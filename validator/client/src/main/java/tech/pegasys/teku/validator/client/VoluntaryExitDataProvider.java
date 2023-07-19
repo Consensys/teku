@@ -56,18 +56,14 @@ public class VoluntaryExitDataProvider {
       final BLSPublicKey publicKey, final Optional<UInt64> maybeEpoch) {
     return genesisDataProvider
         .getGenesisData()
-        .thenCompose(
-            genesisData -> {
+        .thenCombine(
+            validatorApiChannel.getValidatorIndices(Set.of(publicKey)),
+            (genesisData, indicesMap) -> {
               final UInt64 epoch = calculateCurrentEpoch(maybeEpoch, genesisData.getGenesisTime());
-              return validatorApiChannel
-                  .getValidatorIndices(Set.of(publicKey))
-                  .thenApply(
-                      indicesMap -> {
-                        final Bytes32 genesisRoot = genesisData.getGenesisValidatorsRoot();
-                        final Fork fork = spec.getForkSchedule().getFork(epoch);
-                        final ForkInfo forkInfo = new ForkInfo(fork, genesisRoot);
-                        return calculateSignedVoluntaryExit(indicesMap, publicKey, epoch, forkInfo);
-                      });
+              final Bytes32 genesisRoot = genesisData.getGenesisValidatorsRoot();
+              final Fork fork = spec.getForkSchedule().getFork(epoch);
+              final ForkInfo forkInfo = new ForkInfo(fork, genesisRoot);
+              return calculateSignedVoluntaryExit(indicesMap, publicKey, epoch, forkInfo);
             });
   }
 
