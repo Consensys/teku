@@ -220,6 +220,7 @@ public class ValidatorClientService extends Service {
                 validatorClientService.initializeValidatorRestApi(
                     validatorApiChannel,
                     validatorApiConfig,
+                    genesisDataProvider,
                     proposerConfigManager,
                     new ActiveKeyManager(
                         validatorLoader,
@@ -269,6 +270,7 @@ public class ValidatorClientService extends Service {
   private void initializeValidatorRestApi(
       final ValidatorApiChannel validatorApiChannel,
       final ValidatorRestApiConfig validatorRestApiConfig,
+      final GenesisDataProvider genesisDataProvider,
       final Optional<ProposerConfigManager> proposerConfigManager,
       final ActiveKeyManager activeKeyManager,
       final DataDirLayout dataDirLayout,
@@ -278,6 +280,7 @@ public class ValidatorClientService extends Service {
         ValidatorRestApi.create(
             validatorApiChannel,
             validatorRestApiConfig,
+            genesisDataProvider,
             proposerConfigManager,
             activeKeyManager,
             spec,

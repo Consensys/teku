@@ -20,6 +20,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import picocli.AutoComplete;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -27,6 +28,9 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Spec;
 import tech.pegasys.teku.cli.converter.PicoCliVersionProvider;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
+import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
@@ -38,6 +42,7 @@ import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 import tech.pegasys.teku.validator.client.KeyManager;
 import tech.pegasys.teku.validator.client.NoOpKeyManager;
 import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAlert;
@@ -143,10 +148,17 @@ public class DebugToolsCommand implements Runnable {
     DataDirLayout dataDirLayout =
         new SeparateServiceDataDirLayout(tempDir, Optional.empty(), Optional.empty());
     final KeyManager keyManager = new NoOpKeyManager();
+
+    final AsyncRunnerFactory asyncRunnerFactory =
+        AsyncRunnerFactory.createDefault(
+            new MetricTrackingExecutorFactory(new NoOpMetricsSystem()));
+    final AsyncRunner asyncRunner = asyncRunnerFactory.create("async", 1);
+
     RestApi api =
         ValidatorRestApi.create(
             ValidatorApiChannel.NO_OP,
             config,
+            new GenesisDataProvider(asyncRunner, ValidatorApiChannel.NO_OP),
             Optional.empty(),
             keyManager,
             spec,
