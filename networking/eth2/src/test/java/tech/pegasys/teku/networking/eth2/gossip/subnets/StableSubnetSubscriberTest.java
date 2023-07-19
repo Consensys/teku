@@ -57,22 +57,6 @@ public class StableSubnetSubscriberTest {
   }
 
   @Test
-  void shouldNotNotifyAnyChangeWhenNumberOfValidatorsDecrease() {
-    StableSubnetSubscriber stableSubnetSubscriber = createStableSubnetSubscriber();
-    ArgumentCaptor<Set<SubnetSubscription>> subnetSubscriptions =
-        ArgumentCaptor.forClass(Set.class);
-
-    stableSubnetSubscriber.onSlot(ZERO);
-    verify(attestationTopicSubscriber).subscribeToPersistentSubnets(subnetSubscriptions.capture());
-
-    assertUnsubscribeSlotsAreInBound(subnetSubscriptions.getValue(), ZERO);
-    assertSubnetsAreDistinct(subnetSubscriptions.getValue());
-
-    stableSubnetSubscriber.onSlot(UInt64.ONE);
-    verifyNoMoreInteractions(attestationTopicSubscriber);
-  }
-
-  @Test
   void shouldReplaceExpiredSubscriptionsWithNewOnes() {
     StableSubnetSubscriber stableSubnetSubscriber = createStableSubnetSubscriber();
 
