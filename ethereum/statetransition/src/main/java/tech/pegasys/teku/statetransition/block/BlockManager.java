@@ -105,9 +105,62 @@ public class BlockManager extends Service
   }
 
   @Override
-  public SafeFuture<BlockImportResult> importBlock(final SignedBeaconBlock block) {
+  public SafeFuture<BlockImportResult> importBlock(
+      final SignedBeaconBlock block, final Optional<BroadcastValidation> broadcastValidation) {
     LOG.trace("Preparing to import block: {}", block::toLogString);
-    return doImportBlock(block, Optional.empty());
+
+    // NO broadcast validation
+    if (broadcastValidation.isEmpty()) {
+      return doImportBlock(block, Optional.empty(), Optional.empty());
+    }
+
+    int broadcastValidationLevel = broadcastValidation.get().ordinal();
+
+    final Optional<SafeFuture<BlockImportResult>> consensusValidationResult;
+    if (broadcastValidationLevel >= BroadcastValidation.CONSENSUS.ordinal()) {
+      consensusValidationResult = Optional.of(new SafeFuture<>());
+    } else {
+      consensusValidationResult = Optional.empty();
+    }
+
+    // GOSSIP
+    SafeFuture<BlockImportResult> importPipeline =
+        validator
+            .validate(block, true)
+            .thenCompose(
+                internalValidationResult -> {
+                  if (internalValidationResult.isAccept()) {
+                    return doImportBlock(block, Optional.empty(), consensusValidationResult);
+                  }
+                  return SafeFuture.completedFuture(BlockImportResult.FAILED_GOSSIP_VALIDATION);
+                });
+
+    if (broadcastValidationLevel == BroadcastValidation.GOSSIP.ordinal()) {
+      return importPipeline;
+    }
+
+    //  GOSSIP + CONSENSUS validation
+    importPipeline = importPipeline.or(consensusValidationResult.orElseThrow());
+
+    if (broadcastValidationLevel == BroadcastValidation.CONSENSUS.ordinal()) {
+      return importPipeline;
+    }
+
+    // GOSSIP + CONSENSUS + additional EQUIVOCATION
+    return importPipeline.thenApply(
+        result -> {
+          // forward errors
+          if (!result.isSuccessful()) {
+            return result;
+          }
+
+          // forward success if equivocation check passes
+          if (validator.blockIsFirstBlockWithValidSignatureForSlot(block)) {
+            return result;
+          }
+
+          return BlockImportResult.FAILED_EQUIVOCATION_CHECK;
+        });
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
@@ -130,12 +183,12 @@ public class BlockManager extends Service
           InternalValidationResult.reject("Block (or its parent) previously marked as invalid"));
     }
 
-    SafeFuture<InternalValidationResult> validationResult = validator.validate(block);
+    final SafeFuture<InternalValidationResult> validationResult = validator.validate(block, false);
     validationResult.thenAccept(
         result -> {
           if (result.code().equals(ValidationResultCode.ACCEPT)
               || result.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
-            doImportBlock(block, blockImportPerformance)
+            doImportBlock(block, blockImportPerformance, Optional.empty())
                 .finish(err -> LOG.error("Failed to process received block.", err));
           }
         });
@@ -186,17 +239,18 @@ public class BlockManager extends Service
   }
 
   private void importBlockIgnoringResult(final SignedBeaconBlock block) {
-    doImportBlock(block, Optional.empty()).ifExceptionGetsHereRaiseABug();
+    doImportBlock(block, Optional.empty(), Optional.empty()).ifExceptionGetsHereRaiseABug();
   }
 
   private SafeFuture<BlockImportResult> doImportBlock(
       final SignedBeaconBlock block,
-      final Optional<BlockImportPerformance> blockImportPerformance) {
+      final Optional<BlockImportPerformance> blockImportPerformance,
+      final Optional<SafeFuture<BlockImportResult>> consensusValidation) {
     return handleInvalidBlock(block)
         .or(() -> handleKnownBlock(block))
         .orElseGet(
             () ->
-                handleBlockImport(block, blockImportPerformance)
+                handleBlockImport(block, blockImportPerformance, consensusValidation)
                     .thenPeek(
                         result -> lateBlockImportCheck(blockImportPerformance, block, result)))
         .thenPeek(
@@ -242,13 +296,14 @@ public class BlockManager extends Service
 
   private SafeFuture<BlockImportResult> handleBlockImport(
       final SignedBeaconBlock block,
-      final Optional<BlockImportPerformance> blockImportPerformance) {
+      final Optional<BlockImportPerformance> blockImportPerformance,
+      final Optional<SafeFuture<BlockImportResult>> consensusValidation) {
 
     onBlockValidated(block);
     blobSidecarPool.onNewBlock(block);
 
     return blockImporter
-        .importBlock(block, blockImportPerformance)
+        .importBlock(block, blockImportPerformance, consensusValidation)
         .thenPeek(
             result -> {
               if (result.isSuccessful()) {

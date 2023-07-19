@@ -54,7 +54,8 @@ public class BlockValidator {
     this.gossipValidationHelper = gossipValidationHelper;
   }
 
-  public SafeFuture<InternalValidationResult> validate(final SignedBeaconBlock block) {
+  public SafeFuture<InternalValidationResult> validate(
+      final SignedBeaconBlock block, final boolean isLocal) {
 
     if (gossipValidationHelper.isSlotFinalized(block.getSlot())
         || !blockIsFirstBlockWithValidSignatureForSlot(block)) {
@@ -136,7 +137,14 @@ public class BlockValidator {
                 return reject("Block signature is invalid");
               }
 
-              if (!receivedValidBlockInfoSet.add(new SlotAndProposer(block))) {
+              // if we are checking a locally produced block, we don't want to track the block.
+              // tracking blocks received via gossip allows us to reapply an equivocation check
+              // later again in the block import pipeline.
+              final boolean equivocationCheck =
+                  isLocal
+                      ? blockIsFirstBlockWithValidSignatureForSlot(block)
+                      : receivedValidBlockInfoSet.add(new SlotAndProposer(block));
+              if (!equivocationCheck) {
                 return ignore(
                     "Block is not the first with valid signature for its slot. It will be dropped.");
               }
@@ -145,7 +153,7 @@ public class BlockValidator {
             });
   }
 
-  private boolean blockIsFirstBlockWithValidSignatureForSlot(final SignedBeaconBlock block) {
+  public boolean blockIsFirstBlockWithValidSignatureForSlot(final SignedBeaconBlock block) {
     return !receivedValidBlockInfoSet.contains(new SlotAndProposer(block));
   }
 
