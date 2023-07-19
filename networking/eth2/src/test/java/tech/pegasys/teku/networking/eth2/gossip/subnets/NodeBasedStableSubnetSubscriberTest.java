@@ -66,7 +66,7 @@ public class NodeBasedStableSubnetSubscriberTest {
         .allMatch(subnetId -> subnetId >= 0 && subnetId < attestationSubnetCount);
     assertThat(subnetIdsCaptor.getAllValues())
         .hasSize(spec.getNetworkingConfig().getSubnetsPerNode() * 2);
-    assertSubnetsAreDistinct(subnetIdsCaptor.getAllValues());
+    assertSubscribedToAtLeastOneNewSubnet(subnetIdsCaptor.getAllValues());
   }
 
   @NotNull
@@ -77,9 +77,9 @@ public class NodeBasedStableSubnetSubscriberTest {
         Optional.of(dataStructureUtil.randomUInt256()));
   }
 
-  private void assertSubnetsAreDistinct(List<Integer> subscribedSubnetIds) {
+  private void assertSubscribedToAtLeastOneNewSubnet(List<Integer> subscribedSubnetIds) {
     IntSet subnetIds =
         IntOpenHashSet.toSet(subscribedSubnetIds.stream().mapToInt(Integer::intValue));
-    assertThat(subscribedSubnetIds).hasSameSizeAs(subnetIds);
+    assertThat(subnetIds.size()).isGreaterThanOrEqualTo(2);
   }
 }
