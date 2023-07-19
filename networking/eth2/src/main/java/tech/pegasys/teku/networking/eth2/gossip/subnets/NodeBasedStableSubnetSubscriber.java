@@ -89,13 +89,14 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
         subnetSubscriptions.size(),
         subnetsPerNode);
 
+    final UInt256 nodeId =
+        discoveryNodeId.orElseThrow(
+            () -> new IllegalArgumentException("Unable to get discovery node id"));
+
     final List<UInt64> nodeSubscribedSubnets =
         spec.atSlot(currentSlot)
             .miscHelpers()
-            .computeSubscribedSubnets(
-                discoveryNodeId.orElseThrow(
-                    () -> new IllegalArgumentException("Unable to get discovery node id")),
-                spec.computeEpochAtSlot(currentSlot));
+            .computeSubscribedSubnets(nodeId, spec.computeEpochAtSlot(currentSlot));
 
     final Iterator<UInt64> nodeSubscribedSubnetsIterator = nodeSubscribedSubnets.iterator();
 
@@ -107,7 +108,7 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
               nodeSubscribedSubnetsIterator.next().intValue(),
               spec.getGenesisSpec()
                   .miscHelpers()
-                  .calculateNodeSubnetUnsubscriptionSlot(currentSlot)));
+                  .calculateNodeSubnetUnsubscriptionSlot(nodeId, currentSlot)));
     }
     return newSubnetSubscriptions;
   }

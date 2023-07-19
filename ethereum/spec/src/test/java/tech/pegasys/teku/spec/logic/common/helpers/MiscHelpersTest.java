@@ -169,13 +169,37 @@ class MiscHelpersTest {
   @ParameterizedTest
   @MethodSource("provideSubnetsForNodeIds")
   public void testDiscoveryNodeBasedSubnetIds(
-      final String nodeId, final String epoch, int firstSubnetId, int secondSubnetId) {
-    final List<UInt64> nodeSubnetIds =
-        miscHelpers.computeSubscribedSubnets(
-            UInt256.valueOf(new BigInteger(nodeId)), UInt64.valueOf(epoch));
+      final UInt256 nodeId, final UInt64 epoch, int firstSubnetId, int secondSubnetId) {
+    final List<UInt64> nodeSubnetIds = miscHelpers.computeSubscribedSubnets(nodeId, epoch);
     assertThat(nodeSubnetIds).hasSize(specConfig.getSubnetsPerNode());
     assertThat(nodeSubnetIds).contains(UInt64.valueOf(firstSubnetId));
     assertThat(nodeSubnetIds).contains(UInt64.valueOf(secondSubnetId));
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideNodeIdsAndSlots")
+  public void unsubsciptionEpochMustMatchSubnetsCalculationResultChange(
+      final UInt256 nodeId, final UInt64 slotAtEpoch) {
+    int subscriptionPeriod = 0;
+    for (int epoch = 0; epoch < 1000; epoch++) {
+      List<UInt64> currentSubnets =
+          miscHelpers.computeSubscribedSubnets(nodeId, UInt64.valueOf(epoch));
+      List<UInt64> nextSubnets =
+          miscHelpers.computeSubscribedSubnets(nodeId, UInt64.valueOf(epoch + 1));
+      if (!currentSubnets.equals(nextSubnets)) {
+        UInt64 currentSlot =
+            miscHelpers
+                .computeStartSlotAtEpoch(
+                    UInt64.valueOf(
+                        (long) specConfig.getEpochsPerSubnetSubscription() * subscriptionPeriod))
+                .plus(slotAtEpoch);
+        UInt64 unsubscriptionSlot =
+            miscHelpers.calculateNodeSubnetUnsubscriptionSlot(nodeId, currentSlot);
+        UInt64 unsubscriptionEpoch = miscHelpers.computeEpochAtSlot(unsubscriptionSlot);
+        assertThat(unsubscriptionEpoch).isEqualTo(UInt64.valueOf(epoch));
+        subscriptionPeriod++;
+      }
+    }
   }
 
   @ParameterizedTest
@@ -218,12 +242,25 @@ class MiscHelpersTest {
 
   public static Stream<Arguments> provideSubnetsForNodeIds() {
     return Stream.of(
-        Arguments.of("434726285098", "6717051035888874875", 28, 29),
-        Arguments.of("288055627580", "13392352527348795112", 8, 9),
+        Arguments.of(UInt256.valueOf(434726285098L), UInt64.valueOf(6717051035888874875L), 28, 29),
+        Arguments.of(UInt256.valueOf(288055627580L), UInt64.valueOf("13392352527348795112"), 8, 9),
         Arguments.of(
-            "57467522110468688239177851250859789869070302005900722885377252304169193209346",
-            "6226203858325459337",
+            UInt256.valueOf(
+                new BigInteger(
+                    "57467522110468688239177851250859789869070302005900722885377252304169193209346")),
+            UInt64.valueOf(6226203858325459337L),
             44,
             45));
+  }
+
+  public static Stream<Arguments> provideNodeIdsAndSlots() {
+    return Stream.of(
+        Arguments.of(UInt256.valueOf(434726285098L), UInt64.valueOf(0)),
+        Arguments.of(UInt256.valueOf(288055627580L), UInt64.valueOf(5)),
+        Arguments.of(
+            UInt256.valueOf(
+                new BigInteger(
+                    "57467522110468688239177851250859789869070302005900722885377252304169193209346")),
+            UInt64.valueOf(7)));
   }
 }
