@@ -100,10 +100,6 @@
       "moduleLicense": "MIT License"
     },
     {
-      "moduleName": "com.google.code.gson:gson",
-      "moduleLicense": "Apache License, Version 2.0"
-    },
-    {
       "moduleName": "io.libp2p:jvm-libp2p-minimal",
       "moduleLicense": "Apache License, Version 2.0",
       "moduleLicenseUrl": "https://github.com/libp2p/jvm-libp2p/blob/develop/LICENSE-APACHE"

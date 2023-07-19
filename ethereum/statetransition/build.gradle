@@ -24,7 +24,6 @@ dependencies {
   implementation project(':storage')
   implementation project(':storage:api')
 
-  implementation 'com.google.code.gson:gson'
   implementation 'org.apache.tuweni:tuweni-units'
 
   testImplementation testFixtures(project(':ethereum:spec'))
