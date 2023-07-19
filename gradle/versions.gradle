@@ -5,9 +5,6 @@ dependencyManagement {
     dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.15.2'
     dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2'
 
-
-    dependency 'com.google.auto.service:auto-service:1.0-rc7'
-
     dependencySet(group: 'com.google.errorprone', version: '2.20.0') {
       entry 'error_prone_annotation'
       entry 'error_prone_check_api'
@@ -18,8 +15,8 @@ dependencyManagement {
     dependency 'tech.pegasys.tools.epchecks:errorprone-checks:1.1.1'
 
     dependency 'com.google.guava:guava:32.1.1-jre'
+    dependency 'com.google.code.gson:gson:2.10.1'
 
-    dependency 'com.googlecode.json-simple:json-simple:1.1.1'
     dependency 'org.jsoup:jsoup:1.16.1'
 
     dependency 'com.launchdarkly:okhttp-eventsource:4.1.1'
@@ -35,8 +32,6 @@ dependencyManagement {
       entry 'javalin'
       entry 'javalin-rendering'
     }
-    dependency 'io.protostuff:protostuff-core:1.6.2'
-    dependency 'io.protostuff:protostuff-runtime:1.6.2'
 
     dependency 'io.libp2p:jvm-libp2p-minimal:0.10.0-RELEASE'
     dependency 'tech.pegasys:jblst:0.3.10'
@@ -45,8 +40,6 @@ dependencyManagement {
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
 
     dependency 'org.jetbrains.kotlin:kotlin-stdlib:1.9.0'
-
-    dependency 'io.pkts:pkts-core:3.0.3'
 
     dependency 'org.mock-server:mockserver-junit-jupiter:5.15.0'
 
@@ -113,7 +106,7 @@ dependencyManagement {
 
     dependency 'org.bouncycastle:bcprov-jdk15on:1.70'
 
-    dependency 'org.java-websocket:Java-WebSocket:1.5.2'
+    dependency 'org.java-websocket:Java-WebSocket:1.5.3'
 
     dependencySet(group: 'org.junit.jupiter', version: '5.9.3') {
       entry 'junit-jupiter-api'
