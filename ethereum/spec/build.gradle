@@ -9,7 +9,6 @@ dependencies {
 
     implementation 'com.fasterxml.jackson.core:jackson-databind'
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
-    implementation 'com.google.code.gson:gson'
     implementation 'org.apache.tuweni:tuweni-bytes'
     implementation 'org.apache.tuweni:tuweni-ssz'
     implementation 'org.apache.tuweni:tuweni-ssz'
@@ -29,7 +28,6 @@ dependencies {
     implementation project(':infrastructure:ssz')
     implementation project(':infrastructure:time')
 
-    testFixturesApi 'com.google.guava:guava'
     testFixturesApi 'com.google.guava:guava'
     testFixturesApi 'org.apache.tuweni:tuweni-bytes'
     testFixturesApi project(':ethereum:pow:api')

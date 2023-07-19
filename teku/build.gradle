@@ -44,7 +44,6 @@ dependencies {
   api 'com.google.guava:guava'
 
   implementation 'commons-io:commons-io'
-  implementation 'com.google.code.gson:gson'
   implementation 'com.squareup.okhttp3:okhttp'
   implementation 'info.picocli:picocli'
   implementation 'io.libp2p:jvm-libp2p-minimal'

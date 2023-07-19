@@ -15,7 +15,6 @@ dependencies {
     implementation project(':beacon:sync')
     implementation project(':validator:api')
 
-    implementation 'com.google.code.gson:gson'
     implementation 'org.apache.tuweni:tuweni-units'
 
     testImplementation testFixtures(project(':ethereum:spec'))
