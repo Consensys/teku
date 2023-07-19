@@ -166,8 +166,10 @@ dependencyManagement {
       exclude 'org.apache.tuweni:units'
     }
 
-    dependency 'org.jupnp:org.jupnp.support:2.7.1'
-    dependency 'org.jupnp:org.jupnp:2.7.1'
+    dependencySet(group: 'org.jupnp', version: '2.7.1') {
+      entry "org.jupnp.support"
+      entry "org.jupnp"
+    }
 
     dependencySet(group: 'io.jsonwebtoken', version: '0.11.5') {
       entry 'jjwt-api'
