@@ -36,6 +36,7 @@ public class ExecutionLayerConfiguration {
   public static final int DEFAULT_BUILDER_BID_COMPARE_FACTOR = 100;
   public static final boolean DEFAULT_BUILDER_SET_USER_AGENT_HEADER = true;
   public static final boolean DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG = true;
+  public static final boolean DEFAULT_EXCHANGE_CAPABILITIES_MONITORING_ENABLED = true;
   public static final String BUILDER_ALWAYS_KEYWORD = "BUILDER_ALWAYS";
 
   private final Spec spec;
@@ -49,6 +50,7 @@ public class ExecutionLayerConfiguration {
   private final Optional<Integer> builderBidCompareFactor;
   private final boolean builderSetUserAgentHeader;
   private final boolean useShouldOverrideBuilderFlag;
+  private final boolean exchangeCapabilitiesMonitoringEnabled;
 
   private ExecutionLayerConfiguration(
       final Spec spec,
@@ -61,7 +63,8 @@ public class ExecutionLayerConfiguration {
       final int builderCircuitBreakerAllowedConsecutiveFaults,
       final Optional<Integer> builderBidCompareFactor,
       final boolean builderSetUserAgentHeader,
-      final boolean useShouldOverrideBuilderFlag) {
+      final boolean useShouldOverrideBuilderFlag,
+      final boolean exchangeCapabilitiesMonitoringEnabled) {
     this.spec = spec;
     this.engineEndpoint = engineEndpoint;
     this.engineJwtSecretFile = engineJwtSecretFile;
@@ -74,6 +77,7 @@ public class ExecutionLayerConfiguration {
     this.builderBidCompareFactor = builderBidCompareFactor;
     this.builderSetUserAgentHeader = builderSetUserAgentHeader;
     this.useShouldOverrideBuilderFlag = useShouldOverrideBuilderFlag;
+    this.exchangeCapabilitiesMonitoringEnabled = exchangeCapabilitiesMonitoringEnabled;
   }
 
   public static Builder builder() {
@@ -131,6 +135,10 @@ public class ExecutionLayerConfiguration {
     return useShouldOverrideBuilderFlag;
   }
 
+  public boolean isExchangeCapabilitiesMonitoringEnabled() {
+    return exchangeCapabilitiesMonitoringEnabled;
+  }
+
   public static class Builder {
     private Spec spec;
     private Optional<String> engineEndpoint = Optional.empty();
@@ -144,6 +152,8 @@ public class ExecutionLayerConfiguration {
     private String builderBidCompareFactor = Integer.toString(DEFAULT_BUILDER_BID_COMPARE_FACTOR);
     private boolean builderSetUserAgentHeader = DEFAULT_BUILDER_SET_USER_AGENT_HEADER;
     private boolean useShouldOverrideBuilderFlag = DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG;
+    private boolean exchangeCapabilitiesMonitoringEnabled =
+        DEFAULT_EXCHANGE_CAPABILITIES_MONITORING_ENABLED;
 
     private Builder() {}
 
@@ -179,7 +189,8 @@ public class ExecutionLayerConfiguration {
           builderCircuitBreakerAllowedConsecutiveFaults,
           builderBidCompareFactor,
           builderSetUserAgentHeader,
-          useShouldOverrideBuilderFlag);
+          useShouldOverrideBuilderFlag,
+          exchangeCapabilitiesMonitoringEnabled);
     }
 
     public Builder engineEndpoint(final String engineEndpoint) {
@@ -237,6 +248,12 @@ public class ExecutionLayerConfiguration {
 
     public Builder useShouldOverrideBuilderFlag(final boolean useShouldOverrideBuilderFlag) {
       this.useShouldOverrideBuilderFlag = useShouldOverrideBuilderFlag;
+      return this;
+    }
+
+    public Builder exchangeCapabilitiesMonitoringEnabled(
+        final boolean exchangeCapabilitiesMonitoringEnabled) {
+      this.exchangeCapabilitiesMonitoringEnabled = exchangeCapabilitiesMonitoringEnabled;
       return this;
     }
 

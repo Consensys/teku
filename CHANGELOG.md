@@ -14,4 +14,6 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Additions and Improvements
 
+Introduce `--exchange-capabilities-monitoring-enabled` parameter. If enabled, EL will be queried periodically for the Engine API methods it supports. If incompatibility is detected, there will be a warning raised in the logs. The default is `true`.
+
 ### Bug Fixes

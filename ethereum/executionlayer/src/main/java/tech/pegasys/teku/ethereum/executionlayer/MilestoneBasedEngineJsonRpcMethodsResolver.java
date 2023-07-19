@@ -20,7 +20,10 @@ import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineForkChoiceUpdatedV1;
@@ -40,7 +43,7 @@ import tech.pegasys.teku.spec.datastructures.util.ForkAndSpecMilestone;
 public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpcMethodsResolver {
 
   private final Map<SpecMilestone, Map<EngineApiMethod, EngineJsonRpcMethod<?>>>
-      methodsByMilestone = new HashMap<>();
+      methodsByMilestone = new TreeMap<>();
 
   private final Spec spec;
   private final ExecutionEngineClient executionEngineClient;
@@ -118,5 +121,14 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
           "Can't find method with name " + method.getName() + " for milestone " + milestone);
     }
     return foundMethod;
+  }
+
+  @Override
+  public Set<String> getCapabilities() {
+    return methodsByMilestone.values().stream()
+        .flatMap(methods -> methods.values().stream())
+        .filter(method -> !method.isDeprecated())
+        .map(EngineJsonRpcMethod::getVersionedName)
+        .collect(Collectors.toSet());
   }
 }

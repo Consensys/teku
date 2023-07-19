@@ -21,6 +21,7 @@ import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfigurat
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_ENABLED;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_CIRCUIT_BREAKER_WINDOW;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_BUILDER_SET_USER_AGENT_HEADER;
+import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_EXCHANGE_CAPABILITIES_MONITORING_ENABLED;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG;
 
 import picocli.CommandLine.Help.Visibility;
@@ -58,7 +59,7 @@ public class ExecutionLayerOptions {
       names = {"--Xbuilder-circuit-breaker-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Enables Circuit Breaker logic for builder usage.",
-      arity = "1",
+      arity = "0..1",
       showDefaultValue = Visibility.ALWAYS,
       fallbackValue = "true",
       hidden = true)
@@ -110,10 +111,9 @@ public class ExecutionLayerOptions {
       paramLabel = "<BOOLEAN>",
       description =
           "Set User-Agent header to teku/v<version> (e.g. teku/v23.4.0) when making a builder bid request to help builders identify clients and versions",
-      arity = "1",
+      arity = "0..1",
       showDefaultValue = Visibility.ALWAYS,
-      fallbackValue = "true",
-      hidden = true)
+      fallbackValue = "true")
   private boolean builderSetUserAgentHeader = DEFAULT_BUILDER_SET_USER_AGENT_HEADER;
 
   @Option(
@@ -121,11 +121,22 @@ public class ExecutionLayerOptions {
       paramLabel = "<BOOLEAN>",
       description =
           "Whether or not to use the shouldOverrideBuilder flag provided by the Engine API.",
-      arity = "1",
+      arity = "0..1",
       showDefaultValue = Visibility.ALWAYS,
       fallbackValue = "true",
       hidden = true)
   private boolean useShouldOverrideBuilderFlag = DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG;
+
+  @Option(
+      names = {"--exchange-capabilities-monitoring-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Enables querying EL periodically for the Engine API methods it supports. If incompatibility is detected, there will be a warning raised in the logs.",
+      arity = "0..1",
+      showDefaultValue = Visibility.ALWAYS,
+      fallbackValue = "true")
+  private boolean exchangeCapabilitiesMonitoringEnabled =
+      DEFAULT_EXCHANGE_CAPABILITIES_MONITORING_ENABLED;
 
   public void configure(final Builder builder) {
     builder.executionLayer(
@@ -140,7 +151,8 @@ public class ExecutionLayerOptions {
                     builderCircuitBreakerAllowedConsecutiveFaults)
                 .builderBidCompareFactor(builderBidCompareFactor)
                 .builderSetUserAgentHeader(builderSetUserAgentHeader)
-                .useShouldOverrideBuilderFlag(useShouldOverrideBuilderFlag));
+                .useShouldOverrideBuilderFlag(useShouldOverrideBuilderFlag)
+                .exchangeCapabilitiesMonitoringEnabled(exchangeCapabilitiesMonitoringEnabled));
     depositOptions.configure(builder);
   }
 }

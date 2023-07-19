@@ -13,10 +13,11 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
@@ -34,14 +35,15 @@ public abstract class ExecutionHandlerClientTest {
   @SuppressWarnings("FutureReturnValueIgnored")
   @Test
   void eth1GetPowBlock_shouldCallExecutionClient() {
-    ExecutionClientHandler handler = getHandler();
+    final ExecutionClientHandler handler = getHandler();
     final Bytes32 blockHash = Bytes32.random();
     final PowBlock block = createPowBlock(blockHash);
 
     when(executionEngineClient.getPowBlock(blockHash))
         .thenReturn(SafeFuture.completedFuture(block));
-    handler.eth1GetPowBlock(blockHash);
-    verify(executionEngineClient).getPowBlock(blockHash);
+
+    final SafeFuture<Optional<PowBlock>> result = handler.eth1GetPowBlock(blockHash);
+    assertThat(result).isCompletedWithValue(Optional.of(block));
   }
 
   private PowBlock createPowBlock(final Bytes32 blockHash) {
@@ -55,12 +57,13 @@ public abstract class ExecutionHandlerClientTest {
   @SuppressWarnings("FutureReturnValueIgnored")
   @Test
   void eth1GetPowChainHead_shouldCallExecutionClient() {
-    ExecutionClientHandler handler = getHandler();
+    final ExecutionClientHandler handler = getHandler();
     final PowBlock block = createPowBlock(Bytes32.random());
 
     when(executionEngineClient.getPowChainHead()).thenReturn(SafeFuture.completedFuture(block));
-    handler.eth1GetPowChainHead();
-    verify(executionEngineClient).getPowChainHead();
+
+    final SafeFuture<PowBlock> result = handler.eth1GetPowChainHead();
+    assertThat(result).isCompletedWithValue(block);
   }
 
   final ExecutionClientHandler getHandler() {
