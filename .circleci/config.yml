@@ -225,6 +225,24 @@ jobs:
             ./gradlew --no-daemon --parallel checkMavenCoordinateCollisions spotlessCheck checkModuleDependencies
       - notify
 
+  javaCheck:
+    executor: machine_executor_arm64
+    steps:
+      - run:
+          name: test
+          command: |
+            echo $JAVA_HOME
+            java --version
+
+  javaCheckAgain:
+    executor: machine_executor_amd64
+    steps:
+      - run:
+          name: test
+          command: |
+            echo $JAVA_HOME
+            java --version  
+
   dockerScan:
     executor: trivy_executor
     steps:
@@ -534,6 +552,14 @@ workflows:
             tags: &filters-release-tags
               only: /^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?/
       - spotless:
+          filters:
+            tags:
+              <<: *filters-release-tags
+      - javaCheck:
+          filters:
+            tags:
+              <<: *filters-release-tags
+      - javaCheckAgain:
           filters:
             tags:
               <<: *filters-release-tags
