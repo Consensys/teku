@@ -731,6 +731,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             ? AllSubnetsSubscriber.create(attestationTopicSubscriber, spec.getNetworkingConfig())
             : new NodeBasedStableSubnetSubscriber(
                 attestationTopicSubscriber, spec, p2pNetwork.getDiscoveryNodeId());
+    eventChannels.subscribe(SlotEventsChannel.class, stableSubnetSubscriber);
   }
 
   public void initValidatorApiHandler() {
@@ -791,7 +792,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             syncCommitteeSubscriptionManager);
     eventChannels
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
-        .subscribe(SlotEventsChannel.class, stableSubnetSubscriber)
         .subscribeMultithreaded(
             ValidatorApiChannel.class,
             validatorApiHandler,
