@@ -29,7 +29,6 @@ dependencies {
     implementation project(':infrastructure:time')
 
     testFixturesApi 'com.google.guava:guava'
-    testFixturesApi 'com.google.guava:guava'
     testFixturesApi 'org.apache.tuweni:tuweni-bytes'
     testFixturesApi project(':ethereum:pow:api')
     testFixturesApi project(':infrastructure:ssz')
