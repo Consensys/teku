@@ -182,20 +182,20 @@ class MiscHelpersTest {
       final UInt256 nodeId, final UInt64 slotAtEpoch) {
     int subscriptionPeriod = 0;
     for (int epoch = 0; epoch < 1000; epoch++) {
-      List<UInt64> currentSubnets =
+      final List<UInt64> currentSubnets =
           miscHelpers.computeSubscribedSubnets(nodeId, UInt64.valueOf(epoch));
-      List<UInt64> nextSubnets =
+      final List<UInt64> nextSubnets =
           miscHelpers.computeSubscribedSubnets(nodeId, UInt64.valueOf(epoch + 1));
       if (!currentSubnets.equals(nextSubnets)) {
-        UInt64 currentSlot =
+        final UInt64 currentSlot =
             miscHelpers
                 .computeStartSlotAtEpoch(
                     UInt64.valueOf(
                         (long) specConfig.getEpochsPerSubnetSubscription() * subscriptionPeriod))
                 .plus(slotAtEpoch);
-        UInt64 unsubscriptionSlot =
+        final UInt64 unsubscriptionSlot =
             miscHelpers.calculateNodeSubnetUnsubscriptionSlot(nodeId, currentSlot);
-        UInt64 unsubscriptionEpoch = miscHelpers.computeEpochAtSlot(unsubscriptionSlot);
+        final UInt64 unsubscriptionEpoch = miscHelpers.computeEpochAtSlot(unsubscriptionSlot);
         assertThat(unsubscriptionEpoch).isEqualTo(UInt64.valueOf(epoch));
         subscriptionPeriod++;
       }
