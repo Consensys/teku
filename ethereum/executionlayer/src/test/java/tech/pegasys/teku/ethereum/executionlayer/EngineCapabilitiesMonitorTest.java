@@ -23,6 +23,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.ethereum.executionlayer.EngineCapabilitiesMonitor.SLOT_IN_THE_EPOCH_TO_RUN_MONITORING;
 
+import java.util.HashSet;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -48,7 +49,7 @@ public class EngineCapabilitiesMonitorTest {
 
   @BeforeEach
   public void setUp() {
-    when(engineMethodsResolver.getCapabilities()).thenReturn(capabilities);
+    when(engineMethodsResolver.getCapabilities()).thenReturn(new HashSet<>(capabilities));
     mockEngineCapabilitiesResponse(capabilities);
     engineCapabilitiesMonitor =
         new EngineCapabilitiesMonitor(

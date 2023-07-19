@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ethereum.executionlayer;
 
 import com.google.common.base.Suppliers;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -49,7 +50,8 @@ public class EngineCapabilitiesMonitor implements SlotEventsChannel {
       final ExecutionEngineClient executionEngineClient) {
     this.spec = spec;
     this.eventLogger = eventLogger;
-    this.capabilitiesSupplier = Suppliers.memoize(engineMethodsResolver::getCapabilities);
+    this.capabilitiesSupplier =
+        Suppliers.memoize(() -> new ArrayList<>(engineMethodsResolver.getCapabilities()));
     this.executionEngineClient = executionEngineClient;
   }
 

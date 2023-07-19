@@ -21,7 +21,7 @@ import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod
 import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_GET_PAYLOAD;
 import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_NEW_PAYLOAD;
 
-import java.util.List;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -163,7 +163,7 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
     final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
         new MilestoneBasedEngineJsonRpcMethodsResolver(spec, executionEngineClient);
 
-    final List<String> capabilities = engineMethodsResolver.getCapabilities();
+    final Set<String> capabilities = engineMethodsResolver.getCapabilities();
 
     assertThat(capabilities)
         .containsExactlyInAnyOrder(

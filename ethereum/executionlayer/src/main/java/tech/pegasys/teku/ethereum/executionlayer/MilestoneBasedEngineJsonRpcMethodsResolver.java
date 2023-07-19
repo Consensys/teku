@@ -19,8 +19,8 @@ import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -124,11 +124,11 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
   }
 
   @Override
-  public List<String> getCapabilities() {
+  public Set<String> getCapabilities() {
     return methodsByMilestone.values().stream()
         .flatMap(methods -> methods.values().stream())
         .filter(method -> !method.isDeprecated())
         .map(EngineJsonRpcMethod::getVersionedName)
-        .collect(Collectors.toList());
+        .collect(Collectors.toSet());
   }
 }
