@@ -131,7 +131,8 @@ public class BlobSidecarsByRangeMessageHandler
         .thenCompose(
             earliestAvailableSlot -> {
               final UInt64 requestEpoch = spec.computeEpochAtSlot(startSlot);
-              if (checkRequestInBlobServeRange(requestEpoch)
+              if (spec.isAvailabilityOfBlobSidecarsRequiredAtEpoch(
+                      combinedChainDataClient.getStore(), requestEpoch)
                   && !checkBlobSidecarsAreAvailable(earliestAvailableSlot, endSlot)) {
                 return SafeFuture.failedFuture(
                     new ResourceUnavailableException("Requested blob sidecars are not available."));
@@ -187,16 +188,6 @@ public class BlobSidecarsByRangeMessageHandler
     return earliestAvailableSidecarSlot
         .map(earliestSlot -> earliestSlot.isLessThanOrEqualTo(requestSlot))
         .orElse(false);
-  }
-
-  private boolean checkRequestInBlobServeRange(final UInt64 requestEpoch) {
-    final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
-    final UInt64 minEpochForBlobSidecars =
-        specConfigDeneb
-            .getDenebForkEpoch()
-            .max(currentEpoch.minusMinZero(specConfigDeneb.getMinEpochsForBlobSidecarsRequests()));
-    return requestEpoch.isGreaterThanOrEqualTo(minEpochForBlobSidecars)
-        && requestEpoch.isLessThanOrEqualTo(currentEpoch);
   }
 
   private SafeFuture<RequestState> sendBlobSidecars(final RequestState requestState) {

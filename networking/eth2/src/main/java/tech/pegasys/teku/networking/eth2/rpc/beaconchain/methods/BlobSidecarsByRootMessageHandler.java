@@ -187,22 +187,16 @@ public class BlobSidecarsByRootMessageHandler
                 return;
               }
               final UInt64 requestedEpoch = spec.computeEpochAtSlot(maybeSlot.get());
-              final UInt64 minimumRequestEpoch = computeMinimumRequestEpoch(finalizedEpoch);
-              if (requestedEpoch.isLessThan(minimumRequestEpoch)) {
+              if (!spec.isAvailabilityOfBlobSidecarsRequiredAtEpoch(
+                      combinedChainDataClient.getStore(), requestedEpoch)
+                  || requestedEpoch.isLessThan(finalizedEpoch)) {
                 throw new RpcException(
                     INVALID_REQUEST_CODE,
                     String.format(
-                        "Block root (%s) references a block earlier than the minimum_request_epoch (%s)",
-                        identifier.getBlockRoot(), minimumRequestEpoch));
+                        "Block root (%s) references a block earlier than the minimum_request_epoch",
+                        identifier.getBlockRoot()));
               }
             });
-  }
-
-  private UInt64 computeMinimumRequestEpoch(final UInt64 finalizedEpoch) {
-    final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
-    return finalizedEpoch
-        .max(currentEpoch.minusMinZero(specConfigDeneb.getMinEpochsForBlobSidecarsRequests()))
-        .max(specConfigDeneb.getDenebForkEpoch());
   }
 
   private SafeFuture<Optional<BlobSidecar>> retrieveBlobSidecar(final BlobIdentifier identifier) {

@@ -48,6 +48,8 @@ public class Eth2NetworkConfiguration {
   public static final boolean DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED = true;
 
   public static final String INITIAL_STATE_URL_PATH = "eth/v2/debug/beacon/states/finalized";
+  // 26 thousand years should be enough
+  public static final Integer MAX_EPOCHS_STORE_BLOBS = Integer.MAX_VALUE;
 
   private final Spec spec;
   private final String constants;
@@ -70,6 +72,7 @@ public class Eth2NetworkConfiguration {
   private final Optional<UInt256> totalTerminalDifficultyOverride;
   private final Optional<UInt64> terminalBlockHashEpochOverride;
   private final Optional<Eth2Network> eth2Network;
+  private final Optional<Integer> epochsStoreBlobs;
 
   private Eth2NetworkConfiguration(
       final Spec spec,
@@ -91,7 +94,8 @@ public class Eth2NetworkConfiguration {
       final Optional<Bytes32> terminalBlockHashOverride,
       final Optional<UInt256> totalTerminalDifficultyOverride,
       final Optional<UInt64> terminalBlockHashEpochOverride,
-      final Optional<Eth2Network> eth2Network) {
+      final Optional<Eth2Network> eth2Network,
+      final Optional<Integer> epochsStoreBlobs) {
     this.spec = spec;
     this.constants = constants;
     this.initialState = initialState;
@@ -115,6 +119,7 @@ public class Eth2NetworkConfiguration {
     this.totalTerminalDifficultyOverride = totalTerminalDifficultyOverride;
     this.terminalBlockHashEpochOverride = terminalBlockHashEpochOverride;
     this.eth2Network = eth2Network;
+    this.epochsStoreBlobs = epochsStoreBlobs;
   }
 
   public static Eth2NetworkConfiguration.Builder builder(final String network) {
@@ -213,12 +218,17 @@ public class Eth2NetworkConfiguration {
     return eth2Network;
   }
 
+  public Optional<Integer> getEpochsStoreBlobs() {
+    return epochsStoreBlobs;
+  }
+
   @Override
   public String toString() {
     return constants;
   }
 
   public static class Builder {
+    private static final String EPOCHS_STORE_BLOBS_MAX_KEYWORD = "MAX";
     private String constants;
     private Optional<String> initialState = Optional.empty();
     private boolean usingCustomInitialState = false;
@@ -237,6 +247,7 @@ public class Eth2NetworkConfiguration {
     private Optional<UInt256> totalTerminalDifficultyOverride = Optional.empty();
     private Optional<UInt64> terminalBlockHashEpochOverride = Optional.empty();
     private int safeSlotsToImportOptimistically = DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
+    private String epochsStoreBlobs;
     private Spec spec;
     private boolean forkChoiceUpdateHeadOnBlockImportEnabled =
         DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
@@ -249,6 +260,8 @@ public class Eth2NetworkConfiguration {
       checkNotNull(constants, "Missing constants");
       checkArgument(
           safeSlotsToImportOptimistically >= 0, "Safe slots to import optimistically must be >= 0");
+      final Optional<Integer> maybeEpochsStoreBlobs =
+          validateAndParseEpochsStoreBlobs(epochsStoreBlobs);
       if (spec == null) {
         spec =
             SpecFactory.create(
@@ -276,6 +289,9 @@ public class Eth2NetworkConfiguration {
                       denebBuilder -> {
                         denebForkEpoch.ifPresent(denebBuilder::denebForkEpoch);
                         trustedSetup.ifPresent(denebBuilder::trustedSetupPath);
+                        if (maybeEpochsStoreBlobs.isPresent()) {
+                          denebBuilder.epochsStoreBlobs(maybeEpochsStoreBlobs);
+                        }
                       });
                 });
       }
@@ -304,7 +320,8 @@ public class Eth2NetworkConfiguration {
           terminalBlockHashOverride,
           totalTerminalDifficultyOverride,
           terminalBlockHashEpochOverride,
-          eth2Network);
+          eth2Network,
+          maybeEpochsStoreBlobs);
     }
 
     public Builder constants(final String constants) {
@@ -443,6 +460,11 @@ public class Eth2NetworkConfiguration {
 
     public Builder terminalBlockHashEpochOverride(final UInt64 terminalBlockHashEpochOverride) {
       this.terminalBlockHashEpochOverride = Optional.of(terminalBlockHashEpochOverride);
+      return this;
+    }
+
+    public Builder epochsStoreBlobs(final String epochsStoreBlobs) {
+      this.epochsStoreBlobs = epochsStoreBlobs;
       return this;
     }
 
@@ -631,6 +653,27 @@ public class Eth2NetworkConfiguration {
               "enr:-Ly4QAtr21x5Ps7HYhdZkIBRBgcBkvlIfEel1YNjtFWf4cV3au2LgBGICz9PtEs9-p2HUl_eME8m1WImxTxSB3AkCMwBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpAxNnBDAgAAb___________gmlkgnY0gmlwhANHhOeJc2VjcDI1NmsxoQNLp1QPV8-pyMCohOtj6xGtSBM_GtVTqzlbvNsCF4ezkYhzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
               // GnosisDAO Bootnode: 3.69.35.13
               "enr:-Ly4QLgn8Bx6faigkKUGZQvd1HDToV2FAxZIiENK-lczruzQb90qJK-4E65ADly0s4__dQOW7IkLMW7ZAyJy2vtiLy8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpAxNnBDAgAAb___________gmlkgnY0gmlwhANFIw2Jc2VjcDI1NmsxoQMa-fWEy9UJHfOl_lix3wdY5qust78sHAqZnWwEiyqKgYhzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA");
+    }
+
+    private Optional<Integer> validateAndParseEpochsStoreBlobs(final String epochsStoreBlobs) {
+      if (epochsStoreBlobs == null || epochsStoreBlobs.isBlank()) {
+        return Optional.empty();
+      }
+      if (epochsStoreBlobs.equalsIgnoreCase(EPOCHS_STORE_BLOBS_MAX_KEYWORD)) {
+        return Optional.of(MAX_EPOCHS_STORE_BLOBS);
+      }
+      final int epochsStoreBlobsInt;
+      try {
+        epochsStoreBlobsInt = Integer.parseInt(epochsStoreBlobs);
+      } catch (final NumberFormatException ex) {
+        throw new InvalidConfigurationException(
+            "Expecting number or "
+                + EPOCHS_STORE_BLOBS_MAX_KEYWORD
+                + " keyword for the number of the epochs to store blobs for");
+      }
+      checkArgument(
+          epochsStoreBlobsInt > 0, "Number of the epochs to store blobs for should be > 0");
+      return Optional.of(epochsStoreBlobsInt);
     }
   }
 }

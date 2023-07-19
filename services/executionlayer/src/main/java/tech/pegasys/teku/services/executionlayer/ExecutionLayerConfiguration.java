@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.STUB_ENDPOINT_PREFIX;
 
-import java.util.Locale;
 import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -261,7 +260,7 @@ public class ExecutionLayerConfiguration {
     }
 
     private Optional<Integer> validateAndParseBuilderBidCompareFactor() {
-      if (builderBidCompareFactor.toUpperCase(Locale.ROOT).equals(BUILDER_ALWAYS_KEYWORD)) {
+      if (builderBidCompareFactor.equalsIgnoreCase(BUILDER_ALWAYS_KEYWORD)) {
         return Optional.empty();
       }
       if (builderBidCompareFactor.endsWith("%")) {

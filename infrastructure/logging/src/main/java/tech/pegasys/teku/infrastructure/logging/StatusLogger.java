@@ -78,6 +78,30 @@ public class StatusLogger {
             Color.YELLOW));
   }
 
+  public void warnDenebEpochsStoreBlobsParameterSet(
+      final String epochsStoreBlobs,
+      final boolean isOverriden,
+      final String specValue,
+      final Integer maxEpochsStoreBlobs) {
+    if (isOverriden) {
+      final boolean isMax = String.valueOf(maxEpochsStoreBlobs).equals(epochsStoreBlobs);
+      log.warn(
+          print(
+              "Xepochs-store-blobs has been set to "
+                  + (isMax ? "MAX" : epochsStoreBlobs)
+                  + ". It overrides the standard number of epochs blob sidecars are stored and requested during the sync.",
+              Color.YELLOW));
+    } else {
+      log.warn(
+          print(
+              "Ignoring Xepochs-store-blobs value "
+                  + epochsStoreBlobs
+                  + " since it is less than MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS = "
+                  + specValue,
+              Color.YELLOW));
+    }
+  }
+
   public void warnMissingProposerDefaultFeeRecipientWithRestAPIEnabled() {
     log.warn(
         print(

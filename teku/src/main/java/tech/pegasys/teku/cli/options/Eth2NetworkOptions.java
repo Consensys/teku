@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLO
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.Bytes32Converter;
@@ -173,6 +174,17 @@ public class Eth2NetworkOptions {
       arity = "1")
   private Long eth1DepositContractDeployBlockOverride;
 
+  @CommandLine.Option(
+      names = {"--Xepochs-store-blobs"},
+      hidden = true,
+      paramLabel = "<STRING>",
+      description =
+          "Sets the number of epochs blob sidecars are stored and requested during the sync. Use MAX to store all blob sidecars. The value cannot be set to be lower than the spec's MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS.",
+      fallbackValue = "",
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "0..1")
+  private String epochsStoreBlobs;
+
   public Eth2NetworkConfiguration getNetworkConfiguration() {
     return createEth2NetworkConfig();
   }
@@ -233,7 +245,8 @@ public class Eth2NetworkOptions {
     }
     builder
         .safeSlotsToImportOptimistically(safeSlotsToImportOptimistically)
-        .forkChoiceUpdateHeadOnBlockImportEnabled(forkChoiceUpdateHeadOnBlockImportEnabled);
+        .forkChoiceUpdateHeadOnBlockImportEnabled(forkChoiceUpdateHeadOnBlockImportEnabled)
+        .epochsStoreBlobs(epochsStoreBlobs);
   }
 
   public String getNetwork() {

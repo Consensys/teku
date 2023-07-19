@@ -147,7 +147,7 @@ dependencyManagement {
 
     dependency 'io.prometheus:simpleclient:0.9.0'
 
-    dependencySet(group: 'org.hyperledger.besu.internal', version: '22.10.4') {
+    dependencySet(group: 'org.hyperledger.besu.internal', version: '23.4.4') {
       entry('metrics-core') {
         // We include netty-all so omit the separated jars
         exclude 'io.netty:netty-tcnative-boringssl-static'
@@ -155,7 +155,7 @@ dependencyManagement {
       entry('core')
       entry('config')
     }
-    dependencySet(group: 'org.hyperledger.besu', version: '22.10.4') {
+    dependencySet(group: 'org.hyperledger.besu', version: '23.4.4') {
       entry('besu-datatypes')
       entry('evm')
       entry('plugin-api')
