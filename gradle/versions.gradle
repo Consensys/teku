@@ -15,7 +15,6 @@ dependencyManagement {
     dependency 'tech.pegasys.tools.epchecks:errorprone-checks:1.1.1'
 
     dependency 'com.google.guava:guava:32.1.1-jre'
-    dependency 'com.google.code.gson:gson:2.10.1'
 
     dependency 'org.jsoup:jsoup:1.16.1'
 
