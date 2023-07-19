@@ -104,7 +104,11 @@ public class VoluntaryExitDataProvider {
             .filter(v -> v.getPublicKey().equals(publicKey))
             .findFirst()
             .orElseThrow(
-                () -> new BadRequestException("Validator not found with public key value."));
+                () ->
+                    new BadRequestException(
+                        String.format(
+                            "Validator %s is not in the list of keys managed by this service.",
+                            publicKey)));
     final VoluntaryExit message = new VoluntaryExit(epoch, UInt64.valueOf(validatorIndex));
     final BLSSignature signature =
         Optional.ofNullable(validator)
