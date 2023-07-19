@@ -21,7 +21,6 @@ import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -55,20 +54,16 @@ public class VoluntaryExitDataProvider {
 
   public SafeFuture<SignedVoluntaryExit> createSignedVoluntaryExit(
       final BLSPublicKey publicKey, final Optional<UInt64> maybeEpoch) {
-    return validatorApiChannel
+    return genesisDataProvider
         .getGenesisData()
         .thenCompose(
             genesisData -> {
-              if (genesisData.isEmpty()) {
-                throw new InvalidConfigurationException(
-                    "Unable to fetch genesis data, cannot generate an exit.");
-              }
-
-              return calculateCurrentEpoch(maybeEpoch)
-                  .thenCombine(
-                      validatorApiChannel.getValidatorIndices(Set.of(publicKey)),
-                      (epoch, indicesMap) -> {
-                        final Bytes32 genesisRoot = genesisData.get().getGenesisValidatorsRoot();
+              final UInt64 epoch = calculateCurrentEpoch(maybeEpoch, genesisData.getGenesisTime());
+              return validatorApiChannel
+                  .getValidatorIndices(Set.of(publicKey))
+                  .thenApply(
+                      indicesMap -> {
+                        final Bytes32 genesisRoot = genesisData.getGenesisValidatorsRoot();
                         final Fork fork = spec.getForkSchedule().getFork(epoch);
                         final ForkInfo forkInfo = new ForkInfo(fork, genesisRoot);
                         return calculateSignedVoluntaryExit(indicesMap, publicKey, epoch, forkInfo);
@@ -76,21 +71,15 @@ public class VoluntaryExitDataProvider {
             });
   }
 
-  private SafeFuture<UInt64> calculateCurrentEpoch(final Optional<UInt64> maybeEpoch) {
-    return maybeEpoch
-        .map(SafeFuture::completedFuture)
-        .orElseGet(
-            () ->
-                genesisDataProvider
-                    .getGenesisTime()
-                    .thenApply(
-                        genesisTime -> {
-                          final SpecVersion genesisSpec = spec.getGenesisSpec();
-                          final UInt64 currentTime = timeProvider.getTimeInSeconds();
-                          final UInt64 slot =
-                              genesisSpec.miscHelpers().computeSlotAtTime(genesisTime, currentTime);
-                          return spec.computeEpochAtSlot(slot);
-                        }));
+  private UInt64 calculateCurrentEpoch(
+      final Optional<UInt64> maybeEpoch, final UInt64 genesisTime) {
+    return maybeEpoch.orElseGet(
+        () -> {
+          final SpecVersion genesisSpec = spec.getGenesisSpec();
+          final UInt64 currentTime = timeProvider.getTimeInSeconds();
+          final UInt64 slot = genesisSpec.miscHelpers().computeSlotAtTime(genesisTime, currentTime);
+          return spec.computeEpochAtSlot(slot);
+        });
   }
 
   private SignedVoluntaryExit calculateSignedVoluntaryExit(
