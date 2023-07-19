@@ -32,6 +32,7 @@ import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 import tech.pegasys.teku.validator.client.ActiveKeyManager;
 import tech.pegasys.teku.validator.client.ProposerConfigManager;
 import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
@@ -40,6 +41,7 @@ class ValidatorOpenApiTest {
   private final ValidatorRestApiConfig config = mock(ValidatorRestApiConfig.class);
   private final ActiveKeyManager keyManager = mock(ActiveKeyManager.class);
   private final ProposerConfigManager proposerConfigManager = mock(ProposerConfigManager.class);
+  private final GenesisDataProvider genesisDataProvider = mock(GenesisDataProvider.class);
   private final OpenApiTestUtil<ValidatorOpenApiTest> util =
       new OpenApiTestUtil<>(ValidatorOpenApiTest.class);
   private JsonNode jsonNode;
@@ -61,6 +63,7 @@ class ValidatorOpenApiTest {
         ValidatorRestApi.create(
             ValidatorApiChannel.NO_OP,
             config,
+            genesisDataProvider,
             Optional.of(proposerConfigManager),
             keyManager,
             spec,
