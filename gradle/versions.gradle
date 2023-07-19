@@ -167,8 +167,8 @@ dependencyManagement {
     }
 
     dependencySet(group: 'org.jupnp', version: '2.7.1') {
-      entry "org.jupnp.support"
       entry "org.jupnp"
+      entry "org.jupnp.support"
     }
 
     dependencySet(group: 'io.jsonwebtoken', version: '0.11.5') {
