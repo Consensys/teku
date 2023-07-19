@@ -21,8 +21,10 @@ dependencyManagement {
 
     dependency 'com.launchdarkly:okhttp-eventsource:4.1.1'
 
-    dependency 'com.squareup.okhttp3:okhttp:4.11.0'
-    dependency 'com.squareup.okhttp3:mockwebserver:4.11.0'
+    dependencySet(group: 'com.squareup.okhttp3', version: '4.11.0') {
+      entry 'okhttp'
+      entry 'mockwebserver'
+    }
 
     dependency 'commons-cli:commons-cli:1.4'
 
@@ -105,8 +107,6 @@ dependencyManagement {
     dependency 'org.awaitility:awaitility:4.2.0'
 
     dependency 'org.bouncycastle:bcprov-jdk15on:1.70'
-
-    dependency 'org.java-websocket:Java-WebSocket:1.5.3'
 
     dependencySet(group: 'org.junit.jupiter', version: '5.9.3') {
       entry 'junit-jupiter-api'
