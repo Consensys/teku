@@ -169,11 +169,10 @@ class MiscHelpersTest {
   @ParameterizedTest
   @MethodSource("provideSubnetsForNodeIds")
   public void testDiscoveryNodeBasedSubnetIds(
-      final UInt256 nodeId, final UInt64 epoch, int firstSubnetId, int secondSubnetId) {
+      final UInt256 nodeId, final UInt64 epoch, List<UInt64> subnetIds) {
     final List<UInt64> nodeSubnetIds = miscHelpers.computeSubscribedSubnets(nodeId, epoch);
-    assertThat(nodeSubnetIds).hasSize(specConfig.getSubnetsPerNode());
-    assertThat(nodeSubnetIds).contains(UInt64.valueOf(firstSubnetId));
-    assertThat(nodeSubnetIds).contains(UInt64.valueOf(secondSubnetId));
+    assertThat(nodeSubnetIds).hasSize(subnetIds.size());
+    assertThat(nodeSubnetIds).isEqualTo(subnetIds);
   }
 
   @ParameterizedTest
@@ -242,15 +241,20 @@ class MiscHelpersTest {
 
   public static Stream<Arguments> provideSubnetsForNodeIds() {
     return Stream.of(
-        Arguments.of(UInt256.valueOf(434726285098L), UInt64.valueOf(6717051035888874875L), 28, 29),
-        Arguments.of(UInt256.valueOf(288055627580L), UInt64.valueOf("13392352527348795112"), 8, 9),
+        Arguments.of(
+            UInt256.valueOf(434726285098L),
+            UInt64.valueOf(6717051035888874875L),
+            List.of(UInt64.valueOf(28), UInt64.valueOf(29))),
+        Arguments.of(
+            UInt256.valueOf(288055627580L),
+            UInt64.valueOf("13392352527348795112"),
+            List.of(UInt64.valueOf(8), UInt64.valueOf(9))),
         Arguments.of(
             UInt256.valueOf(
                 new BigInteger(
                     "57467522110468688239177851250859789869070302005900722885377252304169193209346")),
             UInt64.valueOf(6226203858325459337L),
-            44,
-            45));
+            List.of(UInt64.valueOf(44), UInt64.valueOf(45))));
   }
 
   public static Stream<Arguments> provideNodeIdsAndSlots() {
