@@ -68,7 +68,7 @@ public class ValidatorOptions {
       showDefaultValue = Visibility.ALWAYS,
       fallbackValue = "true",
       description = "Enable locking validator keystore files",
-      arity = "1")
+      arity = "0..1")
   private boolean validatorKeystoreLockingEnabled =
       ValidatorConfig.DEFAULT_VALIDATOR_KEYSTORE_LOCKING_ENABLED;
 

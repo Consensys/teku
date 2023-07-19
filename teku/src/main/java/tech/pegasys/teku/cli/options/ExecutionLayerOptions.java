@@ -59,7 +59,7 @@ public class ExecutionLayerOptions {
       names = {"--Xbuilder-circuit-breaker-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Enables Circuit Breaker logic for builder usage.",
-      arity = "1",
+      arity = "0..1",
       showDefaultValue = Visibility.ALWAYS,
       fallbackValue = "true",
       hidden = true)
@@ -111,10 +111,9 @@ public class ExecutionLayerOptions {
       paramLabel = "<BOOLEAN>",
       description =
           "Set User-Agent header to teku/v<version> (e.g. teku/v23.4.0) when making a builder bid request to help builders identify clients and versions",
-      arity = "1",
+      arity = "0..1",
       showDefaultValue = Visibility.ALWAYS,
-      fallbackValue = "true",
-      hidden = true)
+      fallbackValue = "true")
   private boolean builderSetUserAgentHeader = DEFAULT_BUILDER_SET_USER_AGENT_HEADER;
 
   @Option(
@@ -122,7 +121,7 @@ public class ExecutionLayerOptions {
       paramLabel = "<BOOLEAN>",
       description =
           "Whether or not to use the shouldOverrideBuilder flag provided by the Engine API.",
-      arity = "1",
+      arity = "0..1",
       showDefaultValue = Visibility.ALWAYS,
       fallbackValue = "true",
       hidden = true)
@@ -133,10 +132,9 @@ public class ExecutionLayerOptions {
       paramLabel = "<BOOLEAN>",
       description =
           "Enables querying EL periodically for the Engine API methods it supports. If incompatibility is detected, there will be a warning raised in the logs.",
-      arity = "1",
+      arity = "0..1",
       showDefaultValue = Visibility.ALWAYS,
-      fallbackValue = "true",
-      hidden = true)
+      fallbackValue = "true")
   private boolean exchangeCapabilitiesMonitoringEnabled =
       DEFAULT_EXCHANGE_CAPABILITIES_MONITORING_ENABLED;
 
