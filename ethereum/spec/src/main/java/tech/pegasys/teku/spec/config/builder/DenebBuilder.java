@@ -40,6 +40,7 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
   private Integer maxRequestBlocksDeneb;
   private Integer maxRequestBlobSidecars;
   private Integer minEpochsForBlobSidecarsRequests;
+  private Optional<Integer> epochsStoreBlobs = Optional.empty();
   private Integer blobSidecarSubnetCount;
 
   DenebBuilder() {}
@@ -58,7 +59,8 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
         maxRequestBlocksDeneb,
         maxRequestBlobSidecars,
         minEpochsForBlobSidecarsRequests,
-        blobSidecarSubnetCount);
+        blobSidecarSubnetCount,
+        epochsStoreBlobs);
   }
 
   public DenebBuilder denebForkEpoch(final UInt64 denebForkEpoch) {
@@ -116,6 +118,11 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
 
   public DenebBuilder blobSidecarSubnetCount(final Integer blobSidecarSubnetCount) {
     this.blobSidecarSubnetCount = blobSidecarSubnetCount;
+    return this;
+  }
+
+  public DenebBuilder epochsStoreBlobs(final Optional<Integer> epochsStoreBlobs) {
+    this.epochsStoreBlobs = epochsStoreBlobs;
     return this;
   }
 

@@ -20,7 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.api.exceptions.BadRequestException;
+import tech.pegasys.teku.api.AbstractSelectorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -29,49 +29,22 @@ import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
-public class BlockSelectorFactory {
+public class BlockSelectorFactory extends AbstractSelectorFactory<BlockSelector> {
 
   private final Spec spec;
-  private final CombinedChainDataClient client;
 
-  public BlockSelectorFactory(
-      final Spec spec, final CombinedChainDataClient combinedChainDataClient) {
+  public BlockSelectorFactory(final Spec spec, final CombinedChainDataClient client) {
+    super(client);
     this.spec = spec;
-    this.client = combinedChainDataClient;
   }
 
-  /**
-   * Default parsing of the slot parameter to determine the block to return - "head" - the head
-   * block - "genesis" - the genesis block - "finalized" - the block in effect at the last slot of
-   * the finalized epoch - 0x00 - the block root (bytes32) to return - {UINT64} - a specific slot to
-   * retrieve a block from
-   *
-   * @param selectorMethod the selector from the rest api call
-   * @return the selector for the requested string
-   */
-  public BlockSelector defaultBlockSelector(final String selectorMethod) {
-    if (selectorMethod.startsWith("0x")) {
-      try {
-        return forBlockRoot(Bytes32.fromHexString(selectorMethod));
-      } catch (IllegalArgumentException e) {
-        throw new BadRequestException("Invalid block: " + selectorMethod);
-      }
-    }
-    switch (selectorMethod) {
-      case "head":
-        return headSelector();
-      case "genesis":
-        return genesisSelector();
-      case "finalized":
-        return finalizedSelector();
-    }
-    try {
-      return forSlot(UInt64.valueOf(selectorMethod));
-    } catch (NumberFormatException ex) {
-      throw new BadRequestException("Invalid block: " + selectorMethod);
-    }
+  @Override
+  public BlockSelector blockRootSelector(final Bytes32 blockRoot) {
+    return () ->
+        optionalToList(client.getBlockByBlockRoot(blockRoot).thenApply(this::lookupBlockData));
   }
 
+  @Override
   public BlockSelector headSelector() {
     return () ->
         optionalToList(
@@ -81,9 +54,32 @@ public class BlockSelectorFactory {
                 .orElse(SafeFuture.completedFuture(Optional.empty())));
   }
 
-  private SafeFuture<Optional<BlockAndMetaData>> fromChainHead(final ChainHead head) {
-    return head.getBlock()
-        .thenApply(maybeBlock -> lookupCanonicalBlockData(maybeBlock, head.isOptimistic()));
+  @Override
+  public BlockSelector finalizedSelector() {
+    return () ->
+        optionalToList(
+            SafeFuture.completedFuture(
+                // Finalized checkpoint is always canonical
+                lookupCanonicalBlockData(
+                    client.getFinalizedBlock(),
+                    // The finalized checkpoint may change because of optimistically imported blocks
+                    // at the head and if the head isn't optimistic, the finalized block can't be
+                    // optimistic.
+                    client.isChainHeadOptimistic())));
+  }
+
+  @Override
+  public BlockSelector genesisSelector() {
+    return () ->
+        optionalToList(
+            client
+                .getBlockAtSlotExact(GENESIS_SLOT)
+                .thenApply(maybeBlock -> lookupCanonicalBlockData(maybeBlock, false)));
+  }
+
+  @Override
+  public BlockSelector slotSelector(final UInt64 slot) {
+    return () -> optionalToList(forSlot(client.getChainHead(), slot));
   }
 
   public BlockSelector nonCanonicalBlocksSelector(final UInt64 slot) {
@@ -99,29 +95,9 @@ public class BlockSelectorFactory {
     };
   }
 
-  public BlockSelector finalizedSelector() {
-    return () ->
-        optionalToList(
-            SafeFuture.completedFuture(
-                // Finalized checkpoint is always canonical
-                lookupCanonicalBlockData(
-                    client.getFinalizedBlock(),
-                    // The finalized checkpoint may change because of optimistically imported blocks
-                    // at the head and if the head isn't optimistic, the finalized block can't be
-                    // optimistic.
-                    client.isChainHeadOptimistic())));
-  }
-
-  public BlockSelector genesisSelector() {
-    return () ->
-        optionalToList(
-            client
-                .getBlockAtSlotExact(GENESIS_SLOT)
-                .thenApply(maybeBlock -> lookupCanonicalBlockData(maybeBlock, false)));
-  }
-
-  public BlockSelector forSlot(final UInt64 slot) {
-    return () -> optionalToList(forSlot(client.getChainHead(), slot));
+  private SafeFuture<Optional<BlockAndMetaData>> fromChainHead(final ChainHead head) {
+    return head.getBlock()
+        .thenApply(maybeBlock -> lookupCanonicalBlockData(maybeBlock, head.isOptimistic()));
   }
 
   private SafeFuture<Optional<BlockAndMetaData>> forSlot(
@@ -135,11 +111,6 @@ public class BlockSelectorFactory {
     return client
         .getBlockAtSlotExact(slot, head.getRoot())
         .thenApply(maybeBlock -> lookupCanonicalBlockData(maybeBlock, head.isOptimistic()));
-  }
-
-  public BlockSelector forBlockRoot(final Bytes32 blockRoot) {
-    return () ->
-        optionalToList(client.getBlockByBlockRoot(blockRoot).thenApply(this::lookupBlockData));
   }
 
   private SafeFuture<List<BlockAndMetaData>> optionalToList(

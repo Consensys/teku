@@ -21,6 +21,7 @@ import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod
 import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_GET_PAYLOAD;
 import static tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod.ENGINE_NEW_PAYLOAD;
 
+import java.util.Set;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,6 +40,7 @@ import tech.pegasys.teku.ethereum.executionclient.methods.EngineJsonRpcMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineNewPayloadV3;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -151,6 +153,29 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
         engineMethodsResolver.getMethod(method, () -> SpecMilestone.DENEB, Object.class);
 
     assertThat(providedMethod).isExactlyInstanceOf(expectedMethodClass);
+  }
+
+  @Test
+  void getsCapabilities() {
+    final Spec spec =
+        TestSpecFactory.createMinimalWithCapellaAndDenebForkEpoch(UInt64.ONE, UInt64.valueOf(2));
+
+    final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
+        new MilestoneBasedEngineJsonRpcMethodsResolver(spec, executionEngineClient);
+
+    final Set<String> capabilities = engineMethodsResolver.getCapabilities();
+
+    assertThat(capabilities)
+        .containsExactlyInAnyOrder(
+            "engine_newPayloadV1",
+            "engine_getPayloadV1",
+            "engine_forkchoiceUpdatedV1",
+            "engine_newPayloadV2",
+            "engine_getPayloadV2",
+            "engine_forkchoiceUpdatedV2",
+            "engine_newPayloadV3",
+            "engine_getPayloadV3",
+            "engine_forkchoiceUpdatedV3");
   }
 
   private static Stream<Arguments> denebMethods() {

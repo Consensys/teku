@@ -42,10 +42,10 @@ public class GetStateByBlockRootTest extends AbstractMigratedBeaconHandlerTest {
   }
 
   @Test
-  public void shouldReturnStateByBlockRoot() throws JsonProcessingException {
+  public void shouldReturnStateByBlockId() throws JsonProcessingException {
     final BeaconState state = dataStructureUtil.randomBeaconState();
     request.setPathParameter(PARAM_BLOCK_ID, "head");
-    when(chainDataProvider.getBeaconStateByBlockRoot(eq("head")))
+    when(chainDataProvider.getBeaconStateByBlockId(eq("head")))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
 
     handler.handleRequest(request);

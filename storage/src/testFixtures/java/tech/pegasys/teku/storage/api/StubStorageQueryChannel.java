@@ -104,6 +104,11 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
+  public SafeFuture<Optional<UInt64>> getFinalizedSlotByBlockRoot(final Bytes32 blockRoot) {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
+
+  @Override
   public SafeFuture<Optional<BeaconState>> getFinalizedStateByBlockRoot(Bytes32 blockRoot) {
     return SafeFuture.completedFuture(Optional.empty());
   }
@@ -142,6 +147,11 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   public SafeFuture<Optional<BlobSidecar>> getNonCanonicalBlobSidecar(
       final SlotAndBlockRootAndBlobIndex key) {
     return SafeFuture.completedFuture(Optional.empty());
+  }
+
+  @Override
+  public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(final UInt64 slot) {
+    return SafeFuture.completedFuture(List.of());
   }
 
   @Override

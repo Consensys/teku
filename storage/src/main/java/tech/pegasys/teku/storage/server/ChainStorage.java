@@ -234,12 +234,14 @@ public class ChainStorage
   }
 
   @Override
+  public SafeFuture<Optional<UInt64>> getFinalizedSlotByBlockRoot(final Bytes32 blockRoot) {
+    return SafeFuture.of(() -> database.getSlotForFinalizedBlockRoot(blockRoot));
+  }
+
+  @Override
   public SafeFuture<Optional<BeaconState>> getFinalizedStateByBlockRoot(final Bytes32 blockRoot) {
-    return SafeFuture.of(
-        () ->
-            database
-                .getSlotForFinalizedBlockRoot(blockRoot)
-                .flatMap(this::getLatestFinalizedStateAtSlotSync));
+    return getFinalizedSlotByBlockRoot(blockRoot)
+        .thenApply(slot -> slot.flatMap(this::getLatestFinalizedStateAtSlotSync));
   }
 
   @Override
@@ -289,6 +291,17 @@ public class ChainStorage
   public SafeFuture<Optional<BlobSidecar>> getNonCanonicalBlobSidecar(
       final SlotAndBlockRootAndBlobIndex key) {
     return SafeFuture.of(() -> database.getNonCanonicalBlobSidecar(key));
+  }
+
+  @Override
+  public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(final UInt64 slot) {
+    return SafeFuture.of(
+        () -> {
+          try (final Stream<SlotAndBlockRootAndBlobIndex> blobSidecars =
+              database.streamBlobSidecarKeys(slot)) {
+            return blobSidecars.collect(Collectors.toList());
+          }
+        });
   }
 
   @Override

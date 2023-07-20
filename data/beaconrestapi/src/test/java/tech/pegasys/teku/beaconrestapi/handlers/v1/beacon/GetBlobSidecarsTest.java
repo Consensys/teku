@@ -53,7 +53,7 @@ class GetBlobSidecarsTest extends AbstractMigratedBeaconHandlerWithChainDataProv
     final ObjectAndMetaData<SignedBeaconBlock> blockAndMetaData =
         chainDataProvider.getBlock("head").get().orElseThrow();
     final List<BlobSidecar> blobSidecars =
-        chainDataProvider
+        combinedChainDataClient
             .getBlobSidecars(
                 blockAndMetaData.getData().getSlotAndBlockRoot(), Collections.emptyList())
             .get();

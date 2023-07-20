@@ -32,6 +32,7 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
   private final int maxRequestBlobSidecars;
   private final int minEpochsForBlobSidecarsRequests;
   private final int blobSidecarSubnetCount;
+  private final Optional<Integer> maybeEpochsStoreBlobs;
 
   public SpecConfigDenebImpl(
       final SpecConfigCapella specConfig,
@@ -45,7 +46,8 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
       final int maxRequestBlocksDeneb,
       final int maxRequestBlobSidecars,
       final int minEpochsForBlobSidecarsRequests,
-      final int blobSidecarSubnetCount) {
+      final int blobSidecarSubnetCount,
+      final Optional<Integer> maybeEpochsStoreBlobs) {
     super(specConfig);
     this.denebForkVersion = denebForkVersion;
     this.denebForkEpoch = denebForkEpoch;
@@ -58,6 +60,7 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
     this.maxRequestBlobSidecars = maxRequestBlobSidecars;
     this.minEpochsForBlobSidecarsRequests = minEpochsForBlobSidecarsRequests;
     this.blobSidecarSubnetCount = blobSidecarSubnetCount;
+    this.maybeEpochsStoreBlobs = maybeEpochsStoreBlobs;
   }
 
   @Override
@@ -116,6 +119,13 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
   }
 
   @Override
+  public int getEpochsStoreBlobs() {
+    return maybeEpochsStoreBlobs
+        .filter(epochsStoreBlobsInput -> epochsStoreBlobsInput > minEpochsForBlobSidecarsRequests)
+        .orElse(minEpochsForBlobSidecarsRequests);
+  }
+
+  @Override
   public Optional<SpecConfigDeneb> toVersionDeneb() {
     return Optional.of(this);
   }
@@ -132,6 +142,7 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
     return Objects.equals(specConfig, that.specConfig)
         && Objects.equals(denebForkVersion, that.denebForkVersion)
         && Objects.equals(denebForkEpoch, that.denebForkEpoch)
+        && Objects.equals(maybeEpochsStoreBlobs, that.maybeEpochsStoreBlobs)
         && fieldElementsPerBlob == that.fieldElementsPerBlob
         && maxBlobCommitmentsPerBlock == that.maxBlobCommitmentsPerBlock
         && maxBlobsPerBlock == that.maxBlobsPerBlock
@@ -157,6 +168,7 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
         maxRequestBlocksDeneb,
         maxRequestBlobSidecars,
         minEpochsForBlobSidecarsRequests,
-        blobSidecarSubnetCount);
+        blobSidecarSubnetCount,
+        maybeEpochsStoreBlobs);
   }
 }

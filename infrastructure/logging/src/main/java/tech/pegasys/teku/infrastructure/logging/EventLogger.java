@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.LogManager;
@@ -154,6 +155,14 @@ public class EventLogger {
 
   public void executionClientRecovered() {
     info("Execution Client is responding to requests again after a previous failure", Color.GREEN);
+  }
+
+  public void missingEngineApiCapabilities(final List<String> missingCapabilities) {
+    warn(
+        String.format(
+            "Execution Client does not support required Engine API methods: %s. Make sure it is upgraded to a compatible version.",
+            missingCapabilities),
+        Color.YELLOW);
   }
 
   public void builderIsNotAvailable(final String errorMessage) {

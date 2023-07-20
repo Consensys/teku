@@ -14,6 +14,8 @@
 package tech.pegasys.teku.storage.server.pruner;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
@@ -118,5 +120,99 @@ public class BlobSidecarPrunerTest {
 
     asyncRunner.executeDueActions();
     verify(database).pruneOldestBlobSidecars(UInt64.valueOf((slotsPerEpoch / 2) - 1), PRUNE_LIMIT);
+  }
+
+  @Test
+  void shouldUseEpochsStoreBlobs() {
+    final SpecConfig config = spec.forMilestone(SpecMilestone.DENEB).getConfig();
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
+    final int defaultValue = specConfigDeneb.getMinEpochsForBlobSidecarsRequests();
+
+    final Spec specOverride =
+        TestSpecFactory.createMinimalDeneb(
+            builder ->
+                builder.denebBuilder(
+                    denebBuilder -> denebBuilder.epochsStoreBlobs(Optional.of(defaultValue * 2))));
+    assertEquals(
+        defaultValue,
+        SpecConfigDeneb.required(specOverride.forMilestone(SpecMilestone.DENEB).getConfig())
+            .getMinEpochsForBlobSidecarsRequests());
+
+    final Database databaseOverride = mock(Database.class);
+    final BlobSidecarPruner blobsPrunerOverride =
+        new BlobSidecarPruner(
+            specOverride,
+            databaseOverride,
+            stubMetricsSystem,
+            asyncRunner,
+            timeProvider,
+            PRUNE_INTERVAL,
+            PRUNE_LIMIT,
+            false,
+            false);
+    when(databaseOverride.getGenesisTime()).thenReturn(Optional.of(genesisTime));
+    assertThat(blobsPrunerOverride.start()).isCompleted();
+
+    // set current slot to spec MIN_EPOCHS_FOR_BLOB_SIDECARS_REQUESTS + 1 epoch + half epoch
+    final UInt64 slotOne =
+        UInt64.valueOf(specConfigDeneb.getMinEpochsForBlobSidecarsRequests() + 1)
+            .times(slotsPerEpoch)
+            .plus(slotsPerEpoch / 2);
+    final UInt64 timeForSlotOne = slotOne.times(secondsPerSlot);
+
+    timeProvider.advanceTimeBy(Duration.ofSeconds(timeForSlotOne.longValue()));
+
+    asyncRunner.executeDueActions();
+    verify(databaseOverride, never()).pruneOldestBlobSidecars(any(), anyInt());
+
+    // move more to open pruning zone near genesis
+    final UInt64 slotDelta =
+        UInt64.valueOf(specConfigDeneb.getMinEpochsForBlobSidecarsRequests()).times(slotsPerEpoch);
+    final UInt64 timeDelta = slotDelta.times(secondsPerSlot);
+
+    timeProvider.advanceTimeBy(Duration.ofSeconds(timeDelta.longValue()));
+
+    asyncRunner.executeDueActions();
+    verify(databaseOverride)
+        .pruneOldestBlobSidecars(UInt64.valueOf((slotsPerEpoch / 2) - 1), PRUNE_LIMIT);
+  }
+
+  @Test
+  void shouldNotPruneWhenEpochsStoreBlobsIsMax() {
+    final Spec specOverride =
+        TestSpecFactory.createMinimalDeneb(
+            builder ->
+                builder.denebBuilder(
+                    denebBuilder -> denebBuilder.epochsStoreBlobs(Optional.of(Integer.MAX_VALUE))));
+    final SpecConfigDeneb specConfigDenebOverride =
+        SpecConfigDeneb.required(specOverride.forMilestone(SpecMilestone.DENEB).getConfig());
+    assertNotEquals(
+        specConfigDenebOverride.getMinEpochsForBlobSidecarsRequests(),
+        specConfigDenebOverride.getEpochsStoreBlobs());
+
+    final Database databaseOverride = mock(Database.class);
+    final BlobSidecarPruner blobsPrunerOverride =
+        new BlobSidecarPruner(
+            specOverride,
+            databaseOverride,
+            stubMetricsSystem,
+            asyncRunner,
+            timeProvider,
+            PRUNE_INTERVAL,
+            PRUNE_LIMIT,
+            false,
+            false);
+    when(databaseOverride.getGenesisTime()).thenReturn(Optional.of(genesisTime));
+    assertThat(blobsPrunerOverride.start()).isCompleted();
+
+    // set current slot to the very big epoch number
+    final UInt64 currentSlot =
+        UInt64.valueOf(12345678).times(slotsPerEpoch).plus(slotsPerEpoch / 2);
+    final UInt64 currentTime = currentSlot.times(secondsPerSlot);
+
+    timeProvider.advanceTimeBy(Duration.ofSeconds(currentTime.longValue()));
+
+    asyncRunner.executeDueActions();
+    verify(databaseOverride, never()).pruneOldestBlobSidecars(any(), anyInt());
   }
 }

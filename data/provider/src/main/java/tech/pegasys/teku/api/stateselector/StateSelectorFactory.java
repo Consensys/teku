@@ -17,7 +17,7 @@ import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.api.exceptions.BadRequestException;
+import tech.pegasys.teku.api.AbstractSelectorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -27,56 +27,26 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
-public class StateSelectorFactory {
+public class StateSelectorFactory extends AbstractSelectorFactory<StateSelector> {
 
   private final Spec spec;
-  private final CombinedChainDataClient client;
 
   public StateSelectorFactory(final Spec spec, final CombinedChainDataClient client) {
+    super(client);
     this.spec = spec;
-    this.client = client;
   }
 
-  public StateSelector byBlockRootStateSelector(final String selectorMethod) {
-    if (selectorMethod.startsWith("0x")) {
-      try {
-        return forBlockRoot(Bytes32.fromHexString(selectorMethod));
-      } catch (IllegalArgumentException ex) {
-        throw new BadRequestException("Invalid state: " + selectorMethod);
-      }
-    }
-    return byKeywordOrSlot(selectorMethod);
+  @Override
+  public StateSelector stateRootSelector(final Bytes32 stateRoot) {
+    return () -> client.getStateByStateRoot(stateRoot).thenApply(this::addMetaData);
   }
 
-  public StateSelector defaultStateSelector(final String selectorMethod) {
-    if (selectorMethod.startsWith("0x")) {
-      try {
-        return forStateRoot(Bytes32.fromHexString(selectorMethod));
-      } catch (IllegalArgumentException ex) {
-        throw new BadRequestException("Invalid state: " + selectorMethod);
-      }
-    }
-    return byKeywordOrSlot(selectorMethod);
+  @Override
+  public StateSelector blockRootSelector(final Bytes32 blockRoot) {
+    return () -> client.getStateByBlockRoot(blockRoot).thenApply(this::addMetaData);
   }
 
-  public StateSelector byKeywordOrSlot(final String selectorMethod) {
-    switch (selectorMethod) {
-      case "head":
-        return headSelector();
-      case "genesis":
-        return genesisSelector();
-      case "finalized":
-        return finalizedSelector();
-      case "justified":
-        return justifiedSelector();
-    }
-    try {
-      return forSlot(UInt64.valueOf(selectorMethod));
-    } catch (NumberFormatException ex) {
-      throw new BadRequestException("Invalid state: " + selectorMethod);
-    }
-  }
-
+  @Override
   public StateSelector headSelector() {
     return () -> {
       final Optional<ChainHead> maybeChainHead = client.getChainHead();
@@ -98,6 +68,16 @@ public class StateSelectorFactory {
     };
   }
 
+  @Override
+  public StateSelector genesisSelector() {
+    return () ->
+        client
+            .getStateAtSlotExact(GENESIS_SLOT)
+            .thenApply(
+                maybeState -> maybeState.map(state -> addMetaData(state, false, true, true)));
+  }
+
+  @Override
   public StateSelector finalizedSelector() {
     return () ->
         SafeFuture.completedFuture(
@@ -115,6 +95,7 @@ public class StateSelectorFactory {
                             true)));
   }
 
+  @Override
   public StateSelector justifiedSelector() {
     return () ->
         client
@@ -128,15 +109,8 @@ public class StateSelectorFactory {
                         state -> addMetaData(state, client.isChainHeadOptimistic(), true, false)));
   }
 
-  public StateSelector genesisSelector() {
-    return () ->
-        client
-            .getStateAtSlotExact(GENESIS_SLOT)
-            .thenApply(
-                maybeState -> maybeState.map(state -> addMetaData(state, false, true, true)));
-  }
-
-  public StateSelector forSlot(final UInt64 slot) {
+  @Override
+  public StateSelector slotSelector(final UInt64 slot) {
     return () ->
         client
             .getChainHead()
@@ -158,14 +132,6 @@ public class StateSelectorFactory {
                                           client.isFinalized(slot))));
                 })
             .orElse(SafeFuture.completedFuture(Optional.empty()));
-  }
-
-  public StateSelector forStateRoot(final Bytes32 stateRoot) {
-    return () -> client.getStateByStateRoot(stateRoot).thenApply(this::addMetaData);
-  }
-
-  public StateSelector forBlockRoot(final Bytes32 blockRoot) {
-    return () -> client.getStateByBlockRoot(blockRoot).thenApply(this::addMetaData);
   }
 
   private Optional<StateAndMetaData> addMetaData(final Optional<BeaconState> maybeState) {

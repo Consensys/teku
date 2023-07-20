@@ -109,6 +109,11 @@ public class TestSpecFactory {
     return create(specConfig, SpecMilestone.DENEB);
   }
 
+  public static Spec createMinimalDeneb(final Consumer<SpecConfigBuilder> configAdapter) {
+    final SpecConfigDeneb specConfig = getDenebSpecConfig(Eth2Network.MINIMAL, configAdapter);
+    return create(specConfig, SpecMilestone.DENEB);
+  }
+
   /**
    * Create a spec that forks to altair at the provided slot
    *

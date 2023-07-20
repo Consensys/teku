@@ -11,24 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.executionclient.methods;
+package tech.pegasys.teku.api.blobselector;
 
+import java.util.List;
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 
-public interface EngineJsonRpcMethod<T> {
-
-  String getName();
-
-  int getVersion();
-
-  SafeFuture<T> execute(JsonRpcRequestParams params);
-
-  /** Override this method, when an Engine API method has been deprecated */
-  default boolean isDeprecated() {
-    return false;
-  }
-
-  default String getVersionedName() {
-    return getVersion() == 0 ? getName() : getName() + "V" + getVersion();
-  }
+public interface BlobSidecarSelector {
+  SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecars(List<UInt64> indices);
 }

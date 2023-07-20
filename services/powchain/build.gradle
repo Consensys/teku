@@ -18,7 +18,6 @@ dependencies {
   implementation project(':infrastructure:serviceutils')
   implementation project(':validator:client')
 
-  implementation 'com.google.code.gson:gson'
   implementation 'org.apache.tuweni:tuweni-units'
 
   testImplementation project(':ethereum:pow:merkletree')

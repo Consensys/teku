@@ -130,8 +130,8 @@ allprojects {
     jar.preserveFileTimestamps = false
   }
 
-  sourceCompatibility = '11'
-  targetCompatibility = '11'
+  sourceCompatibility = '17'
+  targetCompatibility = '17'
 
   repositories {
     mavenLocal()
@@ -494,7 +494,7 @@ tasks.register("dockerDistUntar") {
 }
 
 def dockerImage = "consensys/teku"
-def dockerJdkVariants = [ "jdk17", "jdk16", ]
+def dockerJdkVariants = [ "jdk17" ]
 def dockerBuildDir = "build/docker-teku/"
 
 task distDocker  {
@@ -773,6 +773,12 @@ subprojects {
     acceptanceTestRuntimeOnly.extendsFrom testRuntimeOnly
     propertyTestRuntimeOnly.extendsFrom testRuntimeOnly
     referenceTestRuntimeOnly.extendsFrom testRuntimeOnly
+
+    // Details at https://github.com/Hakky54/log-captor#using-log-captor-alongside-with-other-logging-libraries
+    testImplementation {
+      exclude(group: "org.apache.logging.log4j", module: "log4j-slf4j-impl")
+      exclude(group: "org.apache.logging.log4j", module: "log4j-slf4j2-impl")
+    }
   }
 
   def jarName = project.name

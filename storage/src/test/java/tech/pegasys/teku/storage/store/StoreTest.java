@@ -34,17 +34,19 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannelWithDelays;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 class StoreTest extends AbstractStoreTest {
-
   @Test
   public void create_timeLessThanGenesisTime() {
     final UInt64 genesisTime = UInt64.valueOf(100);
@@ -87,6 +89,47 @@ class StoreTest extends AbstractStoreTest {
               .describedAs("block %s", expectedBlock.getSlot())
               .isCompletedWithValue(Optional.of(expectedBlock));
         });
+  }
+
+  @Test
+  public void epochStatesCacheMostRecentlyAddedStates() {
+    final int cacheSize = 2;
+    final StoreConfig pruningOptions =
+        StoreConfig.builder()
+            .checkpointStateCacheSize(cacheSize)
+            .blockCacheSize(cacheSize)
+            .stateCacheSize(cacheSize)
+            .epochStateCacheSize(cacheSize)
+            .build();
+
+    final UpdatableStore store = createGenesisStore(pruningOptions);
+
+    chainBuilder.generateBlocksUpToSlot(25);
+    // Add blocks
+    final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
+    chainBuilder
+        .streamBlocksAndStates(0, 25)
+        .forEach(
+            blockAndState -> {
+              tx.putBlockAndState(
+                  blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState()));
+            });
+    tx.commit().join();
+
+    final Store s = (Store) store;
+    assertThat(store.retrieveStateAtSlot(stateAndBlockAtSlot(16, chainBuilder))).isCompleted();
+    assertThat(store.retrieveStateAtSlot(stateAndBlockAtSlot(24, chainBuilder))).isCompleted();
+    assertThat(store.retrieveStateAtSlot(stateAndBlockAtSlot(8, chainBuilder))).isCompleted();
+    assertThat(
+            s.getEpochStates().orElseThrow().values().stream()
+                .map(StateAndBlockSummary::getSlot)
+                .map(UInt64::intValue)
+                .collect(Collectors.toList()))
+        .containsExactlyInAnyOrder(24, 8);
+  }
+
+  private SlotAndBlockRoot stateAndBlockAtSlot(final int i, final ChainBuilder chainBuilder) {
+    return new SlotAndBlockRoot(UInt64.valueOf(i), chainBuilder.getBlockAtSlot(i).getRoot());
   }
 
   @Test
