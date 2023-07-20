@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
@@ -36,16 +35,8 @@ class VoluntaryExitDataProviderTest {
 
   @Test
   void calculateExpectedEpochWhenNotProvided() {
-    final UInt64 epoch = provider.getOrCalculateCurrentEpoch(Optional.empty(), UInt64.ZERO);
+    final UInt64 epoch = provider.calculateCurrentEpoch(UInt64.ZERO);
     final UInt64 expectedEpoch = UInt64.valueOf(2083);
-    assertThat(epoch).isEqualTo(expectedEpoch);
-  }
-
-  @Test
-  void getExpectedEpoch() {
-    final UInt64 expectedEpoch = UInt64.valueOf(1234);
-    final UInt64 epoch =
-        provider.getOrCalculateCurrentEpoch(Optional.of(expectedEpoch), UInt64.ZERO);
     assertThat(epoch).isEqualTo(expectedEpoch);
   }
 }

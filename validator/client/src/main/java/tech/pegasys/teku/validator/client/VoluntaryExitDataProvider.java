@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.client;
 
-import java.util.Optional;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -28,14 +27,10 @@ public class VoluntaryExitDataProvider {
     this.timeProvider = timeProvider;
   }
 
-  protected UInt64 getOrCalculateCurrentEpoch(
-      final Optional<UInt64> maybeEpoch, final UInt64 genesisTime) {
-    return maybeEpoch.orElseGet(
-        () -> {
-          final SpecVersion genesisSpec = spec.getGenesisSpec();
-          final UInt64 currentTime = timeProvider.getTimeInSeconds();
-          final UInt64 slot = genesisSpec.miscHelpers().computeSlotAtTime(genesisTime, currentTime);
-          return spec.computeEpochAtSlot(slot);
-        });
+  protected UInt64 calculateCurrentEpoch(final UInt64 genesisTime) {
+    final SpecVersion genesisSpec = spec.getGenesisSpec();
+    final UInt64 currentTime = timeProvider.getTimeInSeconds();
+    final UInt64 slot = genesisSpec.miscHelpers().computeSlotAtTime(genesisTime, currentTime);
+    return spec.computeEpochAtSlot(slot);
   }
 }
