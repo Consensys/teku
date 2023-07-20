@@ -221,15 +221,20 @@ public class MiscHelpers {
 
   public UInt64 calculateNodeSubnetUnsubscriptionSlot(
       final UInt256 nodeId, final UInt64 currentSlot) {
-    final UInt64 nodeOffset =
-        UInt64.valueOf(
-            nodeId.mod(specConfig.getNetworkingConfig().getEpochsPerSubnetSubscription()).toLong());
+    final int epochsPerSubnetSubscription =
+        specConfig.getNetworkingConfig().getEpochsPerSubnetSubscription();
+    final UInt64 nodeOffset = UInt64.valueOf(nodeId.mod(epochsPerSubnetSubscription).toLong());
     final UInt64 currentEpoch = computeEpochAtSlot(currentSlot);
-    final UInt64 nextPeriodEpoch =
+    final UInt64 currentEpochRemainder = currentEpoch.mod(epochsPerSubnetSubscription);
+    UInt64 nextPeriodEpoch =
         currentEpoch
-            .plus(specConfig.getNetworkingConfig().getEpochsPerSubnetSubscription())
-            .minus(nodeOffset.intValue());
-    return computeStartSlotAtEpoch(nextPeriodEpoch).minus(UInt64.ONE);
+            .plus(epochsPerSubnetSubscription)
+            .minus(currentEpochRemainder)
+            .minus(nodeOffset);
+    if (nextPeriodEpoch.isLessThanOrEqualTo(currentEpoch)) {
+      nextPeriodEpoch = nextPeriodEpoch.plus(epochsPerSubnetSubscription);
+    }
+    return computeStartSlotAtEpoch(nextPeriodEpoch);
   }
 
   IntList shuffleList(IntList input, Bytes32 seed) {

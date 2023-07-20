@@ -179,24 +179,20 @@ class MiscHelpersTest {
   @MethodSource("provideNodeIdsAndSlots")
   public void unsubsciptionEpochMustMatchSubnetsCalculationResultChange(
       final UInt256 nodeId, final UInt64 slotAtEpoch) {
-    int subscriptionPeriod = 0;
     for (int epoch = 0; epoch < 1000; epoch++) {
       final List<UInt64> currentSubnets =
           miscHelpers.computeSubscribedSubnets(nodeId, UInt64.valueOf(epoch));
       final List<UInt64> nextSubnets =
           miscHelpers.computeSubscribedSubnets(nodeId, UInt64.valueOf(epoch + 1));
+      final UInt64 currentSlot =
+          miscHelpers.computeStartSlotAtEpoch(UInt64.valueOf(epoch)).plus(slotAtEpoch);
+      final UInt64 unsubscriptionSlot =
+          miscHelpers.calculateNodeSubnetUnsubscriptionSlot(nodeId, currentSlot);
+      final UInt64 unsubscriptionEpoch = miscHelpers.computeEpochAtSlot(unsubscriptionSlot);
       if (!currentSubnets.equals(nextSubnets)) {
-        final UInt64 currentSlot =
-            miscHelpers
-                .computeStartSlotAtEpoch(
-                    UInt64.valueOf(
-                        (long) specConfig.getEpochsPerSubnetSubscription() * subscriptionPeriod))
-                .plus(slotAtEpoch);
-        final UInt64 unsubscriptionSlot =
-            miscHelpers.calculateNodeSubnetUnsubscriptionSlot(nodeId, currentSlot);
-        final UInt64 unsubscriptionEpoch = miscHelpers.computeEpochAtSlot(unsubscriptionSlot);
-        assertThat(unsubscriptionEpoch).isEqualTo(UInt64.valueOf(epoch));
-        subscriptionPeriod++;
+        assertThat(unsubscriptionEpoch).isEqualTo(UInt64.valueOf(epoch + 1));
+      } else {
+        assertThat(unsubscriptionEpoch.isGreaterThan(epoch)).isTrue();
       }
     }
   }
