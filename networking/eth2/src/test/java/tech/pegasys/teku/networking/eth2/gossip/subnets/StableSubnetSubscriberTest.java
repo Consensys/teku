@@ -24,6 +24,7 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Optional;
 import java.util.Set;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -38,21 +39,32 @@ public class StableSubnetSubscriberTest {
   private final AttestationTopicSubscriber attestationTopicSubscriber =
       mock(AttestationTopicSubscriber.class);
 
-  final DataStructureUtil dataStructureUtil =
+  private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
+
+  private final Optional<UInt256> nodeId = Optional.of(dataStructureUtil.randomUInt256());
 
   @Test
   void shouldSubscribeToSubnetsPerNodeAtStart() {
     StableSubnetSubscriber stableSubnetSubscriber = createStableSubnetSubscriber();
-
-    stableSubnetSubscriber.onSlot(ZERO);
+    final UInt64 currentSlot = ZERO;
+    stableSubnetSubscriber.onSlot(currentSlot);
     ArgumentCaptor<Set<SubnetSubscription>> subnetSubscriptions =
         ArgumentCaptor.forClass(Set.class);
 
     verify(attestationTopicSubscriber).subscribeToPersistentSubnets(subnetSubscriptions.capture());
     assertThat(subnetSubscriptions.getValue())
         .hasSize(spec.getNetworkingConfig().getSubnetsPerNode());
-    assertUnsubscribeSlotsAreInBound(subnetSubscriptions.getValue(), ZERO);
+    final UInt64 unsubscriptionSlot =
+        spec.getGenesisSpec()
+            .miscHelpers()
+            .calculateNodeSubnetUnsubscriptionSlot(nodeId.get(), currentSlot);
+    subnetSubscriptions
+        .getValue()
+        .forEach(
+            subnetSubscription ->
+                assertThat(subnetSubscription.getUnsubscriptionSlot())
+                    .isEqualTo(unsubscriptionSlot));
     assertSubnetsAreDistinct(subnetSubscriptions.getValue());
   }
 
@@ -92,25 +104,6 @@ public class StableSubnetSubscriberTest {
     // since subnet id can randomly be chosen the same
   }
 
-  private void assertUnsubscribeSlotsAreInBound(
-      Set<SubnetSubscription> subnetSubscriptions, UInt64 currentSlot) {
-    UInt64 lowerBound =
-        currentSlot.plus(
-            UInt64.valueOf(
-                (long) spec.getNetworkingConfig().getEpochsPerSubnetSubscription()
-                    * spec.getGenesisSpecConfig().getSlotsPerEpoch()));
-    UInt64 upperBound =
-        currentSlot.plus(
-            UInt64.valueOf(
-                2L
-                    * spec.getNetworkingConfig().getEpochsPerSubnetSubscription()
-                    * spec.getGenesisSpecConfig().getSlotsPerEpoch()));
-    subnetSubscriptions.forEach(
-        subnetSubscription -> {
-          assertThat(subnetSubscription.getUnsubscriptionSlot()).isBetween(lowerBound, upperBound);
-        });
-  }
-
   private void assertSubnetsAreDistinct(Set<SubnetSubscription> subnetSubscriptions) {
     IntSet subnetIds =
         IntOpenHashSet.toSet(
@@ -121,7 +114,6 @@ public class StableSubnetSubscriberTest {
   }
 
   private StableSubnetSubscriber createStableSubnetSubscriber() {
-    return new NodeBasedStableSubnetSubscriber(
-        attestationTopicSubscriber, spec, Optional.of(dataStructureUtil.randomUInt256()));
+    return new NodeBasedStableSubnetSubscriber(attestationTopicSubscriber, spec, nodeId);
   }
 }
