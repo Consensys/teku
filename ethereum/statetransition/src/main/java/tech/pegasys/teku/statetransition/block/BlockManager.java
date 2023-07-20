@@ -109,15 +109,16 @@ public class BlockManager extends Service
       final SignedBeaconBlock block, final Optional<BroadcastValidation> broadcastValidation) {
     LOG.trace("Preparing to import block: {}", block::toLogString);
 
-    // NO broadcast validation
+    // NO broadcast validation, import the old way
     if (broadcastValidation.isEmpty()) {
       return doImportBlock(block, Optional.empty(), Optional.empty());
     }
 
     int broadcastValidationLevel = broadcastValidation.get().ordinal();
 
+    // prepare consensus validation future, to me completed by the block import flow
     final Optional<SafeFuture<BlockImportResult>> consensusValidationResult;
-    if (broadcastValidationLevel >= BroadcastValidation.CONSENSUS.ordinal()) {
+    if (broadcastValidationLevel > BroadcastValidation.GOSSIP.ordinal()) {
       consensusValidationResult = Optional.of(new SafeFuture<>());
     } else {
       consensusValidationResult = Optional.empty();
@@ -139,8 +140,10 @@ public class BlockManager extends Service
       return importPipeline;
     }
 
-    //  GOSSIP + CONSENSUS validation
-    importPipeline = importPipeline.or(consensusValidationResult.orElseThrow());
+    // GOSSIP + CONSENSUS validation
+    // this will ensure that we react to the first of the two resolving futures, and we fail
+    // whenever one of the two fails.
+    importPipeline = importPipeline.or(consensusValidationResult.get());
 
     if (broadcastValidationLevel == BroadcastValidation.CONSENSUS.ordinal()) {
       return importPipeline;

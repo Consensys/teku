@@ -27,6 +27,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED;
@@ -117,6 +118,7 @@ class ForkChoiceTest {
   private final OptimisticHeadSubscriber optimisticSyncStateTracker =
       mock(OptimisticHeadSubscriber.class);
   private ExecutionLayerChannelStub executionLayer;
+  private Optional<SafeFuture<BlockImportResult>> consensusValidationResult = Optional.empty();
   private final MergeTransitionBlockValidator transitionBlockValidator =
       mock(MergeTransitionBlockValidator.class);
 
@@ -234,6 +236,65 @@ class ForkChoiceTest {
   }
 
   @Test
+  void onBlock_consensusValidationShouldNotResolveWhenDataAvailabilityFails() {
+    setupWithSpec(TestSpecFactory.createMinimalDeneb());
+    consensusValidationResult = Optional.of(new SafeFuture<>());
+    final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
+    storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
+
+    when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
+            .thenReturn(SafeFuture.completedFuture(BlobSidecarsAndValidationResult.NOT_AVAILABLE));
+
+    importBlockWithError(blockAndState, FailureReason.FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE);
+
+    assertThatSafeFuture(consensusValidationResult.get()).isNotDone();
+
+    verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
+    verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
+    verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
+  }
+
+  @Test
+  void onBlock_consensusValidationShouldNotResolveWhenEarlyFails() {
+    setupWithSpec(TestSpecFactory.createMinimalDeneb());
+    consensusValidationResult = Optional.of(new SafeFuture<>());
+    final List<SignedBlockAndState> signedBlockAndStates = chainBuilder.generateBlocksUpToSlot(2);
+    final SignedBlockAndState wrongBlockAndState = signedBlockAndStates.get(signedBlockAndStates.size()-1);
+
+    storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(wrongBlockAndState.getSlot());
+
+    importBlockWithError(wrongBlockAndState, FailureReason.UNKNOWN_PARENT);
+
+    assertThatSafeFuture(consensusValidationResult.get()).isNotDone();
+  }
+
+  @Test
+  void onBlock_consensusValidationShouldReturnRegardlessExecutionPayloadValidation() {
+    setupWithSpec(TestSpecFactory.createMinimalDeneb());
+    consensusValidationResult = Optional.of(new SafeFuture<>());
+    final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
+    importBlock(blockAndState);
+
+    // let's prepare a mocked EL with lazy newPayload
+    executionLayer = mock(ExecutionLayerChannelStub.class);
+    final SafeFuture<PayloadStatus> payloadStatusSafeFuture = new SafeFuture<>();
+    when(executionLayer.engineNewPayload(any())).thenReturn(payloadStatusSafeFuture);
+
+    // let's import a valid consensus block
+    final SafeFuture<BlockImportResult> importResult = importBlockNoResultCheck(chainBuilder.generateNextBlock());
+
+    // successful consensus check prior to EL validation
+    assertThatSafeFuture(consensusValidationResult.get()).isCompletedWithValueMatching(BlockImportResult::isSuccessful);
+
+    assertThatSafeFuture(importResult).isNotDone();
+
+    // resolve with a failure
+    payloadStatusSafeFuture.complete(PayloadStatus.invalid(Optional.empty(), Optional.empty()));
+
+    assertBlockImportFailure(importResult,FailureReason.FAILED_STATE_TRANSITION);
+  }
+
+  @Test
   void onBlock_shouldImportIfBlobsAreNotRequired() {
     setupWithSpec(TestSpecFactory.createMinimalDeneb());
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
@@ -254,7 +315,8 @@ class ForkChoiceTest {
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
     final SafeFuture<BlockImportResult> importResult =
-        forkChoice.onBlock(blockAndState.getBlock(), Optional.empty(), executionLayer);
+        forkChoice.onBlock(
+            blockAndState.getBlock(), Optional.empty(), Optional.empty(), executionLayer);
     assertBlockImportedSuccessfully(importResult, false);
 
     assertThat(recentChainData.getHeadBlock().map(MinimalBeaconBlockSummary::getRoot))
@@ -271,7 +333,8 @@ class ForkChoiceTest {
 
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     final SafeFuture<BlockImportResult> importResult =
-        forkChoice.onBlock(blockAndState.getBlock(), Optional.empty(), executionLayer);
+        forkChoice.onBlock(
+            blockAndState.getBlock(), Optional.empty(), Optional.empty(), executionLayer);
     assertBlockImportedSuccessfully(importResult, false);
 
     assertThat(recentChainData.getHeadBlock().map(MinimalBeaconBlockSummary::getRoot))
@@ -577,7 +640,8 @@ class ForkChoiceTest {
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
     final SafeFuture<BlockImportResult> importResult =
-        forkChoice.onBlock(blockAndState.getBlock(), Optional.empty(), executionLayer);
+        forkChoice.onBlock(
+            blockAndState.getBlock(), Optional.empty(), Optional.empty(), executionLayer);
     assertBlockImportedSuccessfully(importResult, false);
 
     assertForkChoiceUpdateNotification(blockAndState, false);
@@ -844,7 +908,8 @@ class ForkChoiceTest {
     executionLayer.setPayloadStatus(PayloadStatus.SYNCING);
     setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.SYNCING);
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(blockAndState.getBlock(), Optional.empty(), executionLayer);
+        forkChoice.onBlock(
+            blockAndState.getBlock(), Optional.empty(), Optional.empty(), executionLayer);
     assertBlockImportedSuccessfully(result, true);
 
     assertForkChoiceUpdateNotification(blockAndState, true);
@@ -1189,17 +1254,22 @@ class ForkChoiceTest {
         .isEqualTo(optimistically);
   }
 
+  private SafeFuture<BlockImportResult> importBlockNoResultCheck(final SignedBlockAndState block) {
+    storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(block.getSlot());
+   return forkChoice.onBlock(block.getBlock(), Optional.empty(), consensusValidationResult, executionLayer);
+  }
+
   private void importBlock(final SignedBlockAndState block) {
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(block.getSlot());
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(block.getBlock(), Optional.empty(), executionLayer);
+        forkChoice.onBlock(block.getBlock(), Optional.empty(), consensusValidationResult, executionLayer);
     assertBlockImportedSuccessfully(result, false);
   }
 
   private void importBlockOptimistically(final SignedBlockAndState block) {
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(block.getSlot());
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(block.getBlock(), Optional.empty(), executionLayer);
+        forkChoice.onBlock(block.getBlock(), Optional.empty(), consensusValidationResult, executionLayer);
     assertBlockImportedSuccessfully(result, true);
   }
 
@@ -1210,10 +1280,10 @@ class ForkChoiceTest {
     assertThat(result.getFailureReason()).isEqualTo(failureReason);
   }
 
-  private void importBlockWithError(final SignedBlockAndState block, FailureReason failureReason) {
+  private void importBlockWithError(final SignedBlockAndState block, final FailureReason failureReason) {
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(block.getSlot());
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(block.getBlock(), Optional.empty(), executionLayer);
+        forkChoice.onBlock(block.getBlock(), Optional.empty(), consensusValidationResult, executionLayer);
     assertBlockImportFailure(result, failureReason);
   }
 
