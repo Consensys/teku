@@ -27,7 +27,7 @@ public class VoluntaryExitDataProvider {
     this.timeProvider = timeProvider;
   }
 
-  protected UInt64 calculateCurrentEpoch(final UInt64 genesisTime) {
+  UInt64 calculateCurrentEpoch(final UInt64 genesisTime) {
     final SpecVersion genesisSpec = spec.getGenesisSpec();
     final UInt64 currentTime = timeProvider.getTimeInSeconds();
     final UInt64 slot = genesisSpec.miscHelpers().computeSlotAtTime(genesisTime, currentTime);
