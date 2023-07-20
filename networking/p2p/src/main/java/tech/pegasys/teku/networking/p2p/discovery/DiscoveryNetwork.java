@@ -111,7 +111,7 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   public Optional<UInt256> getDiscoveryNodeId() {
     return discoveryService
         .getNodeId()
-        .map(bytes -> UInt256.valueOf(new BigInteger(bytes.toArray())));
+        .map(bytes -> UInt256.valueOf(new BigInteger(1, bytes.toArray())));
   }
 
   @Override
