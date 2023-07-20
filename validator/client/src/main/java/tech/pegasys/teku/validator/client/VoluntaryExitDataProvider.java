@@ -59,7 +59,8 @@ public class VoluntaryExitDataProvider {
         .thenCombine(
             validatorApiChannel.getValidatorIndices(Set.of(publicKey)),
             (genesisData, indicesMap) -> {
-              final UInt64 epoch = calculateCurrentEpoch(maybeEpoch, genesisData.getGenesisTime());
+              final UInt64 epoch =
+                  maybeEpoch.orElse(calculateCurrentEpoch(genesisData.getGenesisTime()));
               final Bytes32 genesisRoot = genesisData.getGenesisValidatorsRoot();
               final Fork fork = spec.getForkSchedule().getFork(epoch);
               final ForkInfo forkInfo = new ForkInfo(fork, genesisRoot);
@@ -67,15 +68,11 @@ public class VoluntaryExitDataProvider {
             });
   }
 
-  private UInt64 calculateCurrentEpoch(
-      final Optional<UInt64> maybeEpoch, final UInt64 genesisTime) {
-    return maybeEpoch.orElseGet(
-        () -> {
-          final SpecVersion genesisSpec = spec.getGenesisSpec();
-          final UInt64 currentTime = timeProvider.getTimeInSeconds();
-          final UInt64 slot = genesisSpec.miscHelpers().computeSlotAtTime(genesisTime, currentTime);
-          return spec.computeEpochAtSlot(slot);
-        });
+  private UInt64 calculateCurrentEpoch(final UInt64 genesisTime) {
+    final SpecVersion genesisSpec = spec.getGenesisSpec();
+    final UInt64 currentTime = timeProvider.getTimeInSeconds();
+    final UInt64 slot = genesisSpec.miscHelpers().computeSlotAtTime(genesisTime, currentTime);
+    return spec.computeEpochAtSlot(slot);
   }
 
   private SignedVoluntaryExit calculateSignedVoluntaryExit(
