@@ -61,7 +61,6 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
       if (subnetSubscription.getUnsubscriptionSlot().compareTo(slot) > 0) {
         break;
       }
-
       iterator.remove();
     }
 
@@ -106,7 +105,7 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
       newSubnetSubscriptions.add(
           subscribeToSubnet(
               nodeSubscribedSubnetsIterator.next().intValue(),
-              spec.getGenesisSpec()
+              spec.atSlot(currentSlot)
                   .miscHelpers()
                   .calculateNodeSubnetUnsubscriptionSlot(nodeId, currentSlot)));
     }
@@ -116,6 +115,7 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
   private SubnetSubscription subscribeToSubnet(
       final int subnetId, final UInt64 unsubscriptionSlot) {
     SubnetSubscription subnetSubscription = new SubnetSubscription(subnetId, unsubscriptionSlot);
+    subnetSubscriptions.removeIf(subscription -> subscription.getSubnetId() == subnetId);
     subnetSubscriptions.add(subnetSubscription);
     return subnetSubscription;
   }

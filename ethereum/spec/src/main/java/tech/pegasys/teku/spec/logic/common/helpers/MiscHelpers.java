@@ -188,7 +188,8 @@ public class MiscHelpers {
         .collect(Collectors.toList());
   }
 
-  public UInt64 computeSubscribedSubnet(final UInt256 nodeId, final UInt64 epoch, final int index) {
+  private UInt64 computeSubscribedSubnet(
+      final UInt256 nodeId, final UInt64 epoch, final int index) {
 
     final int nodeIdPrefix =
         nodeId
