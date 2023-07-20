@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.client;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
@@ -64,7 +63,8 @@ public class VoluntaryExitDataProvider {
               final Bytes32 genesisRoot = genesisData.getGenesisValidatorsRoot();
               final Fork fork = spec.getForkSchedule().getFork(epoch);
               final ForkInfo forkInfo = new ForkInfo(fork, genesisRoot);
-              return calculateSignedVoluntaryExit(indicesMap, publicKey, epoch, forkInfo);
+              return calculateSignedVoluntaryExit(
+                  indicesMap.get(publicKey), publicKey, epoch, forkInfo);
             });
   }
 
@@ -76,11 +76,10 @@ public class VoluntaryExitDataProvider {
   }
 
   private SignedVoluntaryExit calculateSignedVoluntaryExit(
-      final Map<BLSPublicKey, Integer> indicesMap,
+      final int validatorIndex,
       final BLSPublicKey publicKey,
       final UInt64 epoch,
       final ForkInfo forkInfo) {
-    final int validatorIndex = indicesMap.get(publicKey);
     final Validator validator =
         keyManager.getActiveValidatorKeys().stream()
             .filter(v -> v.getPublicKey().equals(publicKey))
