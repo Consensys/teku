@@ -243,7 +243,7 @@ class ForkChoiceTest {
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
 
     when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
-            .thenReturn(SafeFuture.completedFuture(BlobSidecarsAndValidationResult.NOT_AVAILABLE));
+        .thenReturn(SafeFuture.completedFuture(BlobSidecarsAndValidationResult.NOT_AVAILABLE));
 
     importBlockWithError(blockAndState, FailureReason.FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE);
 
@@ -259,7 +259,8 @@ class ForkChoiceTest {
     setupWithSpec(TestSpecFactory.createMinimalDeneb());
     consensusValidationResult = Optional.of(new SafeFuture<>());
     final List<SignedBlockAndState> signedBlockAndStates = chainBuilder.generateBlocksUpToSlot(2);
-    final SignedBlockAndState wrongBlockAndState = signedBlockAndStates.get(signedBlockAndStates.size()-1);
+    final SignedBlockAndState wrongBlockAndState =
+        signedBlockAndStates.get(signedBlockAndStates.size() - 1);
 
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(wrongBlockAndState.getSlot());
 
@@ -281,17 +282,19 @@ class ForkChoiceTest {
     when(executionLayer.engineNewPayload(any())).thenReturn(payloadStatusSafeFuture);
 
     // let's import a valid consensus block
-    final SafeFuture<BlockImportResult> importResult = importBlockNoResultCheck(chainBuilder.generateNextBlock());
+    final SafeFuture<BlockImportResult> importResult =
+        importBlockNoResultCheck(chainBuilder.generateNextBlock());
 
     // successful consensus check prior to EL validation
-    assertThatSafeFuture(consensusValidationResult.get()).isCompletedWithValueMatching(BlockImportResult::isSuccessful);
+    assertThatSafeFuture(consensusValidationResult.get())
+        .isCompletedWithValueMatching(BlockImportResult::isSuccessful);
 
     assertThatSafeFuture(importResult).isNotDone();
 
     // resolve with a failure
     payloadStatusSafeFuture.complete(PayloadStatus.invalid(Optional.empty(), Optional.empty()));
 
-    assertBlockImportFailure(importResult,FailureReason.FAILED_STATE_TRANSITION);
+    assertBlockImportFailure(importResult, FailureReason.FAILED_STATE_TRANSITION);
   }
 
   @Test
@@ -1256,20 +1259,23 @@ class ForkChoiceTest {
 
   private SafeFuture<BlockImportResult> importBlockNoResultCheck(final SignedBlockAndState block) {
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(block.getSlot());
-   return forkChoice.onBlock(block.getBlock(), Optional.empty(), consensusValidationResult, executionLayer);
+    return forkChoice.onBlock(
+        block.getBlock(), Optional.empty(), consensusValidationResult, executionLayer);
   }
 
   private void importBlock(final SignedBlockAndState block) {
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(block.getSlot());
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(block.getBlock(), Optional.empty(), consensusValidationResult, executionLayer);
+        forkChoice.onBlock(
+            block.getBlock(), Optional.empty(), consensusValidationResult, executionLayer);
     assertBlockImportedSuccessfully(result, false);
   }
 
   private void importBlockOptimistically(final SignedBlockAndState block) {
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(block.getSlot());
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(block.getBlock(), Optional.empty(), consensusValidationResult, executionLayer);
+        forkChoice.onBlock(
+            block.getBlock(), Optional.empty(), consensusValidationResult, executionLayer);
     assertBlockImportedSuccessfully(result, true);
   }
 
@@ -1280,10 +1286,12 @@ class ForkChoiceTest {
     assertThat(result.getFailureReason()).isEqualTo(failureReason);
   }
 
-  private void importBlockWithError(final SignedBlockAndState block, final FailureReason failureReason) {
+  private void importBlockWithError(
+      final SignedBlockAndState block, final FailureReason failureReason) {
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(block.getSlot());
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(block.getBlock(), Optional.empty(), consensusValidationResult, executionLayer);
+        forkChoice.onBlock(
+            block.getBlock(), Optional.empty(), consensusValidationResult, executionLayer);
     assertBlockImportFailure(result, failureReason);
   }
 
