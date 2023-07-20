@@ -34,7 +34,7 @@ class VoluntaryExitDataProviderTest {
   }
 
   @Test
-  void calculateExpectedEpochWhenNotProvided() {
+  void calculateCurrentEpoch_shouldReturnEpoch() {
     final UInt64 epoch = provider.calculateCurrentEpoch(UInt64.ZERO);
     final UInt64 expectedEpoch = UInt64.valueOf(2083);
     assertThat(epoch).isEqualTo(expectedEpoch);
