@@ -15,7 +15,7 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Additions and Improvements
 
-- Subscribe to a fixed number of attestation subnets ([`SUBNETS_PER_NODE`](https://github.com/ethereum/consensus-specs/blob/2cd967e2bb4f8437cdf70ecd1a8a119a005330a9/configs/mainnet.yaml#L127C7-L127C7)) based on the node id for a period of [`EPOCHS_PER_SUBNET_SUBSCRIPTION`](https://github.com/ethereum/consensus-specs/blob/2cd967e2bb4f8437cdf70ecd1a8a119a005330a9/configs/mainnet.yaml#L112C4-L112C4) epochs
 - Introduce `--exchange-capabilities-monitoring-enabled` parameter. If enabled, EL will be queried periodically for the Engine API methods it supports. If incompatibility is detected, there will be a warning raised in the logs. The default is `true`.
+- Update attestation subnet subscriptions strategy according to [the spec changes](https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/p2p-interface.md#attestation-subnet-subscription). All nodes (including non-validating ones) will subscribe to 2 subnets regardless of the number of validators
 
 ### Bug Fixes
