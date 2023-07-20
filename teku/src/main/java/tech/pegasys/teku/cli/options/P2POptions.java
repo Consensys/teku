@@ -155,7 +155,7 @@ public class P2POptions {
       description = "Enables multipeer sync",
       fallbackValue = "true",
       hidden = true,
-      arity = "1")
+      arity = "0..1")
   private boolean multiPeerSyncEnabled = SyncConfig.DEFAULT_MULTI_PEER_SYNC_ENABLED;
 
   @Option(
