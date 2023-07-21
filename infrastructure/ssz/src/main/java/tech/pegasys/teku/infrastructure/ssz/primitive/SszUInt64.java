@@ -27,9 +27,11 @@ public class SszUInt64 extends AbstractSszPrimitive<UInt64, SszUInt64> {
   public static SszUInt64 of(UInt64 val) {
     if (val.isZero()) {
       return ZERO;
-    } else if (val.isThirtyTwoGwei()) {
+    }
+    if (val.isThirtyTwoGwei()) {
       return THIRTY_TWO_GWEI;
-    } else if (val.isMaxValue()) {
+    }
+    if (val.isMaxValue()) {
       return MAX_VALUE;
     }
     return new SszUInt64(val);

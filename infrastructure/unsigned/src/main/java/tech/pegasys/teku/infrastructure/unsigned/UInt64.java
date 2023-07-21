@@ -85,13 +85,14 @@ public final class UInt64 implements Comparable<UInt64> {
   public static UInt64 fromLongBits(final long value) {
     if (value == 0L) {
       return ZERO;
-    } else if (value == 32_000_000_000L) {
-      return THIRTY_TWO_GWEI;
-    } else if (value == -1L) {
-      return MAX_VALUE;
-    } else {
-      return new UInt64(value);
     }
+    if (value == 32_000_000_000L) {
+      return THIRTY_TWO_GWEI;
+    }
+    if (value == -1L) {
+      return MAX_VALUE;
+    }
+    return new UInt64(value);
   }
 
   /**
