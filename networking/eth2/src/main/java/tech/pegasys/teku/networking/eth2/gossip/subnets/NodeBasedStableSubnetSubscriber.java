@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import static java.util.Collections.emptySet;
 
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -34,10 +33,7 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
   private static final Logger LOG = LogManager.getLogger();
 
   private final AttestationTopicSubscriber persistentSubnetSubscriber;
-  private final NavigableSet<SubnetSubscription> subnetSubscriptions =
-      new TreeSet<>(
-          Comparator.comparing(SubnetSubscription::getUnsubscriptionSlot)
-              .thenComparing(SubnetSubscription::getSubnetId));
+  private final NavigableSet<SubnetSubscription> subnetSubscriptions = new TreeSet<>();
   private final Spec spec;
   private final int subnetsPerNode;
   private final Optional<UInt256> discoveryNodeId;
@@ -61,8 +57,6 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
       if (subnetSubscription.getUnsubscriptionSlot().isGreaterThan(slot)) {
         break;
       }
-      LOG.info(
-          "Unsubscription from persistent subnet with id {}", subnetSubscription.getSubnetId());
       iterator.remove();
     }
 
@@ -106,7 +100,7 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
               spec.atSlot(currentSlot)
                   .miscHelpers()
                   .calculateNodeSubnetUnsubscriptionSlot(nodeId, currentSlot));
-      LOG.info(
+      LOG.debug(
           "Subscribing to new persistent subnet with id {}", newSubnetSubscription.getSubnetId());
       newSubnetSubscriptions.add(newSubnetSubscription);
     }
