@@ -290,7 +290,7 @@ class UInt64Test {
   @Test
   void constants_shouldHaveExpectedValues() {
     assertThat(UInt64.ZERO).isEqualTo(UInt64.valueOf(0));
-    assertThat(UInt64.MAX_EFFECTIVE_BALANCE).isEqualTo(UInt64.valueOf(32_000_000_000L));
+    assertThat(UInt64.THIRTY_TWO_GWEI).isEqualTo(UInt64.valueOf(32_000_000_000L));
     assertThat(UInt64.ONE).isEqualTo(UInt64.valueOf(1));
     assertThat(UInt64.MAX_VALUE).isEqualTo(UInt64.fromLongBits(-1));
   }
