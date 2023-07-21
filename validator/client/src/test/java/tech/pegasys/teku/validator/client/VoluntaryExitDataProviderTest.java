@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
@@ -74,6 +76,24 @@ class VoluntaryExitDataProviderTest {
         new SignedVoluntaryExit(
             new VoluntaryExit(epoch, UInt64.valueOf(validatorIndex)), signature);
     assertThat(signedVoluntaryExit).isEqualTo(expected);
+  }
+
+  @Test
+  void createSignedVoluntaryExit_throwsExceptionWhenValidatorNotInList() {
+    final BLSSignature signature = dataStructureUtil.randomSignature();
+    final Validator activeValidator = getValidator(signature);
+    final int validatorIndex = 0;
+    when(keyManager.getActiveValidatorKeys()).thenReturn(List.of(activeValidator));
+
+    final UInt64 epoch = dataStructureUtil.randomEpoch();
+    final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
+
+    assertThatThrownBy(
+            () ->
+                provider.createSignedVoluntaryExit(
+                    validatorIndex, dataStructureUtil.randomPublicKey(), epoch, forkInfo))
+        .isInstanceOf(BadRequestException.class)
+        .hasMessageMatching("Validator (.*) is not in the list of keys managed by this service.");
   }
 
   private Validator getValidator(final BLSSignature signature) {
