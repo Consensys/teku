@@ -80,18 +80,14 @@ class VoluntaryExitDataProviderTest {
 
   @Test
   void createSignedVoluntaryExit_throwsExceptionWhenValidatorNotInList() {
-    final BLSSignature signature = dataStructureUtil.randomSignature();
-    final Validator activeValidator = getValidator(signature);
-    final int validatorIndex = 0;
-    when(keyManager.getActiveValidatorKeys()).thenReturn(List.of(activeValidator));
-
+    when(keyManager.getActiveValidatorKeys()).thenReturn(List.of());
     final UInt64 epoch = dataStructureUtil.randomEpoch();
     final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
 
     assertThatThrownBy(
             () ->
                 provider.createSignedVoluntaryExit(
-                    validatorIndex, dataStructureUtil.randomPublicKey(), epoch, forkInfo))
+                    0, dataStructureUtil.randomPublicKey(), epoch, forkInfo))
         .isInstanceOf(BadRequestException.class)
         .hasMessageMatching("Validator (.*) is not in the list of keys managed by this service.");
   }
