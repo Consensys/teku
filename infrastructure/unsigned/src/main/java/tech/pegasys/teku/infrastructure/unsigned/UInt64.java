@@ -27,6 +27,7 @@ public final class UInt64 implements Comparable<UInt64> {
   private static final long LOW_MASK = 0x00000000ffffffffL;
 
   public static final UInt64 ZERO = new UInt64(0);
+  public static final UInt64 MAX_EFFECTIVE_BALANCE = new UInt64(32_000_000_000L);
   public static final UInt64 ONE = new UInt64(1);
   public static final UInt64 MAX_VALUE = new UInt64(-1L);
 
@@ -82,7 +83,13 @@ public final class UInt64 implements Comparable<UInt64> {
    * @return the created UInt64.
    */
   public static UInt64 fromLongBits(final long value) {
-    return value == 0 ? ZERO : new UInt64(value);
+    if (value == 0L) {
+      return ZERO;
+    } else if (value == 32_000_000_000L) {
+      return MAX_EFFECTIVE_BALANCE;
+    } else {
+      return new UInt64(value);
+    }
   }
 
   /**
@@ -363,6 +370,15 @@ public final class UInt64 implements Comparable<UInt64> {
    */
   public boolean isZero() {
     return value == 0;
+  }
+
+  /**
+   * Returns true if the value is 32_000_000_000L
+   *
+   * @return true if the value is 32_000_000_000L
+   */
+  public boolean isMaxEffectiveBalance() {
+    return value == 32_000_000_000L;
   }
 
   /**
