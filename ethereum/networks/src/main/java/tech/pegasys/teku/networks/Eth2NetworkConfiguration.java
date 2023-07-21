@@ -24,6 +24,7 @@ import static tech.pegasys.teku.spec.networks.Eth2Network.MAINNET;
 import static tech.pegasys.teku.spec.networks.Eth2Network.MINIMAL;
 import static tech.pegasys.teku.spec.networks.Eth2Network.PRATER;
 import static tech.pegasys.teku.spec.networks.Eth2Network.SEPOLIA;
+import static tech.pegasys.teku.spec.networks.Eth2Network.LUKSO;
 import static tech.pegasys.teku.spec.networks.Eth2Network.SWIFT;
 
 import java.net.URL;
@@ -489,6 +490,8 @@ public class Eth2NetworkConfiguration {
           return applyPraterNetworkDefaults();
         case SEPOLIA:
           return applySepoliaNetworkDefaults();
+        case LUKSO:
+          return applyLuksoNetworkDefaults();
         case GNOSIS:
           return applyGnosisNetworkDefaults();
         case CHIADO:
@@ -608,6 +611,18 @@ public class Eth2NetworkConfiguration {
               "enr:-Ly4QFoZTWR8ulxGVsWydTNGdwEESueIdj-wB6UmmjUcm-AOPxnQi7wprzwcdo7-1jBW_JxELlUKJdJES8TDsbl1EdNlh2F0dG5ldHOI__78_v2bsV-EZXRoMpA2-lATkAAAcf__________gmlkgnY0gmlwhBLYJjGJc2VjcDI1NmsxoQI0gujXac9rMAb48NtMqtSTyHIeNYlpjkbYpWJw46PmYYhzeW5jbmV0cw-DdGNwgiMog3VkcIIjKA",
               // Another bootnode
               "enr:-L64QC9Hhov4DhQ7mRukTOz4_jHm4DHlGL726NWH4ojH1wFgEwSin_6H95Gs6nW2fktTWbPachHJ6rUFu0iJNgA0SB2CARqHYXR0bmV0c4j__________4RldGgykDb6UBOQAABx__________-CaWSCdjSCaXCEA-2vzolzZWNwMjU2azGhA17lsUg60R776rauYMdrAz383UUgESoaHEzMkvm4K6k6iHN5bmNuZXRzD4N0Y3CCIyiDdWRwgiMo");
+    }
+    private Builder applyLuksoNetworkDefaults() {
+      return applyTestnetDefaults()
+          .constants(LUKSO.configName())
+          .startupTimeoutSeconds(120)
+          .eth1DepositContractDeployBlock(0)
+          .initialStateFromClasspath("lukso-genesis.ssz")
+          .genesisStateFromClasspath("lukso-genesis.ssz")
+          .discoveryBootnodes(
+              // Consensus layer bootnodes
+              "enr:-MK4QJ-Bt9HATy4GQawPbDDTArtnt_phuWiVVoWKhS7-DSNjVzmGKBI9xKzpyRtpeCWd3qA9737FTdkKGDgtHfF4N-6GAYlzJCVRh2F0dG5ldHOIAAAAAAAAAACEZXRoMpA2ulfbQgAABP__________gmlkgnY0gmlwhCKTScGJc2VjcDI1NmsxoQJNpNUERqKhA8eDDC4tovG3a59NXVOW16JDFAWXoFFTEYhzeW5jbmV0cwCDdGNwgjLIg3VkcIIu4A",
+              "enr:-MK4QDOs4pISOkkYbVHnGYHC5EhYCsVzwguun6sFZjLTqrY6Kx_AoE-YyHvqBIHDUwyQqESC4-B3o6DigPQNfKpdhXiGAYgmPWCdh2F0dG5ldHOIAAAAAAAAAACEZXRoMpA2ulfbQgAABP__________gmlkgnY0gmlwhCIgwNOJc2VjcDI1NmsxoQNGVC8JPcsqsZPoohLP1ujAYpBfS0dBwiz4LeoUQ-k5OohzeW5jbmV0cwCDdGNwgjLIg3VkcIIu4A");
     }
 
     public Builder applyGnosisNetworkDefaults() {
