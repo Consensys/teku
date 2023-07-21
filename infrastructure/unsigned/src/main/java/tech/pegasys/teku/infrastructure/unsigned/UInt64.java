@@ -380,7 +380,7 @@ public final class UInt64 implements Comparable<UInt64> {
    *
    * @return true if the value is 32_000_000_000L
    */
-  public boolean isThirtyTwoGwei() {
+  public boolean isThirtyTwoEth() {
     return value == 32_000_000_000L;
   }
 
