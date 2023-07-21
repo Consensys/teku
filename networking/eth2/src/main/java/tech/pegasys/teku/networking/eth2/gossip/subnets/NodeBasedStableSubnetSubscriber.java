@@ -58,15 +58,17 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
     final Iterator<SubnetSubscription> iterator = subnetSubscriptions.iterator();
     while (iterator.hasNext()) {
       final SubnetSubscription subnetSubscription = iterator.next();
-      if (subnetSubscription.getUnsubscriptionSlot().compareTo(slot) > 0) {
+      if (subnetSubscription.getUnsubscriptionSlot().isGreaterThan(slot)) {
         break;
       }
+      LOG.info(
+          "Unsubscription from persistent subnet with id {}", subnetSubscription.getSubnetId());
       iterator.remove();
     }
 
     // Adjust the number of subscriptions
     // If there are new subscriptions, pass the new subscription set to BeaconNode
-    Set<SubnetSubscription> newSubnetSubscriptions =
+    final Set<SubnetSubscription> newSubnetSubscriptions =
         adjustNumberOfSubscriptionsToNodeRequirement(slot);
     if (!newSubnetSubscriptions.isEmpty()) {
       persistentSubnetSubscriber.subscribeToPersistentSubnets(newSubnetSubscriptions);
@@ -83,10 +85,6 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
     if (subnetSubscriptions.size() >= subnetsPerNode) {
       return emptySet();
     }
-    LOG.info(
-        "Updating number of persistent subnet subscriptions from {} to {}",
-        subnetSubscriptions.size(),
-        subnetsPerNode);
 
     final UInt256 nodeId =
         discoveryNodeId.orElseThrow(
@@ -102,19 +100,23 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
     final Set<SubnetSubscription> newSubnetSubscriptions = new HashSet<>();
 
     while (subnetSubscriptions.size() < subnetsPerNode) {
-      newSubnetSubscriptions.add(
+      final SubnetSubscription newSubnetSubscription =
           subscribeToSubnet(
               nodeSubscribedSubnetsIterator.next().intValue(),
               spec.atSlot(currentSlot)
                   .miscHelpers()
-                  .calculateNodeSubnetUnsubscriptionSlot(nodeId, currentSlot)));
+                  .calculateNodeSubnetUnsubscriptionSlot(nodeId, currentSlot));
+      LOG.info(
+          "Subscribing to new persistent subnet with id {}", newSubnetSubscription.getSubnetId());
+      newSubnetSubscriptions.add(newSubnetSubscription);
     }
     return newSubnetSubscriptions;
   }
 
   private SubnetSubscription subscribeToSubnet(
       final int subnetId, final UInt64 unsubscriptionSlot) {
-    SubnetSubscription subnetSubscription = new SubnetSubscription(subnetId, unsubscriptionSlot);
+    final SubnetSubscription subnetSubscription =
+        new SubnetSubscription(subnetId, unsubscriptionSlot);
     subnetSubscriptions.removeIf(subscription -> subscription.getSubnetId() == subnetId);
     subnetSubscriptions.add(subnetSubscription);
     return subnetSubscription;

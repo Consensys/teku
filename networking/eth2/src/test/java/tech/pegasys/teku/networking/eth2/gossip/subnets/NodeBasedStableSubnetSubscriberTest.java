@@ -22,8 +22,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -43,6 +41,9 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 public class NodeBasedStableSubnetSubscriberTest {
   protected Spec spec = TestSpecFactory.createMinimalPhase0();
   private final Eth2P2PNetwork network = mock(Eth2P2PNetwork.class);
+
+  private final AttestationTopicSubscriber attestationTopicSubscriber =
+      new AttestationTopicSubscriber(spec, network);
   private final int attestationSubnetCount = spec.getNetworkingConfig().getAttestationSubnetCount();
 
   final DataStructureUtil dataStructureUtil =
@@ -60,21 +61,34 @@ public class NodeBasedStableSubnetSubscriberTest {
   void shouldSubscribeToNewSubnetsAfterExpiration() {
     final NodeBasedStableSubnetSubscriber subscriber = createSubscriber();
     subscriber.onSlot(UInt64.ONE);
-    subscriber.onSlot(
+    final ArgumentCaptor<Integer> firstSubscriptions = ArgumentCaptor.forClass(Integer.class);
+
+    verify(network, times(spec.getNetworkingConfig().getSubnetsPerNode()))
+        .subscribeToAttestationSubnetId(firstSubscriptions.capture());
+    assertThat(firstSubscriptions.getAllValues())
+        .hasSize(spec.getNetworkingConfig().getSubnetsPerNode());
+
+    final UInt64 nextSlot =
         UInt64.ONE.plus(
             UInt64.valueOf(
                 (long) spec.getNetworkingConfig().getEpochsPerSubnetSubscription()
-                    * spec.getSlotsPerEpoch(UInt64.ONE))));
+                    * spec.getSlotsPerEpoch(UInt64.ONE)));
+    subscriber.onSlot(nextSlot);
 
-    final ArgumentCaptor<Integer> subnetIdsCaptor = ArgumentCaptor.forClass(Integer.class);
-
+    final ArgumentCaptor<Integer> secondSubscriptions = ArgumentCaptor.forClass(Integer.class);
     verify(network, times(spec.getNetworkingConfig().getSubnetsPerNode() * 2))
-        .subscribeToAttestationSubnetId(subnetIdsCaptor.capture());
-    assertThat(subnetIdsCaptor.getAllValues())
+        .subscribeToAttestationSubnetId(secondSubscriptions.capture());
+
+    assertThat(secondSubscriptions.getAllValues())
         .allMatch(subnetId -> subnetId >= 0 && subnetId < attestationSubnetCount);
-    assertThat(subnetIdsCaptor.getAllValues())
+    assertThat(secondSubscriptions.getAllValues())
         .hasSize(spec.getNetworkingConfig().getSubnetsPerNode() * 2);
-    assertSubscribedToAtLeastOneNewSubnet(subnetIdsCaptor.getAllValues());
+
+    attestationTopicSubscriber.onSlot(nextSlot);
+    verify(network, times(1))
+        .unsubscribeFromAttestationSubnetId(firstSubscriptions.getAllValues().get(0));
+    verify(network, times(1))
+        .unsubscribeFromAttestationSubnetId(firstSubscriptions.getAllValues().get(1));
   }
 
   @SuppressWarnings("unchecked")
@@ -140,14 +154,6 @@ public class NodeBasedStableSubnetSubscriberTest {
   @NotNull
   private NodeBasedStableSubnetSubscriber createSubscriber() {
     return new NodeBasedStableSubnetSubscriber(
-        new AttestationTopicSubscriber(spec, network),
-        spec,
-        Optional.of(dataStructureUtil.randomUInt256()));
-  }
-
-  private void assertSubscribedToAtLeastOneNewSubnet(List<Integer> subscribedSubnetIds) {
-    IntSet subnetIds =
-        IntOpenHashSet.toSet(subscribedSubnetIds.stream().mapToInt(Integer::intValue));
-    assertThat(subnetIds.size()).isGreaterThanOrEqualTo(2);
+        attestationTopicSubscriber, spec, Optional.of(dataStructureUtil.randomUInt256()));
   }
 }

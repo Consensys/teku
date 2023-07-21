@@ -96,12 +96,18 @@ public class StableSubnetSubscriberTest {
     verify(attestationTopicSubscriber, times(spec.getNetworkingConfig().getSubnetsPerNode()))
         .subscribeToPersistentSubnets(secondSubscriptionUpdate.capture());
 
+    assertThat(firstSubscriptionUpdate.getValue())
+        .isNotEqualTo(secondSubscriptionUpdate.getValue());
+
     UInt64 secondUnsubscriptionSlot =
         secondSubscriptionUpdate.getValue().stream().findFirst().get().getUnsubscriptionSlot();
 
     assertThat(firstUnsubscriptionSlot).isNotEqualByComparingTo(secondUnsubscriptionSlot);
-    // Can only verify unsubscription slot have changed and not the subnet id,
-    // since subnet id can randomly be chosen the same
+    assertThat(
+            secondUnsubscriptionSlot
+                .minus(firstUnsubscriptionSlot)
+                .dividedBy(spec.getGenesisSpecConfig().getSlotsPerEpoch()))
+        .isEqualTo(UInt64.valueOf(spec.getNetworkingConfig().getEpochsPerSubnetSubscription()));
   }
 
   private void assertSubnetsAreDistinct(Set<SubnetSubscription> subnetSubscriptions) {
