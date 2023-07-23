@@ -93,17 +93,13 @@ public abstract class AbstractSelectorFactory<T> {
   }
 
   private T createSelectorForKeywordOrSlot(final String identifier) {
-    switch (identifier) {
-      case HEAD:
-        return headSelector();
-      case GENESIS:
-        return genesisSelector();
-      case FINALIZED:
-        return finalizedSelector();
-      case JUSTIFIED:
-        return justifiedSelector();
-    }
-    return slotSelector(UInt64.valueOf(identifier));
+    return switch (identifier) {
+      case HEAD -> headSelector();
+      case GENESIS -> genesisSelector();
+      case FINALIZED -> finalizedSelector();
+      case JUSTIFIED -> justifiedSelector();
+      default -> slotSelector(UInt64.valueOf(identifier));
+    };
   }
 
   private BadRequestException badRequestException(final String type, final String identifier) {
