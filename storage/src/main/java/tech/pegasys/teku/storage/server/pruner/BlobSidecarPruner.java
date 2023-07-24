@@ -24,6 +24,7 @@ import org.hyperledger.besu.plugin.services.metrics.LabelledGauge;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -44,6 +45,9 @@ public class BlobSidecarPruner extends Service {
   private final int pruneLimit;
   private final TimeProvider timeProvider;
   private final boolean blobSidecarsStorageCountersEnabled;
+  private final String pruningMetricsType;
+  private final SettableLabelledGauge pruningTimingsLabelledGauge;
+  private final SettableLabelledGauge pruningActiveLabelledGauge;
 
   private Optional<Cancellable> scheduledPruner = Optional.empty();
   private Optional<UInt64> genesisTime = Optional.empty();
@@ -59,7 +63,10 @@ public class BlobSidecarPruner extends Service {
       final TimeProvider timeProvider,
       final Duration pruneInterval,
       final int pruneLimit,
-      final boolean blobSidecarsStorageCountersEnabled) {
+      final boolean blobSidecarsStorageCountersEnabled,
+      final String pruningMetricsType,
+      final SettableLabelledGauge pruningTimingsLabelledGauge,
+      final SettableLabelledGauge pruningActiveLabelledGauge) {
     this.spec = spec;
     this.database = database;
     this.asyncRunner = asyncRunner;
@@ -67,6 +74,9 @@ public class BlobSidecarPruner extends Service {
     this.pruneLimit = pruneLimit;
     this.timeProvider = timeProvider;
     this.blobSidecarsStorageCountersEnabled = blobSidecarsStorageCountersEnabled;
+    this.pruningMetricsType = pruningMetricsType;
+    this.pruningTimingsLabelledGauge = pruningTimingsLabelledGauge;
+    this.pruningActiveLabelledGauge = pruningActiveLabelledGauge;
 
     if (blobSidecarsStorageCountersEnabled) {
       LabelledGauge labelledGauge =
@@ -100,7 +110,13 @@ public class BlobSidecarPruner extends Service {
   }
 
   private void pruneBlobs() {
+    pruningActiveLabelledGauge.set(1, pruningMetricsType);
+    final long start = System.currentTimeMillis();
+
     pruneBlobsPriorToAvailabilityWindow();
+
+    pruningTimingsLabelledGauge.set(System.currentTimeMillis() - start, pruningMetricsType);
+    pruningActiveLabelledGauge.set(0, pruningMetricsType);
 
     if (blobSidecarsStorageCountersEnabled) {
       blobColumnSize.set(database.getBlobSidecarColumnCount());
@@ -127,12 +143,8 @@ public class BlobSidecarPruner extends Service {
     }
     LOG.debug("Pruning blobs up to slot {}, limit {}", latestPrunableSlot, pruneLimit);
     try {
-      final long start = System.currentTimeMillis();
       final boolean limitReached = database.pruneOldestBlobSidecars(latestPrunableSlot, pruneLimit);
-      LOG.debug(
-          "Blobs pruning finished in {} ms. Limit reached: {}",
-          () -> System.currentTimeMillis() - start,
-          () -> limitReached);
+      LOG.debug("Blobs pruning finished. Limit reached: {}", () -> limitReached);
     } catch (ShuttingDownException | RejectedExecutionException ex) {
       LOG.debug("Shutting down", ex);
     }

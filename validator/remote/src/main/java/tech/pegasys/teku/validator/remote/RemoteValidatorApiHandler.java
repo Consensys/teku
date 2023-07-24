@@ -446,15 +446,15 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> getValidatorsLiveness(
-      List<UInt64> validatorIndices, UInt64 epoch) {
+      final List<UInt64> validatorIndices, final UInt64 epoch) {
     return sendRequest(
         () ->
             apiClient
                 .sendValidatorsLiveness(epoch, validatorIndices)
-                .map(this::responseToDoppelgangerDetectionResult));
+                .map(this::responseToValidatorsLivenessResult));
   }
 
-  private List<ValidatorLivenessAtEpoch> responseToDoppelgangerDetectionResult(
+  private List<ValidatorLivenessAtEpoch> responseToValidatorsLivenessResult(
       final PostValidatorLivenessResponse response) {
     return response.data.stream()
         .map(
