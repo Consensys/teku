@@ -18,13 +18,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -33,22 +36,86 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 
 class VoluntaryExitDataProviderTest {
   private final Spec spec = TestSpecFactory.createMinimal(SpecMilestone.CAPELLA);
   private final KeyManager keyManager = mock(KeyManager.class);
+  private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
+  private final GenesisDataProvider genesisDataProvider = mock(GenesisDataProvider.class);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(100000);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private VoluntaryExitDataProvider provider;
 
+  final BLSPublicKey publicKey1 = dataStructureUtil.randomPublicKey();
+  final BLSPublicKey publicKey2 = dataStructureUtil.randomPublicKey();
+  final Signer signer = mock(Signer.class);
+  final Validator validator = new Validator(publicKey1, signer, Optional::empty, false);
+  final BLSSignature volExitSignature = dataStructureUtil.randomSignature();
+
   @BeforeEach
   void setUp() {
-    provider = new VoluntaryExitDataProvider(spec, keyManager, timeProvider);
+    final GenesisData genesisData = new GenesisData(UInt64.ZERO, dataStructureUtil.randomBytes32());
+    final Map<BLSPublicKey, Integer> validatorIndices = Map.of(publicKey1, 0, publicKey2, 1);
+
+    when(genesisDataProvider.getGenesisData()).thenReturn(SafeFuture.completedFuture(genesisData));
+    when(validatorApiChannel.getValidatorIndices(any()))
+        .thenReturn(SafeFuture.completedFuture(validatorIndices));
+    when(keyManager.getActiveValidatorKeys()).thenReturn(List.of(validator));
+    when(signer.signVoluntaryExit(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(volExitSignature));
+
+    provider =
+        new VoluntaryExitDataProvider(
+            spec, keyManager, validatorApiChannel, genesisDataProvider, timeProvider);
+  }
+
+  @Test
+  void getSignedVoluntaryExit_shouldReturnExpectedResult() {
+    final SafeFuture<SignedVoluntaryExit> result =
+        provider.getSignedVoluntaryExit(publicKey1, Optional.of(UInt64.valueOf(1234)));
+
+    final SignedVoluntaryExit expected =
+        new SignedVoluntaryExit(
+            new VoluntaryExit(UInt64.valueOf(1234), UInt64.ZERO), volExitSignature);
+    assertThatSafeFuture(result).isCompletedWithValue(expected);
+  }
+
+  @Test
+  void getSignedVoluntaryExit_exceptionWhenValidatorNotActive() {
+    final SafeFuture<SignedVoluntaryExit> result =
+        provider.getSignedVoluntaryExit(publicKey2, Optional.of(UInt64.valueOf(1234)));
+    assertThatSafeFuture(result)
+        .isCompletedExceptionallyWith(BadRequestException.class)
+        .hasMessageMatching("Validator (.*) is not in the list of keys managed by this service.");
+  }
+
+  @Test
+  void getSignedVoluntaryExit_exceptionWhenKeyNotInIndicesMap() {
+    final SafeFuture<SignedVoluntaryExit> result =
+        provider.getSignedVoluntaryExit(
+            dataStructureUtil.randomPublicKey(), Optional.of(UInt64.valueOf(1234)));
+    assertThatSafeFuture(result)
+        .isCompletedExceptionallyWith(BadRequestException.class)
+        .hasMessageMatching("Public key (.*) is not in the map of validator indices.");
+  }
+
+  @Test
+  void getSignedVoluntaryExit_shouldReturnExpectedResultWithoutEpoch() {
+    final SafeFuture<SignedVoluntaryExit> result =
+        provider.getSignedVoluntaryExit(publicKey1, Optional.empty());
+
+    final SignedVoluntaryExit expected =
+        new SignedVoluntaryExit(
+            new VoluntaryExit(UInt64.valueOf(2083), UInt64.ZERO), volExitSignature);
+    assertThatSafeFuture(result).isCompletedWithValue(expected);
   }
 
   @Test
