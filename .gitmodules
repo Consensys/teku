@@ -1,4 +1,0 @@
-[submodule "ganache-cli"]
-	path = ganache-cli
-	url = https://github.com/trufflesuite/ganache-cli.git
-

@@ -21,6 +21,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
@@ -35,6 +36,9 @@ public class BlockPruner extends Service {
   private final Database database;
   private final AsyncRunner asyncRunner;
   private final Duration pruneInterval;
+  private final SettableLabelledGauge pruningTimingsLabelledGauge;
+  private final SettableLabelledGauge pruningActiveLabelledGauge;
+  private final String pruningMetricsType;
 
   private Optional<Cancellable> scheduledPruner = Optional.empty();
 
@@ -42,11 +46,17 @@ public class BlockPruner extends Service {
       final Spec spec,
       final Database database,
       final AsyncRunner asyncRunner,
-      final Duration pruneInterval) {
+      final Duration pruneInterval,
+      final String pruningMetricsType,
+      final SettableLabelledGauge pruningTimingsLabelledGauge,
+      final SettableLabelledGauge pruningActiveLabelledGauge) {
     this.spec = spec;
     this.database = database;
     this.asyncRunner = asyncRunner;
     this.pruneInterval = pruneInterval;
+    this.pruningMetricsType = pruningMetricsType;
+    this.pruningTimingsLabelledGauge = pruningTimingsLabelledGauge;
+    this.pruningActiveLabelledGauge = pruningActiveLabelledGauge;
   }
 
   @Override
@@ -54,7 +64,14 @@ public class BlockPruner extends Service {
     scheduledPruner =
         Optional.of(
             asyncRunner.runWithFixedDelay(
-                this::pruneBlocks,
+                () -> {
+                  pruningActiveLabelledGauge.set(1, pruningMetricsType);
+                  final long start = System.currentTimeMillis();
+                  pruneBlocks();
+                  pruningTimingsLabelledGauge.set(
+                      System.currentTimeMillis() - start, pruningMetricsType);
+                  pruningActiveLabelledGauge.set(0, pruningMetricsType);
+                },
                 Duration.ZERO,
                 pruneInterval,
                 error -> LOG.error("Failed to prune old blocks", error)));

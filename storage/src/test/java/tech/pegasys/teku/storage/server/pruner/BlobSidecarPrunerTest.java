@@ -28,6 +28,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -64,6 +65,9 @@ public class BlobSidecarPrunerTest {
           PRUNE_INTERVAL,
           PRUNE_LIMIT,
           false,
+          "test",
+          mock(SettableLabelledGauge.class),
+          mock(SettableLabelledGauge.class),
           false);
 
   @BeforeEach
@@ -149,6 +153,9 @@ public class BlobSidecarPrunerTest {
             PRUNE_INTERVAL,
             PRUNE_LIMIT,
             false,
+            "test",
+            mock(SettableLabelledGauge.class),
+            mock(SettableLabelledGauge.class),
             false);
     when(databaseOverride.getGenesisTime()).thenReturn(Optional.of(genesisTime));
     assertThat(blobsPrunerOverride.start()).isCompleted();
@@ -201,6 +208,9 @@ public class BlobSidecarPrunerTest {
             PRUNE_INTERVAL,
             PRUNE_LIMIT,
             false,
+            "test",
+            mock(SettableLabelledGauge.class),
+            mock(SettableLabelledGauge.class),
             false);
     when(databaseOverride.getGenesisTime()).thenReturn(Optional.of(genesisTime));
     assertThat(blobsPrunerOverride.start()).isCompleted();
