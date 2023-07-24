@@ -114,56 +114,26 @@ public class BlockManager extends Service
       return doImportBlock(block, Optional.empty(), Optional.empty());
     }
 
-    int broadcastValidationLevel = broadcastValidation.get().ordinal();
+    final SafeFuture<BlockImportResult> consensusValidationResult = new SafeFuture<>();
+    final SafeFuture<BlockImportResult> importResult =
+        doImportBlock(block, Optional.empty(), Optional.of(consensusValidationResult));
 
-    // prepare consensus validation future, to me completed by the block import flow
-    final Optional<SafeFuture<BlockImportResult>> consensusValidationResult;
-    if (broadcastValidationLevel > BroadcastValidation.GOSSIP.ordinal()) {
-      consensusValidationResult = Optional.of(new SafeFuture<>());
-    } else {
-      consensusValidationResult = Optional.empty();
-    }
-
-    // GOSSIP
-    SafeFuture<BlockImportResult> importPipeline =
+    SafeFuture<BlockImportResult> result2 =
         validator
-            .validate(block, true)
-            .thenCompose(
-                internalValidationResult -> {
-                  if (internalValidationResult.isAccept()) {
-                    return doImportBlock(block, Optional.empty(), consensusValidationResult);
+            .broadcastValidate(
+                block, broadcastValidation.get(), consensusValidationResult.or(importResult))
+            .thenApply(
+                result -> {
+                  if (result.isAccept()) {
+                    return BlockImportResult.successful(block);
                   }
-                  return SafeFuture.completedFuture(BlockImportResult.FAILED_GOSSIP_VALIDATION);
+                  // TODO: to be changed to broadcast validation result
+                  return BlockImportResult.FAILED_EQUIVOCATION_CHECK;
                 });
 
-    if (broadcastValidationLevel == BroadcastValidation.GOSSIP.ordinal()) {
-      return importPipeline;
-    }
+    importResult.ifExceptionGetsHereRaiseABug();
 
-    // GOSSIP + CONSENSUS validation
-    // this will ensure that we react to the first of the two resolving futures, and we fail
-    // whenever one of the two fails.
-    importPipeline = importPipeline.or(consensusValidationResult.get());
-
-    if (broadcastValidationLevel == BroadcastValidation.CONSENSUS.ordinal()) {
-      return importPipeline;
-    }
-
-    // GOSSIP + CONSENSUS + additional EQUIVOCATION
-    return importPipeline.thenApply(
-        result -> {
-          // forward errors
-          if (!result.isSuccessful()) {
-            return result;
-          }
-
-          // forward success if equivocation check passes
-          if (validator.blockIsFirstBlockWithValidSignatureForSlot(block)) {
-            return result;
-          }
-
-          return BlockImportResult.FAILED_EQUIVOCATION_CHECK;
-        });
+    return result2;
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
@@ -186,7 +156,7 @@ public class BlockManager extends Service
           InternalValidationResult.reject("Block (or its parent) previously marked as invalid"));
     }
 
-    final SafeFuture<InternalValidationResult> validationResult = validator.validate(block, false);
+    final SafeFuture<InternalValidationResult> validationResult = validator.validate(block);
     validationResult.thenAccept(
         result -> {
           if (result.code().equals(ValidationResultCode.ACCEPT)

@@ -34,6 +34,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel.BroadcastValidation;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockValidator {
@@ -54,7 +56,52 @@ public class BlockValidator {
     this.gossipValidationHelper = gossipValidationHelper;
   }
 
-  public SafeFuture<InternalValidationResult> validate(
+  public SafeFuture<InternalValidationResult> broadcastValidate(
+      final SignedBeaconBlock block,
+      final BroadcastValidation broadcastValidation,
+      final SafeFuture<BlockImportResult> consensusValidationResult) {
+
+    SafeFuture<InternalValidationResult> validationPipeline = validate(block, true);
+
+    if (broadcastValidation == BroadcastValidation.GOSSIP) {
+      return validationPipeline;
+    }
+
+    validationPipeline =
+        validationPipeline.thenCombine(
+            consensusValidationResult,
+            (gossipValidation, consensusValidation) -> {
+              if (gossipValidation.isAccept() && consensusValidation.isSuccessful()) {
+                return gossipValidation;
+              }
+              return InternalValidationResult.IGNORE;
+            });
+
+    if (broadcastValidation == BroadcastValidation.CONSENSUS) {
+      return validationPipeline;
+    }
+
+    // CONSENSUS_EQUIVOCATION
+    return validationPipeline.thenApply(
+        gossipAndConsensusValidation -> {
+          // forward errors
+          if (!gossipAndConsensusValidation.isAccept()) {
+            return gossipAndConsensusValidation;
+          }
+
+          if (blockIsFirstBlockWithValidSignatureForSlot(block)) {
+            return gossipAndConsensusValidation;
+          }
+
+          return InternalValidationResult.IGNORE;
+        });
+  }
+
+  public SafeFuture<InternalValidationResult> validate(final SignedBeaconBlock block) {
+    return validate(block, false);
+  }
+
+  private SafeFuture<InternalValidationResult> validate(
       final SignedBeaconBlock block, final boolean isLocal) {
 
     if (gossipValidationHelper.isSlotFinalized(block.getSlot())
@@ -153,7 +200,7 @@ public class BlockValidator {
             });
   }
 
-  public boolean blockIsFirstBlockWithValidSignatureForSlot(final SignedBeaconBlock block) {
+  private boolean blockIsFirstBlockWithValidSignatureForSlot(final SignedBeaconBlock block) {
     return !receivedValidBlockInfoSet.contains(new SlotAndProposer(block));
   }
 
