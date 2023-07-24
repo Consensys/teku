@@ -38,7 +38,7 @@ public class SubnetSubscription implements Comparable<SubnetSubscription> {
   }
 
   @Override
-  public int compareTo(@NotNull SubnetSubscription o) {
+  public int compareTo(@NotNull final SubnetSubscription o) {
     return Comparator.comparing(SubnetSubscription::getUnsubscriptionSlot)
         .thenComparing(SubnetSubscription::getSubnetId)
         .compare(this, o);

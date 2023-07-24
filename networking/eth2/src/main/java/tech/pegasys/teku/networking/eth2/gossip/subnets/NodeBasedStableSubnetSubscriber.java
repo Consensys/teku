@@ -100,8 +100,6 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
               spec.atSlot(currentSlot)
                   .miscHelpers()
                   .calculateNodeSubnetUnsubscriptionSlot(nodeId, currentSlot));
-      LOG.debug(
-          "Subscribing to new persistent subnet with id {}", newSubnetSubscription.getSubnetId());
       newSubnetSubscriptions.add(newSubnetSubscription);
     }
     return newSubnetSubscriptions;
