@@ -68,7 +68,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
           subnetIdToUnsubscribeSlot.computeIfAbsent(
               subnetId,
               (key) -> {
-                LOG.trace("Subscribing to subnet {}", subnetId);
+                LOG.trace("Subscribing to persistent subnet {}", subnetId);
                 eth2P2PNetwork.subscribeToAttestationSubnetId(subnetId);
                 return ZERO;
               });
