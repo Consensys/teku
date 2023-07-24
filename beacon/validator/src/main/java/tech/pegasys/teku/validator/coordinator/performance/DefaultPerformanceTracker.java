@@ -126,6 +126,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       return;
     }
 
+    final long startTime = System.currentTimeMillis();
     final List<SafeFuture<?>> reportingTasks = new ArrayList<>();
     // Output attestation performance information for current epoch - 2 since attestations can be
     // included in both the epoch they were produced in or in the one following.
@@ -144,10 +145,14 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       reportingTasks.add(reportSyncCommitteePerformance(currentEpoch));
     }
 
-    final long startTime = System.currentTimeMillis();
     SafeFuture.allOf(reportingTasks.toArray(SafeFuture[]::new))
         .handleException(LOG::error)
-        .alwaysRun(() -> timingsSettableGauge.set(System.currentTimeMillis() - startTime))
+        .alwaysRun(
+            () -> {
+              if (reportingTasks.size() > 0) {
+                timingsSettableGauge.set(System.currentTimeMillis() - startTime);
+              }
+            })
         .join();
   }
 
