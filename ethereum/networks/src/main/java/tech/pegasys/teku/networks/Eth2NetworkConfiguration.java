@@ -20,11 +20,11 @@ import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLO
 import static tech.pegasys.teku.spec.networks.Eth2Network.CHIADO;
 import static tech.pegasys.teku.spec.networks.Eth2Network.GNOSIS;
 import static tech.pegasys.teku.spec.networks.Eth2Network.LESS_SWIFT;
+import static tech.pegasys.teku.spec.networks.Eth2Network.LUKSO;
 import static tech.pegasys.teku.spec.networks.Eth2Network.MAINNET;
 import static tech.pegasys.teku.spec.networks.Eth2Network.MINIMAL;
 import static tech.pegasys.teku.spec.networks.Eth2Network.PRATER;
 import static tech.pegasys.teku.spec.networks.Eth2Network.SEPOLIA;
-import static tech.pegasys.teku.spec.networks.Eth2Network.LUKSO;
 import static tech.pegasys.teku.spec.networks.Eth2Network.SWIFT;
 
 import java.net.URL;
@@ -612,6 +612,7 @@ public class Eth2NetworkConfiguration {
               // Another bootnode
               "enr:-L64QC9Hhov4DhQ7mRukTOz4_jHm4DHlGL726NWH4ojH1wFgEwSin_6H95Gs6nW2fktTWbPachHJ6rUFu0iJNgA0SB2CARqHYXR0bmV0c4j__________4RldGgykDb6UBOQAABx__________-CaWSCdjSCaXCEA-2vzolzZWNwMjU2azGhA17lsUg60R776rauYMdrAz383UUgESoaHEzMkvm4K6k6iHN5bmNuZXRzD4N0Y3CCIyiDdWRwgiMo");
     }
+
     private Builder applyLuksoNetworkDefaults() {
       return applyTestnetDefaults()
           .constants(LUKSO.configName())
