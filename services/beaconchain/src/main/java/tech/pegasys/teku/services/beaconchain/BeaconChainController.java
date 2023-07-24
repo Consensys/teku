@@ -431,12 +431,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initBlockManager();
     initSyncCommitteePools();
     initP2PNetwork();
-    initSubnetSubscriber();
     initSyncService();
     initSlotProcessor();
     initMetrics();
     initAttestationTopicSubscriber();
     initActiveValidatorTracker();
+    initSubnetSubscriber();
     initPerformanceTracker();
     initDataProvider();
     initValidatorApiHandler();
