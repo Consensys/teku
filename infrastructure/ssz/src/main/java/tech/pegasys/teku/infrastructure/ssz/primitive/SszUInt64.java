@@ -19,13 +19,24 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SszUInt64 extends AbstractSszPrimitive<UInt64, SszUInt64> {
 
-  public static final SszUInt64 ZERO = SszUInt64.of(UInt64.ZERO);
+  public static final SszUInt64 ZERO = new SszUInt64(UInt64.ZERO);
+  public static final SszUInt64 THIRTY_TWO_ETH = new SszUInt64(UInt64.THIRTY_TWO_ETH);
+  public static final SszUInt64 MAX_VALUE = new SszUInt64(UInt64.MAX_VALUE);
 
-  public static SszUInt64 of(UInt64 val) {
+  public static SszUInt64 of(final UInt64 val) {
+    if (val.isZero()) {
+      return ZERO;
+    }
+    if (val.isThirtyTwoEth()) {
+      return THIRTY_TWO_ETH;
+    }
+    if (val.isMaxValue()) {
+      return MAX_VALUE;
+    }
     return new SszUInt64(val);
   }
 
-  private SszUInt64(UInt64 val) {
+  private SszUInt64(final UInt64 val) {
     super(val, SszPrimitiveSchemas.UINT64_SCHEMA);
   }
 

@@ -22,6 +22,8 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.AsyncRunnerEventThread;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -80,6 +82,22 @@ public class StorageService extends Service implements StorageServiceFacade {
 
               database.migrate();
 
+              final SettableLabelledGauge pruningTimingsLabelledGauge =
+                  SettableLabelledGauge.create(
+                      serviceConfig.getMetricsSystem(),
+                      TekuMetricCategory.STORAGE,
+                      "pruning_time",
+                      "Tracks last pruning duration in milliseconds",
+                      "type");
+
+              final SettableLabelledGauge pruningActiveLabelledGauge =
+                  SettableLabelledGauge.create(
+                      serviceConfig.getMetricsSystem(),
+                      TekuMetricCategory.STORAGE,
+                      "pruning_active",
+                      "Tracks when pruner is active",
+                      "type");
+
               if (!config.getDataStorageMode().storesAllBlocks()) {
                 blockPruner =
                     Optional.of(
@@ -87,7 +105,10 @@ public class StorageService extends Service implements StorageServiceFacade {
                             config.getSpec(),
                             database,
                             storagePrunerAsyncRunner,
-                            config.getBlockPruningInterval()));
+                            config.getBlockPruningInterval(),
+                            "block",
+                            pruningTimingsLabelledGauge,
+                            pruningActiveLabelledGauge));
               }
               if (config.getSpec().isMilestoneSupported(SpecMilestone.DENEB)) {
                 blobsPruner =
@@ -100,7 +121,10 @@ public class StorageService extends Service implements StorageServiceFacade {
                             serviceConfig.getTimeProvider(),
                             config.getBlobsPruningInterval(),
                             config.getBlobsPruningLimit(),
-                            blobSidecarsStorageCountersEnabled));
+                            blobSidecarsStorageCountersEnabled,
+                            "blob_sidecar",
+                            pruningTimingsLabelledGauge,
+                            pruningActiveLabelledGauge));
               }
               final EventChannels eventChannels = serviceConfig.getEventChannels();
               chainStorage = ChainStorage.create(database, config.getSpec());

@@ -25,6 +25,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -51,7 +52,15 @@ class BlockPrunerTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final Database database = mock(Database.class);
 
-  private final BlockPruner pruner = new BlockPruner(spec, database, asyncRunner, PRUNE_INTERVAL);
+  private final BlockPruner pruner =
+      new BlockPruner(
+          spec,
+          database,
+          asyncRunner,
+          PRUNE_INTERVAL,
+          "test",
+          mock(SettableLabelledGauge.class),
+          mock(SettableLabelledGauge.class));
 
   @BeforeEach
   void setUp() {
