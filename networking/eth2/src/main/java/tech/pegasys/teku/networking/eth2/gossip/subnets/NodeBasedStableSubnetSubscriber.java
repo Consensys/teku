@@ -22,15 +22,12 @@ import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
 public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
-  private static final Logger LOG = LogManager.getLogger();
 
   private final AttestationTopicSubscriber persistentSubnetSubscriber;
   private final NavigableSet<SubnetSubscription> subnetSubscriptions = new TreeSet<>();
