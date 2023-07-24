@@ -22,6 +22,9 @@ import java.util.NavigableSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -29,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
 public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
 
+  private static final Logger LOG = LogManager.getLogger();
   private final AttestationTopicSubscriber persistentSubnetSubscriber;
   private final NavigableSet<SubnetSubscription> subnetSubscriptions = new TreeSet<>();
   private final Spec spec;
@@ -85,6 +89,11 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
         spec.atSlot(currentSlot)
             .miscHelpers()
             .computeSubscribedSubnets(nodeId, spec.computeEpochAtSlot(currentSlot));
+
+    LOG.trace(
+        "Computed node based subnets {} for node id {}",
+        nodeSubscribedSubnets.stream().map(UInt64::toString).collect(Collectors.joining(", ")),
+        nodeId);
 
     final Iterator<UInt64> nodeSubscribedSubnetsIterator = nodeSubscribedSubnets.iterator();
 
