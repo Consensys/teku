@@ -32,6 +32,7 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -71,7 +72,8 @@ public class DefaultPerformanceTrackerTest {
           ValidatorPerformanceTrackingMode.ALL,
           validatorTracker,
           syncCommitteePerformanceTracker,
-          spec);
+          spec,
+          mock(SettableGauge.class));
 
   @BeforeEach
   void beforeEach() {
