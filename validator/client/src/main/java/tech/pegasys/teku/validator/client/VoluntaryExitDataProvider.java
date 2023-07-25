@@ -14,27 +14,66 @@
 package tech.pegasys.teku.validator.client;
 
 import java.util.Optional;
+import java.util.Set;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 
 public class VoluntaryExitDataProvider {
   private final Spec spec;
   private final KeyManager keyManager;
+  private final ValidatorApiChannel validatorApiChannel;
+  private final GenesisDataProvider genesisDataProvider;
   private final TimeProvider timeProvider;
 
   VoluntaryExitDataProvider(
-      final Spec spec, final KeyManager keyManager, final TimeProvider timeProvider) {
+      final Spec spec,
+      final KeyManager keyManager,
+      final ValidatorApiChannel validatorApiChannel,
+      final GenesisDataProvider genesisDataProvider,
+      final TimeProvider timeProvider) {
     this.spec = spec;
     this.keyManager = keyManager;
+    this.validatorApiChannel = validatorApiChannel;
+    this.genesisDataProvider = genesisDataProvider;
     this.timeProvider = timeProvider;
+  }
+
+  public SafeFuture<SignedVoluntaryExit> getSignedVoluntaryExit(
+      final BLSPublicKey publicKey, final Optional<UInt64> maybeEpoch) {
+    return genesisDataProvider
+        .getGenesisData()
+        .thenCombine(
+            validatorApiChannel.getValidatorIndices(Set.of(publicKey)),
+            (genesisData, indicesMap) -> {
+              final UInt64 epoch =
+                  maybeEpoch.orElse(calculateCurrentEpoch(genesisData.getGenesisTime()));
+              final Bytes32 genesisRoot = genesisData.getGenesisValidatorsRoot();
+              final Fork fork = spec.getForkSchedule().getFork(epoch);
+              final ForkInfo forkInfo = new ForkInfo(fork, genesisRoot);
+              final int validatorIndex =
+                  Optional.ofNullable(indicesMap.get(publicKey))
+                      .orElseThrow(
+                          () ->
+                              new BadRequestException(
+                                  String.format(
+                                      "Public key %s is not in the map of validator indices.",
+                                      publicKey)));
+
+              return createSignedVoluntaryExit(validatorIndex, publicKey, epoch, forkInfo);
+            });
   }
 
   UInt64 calculateCurrentEpoch(final UInt64 genesisTime) {
