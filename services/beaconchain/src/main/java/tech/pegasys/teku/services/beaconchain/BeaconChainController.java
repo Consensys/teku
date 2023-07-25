@@ -61,6 +61,7 @@ import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
+import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -522,6 +523,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
     ValidatorPerformanceTrackingMode mode =
         beaconConfig.validatorConfig().getValidatorPerformanceTrackingMode();
     if (mode.isEnabled()) {
+      final SettableGauge performanceTrackerTimings =
+          SettableGauge.create(
+              metricsSystem,
+              BEACON,
+              "performance_tracker_timings",
+              "Tracks how much time (in millis) performance tracker takes to perform calculations");
       performanceTracker =
           new DefaultPerformanceTracker(
               combinedChainDataClient,
@@ -530,7 +537,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
               beaconConfig.validatorConfig().getValidatorPerformanceTrackingMode(),
               activeValidatorTracker,
               new SyncCommitteePerformanceTracker(spec, combinedChainDataClient),
-              spec);
+              spec,
+              performanceTrackerTimings);
       eventChannels.subscribe(SlotEventsChannel.class, performanceTracker);
     } else {
       performanceTracker = new NoOpPerformanceTracker();
