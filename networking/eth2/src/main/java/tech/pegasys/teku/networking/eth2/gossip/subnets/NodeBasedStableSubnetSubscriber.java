@@ -85,15 +85,14 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
         discoveryNodeId.orElseThrow(
             () -> new IllegalArgumentException("Unable to get discovery node id"));
 
-    final UInt64 currentEpoch = spec.computeEpochAtSlot(currentSlot);
     final List<UInt64> nodeSubscribedSubnets =
-        spec.atSlot(currentSlot).miscHelpers().computeSubscribedSubnets(nodeId, currentEpoch);
+        spec.atSlot(currentSlot)
+            .miscHelpers()
+            .computeSubscribedSubnets(nodeId, spec.computeEpochAtSlot(currentSlot));
 
     LOG.trace(
-        "Computed persistent node based subnets {} for node id {} at epoch {}",
-        nodeSubscribedSubnets.stream().map(UInt64::toString).collect(Collectors.joining(", ")),
-        nodeId,
-        currentEpoch);
+        "Computed persistent subnets {}",
+        nodeSubscribedSubnets.stream().map(UInt64::toString).collect(Collectors.joining(", ")));
 
     final Iterator<UInt64> nodeSubscribedSubnetsIterator = nodeSubscribedSubnets.iterator();
 
