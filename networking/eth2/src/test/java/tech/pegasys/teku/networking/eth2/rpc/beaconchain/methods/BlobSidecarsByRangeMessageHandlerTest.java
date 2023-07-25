@@ -64,6 +64,9 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class BlobSidecarsByRangeMessageHandlerTest {
 
+  private static final RequestApproval ZERO_OBJECTS_REQUEST_APPROVAL =
+      new RequestApproval.RequestApprovalBuilder().timeSeconds(ZERO).objectsCount(0).build();
+
   private static final RpcEncoding RPC_ENCODING =
       RpcEncoding.createSszSnappyEncoding(
           TestSpecFactory.createDefault().getNetworkingConfig().getMaxChunkSize());
@@ -345,15 +348,39 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(startSlot, ZERO, maxBlobsPerBlock);
 
-    final Optional<RequestApproval> zeroObjectRequests =
-        Optional.of(
-            new RequestApproval.RequestApprovalBuilder().timeSeconds(ZERO).objectsCount(0).build());
-
-    when(peer.approveBlobSidecarsRequest(listener, 0)).thenReturn(zeroObjectRequests);
+    when(peer.approveBlobSidecarsRequest(listener, 0))
+        .thenReturn(Optional.of(ZERO_OBJECTS_REQUEST_APPROVAL));
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
-    // Requesting 5 * maxBlobsPerBlock blob sidecars
+    verify(peer, times(1)).approveBlobSidecarsRequest(any(), eq(Long.valueOf(0)));
+    // no adjustment
+    verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
+
+    final ArgumentCaptor<BlobSidecar> argumentCaptor = ArgumentCaptor.forClass(BlobSidecar.class);
+
+    verify(listener, never()).respond(argumentCaptor.capture());
+
+    final List<BlobSidecar> actualSent = argumentCaptor.getAllValues();
+
+    verify(listener).completeSuccessfully();
+
+    AssertionsForInterfaceTypes.assertThat(actualSent).isEmpty();
+  }
+
+  @Test
+  public void shouldIgnoreRequestWhenCountIsZeroAndHotSlotRequested() {
+    // not finalized
+    final UInt64 hotStartSlot = startSlot.plus(7);
+
+    final BlobSidecarsByRangeRequestMessage request =
+        new BlobSidecarsByRangeRequestMessage(hotStartSlot, ZERO, maxBlobsPerBlock);
+
+    when(peer.approveBlobSidecarsRequest(listener, 0))
+        .thenReturn(Optional.of(ZERO_OBJECTS_REQUEST_APPROVAL));
+
+    handler.onIncomingMessage(protocolId, peer, request, listener);
+
     verify(peer, times(1)).approveBlobSidecarsRequest(any(), eq(Long.valueOf(0)));
     // no adjustment
     verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
