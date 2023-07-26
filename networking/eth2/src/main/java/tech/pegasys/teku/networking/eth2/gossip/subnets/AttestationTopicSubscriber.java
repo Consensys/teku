@@ -63,18 +63,21 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
     for (SubnetSubscription subnetSubscription : newSubscriptions) {
       int subnetId = subnetSubscription.getSubnetId();
       shouldUpdateENR = persistentSubnetIdSet.add(subnetId) || shouldUpdateENR;
-
-      UInt64 existingUnsubscriptionSlot =
-          subnetIdToUnsubscribeSlot.computeIfAbsent(
-              subnetId,
-              (key) -> {
-                LOG.trace("Subscribing to persistent subnet {}", subnetId);
-                eth2P2PNetwork.subscribeToAttestationSubnetId(subnetId);
-                return ZERO;
-              });
-
-      subnetIdToUnsubscribeSlot.put(
-          subnetId, existingUnsubscriptionSlot.max(subnetSubscription.getUnsubscriptionSlot()));
+      LOG.trace("Subscribing to persistent subnet {}", subnetId);
+      if (subnetIdToUnsubscribeSlot.containsKey(subnetId)) {
+        UInt64 existingUnsubscriptionSlot = subnetIdToUnsubscribeSlot.get(subnetId);
+        UInt64 unsubscriptionSlot =
+            existingUnsubscriptionSlot.max(subnetSubscription.getUnsubscriptionSlot());
+        LOG.trace(
+            "Already subscribed to subnet {}, updating unsubscription slot to {}",
+            subnetId,
+            unsubscriptionSlot);
+        subnetIdToUnsubscribeSlot.put(subnetId, unsubscriptionSlot);
+      } else {
+        eth2P2PNetwork.subscribeToAttestationSubnetId(subnetId);
+        LOG.trace("Subscribed to new persistent subnet {}", subnetId);
+        subnetIdToUnsubscribeSlot.put(subnetId, subnetSubscription.getUnsubscriptionSlot());
+      }
     }
 
     if (shouldUpdateENR) {
