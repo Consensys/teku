@@ -1173,12 +1173,16 @@ public class DatabaseTest {
   public void storeNonCanonicalBlobsTest_multiple(final DatabaseContext context)
       throws IOException {
     createStorageSystem(context, StateStorageMode.ARCHIVE, StoreConfig.createDefault(), true);
+    final BlockOptions randomBlobsOptions =
+        BlockOptions.create()
+            .setGenerateRandomBlobs(true)
+            .setGenerateRandomBlobsCount(Optional.of(2));
     final ChainBuilder primaryChain = ChainBuilder.create(spec, VALIDATOR_KEYS);
     primaryChain.generateGenesis(genesisTime, true);
-    primaryChain.generateBlocksUpToSlot(3);
+    primaryChain.generateBlocksUpToSlot(3, randomBlobsOptions);
     final ChainBuilder forkChain = primaryChain.fork();
     // Primary chain's next block is at 5
-    primaryChain.generateBlockAtSlot(5);
+    primaryChain.generateBlockAtSlot(5, randomBlobsOptions);
     final ChainBuilder secondFork = primaryChain.fork();
 
     final BlobSidecar blobSidecarPrimary2Slot2Index0 =
@@ -1191,32 +1195,16 @@ public class DatabaseTest {
     database.storeBlobSidecar(blobSidecarPrimary2Slot2Index1);
 
     // Primary chain's next block is at 7
-    final SignedBlockAndState finalizedBlock = primaryChain.generateBlockAtSlot(7);
+    final SignedBlockAndState finalizedBlock =
+        primaryChain.generateBlockAtSlot(7, randomBlobsOptions);
     final Checkpoint finalizedCheckpoint = getCheckpointForBlock(primaryChain.getBlockAtSlot(7));
     final UInt64 firstHotBlockSlot = finalizedCheckpoint.getEpochStartSlot(spec).plus(UInt64.ONE);
-    primaryChain.generateBlockAtSlot(firstHotBlockSlot);
+    primaryChain.generateBlockAtSlot(firstHotBlockSlot, randomBlobsOptions);
     // Fork chain's next block is at 6
-    forkChain.generateBlockAtSlot(6);
-    forkChain.generateBlockAtSlot(firstHotBlockSlot);
-    secondFork.generateBlockAtSlot(6);
-    secondFork.generateBlockAtSlot(firstHotBlockSlot);
-
-    final BlobSidecar blobSidecarFork2Slot6Index0 =
-        dataStructureUtil.randomBlobSidecar(
-            UInt64.valueOf(6), forkChain.getBlockAtSlot(6).getRoot(), UInt64.valueOf(0));
-    database.storeBlobSidecar(blobSidecarFork2Slot6Index0);
-    final BlobSidecar blobSidecarFork2Slot6Index1 =
-        dataStructureUtil.randomBlobSidecar(
-            UInt64.valueOf(6), forkChain.getBlockAtSlot(6).getRoot(), UInt64.valueOf(1));
-    database.storeBlobSidecar(blobSidecarFork2Slot6Index1);
-    final BlobSidecar blobSidecarFork2Slot9Index0 =
-        dataStructureUtil.randomBlobSidecar(
-            UInt64.valueOf(9), forkChain.getBlockAtSlot(9).getRoot(), UInt64.valueOf(0));
-    database.storeBlobSidecar(blobSidecarFork2Slot9Index0);
-    final BlobSidecar blobSidecarFork2Slot9Index1 =
-        dataStructureUtil.randomBlobSidecar(
-            UInt64.valueOf(9), forkChain.getBlockAtSlot(9).getRoot(), UInt64.valueOf(1));
-    database.storeBlobSidecar(blobSidecarFork2Slot9Index1);
+    forkChain.generateBlockAtSlot(6, randomBlobsOptions);
+    forkChain.generateBlockAtSlot(firstHotBlockSlot, randomBlobsOptions);
+    secondFork.generateBlockAtSlot(6, randomBlobsOptions);
+    secondFork.generateBlockAtSlot(firstHotBlockSlot, randomBlobsOptions);
 
     initGenesis();
 
@@ -1227,45 +1215,61 @@ public class DatabaseTest {
                 secondFork.streamBlocksAndStates())
             .collect(Collectors.toSet());
 
+    final List<BlobSidecar> allBlocksSidecars =
+        Streams.concat(
+                primaryChain.streamBlobSidecars(),
+                forkChain.streamBlobSidecars(),
+                secondFork.streamBlobSidecars())
+            .collect(Collectors.toList());
+
     // Finalize at block 7, making the fork blocks unavailable
-    add(allBlocksAndStates);
+    add(allBlocksAndStates, allBlocksSidecars);
+
     justifyAndFinalizeEpoch(finalizedCheckpoint.getEpoch(), finalizedBlock);
 
-    assertThat(database.getNonCanonicalBlocksAtSlot(UInt64.valueOf(6)).size()).isEqualTo(2);
+    final List<SignedBeaconBlock> nonCanonicalBlocksAt6 =
+        database.getNonCanonicalBlocksAtSlot(UInt64.valueOf(6));
+    final List<SignedBeaconBlock> nonCanonicalBlocksAt9 =
+        database.getNonCanonicalBlocksAtSlot(UInt64.valueOf(9));
+
+    // check that streamNonCanonicalBlobSidecarKeys for slot 6 and 9 returns 4 blobs (2 * 2) each
+    assertThat(nonCanonicalBlocksAt6.size()).isEqualTo(2);
+    nonCanonicalBlocksAt6.forEach(
+        block ->
+            assertThat(
+                    database
+                        .streamNonCanonicalBlobSidecarKeys(UInt64.valueOf(6), UInt64.valueOf(6))
+                        .count())
+                .isEqualTo(2 * 2));
+    assertThat(nonCanonicalBlocksAt9.size()).isEqualTo(2);
+    nonCanonicalBlocksAt9.forEach(
+        block ->
+            assertThat(
+                    database
+                        .streamNonCanonicalBlobSidecarKeys(UInt64.valueOf(9), UInt64.valueOf(9))
+                        .count())
+                .isEqualTo(2 * 2));
+
+    // check that all blobs for slot 6 and 9 are stored as non canonical
+    Streams.concat(nonCanonicalBlocksAt6.stream(), nonCanonicalBlocksAt9.stream())
+        .flatMap(
+            block ->
+                Stream.of(
+                    new SlotAndBlockRootAndBlobIndex(block.getSlot(), block.getRoot(), ZERO),
+                    new SlotAndBlockRootAndBlobIndex(block.getSlot(), block.getRoot(), ONE)))
+        .forEach(
+            key -> {
+              // retrieve expected blobSidecar from allBlocksSidecars
+              final BlobSidecar blobSidecar =
+                  allBlocksSidecars.stream()
+                      .filter(sidecar -> blobSidecarToKey(sidecar).equals(key))
+                      .findFirst()
+                      .orElseThrow();
+
+              assertThat(database.getNonCanonicalBlobSidecar(key)).contains(blobSidecar);
+            });
 
     SlotAndBlockRootAndBlobIndex key =
-        new SlotAndBlockRootAndBlobIndex(
-            UInt64.valueOf(6), forkChain.getBlockAtSlot(6).getRoot(), ZERO);
-    assertThat(database.getNonCanonicalBlobSidecar(key)).isPresent();
-    assertThat(database.getNonCanonicalBlobSidecar(key))
-        .get()
-        .isEqualTo(blobSidecarFork2Slot6Index0);
-
-    key =
-        new SlotAndBlockRootAndBlobIndex(
-            UInt64.valueOf(6), forkChain.getBlockAtSlot(6).getRoot(), ONE);
-    assertThat(database.getNonCanonicalBlobSidecar(key)).isPresent();
-    assertThat(database.getNonCanonicalBlobSidecar(key))
-        .get()
-        .isEqualTo(blobSidecarFork2Slot6Index1);
-
-    key =
-        new SlotAndBlockRootAndBlobIndex(
-            UInt64.valueOf(9), forkChain.getBlockAtSlot(9).getRoot(), ZERO);
-    assertThat(database.getNonCanonicalBlobSidecar(key)).isPresent();
-    assertThat(database.getNonCanonicalBlobSidecar(key))
-        .get()
-        .isEqualTo(blobSidecarFork2Slot9Index0);
-
-    key =
-        new SlotAndBlockRootAndBlobIndex(
-            UInt64.valueOf(9), forkChain.getBlockAtSlot(9).getRoot(), ONE);
-    assertThat(database.getNonCanonicalBlobSidecar(key)).isPresent();
-    assertThat(database.getNonCanonicalBlobSidecar(key))
-        .get()
-        .isEqualTo(blobSidecarFork2Slot9Index1);
-
-    key =
         new SlotAndBlockRootAndBlobIndex(
             UInt64.valueOf(2), primaryChain.getBlockAtSlot(2).getRoot(), ZERO);
     assertThat(database.getNonCanonicalBlobSidecar(key)).isEmpty();
