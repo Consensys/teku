@@ -54,6 +54,7 @@ public class StoreAssertions {
             "stateProvider",
             "checkpointStates",
             "forkChoiceStrategy",
+            "maybeEpochStates",
             "epochStatesCountGauge")
         .isEqualTo(expectedState);
     assertThat(actualState.getOrderedBlockRoots())

@@ -21,7 +21,7 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 public class StoreConfig {
   public static final int MAX_CACHE_SIZE = 10_000;
 
-  public static final int DEFAULT_STATE_CACHE_SIZE = 6;
+  public static final int DEFAULT_STATE_CACHE_SIZE = 8;
 
   public static final int DEFAULT_EPOCH_STATE_CACHE_SIZE = 6;
   public static final int DEFAULT_BLOCK_CACHE_SIZE = 32;
