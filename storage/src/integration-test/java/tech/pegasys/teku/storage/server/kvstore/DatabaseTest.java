@@ -359,7 +359,7 @@ public class DatabaseTest {
             UInt64.valueOf(5), dataStructureUtil.randomBytes32(), UInt64.valueOf(0));
     final BlobSidecar blobSidecarNotAdded = dataStructureUtil.randomBlobSidecar();
 
-    // add blobs out of order
+    // add non-canonical blobs out of order
     database.storeNonCanonicalBlobSidecar(blobSidecar2);
     database.storeNonCanonicalBlobSidecar(blobSidecar1);
     database.storeNonCanonicalBlobSidecar(blobSidecar2bis);
@@ -399,18 +399,18 @@ public class DatabaseTest {
             Optional.empty(),
             true));
 
-    // all added blobs must be there
+    // check all non-canonical blobs are present
     List.of(blobSidecar1, blobSidecar2, blobSidecar2bis, blobSidecar3, blobSidecar5)
         .forEach(
             blobSidecar ->
                 assertThat(database.getNonCanonicalBlobSidecar(blobSidecarToKey(blobSidecar)))
                     .contains(blobSidecar));
 
-    // non added blobs must not be there
+    // check blobSidecarNotAdded is not present
     assertThat(database.getNonCanonicalBlobSidecar(blobSidecarToKey(blobSidecarNotAdded)))
         .isEmpty();
 
-    // all blobs must be streamed ordered by slot
+    // all non-canonical blobs must be streamed ordered by slot
     assertNonCanonicalBlobSidecarKeys(
         blobSidecar1.getSlot(),
         blobSidecar5.getSlot(),
@@ -430,7 +430,7 @@ public class DatabaseTest {
             blobSidecar5.getSlot(),
             List.of(blobSidecar5)));
 
-    // let's prune with limit to 1
+    // Pruning with a prune limit set to 1: Only blobSidecar1 will be pruned
     assertThat(database.pruneOldestNonCanonicalBlobSidecars(UInt64.MAX_VALUE, 1)).isTrue();
     assertNonCanonicalBlobSidecarKeys(
         blobSidecar2.getSlot(),
@@ -446,7 +446,7 @@ public class DatabaseTest {
             blobSidecar5.getSlot(), List.of(blobSidecar5)));
     assertThat(database.getNonCanonicalBlobSidecarColumnCount()).isEqualTo(4L);
 
-    // let's prune up to slot 1 (nothing will be pruned)
+    // Pruning up to slot 1: No blobs pruned
     assertThat(database.pruneOldestNonCanonicalBlobSidecars(ONE, 10)).isFalse();
     assertNonCanonicalBlobSidecarKeys(
         blobSidecar2.getSlot(),
@@ -462,16 +462,16 @@ public class DatabaseTest {
             blobSidecar5.getSlot(), List.of(blobSidecar5)));
     assertThat(database.getNonCanonicalBlobSidecarColumnCount()).isEqualTo(4L);
 
-    // let's prune all from slot 4 excluded
+    // Prune blobs up to slot 3
     assertThat(database.pruneOldestNonCanonicalBlobSidecars(UInt64.valueOf(3), 10)).isFalse();
     assertNonCanonicalBlobSidecarKeys(
         blobSidecar1.getSlot(), blobSidecar5.getSlot(), blobSidecarToKey(blobSidecar5));
     assertNonCanonicalBlobSidecars(Map.of(blobSidecar5.getSlot(), List.of(blobSidecar5)));
     assertThat(database.getNonCanonicalBlobSidecarColumnCount()).isEqualTo(1L);
 
-    // let's prune all
+    // Pruning all blobs
     assertThat(database.pruneOldestNonCanonicalBlobSidecars(UInt64.valueOf(5), 1)).isTrue();
-    // all empty now
+    // No blobs should be left
     assertNonCanonicalBlobSidecarKeys(ZERO, UInt64.valueOf(10));
     assertThat(database.getNonCanonicalBlobSidecarColumnCount()).isEqualTo(0L);
   }
