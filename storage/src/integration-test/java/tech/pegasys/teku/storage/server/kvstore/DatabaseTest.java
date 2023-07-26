@@ -1235,20 +1235,20 @@ public class DatabaseTest {
     // check that streamNonCanonicalBlobSidecarKeys for slot 6 and 9 returns 4 blobs (2 * 2) each
     assertThat(nonCanonicalBlocksAt6.size()).isEqualTo(2);
     nonCanonicalBlocksAt6.forEach(
-        block ->
-            assertThat(
-                    database
-                        .streamNonCanonicalBlobSidecarKeys(UInt64.valueOf(6), UInt64.valueOf(6))
-                        .count())
-                .isEqualTo(2 * 2));
+        block -> {
+          try (Stream<SlotAndBlockRootAndBlobIndex> slotAndBlockRootAndBlobIndexStream =
+              database.streamNonCanonicalBlobSidecarKeys(UInt64.valueOf(6), UInt64.valueOf(6))) {
+            assertThat(slotAndBlockRootAndBlobIndexStream.count()).isEqualTo(2 * 2);
+          }
+        });
     assertThat(nonCanonicalBlocksAt9.size()).isEqualTo(2);
     nonCanonicalBlocksAt9.forEach(
-        block ->
-            assertThat(
-                    database
-                        .streamNonCanonicalBlobSidecarKeys(UInt64.valueOf(9), UInt64.valueOf(9))
-                        .count())
-                .isEqualTo(2 * 2));
+        block -> {
+          try (Stream<SlotAndBlockRootAndBlobIndex> slotAndBlockRootAndBlobIndexStream =
+              database.streamNonCanonicalBlobSidecarKeys(UInt64.valueOf(9), UInt64.valueOf(9))) {
+            assertThat(slotAndBlockRootAndBlobIndexStream.count()).isEqualTo(2 * 2);
+          }
+        });
 
     // check that all blobs for slot 6 and 9 are stored as non canonical
     Streams.concat(nonCanonicalBlocksAt6.stream(), nonCanonicalBlocksAt9.stream())
