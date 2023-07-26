@@ -143,7 +143,7 @@ public class BlobSidecarsByRangeMessageHandler
 
               final SortedMap<UInt64, Bytes32> canonicalHotRoots;
               if (endSlot.isGreaterThan(finalizedSlot)) {
-                final UInt64 hotSlotsCount = endSlot.minus(startSlot).increment();
+                final UInt64 hotSlotsCount = endSlot.increment().minusMinZero(startSlot);
 
                 canonicalHotRoots =
                     combinedChainDataClient.getAncestorRoots(startSlot, UInt64.ONE, hotSlotsCount);
@@ -263,8 +263,8 @@ public class BlobSidecarsByRangeMessageHandler
         return combinedChainDataClient
             .getBlobSidecarKeys(startSlot, endSlot, maxRequestBlobSidecars)
             .thenCompose(
-                list -> {
-                  blobSidecarKeysIterator = Optional.of(list.iterator());
+                keys -> {
+                  blobSidecarKeysIterator = Optional.of(keys.iterator());
                   return getNextBlobSidecar(blobSidecarKeysIterator.get());
                 });
       } else {
