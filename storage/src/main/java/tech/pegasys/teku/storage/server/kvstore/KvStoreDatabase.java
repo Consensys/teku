@@ -1061,17 +1061,20 @@ public class KvStoreDatabase implements Database {
   private void removeNonCanonicalBlobSidecars(
       final Map<Bytes32, UInt64> deletedHotBlocks,
       final Map<Bytes32, Bytes32> finalizedChildToParentMap) {
-    try (final FinalizedUpdater updater = finalizedUpdater()) {
-      final Set<SlotAndBlockRoot> nonCanonicalBlocks =
-          deletedHotBlocks.entrySet().stream()
-              .filter(entry -> !finalizedChildToParentMap.containsKey(entry.getKey()))
-              .map(entry -> new SlotAndBlockRoot(entry.getValue(), entry.getKey()))
-              .collect(Collectors.toSet());
-      if (storeNonCanonicalBlocks) {
-        int index = 0;
-        Iterator<SlotAndBlockRoot> nonCanonicalBlocksIterator = nonCanonicalBlocks.iterator();
-        while (nonCanonicalBlocksIterator.hasNext()) {
-          if (index < BLOBS_TX_BATCH_SIZE) {
+
+    final Set<SlotAndBlockRoot> nonCanonicalBlocks =
+        deletedHotBlocks.entrySet().stream()
+            .filter(entry -> !finalizedChildToParentMap.containsKey(entry.getKey()))
+            .map(entry -> new SlotAndBlockRoot(entry.getValue(), entry.getKey()))
+            .collect(Collectors.toSet());
+
+    if (storeNonCanonicalBlocks) {
+      final Iterator<SlotAndBlockRoot> nonCanonicalBlocksIterator = nonCanonicalBlocks.iterator();
+      int index = 0;
+      while (nonCanonicalBlocksIterator.hasNext()) {
+        int start = index;
+        try (final FinalizedUpdater updater = finalizedUpdater()) {
+          while (nonCanonicalBlocksIterator.hasNext() && (index - start) < BLOBS_TX_BATCH_SIZE) {
             dao.getBlobSidecarKeys(nonCanonicalBlocksIterator.next())
                 .forEach(
                     key -> {
@@ -1084,16 +1087,14 @@ public class KvStoreDatabase implements Database {
                                 updater.removeBlobSidecar(key);
                               });
                     });
-          }
-          if (index >= BLOBS_TX_BATCH_SIZE || index == nonCanonicalBlocks.size() - 1) {
-            index = 0;
-            updater.commit();
-          } else {
             index++;
           }
+          updater.commit();
         }
-      } else {
-        LOG.trace("Removing blob sidecars for non-canonical blocks");
+      }
+    } else {
+      LOG.trace("Removing blob sidecars for non-canonical blocks");
+      try (final FinalizedUpdater updater = finalizedUpdater()) {
         for (final SlotAndBlockRoot slotAndBlockRoot : nonCanonicalBlocks) {
           dao.getBlobSidecarKeys(slotAndBlockRoot)
               .forEach(
