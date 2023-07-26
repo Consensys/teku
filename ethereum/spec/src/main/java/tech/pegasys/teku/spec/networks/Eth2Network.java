@@ -21,6 +21,7 @@ public enum Eth2Network {
   MAINNET("mainnet"),
   PRATER("prater"),
   SEPOLIA("sepolia"),
+  LUKSO("lukso"),
   GNOSIS("gnosis"),
   CHIADO("chiado"),
   // Test networks
