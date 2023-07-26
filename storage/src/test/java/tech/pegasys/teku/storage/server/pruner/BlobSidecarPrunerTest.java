@@ -68,7 +68,7 @@ public class BlobSidecarPrunerTest {
           "test",
           mock(SettableLabelledGauge.class),
           mock(SettableLabelledGauge.class),
-          false);
+          true);
 
   @BeforeEach
   void setUp() {
@@ -84,6 +84,7 @@ public class BlobSidecarPrunerTest {
 
     verify(database).getGenesisTime();
     verify(database, never()).pruneOldestBlobSidecars(any(), anyInt());
+    verify(database, never()).pruneOldestNonCanonicalBlobSidecars(any(), anyInt());
   }
 
   @Test
@@ -92,6 +93,7 @@ public class BlobSidecarPrunerTest {
 
     verify(database).getGenesisTime();
     verify(database, never()).pruneOldestBlobSidecars(any(), anyInt());
+    verify(database, never()).pruneOldestNonCanonicalBlobSidecars(any(), anyInt());
   }
 
   @Test
@@ -107,6 +109,7 @@ public class BlobSidecarPrunerTest {
 
     asyncRunner.executeDueActions();
     verify(database, never()).pruneOldestBlobSidecars(any(), anyInt());
+    verify(database, never()).pruneOldestNonCanonicalBlobSidecars(any(), anyInt());
   }
 
   @Test
@@ -124,6 +127,8 @@ public class BlobSidecarPrunerTest {
 
     asyncRunner.executeDueActions();
     verify(database).pruneOldestBlobSidecars(UInt64.valueOf((slotsPerEpoch / 2) - 1), PRUNE_LIMIT);
+    verify(database)
+        .pruneOldestNonCanonicalBlobSidecars(UInt64.valueOf((slotsPerEpoch / 2) - 1), PRUNE_LIMIT);
   }
 
   @Test
@@ -156,7 +161,7 @@ public class BlobSidecarPrunerTest {
             "test",
             mock(SettableLabelledGauge.class),
             mock(SettableLabelledGauge.class),
-            false);
+            true);
     when(databaseOverride.getGenesisTime()).thenReturn(Optional.of(genesisTime));
     assertThat(blobsPrunerOverride.start()).isCompleted();
 
@@ -182,6 +187,8 @@ public class BlobSidecarPrunerTest {
     asyncRunner.executeDueActions();
     verify(databaseOverride)
         .pruneOldestBlobSidecars(UInt64.valueOf((slotsPerEpoch / 2) - 1), PRUNE_LIMIT);
+    verify(databaseOverride)
+        .pruneOldestNonCanonicalBlobSidecars(UInt64.valueOf((slotsPerEpoch / 2) - 1), PRUNE_LIMIT);
   }
 
   @Test
@@ -211,7 +218,7 @@ public class BlobSidecarPrunerTest {
             "test",
             mock(SettableLabelledGauge.class),
             mock(SettableLabelledGauge.class),
-            false);
+            true);
     when(databaseOverride.getGenesisTime()).thenReturn(Optional.of(genesisTime));
     assertThat(blobsPrunerOverride.start()).isCompleted();
 
@@ -224,5 +231,6 @@ public class BlobSidecarPrunerTest {
 
     asyncRunner.executeDueActions();
     verify(databaseOverride, never()).pruneOldestBlobSidecars(any(), anyInt());
+    verify(databaseOverride, never()).pruneOldestNonCanonicalBlobSidecars(any(), anyInt());
   }
 }

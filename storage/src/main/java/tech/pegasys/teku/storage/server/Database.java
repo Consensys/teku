@@ -63,6 +63,8 @@ public interface Database extends AutoCloseable {
 
   void storeBlobSidecar(BlobSidecar blobSidecar);
 
+  void storeNonCanonicalBlobSidecar(BlobSidecar blobSidecar);
+
   Optional<BlobSidecar> getBlobSidecar(SlotAndBlockRootAndBlobIndex key);
 
   Optional<BlobSidecar> getNonCanonicalBlobSidecar(SlotAndBlockRootAndBlobIndex key);
@@ -207,6 +209,8 @@ public interface Database extends AutoCloseable {
   Map<String, Long> getColumnCounts();
 
   long getBlobSidecarColumnCount();
+
+  long getNonCanonicalBlobSidecarColumnCount();
 
   void migrate();
 

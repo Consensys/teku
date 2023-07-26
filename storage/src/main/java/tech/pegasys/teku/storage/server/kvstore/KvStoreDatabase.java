@@ -363,6 +363,11 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  public long getNonCanonicalBlobSidecarColumnCount() {
+    return dao.getNonCanonicalBlobSidecarColumnCount();
+  }
+
+  @Override
   public void migrate() {}
 
   @Override
@@ -791,6 +796,14 @@ public class KvStoreDatabase implements Database {
   public void storeBlobSidecar(final BlobSidecar blobSidecar) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       updater.addBlobSidecar(blobSidecar);
+      updater.commit();
+    }
+  }
+
+  @Override
+  public void storeNonCanonicalBlobSidecar(BlobSidecar blobSidecar) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      updater.addNonCanonicalBlobSidecar(blobSidecar);
       updater.commit();
     }
   }

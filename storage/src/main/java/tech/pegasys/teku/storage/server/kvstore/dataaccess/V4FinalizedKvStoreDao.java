@@ -233,6 +233,14 @@ public class V4FinalizedKvStoreDao {
     return db.size(column);
   }
 
+  public long getNonCanonicalBlobSidecarColumnCount() {
+    final KvStoreColumn<?, ?> column =
+        schema
+            .getColumnMap()
+            .get("NON_CANONICAL_BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX");
+    return db.size(column);
+  }
+
   @MustBeClosed
   public Stream<UInt64> streamFinalizedStateSlots(final UInt64 startSlot, final UInt64 endSlot) {
     return db.stream(schema.getColumnFinalizedStatesBySlot(), startSlot, endSlot)
@@ -339,7 +347,7 @@ public class V4FinalizedKvStoreDao {
 
     @Override
     public void removeNonCanonicalBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
-      transaction.delete(schema.getColumnBlobSidecarBySlotRootBlobIndex(), key);
+      transaction.delete(schema.getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex(), key);
     }
 
     @Override

@@ -409,6 +409,15 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public long getNonCanonicalBlobSidecarColumnCount() {
+    final KvStoreColumn<?, ?> column =
+        schema
+            .getColumnMap()
+            .get("NON_CANONICAL_BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX");
+    return db.size(column);
+  }
+
+  @Override
   @MustBeClosed
   public Stream<UInt64> streamFinalizedStateSlots(final UInt64 startSlot, final UInt64 endSlot) {
     return stateStorageLogic.streamFinalizedStateSlots(db, schema, startSlot, endSlot);

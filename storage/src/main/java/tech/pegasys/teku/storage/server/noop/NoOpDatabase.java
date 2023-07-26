@@ -253,6 +253,11 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public long getNonCanonicalBlobSidecarColumnCount() {
+    return 0L;
+  }
+
+  @Override
   public void migrate() {}
 
   @Override
@@ -270,6 +275,9 @@ public class NoOpDatabase implements Database {
 
   @Override
   public void storeBlobSidecar(final BlobSidecar blobSidecar) {}
+
+  @Override
+  public void storeNonCanonicalBlobSidecar(final BlobSidecar blobSidecar) {}
 
   @Override
   public Optional<BlobSidecar> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {

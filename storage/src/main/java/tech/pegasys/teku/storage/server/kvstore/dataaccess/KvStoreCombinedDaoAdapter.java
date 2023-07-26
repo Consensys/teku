@@ -223,6 +223,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  public long getNonCanonicalBlobSidecarColumnCount() {
+    return finalizedDao.getNonCanonicalBlobSidecarColumnCount();
+  }
+
+  @Override
   @MustBeClosed
   public Stream<UInt64> streamFinalizedStateSlots(final UInt64 startSlot, final UInt64 endSlot) {
     return finalizedDao.streamFinalizedStateSlots(startSlot, endSlot);

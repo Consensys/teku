@@ -340,6 +340,143 @@ public class DatabaseTest {
   }
 
   @TestTemplate
+  public void verifyNonCanonicalBlobsLifecycle(final DatabaseContext context) throws IOException {
+    initialize(context);
+
+    final BlobSidecar blobSidecar1 =
+        dataStructureUtil.randomBlobSidecar(
+            UInt64.valueOf(1), dataStructureUtil.randomBytes32(), UInt64.valueOf(0));
+    final BlobSidecar blobSidecar2 =
+        dataStructureUtil.randomBlobSidecar(UInt64.valueOf(2), Bytes32.ZERO, UInt64.valueOf(0));
+    final BlobSidecar blobSidecar2bis =
+        dataStructureUtil.randomBlobSidecar(
+            UInt64.valueOf(2), Bytes32.fromHexString("0x01"), UInt64.valueOf(1));
+    final BlobSidecar blobSidecar3 =
+        dataStructureUtil.randomBlobSidecar(
+            UInt64.valueOf(3), dataStructureUtil.randomBytes32(), UInt64.valueOf(0));
+    final BlobSidecar blobSidecar5 =
+        dataStructureUtil.randomBlobSidecar(
+            UInt64.valueOf(5), dataStructureUtil.randomBytes32(), UInt64.valueOf(0));
+    final BlobSidecar blobSidecarNotAdded = dataStructureUtil.randomBlobSidecar();
+
+    // add blobs out of order
+    database.storeNonCanonicalBlobSidecar(blobSidecar2);
+    database.storeNonCanonicalBlobSidecar(blobSidecar1);
+    database.storeNonCanonicalBlobSidecar(blobSidecar2bis);
+    database.storeNonCanonicalBlobSidecar(blobSidecar5);
+    database.storeNonCanonicalBlobSidecar(blobSidecar3);
+
+    assertThat(database.getNonCanonicalBlobSidecarColumnCount()).isEqualTo(5L);
+
+    database.update(
+        new StorageUpdate(
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Map.of(),
+            Map.of(),
+            Map.of(),
+            Optional.empty(),
+            Map.of(blobSidecar1.getBlockRoot(), blobSidecar1.getSlot()),
+            Map.of(),
+            false,
+            Optional.empty(),
+            true));
+    database.update(
+        new StorageUpdate(
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Optional.empty(),
+            Map.of(),
+            Map.of(),
+            Map.of(),
+            Optional.empty(),
+            Map.of(blobSidecar3.getBlockRoot(), blobSidecar3.getSlot()),
+            Map.of(),
+            false,
+            Optional.empty(),
+            true));
+
+    // all added blobs must be there
+    List.of(blobSidecar1, blobSidecar2, blobSidecar2bis, blobSidecar3, blobSidecar5)
+        .forEach(
+            blobSidecar ->
+                assertThat(database.getNonCanonicalBlobSidecar(blobSidecarToKey(blobSidecar)))
+                    .contains(blobSidecar));
+
+    // non added blobs must not be there
+    assertThat(database.getNonCanonicalBlobSidecar(blobSidecarToKey(blobSidecarNotAdded)))
+        .isEmpty();
+
+    // all blobs must be streamed ordered by slot
+    assertNonCanonicalBlobSidecarKeys(
+        blobSidecar1.getSlot(),
+        blobSidecar5.getSlot(),
+        blobSidecarToKey(blobSidecar1),
+        blobSidecarToKey(blobSidecar2),
+        blobSidecarToKey(blobSidecar2bis),
+        blobSidecarToKey(blobSidecar3),
+        blobSidecarToKey(blobSidecar5));
+    assertNonCanonicalBlobSidecars(
+        Map.of(
+            blobSidecar1.getSlot(),
+            List.of(blobSidecar1),
+            blobSidecar2.getSlot(),
+            List.of(blobSidecar2, blobSidecar2bis),
+            blobSidecar3.getSlot(),
+            List.of(blobSidecar3),
+            blobSidecar5.getSlot(),
+            List.of(blobSidecar5)));
+
+    // let's prune with limit to 1
+    assertThat(database.pruneOldestNonCanonicalBlobSidecars(UInt64.MAX_VALUE, 1)).isTrue();
+    assertNonCanonicalBlobSidecarKeys(
+        blobSidecar2.getSlot(),
+        blobSidecar5.getSlot(),
+        blobSidecarToKey(blobSidecar2),
+        blobSidecarToKey(blobSidecar2bis),
+        blobSidecarToKey(blobSidecar3),
+        blobSidecarToKey(blobSidecar5));
+    assertNonCanonicalBlobSidecars(
+        Map.of(
+            blobSidecar2.getSlot(), List.of(blobSidecar2, blobSidecar2bis),
+            blobSidecar3.getSlot(), List.of(blobSidecar3),
+            blobSidecar5.getSlot(), List.of(blobSidecar5)));
+    assertThat(database.getNonCanonicalBlobSidecarColumnCount()).isEqualTo(4L);
+
+    // let's prune up to slot 1 (nothing will be pruned)
+    assertThat(database.pruneOldestNonCanonicalBlobSidecars(ONE, 10)).isFalse();
+    assertNonCanonicalBlobSidecarKeys(
+        blobSidecar2.getSlot(),
+        blobSidecar5.getSlot(),
+        blobSidecarToKey(blobSidecar2),
+        blobSidecarToKey(blobSidecar2bis),
+        blobSidecarToKey(blobSidecar3),
+        blobSidecarToKey(blobSidecar5));
+    assertNonCanonicalBlobSidecars(
+        Map.of(
+            blobSidecar2.getSlot(), List.of(blobSidecar2, blobSidecar2bis),
+            blobSidecar3.getSlot(), List.of(blobSidecar3),
+            blobSidecar5.getSlot(), List.of(blobSidecar5)));
+    assertThat(database.getNonCanonicalBlobSidecarColumnCount()).isEqualTo(4L);
+
+    // let's prune all from slot 4 excluded
+    assertThat(database.pruneOldestNonCanonicalBlobSidecars(UInt64.valueOf(3), 10)).isFalse();
+    assertNonCanonicalBlobSidecarKeys(
+        blobSidecar1.getSlot(), blobSidecar5.getSlot(), blobSidecarToKey(blobSidecar5));
+    assertNonCanonicalBlobSidecars(Map.of(blobSidecar5.getSlot(), List.of(blobSidecar5)));
+    assertThat(database.getNonCanonicalBlobSidecarColumnCount()).isEqualTo(1L);
+
+    // let's prune all
+    assertThat(database.pruneOldestNonCanonicalBlobSidecars(UInt64.valueOf(5), 1)).isTrue();
+    // all empty now
+    assertNonCanonicalBlobSidecarKeys(ZERO, UInt64.valueOf(10));
+    assertThat(database.getNonCanonicalBlobSidecarColumnCount()).isEqualTo(0L);
+  }
+
+  @TestTemplate
   public void updateWeakSubjectivityState_clearValue(final DatabaseContext context)
       throws IOException {
     initialize(context);
@@ -2473,6 +2610,15 @@ public class DatabaseTest {
     }
   }
 
+  private void assertNonCanonicalBlobSidecarKeys(
+      final UInt64 from, final UInt64 to, SlotAndBlockRootAndBlobIndex... keys) {
+    try (final Stream<SlotAndBlockRootAndBlobIndex> blobSidecarsStream =
+        database.streamNonCanonicalBlobSidecarKeys(from, to)) {
+      final List<SlotAndBlockRootAndBlobIndex> keysFromDb = blobSidecarsStream.collect(toList());
+      assertThat(keysFromDb).isEqualTo(Arrays.asList(keys));
+    }
+  }
+
   private void assertBlobSidecars(final Map<UInt64, List<BlobSidecar>> blobSidecars) {
     final List<UInt64> slots = blobSidecars.keySet().stream().sorted().collect(toList());
     if (slots.isEmpty()) {
@@ -2489,6 +2635,28 @@ public class DatabaseTest {
         final List<BlobSidecar> currentSlotBlobs =
             blobSidecarsDb.computeIfAbsent(key.getSlot(), __ -> new ArrayList<>());
         currentSlotBlobs.add(database.getBlobSidecar(key).orElseThrow());
+      }
+    }
+
+    assertThat(blobSidecarsDb).isEqualTo(blobSidecars);
+  }
+
+  private void assertNonCanonicalBlobSidecars(final Map<UInt64, List<BlobSidecar>> blobSidecars) {
+    final List<UInt64> slots = blobSidecars.keySet().stream().sorted().collect(toList());
+    if (slots.isEmpty()) {
+      return;
+    }
+
+    final Map<UInt64, List<BlobSidecar>> blobSidecarsDb = new HashMap<>();
+    try (final Stream<SlotAndBlockRootAndBlobIndex> blobSidecarsStream =
+        database.streamNonCanonicalBlobSidecarKeys(slots.get(0), slots.get(slots.size() - 1))) {
+
+      for (final Iterator<SlotAndBlockRootAndBlobIndex> iterator = blobSidecarsStream.iterator();
+          iterator.hasNext(); ) {
+        final SlotAndBlockRootAndBlobIndex key = iterator.next();
+        final List<BlobSidecar> currentSlotBlobs =
+            blobSidecarsDb.computeIfAbsent(key.getSlot(), __ -> new ArrayList<>());
+        currentSlotBlobs.add(database.getNonCanonicalBlobSidecar(key).orElseThrow());
       }
     }
 
