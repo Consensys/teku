@@ -36,7 +36,8 @@ public class DepositSnapshotFileLoader {
           Eth2Network.GNOSIS, "gnosis.ssz",
           Eth2Network.PRATER, "goerli.ssz",
           Eth2Network.MAINNET, "mainnet.ssz",
-          Eth2Network.SEPOLIA, "sepolia.ssz");
+          Eth2Network.SEPOLIA, "sepolia.ssz",
+          Eth2Network.LUKSO, "lukso.ssz");
 
   private static final Logger LOG = LogManager.getLogger();
 

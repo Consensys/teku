@@ -85,6 +85,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final Supplier<UInt64> firstSlotSupportingBlobSidecarsByRange;
   private final Supplier<BlobSidecarsByRootRequestMessageSchema>
       blobSidecarsByRootRequestMessageSchema;
+  private final Supplier<Integer> maxBlobsPerBlock;
 
   DefaultEth2Peer(
       final Spec spec,
@@ -108,9 +109,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     this.firstSlotSupportingBlobSidecarsByRange =
         Suppliers.memoize(
             () -> {
-              final UInt64 denebForkEpoch =
-                  SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
-                      .getDenebForkEpoch();
+              final UInt64 denebForkEpoch = getSpecConfigDeneb().getDenebForkEpoch();
               return spec.computeStartSlotAtEpoch(denebForkEpoch);
             });
     this.blobSidecarsByRootRequestMessageSchema =
@@ -119,6 +118,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                 SchemaDefinitionsDeneb.required(
                         spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
                     .getBlobSidecarsByRootRequestMessageSchema());
+    this.maxBlobsPerBlock = Suppliers.memoize(() -> getSpecConfigDeneb().getMaxBlobsPerBlock());
   }
 
   @Override
@@ -313,21 +313,12 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                 if (updatedCount.isZero()) {
                   return SafeFuture.COMPLETE;
                 }
-
                 request =
                     new BlobSidecarsByRangeRequestMessage(
-                        firstSupportedSlot,
-                        updatedCount,
-                        spec.getMaxBlobsPerBlock(
-                                firstSupportedSlot.plus(updatedCount).minusMinZero(1))
-                            .orElseThrow());
+                        firstSupportedSlot, updatedCount, maxBlobsPerBlock.get());
               } else {
                 request =
-                    new BlobSidecarsByRangeRequestMessage(
-                        startSlot,
-                        count,
-                        spec.getMaxBlobsPerBlock(firstSupportedSlot.plus(count).minusMinZero(1))
-                            .orElseThrow());
+                    new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock.get());
               }
               return requestStream(method, request, listener);
             })
@@ -450,6 +441,10 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                     .handleInitialPayloadSent(ctrl.getRpcStream()))
         .thenCompose(ctrl -> ctrl.getRequiredOutgoingRequestHandler().getCompletedFuture())
         .alwaysRun(outstandingRequests::decrementAndGet);
+  }
+
+  private SpecConfigDeneb getSpecConfigDeneb() {
+    return SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig());
   }
 
   private <T> SafeFuture<T> failWithUnsupportedMethodException(final String method) {

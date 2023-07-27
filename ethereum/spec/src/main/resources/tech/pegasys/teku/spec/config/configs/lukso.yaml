@@ -1,0 +1,132 @@
+# LUKSO config
+
+# Extends the mainnet preset
+PRESET_BASE: 'mainnet'
+
+# Free-form short name of the network that this configuration applies to
+# Must match the regex: [a-z0-9\-]
+CONFIG_NAME: 'lukso'
+
+# Genesis
+# ---------------------------------------------------------------
+# Min Genesis Validators in Genesis state
+MIN_GENESIS_ACTIVE_VALIDATOR_COUNT: 4096
+# Min Genesis Time: Tuesday, 23 May 2023 15:40:00 GMT
+MIN_GENESIS_TIME: 1684856400
+# 2400 seconds (40 Min)
+GENESIS_DELAY: 2400
+# Final Network start time: 1684856400 + 2400 = 1684858800
+# Tuesday, 23 May 2023 16:20:00 GMT (4:20pm UTC)
+
+# Transition
+# ---------------------------------------------------------------
+# Configs are present in case a need arose to manually select a particular proof of work fork to follow in case of trouble
+# The total (cumulative) difficulty threshold required of the final block mined in Ethereum
+TERMINAL_TOTAL_DIFFICULTY: 0
+# Designates the hash of the terminal PoW block if set
+TERMINAL_BLOCK_HASH: 0x0000000000000000000000000000000000000000000000000000000000000000
+# Specifies the terminal block hash epoch to manual
+TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH: 1
+
+# Deposit contract and execution chain IDs
+# ---------------------------------------------------------------
+DEPOSIT_CHAIN_ID: 42
+DEPOSIT_NETWORK_ID: 42
+DEPOSIT_CONTRACT_ADDRESS: 0xcafe00000000000000000000000000000000cafe
+
+# Forks
+# ---------------------------------------------------------------
+# Some forks are disabled for now:
+#  - These may be re-assigned to another fork-version later
+#  - Temporarily set to max uint64 value: 2**64 - 1
+
+# Gensis fork
+GENESIS_FORK_VERSION: 0x42000001
+
+# Altair
+ALTAIR_FORK_VERSION: 0x42000002
+ALTAIR_FORK_EPOCH: 0
+
+# Belatrix
+BELLATRIX_FORK_VERSION: 0x42000003
+BELLATRIX_FORK_EPOCH: 0
+
+# Capella
+# 1 epoch = 384 seconds
+# Epoch to seconds: 32 * 12 * 8100 = 3110400
+# Shanghai time: 3110400 + 1684858800 - 2 = 1687969198
+# Capella fork: Wednesday, 28 June 2023 16:20:00 GMT
+CAPELLA_FORK_VERSION: 0x42000004
+CAPELLA_FORK_EPOCH: 8100
+
+# Fork choice
+# ---------------------------------------------------------------
+# 40%
+PROPOSER_SCORE_BOOST: 40
+
+# Time parameters
+# ---------------------------------------------------------------
+# 12 seconds
+SECONDS_PER_SLOT: 12
+# 2**5 (= 32) slots 6.4 minutes
+SLOTS_PER_EPOCH: 32
+# 14 (estimate from Eth1 mainnet)
+SECONDS_PER_ETH1_BLOCK: 12
+# 2**8 (= 256) epochs ~27 hours
+MIN_VALIDATOR_WITHDRAWABILITY_DELAY: 256
+# 2**8 (= 256) epochs ~27 hours
+SHARD_COMMITTEE_PERIOD: 256
+# 2**11 (= 2,048) Eth1 blocks ~8 hours
+ETH1_FOLLOW_DISTANCE: 2048
+
+# Sync committee
+# ---------------------------------------------------------------
+# 2**9 (= 512)
+SYNC_COMMITTEE_SIZE: 512
+# 2**8 (= 256)
+EPOCHS_PER_SYNC_COMMITTEE_PERIOD: 256
+
+# Validator cycle
+# ---------------------------------------------------------------
+# 2**2 (= 4)
+INACTIVITY_SCORE_BIAS: 4
+# 2**4 (= 16)
+INACTIVITY_SCORE_RECOVERY_RATE: 16
+# 2**2 (= 4)
+MIN_PER_EPOCH_CHURN_LIMIT: 4
+# 2**16 (= 65,536)
+CHURN_LIMIT_QUOTIENT: 65536
+
+# Validator Stakes
+# ---------------------------------------------------------------
+# 2**5 * 10**9 (= 32,000,000,000) Gwei
+MAX_EFFECTIVE_BALANCE: 32000000000
+# 2**4 * 10**9 (= 16,000,000,000) Gwei
+EJECTION_BALANCE: 16000000000
+
+# Extra consensus configuration (Teku)
+# ---------------------------------------------------------------
+# 10 * 2**20 (= 10485760, 10 MiB)
+GOSSIP_MAX_SIZE: 10485760
+# `10 * 2**20` (=10485760, 10 MiB)
+MAX_CHUNK_SIZE: 10485760
+# `2**10` (= 1024)
+MAX_REQUEST_BLOCKS: 1024
+# `2**8` (= 256)
+EPOCHS_PER_SUBNET_SUBSCRIPTION: 256
+# 5s
+TTFB_TIMEOUT: 5
+# 10s
+RESP_TIMEOUT: 10
+ATTESTATION_PROPAGATION_SLOT_RANGE: 32
+# 500ms
+MAXIMUM_GOSSIP_CLOCK_DISPARITY: 500
+MESSAGE_DOMAIN_INVALID_SNAPPY: 0x00000000
+MESSAGE_DOMAIN_VALID_SNAPPY: 0x01000000
+# 2 subnets per node
+SUBNETS_PER_NODE: 2
+# 2**8 (= 64)
+ATTESTATION_SUBNET_COUNT: 64
+ATTESTATION_SUBNET_EXTRA_BITS: 0
+# ceillog2(ATTESTATION_SUBNET_COUNT) + ATTESTATION_SUBNET_EXTRA_BITS
+ATTESTATION_SUBNET_PREFIX_BITS: 6
