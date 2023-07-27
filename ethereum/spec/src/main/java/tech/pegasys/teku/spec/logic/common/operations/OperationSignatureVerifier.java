@@ -106,7 +106,9 @@ public class OperationSignatureVerifier {
       return false;
     }
 
-    final Bytes32 domain = beaconStateAccessors.getVoluntaryExitDomain(signedExit, state);
+    final Bytes32 domain =
+        beaconStateAccessors.getVoluntaryExitDomain(
+            exit.getEpoch(), state.getFork(), state.getGenesisValidatorsRoot());
 
     final Bytes signingRoot = miscHelpers.computeSigningRoot(exit, domain);
     return signatureVerifier.verify(maybePublicKey.get(), signingRoot, signedExit.getSignature());
