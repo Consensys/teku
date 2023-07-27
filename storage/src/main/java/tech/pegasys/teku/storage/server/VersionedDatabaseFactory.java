@@ -101,7 +101,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
       LOG.error("Failed to read storage mode file", e);
     }
 
-    // the file will exist AND the storage mode is empty, use our default mode in this case.
     return maybeConfiguredStorageMode.orElse(StateStorageMode.DEFAULT_MODE);
   }
 
