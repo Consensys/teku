@@ -219,11 +219,14 @@ public class ValidatorClientService extends Service {
               if (validatorApiConfig.isRestApiEnabled()) {
                 validatorClientService.initializeValidatorRestApi(
                     validatorApiConfig,
+                    validatorApiChannel,
+                    genesisDataProvider,
                     proposerConfigManager,
                     new ActiveKeyManager(
                         validatorLoader,
                         services.getEventChannels().getPublisher(ValidatorTimingChannel.class)),
                     services.getDataDirLayout(),
+                    services.getTimeProvider(),
                     validatorClientService.maybeDoppelgangerDetector);
               } else {
                 LOG.info("validator-api-enabled is false, not starting rest api.");
@@ -266,16 +269,23 @@ public class ValidatorClientService extends Service {
 
   private void initializeValidatorRestApi(
       final ValidatorRestApiConfig validatorRestApiConfig,
+      final ValidatorApiChannel validatorApiChannel,
+      final GenesisDataProvider genesisDataProvider,
       final Optional<ProposerConfigManager> proposerConfigManager,
       final ActiveKeyManager activeKeyManager,
       final DataDirLayout dataDirLayout,
+      final TimeProvider timeProvider,
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector) {
     final RestApi validatorRestApi =
         ValidatorRestApi.create(
+            spec,
             validatorRestApiConfig,
+            validatorApiChannel,
+            genesisDataProvider,
             proposerConfigManager,
             activeKeyManager,
             dataDirLayout,
+            timeProvider,
             maybeDoppelgangerDetector,
             new DoppelgangerDetectionAlert());
     maybeValidatorRestApi = Optional.of(validatorRestApi);

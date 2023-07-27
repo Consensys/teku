@@ -38,7 +38,7 @@ public class VoluntaryExitDataProvider {
   private final GenesisDataProvider genesisDataProvider;
   private final TimeProvider timeProvider;
 
-  VoluntaryExitDataProvider(
+  public VoluntaryExitDataProvider(
       final Spec spec,
       final KeyManager keyManager,
       final ValidatorApiChannel validatorApiChannel,

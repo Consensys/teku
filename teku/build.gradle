@@ -37,6 +37,7 @@ dependencies {
   implementation project(':storage:api')
   implementation project(':beacon:sync')
   implementation project(':validator:api')
+  implementation project(':validator:beaconnode')
   implementation project(':validator:client')
   implementation project(':validator:remote')
   implementation project(':infrastructure:bls-keystore')
