@@ -16,6 +16,8 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Additions and Improvements
 
 - Introduce `--exchange-capabilities-monitoring-enabled` parameter. If enabled, EL will be queried periodically for the Engine API methods it supports. If incompatibility is detected, a warning is raised in the logs. The default is `true`.
+- Add support for [Lukso network](https://lukso.network/) `--network=lukso`
+- The development option `--Xfork-choice-update-head-on-block-import-enabled` was changed to default to `false` to ensure fork-choice is run when new blocks arrive.
 - The default state-cache size has been changed to 8 (previously 160), and there is now an epoch-states-cache, which defaults to a maximum of 6 elements. 
 
 ### Bug Fixes
