@@ -712,7 +712,7 @@ subprojects {
           suppressPomMetadataWarningsFor('testFixturesRuntimeElements')
           pom {
             name = "Teku - ${project.name}"
-            url = 'https://github.com/ConsenSys/teku'
+            url = 'https://github.com/Consensys/teku'
             licenses {
               license {
                 name = 'The Apache License, Version 2.0'
@@ -720,9 +720,9 @@ subprojects {
               }
             }
             scm {
-              connection = 'scm:git:git://github.com/ConsenSys/teku.git'
-              developerConnection = 'https://github.com/ConsenSys/teku.git'
-              url = 'https://github.com/ConsenSys/teku'
+              connection = 'scm:git:git://github.com/Consensys/teku.git'
+              developerConnection = 'https://github.com/Consensys/teku.git'
+              url = 'https://github.com/Consensys/teku'
             }
           }
         }

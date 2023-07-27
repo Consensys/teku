@@ -1,27 +1,27 @@
 # teku
 
- [![Build Status](https://circleci.com/gh/Consensys/teku.svg?style=svg)](https://circleci.com/gh/ConsenSys/workflows/teku)
- [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/ConsenSys/teku/blob/master/LICENSE)
- [![GitHub release (latest by date)](https://img.shields.io/github/v/release/ConsenSys/teku)](https://github.com/ConsenSys/teku/releases/latest)
+ [![Build Status](https://circleci.com/gh/Consensys/teku.svg?style=svg)](https://circleci.com/gh/Consensys/workflows/teku)
+ [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/Consensys/teku/blob/master/LICENSE)
+ [![GitHub release (latest by date)](https://img.shields.io/github/v/release/Consensys/teku)](https://github.com/Consensys/teku/releases/latest)
  [![Discord](https://img.shields.io/badge/Chat-on%20Discord-%235865F2?logo=discord&logoColor=white)](https://discord.gg/7hPv2T6)
- [![GitPOAP Badge](https://public-api.gitpoap.io/v1/repo/ConsenSys/teku/badge)](https://www.gitpoap.io/gh/ConsenSys/teku)
+ [![GitPOAP Badge](https://public-api.gitpoap.io/v1/repo/Consensys/teku/badge)](https://www.gitpoap.io/gh/Consensys/teku)
 
-Teku is a Java implementation of the Ethereum 2.0 Beacon Chain. See the [Changelog](https://github.com/ConsenSys/teku/releases) for details of the latest releases and upcoming breaking changes.
+Teku is a Java implementation of the Ethereum 2.0 Beacon Chain. See the [Changelog](https://github.com/Consensys/teku/releases) for details of the latest releases and upcoming breaking changes.
 
 ## Useful links
 
 * [Ethereum 2.0 Beacon Chain specification](https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/beacon-chain.md)
 * [Teku user documentation](https://docs.teku.consensys.net/)
 * [Teku REST API reference documentation](https://consensys.github.io/teku/)
-* [Teku issues](https://github.com/ConsenSys/teku/issues)
+* [Teku issues](https://github.com/Consensys/teku/issues)
 * [Contribution guidelines](CONTRIBUTING.md)
-* [Teku Changelog](https://github.com/ConsenSys/teku/releases)
+* [Teku Changelog](https://github.com/Consensys/teku/releases)
 
 ## Teku users
 
 See our [user documentation](https://docs.teku.consensys.net/).
 
-Raise a [documentation issue](https://github.com/ConsenSys/doc.teku/issues) or get in touch in
+Raise a [documentation issue](https://github.com/Consensys/doc.teku/issues) or get in touch in
 the #teku channel on [Discord](https://discord.gg/7hPv2T6) if you've got questions or feedback.
 
 ## Teku developers
@@ -31,7 +31,7 @@ the #teku channel on [Discord](https://discord.gg/7hPv2T6) if you've got questio
 
 ## Binary Releases
 
-Binary releases are available from the [releases page](https://github.com/ConsenSys/teku/releases).
+Binary releases are available from the [releases page](https://github.com/Consensys/teku/releases).
 Binary builds that track the latest changes on the master branch are available on
 [Dockerhub](https://hub.docker.com/r/consensys/teku) using the `develop` version or as binary
 downloads ([tar.gz format](https://artifacts.consensys.net/public/teku/raw/names/teku.tar.gz/versions/develop/teku-develop.tar.gz)
@@ -42,9 +42,9 @@ the latest changes on testnets.
 
 Release notifications are available via:
 * Sign up to our [release announcements](https://pages.consensys.net/teku-sign-up) email list (release and important announcements only, no marketing)
-* Follow us on [Twitter](https://twitter.com/Teku_ConsenSys)
+* Follow us on [Twitter](https://twitter.com/Teku_Consensys)
 * `teku` in [Consensys Discord](https://discord.gg/7hPv2T6),
-* Subscribe to release notifications on github for [teku](https://github.com/ConsenSys/teku)
+* Subscribe to release notifications on github for [teku](https://github.com/Consensys/teku)
 
 ## Build Instructions
 
@@ -61,7 +61,7 @@ Building on a more recent version of Java is supported, but the resulting build 
 To create a ready to run distribution:
 
 ```shell script
-git clone https://github.com/ConsenSys/teku.git
+git clone https://github.com/Consensys/teku.git
 cd teku && ./gradlew distTar installDist
 ```
 
@@ -74,7 +74,7 @@ This produces:
 To build, clone this repo and run with `gradle`:
 
 ```shell script
-git clone https://github.com/ConsenSys/teku.git
+git clone https://github.com/Consensys/teku.git
 cd teku && ./gradlew
 
 ```

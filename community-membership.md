@@ -8,9 +8,9 @@ this project.
 | Everyone | none | anybody with a belly button
 | Member | everyone who contributes - code or otherwise | Teku GitHub org member
 | Approver | approve accepting contributions | write permissions on master
-| Project Sponsor | contribute developer resources | ConsenSys
-| Project Evangelist | promote the project | ConsenSys
-| Benevolent Dictator | decision tie-breaker | ConsenSys
+| Project Sponsor | contribute developer resources | Consensys
+| Project Evangelist | promote the project | Consensys
+| Benevolent Dictator | decision tie-breaker | Consensys
 
 ## Everyone
 Any person from the public is able to access the code.  The standard permissions grant the ability to view the code, view open bugs, access the wiki, download binaries, view CI results and comment on pull requests.
@@ -82,7 +82,7 @@ Code approvers are members that have signed an ICLA and have been granted additi
 ## Project Sponsor
 The Project Sponsor role provides a user with the ability to contribute additional developer resources to the project.  Project Sponsors must sign the ICLA.
 
-**Defined by:** ConsenSys
+**Defined by:** Consensys
 
 ### Requirements
 - Signed ICLA, as described in [CLA.md]
@@ -94,7 +94,7 @@ The Project Sponsor role provides a user with the ability to contribute addition
 
 ## Project Evangelist
 The Project Evangelist role is for those who wish to promote the project to the outside world, but not actively contribute to it.  
-**Defined by:** ConsenSys
+**Defined by:** Consensys
 
 ### Requirements
 - Includes all of the requirements of a Member user
