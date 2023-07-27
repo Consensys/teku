@@ -1627,7 +1627,7 @@ public class DatabaseTest {
     }
     final long lastSlot = chainBuilder.getLatestSlot().longValue();
 
-    final StoreConfig config = StoreConfig.builder().stateCacheSize(16).build();
+    final StoreConfig config = StoreConfig.builder().stateCacheSize(32).build();
     // Setup database
     createStorageSystem(context, storageMode, config, false);
     initGenesis();
