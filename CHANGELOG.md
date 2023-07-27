@@ -4,7 +4,7 @@
 
 ## Current Releases
 
-For information on changes in released versions of Teku, see the [releases page](https://github.com/ConsenSys/teku/releases).
+For information on changes in released versions of Teku, see the [releases page](https://github.com/Consensys/teku/releases).
 
 ## Unreleased Changes
 
