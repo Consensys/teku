@@ -16,9 +16,11 @@ package tech.pegasys.teku.storage.server;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -39,6 +41,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   @VisibleForTesting static final String DB_PATH = "db";
   @VisibleForTesting static final String ARCHIVE_PATH = "archive";
   @VisibleForTesting static final String DB_VERSION_PATH = "db.version";
+
+  @VisibleForTesting static final String STORAGE_MODE_PATH = "data-storage-mode.txt";
   @VisibleForTesting static final String METADATA_FILENAME = "metadata.yml";
   @VisibleForTesting static final String NETWORK_FILENAME = "network.yml";
 
@@ -48,6 +52,8 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
   private final File dbDirectory;
   private final File v5ArchiveDirectory;
   private final File dbVersionFile;
+
+  private final File dbStorageModeFile;
   private final StateStorageMode stateStorageMode;
   private final DatabaseVersion createDatabaseVersion;
   private final long stateStorageFrequency;
@@ -61,7 +67,6 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     this.metricsSystem = metricsSystem;
     this.dataDirectory = dataPath.toFile();
 
-    this.stateStorageMode = config.getDataStorageMode();
     this.createDatabaseVersion = config.getDataStorageCreateDbVersion();
     this.maxKnownNodeCacheSize = config.getMaxKnownNodeCacheSize();
     this.stateStorageFrequency = config.getDataStorageFrequency();
@@ -72,6 +77,32 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     this.dbDirectory = this.dataDirectory.toPath().resolve(DB_PATH).toFile();
     this.v5ArchiveDirectory = this.dataDirectory.toPath().resolve(ARCHIVE_PATH).toFile();
     this.dbVersionFile = this.dataDirectory.toPath().resolve(DB_VERSION_PATH).toFile();
+    this.dbStorageModeFile = this.dataDirectory.toPath().resolve(STORAGE_MODE_PATH).toFile();
+
+    this.stateStorageMode =
+        getStateStorageModeFromConfigOrDisk(Optional.of(config.getDataStorageMode()));
+  }
+
+  private StateStorageMode getStateStorageModeFromConfigOrDisk(
+      final Optional<StateStorageMode> maybeConfiguredStorageMode) {
+    try {
+      final File storageModeFile = this.dataDirectory.toPath().resolve(STORAGE_MODE_PATH).toFile();
+      if (storageModeFile.exists() && maybeConfiguredStorageMode.isPresent()) {
+        final StateStorageMode storageModeFromFile =
+            StateStorageMode.valueOf(Files.readString(storageModeFile.toPath()).trim());
+        if (!storageModeFromFile.equals(maybeConfiguredStorageMode.get())) {
+          LOG.info(
+              "Storage mode that was persisted differs from the command specified option; file: {}, CLI: {}",
+              () -> storageModeFromFile,
+              maybeConfiguredStorageMode::get);
+        }
+      }
+    } catch (IOException e) {
+      LOG.error("Failed to read storage mode file", e);
+    }
+
+    // the file will exist AND the storage mode is empty, use our default mode in this case.
+    return maybeConfiguredStorageMode.orElse(StateStorageMode.DEFAULT_MODE);
   }
 
   @Override
@@ -81,6 +112,7 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
     final DatabaseVersion dbVersion = getDatabaseVersion();
     createDirectories(dbVersion);
     saveDatabaseVersion(dbVersion);
+    saveStorageMode(stateStorageMode);
 
     Database database;
     switch (dbVersion) {
@@ -146,6 +178,10 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         throw new UnsupportedOperationException("Unhandled database version " + dbVersion);
     }
     return database;
+  }
+
+  public StateStorageMode getStateStorageMode() {
+    return stateStorageMode;
   }
 
   private Database createV4Database() {
@@ -343,6 +379,16 @@ public class VersionedDatabaseFactory implements DatabaseFactory {
         throw DatabaseStorageException.unrecoverable(
             "Failed to write database version to file " + dbVersionFile.getAbsolutePath(), e);
       }
+    }
+  }
+
+  private void saveStorageMode(final StateStorageMode storageMode) {
+    try {
+      Files.writeString(dbStorageModeFile.toPath(), storageMode.name(), StandardCharsets.UTF_8);
+    } catch (IOException e) {
+      throw DatabaseStorageException.unrecoverable(
+          "Failed to write database storage mode to file " + dbStorageModeFile.getAbsolutePath(),
+          e);
     }
   }
 }
