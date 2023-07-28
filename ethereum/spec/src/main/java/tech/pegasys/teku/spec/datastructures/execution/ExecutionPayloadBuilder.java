@@ -53,9 +53,9 @@ public interface ExecutionPayloadBuilder {
 
   ExecutionPayloadBuilder withdrawals(Supplier<List<Withdrawal>> withdrawalsSupplier);
 
-  ExecutionPayloadBuilder dataGasUsed(Supplier<UInt64> dataGasUsedSupplier);
+  ExecutionPayloadBuilder blobGasUsed(Supplier<UInt64> blobGasUsedSupplier);
 
-  ExecutionPayloadBuilder excessDataGas(Supplier<UInt64> excessDataGasSupplier);
+  ExecutionPayloadBuilder excessBlobGas(Supplier<UInt64> excessBlobGasSupplier);
 
   ExecutionPayload build();
 }

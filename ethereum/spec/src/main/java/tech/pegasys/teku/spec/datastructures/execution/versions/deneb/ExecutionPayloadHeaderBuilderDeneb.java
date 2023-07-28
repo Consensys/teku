@@ -28,8 +28,8 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Executio
 public class ExecutionPayloadHeaderBuilderDeneb extends ExecutionPayloadHeaderBuilderCapella {
   private ExecutionPayloadHeaderSchemaDeneb schema;
 
-  protected UInt64 dataGasUsed;
-  protected UInt64 excessDataGas;
+  protected UInt64 blobGasUsed;
+  protected UInt64 excessBlobGas;
 
   public ExecutionPayloadHeaderBuilderDeneb schema(final ExecutionPayloadHeaderSchemaDeneb schema) {
     this.schema = schema;
@@ -37,15 +37,15 @@ public class ExecutionPayloadHeaderBuilderDeneb extends ExecutionPayloadHeaderBu
   }
 
   @Override
-  public ExecutionPayloadHeaderBuilder dataGasUsed(final Supplier<UInt64> dataGasUsedSupplier) {
-    this.dataGasUsed = dataGasUsedSupplier.get();
+  public ExecutionPayloadHeaderBuilder blobGasUsed(final Supplier<UInt64> blobGasUsedSupplier) {
+    this.blobGasUsed = blobGasUsedSupplier.get();
     return this;
   }
 
   @Override
-  public ExecutionPayloadHeaderBuilderDeneb excessDataGas(
-      final Supplier<UInt64> excessDataGasSupplier) {
-    this.excessDataGas = excessDataGasSupplier.get();
+  public ExecutionPayloadHeaderBuilderDeneb excessBlobGas(
+      final Supplier<UInt64> excessBlobGasSupplier) {
+    this.excessBlobGas = excessBlobGasSupplier.get();
     return this;
   }
 
@@ -57,8 +57,8 @@ public class ExecutionPayloadHeaderBuilderDeneb extends ExecutionPayloadHeaderBu
   @Override
   protected void validate() {
     super.validate();
-    checkNotNull(dataGasUsed, "dataGasUsed must be specified");
-    checkNotNull(excessDataGas, "excessDataGas must be specified");
+    checkNotNull(blobGasUsed, "blobGasUsed must be specified");
+    checkNotNull(excessBlobGas, "excessBlobGas must be specified");
   }
 
   @Override
@@ -81,7 +81,7 @@ public class ExecutionPayloadHeaderBuilderDeneb extends ExecutionPayloadHeaderBu
         SszBytes32.of(blockHash),
         SszBytes32.of(transactionsRoot),
         SszBytes32.of(withdrawalsRoot),
-        SszUInt64.of(dataGasUsed),
-        SszUInt64.of(excessDataGas));
+        SszUInt64.of(blobGasUsed),
+        SszUInt64.of(excessBlobGas));
   }
 }
