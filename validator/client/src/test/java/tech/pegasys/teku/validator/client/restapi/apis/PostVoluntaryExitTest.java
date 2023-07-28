@@ -14,22 +14,32 @@
 package tech.pegasys.teku.validator.client.restapi.apis;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_FORBIDDEN;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORIZED;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PUBKEY;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.getResponseStringFromMetadata;
 import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMetadataErrorResponse;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.client.VoluntaryExitDataProvider;
 
@@ -38,6 +48,39 @@ public class PostVoluntaryExitTest {
   private final PostVoluntaryExit handler = new PostVoluntaryExit(provider);
   private final Spec spec = TestSpecFactory.createMinimal(SpecMilestone.CAPELLA);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final StubRestApiRequest request = new StubRestApiRequest(handler.getMetadata());
+
+  final VoluntaryExit message = new VoluntaryExit(UInt64.valueOf(123), UInt64.ZERO);
+  final SignedVoluntaryExit signedVoluntaryExit =
+      new SignedVoluntaryExit(message, dataStructureUtil.randomSignature());
+
+  @Test
+  void noEpochQueryParamProvided_shouldGiveValidSignedVoluntaryExit()
+      throws JsonProcessingException {
+    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    request.setPathParameter("pubkey", publicKey.toString());
+
+    when(provider.getSignedVoluntaryExit(eq(publicKey), eq(Optional.empty())))
+        .thenReturn(SafeFuture.completedFuture(signedVoluntaryExit));
+
+    handler.handleRequest(request);
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(signedVoluntaryExit);
+  }
+
+  @Test
+  void epochQueryParamProvided_shouldGiveValidSignedVoluntaryExit() throws JsonProcessingException {
+    final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
+    request.setPathParameter(PUBKEY, publicKey.toString());
+    request.setOptionalQueryParameter(EPOCH, "1234");
+
+    when(provider.getSignedVoluntaryExit(eq(publicKey), eq(Optional.of(UInt64.valueOf(1234)))))
+        .thenReturn(SafeFuture.completedFuture(signedVoluntaryExit));
+
+    handler.handleRequest(request);
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(signedVoluntaryExit);
+  }
 
   @Test
   void metadata_shouldHandle400() throws JsonProcessingException {
