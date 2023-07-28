@@ -13,10 +13,14 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import java.util.Iterator;
+import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -24,11 +28,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
-
-import java.util.Iterator;
-import java.util.Set;
-
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 public class AttestationTopicSubscriber implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
