@@ -5,10 +5,10 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git://github.com/ConsenSys/teku.git"
+    "url": "git://github.com/Consensys/teku.git"
   },
   "bugs": {
-    "url": "https://github.com/ConsenSys/teku/issues"
+    "url": "https://github.com/Consensys/teku/issues"
   },
   "main": "./publish.js",
   "dependencies": {

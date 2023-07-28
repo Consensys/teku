@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -41,6 +41,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -77,18 +78,20 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   private final ActiveValidatorTracker validatorTracker;
   private final SyncCommitteePerformanceTracker syncCommitteePerformanceTracker;
   private final Spec spec;
+  private final SettableGauge timingsSettableGauge;
 
   private volatile Optional<UInt64> nodeStartEpoch = Optional.empty();
   private final AtomicReference<UInt64> latestAnalyzedEpoch = new AtomicReference<>(UInt64.ZERO);
 
   public DefaultPerformanceTracker(
-      CombinedChainDataClient combinedChainDataClient,
-      StatusLogger statusLogger,
-      ValidatorPerformanceMetrics validatorPerformanceMetrics,
-      ValidatorPerformanceTrackingMode mode,
-      ActiveValidatorTracker validatorTracker,
-      SyncCommitteePerformanceTracker syncCommitteePerformanceTracker,
-      final Spec spec) {
+      final CombinedChainDataClient combinedChainDataClient,
+      final StatusLogger statusLogger,
+      final ValidatorPerformanceMetrics validatorPerformanceMetrics,
+      final ValidatorPerformanceTrackingMode mode,
+      final ActiveValidatorTracker validatorTracker,
+      final SyncCommitteePerformanceTracker syncCommitteePerformanceTracker,
+      final Spec spec,
+      final SettableGauge timingsSettableGauge) {
     this.combinedChainDataClient = combinedChainDataClient;
     this.statusLogger = statusLogger;
     this.validatorPerformanceMetrics = validatorPerformanceMetrics;
@@ -96,6 +99,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
     this.validatorTracker = validatorTracker;
     this.syncCommitteePerformanceTracker = syncCommitteePerformanceTracker;
     this.spec = spec;
+    this.timingsSettableGauge = timingsSettableGauge;
   }
 
   @Override
@@ -122,6 +126,7 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       return;
     }
 
+    final long startTime = System.currentTimeMillis();
     final List<SafeFuture<?>> reportingTasks = new ArrayList<>();
     // Output attestation performance information for current epoch - 2 since attestations can be
     // included in both the epoch they were produced in or in the one following.
@@ -140,7 +145,15 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
       reportingTasks.add(reportSyncCommitteePerformance(currentEpoch));
     }
 
-    SafeFuture.allOf(reportingTasks.toArray(SafeFuture[]::new)).handleException(LOG::error).join();
+    SafeFuture.allOf(reportingTasks.toArray(SafeFuture[]::new))
+        .handleException(LOG::error)
+        .alwaysRun(
+            () -> {
+              if (reportingTasks.size() > 0) {
+                timingsSettableGauge.set(System.currentTimeMillis() - startTime);
+              }
+            })
+        .join();
   }
 
   private SafeFuture<?> reportBlockPerformance(final UInt64 currentEpoch) {

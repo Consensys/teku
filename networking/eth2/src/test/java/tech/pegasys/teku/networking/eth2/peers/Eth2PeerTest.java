@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -187,11 +187,12 @@ class Eth2PeerTest {
     // Deneb starts from epoch 1, so request start slot should be 8 and the count should be 6
     assertThat(request.getStartSlot()).isEqualTo(UInt64.valueOf(8));
     assertThat(request.getCount()).isEqualTo(UInt64.valueOf(6));
+    assertThat(request.getMaximumResponseChunks()).isEqualTo(36); // 6 * MAX_BLOBS_PER_BLOCK (6)
   }
 
   @Test
   @SuppressWarnings({"unchecked", "FutureReturnValueIgnored"})
-  public void shouldSetCountToZeroWhenSlotEqualsToDenebTransitionSlot() {
+  public void shouldSetCountToZeroWhenRequestIsPreDeneb() {
 
     final Eth2RpcMethod<BlobSidecarsByRangeRequestMessage, BlobSidecar> blobSidecarsByRangeMethod =
         mock(Eth2RpcMethod.class);
