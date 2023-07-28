@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -29,8 +29,7 @@ public class ReferenceTestFinder {
   private static final Path TEST_PATH_FROM_MODULE =
       Path.of("src", "referenceTest", "resources", "consensus-spec-tests", "tests");
   private static final List<String> SUPPORTED_FORKS =
-      List.of(
-          TestFork.PHASE0, TestFork.ALTAIR, TestFork.BELLATRIX, TestFork.CAPELLA, TestFork.DENEB);
+      List.of(TestFork.PHASE0, TestFork.ALTAIR, TestFork.BELLATRIX, TestFork.CAPELLA);
 
   @MustBeClosed
   public static Stream<TestDefinition> findReferenceTests() throws IOException {

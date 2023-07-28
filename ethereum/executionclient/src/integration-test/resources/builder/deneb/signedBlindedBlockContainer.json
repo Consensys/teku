@@ -210,8 +210,8 @@
           "block_hash": "0xc02310cdcc9e8ddc40b9aee79e425463dc4f04209a2159c781a4d8fdebee62f6",
           "transactions_root": "0xd3440acd6cea6c2135fc151371cb6830e25203b250ea8181ae251cc6c54f1a81",
           "withdrawals_root": "0x18cf2fce2e25d0ad50e8ea981c126622aabb342eb3b68a25beeaeca81f654969",
-          "data_gas_used": "14779654655076927372",
-          "excess_data_gas": "14778002167565275948"
+          "blob_gas_used": "14779654655076927372",
+          "excess_blob_gas": "14778002167565275948"
         },
         "bls_to_execution_changes": [
           {

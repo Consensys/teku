@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -90,8 +90,8 @@ public class DenebStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
                                   .blockHash(capellaHeader.getBlockHash())
                                   .transactionsRoot(capellaHeader.getTransactionsRoot())
                                   .withdrawalsRoot(capellaHeader::getWithdrawalsRoot)
-                                  .dataGasUsed(() -> UInt64.ZERO)
-                                  .excessDataGas(() -> UInt64.ZERO));
+                                  .blobGasUsed(() -> UInt64.ZERO)
+                                  .excessBlobGas(() -> UInt64.ZERO));
 
               state.setLatestExecutionPayloadHeader(upgradedExecutionPayloadHeader);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -143,12 +143,12 @@ public class ExecutionPayloadHeaderBuilderBellatrix implements ExecutionPayloadH
   }
 
   @Override
-  public ExecutionPayloadHeaderBuilder dataGasUsed(final Supplier<UInt64> dataGasUsedSupplier) {
+  public ExecutionPayloadHeaderBuilder blobGasUsed(final Supplier<UInt64> blobGasUsedSupplier) {
     return this;
   }
 
   @Override
-  public ExecutionPayloadHeaderBuilder excessDataGas(final Supplier<UInt64> excessDataGasSupplier) {
+  public ExecutionPayloadHeaderBuilder excessBlobGas(final Supplier<UInt64> excessBlobGasSupplier) {
     return this;
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -53,9 +53,9 @@ public interface ExecutionPayloadBuilder {
 
   ExecutionPayloadBuilder withdrawals(Supplier<List<Withdrawal>> withdrawalsSupplier);
 
-  ExecutionPayloadBuilder dataGasUsed(Supplier<UInt64> dataGasUsedSupplier);
+  ExecutionPayloadBuilder blobGasUsed(Supplier<UInt64> blobGasUsedSupplier);
 
-  ExecutionPayloadBuilder excessDataGas(Supplier<UInt64> excessDataGasSupplier);
+  ExecutionPayloadBuilder excessBlobGas(Supplier<UInt64> excessBlobGasSupplier);
 
   ExecutionPayload build();
 }

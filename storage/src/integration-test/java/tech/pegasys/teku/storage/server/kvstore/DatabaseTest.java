@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -141,7 +141,7 @@ public class DatabaseTest {
 
   private void initialize(final DatabaseContext context, final StateStorageMode storageMode)
       throws IOException {
-    final StoreConfig config = StoreConfig.builder().build();
+    final StoreConfig config = StoreConfig.builder().stateCacheSize(32).build();
     createStorageSystem(context, storageMode, config, false);
 
     // Initialize genesis store
