@@ -31,9 +31,9 @@ public interface ExecutionPayloadDeneb extends ExecutionPayload, ExecutionPayloa
                         + payload.getClass().getSimpleName()));
   }
 
-  UInt64 getDataGasUsed();
+  UInt64 getBlobGasUsed();
 
-  UInt64 getExcessDataGas();
+  UInt64 getExcessBlobGas();
 
   @Override
   default Optional<ExecutionPayloadDeneb> toVersionDeneb() {

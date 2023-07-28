@@ -34,8 +34,8 @@ public enum ExecutionPayloadFields implements SszFieldName {
   WITHDRAWALS,
   TRANSACTIONS_ROOT,
   WITHDRAWALS_ROOT,
-  DATA_GAS_USED,
-  EXCESS_DATA_GAS;
+  BLOB_GAS_USED,
+  EXCESS_BLOB_GAS;
 
   private final String sszFieldName;
 

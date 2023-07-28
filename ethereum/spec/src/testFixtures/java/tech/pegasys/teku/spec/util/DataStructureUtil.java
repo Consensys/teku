@@ -578,8 +578,8 @@ public final class DataStructureUtil {
                     .blockHash(randomBytes32())
                     .transactionsRoot(randomBytes32())
                     .withdrawalsRoot(() -> withdrawalsRoot)
-                    .dataGasUsed(this::randomUInt64)
-                    .excessDataGas(this::randomUInt64));
+                    .blobGasUsed(this::randomUInt64)
+                    .excessBlobGas(this::randomUInt64));
   }
 
   public ExecutionPayloadHeader randomExecutionPayloadHeader(final SpecVersion specVersion) {
@@ -677,8 +677,8 @@ public final class DataStructureUtil {
                       .blockHash(randomBytes32())
                       .transactions(randomExecutionPayloadTransactions())
                       .withdrawals(this::randomExecutionPayloadWithdrawals)
-                      .dataGasUsed(this::randomUInt64)
-                      .excessDataGas(this::randomUInt64);
+                      .blobGasUsed(this::randomUInt64)
+                      .excessBlobGas(this::randomUInt64);
               postRandomModifications.accept(executionPayloadBuilder);
             });
   }
