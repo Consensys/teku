@@ -1,7 +1,7 @@
 # Teku OpenAPI Spec Publish
 
 This directory contains NodeJS project which publishes Teku OpenAPI specifications to
-[`gh-pages`](https://github.com/ConsenSys/teku/tree/gh-pages) branch via CI job after tests are green.
+[`gh-pages`](https://github.com/Consensys/teku/tree/gh-pages) branch via CI job after tests are green.
 See `publishOpenApiSpec` job in `.circleci/config.yml`.
 
 The actual up to date generated doc is available at https://consensys.github.io/teku/
@@ -18,7 +18,7 @@ The script performs following tasks:
 For release version (when tagged with CalVer version), it performs following additional steps:
 
 * Copy the spec to `dist` as `teku-<version>.json`
-* Fetch `https://github.com/ConsenSys/teku/raw/gh-pages/versions.json`
+* Fetch `https://github.com/Consensys/teku/raw/gh-pages/versions.json`
 * Update versions' json with release versions by updating `stable.spec` and `stable.source` to the release version and adding a new entry
 for it. For example after adding spec version `20.11.0`, the `versions.json` would look like:
 
@@ -51,7 +51,7 @@ npm module to automate this step.
 
 Following environment variables can be used to override defaults
 
-* `OA_GIT_URL`            (default: `git@github.com:ConsenSys/teku.git`)
+* `OA_GIT_URL`            (default: `git@github.com:Consensys/teku.git`)
 * `OA_GH_PAGES_BRANCH`    (default: `gh-pages`)
 * `OA_GIT_USERNAME`       (default: `CircleCI Build`)
 * `OA_GIT_EMAIL`          (default: `ci-build@consensys.net`)

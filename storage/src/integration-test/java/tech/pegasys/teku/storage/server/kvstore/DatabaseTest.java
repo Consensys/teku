@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -1627,8 +1627,9 @@ public class DatabaseTest {
     }
     final long lastSlot = chainBuilder.getLatestSlot().longValue();
 
+    final StoreConfig config = StoreConfig.builder().stateCacheSize(16).build();
     // Setup database
-    createStorageSystem(context, storageMode, StoreConfig.createDefault(), false);
+    createStorageSystem(context, storageMode, config, false);
     initGenesis();
 
     add(chainBuilder.streamBlocksAndStates().collect(Collectors.toSet()));
