@@ -490,6 +490,13 @@ public class Spec {
         .getDomain(domainType, epoch, fork, genesisValidatorsRoot);
   }
 
+  public Bytes32 getVoluntaryExitDomain(
+      final UInt64 epoch, final Fork fork, final Bytes32 genesisValidatorsRoot) {
+    return atEpoch(epoch)
+        .beaconStateAccessors()
+        .getVoluntaryExitDomain(epoch, fork, genesisValidatorsRoot);
+  }
+
   public Bytes32 getRandaoMix(final BeaconState state, final UInt64 epoch) {
     return atState(state).beaconStateAccessors().getRandaoMix(state, epoch);
   }
