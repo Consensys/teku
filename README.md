@@ -4,7 +4,7 @@
  [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/Consensys/teku/blob/master/LICENSE)
  [![GitHub release (latest by date)](https://img.shields.io/github/v/release/Consensys/teku)](https://github.com/Consensys/teku/releases/latest)
  [![Discord](https://img.shields.io/badge/Chat-on%20Discord-%235865F2?logo=discord&logoColor=white)](https://discord.gg/7hPv2T6)
- [![GitPOAP Badge](https://public-api.gitpoap.io/v1/repo/Consensys/teku/badge)](https://www.gitpoap.io/gh/Consensys/teku)
+ [![GitPOAP Badge](https://public-api.gitpoap.io/v1/repo/ConsenSys/teku/badge)](https://www.gitpoap.io/gh/ConsenSys/teku)
 
 Teku is a Java implementation of the Ethereum 2.0 Beacon Chain. See the [Changelog](https://github.com/Consensys/teku/releases) for details of the latest releases and upcoming breaking changes.
 

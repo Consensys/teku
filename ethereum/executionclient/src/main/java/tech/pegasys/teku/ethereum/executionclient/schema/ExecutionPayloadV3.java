@@ -36,11 +36,11 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionP
 public class ExecutionPayloadV3 extends ExecutionPayloadV2 {
   @JsonSerialize(using = UInt64AsHexSerializer.class)
   @JsonDeserialize(using = UInt64AsHexDeserializer.class)
-  public final UInt64 dataGasUsed;
+  public final UInt64 blobGasUsed;
 
   @JsonSerialize(using = UInt64AsHexSerializer.class)
   @JsonDeserialize(using = UInt64AsHexDeserializer.class)
-  public final UInt64 excessDataGas;
+  public final UInt64 excessBlobGas;
 
   public ExecutionPayloadV3(
       @JsonProperty("parentHash") Bytes32 parentHash,
@@ -58,8 +58,8 @@ public class ExecutionPayloadV3 extends ExecutionPayloadV2 {
       @JsonProperty("blockHash") Bytes32 blockHash,
       @JsonProperty("transactions") List<Bytes> transactions,
       @JsonProperty("withdrawals") List<WithdrawalV1> withdrawals,
-      @JsonProperty("dataGasUsed") UInt64 dataGasUsed,
-      @JsonProperty("excessDataGas") UInt64 excessDataGas) {
+      @JsonProperty("blobGasUsed") UInt64 blobGasUsed,
+      @JsonProperty("excessBlobGas") UInt64 excessBlobGas) {
     super(
         parentHash,
         feeRecipient,
@@ -76,8 +76,8 @@ public class ExecutionPayloadV3 extends ExecutionPayloadV2 {
         blockHash,
         transactions,
         withdrawals);
-    this.dataGasUsed = dataGasUsed;
-    this.excessDataGas = excessDataGas;
+    this.blobGasUsed = blobGasUsed;
+    this.excessBlobGas = excessBlobGas;
   }
 
   public static ExecutionPayloadV3 fromInternalExecutionPayload(
@@ -102,10 +102,10 @@ public class ExecutionPayloadV3 extends ExecutionPayloadV2 {
             .map(SszByteListImpl::getBytes)
             .collect(Collectors.toList()),
         withdrawalsList,
-        executionPayload.toVersionDeneb().map(ExecutionPayloadDeneb::getDataGasUsed).orElse(null),
+        executionPayload.toVersionDeneb().map(ExecutionPayloadDeneb::getBlobGasUsed).orElse(null),
         executionPayload
             .toVersionDeneb()
-            .map(ExecutionPayloadDeneb::getExcessDataGas)
+            .map(ExecutionPayloadDeneb::getExcessBlobGas)
             .orElse(null));
   }
 
@@ -114,8 +114,8 @@ public class ExecutionPayloadV3 extends ExecutionPayloadV2 {
       final ExecutionPayloadSchema<?> executionPayloadSchema,
       final ExecutionPayloadBuilder builder) {
     return super.applyToBuilder(executionPayloadSchema, builder)
-        .dataGasUsed(() -> checkNotNull(dataGasUsed, "dataGasUsed not provided when required"))
-        .excessDataGas(
-            () -> checkNotNull(excessDataGas, "excessDataGas not provided when required"));
+        .blobGasUsed(() -> checkNotNull(blobGasUsed, "blobGasUsed not provided when required"))
+        .excessBlobGas(
+            () -> checkNotNull(excessBlobGas, "excessBlobGas not provided when required"));
   }
 }

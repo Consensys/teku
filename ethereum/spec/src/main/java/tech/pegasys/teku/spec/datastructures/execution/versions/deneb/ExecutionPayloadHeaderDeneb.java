@@ -19,9 +19,9 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Executio
 
 public interface ExecutionPayloadHeaderDeneb extends ExecutionPayloadHeaderCapella {
 
-  UInt64 getDataGasUsed();
+  UInt64 getBlobGasUsed();
 
-  UInt64 getExcessDataGas();
+  UInt64 getExcessBlobGas();
 
   @Override
   default Optional<ExecutionPayloadHeaderDeneb> toVersionDeneb() {

@@ -141,7 +141,7 @@ public class DatabaseTest {
 
   private void initialize(final DatabaseContext context, final StateStorageMode storageMode)
       throws IOException {
-    final StoreConfig config = StoreConfig.builder().build();
+    final StoreConfig config = StoreConfig.builder().stateCacheSize(32).build();
     createStorageSystem(context, storageMode, config, false);
 
     // Initialize genesis store

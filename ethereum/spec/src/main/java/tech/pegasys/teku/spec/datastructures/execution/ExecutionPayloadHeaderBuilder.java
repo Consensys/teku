@@ -51,9 +51,9 @@ public interface ExecutionPayloadHeaderBuilder {
 
   ExecutionPayloadHeaderBuilder withdrawalsRoot(Supplier<Bytes32> withdrawalsRootSupplier);
 
-  ExecutionPayloadHeaderBuilder dataGasUsed(Supplier<UInt64> dataGasUsedSupplier);
+  ExecutionPayloadHeaderBuilder blobGasUsed(Supplier<UInt64> blobGasUsedSupplier);
 
-  ExecutionPayloadHeaderBuilder excessDataGas(Supplier<UInt64> excessDataGasSupplier);
+  ExecutionPayloadHeaderBuilder excessBlobGas(Supplier<UInt64> excessBlobGasSupplier);
 
   ExecutionPayloadHeader build();
 }

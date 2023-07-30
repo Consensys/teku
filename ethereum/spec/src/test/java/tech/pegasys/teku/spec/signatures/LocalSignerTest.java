@@ -39,9 +39,9 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 // failures in this test. If there are no changes to signing code, just update the expected result.
 class LocalSignerTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final Spec denebSpec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final DataStructureUtil dataStructureUtilDeneb =
-      new DataStructureUtil(TestSpecFactory.createMinimalDeneb());
+  private final DataStructureUtil dataStructureUtilDeneb = new DataStructureUtil(denebSpec);
 
   private final ForkInfo fork = dataStructureUtil.randomForkInfo();
 
@@ -216,6 +216,26 @@ class LocalSignerTest {
             Bytes.fromBase64String(
                 "qumUYTSgi8hmsS3/a1oDLGSIfOQ4+PgByZpDprnvlQKaDTXnlzGQloQ/W0kAeMa8EhXvGvF0OiGkQxEEznpVsFNhZ01H+3S2StWqq7S0mbRcbJhT6fEcyrOMqRer36q8"));
 
+    final SafeFuture<BLSSignature> result = signer.signVoluntaryExit(voluntaryExit, fork);
+    asyncRunner.executeQueuedActions();
+
+    assertThat(result)
+        .withFailMessage(
+            "expected: %s\nbut was: %s",
+            expectedSignature.toBytesCompressed().toBase64String(),
+            result.getImmediately().toBytesCompressed().toBase64String())
+        .isCompletedWithValue(expectedSignature);
+  }
+
+  @Test
+  public void shouldSignVoluntaryExitWithCapellaForkDomainAfterDeneb() {
+    final VoluntaryExit voluntaryExit = dataStructureUtilDeneb.randomVoluntaryExit();
+    final BLSSignature expectedSignature =
+        BLSSignature.fromBytesCompressed(
+            Bytes.fromBase64String(
+                "j08XcEXfa3g/D/F8lYUmkFS2ZXcnfW82Y0lGA5jnnWmBB/1ypPtsEEwvAO3DpXNnCRSCxVUhJFqUa1krAuxTgZZofyvakpLM/EA5Nqe0Rq8Epk7uPfX5fPiEg/1vJFn9"));
+
+    final LocalSigner signer = new LocalSigner(denebSpec, KEYPAIR, asyncRunner);
     final SafeFuture<BLSSignature> result = signer.signVoluntaryExit(voluntaryExit, fork);
     asyncRunner.executeQueuedActions();
 

@@ -18,8 +18,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.constants.Domain;
-import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 
@@ -32,13 +31,17 @@ public class BeaconStateAccessorsDeneb extends BeaconStateAccessorsAltair {
     super(config, predicates, miscHelpers);
   }
 
+  /**
+   * <a href="https://eips.ethereum.org/EIPS/eip-7044">EIP-7044: Perpetually Valid Signed Voluntary
+   * Exits</a>
+   */
   @Override
   public Bytes32 getVoluntaryExitDomain(
-      final SignedVoluntaryExit signedVoluntaryExit, final BeaconState state) {
+      final UInt64 epoch, final Fork fork, final Bytes32 genesisValidatorsRoot) {
     return miscHelpers.computeDomain(
         Domain.VOLUNTARY_EXIT,
         SpecConfigCapella.required(config).getCapellaForkVersion(),
-        state.getGenesisValidatorsRoot());
+        genesisValidatorsRoot);
   }
 
   /**
