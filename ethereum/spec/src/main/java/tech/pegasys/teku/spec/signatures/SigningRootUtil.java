@@ -124,11 +124,8 @@ public class SigningRootUtil {
       final VoluntaryExit voluntaryExit, final ForkInfo forkInfo) {
     final SpecVersion specVersion = spec.atEpoch(voluntaryExit.getEpoch());
     final Bytes32 domain =
-        spec.getDomain(
-            Domain.VOLUNTARY_EXIT,
-            voluntaryExit.getEpoch(),
-            forkInfo.getFork(),
-            forkInfo.getGenesisValidatorsRoot());
+        spec.getVoluntaryExitDomain(
+            voluntaryExit.getEpoch(), forkInfo.getFork(), forkInfo.getGenesisValidatorsRoot());
     return specVersion.miscHelpers().computeSigningRoot(voluntaryExit, domain);
   }
 

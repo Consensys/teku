@@ -143,12 +143,12 @@ public class ExecutionPayloadBuilderBellatrix implements ExecutionPayloadBuilder
   }
 
   @Override
-  public ExecutionPayloadBuilder dataGasUsed(final Supplier<UInt64> dataGasUsedSupplier) {
+  public ExecutionPayloadBuilder blobGasUsed(final Supplier<UInt64> blobGasUsedSupplier) {
     return this;
   }
 
   @Override
-  public ExecutionPayloadBuilder excessDataGas(final Supplier<UInt64> excessDataGasSupplier) {
+  public ExecutionPayloadBuilder excessBlobGas(final Supplier<UInt64> excessBlobGasSupplier) {
     return this;
   }
 

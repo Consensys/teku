@@ -91,8 +91,8 @@ public class ExecutionPayloadHeaderDenebImpl
       SszBytes32 blockHash,
       SszBytes32 transactionsRoot,
       SszBytes32 withdrawalsRoot,
-      SszUInt64 dataGasUsed,
-      SszUInt64 excessDataGas) {
+      SszUInt64 blobGasUsed,
+      SszUInt64 excessBlobGas) {
     super(
         schema,
         parentHash,
@@ -110,8 +110,8 @@ public class ExecutionPayloadHeaderDenebImpl
         blockHash,
         transactionsRoot,
         withdrawalsRoot,
-        dataGasUsed,
-        excessDataGas);
+        blobGasUsed,
+        excessBlobGas);
   }
 
   @Override
@@ -210,12 +210,12 @@ public class ExecutionPayloadHeaderDenebImpl
   }
 
   @Override
-  public UInt64 getDataGasUsed() {
+  public UInt64 getBlobGasUsed() {
     return getField15().get();
   }
 
   @Override
-  public UInt64 getExcessDataGas() {
+  public UInt64 getExcessBlobGas() {
     return getField16().get();
   }
 }
