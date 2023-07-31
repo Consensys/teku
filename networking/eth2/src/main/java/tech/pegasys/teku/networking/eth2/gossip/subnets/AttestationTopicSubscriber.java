@@ -13,14 +13,10 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
-import java.util.Iterator;
-import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -28,6 +24,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
+
+import java.util.Iterator;
+import java.util.Set;
+
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 public class AttestationTopicSubscriber implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -63,7 +64,10 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
     for (SubnetSubscription subnetSubscription : newSubscriptions) {
       int subnetId = subnetSubscription.getSubnetId();
       shouldUpdateENR = persistentSubnetIdSet.add(subnetId) || shouldUpdateENR;
-      LOG.trace("Subscribing to persistent subnet {}", subnetId);
+      LOG.trace(
+          "Subscribing to persistent subnet {} with unsubscribe due at slot {}",
+          subnetId,
+          subnetSubscription.getUnsubscriptionSlot());
       if (subnetIdToUnsubscribeSlot.containsKey(subnetId)) {
         UInt64 existingUnsubscriptionSlot = subnetIdToUnsubscribeSlot.get(subnetId);
         UInt64 unsubscriptionSlot =

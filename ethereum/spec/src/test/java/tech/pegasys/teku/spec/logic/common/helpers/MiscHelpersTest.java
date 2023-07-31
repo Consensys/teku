@@ -177,7 +177,7 @@ class MiscHelpersTest {
 
   @ParameterizedTest
   @MethodSource("provideNodeIdsAndSlots")
-  public void unsubsciptionEpochMustMatchSubnetsCalculationResultChange(
+  public void unsubscriptionEpochMustMatchSubnetsCalculationResultChange(
       final UInt256 nodeId, final UInt64 slotAtEpoch) {
     for (int epoch = 0; epoch < 1000; epoch++) {
       final List<UInt64> currentSubnets =
