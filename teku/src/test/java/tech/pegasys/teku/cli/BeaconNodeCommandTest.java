@@ -27,6 +27,7 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.EVENTBUS;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.LIBP2P;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.NETWORK;
+import static tech.pegasys.teku.storage.server.StateStorageMode.MINIMAL;
 import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
 
 import com.google.common.io.Resources;
@@ -521,7 +522,9 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                   .depositContractDeployBlock(networkConfig.getEth1DepositContractDeployBlock());
             })
         .storageConfiguration(
-            b -> b.eth1DepositContract(networkConfig.getEth1DepositContractAddress()))
+            b ->
+                b.eth1DepositContract(networkConfig.getEth1DepositContractAddress())
+                    .dataStorageMode(MINIMAL))
         .metrics(b -> b.metricsCategories(DEFAULT_METRICS_CATEGORIES))
         .restApi(b -> b.eth1DepositContractAddress(networkConfig.getEth1DepositContractAddress()))
         .p2p(p -> p.peerRateLimit(500).peerRequestLimit(50))

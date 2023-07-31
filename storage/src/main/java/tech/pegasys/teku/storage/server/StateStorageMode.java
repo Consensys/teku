@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.storage.server;
 
+import java.util.Optional;
+
 public enum StateStorageMode {
 
   // All historical state is available to query in archive mode
@@ -20,9 +22,10 @@ public enum StateStorageMode {
   // No historical state is available to query in mode "prune"
   PRUNE,
   // No historical state and blocks beyond the minimum retention period are removed
-  MINIMAL;
+  MINIMAL,
+  NOT_SET;
 
-  public static final StateStorageMode DEFAULT_MODE = PRUNE;
+  public static final StateStorageMode DEFAULT_MODE = NOT_SET;
 
   public boolean storesFinalizedStates() {
     return this == ARCHIVE;
@@ -30,5 +33,15 @@ public enum StateStorageMode {
 
   public boolean storesAllBlocks() {
     return this != MINIMAL;
+  }
+
+  public static StateStorageMode determineStorageDefault(
+      final boolean isExistingStore,
+      final Optional<StateStorageMode> maybeHistoricStorageMode,
+      final StateStorageMode modeRequested) {
+    if (modeRequested != NOT_SET) {
+      return modeRequested;
+    }
+    return maybeHistoricStorageMode.orElse(isExistingStore ? PRUNE : MINIMAL);
   }
 }

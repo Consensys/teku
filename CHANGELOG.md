@@ -19,5 +19,6 @@ For information on changes in released versions of Teku, see the [releases page]
 - Add support for [Lukso network](https://lukso.network/) `--network=lukso`
 - The development option `--Xfork-choice-update-head-on-block-import-enabled` was changed to default to `false` to ensure fork-choice is run when new blocks arrive.
 - The default state-cache size has been changed to 8 (previously 160), and there is now an epoch-states-cache, which defaults to a maximum of 6 elements. 
+- New databases will now default to `minimal` if no `--data-storage-mode` is explicitly set. Existing `prune` mode databases will need to explicitly set `--data-storage-mode=minimal` if they wish to use minimal data storage. This includes anyone not specifying `--data-storage-mode` in 23.6.2 or earlier.
 
 ### Bug Fixes
