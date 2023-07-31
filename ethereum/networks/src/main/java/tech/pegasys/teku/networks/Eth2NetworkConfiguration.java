@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -20,6 +20,7 @@ import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLO
 import static tech.pegasys.teku.spec.networks.Eth2Network.CHIADO;
 import static tech.pegasys.teku.spec.networks.Eth2Network.GNOSIS;
 import static tech.pegasys.teku.spec.networks.Eth2Network.LESS_SWIFT;
+import static tech.pegasys.teku.spec.networks.Eth2Network.LUKSO;
 import static tech.pegasys.teku.spec.networks.Eth2Network.MAINNET;
 import static tech.pegasys.teku.spec.networks.Eth2Network.MINIMAL;
 import static tech.pegasys.teku.spec.networks.Eth2Network.PRATER;
@@ -45,7 +46,7 @@ public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
 
-  public static final boolean DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED = true;
+  public static final boolean DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED = false;
 
   public static final String INITIAL_STATE_URL_PATH = "eth/v2/debug/beacon/states/finalized";
   // 26 thousand years should be enough
@@ -188,18 +189,13 @@ public class Eth2NetworkConfiguration {
   }
 
   public Optional<UInt64> getForkEpoch(final SpecMilestone specMilestone) {
-    switch (specMilestone) {
-      case ALTAIR:
-        return altairForkEpoch;
-      case BELLATRIX:
-        return bellatrixForkEpoch;
-      case CAPELLA:
-        return capellaForkEpoch;
-      case DENEB:
-        return denebForkEpoch;
-      default:
-        return Optional.empty();
-    }
+    return switch (specMilestone) {
+      case ALTAIR -> altairForkEpoch;
+      case BELLATRIX -> bellatrixForkEpoch;
+      case CAPELLA -> capellaForkEpoch;
+      case DENEB -> denebForkEpoch;
+      default -> Optional.empty();
+    };
   }
 
   public Optional<Bytes32> getTerminalBlockHashOverride() {
@@ -480,26 +476,17 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder applyNetworkDefaults(final Eth2Network network) {
-      switch (network) {
-        case MAINNET:
-          return applyMainnetNetworkDefaults();
-        case MINIMAL:
-          return applyMinimalNetworkDefaults();
-        case PRATER:
-          return applyPraterNetworkDefaults();
-        case SEPOLIA:
-          return applySepoliaNetworkDefaults();
-        case GNOSIS:
-          return applyGnosisNetworkDefaults();
-        case CHIADO:
-          return applyChiadoNetworkDefaults();
-        case SWIFT:
-          return applySwiftNetworkDefaults();
-        case LESS_SWIFT:
-          return applyLessSwiftNetworkDefaults();
-        default:
-          return resetAndApplyBasicDefaults(network.configName());
-      }
+      return switch (network) {
+        case MAINNET -> applyMainnetNetworkDefaults();
+        case MINIMAL -> applyMinimalNetworkDefaults();
+        case PRATER -> applyPraterNetworkDefaults();
+        case SEPOLIA -> applySepoliaNetworkDefaults();
+        case LUKSO -> applyLuksoNetworkDefaults();
+        case GNOSIS -> applyGnosisNetworkDefaults();
+        case CHIADO -> applyChiadoNetworkDefaults();
+        case SWIFT -> applySwiftNetworkDefaults();
+        case LESS_SWIFT -> applyLessSwiftNetworkDefaults();
+      };
     }
 
     private Builder reset() {
@@ -608,6 +595,19 @@ public class Eth2NetworkConfiguration {
               "enr:-Ly4QFoZTWR8ulxGVsWydTNGdwEESueIdj-wB6UmmjUcm-AOPxnQi7wprzwcdo7-1jBW_JxELlUKJdJES8TDsbl1EdNlh2F0dG5ldHOI__78_v2bsV-EZXRoMpA2-lATkAAAcf__________gmlkgnY0gmlwhBLYJjGJc2VjcDI1NmsxoQI0gujXac9rMAb48NtMqtSTyHIeNYlpjkbYpWJw46PmYYhzeW5jbmV0cw-DdGNwgiMog3VkcIIjKA",
               // Another bootnode
               "enr:-L64QC9Hhov4DhQ7mRukTOz4_jHm4DHlGL726NWH4ojH1wFgEwSin_6H95Gs6nW2fktTWbPachHJ6rUFu0iJNgA0SB2CARqHYXR0bmV0c4j__________4RldGgykDb6UBOQAABx__________-CaWSCdjSCaXCEA-2vzolzZWNwMjU2azGhA17lsUg60R776rauYMdrAz383UUgESoaHEzMkvm4K6k6iHN5bmNuZXRzD4N0Y3CCIyiDdWRwgiMo");
+    }
+
+    private Builder applyLuksoNetworkDefaults() {
+      return applyTestnetDefaults()
+          .constants(LUKSO.configName())
+          .startupTimeoutSeconds(120)
+          .eth1DepositContractDeployBlock(0)
+          .initialStateFromClasspath("lukso-genesis.ssz")
+          .genesisStateFromClasspath("lukso-genesis.ssz")
+          .discoveryBootnodes(
+              // Consensus layer bootnodes
+              "enr:-MK4QJ-Bt9HATy4GQawPbDDTArtnt_phuWiVVoWKhS7-DSNjVzmGKBI9xKzpyRtpeCWd3qA9737FTdkKGDgtHfF4N-6GAYlzJCVRh2F0dG5ldHOIAAAAAAAAAACEZXRoMpA2ulfbQgAABP__________gmlkgnY0gmlwhCKTScGJc2VjcDI1NmsxoQJNpNUERqKhA8eDDC4tovG3a59NXVOW16JDFAWXoFFTEYhzeW5jbmV0cwCDdGNwgjLIg3VkcIIu4A",
+              "enr:-MK4QDOs4pISOkkYbVHnGYHC5EhYCsVzwguun6sFZjLTqrY6Kx_AoE-YyHvqBIHDUwyQqESC4-B3o6DigPQNfKpdhXiGAYgmPWCdh2F0dG5ldHOIAAAAAAAAAACEZXRoMpA2ulfbQgAABP__________gmlkgnY0gmlwhCIgwNOJc2VjcDI1NmsxoQNGVC8JPcsqsZPoohLP1ujAYpBfS0dBwiz4LeoUQ-k5OohzeW5jbmV0cwCDdGNwgjLIg3VkcIIu4A");
     }
 
     public Builder applyGnosisNetworkDefaults() {

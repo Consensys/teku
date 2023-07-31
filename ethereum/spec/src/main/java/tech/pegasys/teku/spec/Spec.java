@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -488,6 +488,13 @@ public class Spec {
     return atEpoch(epoch)
         .beaconStateAccessors()
         .getDomain(domainType, epoch, fork, genesisValidatorsRoot);
+  }
+
+  public Bytes32 getVoluntaryExitDomain(
+      final UInt64 epoch, final Fork fork, final Bytes32 genesisValidatorsRoot) {
+    return atEpoch(epoch)
+        .beaconStateAccessors()
+        .getVoluntaryExitDomain(epoch, fork, genesisValidatorsRoot);
   }
 
   public Bytes32 getRandaoMix(final BeaconState state, final UInt64 epoch) {

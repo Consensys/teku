@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -28,8 +28,8 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Executio
 public class ExecutionPayloadBuilderDeneb extends ExecutionPayloadBuilderCapella {
   private ExecutionPayloadSchemaDeneb schema;
 
-  protected UInt64 dataGasUsed;
-  protected UInt64 excessDataGas;
+  protected UInt64 blobGasUsed;
+  protected UInt64 excessBlobGas;
 
   public ExecutionPayloadBuilderDeneb schema(final ExecutionPayloadSchemaDeneb schema) {
     this.schema = schema;
@@ -37,14 +37,14 @@ public class ExecutionPayloadBuilderDeneb extends ExecutionPayloadBuilderCapella
   }
 
   @Override
-  public ExecutionPayloadBuilder dataGasUsed(final Supplier<UInt64> dataGasUsedSupplier) {
-    this.dataGasUsed = dataGasUsedSupplier.get();
+  public ExecutionPayloadBuilder blobGasUsed(final Supplier<UInt64> blobGasUsedSupplier) {
+    this.blobGasUsed = blobGasUsedSupplier.get();
     return this;
   }
 
   @Override
-  public ExecutionPayloadBuilderDeneb excessDataGas(final Supplier<UInt64> excessDataGasSupplier) {
-    this.excessDataGas = excessDataGasSupplier.get();
+  public ExecutionPayloadBuilderDeneb excessBlobGas(final Supplier<UInt64> excessBlobGasSupplier) {
+    this.excessBlobGas = excessBlobGasSupplier.get();
     return this;
   }
 
@@ -56,8 +56,8 @@ public class ExecutionPayloadBuilderDeneb extends ExecutionPayloadBuilderCapella
   @Override
   protected void validate() {
     super.validate();
-    checkNotNull(dataGasUsed, "dataGasUsed must be specified");
-    checkNotNull(excessDataGas, "excessDataGas must be specified");
+    checkNotNull(blobGasUsed, "blobGasUsed must be specified");
+    checkNotNull(excessBlobGas, "excessBlobGas must be specified");
   }
 
   @Override
@@ -82,7 +82,7 @@ public class ExecutionPayloadBuilderDeneb extends ExecutionPayloadBuilderCapella
             .map(schema.getTransactionSchema()::fromBytes)
             .collect(schema.getTransactionsSchema().collector()),
         schema.getWithdrawalsSchema().createFromElements(withdrawals),
-        SszUInt64.of(dataGasUsed),
-        SszUInt64.of(excessDataGas));
+        SszUInt64.of(blobGasUsed),
+        SszUInt64.of(excessBlobGas));
   }
 }

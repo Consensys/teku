@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -36,7 +36,8 @@ public class DepositSnapshotFileLoader {
           Eth2Network.GNOSIS, "gnosis.ssz",
           Eth2Network.PRATER, "goerli.ssz",
           Eth2Network.MAINNET, "mainnet.ssz",
-          Eth2Network.SEPOLIA, "sepolia.ssz");
+          Eth2Network.SEPOLIA, "sepolia.ssz",
+          Eth2Network.LUKSO, "lukso.ssz");
 
   private static final Logger LOG = LogManager.getLogger();
 

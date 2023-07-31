@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -55,6 +55,7 @@ public class VersionedDatabaseFactoryTest {
       assertThat(db).isNotNull();
 
       assertDbVersionSaved(dataDir, DatabaseVersion.DEFAULT_VERSION);
+      assertStorageModeSaved(dataDir, StateStorageMode.PRUNE);
     }
   }
 
@@ -81,6 +82,7 @@ public class VersionedDatabaseFactoryTest {
       assertThat(db).isNotNull();
     }
     assertThat(dbFactory.getDatabaseVersion()).isEqualTo(nonDefaultDatabaseVersion);
+    assertThat(dbFactory.getStateStorageMode()).isEqualTo(StateStorageMode.PRUNE);
   }
 
   @Test
@@ -160,5 +162,12 @@ public class VersionedDatabaseFactoryTest {
     final String versionValue =
         Files.readString(dataDirectory.resolve(VersionedDatabaseFactory.DB_VERSION_PATH));
     assertThat(versionValue).isEqualTo(defaultVersion.getValue());
+  }
+
+  private void assertStorageModeSaved(
+      final Path dataDirectory, final StateStorageMode expectedStorageMode) throws IOException {
+    final String storageModeValue =
+        Files.readString(dataDirectory.resolve(VersionedDatabaseFactory.STORAGE_MODE_PATH));
+    assertThat(storageModeValue).isEqualTo(expectedStorageMode.toString());
   }
 }
