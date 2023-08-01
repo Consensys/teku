@@ -26,7 +26,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-class StateStorageModeTest {
+public class StorageConfigurationTest {
 
   public static Stream<Arguments> getStateStorageDefaultScenarios() {
     ArrayList<Arguments> args = new ArrayList<>();
@@ -54,7 +54,7 @@ class StateStorageModeTest {
       final StateStorageMode expectedResult) {
 
     assertThat(
-            StateStorageMode.determineStorageDefault(
+            StorageConfiguration.determineStorageDefault(
                 isExistingStore, maybePreviousStorageMode, requestedMode))
         .isEqualTo(expectedResult);
   }

@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.storage.server;
 
+import static tech.pegasys.teku.storage.server.StateStorageMode.MINIMAL;
+import static tech.pegasys.teku.storage.server.StateStorageMode.NOT_SET;
+import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
 import static tech.pegasys.teku.storage.server.VersionedDatabaseFactory.STORAGE_MODE_PATH;
 
 import java.io.File;
@@ -240,8 +243,8 @@ public class StorageConfiguration {
                 getStorageModeFromPersistedDatabase(dataDirLayout),
                 dataStorageMode);
       } else {
-        if (dataStorageMode.equals(StateStorageMode.NOT_SET)) {
-          dataStorageMode = StateStorageMode.PRUNE;
+        if (dataStorageMode.equals(NOT_SET)) {
+          dataStorageMode = PRUNE;
         }
       }
     }
@@ -263,5 +266,15 @@ public class StorageConfiguration {
       }
       return maybePreviousStorage;
     }
+  }
+
+  static StateStorageMode determineStorageDefault(
+      final boolean isExistingStore,
+      final Optional<StateStorageMode> maybeHistoricStorageMode,
+      final StateStorageMode modeRequested) {
+    if (modeRequested != NOT_SET) {
+      return modeRequested;
+    }
+    return maybeHistoricStorageMode.orElse(isExistingStore ? PRUNE : MINIMAL);
   }
 }
