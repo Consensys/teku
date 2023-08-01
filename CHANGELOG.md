@@ -21,3 +21,5 @@ For information on changes in released versions of Teku, see the [releases page]
 - The default state-cache size has been changed to 8 (previously 160), and there is now an epoch-states-cache, which defaults to a maximum of 6 elements. 
 
 ### Bug Fixes
+
+- Fixed a possibility of overflow errors when calculating validator duties if the number of active validators is >1M. 
