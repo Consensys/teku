@@ -34,7 +34,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class MiscHelpersTest {
@@ -42,7 +41,6 @@ class MiscHelpersTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final SpecConfig specConfig = spec.getGenesisSpecConfig();
   private final MiscHelpers miscHelpers = new MiscHelpers(specConfig);
-  private final BeaconState beaconStateMock = mock(BeaconState.class);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @Test
@@ -187,12 +185,16 @@ class MiscHelpersTest {
 
   @ParameterizedTest
   @MethodSource("getCommitteeComputationArguments")
-  public void committeeComputationShouldNotOverflow(int validatorsCount, int committeeIndex) {
-    final IntList indices = IntList.of(IntStream.range(0, validatorsCount).toArray());
+  public void committeeComputationShouldNotOverflow(int activeValidatorsCount, int committeeIndex) {
+    final IntList indices = IntList.of(IntStream.range(0, activeValidatorsCount).toArray());
     Assertions.assertDoesNotThrow(
         () -> {
           miscHelpers.computeCommittee(
-              beaconStateMock, indices, dataStructureUtil.randomBytes32(), committeeIndex, 2048);
+              dataStructureUtil.randomBeaconState(),
+              indices,
+              dataStructureUtil.randomBytes32(),
+              committeeIndex,
+              2048);
         });
   }
 
