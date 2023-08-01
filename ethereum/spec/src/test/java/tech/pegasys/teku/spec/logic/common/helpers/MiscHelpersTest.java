@@ -187,12 +187,12 @@ class MiscHelpersTest {
 
   @ParameterizedTest
   @MethodSource("getCommitteeComputationArguments")
-  public void committeeComputationShouldNotOverflow(int validatorsCount, int validatorIndex) {
+  public void committeeComputationShouldNotOverflow(int validatorsCount, int committeeIndex) {
     final IntList indices = IntList.of(IntStream.range(0, validatorsCount).toArray());
     Assertions.assertDoesNotThrow(
         () -> {
           miscHelpers.computeCommittee(
-              beaconStateMock, indices, dataStructureUtil.randomBytes32(), validatorIndex, 2048);
+              beaconStateMock, indices, dataStructureUtil.randomBytes32(), committeeIndex, 2048);
         });
   }
 

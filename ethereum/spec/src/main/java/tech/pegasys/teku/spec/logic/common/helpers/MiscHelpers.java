@@ -163,9 +163,9 @@ public class MiscHelpers {
       final Bytes32 seed,
       final int index,
       final int count) {
-    final UInt64 size = UInt64.valueOf(indices.size());
-    final UInt64 start = size.times(index).dividedBy(count);
-    final UInt64 end = size.times(index + 1).dividedBy(count);
+    final UInt64 indicesSize = UInt64.valueOf(indices.size());
+    final int start = indicesSize.times(index).dividedBy(count).intValue();
+    final int end = indicesSize.times(index + 1).dividedBy(count).intValue();
     return computeCommitteeShuffle(state, indices, seed, start, end);
   }
 
@@ -173,17 +173,17 @@ public class MiscHelpers {
       final BeaconState state,
       final IntList indices,
       final Bytes32 seed,
-      final UInt64 fromIndex,
-      final UInt64 toIndex) {
-    if (fromIndex.isLessThan(toIndex)) {
+      final int fromIndex,
+      final int toIndex) {
+    if (fromIndex < toIndex) {
       final int indexCount = indices.size();
-      checkArgument(fromIndex.isLessThan(indexCount), "CommitteeUtil.getShuffledIndex1");
-      checkArgument(toIndex.isLessThanOrEqualTo(indexCount), "CommitteeUtil.getShuffledIndex1");
+      checkArgument(fromIndex < indexCount, "CommitteeUtil.getShuffledIndex1");
+      checkArgument(toIndex <= indexCount, "CommitteeUtil.getShuffledIndex1");
     }
     return BeaconStateCache.getTransitionCaches(state)
         .getCommitteeShuffle()
         .get(seed, s -> shuffleList(indices, s))
-        .subList(fromIndex.intValue(), toIndex.intValue());
+        .subList(fromIndex, toIndex);
   }
 
   IntList shuffleList(IntList input, Bytes32 seed) {
