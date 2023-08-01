@@ -158,23 +158,32 @@ public class MiscHelpers {
   }
 
   public IntList computeCommittee(
-      BeaconState state, IntList indices, Bytes32 seed, int index, int count) {
-    int start = Math.floorDiv(indices.size() * index, count);
-    int end = Math.floorDiv(indices.size() * (index + 1), count);
+      final BeaconState state,
+      final IntList indices,
+      final Bytes32 seed,
+      final int index,
+      final int count) {
+    final UInt64 size = UInt64.valueOf(indices.size());
+    final UInt64 start = size.times(index).dividedBy(count);
+    final UInt64 end = size.times(index + 1).dividedBy(count);
     return computeCommitteeShuffle(state, indices, seed, start, end);
   }
 
   private IntList computeCommitteeShuffle(
-      BeaconState state, IntList indices, Bytes32 seed, int fromIndex, int toIndex) {
-    if (fromIndex < toIndex) {
-      int indexCount = indices.size();
-      checkArgument(fromIndex < indexCount, "CommitteeUtil.getShuffledIndex1");
-      checkArgument(toIndex <= indexCount, "CommitteeUtil.getShuffledIndex1");
+      final BeaconState state,
+      final IntList indices,
+      final Bytes32 seed,
+      final UInt64 fromIndex,
+      final UInt64 toIndex) {
+    if (fromIndex.isLessThan(toIndex)) {
+      final int indexCount = indices.size();
+      checkArgument(fromIndex.isLessThan(indexCount), "CommitteeUtil.getShuffledIndex1");
+      checkArgument(toIndex.isLessThanOrEqualTo(indexCount), "CommitteeUtil.getShuffledIndex1");
     }
     return BeaconStateCache.getTransitionCaches(state)
         .getCommitteeShuffle()
         .get(seed, s -> shuffleList(indices, s))
-        .subList(fromIndex, toIndex);
+        .subList(fromIndex.intValue(), toIndex.intValue());
   }
 
   IntList shuffleList(IntList input, Bytes32 seed) {
