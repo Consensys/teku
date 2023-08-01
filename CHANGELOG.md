@@ -22,4 +22,4 @@ For information on changes in released versions of Teku, see the [releases page]
 
 ### Bug Fixes
 
-- Fixed validator duty calculations overflow which could occur when the number of validators in state is >1M. 
+- Fixed validator duty calculations overflow which could occur when the number of active validators is >1M. 
