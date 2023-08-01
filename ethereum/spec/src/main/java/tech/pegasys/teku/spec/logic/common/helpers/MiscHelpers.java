@@ -158,16 +158,25 @@ public class MiscHelpers {
   }
 
   public IntList computeCommittee(
-      BeaconState state, IntList indices, Bytes32 seed, int index, int count) {
-    int start = Math.floorDiv(indices.size() * index, count);
-    int end = Math.floorDiv(indices.size() * (index + 1), count);
+      final BeaconState state,
+      final IntList indices,
+      final Bytes32 seed,
+      final int index,
+      final int count) {
+    final UInt64 indicesSize = UInt64.valueOf(indices.size());
+    final int start = indicesSize.times(index).dividedBy(count).intValue();
+    final int end = indicesSize.times(index + 1).dividedBy(count).intValue();
     return computeCommitteeShuffle(state, indices, seed, start, end);
   }
 
   private IntList computeCommitteeShuffle(
-      BeaconState state, IntList indices, Bytes32 seed, int fromIndex, int toIndex) {
+      final BeaconState state,
+      final IntList indices,
+      final Bytes32 seed,
+      final int fromIndex,
+      final int toIndex) {
     if (fromIndex < toIndex) {
-      int indexCount = indices.size();
+      final int indexCount = indices.size();
       checkArgument(fromIndex < indexCount, "CommitteeUtil.getShuffledIndex1");
       checkArgument(toIndex <= indexCount, "CommitteeUtil.getShuffledIndex1");
     }
