@@ -34,6 +34,7 @@ dependencies {
   implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml'
 
   integrationTestImplementation 'org.mock-server:mockserver-junit-jupiter'
+  integrationTestImplementation 'com.squareup.okhttp3:okhttp'
 
   testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':ethereum:spec'))
