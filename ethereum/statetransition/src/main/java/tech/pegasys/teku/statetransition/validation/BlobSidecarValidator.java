@@ -189,7 +189,7 @@ public class BlobSidecarValidator {
   }
 
   private boolean verifyBlobSidecarSignature(
-      BeaconState state, SignedBlobSidecar signedBlobSidecar) {
+      final BeaconState state, final SignedBlobSidecar signedBlobSidecar) {
 
     final Bytes32 domain =
         spec.getDomain(
@@ -206,7 +206,7 @@ public class BlobSidecarValidator {
         state);
   }
 
-  private boolean isFirstWithValidSignatureForIndexAndBlockRoot(BlobSidecar blobSidecar) {
+  private boolean isFirstWithValidSignatureForIndexAndBlockRoot(final BlobSidecar blobSidecar) {
     return !receivedValidBlobSidecarInfoSet.contains(
         new IndexAndBlockRoot(blobSidecar.getIndex(), blobSidecar.getBlockRoot()));
   }
@@ -229,14 +229,14 @@ public class BlobSidecarValidator {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
       if (this == o) {
         return true;
       }
       if (!(o instanceof IndexAndBlockRoot)) {
         return false;
       }
-      IndexAndBlockRoot that = (IndexAndBlockRoot) o;
+      final IndexAndBlockRoot that = (IndexAndBlockRoot) o;
       return Objects.equal(index, that.index) && Objects.equal(root, that.root);
     }
 
