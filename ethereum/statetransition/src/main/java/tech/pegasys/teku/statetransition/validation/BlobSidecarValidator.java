@@ -82,11 +82,11 @@ public class BlobSidecarValidator {
     final BlobSidecar blobSidecar = signedBlobSidecar.getBlobSidecar();
 
     /*
-    [REJECT] The sidecar is for the correct topic -- i.e. sidecar.index matches the topic {index}.
+    [REJECT] The sidecar is for the correct subnet -- i.e. compute_subnet_for_blob_sidecar(sidecar.index) == subnet_id.
     */
     /*
     This rule is already implemented in
-    tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipManager.TopicIndexAwareOperationProcessor
+    tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipManager.TopicSubnetIdAwareOperationProcessor
      */
 
     /*
@@ -171,10 +171,9 @@ public class BlobSidecarValidator {
               }
 
               /*
-              [REJECT] The proposer signature, signed_blob_sidecar.signature, is valid with respect to the
-              sidecar.proposer_index pubkey.
+              [REJECT] The proposer signature, signed_blob_sidecar.signature, is valid as verified by verify_blob_sidecar_signature.
                */
-              if (!isSignatureValidWithRespectToProposerIndex(signedBlobSidecar, postState)) {
+              if (!verifyBlobSidecarSignature(postState, signedBlobSidecar)) {
                 return reject("BlobSidecar signature is invalid");
               }
               if (!receivedValidBlobSidecarInfoSet.add(
@@ -189,25 +188,25 @@ public class BlobSidecarValidator {
             });
   }
 
-  private boolean isSignatureValidWithRespectToProposerIndex(
-      SignedBlobSidecar signedBlobSidecar, BeaconState postState) {
+  private boolean verifyBlobSidecarSignature(
+      final BeaconState state, final SignedBlobSidecar signedBlobSidecar) {
 
     final Bytes32 domain =
         spec.getDomain(
             Domain.DOMAIN_BLOB_SIDECAR,
-            spec.getCurrentEpoch(postState),
-            postState.getFork(),
-            postState.getGenesisValidatorsRoot());
+            spec.getCurrentEpoch(state),
+            state.getFork(),
+            state.getGenesisValidatorsRoot());
     final Bytes signingRoot = spec.computeSigningRoot(signedBlobSidecar.getBlobSidecar(), domain);
 
     return gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
         signingRoot,
         signedBlobSidecar.getBlobSidecar().getProposerIndex(),
         signedBlobSidecar.getSignature(),
-        postState);
+        state);
   }
 
-  private boolean isFirstWithValidSignatureForIndexAndBlockRoot(BlobSidecar blobSidecar) {
+  private boolean isFirstWithValidSignatureForIndexAndBlockRoot(final BlobSidecar blobSidecar) {
     return !receivedValidBlobSidecarInfoSet.contains(
         new IndexAndBlockRoot(blobSidecar.getIndex(), blobSidecar.getBlockRoot()));
   }
@@ -230,14 +229,14 @@ public class BlobSidecarValidator {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
       if (this == o) {
         return true;
       }
       if (!(o instanceof IndexAndBlockRoot)) {
         return false;
       }
-      IndexAndBlockRoot that = (IndexAndBlockRoot) o;
+      final IndexAndBlockRoot that = (IndexAndBlockRoot) o;
       return Objects.equal(index, that.index) && Objects.equal(root, that.root);
     }
 
