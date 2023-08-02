@@ -26,6 +26,7 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Collections;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
@@ -39,7 +40,7 @@ class AttestationTopicSubscriberTest {
 
   private final Spec spec = TestSpecFactory.createDefault();
   private final AttestationTopicSubscriber subscriber =
-      new AttestationTopicSubscriber(spec, eth2P2PNetwork);
+      new AttestationTopicSubscriber(spec, eth2P2PNetwork, mock(SettableLabelledGauge.class));
 
   @Test
   public void shouldSubscribeToSubnet() {
