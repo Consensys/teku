@@ -13,18 +13,8 @@
 
 package tech.pegasys.teku.spec.logic.common.helpers;
 
-import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.infrastructure.crypto.Hash.getSha256Instance;
-import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
-import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
-import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintTo4Bytes;
-
 import com.google.common.primitives.UnsignedBytes;
 import it.unimi.dsi.fastutil.ints.IntList;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -46,6 +36,17 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.infrastructure.crypto.Hash.getSha256Instance;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintTo4Bytes;
 
 public class MiscHelpers {
 
@@ -163,16 +164,25 @@ public class MiscHelpers {
   }
 
   public IntList computeCommittee(
-      BeaconState state, IntList indices, Bytes32 seed, int index, int count) {
-    int start = Math.floorDiv(indices.size() * index, count);
-    int end = Math.floorDiv(indices.size() * (index + 1), count);
+      final BeaconState state,
+      final IntList indices,
+      final Bytes32 seed,
+      final int index,
+      final int count) {
+    final UInt64 indicesSize = UInt64.valueOf(indices.size());
+    final int start = indicesSize.times(index).dividedBy(count).intValue();
+    final int end = indicesSize.times(index + 1).dividedBy(count).intValue();
     return computeCommitteeShuffle(state, indices, seed, start, end);
   }
 
   private IntList computeCommitteeShuffle(
-      BeaconState state, IntList indices, Bytes32 seed, int fromIndex, int toIndex) {
+      final BeaconState state,
+      final IntList indices,
+      final Bytes32 seed,
+      final int fromIndex,
+      final int toIndex) {
     if (fromIndex < toIndex) {
-      int indexCount = indices.size();
+      final int indexCount = indices.size();
       checkArgument(fromIndex < indexCount, "CommitteeUtil.getShuffledIndex1");
       checkArgument(toIndex <= indexCount, "CommitteeUtil.getShuffledIndex1");
     }

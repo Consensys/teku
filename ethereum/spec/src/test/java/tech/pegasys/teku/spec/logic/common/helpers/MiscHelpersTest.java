@@ -13,33 +13,38 @@
 
 package tech.pegasys.teku.spec.logic.common.helpers;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import it.unimi.dsi.fastutil.ints.IntList;
+import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
+
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigLoader;
-import tech.pegasys.teku.spec.networks.Eth2Network;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class MiscHelpersTest {
-  private final SpecConfig specConfig =
-      SpecConfigLoader.loadConfig(Eth2Network.MINIMAL.configName());
+
+  private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private final SpecConfig specConfig = spec.getGenesisSpecConfig();
   private final MiscHelpers miscHelpers = new MiscHelpers(specConfig);
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @Test
   void computeShuffledIndex_boundaryTest() {
@@ -212,6 +217,21 @@ class MiscHelpersTest {
     assertThat(actualTime).isEqualTo(UInt64.valueOf(expectedTime));
   }
 
+  @ParameterizedTest
+  @MethodSource("getCommitteeComputationArguments")
+  public void committeeComputationShouldNotOverflow(int activeValidatorsCount, int committeeIndex) {
+    final IntList indices = IntList.of(IntStream.range(0, activeValidatorsCount).toArray());
+    Assertions.assertDoesNotThrow(
+        () -> {
+          miscHelpers.computeCommittee(
+              dataStructureUtil.randomBeaconState(),
+              indices,
+              dataStructureUtil.randomBytes32(),
+              committeeIndex,
+              2048);
+        });
+  }
+
   public static Stream<Arguments> getComputesSlotAtTimeArguments() {
     // 6 seconds per slot
     return Stream.of(
@@ -262,5 +282,9 @@ class MiscHelpersTest {
                 new BigInteger(
                     "57467522110468688239177851250859789869070302005900722885377252304169193209346")),
             UInt64.valueOf(7)));
+  }
+
+  public static Stream<Arguments> getCommitteeComputationArguments() {
+    return Stream.of(Arguments.of(2_100_000, 1024), Arguments.of(1_049_088, 2047));
   }
 }
