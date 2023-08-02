@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -301,7 +301,7 @@ public class BuilderBidValidatorTest {
                     .blockHash(Bytes32.random())
                     .transactionsRoot(Bytes32.ZERO)
                     .withdrawalsRoot(() -> Bytes32.ZERO)
-                    .dataGasUsed(() -> UInt64.ONE)
-                    .excessDataGas(() -> UInt64.ONE));
+                    .blobGasUsed(() -> UInt64.ONE)
+                    .excessBlobGas(() -> UInt64.ONE));
   }
 }

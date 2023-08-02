@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -96,8 +96,8 @@ public class ExecutionPayloadDenebImpl
       SszBytes32 blockHash,
       SszList<Transaction> transactions,
       SszList<Withdrawal> withdrawals,
-      SszUInt64 dataGasUsed,
-      SszUInt64 excessDataGas) {
+      SszUInt64 blobGasUsed,
+      SszUInt64 excessBlobGas) {
     super(
         schema,
         parentHash,
@@ -115,8 +115,8 @@ public class ExecutionPayloadDenebImpl
         blockHash,
         transactions,
         withdrawals,
-        dataGasUsed,
-        excessDataGas);
+        blobGasUsed,
+        excessBlobGas);
   }
 
   @Override
@@ -215,12 +215,12 @@ public class ExecutionPayloadDenebImpl
   }
 
   @Override
-  public UInt64 getDataGasUsed() {
+  public UInt64 getBlobGasUsed() {
     return getField15().get();
   }
 
   @Override
-  public UInt64 getExcessDataGas() {
+  public UInt64 getExcessBlobGas() {
     return getField16().get();
   }
 

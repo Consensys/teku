@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -124,11 +124,8 @@ public class SigningRootUtil {
       final VoluntaryExit voluntaryExit, final ForkInfo forkInfo) {
     final SpecVersion specVersion = spec.atEpoch(voluntaryExit.getEpoch());
     final Bytes32 domain =
-        spec.getDomain(
-            Domain.VOLUNTARY_EXIT,
-            voluntaryExit.getEpoch(),
-            forkInfo.getFork(),
-            forkInfo.getGenesisValidatorsRoot());
+        spec.getVoluntaryExitDomain(
+            voluntaryExit.getEpoch(), forkInfo.getFork(), forkInfo.getGenesisValidatorsRoot());
     return specVersion.miscHelpers().computeSigningRoot(voluntaryExit, domain);
   }
 

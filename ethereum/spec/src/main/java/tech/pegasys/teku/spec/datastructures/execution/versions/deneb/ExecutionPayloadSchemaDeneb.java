@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -14,10 +14,10 @@
 package tech.pegasys.teku.spec.datastructures.execution.versions.deneb;
 
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BASE_FEE_PER_GAS;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOB_GAS_USED;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_HASH;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_NUMBER;
-import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.DATA_GAS_USED;
-import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXCESS_DATA_GAS;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXCESS_BLOB_GAS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXTRA_DATA;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.FEE_RECIPIENT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.GAS_LIMIT;
@@ -102,8 +102,8 @@ public class ExecutionPayloadSchemaDeneb
         namedSchema(
             WITHDRAWALS,
             SszListSchema.create(new WithdrawalSchema(), specConfig.getMaxWithdrawalsPerPayload())),
-        namedSchema(DATA_GAS_USED, SszPrimitiveSchemas.UINT64_SCHEMA),
-        namedSchema(EXCESS_DATA_GAS, SszPrimitiveSchemas.UINT64_SCHEMA));
+        namedSchema(BLOB_GAS_USED, SszPrimitiveSchemas.UINT64_SCHEMA),
+        namedSchema(EXCESS_BLOB_GAS, SszPrimitiveSchemas.UINT64_SCHEMA));
     this.defaultExecutionPayload = createFromBackingNode(getDefaultTree());
   }
 

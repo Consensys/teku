@@ -1,5 +1,5 @@
 /*
- * Copyright ConsenSys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -46,7 +46,7 @@ public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
 
-  public static final boolean DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED = true;
+  public static final boolean DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED = false;
 
   public static final String INITIAL_STATE_URL_PATH = "eth/v2/debug/beacon/states/finalized";
   // 26 thousand years should be enough
@@ -189,18 +189,13 @@ public class Eth2NetworkConfiguration {
   }
 
   public Optional<UInt64> getForkEpoch(final SpecMilestone specMilestone) {
-    switch (specMilestone) {
-      case ALTAIR:
-        return altairForkEpoch;
-      case BELLATRIX:
-        return bellatrixForkEpoch;
-      case CAPELLA:
-        return capellaForkEpoch;
-      case DENEB:
-        return denebForkEpoch;
-      default:
-        return Optional.empty();
-    }
+    return switch (specMilestone) {
+      case ALTAIR -> altairForkEpoch;
+      case BELLATRIX -> bellatrixForkEpoch;
+      case CAPELLA -> capellaForkEpoch;
+      case DENEB -> denebForkEpoch;
+      default -> Optional.empty();
+    };
   }
 
   public Optional<Bytes32> getTerminalBlockHashOverride() {
@@ -481,28 +476,17 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder applyNetworkDefaults(final Eth2Network network) {
-      switch (network) {
-        case MAINNET:
-          return applyMainnetNetworkDefaults();
-        case MINIMAL:
-          return applyMinimalNetworkDefaults();
-        case PRATER:
-          return applyPraterNetworkDefaults();
-        case SEPOLIA:
-          return applySepoliaNetworkDefaults();
-        case LUKSO:
-          return applyLuksoNetworkDefaults();
-        case GNOSIS:
-          return applyGnosisNetworkDefaults();
-        case CHIADO:
-          return applyChiadoNetworkDefaults();
-        case SWIFT:
-          return applySwiftNetworkDefaults();
-        case LESS_SWIFT:
-          return applyLessSwiftNetworkDefaults();
-        default:
-          return resetAndApplyBasicDefaults(network.configName());
-      }
+      return switch (network) {
+        case MAINNET -> applyMainnetNetworkDefaults();
+        case MINIMAL -> applyMinimalNetworkDefaults();
+        case PRATER -> applyPraterNetworkDefaults();
+        case SEPOLIA -> applySepoliaNetworkDefaults();
+        case LUKSO -> applyLuksoNetworkDefaults();
+        case GNOSIS -> applyGnosisNetworkDefaults();
+        case CHIADO -> applyChiadoNetworkDefaults();
+        case SWIFT -> applySwiftNetworkDefaults();
+        case LESS_SWIFT -> applyLessSwiftNetworkDefaults();
+      };
     }
 
     private Builder reset() {
@@ -523,7 +507,10 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder applyMinimalNetworkDefaults() {
-      return applyTestnetDefaults().constants(MINIMAL.configName()).startupTargetPeerCount(0);
+      return applyTestnetDefaults()
+          .trustedSetupFromClasspath("minimal-trusted-setup.txt")
+          .constants(MINIMAL.configName())
+          .startupTargetPeerCount(0);
     }
 
     public Builder applySwiftNetworkDefaults() {
