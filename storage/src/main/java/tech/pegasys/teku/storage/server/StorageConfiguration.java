@@ -238,7 +238,7 @@ public class StorageConfiguration {
       if (dataConfig != null) {
         final DataDirLayout dataDirLayout = DataDirLayout.createFrom(dataConfig);
         this.dataStorageMode =
-            StateStorageMode.determineStorageDefault(
+            determineStorageDefault(
                 dataDirLayout.getBeaconDataDirectory().toFile().exists(),
                 getStorageModeFromPersistedDatabase(dataDirLayout),
                 dataStorageMode);
