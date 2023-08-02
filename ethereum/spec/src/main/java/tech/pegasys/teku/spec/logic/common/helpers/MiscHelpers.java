@@ -13,8 +13,18 @@
 
 package tech.pegasys.teku.spec.logic.common.helpers;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.infrastructure.crypto.Hash.getSha256Instance;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
+import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintTo4Bytes;
+
 import com.google.common.primitives.UnsignedBytes;
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -36,17 +46,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
-
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.infrastructure.crypto.Hash.getSha256Instance;
-import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
-import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
-import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintTo4Bytes;
 
 public class MiscHelpers {
 
