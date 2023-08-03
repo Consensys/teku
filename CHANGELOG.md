@@ -22,3 +22,5 @@ For information on changes in released versions of Teku, see the [releases page]
 - New databases will now default to `minimal` if no `--data-storage-mode` is explicitly set. Existing `prune` mode databases will need to explicitly set `--data-storage-mode=minimal` if they wish to use minimal data storage. This includes anyone not specifying `--data-storage-mode` in 23.6.2 or earlier.
 
 ### Bug Fixes
+
+- Fixed a possibility of overflow errors when calculating validator duties if the number of active validators is >1M. 

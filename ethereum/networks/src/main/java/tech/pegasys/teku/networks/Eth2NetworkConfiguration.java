@@ -507,7 +507,10 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder applyMinimalNetworkDefaults() {
-      return applyTestnetDefaults().constants(MINIMAL.configName()).startupTargetPeerCount(0);
+      return applyTestnetDefaults()
+          .trustedSetupFromClasspath("minimal-trusted-setup.txt")
+          .constants(MINIMAL.configName())
+          .startupTargetPeerCount(0);
     }
 
     public Builder applySwiftNetworkDefaults() {
