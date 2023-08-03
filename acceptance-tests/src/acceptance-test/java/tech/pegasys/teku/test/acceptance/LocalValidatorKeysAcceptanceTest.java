@@ -84,6 +84,10 @@ public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
 
     api.assertValidatorGasLimit(
         validatorKeystores.getPublicKeys().get(1), UInt64.valueOf(30000000));
+
+    // generate voluntary exit
+    api.postVoluntaryExit(validatorKeystores.getPublicKeys().get(1));
+
     api.assertValidatorFeeRecipient(validatorKeystores.getPublicKeys().get(1), defaultFeeRecipient);
 
     final String expectedFeeRecipient = "0xAbcF8e0d4e9587369b2301D0790347320302cc09";
