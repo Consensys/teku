@@ -58,7 +58,9 @@ public class PostVoluntaryExit extends RestApiEndpoint {
             .pathParam(PARAM_PUBKEY_TYPE)
             .queryParam(EPOCH_QUERY_TYPE)
             .description(
-                "Create a signed voluntary exit message for an active validator, identified by a public key known to the validator client. This endpoint returns a SignedVoluntaryExit object, which can be used to initiate voluntary exit via the beacon node's submitPoolVoluntaryExit endpoint.")
+                "Create a signed voluntary exit message for an active validator, identified by a public key known to "
+                    + "the validator client. This endpoint returns a SignedVoluntaryExit object, which can be used to "
+                    + "initiate voluntary exit via the beacon node's submitPoolVoluntaryExit endpoint.")
             .response(SC_OK, "Success response", SIGNED_VOLUNTARY_EXIT_RESPONSE_TYPE)
             .withNotFoundResponse()
             .withUnauthorizedResponse()
@@ -71,7 +73,6 @@ public class PostVoluntaryExit extends RestApiEndpoint {
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final BLSPublicKey publicKey = request.getPathParameter(PARAM_PUBKEY_TYPE);
     final Optional<UInt64> maybeEpoch = request.getOptionalQueryParameter(EPOCH_QUERY_TYPE);
-
     final SafeFuture<SignedVoluntaryExit> future =
         provider.getSignedVoluntaryExit(publicKey, maybeEpoch);
     request.respondAsync(future.thenApply(AsyncApiResponse::respondOk));
