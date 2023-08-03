@@ -30,7 +30,6 @@ import java.time.Duration;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.function.Function;
 import java.util.function.IntSupplier;
 import org.apache.logging.log4j.LogManager;
@@ -74,9 +73,9 @@ import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSubnetsSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AllSyncCommitteeSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
+import tech.pegasys.teku.networking.eth2.gossip.subnets.NodeBasedStableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
-import tech.pegasys.teku.networking.eth2.gossip.subnets.ValidatorBasedStableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.mock.NoOpEth2P2PNetwork;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -258,6 +257,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile KeyValueStore<String, Bytes> keyValueStore;
   protected volatile StorageQueryChannel storageQueryChannel;
   protected volatile StorageUpdateChannel storageUpdateChannel;
+  protected volatile StableSubnetSubscriber stableSubnetSubscriber;
 
   protected UInt64 genesisTimeTracker = ZERO;
   protected BlockManager blockManager;
@@ -437,6 +437,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initMetrics();
     initAttestationTopicSubscriber();
     initActiveValidatorTracker();
+    initSubnetSubscriber();
     initPerformanceTracker();
     initDataProvider();
     initValidatorApiHandler();
@@ -728,15 +729,17 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initActiveValidatorTracker() {
     LOG.debug("BeaconChainController.initActiveValidatorTracker");
-    final StableSubnetSubscriber stableSubnetSubscriber =
+    this.activeValidatorTracker = new ActiveValidatorTracker(spec);
+  }
+
+  protected void initSubnetSubscriber() {
+    LOG.debug("BeaconChainController.initSubnetSubscriber");
+    this.stableSubnetSubscriber =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? AllSubnetsSubscriber.create(attestationTopicSubscriber, spec.getNetworkingConfig())
-            : new ValidatorBasedStableSubnetSubscriber(
-                attestationTopicSubscriber,
-                new Random(),
-                spec,
-                beaconConfig.p2pConfig().getMinimumSubnetSubscriptions());
-    this.activeValidatorTracker = new ActiveValidatorTracker(stableSubnetSubscriber, spec);
+            : new NodeBasedStableSubnetSubscriber(
+                attestationTopicSubscriber, spec, p2pNetwork.getDiscoveryNodeId());
+    eventChannels.subscribe(SlotEventsChannel.class, stableSubnetSubscriber);
   }
 
   public void initValidatorApiHandler() {
