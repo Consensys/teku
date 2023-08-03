@@ -57,8 +57,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
     final UInt64 currentUnsubscriptionSlot = subnetIdToUnsubscribeSlot.getOrDefault(subnetId, ZERO);
     if (currentUnsubscriptionSlot.equals(ZERO)) {
       eth2P2PNetwork.subscribeToAttestationSubnetId(subnetId);
-      subnetSubscriptionsGauge.set(
-          subnetId, String.format(GAUGE_AGGREGATION_SUBNETS_LABEL, subnetId));
+      subnetSubscriptionsGauge.set(1, String.format(GAUGE_AGGREGATION_SUBNETS_LABEL, subnetId));
     }
     final UInt64 unsubscribeSlot = currentUnsubscriptionSlot.max(aggregationSlot);
     LOG.trace(
@@ -88,8 +87,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
         subnetIdToUnsubscribeSlot.put(subnetId, unsubscriptionSlot);
       } else {
         eth2P2PNetwork.subscribeToAttestationSubnetId(subnetId);
-        subnetSubscriptionsGauge.set(
-            subnetId, String.format(GAUGE_PERSISTENT_SUBNETS_LABEL, subnetId));
+        subnetSubscriptionsGauge.set(1, String.format(GAUGE_PERSISTENT_SUBNETS_LABEL, subnetId));
         LOG.trace("Subscribed to new persistent subnet {}", subnetId);
         subnetIdToUnsubscribeSlot.put(subnetId, subnetSubscription.getUnsubscriptionSlot());
       }
