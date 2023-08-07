@@ -19,7 +19,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NavigableSet;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -37,12 +36,12 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
   private final NavigableSet<SubnetSubscription> subnetSubscriptions = new TreeSet<>();
   private final Spec spec;
   private final int subnetsPerNode;
-  private final Optional<UInt256> discoveryNodeId;
+  private final UInt256 discoveryNodeId;
 
   public NodeBasedStableSubnetSubscriber(
       final AttestationTopicSubscriber persistentSubnetSubscriber,
       final Spec spec,
-      final Optional<UInt256> discoveryNodeId) {
+      final UInt256 discoveryNodeId) {
     this.persistentSubnetSubscriber = persistentSubnetSubscriber;
     this.spec = spec;
     this.subnetsPerNode = spec.getNetworkingConfig().getSubnetsPerNode();
@@ -81,14 +80,10 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
       return emptySet();
     }
 
-    final UInt256 nodeId =
-        discoveryNodeId.orElseThrow(
-            () -> new IllegalArgumentException("Unable to get discovery node id"));
-
     final List<UInt64> nodeSubscribedSubnets =
         spec.atSlot(currentSlot)
             .miscHelpers()
-            .computeSubscribedSubnets(nodeId, spec.computeEpochAtSlot(currentSlot));
+            .computeSubscribedSubnets(discoveryNodeId, spec.computeEpochAtSlot(currentSlot));
 
     LOG.trace(
         "Computed persistent subnets {}",
@@ -104,7 +99,7 @@ public class NodeBasedStableSubnetSubscriber implements StableSubnetSubscriber {
               nodeSubscribedSubnetsIterator.next().intValue(),
               spec.atSlot(currentSlot)
                   .miscHelpers()
-                  .calculateNodeSubnetUnsubscriptionSlot(nodeId, currentSlot));
+                  .calculateNodeSubnetUnsubscriptionSlot(discoveryNodeId, currentSlot));
       newSubnetSubscriptions.add(newSubnetSubscription);
     }
     return newSubnetSubscriptions;
