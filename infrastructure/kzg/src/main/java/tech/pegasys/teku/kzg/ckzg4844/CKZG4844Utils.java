@@ -25,7 +25,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
@@ -35,23 +35,20 @@ import tech.pegasys.teku.kzg.TrustedSetup;
 
 public class CKZG4844Utils {
 
-  public static byte[] flattenBytes(final Stream<Bytes> bytesStream, final int capacity) {
-    return bytesStream.reduce(Bytes::concatenate).map(Bytes::toArray).orElse(new byte[capacity]);
-  }
-
   public static byte[] flattenBlobs(final List<Bytes> blobs) {
-    return flattenBytes(blobs.stream(), CKZG4844JNI.getBytesPerBlob() * blobs.size());
+    return flattenBytes(blobs, CKZG4844JNI.getBytesPerBlob() * blobs.size());
   }
 
   public static byte[] flattenCommitments(final List<KZGCommitment> commitments) {
-    final Stream<Bytes> commitmentsBytes =
-        commitments.stream().map(KZGCommitment::getBytesCompressed);
-    return flattenBytes(commitmentsBytes, KZGCommitment.KZG_COMMITMENT_SIZE * commitments.size());
+    return flattenBytes(
+        commitments,
+        KZGCommitment::getBytesCompressed,
+        KZGCommitment.KZG_COMMITMENT_SIZE * commitments.size());
   }
 
   public static byte[] flattenProofs(final List<KZGProof> kzgProofs) {
-    final Stream<Bytes> kzgProofBytes = kzgProofs.stream().map(KZGProof::getBytesCompressed);
-    return flattenBytes(kzgProofBytes, KZGProof.KZG_PROOF_SIZE * kzgProofs.size());
+    return flattenBytes(
+        kzgProofs, KZGProof::getBytesCompressed, KZGProof.KZG_PROOF_SIZE * kzgProofs.size());
   }
 
   public static TrustedSetup parseTrustedSetupFile(final String filePath) throws IOException {
@@ -84,5 +81,21 @@ public class CKZG4844Utils {
     } catch (Exception ex) {
       throw new IOException(String.format("Failed to parse trusted setup file\n: %s", filePath));
     }
+  }
+
+  public static byte[] flattenBytes(final List<Bytes> toFlatten, final int capacity) {
+    return flattenBytes(toFlatten, Function.identity(), capacity);
+  }
+
+  private static <T> byte[] flattenBytes(
+      final List<T> toFlatten, final Function<T, Bytes> bytesConverter, final int capacity) {
+    final byte[] flattened = new byte[capacity];
+    int destPos = 0;
+    for (final T data : toFlatten) {
+      final Bytes bytes = bytesConverter.apply(data);
+      System.arraycopy(bytes.toArray(), 0, flattened, destPos, bytes.size());
+      destPos += bytes.size();
+    }
+    return flattened;
   }
 }
