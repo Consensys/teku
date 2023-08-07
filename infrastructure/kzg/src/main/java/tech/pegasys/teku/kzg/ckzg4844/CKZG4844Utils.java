@@ -13,19 +13,20 @@
 
 package tech.pegasys.teku.kzg.ckzg4844;
 
+import static tech.pegasys.teku.kzg.ckzg4844.CKZG4844.G1_POINT_SIZE;
+import static tech.pegasys.teku.kzg.ckzg4844.CKZG4844.G2_POINT_SIZE;
+
 import ethereum.ckzg4844.CKZG4844JNI;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.kzg.KZGCommitment;
@@ -34,11 +35,8 @@ import tech.pegasys.teku.kzg.TrustedSetup;
 
 public class CKZG4844Utils {
 
-  private static final int G2_POINT_SIZE = 96;
-
-  public static byte[] flattenBytes(final List<? extends Bytes> bytes) {
-    return flattenBytes(
-        bytes.stream(), bytes.stream().map(Bytes::size).reduce(Integer::sum).orElse(0));
+  public static byte[] flattenBytes(final Stream<Bytes> bytesStream, final int capacity) {
+    return bytesStream.reduce(Bytes::concatenate).map(Bytes::toArray).orElse(new byte[capacity]);
   }
 
   public static byte[] flattenBlobs(final List<Bytes> blobs) {
@@ -70,9 +68,9 @@ public class CKZG4844Utils {
       // Number of G2 points
       final int g2Size = Integer.parseInt(reader.readLine());
       // List of G1 points, one on each new line
-      final List<Bytes48> g1Points = new ArrayList<>();
+      final List<Bytes> g1Points = new ArrayList<>();
       for (int i = 0; i < g1Size; i++) {
-        final Bytes48 g1Point = Bytes48.fromHexString(reader.readLine());
+        final Bytes g1Point = Bytes.fromHexString(reader.readLine(), G1_POINT_SIZE);
         g1Points.add(g1Point);
       }
       // List of G2 points, one on each new line
@@ -86,11 +84,5 @@ public class CKZG4844Utils {
     } catch (Exception ex) {
       throw new IOException(String.format("Failed to parse trusted setup file\n: %s", filePath));
     }
-  }
-
-  private static byte[] flattenBytes(final Stream<? extends Bytes> bytes, final int capacity) {
-    final ByteBuffer buffer = ByteBuffer.allocate(capacity);
-    bytes.map(Bytes::toArray).forEach(buffer::put);
-    return buffer.array();
   }
 }

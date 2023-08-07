@@ -35,6 +35,9 @@ import tech.pegasys.teku.kzg.TrustedSetup;
  */
 public final class CKZG4844 implements KZG {
 
+  public static final int G1_POINT_SIZE = 48;
+  public static final int G2_POINT_SIZE = 96;
+
   private static final Logger LOG = LogManager.getLogger();
 
   private static CKZG4844 instance;
@@ -103,11 +106,13 @@ public final class CKZG4844 implements KZG {
       return;
     }
     try {
+      final List<Bytes> g1Points = trustedSetup.g1Points();
+      final List<Bytes> g2Points = trustedSetup.g2Points();
       CKZG4844JNI.loadTrustedSetup(
-          CKZG4844Utils.flattenBytes(trustedSetup.getG1Points()),
-          trustedSetup.getG1Points().size(),
-          CKZG4844Utils.flattenBytes(trustedSetup.getG2Points()),
-          trustedSetup.getG2Points().size());
+          CKZG4844Utils.flattenBytes(g1Points.stream(), g1Points.size() * G1_POINT_SIZE),
+          g1Points.size(),
+          CKZG4844Utils.flattenBytes(g2Points.stream(), g2Points.size() * G2_POINT_SIZE),
+          g2Points.size());
       loadedTrustedSetupHash = Optional.of(trustedSetup.hashCode());
       LOG.debug("Loaded trusted setup: {}", trustedSetup);
     } catch (final Exception ex) {
