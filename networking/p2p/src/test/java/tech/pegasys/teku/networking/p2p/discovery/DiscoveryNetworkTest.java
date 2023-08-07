@@ -23,14 +23,19 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
+import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
@@ -274,6 +279,17 @@ class DiscoveryNetworkTest {
     verify(discoveryService).updateCustomENRField("eth2", enrForkId.sszSerialize());
   }
 
+  @ParameterizedTest
+  @MethodSource("provideNodeIds")
+  public void nodeIdMustBeWrappedInUint256(String nodeIdValue) {
+    final Optional<Bytes> nodeId =
+        Optional.of(Bytes.wrap(new BigInteger(nodeIdValue).toByteArray()));
+    when(discoveryService.getNodeId()).thenReturn(nodeId);
+    assertThat(discoveryNetwork.getDiscoveryNodeId()).isPresent();
+    assertThat(discoveryNetwork.getDiscoveryNodeId().get().toBigInteger().toString())
+        .isEqualTo(nodeIdValue);
+  }
+
   public DiscoveryPeer createDiscoveryPeer(Optional<EnrForkId> maybeForkId) {
     final SszBitvector syncCommitteeSubnets =
         schemaDefinitions.getSyncnetsENRFieldSchema().getDefault();
@@ -284,5 +300,14 @@ class DiscoveryNetworkTest {
         SszBitvectorSchema.create(spec.getNetworkingConfig().getAttestationSubnetCount())
             .getDefault(),
         syncCommitteeSubnets);
+  }
+
+  public static Stream<Arguments> provideNodeIds() {
+    return Stream.of(
+        Arguments.of("19"),
+        Arguments.of("434726285098"),
+        Arguments.of("28805562758054575154484845"),
+        Arguments.of(
+            "57467522110468688239177851250859789869070302005900722885377252304169193209346"));
   }
 }

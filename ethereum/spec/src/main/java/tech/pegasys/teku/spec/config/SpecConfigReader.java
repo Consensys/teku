@@ -75,7 +75,6 @@ public class SpecConfigReader {
           // Phase0 constants which may exist in legacy config files, but should now be ignored
           "BLS_WITHDRAWAL_PREFIX",
           "TARGET_AGGREGATORS_PER_COMMITTEE",
-          "RANDOM_SUBNETS_PER_VALIDATOR",
           "EPOCHS_PER_RANDOM_SUBNET_SUBSCRIPTION",
           "DOMAIN_BEACON_PROPOSER",
           "DOMAIN_BEACON_ATTESTER",
