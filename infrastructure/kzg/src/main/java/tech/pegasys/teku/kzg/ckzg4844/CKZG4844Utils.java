@@ -51,6 +51,10 @@ public class CKZG4844Utils {
         kzgProofs, KZGProof::getBytesCompressed, KZGProof.KZG_PROOF_SIZE * kzgProofs.size());
   }
 
+  public static byte[] flattenBytes(final List<Bytes> toFlatten, final int expectedSize) {
+    return flattenBytes(toFlatten, Function.identity(), expectedSize);
+  }
+
   public static TrustedSetup parseTrustedSetupFile(final String filePath) throws IOException {
     final String sanitizedTrustedSetup = UrlSanitizer.sanitizePotentialUrl(filePath);
     final InputStream resource =
@@ -81,10 +85,6 @@ public class CKZG4844Utils {
     } catch (final Exception ex) {
       throw new IOException(String.format("Failed to parse trusted setup file\n: %s", filePath));
     }
-  }
-
-  public static byte[] flattenBytes(final List<Bytes> toFlatten, final int expectedSize) {
-    return flattenBytes(toFlatten, Function.identity(), expectedSize);
   }
 
   private static <T> byte[] flattenBytes(
