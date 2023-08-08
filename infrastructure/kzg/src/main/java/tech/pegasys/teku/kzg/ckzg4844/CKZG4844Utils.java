@@ -13,9 +13,6 @@
 
 package tech.pegasys.teku.kzg.ckzg4844;
 
-import static tech.pegasys.teku.kzg.ckzg4844.CKZG4844.G1_POINT_SIZE;
-import static tech.pegasys.teku.kzg.ckzg4844.CKZG4844.G2_POINT_SIZE;
-
 import ethereum.ckzg4844.CKZG4844JNI;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -51,8 +48,12 @@ public class CKZG4844Utils {
         kzgProofs, KZGProof::getBytesCompressed, KZGProof.KZG_PROOF_SIZE * kzgProofs.size());
   }
 
-  public static byte[] flattenBytes(final List<Bytes> toFlatten, final int expectedSize) {
-    return flattenBytes(toFlatten, Function.identity(), expectedSize);
+  public static byte[] flattenG1Points(final List<Bytes> g1Points) {
+    return flattenBytes(g1Points, CKZG4844.G1_POINT_SIZE * g1Points.size());
+  }
+
+  public static byte[] flattenG2Points(final List<Bytes> g2Points) {
+    return flattenBytes(g2Points, CKZG4844.G2_POINT_SIZE * g2Points.size());
   }
 
   public static TrustedSetup parseTrustedSetupFile(final String filePath) throws IOException {
@@ -71,13 +72,13 @@ public class CKZG4844Utils {
       // List of G1 points, one on each new line
       final List<Bytes> g1Points = new ArrayList<>();
       for (int i = 0; i < g1Size; i++) {
-        final Bytes g1Point = Bytes.fromHexString(reader.readLine(), G1_POINT_SIZE);
+        final Bytes g1Point = Bytes.fromHexString(reader.readLine(), CKZG4844.G1_POINT_SIZE);
         g1Points.add(g1Point);
       }
       // List of G2 points, one on each new line
       final List<Bytes> g2Points = new ArrayList<>();
       for (int i = 0; i < g2Size; i++) {
-        final Bytes g2Point = Bytes.fromHexString(reader.readLine(), G2_POINT_SIZE);
+        final Bytes g2Point = Bytes.fromHexString(reader.readLine(), CKZG4844.G2_POINT_SIZE);
         g2Points.add(g2Point);
       }
 
@@ -85,6 +86,10 @@ public class CKZG4844Utils {
     } catch (final Exception ex) {
       throw new IOException(String.format("Failed to parse trusted setup file\n: %s", filePath));
     }
+  }
+
+  private static byte[] flattenBytes(final List<Bytes> toFlatten, final int expectedSize) {
+    return flattenBytes(toFlatten, Function.identity(), expectedSize);
   }
 
   private static <T> byte[] flattenBytes(

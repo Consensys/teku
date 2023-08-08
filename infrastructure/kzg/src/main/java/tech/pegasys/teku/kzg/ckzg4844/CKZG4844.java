@@ -109,9 +109,9 @@ public final class CKZG4844 implements KZG {
       final List<Bytes> g1Points = trustedSetup.g1Points();
       final List<Bytes> g2Points = trustedSetup.g2Points();
       CKZG4844JNI.loadTrustedSetup(
-          CKZG4844Utils.flattenBytes(g1Points, g1Points.size() * G1_POINT_SIZE),
+          CKZG4844Utils.flattenG1Points(g1Points),
           g1Points.size(),
-          CKZG4844Utils.flattenBytes(g2Points, g2Points.size() * G2_POINT_SIZE),
+          CKZG4844Utils.flattenG2Points(g2Points),
           g2Points.size());
       loadedTrustedSetupHash = Optional.of(trustedSetup.hashCode());
       LOG.debug("Loaded trusted setup: {}", trustedSetup);
