@@ -93,7 +93,7 @@ public final class CKZG4844 implements KZG {
     try {
       final TrustedSetup trustedSetup = CKZG4844Utils.parseTrustedSetupFile(trustedSetupFilePath);
       loadTrustedSetup(trustedSetup);
-    } catch (IOException ex) {
+    } catch (final IOException ex) {
       throw new KZGException("Failed to load trusted setup from file: " + trustedSetupFilePath, ex);
     }
   }

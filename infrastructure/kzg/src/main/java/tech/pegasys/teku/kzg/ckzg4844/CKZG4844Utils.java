@@ -78,23 +78,29 @@ public class CKZG4844Utils {
       }
 
       return new TrustedSetup(g1Points, g2Points);
-    } catch (Exception ex) {
+    } catch (final Exception ex) {
       throw new IOException(String.format("Failed to parse trusted setup file\n: %s", filePath));
     }
   }
 
-  public static byte[] flattenBytes(final List<Bytes> toFlatten, final int capacity) {
-    return flattenBytes(toFlatten, Function.identity(), capacity);
+  public static byte[] flattenBytes(final List<Bytes> toFlatten, final int expectedSize) {
+    return flattenBytes(toFlatten, Function.identity(), expectedSize);
   }
 
   private static <T> byte[] flattenBytes(
-      final List<T> toFlatten, final Function<T, Bytes> bytesConverter, final int capacity) {
-    final byte[] flattened = new byte[capacity];
+      final List<T> toFlatten, final Function<T, Bytes> bytesConverter, final int expectedSize) {
+    final byte[] flattened = new byte[expectedSize];
     int destPos = 0;
     for (final T data : toFlatten) {
       final Bytes bytes = bytesConverter.apply(data);
       System.arraycopy(bytes.toArray(), 0, flattened, destPos, bytes.size());
       destPos += bytes.size();
+    }
+    if (destPos != expectedSize) {
+      throw new IllegalArgumentException(
+          String.format(
+              "The actual bytes to flatten (%d) was not the same as the expected size specified (%d)",
+              destPos, expectedSize));
     }
     return flattened;
   }
