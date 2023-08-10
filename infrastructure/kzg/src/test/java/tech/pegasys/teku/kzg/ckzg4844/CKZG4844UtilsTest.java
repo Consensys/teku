@@ -22,19 +22,34 @@ import ethereum.ckzg4844.CKZG4844JNI.Preset;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 class CKZG4844UtilsTest {
 
+  @BeforeAll
+  public static void setUp() {
+    CKZG4844JNI.loadNativeLibrary(Preset.MAINNET);
+  }
+
   @Test
   public void testFlattenBlobsWithUnexpectedSizeThrows() {
-    CKZG4844JNI.loadNativeLibrary(Preset.MAINNET);
-    final int blobCount = Integer.MAX_VALUE / getBytesPerBlob();
+    final int blobCount = 42;
     final List<Bytes> blobs = IntStream.range(0, blobCount).mapToObj(__ -> Bytes.of()).toList();
     final IllegalArgumentException exception =
         assertThrows(IllegalArgumentException.class, () -> CKZG4844Utils.flattenBlobs(blobs));
     assertThat(exception)
         .hasMessage(
-            "The actual bytes to flatten (0) was not the same as the expected size specified (2147352576)");
+            "The actual bytes to flatten (0) was not the same as the expected size specified (5505024)");
+  }
+
+  @Test
+  public void testFlattenBlobsWithBigBoySizeThrows() {
+    final int blobCount = Integer.MAX_VALUE / getBytesPerBlob();
+    final List<Bytes> blobs = IntStream.range(0, blobCount).mapToObj(__ -> Bytes.of()).toList();
+    final IllegalArgumentException exception =
+        assertThrows(IllegalArgumentException.class, () -> CKZG4844Utils.flattenBlobs(blobs));
+    assertThat(exception)
+        .hasMessage("Maximum of 100000000 bytes can be flattened, but 2147352576 were requested");
   }
 }

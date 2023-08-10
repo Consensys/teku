@@ -15,6 +15,7 @@ package tech.pegasys.teku.kzg;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import ethereum.ckzg4844.CKZG4844JNI;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
@@ -22,7 +23,6 @@ import org.apache.tuweni.ssz.SSZ;
 
 public final class KZGProof {
 
-  public static final int KZG_PROOF_SIZE = 48;
   /** Creates 0x00..00 for point-at-infinity */
   public static final KZGProof INFINITY = KZGProof.fromBytesCompressed(Bytes48.ZERO);
 
@@ -32,11 +32,12 @@ public final class KZGProof {
 
   public static KZGProof fromSSZBytes(final Bytes bytes) {
     checkArgument(
-        bytes.size() == KZG_PROOF_SIZE,
-        "Expected " + KZG_PROOF_SIZE + " bytes but received %s.",
+        bytes.size() == CKZG4844JNI.BYTES_PER_PROOF,
+        "Expected " + CKZG4844JNI.BYTES_PER_PROOF + " bytes but received %s.",
         bytes.size());
     return SSZ.decode(
-        bytes, reader -> new KZGProof(Bytes48.wrap(reader.readFixedBytes(KZG_PROOF_SIZE))));
+        bytes,
+        reader -> new KZGProof(Bytes48.wrap(reader.readFixedBytes(CKZG4844JNI.BYTES_PER_PROOF))));
   }
 
   public static KZGProof fromBytesCompressed(final Bytes48 bytes) throws IllegalArgumentException {

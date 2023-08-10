@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.kzg.ckzg4844;
 
+import com.google.common.base.Preconditions;
 import ethereum.ckzg4844.CKZG4844JNI;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -32,6 +33,8 @@ import tech.pegasys.teku.kzg.TrustedSetup;
 
 public class CKZG4844Utils {
 
+  private static final int MAX_BYTES_TO_FLATTEN = 100_000_000; // 100 MB
+
   public static byte[] flattenBlobs(final List<Bytes> blobs) {
     return flattenBytes(blobs, CKZG4844JNI.getBytesPerBlob() * blobs.size());
   }
@@ -40,12 +43,12 @@ public class CKZG4844Utils {
     return flattenBytes(
         commitments,
         KZGCommitment::getBytesCompressed,
-        KZGCommitment.KZG_COMMITMENT_SIZE * commitments.size());
+        CKZG4844JNI.BYTES_PER_COMMITMENT * commitments.size());
   }
 
   public static byte[] flattenProofs(final List<KZGProof> kzgProofs) {
     return flattenBytes(
-        kzgProofs, KZGProof::getBytesCompressed, KZGProof.KZG_PROOF_SIZE * kzgProofs.size());
+        kzgProofs, KZGProof::getBytesCompressed, CKZG4844JNI.BYTES_PER_PROOF * kzgProofs.size());
   }
 
   public static byte[] flattenG1Points(final List<Bytes> g1Points) {
@@ -94,6 +97,11 @@ public class CKZG4844Utils {
 
   private static <T> byte[] flattenBytes(
       final List<T> toFlatten, final Function<T, Bytes> bytesConverter, final int expectedSize) {
+    Preconditions.checkArgument(
+        expectedSize <= MAX_BYTES_TO_FLATTEN,
+        "Maximum of %s bytes can be flattened, but %s were requested",
+        MAX_BYTES_TO_FLATTEN,
+        expectedSize);
     final byte[] flattened = new byte[expectedSize];
     int destPos = 0;
     for (final T data : toFlatten) {
