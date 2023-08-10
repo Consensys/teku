@@ -50,6 +50,6 @@ class CKZG4844UtilsTest {
     final IllegalArgumentException exception =
         assertThrows(IllegalArgumentException.class, () -> CKZG4844Utils.flattenBlobs(blobs));
     assertThat(exception)
-        .hasMessage("Maximum of 100000000 bytes can be flattened, but 2147352576 were requested");
+        .hasMessage("Maximum of 100663296 bytes can be flattened, but 2147352576 were requested");
   }
 }
