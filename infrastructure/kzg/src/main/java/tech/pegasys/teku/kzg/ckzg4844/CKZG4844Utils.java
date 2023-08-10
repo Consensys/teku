@@ -13,19 +13,18 @@
 
 package tech.pegasys.teku.kzg.ckzg4844;
 
+import com.google.common.base.Preconditions;
 import ethereum.ckzg4844.CKZG4844JNI;
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.kzg.KZGCommitment;
@@ -34,26 +33,30 @@ import tech.pegasys.teku.kzg.TrustedSetup;
 
 public class CKZG4844Utils {
 
-  private static final int G2_POINT_SIZE = 96;
-
-  public static byte[] flattenBytes(final List<? extends Bytes> bytes) {
-    return flattenBytes(
-        bytes.stream(), bytes.stream().map(Bytes::size).reduce(Integer::sum).orElse(0));
-  }
+  private static final int MAX_BYTES_TO_FLATTEN = 100_663_296; // ~100.66 MB or 768 blobs
 
   public static byte[] flattenBlobs(final List<Bytes> blobs) {
-    return flattenBytes(blobs.stream(), CKZG4844JNI.getBytesPerBlob() * blobs.size());
+    return flattenBytes(blobs, CKZG4844JNI.getBytesPerBlob() * blobs.size());
   }
 
   public static byte[] flattenCommitments(final List<KZGCommitment> commitments) {
-    final Stream<Bytes> commitmentsBytes =
-        commitments.stream().map(KZGCommitment::getBytesCompressed);
-    return flattenBytes(commitmentsBytes, KZGCommitment.KZG_COMMITMENT_SIZE * commitments.size());
+    return flattenBytes(
+        commitments,
+        KZGCommitment::toArrayUnsafe,
+        CKZG4844JNI.BYTES_PER_COMMITMENT * commitments.size());
   }
 
   public static byte[] flattenProofs(final List<KZGProof> kzgProofs) {
-    final Stream<Bytes> kzgProofBytes = kzgProofs.stream().map(KZGProof::getBytesCompressed);
-    return flattenBytes(kzgProofBytes, KZGProof.KZG_PROOF_SIZE * kzgProofs.size());
+    return flattenBytes(
+        kzgProofs, KZGProof::toArrayUnsafe, CKZG4844JNI.BYTES_PER_PROOF * kzgProofs.size());
+  }
+
+  public static byte[] flattenG1Points(final List<Bytes> g1Points) {
+    return flattenBytes(g1Points, CKZG4844.G1_POINT_SIZE * g1Points.size());
+  }
+
+  public static byte[] flattenG2Points(final List<Bytes> g2Points) {
+    return flattenBytes(g2Points, CKZG4844.G2_POINT_SIZE * g2Points.size());
   }
 
   public static TrustedSetup parseTrustedSetupFile(final String filePath) throws IOException {
@@ -70,27 +73,48 @@ public class CKZG4844Utils {
       // Number of G2 points
       final int g2Size = Integer.parseInt(reader.readLine());
       // List of G1 points, one on each new line
-      final List<Bytes48> g1Points = new ArrayList<>();
+      final List<Bytes> g1Points = new ArrayList<>();
       for (int i = 0; i < g1Size; i++) {
-        final Bytes48 g1Point = Bytes48.fromHexString(reader.readLine());
+        final Bytes g1Point = Bytes.fromHexString(reader.readLine(), CKZG4844.G1_POINT_SIZE);
         g1Points.add(g1Point);
       }
       // List of G2 points, one on each new line
       final List<Bytes> g2Points = new ArrayList<>();
       for (int i = 0; i < g2Size; i++) {
-        final Bytes g2Point = Bytes.fromHexString(reader.readLine(), G2_POINT_SIZE);
+        final Bytes g2Point = Bytes.fromHexString(reader.readLine(), CKZG4844.G2_POINT_SIZE);
         g2Points.add(g2Point);
       }
 
       return new TrustedSetup(g1Points, g2Points);
-    } catch (Exception ex) {
+    } catch (final Exception ex) {
       throw new IOException(String.format("Failed to parse trusted setup file\n: %s", filePath));
     }
   }
 
-  private static byte[] flattenBytes(final Stream<? extends Bytes> bytes, final int capacity) {
-    final ByteBuffer buffer = ByteBuffer.allocate(capacity);
-    bytes.map(Bytes::toArray).forEach(buffer::put);
-    return buffer.array();
+  private static byte[] flattenBytes(final List<Bytes> toFlatten, final int expectedSize) {
+    return flattenBytes(toFlatten, Bytes::toArrayUnsafe, expectedSize);
+  }
+
+  private static <T> byte[] flattenBytes(
+      final List<T> toFlatten, final Function<T, byte[]> bytesConverter, final int expectedSize) {
+    Preconditions.checkArgument(
+        expectedSize <= MAX_BYTES_TO_FLATTEN,
+        "Maximum of %s bytes can be flattened, but %s were requested",
+        MAX_BYTES_TO_FLATTEN,
+        expectedSize);
+    final byte[] flattened = new byte[expectedSize];
+    int destPos = 0;
+    for (final T data : toFlatten) {
+      final byte[] bytes = bytesConverter.apply(data);
+      System.arraycopy(bytes, 0, flattened, destPos, bytes.length);
+      destPos += bytes.length;
+    }
+    if (destPos != expectedSize) {
+      throw new IllegalArgumentException(
+          String.format(
+              "The actual bytes to flatten (%d) was not the same as the expected size specified (%d)",
+              destPos, expectedSize));
+    }
+    return flattened;
   }
 }

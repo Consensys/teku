@@ -35,6 +35,9 @@ import tech.pegasys.teku.kzg.TrustedSetup;
  */
 public final class CKZG4844 implements KZG {
 
+  public static final int G1_POINT_SIZE = 48;
+  public static final int G2_POINT_SIZE = 96;
+
   private static final Logger LOG = LogManager.getLogger();
 
   private static CKZG4844 instance;
@@ -90,7 +93,7 @@ public final class CKZG4844 implements KZG {
     try {
       final TrustedSetup trustedSetup = CKZG4844Utils.parseTrustedSetupFile(trustedSetupFilePath);
       loadTrustedSetup(trustedSetup);
-    } catch (IOException ex) {
+    } catch (final IOException ex) {
       throw new KZGException("Failed to load trusted setup from file: " + trustedSetupFilePath, ex);
     }
   }
@@ -103,11 +106,13 @@ public final class CKZG4844 implements KZG {
       return;
     }
     try {
+      final List<Bytes> g1Points = trustedSetup.g1Points();
+      final List<Bytes> g2Points = trustedSetup.g2Points();
       CKZG4844JNI.loadTrustedSetup(
-          CKZG4844Utils.flattenBytes(trustedSetup.getG1Points()),
-          trustedSetup.getG1Points().size(),
-          CKZG4844Utils.flattenBytes(trustedSetup.getG2Points()),
-          trustedSetup.getG2Points().size());
+          CKZG4844Utils.flattenG1Points(g1Points),
+          g1Points.size(),
+          CKZG4844Utils.flattenG2Points(g2Points),
+          g2Points.size());
       loadedTrustedSetupHash = Optional.of(trustedSetup.hashCode());
       LOG.debug("Loaded trusted setup: {}", trustedSetup);
     } catch (final Exception ex) {
@@ -135,9 +140,9 @@ public final class CKZG4844 implements KZG {
     try {
       final byte[] blobsBytes = CKZG4844Utils.flattenBlobs(blobs);
       final byte[] commitmentsBytes = CKZG4844Utils.flattenCommitments(kzgCommitments);
-      final byte[] proofBytes = CKZG4844Utils.flattenProofs(kzgProofs);
+      final byte[] proofsBytes = CKZG4844Utils.flattenProofs(kzgProofs);
       return CKZG4844JNI.verifyBlobKzgProofBatch(
-          blobsBytes, commitmentsBytes, proofBytes, blobs.size());
+          blobsBytes, commitmentsBytes, proofsBytes, blobs.size());
     } catch (final Exception ex) {
       throw new KZGException(
           "Failed to verify blobs and commitments against KZG proofs " + kzgProofs, ex);
