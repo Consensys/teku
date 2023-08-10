@@ -42,13 +42,13 @@ public class CKZG4844Utils {
   public static byte[] flattenCommitments(final List<KZGCommitment> commitments) {
     return flattenBytes(
         commitments,
-        KZGCommitment::getBytesCompressed,
+        KZGCommitment::toArrayUnsafe,
         CKZG4844JNI.BYTES_PER_COMMITMENT * commitments.size());
   }
 
   public static byte[] flattenProofs(final List<KZGProof> kzgProofs) {
     return flattenBytes(
-        kzgProofs, KZGProof::getBytesCompressed, CKZG4844JNI.BYTES_PER_PROOF * kzgProofs.size());
+        kzgProofs, KZGProof::toArrayUnsafe, CKZG4844JNI.BYTES_PER_PROOF * kzgProofs.size());
   }
 
   public static byte[] flattenG1Points(final List<Bytes> g1Points) {
@@ -92,11 +92,11 @@ public class CKZG4844Utils {
   }
 
   private static byte[] flattenBytes(final List<Bytes> toFlatten, final int expectedSize) {
-    return flattenBytes(toFlatten, Function.identity(), expectedSize);
+    return flattenBytes(toFlatten, Bytes::toArrayUnsafe, expectedSize);
   }
 
   private static <T> byte[] flattenBytes(
-      final List<T> toFlatten, final Function<T, Bytes> bytesConverter, final int expectedSize) {
+      final List<T> toFlatten, final Function<T, byte[]> bytesConverter, final int expectedSize) {
     Preconditions.checkArgument(
         expectedSize <= MAX_BYTES_TO_FLATTEN,
         "Maximum of %s bytes can be flattened, but %s were requested",
@@ -105,9 +105,9 @@ public class CKZG4844Utils {
     final byte[] flattened = new byte[expectedSize];
     int destPos = 0;
     for (final T data : toFlatten) {
-      final Bytes bytes = bytesConverter.apply(data);
-      System.arraycopy(bytes.toArray(), 0, flattened, destPos, bytes.size());
-      destPos += bytes.size();
+      final byte[] bytes = bytesConverter.apply(data);
+      System.arraycopy(bytes, 0, flattened, destPos, bytes.length);
+      destPos += bytes.length;
     }
     if (destPos != expectedSize) {
       throw new IllegalArgumentException(
