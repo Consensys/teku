@@ -15,14 +15,13 @@ package tech.pegasys.teku.kzg;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import ethereum.ckzg4844.CKZG4844JNI;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.ssz.SSZ;
 
 public final class KZGCommitment {
-
-  public static final int KZG_COMMITMENT_SIZE = 48;
 
   /**
    * Creates 0x00..00 for point-at-infinity
@@ -39,12 +38,14 @@ public final class KZGCommitment {
 
   public static KZGCommitment fromSSZBytes(final Bytes bytes) {
     checkArgument(
-        bytes.size() == KZG_COMMITMENT_SIZE,
-        "Expected " + KZG_COMMITMENT_SIZE + " bytes but received %s.",
+        bytes.size() == CKZG4844JNI.BYTES_PER_COMMITMENT,
+        "Expected " + CKZG4844JNI.BYTES_PER_COMMITMENT + " bytes but received %s.",
         bytes.size());
     return SSZ.decode(
         bytes,
-        reader -> new KZGCommitment(Bytes48.wrap(reader.readFixedBytes(KZG_COMMITMENT_SIZE))));
+        reader ->
+            new KZGCommitment(
+                Bytes48.wrap(reader.readFixedBytes(CKZG4844JNI.BYTES_PER_COMMITMENT))));
   }
 
   public static KZGCommitment fromBytesCompressed(final Bytes48 bytes) {
