@@ -14,8 +14,8 @@
 package tech.pegasys.teku.kzg;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static tech.pegasys.teku.kzg.ckzg4844.CKZG4844.G1_POINT_SIZE;
-import static tech.pegasys.teku.kzg.ckzg4844.CKZG4844.G2_POINT_SIZE;
+import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_G1;
+import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_G2;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
@@ -28,12 +28,10 @@ public record TrustedSetup(List<Bytes> g1Points, List<Bytes> g2Points) {
   }
 
   private void validateG1Point(final Bytes g1Point) {
-    checkArgument(
-        g1Point.size() == G1_POINT_SIZE, "Expected G1 point to be %s bytes", G1_POINT_SIZE);
+    checkArgument(g1Point.size() == BYTES_PER_G1, "Expected G1 point to be %s bytes", BYTES_PER_G1);
   }
 
   private void validateG2Point(final Bytes g2Point) {
-    checkArgument(
-        g2Point.size() == G2_POINT_SIZE, "Expected G2 point to be %s bytes", G2_POINT_SIZE);
+    checkArgument(g2Point.size() == BYTES_PER_G2, "Expected G2 point to be %s bytes", BYTES_PER_G2);
   }
 }

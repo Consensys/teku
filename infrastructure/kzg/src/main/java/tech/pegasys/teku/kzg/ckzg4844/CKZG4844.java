@@ -35,9 +35,6 @@ import tech.pegasys.teku.kzg.TrustedSetup;
  */
 public final class CKZG4844 implements KZG {
 
-  public static final int G1_POINT_SIZE = 48;
-  public static final int G2_POINT_SIZE = 96;
-
   private static final Logger LOG = LogManager.getLogger();
 
   private static CKZG4844 instance;

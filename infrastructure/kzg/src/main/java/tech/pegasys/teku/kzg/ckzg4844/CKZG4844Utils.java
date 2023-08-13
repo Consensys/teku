@@ -52,11 +52,11 @@ public class CKZG4844Utils {
   }
 
   public static byte[] flattenG1Points(final List<Bytes> g1Points) {
-    return flattenBytes(g1Points, CKZG4844.G1_POINT_SIZE * g1Points.size());
+    return flattenBytes(g1Points, CKZG4844JNI.BYTES_PER_G1 * g1Points.size());
   }
 
   public static byte[] flattenG2Points(final List<Bytes> g2Points) {
-    return flattenBytes(g2Points, CKZG4844.G2_POINT_SIZE * g2Points.size());
+    return flattenBytes(g2Points, CKZG4844JNI.BYTES_PER_G2 * g2Points.size());
   }
 
   public static TrustedSetup parseTrustedSetupFile(final String filePath) throws IOException {
@@ -75,13 +75,13 @@ public class CKZG4844Utils {
       // List of G1 points, one on each new line
       final List<Bytes> g1Points = new ArrayList<>();
       for (int i = 0; i < g1Size; i++) {
-        final Bytes g1Point = Bytes.fromHexString(reader.readLine(), CKZG4844.G1_POINT_SIZE);
+        final Bytes g1Point = Bytes.fromHexString(reader.readLine(), CKZG4844JNI.BYTES_PER_G1);
         g1Points.add(g1Point);
       }
       // List of G2 points, one on each new line
       final List<Bytes> g2Points = new ArrayList<>();
       for (int i = 0; i < g2Size; i++) {
-        final Bytes g2Point = Bytes.fromHexString(reader.readLine(), CKZG4844.G2_POINT_SIZE);
+        final Bytes g2Point = Bytes.fromHexString(reader.readLine(), CKZG4844JNI.BYTES_PER_G2);
         g2Points.add(g2Point);
       }
 
