@@ -32,8 +32,8 @@ import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
 public class AttestationTopicSubscriber implements SlotEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
-  static final String GAUGE_AGGREGATION_SUBNETS_LABEL = "aggregation_subnet_%d";
-  static final String GAUGE_PERSISTENT_SUBNETS_LABEL = "persistent_subnet_%d";
+  static final String GAUGE_AGGREGATION_SUBNETS_LABEL = "aggregation_subnet_%02d";
+  static final String GAUGE_PERSISTENT_SUBNETS_LABEL = "persistent_subnet_%02d";
   private final Int2ObjectMap<UInt64> subnetIdToUnsubscribeSlot = new Int2ObjectOpenHashMap<>();
   private final IntSet persistentSubnetIdSet = new IntOpenHashSet();
   private final Eth2P2PNetwork eth2P2PNetwork;
