@@ -734,11 +734,20 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initSubnetSubscriber() {
     LOG.debug("BeaconChainController.initSubnetSubscriber");
-    this.stableSubnetSubscriber =
-        beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
-            ? AllSubnetsSubscriber.create(attestationTopicSubscriber, spec.getNetworkingConfig())
-            : new NodeBasedStableSubnetSubscriber(
-                attestationTopicSubscriber, spec, p2pNetwork.getDiscoveryNodeId());
+    if (beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()) {
+      LOG.info("Subscribing to all attestation subnets");
+      this.stableSubnetSubscriber =
+          AllSubnetsSubscriber.create(attestationTopicSubscriber, spec.getNetworkingConfig());
+    } else {
+      if (p2pNetwork.getDiscoveryNodeId().isPresent()) {
+        this.stableSubnetSubscriber =
+            new NodeBasedStableSubnetSubscriber(
+                attestationTopicSubscriber, spec, p2pNetwork.getDiscoveryNodeId().get());
+      } else {
+        LOG.warn("Discovery nodeId is not defined, disabling stable subnet subscriptions");
+        this.stableSubnetSubscriber = StableSubnetSubscriber.NOOP;
+      }
+    }
     eventChannels.subscribe(SlotEventsChannel.class, stableSubnetSubscriber);
   }
 

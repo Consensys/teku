@@ -14,57 +14,24 @@
 package tech.pegasys.teku.kzg;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_G1;
+import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_G2;
 
-import com.google.common.base.MoreObjects;
 import java.util.List;
-import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes48;
 
-public class TrustedSetup {
-  private final List<Bytes48> g1Points;
-  private final List<Bytes> g2Points;
+public record TrustedSetup(List<Bytes> g1Points, List<Bytes> g2Points) {
 
-  private void validateG2Point(Bytes g2Point) {
-    checkArgument(g2Point.size() == 96, "Expected G2 point to be 96 bytes");
-  }
-
-  public TrustedSetup(final List<Bytes48> g1Points, final List<Bytes> g2Points) {
+  public TrustedSetup {
+    g1Points.forEach(this::validateG1Point);
     g2Points.forEach(this::validateG2Point);
-    this.g1Points = g1Points;
-    this.g2Points = g2Points;
   }
 
-  public List<Bytes48> getG1Points() {
-    return g1Points;
+  private void validateG1Point(final Bytes g1Point) {
+    checkArgument(g1Point.size() == BYTES_PER_G1, "Expected G1 point to be %s bytes", BYTES_PER_G1);
   }
 
-  public List<Bytes> getG2Points() {
-    return g2Points;
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final TrustedSetup that = (TrustedSetup) o;
-    return Objects.equals(g1Points, that.g1Points) && Objects.equals(g2Points, that.g2Points);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(g1Points, g2Points);
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("g1Points", g1Points)
-        .add("g2Points", g2Points)
-        .toString();
+  private void validateG2Point(final Bytes g2Point) {
+    checkArgument(g2Point.size() == BYTES_PER_G2, "Expected G2 point to be %s bytes", BYTES_PER_G2);
   }
 }
