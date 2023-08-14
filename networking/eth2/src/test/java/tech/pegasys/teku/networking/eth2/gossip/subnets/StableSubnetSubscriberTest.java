@@ -22,7 +22,6 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
-import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.Test;
@@ -42,7 +41,7 @@ public class StableSubnetSubscriberTest {
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createDefault());
 
-  private final Optional<UInt256> nodeId = Optional.of(dataStructureUtil.randomUInt256());
+  private final UInt256 nodeId = dataStructureUtil.randomUInt256();
 
   @Test
   void shouldSubscribeToSubnetsPerNodeAtStart() {
@@ -58,7 +57,7 @@ public class StableSubnetSubscriberTest {
     final UInt64 unsubscriptionSlot =
         spec.getGenesisSpec()
             .miscHelpers()
-            .calculateNodeSubnetUnsubscriptionSlot(nodeId.get(), currentSlot);
+            .calculateNodeSubnetUnsubscriptionSlot(nodeId, currentSlot);
     subnetSubscriptions
         .getValue()
         .forEach(

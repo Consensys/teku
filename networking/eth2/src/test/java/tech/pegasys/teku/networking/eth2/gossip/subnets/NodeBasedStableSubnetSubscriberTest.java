@@ -23,7 +23,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -124,9 +123,7 @@ public class NodeBasedStableSubnetSubscriberTest {
 
     final NodeBasedStableSubnetSubscriber subscriber =
         new NodeBasedStableSubnetSubscriber(
-            attestationTopicSubscriberMock,
-            specMock,
-            Optional.of(dataStructureUtil.randomUInt256()));
+            attestationTopicSubscriberMock, specMock, dataStructureUtil.randomUInt256());
 
     final ArgumentCaptor<Set<SubnetSubscription>> subscriptionCaptor =
         ArgumentCaptor.forClass(Set.class);
@@ -155,6 +152,6 @@ public class NodeBasedStableSubnetSubscriberTest {
   @NotNull
   private NodeBasedStableSubnetSubscriber createSubscriber() {
     return new NodeBasedStableSubnetSubscriber(
-        attestationTopicSubscriber, spec, Optional.of(dataStructureUtil.randomUInt256()));
+        attestationTopicSubscriber, spec, dataStructureUtil.randomUInt256());
   }
 }

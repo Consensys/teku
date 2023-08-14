@@ -65,7 +65,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
           unsubscribeSlot);
     } else {
       if (aggregationSlot.isGreaterThan(currentUnsubscriptionSlot)
-          && (persistentSubnetIdSet.contains(subnetId))) {
+          && persistentSubnetIdSet.contains(subnetId)) {
         subnetSubscriptionsGauge.set(0, String.format(GAUGE_PERSISTENT_SUBNETS_LABEL, subnetId));
         persistentSubnetIdSet.remove(subnetId);
         subnetSubscriptionsGauge.set(1, String.format(GAUGE_AGGREGATION_SUBNETS_LABEL, subnetId));
