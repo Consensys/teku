@@ -14,22 +14,28 @@
 package tech.pegasys.teku.ethereum.executionclient.schema;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes32Deserializer;
+import tech.pegasys.teku.ethereum.executionclient.serialization.BytesSerializer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 
 public class PayloadAttributesV3 extends PayloadAttributesV2 {
 
+  @JsonSerialize(using = BytesSerializer.class)
+  @JsonDeserialize(using = Bytes32Deserializer.class)
   public final Bytes32 parentBeaconBlockRoot;
 
   public PayloadAttributesV3(
       @JsonProperty("timestamp") UInt64 timestamp,
       @JsonProperty("prevRandao") Bytes32 prevRandao,
       @JsonProperty("suggestedFeeRecipient") Bytes20 suggestedFeeRecipient,
-      @JsonProperty("withdrawals") final List<WithdrawalV1> withdrawals,
+      @JsonProperty("withdrawals") List<WithdrawalV1> withdrawals,
       @JsonProperty("parentBeaconBlockRoot") final Bytes32 parentBeaconBlockRoot) {
     super(timestamp, prevRandao, suggestedFeeRecipient, withdrawals);
     this.parentBeaconBlockRoot = parentBeaconBlockRoot;

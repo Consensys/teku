@@ -13,12 +13,14 @@
 
 package tech.pegasys.teku.networking.p2p.discovery;
 
+import java.math.BigInteger;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
@@ -103,6 +105,13 @@ public class DiscoveryNetwork<P extends Peer> extends DelegatingP2PNetwork<P> {
   @Override
   public Optional<String> getEnr() {
     return discoveryService.getEnr();
+  }
+
+  @Override
+  public Optional<UInt256> getDiscoveryNodeId() {
+    return discoveryService
+        .getNodeId()
+        .map(bytes -> UInt256.valueOf(new BigInteger(1, bytes.toArray())));
   }
 
   @Override

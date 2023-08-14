@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.constants;
 public class ValidatorConstants {
   // Phase0
   public static final int TARGET_AGGREGATORS_PER_COMMITTEE = 16;
-  public static final int RANDOM_SUBNETS_PER_VALIDATOR = 1;
   // Altair
   public static final int TARGET_AGGREGATORS_PER_SYNC_SUBCOMMITTEE = 16;
 }

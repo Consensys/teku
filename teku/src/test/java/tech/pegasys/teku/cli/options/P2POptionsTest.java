@@ -276,26 +276,6 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void minimumSubnetSubscriptions_shouldBeSettable() {
-    TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--Xp2p-minimum-subnet-subscriptions", "10");
-    final P2PConfig config = tekuConfiguration.p2p();
-    assertThat(config.getSpec()).isNotNull();
-    assertThat(tekuConfiguration.p2p().getMinimumSubnetSubscriptions()).isEqualTo(10);
-    assertThat(createConfigBuilder().p2p(b -> b.minimumSubnetSubscriptions(10)).build())
-        .usingRecursiveComparison()
-        .isEqualTo(tekuConfiguration);
-  }
-
-  @Test
-  public void minimumSubnetSubscriptions_negativeSubscriptionsShouldThrowException() {
-    assertThatThrownBy(
-            () -> createConfigBuilder().p2p(b -> b.minimumSubnetSubscriptions(-1)).build())
-        .isInstanceOf(InvalidConfigurationException.class)
-        .hasMessage("Invalid minimumSubnetSubscriptions: -1");
-  }
-
-  @Test
   public void subscribeToBlsToExecutionChangesOption_shouldDefaultToTrue() {
     final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
     final P2PConfig config = tekuConfiguration.p2p();

@@ -23,9 +23,13 @@ import com.google.common.primitives.UnsignedBytes;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.crypto.Sha256;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
@@ -33,6 +37,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
@@ -158,16 +163,25 @@ public class MiscHelpers {
   }
 
   public IntList computeCommittee(
-      BeaconState state, IntList indices, Bytes32 seed, int index, int count) {
-    int start = Math.floorDiv(indices.size() * index, count);
-    int end = Math.floorDiv(indices.size() * (index + 1), count);
+      final BeaconState state,
+      final IntList indices,
+      final Bytes32 seed,
+      final int index,
+      final int count) {
+    final UInt64 indicesSize = UInt64.valueOf(indices.size());
+    final int start = indicesSize.times(index).dividedBy(count).intValue();
+    final int end = indicesSize.times(index + 1).dividedBy(count).intValue();
     return computeCommitteeShuffle(state, indices, seed, start, end);
   }
 
   private IntList computeCommitteeShuffle(
-      BeaconState state, IntList indices, Bytes32 seed, int fromIndex, int toIndex) {
+      final BeaconState state,
+      final IntList indices,
+      final Bytes32 seed,
+      final int fromIndex,
+      final int toIndex) {
     if (fromIndex < toIndex) {
-      int indexCount = indices.size();
+      final int indexCount = indices.size();
       checkArgument(fromIndex < indexCount, "CommitteeUtil.getShuffledIndex1");
       checkArgument(toIndex <= indexCount, "CommitteeUtil.getShuffledIndex1");
     }
@@ -175,6 +189,61 @@ public class MiscHelpers {
         .getCommitteeShuffle()
         .get(seed, s -> shuffleList(indices, s))
         .subList(fromIndex, toIndex);
+  }
+
+  public List<UInt64> computeSubscribedSubnets(final UInt256 nodeId, final UInt64 epoch) {
+    return IntStream.range(0, specConfig.getNetworkingConfig().getSubnetsPerNode())
+        .mapToObj(index -> computeSubscribedSubnet(nodeId, epoch, index))
+        .collect(Collectors.toList());
+  }
+
+  private UInt64 computeSubscribedSubnet(
+      final UInt256 nodeId, final UInt64 epoch, final int index) {
+
+    final int nodeIdPrefix =
+        nodeId
+            .shiftRight(
+                NetworkConstants.NODE_ID_BITS
+                    - specConfig.getNetworkingConfig().getAttestationSubnetPrefixBits())
+            .intValue();
+
+    final UInt64 nodeOffset =
+        UInt64.valueOf(
+            nodeId.mod(specConfig.getNetworkingConfig().getEpochsPerSubnetSubscription()).toLong());
+
+    final Bytes32 permutationSeed =
+        Hash.sha256(
+            uint64ToBytes(
+                epoch
+                    .plus(nodeOffset)
+                    .dividedBy(specConfig.getNetworkingConfig().getEpochsPerSubnetSubscription())));
+
+    final int permutedPrefix =
+        computeShuffledIndex(
+            nodeIdPrefix,
+            1 << specConfig.getNetworkingConfig().getAttestationSubnetPrefixBits(),
+            permutationSeed);
+
+    return UInt64.valueOf(
+        (permutedPrefix + index) % specConfig.getNetworkingConfig().getAttestationSubnetCount());
+  }
+
+  public UInt64 calculateNodeSubnetUnsubscriptionSlot(
+      final UInt256 nodeId, final UInt64 currentSlot) {
+    final int epochsPerSubnetSubscription =
+        specConfig.getNetworkingConfig().getEpochsPerSubnetSubscription();
+    final UInt64 nodeOffset = UInt64.valueOf(nodeId.mod(epochsPerSubnetSubscription).toLong());
+    final UInt64 currentEpoch = computeEpochAtSlot(currentSlot);
+    final UInt64 currentEpochRemainder = currentEpoch.mod(epochsPerSubnetSubscription);
+    UInt64 nextPeriodEpoch =
+        currentEpoch
+            .plus(epochsPerSubnetSubscription)
+            .minus(currentEpochRemainder)
+            .minus(nodeOffset);
+    if (nextPeriodEpoch.isLessThanOrEqualTo(currentEpoch)) {
+      nextPeriodEpoch = nextPeriodEpoch.plus(epochsPerSubnetSubscription);
+    }
+    return computeStartSlotAtEpoch(nextPeriodEpoch);
   }
 
   IntList shuffleList(IntList input, Bytes32 seed) {

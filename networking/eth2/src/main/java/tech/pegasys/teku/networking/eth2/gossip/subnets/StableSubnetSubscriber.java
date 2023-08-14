@@ -13,9 +13,16 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
+import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public interface StableSubnetSubscriber {
+public interface StableSubnetSubscriber extends SlotEventsChannel {
+  StableSubnetSubscriber NOOP =
+      new StableSubnetSubscriber() {
+        @Override
+        public void onSlot(UInt64 slot) {}
+      };
 
-  void onSlot(UInt64 slot, int validatorCount);
+  @Override
+  default void onSlot(final UInt64 slot) {}
 }

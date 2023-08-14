@@ -27,14 +27,14 @@ dependencyManagement {
 
     dependency 'info.picocli:picocli:4.7.4'
 
-    dependencySet(group: 'io.javalin', version: '5.6.0') {
+    dependencySet(group: 'io.javalin', version: '5.6.1') {
       entry 'javalin'
       entry 'javalin-rendering'
     }
 
     dependency 'io.libp2p:jvm-libp2p-minimal:0.10.0-RELEASE'
     dependency 'tech.pegasys:jblst:0.3.10'
-    dependency 'tech.pegasys:jc-kzg-4844:0.7.1'
+    dependency 'tech.pegasys:jc-kzg-4844:0.7.2'
 
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
 
@@ -49,15 +49,15 @@ dependencyManagement {
       entry 'swagger-annotations'
     }
     // On update don't forget to change version in tech.pegasys.teku.infrastructure.restapi.SwaggerUIBuilder
-    dependency 'org.webjars:swagger-ui:5.1.0'
-    dependency 'org.thymeleaf:thymeleaf:3.1.1.RELEASE'
+    dependency 'org.webjars:swagger-ui:5.1.3'
+    dependency 'org.thymeleaf:thymeleaf:3.1.2.RELEASE'
     dependency 'io.github.classgraph:classgraph:4.8.161'
     dependencySet(group: 'com.github.oshi', version: '6.4.4') {
       entry 'oshi-core'
       entry 'oshi-core-java11'
     }
 
-    dependencySet(group: 'io.netty', version: '4.1.87.Final') {
+    dependencySet(group: 'io.netty', version: '4.1.96.Final') {
       entry('netty-all') {
         exclude "io.netty:netty-transport-rxtx"
         exclude "org.rxtx:rxtx"
@@ -70,7 +70,7 @@ dependencyManagement {
       entry 'vertx-unit'
       entry 'vertx-web'
     }
-    dependency 'io.projectreactor:reactor-core:3.5.7'
+    dependency 'io.projectreactor:reactor-core:3.5.8'
 
     dependency 'it.unimi.dsi:fastutil:8.5.12'
 
@@ -85,7 +85,7 @@ dependencyManagement {
     }
 
     dependency 'org.apache.commons:commons-text:1.10.0'
-    dependency 'org.apache.commons:commons-lang3:3.12.0'
+    dependency 'org.apache.commons:commons-lang3:3.13.0'
     dependency 'commons-io:commons-io:2.13.0'
     dependency 'org.commonjava.mimeparse:mimeparse:0.1.3.3'
 
@@ -104,7 +104,7 @@ dependencyManagement {
 
     dependency 'org.bouncycastle:bcprov-jdk15on:1.70'
 
-    dependencySet(group: 'org.junit.jupiter', version: '5.9.3') {
+    dependencySet(group: 'org.junit.jupiter', version: '5.10.0') {
       entry 'junit-jupiter-api'
       entry 'junit-jupiter-engine'
       entry 'junit-jupiter-params'
@@ -125,13 +125,13 @@ dependencyManagement {
     dependency 'org.fusesource.leveldbjni:leveldbjni-win32:1.8'
     dependency 'tech.pegasys:leveldb-native:0.2.0'
 
-    dependencySet(group: "org.web3j", version: "4.9.8") {
+    dependencySet(group: "org.web3j", version: "4.10.1") {
       entry 'core'
       entry 'abi'
       entry 'crypto'
     }
 
-    dependency 'org.xerial.snappy:snappy-java:1.1.10.1'
+    dependency 'org.xerial.snappy:snappy-java:1.1.10.3'
 
     dependency 'io.prometheus:simpleclient:0.9.0'
 

@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
 
 import java.util.List;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
@@ -51,7 +50,7 @@ public class SignedBlobSidecarsUnblinderDeneb implements SignedBlobSidecarsUnbli
                 .map(
                     signedBlindedBlobSidecar ->
                         unblindSignedBlindedBlobSidecar(signedBlindedBlobSidecar, blobsBundle))
-                .collect(Collectors.toUnmodifiableList()));
+                .toList());
   }
 
   private SignedBlobSidecar unblindSignedBlindedBlobSidecar(
