@@ -25,12 +25,12 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
  */
 public class GossipConfig {
   public static final int DEFAULT_D = 8;
-  public static final int DEFAULT_D_LOW = 6;
+  public static final int DEFAULT_D_LOW = 3;
   public static final int DEFAULT_D_HIGH = 12;
-  public static final int DEFAULT_D_LAZY = 6;
+  public static final int DEFAULT_D_LAZY = 3;
   private static final Duration DEFAULT_FANOUT_TTL = Duration.ofSeconds(60);
   private static final int DEFAULT_ADVERTISE = 3;
-  private static final int DEFAULT_HISTORY = 6;
+  private static final int DEFAULT_HISTORY = 3;
   static final Duration DEFAULT_HEARTBEAT_INTERVAL = Duration.ofMillis(700);
   // ATTESTATION_PROPAGATION_SLOT_RANGE needs to be the last 32 slots, so TTL is 33 slots
   // 566 * HEARTBEAT == 396.2 seconds, 33 slots is (396 seconds) on mainnet
