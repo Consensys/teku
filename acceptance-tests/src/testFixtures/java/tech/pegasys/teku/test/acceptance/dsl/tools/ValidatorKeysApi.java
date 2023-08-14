@@ -69,10 +69,15 @@ public class ValidatorKeysApi {
     tempDir.toFile().delete();
   }
 
-  public void postVoluntaryExit(final BLSPublicKey publicKey) throws IOException {
+  public void postVoluntaryExit(
+      final BLSPublicKey publicKey, final UInt64 epoch, final int validatorIndex)
+      throws IOException {
     final String value = getPostVoluntaryExitString(publicKey, Optional.empty());
-    final JsonNode addResult = jsonProvider.getObjectMapper().readTree(value);
-    checkStatus(addResult.get("data"), "-");
+    final JsonNode result = jsonProvider.getObjectMapper().readTree(value).get("data");
+    final JsonNode message = result.get("message");
+    assertThat(message.get("epoch").asText()).isEqualTo(String.valueOf(epoch));
+    assertThat(message.get("validator_index").asText()).isEqualTo(String.valueOf(validatorIndex));
+    assertThat(result.get("signature").asText()).isBase64();
   }
 
   private String getPostVoluntaryExitString(
