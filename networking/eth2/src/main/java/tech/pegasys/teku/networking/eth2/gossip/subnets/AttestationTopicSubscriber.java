@@ -55,13 +55,26 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
         spec.computeSubnetForCommittee(
             aggregationSlot, UInt64.valueOf(committeeIndex), committeesAtSlot);
     final UInt64 currentUnsubscriptionSlot = subnetIdToUnsubscribeSlot.getOrDefault(subnetId, ZERO);
+    final UInt64 unsubscribeSlot = currentUnsubscriptionSlot.max(aggregationSlot);
     if (currentUnsubscriptionSlot.equals(ZERO)) {
       eth2P2PNetwork.subscribeToAttestationSubnetId(subnetId);
       subnetSubscriptionsGauge.set(1, String.format(GAUGE_AGGREGATION_SUBNETS_LABEL, subnetId));
+      LOG.trace(
+          "Subscribing to aggregation subnet {} with unsubscribe due at slot {}",
+          subnetId,
+          unsubscribeSlot);
+    } else {
+      if (aggregationSlot.isGreaterThan(currentUnsubscriptionSlot)
+          && (persistentSubnetIdSet.contains(subnetId))) {
+        subnetSubscriptionsGauge.set(0, String.format(GAUGE_PERSISTENT_SUBNETS_LABEL, subnetId));
+        persistentSubnetIdSet.remove(subnetId);
+        subnetSubscriptionsGauge.set(1, String.format(GAUGE_AGGREGATION_SUBNETS_LABEL, subnetId));
+      }
+      LOG.trace(
+          "Already subscribed to aggregation subnet {}, updating unsubscription slot to {}",
+          subnetId,
+          unsubscribeSlot);
     }
-    final UInt64 unsubscribeSlot = currentUnsubscriptionSlot.max(aggregationSlot);
-    LOG.trace(
-        "Subscribing to subnet {} with unsubscribe due at slot {}", subnetId, unsubscribeSlot);
     subnetIdToUnsubscribeSlot.put(subnetId, unsubscribeSlot);
   }
 
@@ -84,6 +97,8 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
             "Already subscribed to subnet {}, updating unsubscription slot to {}",
             subnetId,
             unsubscriptionSlot);
+        subnetSubscriptionsGauge.set(0, String.format(GAUGE_AGGREGATION_SUBNETS_LABEL, subnetId));
+        subnetSubscriptionsGauge.set(1, String.format(GAUGE_PERSISTENT_SUBNETS_LABEL, subnetId));
         subnetIdToUnsubscribeSlot.put(subnetId, unsubscriptionSlot);
       } else {
         eth2P2PNetwork.subscribeToAttestationSubnetId(subnetId);

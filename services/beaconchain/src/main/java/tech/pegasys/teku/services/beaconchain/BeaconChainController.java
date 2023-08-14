@@ -731,7 +731,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             TekuMetricCategory.NETWORK,
             "subnet_subscriptions",
             "Tracks attestations subnet subscriptions",
-            "attestations");
+            "type");
     this.attestationTopicSubscriber =
         new AttestationTopicSubscriber(spec, p2pNetwork, subnetSubscriptionsGauge);
   }
