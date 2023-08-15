@@ -37,4 +37,10 @@ public enum ValidatorStatus {
   public boolean hasExited() {
     return hasExited;
   }
+
+  public boolean isActive() {
+    return this.equals(active_ongoing)
+        || this.equals(active_exiting)
+        || this.equals(active_slashed);
+  }
 }

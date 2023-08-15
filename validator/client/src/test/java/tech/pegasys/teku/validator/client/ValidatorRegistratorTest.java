@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -31,10 +32,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -48,6 +51,7 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 @TestSpecContext(milestone = SpecMilestone.BELLATRIX)
@@ -58,6 +62,7 @@ class ValidatorRegistratorTest {
       mock(ProposerConfigPropertiesProvider.class);
   private final ValidatorRegistrationBatchSender validatorRegistrationBatchSender =
       mock(ValidatorRegistrationBatchSender.class);
+  private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final TimeProvider stubTimeProvider = StubTimeProvider.withTimeInSeconds(12);
   private final Signer signer = mock(Signer.class);
 
@@ -74,6 +79,7 @@ class ValidatorRegistratorTest {
   private ValidatorRegistrator validatorRegistrator;
 
   @BeforeEach
+  @SuppressWarnings("unchecked")
   void setUp(SpecContext specContext) {
     slotsPerEpoch = specContext.getSpec().getGenesisSpecConfig().getSlotsPerEpoch();
     dataStructureUtil = specContext.getDataStructureUtil();
@@ -90,7 +96,8 @@ class ValidatorRegistratorTest {
             stubTimeProvider,
             ownedValidators,
             proposerConfigPropertiesProvider,
-            validatorRegistrationBatchSender);
+            validatorRegistrationBatchSender,
+            validatorApiChannel);
     when(validatorRegistrationBatchSender.sendInBatches(any())).thenReturn(SafeFuture.COMPLETE);
 
     when(proposerConfigPropertiesProvider.isBuilderEnabled(any())).thenReturn(true);
@@ -106,6 +113,19 @@ class ValidatorRegistratorTest {
     doAnswer(invocation -> SafeFuture.completedFuture(dataStructureUtil.randomSignature()))
         .when(signer)
         .signValidatorRegistration(any(ValidatorRegistration.class));
+
+    // all validators are active
+    when(validatorApiChannel.getValidatorStatuses(anyList()))
+        .thenAnswer(
+            args -> {
+              final List<BLSPublicKey> keys = (List<BLSPublicKey>) args.getArguments()[0];
+              Map<BLSPublicKey, ValidatorStatus> statuses =
+                  keys.stream()
+                      .collect(
+                          Collectors.toMap(
+                              Function.identity(), __ -> ValidatorStatus.active_ongoing));
+              return SafeFuture.completedFuture(Optional.of(statuses));
+            });
   }
 
   @TestTemplate
@@ -119,7 +139,7 @@ class ValidatorRegistratorTest {
 
   @TestTemplate
   void doesNotRegisterValidators_ifNotThreeSlotsInTheEpoch() {
-    setActiveValidators(validator1, validator2, validator3);
+    setOwnedValidators(validator1, validator2, validator3);
 
     // initially validators will be registered anyway since it's the first call
     runRegistrationFlowForSlot(ZERO);
@@ -135,7 +155,7 @@ class ValidatorRegistratorTest {
 
   @TestTemplate
   void registersValidators_threeSlotsInTheEpoch() {
-    setActiveValidators(validator1, validator2, validator3);
+    setOwnedValidators(validator1, validator2, validator3);
 
     runRegistrationFlowForEpoch(0);
     runRegistrationFlowForEpoch(1);
@@ -159,7 +179,7 @@ class ValidatorRegistratorTest {
             validator1.getPublicKey()))
         .thenReturn(Optional.of(timestampOverride));
 
-    setActiveValidators(validator1);
+    setOwnedValidators(validator1);
 
     runRegistrationFlowForEpoch(0);
     runRegistrationFlowForEpoch(1);
@@ -189,7 +209,7 @@ class ValidatorRegistratorTest {
             validator2.getPublicKey()))
         .thenReturn(Optional.of(publicKeyOverride));
 
-    setActiveValidators(validator1, validator2);
+    setOwnedValidators(validator1, validator2);
 
     runRegistrationFlowForEpoch(0);
     runRegistrationFlowForEpoch(1);
@@ -211,15 +231,15 @@ class ValidatorRegistratorTest {
   }
 
   @TestTemplate
-  void cleanupsCache_ifValidatorIsNoLongerActive() {
-    setActiveValidators(validator1, validator2, validator3);
+  void cleanupsCache_ifValidatorIsNoLongerOwned() {
+    setOwnedValidators(validator1, validator2, validator3);
 
     runRegistrationFlowForEpoch(0);
 
     assertThat(validatorRegistrator.getNumberOfCachedRegistrations()).isEqualTo(3);
 
     // validator1 not active anymore
-    setActiveValidators(validator2, validator3);
+    setOwnedValidators(validator2, validator3);
 
     runRegistrationFlowForEpoch(1);
 
@@ -233,7 +253,7 @@ class ValidatorRegistratorTest {
     final Validator validator5 =
         new Validator(dataStructureUtil.randomPublicKey(), signer, Optional::empty);
 
-    setActiveValidators(validator1, validator2, validator3, validator4, validator5);
+    setOwnedValidators(validator1, validator2, validator3, validator4, validator5);
 
     runRegistrationFlowForEpoch(0);
 
@@ -316,7 +336,7 @@ class ValidatorRegistratorTest {
 
   @TestTemplate
   void registerValidatorsOnPossibleMissedEvents() {
-    setActiveValidators(validator1, validator2, validator3);
+    setOwnedValidators(validator1, validator2, validator3);
 
     validatorRegistrator.onPossibleMissedEvents();
 
@@ -343,12 +363,12 @@ class ValidatorRegistratorTest {
 
   @TestTemplate
   void registersNewlyAddedValidators() {
-    setActiveValidators(validator1);
+    setOwnedValidators(validator1);
 
     runRegistrationFlowForEpoch(0);
 
     // new validators are added
-    setActiveValidators(validator1, validator2, validator3);
+    setOwnedValidators(validator1, validator2, validator3);
 
     validatorRegistrator.onValidatorsAdded();
 
@@ -365,7 +385,7 @@ class ValidatorRegistratorTest {
 
   @TestTemplate
   void skipsValidatorRegistrationIfRegistrationNotEnabled() {
-    setActiveValidators(validator1, validator2, validator3);
+    setOwnedValidators(validator1, validator2, validator3);
 
     // validator registration is disabled for validator2
     when(proposerConfigPropertiesProvider.isBuilderEnabled(validator2.getPublicKey()))
@@ -381,7 +401,7 @@ class ValidatorRegistratorTest {
 
   @TestTemplate
   void retrievesCorrectGasLimitForValidators() {
-    setActiveValidators(validator1, validator2);
+    setOwnedValidators(validator1, validator2);
 
     final UInt64 validator2GasLimit = UInt64.valueOf(28_000_000);
     final UInt64 validator1GasLimit = UInt64.valueOf(27_000_000);
@@ -414,7 +434,7 @@ class ValidatorRegistratorTest {
 
   @TestTemplate
   void skipsValidatorRegistrationIfFeeRecipientNotSpecified() {
-    setActiveValidators(validator1, validator2);
+    setOwnedValidators(validator1, validator2);
 
     // no fee recipient provided for validator2
     when(proposerConfigPropertiesProvider.getFeeRecipient(validator2.getPublicKey()))
@@ -428,7 +448,7 @@ class ValidatorRegistratorTest {
 
   @TestTemplate
   void registerValidatorsEvenIfOneRegistrationSigningFails() {
-    setActiveValidators(validator1, validator2, validator3);
+    setOwnedValidators(validator1, validator2, validator3);
 
     when(signer.signValidatorRegistration(
             argThat(
@@ -448,7 +468,72 @@ class ValidatorRegistratorTest {
     verifyRegistrations(registrationCalls.get(1), List.of(validator1, validator2, validator3));
   }
 
-  private void setActiveValidators(final Validator... validators) {
+  @TestTemplate
+  @SuppressWarnings("unchecked")
+  void doesNotRegister_ifValidatorIsNotActive() {
+    setOwnedValidators(validator1, validator2, validator3);
+
+    // only validator2 is active
+    when(validatorApiChannel.getValidatorStatuses(anyList()))
+        .thenAnswer(
+            args -> {
+              final List<BLSPublicKey> keys = (List<BLSPublicKey>) args.getArguments()[0];
+              Map<BLSPublicKey, ValidatorStatus> statuses =
+                  keys.stream()
+                      .collect(
+                          Collectors.toMap(
+                              Function.identity(),
+                              publicKey -> {
+                                if (publicKey.equals(validator1.getPublicKey())) {
+                                  return ValidatorStatus.pending_initialized;
+                                }
+                                if (publicKey.equals(validator3.getPublicKey())) {
+                                  return ValidatorStatus.exited_unslashed;
+                                }
+                                return ValidatorStatus.active_ongoing;
+                              }));
+              return SafeFuture.completedFuture(Optional.of(statuses));
+            });
+
+    runRegistrationFlowForEpoch(0);
+
+    assertThat(validatorRegistrator.getNumberOfCachedRegistrations()).isEqualTo(1);
+    verify(signer, times(1)).signValidatorRegistration(any());
+
+    // validator1, validator2 are active
+    when(validatorApiChannel.getValidatorStatuses(anyList()))
+        .thenAnswer(
+            args -> {
+              final List<BLSPublicKey> keys = (List<BLSPublicKey>) args.getArguments()[0];
+              Map<BLSPublicKey, ValidatorStatus> statuses =
+                  keys.stream()
+                      .collect(
+                          Collectors.toMap(
+                              Function.identity(),
+                              publicKey -> {
+                                if (publicKey.equals(validator2.getPublicKey())) {
+                                  return ValidatorStatus.active_exiting;
+                                }
+                                if (publicKey.equals(validator3.getPublicKey())) {
+                                  return ValidatorStatus.exited_unslashed;
+                                }
+                                return ValidatorStatus.active_ongoing;
+                              }));
+              return SafeFuture.completedFuture(Optional.of(statuses));
+            });
+
+    runRegistrationFlowForEpoch(1);
+
+    assertThat(validatorRegistrator.getNumberOfCachedRegistrations()).isEqualTo(2);
+    verify(signer, times(2)).signValidatorRegistration(any());
+
+    final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(2);
+
+    verifyRegistrations(registrationCalls.get(0), List.of(validator2));
+    verifyRegistrations(registrationCalls.get(1), List.of(validator1, validator2));
+  }
+
+  private void setOwnedValidators(final Validator... validators) {
     final List<Validator> validatorsAsList = Arrays.stream(validators).collect(Collectors.toList());
     when(ownedValidators.getActiveValidators()).thenReturn(validatorsAsList);
   }

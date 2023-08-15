@@ -181,7 +181,8 @@ public class ValidatorClientService extends Service {
                   proposerConfigManager.get(),
                   new ValidatorRegistrationBatchSender(
                       validatorConfig.getBuilderRegistrationSendingBatchSize(),
-                      validatorApiChannel)));
+                      validatorApiChannel),
+                  validatorApiChannel));
     } else {
       proposerConfigManager = Optional.empty();
     }
