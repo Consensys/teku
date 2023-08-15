@@ -55,8 +55,7 @@ public class PostVoluntaryExitTest {
       new SignedVoluntaryExit(message, dataStructureUtil.randomSignature());
 
   @Test
-  void noEpochQueryParamProvided_shouldGiveValidSignedVoluntaryExit()
-      throws JsonProcessingException {
+  void shouldCallProviderWhenEpochNotProvided() throws JsonProcessingException {
     final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
     request.setPathParameter("pubkey", publicKey.toString());
 
@@ -69,7 +68,7 @@ public class PostVoluntaryExitTest {
   }
 
   @Test
-  void epochQueryParamProvided_shouldGiveValidSignedVoluntaryExit() throws JsonProcessingException {
+  void shouldCallProviderWhenEpochProvided() throws JsonProcessingException {
     final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
     request.setPathParameter(PUBKEY, publicKey.toString());
     request.setOptionalQueryParameter(EPOCH, "1234");
