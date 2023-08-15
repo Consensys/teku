@@ -1,6 +1,6 @@
 {
   "post" : {
-    "tags" : [ "Voluntary Exit", "Experimental" ],
+    "tags" : [ "Voluntary Exit" ],
     "operationId" : "signVoluntaryExit",
     "summary" : "Sign Voluntary Exit",
     "description" : "Create a signed voluntary exit message for an active validator, identified by a public key known to the validator client. This endpoint returns a SignedVoluntaryExit object, which can be used to initiate voluntary exit via the beacon node's submitPoolVoluntaryExit endpoint.",

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.client.restapi.apis;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
 import static tech.pegasys.teku.validator.client.restapi.ValidatorRestApi.TAG_VOLUNTARY_EXIT;
 import static tech.pegasys.teku.validator.client.restapi.ValidatorTypes.EPOCH_QUERY_TYPE;
 import static tech.pegasys.teku.validator.client.restapi.ValidatorTypes.PARAM_PUBKEY_TYPE;
@@ -53,7 +52,7 @@ public class PostVoluntaryExit extends RestApiEndpoint {
         EndpointMetadata.post(ROUTE)
             .operationId("signVoluntaryExit")
             .summary("Sign Voluntary Exit")
-            .tags(TAG_VOLUNTARY_EXIT, TAG_EXPERIMENTAL)
+            .tags(TAG_VOLUNTARY_EXIT)
             .withBearerAuthSecurity()
             .pathParam(PARAM_PUBKEY_TYPE)
             .queryParam(EPOCH_QUERY_TYPE)
