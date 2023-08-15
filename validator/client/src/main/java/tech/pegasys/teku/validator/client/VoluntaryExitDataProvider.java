@@ -68,9 +68,7 @@ public class VoluntaryExitDataProvider {
                       .orElseThrow(
                           () ->
                               new BadRequestException(
-                                  String.format(
-                                      "Public key %s is not in the map of validator indices.",
-                                      publicKey)));
+                                  String.format("Public key %s is not found.", publicKey)));
 
               return createSignedVoluntaryExit(validatorIndex, publicKey, epoch, forkInfo);
             });
