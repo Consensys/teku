@@ -86,7 +86,7 @@ public class LocalValidatorKeysAcceptanceTest extends AcceptanceTestBase {
         validatorKeystores.getPublicKeys().get(1), UInt64.valueOf(30000000));
 
     // generate voluntary exit
-    api.postVoluntaryExit(validatorKeystores.getPublicKeys().get(1), UInt64.ZERO, 1);
+    api.postVoluntaryExit(validatorKeystores.getPublicKeys().get(1), 1);
 
     api.assertValidatorFeeRecipient(validatorKeystores.getPublicKeys().get(1), defaultFeeRecipient);
 
