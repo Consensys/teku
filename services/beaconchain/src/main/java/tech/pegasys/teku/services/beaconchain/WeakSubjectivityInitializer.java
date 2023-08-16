@@ -19,7 +19,6 @@ import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.INITIAL_STATE_
 import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Function;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -44,9 +43,6 @@ public class WeakSubjectivityInitializer {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final Function<String, String> FAILED_TO_LOAD_STATE_ERROR_MESSAGE_GENERATOR =
-      resource -> String.format("Failed to load initial state from %s", resource);
-
   public Optional<AnchorPoint> loadInitialAnchorPoint(
       final Spec spec, final Optional<String> initialStateResource) {
     return initialStateResource.map(
@@ -64,19 +60,19 @@ public class WeakSubjectivityInitializer {
                   UrlSanitizer.sanitizePotentialUrl(stateResourceWithPath);
               LOG.info(
                   String.format(
-                      "%s. Will try to load initial state from %s instead.",
-                      FAILED_TO_LOAD_STATE_ERROR_MESSAGE_GENERATOR.apply(sanitizedResource),
-                      sanitizedResourceWithPath));
+                      "Failed to load initial state from %s. Will try to load initial state from %s instead.",
+                      sanitizedResource, sanitizedResourceWithPath));
               try {
                 return getAnchorPoint(spec, stateResourceWithPath, sanitizedResourceWithPath);
-              } catch (final IOException | SszDeserializeException ex1) {
+              } catch (final IOException | SszDeserializeException exWithPath) {
                 throw new InvalidConfigurationException(
-                    FAILED_TO_LOAD_STATE_ERROR_MESSAGE_GENERATOR.apply(sanitizedResourceWithPath),
-                    ex);
+                    String.format(
+                        "Failed to load initial state from %s", sanitizedResourceWithPath),
+                    exWithPath);
               }
             } else {
               throw new InvalidConfigurationException(
-                  FAILED_TO_LOAD_STATE_ERROR_MESSAGE_GENERATOR.apply(sanitizedResource), ex);
+                  String.format("Failed to load initial state from %s", sanitizedResource), ex);
             }
           }
         });
