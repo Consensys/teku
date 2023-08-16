@@ -19,6 +19,7 @@ import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.INITIAL_STATE_
 import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,6 +44,9 @@ public class WeakSubjectivityInitializer {
 
   private static final Logger LOG = LogManager.getLogger();
 
+  private static final Function<String, String> FAILED_TO_LOAD_STATE_ERROR_MESSAGE_GENERATOR =
+      resource -> String.format("Failed to load initial state from %s", resource);
+
   public Optional<AnchorPoint> loadInitialAnchorPoint(
       final Spec spec, final Optional<String> initialStateResource) {
     return initialStateResource.map(
@@ -50,32 +54,29 @@ public class WeakSubjectivityInitializer {
           final String sanitizedResource = UrlSanitizer.sanitizePotentialUrl(stateResource);
           try {
             return getAnchorPoint(spec, stateResource, sanitizedResource);
-          } catch (IOException | SszDeserializeException e) {
-            LOG.error(
-                String.format("Failed to load initial state from %s : ", sanitizedResource), e);
+          } catch (final IOException | SszDeserializeException ex) {
             if (!UrlSanitizer.urlContainsNonEmptyPath(stateResource)) {
-              String stateResourceWithPath =
+              final String stateResourceWithPath =
                   stateResource.endsWith("/")
                       ? stateResource + INITIAL_STATE_URL_PATH
                       : stateResource + "/" + INITIAL_STATE_URL_PATH;
-              String sanitizedResourceWithPath =
+              final String sanitizedResourceWithPath =
                   UrlSanitizer.sanitizePotentialUrl(stateResourceWithPath);
               LOG.info(
                   String.format(
-                      "Trying to load initial state from %s instead", sanitizedResourceWithPath));
+                      "%s. Will try to load initial state from %s instead.",
+                      FAILED_TO_LOAD_STATE_ERROR_MESSAGE_GENERATOR.apply(sanitizedResource),
+                      sanitizedResourceWithPath));
               try {
                 return getAnchorPoint(spec, stateResourceWithPath, sanitizedResourceWithPath);
-              } catch (IOException | SszDeserializeException ex) {
+              } catch (final IOException | SszDeserializeException ex1) {
                 throw new InvalidConfigurationException(
-                    String.format(
-                        "Failed to load initial state from both %s and %s : %s",
-                        sanitizedResource, sanitizedResourceWithPath, e.getMessage()));
+                    FAILED_TO_LOAD_STATE_ERROR_MESSAGE_GENERATOR.apply(sanitizedResourceWithPath),
+                    ex);
               }
             } else {
               throw new InvalidConfigurationException(
-                  String.format(
-                      "Failed to load initial state from %s : %s",
-                      sanitizedResource, e.getMessage()));
+                  FAILED_TO_LOAD_STATE_ERROR_MESSAGE_GENERATOR.apply(sanitizedResource), ex);
             }
           }
         });
