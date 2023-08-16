@@ -19,12 +19,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -169,6 +171,37 @@ class MiscHelpersTest {
   }
 
   @ParameterizedTest
+  @MethodSource("provideSubnetsForNodeIds")
+  public void testDiscoveryNodeBasedSubnetIds(
+      final UInt256 nodeId, final UInt64 epoch, List<UInt64> subnetIds) {
+    final List<UInt64> nodeSubnetIds = miscHelpers.computeSubscribedSubnets(nodeId, epoch);
+    assertThat(nodeSubnetIds).hasSize(subnetIds.size());
+    assertThat(nodeSubnetIds).isEqualTo(subnetIds);
+  }
+
+  @ParameterizedTest
+  @MethodSource("provideNodeIdsAndSlots")
+  public void unsubscriptionEpochMustMatchSubnetsCalculationResultChange(
+      final UInt256 nodeId, final UInt64 slotAtEpoch) {
+    for (int epoch = 0; epoch < 1000; epoch++) {
+      final List<UInt64> currentSubnets =
+          miscHelpers.computeSubscribedSubnets(nodeId, UInt64.valueOf(epoch));
+      final List<UInt64> nextSubnets =
+          miscHelpers.computeSubscribedSubnets(nodeId, UInt64.valueOf(epoch + 1));
+      final UInt64 currentSlot =
+          miscHelpers.computeStartSlotAtEpoch(UInt64.valueOf(epoch)).plus(slotAtEpoch);
+      final UInt64 unsubscriptionSlot =
+          miscHelpers.calculateNodeSubnetUnsubscriptionSlot(nodeId, currentSlot);
+      final UInt64 unsubscriptionEpoch = miscHelpers.computeEpochAtSlot(unsubscriptionSlot);
+      if (!currentSubnets.equals(nextSubnets)) {
+        assertThat(unsubscriptionEpoch).isEqualTo(UInt64.valueOf(epoch + 1));
+      } else {
+        assertThat(unsubscriptionEpoch.isGreaterThan(epoch)).isTrue();
+      }
+    }
+  }
+
+  @ParameterizedTest
   @MethodSource("getComputesSlotAtTimeArguments")
   public void computesSlotAtTime(final long currentTime, final UInt64 expectedSlot) {
     final UInt64 actualSlot =
@@ -219,6 +252,35 @@ class MiscHelpersTest {
   public static Stream<Arguments> getNValues() {
     return Stream.of(
         Arguments.of(1), Arguments.of(2), Arguments.of(3), Arguments.of(4), Arguments.of(5));
+  }
+
+  public static Stream<Arguments> provideSubnetsForNodeIds() {
+    return Stream.of(
+        Arguments.of(
+            UInt256.valueOf(434726285098L),
+            UInt64.valueOf(6717051035888874875L),
+            List.of(UInt64.valueOf(28), UInt64.valueOf(29))),
+        Arguments.of(
+            UInt256.valueOf(288055627580L),
+            UInt64.valueOf("13392352527348795112"),
+            List.of(UInt64.valueOf(8), UInt64.valueOf(9))),
+        Arguments.of(
+            UInt256.valueOf(
+                new BigInteger(
+                    "57467522110468688239177851250859789869070302005900722885377252304169193209346")),
+            UInt64.valueOf(6226203858325459337L),
+            List.of(UInt64.valueOf(44), UInt64.valueOf(45))));
+  }
+
+  public static Stream<Arguments> provideNodeIdsAndSlots() {
+    return Stream.of(
+        Arguments.of(UInt256.valueOf(434726285098L), UInt64.valueOf(0)),
+        Arguments.of(UInt256.valueOf(288055627580L), UInt64.valueOf(5)),
+        Arguments.of(
+            UInt256.valueOf(
+                new BigInteger(
+                    "57467522110468688239177851250859789869070302005900722885377252304169193209346")),
+            UInt64.valueOf(7)));
   }
 
   public static Stream<Arguments> getCommitteeComputationArguments() {

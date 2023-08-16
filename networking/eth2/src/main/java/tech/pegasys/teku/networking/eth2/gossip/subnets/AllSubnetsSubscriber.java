@@ -17,28 +17,19 @@ import static java.util.stream.Collectors.toSet;
 
 import java.util.Set;
 import java.util.stream.IntStream;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
 public class AllSubnetsSubscriber implements StableSubnetSubscriber {
-  private static final Logger LOG = LogManager.getLogger();
 
   public static StableSubnetSubscriber create(
       final AttestationTopicSubscriber subscriber, final NetworkingSpecConfig networkingConfig) {
-    LOG.info("Subscribing to all attestation subnets");
     final Set<SubnetSubscription> subscriptions =
         IntStream.range(0, networkingConfig.getAttestationSubnetCount())
             .mapToObj(subnetId -> new SubnetSubscription(subnetId, UInt64.MAX_VALUE))
             .collect(toSet());
     subscriber.subscribeToPersistentSubnets(subscriptions);
     return new AllSubnetsSubscriber();
-  }
-
-  @Override
-  public void onSlot(final UInt64 slot, final int validatorCount) {
-    // Already subscribed to all subnets
   }
 }

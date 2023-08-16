@@ -14,10 +14,12 @@
 package tech.pegasys.teku.spec.datastructures.validator;
 
 import com.google.common.base.MoreObjects;
+import java.util.Comparator;
 import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class SubnetSubscription {
+public class SubnetSubscription implements Comparable<SubnetSubscription> {
 
   private final int subnetId;
   private final UInt64 unsubscriptionSlot;
@@ -33,6 +35,13 @@ public class SubnetSubscription {
 
   public UInt64 getUnsubscriptionSlot() {
     return unsubscriptionSlot;
+  }
+
+  @Override
+  public int compareTo(@NotNull final SubnetSubscription o) {
+    return Comparator.comparing(SubnetSubscription::getUnsubscriptionSlot)
+        .thenComparing(SubnetSubscription::getSubnetId)
+        .compare(this, o);
   }
 
   @Override
