@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 
-public class ExternalSignerBellatrixSigningIntegrationTest
+public class ExternalSignerBellatrixIntegrationTest
     extends AbstractExternalSignerIntegrationTest {
 
   @Override
