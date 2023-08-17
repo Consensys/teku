@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.client.signer;
 
+import static tech.pegasys.teku.api.schema.deneb.BlindedBlobSidecar.fromInternalBlindedBlobSidecar;
+import static tech.pegasys.teku.api.schema.deneb.BlindedBlobSidecar.fromInternalBlobSidecar;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_PRECONDITION_FAILED;
 
@@ -32,7 +34,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -131,16 +132,26 @@ public class ExternalSigner implements Signer {
   @Override
   public SafeFuture<BLSSignature> signBlobSidecar(
       final BlobSidecar blobSidecar, final ForkInfo forkInfo) {
-    return SafeFuture.failedFuture(
-        new NotImplementedException("Blob sidecars external signing is not implemented yet."));
+
+    return sign(
+        signingRootUtil.signingRootForBlobSidecar(blobSidecar, forkInfo),
+        SignType.BLOB_SIDECAR, // both blobSidecar and blindedBlobSidecar uses same SignType
+        Map.of(FORK_INFO, forkInfo(forkInfo), "blob_sidecar", fromInternalBlobSidecar(blobSidecar)),
+        slashableGenericMessage("blob sidecar"));
   }
 
   @Override
   public SafeFuture<BLSSignature> signBlindedBlobSidecar(
       final BlindedBlobSidecar blindedBlobSidecar, final ForkInfo forkInfo) {
-    return SafeFuture.failedFuture(
-        new NotImplementedException(
-            "Blinded blob sidecars external signing is not implemented yet."));
+    return sign(
+        signingRootUtil.signingRootForBlindedBlobSidecar(blindedBlobSidecar, forkInfo),
+        SignType.BLOB_SIDECAR, // both blobSidecar and blindedBlobSidecar uses same SignType
+        Map.of(
+            FORK_INFO,
+            forkInfo(forkInfo),
+            "blob_sidecar",
+            fromInternalBlindedBlobSidecar(blindedBlobSidecar)),
+        slashableGenericMessage("blinded blob sidecar"));
   }
 
   @Override
@@ -312,6 +323,35 @@ public class ExternalSigner implements Signer {
         "genesis_validators_root",
         forkInfo.getGenesisValidatorsRoot());
   }
+
+  //  static Map<String, Object> blobSidecarJsonMap(final BlobSidecar blobSidecar) {
+  //    final Map<String, Object> blobSideCarProps = new HashMap<>();
+  //    blobSideCarProps.put("block_root", blobSidecar.getBlockRoot());
+  //    blobSideCarProps.put("index", blobSidecar.getIndex());
+  //    blobSideCarProps.put("slot", blobSidecar.getSlot());
+  //    blobSideCarProps.put("block_parent_root", blobSidecar.getBlockParentRoot());
+  //    blobSideCarProps.put("proposer_index", blobSidecar.getProposerIndex());
+  //    blobSideCarProps.put("blob_root", blobSidecar.getBlob().hashTreeRoot());
+  //    blobSideCarProps.put("kzg_commitment", blobSidecar.getKZGCommitment().toHexString());
+  //    blobSideCarProps.put("kzg_proof", blobSidecar.getKZGProof().toHexString());
+  //
+  //    return blobSideCarProps;
+  //  }
+  //
+  //  static Map<String, Object> blindedBlobSidecarJsonMap(
+  //      final BlindedBlobSidecar blindedBlobSidecar) {
+  //    final Map<String, Object> blobSideCarProps = new HashMap<>();
+  //    blobSideCarProps.put("block_root", blindedBlobSidecar.getBlockRoot());
+  //    blobSideCarProps.put("index", blindedBlobSidecar.getIndex());
+  //    blobSideCarProps.put("slot", blindedBlobSidecar.getSlot());
+  //    blobSideCarProps.put("block_parent_root", blindedBlobSidecar.getBlockParentRoot());
+  //    blobSideCarProps.put("proposer_index", blindedBlobSidecar.getProposerIndex());
+  //    blobSideCarProps.put("blob_root", blindedBlobSidecar.getBlobRoot());
+  //    blobSideCarProps.put("kzg_commitment", blindedBlobSidecar.getKZGCommitment().toHexString());
+  //    blobSideCarProps.put("kzg_proof", blindedBlobSidecar.getKZGProof().toHexString());
+  //
+  //    return blobSideCarProps;
+  //  }
 
   private SafeFuture<BLSSignature> sign(
       final Bytes signingRoot,
