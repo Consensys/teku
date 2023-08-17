@@ -50,32 +50,29 @@ public class WeakSubjectivityInitializer {
           final String sanitizedResource = UrlSanitizer.sanitizePotentialUrl(stateResource);
           try {
             return getAnchorPoint(spec, stateResource, sanitizedResource);
-          } catch (IOException | SszDeserializeException e) {
-            LOG.error(
-                String.format("Failed to load initial state from %s : ", sanitizedResource), e);
+          } catch (final IOException | SszDeserializeException ex) {
             if (!UrlSanitizer.urlContainsNonEmptyPath(stateResource)) {
-              String stateResourceWithPath =
+              final String stateResourceWithPath =
                   stateResource.endsWith("/")
                       ? stateResource + INITIAL_STATE_URL_PATH
                       : stateResource + "/" + INITIAL_STATE_URL_PATH;
-              String sanitizedResourceWithPath =
+              final String sanitizedResourceWithPath =
                   UrlSanitizer.sanitizePotentialUrl(stateResourceWithPath);
               LOG.info(
                   String.format(
-                      "Trying to load initial state from %s instead", sanitizedResourceWithPath));
+                      "Failed to load initial state from %s. Will try to load initial state from %s instead.",
+                      sanitizedResource, sanitizedResourceWithPath));
               try {
                 return getAnchorPoint(spec, stateResourceWithPath, sanitizedResourceWithPath);
-              } catch (IOException | SszDeserializeException ex) {
+              } catch (final IOException | SszDeserializeException exWithPath) {
                 throw new InvalidConfigurationException(
                     String.format(
-                        "Failed to load initial state from both %s and %s : %s",
-                        sanitizedResource, sanitizedResourceWithPath, e.getMessage()));
+                        "Failed to load initial state from %s", sanitizedResourceWithPath),
+                    exWithPath);
               }
             } else {
               throw new InvalidConfigurationException(
-                  String.format(
-                      "Failed to load initial state from %s : %s",
-                      sanitizedResource, e.getMessage()));
+                  String.format("Failed to load initial state from %s", sanitizedResource), ex);
             }
           }
         });
