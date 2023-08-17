@@ -37,7 +37,6 @@ class ExternalSignerTestUtil {
       final String publicKey,
       final SigningRequestBody signingRequestBody)
       throws JsonProcessingException {
-    System.out.println(JSON_PROVIDER.objectToPrettyJSON(signingRequestBody));
     client.verify(
         request()
             .withMethod("POST")
