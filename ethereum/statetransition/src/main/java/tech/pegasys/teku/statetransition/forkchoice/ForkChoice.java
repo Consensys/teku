@@ -100,6 +100,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final TickProcessor tickProcessor;
   private Optional<Boolean> optimisticSyncing = Optional.empty();
 
+  private boolean initialized = false;
+
   public ForkChoice(
       final Spec spec,
       final EventThread forkChoiceExecutor,
@@ -179,24 +181,122 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .finish(error -> LOG.error("Failed to update fork choice", error));
   }
 
-  private void initializeProtoArrayForkChoice() {
-    processHead().join();
-  }
-
   public SafeFuture<Boolean> processHead() {
     return processHead(Optional.empty(), false);
   }
 
-  public SafeFuture<Boolean> processHead(final UInt64 nodeSlot) {
-    return processHead(Optional.of(nodeSlot), false);
+  /** Import a block to the store. */
+  public SafeFuture<BlockImportResult> onBlock(
+      final SignedBeaconBlock block,
+      final Optional<BlockImportPerformance> blockImportPerformance,
+      final ExecutionLayerChannel executionLayer) {
+    return recentChainData
+        .retrieveStateAtSlot(new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
+        .thenPeek(__ -> blockImportPerformance.ifPresent(BlockImportPerformance::preStateRetrieved))
+        .thenCompose(
+            blockSlotState ->
+                onBlock(block, blockSlotState, blockImportPerformance, executionLayer));
   }
 
-  public SafeFuture<Boolean> processHead(final UInt64 nodeSlot, final boolean isPreProposal) {
-    return processHead(Optional.of(nodeSlot), isPreProposal);
+  public SafeFuture<AttestationProcessingResult> onAttestation(
+      final ValidatableAttestation attestation) {
+    return attestationStateSelector
+        .getStateToValidate(attestation.getData())
+        .thenCompose(
+            maybeState -> {
+              final UpdatableStore store = recentChainData.getStore();
+              final AttestationProcessingResult validationResult =
+                  spec.validateAttestation(store, attestation, maybeState);
+
+              if (!validationResult.isSuccessful()) {
+                if (validationResult.getStatus() == Status.DEFER_FORK_CHOICE_PROCESSING) {
+                  deferredAttestations.addAttestation(getIndexedAttestation(attestation));
+                }
+                return SafeFuture.completedFuture(validationResult);
+              }
+              return onForkChoiceThread(
+                      () -> {
+                        final VoteUpdater transaction = recentChainData.startVoteUpdate();
+                        getForkChoiceStrategy()
+                            .onAttestation(transaction, getIndexedAttestation(attestation));
+                        transaction.commit();
+                      })
+                  .thenApply(__ -> validationResult);
+            })
+        .exceptionallyCompose(
+            error -> {
+              final Throwable rootCause = Throwables.getRootCause(error);
+              if (rootCause instanceof InvalidCheckpointException) {
+                return SafeFuture.completedFuture(
+                    AttestationProcessingResult.invalid(rootCause.getMessage()));
+              }
+              return SafeFuture.failedFuture(error);
+            });
+  }
+
+  public void applyIndexedAttestations(final List<ValidatableAttestation> attestations) {
+    onForkChoiceThread(
+            () -> {
+              final VoteUpdater transaction = recentChainData.startVoteUpdate();
+              final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+              attestations.stream()
+                  .map(this::getIndexedAttestation)
+                  .forEach(
+                      attestation -> forkChoiceStrategy.onAttestation(transaction, attestation));
+              transaction.commit();
+            })
+        .ifExceptionGetsHereRaiseABug();
+  }
+
+  public void onAttesterSlashing(
+      final AttesterSlashing slashing,
+      InternalValidationResult validationStatus,
+      boolean fromNetwork) {
+    if (!validationStatus.isAccept()) {
+      return;
+    }
+    onForkChoiceThread(
+            () -> {
+              final VoteUpdater transaction = recentChainData.startVoteUpdate();
+              storeEquivocatingIndices(slashing, transaction);
+              transaction.commit();
+            })
+        .ifExceptionGetsHereRaiseABug();
+  }
+
+  public void subscribeToOptimisticHeadChangesAndUpdate(OptimisticHeadSubscriber subscriber) {
+    optimisticSyncSubscribers.subscribe(subscriber);
+    getOptimisticSyncing().ifPresent(subscriber::onOptimisticHeadChanged);
+  }
+
+  public void onTick(
+      final UInt64 currentTimeMillis, final Optional<TickProcessingPerformance> performanceRecord) {
+    final UpdatableStore store = recentChainData.getStore();
+    final UInt64 slotAtStartOfTick = spec.getCurrentSlot(store);
+    tickProcessor.onTick(currentTimeMillis).join();
+    performanceRecord.ifPresent(TickProcessingPerformance::tickProcessorComplete);
+    final UInt64 currentSlot = spec.getCurrentSlot(store);
+    if (currentSlot.isGreaterThan(slotAtStartOfTick)) {
+      applyDeferredAttestations(currentSlot).ifExceptionGetsHereRaiseABug();
+    }
+    performanceRecord.ifPresent(TickProcessingPerformance::deferredAttestationsApplied);
+  }
+
+  private void initializeProtoArrayForkChoice() {
+    initialized = true;
+    processHead().join();
+  }
+
+  SafeFuture<Boolean> processHead(final UInt64 nodeSlot) {
+    return processHead(Optional.of(nodeSlot), false);
   }
 
   private SafeFuture<Boolean> processHead(
       final Optional<UInt64> nodeSlot, final boolean isPreProposal) {
+    if (!initialized) {
+      LOG.debug("Calling processHead before initialized is set");
+      return SafeFuture.completedFuture(false);
+    }
     final Checkpoint retrievedJustifiedCheckpoint =
         recentChainData.getStore().getJustifiedCheckpoint();
     return recentChainData
@@ -251,19 +351,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
                       return true;
                     }));
-  }
-
-  /** Import a block to the store. */
-  public SafeFuture<BlockImportResult> onBlock(
-      final SignedBeaconBlock block,
-      final Optional<BlockImportPerformance> blockImportPerformance,
-      final ExecutionLayerChannel executionLayer) {
-    return recentChainData
-        .retrieveStateAtSlot(new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
-        .thenPeek(__ -> blockImportPerformance.ifPresent(BlockImportPerformance::preStateRetrieved))
-        .thenCompose(
-            blockSlotState ->
-                onBlock(block, blockSlotState, blockImportPerformance, executionLayer));
   }
 
   /**
@@ -655,56 +742,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .isSuccessful();
   }
 
-  public SafeFuture<AttestationProcessingResult> onAttestation(
-      final ValidatableAttestation attestation) {
-    return attestationStateSelector
-        .getStateToValidate(attestation.getData())
-        .thenCompose(
-            maybeState -> {
-              final UpdatableStore store = recentChainData.getStore();
-              final AttestationProcessingResult validationResult =
-                  spec.validateAttestation(store, attestation, maybeState);
-
-              if (!validationResult.isSuccessful()) {
-                if (validationResult.getStatus() == Status.DEFER_FORK_CHOICE_PROCESSING) {
-                  deferredAttestations.addAttestation(getIndexedAttestation(attestation));
-                }
-                return SafeFuture.completedFuture(validationResult);
-              }
-              return onForkChoiceThread(
-                      () -> {
-                        final VoteUpdater transaction = recentChainData.startVoteUpdate();
-                        getForkChoiceStrategy()
-                            .onAttestation(transaction, getIndexedAttestation(attestation));
-                        transaction.commit();
-                      })
-                  .thenApply(__ -> validationResult);
-            })
-        .exceptionallyCompose(
-            error -> {
-              final Throwable rootCause = Throwables.getRootCause(error);
-              if (rootCause instanceof InvalidCheckpointException) {
-                return SafeFuture.completedFuture(
-                    AttestationProcessingResult.invalid(rootCause.getMessage()));
-              }
-              return SafeFuture.failedFuture(error);
-            });
-  }
-
-  public void applyIndexedAttestations(final List<ValidatableAttestation> attestations) {
-    onForkChoiceThread(
-            () -> {
-              final VoteUpdater transaction = recentChainData.startVoteUpdate();
-              final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
-              attestations.stream()
-                  .map(this::getIndexedAttestation)
-                  .forEach(
-                      attestation -> forkChoiceStrategy.onAttestation(transaction, attestation));
-              transaction.commit();
-            })
-        .ifExceptionGetsHereRaiseABug();
-  }
-
   private SafeFuture<Void> applyDeferredAttestations(
       final Collection<DeferredVotes> deferredVoteUpdates) {
     return onForkChoiceThread(
@@ -726,22 +763,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .forEach(attesterSlashing -> storeEquivocatingIndices(attesterSlashing, voteUpdater));
   }
 
-  public void onAttesterSlashing(
-      final AttesterSlashing slashing,
-      InternalValidationResult validationStatus,
-      boolean fromNetwork) {
-    if (!validationStatus.isAccept()) {
-      return;
-    }
-    onForkChoiceThread(
-            () -> {
-              final VoteUpdater transaction = recentChainData.startVoteUpdate();
-              storeEquivocatingIndices(slashing, transaction);
-              transaction.commit();
-            })
-        .ifExceptionGetsHereRaiseABug();
-  }
-
   private void storeEquivocatingIndices(
       final AttesterSlashing attesterSlashing, final VoteUpdater transaction) {
     attesterSlashing
@@ -753,19 +774,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             });
   }
 
-  public void onTick(
-      final UInt64 currentTimeMillis, final Optional<TickProcessingPerformance> performanceRecord) {
-    final UInt64 previousSlot = spec.getCurrentSlot(recentChainData.getStore());
-    tickProcessor.onTick(currentTimeMillis).join();
-    performanceRecord.ifPresent(TickProcessingPerformance::tickProcessorComplete);
-    final UInt64 currentSlot = spec.getCurrentSlot(recentChainData.getStore());
-    if (currentSlot.isGreaterThan(previousSlot)) {
-      applyDeferredAttestations(currentSlot).ifExceptionGetsHereRaiseABug();
-    }
-    performanceRecord.ifPresent(TickProcessingPerformance::deferredAttestationsApplied);
-  }
-
-  public SafeFuture<Void> prepareForBlockProduction(final UInt64 slot) {
+  SafeFuture<Void> prepareForBlockProduction(final UInt64 slot) {
     final UInt64 slotStartTimeMillis =
         spec.getSlotStartTimeMillis(slot, recentChainData.getGenesisTimeMillis());
     final UInt64 currentTime = recentChainData.getStore().getTimeMillis();
@@ -783,7 +792,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     return SafeFuture.allOf(
             tickProcessor.onTick(slotStartTimeMillis), applyDeferredAttestations(slot))
-        .thenCompose(__ -> processHead(slot, true))
+        .thenCompose(__ -> processHead(Optional.of(slot), true))
         .toVoid();
   }
 
@@ -826,13 +835,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     return forkChoiceExecutor.execute(task);
   }
 
-  public Optional<Boolean> getOptimisticSyncing() {
+  private Optional<Boolean> getOptimisticSyncing() {
     return optimisticSyncing;
-  }
-
-  public void subscribeToOptimisticHeadChangesAndUpdate(OptimisticHeadSubscriber subscriber) {
-    optimisticSyncSubscribers.subscribe(subscriber);
-    getOptimisticSyncing().ifPresent(subscriber::onOptimisticHeadChanged);
   }
 
   public interface OptimisticHeadSubscriber {
