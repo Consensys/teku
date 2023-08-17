@@ -430,9 +430,9 @@ public class RespondingEth2Peer implements Eth2Peer {
   @Override
   public void adjustReputation(final ReputationAdjustment adjustment) {}
 
-  private <K, T> Optional<T> findObjectByKey(
-      final K key, final BiFunction<ChainBuilder, K, Optional<T>> findMethod) {
-    Optional<T> object = findMethod.apply(chain, key);
+  private <K, V> Optional<V> findObjectByKey(
+      final K key, final BiFunction<ChainBuilder, K, Optional<V>> findMethod) {
+    Optional<V> object = findMethod.apply(chain, key);
     for (ChainBuilder fork : forks) {
       if (object.isPresent()) {
         break;
