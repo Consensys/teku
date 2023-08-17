@@ -38,7 +38,7 @@ public class VoluntaryExitDataProvider {
   private final GenesisDataProvider genesisDataProvider;
   private final TimeProvider timeProvider;
 
-  VoluntaryExitDataProvider(
+  public VoluntaryExitDataProvider(
       final Spec spec,
       final KeyManager keyManager,
       final ValidatorApiChannel validatorApiChannel,
@@ -68,9 +68,7 @@ public class VoluntaryExitDataProvider {
                       .orElseThrow(
                           () ->
                               new BadRequestException(
-                                  String.format(
-                                      "Public key %s is not in the map of validator indices.",
-                                      publicKey)));
+                                  String.format("Public key %s is not found.", publicKey)));
 
               return createSignedVoluntaryExit(validatorIndex, publicKey, epoch, forkInfo);
             });
