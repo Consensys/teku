@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -39,11 +40,11 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 public class ValidatorKeysApi {
   private static final Logger LOG = LogManager.getLogger();
   private static final String LOCAL_KEYS_URL = "/eth/v1/keystores";
-
   private static final String LOCAL_FEE_RECIPIENT_URL = "/eth/v1/validator/{pubkey}/feerecipient";
-
   public static final String LOCAL_GAS_LIMIT_URL = "/eth/v1/validator/{pubkey}/gas_limit";
   private static final String REMOTE_KEYS_URL = "/eth/v1/remotekeys";
+  public static final String VOLUNTARY_EXIT_URL = "/eth/v1/validator/{pubkey}/voluntary_exit";
+
   private final JsonProvider jsonProvider = new JsonProvider();
   private final SimpleHttpClient httpClient;
   private final Supplier<URI> validatorUri;
@@ -66,6 +67,29 @@ public class ValidatorKeysApi {
     assertThat(addResult.get("data").size()).isEqualTo(validatorKeystores.getValidatorCount());
     checkStatus(addResult.get("data"), expectedStatus);
     tempDir.toFile().delete();
+  }
+
+  public void postVoluntaryExit(final BLSPublicKey publicKey, final int validatorIndex)
+      throws IOException {
+    final UInt64 epoch = UInt64.ONE;
+    final String value = getPostVoluntaryExitString(publicKey, Optional.of(epoch));
+    final JsonNode result = jsonProvider.getObjectMapper().readTree(value).get("data");
+    final JsonNode message = result.get("message");
+    assertThat(message.get("epoch").asText()).isEqualTo(String.valueOf(epoch));
+    assertThat(message.get("validator_index").asText()).isEqualTo(String.valueOf(validatorIndex));
+    assertThat(result.get("signature").asText()).isBase64();
+  }
+
+  private String getPostVoluntaryExitString(
+      final BLSPublicKey publicKey, final Optional<UInt64> epoch) throws IOException {
+    String url = VOLUNTARY_EXIT_URL.replace("{pubkey}", publicKey.toHexString());
+    if (epoch.isPresent()) {
+      url = url.concat("?epoch=" + epoch.get());
+    }
+
+    final String result = httpClient.post(validatorUri.get(), url, "", authHeaders());
+    LOG.debug("POST Keys: " + result);
+    return result;
   }
 
   public void addFeeRecipient(final BLSPublicKey publicKey, final Eth1Address eth1Address)

@@ -153,9 +153,15 @@ public class JavalinRestApiRequest implements RestApiRequest {
 
   @Override
   public <T> T getPathParameter(final ParameterMetadata<T> parameterMetadata) {
-    return parameterMetadata
-        .getType()
-        .deserializeFromString(pathParamMap.get(parameterMetadata.getName()));
+    try {
+      return parameterMetadata
+          .getType()
+          .deserializeFromString(pathParamMap.get(parameterMetadata.getName()));
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Could not read path parameter %s: %s", parameterMetadata.getName(), e.getMessage()));
+    }
   }
 
   @Override
@@ -168,21 +174,35 @@ public class JavalinRestApiRequest implements RestApiRequest {
     if (!queryParamMap.containsKey(parameterMetadata.getName())) {
       return Optional.empty();
     }
-    return Optional.of(
-        parameterMetadata
-            .getType()
-            .deserializeFromString(
-                SingleQueryParameterUtils.validateQueryParameter(
-                    queryParamMap, parameterMetadata.getName())));
+    try {
+      return Optional.of(
+          parameterMetadata
+              .getType()
+              .deserializeFromString(
+                  SingleQueryParameterUtils.validateQueryParameter(
+                      queryParamMap, parameterMetadata.getName())));
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Could not read optional query parameter %s: %s",
+              parameterMetadata.getName(), e.getMessage()));
+    }
   }
 
   @Override
   public <T> T getQueryParameter(final ParameterMetadata<T> parameterMetadata) {
-    return parameterMetadata
-        .getType()
-        .deserializeFromString(
-            SingleQueryParameterUtils.validateQueryParameter(
-                queryParamMap, parameterMetadata.getName()));
+    try {
+      return parameterMetadata
+          .getType()
+          .deserializeFromString(
+              SingleQueryParameterUtils.validateQueryParameter(
+                  queryParamMap, parameterMetadata.getName()));
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Could not read query parameter %s: %s",
+              parameterMetadata.getName(), e.getMessage()));
+    }
   }
 
   @Override
@@ -190,13 +210,19 @@ public class JavalinRestApiRequest implements RestApiRequest {
     if (!queryParamMap.containsKey(parameterMetadata.getName())) {
       return List.of();
     }
-
-    final List<String> paramList =
-        ListQueryParameterUtils.getParameterAsStringList(
-            queryParamMap, parameterMetadata.getName());
-    return paramList.stream()
-        .map(item -> parameterMetadata.getType().deserializeFromString(item))
-        .collect(Collectors.toList());
+    try {
+      final List<String> paramList =
+          ListQueryParameterUtils.getParameterAsStringList(
+              queryParamMap, parameterMetadata.getName());
+      return paramList.stream()
+          .map(item -> parameterMetadata.getType().deserializeFromString(item))
+          .collect(Collectors.toList());
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Could not read query list parameter %s: %s",
+              parameterMetadata.getName(), e.getMessage()));
+    }
   }
 
   @Override
