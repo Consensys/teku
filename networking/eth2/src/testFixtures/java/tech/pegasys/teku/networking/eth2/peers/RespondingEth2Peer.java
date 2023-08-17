@@ -245,7 +245,16 @@ public class RespondingEth2Peer implements Eth2Peer {
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRoot(
       final List<BlobIdentifier> blobIdentifiers, final RpcResponseListener<BlobSidecar> listener) {
-    throw new UnsupportedOperationException("Not yet implemented");
+    final PendingRequestHandler<Void, BlobSidecar> handler =
+        PendingRequestHandler.createForBatchBlobSidecarRequest(
+            listener,
+            () ->
+                blobIdentifiers.stream()
+                    .map(this::findBlobSidecarByBlobIdentifier)
+                    .flatMap(Optional::stream)
+                    .collect(Collectors.toList()));
+
+    return createPendingBlobSidecarRequest(handler);
   }
 
   @Override
@@ -268,7 +277,11 @@ public class RespondingEth2Peer implements Eth2Peer {
   @Override
   public SafeFuture<Optional<BlobSidecar>> requestBlobSidecarByRoot(
       final BlobIdentifier blobIdentifier) {
-    throw new UnsupportedOperationException("Not yet implemented");
+    final PendingRequestHandler<Optional<BlobSidecar>, BlobSidecar> handler =
+        PendingRequestHandler.createForSingleBlobSidecarRequest(
+            () -> findBlobSidecarByBlobIdentifier(blobIdentifier));
+
+    return createPendingBlobSidecarRequest(handler);
   }
 
   private <T> SafeFuture<T> createPendingBlockRequest(
@@ -417,20 +430,25 @@ public class RespondingEth2Peer implements Eth2Peer {
   @Override
   public void adjustReputation(final ReputationAdjustment adjustment) {}
 
-  private <T> Optional<T> findObjectByRoot(
-      final Bytes32 root, final BiFunction<ChainBuilder, Bytes32, Optional<T>> findMethod) {
-    Optional<T> object = findMethod.apply(chain, root);
+  private <K, T> Optional<T> findObjectByKey(
+      final K key, final BiFunction<ChainBuilder, K, Optional<T>> findMethod) {
+    Optional<T> object = findMethod.apply(chain, key);
     for (ChainBuilder fork : forks) {
       if (object.isPresent()) {
         break;
       }
-      object = findMethod.apply(fork, root);
+      object = findMethod.apply(fork, key);
     }
     return object;
   }
 
   private Optional<SignedBeaconBlock> findBlockByRoot(final Bytes32 root) {
-    return findObjectByRoot(root, ChainBuilder::getBlock);
+    return findObjectByKey(root, ChainBuilder::getBlock);
+  }
+
+  private Optional<BlobSidecar> findBlobSidecarByBlobIdentifier(
+      final BlobIdentifier blobIdentifier) {
+    return findObjectByKey(blobIdentifier, ChainBuilder::getBlobSidecar);
   }
 
   public static class PendingRequest<ResponseT, HandlerT> {
@@ -507,6 +525,12 @@ public class RespondingEth2Peer implements Eth2Peer {
     static PendingRequestHandler<Optional<SignedBeaconBlock>, SignedBeaconBlock>
         createForSingleBlockRequest(final Supplier<Optional<SignedBeaconBlock>> blockSupplier) {
       return createForSingleRequest(blockSupplier);
+    }
+
+    static PendingRequestHandler<Optional<BlobSidecar>, BlobSidecar>
+        createForSingleBlobSidecarRequest(
+            final Supplier<Optional<BlobSidecar>> blobSidecarSupplier) {
+      return createForSingleRequest(blobSidecarSupplier);
     }
 
     static <T> PendingRequestHandler<Void, T> createForBatchRequest(
