@@ -58,7 +58,7 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
     final UInt64 unsubscribeSlot = currentUnsubscriptionSlot.max(aggregationSlot);
     if (currentUnsubscriptionSlot.equals(ZERO)) {
       eth2P2PNetwork.subscribeToAttestationSubnetId(subnetId);
-      subnetSubscriptionsGauge.set(1, String.format(GAUGE_AGGREGATION_SUBNETS_LABEL, subnetId));
+      toggleAggregateSubscriptionMetric(subnetId, false);
       LOG.trace(
           "Subscribing to aggregation subnet {} with unsubscribe due at slot {}",
           subnetId,
@@ -66,9 +66,8 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
     } else {
       if (aggregationSlot.isGreaterThan(currentUnsubscriptionSlot)
           && persistentSubnetIdSet.contains(subnetId)) {
-        subnetSubscriptionsGauge.set(0, String.format(GAUGE_PERSISTENT_SUBNETS_LABEL, subnetId));
+        toggleAggregateSubscriptionMetric(subnetId, true);
         persistentSubnetIdSet.remove(subnetId);
-        subnetSubscriptionsGauge.set(1, String.format(GAUGE_AGGREGATION_SUBNETS_LABEL, subnetId));
       }
       LOG.trace(
           "Already subscribed to aggregation subnet {}, updating unsubscription slot to {}",
@@ -76,6 +75,20 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
           unsubscribeSlot);
     }
     subnetIdToUnsubscribeSlot.put(subnetId, unsubscribeSlot);
+  }
+
+  private void togglePersistentSubscriptionMetric(final int subnetId, final boolean reset) {
+    subnetSubscriptionsGauge.set(1, String.format(GAUGE_PERSISTENT_SUBNETS_LABEL, subnetId));
+    if (reset) {
+      subnetSubscriptionsGauge.set(0, String.format(GAUGE_AGGREGATION_SUBNETS_LABEL, subnetId));
+    }
+  }
+
+  private void toggleAggregateSubscriptionMetric(final int subnetId, final boolean reset) {
+    subnetSubscriptionsGauge.set(1, String.format(GAUGE_AGGREGATION_SUBNETS_LABEL, subnetId));
+    if (reset) {
+      subnetSubscriptionsGauge.set(0, String.format(GAUGE_PERSISTENT_SUBNETS_LABEL, subnetId));
+    }
   }
 
   public synchronized void subscribeToPersistentSubnets(
@@ -97,12 +110,11 @@ public class AttestationTopicSubscriber implements SlotEventsChannel {
             "Already subscribed to subnet {}, updating unsubscription slot to {}",
             subnetId,
             unsubscriptionSlot);
-        subnetSubscriptionsGauge.set(0, String.format(GAUGE_AGGREGATION_SUBNETS_LABEL, subnetId));
-        subnetSubscriptionsGauge.set(1, String.format(GAUGE_PERSISTENT_SUBNETS_LABEL, subnetId));
+        togglePersistentSubscriptionMetric(subnetId, true);
         subnetIdToUnsubscribeSlot.put(subnetId, unsubscriptionSlot);
       } else {
         eth2P2PNetwork.subscribeToAttestationSubnetId(subnetId);
-        subnetSubscriptionsGauge.set(1, String.format(GAUGE_PERSISTENT_SUBNETS_LABEL, subnetId));
+        togglePersistentSubscriptionMetric(subnetId, false);
         LOG.trace("Subscribed to new persistent subnet {}", subnetId);
         subnetIdToUnsubscribeSlot.put(subnetId, subnetSubscription.getUnsubscriptionSlot());
       }
