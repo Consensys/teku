@@ -25,11 +25,16 @@ import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.restapi.RestApi;
 import tech.pegasys.teku.infrastructure.restapi.RestApiBuilder;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 import tech.pegasys.teku.validator.client.KeyManager;
 import tech.pegasys.teku.validator.client.ProposerConfigManager;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
+import tech.pegasys.teku.validator.client.VoluntaryExitDataProvider;
 import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
 import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteFeeRecipient;
@@ -54,12 +59,19 @@ public class ValidatorRestApi {
   public static final String TAG_GAS_LIMIT = "Gas Limit";
 
   public static RestApi create(
+      final Spec spec,
       final ValidatorRestApiConfig config,
+      final ValidatorApiChannel validatorApiChannel,
+      final GenesisDataProvider genesisDataProvider,
       final Optional<ProposerConfigManager> proposerConfigManager,
       final KeyManager keyManager,
       final DataDirLayout dataDirLayout,
+      final TimeProvider timeProvider,
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
       final DoppelgangerDetectionAction doppelgangerDetectionAction) {
+    final VoluntaryExitDataProvider voluntaryExitDataProvider =
+        new VoluntaryExitDataProvider(
+            spec, keyManager, validatorApiChannel, genesisDataProvider, timeProvider);
     final Path slashingProtectionPath =
         ValidatorClientService.getSlashingProtectionPath(dataDirLayout);
     return new RestApiBuilder()
@@ -109,7 +121,7 @@ public class ValidatorRestApi {
         .endpoint(new SetGasLimit(proposerConfigManager))
         .endpoint(new DeleteFeeRecipient(proposerConfigManager))
         .endpoint(new DeleteGasLimit(proposerConfigManager))
-        .endpoint(new PostVoluntaryExit())
+        .endpoint(new PostVoluntaryExit(voluntaryExitDataProvider))
         .sslCertificate(config.getRestApiKeystoreFile(), config.getRestApiKeystorePasswordFile())
         .passwordFilePath(
             ValidatorClientService.getKeyManagerPath(dataDirLayout).resolve("validator-api-bearer"))
