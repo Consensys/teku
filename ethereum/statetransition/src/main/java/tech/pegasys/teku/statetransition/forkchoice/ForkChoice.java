@@ -100,8 +100,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final TickProcessor tickProcessor;
   private Optional<Boolean> optimisticSyncing = Optional.empty();
 
-  private boolean initialized = false;
-
   public ForkChoice(
       final Spec spec,
       final EventThread forkChoiceExecutor,
@@ -283,7 +281,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   private void initializeProtoArrayForkChoice() {
-    initialized = true;
     processHead().join();
   }
 
@@ -293,10 +290,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   private SafeFuture<Boolean> processHead(
       final Optional<UInt64> nodeSlot, final boolean isPreProposal) {
-    if (!initialized) {
-      LOG.debug("Calling processHead before initialized is set");
-      return SafeFuture.completedFuture(false);
-    }
     final Checkpoint retrievedJustifiedCheckpoint =
         recentChainData.getStore().getJustifiedCheckpoint();
     return recentChainData
@@ -337,10 +330,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   private void updateHeadTransaction(
-      Optional<UInt64> nodeSlot,
-      BeaconState justifiedState,
-      Checkpoint finalizedCheckpoint,
-      Checkpoint justifiedCheckpoint) {
+      final Optional<UInt64> nodeSlot,
+      final BeaconState justifiedState,
+      final Checkpoint finalizedCheckpoint,
+      final Checkpoint justifiedCheckpoint) {
     final VoteUpdater transaction = recentChainData.startVoteUpdate();
     final ReadOnlyForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
     final List<UInt64> justifiedEffectiveBalances =
