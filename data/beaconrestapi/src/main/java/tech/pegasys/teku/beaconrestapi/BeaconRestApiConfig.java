@@ -20,11 +20,15 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
 
 public class BeaconRestApiConfig {
+  private static final Logger LOG = LogManager.getLogger();
+
   public static final int DEFAULT_REST_API_PORT = 5051;
   public static final int DEFAULT_MAX_EVENT_QUEUE_SIZE = 250;
   public static final int DEFAULT_MAX_URL_LENGTH = 65535;
@@ -130,8 +134,10 @@ public class BeaconRestApiConfig {
     // <= 4 cores -> 2 threads
     // <= 8 cores -> 3 threads
     // <= 16 cores -> 4 threads
+    final int threads = Math.max(1, LongMath.log2(coreNumbers, RoundingMode.UP));
 
-    return Math.max(1, LongMath.log2(coreNumbers, RoundingMode.UP));
+    LOG.info("Using {} threads for handling validator API channel", threads);
+    return threads;
   }
 
   public static BeaconRestApiConfigBuilder builder() {

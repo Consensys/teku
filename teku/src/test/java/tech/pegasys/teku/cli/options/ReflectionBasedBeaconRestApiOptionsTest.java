@@ -244,10 +244,10 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
   }
 
   @Test
-  void validatorThreads_shouldDefaultToOne() {
+  void validatorThreads_shouldDefaultToAtLeastOne() {
     final int validatorThreads =
         getConfig(getTekuConfigurationFromArguments()).getValidatorThreads();
-    assertThat(validatorThreads).isEqualTo(1);
+    assertThat(validatorThreads).isGreaterThanOrEqualTo(1);
   }
 
   @Test

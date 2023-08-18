@@ -89,7 +89,6 @@ public abstract class AbstractNode implements Node {
             .beaconChainRestApiInterface(beaconChainRestApiConfig.getRestApiInterface())
             .beaconChainRestApiPort(beaconChainRestApiConfig.getRestApiPort())
             .beaconChainRestApiAllow(beaconChainRestApiConfig.getRestApiHostAllowlist())
-            .beaconChainRestApiValidatorThreads(beaconChainRestApiConfig.getValidatorThreads())
             .validatorRestApiInterface(validatorRestApiConfig.getRestApiInterface())
             .validatorRestApiPort(validatorRestApiConfig.getRestApiPort())
             .validatorRestApiAllow(validatorRestApiConfig.getRestApiHostAllowlist())
