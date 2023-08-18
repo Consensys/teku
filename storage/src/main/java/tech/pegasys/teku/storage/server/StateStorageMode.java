@@ -20,9 +20,10 @@ public enum StateStorageMode {
   // No historical state is available to query in mode "prune"
   PRUNE,
   // No historical state and blocks beyond the minimum retention period are removed
-  MINIMAL;
+  MINIMAL,
+  NOT_SET;
 
-  public static final StateStorageMode DEFAULT_MODE = PRUNE;
+  public static final StateStorageMode DEFAULT_MODE = NOT_SET;
 
   public boolean storesFinalizedStates() {
     return this == ARCHIVE;
