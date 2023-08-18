@@ -36,7 +36,7 @@ public class StorageConfigurationTest {
     args.add(Arguments.of(false, Optional.empty(), PRUNE, PRUNE));
     args.add(Arguments.of(true, Optional.empty(), NOT_SET, PRUNE));
     args.add(Arguments.of(true, Optional.of(ARCHIVE), NOT_SET, ARCHIVE));
-    args.add(Arguments.of(true, Optional.of(PRUNE), StateStorageMode.ARCHIVE, ARCHIVE));
+    args.add(Arguments.of(true, Optional.of(PRUNE), ARCHIVE, ARCHIVE));
     args.add(Arguments.of(true, Optional.of(ARCHIVE), MINIMAL, MINIMAL));
     return args.stream();
   }
