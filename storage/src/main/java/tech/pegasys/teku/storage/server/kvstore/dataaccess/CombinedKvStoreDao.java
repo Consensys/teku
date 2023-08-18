@@ -717,6 +717,15 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     }
 
     @Override
+    public void addNonCanonicalBlobSidecarRaw(
+        final Bytes blobSidecarBytes, final SlotAndBlockRootAndBlobIndex key) {
+      final KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes> column =
+          schema.getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex();
+      transaction.putRaw(
+          column, Bytes.wrap(column.getKeySerializer().serialize(key)), blobSidecarBytes);
+    }
+
+    @Override
     public void removeBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
       transaction.delete(schema.getColumnBlobSidecarBySlotRootBlobIndex(), key);
     }

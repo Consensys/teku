@@ -785,7 +785,7 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void removeDepositsFromBlockEvents(List<UInt64> blockNumbers) {
+  public void removeDepositsFromBlockEvents(final List<UInt64> blockNumbers) {
     try (final HotUpdater updater = hotUpdater()) {
       blockNumbers.forEach(updater::removeDepositsFromBlockEvent);
       updater.commit();
@@ -801,7 +801,7 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void storeNonCanonicalBlobSidecar(BlobSidecar blobSidecar) {
+  public void storeNonCanonicalBlobSidecar(final BlobSidecar blobSidecar) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       updater.addNonCanonicalBlobSidecar(blobSidecar);
       updater.commit();
@@ -867,12 +867,15 @@ public class KvStoreDatabase implements Database {
       if (nonCanonicalblobSidecars) {
         updater.removeNonCanonicalBlobSidecar(key);
       } else {
+        earliestBlobSidecarSlot = Optional.of(key.getSlot().plus(1));
         updater.removeBlobSidecar(key);
       }
-      earliestBlobSidecarSlot = Optional.of(key.getSlot().plus(1));
       ++pruned;
     }
-    earliestBlobSidecarSlot.ifPresent(updater::setEarliestBlobSidecarSlot);
+
+    if (!nonCanonicalblobSidecars) {
+      earliestBlobSidecarSlot.ifPresent(updater::setEarliestBlobSidecarSlot);
+    }
     updater.commit();
 
     // `pruned` will be greater when we reach pruneLimit not on the latest BlobSidecar
@@ -1085,7 +1088,7 @@ public class KvStoreDatabase implements Database {
       final Iterator<SlotAndBlockRoot> nonCanonicalBlocksIterator = nonCanonicalBlocks.iterator();
       int index = 0;
       while (nonCanonicalBlocksIterator.hasNext()) {
-        int start = index;
+        final int start = index;
         try (final FinalizedUpdater updater = finalizedUpdater()) {
           while (nonCanonicalBlocksIterator.hasNext() && (index - start) < BLOBS_TX_BATCH_SIZE) {
             dao.getBlobSidecarKeys(nonCanonicalBlocksIterator.next())
@@ -1094,9 +1097,7 @@ public class KvStoreDatabase implements Database {
                       dao.getBlobSidecar(key)
                           .ifPresent(
                               blobSidecarBytes -> {
-                                BlobSidecar blobSidecar =
-                                    spec.deserializeBlobSidecar(blobSidecarBytes, key.getSlot());
-                                updater.addNonCanonicalBlobSidecar(blobSidecar);
+                                updater.addNonCanonicalBlobSidecarRaw(blobSidecarBytes, key);
                                 updater.removeBlobSidecar(key);
                               });
                     });
