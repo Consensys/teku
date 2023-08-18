@@ -15,8 +15,11 @@ package tech.pegasys.teku.beaconrestapi;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.google.common.math.LongMath;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
@@ -30,7 +33,6 @@ public class BeaconRestApiConfig {
       List.of("127.0.0.1", "localhost");
   public static final List<String> DEFAULT_REST_API_CORS_ALLOWED_ORIGINS = new ArrayList<>();
   public static final boolean DEFAULT_BEACON_LIVENESS_TRACKING_ENABLED = false;
-  public static final int DEFAULT_SUBSCRIBE_THREADS_COUNT = 1;
 
   // Beacon REST API
   private final int restApiPort;
@@ -44,7 +46,7 @@ public class BeaconRestApiConfig {
   private final Eth1Address eth1DepositContractAddress;
   private final int maxUrlLength;
   private final int maxPendingEvents;
-  private final int validatorThreads;
+  private final Optional<Integer> validatorThreads;
 
   private BeaconRestApiConfig(
       final int restApiPort,
@@ -57,7 +59,7 @@ public class BeaconRestApiConfig {
       final Eth1Address eth1DepositContractAddress,
       final int maxUrlLength,
       final int maxPendingEvents,
-      final int validatorThreads,
+      final Optional<Integer> validatorThreads,
       final boolean beaconLivenessTrackingEnabled) {
     this.restApiPort = restApiPort;
     this.restApiDocsEnabled = restApiDocsEnabled;
@@ -118,7 +120,18 @@ public class BeaconRestApiConfig {
   }
 
   public int getValidatorThreads() {
-    return validatorThreads;
+    if (validatorThreads.isPresent()) {
+      return validatorThreads.get();
+    }
+
+    final int coreNumbers = Runtime.getRuntime().availableProcessors();
+
+    // <= 2 cores -> 1 thread
+    // <= 4 cores -> 2 threads
+    // <= 8 cores -> 3 threads
+    // <= 16 cores -> 4 threads
+
+    return Math.max(1, LongMath.log2(coreNumbers, RoundingMode.UP));
   }
 
   public static BeaconRestApiConfigBuilder builder() {
@@ -137,7 +150,7 @@ public class BeaconRestApiConfig {
     private List<String> restApiCorsAllowedOrigins = DEFAULT_REST_API_CORS_ALLOWED_ORIGINS;
     private int maxPendingEvents = DEFAULT_MAX_EVENT_QUEUE_SIZE;
     private int maxUrlLength = DEFAULT_MAX_URL_LENGTH;
-    private int validatorThreads = DEFAULT_SUBSCRIBE_THREADS_COUNT;
+    private Optional<Integer> validatorThreads = Optional.empty();
     private Eth1Address eth1DepositContractAddress;
 
     private BeaconRestApiConfigBuilder() {}
@@ -214,16 +227,20 @@ public class BeaconRestApiConfig {
       return this;
     }
 
-    public BeaconRestApiConfigBuilder validatorThreads(final int validatorThreads) {
-      // Generally this will be a low number, and there's a point where too many won't help.
-      // 5000 seems like a lot of concurrent threads for a rest api
-      // and at that point it's likely to not help if you go higher; so that can be a starting upper
-      // sanity bound.
-      if (validatorThreads < 1 || validatorThreads > 5_000) {
-        throw new InvalidConfigurationException(
-            String.format(
-                "Invalid validatorThreads: %d should be between 1 and 5000", validatorThreads));
-      }
+    public BeaconRestApiConfigBuilder validatorThreads(final Optional<Integer> validatorThreads) {
+      validatorThreads.ifPresent(
+          threads -> {
+            // Generally this will be a low number, and there's a point where too many won't help.
+            // 5000 seems like a lot of concurrent threads for a rest api
+            // and at that point it's likely to not help if you go higher; so that can be a starting
+            // upper
+            // sanity bound.
+            if (threads < 1 || threads > 5_000) {
+              throw new InvalidConfigurationException(
+                  String.format(
+                      "Invalid validatorThreads: %d should be between 1 and 5000", threads));
+            }
+          });
       this.validatorThreads = validatorThreads;
       return this;
     }

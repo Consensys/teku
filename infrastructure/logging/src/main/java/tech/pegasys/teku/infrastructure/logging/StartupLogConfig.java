@@ -30,6 +30,7 @@ public class StartupLogConfig {
   private final String beaconChainRestApiInterface;
   private final int beaconChainRestApiPort;
   private final List<String> beaconChainRestApiAllow;
+  private final int beaconChainRestApiValidatorThreads;
 
   private final String validatorRestApiInterface;
   private final int validatorRestApiPort;
@@ -45,6 +46,7 @@ public class StartupLogConfig {
       final List<String> beaconChainRestApiAllow,
       final String validatorRestApiInterface,
       final int validatorRestApiPort,
+      final int beaconChainRestApiValidatorThreads,
       final List<String> validatorRestApiAllow) {
     this.network = network;
     this.storageMode = storageMode;
@@ -57,6 +59,7 @@ public class StartupLogConfig {
     this.beaconChainRestApiInterface = beaconChainRestApiInterface;
     this.beaconChainRestApiPort = beaconChainRestApiPort;
     this.beaconChainRestApiAllow = beaconChainRestApiAllow;
+    this.beaconChainRestApiValidatorThreads = beaconChainRestApiValidatorThreads;
 
     this.validatorRestApiInterface = validatorRestApiInterface;
     this.validatorRestApiPort = validatorRestApiPort;
@@ -77,8 +80,11 @@ public class StartupLogConfig {
     final String restApi =
         beaconChainRestApiEnabled
             ? String.format(
-                "Rest Api Configuration | Enabled: true, Listen Address: %s, Port: %s, Allow: %s",
-                beaconChainRestApiInterface, beaconChainRestApiPort, beaconChainRestApiAllow)
+                "Rest Api Configuration | Enabled: true, Listen Address: %s, Port: %s, Allow: %s, Validator Threads: %s",
+                beaconChainRestApiInterface,
+                beaconChainRestApiPort,
+                beaconChainRestApiAllow,
+                beaconChainRestApiValidatorThreads)
             : "Rest Api Configuration | Enabled: false";
     final String validatorApi =
         String.format(
@@ -97,6 +103,7 @@ public class StartupLogConfig {
     private HardwareAbstractionLayer hardwareInfo;
     private boolean beaconChainRestApiEnabled;
     private String beaconChainRestApiInterface;
+    private int beaconChainRestApiValidatorThreads;
     private int beaconChainRestApiPort;
     private List<String> beaconChainRestApiAllow;
     private String validatorRestApiInterface;
@@ -116,6 +123,7 @@ public class StartupLogConfig {
           beaconChainRestApiAllow,
           validatorRestApiInterface,
           validatorRestApiPort,
+          beaconChainRestApiValidatorThreads,
           validatorRestApiAllow);
     }
 
@@ -156,6 +164,11 @@ public class StartupLogConfig {
     public Builder beaconChainRestApiAllow(List<String> beaconChainRestApiAllow) {
       checkNotNull(beaconChainRestApiAllow);
       this.beaconChainRestApiAllow = beaconChainRestApiAllow;
+      return this;
+    }
+
+    public Builder beaconChainRestApiValidatorThreads(int beaconChainRestApiValidatorThreads) {
+      this.beaconChainRestApiValidatorThreads = beaconChainRestApiValidatorThreads;
       return this;
     }
 
