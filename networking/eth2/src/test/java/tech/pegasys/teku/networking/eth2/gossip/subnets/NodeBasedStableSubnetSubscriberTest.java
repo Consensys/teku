@@ -27,6 +27,7 @@ import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.spec.Spec;
@@ -42,7 +43,7 @@ public class NodeBasedStableSubnetSubscriberTest {
   private final Eth2P2PNetwork network = mock(Eth2P2PNetwork.class);
 
   private final AttestationTopicSubscriber attestationTopicSubscriber =
-      new AttestationTopicSubscriber(spec, network);
+      new AttestationTopicSubscriber(spec, network, mock(SettableLabelledGauge.class));
   private final int attestationSubnetCount = spec.getNetworkingConfig().getAttestationSubnetCount();
 
   final DataStructureUtil dataStructureUtil =
