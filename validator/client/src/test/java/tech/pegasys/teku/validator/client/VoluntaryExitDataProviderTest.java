@@ -104,7 +104,7 @@ class VoluntaryExitDataProviderTest {
             dataStructureUtil.randomPublicKey(), Optional.of(UInt64.valueOf(1234)));
     assertThatSafeFuture(result)
         .isCompletedExceptionallyWith(BadRequestException.class)
-        .hasMessageMatching("Public key (.*) is not in the map of validator indices.");
+        .hasMessageMatching("Public key (.*) is not found.");
   }
 
   @Test

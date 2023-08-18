@@ -249,16 +249,4 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessage("Cannot reconstruct historic states without using ARCHIVE data storage mode");
   }
-
-  @Test
-  void shouldNotAllowPruningBlocksAndFetchingAllHistoricBlocks() {
-    assertThatThrownBy(
-            () ->
-                createConfigBuilder()
-                    .storageConfiguration(b -> b.dataStorageMode(MINIMAL))
-                    .sync(b -> b.fetchAllHistoricBlocks(true))
-                    .build())
-        .isInstanceOf(InvalidConfigurationException.class)
-        .hasMessage("Cannot download all historic blocks with block pruning enabled");
-  }
 }

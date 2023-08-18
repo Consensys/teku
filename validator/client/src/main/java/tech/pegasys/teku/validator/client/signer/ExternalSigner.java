@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.client.signer;
 
+import static tech.pegasys.teku.api.schema.deneb.BlindedBlobSidecar.fromInternalBlindedBlobSidecar;
+import static tech.pegasys.teku.api.schema.deneb.BlindedBlobSidecar.fromInternalBlobSidecar;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_PRECONDITION_FAILED;
 
@@ -32,7 +34,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -131,16 +132,25 @@ public class ExternalSigner implements Signer {
   @Override
   public SafeFuture<BLSSignature> signBlobSidecar(
       final BlobSidecar blobSidecar, final ForkInfo forkInfo) {
-    return SafeFuture.failedFuture(
-        new NotImplementedException("Blob sidecars external signing is not implemented yet."));
+    return sign(
+        signingRootUtil.signingRootForBlobSidecar(blobSidecar, forkInfo),
+        SignType.BLOB_SIDECAR, // both blobSidecar and blindedBlobSidecar uses same SignType
+        Map.of(FORK_INFO, forkInfo(forkInfo), "blob_sidecar", fromInternalBlobSidecar(blobSidecar)),
+        slashableGenericMessage("blob sidecar"));
   }
 
   @Override
   public SafeFuture<BLSSignature> signBlindedBlobSidecar(
       final BlindedBlobSidecar blindedBlobSidecar, final ForkInfo forkInfo) {
-    return SafeFuture.failedFuture(
-        new NotImplementedException(
-            "Blinded blob sidecars external signing is not implemented yet."));
+    return sign(
+        signingRootUtil.signingRootForBlindedBlobSidecar(blindedBlobSidecar, forkInfo),
+        SignType.BLOB_SIDECAR, // both blobSidecar and blindedBlobSidecar uses same SignType
+        Map.of(
+            FORK_INFO,
+            forkInfo(forkInfo),
+            "blob_sidecar",
+            fromInternalBlindedBlobSidecar(blindedBlobSidecar)),
+        slashableGenericMessage("blinded blob sidecar"));
   }
 
   @Override
