@@ -179,78 +179,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .finish(error -> LOG.error("Failed to update fork choice", error));
   }
 
-  private void initializeProtoArrayForkChoice() {
-    processHead().join();
-  }
-
   public SafeFuture<Boolean> processHead() {
     return processHead(Optional.empty(), false);
-  }
-
-  public SafeFuture<Boolean> processHead(final UInt64 nodeSlot) {
-    return processHead(Optional.of(nodeSlot), false);
-  }
-
-  public SafeFuture<Boolean> processHead(final UInt64 nodeSlot, final boolean isPreProposal) {
-    return processHead(Optional.of(nodeSlot), isPreProposal);
-  }
-
-  private SafeFuture<Boolean> processHead(
-      final Optional<UInt64> nodeSlot, final boolean isPreProposal) {
-    final Checkpoint retrievedJustifiedCheckpoint =
-        recentChainData.getStore().getJustifiedCheckpoint();
-    return recentChainData
-        .retrieveCheckpointState(retrievedJustifiedCheckpoint)
-        .thenCompose(
-            justifiedCheckpointState ->
-                onForkChoiceThread(
-                    () -> {
-                      final Checkpoint finalizedCheckpoint =
-                          recentChainData.getStore().getFinalizedCheckpoint();
-                      final Checkpoint justifiedCheckpoint =
-                          recentChainData.getStore().getJustifiedCheckpoint();
-                      if (!justifiedCheckpoint.equals(retrievedJustifiedCheckpoint)) {
-                        LOG.debug(
-                            "Skipping head block update as justified checkpoint was updated while loading checkpoint state. Was {} ({}) but now {} ({})",
-                            retrievedJustifiedCheckpoint.getEpoch(),
-                            retrievedJustifiedCheckpoint.getRoot(),
-                            justifiedCheckpoint.getEpoch(),
-                            justifiedCheckpoint.getRoot());
-                        return false;
-                      }
-                      final VoteUpdater transaction = recentChainData.startVoteUpdate();
-                      final ReadOnlyForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
-                      final BeaconState justifiedState = justifiedCheckpointState.orElseThrow();
-                      final List<UInt64> justifiedEffectiveBalances =
-                          spec.getBeaconStateUtil(justifiedState.getSlot())
-                              .getEffectiveActiveUnslashedBalances(justifiedState);
-
-                      Bytes32 headBlockRoot =
-                          transaction.applyForkChoiceScoreChanges(
-                              recentChainData.getCurrentEpoch().orElseThrow(),
-                              finalizedCheckpoint,
-                              justifiedCheckpoint,
-                              justifiedEffectiveBalances,
-                              recentChainData.getStore().getProposerBoostRoot(),
-                              spec.getProposerBoostAmount(justifiedState));
-
-                      recentChainData.updateHead(
-                          headBlockRoot,
-                          nodeSlot.orElse(
-                              forkChoiceStrategy
-                                  .blockSlot(headBlockRoot)
-                                  .orElseThrow(
-                                      () ->
-                                          new IllegalStateException(
-                                              "Unable to retrieve the slot of fork choice head: "
-                                                  + headBlockRoot))));
-
-                      transaction.commit();
-                      notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
-                          isPreProposal ? nodeSlot : Optional.empty());
-
-                      return true;
-                    }));
   }
 
   /** Import a block to the store. */
@@ -264,6 +194,172 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .thenCompose(
             blockSlotState ->
                 onBlock(block, blockSlotState, blockImportPerformance, executionLayer));
+  }
+
+  public SafeFuture<AttestationProcessingResult> onAttestation(
+      final ValidatableAttestation attestation) {
+    return attestationStateSelector
+        .getStateToValidate(attestation.getData())
+        .thenCompose(
+            maybeState -> {
+              final UpdatableStore store = recentChainData.getStore();
+              final AttestationProcessingResult validationResult =
+                  spec.validateAttestation(store, attestation, maybeState);
+
+              if (!validationResult.isSuccessful()) {
+                if (validationResult.getStatus() == Status.DEFER_FORK_CHOICE_PROCESSING) {
+                  deferredAttestations.addAttestation(getIndexedAttestation(attestation));
+                }
+                return SafeFuture.completedFuture(validationResult);
+              }
+              return onForkChoiceThread(
+                      () -> {
+                        final VoteUpdater transaction = recentChainData.startVoteUpdate();
+                        getForkChoiceStrategy()
+                            .onAttestation(transaction, getIndexedAttestation(attestation));
+                        transaction.commit();
+                      })
+                  .thenApply(__ -> validationResult);
+            })
+        .exceptionallyCompose(
+            error -> {
+              final Throwable rootCause = Throwables.getRootCause(error);
+              if (rootCause instanceof InvalidCheckpointException) {
+                return SafeFuture.completedFuture(
+                    AttestationProcessingResult.invalid(rootCause.getMessage()));
+              }
+              return SafeFuture.failedFuture(error);
+            });
+  }
+
+  public void applyIndexedAttestations(final List<ValidatableAttestation> attestations) {
+    onForkChoiceThread(
+            () -> {
+              final VoteUpdater transaction = recentChainData.startVoteUpdate();
+              final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+              attestations.stream()
+                  .map(this::getIndexedAttestation)
+                  .forEach(
+                      attestation -> forkChoiceStrategy.onAttestation(transaction, attestation));
+              transaction.commit();
+            })
+        .ifExceptionGetsHereRaiseABug();
+  }
+
+  public void onAttesterSlashing(
+      final AttesterSlashing slashing,
+      InternalValidationResult validationStatus,
+      boolean fromNetwork) {
+    if (!validationStatus.isAccept()) {
+      return;
+    }
+    onForkChoiceThread(
+            () -> {
+              final VoteUpdater transaction = recentChainData.startVoteUpdate();
+              storeEquivocatingIndices(slashing, transaction);
+              transaction.commit();
+            })
+        .ifExceptionGetsHereRaiseABug();
+  }
+
+  public void subscribeToOptimisticHeadChangesAndUpdate(OptimisticHeadSubscriber subscriber) {
+    optimisticSyncSubscribers.subscribe(subscriber);
+    getOptimisticSyncing().ifPresent(subscriber::onOptimisticHeadChanged);
+  }
+
+  public void onTick(
+      final UInt64 currentTimeMillis, final Optional<TickProcessingPerformance> performanceRecord) {
+    final UpdatableStore store = recentChainData.getStore();
+    final UInt64 slotAtStartOfTick = spec.getCurrentSlot(store);
+    tickProcessor.onTick(currentTimeMillis).join();
+    performanceRecord.ifPresent(TickProcessingPerformance::tickProcessorComplete);
+    final UInt64 currentSlot = spec.getCurrentSlot(store);
+    if (currentSlot.isGreaterThan(slotAtStartOfTick)) {
+      applyDeferredAttestations(currentSlot).ifExceptionGetsHereRaiseABug();
+    }
+    performanceRecord.ifPresent(TickProcessingPerformance::deferredAttestationsApplied);
+  }
+
+  private void initializeProtoArrayForkChoice() {
+    processHead().join();
+  }
+
+  SafeFuture<Boolean> processHead(final UInt64 nodeSlot) {
+    return processHead(Optional.of(nodeSlot), false);
+  }
+
+  private SafeFuture<Boolean> processHead(
+      final Optional<UInt64> nodeSlot, final boolean isPreProposal) {
+    final Checkpoint retrievedJustifiedCheckpoint =
+        recentChainData.getStore().getJustifiedCheckpoint();
+    return recentChainData
+        .retrieveCheckpointState(retrievedJustifiedCheckpoint)
+        .thenCompose(
+            maybeJustifiedCheckpointState ->
+                onForkChoiceThread(
+                    () -> {
+                      final Checkpoint finalizedCheckpoint =
+                          recentChainData.getStore().getFinalizedCheckpoint();
+                      final Checkpoint justifiedCheckpoint =
+                          recentChainData.getStore().getJustifiedCheckpoint();
+                      if (!justifiedCheckpoint.equals(retrievedJustifiedCheckpoint)) {
+                        LOG.debug(
+                            "Skipping head block update as justified checkpoint was updated while loading checkpoint state. Was {} ({}) but now {} ({})",
+                            retrievedJustifiedCheckpoint::getEpoch,
+                            retrievedJustifiedCheckpoint::getRoot,
+                            justifiedCheckpoint::getEpoch,
+                            justifiedCheckpoint::getRoot);
+                        return false;
+                      }
+                      if (maybeJustifiedCheckpointState.isEmpty()) {
+                        LOG.debug(
+                            "Retrieved justified checkpoint state for {} was empty, cannot update head given current information.",
+                            justifiedCheckpoint::getRoot);
+                        return false;
+                      }
+
+                      updateHeadTransaction(
+                          nodeSlot,
+                          maybeJustifiedCheckpointState.orElseThrow(),
+                          finalizedCheckpoint,
+                          justifiedCheckpoint);
+                      notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
+                          isPreProposal ? nodeSlot : Optional.empty());
+                      return true;
+                    }));
+  }
+
+  private void updateHeadTransaction(
+      final Optional<UInt64> nodeSlot,
+      final BeaconState justifiedState,
+      final Checkpoint finalizedCheckpoint,
+      final Checkpoint justifiedCheckpoint) {
+    final VoteUpdater transaction = recentChainData.startVoteUpdate();
+    final ReadOnlyForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+    final List<UInt64> justifiedEffectiveBalances =
+        spec.getBeaconStateUtil(justifiedState.getSlot())
+            .getEffectiveActiveUnslashedBalances(justifiedState);
+
+    final Bytes32 headBlockRoot =
+        transaction.applyForkChoiceScoreChanges(
+            recentChainData.getCurrentEpoch().orElseThrow(),
+            finalizedCheckpoint,
+            justifiedCheckpoint,
+            justifiedEffectiveBalances,
+            recentChainData.getStore().getProposerBoostRoot(),
+            spec.getProposerBoostAmount(justifiedState));
+
+    recentChainData.updateHead(
+        headBlockRoot,
+        nodeSlot.orElse(
+            forkChoiceStrategy
+                .blockSlot(headBlockRoot)
+                .orElseThrow(
+                    () ->
+                        new IllegalStateException(
+                            "Unable to retrieve the slot of fork choice head: " + headBlockRoot))));
+
+    transaction.commit();
   }
 
   /**
@@ -655,56 +751,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .isSuccessful();
   }
 
-  public SafeFuture<AttestationProcessingResult> onAttestation(
-      final ValidatableAttestation attestation) {
-    return attestationStateSelector
-        .getStateToValidate(attestation.getData())
-        .thenCompose(
-            maybeState -> {
-              final UpdatableStore store = recentChainData.getStore();
-              final AttestationProcessingResult validationResult =
-                  spec.validateAttestation(store, attestation, maybeState);
-
-              if (!validationResult.isSuccessful()) {
-                if (validationResult.getStatus() == Status.DEFER_FORK_CHOICE_PROCESSING) {
-                  deferredAttestations.addAttestation(getIndexedAttestation(attestation));
-                }
-                return SafeFuture.completedFuture(validationResult);
-              }
-              return onForkChoiceThread(
-                      () -> {
-                        final VoteUpdater transaction = recentChainData.startVoteUpdate();
-                        getForkChoiceStrategy()
-                            .onAttestation(transaction, getIndexedAttestation(attestation));
-                        transaction.commit();
-                      })
-                  .thenApply(__ -> validationResult);
-            })
-        .exceptionallyCompose(
-            error -> {
-              final Throwable rootCause = Throwables.getRootCause(error);
-              if (rootCause instanceof InvalidCheckpointException) {
-                return SafeFuture.completedFuture(
-                    AttestationProcessingResult.invalid(rootCause.getMessage()));
-              }
-              return SafeFuture.failedFuture(error);
-            });
-  }
-
-  public void applyIndexedAttestations(final List<ValidatableAttestation> attestations) {
-    onForkChoiceThread(
-            () -> {
-              final VoteUpdater transaction = recentChainData.startVoteUpdate();
-              final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
-              attestations.stream()
-                  .map(this::getIndexedAttestation)
-                  .forEach(
-                      attestation -> forkChoiceStrategy.onAttestation(transaction, attestation));
-              transaction.commit();
-            })
-        .ifExceptionGetsHereRaiseABug();
-  }
-
   private SafeFuture<Void> applyDeferredAttestations(
       final Collection<DeferredVotes> deferredVoteUpdates) {
     return onForkChoiceThread(
@@ -726,22 +772,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         .forEach(attesterSlashing -> storeEquivocatingIndices(attesterSlashing, voteUpdater));
   }
 
-  public void onAttesterSlashing(
-      final AttesterSlashing slashing,
-      InternalValidationResult validationStatus,
-      boolean fromNetwork) {
-    if (!validationStatus.isAccept()) {
-      return;
-    }
-    onForkChoiceThread(
-            () -> {
-              final VoteUpdater transaction = recentChainData.startVoteUpdate();
-              storeEquivocatingIndices(slashing, transaction);
-              transaction.commit();
-            })
-        .ifExceptionGetsHereRaiseABug();
-  }
-
   private void storeEquivocatingIndices(
       final AttesterSlashing attesterSlashing, final VoteUpdater transaction) {
     attesterSlashing
@@ -753,19 +783,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             });
   }
 
-  public void onTick(
-      final UInt64 currentTimeMillis, final Optional<TickProcessingPerformance> performanceRecord) {
-    final UInt64 previousSlot = spec.getCurrentSlot(recentChainData.getStore());
-    tickProcessor.onTick(currentTimeMillis).join();
-    performanceRecord.ifPresent(TickProcessingPerformance::tickProcessorComplete);
-    final UInt64 currentSlot = spec.getCurrentSlot(recentChainData.getStore());
-    if (currentSlot.isGreaterThan(previousSlot)) {
-      applyDeferredAttestations(currentSlot).ifExceptionGetsHereRaiseABug();
-    }
-    performanceRecord.ifPresent(TickProcessingPerformance::deferredAttestationsApplied);
-  }
-
-  public SafeFuture<Void> prepareForBlockProduction(final UInt64 slot) {
+  SafeFuture<Void> prepareForBlockProduction(final UInt64 slot) {
     final UInt64 slotStartTimeMillis =
         spec.getSlotStartTimeMillis(slot, recentChainData.getGenesisTimeMillis());
     final UInt64 currentTime = recentChainData.getStore().getTimeMillis();
@@ -783,7 +801,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
     return SafeFuture.allOf(
             tickProcessor.onTick(slotStartTimeMillis), applyDeferredAttestations(slot))
-        .thenCompose(__ -> processHead(slot, true))
+        .thenCompose(__ -> processHead(Optional.of(slot), true))
         .toVoid();
   }
 
@@ -826,13 +844,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     return forkChoiceExecutor.execute(task);
   }
 
-  public Optional<Boolean> getOptimisticSyncing() {
+  private Optional<Boolean> getOptimisticSyncing() {
     return optimisticSyncing;
-  }
-
-  public void subscribeToOptimisticHeadChangesAndUpdate(OptimisticHeadSubscriber subscriber) {
-    optimisticSyncSubscribers.subscribe(subscriber);
-    getOptimisticSyncing().ifPresent(subscriber::onOptimisticHeadChanged);
   }
 
   public interface OptimisticHeadSubscriber {
