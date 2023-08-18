@@ -181,9 +181,10 @@ public class BlobSidecarPruner extends Service {
 
     final SpecConfig config = spec.atSlot(currentSlot).getConfig();
     final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
-    return currentSlot.minusMinZero(
-        ((long) (specConfigDeneb.getEpochsStoreBlobs() + 1)
+    final long slotsToKeep =
+        (((long) specConfigDeneb.getEpochsStoreBlobs() + 1)
                 * spec.atSlot(currentSlot).getSlotsPerEpoch())
-            + 1);
+            + 1;
+    return currentSlot.minusMinZero(slotsToKeep);
   }
 }
