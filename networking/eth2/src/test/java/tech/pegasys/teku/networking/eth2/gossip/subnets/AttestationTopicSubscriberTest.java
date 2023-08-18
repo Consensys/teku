@@ -49,7 +49,7 @@ class AttestationTopicSubscriberTest {
         spec.computeSubnetForCommittee(ONE, UInt64.valueOf(committeeId), COMMITTEES_AT_SLOT);
     subscriber.subscribeToCommitteeForAggregation(committeeId, COMMITTEES_AT_SLOT, ONE);
 
-    verify(settableLabelledGaugeMock, times(1))
+    verify(settableLabelledGaugeMock)
         .set(
             1, String.format(AttestationTopicSubscriber.GAUGE_AGGREGATION_SUBNETS_LABEL, subnetId));
     verifyNoMoreInteractions(settableLabelledGaugeMock);
@@ -65,11 +65,11 @@ class AttestationTopicSubscriberTest {
             aggregationSlot, UInt64.valueOf(committeeId), COMMITTEES_AT_SLOT);
 
     subscriber.subscribeToCommitteeForAggregation(committeeId, COMMITTEES_AT_SLOT, aggregationSlot);
-    verify(settableLabelledGaugeMock, times(1))
+    verify(settableLabelledGaugeMock)
         .set(
             1, String.format(AttestationTopicSubscriber.GAUGE_AGGREGATION_SUBNETS_LABEL, subnetId));
     subscriber.onSlot(aggregationSlot.plus(ONE));
-    verify(settableLabelledGaugeMock, times(1))
+    verify(settableLabelledGaugeMock)
         .set(
             0, String.format(AttestationTopicSubscriber.GAUGE_AGGREGATION_SUBNETS_LABEL, subnetId));
     verifyNoMoreInteractions(settableLabelledGaugeMock);
@@ -87,7 +87,7 @@ class AttestationTopicSubscriberTest {
             aggregationSlot, UInt64.valueOf(committeeId), COMMITTEES_AT_SLOT);
     subscriber.subscribeToCommitteeForAggregation(committeeId, COMMITTEES_AT_SLOT, aggregationSlot);
     subscriber.onSlot(aggregationSlot);
-    verify(settableLabelledGaugeMock, times(1))
+    verify(settableLabelledGaugeMock)
         .set(
             1,
             String.format(
@@ -112,13 +112,13 @@ class AttestationTopicSubscriberTest {
     subscriber.subscribeToCommitteeForAggregation(committeeId, COMMITTEES_AT_SLOT, firstSlot);
     subscriber.subscribeToCommitteeForAggregation(committeeId, COMMITTEES_AT_SLOT, secondSlot);
     subscriber.onSlot(firstSlot.plus(ONE));
-    verify(settableLabelledGaugeMock, times(1))
+    verify(settableLabelledGaugeMock)
         .set(
             1, String.format(AttestationTopicSubscriber.GAUGE_AGGREGATION_SUBNETS_LABEL, subnetId));
     verify(eth2P2PNetwork, never()).unsubscribeFromAttestationSubnetId(anyInt());
 
     subscriber.onSlot(secondSlot.plus(ONE));
-    verify(settableLabelledGaugeMock, times(1))
+    verify(settableLabelledGaugeMock)
         .set(
             0, String.format(AttestationTopicSubscriber.GAUGE_AGGREGATION_SUBNETS_LABEL, subnetId));
     verifyNoMoreInteractions(settableLabelledGaugeMock);
@@ -143,12 +143,12 @@ class AttestationTopicSubscriberTest {
 
     subscriber.onSlot(firstSlot.plus(ONE));
     verify(eth2P2PNetwork, never()).unsubscribeFromAttestationSubnetId(anyInt());
-    verify(settableLabelledGaugeMock, times(1))
+    verify(settableLabelledGaugeMock)
         .set(
             1, String.format(AttestationTopicSubscriber.GAUGE_AGGREGATION_SUBNETS_LABEL, subnetId));
 
     subscriber.onSlot(secondSlot.plus(ONE));
-    verify(settableLabelledGaugeMock, times(1))
+    verify(settableLabelledGaugeMock)
         .set(
             0, String.format(AttestationTopicSubscriber.GAUGE_AGGREGATION_SUBNETS_LABEL, subnetId));
     verifyNoMoreInteractions(settableLabelledGaugeMock);
@@ -164,9 +164,9 @@ class AttestationTopicSubscriberTest {
 
     subscriber.subscribeToPersistentSubnets(subnetSubscriptions);
 
-    verify(settableLabelledGaugeMock, times(1))
+    verify(settableLabelledGaugeMock)
         .set(1, String.format(AttestationTopicSubscriber.GAUGE_PERSISTENT_SUBNETS_LABEL, 1));
-    verify(settableLabelledGaugeMock, times(1))
+    verify(settableLabelledGaugeMock)
         .set(1, String.format(AttestationTopicSubscriber.GAUGE_PERSISTENT_SUBNETS_LABEL, 2));
     verifyNoMoreInteractions(settableLabelledGaugeMock);
 
@@ -184,7 +184,7 @@ class AttestationTopicSubscriberTest {
     subscriber.subscribeToCommitteeForAggregation(1, COMMITTEES_AT_SLOT, someSlot);
     final int firstAggregationSubnetId =
         spec.computeSubnetForCommittee(someSlot, UInt64.valueOf(1), COMMITTEES_AT_SLOT);
-    verify(settableLabelledGaugeMock, times(1))
+    verify(settableLabelledGaugeMock)
         .set(
             1,
             String.format(
@@ -193,7 +193,7 @@ class AttestationTopicSubscriberTest {
     subscriber.subscribeToCommitteeForAggregation(2, COMMITTEES_AT_SLOT, someSlot);
     final int secondAggregationSubnetId =
         spec.computeSubnetForCommittee(someSlot, UInt64.valueOf(2), COMMITTEES_AT_SLOT);
-    verify(settableLabelledGaugeMock, times(1))
+    verify(settableLabelledGaugeMock)
         .set(
             1,
             String.format(
@@ -208,7 +208,7 @@ class AttestationTopicSubscriberTest {
             spec.computeSubnetForCommittee(someSlot, UInt64.valueOf(2), COMMITTEES_AT_SLOT));
 
     subscriber.subscribeToPersistentSubnets(subnetSubscription);
-    verify(settableLabelledGaugeMock, times(1))
+    verify(settableLabelledGaugeMock)
         .set(1, String.format(AttestationTopicSubscriber.GAUGE_PERSISTENT_SUBNETS_LABEL, 2));
     verifyNoMoreInteractions(settableLabelledGaugeMock);
 
@@ -227,18 +227,18 @@ class AttestationTopicSubscriberTest {
     subscriber.subscribeToCommitteeForAggregation(subnetId, COMMITTEES_AT_SLOT, firstSlot);
     final int aggregationSubnetId =
         spec.computeSubnetForCommittee(firstSlot, UInt64.valueOf(subnetId), COMMITTEES_AT_SLOT);
-    verify(settableLabelledGaugeMock, times(1))
+    verify(settableLabelledGaugeMock)
         .set(
             1,
             String.format(
                 AttestationTopicSubscriber.GAUGE_AGGREGATION_SUBNETS_LABEL, aggregationSubnetId));
 
     subscriber.subscribeToPersistentSubnets(subnetSubscriptions);
-    verify(settableLabelledGaugeMock, times(1))
+    verify(settableLabelledGaugeMock)
         .set(1, String.format(AttestationTopicSubscriber.GAUGE_PERSISTENT_SUBNETS_LABEL, subnetId));
 
     subscriber.onSlot(firstSlot.plus(ONE));
-    verify(settableLabelledGaugeMock, times(1))
+    verify(settableLabelledGaugeMock)
         .set(
             0,
             String.format(
@@ -246,7 +246,7 @@ class AttestationTopicSubscriberTest {
     verify(eth2P2PNetwork, never()).unsubscribeFromAttestationSubnetId(subnetId);
 
     subscriber.onSlot(secondSlot.plus(ONE));
-    verify(settableLabelledGaugeMock, times(1))
+    verify(settableLabelledGaugeMock)
         .set(0, String.format(AttestationTopicSubscriber.GAUGE_PERSISTENT_SUBNETS_LABEL, subnetId));
     verifyNoMoreInteractions(settableLabelledGaugeMock);
     verify(eth2P2PNetwork).unsubscribeFromAttestationSubnetId(subnetId);
@@ -260,16 +260,16 @@ class AttestationTopicSubscriberTest {
     final int subnetId =
         spec.computeSubnetForCommittee(secondSlot, UInt64.valueOf(committeeId), COMMITTEES_AT_SLOT);
     subscriber.subscribeToCommitteeForAggregation(committeeId, COMMITTEES_AT_SLOT, secondSlot);
-    verify(settableLabelledGaugeMock, times(1))
+    verify(settableLabelledGaugeMock)
         .set(
             1, String.format(AttestationTopicSubscriber.GAUGE_AGGREGATION_SUBNETS_LABEL, subnetId));
     Set<SubnetSubscription> subnetSubscriptions =
         Set.of(new SubnetSubscription(subnetId, firstSlot));
     subscriber.subscribeToPersistentSubnets(subnetSubscriptions);
-    verify(settableLabelledGaugeMock, times(1))
+    verify(settableLabelledGaugeMock)
         .set(
             0, String.format(AttestationTopicSubscriber.GAUGE_AGGREGATION_SUBNETS_LABEL, subnetId));
-    verify(settableLabelledGaugeMock, times(1))
+    verify(settableLabelledGaugeMock)
         .set(1, String.format(AttestationTopicSubscriber.GAUGE_PERSISTENT_SUBNETS_LABEL, subnetId));
 
     subscriber.onSlot(firstSlot.plus(ONE));
@@ -278,7 +278,7 @@ class AttestationTopicSubscriberTest {
     verify(eth2P2PNetwork, never()).unsubscribeFromAttestationSubnetId(subnetId);
 
     subscriber.onSlot(secondSlot.plus(ONE));
-    verify(settableLabelledGaugeMock, times(1))
+    verify(settableLabelledGaugeMock)
         .set(0, String.format(AttestationTopicSubscriber.GAUGE_PERSISTENT_SUBNETS_LABEL, subnetId));
     verifyNoMoreInteractions(settableLabelledGaugeMock);
     verify(eth2P2PNetwork).unsubscribeFromAttestationSubnetId(subnetId);
@@ -303,7 +303,7 @@ class AttestationTopicSubscriberTest {
 
     verify(settableLabelledGaugeMock, times(2))
         .set(1, String.format(AttestationTopicSubscriber.GAUGE_PERSISTENT_SUBNETS_LABEL, subnetId));
-    verify(settableLabelledGaugeMock, times(1))
+    verify(settableLabelledGaugeMock)
         .set(
             0, String.format(AttestationTopicSubscriber.GAUGE_AGGREGATION_SUBNETS_LABEL, subnetId));
 
@@ -311,7 +311,7 @@ class AttestationTopicSubscriberTest {
 
     subscriber.onSlot(secondSlot.plus(ONE));
 
-    verify(settableLabelledGaugeMock, times(1))
+    verify(settableLabelledGaugeMock)
         .set(0, String.format(AttestationTopicSubscriber.GAUGE_PERSISTENT_SUBNETS_LABEL, subnetId));
     verifyNoMoreInteractions(settableLabelledGaugeMock);
     verify(eth2P2PNetwork).unsubscribeFromAttestationSubnetId(subnetId);
