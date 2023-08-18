@@ -302,7 +302,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     return recentChainData
         .retrieveCheckpointState(retrievedJustifiedCheckpoint)
         .thenCompose(
-            justifiedCheckpointState ->
+            maybeJustifiedCheckpointState ->
                 onForkChoiceThread(
                     () -> {
                       final Checkpoint finalizedCheckpoint =
@@ -312,45 +312,61 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                       if (!justifiedCheckpoint.equals(retrievedJustifiedCheckpoint)) {
                         LOG.debug(
                             "Skipping head block update as justified checkpoint was updated while loading checkpoint state. Was {} ({}) but now {} ({})",
-                            retrievedJustifiedCheckpoint.getEpoch(),
-                            retrievedJustifiedCheckpoint.getRoot(),
-                            justifiedCheckpoint.getEpoch(),
-                            justifiedCheckpoint.getRoot());
+                            retrievedJustifiedCheckpoint::getEpoch,
+                            retrievedJustifiedCheckpoint::getRoot,
+                            justifiedCheckpoint::getEpoch,
+                            justifiedCheckpoint::getRoot);
                         return false;
                       }
-                      final VoteUpdater transaction = recentChainData.startVoteUpdate();
-                      final ReadOnlyForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
-                      final BeaconState justifiedState = justifiedCheckpointState.orElseThrow();
-                      final List<UInt64> justifiedEffectiveBalances =
-                          spec.getBeaconStateUtil(justifiedState.getSlot())
-                              .getEffectiveActiveUnslashedBalances(justifiedState);
+                      if (maybeJustifiedCheckpointState.isEmpty()) {
+                        LOG.debug(
+                            "Retrieved justified checkpoint state for {} was empty, cannot update head given current information.",
+                            justifiedCheckpoint::getRoot);
+                        return false;
+                      }
 
-                      Bytes32 headBlockRoot =
-                          transaction.applyForkChoiceScoreChanges(
-                              recentChainData.getCurrentEpoch().orElseThrow(),
-                              finalizedCheckpoint,
-                              justifiedCheckpoint,
-                              justifiedEffectiveBalances,
-                              recentChainData.getStore().getProposerBoostRoot(),
-                              spec.getProposerBoostAmount(justifiedState));
-
-                      recentChainData.updateHead(
-                          headBlockRoot,
-                          nodeSlot.orElse(
-                              forkChoiceStrategy
-                                  .blockSlot(headBlockRoot)
-                                  .orElseThrow(
-                                      () ->
-                                          new IllegalStateException(
-                                              "Unable to retrieve the slot of fork choice head: "
-                                                  + headBlockRoot))));
-
-                      transaction.commit();
+                      updateHeadTransaction(
+                          nodeSlot,
+                          maybeJustifiedCheckpointState.orElseThrow(),
+                          finalizedCheckpoint,
+                          justifiedCheckpoint);
                       notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
                           isPreProposal ? nodeSlot : Optional.empty());
-
                       return true;
                     }));
+  }
+
+  private void updateHeadTransaction(
+      Optional<UInt64> nodeSlot,
+      BeaconState justifiedState,
+      Checkpoint finalizedCheckpoint,
+      Checkpoint justifiedCheckpoint) {
+    final VoteUpdater transaction = recentChainData.startVoteUpdate();
+    final ReadOnlyForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
+    final List<UInt64> justifiedEffectiveBalances =
+        spec.getBeaconStateUtil(justifiedState.getSlot())
+            .getEffectiveActiveUnslashedBalances(justifiedState);
+
+    final Bytes32 headBlockRoot =
+        transaction.applyForkChoiceScoreChanges(
+            recentChainData.getCurrentEpoch().orElseThrow(),
+            finalizedCheckpoint,
+            justifiedCheckpoint,
+            justifiedEffectiveBalances,
+            recentChainData.getStore().getProposerBoostRoot(),
+            spec.getProposerBoostAmount(justifiedState));
+
+    recentChainData.updateHead(
+        headBlockRoot,
+        nodeSlot.orElse(
+            forkChoiceStrategy
+                .blockSlot(headBlockRoot)
+                .orElseThrow(
+                    () ->
+                        new IllegalStateException(
+                            "Unable to retrieve the slot of fork choice head: " + headBlockRoot))));
+
+    transaction.commit();
   }
 
   /**
