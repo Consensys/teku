@@ -15,33 +15,34 @@ package tech.pegasys.teku.validator.client;
 
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.impl.SszUtils;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
-import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
@@ -58,25 +59,25 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   private final AtomicReference<UInt64> lastRunEpoch = new AtomicReference<>();
 
   private final Spec spec;
-  private final TimeProvider timeProvider;
   private final OwnedValidators ownedValidators;
   private final ProposerConfigPropertiesProvider validatorRegistrationPropertiesProvider;
-  private final ValidatorRegistrationBatchSender validatorRegistrationBatchSender;
+  private final ValidatorRegistrationSigningService validatorRegistrationSigningService;
   private final ValidatorApiChannel validatorApiChannel;
+  private final int batchSize;
 
   public ValidatorRegistrator(
       final Spec spec,
-      final TimeProvider timeProvider,
       final OwnedValidators ownedValidators,
       final ProposerConfigPropertiesProvider validatorRegistrationPropertiesProvider,
-      final ValidatorRegistrationBatchSender validatorRegistrationBatchSender,
-      final ValidatorApiChannel validatorApiChannel) {
+      final ValidatorRegistrationSigningService validatorRegistrationSigningService,
+      final ValidatorApiChannel validatorApiChannel,
+      final int batchSize) {
     this.spec = spec;
-    this.timeProvider = timeProvider;
     this.ownedValidators = ownedValidators;
     this.validatorRegistrationPropertiesProvider = validatorRegistrationPropertiesProvider;
-    this.validatorRegistrationBatchSender = validatorRegistrationBatchSender;
+    this.validatorRegistrationSigningService = validatorRegistrationSigningService;
     this.validatorApiChannel = validatorApiChannel;
+    this.batchSize = batchSize;
   }
 
   @Override
@@ -181,21 +182,64 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
     return validatorRegistrationPropertiesProvider
         .refresh()
-        .thenCompose(
-            __ -> {
-              final SafeFuture<List<SignedValidatorRegistration>> validatorRegistrations =
-                  filterActiveValidators(validators)
-                      .thenCompose(this::createValidatorRegistrations);
-              return validatorRegistrations.thenCompose(
-                  validatorRegistrationBatchSender::sendInBatches);
-            });
+        .thenCompose(__ -> processInBatches(validators));
+  }
+
+  private SafeFuture<Void> processInBatches(final List<Validator> validators) {
+    final List<List<Validator>> batchedValidators = Lists.partition(validators, batchSize);
+
+    LOG.debug(
+        "Going to prepare and send {} validator registration(s) to the Beacon Node in {} batch(es)",
+        validators.size(),
+        batchedValidators.size());
+
+    final Iterator<List<Validator>> batchedValidatorsIterator = batchedValidators.iterator();
+
+    final AtomicInteger batchCounter = new AtomicInteger(0);
+    final AtomicInteger successfullySentRegistrations = new AtomicInteger(0);
+
+    return SafeFuture.asyncDoWhile(
+            () -> {
+              if (!batchedValidatorsIterator.hasNext()) {
+                return SafeFuture.completedFuture(false);
+              }
+              final List<Validator> batch = batchedValidatorsIterator.next();
+              final int currentBatch = batchCounter.incrementAndGet();
+              LOG.debug(
+                  "Starting to process validators registration batch {}/{}",
+                  currentBatch,
+                  batchedValidators.size());
+              return filterActiveValidators(batch)
+                  .thenCompose(this::createValidatorRegistrations)
+                  .thenCompose(this::sendValidatorRegistrations)
+                  .thenApply(
+                      size -> {
+                        successfullySentRegistrations.updateAndGet(count -> count + size);
+                        LOG.debug(
+                            "Batch {}/{}: {} validator(s) registrations were sent to the Beacon Node out of {} validators.",
+                            currentBatch,
+                            batchedValidators.size(),
+                            size,
+                            batch.size());
+                        return true;
+                      });
+            })
+        .alwaysRun(
+            () ->
+                VALIDATOR_LOGGER.validatorRegistrationsSentToTheBuilderNetwork(
+                    successfullySentRegistrations.get(), validators.size()));
   }
 
   private SafeFuture<List<Validator>> filterActiveValidators(final List<Validator> validators) {
+    final Function<Validator, BLSPublicKey> getKey =
+        validator ->
+            validatorRegistrationPropertiesProvider
+                .getBuilderRegistrationPublicKeyOverride(validator.getPublicKey())
+                .orElse(validator.getPublicKey());
     final Map<BLSPublicKey, Validator> validatorMap =
-        validators.stream().collect(Collectors.toMap(Validator::getPublicKey, Function.identity()));
+        validators.stream().collect(Collectors.toMap(getKey, Function.identity()));
     return validatorApiChannel
-        .getValidatorStatuses(validators.stream().map(Validator::getPublicKey).toList())
+        .getValidatorStatuses(validators.stream().map(getKey).toList())
         .thenApply(
             maybeValidatorStatuses ->
                 maybeValidatorStatuses.map(Map::entrySet).stream()
@@ -211,132 +255,42 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     final Stream<SafeFuture<SignedValidatorRegistration>> validatorRegistrationsFutures =
         validators.stream()
             .map(
-                validator ->
-                    createSignedValidatorRegistration(
-                        validator,
-                        throwable -> {
-                          final String errorMessage =
-                              String.format(
-                                  "Exception while creating a validator registration for %s. Creation will be attempted again next epoch.",
-                                  validator.getPublicKey());
-                          LOG.warn(errorMessage, throwable);
-                        }))
-            .flatMap(Optional::stream);
+                validator -> {
+                  final Optional<SafeFuture<SignedValidatorRegistration>>
+                      maybeSignedValidatorRegistration =
+                          validatorRegistrationSigningService.createSignedValidatorRegistration(
+                              validator,
+                              Optional.ofNullable(
+                                  cachedValidatorRegistrations.get(validator.getPublicKey())),
+                              throwable -> {
+                                final String errorMessage =
+                                    String.format(
+                                        "Exception while creating a validator registration for %s. Creation will be attempted again next epoch.",
+                                        validator.getPublicKey());
+                                LOG.warn(errorMessage, throwable);
+                              });
+                  return Pair.of(validator.getPublicKey(), maybeSignedValidatorRegistration);
+                })
+            .filter(pair -> pair.getRight().isPresent())
+            .map(
+                pair -> {
+                  final SafeFuture<SignedValidatorRegistration> registrationFuture =
+                      pair.getRight().get();
+                  return registrationFuture.thenPeek(
+                      registration ->
+                          cachedValidatorRegistrations.put(pair.getLeft(), registration));
+                });
     return SafeFuture.collectAllSuccessful(validatorRegistrationsFutures);
   }
 
-  private Optional<SafeFuture<SignedValidatorRegistration>> createSignedValidatorRegistration(
-      final Validator validator, final Consumer<Throwable> errorHandler) {
-    return createSignedValidatorRegistration(validator)
-        .map(registrationFuture -> registrationFuture.whenException(errorHandler));
-  }
-
-  private Optional<SafeFuture<SignedValidatorRegistration>> createSignedValidatorRegistration(
-      final Validator validator) {
-
-    final BLSPublicKey publicKey = validator.getPublicKey();
-
-    final boolean builderEnabled =
-        validatorRegistrationPropertiesProvider.isBuilderEnabled(publicKey);
-
-    if (!builderEnabled) {
-      LOG.trace("Validator registration is disabled for {}", publicKey);
-      return Optional.empty();
-    }
-
-    final Optional<Eth1Address> maybeFeeRecipient =
-        validatorRegistrationPropertiesProvider.getFeeRecipient(publicKey);
-
-    if (maybeFeeRecipient.isEmpty()) {
-      LOG.debug(
-          "Couldn't retrieve fee recipient for {}. Will skip registering this validator.",
-          publicKey);
-      return Optional.empty();
-    }
-
-    final Eth1Address feeRecipient = maybeFeeRecipient.get();
-    final UInt64 gasLimit = validatorRegistrationPropertiesProvider.getGasLimit(publicKey);
-
-    final Optional<UInt64> maybeTimestampOverride =
-        validatorRegistrationPropertiesProvider.getBuilderRegistrationTimestampOverride(publicKey);
-    final Optional<BLSPublicKey> maybePublicKeyOverride =
-        validatorRegistrationPropertiesProvider.getBuilderRegistrationPublicKeyOverride(publicKey);
-
-    final ValidatorRegistration validatorRegistration =
-        createValidatorRegistration(
-            maybePublicKeyOverride.orElse(publicKey),
-            feeRecipient,
-            gasLimit,
-            maybeTimestampOverride.orElse(timeProvider.getTimeInSeconds()));
-
-    return Optional.ofNullable(cachedValidatorRegistrations.get(publicKey))
-        .filter(
-            cachedValidatorRegistration -> {
-              final boolean needsUpdate =
-                  registrationNeedsUpdating(
-                      cachedValidatorRegistration.getMessage(),
-                      validatorRegistration,
-                      maybeTimestampOverride);
-              if (needsUpdate) {
-                LOG.debug(
-                    "The cached registration for {} needs updating. Will create a new one.",
-                    publicKey);
-              }
-              return !needsUpdate;
-            })
-        .map(SafeFuture::completedFuture)
-        .or(
-            () -> {
-              final Signer signer = validator.getSigner();
-              return Optional.of(
-                  signAndCacheValidatorRegistration(publicKey, validatorRegistration, signer));
-            });
-  }
-
-  private ValidatorRegistration createValidatorRegistration(
-      final BLSPublicKey publicKey,
-      final Eth1Address feeRecipient,
-      final UInt64 gasLimit,
-      final UInt64 timestamp) {
-    return ApiSchemas.VALIDATOR_REGISTRATION_SCHEMA.create(
-        feeRecipient, gasLimit, timestamp, publicKey);
-  }
-
-  private SafeFuture<SignedValidatorRegistration> signAndCacheValidatorRegistration(
-      final BLSPublicKey cacheKey,
-      final ValidatorRegistration validatorRegistration,
-      final Signer signer) {
-    return signer
-        .signValidatorRegistration(validatorRegistration)
-        .thenApply(
-            signature -> {
-              final SignedValidatorRegistration signedValidatorRegistration =
-                  ApiSchemas.SIGNED_VALIDATOR_REGISTRATION_SCHEMA.create(
-                      validatorRegistration, signature);
-              LOG.debug("Validator registration signed for {}", cacheKey);
-              cachedValidatorRegistrations.put(cacheKey, signedValidatorRegistration);
-              return signedValidatorRegistration;
-            });
-  }
-
-  public boolean registrationNeedsUpdating(
-      final ValidatorRegistration cachedValidatorRegistration,
-      final ValidatorRegistration newValidatorRegistration,
-      final Optional<UInt64> newMaybeTimestampOverride) {
-    final boolean cachedTimestampIsDifferentThanOverride =
-        newMaybeTimestampOverride
-            .map(
-                newTimestampOverride ->
-                    !cachedValidatorRegistration.getTimestamp().equals(newTimestampOverride))
-            .orElse(false);
-    return !cachedValidatorRegistration
-            .getFeeRecipient()
-            .equals(newValidatorRegistration.getFeeRecipient())
-        || !cachedValidatorRegistration.getGasLimit().equals(newValidatorRegistration.getGasLimit())
-        || !cachedValidatorRegistration
-            .getPublicKey()
-            .equals(newValidatorRegistration.getPublicKey())
-        || cachedTimestampIsDifferentThanOverride;
+  private SafeFuture<Integer> sendValidatorRegistrations(
+      final List<SignedValidatorRegistration> validatorRegistrations) {
+    final SszList<SignedValidatorRegistration> sszValidatorRegistrations =
+        SszUtils.toSszList(
+            ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA, validatorRegistrations);
+    return validatorApiChannel
+        .registerValidators(sszValidatorRegistrations)
+        .thenApply(__ -> validatorRegistrations.size());
   }
 
   private void cleanupCache(final List<Validator> managedValidators) {

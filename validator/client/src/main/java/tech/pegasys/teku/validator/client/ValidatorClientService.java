@@ -176,13 +176,12 @@ public class ValidatorClientService extends Service {
           Optional.of(
               new ValidatorRegistrator(
                   config.getSpec(),
-                  services.getTimeProvider(),
                   validatorLoader.getOwnedValidators(),
                   proposerConfigManager.get(),
-                  new ValidatorRegistrationBatchSender(
-                      validatorConfig.getBuilderRegistrationSendingBatchSize(),
-                      validatorApiChannel),
-                  validatorApiChannel));
+                  new ValidatorRegistrationSigningService(
+                      proposerConfigManager.get(), services.getTimeProvider()),
+                  validatorApiChannel,
+                  validatorConfig.getBuilderRegistrationSendingBatchSize()));
     } else {
       proposerConfigManager = Optional.empty();
     }
