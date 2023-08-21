@@ -13,9 +13,22 @@
 
 package tech.pegasys.teku.storage.server;
 
+import static tech.pegasys.teku.storage.server.StateStorageMode.MINIMAL;
+import static tech.pegasys.teku.storage.server.StateStorageMode.NOT_SET;
+import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
+import static tech.pegasys.teku.storage.server.VersionedDatabaseFactory.STORAGE_MODE_PATH;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.time.Duration;
+import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.service.serviceutils.layout.DataConfig;
+import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 
 public class StorageConfiguration {
@@ -111,12 +124,13 @@ public class StorageConfiguration {
   }
 
   public static final class Builder {
-
+    private static final Logger LOG = LogManager.getLogger();
     private Eth1Address eth1DepositContract;
     private StateStorageMode dataStorageMode = StateStorageMode.DEFAULT_MODE;
     private long dataStorageFrequency = DEFAULT_STORAGE_FREQUENCY;
     private DatabaseVersion dataStorageCreateDbVersion = DatabaseVersion.DEFAULT_VERSION;
     private Spec spec;
+    private DataConfig dataConfig;
     private boolean storeNonCanonicalBlocks = DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED;
     private int maxKnownNodeCacheSize = DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE;
     private Duration blockPruningInterval = DEFAULT_BLOCK_PRUNING_INTERVAL;
@@ -153,6 +167,11 @@ public class StorageConfiguration {
 
     public Builder dataStorageCreateDbVersion(DatabaseVersion dataStorageCreateDbVersion) {
       this.dataStorageCreateDbVersion = dataStorageCreateDbVersion;
+      return this;
+    }
+
+    public Builder dataConfig(final DataConfig dataConfig) {
+      this.dataConfig = dataConfig;
       return this;
     }
 
@@ -201,6 +220,7 @@ public class StorageConfiguration {
     }
 
     public StorageConfiguration build() {
+      determineDataStorageMode();
       return new StorageConfiguration(
           eth1DepositContract,
           dataStorageMode,
@@ -213,5 +233,48 @@ public class StorageConfiguration {
           blobsPruningLimit,
           spec);
     }
+
+    private void determineDataStorageMode() {
+      if (dataConfig != null) {
+        final DataDirLayout dataDirLayout = DataDirLayout.createFrom(dataConfig);
+        this.dataStorageMode =
+            determineStorageDefault(
+                dataDirLayout.getBeaconDataDirectory().toFile().exists(),
+                getStorageModeFromPersistedDatabase(dataDirLayout),
+                dataStorageMode);
+      } else {
+        if (dataStorageMode.equals(NOT_SET)) {
+          dataStorageMode = PRUNE;
+        }
+      }
+    }
+
+    private Optional<StateStorageMode> getStorageModeFromPersistedDatabase(
+        final DataDirLayout dataDirLayout) {
+      Optional<StateStorageMode> maybePreviousStorage = Optional.empty();
+      if (dataDirLayout.getBeaconDataDirectory().toFile().exists()) {
+        try {
+          final File dbStorageModeFile =
+              dataDirLayout.getBeaconDataDirectory().resolve(STORAGE_MODE_PATH).toFile();
+          maybePreviousStorage =
+              Optional.of(
+                  StateStorageMode.valueOf(Files.readString(dbStorageModeFile.toPath()).trim()));
+          LOG.debug("Read previous storage mode as {}", maybePreviousStorage);
+        } catch (IOException ex) {
+          LOG.error("Failed to read storage mode from file", ex);
+        }
+      }
+      return maybePreviousStorage;
+    }
+  }
+
+  static StateStorageMode determineStorageDefault(
+      final boolean isExistingStore,
+      final Optional<StateStorageMode> maybeHistoricStorageMode,
+      final StateStorageMode modeRequested) {
+    if (modeRequested != NOT_SET) {
+      return modeRequested;
+    }
+    return maybeHistoricStorageMode.orElse(isExistingStore ? PRUNE : MINIMAL);
   }
 }

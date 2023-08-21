@@ -26,28 +26,12 @@ import static tech.pegasys.teku.validator.client.signer.ExternalSignerTestUtil.c
 import static tech.pegasys.teku.validator.client.signer.ExternalSignerTestUtil.validateMetrics;
 import static tech.pegasys.teku.validator.client.signer.ExternalSignerTestUtil.verifySignRequest;
 
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.http.HttpClient;
-import java.time.Duration;
-import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockserver.integration.ClientAndServer;
-import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.model.Delay;
-import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueueWithPriority;
-import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
-import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -56,61 +40,19 @@ import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
-import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.spec.signatures.SigningRootUtil;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.validator.api.ValidatorConfig;
-import tech.pegasys.teku.validator.client.loader.HttpClientExternalSignerFactory;
 
-@ExtendWith(MockServerExtension.class)
-public class ExternalSignerIntegrationTest {
-  private static final Duration TIMEOUT = Duration.ofMillis(500);
-  private static final BLSKeyPair KEYPAIR = BLSTestUtil.randomKeyPair(1234);
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
-  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final ForkInfo fork = dataStructureUtil.randomForkInfo();
-  private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
-  private final ThrottlingTaskQueueWithPriority queue =
-      ThrottlingTaskQueueWithPriority.create(
-          8, metricsSystem, TekuMetricCategory.VALIDATOR, "externalSignerTest");
-  private final SigningRootUtil signingRootUtil = new SigningRootUtil(spec);
+public class ExternalSignerIntegrationTest extends AbstractExternalSignerIntegrationTest {
 
-  private ClientAndServer client;
-  private ExternalSigner externalSigner;
-
-  @BeforeEach
-  void setup(final ClientAndServer client) throws MalformedURLException {
-    this.client = client;
-    final ValidatorConfig config =
-        ValidatorConfig.builder()
-            .validatorExternalSignerPublicKeySources(List.of(KEYPAIR.getPublicKey().toString()))
-            .validatorExternalSignerUrl(new URL("http://127.0.0.1:" + client.getLocalPort()))
-            .validatorExternalSignerTimeout(TIMEOUT)
-            .build();
-    final Supplier<HttpClient> externalSignerHttpClientFactory =
-        HttpClientExternalSignerFactory.create(config);
-
-    externalSigner =
-        new ExternalSigner(
-            spec,
-            externalSignerHttpClientFactory.get(),
-            config.getValidatorExternalSignerUrl(),
-            KEYPAIR.getPublicKey(),
-            TIMEOUT,
-            queue,
-            metricsSystem);
-  }
-
-  @AfterEach
-  void tearDown() {
-    client.reset();
+  @Override
+  public Spec getSpec() {
+    return TestSpecFactory.createMinimalPhase0();
   }
 
   @Test
   void failsSigningWhenSigningServiceReturnsFailureResponse() {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(10);
 
-    assertThatThrownBy(() -> externalSigner.signBlock(block, fork).join())
+    assertThatThrownBy(() -> externalSigner.signBlock(block, forkInfo).join())
         .hasCauseInstanceOf(ExternalSignerException.class)
         .hasMessageEndingWith("Invalid response status code: 404");
 
@@ -124,7 +66,7 @@ public class ExternalSignerIntegrationTest {
     final Delay delay = new Delay(MILLISECONDS, TIMEOUT.plusMillis(ensureTimeout).toMillis());
     client.when(request()).respond(response().withDelay(delay));
 
-    assertThatThrownBy(() -> externalSigner.signBlock(block, fork).join())
+    assertThatThrownBy(() -> externalSigner.signBlock(block, forkInfo).join())
         .hasCauseInstanceOf(ExternalSignerException.class)
         .hasMessageEndingWith("request timed out");
 
@@ -136,7 +78,7 @@ public class ExternalSignerIntegrationTest {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(10);
     client.when(request()).respond(response().withBody("INVALID_RESPONSE"));
 
-    assertThatThrownBy(() -> externalSigner.signBlock(block, fork).join())
+    assertThatThrownBy(() -> externalSigner.signBlock(block, forkInfo).join())
         .hasCauseInstanceOf(ExternalSignerException.class)
         .hasMessageEndingWith(
             "Returned an invalid signature: Illegal character 'I' found at index 0 in hex binary representation");
@@ -149,7 +91,7 @@ public class ExternalSignerIntegrationTest {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(10);
     client.when(request()).respond(response().withStatusCode(SC_PRECONDITION_FAILED));
 
-    assertThatThrownBy(() -> externalSigner.signBlock(block, fork).join())
+    assertThatThrownBy(() -> externalSigner.signBlock(block, forkInfo).join())
         .hasCauseInstanceOf(ExternalSignerException.class)
         .hasMessageEndingWith(slashableBlockMessage(block.getSlot()).get());
 
@@ -161,7 +103,7 @@ public class ExternalSignerIntegrationTest {
     final AttestationData attestationData = dataStructureUtil.randomAttestationData();
     client.when(request()).respond(response().withStatusCode(SC_PRECONDITION_FAILED));
 
-    assertThatThrownBy(() -> externalSigner.signAttestationData(attestationData, fork).join())
+    assertThatThrownBy(() -> externalSigner.signAttestationData(attestationData, forkInfo).join())
         .hasCauseInstanceOf(ExternalSignerException.class)
         .hasMessageEndingWith(slashableAttestationMessage(attestationData).get());
 
@@ -173,7 +115,7 @@ public class ExternalSignerIntegrationTest {
     final UInt64 epoch = UInt64.valueOf(7);
     client.when(request()).respond(response().withStatusCode(SC_PRECONDITION_FAILED));
 
-    assertThatThrownBy(() -> externalSigner.createRandaoReveal(epoch, fork).join())
+    assertThatThrownBy(() -> externalSigner.createRandaoReveal(epoch, forkInfo).join())
         .hasCauseInstanceOf(ExternalSignerException.class)
         .hasMessageEndingWith(slashableGenericMessage("randao reveal").get());
 
@@ -189,7 +131,7 @@ public class ExternalSignerIntegrationTest {
                 "luIZGEgsjSbFo4MEPVeqaqqm1AnnTODcxFy9gPmdAywVmDIpqkzYed8DJ2l4zx5WAejUTox+NO5HQ4M2APMNovd7FuqnCSVUEftrL4WtJqegPrING2ZCtVTrcaUzFpUQ"));
     client.when(request()).respond(response().withBody(expectedSignature.toString()));
 
-    final BLSSignature response = externalSigner.signBlock(block, fork).join();
+    final BLSSignature response = externalSigner.signBlock(block, forkInfo).join();
     assertThat(response).isEqualTo(expectedSignature);
 
     final ExternalSignerBlockRequestProvider externalSignerBlockRequestProvider =
@@ -197,10 +139,10 @@ public class ExternalSignerIntegrationTest {
 
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(
-            signingRootUtil.signingRootForSignBlock(block, fork),
+            signingRootUtil.signingRootForSignBlock(block, forkInfo),
             externalSignerBlockRequestProvider.getSignType(),
             externalSignerBlockRequestProvider.getBlockMetadata(
-                Map.of("fork_info", createForkInfo(fork))));
+                Map.of("fork_info", createForkInfo(forkInfo))));
 
     verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
 
@@ -217,15 +159,16 @@ public class ExternalSignerIntegrationTest {
 
     client.when(request()).respond(response().withBody(expectedSignature.toString()));
 
-    final BLSSignature response = externalSigner.signAttestationData(attestationData, fork).join();
+    final BLSSignature response =
+        externalSigner.signAttestationData(attestationData, forkInfo).join();
     assertThat(response).isEqualTo(expectedSignature);
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(
-            signingRootUtil.signingRootForSignAttestationData(attestationData, fork),
+            signingRootUtil.signingRootForSignAttestationData(attestationData, forkInfo),
             SignType.ATTESTATION,
             Map.of(
                 "fork_info",
-                createForkInfo(fork),
+                createForkInfo(forkInfo),
                 "attestation",
                 new tech.pegasys.teku.api.schema.AttestationData(attestationData)));
 
@@ -243,14 +186,14 @@ public class ExternalSignerIntegrationTest {
                 "j7vOT7GQBnv+aIqxb0byMWNvMCXhQwAfj38UcMne7pNGXOvNZKnXQ9Knma/NOPUyAvLcRBDtew23vVtzWcm7naaTRJVvLJS6xiPOMIHOw6wNtGggzc20heZAXZAMdaKi"));
     client.when(request()).respond(response().withBody(expectedSignature.toString()));
 
-    final BLSSignature response = externalSigner.createRandaoReveal(epoch, fork).join();
+    final BLSSignature response = externalSigner.createRandaoReveal(epoch, forkInfo).join();
     assertThat(response).isEqualTo(expectedSignature);
 
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(
-            signingRootUtil.signingRootForRandaoReveal(epoch, fork),
+            signingRootUtil.signingRootForRandaoReveal(epoch, forkInfo),
             SignType.RANDAO_REVEAL,
-            Map.of("fork_info", createForkInfo(fork), "randao_reveal", Map.of("epoch", epoch)));
+            Map.of("fork_info", createForkInfo(forkInfo), "randao_reveal", Map.of("epoch", epoch)));
     verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
 
     validateMetrics(metricsSystem, 1, 0, 0);
@@ -265,15 +208,16 @@ public class ExternalSignerIntegrationTest {
                 "hnCLCZlbEyzMFq2JLHl6wk4W6gpbFGoQA2N4WB+CpgqVg3gcxJpRKOswtSTU4XdSEU2x3Hf0oTlxer/gVaFwAh84Mm4VLH67LNUxVO4+o2Q5TxOD1sArnvMcOJdGMGp2"));
     client.when(request()).respond(response().withBody(expectedSignature.toString()));
 
-    final SafeFuture<BLSSignature> future = externalSigner.signAggregationSlot(slot, fork);
+    final SafeFuture<BLSSignature> future = externalSigner.signAggregationSlot(slot, forkInfo);
 
     assertThat(future.get()).isEqualTo(expectedSignature);
 
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(
-            signingRootUtil.signingRootForSignAggregationSlot(slot, fork),
+            signingRootUtil.signingRootForSignAggregationSlot(slot, forkInfo),
             SignType.AGGREGATION_SLOT,
-            Map.of("fork_info", createForkInfo(fork), "aggregation_slot", Map.of("slot", slot)));
+            Map.of(
+                "fork_info", createForkInfo(forkInfo), "aggregation_slot", Map.of("slot", slot)));
     verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
     validateMetrics(metricsSystem, 1, 0, 0);
   }
@@ -288,17 +232,17 @@ public class ExternalSignerIntegrationTest {
 
     client.when(request()).respond(response().withBody(expectedSignature.toString()));
     final BLSSignature response =
-        externalSigner.signAggregateAndProof(aggregateAndProof, fork).join();
+        externalSigner.signAggregateAndProof(aggregateAndProof, forkInfo).join();
 
     assertThat(response).isEqualTo(expectedSignature);
 
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(
-            signingRootUtil.signingRootForSignAggregateAndProof(aggregateAndProof, fork),
+            signingRootUtil.signingRootForSignAggregateAndProof(aggregateAndProof, forkInfo),
             SignType.AGGREGATE_AND_PROOF,
             Map.of(
                 "fork_info",
-                createForkInfo(fork),
+                createForkInfo(forkInfo),
                 "aggregate_and_proof",
                 new tech.pegasys.teku.api.schema.AggregateAndProof(aggregateAndProof)));
     verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
@@ -313,16 +257,16 @@ public class ExternalSignerIntegrationTest {
             Bytes.fromBase64String(
                 "g9JMIY7595zlrapmwbnCLj8+WX7ry3yfBwNNPQ9mRJ0m+rXTwgDpmsxpzs+kX4F8Bg+KRz+v5BPKEAWkeh8bJBDX7psiELLI3q9WmCX95MXT080jByrtYLdz1Qy3OUKK"));
     client.when(request()).respond(response().withBody(expectedSignature.toString()));
-    final BLSSignature response = externalSigner.signVoluntaryExit(voluntaryExit, fork).join();
+    final BLSSignature response = externalSigner.signVoluntaryExit(voluntaryExit, forkInfo).join();
     assertThat(response).isEqualTo(expectedSignature);
 
     final SigningRequestBody signingRequestBody =
         new SigningRequestBody(
-            signingRootUtil.signingRootForSignVoluntaryExit(voluntaryExit, fork),
+            signingRootUtil.signingRootForSignVoluntaryExit(voluntaryExit, forkInfo),
             SignType.VOLUNTARY_EXIT,
             Map.of(
                 "fork_info",
-                createForkInfo(fork),
+                createForkInfo(forkInfo),
                 "voluntary_exit",
                 new tech.pegasys.teku.api.schema.VoluntaryExit(voluntaryExit)));
     verifySignRequest(client, KEYPAIR.getPublicKey().toString(), signingRequestBody);
