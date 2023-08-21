@@ -62,6 +62,7 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
@@ -724,7 +725,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initAttestationTopicSubscriber() {
     LOG.debug("BeaconChainController.initAttestationTopicSubscriber");
-    this.attestationTopicSubscriber = new AttestationTopicSubscriber(spec, p2pNetwork);
+    final SettableLabelledGauge subnetSubscriptionsGauge =
+        SettableLabelledGauge.create(
+            metricsSystem,
+            TekuMetricCategory.NETWORK,
+            "subnet_subscriptions",
+            "Tracks attestations subnet subscriptions",
+            "type");
+    this.attestationTopicSubscriber =
+        new AttestationTopicSubscriber(spec, p2pNetwork, subnetSubscriptionsGauge);
   }
 
   protected void initActiveValidatorTracker() {

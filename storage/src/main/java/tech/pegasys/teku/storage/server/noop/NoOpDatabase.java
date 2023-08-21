@@ -253,6 +253,11 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
+  public long getNonCanonicalBlobSidecarColumnCount() {
+    return 0L;
+  }
+
+  @Override
   public void migrate() {}
 
   @Override
@@ -272,7 +277,15 @@ public class NoOpDatabase implements Database {
   public void storeBlobSidecar(final BlobSidecar blobSidecar) {}
 
   @Override
+  public void storeNonCanonicalBlobSidecar(final BlobSidecar blobSidecar) {}
+
+  @Override
   public Optional<BlobSidecar> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<BlobSidecar> getNonCanonicalBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
     return Optional.empty();
   }
 
@@ -281,6 +294,12 @@ public class NoOpDatabase implements Database {
 
   @Override
   public Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    return Stream.empty();
+  }
+
+  @Override
+  public Stream<SlotAndBlockRootAndBlobIndex> streamNonCanonicalBlobSidecarKeys(
       final UInt64 startSlot, final UInt64 endSlot) {
     return Stream.empty();
   }
@@ -303,6 +322,12 @@ public class NoOpDatabase implements Database {
 
   @Override
   public boolean pruneOldestBlobSidecars(final UInt64 lastSlotToPrune, final int pruneLimit) {
+    return false;
+  }
+
+  @Override
+  public boolean pruneOldestNonCanonicalBlobSidecars(
+      final UInt64 lastSlotToPrune, final int pruneLimit) {
     return false;
   }
 

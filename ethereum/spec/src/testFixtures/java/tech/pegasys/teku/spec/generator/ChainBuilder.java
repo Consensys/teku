@@ -59,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.interop.GenesisStateBuilder;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -143,6 +144,12 @@ public class ChainBuilder {
 
   public List<BlobSidecar> getBlobSidecars(final Bytes32 blockRoot) {
     return Optional.ofNullable(blobSidecarsByHash.get(blockRoot)).orElse(Collections.emptyList());
+  }
+
+  public Optional<BlobSidecar> getBlobSidecar(final BlobIdentifier blobIdentifier) {
+    return getBlobSidecars(blobIdentifier.getBlockRoot()).stream()
+        .filter(blobSidecar -> blobSidecar.getIndex().equals(blobIdentifier.getIndex()))
+        .findFirst();
   }
 
   public Optional<UInt64> getEarliestBlobSidecarSlot() {

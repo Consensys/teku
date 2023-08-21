@@ -201,6 +201,7 @@ public class TekuConfiguration {
       final Eth2NetworkConfiguration eth2NetworkConfiguration =
           eth2NetworkConfigurationBuilder.build();
       final Spec spec = eth2NetworkConfiguration.getSpec();
+      final DataConfig dataConfig = dataConfigBuilder.build();
 
       // Add specs
       interopConfigBuilder.specProvider(spec);
@@ -214,6 +215,7 @@ public class TekuConfiguration {
       Optional<UInt64> depositContractDeployBlock =
           eth2NetworkConfiguration.getEth1DepositContractDeployBlock();
       storageConfigurationBuilder.eth1DepositContractDefault(depositContractAddress);
+      storageConfigurationBuilder.dataConfig(dataConfig);
       powchainConfigBuilder.depositContractDefault(depositContractAddress);
       powchainConfigBuilder.depositContractDeployBlockDefault(depositContractDeployBlock);
       powchainConfigBuilder.setDepositSnapshotPathForNetwork(
@@ -222,13 +224,17 @@ public class TekuConfiguration {
           b -> b.bootnodesDefault(eth2NetworkConfiguration.getDiscoveryBootnodes()));
       restApiBuilder.eth1DepositContractAddressDefault(depositContractAddress);
 
-      final DataConfig dataConfig = dataConfigBuilder.build();
       final ValidatorConfig validatorConfig = validatorConfigBuilder.build();
 
       final P2PConfig p2PConfig = p2pConfigBuilder.build();
       syncConfigBuilder.isSyncEnabledDefault(p2PConfig.getNetworkConfig().isEnabled());
 
       final StorageConfiguration storageConfiguration = storageConfigurationBuilder.build();
+      // the storageConfiguration may change the dataStorage mode, so make sure any change is
+      // reflected in the sync config builder
+      syncConfigBuilder.fetchAllHistoricBlocks(
+          storageConfiguration.getDataStorageMode().storesAllBlocks());
+
       final SyncConfig syncConfig = syncConfigBuilder.build();
 
       final long maxAllowedBatchSize =
@@ -259,11 +265,6 @@ public class TekuConfiguration {
           throw new InvalidConfigurationException(
               "Cannot reconstruct historic states without using ARCHIVE data storage mode");
         }
-      }
-      if (!storageConfiguration.getDataStorageMode().storesAllBlocks()
-          && syncConfig.fetchAllHistoricBlocks()) {
-        throw new InvalidConfigurationException(
-            "Cannot download all historic blocks with block pruning enabled");
       }
 
       return new TekuConfiguration(

@@ -59,6 +59,9 @@ public interface SchemaCombined extends Schema {
 
   KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes> getColumnBlobSidecarBySlotRootBlobIndex();
 
+  KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes>
+      getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex();
+
   // Variables
   KvStoreVariable<UInt64> getVariableGenesisTime();
 

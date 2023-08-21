@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.restapi.endpoints;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -69,7 +70,43 @@ public class RestApiRequestTest {
   private final Context context = mock(Context.class);
 
   @Test
-  void shouldDeserializeStringFromParameters() throws Exception {
+  void shouldGiveSensibleErrorMessageFromOptionalQueryParameter() {
+    when(context.queryParamMap()).thenReturn(Map.of("uint8", List.of("-1")));
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
+    assertThatThrownBy(() -> request.getOptionalQueryParameter(UINT8_PARAM))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("uint8");
+  }
+
+  @Test
+  void shouldGiveSensibleErrorMessageFromQueryParameter() {
+    when(context.queryParamMap()).thenReturn(Map.of("uint8", List.of("-1")));
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
+    assertThatThrownBy(() -> request.getQueryParameter(UINT8_PARAM))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("uint8");
+  }
+
+  @Test
+  void shouldGiveSensibleErrorMessageFromQueryList() {
+    when(context.queryParamMap()).thenReturn(Map.of("uint8", List.of("-1", "2", "3")));
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
+    assertThatThrownBy(() -> request.getQueryParameterList(UINT8_PARAM))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("uint8");
+  }
+
+  @Test
+  void shouldGiveSensibleErrorMessageFromPathParameter() {
+    when(context.pathParamMap()).thenReturn(Map.of("uint8", "-1"));
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
+    assertThatThrownBy(() -> request.getPathParameter(UINT8_PARAM))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("uint8");
+  }
+
+  @Test
+  void shouldDeserializeStringFromParameters() {
     when(context.pathParamMap()).thenReturn(Map.of("str", "byeWorld"));
     when(context.queryParamMap()).thenReturn(Map.of("str", List.of("helloWorld")));
     final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
@@ -78,7 +115,7 @@ public class RestApiRequestTest {
   }
 
   @Test
-  void shouldDeserializeIntegerFromParameters() throws Exception {
+  void shouldDeserializeIntegerFromParameters() {
     when(context.pathParamMap()).thenReturn(Map.of("int", "1234"));
     when(context.queryParamMap()).thenReturn(Map.of("int", List.of("4321")));
     final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
@@ -87,7 +124,7 @@ public class RestApiRequestTest {
   }
 
   @Test
-  void shouldDeserializeBooleanFromParameters() throws Exception {
+  void shouldDeserializeBooleanFromParameters() {
     when(context.pathParamMap()).thenReturn(Map.of("bool", "true"));
     when(context.queryParamMap()).thenReturn(Map.of("bool", List.of("false")));
     final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);

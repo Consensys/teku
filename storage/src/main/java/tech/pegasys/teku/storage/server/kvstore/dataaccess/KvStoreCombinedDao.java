@@ -129,8 +129,14 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Optional<Bytes> getBlobSidecar(SlotAndBlockRootAndBlobIndex key);
 
+  Optional<Bytes> getNonCanonicalBlobSidecar(SlotAndBlockRootAndBlobIndex key);
+
   @MustBeClosed
   Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(UInt64 startSlot, UInt64 endSlot);
+
+  @MustBeClosed
+  Stream<SlotAndBlockRootAndBlobIndex> streamNonCanonicalBlobSidecarKeys(
+      UInt64 startSlot, UInt64 endSlot);
 
   @MustBeClosed
   Stream<Bytes> streamBlobSidecars(SlotAndBlockRoot slotAndBlockRoot);
@@ -142,6 +148,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
   Map<String, Long> getColumnCounts();
 
   long getBlobSidecarColumnCount();
+
+  long getNonCanonicalBlobSidecarColumnCount();
 
   @MustBeClosed
   Stream<UInt64> streamFinalizedStateSlots(final UInt64 startSlot, final UInt64 endSlot);
@@ -229,7 +237,13 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
     void addBlobSidecar(BlobSidecar blobSidecar);
 
+    void addNonCanonicalBlobSidecar(BlobSidecar blobSidecar);
+
+    void addNonCanonicalBlobSidecarRaw(Bytes blobSidecarBytes, SlotAndBlockRootAndBlobIndex key);
+
     void removeBlobSidecar(SlotAndBlockRootAndBlobIndex key);
+
+    void removeNonCanonicalBlobSidecar(SlotAndBlockRootAndBlobIndex key);
 
     void setEarliestBlobSidecarSlot(UInt64 slot);
 
