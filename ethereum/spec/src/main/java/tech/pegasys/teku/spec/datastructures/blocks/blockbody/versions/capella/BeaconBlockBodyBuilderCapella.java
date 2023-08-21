@@ -65,7 +65,11 @@ public class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatr
 
   @Override
   protected void validateSchema() {
-    checkState(schema != null || blindedSchema != null, "schema or blindedSchema must be set");
+    if (isBlinded()) {
+      checkState(blindedSchema != null, "blindedSchema must be set");
+    } else {
+      checkState(schema != null, "schema must be set");
+    }
   }
 
   @Override
