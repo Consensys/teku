@@ -11,25 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.storage.server;
+package tech.pegasys.teku.provider;
 
-public enum StateStorageMode {
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import java.io.IOException;
+import java.util.Locale;
+import tech.pegasys.teku.api.schema.KZGProof;
 
-  // All historical state is available to query in archive mode
-  ARCHIVE,
-  // No historical state is available to query in mode "prune"
-  PRUNE,
-  // No historical state and blocks beyond the minimum retention period are removed
-  MINIMAL,
-  NOT_SET;
-
-  public static final StateStorageMode DEFAULT_MODE = NOT_SET;
-
-  public boolean storesFinalizedStates() {
-    return this == ARCHIVE;
-  }
-
-  public boolean storesAllBlocks() {
-    return this != MINIMAL;
+public class KZGProofSerializer extends JsonSerializer<KZGProof> {
+  @Override
+  public void serialize(
+      final KZGProof value, final JsonGenerator gen, final SerializerProvider serializers)
+      throws IOException {
+    gen.writeString(value.toHexString().toLowerCase(Locale.ROOT));
   }
 }
