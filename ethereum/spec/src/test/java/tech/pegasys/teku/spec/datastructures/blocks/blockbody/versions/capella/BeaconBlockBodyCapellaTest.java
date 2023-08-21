@@ -61,6 +61,7 @@ class BeaconBlockBodyCapellaTest extends AbstractBeaconBlockBodyTest<BeaconBlock
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   void builderShouldFailWhenOverridingBlindedSchemaWithANullSchema() {
     BeaconBlockBodyBuilderCapella beaconBlockBodyBuilderCapella =
         new BeaconBlockBodyBuilderCapella();
@@ -84,6 +85,7 @@ class BeaconBlockBodyCapellaTest extends AbstractBeaconBlockBodyTest<BeaconBlock
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   void builderShouldFailWhenOverridingSchemaWithANullBlindedSchema() {
     BeaconBlockBodyBuilderCapella beaconBlockBodyBuilderCapella =
         new BeaconBlockBodyBuilderCapella();

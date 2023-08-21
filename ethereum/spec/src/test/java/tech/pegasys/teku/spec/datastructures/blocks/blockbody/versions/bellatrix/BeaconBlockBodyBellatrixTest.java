@@ -57,6 +57,7 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   void builderShouldFailWhenOverridingBlindedSchemaWithANullSchema() {
     BeaconBlockBodyBuilderBellatrix beaconBlockBodyBuilderBellatrix =
         new BeaconBlockBodyBuilderBellatrix();
@@ -80,6 +81,7 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   void builderShouldFailWhenOverridingSchemaWithANullBlindedSchema() {
     BeaconBlockBodyBuilderBellatrix beaconBlockBodyBuilderBellatrix =
         new BeaconBlockBodyBuilderBellatrix();

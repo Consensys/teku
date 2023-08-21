@@ -64,6 +64,7 @@ class BeaconBlockBodyDenebTest extends AbstractBeaconBlockBodyTest<BeaconBlockBo
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   void builderShouldFailWhenOverridingBlindedSchemaWithANullSchema() {
     BeaconBlockBodyBuilderDeneb beaconBlockBodyBuilderDeneb = new BeaconBlockBodyBuilderDeneb();
     Exception exception =
@@ -86,6 +87,7 @@ class BeaconBlockBodyDenebTest extends AbstractBeaconBlockBodyTest<BeaconBlockBo
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   void builderShouldFailWhenOverridingSchemaWithANullBlindedSchema() {
     BeaconBlockBodyBuilderDeneb beaconBlockBodyBuilderDeneb = new BeaconBlockBodyBuilderDeneb();
     Exception exception =
