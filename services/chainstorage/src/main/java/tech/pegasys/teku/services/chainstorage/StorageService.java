@@ -124,7 +124,8 @@ public class StorageService extends Service implements StorageServiceFacade {
                             blobSidecarsStorageCountersEnabled,
                             "blob_sidecar",
                             pruningTimingsLabelledGauge,
-                            pruningActiveLabelledGauge));
+                            pruningActiveLabelledGauge,
+                            config.isStoreNonCanonicalBlocksEnabled()));
               }
               final EventChannels eventChannels = serviceConfig.getEventChannels();
               chainStorage = ChainStorage.create(database, config.getSpec());
