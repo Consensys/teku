@@ -19,8 +19,11 @@ import static org.mockito.Mockito.mock;
 import io.libp2p.core.Connection;
 import io.libp2p.core.transport.Transport;
 import io.libp2p.etc.util.netty.mux.MuxId;
-import io.libp2p.mux.MuxFrame;
-import io.libp2p.mux.MuxFrame.Flag;
+import io.libp2p.mux.mplex.MplexFlag;
+import io.libp2p.mux.mplex.MplexFrame;
+import io.libp2p.mux.yamux.YamuxFlags;
+import io.libp2p.mux.yamux.YamuxFrame;
+import io.libp2p.mux.yamux.YamuxType;
 import io.libp2p.transport.implementation.ConnectionOverNetty;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -37,13 +40,14 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
-public class MplexFirewallTest {
+public class MuxFirewallTest {
   private static final ChannelId DUMMY_CHANNEL_ID = DefaultChannelId.newInstance();
 
   private final AtomicLong time = new AtomicLong();
-  private final MplexFirewall firewall = new MplexFirewall(10, 20, time::get);
+  private final MuxFirewall firewall = new MuxFirewall(10, 20, time::get);
   private final ByteBuf data1K = Unpooled.buffer().writeBytes(new byte[1024]);
   private final EmbeddedChannel channel = new EmbeddedChannel();
   private final Connection connectionOverNetty =
@@ -58,13 +62,18 @@ public class MplexFirewallTest {
         .addLast(
             new ChannelInboundHandlerAdapter() {
               @Override
-              public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+              public void channelRead(ChannelHandlerContext ctx, Object msg) {
                 passedMessages.add(msg.toString());
               }
             });
   }
 
-  private void writeOneInbound(MuxFrame message) {
+  private enum MuxType {
+    MPLEX,
+    YAMUX
+  }
+
+  private void writeOneInbound(Object message) {
     try {
       boolean res = channel.writeOneInbound(message).await(1000L);
       assertThat(res).isTrue();
@@ -73,13 +82,12 @@ public class MplexFirewallTest {
     }
   }
 
-  @Test
-  void testThatDisconnectsOnRateLimitExceed() {
+  @ParameterizedTest
+  @EnumSource(MuxType.class)
+  void testThatDisconnectsOnRateLimitExceed(final MuxType muxType) {
     for (int i = 0; i < 20; i++) {
-      writeOneInbound(
-          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
-      writeOneInbound(
-          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.CLOSE, Unpooled.EMPTY_BUFFER));
+      writeOneInbound(createNewStreamFrame(muxType, i));
+      writeOneInbound(createCloseReceiverFrame(muxType, i));
       time.incrementAndGet();
     }
     assertThat(channel.isOpen()).isFalse();
@@ -88,36 +96,32 @@ public class MplexFirewallTest {
     assertThat(passedMessages).hasSizeBetween(20, 22).doesNotHaveDuplicates();
   }
 
-  @Test
-  void testThatDoesntDisconnectOnAllowedRate() {
+  @ParameterizedTest
+  @EnumSource(MuxType.class)
+  void testThatDoesNotDisconnectOnAllowedRate(final MuxType muxType) {
     for (int i = 0; i < 500; i++) {
-      writeOneInbound(
-          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
-      writeOneInbound(
-          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.CLOSE, Unpooled.EMPTY_BUFFER));
+      writeOneInbound(createNewStreamFrame(muxType, i));
+      writeOneInbound(createCloseReceiverFrame(muxType, i));
       time.addAndGet(112); // ~9 per sec
     }
     assertThat(channel.isOpen()).isTrue();
     assertThat(passedMessages).hasSize(1000).doesNotHaveDuplicates();
   }
 
-  @Test
-  void testThatDisconnectsOnExceededAfterAllowedRate() {
+  @ParameterizedTest
+  @EnumSource(MuxType.class)
+  void testThatDisconnectsOnExceededAfterAllowedRate(final MuxType muxType) {
     for (int i = 0; i < 100; i++) {
-      writeOneInbound(
-          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
-      writeOneInbound(
-          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.CLOSE, Unpooled.EMPTY_BUFFER));
+      writeOneInbound(createNewStreamFrame(muxType, i));
+      writeOneInbound(createCloseReceiverFrame(muxType, i));
       time.addAndGet(112); // ~9 per sec
     }
     assertThat(channel.isOpen()).isTrue();
     assertThat(passedMessages).hasSize(200).doesNotHaveDuplicates();
 
     for (int i = 100; i < 200; i++) {
-      writeOneInbound(
-          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
-      writeOneInbound(
-          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.CLOSE, Unpooled.EMPTY_BUFFER));
+      writeOneInbound(createNewStreamFrame(muxType, i));
+      writeOneInbound(createCloseReceiverFrame(muxType, i));
       time.addAndGet(80); // ~12 per sec
     }
     assertThat(channel.isOpen()).isFalse();
@@ -126,29 +130,27 @@ public class MplexFirewallTest {
     assertThat(passedMessages).hasSizeLessThan(220 + 2).doesNotHaveDuplicates();
   }
 
-  @Test
-  void testThatDoesntDisconnectOnHighDataRate() {
+  @ParameterizedTest
+  @EnumSource(MuxType.class)
+  void testThatDoesntDisconnectOnHighDataRate(final MuxType muxType) {
     for (int i = 0; i < 500; i++) {
-      writeOneInbound(
-          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
+      writeOneInbound(createNewStreamFrame(muxType, i));
       for (int j = 0; j < 30; j++) {
-        writeOneInbound(
-            new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.DATA, data1K.slice()));
+        writeOneInbound(createDataFrame(muxType, i));
       }
-      writeOneInbound(
-          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.CLOSE, Unpooled.EMPTY_BUFFER));
+      writeOneInbound(createCloseReceiverFrame(muxType, i));
       time.addAndGet(112); // ~9 per sec
     }
     assertThat(channel.isOpen()).isTrue();
     assertThat(passedMessages).hasSize(500 * (2 + 30));
   }
 
-  @Test
-  void testThatDisconnectsOnExceedingParallelStreams() {
+  @ParameterizedTest
+  @EnumSource(MuxType.class)
+  void testThatDisconnectsOnExceedingParallelStreams(final MuxType muxType) {
     // opening 30 streams on normal open rate
     for (int i = 0; i < 30; i++) {
-      writeOneInbound(
-          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
+      writeOneInbound(createNewStreamFrame(muxType, i));
       time.addAndGet(112); // ~9 per sec
     }
     assertThat(channel.isOpen()).isFalse();
@@ -157,28 +159,25 @@ public class MplexFirewallTest {
     assertThat(passedMessages).hasSizeLessThan(20 + 1).doesNotHaveDuplicates();
   }
 
-  @Test
-  void testThatDoesntDisconnectOnAllowedParallelStreams() {
+  @ParameterizedTest
+  @EnumSource(MuxType.class)
+  void testThatDoesntDisconnectOnAllowedParallelStreams(final MuxType muxType) {
     IntList openedIds = new IntArrayList();
     for (int i = 0; i < 18; i++) {
-      writeOneInbound(
-          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
+      writeOneInbound(createNewStreamFrame(muxType, i));
       openedIds.add(i);
       time.addAndGet(112); // ~9 per sec
     }
 
     Random random = new Random();
     for (int i = 18; i < 200; i++) {
-      writeOneInbound(
-          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
+      writeOneInbound(createNewStreamFrame(muxType, i));
       openedIds.add(i);
 
       IntLists.shuffle(openedIds, random);
       int toRemove = openedIds.removeInt(0);
 
-      writeOneInbound(
-          new MuxFrame(
-              new MuxId(DUMMY_CHANNEL_ID, toRemove, true), Flag.CLOSE, Unpooled.EMPTY_BUFFER));
+      writeOneInbound(createCloseReceiverFrame(muxType, toRemove));
       time.addAndGet(112); // ~9 per sec
     }
 
@@ -186,16 +185,13 @@ public class MplexFirewallTest {
     assertThat(passedMessages).hasSize(200 * 2 - 18).doesNotHaveDuplicates();
   }
 
-  @Test
-  void testThatResetStreamFromLocalIsTracked() throws InterruptedException {
+  @ParameterizedTest
+  @EnumSource(MuxType.class)
+  void testThatResetStreamFromLocalIsTracked(final MuxType muxType) throws InterruptedException {
     for (int i = 0; i < 200; i++) {
-      writeOneInbound(
-          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
+      writeOneInbound(createNewStreamFrame(muxType, i));
 
-      channel
-          .writeAndFlush(
-              new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.RESET, Unpooled.EMPTY_BUFFER))
-          .await(1000);
+      channel.writeAndFlush(createResetInitiatorFrame(muxType, i)).await(1000);
       time.addAndGet(112); // ~9 per sec
     }
 
@@ -206,14 +202,12 @@ public class MplexFirewallTest {
         .doesNotHaveDuplicates();
   }
 
-  @Test
-  void testThatResetStreamFromRemoteIsTracked() {
+  @ParameterizedTest
+  @EnumSource(MuxType.class)
+  void testThatResetStreamFromRemoteIsTracked(final MuxType muxType) {
     for (int i = 0; i < 200; i++) {
-      writeOneInbound(
-          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
-
-      writeOneInbound(
-          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.RESET, Unpooled.EMPTY_BUFFER));
+      writeOneInbound(createNewStreamFrame(muxType, i));
+      writeOneInbound(createResetReceiverFrame(muxType, i));
       time.addAndGet(112); // ~9 per sec
     }
 
@@ -221,19 +215,16 @@ public class MplexFirewallTest {
     assertThat(passedMessages).hasSize(200 * 2).doesNotHaveDuplicates();
   }
 
-  @Test
-  void testThatDisconnectsOnLocalClose() throws InterruptedException {
+  @ParameterizedTest
+  @EnumSource(MuxType.class)
+  void testThatDisconnectsOnLocalClose(final MuxType muxType) throws InterruptedException {
     // CLOSE (unlike RESET) sent from local doesn't close the stream and still allows remote to
     // write
     // so it shouldn't affect the number of opened tracked streams
     for (int i = 0; i < 25; i++) {
-      writeOneInbound(
-          new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.OPEN, Unpooled.EMPTY_BUFFER));
+      writeOneInbound(createNewStreamFrame(muxType, i));
 
-      channel
-          .writeAndFlush(
-              new MuxFrame(new MuxId(DUMMY_CHANNEL_ID, i, true), Flag.CLOSE, Unpooled.EMPTY_BUFFER))
-          .await(1000);
+      channel.writeAndFlush(createCloseInitiatorFrame(muxType, i)).await(1000);
       time.addAndGet(112); // ~9 per sec
     }
 
@@ -244,5 +235,59 @@ public class MplexFirewallTest {
     assertThat(channel.outboundMessages().stream().map(Object::toString))
         .hasSizeBetween(20, 22)
         .doesNotHaveDuplicates();
+  }
+
+  private Object createNewStreamFrame(final MuxType muxType, final long id) {
+    final MuxId muxId = createMuxId(id);
+    return switch (muxType) {
+      case MPLEX -> new MplexFrame(muxId, MplexFlag.NewStream, Unpooled.EMPTY_BUFFER);
+      case YAMUX -> new YamuxFrame(muxId, YamuxType.DATA, YamuxFlags.ACK, 0, Unpooled.EMPTY_BUFFER);
+    };
+  }
+
+  private Object createCloseInitiatorFrame(final MuxType muxType, final long id) {
+    final MuxId muxId = createMuxId(id);
+    return switch (muxType) {
+      case MPLEX -> new MplexFrame(muxId, MplexFlag.CloseInitiator, Unpooled.EMPTY_BUFFER);
+      case YAMUX -> new YamuxFrame(muxId, YamuxType.DATA, YamuxFlags.FIN, 0, Unpooled.EMPTY_BUFFER);
+    };
+  }
+
+  private Object createCloseReceiverFrame(final MuxType muxType, final long id) {
+    final MuxId muxId = createMuxId(id);
+    return switch (muxType) {
+      case MPLEX -> new MplexFrame(muxId, MplexFlag.CloseReceiver, Unpooled.EMPTY_BUFFER);
+      case YAMUX -> new YamuxFrame(muxId, YamuxType.DATA, YamuxFlags.FIN, 0, Unpooled.EMPTY_BUFFER);
+    };
+  }
+
+  private Object createDataFrame(final MuxType muxType, final long id) {
+    final MuxId muxId = createMuxId(id);
+    final ByteBuf slicedByteBuf = data1K.slice();
+    return switch (muxType) {
+      case MPLEX -> new MplexFrame(muxId, MplexFlag.MessageReceiver, slicedByteBuf);
+      case YAMUX -> new YamuxFrame(
+          muxId, YamuxType.DATA, 0, slicedByteBuf.readableBytes(), slicedByteBuf);
+    };
+  }
+
+  private Object createResetInitiatorFrame(final MuxType muxType, final long id) {
+    final MuxId muxId = createMuxId(id);
+    return switch (muxType) {
+      case MPLEX -> new MplexFrame(muxId, MplexFlag.ResetInitiator, Unpooled.EMPTY_BUFFER);
+      case YAMUX -> new YamuxFrame(muxId, YamuxType.DATA, YamuxFlags.RST, 0, Unpooled.EMPTY_BUFFER);
+    };
+  }
+
+  private Object createResetReceiverFrame(final MuxType muxType, final long id) {
+    final MuxId muxId = createMuxId(id);
+    return switch (muxType) {
+      case MPLEX -> new MplexFrame(muxId, MplexFlag.ResetReceiver, Unpooled.EMPTY_BUFFER);
+      case YAMUX -> new YamuxFrame(muxId, YamuxType.DATA, YamuxFlags.RST, 0, Unpooled.EMPTY_BUFFER);
+    };
+  }
+
+  private MuxId createMuxId(final long id) {
+    return new MuxId(DUMMY_CHANNEL_ID, id, true);
   }
 }
