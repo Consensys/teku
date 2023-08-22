@@ -94,6 +94,7 @@ import tech.pegasys.teku.storage.server.state.StateRootRecorder;
 public class KvStoreDatabase implements Database {
 
   protected static final int TX_BATCH_SIZE = 500;
+  protected static final int BLOBS_TX_BATCH_SIZE = 100;
   private static final Logger LOG = LogManager.getLogger();
   protected final Spec spec;
   protected final boolean storeNonCanonicalBlocks;
@@ -359,6 +360,11 @@ public class KvStoreDatabase implements Database {
   @Override
   public long getBlobSidecarColumnCount() {
     return dao.getBlobSidecarColumnCount();
+  }
+
+  @Override
+  public long getNonCanonicalBlobSidecarColumnCount() {
+    return dao.getNonCanonicalBlobSidecarColumnCount();
   }
 
   @Override
@@ -779,7 +785,7 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void removeDepositsFromBlockEvents(List<UInt64> blockNumbers) {
+  public void removeDepositsFromBlockEvents(final List<UInt64> blockNumbers) {
     try (final HotUpdater updater = hotUpdater()) {
       blockNumbers.forEach(updater::removeDepositsFromBlockEvent);
       updater.commit();
@@ -795,8 +801,22 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
+  public void storeNonCanonicalBlobSidecar(final BlobSidecar blobSidecar) {
+    try (final FinalizedUpdater updater = finalizedUpdater()) {
+      updater.addNonCanonicalBlobSidecar(blobSidecar);
+      updater.commit();
+    }
+  }
+
+  @Override
   public Optional<BlobSidecar> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
     final Optional<Bytes> maybePayload = dao.getBlobSidecar(key);
+    return maybePayload.map(payload -> spec.deserializeBlobSidecar(payload, key.getSlot()));
+  }
+
+  @Override
+  public Optional<BlobSidecar> getNonCanonicalBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+    final Optional<Bytes> maybePayload = dao.getNonCanonicalBlobSidecar(key);
     return maybePayload.map(payload -> spec.deserializeBlobSidecar(payload, key.getSlot()));
   }
 
@@ -813,28 +833,54 @@ public class KvStoreDatabase implements Database {
     try (final Stream<SlotAndBlockRootAndBlobIndex> prunableBlobKeys =
             streamBlobSidecarKeys(UInt64.ZERO, lastSlotToPrune);
         final FinalizedUpdater updater = finalizedUpdater()) {
-      int remaining = pruneLimit;
-      int pruned = 0;
-      Optional<UInt64> earliestBlobSidecarSlot = Optional.empty();
-      for (final Iterator<SlotAndBlockRootAndBlobIndex> it = prunableBlobKeys.iterator();
-          it.hasNext(); ) {
-        --remaining;
-        final boolean finished = remaining < 0;
-        final SlotAndBlockRootAndBlobIndex key = it.next();
-        // Before we finish we should check that there are no BlobSidecars left in the same slot
-        if (finished && key.getBlobIndex().equals(ZERO)) {
-          break;
-        }
-        updater.removeBlobSidecar(key);
-        earliestBlobSidecarSlot = Optional.of(key.getSlot().plus(1));
-        ++pruned;
-      }
-      earliestBlobSidecarSlot.ifPresent(updater::setEarliestBlobSidecarSlot);
-      updater.commit();
-
-      // `pruned` will be greater when we reach pruneLimit not on the latest BlobSidecar in a slot
-      return pruned >= pruneLimit;
+      return pruneBlobSidecars(pruneLimit, prunableBlobKeys, updater, false);
     }
+  }
+
+  @Override
+  public boolean pruneOldestNonCanonicalBlobSidecars(
+      final UInt64 lastSlotToPrune, final int pruneLimit) {
+    try (final Stream<SlotAndBlockRootAndBlobIndex> prunableNoncanonicalBlobKeys =
+            streamNonCanonicalBlobSidecarKeys(UInt64.ZERO, lastSlotToPrune);
+        final FinalizedUpdater updater = finalizedUpdater()) {
+      return pruneBlobSidecars(pruneLimit, prunableNoncanonicalBlobKeys, updater, true);
+    }
+  }
+
+  private boolean pruneBlobSidecars(
+      final int pruneLimit,
+      final Stream<SlotAndBlockRootAndBlobIndex> prunableBlobKeys,
+      final FinalizedUpdater updater,
+      final boolean nonCanonicalblobSidecars) {
+    int remaining = pruneLimit;
+    int pruned = 0;
+    Optional<UInt64> earliestBlobSidecarSlot = Optional.empty();
+    for (final Iterator<SlotAndBlockRootAndBlobIndex> it = prunableBlobKeys.iterator();
+        it.hasNext(); ) {
+      --remaining;
+      final boolean finished = remaining < 0;
+      final SlotAndBlockRootAndBlobIndex key = it.next();
+      // Before we finish we should check that there are no BlobSidecars left in the same slot
+      if (finished && key.getBlobIndex().equals(ZERO)) {
+        break;
+      }
+      if (nonCanonicalblobSidecars) {
+        updater.removeNonCanonicalBlobSidecar(key);
+      } else {
+        earliestBlobSidecarSlot = Optional.of(key.getSlot().plus(1));
+        updater.removeBlobSidecar(key);
+      }
+      ++pruned;
+    }
+
+    if (!nonCanonicalblobSidecars) {
+      earliestBlobSidecarSlot.ifPresent(updater::setEarliestBlobSidecarSlot);
+    }
+    updater.commit();
+
+    // `pruned` will be greater when we reach pruneLimit not on the latest BlobSidecar
+    // in a slot
+    return pruned >= pruneLimit;
   }
 
   @MustBeClosed
@@ -842,6 +888,13 @@ public class KvStoreDatabase implements Database {
   public Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(
       final UInt64 startSlot, final UInt64 endSlot) {
     return dao.streamBlobSidecarKeys(startSlot, endSlot);
+  }
+
+  @MustBeClosed
+  @Override
+  public Stream<SlotAndBlockRootAndBlobIndex> streamNonCanonicalBlobSidecarKeys(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    return dao.streamNonCanonicalBlobSidecarKeys(startSlot, endSlot);
   }
 
   @MustBeClosed
@@ -1024,22 +1077,48 @@ public class KvStoreDatabase implements Database {
   private void removeNonCanonicalBlobSidecars(
       final Map<Bytes32, UInt64> deletedHotBlocks,
       final Map<Bytes32, Bytes32> finalizedChildToParentMap) {
-    try (final FinalizedUpdater updater = finalizedUpdater()) {
-      LOG.trace("Removing blob sidecars for non-canonical blocks");
-      final Set<SlotAndBlockRoot> nonCanonicalBlocks =
-          deletedHotBlocks.entrySet().stream()
-              .filter(entry -> !finalizedChildToParentMap.containsKey(entry.getKey()))
-              .map(entry -> new SlotAndBlockRoot(entry.getValue(), entry.getKey()))
-              .collect(Collectors.toSet());
-      for (final SlotAndBlockRoot slotAndBlockRoot : nonCanonicalBlocks) {
-        dao.getBlobSidecarKeys(slotAndBlockRoot)
-            .forEach(
-                key -> {
-                  LOG.trace("Removing blobSidecar with index {} for non-canonical block", key);
-                  updater.removeBlobSidecar(key);
-                });
+
+    final Set<SlotAndBlockRoot> nonCanonicalBlocks =
+        deletedHotBlocks.entrySet().stream()
+            .filter(entry -> !finalizedChildToParentMap.containsKey(entry.getKey()))
+            .map(entry -> new SlotAndBlockRoot(entry.getValue(), entry.getKey()))
+            .collect(Collectors.toSet());
+
+    if (storeNonCanonicalBlocks) {
+      final Iterator<SlotAndBlockRoot> nonCanonicalBlocksIterator = nonCanonicalBlocks.iterator();
+      int index = 0;
+      while (nonCanonicalBlocksIterator.hasNext()) {
+        final int start = index;
+        try (final FinalizedUpdater updater = finalizedUpdater()) {
+          while (nonCanonicalBlocksIterator.hasNext() && (index - start) < BLOBS_TX_BATCH_SIZE) {
+            dao.getBlobSidecarKeys(nonCanonicalBlocksIterator.next())
+                .forEach(
+                    key -> {
+                      dao.getBlobSidecar(key)
+                          .ifPresent(
+                              blobSidecarBytes -> {
+                                updater.addNonCanonicalBlobSidecarRaw(blobSidecarBytes, key);
+                                updater.removeBlobSidecar(key);
+                              });
+                    });
+            index++;
+          }
+          updater.commit();
+        }
       }
-      updater.commit();
+    } else {
+      LOG.trace("Removing blob sidecars for non-canonical blocks");
+      try (final FinalizedUpdater updater = finalizedUpdater()) {
+        for (final SlotAndBlockRoot slotAndBlockRoot : nonCanonicalBlocks) {
+          dao.getBlobSidecarKeys(slotAndBlockRoot)
+              .forEach(
+                  key -> {
+                    LOG.trace("Removing blobSidecar with index {} for non-canonical block", key);
+                    updater.removeBlobSidecar(key);
+                  });
+        }
+        updater.commit();
+      }
     }
   }
 

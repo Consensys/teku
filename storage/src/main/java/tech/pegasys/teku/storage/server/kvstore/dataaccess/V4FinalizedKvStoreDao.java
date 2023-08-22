@@ -125,11 +125,24 @@ public class V4FinalizedKvStoreDao {
     return db.get(schema.getColumnBlobSidecarBySlotRootBlobIndex(), key);
   }
 
+  public Optional<Bytes> getNonCanonicalBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+    return db.get(schema.getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex(), key);
+  }
+
   @MustBeClosed
   public Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(
       final UInt64 startSlot, final UInt64 endSlot) {
     return db.streamKeys(
         schema.getColumnBlobSidecarBySlotRootBlobIndex(),
+        new SlotAndBlockRootAndBlobIndex(startSlot, MIN_BLOCK_ROOT, UInt64.ZERO),
+        new SlotAndBlockRootAndBlobIndex(endSlot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE));
+  }
+
+  @MustBeClosed
+  public Stream<SlotAndBlockRootAndBlobIndex> streamNonCanonicalBlobSidecarKeys(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    return db.streamKeys(
+        schema.getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex(),
         new SlotAndBlockRootAndBlobIndex(startSlot, MIN_BLOCK_ROOT, UInt64.ZERO),
         new SlotAndBlockRootAndBlobIndex(endSlot, MAX_BLOCK_ROOT, UInt64.MAX_VALUE));
   }
@@ -217,6 +230,14 @@ public class V4FinalizedKvStoreDao {
   public long getBlobSidecarColumnCount() {
     final KvStoreColumn<?, ?> column =
         schema.getColumnMap().get("BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX");
+    return db.size(column);
+  }
+
+  public long getNonCanonicalBlobSidecarColumnCount() {
+    final KvStoreColumn<?, ?> column =
+        schema
+            .getColumnMap()
+            .get("NON_CANONICAL_BLOB_SIDECAR_BY_SLOT_AND_BLOCK_ROOT_AND_BLOB_INDEX");
     return db.size(column);
   }
 
@@ -311,8 +332,31 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
+    public void addNonCanonicalBlobSidecar(final BlobSidecar blobSidecar) {
+      transaction.put(
+          schema.getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex(),
+          new SlotAndBlockRootAndBlobIndex(
+              blobSidecar.getSlot(), blobSidecar.getBlockRoot(), blobSidecar.getIndex()),
+          blobSidecar.sszSerialize());
+    }
+
+    @Override
+    public void addNonCanonicalBlobSidecarRaw(
+        final Bytes blobSidecarBytes, final SlotAndBlockRootAndBlobIndex key) {
+      final KvStoreColumn<SlotAndBlockRootAndBlobIndex, Bytes> column =
+          schema.getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex();
+      transaction.putRaw(
+          column, Bytes.wrap(column.getKeySerializer().serialize(key)), blobSidecarBytes);
+    }
+
+    @Override
     public void removeBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
       transaction.delete(schema.getColumnBlobSidecarBySlotRootBlobIndex(), key);
+    }
+
+    @Override
+    public void removeNonCanonicalBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+      transaction.delete(schema.getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex(), key);
     }
 
     @Override
