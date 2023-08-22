@@ -299,6 +299,7 @@ public class P2POptions {
       showDefaultValue = Visibility.ALWAYS,
       description = "Enables yamux multiplexing",
       arity = "0..1",
+      hidden = true,
       fallbackValue = "true")
   private boolean yamuxEnabled = NetworkConfig.DEFAULT_YAMUX_ENABLED;
 
