@@ -68,7 +68,8 @@ class VoluntaryExitDataProviderTest {
     when(genesisDataProvider.getGenesisData()).thenReturn(SafeFuture.completedFuture(genesisData));
     when(validatorApiChannel.getValidatorIndices(any()))
         .thenReturn(SafeFuture.completedFuture(validatorIndices));
-    when(keyManager.getActiveValidatorKeys()).thenReturn(List.of(validator));
+    when(keyManager.getActiveValidatorByPublicKey(validator.getPublicKey()))
+        .thenReturn(Optional.of(validator));
     when(signer.signVoluntaryExit(any(), any()))
         .thenReturn(SafeFuture.completedFuture(volExitSignature));
 
@@ -130,7 +131,8 @@ class VoluntaryExitDataProviderTest {
     final BLSSignature signature = dataStructureUtil.randomSignature();
     final Validator activeValidator = getValidator(signature);
     final int validatorIndex = 0;
-    when(keyManager.getActiveValidatorKeys()).thenReturn(List.of(activeValidator));
+    when(keyManager.getActiveValidatorByPublicKey(activeValidator.getPublicKey()))
+        .thenReturn(Optional.of(activeValidator));
 
     final UInt64 epoch = dataStructureUtil.randomEpoch();
     final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
@@ -157,6 +159,16 @@ class VoluntaryExitDataProviderTest {
                     0, dataStructureUtil.randomPublicKey(), epoch, forkInfo))
         .isInstanceOf(BadRequestException.class)
         .hasMessageMatching("Validator (.*) is not in the list of keys managed by this service.");
+  }
+
+  @Test
+  void createExitForValidator_notFound() {
+    when(keyManager.getActiveValidatorKeys()).thenReturn(List.of());
+    final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
+    assertThat(
+            provider.getExitForValidator(
+                dataStructureUtil.randomPublicKey(), mock(VoluntaryExit.class), forkInfo))
+        .isEmpty();
   }
 
   private Validator getValidator(final BLSSignature signature) {

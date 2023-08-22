@@ -69,8 +69,8 @@ public class ValidatorKeysApi {
     tempDir.toFile().delete();
   }
 
-  public void postVoluntaryExit(final BLSPublicKey publicKey, final int validatorIndex)
-      throws IOException {
+  public void generateVoluntaryExitAndCheckValidatorIndex(
+      final BLSPublicKey publicKey, final int validatorIndex) throws IOException {
     final UInt64 epoch = UInt64.ONE;
     final String value = getPostVoluntaryExitString(publicKey, Optional.of(epoch));
     final JsonNode result = jsonProvider.getObjectMapper().readTree(value).get("data");
@@ -88,7 +88,7 @@ public class ValidatorKeysApi {
     }
 
     final String result = httpClient.post(validatorUri.get(), url, "", authHeaders());
-    LOG.debug("POST Keys: " + result);
+    LOG.debug("POST VoluntaryExit: " + result);
     return result;
   }
 
