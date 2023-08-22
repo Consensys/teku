@@ -118,22 +118,23 @@ public class BlockManager extends Service
     final SafeFuture<BlockImportResult> importResult =
         doImportBlock(block, Optional.empty(), Optional.of(consensusValidationResult));
 
-    SafeFuture<BlockImportResult> result2 =
+    SafeFuture<BlockImportResult> finalImportResult =
         validator
             .broadcastValidate(
                 block, broadcastValidation.get(), consensusValidationResult.or(importResult))
-            .thenApply(
-                result -> {
-                  if (result.isAccept()) {
-                    return BlockImportResult.successful(block);
-                  }
-                  // TODO: to be changed to broadcast validation result
-                  return BlockImportResult.FAILED_EQUIVOCATION_CHECK;
-                });
+            .thenCompose(
+                broadcastValidationResult ->
+                    switch (broadcastValidationResult) {
+                      case SUCCESS, CONSENSUS_FAILURE -> importResult;
+                      case GOSSIP_FAILURE -> SafeFuture.completedFuture(
+                          BlockImportResult.FAILED_BROADCAST_GOSSIP_VALIDATION);
+                      case FINAL_EQUIVOCATION_FAILURE -> SafeFuture.completedFuture(
+                          BlockImportResult.FAILED_BROADCAST_EQUIVOCATION_VALIDATION);
+                    });
 
-    importResult.ifExceptionGetsHereRaiseABug();
+    importResult.finish(err -> LOG.error("Failed to import block.", err));
 
-    return result2;
+    return finalImportResult;
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")

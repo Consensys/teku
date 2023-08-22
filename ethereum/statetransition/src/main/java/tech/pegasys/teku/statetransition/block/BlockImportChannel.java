@@ -27,6 +27,13 @@ public interface BlockImportChannel extends ChannelInterface {
     CONSENSUS_EQUIVOCATION
   }
 
+  enum BroadcastValidationResult {
+    SUCCESS,
+    GOSSIP_FAILURE,
+    CONSENSUS_FAILURE,
+    FINAL_EQUIVOCATION_FAILURE
+  }
+
   SafeFuture<BlockImportResult> importBlock(
       SignedBeaconBlock block, Optional<BroadcastValidation> broadcastValidation);
 }
