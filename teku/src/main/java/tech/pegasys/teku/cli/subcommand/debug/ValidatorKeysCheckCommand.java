@@ -57,7 +57,7 @@ public class ValidatorKeysCheckCommand implements Callable<Integer> {
   private ValidatorKeysOptions validatorKeysOptions;
 
   @CommandLine.Option(
-      names = {"--verbose-output-enabled", "-v", "-verbose"},
+      names = {"--verbose-output-enabled", "--v", "--verbose"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       fallbackValue = "true",
