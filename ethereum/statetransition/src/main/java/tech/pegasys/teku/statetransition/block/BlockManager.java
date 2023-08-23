@@ -34,6 +34,7 @@ import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
+import tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastValidation;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -118,10 +119,15 @@ public class BlockManager extends Service
     final SafeFuture<BlockImportResult> importResult =
         doImportBlock(block, Optional.empty(), Optional.of(consensusValidationResult));
 
-    SafeFuture<BlockImportResult> finalImportResult =
+    // we want a future that completes as soon as the consensus validation is done, or intercept any
+    // early import results\exceptions happening before the consensus validation is completed
+    final SafeFuture<BlockImportResult> consensusValidationResultOrImportFailure =
+        consensusValidationResult.or(importResult);
+
+    final SafeFuture<BlockImportResult> finalImportResult =
         validator
             .broadcastValidate(
-                block, broadcastValidation.get(), consensusValidationResult.or(importResult))
+                block, broadcastValidation.get(), consensusValidationResultOrImportFailure)
             .thenCompose(
                 broadcastValidationResult ->
                     switch (broadcastValidationResult) {
@@ -157,7 +163,7 @@ public class BlockManager extends Service
           InternalValidationResult.reject("Block (or its parent) previously marked as invalid"));
     }
 
-    final SafeFuture<InternalValidationResult> validationResult = validator.validate(block);
+    final SafeFuture<InternalValidationResult> validationResult = validator.gossipValidate(block);
     validationResult.thenAccept(
         result -> {
           if (result.code().equals(ValidationResultCode.ACCEPT)

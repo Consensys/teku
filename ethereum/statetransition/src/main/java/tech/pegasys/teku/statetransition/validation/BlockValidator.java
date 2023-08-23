@@ -35,8 +35,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.statetransition.block.BlockImportChannel.BroadcastValidation;
-import tech.pegasys.teku.statetransition.block.BlockImportChannel.BroadcastValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockValidator {
@@ -62,8 +60,9 @@ public class BlockValidator {
       final BroadcastValidation broadcastValidation,
       final SafeFuture<BlockImportResult> consensusValidationResult) {
 
+    // GOSSIP only validation
     SafeFuture<BroadcastValidationResult> validationPipeline =
-        validate(block, true)
+        gossipValidate(block, true)
             .thenApply(
                 gossipValidationResult -> {
                   if (gossipValidationResult.isAccept()) {
@@ -76,6 +75,7 @@ public class BlockValidator {
       return validationPipeline;
     }
 
+    // GOSSIP and CONSENSUS validation
     validationPipeline =
         validationPipeline.thenCombine(
             consensusValidationResult,
@@ -94,7 +94,7 @@ public class BlockValidator {
       return validationPipeline;
     }
 
-    // CONSENSUS_EQUIVOCATION
+    // GOSSIP, CONSENSUS and additional EQUIVOCATION validation
     return validationPipeline.thenApply(
         broadcastValidationResult -> {
           if (broadcastValidationResult != BroadcastValidationResult.SUCCESS) {
@@ -111,11 +111,11 @@ public class BlockValidator {
         });
   }
 
-  public SafeFuture<InternalValidationResult> validate(final SignedBeaconBlock block) {
-    return validate(block, false);
+  public SafeFuture<InternalValidationResult> gossipValidate(final SignedBeaconBlock block) {
+    return gossipValidate(block, false);
   }
 
-  private SafeFuture<InternalValidationResult> validate(
+  private SafeFuture<InternalValidationResult> gossipValidate(
       final SignedBeaconBlock block, final boolean isLocal) {
 
     if (gossipValidationHelper.isSlotFinalized(block.getSlot())
@@ -237,6 +237,19 @@ public class BlockValidator {
         block.getMessage(),
         recentChainData.getStore(),
         recentChainData.getForkChoiceStrategy().orElseThrow());
+  }
+
+  public enum BroadcastValidation {
+    GOSSIP,
+    CONSENSUS,
+    CONSENSUS_EQUIVOCATION
+  }
+
+  public enum BroadcastValidationResult {
+    SUCCESS,
+    GOSSIP_FAILURE,
+    CONSENSUS_FAILURE,
+    FINAL_EQUIVOCATION_FAILURE
   }
 
   private static class SlotAndProposer {

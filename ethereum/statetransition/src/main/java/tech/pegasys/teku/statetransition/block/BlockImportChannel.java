@@ -18,21 +18,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastValidation;
 
 public interface BlockImportChannel extends ChannelInterface {
-
-  enum BroadcastValidation {
-    GOSSIP,
-    CONSENSUS,
-    CONSENSUS_EQUIVOCATION
-  }
-
-  enum BroadcastValidationResult {
-    SUCCESS,
-    GOSSIP_FAILURE,
-    CONSENSUS_FAILURE,
-    FINAL_EQUIVOCATION_FAILURE
-  }
 
   SafeFuture<BlockImportResult> importBlock(
       SignedBeaconBlock block, Optional<BroadcastValidation> broadcastValidation);
