@@ -163,7 +163,7 @@ class VoluntaryExitDataProviderTest {
 
   @Test
   void createExitForValidator_notFound() {
-    when(keyManager.getActiveValidatorKeys()).thenReturn(List.of());
+    when(keyManager.getActiveValidatorByPublicKey(any())).thenReturn(Optional.empty());
     final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
     assertThat(
             provider.getExitForValidator(
