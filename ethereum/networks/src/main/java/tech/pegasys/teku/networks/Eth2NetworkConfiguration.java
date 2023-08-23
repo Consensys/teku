@@ -665,10 +665,10 @@ public class Eth2NetworkConfiguration {
           .constants(HOLESKY.configName())
           .startupTimeoutSeconds(120)
           .eth1DepositContractDeployBlock(0)
-              .defaultInitialState(
-                      "https://github.com/eth-clients/holesky/raw/afdcfcbb9282bf3c677eed8ccb3ec803276d108c/custom_config_data/genesis.ssz")
-              .customGenesisState(
-                      "https://github.com/eth-clients/holesky/raw/afdcfcbb9282bf3c677eed8ccb3ec803276d108c/custom_config_data/genesis.ssz")
+          .defaultInitialState(
+              "https://github.com/eth-clients/holesky/raw/afdcfcbb9282bf3c677eed8ccb3ec803276d108c/custom_config_data/genesis.ssz")
+          .customGenesisState(
+              "https://github.com/eth-clients/holesky/raw/afdcfcbb9282bf3c677eed8ccb3ec803276d108c/custom_config_data/genesis.ssz")
           .discoveryBootnodes(
               "enr:-Iq4QJk4WqRkjsX5c2CXtOra6HnxN-BMXnWhmhEQO9Bn9iABTJGdjUOurM7Btj1ouKaFkvTRoju5vz2GPmVON2dffQKGAX53x8JigmlkgnY0gmlwhLKAlv6Jc2VjcDI1NmsxoQK6S-Cii_KmfFdUJL2TANL3ksaKUnNXvTCv1tLwXs0QgIN1ZHCCIyk",
               "enr:-KG4QMH842KsJOZAHxI98VJcf8oPr1U8Ylyp2Tb-sNAPniWSCaxIS4F9gc3lGOnROEok7g5qrOm8WgJTl2WXx8MhMmIMhGV0aDKQqX6DZjABcAAKAAAAAAAAAIJpZIJ2NIJpcISygIjpiXNlY3AyNTZrMaECvQMvoDF46BfJgvAbbv1hwpNu9VQBXRIpHS_B8zmkZmmDdGNwgiMog3VkcIIjKA",
