@@ -738,7 +738,7 @@ class ValidatorLoaderTest {
     assertThat(validators.hasNoValidators()).isTrue();
   }
 
-  private void writeKeystore(final Path tempDir) throws Exception {
+  static void writeKeystore(final Path tempDir) throws Exception {
     final URL resource = Resources.getResource("pbkdf2TestVector.json");
     Files.copy(Path.of(resource.toURI()), tempDir.resolve("key.json"));
     Files.writeString(tempDir.resolve("key.txt"), "testpassword");

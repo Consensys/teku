@@ -63,7 +63,11 @@ public interface Database extends AutoCloseable {
 
   void storeBlobSidecar(BlobSidecar blobSidecar);
 
+  void storeNonCanonicalBlobSidecar(BlobSidecar blobSidecar);
+
   Optional<BlobSidecar> getBlobSidecar(SlotAndBlockRootAndBlobIndex key);
+
+  Optional<BlobSidecar> getNonCanonicalBlobSidecar(SlotAndBlockRootAndBlobIndex key);
 
   void removeBlobSidecars(SlotAndBlockRoot slotAndBlockRoot);
 
@@ -80,8 +84,14 @@ public interface Database extends AutoCloseable {
    */
   boolean pruneOldestBlobSidecars(UInt64 lastSlotToPrune, int pruneLimit);
 
+  boolean pruneOldestNonCanonicalBlobSidecars(UInt64 lastSlotToPrune, int pruneLimit);
+
   @MustBeClosed
   Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(UInt64 startSlot, UInt64 endSlot);
+
+  @MustBeClosed
+  Stream<SlotAndBlockRootAndBlobIndex> streamNonCanonicalBlobSidecarKeys(
+      UInt64 startSlot, UInt64 endSlot);
 
   @MustBeClosed
   default Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(UInt64 slot) {
@@ -199,6 +209,8 @@ public interface Database extends AutoCloseable {
   Map<String, Long> getColumnCounts();
 
   long getBlobSidecarColumnCount();
+
+  long getNonCanonicalBlobSidecarColumnCount();
 
   void migrate();
 

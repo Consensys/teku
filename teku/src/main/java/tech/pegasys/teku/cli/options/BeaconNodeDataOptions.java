@@ -64,7 +64,7 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
       names = {"--data-storage-non-canonical-blocks-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
-      description = "Store non-canonical blocks",
+      description = "Store non-canonical blocks and associated blobs if they exist",
       fallbackValue = "true",
       arity = "0..1")
   private boolean storeNonCanonicalBlocksEnabled =
