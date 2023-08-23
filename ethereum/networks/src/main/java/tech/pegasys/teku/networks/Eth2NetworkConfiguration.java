@@ -19,6 +19,7 @@ import static java.util.Arrays.asList;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 import static tech.pegasys.teku.spec.networks.Eth2Network.CHIADO;
 import static tech.pegasys.teku.spec.networks.Eth2Network.GNOSIS;
+import static tech.pegasys.teku.spec.networks.Eth2Network.HOLESKY;
 import static tech.pegasys.teku.spec.networks.Eth2Network.LESS_SWIFT;
 import static tech.pegasys.teku.spec.networks.Eth2Network.LUKSO;
 import static tech.pegasys.teku.spec.networks.Eth2Network.MAINNET;
@@ -482,6 +483,7 @@ public class Eth2NetworkConfiguration {
         case PRATER -> applyPraterNetworkDefaults();
         case SEPOLIA -> applySepoliaNetworkDefaults();
         case LUKSO -> applyLuksoNetworkDefaults();
+        case HOLESKY -> applyHoleskyNetworkDefaults();
         case GNOSIS -> applyGnosisNetworkDefaults();
         case CHIADO -> applyChiadoNetworkDefaults();
         case SWIFT -> applySwiftNetworkDefaults();
@@ -656,6 +658,21 @@ public class Eth2NetworkConfiguration {
               "enr:-Ly4QAtr21x5Ps7HYhdZkIBRBgcBkvlIfEel1YNjtFWf4cV3au2LgBGICz9PtEs9-p2HUl_eME8m1WImxTxSB3AkCMwBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpAxNnBDAgAAb___________gmlkgnY0gmlwhANHhOeJc2VjcDI1NmsxoQNLp1QPV8-pyMCohOtj6xGtSBM_GtVTqzlbvNsCF4ezkYhzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
               // GnosisDAO Bootnode: 3.69.35.13
               "enr:-Ly4QLgn8Bx6faigkKUGZQvd1HDToV2FAxZIiENK-lczruzQb90qJK-4E65ADly0s4__dQOW7IkLMW7ZAyJy2vtiLy8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpAxNnBDAgAAb___________gmlkgnY0gmlwhANFIw2Jc2VjcDI1NmsxoQMa-fWEy9UJHfOl_lix3wdY5qust78sHAqZnWwEiyqKgYhzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA");
+    }
+
+    private Builder applyHoleskyNetworkDefaults() {
+      return applyTestnetDefaults()
+          .constants(HOLESKY.configName())
+          .startupTimeoutSeconds(120)
+          .eth1DepositContractDeployBlock(0)
+          .defaultInitialState(
+              "https://github.com/eth-clients/holesky/raw/afdcfcbb9282bf3c677eed8ccb3ec803276d108c/custom_config_data/genesis.ssz")
+          .customGenesisState(
+              "https://github.com/eth-clients/holesky/raw/afdcfcbb9282bf3c677eed8ccb3ec803276d108c/custom_config_data/genesis.ssz")
+          .discoveryBootnodes(
+              "enr:-Iq4QJk4WqRkjsX5c2CXtOra6HnxN-BMXnWhmhEQO9Bn9iABTJGdjUOurM7Btj1ouKaFkvTRoju5vz2GPmVON2dffQKGAX53x8JigmlkgnY0gmlwhLKAlv6Jc2VjcDI1NmsxoQK6S-Cii_KmfFdUJL2TANL3ksaKUnNXvTCv1tLwXs0QgIN1ZHCCIyk",
+              "enr:-KG4QMH842KsJOZAHxI98VJcf8oPr1U8Ylyp2Tb-sNAPniWSCaxIS4F9gc3lGOnROEok7g5qrOm8WgJTl2WXx8MhMmIMhGV0aDKQqX6DZjABcAAKAAAAAAAAAIJpZIJ2NIJpcISygIjpiXNlY3AyNTZrMaECvQMvoDF46BfJgvAbbv1hwpNu9VQBXRIpHS_B8zmkZmmDdGNwgiMog3VkcIIjKA",
+              "enr:-Ly4QDU8tZeygxz1gEeAD4EKe4H_8gg-IanpTY6h8A1YGPv5BPNvCMD77zjHUk_iF1pfG_8DC6jYWbIOD1k5kF-LaG4Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCpfoNmMAFwAAoAAAAAAAAAgmlkgnY0gmlwhJK-DYCJc2VjcDI1NmsxoQN4bUae9DwIcq_56DNztksQYXeddTDKRonI5qI3YhN4SohzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA");
     }
 
     private Optional<Integer> validateAndParseEpochsStoreBlobs(final String epochsStoreBlobs) {
