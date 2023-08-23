@@ -30,6 +30,8 @@ public interface KeyManager {
 
   List<ExternalValidator> getActiveRemoteValidatorKeys();
 
+  Optional<Validator> getActiveValidatorByPublicKey(final BLSPublicKey publicKey);
+
   DeleteKeysResponse deleteValidators(
       final List<BLSPublicKey> validators, final Path slashingProtectionPath);
 
