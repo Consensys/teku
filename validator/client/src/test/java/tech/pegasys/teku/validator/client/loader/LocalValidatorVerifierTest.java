@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Set;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.bls.keystore.KeyStoreValidationException;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -75,6 +77,7 @@ class LocalValidatorVerifierTest {
   }
 
   @Test
+  @DisabledOnOs(OS.WINDOWS) // can't set posix permissions on windows
   void shouldThrowExceptionWhenCannotReadPasswordFile(@TempDir final Path tempDir)
       throws Exception {
     ValidatorLoaderTest.writeKeystore(tempDir);
@@ -90,6 +93,7 @@ class LocalValidatorVerifierTest {
   }
 
   @Test
+  @DisabledOnOs(OS.WINDOWS) // can't set posix permissions on windows
   void shouldThrowExceptionWhenCannotReadKeyFile(@TempDir final Path tempDir) throws Exception {
     ValidatorLoaderTest.writeKeystore(tempDir);
     final String key = tempDir.resolve("key.json").toString();
