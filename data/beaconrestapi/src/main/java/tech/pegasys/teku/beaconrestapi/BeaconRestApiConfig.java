@@ -128,13 +128,13 @@ public class BeaconRestApiConfig {
       return validatorThreads.get();
     }
 
-    final int coreNumbers = Runtime.getRuntime().availableProcessors();
+    final int numberOfCores = Runtime.getRuntime().availableProcessors();
 
     // <= 2 cores -> 1 thread
     // <= 4 cores -> 2 threads
     // <= 8 cores -> 3 threads
     // <= 16 cores -> 4 threads
-    final int threads = Math.max(1, LongMath.log2(coreNumbers, RoundingMode.UP));
+    final int threads = Math.max(1, LongMath.log2(numberOfCores, RoundingMode.UP));
 
     LOG.info("Using {} threads for handling validator API channel", threads);
     return threads;
