@@ -27,7 +27,7 @@ public class LocalValidatorVerifier {
   private final LocalValidatorSource validatorSource;
 
   public LocalValidatorVerifier(
-      final Spec spec, List<String> keystoreFiles, AsyncRunner asyncRunner) {
+      final Spec spec, final List<String> keystoreFiles, final AsyncRunner asyncRunner) {
     keyStoreFilesLocator = new KeyStoreFilesLocator(keystoreFiles, File.pathSeparator);
 
     validatorSource =
@@ -46,7 +46,7 @@ public class LocalValidatorVerifier {
   }
 
   public ValidatorSource.ValidatorProvider createValidatorProvider(
-      Pair<Path, Path> keystorePasswordPathPair) {
+      final Pair<Path, Path> keystorePasswordPathPair) {
     return validatorSource.createValidatorProvider(keystorePasswordPathPair);
   }
 }

@@ -75,7 +75,7 @@ public class ValidatorKeysCheckCommand implements Callable<Integer> {
 
   @Override
   public Integer call() {
-    TekuConfiguration config = tekuConfiguration();
+    final TekuConfiguration config = tekuConfiguration();
 
     final AsyncRunnerFactory asyncRunnerFactory =
         AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(metricsSystem));
@@ -101,13 +101,13 @@ public class ValidatorKeysCheckCommand implements Callable<Integer> {
   private boolean keysCanBeLoadedAndLocked() {
     int failedKeys = 0;
     int successfulKeys = 0;
-    for (Pair<Path, Path> keystorePasswordPathPair : filePairs) {
+    for (final Pair<Path, Path> keystorePasswordPathPair : filePairs) {
       try {
         if (isVerboseOutputEnabled) {
           SUB_COMMAND_LOG.display(
               String.format(" -> Creating provider from %s", keystorePasswordPathPair.getKey()));
         }
-        ValidatorSource.ValidatorProvider provider =
+        final ValidatorSource.ValidatorProvider provider =
             verifier.createValidatorProvider(keystorePasswordPathPair);
         if (canCreateSignerFromValidatorProvider(provider)) {
           successfulKeys++;
@@ -122,7 +122,7 @@ public class ValidatorKeysCheckCommand implements Callable<Integer> {
                   e.getMessage()));
           failedKeys++;
         }
-      } catch (InvalidConfigurationException e) {
+      } catch (final InvalidConfigurationException e) {
         if (Throwables.getRootCause(e) instanceof AccessDeniedException) {
           SUB_COMMAND_LOG.error(
               String.format(
@@ -149,7 +149,7 @@ public class ValidatorKeysCheckCommand implements Callable<Integer> {
   private boolean filesLocatorCanParseEntries() {
     try {
       filePairs = verifier.parse();
-    } catch (InvalidConfigurationException ex) {
+    } catch (final InvalidConfigurationException ex) {
       SUB_COMMAND_LOG.error(
           String.format("Failed to load available validators: %s", ex.getMessage()));
       return false;
@@ -158,7 +158,7 @@ public class ValidatorKeysCheckCommand implements Callable<Integer> {
   }
 
   private boolean canCreateSignerFromValidatorProvider(
-      ValidatorSource.ValidatorProvider validatorProvider) {
+      final ValidatorSource.ValidatorProvider validatorProvider) {
     try {
       if (isVerboseOutputEnabled) {
         SUB_COMMAND_LOG.display(
@@ -170,7 +170,7 @@ public class ValidatorKeysCheckCommand implements Callable<Integer> {
           String.format(
               "Failed to load signer %s: %s", validatorProvider.getPublicKey(), ex.getMessage()));
       return false;
-    } catch (UncheckedIOException ex) {
+    } catch (final UncheckedIOException ex) {
       SUB_COMMAND_LOG.error(
           String.format(
               "Failed to load signer %s: %s\nCheck the folder permissions for write access.",
