@@ -77,7 +77,7 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
                     .deposits(mock(SszList.class))
                     .voluntaryExits(mock(SszList.class))
                     .build());
-    assertEquals(exception.getMessage(), "schema must be set");
+    assertEquals(exception.getMessage(), "schema must be set with no blindedSchema");
   }
 
   @Test
@@ -101,7 +101,7 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
                     .deposits(mock(SszList.class))
                     .voluntaryExits(mock(SszList.class))
                     .build());
-    assertEquals(exception.getMessage(), "blindedSchema must be set");
+    assertEquals(exception.getMessage(), "blindedSchema must be set with no schema");
   }
 
   @Override
