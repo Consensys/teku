@@ -86,24 +86,29 @@ public class VoluntaryExitDataProvider {
       final BLSPublicKey publicKey,
       final UInt64 epoch,
       final ForkInfo forkInfo) {
-    final Validator validator =
-        keyManager.getActiveValidatorKeys().stream()
-            .filter(v -> v.getPublicKey().equals(publicKey))
-            .findFirst()
-            .orElseThrow(
-                () ->
-                    new BadRequestException(
-                        String.format(
-                            "Validator %s is not in the list of keys managed by this service.",
-                            publicKey)));
     final VoluntaryExit message = new VoluntaryExit(epoch, UInt64.valueOf(validatorIndex));
-    final BLSSignature signature =
-        Optional.ofNullable(validator)
-            .orElseThrow()
-            .getSigner()
-            .signVoluntaryExit(message, forkInfo)
-            .join();
 
-    return new SignedVoluntaryExit(message, signature);
+    final Optional<SignedVoluntaryExit> maybeLocalExit =
+        getExitForValidator(publicKey, message, forkInfo);
+    if (maybeLocalExit.isPresent()) {
+      return maybeLocalExit.get();
+    }
+
+    throw new BadRequestException(
+        String.format(
+            "Validator %s is not in the list of keys managed by this service.", publicKey));
+  }
+
+  Optional<SignedVoluntaryExit> getExitForValidator(
+      final BLSPublicKey publicKey, final VoluntaryExit message, final ForkInfo forkInfo) {
+    final Optional<Validator> maybeValidator = keyManager.getActiveValidatorByPublicKey(publicKey);
+
+    if (maybeValidator.isPresent()) {
+      final Validator validator = maybeValidator.get();
+      final BLSSignature signature =
+          validator.getSigner().signVoluntaryExit(message, forkInfo).join();
+      return Optional.of(new SignedVoluntaryExit(message, signature));
+    }
+    return Optional.empty();
   }
 }

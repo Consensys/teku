@@ -70,7 +70,13 @@ public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltai
 
   @Override
   protected void validateSchema() {
-    checkState(schema != null || blindedSchema != null, "schema or blindedSchema must be set");
+    if (isBlinded()) {
+      checkState(
+          blindedSchema != null && schema == null, "blindedSchema must be set with no schema");
+    } else {
+      checkState(
+          schema != null && blindedSchema == null, "schema must be set with no blindedSchema");
+    }
   }
 
   @Override

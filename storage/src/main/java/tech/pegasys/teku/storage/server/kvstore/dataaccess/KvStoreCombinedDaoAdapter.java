@@ -223,6 +223,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  public long getNonCanonicalBlobSidecarColumnCount() {
+    return finalizedDao.getNonCanonicalBlobSidecarColumnCount();
+  }
+
+  @Override
   @MustBeClosed
   public Stream<UInt64> streamFinalizedStateSlots(final UInt64 startSlot, final UInt64 endSlot) {
     return finalizedDao.streamFinalizedStateSlots(startSlot, endSlot);
@@ -239,10 +244,22 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  public Optional<Bytes> getNonCanonicalBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+    return finalizedDao.getNonCanonicalBlobSidecar(key);
+  }
+
+  @Override
   @MustBeClosed
   public Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(
       final UInt64 startSlot, final UInt64 endSlot) {
     return finalizedDao.streamBlobSidecarKeys(startSlot, endSlot);
+  }
+
+  @Override
+  @MustBeClosed
+  public Stream<SlotAndBlockRootAndBlobIndex> streamNonCanonicalBlobSidecarKeys(
+      final UInt64 startSlot, final UInt64 endSlot) {
+    return finalizedDao.streamNonCanonicalBlobSidecarKeys(startSlot, endSlot);
   }
 
   @Override
@@ -422,8 +439,24 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
+    public void addNonCanonicalBlobSidecar(final BlobSidecar blobSidecar) {
+      finalizedUpdater.addNonCanonicalBlobSidecar(blobSidecar);
+    }
+
+    @Override
+    public void addNonCanonicalBlobSidecarRaw(
+        final Bytes blobSidecarBytes, final SlotAndBlockRootAndBlobIndex key) {
+      finalizedUpdater.addNonCanonicalBlobSidecarRaw(blobSidecarBytes, key);
+    }
+
+    @Override
     public void removeBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
       finalizedUpdater.removeBlobSidecar(key);
+    }
+
+    @Override
+    public void removeNonCanonicalBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+      finalizedUpdater.removeNonCanonicalBlobSidecar(key);
     }
 
     @Override

@@ -77,6 +77,11 @@ public class ActiveKeyManager implements KeyManager {
         .collect(Collectors.toList());
   }
 
+  @Override
+  public Optional<Validator> getActiveValidatorByPublicKey(BLSPublicKey publicKey) {
+    return validatorLoader.getOwnedValidators().getValidator(publicKey);
+  }
+
   /**
    * Delete a collection of validators
    *

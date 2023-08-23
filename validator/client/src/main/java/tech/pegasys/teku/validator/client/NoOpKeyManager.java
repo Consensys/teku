@@ -39,6 +39,11 @@ public class NoOpKeyManager implements KeyManager {
   }
 
   @Override
+  public Optional<Validator> getActiveValidatorByPublicKey(BLSPublicKey publicKey) {
+    return Optional.empty();
+  }
+
+  @Override
   public DeleteKeysResponse deleteValidators(
       final List<BLSPublicKey> validators, final Path slashingProtectionPath) {
     return new DeleteKeysResponse(Collections.emptyList(), "");
