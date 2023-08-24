@@ -241,9 +241,10 @@ public class ExternalValidatorSourceTest {
     final List<ValidatorProviderInfo> result =
         validators.stream()
             .map(
-                v -> {
-                  assertThat(v).isInstanceOf(ExternalValidatorProvider.class);
-                  ExternalValidatorProvider provider = (ExternalValidatorProvider) v;
+                validatorProvider -> {
+                  assertThat(validatorProvider).isInstanceOf(ExternalValidatorProvider.class);
+                  final ExternalValidatorProvider provider =
+                      (ExternalValidatorProvider) validatorProvider;
                   return new ValidatorProviderInfo(
                       provider.getPublicKey(), provider.getExternalSignerUrl());
                 })
