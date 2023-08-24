@@ -24,6 +24,7 @@ public enum Eth2Network {
   LUKSO("lukso"),
   GNOSIS("gnosis"),
   CHIADO("chiado"),
+  HOLESKY("holesky"),
   // Test networks
   MINIMAL("minimal"),
   SWIFT("swift"),

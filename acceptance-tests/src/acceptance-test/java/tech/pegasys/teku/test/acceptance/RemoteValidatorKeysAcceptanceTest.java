@@ -77,6 +77,10 @@ public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
 
     validatorClient.waitForLogMessageContaining("Published block");
 
+    // generate voluntary exit
+    validatorNodeApi.generateVoluntaryExitAndCheckValidatorIndex(
+        validatorKeystores.getPublicKeys().get(1), 1);
+
     // remove a validator
     final BLSPublicKey removedPubKey = validatorKeystores.getPublicKeys().get(0);
     validatorNodeApi.removeRemoteValidatorAndCheckStatus(removedPubKey, "deleted");
