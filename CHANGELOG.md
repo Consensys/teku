@@ -11,6 +11,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ### Breaking Changes
 
 - The Development option `--Xp2p-minimum-subnet-subscriptions` has been removed and will no longer be recognised as a command line option.
+- If running separated Beacon Node and Validator node it is required to upgrade Beacon Node first and then Validator Node. A Validator Node running this release won't start if connecting to an older Beacon Node version.
 
 ### Additions and Improvements
 
@@ -20,3 +21,4 @@ For information on changes in released versions of Teku, see the [releases page]
 - Add support for Holesky test network `--network=holesky`
 
 ### Bug Fixes
+- Fixed a bug in network configuration loader which was ignoring MIN_EPOCHS_FOR_BLOCK_REQUESTS parameter. 
