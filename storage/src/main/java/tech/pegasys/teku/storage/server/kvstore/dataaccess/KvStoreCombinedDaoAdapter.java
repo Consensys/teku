@@ -275,6 +275,12 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  public List<SlotAndBlockRootAndBlobIndex> getNonCanonicalBlobSidecarKeys(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    return finalizedDao.getNonCanonicalBlobSidecarKeys(slotAndBlockRoot);
+  }
+
+  @Override
   public Optional<UInt64> getEarliestBlobSidecarSlot() {
     return finalizedDao.getEarliestBlobSidecarSlot();
   }
