@@ -48,6 +48,7 @@ public class UpnpClientTest {
     this.upnpClient = new UpnpClient(natService);
   }
 
+  @SuppressWarnings("AddressSelection")
   @Test
   public void registryListenerShouldDetectService() throws Exception {
     final SafeFuture<?> startupFuture = upnpClient.startup();
