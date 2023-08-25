@@ -246,13 +246,13 @@ public class ValidatorClientService extends Service {
               return SafeFuture.COMPLETE;
             })
         .exceptionally(
-            er -> {
+            error -> {
               Optional<Throwable> maybeCause =
-                  ExceptionUtil.getCause(er, InvalidConfigurationException.class);
+                  ExceptionUtil.getCause(error, InvalidConfigurationException.class);
               if (maybeCause.isPresent()) {
                 LOG.warn(maybeCause.get().getMessage());
               } else {
-                LOG.error("Error was encountered during validator client service start up.", er);
+                LOG.error("Error was encountered during validator client service start up.", error);
               }
               return null;
             })
