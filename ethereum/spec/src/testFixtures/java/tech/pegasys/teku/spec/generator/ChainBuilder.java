@@ -380,6 +380,14 @@ public class ChainBuilder {
     return generateBlockAtSlot(nextSlot);
   }
 
+  public SignedBlockAndState generateNextBlock(
+      final int skipSlots, final BlockOptions blockOptions) {
+    assertBlockCanBeGenerated();
+    final SignedBlockAndState latest = getLatestBlockAndState();
+    final UInt64 nextSlot = latest.getState().getSlot().plus(1 + skipSlots);
+    return generateBlockAtSlot(nextSlot, blockOptions);
+  }
+
   public SignedBlockAndState generateBlockAtSlot(final long slot) {
     return generateBlockAtSlot(UInt64.valueOf(slot));
   }
