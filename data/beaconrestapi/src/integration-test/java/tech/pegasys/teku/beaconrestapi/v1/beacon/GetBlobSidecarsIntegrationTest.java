@@ -157,24 +157,24 @@ public class GetBlobSidecarsIntegrationTest extends AbstractDataBackedRestAPIInt
     chainUpdater.updateBestBlock(canonical);
     chainUpdater.finalizeEpoch(targetSlot.plus(1));
 
-    final Response bySlotResponse =
+    final Response byRootResponse =
         get(
             forked.getRoot().toHexString(),
             List.of(UInt64.ZERO, UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3)));
 
-    assertThat(bySlotResponse.code()).isEqualTo(SC_OK);
+    assertThat(byRootResponse.code()).isEqualTo(SC_OK);
 
-    final List<BlobSidecar> byRootBlobSidecars = parseBlobSidecars(bySlotResponse);
+    final List<BlobSidecar> byRootBlobSidecars = parseBlobSidecars(byRootResponse);
     assertThat(byRootBlobSidecars).isEqualTo(nonCanonicalBlobSidecars);
 
-    final Response byRootResponse =
+    final Response bySlotResponse =
         get(
             forked.getSlot().toString(),
             List.of(UInt64.ZERO, UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3)));
 
-    assertThat(byRootResponse.code()).isEqualTo(SC_OK);
+    assertThat(bySlotResponse.code()).isEqualTo(SC_OK);
 
-    final List<BlobSidecar> bySlotBlobSidecars = parseBlobSidecars(byRootResponse);
+    final List<BlobSidecar> bySlotBlobSidecars = parseBlobSidecars(bySlotResponse);
     assertThat(bySlotBlobSidecars).isEmpty();
   }
 
