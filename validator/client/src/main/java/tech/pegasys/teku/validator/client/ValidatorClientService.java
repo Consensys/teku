@@ -27,6 +27,8 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.infrastructure.io.SystemSignalListener;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
@@ -242,6 +244,17 @@ public class ValidatorClientService extends Service {
                               config, validatorApiChannel, asyncRunner))
                   .propagateTo(validatorClientService.initializationComplete);
               return SafeFuture.COMPLETE;
+            })
+        .exceptionally(
+            er -> {
+              Optional<Throwable> maybeCause =
+                  ExceptionUtil.getCause(er, InvalidConfigurationException.class);
+              if (maybeCause.isPresent()) {
+                LOG.warn(maybeCause.get().getMessage());
+              } else {
+                LOG.error("Error was encountered during validator client service start up.", er);
+              }
+              return null;
             })
         .ifExceptionGetsHereRaiseABug();
 
