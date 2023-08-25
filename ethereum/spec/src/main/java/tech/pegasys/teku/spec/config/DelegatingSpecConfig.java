@@ -347,6 +347,11 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
+  public int getMinEpochsForBlockRequests() {
+    return specConfig.getMinEpochsForBlockRequests();
+  }
+
+  @Override
   public int getSubnetsPerNode() {
     return specConfig.getSubnetsPerNode();
   }
