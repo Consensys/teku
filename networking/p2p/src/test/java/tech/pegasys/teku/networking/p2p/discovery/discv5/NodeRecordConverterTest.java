@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
+@SuppressWarnings("AddressSelection")
 class NodeRecordConverterTest {
 
   private static final Spec SPEC = TestSpecFactory.createMinimalAltair();

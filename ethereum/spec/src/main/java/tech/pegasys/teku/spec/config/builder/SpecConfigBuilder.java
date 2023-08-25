@@ -113,6 +113,7 @@ public class SpecConfigBuilder {
   private Bytes4 messageDomainInvalidSnappy;
   private Bytes4 messageDomainValidSnappy;
   private Integer subnetsPerNode;
+  private Integer minEpochsForBlockRequests;
   private Integer attestationSubnetCount;
   private Integer attestationSubnetExtraBits;
   private Integer attestationSubnetPrefixBits;
@@ -187,6 +188,7 @@ public class SpecConfigBuilder {
             maxChunkSize,
             maxRequestBlocks,
             epochsPerSubnetSubscription,
+            minEpochsForBlockRequests,
             ttfbTimeout,
             respTimeout,
             attestationPropagationSlotRange,
@@ -259,6 +261,7 @@ public class SpecConfigBuilder {
     SpecBuilderUtil.validateConstant("maxChunkSize", maxChunkSize);
     SpecBuilderUtil.validateConstant("maxRequestBlocks", maxRequestBlocks);
     SpecBuilderUtil.validateConstant("epochsPerSubnetSubscription", epochsPerSubnetSubscription);
+    SpecBuilderUtil.validateConstant("minEpochsForBlockRequests", minEpochsForBlockRequests);
     SpecBuilderUtil.validateConstant("ttfbTimeout", ttfbTimeout);
     SpecBuilderUtil.validateConstant("respTimeout", respTimeout);
     SpecBuilderUtil.validateConstant(
@@ -595,6 +598,11 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder epochsPerSubnetSubscription(final Integer epochsPerSubnetSubscription) {
     this.epochsPerSubnetSubscription = epochsPerSubnetSubscription;
+    return this;
+  }
+
+  public SpecConfigBuilder minEpochsForBlockRequests(final Integer minEpochsForBlockRequests) {
+    this.minEpochsForBlockRequests = minEpochsForBlockRequests;
     return this;
   }
 

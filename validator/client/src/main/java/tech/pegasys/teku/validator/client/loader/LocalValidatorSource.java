@@ -155,8 +155,7 @@ public class LocalValidatorSource extends AbstractValidatorSource implements Val
         .resolve(fileName + ".txt");
   }
 
-  private ValidatorProvider createValidatorProvider(
-      final Pair<Path, Path> keystorePasswordFilePair) {
+  ValidatorProvider createValidatorProvider(final Pair<Path, Path> keystorePasswordFilePair) {
     final Path keystorePath = keystorePasswordFilePair.getLeft();
     final Path passwordPath = keystorePasswordFilePair.getRight();
     try {
