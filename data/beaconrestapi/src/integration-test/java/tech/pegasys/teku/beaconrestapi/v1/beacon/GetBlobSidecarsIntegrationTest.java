@@ -153,10 +153,7 @@ public class GetBlobSidecarsIntegrationTest extends AbstractDataBackedRestAPIInt
     final List<BlobSidecar> nonCanonicalBlobSidecars = fork.getBlobSidecars(forked.getRoot());
     chainUpdater.saveBlock(forked, nonCanonicalBlobSidecars);
 
-    SignedBlockAndState canonical = chainBuilder.generateNextBlock(chainUpdater.blockOptions);
-    final List<BlobSidecar> canonicalBlobSidecars =
-        chainBuilder.getBlobSidecars(canonical.getRoot());
-    chainUpdater.saveBlock(canonical, canonicalBlobSidecars);
+    SignedBlockAndState canonical = chainBuilder.generateNextBlock(1, chainUpdater.blockOptions);
     chainUpdater.updateBestBlock(canonical);
     chainUpdater.finalizeEpoch(targetSlot.plus(1));
 
@@ -179,7 +176,7 @@ public class GetBlobSidecarsIntegrationTest extends AbstractDataBackedRestAPIInt
     assertThat(bySlotResponse.code()).isEqualTo(SC_OK);
 
     final List<BlobSidecar> bySlotBlobSidecars = parseBlobSidecars(bySlotResponse);
-    assertThat(bySlotBlobSidecars).isEqualTo(canonicalBlobSidecars);
+    assertThat(bySlotBlobSidecars).isEmpty();
   }
 
   public Response get(final String blockIdString, final String contentType) throws IOException {
