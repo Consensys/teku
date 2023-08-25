@@ -140,7 +140,7 @@ public class GetBlobSidecarsIntegrationTest extends AbstractDataBackedRestAPIInt
   }
 
   @Test
-  public void shouldGetNonCanonicalBlobSidecars() throws IOException {
+  public void shouldGetNonCanonicalBlobSidecarsByRoot() throws IOException {
     chainUpdater.blockOptions.setGenerateRandomBlobs(true);
     chainUpdater.blockOptions.setGenerateRandomBlobsCount(Optional.of(4));
 
@@ -157,15 +157,25 @@ public class GetBlobSidecarsIntegrationTest extends AbstractDataBackedRestAPIInt
     chainUpdater.updateBestBlock(canonical);
     chainUpdater.finalizeEpoch(targetSlot.plus(1));
 
-    final Response response =
+    final Response bySlotResponse =
         get(
             forked.getRoot().toHexString(),
             List.of(UInt64.ZERO, UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3)));
 
-    assertThat(response.code()).isEqualTo(SC_OK);
+    assertThat(bySlotResponse.code()).isEqualTo(SC_OK);
 
-    final List<BlobSidecar> result = parseBlobSidecars(response);
-    assertThat(result).isEqualTo(nonCanonicalBlobSidecars);
+    final List<BlobSidecar> byRootBlobSidecars = parseBlobSidecars(bySlotResponse);
+    assertThat(byRootBlobSidecars).isEqualTo(nonCanonicalBlobSidecars);
+
+    final Response byRootResponse =
+        get(
+            forked.getSlot().toString(),
+            List.of(UInt64.ZERO, UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3)));
+
+    assertThat(byRootResponse.code()).isEqualTo(SC_OK);
+
+    final List<BlobSidecar> bySlotBlobSidecars = parseBlobSidecars(byRootResponse);
+    assertThat(bySlotBlobSidecars).isEmpty();
   }
 
   public Response get(final String blockIdString, final String contentType) throws IOException {

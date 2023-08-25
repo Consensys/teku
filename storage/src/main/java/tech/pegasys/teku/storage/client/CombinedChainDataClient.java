@@ -639,10 +639,14 @@ public class CombinedChainDataClient {
       final SlotAndBlockRootAndBlobIndex key) {
     return historicalChainData
         .getBlobSidecar(key)
-        .thenCombine(
-            historicalChainData.getNonCanonicalBlobSidecar(key),
-            (canonicalBlobSidecar, nonCanonicalBlobSidecars) ->
-                canonicalBlobSidecar.isPresent() ? canonicalBlobSidecar : nonCanonicalBlobSidecars);
+        .thenCompose(
+            maybeBlobSidecar -> {
+              if (maybeBlobSidecar.isPresent()) {
+                return SafeFuture.completedFuture(maybeBlobSidecar);
+              } else {
+                return historicalChainData.getNonCanonicalBlobSidecar(key);
+              }
+            });
   }
 
   private boolean isRecentData(final UInt64 slot) {
