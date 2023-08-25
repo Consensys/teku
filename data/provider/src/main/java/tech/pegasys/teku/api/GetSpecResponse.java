@@ -16,6 +16,7 @@ package tech.pegasys.teku.api;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.Domain;
@@ -35,6 +36,7 @@ public class GetSpecResponse {
         .getRawConfig()
         .forEach((name, value) -> configAttributes.put(name, ConfigProvider.formatValue(value)));
 
+    configAttributes.put("BLS_WITHDRAWAL_PREFIX", getBlsWithdrawalPrefix().toHexString());
     configAttributes.put("TARGET_AGGREGATORS_PER_COMMITTEE", getTargetAggregatorsPerCommittee());
     configAttributes.put("DOMAIN_BEACON_PROPOSER", getDomainBeaconProposer().toHexString());
     configAttributes.put("DOMAIN_BEACON_ATTESTER", getDomainBeaconAttester().toHexString());
@@ -64,6 +66,10 @@ public class GetSpecResponse {
         .ifPresent(subnetCount -> configAttributes.put("SYNC_COMMITTEE_SUBNET_COUNT", subnetCount));
 
     return configAttributes;
+  }
+
+  private Bytes getBlsWithdrawalPrefix() {
+    return specConfig.getBlsWithdrawalPrefix();
   }
 
   private String getTargetAggregatorsPerCommittee() {
