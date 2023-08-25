@@ -907,7 +907,12 @@ public class KvStoreDatabase implements Database {
   @Override
   public List<SlotAndBlockRootAndBlobIndex> getBlobSidecarKeys(
       final SlotAndBlockRoot slotAndBlockRoot) {
-    return dao.getBlobSidecarKeys(slotAndBlockRoot);
+    List<SlotAndBlockRootAndBlobIndex> blobSidecarKeys = dao.getBlobSidecarKeys(slotAndBlockRoot);
+    if (blobSidecarKeys.isEmpty()) {
+      return dao.getNonCanonicalBlobSidecarKeys(slotAndBlockRoot);
+    } else {
+      return blobSidecarKeys;
+    }
   }
 
   @Override

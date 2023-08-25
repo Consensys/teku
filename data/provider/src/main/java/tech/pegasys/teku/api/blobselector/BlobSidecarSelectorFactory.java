@@ -90,7 +90,16 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
 
   private SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecarsForBlock(
       final Optional<SignedBeaconBlock> maybeBlock, final List<UInt64> indices) {
-    if (maybeBlock.isEmpty()) {
+    if (maybeBlock.isEmpty()
+        || maybeBlock.get().getMessage().getBody().toVersionDeneb().isEmpty()
+        || maybeBlock
+            .get()
+            .getMessage()
+            .getBody()
+            .toVersionDeneb()
+            .get()
+            .getBlobKzgCommitments()
+            .isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
     }
     final SignedBeaconBlock block = maybeBlock.get();

@@ -390,6 +390,20 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public List<SlotAndBlockRootAndBlobIndex> getNonCanonicalBlobSidecarKeys(
+      final SlotAndBlockRoot slotAndBlockRoot) {
+    try (final Stream<SlotAndBlockRootAndBlobIndex> streamKeys =
+        db.streamKeys(
+            schema.getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex(),
+            new SlotAndBlockRootAndBlobIndex(
+                slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.ZERO),
+            new SlotAndBlockRootAndBlobIndex(
+                slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.MAX_VALUE))) {
+      return streamKeys.collect(Collectors.toList());
+    }
+  }
+
+  @Override
   public Optional<UInt64> getEarliestBlobSidecarSlot() {
     return db.get(schema.getVariableEarliestBlobSidecarSlot());
   }
