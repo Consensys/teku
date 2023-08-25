@@ -228,6 +228,34 @@ public class ExternalValidatorSourceTest {
             new ValidatorProviderInfo(publicKey2, new URL("http://localhost:9000")));
   }
 
+  @Test
+  void shouldGetAvailableReadOnlyValidators(@TempDir Path tempDir) throws IOException {
+    final BLSPublicKey publicKey1 = dataStructureUtil.randomPublicKey();
+    final BLSPublicKey publicKey2 = dataStructureUtil.randomPublicKey();
+    when(publicKeyLoader.getPublicKeys(any())).thenReturn(List.of(publicKey1, publicKey2));
+
+    final ExternalValidatorSource externalValidatorSource =
+        newExternalValidatorSource(tempDir, true);
+    final List<ValidatorSource.ValidatorProvider> validators =
+        externalValidatorSource.getAvailableValidators();
+    final List<ValidatorProviderInfo> result =
+        validators.stream()
+            .map(
+                validatorProvider -> {
+                  assertThat(validatorProvider).isInstanceOf(ExternalValidatorProvider.class);
+                  final ExternalValidatorProvider provider =
+                      (ExternalValidatorProvider) validatorProvider;
+                  return new ValidatorProviderInfo(
+                      provider.getPublicKey(), provider.getExternalSignerUrl());
+                })
+            .collect(Collectors.toList());
+
+    assertThat(result)
+        .containsExactlyInAnyOrder(
+            new ValidatorProviderInfo(publicKey1, new URL("http://localhost:9000")),
+            new ValidatorProviderInfo(publicKey2, new URL("http://localhost:9000")));
+  }
+
   private void createRemoteKeyFile(
       DataDirLayout dataDirLayout, BLSPublicKey publicKey, Optional<URL> url) throws IOException {
     final String urlContent = url.map(value -> ",\"url\":\"" + value + "\"").orElse("");
@@ -296,6 +324,11 @@ public class ExternalValidatorSourceTest {
     @Override
     public int hashCode() {
       return Objects.hash(publicKey, url);
+    }
+
+    @Override
+    public String toString() {
+      return "ValidatorProviderInfo{" + "publicKey=" + publicKey + ", url=" + url + '}';
     }
   }
 }
