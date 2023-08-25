@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
 public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSidecarSelector> {
@@ -90,16 +91,12 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
 
   private SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecarsForBlock(
       final Optional<SignedBeaconBlock> maybeBlock, final List<UInt64> indices) {
-    if (maybeBlock.isEmpty()
-        || maybeBlock.get().getMessage().getBody().toVersionDeneb().isEmpty()
-        || maybeBlock
-            .get()
-            .getMessage()
-            .getBody()
-            .toVersionDeneb()
-            .get()
-            .getBlobKzgCommitments()
-            .isEmpty()) {
+    if (maybeBlock.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    final Optional<BeaconBlockBodyDeneb> maybeDenebBlock =
+        maybeBlock.get().getMessage().getBody().toVersionDeneb();
+    if (maybeDenebBlock.isEmpty() || maybeDenebBlock.get().getBlobKzgCommitments().isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
     }
     final SignedBeaconBlock block = maybeBlock.get();
