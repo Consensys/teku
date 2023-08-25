@@ -256,7 +256,7 @@ public class ValidatorClientService extends Service {
               }
               return null;
             })
-        .ifExceptionGetsHereRaiseABug();
+        .always(() -> LOG.trace("Finished starting validator client service."));
 
     return validatorClientService;
   }
