@@ -144,21 +144,22 @@ public class GetBlobSidecarsIntegrationTest extends AbstractDataBackedRestAPIInt
     chainUpdater.blockOptions.setGenerateRandomBlobs(true);
     chainUpdater.blockOptions.setGenerateRandomBlobsCount(Optional.of(4));
 
-    chainUpdater.advanceChainUntil(UInt64.valueOf(3));
+    createBlocksAtSlots(10);
 
     final ChainBuilder fork = chainBuilder.fork();
-    SignedBlockAndState forked = fork.generateNextBlock(chainUpdater.blockOptions);
+    SignedBlockAndState forkedBlock = fork.generateNextBlock(chainUpdater.blockOptions);
 
-    final List<BlobSidecar> nonCanonicalBlobSidecars = fork.getBlobSidecars(forked.getRoot());
-    chainUpdater.saveBlock(forked, nonCanonicalBlobSidecars);
+    final List<BlobSidecar> nonCanonicalBlobSidecars = fork.getBlobSidecars(forkedBlock.getRoot());
+    chainUpdater.saveBlock(forkedBlock, nonCanonicalBlobSidecars);
 
-    SignedBlockAndState canonical = chainBuilder.generateNextBlock(1, chainUpdater.blockOptions);
-    chainUpdater.updateBestBlock(canonical);
-    chainUpdater.finalizeCurrentChain();
+    SignedBlockAndState canonicalBlock =
+        chainBuilder.generateNextBlock(1, chainUpdater.blockOptions);
+    chainUpdater.saveBlock(canonicalBlock, chainBuilder.getBlobSidecars(canonicalBlock.getRoot()));
+    chainUpdater.updateBestBlock(canonicalBlock);
 
     final Response byRootResponse =
         get(
-            forked.getRoot().toHexString(),
+            forkedBlock.getRoot().toHexString(),
             List.of(UInt64.ZERO, UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3)));
 
     assertThat(byRootResponse.code()).isEqualTo(SC_OK);
@@ -166,16 +167,12 @@ public class GetBlobSidecarsIntegrationTest extends AbstractDataBackedRestAPIInt
     final List<BlobSidecar> byRootBlobSidecars = parseBlobSidecars(byRootResponse);
     assertThat(byRootBlobSidecars).isEqualTo(nonCanonicalBlobSidecars);
 
-    // By slot request should respond with canonical blob sidecars only
     final Response bySlotResponse =
         get(
-            forked.getSlot().toString(),
+            forkedBlock.getSlot().toString(),
             List.of(UInt64.ZERO, UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3)));
 
-    assertThat(bySlotResponse.code()).isEqualTo(SC_OK);
-
-    final List<BlobSidecar> bySlotBlobSidecars = parseBlobSidecars(bySlotResponse);
-    assertThat(bySlotBlobSidecars).isEmpty();
+    assertThat(bySlotResponse.code()).isEqualTo(SC_NOT_FOUND);
   }
 
   public Response get(final String blockIdString, final String contentType) throws IOException {
