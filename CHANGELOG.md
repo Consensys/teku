@@ -19,6 +19,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - Update attestation subnet subscriptions strategy according to [the spec changes](https://github.com/ethereum/consensus-specs/blob/dev/specs/phase0/p2p-interface.md#attestation-subnet-subscription). All nodes (including non-validating ones) will subscribe to 2 subnets regardless of the number of validators.
 - Added `/eth/v1/validator/{pubkey}/voluntary_exit` Validator API endpoint
 - Add support for Holesky test network `--network=holesky`
+- Add support for gzip encoding in REST API
 
 ### Bug Fixes
 - Fixed a bug in network configuration loader which was ignoring MIN_EPOCHS_FOR_BLOCK_REQUESTS parameter. 
