@@ -144,8 +144,7 @@ public class GetBlobSidecarsIntegrationTest extends AbstractDataBackedRestAPIInt
     chainUpdater.blockOptions.setGenerateRandomBlobs(true);
     chainUpdater.blockOptions.setGenerateRandomBlobsCount(Optional.of(4));
 
-    final UInt64 targetSlot = UInt64.valueOf(3);
-    chainUpdater.advanceChainUntil(targetSlot);
+    chainUpdater.advanceChainUntil(UInt64.valueOf(3));
 
     final ChainBuilder fork = chainBuilder.fork();
     SignedBlockAndState forked = fork.generateNextBlock(chainUpdater.blockOptions);
@@ -155,7 +154,7 @@ public class GetBlobSidecarsIntegrationTest extends AbstractDataBackedRestAPIInt
 
     SignedBlockAndState canonical = chainBuilder.generateNextBlock(1, chainUpdater.blockOptions);
     chainUpdater.updateBestBlock(canonical);
-    chainUpdater.finalizeEpoch(targetSlot.plus(1));
+    chainUpdater.finalizeCurrentChain();
 
     final Response byRootResponse =
         get(
