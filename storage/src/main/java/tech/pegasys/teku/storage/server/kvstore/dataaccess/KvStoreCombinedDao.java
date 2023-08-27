@@ -143,6 +143,9 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   List<SlotAndBlockRootAndBlobIndex> getBlobSidecarKeys(SlotAndBlockRoot slotAndBlockRoot);
 
+  List<SlotAndBlockRootAndBlobIndex> getNonCanonicalBlobSidecarKeys(
+      SlotAndBlockRoot slotAndBlockRoot);
+
   Optional<UInt64> getEarliestBlobSidecarSlot();
 
   Map<String, Long> getColumnCounts();
