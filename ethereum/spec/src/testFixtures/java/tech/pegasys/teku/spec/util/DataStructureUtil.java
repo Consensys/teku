@@ -2211,7 +2211,7 @@ public final class DataStructureUtil {
   }
 
   public BlindedBlobsBundle randomBlindedBlobsBundle() {
-    return randomBlindedBlobsBundle(randomNumberOfBlobsPerBlock());
+    return randomBlindedBlobsBundle(randomNumberOfBlobCommitmentsPerBlock());
   }
 
   public BlobsBundle randomBlobsBundle() {
@@ -2530,6 +2530,15 @@ public final class DataStructureUtil {
   private int randomNumberOfBlobsPerBlock() {
     // minimum 1 blob
     return randomInt(1, spec.getMaxBlobsPerBlock().orElseThrow() + 1);
+  }
+
+  private int randomNumberOfBlobCommitmentsPerBlock() {
+    // minimum 1 commitment
+    return randomInt(
+        1,
+        SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
+                .getMaxBlobCommitmentsPerBlock()
+            + 1);
   }
 
   private int randomInt(final int origin, final int bound) {
