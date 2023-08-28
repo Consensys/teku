@@ -598,7 +598,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                     .eth1DepositContractAddress(address)
                     .maxUrlLength(65535)
                     .maxPendingEvents(BeaconRestApiConfig.DEFAULT_MAX_EVENT_QUEUE_SIZE)
-                    .validatorThreads(1))
+                    .validatorThreads(Optional.empty()))
         .validatorApi(
             b ->
                 b.restApiPort(5052)
