@@ -247,7 +247,7 @@ public class ValidatorClientService extends Service {
             })
         .exceptionally(
             error -> {
-              Optional<Throwable> maybeCause =
+              final Optional<Throwable> maybeCause =
                   ExceptionUtil.getCause(error, InvalidConfigurationException.class);
               if (maybeCause.isPresent()) {
                 LOG.warn(maybeCause.get().getMessage());
