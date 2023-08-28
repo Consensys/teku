@@ -37,6 +37,7 @@ public class BeaconRestApiConfig {
       List.of("127.0.0.1", "localhost");
   public static final List<String> DEFAULT_REST_API_CORS_ALLOWED_ORIGINS = new ArrayList<>();
   public static final boolean DEFAULT_BEACON_LIVENESS_TRACKING_ENABLED = false;
+  public static final int DEFAULT_TARGET_VALIDATORS_API_THREADS = 10;
 
   // Beacon REST API
   private final int restApiPort;
@@ -130,11 +131,8 @@ public class BeaconRestApiConfig {
 
     final int numberOfCores = Runtime.getRuntime().availableProcessors();
 
-    // <= 2 cores -> 1 thread
-    // <= 4 cores -> 2 threads
-    // <= 8 cores -> 3 threads
-    // <= 16 cores -> 4 threads
-    final int threads = Math.max(1, LongMath.log2(numberOfCores, RoundingMode.UP));
+    // by default let's create up to DEFAULT_TARGET_VALIDATORS_API_THREADS but no more than available cores
+    final int threads = Math.min(DEFAULT_TARGET_VALIDATORS_API_THREADS, numberOfCores);
 
     LOG.info("Using {} threads for handling validator API channel", threads);
     return threads;
