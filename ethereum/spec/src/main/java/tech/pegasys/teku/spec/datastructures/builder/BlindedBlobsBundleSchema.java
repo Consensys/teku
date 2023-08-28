@@ -37,14 +37,15 @@ public class BlindedBlobsBundleSchema
         namedSchema(
             "commitments",
             SszListSchema.create(
-                SszKZGCommitmentSchema.INSTANCE, specConfig.getMaxBlobsPerBlock())),
+                SszKZGCommitmentSchema.INSTANCE, specConfig.getMaxBlobCommitmentsPerBlock())),
         namedSchema(
             "proofs",
-            SszListSchema.create(SszKZGProofSchema.INSTANCE, specConfig.getMaxBlobsPerBlock())),
+            SszListSchema.create(
+                SszKZGProofSchema.INSTANCE, specConfig.getMaxBlobCommitmentsPerBlock())),
         namedSchema(
             "blob_roots",
             SszListSchema.create(
-                SszPrimitiveSchemas.BYTES32_SCHEMA, specConfig.getMaxBlobsPerBlock())));
+                SszPrimitiveSchemas.BYTES32_SCHEMA, specConfig.getMaxBlobCommitmentsPerBlock())));
   }
 
   @SuppressWarnings("unchecked")
