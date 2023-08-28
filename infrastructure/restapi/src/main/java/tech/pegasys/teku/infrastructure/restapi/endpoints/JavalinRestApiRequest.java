@@ -24,9 +24,7 @@ import io.javalin.http.Header;
 import io.javalin.http.sse.SseClient;
 import io.javalin.http.sse.SseHandler;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -98,11 +96,7 @@ public class JavalinRestApiRequest implements RestApiRequest {
   }
 
   private OutputStream getResponseOutputStream() {
-    try {
-      return context.res().getOutputStream();
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
+    return context.outputStream();
   }
 
   private void respond(

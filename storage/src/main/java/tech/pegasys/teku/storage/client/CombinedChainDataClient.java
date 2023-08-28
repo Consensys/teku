@@ -194,7 +194,7 @@ public class CombinedChainDataClient {
 
   private SafeFuture<List<BlobSidecar>> getBlobSidecars(
       final Stream<SlotAndBlockRootAndBlobIndex> keys) {
-    return SafeFuture.collectAll(keys.map(this::getBlobSidecarByKey))
+    return SafeFuture.collectAll(keys.map(this::getAllBlobSidecarByKey))
         .thenApply(
             blobSidecars -> blobSidecars.stream().flatMap(Optional::stream).collect(toList()));
   }
@@ -553,15 +553,6 @@ public class CombinedChainDataClient {
     return historicalChainData.getBlobSidecarKeys(startSlot, endSlot, limit);
   }
 
-  private boolean isRecentData(final UInt64 slot) {
-    checkNotNull(slot);
-    if (recentChainData.isPreGenesis()) {
-      return false;
-    }
-    final UInt64 finalizedSlot = getStore().getLatestFinalizedBlockSlot();
-    return slot.compareTo(finalizedSlot) >= 0;
-  }
-
   public Optional<UInt64> getFinalizedBlockSlot() {
     if (recentChainData.isPreGenesis()) {
       return Optional.empty();
@@ -642,6 +633,29 @@ public class CombinedChainDataClient {
 
   public RecentChainData getRecentChainData() {
     return recentChainData;
+  }
+
+  private SafeFuture<Optional<BlobSidecar>> getAllBlobSidecarByKey(
+      final SlotAndBlockRootAndBlobIndex key) {
+    return historicalChainData
+        .getBlobSidecar(key)
+        .thenCompose(
+            maybeBlobSidecar -> {
+              if (maybeBlobSidecar.isPresent()) {
+                return SafeFuture.completedFuture(maybeBlobSidecar);
+              } else {
+                return historicalChainData.getNonCanonicalBlobSidecar(key);
+              }
+            });
+  }
+
+  private boolean isRecentData(final UInt64 slot) {
+    checkNotNull(slot);
+    if (recentChainData.isPreGenesis()) {
+      return false;
+    }
+    final UInt64 finalizedSlot = getStore().getLatestFinalizedBlockSlot();
+    return slot.compareTo(finalizedSlot) >= 0;
   }
 
   private boolean isCanonicalBlockCalculated(
