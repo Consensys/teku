@@ -2534,11 +2534,7 @@ public final class DataStructureUtil {
 
   private int randomNumberOfBlobCommitmentsPerBlock() {
     // minimum 1 commitment
-    return randomInt(
-        1,
-        SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
-                .getMaxBlobCommitmentsPerBlock()
-            + 1);
+    return randomInt(1, spec.getMaxBlobCommitmentsPerBlock().orElseThrow() + 1);
   }
 
   private int randomInt(final int origin, final int bound) {
