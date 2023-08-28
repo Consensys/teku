@@ -15,8 +15,6 @@ package tech.pegasys.teku.beaconrestapi;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import com.google.common.math.LongMath;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -131,7 +129,8 @@ public class BeaconRestApiConfig {
 
     final int numberOfCores = Runtime.getRuntime().availableProcessors();
 
-    // by default let's create up to DEFAULT_TARGET_VALIDATORS_API_THREADS but no more than available cores
+    // by default let's create up to DEFAULT_TARGET_VALIDATORS_API_THREADS but no more than
+    // available cores
     final int threads = Math.min(DEFAULT_TARGET_VALIDATORS_API_THREADS, numberOfCores);
 
     LOG.info("Using {} threads for handling validator API channel", threads);
