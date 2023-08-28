@@ -34,6 +34,7 @@ public class EventSubscriber {
 
   private static final Logger LOG = LogManager.getLogger();
   static final int EXCESSIVE_QUEUING_TOLERANCE_MS = 1000;
+  static final int SANITY_LIMIT = 4;
   private final AtomicBoolean stopped = new AtomicBoolean(false);
   private final List<EventType> eventTypes;
   private final SseClient sseClient;
@@ -44,6 +45,7 @@ public class EventSubscriber {
   private final AtomicBoolean processingQueue;
   private final AsyncRunner asyncRunner;
   private final AtomicLong excessiveQueueingDisconnectionTime = new AtomicLong(Long.MAX_VALUE);
+  private int successiveFailureCounter = 0;
 
   public EventSubscriber(
       final List<String> eventTypes,
@@ -124,18 +126,40 @@ public class EventSubscriber {
                     new ByteArrayInputStream(event.getMessageData().toArrayUnsafe()));
                 event = queuedEvents.poll();
               }
+              successiveFailureCounter = 0;
             })
         .alwaysRun(
             () -> {
               processingQueue.set(false);
-              if (queuedEvents.size() > 0) {
+              if (!queuedEvents.isEmpty()) {
                 processEventQueue();
               }
             })
         .finish(
-            error ->
-                LOG.error(
-                    "Failed to process event queue for client " + sseClient.hashCode(), error));
+            error -> {
+              successiveFailureCounter++;
+              if (error.getCause() instanceof IllegalStateException
+                  && successiveFailureCounter > SANITY_LIMIT) {
+                LOG.warn(
+                    "Failed to process event queue for client {}, terminating connection with {} queued events after {} failed attempts to send events.",
+                    sseClient::hashCode,
+                    queuedEvents::size,
+                    this::getSuccessiveFailureCounter);
+                sseClient.close();
+              } else {
+                if (successiveFailureCounter > 1) {
+                  LOG.error(
+                      "Failed to process event queue for client {}", sseClient.hashCode(), error);
+                } else {
+                  LOG.trace(
+                      "Failed to process event queue for client {}", sseClient.hashCode(), error);
+                }
+              }
+            });
+  }
+
+  private int getSuccessiveFailureCounter() {
+    return successiveFailureCounter;
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
