@@ -35,7 +35,8 @@ public abstract class AbstractProposerConfigProvider implements ProposerConfigPr
   private final TimeProvider timeProvider;
   private Optional<ProposerConfig> lastProposerConfig = Optional.empty();
   private UInt64 lastProposerConfigTimeStamp = UInt64.ZERO;
-  private Optional<SafeFuture<Optional<ProposerConfig>>> futureProposerConfig = Optional.empty();
+  private SafeFuture<Optional<ProposerConfig>> futureProposerConfig =
+      SafeFuture.completedFuture(Optional.empty());
 
   AbstractProposerConfigProvider(
       final AsyncRunner asyncRunner,
@@ -54,9 +55,9 @@ public abstract class AbstractProposerConfigProvider implements ProposerConfigPr
       return SafeFuture.completedFuture(lastProposerConfig);
     }
 
-    if (futureProposerConfig.isPresent()) {
+    if (!futureProposerConfig.isDone()) {
       // a proposer config reload is in progress, use that as result
-      return futureProposerConfig.get();
+      return futureProposerConfig;
     }
 
     if (lastProposerConfig.isPresent()
@@ -67,39 +68,33 @@ public abstract class AbstractProposerConfigProvider implements ProposerConfigPr
     }
 
     futureProposerConfig =
-        Optional.of(
-            asyncRunner
-                .runAsync(
-                    () -> {
-                      lastProposerConfig = Optional.of(internalGetProposerConfig());
-                      lastProposerConfigTimeStamp = timeProvider.getTimeInSeconds();
-                      return lastProposerConfig;
-                    })
-                .orTimeout(30, TimeUnit.SECONDS)
-                .exceptionally(
-                    throwable -> {
-                      if (lastProposerConfig.isPresent()) {
-                        LOG.warn(
-                            "An error occurred while obtaining config, providing last loaded config",
-                            throwable);
-                        return lastProposerConfig;
-                      }
-                      throw new RuntimeException(
-                          "An error occurred while obtaining config and there is no previously loaded config",
-                          throwable);
-                    })
-                .thenPeek(
-                    proposerConfig ->
-                        LOG.info(
-                            "Proposer config successfully loaded. It contains the default configuration and {} specific configuration(s).",
-                            proposerConfig.orElseThrow().getNumberOfProposerConfigs()))
-                .alwaysRun(
-                    () -> {
-                      synchronized (this) {
-                        futureProposerConfig = Optional.empty();
-                      }
-                    }));
-    return futureProposerConfig.get();
+        asyncRunner
+            .runAsync(this::internalGetProposerConfig)
+            .orTimeout(30, TimeUnit.SECONDS)
+            .thenApply(this::updateProposerConfig)
+            .exceptionally(this::handleException);
+
+    return futureProposerConfig;
+  }
+
+  private synchronized Optional<ProposerConfig> handleException(final Throwable throwable) {
+    if (lastProposerConfig.isPresent()) {
+      LOG.warn("An error occurred while obtaining config, providing last loaded config", throwable);
+      return lastProposerConfig;
+    }
+    throw new RuntimeException(
+        "An error occurred while obtaining config and there is no previously loaded config",
+        throwable);
+  }
+
+  private synchronized Optional<ProposerConfig> updateProposerConfig(
+      final ProposerConfig proposerConfig) {
+    lastProposerConfig = Optional.of(proposerConfig);
+    lastProposerConfigTimeStamp = timeProvider.getTimeInSeconds();
+    LOG.info(
+        "Proposer config successfully loaded. It contains the default configuration and {} specific configuration(s).",
+        proposerConfig.getNumberOfProposerConfigs());
+    return lastProposerConfig;
   }
 
   protected abstract ProposerConfig internalGetProposerConfig();

@@ -94,6 +94,7 @@ public class ProposerConfigProviderTest {
 
     assertThat(futureMaybeConfig).isCompletedWithValue(Optional.of(proposerConfigA));
 
+    timeProvider.advanceTimeBySeconds(LAST_PROPOSER_CONFIG_VALIDITY_PERIOD + 10);
     futureMaybeConfig = proposerConfigProvider.getProposerConfig();
 
     when(proposerConfigLoader.getProposerConfig(sourceUrl))
