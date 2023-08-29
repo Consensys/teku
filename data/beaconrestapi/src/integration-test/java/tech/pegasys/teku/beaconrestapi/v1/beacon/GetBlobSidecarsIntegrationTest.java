@@ -147,19 +147,20 @@ public class GetBlobSidecarsIntegrationTest extends AbstractDataBackedRestAPIInt
     createBlocksAtSlots(10);
 
     final ChainBuilder fork = chainBuilder.fork();
-    SignedBlockAndState forkedBlock = fork.generateNextBlock(chainUpdater.blockOptions);
+    final SignedBlockAndState nonCanonicalBlock = fork.generateNextBlock(chainUpdater.blockOptions);
 
-    final List<BlobSidecar> nonCanonicalBlobSidecars = fork.getBlobSidecars(forkedBlock.getRoot());
-    chainUpdater.saveBlock(forkedBlock, nonCanonicalBlobSidecars);
+    final List<BlobSidecar> nonCanonicalBlobSidecars =
+        fork.getBlobSidecars(nonCanonicalBlock.getRoot());
+    chainUpdater.saveBlock(nonCanonicalBlock, nonCanonicalBlobSidecars);
 
-    SignedBlockAndState canonicalBlock =
+    final SignedBlockAndState canonicalBlock =
         chainBuilder.generateNextBlock(1, chainUpdater.blockOptions);
     chainUpdater.saveBlock(canonicalBlock, chainBuilder.getBlobSidecars(canonicalBlock.getRoot()));
     chainUpdater.updateBestBlock(canonicalBlock);
 
     final Response byRootResponse =
         get(
-            forkedBlock.getRoot().toHexString(),
+            nonCanonicalBlock.getRoot().toHexString(),
             List.of(UInt64.ZERO, UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3)));
 
     assertThat(byRootResponse.code()).isEqualTo(SC_OK);
@@ -169,7 +170,7 @@ public class GetBlobSidecarsIntegrationTest extends AbstractDataBackedRestAPIInt
 
     final Response bySlotResponse =
         get(
-            forkedBlock.getSlot().toString(),
+            nonCanonicalBlock.getSlot().toString(),
             List.of(UInt64.ZERO, UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3)));
 
     assertThat(bySlotResponse.code()).isEqualTo(SC_NOT_FOUND);
