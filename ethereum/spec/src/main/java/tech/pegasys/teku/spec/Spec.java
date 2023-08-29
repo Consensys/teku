@@ -923,16 +923,15 @@ public class Spec {
   }
 
   public Optional<Integer> getMaxBlobsPerBlock() {
-    final SpecMilestone highestSupportedMilestone =
-        getForkSchedule().getHighestSupportedMilestone();
-    return Optional.ofNullable(forMilestone(highestSupportedMilestone))
-        .map(SpecVersion::getConfig)
-        .flatMap(SpecConfig::toVersionDeneb)
-        .map(SpecConfigDeneb::getMaxBlobsPerBlock);
+    return getSpecConfigDeneb().map(SpecConfigDeneb::getMaxBlobsPerBlock);
+  }
+
+  public Optional<Integer> getMaxBlobCommitmentsPerBlock() {
+    return getSpecConfigDeneb().map(SpecConfigDeneb::getMaxBlobCommitmentsPerBlock);
   }
 
   public Optional<Integer> getMaxBlobsPerBlock(final UInt64 slot) {
-    return atSlot(slot).getConfig().toVersionDeneb().map(SpecConfigDeneb::getMaxBlobsPerBlock);
+    return getSpecConfigDeneb(slot).map(SpecConfigDeneb::getMaxBlobsPerBlock);
   }
 
   public UInt64 computeSubnetForBlobSidecar(final SignedBlobSidecar signedBlobSidecar) {
@@ -945,11 +944,22 @@ public class Spec {
   }
 
   public Optional<UInt64> computeFirstSlotWithBlobSupport() {
-    return forMilestone(forkSchedule.getHighestSupportedMilestone())
-        .getConfig()
-        .toVersionDeneb()
+    return getSpecConfigDeneb()
         .map(SpecConfigDeneb::getDenebForkEpoch)
         .map(this::computeStartSlotAtEpoch);
+  }
+
+  // Deneb private helpers
+  private Optional<SpecConfigDeneb> getSpecConfigDeneb() {
+    final SpecMilestone highestSupportedMilestone =
+        getForkSchedule().getHighestSupportedMilestone();
+    return Optional.ofNullable(forMilestone(highestSupportedMilestone))
+        .map(SpecVersion::getConfig)
+        .flatMap(SpecConfig::toVersionDeneb);
+  }
+
+  private Optional<SpecConfigDeneb> getSpecConfigDeneb(final UInt64 slot) {
+    return atSlot(slot).getConfig().toVersionDeneb();
   }
 
   // Private helpers

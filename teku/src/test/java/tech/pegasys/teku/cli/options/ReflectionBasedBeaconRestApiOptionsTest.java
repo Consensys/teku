@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -243,10 +244,10 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
   }
 
   @Test
-  void validatorThreads_shouldDefaultToOne() {
+  void validatorThreads_shouldDefaultToAtLeastOne() {
     final int validatorThreads =
         getConfig(getTekuConfigurationFromArguments()).getValidatorThreads();
-    assertThat(validatorThreads).isEqualTo(1);
+    assertThat(validatorThreads).isGreaterThanOrEqualTo(1);
   }
 
   @Test
@@ -255,7 +256,7 @@ public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeC
         getTekuConfigurationFromArguments("--Xrest-api-validator-threads=15");
     final int validatorThreads = getConfig(tekuConfiguration).getValidatorThreads();
     assertThat(validatorThreads).isEqualTo(15);
-    assertThat(createConfigBuilder().restApi(b -> b.validatorThreads(15)).build())
+    assertThat(createConfigBuilder().restApi(b -> b.validatorThreads(Optional.of(15))).build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
   }
