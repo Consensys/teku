@@ -172,6 +172,11 @@ public class BlockManager extends Service
     children.forEach(this::importBlockIgnoringResult);
   }
 
+  @Override
+  public void onBlockValidated(SignedBeaconBlock block) {
+    notifyReceivedBlockSubscribers(block, recentChainData.isChainHeadOptimistic());
+  }
+
   private void importBlockIgnoringResult(final SignedBeaconBlock block) {
     doImportBlock(block, Optional.empty()).ifExceptionGetsHereRaiseABug();
   }
@@ -185,13 +190,7 @@ public class BlockManager extends Service
             () ->
                 handleBlockImport(block, blockImportPerformance)
                     .thenPeek(
-                        result -> lateBlockImportCheck(blockImportPerformance, block, result)))
-        .thenPeek(
-            result -> {
-              if (result.isSuccessful()) {
-                notifyReceivedBlockSubscribers(block, result.isImportedOptimistically());
-              }
-            });
+                        result -> lateBlockImportCheck(blockImportPerformance, block, result)));
   }
 
   private Optional<BlockImportResult> propagateInvalidity(final SignedBeaconBlock block) {
@@ -231,6 +230,7 @@ public class BlockManager extends Service
       final SignedBeaconBlock block,
       final Optional<BlockImportPerformance> blockImportPerformance) {
 
+    onBlockValidated(block);
     blobSidecarPool.onNewBlock(block);
 
     return blockImporter

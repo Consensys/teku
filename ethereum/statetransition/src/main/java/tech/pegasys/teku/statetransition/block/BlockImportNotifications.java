@@ -18,4 +18,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public interface BlockImportNotifications extends VoidReturningChannelInterface {
   void onBlockImported(SignedBeaconBlock block);
+
+  void onBlockValidated(SignedBeaconBlock block);
 }
