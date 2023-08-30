@@ -93,9 +93,10 @@ public class CombinedChainDataClient {
     }
 
     // Try to pull root from recent data
-    final Optional<Bytes32> recentRoot = recentChainData.getBlockRootBySlot(slot);
+    final Optional<Bytes32> recentRoot = recentChainData.getBlockRootInEffectBySlot(slot);
     if (recentRoot.isPresent()) {
-      return getBlockByBlockRoot(recentRoot.get());
+      return getBlockByBlockRoot(recentRoot.get())
+          .thenApply(maybeBlock -> maybeBlock.filter(block -> block.getSlot().equals(slot)));
     }
 
     return historicalChainData.getFinalizedBlockAtSlot(slot);
@@ -116,9 +117,11 @@ public class CombinedChainDataClient {
     }
 
     // Try to pull root from recent data
-    final Optional<Bytes32> recentRoot = recentChainData.getBlockRootBySlot(slot, headBlockRoot);
+    final Optional<Bytes32> recentRoot =
+        recentChainData.getBlockRootInEffectBySlot(slot, headBlockRoot);
     if (recentRoot.isPresent()) {
-      return getBlockByBlockRoot(recentRoot.get());
+      return getBlockByBlockRoot(recentRoot.get())
+          .thenApply(maybeBlock -> maybeBlock.filter(block -> block.getSlot().equals(slot)));
     }
 
     return historicalChainData.getFinalizedBlockAtSlot(slot);
@@ -130,7 +133,7 @@ public class CombinedChainDataClient {
     }
 
     // Try to pull root from recent data
-    final Optional<Bytes32> recentRoot = recentChainData.getBlockRootBySlot(slot);
+    final Optional<Bytes32> recentRoot = recentChainData.getBlockRootInEffectBySlot(slot);
     if (recentRoot.isPresent()) {
       return getBlockByBlockRoot(recentRoot.get());
     }
@@ -199,7 +202,7 @@ public class CombinedChainDataClient {
   }
 
   public SafeFuture<Optional<BeaconState>> getStateAtSlotExact(final UInt64 slot) {
-    final Optional<Bytes32> recentBlockRoot = recentChainData.getBlockRootBySlot(slot);
+    final Optional<Bytes32> recentBlockRoot = recentChainData.getBlockRootInEffectBySlot(slot);
     if (recentBlockRoot.isPresent()) {
       return getStore()
           .retrieveStateAtSlot(new SlotAndBlockRoot(slot, recentBlockRoot.get()))
@@ -215,7 +218,8 @@ public class CombinedChainDataClient {
 
   public SafeFuture<Optional<BeaconState>> getStateAtSlotExact(
       final UInt64 slot, final Bytes32 chainHead) {
-    final Optional<Bytes32> recentBlockRoot = recentChainData.getBlockRootBySlot(slot, chainHead);
+    final Optional<Bytes32> recentBlockRoot =
+        recentChainData.getBlockRootInEffectBySlot(slot, chainHead);
     if (recentBlockRoot.isPresent()) {
       return getStore()
           .retrieveStateAtSlot(new SlotAndBlockRoot(slot, recentBlockRoot.get()))
