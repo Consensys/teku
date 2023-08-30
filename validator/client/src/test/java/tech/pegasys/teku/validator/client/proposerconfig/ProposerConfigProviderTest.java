@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client.proposerconfig;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -101,6 +102,7 @@ public class ProposerConfigProviderTest {
         .thenThrow(new RuntimeException("error"));
     asyncRunner.executeQueuedActions();
 
+    verify(proposerConfigLoader, times(2)).getProposerConfig(any());
     assertThat(futureMaybeConfig).isCompletedWithValue(Optional.of(proposerConfigA));
   }
 
