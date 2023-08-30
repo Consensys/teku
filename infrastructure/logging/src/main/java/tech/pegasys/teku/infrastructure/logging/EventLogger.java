@@ -137,14 +137,13 @@ public class EventLogger {
     info("Execution Client is online", Color.GREEN);
   }
 
-  public void executionClientRequestFailed(final Throwable error, final boolean couldBeAuthError) {
+  public void executionClientRequestFailed(final boolean couldBeAuthError) {
     error(
         "Execution Client request failed. "
             + (couldBeAuthError
                 ? "Check the same JWT secret is configured for Teku and the Execution Client."
                 : EXECUTION_CLIENT_READINESS_USER_REMINDER),
-        Color.RED,
-        error);
+        Color.RED);
   }
 
   public void executionClientRequestTimedOut() {
@@ -295,10 +294,6 @@ public class EventLogger {
 
   private void warn(final String message, final Color color) {
     log.warn(print(message, color));
-  }
-
-  private void error(final String message, final Color color, final Throwable error) {
-    log.error(print(message, color), error);
   }
 
   private void error(final String message, final Color color) {

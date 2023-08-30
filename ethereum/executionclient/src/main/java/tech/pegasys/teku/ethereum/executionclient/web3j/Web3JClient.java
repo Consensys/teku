@@ -167,7 +167,7 @@ public abstract class Web3JClient {
     if (error instanceof TimeoutException) {
       eventLog.executionClientRequestTimedOut();
     } else {
-      eventLog.executionClientRequestFailed(error, couldBeAuthError);
+      eventLog.executionClientRequestFailed(couldBeAuthError);
     }
   }
 }
