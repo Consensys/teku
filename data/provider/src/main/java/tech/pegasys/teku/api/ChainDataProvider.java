@@ -731,13 +731,9 @@ public class ChainDataProvider {
   }
 
   public SafeFuture<Optional<Bytes32>> getFinalizedBlockRoot(final UInt64 slot) {
-    final SafeFuture<Optional<SignedBeaconBlock>> futureFinalizedBlock =
-        combinedChainDataClient.getFinalizedBlockInEffectAtSlot(slot);
-    return futureFinalizedBlock.thenApply(
-        maybeFinalizedBlock ->
-            maybeFinalizedBlock
-                .filter(block -> block.getSlot().equals(slot))
-                .map(SignedBeaconBlock::getRoot));
+    return combinedChainDataClient
+        .getFinalizedBlockAtSlotExact(slot)
+        .thenApply(maybeFinalizedBlock -> maybeFinalizedBlock.map(SignedBeaconBlock::getRoot));
   }
 
   public SpecMilestone getMilestoneAtHead() {

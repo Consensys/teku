@@ -88,8 +88,17 @@ public class CombinedChainDataClient {
    * @return the block at the requested slot or empty if the slot was empty
    */
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockAtSlotExact(final UInt64 slot) {
-    return getBlockInEffectAtSlot(slot)
-        .thenApply(maybeBlock -> maybeBlock.filter(block -> block.getSlot().equals(slot)));
+    if (!isChainDataFullyAvailable()) {
+      return BLOCK_NOT_AVAILABLE;
+    }
+
+    // Try to pull root from recent data
+    final Optional<Bytes32> recentRoot = recentChainData.getBlockRootBySlot(slot);
+    if (recentRoot.isPresent()) {
+      return getBlockByBlockRoot(recentRoot.get());
+    }
+
+    return historicalChainData.getFinalizedBlockAtSlot(slot);
   }
 
   /**
@@ -102,20 +111,6 @@ public class CombinedChainDataClient {
    */
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockAtSlotExact(
       final UInt64 slot, final Bytes32 headBlockRoot) {
-    return getBlockInEffectAtSlot(slot, headBlockRoot)
-        .thenApply(maybeBlock -> maybeBlock.filter(block -> block.getSlot().equals(slot)));
-  }
-
-  /**
-   * Returns the block which was proposed in or most recently before the requested slot on the chain
-   * specified by <code>headBlockRoot</code>. If the slot was empty, the block at the last filled
-   * slot is returned.
-   *
-   * @param slot the slot to get the effective block for
-   * @return the block at slot or the closest previous slot if empty
-   */
-  private SafeFuture<Optional<SignedBeaconBlock>> getBlockInEffectAtSlot(
-      final UInt64 slot, Bytes32 headBlockRoot) {
     if (!isStoreAvailable()) {
       return BLOCK_NOT_AVAILABLE;
     }
@@ -126,7 +121,7 @@ public class CombinedChainDataClient {
       return getBlockByBlockRoot(recentRoot.get());
     }
 
-    return historicalChainData.getLatestFinalizedBlockAtSlot(slot);
+    return historicalChainData.getFinalizedBlockAtSlot(slot);
   }
 
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockInEffectAtSlot(final UInt64 slot) {
@@ -141,6 +136,10 @@ public class CombinedChainDataClient {
     }
 
     return historicalChainData.getLatestFinalizedBlockAtSlot(slot);
+  }
+
+  public SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockAtSlotExact(final UInt64 slot) {
+    return historicalChainData.getFinalizedBlockAtSlot(slot);
   }
 
   public SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockInEffectAtSlot(
