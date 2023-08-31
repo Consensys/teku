@@ -15,18 +15,26 @@ package tech.pegasys.teku.api.blobselector;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -36,6 +44,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 
+@TestSpecContext(allMilestones = true)
 public class BlobSidecarSelectorFactoryTest {
 
   private final CombinedChainDataClient client = mock(CombinedChainDataClient.class);
@@ -174,5 +183,38 @@ public class BlobSidecarSelectorFactoryTest {
   public void justifiedSelector_shouldThrowUnsupportedOperationException() {
     assertThrows(
         UnsupportedOperationException.class, blobSidecarSelectorFactory::justifiedSelector);
+  }
+
+  @Test
+  public void shouldNotLookForBlobSidecarsWhenNoKzgCommitments()
+      throws ExecutionException, InterruptedException {
+    final SignedBeaconBlock blockWithEmptyCommitments =
+        data.randomSignedBeaconBlockWithEmptyCommitments();
+    when(client.isFinalized(blockWithEmptyCommitments.getSlot())).thenReturn(false);
+    when(client.getBlockAtSlotExact(blockWithEmptyCommitments.getSlot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockWithEmptyCommitments)));
+    blobSidecarSelectorFactory
+        .slotSelector(blockWithEmptyCommitments.getSlot())
+        .getBlobSidecars(indices)
+        .get();
+    verify(client, never()).getBlobSidecars(any(SlotAndBlockRoot.class), anyList());
+  }
+
+  @TestTemplate
+  public void shouldLookForBlobSidecarsOnlyAfterDeneb(
+      TestSpecInvocationContextProvider.SpecContext ctx)
+      throws ExecutionException, InterruptedException {
+    final SignedBeaconBlock block = new DataStructureUtil(ctx.getSpec()).randomSignedBeaconBlock();
+    when(client.isFinalized(block.getSlot())).thenReturn(false);
+    when(client.getBlockAtSlotExact(block.getSlot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(block)));
+    when(client.getBlobSidecars(any(SlotAndBlockRoot.class), anyList()))
+        .thenReturn(SafeFuture.completedFuture(List.of()));
+    blobSidecarSelectorFactory.slotSelector(block.getSlot()).getBlobSidecars(indices).get();
+    if (ctx.getSpec().isMilestoneSupported(SpecMilestone.DENEB)) {
+      verify(client).getBlobSidecars(any(SlotAndBlockRoot.class), anyList());
+    } else {
+      verify(client, never()).getBlobSidecars(any(SlotAndBlockRoot.class), anyList());
+    }
   }
 }

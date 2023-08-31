@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.options;
 
 import java.util.List;
+import java.util.Optional;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
@@ -127,7 +128,7 @@ public class BeaconRestApiOptions {
       description = "Set the number of threads used to handle validator api requests",
       paramLabel = "<INTEGER>",
       hidden = true)
-  private int validatorThreads = BeaconRestApiConfig.DEFAULT_SUBSCRIBE_THREADS_COUNT;
+  private Integer validatorThreads;
 
   public void configure(final TekuConfiguration.Builder builder) {
     // Set defaults
@@ -153,6 +154,6 @@ public class BeaconRestApiOptions {
                 .maxUrlLength(maxUrlLength)
                 .beaconLivenessTrackingEnabled(beaconLivenessTrackingEnabled)
                 .maxPendingEvents(maxPendingEvents)
-                .validatorThreads(validatorThreads));
+                .validatorThreads(Optional.ofNullable(validatorThreads)));
   }
 }

@@ -30,6 +30,7 @@ import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeadersResponse;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlockHeaders;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
@@ -40,7 +41,7 @@ public class GetBlockHeadersIntegrationTest extends AbstractDataBackedRestAPIInt
 
   @BeforeEach
   public void setup() {
-    startRestApiAtGenesisStoringNonCanonicalBlocks();
+    startRestApiAtGenesisStoringNonCanonicalBlocks(SpecMilestone.PHASE0);
   }
 
   @Test

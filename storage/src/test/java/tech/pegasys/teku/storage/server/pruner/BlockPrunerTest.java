@@ -45,8 +45,7 @@ class BlockPrunerTest {
                   // Nice simple number of slots per epoch
                   .slotsPerEpoch(SLOTS_PER_EPOCH)
                   // Setup min epochs for block requests to be 5
-                  .minValidatorWithdrawabilityDelay(0)
-                  .churnLimitQuotient(10));
+                  .minEpochsForBlockRequests(5));
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);

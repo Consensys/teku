@@ -5,7 +5,7 @@ dependencyManagement {
     dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.15.2'
     dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2'
 
-    dependencySet(group: 'com.google.errorprone', version: '2.20.0') {
+    dependencySet(group: 'com.google.errorprone', version: '2.21.1') {
       entry 'error_prone_annotation'
       entry 'error_prone_check_api'
       entry 'error_prone_core'
@@ -14,7 +14,7 @@ dependencyManagement {
 
     dependency 'tech.pegasys.tools.epchecks:errorprone-checks:1.1.1'
 
-    dependency 'com.google.guava:guava:32.1.1-jre'
+    dependency 'com.google.guava:guava:32.1.2-jre'
 
     dependency 'org.jsoup:jsoup:1.16.1'
 
@@ -27,7 +27,7 @@ dependencyManagement {
 
     dependency 'info.picocli:picocli:4.7.4'
 
-    dependencySet(group: 'io.javalin', version: '5.6.1') {
+    dependencySet(group: 'io.javalin', version: '5.6.2') {
       entry 'javalin'
       entry 'javalin-rendering'
     }
@@ -38,7 +38,7 @@ dependencyManagement {
 
     dependency 'org.hdrhistogram:HdrHistogram:2.1.12'
 
-    dependency 'org.jetbrains.kotlin:kotlin-stdlib:1.9.0'
+    dependency 'org.jetbrains.kotlin:kotlin-stdlib:1.9.10'
 
     dependency 'org.mock-server:mockserver-junit-jupiter:5.15.0'
 
@@ -49,10 +49,10 @@ dependencyManagement {
       entry 'swagger-annotations'
     }
     // On update don't forget to change version in tech.pegasys.teku.infrastructure.restapi.SwaggerUIBuilder
-    dependency 'org.webjars:swagger-ui:5.1.3'
+    dependency 'org.webjars:swagger-ui:5.4.2'
     dependency 'org.thymeleaf:thymeleaf:3.1.2.RELEASE'
-    dependency 'io.github.classgraph:classgraph:4.8.161'
-    dependencySet(group: 'com.github.oshi', version: '6.4.4') {
+    dependency 'io.github.classgraph:classgraph:4.8.162'
+    dependencySet(group: 'com.github.oshi', version: '6.4.5') {
       entry 'oshi-core'
       entry 'oshi-core-java11'
     }
@@ -70,7 +70,7 @@ dependencyManagement {
       entry 'vertx-unit'
       entry 'vertx-web'
     }
-    dependency 'io.projectreactor:reactor-core:3.5.8'
+    dependency 'io.projectreactor:reactor-core:3.5.9'
 
     dependency 'it.unimi.dsi:fastutil:8.5.12'
 
@@ -110,12 +110,12 @@ dependencyManagement {
       entry 'junit-jupiter-params'
     }
 
-    dependencySet(group: 'org.mockito', version: '5.4.0') {
+    dependencySet(group: 'org.mockito', version: '5.5.0') {
       entry 'mockito-core'
       entry 'mockito-junit-jupiter'
     }
 
-    dependencySet(group: "org.openjdk.jmh", version: "1.36") {
+    dependencySet(group: "org.openjdk.jmh", version: "1.37") {
       entry 'jmh-core'
       entry 'jmh-generator-annprocess'
     }
@@ -135,7 +135,7 @@ dependencyManagement {
 
     dependency 'io.prometheus:simpleclient:0.9.0'
 
-    dependencySet(group: 'org.hyperledger.besu.internal', version: '23.4.4') {
+    dependencySet(group: 'org.hyperledger.besu.internal', version: '23.7.1') {
       entry('metrics-core') {
         // We include netty-all so omit the separated jars
         exclude 'io.netty:netty-tcnative-boringssl-static'
@@ -143,13 +143,13 @@ dependencyManagement {
       entry('core')
       entry('config')
     }
-    dependencySet(group: 'org.hyperledger.besu', version: '23.4.4') {
+    dependencySet(group: 'org.hyperledger.besu', version: '23.7.1') {
       entry('besu-datatypes')
       entry('evm')
       entry('plugin-api')
     }
 
-    dependencySet(group: 'org.testcontainers', version: '1.18.3') {
+    dependencySet(group: 'org.testcontainers', version: '1.19.0') {
       entry "testcontainers"
       entry "junit-jupiter"
     }

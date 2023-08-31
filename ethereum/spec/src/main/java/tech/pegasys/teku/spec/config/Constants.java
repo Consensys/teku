@@ -48,7 +48,7 @@ public class Constants {
   public static final int MAXIMUM_CONCURRENT_EB_REQUESTS = 5;
   public static final int REPUTATION_MANAGER_CAPACITY = 1024;
   public static final Duration STORAGE_REQUEST_TIMEOUT = Duration.ofSeconds(60);
-  public static final int STORAGE_QUERY_CHANNEL_PARALLELISM = 10; // # threads
+  public static final int STORAGE_QUERY_CHANNEL_PARALLELISM = 20; // # threads
   public static final int PROTOARRAY_FORKCHOICE_PRUNE_THRESHOLD = 256;
 
   // Teku Validator Client Specific

@@ -88,8 +88,18 @@ public class CombinedChainDataClient {
    * @return the block at the requested slot or empty if the slot was empty
    */
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockAtSlotExact(final UInt64 slot) {
-    return getBlockInEffectAtSlot(slot)
-        .thenApply(maybeBlock -> maybeBlock.filter(block -> block.getSlot().equals(slot)));
+    if (!isChainDataFullyAvailable()) {
+      return BLOCK_NOT_AVAILABLE;
+    }
+
+    // Try to pull root from recent data
+    final Optional<Bytes32> recentRoot = recentChainData.getBlockRootInEffectBySlot(slot);
+    if (recentRoot.isPresent()) {
+      return getBlockByBlockRoot(recentRoot.get())
+          .thenApply(maybeBlock -> maybeBlock.filter(block -> block.getSlot().equals(slot)));
+    }
+
+    return historicalChainData.getFinalizedBlockAtSlot(slot);
   }
 
   /**
@@ -102,31 +112,19 @@ public class CombinedChainDataClient {
    */
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockAtSlotExact(
       final UInt64 slot, final Bytes32 headBlockRoot) {
-    return getBlockInEffectAtSlot(slot, headBlockRoot)
-        .thenApply(maybeBlock -> maybeBlock.filter(block -> block.getSlot().equals(slot)));
-  }
-
-  /**
-   * Returns the block which was proposed in or most recently before the requested slot on the chain
-   * specified by <code>headBlockRoot</code>. If the slot was empty, the block at the last filled
-   * slot is returned.
-   *
-   * @param slot the slot to get the effective block for
-   * @return the block at slot or the closest previous slot if empty
-   */
-  private SafeFuture<Optional<SignedBeaconBlock>> getBlockInEffectAtSlot(
-      final UInt64 slot, Bytes32 headBlockRoot) {
     if (!isStoreAvailable()) {
       return BLOCK_NOT_AVAILABLE;
     }
 
     // Try to pull root from recent data
-    final Optional<Bytes32> recentRoot = recentChainData.getBlockRootBySlot(slot, headBlockRoot);
+    final Optional<Bytes32> recentRoot =
+        recentChainData.getBlockRootInEffectBySlot(slot, headBlockRoot);
     if (recentRoot.isPresent()) {
-      return getBlockByBlockRoot(recentRoot.get());
+      return getBlockByBlockRoot(recentRoot.get())
+          .thenApply(maybeBlock -> maybeBlock.filter(block -> block.getSlot().equals(slot)));
     }
 
-    return historicalChainData.getLatestFinalizedBlockAtSlot(slot);
+    return historicalChainData.getFinalizedBlockAtSlot(slot);
   }
 
   public SafeFuture<Optional<SignedBeaconBlock>> getBlockInEffectAtSlot(final UInt64 slot) {
@@ -135,12 +133,16 @@ public class CombinedChainDataClient {
     }
 
     // Try to pull root from recent data
-    final Optional<Bytes32> recentRoot = recentChainData.getBlockRootBySlot(slot);
+    final Optional<Bytes32> recentRoot = recentChainData.getBlockRootInEffectBySlot(slot);
     if (recentRoot.isPresent()) {
       return getBlockByBlockRoot(recentRoot.get());
     }
 
     return historicalChainData.getLatestFinalizedBlockAtSlot(slot);
+  }
+
+  public SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockAtSlotExact(final UInt64 slot) {
+    return historicalChainData.getFinalizedBlockAtSlot(slot);
   }
 
   public SafeFuture<Optional<SignedBeaconBlock>> getFinalizedBlockInEffectAtSlot(
@@ -194,13 +196,13 @@ public class CombinedChainDataClient {
 
   private SafeFuture<List<BlobSidecar>> getBlobSidecars(
       final Stream<SlotAndBlockRootAndBlobIndex> keys) {
-    return SafeFuture.collectAll(keys.map(this::getBlobSidecarByKey))
+    return SafeFuture.collectAll(keys.map(this::getAllBlobSidecarByKey))
         .thenApply(
             blobSidecars -> blobSidecars.stream().flatMap(Optional::stream).collect(toList()));
   }
 
   public SafeFuture<Optional<BeaconState>> getStateAtSlotExact(final UInt64 slot) {
-    final Optional<Bytes32> recentBlockRoot = recentChainData.getBlockRootBySlot(slot);
+    final Optional<Bytes32> recentBlockRoot = recentChainData.getBlockRootInEffectBySlot(slot);
     if (recentBlockRoot.isPresent()) {
       return getStore()
           .retrieveStateAtSlot(new SlotAndBlockRoot(slot, recentBlockRoot.get()))
@@ -216,7 +218,8 @@ public class CombinedChainDataClient {
 
   public SafeFuture<Optional<BeaconState>> getStateAtSlotExact(
       final UInt64 slot, final Bytes32 chainHead) {
-    final Optional<Bytes32> recentBlockRoot = recentChainData.getBlockRootBySlot(slot, chainHead);
+    final Optional<Bytes32> recentBlockRoot =
+        recentChainData.getBlockRootInEffectBySlot(slot, chainHead);
     if (recentBlockRoot.isPresent()) {
       return getStore()
           .retrieveStateAtSlot(new SlotAndBlockRoot(slot, recentBlockRoot.get()))
@@ -553,15 +556,6 @@ public class CombinedChainDataClient {
     return historicalChainData.getBlobSidecarKeys(startSlot, endSlot, limit);
   }
 
-  private boolean isRecentData(final UInt64 slot) {
-    checkNotNull(slot);
-    if (recentChainData.isPreGenesis()) {
-      return false;
-    }
-    final UInt64 finalizedSlot = getStore().getLatestFinalizedBlockSlot();
-    return slot.compareTo(finalizedSlot) >= 0;
-  }
-
   public Optional<UInt64> getFinalizedBlockSlot() {
     if (recentChainData.isPreGenesis()) {
       return Optional.empty();
@@ -642,6 +636,29 @@ public class CombinedChainDataClient {
 
   public RecentChainData getRecentChainData() {
     return recentChainData;
+  }
+
+  private SafeFuture<Optional<BlobSidecar>> getAllBlobSidecarByKey(
+      final SlotAndBlockRootAndBlobIndex key) {
+    return historicalChainData
+        .getBlobSidecar(key)
+        .thenCompose(
+            maybeBlobSidecar -> {
+              if (maybeBlobSidecar.isPresent()) {
+                return SafeFuture.completedFuture(maybeBlobSidecar);
+              } else {
+                return historicalChainData.getNonCanonicalBlobSidecar(key);
+              }
+            });
+  }
+
+  private boolean isRecentData(final UInt64 slot) {
+    checkNotNull(slot);
+    if (recentChainData.isPreGenesis()) {
+      return false;
+    }
+    final UInt64 finalizedSlot = getStore().getLatestFinalizedBlockSlot();
+    return slot.compareTo(finalizedSlot) >= 0;
   }
 
   private boolean isCanonicalBlockCalculated(

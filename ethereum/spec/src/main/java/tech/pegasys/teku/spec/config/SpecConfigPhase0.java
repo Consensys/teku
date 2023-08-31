@@ -105,6 +105,7 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final int maxChunkSize;
   private final int maxRequestBlocks;
   private final int epochsPerSubnetSubscription;
+  private final int minEpochsForBlockRequests;
   private final int ttfbTimeout;
   private final int respTimeout;
   private final int attestationPropagationSlotRange;
@@ -171,6 +172,7 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int maxChunkSize,
       final int maxRequestBlocks,
       final int epochsPerSubnetSubscription,
+      final int minEpochsForBlockRequests,
       final int ttfbTimeout,
       final int respTimeout,
       final int attestationPropagationSlotRange,
@@ -236,6 +238,7 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.maxChunkSize = maxChunkSize;
     this.maxRequestBlocks = maxRequestBlocks;
     this.epochsPerSubnetSubscription = epochsPerSubnetSubscription;
+    this.minEpochsForBlockRequests = minEpochsForBlockRequests;
     this.ttfbTimeout = ttfbTimeout;
     this.respTimeout = respTimeout;
     this.attestationPropagationSlotRange = attestationPropagationSlotRange;
@@ -541,6 +544,11 @@ public class SpecConfigPhase0 implements SpecConfig {
   @Override
   public int getEpochsPerSubnetSubscription() {
     return epochsPerSubnetSubscription;
+  }
+
+  @Override
+  public int getMinEpochsForBlockRequests() {
+    return minEpochsForBlockRequests;
   }
 
   @Override
