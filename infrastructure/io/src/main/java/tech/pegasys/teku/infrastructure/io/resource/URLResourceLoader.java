@@ -25,6 +25,7 @@ import java.util.Base64;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.zip.GZIPInputStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -62,13 +63,19 @@ public class URLResourceLoader extends ResourceLoader {
       connection.setConnectTimeout(timeoutMillis);
       connection.setReadTimeout(timeoutMillis);
       acceptHeader.ifPresent(type -> connection.setRequestProperty("Accept", type));
+      connection.setRequestProperty("Accept-Encoding", "gzip");
       if (url.getUserInfo() != null) {
         final String credentials =
             Base64.getEncoder().encodeToString(url.getUserInfo().getBytes(UTF_8));
         connection.setRequestProperty("Authorization", "Basic " + credentials);
       }
       connection.connect();
-      return Optional.of(connection.getInputStream());
+      final String encoding = connection.getHeaderField("Content-Encoding");
+      InputStream stream = connection.getInputStream();
+      if ("gzip".equalsIgnoreCase(encoding)) {
+        stream = new GZIPInputStream(stream);
+      }
+      return Optional.of(stream);
     } catch (final SocketTimeoutException | ConnectException e) {
       throw e;
     } catch (final Exception e) {

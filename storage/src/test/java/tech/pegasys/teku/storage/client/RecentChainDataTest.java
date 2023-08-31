@@ -617,7 +617,7 @@ class RecentChainDataTest {
     finalizeBlock(recentChainData, finalizedEpoch, finalizedBlock);
     advanceBestBlock(recentChainData);
 
-    assertThat(recentChainData.getBlockRootBySlot(targetSlot)).isEmpty();
+    assertThat(recentChainData.getBlockRootInEffectBySlot(targetSlot)).isEmpty();
   }
 
   @Test
@@ -635,7 +635,8 @@ class RecentChainDataTest {
     finalizeBlock(recentChainData, finalizedEpoch, finalizedBlock);
     advanceBestBlock(recentChainData);
 
-    assertThat(recentChainData.getBlockRootBySlot(targetSlot)).contains(historicalBlock.getRoot());
+    assertThat(recentChainData.getBlockRootInEffectBySlot(targetSlot))
+        .contains(historicalBlock.getRoot());
   }
 
   @Test
@@ -643,7 +644,7 @@ class RecentChainDataTest {
     initPostGenesis();
     final SignedBlockAndState bestBlock = advanceBestBlock(recentChainData);
 
-    assertThat(recentChainData.getBlockRootBySlot(bestBlock.getSlot()))
+    assertThat(recentChainData.getBlockRootInEffectBySlot(bestBlock.getSlot()))
         .contains(bestBlock.getRoot());
   }
 
@@ -653,7 +654,7 @@ class RecentChainDataTest {
     final SignedBlockAndState targetBlock = advanceBestBlock(recentChainData);
     advanceBestBlock(recentChainData);
 
-    assertThat(recentChainData.getBlockRootBySlot(targetBlock.getSlot()))
+    assertThat(recentChainData.getBlockRootInEffectBySlot(targetBlock.getSlot()))
         .contains(targetBlock.getRoot());
   }
 
@@ -663,7 +664,8 @@ class RecentChainDataTest {
     final SignedBlockAndState bestBlock = advanceBestBlock(recentChainData);
 
     final UInt64 targetSlot = bestBlock.getSlot().plus(ONE);
-    assertThat(recentChainData.getBlockRootBySlot(targetSlot)).contains(bestBlock.getRoot());
+    assertThat(recentChainData.getBlockRootInEffectBySlot(targetSlot))
+        .contains(bestBlock.getRoot());
   }
 
   @Test
@@ -707,14 +709,14 @@ class RecentChainDataTest {
     // Check slots that should be unavailable
     for (int i = 0; i < finalizedBlockSlot.intValue(); i++) {
       final UInt64 targetSlot = UInt64.valueOf(i);
-      assertThat(recentChainData.getBlockRootBySlot(targetSlot)).isEmpty();
+      assertThat(recentChainData.getBlockRootInEffectBySlot(targetSlot)).isEmpty();
     }
     // Check slots that should be available
     for (int i = finalizedBlockSlot.intValue(); i <= bestBlock.getSlot().intValue(); i++) {
       final UInt64 targetSlot = UInt64.valueOf(i);
       final SignedBlockAndState expectedResult =
           chainBuilder.getLatestBlockAndStateAtSlot(targetSlot);
-      final Optional<Bytes32> result = recentChainData.getBlockRootBySlot(targetSlot);
+      final Optional<Bytes32> result = recentChainData.getBlockRootInEffectBySlot(targetSlot);
       assertThat(result)
           .withFailMessage(
               "Expected root at slot %s to be %s (%s) but was %s",
@@ -729,7 +731,8 @@ class RecentChainDataTest {
     final SignedBlockAndState targetBlock = advanceBestBlock(recentChainData);
     final SignedBlockAndState bestBlock = advanceBestBlock(recentChainData);
 
-    assertThat(recentChainData.getBlockRootBySlot(bestBlock.getSlot(), targetBlock.getRoot()))
+    assertThat(
+            recentChainData.getBlockRootInEffectBySlot(bestBlock.getSlot(), targetBlock.getRoot()))
         .contains(targetBlock.getRoot());
   }
 
@@ -739,7 +742,7 @@ class RecentChainDataTest {
     final Bytes32 headRoot = dataStructureUtil.randomBytes32();
     final SignedBlockAndState bestBlock = advanceBestBlock(recentChainData);
 
-    assertThat(recentChainData.getBlockRootBySlot(bestBlock.getSlot(), headRoot)).isEmpty();
+    assertThat(recentChainData.getBlockRootInEffectBySlot(bestBlock.getSlot(), headRoot)).isEmpty();
   }
 
   @Test
@@ -769,7 +772,7 @@ class RecentChainDataTest {
         assertThat(expectedBlock)
             .isNotEqualTo(chainBuilder.getLatestBlockAndStateAtSlot(targetSlot));
       }
-      assertThat(recentChainData.getBlockRootBySlot(targetSlot, headRoot))
+      assertThat(recentChainData.getBlockRootInEffectBySlot(targetSlot, headRoot))
           .contains(expectedBlock.getRoot());
     }
   }

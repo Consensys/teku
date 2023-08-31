@@ -42,13 +42,14 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class GetBlobSidecarsIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
   @BeforeEach
   public void beforeEach() {
-    startRestAPIAtGenesis(SpecMilestone.DENEB);
+    startRestApiAtGenesisStoringNonCanonicalBlocks(SpecMilestone.DENEB);
   }
 
   @Test
@@ -136,6 +137,43 @@ public class GetBlobSidecarsIntegrationTest extends AbstractDataBackedRestAPIInt
 
     final List<BlobSidecar> result = parseBlobSidecarsFromSsz(response);
     assertThat(result).isEmpty();
+  }
+
+  @Test
+  public void shouldGetNonCanonicalBlobSidecarsByRoot() throws IOException {
+    chainUpdater.blockOptions.setGenerateRandomBlobs(true);
+    chainUpdater.blockOptions.setGenerateRandomBlobsCount(Optional.of(4));
+
+    createBlocksAtSlots(10);
+
+    final ChainBuilder fork = chainBuilder.fork();
+    final SignedBlockAndState nonCanonicalBlock = fork.generateNextBlock(chainUpdater.blockOptions);
+
+    final List<BlobSidecar> nonCanonicalBlobSidecars =
+        fork.getBlobSidecars(nonCanonicalBlock.getRoot());
+    chainUpdater.saveBlock(nonCanonicalBlock, nonCanonicalBlobSidecars);
+
+    final SignedBlockAndState canonicalBlock =
+        chainBuilder.generateNextBlock(1, chainUpdater.blockOptions);
+    chainUpdater.saveBlock(canonicalBlock, chainBuilder.getBlobSidecars(canonicalBlock.getRoot()));
+    chainUpdater.updateBestBlock(canonicalBlock);
+
+    final Response byRootResponse =
+        get(
+            nonCanonicalBlock.getRoot().toHexString(),
+            List.of(UInt64.ZERO, UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3)));
+
+    assertThat(byRootResponse.code()).isEqualTo(SC_OK);
+
+    final List<BlobSidecar> byRootBlobSidecars = parseBlobSidecars(byRootResponse);
+    assertThat(byRootBlobSidecars).isEqualTo(nonCanonicalBlobSidecars);
+
+    final Response bySlotResponse =
+        get(
+            nonCanonicalBlock.getSlot().toString(),
+            List.of(UInt64.ZERO, UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3)));
+
+    assertThat(bySlotResponse.code()).isEqualTo(SC_NOT_FOUND);
   }
 
   public Response get(final String blockIdString, final String contentType) throws IOException {

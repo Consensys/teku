@@ -386,7 +386,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     // latest block (when false). If this is a different fork to the previous chain the root at
     // originalChainTipSlot will be different from originalHeadRoot. If it's an extension of the
     // same chain it will match.
-    return getBlockRootBySlot(originalChainTipSlot)
+    return getBlockRootInEffectBySlot(originalChainTipSlot)
         .map(rootAtOldBestSlot -> !rootAtOldBestSlot.equals(originalHeadRoot))
         .orElse(true);
   }
@@ -525,7 +525,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public SafeFuture<Optional<BeaconState>> retrieveStateInEffectAtSlot(final UInt64 slot) {
-    Optional<Bytes32> rootAtSlot = getBlockRootBySlot(slot);
+    Optional<Bytes32> rootAtSlot = getBlockRootInEffectBySlot(slot);
     if (rootAtSlot.isEmpty()) {
       return EmptyStoreResults.EMPTY_STATE_FUTURE;
     }
@@ -547,11 +547,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return store.retrieveEarliestBlobSidecarSlot();
   }
 
-  public Optional<Bytes32> getBlockRootBySlot(final UInt64 slot) {
-    return chainHead.flatMap(head -> getBlockRootBySlot(slot, head.getRoot()));
+  public Optional<Bytes32> getBlockRootInEffectBySlot(final UInt64 slot) {
+    return chainHead.flatMap(head -> getBlockRootInEffectBySlot(slot, head.getRoot()));
   }
 
-  public Optional<Bytes32> getBlockRootBySlot(final UInt64 slot, final Bytes32 headBlockRoot) {
+  public Optional<Bytes32> getBlockRootInEffectBySlot(
+      final UInt64 slot, final Bytes32 headBlockRoot) {
     return getForkChoiceStrategy()
         .flatMap(strategy -> spec.getAncestor(strategy, headBlockRoot, slot));
   }
