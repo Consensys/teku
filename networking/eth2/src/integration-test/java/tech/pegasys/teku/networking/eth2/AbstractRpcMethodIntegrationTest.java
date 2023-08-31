@@ -256,7 +256,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
             slot ->
                 peerStorage
                     .recentChainData()
-                    .getBlockRootBySlot(slot)
+                    .getBlockRootInEffectBySlot(slot)
                     .map(root -> new SlotAndBlockRoot(slot, root)))
         .flatMap(Optional::stream)
         .map(this::safeRetrieveBlobSidecars)
