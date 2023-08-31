@@ -147,6 +147,11 @@ public class EventLogger {
         error);
   }
 
+  public void executionClientConnectFailure() {
+    error(
+        "Execution Client request failed. " + EXECUTION_CLIENT_READINESS_USER_REMINDER, Color.RED);
+  }
+
   public void executionClientRequestTimedOut() {
     warn(
         "Execution Client request timed out. " + EXECUTION_CLIENT_READINESS_USER_REMINDER,
