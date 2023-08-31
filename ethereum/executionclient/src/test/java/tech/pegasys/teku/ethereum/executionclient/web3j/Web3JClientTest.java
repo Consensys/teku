@@ -166,7 +166,7 @@ public class Web3JClientTest {
 
     Waiter.waitFor(client.doRequest(request, DEFAULT_TIMEOUT));
 
-    verify(eventLog).executionClientRequestFailed(false);
+    verify(eventLog).executionClientRequestFailed(error, false);
 
     Waiter.waitFor(client.doRequest(request, DEFAULT_TIMEOUT));
     verify(eventLog).executionClientRecovered();
