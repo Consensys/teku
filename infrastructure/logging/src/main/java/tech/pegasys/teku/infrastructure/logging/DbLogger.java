@@ -32,13 +32,13 @@ public class DbLogger {
     this.logger = LogManager.getLogger(name);
   }
 
-  public void onDbOpAlertThreshold(String opName, long startTimeNanos, long endTimeNanos) {
-    long duration = endTimeNanos - startTimeNanos;
+  public void onDbOpAlertThreshold(String opName, long startTimeMillis, long endTimeMillis) {
+    long duration = endTimeMillis - startTimeMillis;
     if (dbOpAlertThresholdMillis > 0 && duration >= dbOpAlertThresholdMillis) {
       logger.warn(
           print(
               String.format(
-                  "DB operation %s took too long: %d milliseconds. The alert threshold is set to: %d milliseconds",
+                  "DB operation %s took too long: %d ms. The alert threshold is set to: %d ms",
                   opName, duration, dbOpAlertThresholdMillis),
               Color.YELLOW));
     }
