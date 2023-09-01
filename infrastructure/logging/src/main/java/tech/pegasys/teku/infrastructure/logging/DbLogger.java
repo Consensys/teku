@@ -28,12 +28,13 @@ public class DbLogger {
   @SuppressWarnings("PrivateStaticFinalLoggers")
   private final Logger logger;
 
-  public DbLogger(String name) {
+  public DbLogger(final String name) {
     this.logger = LogManager.getLogger(name);
   }
 
-  public void onDbOpAlertThreshold(String opName, long startTimeMillis, long endTimeMillis) {
-    long duration = endTimeMillis - startTimeMillis;
+  public void onDbOpAlertThreshold(
+      final String opName, final long startTimeMillis, final long endTimeMillis) {
+    final long duration = endTimeMillis - startTimeMillis;
     if (dbOpAlertThresholdMillis > 0 && duration >= dbOpAlertThresholdMillis) {
       logger.warn(
           print(
