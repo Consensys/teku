@@ -15,11 +15,11 @@ package tech.pegasys.teku.infrastructure.ssz.tree;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.crypto.Sha256;
 
 class SimpleLeafNode implements LeafNode, TreeNode {
 
@@ -58,7 +58,7 @@ class SimpleLeafNode implements LeafNode, TreeNode {
   }
 
   @Override
-  public Bytes32 hashTreeRoot(MessageDigest messageDigest) {
+  public Bytes32 hashTreeRoot(Sha256 sha256) {
     Bytes32 cachedHash = this.cachedHash;
     if (cachedHash != null) {
       return cachedHash;
