@@ -979,7 +979,7 @@ public class KvStoreDatabase implements Database {
     }
 
     LOG.trace("Applying hot updates");
-    long startTime = System.nanoTime();
+    long startTime = System.currentTimeMillis();
     try (final HotUpdater updater = hotUpdater()) {
       // Store new hot data
       update.getGenesisTime().ifPresent(updater::setGenesisTime);
@@ -1011,8 +1011,8 @@ public class KvStoreDatabase implements Database {
       updater.commit();
     }
 
-    long endTime = System.nanoTime();
-    DB_LOGGER.onDbOpAlertThreshold("Block Import", startTime, endTime);
+    long endTime = System.currentTimeMillis();
+    DB_LOGGER.onDbOpAlertThreshold("KvStoreDatabase::doUpdate", startTime, endTime);
     LOG.trace("Update complete");
     return new UpdateResult(finalizedOptimisticExecutionPayload);
   }
