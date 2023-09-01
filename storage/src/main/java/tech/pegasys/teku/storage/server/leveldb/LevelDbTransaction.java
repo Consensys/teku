@@ -93,10 +93,10 @@ public class LevelDbTransaction implements KvStoreTransaction {
     applyUpdate(
         () -> {
           try {
-            long startTime = System.nanoTime();
+            long startTime = System.currentTimeMillis();
             db.write(writeBatch);
-            long endTime = System.nanoTime();
-            DB_LOGGER.onDbOpAlertThreshold("Transaction Commit", startTime, endTime);
+            long endTime = System.currentTimeMillis();
+            DB_LOGGER.onDbOpAlertThreshold("LevelDbTransaction::commit", startTime, endTime);
           } finally {
             close();
           }
