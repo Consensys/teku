@@ -157,8 +157,7 @@ public class SszNodeTemplate {
     checkArgument(off == leafPos.getLength());
   }
 
-  public Bytes32 calculateHashTreeRoot(
-      final Bytes ssz, final int offset, final Sha256 messageDigest) {
+  public Bytes32 calculateHashTreeRoot(final Bytes ssz, final int offset, final Sha256 sha256) {
     return binaryTraverse(
         SELF_G_INDEX,
         defaultTree,
@@ -172,7 +171,7 @@ public class SszNodeTemplate {
           @Override
           public Bytes32 visitBranch(
               long gIndex, TreeNode node, Bytes32 leftVisitResult, Bytes32 rightVisitResult) {
-            return Bytes32.wrap(messageDigest.digest(leftVisitResult, rightVisitResult));
+            return Bytes32.wrap(sha256.digest(leftVisitResult, rightVisitResult));
           }
         });
   }
