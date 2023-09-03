@@ -16,6 +16,7 @@ package tech.pegasys.teku.ethereum.executionclient.web3j;
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessageOrSimpleName;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.HashSet;
@@ -27,6 +28,7 @@ import org.web3j.protocol.exceptions.ClientConnectionException;
 import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
@@ -164,7 +166,9 @@ public abstract class Web3JClient {
   }
 
   private void logExecutionClientError(final Throwable error, final boolean couldBeAuthError) {
-    if (error instanceof TimeoutException) {
+    if (ExceptionUtil.hasCause(error, ConnectException.class)) {
+      eventLog.executionClientConnectFailure();
+    } else if (error instanceof TimeoutException) {
       eventLog.executionClientRequestTimedOut();
     } else {
       eventLog.executionClientRequestFailed(error, couldBeAuthError);

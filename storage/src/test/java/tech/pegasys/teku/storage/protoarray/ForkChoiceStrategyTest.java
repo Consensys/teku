@@ -506,7 +506,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
             .getSlot();
 
     final Bytes32 rootToBeInvalidated =
-        recentChainData.getBlockRootBySlot(justifiedSlot.increment()).orElseThrow();
+        recentChainData.getBlockRootInEffectBySlot(justifiedSlot.increment()).orElseThrow();
 
     protoArray.onExecutionPayloadResult(
         rootToBeInvalidated,

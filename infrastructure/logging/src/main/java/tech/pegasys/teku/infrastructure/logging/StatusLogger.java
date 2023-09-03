@@ -56,14 +56,6 @@ public class StatusLogger {
     config.getReport().forEach(log::info);
   }
 
-  public void reportOptimisedBlst() {
-    log.info("Using optimized BLST library");
-  }
-
-  public void warnPortableBlst() {
-    log.info(print("Using portable BLST library.", Color.YELLOW));
-  }
-
   public void warnForkEpochChanged(final String milestoneName, final UInt64 newEpoch) {
     log.warn(
         print(
