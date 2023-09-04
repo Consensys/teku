@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -39,13 +40,12 @@ public class EventSubscriber {
   private final List<EventType> eventTypes;
   private final SseClient sseClient;
   private final Queue<QueuedEvent> queuedEvents;
-  private final Runnable closeCallback;
   private final TimeProvider timeProvider;
   private final int maxPendingEvents;
   private final AtomicBoolean processingQueue;
   private final AsyncRunner asyncRunner;
   private final AtomicLong excessiveQueueingDisconnectionTime = new AtomicLong(Long.MAX_VALUE);
-  private int successiveFailureCounter = 0;
+  private volatile AtomicInteger successiveFailureCounter = new AtomicInteger(0);
 
   public EventSubscriber(
       final List<String> eventTypes,
@@ -56,7 +56,6 @@ public class EventSubscriber {
       final int maxPendingEvents) {
     this.eventTypes = EventType.getTopics(eventTypes);
     this.sseClient = sseClient;
-    this.closeCallback = closeCallback;
     this.timeProvider = timeProvider;
     this.maxPendingEvents = maxPendingEvents;
     this.queuedEvents = new ConcurrentLinkedQueue<>();
@@ -86,8 +85,7 @@ public class EventSubscriber {
       // Had excessive queuing for too long, disconnect.
       if (stopped.compareAndSet(false, true)) {
         LOG.debug("Closing event connection due to exceeding the pending message limit");
-        sseClient.ctx().req().getAsyncContext().complete();
-        closeCallback.run();
+        terminateSseClient();
       }
     } else {
       if (now + EXCESSIVE_QUEUING_TOLERANCE_MS < queuingDisconnectTime) {
@@ -95,6 +93,11 @@ public class EventSubscriber {
       }
       addEventToQueue(eventType, message);
     }
+  }
+
+  private void terminateSseClient() {
+    sseClient.ctx().req().getAsyncContext().complete();
+    sseClient.close();
   }
 
   private void addEventToQueue(final EventType eventType, final EventSource<?> message)
@@ -126,7 +129,7 @@ public class EventSubscriber {
                     new ByteArrayInputStream(event.getMessageData().toArrayUnsafe()));
                 event = queuedEvents.poll();
               }
-              successiveFailureCounter = 0;
+              successiveFailureCounter.set(0);
             })
         .alwaysRun(
             () -> {
@@ -137,17 +140,16 @@ public class EventSubscriber {
             })
         .finish(
             error -> {
-              successiveFailureCounter++;
-              if (error.getCause() instanceof IllegalStateException
-                  && successiveFailureCounter > SANITY_LIMIT) {
+              final int counter = successiveFailureCounter.incrementAndGet();
+              if (error.getCause() instanceof IllegalStateException && counter > SANITY_LIMIT) {
                 LOG.warn(
                     "Failed to process event queue for client {}, terminating connection with {} queued events after {} failed attempts to send events.",
                     sseClient::hashCode,
                     queuedEvents::size,
-                    this::getSuccessiveFailureCounter);
-                sseClient.close();
+                    () -> counter);
+                terminateSseClient();
               } else {
-                if (successiveFailureCounter > 1) {
+                if (counter > 1) {
                   LOG.error(
                       "Failed to process event queue for client {}", sseClient.hashCode(), error);
                 } else {
@@ -156,10 +158,6 @@ public class EventSubscriber {
                 }
               }
             });
-  }
-
-  private int getSuccessiveFailureCounter() {
-    return successiveFailureCounter;
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")

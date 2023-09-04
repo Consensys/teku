@@ -19,7 +19,6 @@ import static org.mockito.Mockito.atMostOnce;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -149,6 +148,10 @@ public class EventSubscriberTest {
   @Test
   void shouldTerminateConnectionIfSendKeepsFailing() throws JsonProcessingException {
     final SseClient failingSseClient = mock(SseClient.class);
+    final Context ctx = mock(Context.class);
+    when(failingSseClient.ctx()).thenReturn(ctx);
+    when(ctx.req()).thenReturn(req);
+    when(req.getAsyncContext()).thenReturn(asyncContext);
     doThrow(new IllegalStateException("computer says no"))
         .when(failingSseClient)
         .sendEvent(any(), any());
@@ -169,7 +172,8 @@ public class EventSubscriberTest {
     for (int i = 0; i <= EventSubscriber.SANITY_LIMIT; i++) {
       asyncRunner.executeQueuedActions();
     }
-    verify(failingSseClient, times(1)).close();
+    verify(asyncContext).complete();
+    verify(failingSseClient).close();
   }
 
   @Test
