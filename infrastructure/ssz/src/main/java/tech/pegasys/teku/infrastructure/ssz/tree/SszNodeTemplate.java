@@ -23,7 +23,6 @@ import static tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil.gIdxRightGInd
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.MutableBytes;
+import tech.pegasys.teku.infrastructure.crypto.Sha256;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 
 /**
@@ -157,8 +157,7 @@ public class SszNodeTemplate {
     checkArgument(off == leafPos.getLength());
   }
 
-  public Bytes32 calculateHashTreeRoot(
-      final Bytes ssz, final int offset, final MessageDigest messageDigest) {
+  public Bytes32 calculateHashTreeRoot(final Bytes ssz, final int offset, final Sha256 sha256) {
     return binaryTraverse(
         SELF_G_INDEX,
         defaultTree,
@@ -172,9 +171,7 @@ public class SszNodeTemplate {
           @Override
           public Bytes32 visitBranch(
               long gIndex, TreeNode node, Bytes32 leftVisitResult, Bytes32 rightVisitResult) {
-            leftVisitResult.update(messageDigest);
-            rightVisitResult.update(messageDigest);
-            return Bytes32.wrap(messageDigest.digest());
+            return Bytes32.wrap(sha256.digest(leftVisitResult, rightVisitResult));
           }
         });
   }
