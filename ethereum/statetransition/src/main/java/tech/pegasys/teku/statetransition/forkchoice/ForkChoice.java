@@ -176,7 +176,18 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                               .getHeadBlockRoot(),
                           forkChoiceUpdatedResult.getPayloadStatus());
                     }))
-        .finish(error -> LOG.error("Failed to update fork choice", error));
+        .finish(
+            error -> {
+              final String errorMessage = "Failed to update fork choice. ";
+              if (error
+                  .getMessage()
+                  .contains(
+                      "Invalid remote response from the execution client: Failed to connect to ")) {
+                LOG.error(errorMessage + error.getMessage());
+              } else {
+                LOG.error(errorMessage, error);
+              }
+            });
   }
 
   public SafeFuture<Boolean> processHead() {
