@@ -64,6 +64,8 @@ public class BlockManager extends Service
       Subscribers.create(true);
 
   private final Optional<BlockImportMetrics> blockImportMetrics;
+  private final boolean isNotifyWhenImported;
+  private final boolean isNotifyWhenValidated;
 
   public BlockManager(
       final RecentChainData recentChainData,
@@ -75,7 +77,9 @@ public class BlockManager extends Service
       final BlockValidator validator,
       final TimeProvider timeProvider,
       final EventLogger eventLogger,
-      final Optional<BlockImportMetrics> blockImportMetrics) {
+      final Optional<BlockImportMetrics> blockImportMetrics,
+      final boolean isNotifyWhenImported,
+      final boolean isNotifyWhenValidated) {
     this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
     this.blobSidecarPool = blobSidecarPool;
@@ -86,6 +90,8 @@ public class BlockManager extends Service
     this.timeProvider = timeProvider;
     this.eventLogger = eventLogger;
     this.blockImportMetrics = blockImportMetrics;
+    this.isNotifyWhenImported = isNotifyWhenImported;
+    this.isNotifyWhenValidated = isNotifyWhenValidated;
   }
 
   @Override
@@ -174,7 +180,9 @@ public class BlockManager extends Service
 
   @Override
   public void onBlockValidated(SignedBeaconBlock block) {
-    notifyReceivedBlockSubscribers(block, recentChainData.isChainHeadOptimistic());
+    if (isNotifyWhenValidated) {
+      notifyReceivedBlockSubscribers(block, recentChainData.isChainHeadOptimistic());
+    }
   }
 
   private void importBlockIgnoringResult(final SignedBeaconBlock block) {
@@ -190,7 +198,13 @@ public class BlockManager extends Service
             () ->
                 handleBlockImport(block, blockImportPerformance)
                     .thenPeek(
-                        result -> lateBlockImportCheck(blockImportPerformance, block, result)));
+                        result -> lateBlockImportCheck(blockImportPerformance, block, result)))
+        .thenPeek(
+            result -> {
+              if (result.isSuccessful() && isNotifyWhenImported) {
+                notifyReceivedBlockSubscribers(block, result.isImportedOptimistically());
+              }
+            });
   }
 
   private Optional<BlockImportResult> propagateInvalidity(final SignedBeaconBlock block) {

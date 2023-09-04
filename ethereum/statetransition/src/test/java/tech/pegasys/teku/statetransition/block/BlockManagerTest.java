@@ -185,7 +185,9 @@ public class BlockManagerTest {
             blockValidator,
             timeProvider,
             eventLogger,
-            Optional.of(mock(BlockImportMetrics.class)));
+            Optional.of(mock(BlockImportMetrics.class)),
+            true,
+            false);
     forwardBlockImportedNotificationsTo(blockManager);
     localChain
         .chainUpdater()
@@ -332,7 +334,9 @@ public class BlockManagerTest {
             mock(BlockValidator.class),
             timeProvider,
             eventLogger,
-            Optional.empty());
+            Optional.empty(),
+            true,
+            false);
     forwardBlockImportedNotificationsTo(blockManager);
     assertThat(blockManager.start()).isCompleted();
 
@@ -1084,6 +1088,8 @@ public class BlockManagerTest {
         mock(BlockValidator.class),
         timeProvider,
         eventLogger,
-        Optional.empty());
+        Optional.empty(),
+        true,
+        false);
   }
 }
