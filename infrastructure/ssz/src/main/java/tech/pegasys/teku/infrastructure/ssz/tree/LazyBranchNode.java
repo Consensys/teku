@@ -14,11 +14,11 @@
 package tech.pegasys.teku.infrastructure.ssz.tree;
 
 import com.google.common.base.Suppliers;
-import java.security.MessageDigest;
 import java.util.function.Supplier;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
+import tech.pegasys.teku.infrastructure.crypto.Sha256;
 
 public class LazyBranchNode implements BranchNode {
   private volatile Bytes32 cachedHash;
@@ -102,19 +102,17 @@ public class LazyBranchNode implements BranchNode {
   }
 
   @Override
-  public Bytes32 hashTreeRoot(MessageDigest messageDigest) {
+  public Bytes32 hashTreeRoot(final Sha256 sha256) {
     Bytes32 cachedHash = this.cachedHash;
     if (cachedHash == null) {
-      leftRoot.update(messageDigest);
-      rightRoot.update(messageDigest);
-      cachedHash = Bytes32.wrap(messageDigest.digest());
+      cachedHash = Bytes32.wrap(sha256.digest(leftRoot, rightRoot));
       this.cachedHash = cachedHash;
     }
     return cachedHash;
   }
 
   @Override
-  public TreeNode updated(TreeUpdates newNodes) {
+  public TreeNode updated(final TreeUpdates newNodes) {
     if (newNodes.isEmpty()) {
       return this;
     } else if (newNodes.isFinal()) {
