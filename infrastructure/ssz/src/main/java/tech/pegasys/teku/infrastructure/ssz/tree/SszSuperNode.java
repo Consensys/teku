@@ -78,7 +78,7 @@ public class SszSuperNode implements TreeNode, LeafDataNode {
   }
 
   @Override
-  public Bytes32 hashTreeRoot(Sha256 sha256) {
+  public Bytes32 hashTreeRoot(final Sha256 sha256) {
     Bytes32 cachedHash = this.cachedHash;
     if (cachedHash == null) {
       cachedHash = calcHashTreeRoot(sha256);
@@ -144,7 +144,7 @@ public class SszSuperNode implements TreeNode, LeafDataNode {
   }
 
   @Override
-  public TreeNode updated(TreeUpdates newNodes) {
+  public TreeNode updated(final TreeUpdates newNodes) {
     if (newNodes.isEmpty()) {
       return this;
     }

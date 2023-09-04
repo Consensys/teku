@@ -61,7 +61,7 @@ public interface BranchNode extends TreeNode {
   BranchNode rebind(boolean left, TreeNode newNode);
 
   @Override
-  default Bytes32 hashTreeRoot(Sha256 sha256) {
+  default Bytes32 hashTreeRoot(final Sha256 sha256) {
     final Bytes32 leftRoot = left().hashTreeRoot(sha256);
     final Bytes32 rightRoot = right().hashTreeRoot(sha256);
     return Bytes32.wrap(sha256.digest(leftRoot, rightRoot));

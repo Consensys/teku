@@ -102,7 +102,7 @@ public class LazyBranchNode implements BranchNode {
   }
 
   @Override
-  public Bytes32 hashTreeRoot(Sha256 sha256) {
+  public Bytes32 hashTreeRoot(final Sha256 sha256) {
     Bytes32 cachedHash = this.cachedHash;
     if (cachedHash == null) {
       cachedHash = Bytes32.wrap(sha256.digest(leftRoot, rightRoot));
@@ -112,7 +112,7 @@ public class LazyBranchNode implements BranchNode {
   }
 
   @Override
-  public TreeNode updated(TreeUpdates newNodes) {
+  public TreeNode updated(final TreeUpdates newNodes) {
     if (newNodes.isEmpty()) {
       return this;
     } else if (newNodes.isFinal()) {

@@ -136,7 +136,7 @@ public interface TreeNode {
    * @see #updated(long, TreeNode)
    * @see #updated(long, Function)
    */
-  default TreeNode updated(TreeUpdates newNodes) {
+  default TreeNode updated(final TreeUpdates newNodes) {
     TreeNode ret = this;
     for (int i = 0; i < newNodes.size(); i++) {
       ret = ret.updated(newNodes.getRelativeGIndex(i), newNodes.getNode(i));
