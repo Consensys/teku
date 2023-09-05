@@ -35,7 +35,6 @@ import io.netty.handler.logging.LogLevel;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
@@ -84,7 +83,7 @@ public class LibP2PNetworkBuilder {
   protected Defaults hostBuilderDefaults = Defaults.None;
   protected Host host;
 
-  protected List<RpcHandler<?, ?, ?>> rpcHandlers;
+  protected List<? extends RpcHandler<?, ?, ?>> rpcHandlers;
   protected PeerManager peerManager;
 
   protected LibP2PNetworkBuilder() {}
@@ -115,10 +114,8 @@ public class LibP2PNetworkBuilder {
         config.getListenPort());
   }
 
-  protected List<RpcHandler<?, ?, ?>> createRpcHandlers() {
-    return rpcMethods.stream()
-        .map(m -> new RpcHandler<>(asyncRunner, m))
-        .collect(Collectors.toList());
+  protected List<? extends RpcHandler<?, ?, ?>> createRpcHandlers() {
+    return rpcMethods.stream().map(m -> new RpcHandler<>(asyncRunner, m)).toList();
   }
 
   protected LibP2PGossipNetwork createGossipNetwork() {

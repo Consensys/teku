@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -176,7 +175,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
                   protoNode.getBestChildIndex().isEmpty()
                       && (includeNonViableHeads || protoArray.nodeIsViableForHead(protoNode)))
           .map(ProtoNode::getBlockData)
-          .collect(Collectors.toList());
+          .toList();
     } finally {
       protoArrayLock.readLock().unlock();
     }
@@ -370,7 +369,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       return protoArray.getNodes().stream()
           .filter(protoNode -> protoNode.getBlockSlot().equals(slot))
           .map(ProtoNode::getBlockRoot)
-          .collect(Collectors.toList());
+          .toList();
     } finally {
       protoArrayLock.readLock().unlock();
     }
@@ -443,9 +442,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   public List<ProtoNodeData> getBlockData() {
     protoArrayLock.readLock().lock();
     try {
-      return protoArray.getNodes().stream()
-          .map(ProtoNode::getBlockData)
-          .collect(Collectors.toList());
+      return protoArray.getNodes().stream().map(ProtoNode::getBlockData).toList();
     } finally {
       protoArrayLock.readLock().unlock();
     }

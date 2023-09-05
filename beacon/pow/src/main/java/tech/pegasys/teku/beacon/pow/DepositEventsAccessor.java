@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beacon.pow;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import org.web3j.abi.EventEncoder;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.methods.request.EthFilter;
@@ -45,7 +44,7 @@ public class DepositEventsAccessor {
                     logs.stream()
                         .map(log -> (Log) log.get())
                         .map(this::convertLogToDepositEventEventResponse)
-                        .collect(Collectors.toList())));
+                        .toList()));
   }
 
   private DepositContract.DepositEventEventResponse convertLogToDepositEventEventResponse(

@@ -17,7 +17,6 @@ import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -63,7 +62,7 @@ public class GenesisHandler implements Eth1EventsChannel {
     final List<DepositWithIndex> deposits =
         event.getDeposits().stream()
             .map(depositUtil::convertDepositEventToOperationDeposit)
-            .collect(Collectors.toList());
+            .toList();
 
     processNewData(event.getBlockHash(), event.getBlockTimestamp(), deposits);
   }

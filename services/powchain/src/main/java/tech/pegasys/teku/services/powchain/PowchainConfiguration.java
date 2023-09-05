@@ -19,7 +19,6 @@ import static tech.pegasys.teku.beacon.pow.DepositSnapshotFileLoader.DEFAULT_SNA
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -136,8 +135,7 @@ public class PowchainConfiguration {
 
     public Builder eth1Endpoints(final List<String> eth1Endpoints) {
       checkNotNull(eth1Endpoints);
-      this.eth1Endpoints =
-          eth1Endpoints.stream().filter(s -> !s.isBlank()).collect(Collectors.toList());
+      this.eth1Endpoints = eth1Endpoints.stream().filter(s -> !s.isBlank()).toList();
       return this;
     }
 

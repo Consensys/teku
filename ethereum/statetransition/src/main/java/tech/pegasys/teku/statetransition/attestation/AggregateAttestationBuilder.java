@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkState;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.spec.Spec;
@@ -75,7 +74,7 @@ class AggregateAttestationBuilder {
                     includedAttestations.stream()
                         .map(ValidatableAttestation::getAttestation)
                         .map(Attestation::getAggregateSignature)
-                        .collect(Collectors.toList()))));
+                        .toList())));
   }
 
   public Collection<ValidatableAttestation> getIncludedAttestations() {

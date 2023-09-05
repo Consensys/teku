@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -163,13 +164,13 @@ public class RocksDbInstanceFactory {
       final Collection<KvStoreColumn<?, ?>> columns,
       final Collection<Bytes> deletedColumns,
       final ColumnFamilyOptions columnFamilyOptions) {
-    List<ColumnFamilyDescriptor> columnDescriptors =
+    final List<ColumnFamilyDescriptor> columnDescriptors =
         Stream.concat(columns.stream().map(KvStoreColumn::getId), deletedColumns.stream())
             .map(id -> new ColumnFamilyDescriptor(id.toArrayUnsafe(), columnFamilyOptions))
-            .collect(Collectors.toList());
+            .collect(Collectors.toCollection(ArrayList::new));
     columnDescriptors.add(
         new ColumnFamilyDescriptor(Schema.DEFAULT_COLUMN_ID.toArrayUnsafe(), columnFamilyOptions));
-    return columnDescriptors;
+    return Collections.unmodifiableList(columnDescriptors);
   }
 
   private static BlockBasedTableConfig createBlockBasedTableConfig(final Cache cache) {

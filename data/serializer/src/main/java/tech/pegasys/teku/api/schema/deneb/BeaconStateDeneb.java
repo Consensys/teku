@@ -18,7 +18,6 @@ import static tech.pegasys.teku.api.schema.SchemaConstants.EXAMPLE_UINT64;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BeaconBlockHeader;
 import tech.pegasys.teku.api.schema.Checkpoint;
@@ -125,9 +124,7 @@ public class BeaconStateDeneb extends BeaconStateAltair {
     this.nextWithdrawalIndex = deneb.getNextWithdrawalIndex();
     this.nextWithdrawalValidatorIndex = deneb.getNextWithdrawalValidatorIndex();
     this.historicalSummaries =
-        deneb.getHistoricalSummaries().stream()
-            .map(HistoricalSummary::new)
-            .collect(Collectors.toList());
+        deneb.getHistoricalSummaries().stream().map(HistoricalSummary::new).toList();
   }
 
   @Override
@@ -172,6 +169,6 @@ public class BeaconStateDeneb extends BeaconStateAltair {
             instance.historicalSummaries.stream()
                 .map(
                     historicalSummary -> historicalSummary.asInternalHistoricalSummary(specVersion))
-                .collect(Collectors.toList())));
+                .toList()));
   }
 }

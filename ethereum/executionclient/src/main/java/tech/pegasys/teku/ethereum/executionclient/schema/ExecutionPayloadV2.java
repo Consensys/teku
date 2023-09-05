@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -85,9 +84,7 @@ public class ExecutionPayloadV2 extends ExecutionPayloadV1 {
         executionPayload.getExtraData(),
         executionPayload.getBaseFeePerGas(),
         executionPayload.getBlockHash(),
-        executionPayload.getTransactions().stream()
-            .map(SszByteListImpl::getBytes)
-            .collect(Collectors.toList()),
+        executionPayload.getTransactions().stream().map(SszByteListImpl::getBytes).toList(),
         withdrawalsList);
   }
 
@@ -102,7 +99,7 @@ public class ExecutionPayloadV2 extends ExecutionPayloadV1 {
                     .map(
                         withdrawalV1 ->
                             createInternalWithdrawal(withdrawalV1, executionPayloadSchema))
-                    .collect(Collectors.toList()));
+                    .toList());
   }
 
   private Withdrawal createInternalWithdrawal(

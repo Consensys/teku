@@ -16,7 +16,6 @@ package tech.pegasys.teku.ethereum.pow.api;
 import static tech.pegasys.teku.ethereum.pow.api.DepositConstants.DEPOSIT_CONTRACT_TREE_DEPTH;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
@@ -93,7 +92,7 @@ public class DepositTreeSnapshot
 
   public List<Bytes32> getFinalized() {
     final SszList<SszBytes32> value = getAny(0);
-    return value.asList().stream().map(SszBytes32::get).collect(Collectors.toList());
+    return value.asList().stream().map(SszBytes32::get).toList();
   }
 
   public Bytes32 getDepositRoot() {

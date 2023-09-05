@@ -55,7 +55,7 @@ public class EventSourceBeaconChainEventAdapter
 
   private final BeaconNodeReadinessManager beaconNodeReadinessManager;
   private final RemoteValidatorApiChannel primaryBeaconNodeApi;
-  private final List<RemoteValidatorApiChannel> failoverBeaconNodeApis;
+  private final List<? extends RemoteValidatorApiChannel> failoverBeaconNodeApis;
   private final OkHttpClient okHttpClient;
   private final ValidatorLogger validatorLogger;
   private final BeaconChainEventAdapter timeBasedEventAdapter;
@@ -64,7 +64,7 @@ public class EventSourceBeaconChainEventAdapter
   public EventSourceBeaconChainEventAdapter(
       final BeaconNodeReadinessManager beaconNodeReadinessManager,
       final RemoteValidatorApiChannel primaryBeaconNodeApi,
-      final List<RemoteValidatorApiChannel> failoverBeaconNodeApis,
+      final List<? extends RemoteValidatorApiChannel> failoverBeaconNodeApis,
       final OkHttpClient okHttpClient,
       final ValidatorLogger validatorLogger,
       final BeaconChainEventAdapter timeBasedEventAdapter,

@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.web3j.protocol.core.DefaultBlockParameterName;
@@ -148,7 +147,7 @@ public class Web3JExecutionEngineClient implements ExecutionEngineClient {
       final List<VersionedHash> blobVersionedHashes,
       final Bytes32 parentBeaconBlockRoot) {
     final List<String> expectedBlobVersionedHashes =
-        blobVersionedHashes.stream().map(VersionedHash::toHexString).collect(Collectors.toList());
+        blobVersionedHashes.stream().map(VersionedHash::toHexString).toList();
     final Request<?, PayloadStatusV1Web3jResponse> web3jRequest =
         new Request<>(
             "engine_newPayloadV3",

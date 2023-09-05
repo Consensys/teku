@@ -19,7 +19,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 
 public abstract class ResourceLoader {
@@ -63,8 +62,7 @@ public abstract class ResourceLoader {
    * @return The first source that can be successfully read
    */
   public Optional<InputStream> load(final String... sources) throws IOException {
-    final List<String> validSources =
-        Arrays.stream(sources).filter(sourceFilter).collect(Collectors.toList());
+    final List<String> validSources = Arrays.stream(sources).filter(sourceFilter).toList();
 
     Optional<InputStream> result = Optional.empty();
     for (String validSource : validSources) {

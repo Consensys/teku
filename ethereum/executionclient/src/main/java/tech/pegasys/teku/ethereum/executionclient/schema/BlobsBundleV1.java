@@ -21,7 +21,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.base.MoreObjects;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes48Deserializer;
@@ -61,24 +60,16 @@ public class BlobsBundleV1 {
 
   public static BlobsBundleV1 fromInternalBlobsBundle(final BlobsBundle blobsBundle) {
     return new BlobsBundleV1(
-        blobsBundle.getCommitments().stream()
-            .map(KZGCommitment::getBytesCompressed)
-            .collect(Collectors.toList()),
-        blobsBundle.getProofs().stream()
-            .map(KZGProof::getBytesCompressed)
-            .collect(Collectors.toList()),
-        blobsBundle.getBlobs().stream()
-            .map(SszByteVectorImpl::getBytes)
-            .collect(Collectors.toList()));
+        blobsBundle.getCommitments().stream().map(KZGCommitment::getBytesCompressed).toList(),
+        blobsBundle.getProofs().stream().map(KZGProof::getBytesCompressed).toList(),
+        blobsBundle.getBlobs().stream().map(SszByteVectorImpl::getBytes).toList());
   }
 
   public BlobsBundle asInternalBlobsBundle(final BlobSchema blobSchema) {
     return new BlobsBundle(
-        commitments.stream().map(KZGCommitment::new).collect(Collectors.toList()),
-        proofs.stream().map(KZGProof::new).collect(Collectors.toList()),
-        blobs.stream()
-            .map(blobBytes -> new Blob(blobSchema, blobBytes))
-            .collect(Collectors.toList()));
+        commitments.stream().map(KZGCommitment::new).toList(),
+        proofs.stream().map(KZGProof::new).toList(),
+        blobs.stream().map(blobBytes -> new Blob(blobSchema, blobBytes)).toList());
   }
 
   @Override
@@ -103,11 +94,9 @@ public class BlobsBundleV1 {
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add(
-            "commitments",
-            commitments.stream().map(this::bytesToBriefString).collect(Collectors.toList()))
-        .add("proofs", proofs.stream().map(this::bytesToBriefString).collect(Collectors.toList()))
-        .add("blobs", blobs.stream().map(this::bytesToBriefString).collect(Collectors.toList()))
+        .add("commitments", commitments.stream().map(this::bytesToBriefString).toList())
+        .add("proofs", proofs.stream().map(this::bytesToBriefString).toList())
+        .add("blobs", blobs.stream().map(this::bytesToBriefString).toList())
         .toString();
   }
 
