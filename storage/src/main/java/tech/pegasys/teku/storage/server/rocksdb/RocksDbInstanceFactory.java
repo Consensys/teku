@@ -163,10 +163,10 @@ public class RocksDbInstanceFactory {
       final Collection<KvStoreColumn<?, ?>> columns,
       final Collection<Bytes> deletedColumns,
       final ColumnFamilyOptions columnFamilyOptions) {
-    List<ColumnFamilyDescriptor> columnDescriptors =
+    final List<ColumnFamilyDescriptor> columnDescriptors =
         Stream.concat(columns.stream().map(KvStoreColumn::getId), deletedColumns.stream())
             .map(id -> new ColumnFamilyDescriptor(id.toArrayUnsafe(), columnFamilyOptions))
-            .toList();
+            .collect(Collectors.toCollection(ArrayList::new));
     columnDescriptors.add(
         new ColumnFamilyDescriptor(Schema.DEFAULT_COLUMN_ID.toArrayUnsafe(), columnFamilyOptions));
     return columnDescriptors;
