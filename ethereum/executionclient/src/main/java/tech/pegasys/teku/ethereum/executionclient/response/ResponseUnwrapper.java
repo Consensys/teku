@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ethereum.executionclient.response;
 
+import java.net.ConnectException;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 
 public class ResponseUnwrapper {
@@ -31,6 +32,10 @@ public class ResponseUnwrapper {
       final String errorMessage =
           String.format(
               "Invalid remote response from the %s: %s", executionType, response.getErrorMessage());
+      if (response.getErrorMessage().contains("Failed to connect")) {
+        throw new InvalidRemoteResponseException(
+            errorMessage, new ConnectException(response.getErrorMessage()));
+      }
       throw new InvalidRemoteResponseException(errorMessage);
     }
     return response.getPayload();
