@@ -48,13 +48,13 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
   private final AtomicBoolean latestPrimaryNodeReadiness = new AtomicBoolean(true);
 
   private final RemoteValidatorApiChannel primaryBeaconNodeApi;
-  private final List<RemoteValidatorApiChannel> failoverBeaconNodeApis;
+  private final List<? extends RemoteValidatorApiChannel> failoverBeaconNodeApis;
   private final ValidatorLogger validatorLogger;
   private final BeaconNodeReadinessChannel beaconNodeReadinessChannel;
 
   public BeaconNodeReadinessManager(
       final RemoteValidatorApiChannel primaryBeaconNodeApi,
-      final List<RemoteValidatorApiChannel> failoverBeaconNodeApis,
+      final List<? extends RemoteValidatorApiChannel> failoverBeaconNodeApis,
       final ValidatorLogger validatorLogger,
       final BeaconNodeReadinessChannel beaconNodeReadinessChannel) {
     this.primaryBeaconNodeApi = primaryBeaconNodeApi;
@@ -67,7 +67,7 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
     return readinessStatusCache.getOrDefault(beaconNodeApi, true);
   }
 
-  public Iterator<RemoteValidatorApiChannel> getFailoversInOrderOfReadiness() {
+  public Iterator<? extends RemoteValidatorApiChannel> getFailoversInOrderOfReadiness() {
     return failoverBeaconNodeApis.stream()
         .sorted(Comparator.comparing(this::isReady).reversed())
         .iterator();

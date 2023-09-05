@@ -18,7 +18,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.BeaconBlockHeader;
 import tech.pegasys.teku.api.schema.BeaconState;
@@ -103,11 +102,9 @@ public class BeaconStatePhase0 extends BeaconState implements State {
       this.previous_epoch_attestations =
           genesisState.getPreviousEpochAttestations().stream()
               .map(PendingAttestation::new)
-              .collect(Collectors.toList());
+              .toList();
       this.current_epoch_attestations =
-          genesisState.getCurrentEpochAttestations().stream()
-              .map(PendingAttestation::new)
-              .collect(Collectors.toList());
+          genesisState.getCurrentEpochAttestations().stream().map(PendingAttestation::new).toList();
     } else {
       this.previous_epoch_attestations = null;
       this.current_epoch_attestations = null;
@@ -131,7 +128,7 @@ public class BeaconStatePhase0 extends BeaconState implements State {
                               pendingAttestation ->
                                   pendingAttestation.asInternalPendingAttestation(
                                       pendingAttestationSchema))
-                          .collect(Collectors.toList()));
+                          .toList());
               mutableState
                   .getCurrentEpochAttestations()
                   .setAll(
@@ -140,7 +137,7 @@ public class BeaconStatePhase0 extends BeaconState implements State {
                               pendingAttestation ->
                                   pendingAttestation.asInternalPendingAttestation(
                                       pendingAttestationSchema))
-                          .collect(Collectors.toList()));
+                          .toList());
             });
   }
 

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.api.response.v1;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @SuppressWarnings("JavaCase")
 public enum EventType {
@@ -29,6 +28,6 @@ public enum EventType {
   bls_to_execution_change;
 
   public static List<EventType> getTopics(List<String> topics) {
-    return topics.stream().map(EventType::valueOf).collect(Collectors.toList());
+    return topics.stream().map(EventType::valueOf).toList();
   }
 }

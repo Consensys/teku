@@ -19,7 +19,6 @@ import com.google.common.base.Suppliers;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes48;
 import org.apache.tuweni.ssz.SSZ;
@@ -52,8 +51,7 @@ public final class BLSPublicKey {
   public static BLSPublicKey aggregate(List<BLSPublicKey> publicKeys) {
     return new BLSPublicKey(
         BLS.getBlsImpl()
-            .aggregatePublicKeys(
-                publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList())));
+            .aggregatePublicKeys(publicKeys.stream().map(BLSPublicKey::getPublicKey).toList()));
   }
 
   public static BLSPublicKey fromSSZBytes(Bytes bytes) {

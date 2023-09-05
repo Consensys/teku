@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -89,7 +88,7 @@ public class EngineCapabilitiesMonitor implements SlotEventsChannel {
               final List<String> missingEngineCapabilities =
                   capabilities.stream()
                       .filter(capability -> !engineCapabilities.contains(capability))
-                      .collect(Collectors.toList());
+                      .toList();
               if (!missingEngineCapabilities.isEmpty()) {
                 eventLogger.missingEngineApiCapabilities(missingEngineCapabilities);
               }

@@ -21,7 +21,6 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class Deposit {
@@ -32,7 +31,7 @@ public class Deposit {
   public final DepositData data;
 
   public Deposit(tech.pegasys.teku.spec.datastructures.operations.Deposit deposit) {
-    this.proof = deposit.getProof().streamUnboxed().collect(Collectors.toList());
+    this.proof = deposit.getProof().streamUnboxed().toList();
     this.data = new DepositData(deposit.getData());
   }
 

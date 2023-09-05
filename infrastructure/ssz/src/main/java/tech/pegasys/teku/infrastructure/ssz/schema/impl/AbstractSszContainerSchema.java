@@ -27,7 +27,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
@@ -84,13 +83,14 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   private final String containerName;
   private final List<String> childrenNames = new ArrayList<>();
   private final Object2IntMap<String> childrenNamesToFieldIndex = new Object2IntOpenHashMap<>();
-  private final List<SszSchema<?>> childrenSchemas;
+  private final List<? extends SszSchema<?>> childrenSchemas;
   private final TreeNode defaultTree;
   private final long treeWidth;
   private final int fixedPartSize;
   private final DeserializableTypeDefinition<C> jsonTypeDefinition;
 
-  protected AbstractSszContainerSchema(String name, List<NamedSchema<?>> childrenSchemas) {
+  protected AbstractSszContainerSchema(
+      String name, List<? extends NamedSchema<?>> childrenSchemas) {
     this.containerName = name;
     for (int i = 0; i < childrenSchemas.size(); i++) {
       final NamedSchema<?> childSchema = childrenSchemas.get(i);
@@ -101,8 +101,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
       childrenNamesToFieldIndex.put(childSchema.getName(), i);
       childrenNames.add(childSchema.getName());
     }
-    this.childrenSchemas =
-        childrenSchemas.stream().map(NamedSchema::getSchema).collect(Collectors.toList());
+    this.childrenSchemas = childrenSchemas.stream().map(NamedSchema::getSchema).toList();
     this.defaultTree = createDefaultTree();
     this.treeWidth = SszContainerSchema.super.treeWidth();
     this.fixedPartSize = calcSszFixedPartSize();
@@ -126,8 +125,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   @Override
   public TreeNode createTreeFromFieldValues(List<? extends SszData> fieldValues) {
     checkArgument(fieldValues.size() == getFieldsCount(), "Wrong number of filed values");
-    return TreeUtil.createTree(
-        fieldValues.stream().map(SszData::getBackingNode).collect(Collectors.toList()));
+    return TreeUtil.createTree(fieldValues.stream().map(SszData::getBackingNode).toList());
   }
 
   @Override
@@ -245,7 +243,7 @@ public abstract class AbstractSszContainerSchema<C extends SszContainer>
   }
 
   @Override
-  public List<SszSchema<?>> getFieldSchemas() {
+  public List<? extends SszSchema<?>> getFieldSchemas() {
     return childrenSchemas;
   }
 

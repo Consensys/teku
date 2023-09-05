@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -73,7 +72,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
   private final BeaconNodeReadinessManager beaconNodeReadinessManager;
   private final RemoteValidatorApiChannel primaryDelegate;
-  private final List<RemoteValidatorApiChannel> failoverDelegates;
+  private final List<? extends RemoteValidatorApiChannel> failoverDelegates;
   private final boolean failoversSendSubnetSubscriptions;
   private final boolean failoversPublishSignedDuties;
   private final LabelledMetric<Counter> failoverBeaconNodesRequestsCounter;
@@ -81,7 +80,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   public FailoverValidatorApiHandler(
       final BeaconNodeReadinessManager beaconNodeReadinessManager,
       final RemoteValidatorApiChannel primaryDelegate,
-      final List<RemoteValidatorApiChannel> failoverDelegates,
+      final List<? extends RemoteValidatorApiChannel> failoverDelegates,
       final boolean failoversSendSubnetSubscriptions,
       final boolean failoversPublishSignedDuties,
       final MetricsSystem metricsSystem) {
@@ -322,7 +321,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
                 failover ->
                     runRequest(failover, request, method)
                         .catchAndRethrow(throwable -> capturedExceptions.put(failover, throwable)))
-            .collect(Collectors.toList());
+            .toList();
     if (!beaconNodeReadinessManager.isReady(primaryDelegate)) {
       LOG.debug(
           "Remote request ({}) will NOT be sent to the primary Beacon Node {} because it is NOT ready. Will try to use a response from a failover.",
@@ -399,7 +398,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       final ValidatorApiChannelRequest<T> request,
       final String method,
       final Map<RemoteValidatorApiChannel, Throwable> capturedExceptions) {
-    final Iterator<RemoteValidatorApiChannel> failoverDelegates =
+    final Iterator<? extends RemoteValidatorApiChannel> failoverDelegates =
         beaconNodeReadinessManager.getFailoversInOrderOfReadiness();
     return makeRequestToFailoversUntilSuccess(
         failoverDelegates.next(), failoverDelegates, request, method, capturedExceptions);
@@ -407,7 +406,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
   private <T> SafeFuture<T> makeRequestToFailoversUntilSuccess(
       final RemoteValidatorApiChannel currentFailoverDelegate,
-      final Iterator<RemoteValidatorApiChannel> failoverDelegates,
+      final Iterator<? extends RemoteValidatorApiChannel> failoverDelegates,
       final ValidatorApiChannelRequest<T> request,
       final String method,
       final Map<RemoteValidatorApiChannel, Throwable> capturedExceptions) {

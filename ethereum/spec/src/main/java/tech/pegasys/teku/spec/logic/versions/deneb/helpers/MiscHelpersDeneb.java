@@ -18,7 +18,6 @@ import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSI
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
@@ -82,12 +81,8 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
               beaconBlockRoot);
         });
     final List<Bytes> blobs =
-        blobSidecars.stream()
-            .map(BlobSidecar::getBlob)
-            .map(Blob::getBytes)
-            .collect(Collectors.toList());
-    final List<KZGProof> proofs =
-        blobSidecars.stream().map(BlobSidecar::getKZGProof).collect(Collectors.toList());
+        blobSidecars.stream().map(BlobSidecar::getBlob).map(Blob::getBytes).toList();
+    final List<KZGProof> proofs = blobSidecars.stream().map(BlobSidecar::getKZGProof).toList();
 
     return kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, proofs);
   }

@@ -20,7 +20,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -311,7 +310,7 @@ public class BlockOperationSelectorFactory {
                             blobKzgCommitmentsSchema.createFromElements(
                                 blobsBundle.getCommitments().stream()
                                     .map(SszKZGCommitment::new)
-                                    .collect(Collectors.toList())));
+                                    .toList()));
               }
             });
     bodyBuilder.blobKzgCommitments(blobKzgCommitments);
@@ -391,7 +390,7 @@ public class BlockOperationSelectorFactory {
                                   blobsBundle.getBlobs().get(index),
                                   blobsBundle.getCommitments().get(index),
                                   blobsBundle.getProofs().get(index)))
-                      .collect(Collectors.toUnmodifiableList()));
+                      .toList());
     };
   }
 
@@ -416,7 +415,7 @@ public class BlockOperationSelectorFactory {
                                   blindedBlobsBundle.getBlobRoots().get(index).get(),
                                   blindedBlobsBundle.getCommitments().get(index).getKZGCommitment(),
                                   blindedBlobsBundle.getProofs().get(index).getKZGProof()))
-                      .collect(Collectors.toUnmodifiableList()));
+                      .toList());
     };
   }
 

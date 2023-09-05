@@ -28,7 +28,6 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -301,7 +300,7 @@ public class HistoricalBatchFetcher {
     final List<BlobIdentifier> blobIdentifiers =
         IntStream.range(0, requiredBlobSidecars)
             .mapToObj(index -> new BlobIdentifier(blockRoot, UInt64.valueOf(index)))
-            .collect(Collectors.toList());
+            .toList();
     return peer.requestBlobSidecarsByRoot(
         blobIdentifiers,
         blobSidecar -> {

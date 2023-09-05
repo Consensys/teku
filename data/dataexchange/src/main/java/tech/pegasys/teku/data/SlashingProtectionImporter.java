@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.data.slashinginterchange.Metadata;
@@ -97,9 +96,7 @@ public class SlashingProtectionImporter {
 
   private List<SigningHistory> summariseCompleteInterchangeFormat(
       final List<SigningHistory> completeSigningData) {
-    return completeSigningData.stream()
-        .map(this::signingHistoryConverter)
-        .collect(Collectors.toList());
+    return completeSigningData.stream().map(this::signingHistoryConverter).toList();
   }
 
   private SigningHistory signingHistoryConverter(final SigningHistory signingHistory) {

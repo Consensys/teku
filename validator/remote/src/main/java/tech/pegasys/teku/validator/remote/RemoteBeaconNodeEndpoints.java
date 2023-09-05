@@ -18,7 +18,6 @@ import static tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi.convertToOk
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import okhttp3.HttpUrl;
 
 public class RemoteBeaconNodeEndpoints {
@@ -40,6 +39,6 @@ public class RemoteBeaconNodeEndpoints {
   private List<HttpUrl> stripAuthentication(final List<HttpUrl> endpoints) {
     return endpoints.stream()
         .map(endpoint -> endpoint.newBuilder().username("").password("").build())
-        .collect(Collectors.toList());
+        .toList();
   }
 }

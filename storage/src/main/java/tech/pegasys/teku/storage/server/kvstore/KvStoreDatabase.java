@@ -560,7 +560,7 @@ public class KvStoreDatabase implements Database {
     final List<SignedBeaconBlock> sorted =
         blocks.stream()
             .sorted(Comparator.comparing(SignedBeaconBlock::getSlot).reversed())
-            .collect(Collectors.toList());
+            .toList();
 
     // The new block should be just prior to our earliest block if available, and otherwise should
     // match our latest finalized block
@@ -1147,7 +1147,7 @@ public class KvStoreDatabase implements Database {
             .childAndParentRoots(finalizedChildToParentMap)
             .build()
             .preOrderStream()
-            .collect(Collectors.toList());
+            .toList();
 
     int i = 0;
     UInt64 lastSlot = baseBlock.getSlot();

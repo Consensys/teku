@@ -17,7 +17,6 @@ import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uintToByte
 
 import java.math.BigInteger;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -31,9 +30,7 @@ public class MockStartValidatorKeyPairFactory {
           "52435875175126190479447740508185965837690552500527637822603658699938581184513");
 
   public List<BLSKeyPair> generateKeyPairs(final int startIndex, final int endIndex) {
-    return IntStream.range(startIndex, endIndex)
-        .mapToObj(this::createKeyPairForValidator)
-        .collect(Collectors.toList());
+    return IntStream.range(startIndex, endIndex).mapToObj(this::createKeyPairForValidator).toList();
   }
 
   private BLSKeyPair createKeyPairForValidator(final int validatorIndex) {
