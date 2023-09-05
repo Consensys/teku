@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.remote;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -110,8 +111,7 @@ class FailoverValidatorApiHandlerTest {
         List.of(failoverApiChannel1, failoverApiChannel2);
 
     when(beaconNodeReadinessManager.isReady(any())).thenReturn(true);
-    when(beaconNodeReadinessManager.getFailoversInOrderOfReadiness())
-        .thenReturn(failoverDelegates.iterator());
+    doReturn(failoverDelegates).when(beaconNodeReadinessManager).getFailoversInOrderOfReadiness();
 
     when(primaryApiChannel.getEndpoint()).thenReturn(randomHttpUrlGenerator.get());
     when(failoverApiChannel1.getEndpoint()).thenReturn(randomHttpUrlGenerator.get());

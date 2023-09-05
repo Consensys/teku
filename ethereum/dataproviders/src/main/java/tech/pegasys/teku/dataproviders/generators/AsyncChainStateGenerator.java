@@ -153,10 +153,7 @@ class AsyncChainStateGenerator {
         .thenApply(
             blocks -> {
               final List<SignedBeaconBlock> chainBlocks =
-                  blockRoots.stream()
-                      .map(blocks::get)
-                      .filter(Objects::nonNull)
-                      .collect(Collectors.toList());
+                  blockRoots.stream().map(blocks::get).filter(Objects::nonNull).toList();
               if (chainBlocks.size() < blockRoots.size()) {
                 final String missingBlocks =
                     blockRoots.stream()

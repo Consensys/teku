@@ -18,7 +18,6 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -360,7 +359,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
                       return comparisonResult;
                     }
                   })
-              .collect(Collectors.toList());
+              .toList();
 
       // Dequeued validators for activation up to churn limit (without resetting activation epoch)
       int churnLimit = beaconStateAccessors.getValidatorChurnLimit(state).intValue();

@@ -23,7 +23,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
@@ -71,20 +70,12 @@ public class BeaconBlockBody {
     this.eth1_data = new Eth1Data(body.getEth1Data());
     this.graffiti = body.getGraffiti();
     this.proposer_slashings =
-        body.getProposerSlashings().stream()
-            .map(ProposerSlashing::new)
-            .collect(Collectors.toList());
+        body.getProposerSlashings().stream().map(ProposerSlashing::new).toList();
     this.attester_slashings =
-        body.getAttesterSlashings().stream()
-            .map(AttesterSlashing::new)
-            .collect(Collectors.toList());
-    this.attestations =
-        body.getAttestations().stream().map(Attestation::new).collect(Collectors.toList());
-    this.deposits = body.getDeposits().stream().map(Deposit::new).collect(Collectors.toList());
-    this.voluntary_exits =
-        body.getVoluntaryExits().stream()
-            .map(SignedVoluntaryExit::new)
-            .collect(Collectors.toList());
+        body.getAttesterSlashings().stream().map(AttesterSlashing::new).toList();
+    this.attestations = body.getAttestations().stream().map(Attestation::new).toList();
+    this.deposits = body.getDeposits().stream().map(Deposit::new).toList();
+    this.voluntary_exits = body.getVoluntaryExits().stream().map(SignedVoluntaryExit::new).toList();
   }
 
   public tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody

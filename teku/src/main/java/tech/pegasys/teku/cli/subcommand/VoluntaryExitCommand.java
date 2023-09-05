@@ -203,7 +203,7 @@ public class VoluntaryExitCommand implements Callable<Integer> {
       Map<BLSPublicKey, Validator> validatorsMap) {
     final Object2IntMap<BLSPublicKey> validatorIndices = new Object2IntOpenHashMap<>();
     final List<String> publicKeys =
-        validatorsMap.keySet().stream().map(BLSPublicKey::toString).collect(Collectors.toList());
+        validatorsMap.keySet().stream().map(BLSPublicKey::toString).toList();
     for (int i = 0; i < publicKeys.size(); i += MAX_PUBLIC_KEY_BATCH_SIZE) {
       final List<String> batch =
           publicKeys.subList(i, Math.min(publicKeys.size(), i + MAX_PUBLIC_KEY_BATCH_SIZE));
@@ -267,10 +267,7 @@ public class VoluntaryExitCommand implements Callable<Integer> {
   private void initialise() {
     if (validatorPublicKeys != null) {
       this.maybePubKeysToExit =
-          Optional.of(
-              validatorPublicKeys.stream()
-                  .map(BLSPublicKey::fromHexString)
-                  .collect(Collectors.toList()));
+          Optional.of(validatorPublicKeys.stream().map(BLSPublicKey::fromHexString).toList());
     }
     config = tekuConfiguration();
     asyncRunnerFactory =

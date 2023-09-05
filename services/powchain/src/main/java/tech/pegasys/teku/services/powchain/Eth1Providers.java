@@ -39,7 +39,7 @@ public class Eth1Providers {
   }
 
   public static Eth1Providers create(
-      final List<MonitorableEth1Provider> baseProviders,
+      final List<? extends MonitorableEth1Provider> baseProviders,
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
       final MetricsSystem metricsSystem) {

@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -688,7 +687,7 @@ public class CombinedChainDataClient {
                                 isCanonicalBlockCalculated(
                                     block.getSlot(), block.getRoot(), chainHead.getRoot()),
                                 isFinalized(block.getSlot())))
-                    .collect(Collectors.toList()));
+                    .toList());
   }
 
   List<BlockAndMetaData> mergeNonCanonicalAndCanonicalBlocks(
@@ -699,7 +698,7 @@ public class CombinedChainDataClient {
     final List<BlockAndMetaData> result =
         signedBeaconBlocks.stream()
             .map(block -> toBlockAndMetaData(block, chainHead, false, false))
-            .collect(Collectors.toList());
+            .toList();
     canonicalBlock.ifPresent(
         block ->
             result.add(toBlockAndMetaData(block, chainHead, true, isFinalized(block.getSlot()))));

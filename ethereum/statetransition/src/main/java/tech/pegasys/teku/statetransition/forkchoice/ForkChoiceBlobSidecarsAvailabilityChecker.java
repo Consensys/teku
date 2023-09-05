@@ -365,7 +365,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
                 .getBlobKzgCommitments()
                 .stream()
                 .map(SszKZGCommitment::getKZGCommitment)
-                .collect(Collectors.toUnmodifiableList()));
+                .toList());
   }
 
   static Duration calculateCompletionTimeout(final Spec spec, final UInt64 slot) {

@@ -29,7 +29,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -304,7 +303,7 @@ public class ChainDataProvider {
     return getValidatorSelector(state, validators)
         .mapToObj(index -> StateValidatorBalanceData.fromState(state, index))
         .flatMap(Optional::stream)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   public Optional<Bytes32> getStateRootFromBlockRoot(final Bytes32 blockRoot) {

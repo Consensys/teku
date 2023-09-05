@@ -170,6 +170,7 @@ public class BeaconNodeReadinessManagerTest {
 
     assertThat(beaconNodeReadinessManager.getFailoversInOrderOfReadiness())
         .toIterable()
+        .asList()
         .containsExactly(anotherFailover, failoverBeaconNodeApi, yetAnotherFailover);
   }
 

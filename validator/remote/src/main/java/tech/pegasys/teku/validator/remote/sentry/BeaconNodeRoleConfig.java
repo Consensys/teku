@@ -19,7 +19,6 @@ import com.google.common.base.Preconditions;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class BeaconNodeRoleConfig {
@@ -50,7 +49,7 @@ public class BeaconNodeRoleConfig {
   }
 
   public List<URI> getEndpointsAsURIs() {
-    return endpoints.stream().map(URI::create).collect(Collectors.toList());
+    return endpoints.stream().map(URI::create).toList();
   }
 
   public static class Builder {

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.api;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.api.response.v1.config.GetForkScheduleResponse;
 import tech.pegasys.teku.api.response.v1.config.GetSpecResponse;
@@ -49,8 +48,7 @@ public class ConfigProvider {
   }
 
   public GetForkScheduleResponse getForkSchedule() {
-    final List<Fork> forkList =
-        spec.getForkSchedule().getForks().stream().map(Fork::new).collect(Collectors.toList());
+    final List<Fork> forkList = spec.getForkSchedule().getForks().stream().map(Fork::new).toList();
     return new GetForkScheduleResponse(forkList);
   }
 

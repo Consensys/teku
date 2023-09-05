@@ -21,7 +21,6 @@ import java.math.BigInteger;
 import java.nio.ByteOrder;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -74,7 +73,7 @@ public class BlobsUtil {
 
   public List<KZGCommitment> blobsToKzgCommitments(final UInt64 slot, final List<Blob> blobs) {
     final MiscHelpersDeneb miscHelpersDeneb = getMiscHelpers(slot);
-    return blobs.stream().map(miscHelpersDeneb::blobToKzgCommitment).collect(Collectors.toList());
+    return blobs.stream().map(miscHelpersDeneb::blobToKzgCommitment).toList();
   }
 
   public List<KZGProof> computeKzgProofs(
@@ -82,13 +81,11 @@ public class BlobsUtil {
     final MiscHelpersDeneb miscHelpersDeneb = getMiscHelpers(slot);
     return Streams.zip(
             blobs.stream(), kzgCommitments.stream(), miscHelpersDeneb::computeBlobKzgProof)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   public List<Blob> generateBlobs(final UInt64 slot, final int count) {
-    return IntStream.range(0, count)
-        .mapToObj(__ -> generateBlob(slot))
-        .collect(Collectors.toList());
+    return IntStream.range(0, count).mapToObj(__ -> generateBlob(slot)).toList();
   }
 
   private MiscHelpersDeneb getMiscHelpers(final UInt64 slot) {
