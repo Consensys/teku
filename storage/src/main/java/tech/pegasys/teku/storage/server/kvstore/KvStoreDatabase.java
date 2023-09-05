@@ -379,7 +379,6 @@ public class KvStoreDatabase implements Database {
     }
   }
 
-  // TODO: test
   @Override
   public boolean pruneFinalizedBlocks(final UInt64 lastSlotToPrune, final int pruneLimit) {
     final Optional<UInt64> earliestBlockSlot =
