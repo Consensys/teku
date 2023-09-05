@@ -14,13 +14,16 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atMostOnce;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
 import io.javalin.http.sse.SseClient;
 import jakarta.servlet.AsyncContext;
@@ -65,13 +68,13 @@ public class EventSubscriberTest {
 
   @Test
   void shouldGetSseClient() {
-    EventSubscriber eventSubscriber = createSubscriber("head");
+    final EventSubscriber eventSubscriber = createSubscriber("head");
     assertThat(eventSubscriber.getSseClient()).isEqualTo(sseClient);
   }
 
   @Test
   void shouldDisconnectWhenQueueSizeTooBigForTooLong() throws Exception {
-    EventSubscriber eventSubscriber = createSubscriber("head");
+    final EventSubscriber eventSubscriber = createSubscriber("head");
 
     for (int i = 0; i < MAX_PENDING_EVENTS + 1; i++) {
       verify(onCloseCallback, never()).run();
@@ -85,7 +88,7 @@ public class EventSubscriberTest {
 
   @Test
   void shouldNotDisconnectWhenMaxQueueSizeBriefly() throws Exception {
-    EventSubscriber eventSubscriber = createSubscriber("head");
+    final EventSubscriber eventSubscriber = createSubscriber("head");
 
     // Max size exceeded
     for (int i = 0; i < MAX_PENDING_EVENTS + 1; i++) {
@@ -107,7 +110,7 @@ public class EventSubscriberTest {
 
   @Test
   void shouldStopSendingEventsWhenQueueOverflows() throws Exception {
-    EventSubscriber eventSubscriber = createSubscriber("head");
+    final EventSubscriber eventSubscriber = createSubscriber("head");
 
     for (int i = 0; i < MAX_PENDING_EVENTS + 1; i++) {
       verify(onCloseCallback, never()).run();
@@ -124,7 +127,7 @@ public class EventSubscriberTest {
 
   @Test
   void shouldOnlyDisconnectOnce() throws Exception {
-    EventSubscriber eventSubscriber = createSubscriber("head");
+    final EventSubscriber eventSubscriber = createSubscriber("head");
 
     for (int i = 0; i < MAX_PENDING_EVENTS + 1; i++) {
       verify(onCloseCallback, never()).run();
@@ -143,8 +146,39 @@ public class EventSubscriberTest {
   }
 
   @Test
+  void shouldTerminateConnectionIfSendKeepsFailing() throws JsonProcessingException {
+    final SseClient failingSseClient = mock(SseClient.class);
+    final Context ctx = mock(Context.class);
+    when(failingSseClient.ctx()).thenReturn(ctx);
+    when(ctx.req()).thenReturn(req);
+    when(req.getAsyncContext()).thenReturn(asyncContext);
+    doThrow(new IllegalStateException("computer says no"))
+        .when(failingSseClient)
+        .sendEvent(any(), any());
+    final EventSubscriber eventSubscriber =
+        new EventSubscriber(
+            List.of("head"),
+            failingSseClient,
+            onCloseCallback,
+            asyncRunner,
+            timeProvider,
+            MAX_PENDING_EVENTS);
+
+    for (int i = 0; i < MAX_PENDING_EVENTS; i++) {
+      eventSubscriber.onEvent(EventType.head, event("test"));
+    }
+
+    assertThat(asyncRunner.countDelayedActions()).isEqualTo(2);
+    for (int i = 0; i <= EventSubscriber.SANITY_LIMIT; i++) {
+      asyncRunner.executeQueuedActions();
+    }
+    verify(asyncContext).complete();
+    verify(failingSseClient).close();
+  }
+
+  @Test
   void shouldSubscribeToMultipleEventsSuccessfully() throws IOException {
-    EventSubscriber eventSubscriber =
+    final EventSubscriber eventSubscriber =
         createSubscriber(allEventTypes.stream().map(EventType::name).toArray(String[]::new));
     for (EventType eventType : allEventTypes) {
       eventSubscriber.onEvent(eventType, event("test"));
@@ -157,7 +191,7 @@ public class EventSubscriberTest {
 
   @Test
   void shouldNotDisconnectIfQueueProcessingCatchesUp() throws IOException {
-    EventSubscriber eventSubscriber = createSubscriber("head");
+    final EventSubscriber eventSubscriber = createSubscriber("head");
 
     for (int i = 0; i < MAX_PENDING_EVENTS; i++) {
       eventSubscriber.onEvent(EventType.head, event("test"));
@@ -175,7 +209,7 @@ public class EventSubscriberTest {
   @ParameterizedTest
   @EnumSource(EventType.class)
   void shouldNotSendEventsIfNotSubscribed(final EventType eventType) throws Exception {
-    EventSubscriber subscriber = createSubscriber(eventType.name());
+    final EventSubscriber subscriber = createSubscriber(eventType.name());
     for (EventType val : allEventTypes) {
       if (val.compareTo(eventType) != 0) {
         subscriber.onEvent(val, event("test"));
@@ -191,7 +225,7 @@ public class EventSubscriberTest {
   @ParameterizedTest
   @EnumSource(EventType.class)
   void shouldSendEventsIfSubscribed(final EventType eventType) throws IOException {
-    EventSubscriber subscriber = createSubscriber(eventType.name());
+    final EventSubscriber subscriber = createSubscriber(eventType.name());
 
     subscriber.onEvent(eventType, event("test"));
 

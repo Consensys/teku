@@ -18,4 +18,8 @@ public class InvalidRemoteResponseException extends RuntimeException {
   public InvalidRemoteResponseException(final String message) {
     super(message);
   }
+
+  public InvalidRemoteResponseException(final String message, final Throwable cause) {
+    super(message, cause);
+  }
 }
