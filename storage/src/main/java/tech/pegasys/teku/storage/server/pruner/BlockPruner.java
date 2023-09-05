@@ -36,6 +36,7 @@ public class BlockPruner extends Service {
   private final Database database;
   private final AsyncRunner asyncRunner;
   private final Duration pruneInterval;
+  private final int pruneLimit;
   private final SettableLabelledGauge pruningTimingsLabelledGauge;
   private final SettableLabelledGauge pruningActiveLabelledGauge;
   private final String pruningMetricsType;
@@ -47,6 +48,7 @@ public class BlockPruner extends Service {
       final Database database,
       final AsyncRunner asyncRunner,
       final Duration pruneInterval,
+      final int pruneLimit,
       final String pruningMetricsType,
       final SettableLabelledGauge pruningTimingsLabelledGauge,
       final SettableLabelledGauge pruningActiveLabelledGauge) {
@@ -57,6 +59,7 @@ public class BlockPruner extends Service {
     this.pruningMetricsType = pruningMetricsType;
     this.pruningTimingsLabelledGauge = pruningTimingsLabelledGauge;
     this.pruningActiveLabelledGauge = pruningActiveLabelledGauge;
+    this.pruneLimit = pruneLimit;
   }
 
   @Override
@@ -100,8 +103,16 @@ public class BlockPruner extends Service {
     }
     LOG.info("Pruning finalized blocks before slot {}", earliestSlotToKeep);
     try {
-      database.pruneFinalizedBlocks(earliestSlotToKeep.decrement());
-      LOG.info("Finalized blocks before slot {} have been pruned.", earliestSlotToKeep);
+      final boolean allPruned =
+          database.pruneFinalizedBlocks(earliestSlotToKeep.decrement(), pruneLimit);
+      if (allPruned) {
+        LOG.info("Finalized blocks before slot {} have been pruned.", earliestSlotToKeep);
+      } else {
+        LOG.info(
+            "{} finalized blocks before slot {} have been pruned, pruning not finished.",
+            pruneLimit,
+            earliestSlotToKeep);
+      }
     } catch (ShuttingDownException | RejectedExecutionException ex) {
       LOG.debug("Shutting down", ex);
     }

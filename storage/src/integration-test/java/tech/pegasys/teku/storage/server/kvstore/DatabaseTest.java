@@ -2143,7 +2143,9 @@ public class DatabaseTest {
     justifyAndFinalizeEpoch(
         spec.computeEpochAtSlot(finalizedBlock.getSlot()).plus(1), finalizedBlock);
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(6))).isPresent();
-    database.pruneFinalizedBlocks(UInt64.valueOf(3));
+
+    final boolean allPruned1 = database.pruneFinalizedBlocks(UInt64.valueOf(3), 100);
+    assertThat(allPruned1).isTrue();
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(0))).isEmpty();
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(1))).isEmpty();
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(2))).isEmpty();
@@ -2152,10 +2154,14 @@ public class DatabaseTest {
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(5))).isPresent();
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(6))).isPresent();
 
-    database.pruneFinalizedBlocks(UInt64.valueOf(5));
+    final boolean allPruned2 = database.pruneFinalizedBlocks(UInt64.valueOf(5), 1);
+    assertThat(allPruned2).isFalse();
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(4))).isEmpty();
-    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(5))).isEmpty();
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(5))).isPresent();
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(6))).isPresent();
+
+    final boolean allPruned3 = database.pruneFinalizedBlocks(UInt64.valueOf(4), 1);
+    assertThat(allPruned3).isTrue();
   }
 
   private List<Map.Entry<Bytes32, UInt64>> getFinalizedStateRootsList() {
