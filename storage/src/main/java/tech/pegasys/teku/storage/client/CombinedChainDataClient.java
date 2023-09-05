@@ -695,14 +695,14 @@ public class CombinedChainDataClient {
       final ChainHead chainHead,
       final Optional<SignedBeaconBlock> canonicalBlock) {
     verifyNotNull(signedBeaconBlocks, "Expected empty set but got null");
-    final List<BlockAndMetaData> result =
-        signedBeaconBlocks.stream()
-            .map(block -> toBlockAndMetaData(block, chainHead, false, false))
-            .toList();
-    canonicalBlock.ifPresent(
-        block ->
-            result.add(toBlockAndMetaData(block, chainHead, true, isFinalized(block.getSlot()))));
-    return result;
+    return Stream.concat(
+            signedBeaconBlocks.stream()
+                .map(block -> toBlockAndMetaData(block, chainHead, false, false)),
+            canonicalBlock.stream()
+                .map(
+                    block ->
+                        toBlockAndMetaData(block, chainHead, true, isFinalized(block.getSlot()))))
+        .toList();
   }
 
   private BlockAndMetaData toBlockAndMetaData(
