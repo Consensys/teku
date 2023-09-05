@@ -111,7 +111,9 @@ class FailoverValidatorApiHandlerTest {
         List.of(failoverApiChannel1, failoverApiChannel2);
 
     when(beaconNodeReadinessManager.isReady(any())).thenReturn(true);
-    doReturn(failoverDelegates).when(beaconNodeReadinessManager).getFailoversInOrderOfReadiness();
+    doReturn(failoverDelegates.iterator())
+        .when(beaconNodeReadinessManager)
+        .getFailoversInOrderOfReadiness();
 
     when(primaryApiChannel.getEndpoint()).thenReturn(randomHttpUrlGenerator.get());
     when(failoverApiChannel1.getEndpoint()).thenReturn(randomHttpUrlGenerator.get());
