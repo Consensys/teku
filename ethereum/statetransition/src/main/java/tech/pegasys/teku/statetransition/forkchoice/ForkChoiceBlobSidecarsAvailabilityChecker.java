@@ -27,7 +27,6 @@ import java.util.SortedMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -178,7 +177,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
                   blobSidecar ->
                       kzgCommitmentsToValidate.add(
                           kzgCommitmentsInBlock.get(blobSidecar.getIndex().intValue())))
-              .collect(Collectors.toUnmodifiableList());
+              .toList();
 
       LOG.debug(
           "{} out of {} BlobSidecars have been received so far. Performing partial validation.",

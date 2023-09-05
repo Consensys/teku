@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.collect.ImmutableMap;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -169,7 +170,7 @@ public class RocksDbInstanceFactory {
             .collect(Collectors.toCollection(ArrayList::new));
     columnDescriptors.add(
         new ColumnFamilyDescriptor(Schema.DEFAULT_COLUMN_ID.toArrayUnsafe(), columnFamilyOptions));
-    return columnDescriptors;
+    return Collections.unmodifiableList(columnDescriptors);
   }
 
   private static BlockBasedTableConfig createBlockBasedTableConfig(final Cache cache) {

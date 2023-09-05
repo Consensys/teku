@@ -25,7 +25,6 @@ import java.util.Optional;
 import java.util.SortedMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -264,7 +263,7 @@ public class BlockBlobSidecarsTracker {
                         MoreObjects.toStringHelper("")
                             .add("index", entry.getKey())
                             .add("blobSidecar", entry.getValue().toLogString()))
-                .collect(Collectors.toUnmodifiableList()))
+                .toList())
         .toString();
   }
 }
