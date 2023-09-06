@@ -32,7 +32,7 @@ import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import tech.pegasys.teku.benchmarks.gen.BlockIO;
-import tech.pegasys.teku.benchmarks.gen.BlsKeyPairIO;
+import tech.pegasys.teku.benchmarks.gen.KeyFileGenerator;
 import tech.pegasys.teku.benchmarks.util.CustomRunner;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
@@ -102,11 +102,8 @@ public class EpochTransitionBenchmark {
             + "_validators_"
             + validatorsCount
             + ".ssz.gz";
-    String keysFile = "/bls-key-pairs/bls-key-pairs-400k-seed-0.txt.gz";
 
-    System.out.println("Generating keypairs from " + keysFile);
-    List<BLSKeyPair> validatorKeys =
-        BlsKeyPairIO.createReaderForResource(keysFile).readAll(validatorsCount);
+    final List<BLSKeyPair> validatorKeys = KeyFileGenerator.readValidatorKeys(validatorsCount);
 
     final BlockImportNotifications blockImportNotifications = mock(BlockImportNotifications.class);
     epochProcessor = spec.getGenesisSpec().getEpochProcessor();
