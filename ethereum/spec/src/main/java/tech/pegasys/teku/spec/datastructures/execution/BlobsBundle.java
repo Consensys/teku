@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.datastructures.execution;
 import com.google.common.base.MoreObjects;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
@@ -52,15 +51,9 @@ public class BlobsBundle {
 
   public String toBriefString() {
     return MoreObjects.toStringHelper(this)
-        .add(
-            "commitments",
-            commitments.stream()
-                .map(KZGCommitment::toAbbreviatedString)
-                .collect(Collectors.toList()))
-        .add(
-            "proofs",
-            proofs.stream().map(KZGProof::toAbbreviatedString).collect(Collectors.toList()))
-        .add("blobs", blobs.stream().map(Blob::toBriefString).collect(Collectors.toList()))
+        .add("commitments", commitments.stream().map(KZGCommitment::toAbbreviatedString).toList())
+        .add("proofs", proofs.stream().map(KZGProof::toAbbreviatedString).toList())
+        .add("blobs", blobs.stream().map(Blob::toBriefString).toList())
         .toString();
   }
 

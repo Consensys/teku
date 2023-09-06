@@ -463,7 +463,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
                     validatorLivenessAtEpoch.index,
                     validatorLivenessAtEpoch.epoch,
                     validatorLivenessAtEpoch.isLive))
-        .collect(Collectors.toList());
+        .toList();
   }
 
   private SafeFuture<Void> sendRequest(final ExceptionThrowingRunnable requestExecutor) {

@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import okhttp3.OkHttpClient;
@@ -105,7 +104,7 @@ public class PowchainService extends Service {
               serviceConfig.getMetricsSystem());
     } else {
       this.web3js = createWeb3js(powConfig);
-      final List<MonitorableEth1Provider> baseProviders =
+      final List<? extends MonitorableEth1Provider> baseProviders =
           IntStream.range(0, web3js.size())
               .mapToObj(
                   idx ->
@@ -117,7 +116,7 @@ public class PowchainService extends Service {
                           web3js.get(idx),
                           asyncRunner,
                           serviceConfig.getTimeProvider()))
-              .collect(Collectors.toList());
+              .toList();
       eth1Providers =
           Eth1Providers.create(
               baseProviders,
@@ -191,7 +190,7 @@ public class PowchainService extends Service {
   }
 
   private List<Web3j> createWeb3js(final PowchainConfiguration config) {
-    return config.getEth1Endpoints().stream().map(this::createWeb3j).collect(Collectors.toList());
+    return config.getEth1Endpoints().stream().map(this::createWeb3j).toList();
   }
 
   private Web3j createWeb3j(final String endpoint) {

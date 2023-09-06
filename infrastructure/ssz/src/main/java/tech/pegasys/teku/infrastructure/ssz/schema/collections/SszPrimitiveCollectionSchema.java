@@ -35,8 +35,7 @@ public interface SszPrimitiveCollectionSchema<
 
   default SszCollectionT of(List<? extends ElementT> rawElements) {
     SszPrimitiveSchema<ElementT, SszElementT> elementSchema = getPrimitiveElementSchema();
-    return createFromElements(
-        rawElements.stream().map(elementSchema::boxed).collect(Collectors.toList()));
+    return createFromElements(rawElements.stream().map(elementSchema::boxed).toList());
   }
 
   @SuppressWarnings("unchecked")

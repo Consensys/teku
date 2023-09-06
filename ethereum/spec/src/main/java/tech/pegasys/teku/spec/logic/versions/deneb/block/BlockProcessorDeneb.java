@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.logic.versions.deneb.block;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
@@ -96,7 +95,7 @@ public class BlockProcessorDeneb extends BlockProcessorCapella {
         blobKzgCommitments.stream()
             .map(SszKZGCommitment::getKZGCommitment)
             .map(miscHelpers::kzgCommitmentToVersionedHash)
-            .collect(Collectors.toList());
+            .toList();
     final Bytes32 parentBeaconBlockRoot = state.getLatestBlockHeader().getParentRoot();
     return new NewPayloadRequest(executionPayload, versionedHashes, parentBeaconBlockRoot);
   }

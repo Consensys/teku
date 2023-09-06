@@ -22,7 +22,6 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.infrastructure.http.HttpStatusCodes;
@@ -100,7 +99,7 @@ public class PostSubscribeToBeaconCommitteeSubnet extends RestApiEndpoint {
     final List<CommitteeSubscriptionRequest> subscriptionRequests =
         requestBody.stream()
             .map(CommitteeSubscriptionData::toCommitteeSubscriptionRequest)
-            .collect(Collectors.toList());
+            .toList();
     request.respondAsync(
         provider
             .subscribeToBeaconCommittee(subscriptionRequests)

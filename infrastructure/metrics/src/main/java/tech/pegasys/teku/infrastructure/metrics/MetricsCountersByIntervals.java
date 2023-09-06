@@ -75,7 +75,7 @@ public class MetricsCountersByIntervals {
             .map(List::size)
             .sorted(Comparator.reverseOrder())
             .distinct()
-            .collect(Collectors.toUnmodifiableList());
+            .toList();
 
     final String[] labels =
         Stream.concat(customLabelsNames.stream(), Stream.of(INTERVAL_LABEL)).toArray(String[]::new);

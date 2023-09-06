@@ -23,7 +23,6 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
@@ -131,9 +130,7 @@ public class Eth1DataCache {
   }
 
   public Collection<Eth1Data> getAllEth1Blocks() {
-    return this.eth1ChainCache.values().stream()
-        .map(Eth1DataAndHeight::getEth1Data)
-        .collect(Collectors.toList());
+    return this.eth1ChainCache.values().stream().map(Eth1DataAndHeight::getEth1Data).toList();
   }
 
   public void updateMetrics(final BeaconState state) {

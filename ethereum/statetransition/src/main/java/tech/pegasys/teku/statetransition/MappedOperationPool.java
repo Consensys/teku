@@ -119,7 +119,7 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
         operations.values().stream()
             .filter(OperationPoolEntry::isLocal)
             .filter(entry -> entry.getTimeSubmitted().isLessThanOrEqualTo(staleTime))
-            .collect(Collectors.toList());
+            .toList();
     if (!staleLocalOperations.isEmpty()) {
       LOG.info(
           "Re-publishing {} operations that are still in the local {} operation pool",
@@ -181,10 +181,7 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
     // Note that iterating through all items does not affect their access time so we are effectively
     // evicting the oldest entries when the size is exceeded as we only ever access via iteration.
     final Collection<T> sortedViableOperations =
-        operations.values().stream()
-            .sorted()
-            .map(OperationPoolEntry::getMessage)
-            .collect(Collectors.toList());
+        operations.values().stream().sorted().map(OperationPoolEntry::getMessage).toList();
     final List<T> selected = new ArrayList<>();
     for (final T item : sortedViableOperations) {
       if (!filter.test(item)) {

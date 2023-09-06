@@ -23,7 +23,6 @@ import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.collections.TekuPair;
@@ -84,7 +83,7 @@ public class ForkSchedule {
     return milestoneToFork.entrySet().stream()
         .map(entry -> new ForkAndSpecMilestone(entry.getValue(), entry.getKey()))
         .sorted(Comparator.comparing(f -> f.getFork().getEpoch()))
-        .collect(Collectors.toList());
+        .toList();
   }
 
   public Fork getFork(final UInt64 epoch) {
@@ -102,9 +101,7 @@ public class ForkSchedule {
    *     same epoch, only the later milestone will be in the result.
    */
   public List<Fork> getForks() {
-    return epochToMilestone.values().stream()
-        .map(milestoneToFork::get)
-        .collect(Collectors.toList());
+    return epochToMilestone.values().stream().map(milestoneToFork::get).toList();
   }
 
   /**
@@ -112,9 +109,7 @@ public class ForkSchedule {
    *     both will be listed in this result.
    */
   public List<Fork> getFullForkList() {
-    return fullMilestoneToForkMap.entrySet().stream()
-        .map(Map.Entry::getValue)
-        .collect(Collectors.toList());
+    return fullMilestoneToForkMap.entrySet().stream().map(Map.Entry::getValue).toList();
   }
 
   public void reportActivatingMilestones(final UInt64 epoch) {

@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import picocli.CommandLine.Help;
 import picocli.CommandLine.IHelpSectionRenderer;
 import picocli.CommandLine.Model.CommandSpec;
@@ -42,9 +41,7 @@ public class MixinSectionOptionRenderer implements IHelpSectionRenderer {
     for (Map.Entry<String, CommandSpec> mixin : mixinsToGroup.entrySet()) {
       ungroupedOptions.removeAll(mixin.getValue().options());
       final List<OptionSpec> visibleOptions =
-          mixin.getValue().options().stream()
-              .filter(option -> !option.hidden())
-              .collect(Collectors.toList());
+          mixin.getValue().options().stream().filter(option -> !option.hidden()).toList();
       if (visibleOptions.isEmpty()) {
         continue;
       }

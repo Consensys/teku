@@ -20,6 +20,7 @@ import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SL
 import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.addParentStateRoots;
 
 import com.google.common.base.Throwables;
+import java.net.ConnectException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -176,7 +177,15 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                               .getHeadBlockRoot(),
                           forkChoiceUpdatedResult.getPayloadStatus());
                     }))
-        .finish(error -> LOG.error("Failed to update fork choice", error));
+        .finish(
+            error -> {
+              final String errorMessage = "Failed to update fork choice. ";
+              if (ExceptionUtil.hasCause(error, ConnectException.class)) {
+                LOG.error(errorMessage + error.getMessage());
+              } else {
+                LOG.error(errorMessage, error);
+              }
+            });
   }
 
   public SafeFuture<Boolean> processHead() {

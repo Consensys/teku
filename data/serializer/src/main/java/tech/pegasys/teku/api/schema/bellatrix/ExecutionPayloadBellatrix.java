@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -91,9 +90,7 @@ public class ExecutionPayloadBellatrix extends ExecutionPayloadCommon implements
         executionPayload.getBaseFeePerGas(),
         executionPayload.getBlockHash());
     this.transactions =
-        executionPayload.getTransactions().stream()
-            .map(Transaction::getBytes)
-            .collect(Collectors.toList());
+        executionPayload.getTransactions().stream().map(Transaction::getBytes).toList();
   }
 
   public tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload

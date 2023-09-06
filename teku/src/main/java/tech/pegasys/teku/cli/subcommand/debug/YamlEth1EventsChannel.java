@@ -21,7 +21,6 @@ import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -64,7 +63,7 @@ class YamlEth1EventsChannel implements Eth1EventsChannel, AutoCloseable {
               + lastBlockTimestamp);
     }
     final List<DepositInfo> deposits =
-        event.getDeposits().stream().map(this::convertDeposit).collect(Collectors.toList());
+        event.getDeposits().stream().map(this::convertDeposit).toList();
 
     lastBlockNumber = event.getBlockNumber();
     lastBlockTimestamp = event.getBlockTimestamp();

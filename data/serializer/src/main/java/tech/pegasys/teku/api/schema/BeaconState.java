@@ -21,7 +21,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.interfaces.State;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
@@ -140,11 +139,9 @@ public abstract class BeaconState implements State {
     this.state_roots = beaconState.getStateRoots().asListUnboxed();
     this.historical_roots = beaconState.getHistoricalRoots().asListUnboxed();
     this.eth1_data = new Eth1Data(beaconState.getEth1Data());
-    this.eth1_data_votes =
-        beaconState.getEth1DataVotes().stream().map(Eth1Data::new).collect(Collectors.toList());
+    this.eth1_data_votes = beaconState.getEth1DataVotes().stream().map(Eth1Data::new).toList();
     this.eth1_deposit_index = beaconState.getEth1DepositIndex();
-    this.validators =
-        beaconState.getValidators().stream().map(Validator::new).collect(Collectors.toList());
+    this.validators = beaconState.getValidators().stream().map(Validator::new).toList();
     this.balances = beaconState.getBalances().asListUnboxed();
     this.randao_mixes = beaconState.getRandaoMixes().asListUnboxed();
     this.slashings = beaconState.getSlashings().asListUnboxed();
@@ -174,17 +171,11 @@ public abstract class BeaconState implements State {
               state.setEth1Data(eth1_data.asInternalEth1Data());
               state
                   .getEth1DataVotes()
-                  .setAll(
-                      eth1_data_votes.stream()
-                          .map(Eth1Data::asInternalEth1Data)
-                          .collect(Collectors.toList()));
+                  .setAll(eth1_data_votes.stream().map(Eth1Data::asInternalEth1Data).toList());
               state.setEth1DepositIndex(eth1_deposit_index);
               state
                   .getValidators()
-                  .setAll(
-                      validators.stream()
-                          .map(Validator::asInternalValidator)
-                          .collect(Collectors.toList()));
+                  .setAll(validators.stream().map(Validator::asInternalValidator).toList());
               state.getBalances().setAllElements(balances);
               state.getRandaoMixes().setAllElements(randao_mixes);
               state.getSlashings().setAllElements(slashings);

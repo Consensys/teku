@@ -23,7 +23,6 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class StateSyncCommittees {
@@ -36,8 +35,8 @@ public class StateSyncCommittees {
   @JsonProperty("validator_aggregates")
   public List<List<String>> getValidatorAggregates() {
     return validatorAggregates.stream()
-        .map(e -> e.stream().map(UInt64::toString).collect(Collectors.toList()))
-        .collect(Collectors.toList());
+        .map(e -> e.stream().map(UInt64::toString).toList())
+        .toList();
   }
 
   @JsonIgnore public final List<List<UInt64>> validatorAggregates;

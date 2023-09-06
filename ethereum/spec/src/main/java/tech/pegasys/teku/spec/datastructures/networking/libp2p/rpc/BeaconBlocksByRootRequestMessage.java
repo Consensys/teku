@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.impl.SszListImpl;
@@ -43,10 +42,7 @@ public class BeaconBlocksByRootRequestMessage extends SszListImpl<SszBytes32>
 
   public BeaconBlocksByRootRequestMessage(
       final BeaconBlocksByRootRequestMessageSchema schema, List<Bytes32> roots) {
-    super(
-        schema,
-        schema.createTreeFromElements(
-            roots.stream().map(SszBytes32::of).collect(Collectors.toList())));
+    super(schema, schema.createTreeFromElements(roots.stream().map(SszBytes32::of).toList()));
   }
 
   private BeaconBlocksByRootRequestMessage(

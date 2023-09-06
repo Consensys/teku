@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.AbstractSszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
@@ -31,10 +30,7 @@ public abstract class AbstractBeaconStateSchema<
     extends AbstractSszContainerSchema<T> implements BeaconStateSchema<T, TMutable> {
   protected AbstractBeaconStateSchema(final String name, final List<SszField> allFields) {
     super(
-        name,
-        allFields.stream()
-            .map(f -> namedSchema(f.getName(), f.getSchema().get()))
-            .collect(Collectors.toList()));
+        name, allFields.stream().map(f -> namedSchema(f.getName(), f.getSchema().get())).toList());
     validateFields(allFields);
   }
 
@@ -46,7 +42,7 @@ public abstract class AbstractBeaconStateSchema<
   private static List<SszField> combineFields(List<SszField> fieldsA, List<SszField> fieldsB) {
     return Stream.concat(fieldsA.stream(), fieldsB.stream())
         .sorted(Comparator.comparing(SszField::getIndex))
-        .collect(Collectors.toList());
+        .toList();
   }
 
   private void validateFields(final List<SszField> fields) {

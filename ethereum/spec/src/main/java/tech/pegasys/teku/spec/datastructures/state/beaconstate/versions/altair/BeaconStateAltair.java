@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
@@ -70,8 +69,7 @@ public interface BeaconStateAltair extends BeaconState {
                     getSchema().getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE)));
 
     return SszBytes32VectorSchema.create(currentSyncCommitteeProof.size())
-        .createFromElements(
-            currentSyncCommitteeProof.stream().map(SszBytes32::of).collect(Collectors.toList()));
+        .createFromElements(currentSyncCommitteeProof.stream().map(SszBytes32::of).toList());
   }
 
   default SyncCommittee getNextSyncCommittee() {

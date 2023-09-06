@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -246,7 +245,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
     final List<OptionSpec> potentialAdditionalParams =
         parseResult.commandSpec().options().stream()
             .filter(optionSpec -> !parseResult.matchedOptionsSet().contains(optionSpec))
-            .collect(Collectors.toUnmodifiableList());
+            .toList();
 
     final AdditionalParamsProvider additionalParamsProvider =
         additionalParamsProvider(commandLine, configFile);

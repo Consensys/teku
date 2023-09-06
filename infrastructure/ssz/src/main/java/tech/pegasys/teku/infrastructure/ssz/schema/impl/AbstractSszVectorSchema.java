@@ -19,7 +19,6 @@ import static tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil.bitsCeilToBytes
 import com.google.common.base.Suppliers;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -111,8 +110,7 @@ public abstract class AbstractSszVectorSchema<
           lastNodeSizeBytes > 0
               ? Stream.of(LeafNode.ZERO_LEAVES[lastNodeSizeBytes])
               : Stream.empty();
-      return TreeUtil.createTree(
-          Stream.concat(fullZeroNodes, lastZeroNode).collect(Collectors.toList()));
+      return TreeUtil.createTree(Stream.concat(fullZeroNodes, lastZeroNode).toList());
     }
   }
 

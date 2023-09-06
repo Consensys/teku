@@ -15,7 +15,6 @@ package tech.pegasys.teku.bls.impl;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 
 public interface Signature {
@@ -44,10 +43,7 @@ public interface Signature {
    * @return True if the verification is successful, false otherwise
    */
   default boolean verify(List<PublicKey> publicKeys, Bytes message) {
-    return verify(
-        publicKeys.stream()
-            .map(pk -> new PublicKeyMessagePair(pk, message))
-            .collect(Collectors.toList()));
+    return verify(publicKeys.stream().map(pk -> new PublicKeyMessagePair(pk, message)).toList());
   }
 
   /**

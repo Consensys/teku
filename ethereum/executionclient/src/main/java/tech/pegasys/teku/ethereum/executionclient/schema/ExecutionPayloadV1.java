@@ -19,7 +19,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.common.base.MoreObjects;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -110,9 +109,7 @@ public class ExecutionPayloadV1 extends ExecutionPayloadCommon {
         executionPayload.getExtraData(),
         executionPayload.getBaseFeePerGas(),
         executionPayload.getBlockHash(),
-        executionPayload.getTransactions().stream()
-            .map(SszByteListImpl::getBytes)
-            .collect(Collectors.toList()));
+        executionPayload.getTransactions().stream().map(SszByteListImpl::getBytes).toList());
   }
 
   @Override
