@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
@@ -212,7 +211,7 @@ public class ChainStorage
         () -> {
           try (final Stream<BlobSidecar> blobSidecarStream =
               database.streamBlobSidecars(slotAndBlockRoot)) {
-            return blobSidecarStream.collect(Collectors.toList());
+            return blobSidecarStream.toList();
           }
         });
   }
@@ -299,7 +298,7 @@ public class ChainStorage
         () -> {
           try (final Stream<SlotAndBlockRootAndBlobIndex> blobSidecars =
               database.streamBlobSidecarKeys(slot)) {
-            return blobSidecars.collect(Collectors.toList());
+            return blobSidecars.toList();
           }
         });
   }
@@ -312,7 +311,7 @@ public class ChainStorage
           final List<SlotAndBlockRootAndBlobIndex> result;
           try (final Stream<SlotAndBlockRootAndBlobIndex> blobSidecars =
               database.streamBlobSidecarKeys(startSlot, endSlot)) {
-            result = blobSidecars.limit(limit.longValue()).collect(Collectors.toList());
+            result = blobSidecars.limit(limit.longValue()).toList();
           }
           return result;
         });

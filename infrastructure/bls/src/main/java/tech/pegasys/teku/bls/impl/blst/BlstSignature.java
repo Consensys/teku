@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import supranational.blst.BLST_ERROR;
 import supranational.blst.P2;
@@ -122,8 +121,7 @@ public class BlstSignature implements Signature {
   @Override
   public boolean verify(List<PublicKey> publicKeys, Bytes message) {
     return verify(
-        BlstPublicKey.aggregate(
-            publicKeys.stream().map(BlstPublicKey::fromPublicKey).collect(Collectors.toList())),
+        BlstPublicKey.aggregate(publicKeys.stream().map(BlstPublicKey::fromPublicKey).toList()),
         message);
   }
 

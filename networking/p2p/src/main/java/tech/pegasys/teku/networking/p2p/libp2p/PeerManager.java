@@ -45,7 +45,7 @@ public class PeerManager implements ConnectionHandler {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final List<RpcHandler<?, ?, ?>> rpcHandlers;
+  private final List<? extends RpcHandler<?, ?, ?>> rpcHandlers;
 
   private final Function<PeerId, Double> peerScoreFunction;
 
@@ -62,7 +62,7 @@ public class PeerManager implements ConnectionHandler {
       final MetricsSystem metricsSystem,
       final ReputationManager reputationManager,
       final List<PeerHandler> peerHandlers,
-      final List<RpcHandler<?, ?, ?>> rpcHandlers,
+      final List<? extends RpcHandler<?, ?, ?>> rpcHandlers,
       Function<PeerId, Double> peerScoreFunction) {
     this.reputationManager = reputationManager;
     this.peerHandlers = peerHandlers;

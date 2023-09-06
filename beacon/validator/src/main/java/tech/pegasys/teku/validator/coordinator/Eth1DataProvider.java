@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.tuple.Pair;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -57,7 +56,7 @@ public class Eth1DataProvider {
     return votes.entrySet().stream()
         .sorted(Entry.comparingByValue(REVERSE_VOTE_COMPARATOR))
         .map(entry -> Pair.of(entry.getKey(), UInt64.valueOf(entry.getValue().getVoteCount())))
-        .collect(Collectors.toList());
+        .toList();
   }
 
   public VotingPeriodInfo getVotingPeriodInfo(final StateAndMetaData stateAndMetaData) {

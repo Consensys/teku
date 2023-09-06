@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -210,7 +209,7 @@ public class JavalinRestApiRequest implements RestApiRequest {
               queryParamMap, parameterMetadata.getName());
       return paramList.stream()
           .map(item -> parameterMetadata.getType().deserializeFromString(item))
-          .collect(Collectors.toList());
+          .toList();
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException(
           String.format(

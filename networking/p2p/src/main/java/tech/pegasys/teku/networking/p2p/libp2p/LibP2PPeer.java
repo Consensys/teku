@@ -64,7 +64,7 @@ public class LibP2PPeer implements Peer {
 
   public LibP2PPeer(
       final Connection connection,
-      final List<RpcHandler<?, ?, ?>> rpcHandlers,
+      final List<? extends RpcHandler<?, ?, ?>> rpcHandlers,
       final ReputationManager reputationManager,
       final Function<PeerId, Double> peerScoreFunction) {
     this.connection = connection;

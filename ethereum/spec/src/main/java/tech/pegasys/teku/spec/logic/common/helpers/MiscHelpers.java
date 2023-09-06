@@ -23,7 +23,6 @@ import com.google.common.primitives.UnsignedBytes;
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -194,7 +193,7 @@ public class MiscHelpers {
   public List<UInt64> computeSubscribedSubnets(final UInt256 nodeId, final UInt64 epoch) {
     return IntStream.range(0, specConfig.getNetworkingConfig().getSubnetsPerNode())
         .mapToObj(index -> computeSubscribedSubnet(nodeId, epoch, index))
-        .collect(Collectors.toList());
+        .toList();
   }
 
   private UInt64 computeSubscribedSubnet(

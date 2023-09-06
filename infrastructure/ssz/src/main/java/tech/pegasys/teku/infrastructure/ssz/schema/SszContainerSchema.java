@@ -137,5 +137,5 @@ public interface SszContainerSchema<C extends SszContainer> extends SszComposite
   List<String> getFieldNames();
 
   /** Return this container field schemas */
-  List<SszSchema<?>> getFieldSchemas();
+  List<? extends SszSchema<?>> getFieldSchemas();
 }

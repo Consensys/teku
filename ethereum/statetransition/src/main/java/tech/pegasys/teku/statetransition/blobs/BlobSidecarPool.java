@@ -17,7 +17,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -97,10 +96,7 @@ public interface BlobSidecarPool extends SlotEventsChannel {
   default void onCompletedBlockAndSignedBlobSidecars(
       SignedBeaconBlock block, List<SignedBlobSidecar> signedBlobSidecars) {
     onCompletedBlockAndBlobSidecars(
-        block,
-        signedBlobSidecars.stream()
-            .map(SignedBlobSidecar::getBlobSidecar)
-            .collect(Collectors.toList()));
+        block, signedBlobSidecars.stream().map(SignedBlobSidecar::getBlobSidecar).toList());
   }
 
   void onCompletedBlockAndBlobSidecars(SignedBeaconBlock block, List<BlobSidecar> blobSidecars);
