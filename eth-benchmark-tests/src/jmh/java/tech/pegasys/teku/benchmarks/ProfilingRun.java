@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.benchmarks.gen.BlockIO;
 import tech.pegasys.teku.benchmarks.gen.BlockIO.Reader;
-import tech.pegasys.teku.benchmarks.gen.BlsKeyPairIO;
+import tech.pegasys.teku.benchmarks.gen.KeyFileGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
@@ -80,11 +80,7 @@ public class ProfilingRun {
             + validatorsCount
             + ".ssz.gz";
 
-    System.out.println("Generating keypairs...");
-
-    List<BLSKeyPair> validatorKeys =
-        BlsKeyPairIO.createReaderForResource("/bls-key-pairs/bls-key-pairs-200k-seed-0.txt.gz")
-            .readAll(validatorsCount);
+    List<BLSKeyPair> validatorKeys = KeyFileGenerator.readValidatorKeys(validatorsCount);
 
     BeaconState initialState =
         new GenesisStateBuilder()
@@ -165,20 +161,16 @@ public class ProfilingRun {
 
     AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
 
-    int validatorsCount = 32 * 1024;
+    final int validatorsCount = 32 * 1024;
 
-    String blocksFile =
+    final String blocksFile =
         "/blocks/blocks_epoch_"
             + spec.getSlotsPerEpoch(UInt64.ZERO)
             + "_validators_"
             + validatorsCount
             + ".ssz.gz";
 
-    System.out.println("Generating keypairs...");
-
-    List<BLSKeyPair> validatorKeys =
-        BlsKeyPairIO.createReaderForResource("/bls-key-pairs/bls-key-pairs-200k-seed-0.txt.gz")
-            .readAll(validatorsCount);
+    final List<BLSKeyPair> validatorKeys = KeyFileGenerator.readValidatorKeys(validatorsCount);
 
     BeaconState initialState =
         new GenesisStateBuilder()
@@ -191,8 +183,8 @@ public class ProfilingRun {
     while (true) {
       final BlockImportNotifications blockImportNotifications =
           mock(BlockImportNotifications.class);
-      RecentChainData recentChainData = MemoryOnlyRecentChainData.create();
-      BeaconChainUtil localChain =
+      final RecentChainData recentChainData = MemoryOnlyRecentChainData.create();
+      final BeaconChainUtil localChain =
           BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
       recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
       initialState = null;
