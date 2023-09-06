@@ -19,7 +19,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
 
@@ -62,8 +61,6 @@ public class OpenApiResponse {
   }
 
   public List<String> getSupportedContentTypes() {
-    return content.stream()
-        .map(ResponseContentTypeDefinition::getContentType)
-        .collect(Collectors.toList());
+    return content.stream().map(ResponseContentTypeDefinition::getContentType).toList();
   }
 }

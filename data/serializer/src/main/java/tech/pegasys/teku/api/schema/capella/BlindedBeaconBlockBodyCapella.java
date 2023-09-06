@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttesterSlashing;
@@ -85,9 +84,7 @@ public class BlindedBeaconBlockBodyCapella extends BeaconBlockBodyAltair {
     this.executionPayloadHeader =
         new ExecutionPayloadHeaderCapella(blockBody.getExecutionPayloadHeader());
     this.blsToExecutionChanges =
-        blockBody.getBlsToExecutionChanges().stream()
-            .map(SignedBlsToExecutionChange::new)
-            .collect(Collectors.toList());
+        blockBody.getBlsToExecutionChanges().stream().map(SignedBlsToExecutionChange::new).toList();
   }
 
   @Override

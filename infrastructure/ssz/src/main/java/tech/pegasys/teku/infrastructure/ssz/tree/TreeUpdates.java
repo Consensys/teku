@@ -74,8 +74,8 @@ public class TreeUpdates {
    */
   public TreeUpdates(List<Update> updates) {
     this(
-        updates.stream().map(Update::getGeneralizedIndex).collect(Collectors.toList()),
-        updates.stream().map(Update::getNewNode).collect(Collectors.toList()));
+        updates.stream().map(Update::getGeneralizedIndex).toList(),
+        updates.stream().map(Update::getNewNode).toList());
   }
 
   public TreeUpdates(List<Long> gIndices, List<TreeNode> nodes) {

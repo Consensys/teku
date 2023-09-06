@@ -358,7 +358,7 @@ public class DoppelgangerDetector {
                                       .get()
                                       .getKey(),
                                   validatorLivenessAtEpoch))
-                      .collect(Collectors.toList()))
+                      .toList())
           .orElse(new ArrayList<>());
     }
 

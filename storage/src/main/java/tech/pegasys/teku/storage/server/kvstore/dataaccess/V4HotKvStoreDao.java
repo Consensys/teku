@@ -18,7 +18,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -107,7 +106,7 @@ public class V4HotKvStoreDao {
       return stream
           .filter((column) -> column.getValue().getSlot().compareTo(slot) < 0)
           .map(ColumnEntry::getKey)
-          .collect(Collectors.toList());
+          .toList();
     }
   }
 

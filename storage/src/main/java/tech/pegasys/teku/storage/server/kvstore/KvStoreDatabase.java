@@ -560,7 +560,7 @@ public class KvStoreDatabase implements Database {
     final List<SignedBeaconBlock> sorted =
         blocks.stream()
             .sorted(Comparator.comparing(SignedBeaconBlock::getSlot).reversed())
-            .collect(Collectors.toList());
+            .toList();
 
     // The new block should be just prior to our earliest block if available, and otherwise should
     // match our latest finalized block
@@ -979,7 +979,7 @@ public class KvStoreDatabase implements Database {
     }
 
     LOG.trace("Applying hot updates");
-    long startTime = System.nanoTime();
+    long startTime = System.currentTimeMillis();
     try (final HotUpdater updater = hotUpdater()) {
       // Store new hot data
       update.getGenesisTime().ifPresent(updater::setGenesisTime);
@@ -1011,8 +1011,8 @@ public class KvStoreDatabase implements Database {
       updater.commit();
     }
 
-    long endTime = System.nanoTime();
-    DB_LOGGER.onDbOpAlertThreshold("Block Import", startTime, endTime);
+    long endTime = System.currentTimeMillis();
+    DB_LOGGER.onDbOpAlertThreshold("KvStoreDatabase::doUpdate", startTime, endTime);
     LOG.trace("Update complete");
     return new UpdateResult(finalizedOptimisticExecutionPayload);
   }
@@ -1147,7 +1147,7 @@ public class KvStoreDatabase implements Database {
             .childAndParentRoots(finalizedChildToParentMap)
             .build()
             .preOrderStream()
-            .collect(Collectors.toList());
+            .toList();
 
     int i = 0;
     UInt64 lastSlot = baseBlock.getSlot();

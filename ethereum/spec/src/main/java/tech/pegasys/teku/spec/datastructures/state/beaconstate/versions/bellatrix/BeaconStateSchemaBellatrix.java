@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszPrimitiveListSchema;
@@ -58,7 +57,7 @@ public class BeaconStateSchemaBellatrix
     return Stream.concat(
             BeaconStateSchemaAltair.getUniqueFields(specConfig).stream(),
             Stream.of(latestExecutionPayloadHeaderField))
-        .collect(Collectors.toList());
+        .toList();
   }
 
   public static BeaconStateSchemaBellatrix required(final BeaconStateSchema<?, ?> schema) {

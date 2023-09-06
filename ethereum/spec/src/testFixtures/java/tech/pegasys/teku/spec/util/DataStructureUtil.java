@@ -1764,9 +1764,7 @@ public final class DataStructureUtil {
 
   public SszList<SignedValidatorRegistration> randomSignedValidatorRegistrations(final int size) {
     return SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.createFromElements(
-        IntStream.range(0, size)
-            .mapToObj(__ -> randomSignedValidatorRegistration())
-            .collect(Collectors.toUnmodifiableList()));
+        IntStream.range(0, size).mapToObj(__ -> randomSignedValidatorRegistration()).toList());
   }
 
   public ForkChoiceState randomForkChoiceState(final boolean optimisticHead) {

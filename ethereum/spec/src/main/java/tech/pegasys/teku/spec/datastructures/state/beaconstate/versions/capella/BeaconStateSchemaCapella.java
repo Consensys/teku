@@ -18,7 +18,6 @@ import static tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.b
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
@@ -81,7 +80,7 @@ public class BeaconStateSchemaCapella
                 nextWithdrawalIndexField,
                 nextWithdrawalValidatorIndexField,
                 historicalSummariesField))
-        .collect(Collectors.toList());
+        .toList();
   }
 
   @SuppressWarnings("unchecked")

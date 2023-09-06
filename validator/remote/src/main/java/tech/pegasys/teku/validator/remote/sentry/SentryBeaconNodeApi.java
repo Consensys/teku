@@ -16,7 +16,6 @@ package tech.pegasys.teku.validator.remote.sentry;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -80,7 +79,7 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
     final RemoteValidatorApiChannel dutiesProviderPrimaryValidatorApiChannel =
         createPrimaryValidatorApiChannel(
             validatorConfig, dutiesProviderHttpClient, sentryNodesHttpClient, spec, asyncRunner);
-    final List<RemoteValidatorApiChannel> dutiesProviderFailoverValidatorApiChannel =
+    final List<? extends RemoteValidatorApiChannel> dutiesProviderFailoverValidatorApiChannel =
         createFailoverValidatorApiChannel(
             validatorConfig, dutiesProviderHttpClient, sentryNodesHttpClient, spec, asyncRunner);
 
@@ -183,13 +182,13 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
         asyncRunner);
   }
 
-  private static List<RemoteValidatorApiChannel> createFailoverValidatorApiChannel(
+  private static List<? extends RemoteValidatorApiChannel> createFailoverValidatorApiChannel(
       final ValidatorConfig validatorConfig,
       final RemoteBeaconNodeEndpoints remoteBeaconNodeEndpoints,
       final OkHttpClient httpClient,
       final Spec spec,
       final AsyncRunner asyncRunner) {
-    final List<RemoteValidatorApiChannel> failoverValidatorApis =
+    final List<? extends RemoteValidatorApiChannel> failoverValidatorApis =
         remoteBeaconNodeEndpoints.getFailoverEndpoints().stream()
             .map(
                 endpoint ->
@@ -199,7 +198,7 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
                         spec,
                         validatorConfig.isValidatorClientUseSszBlocksEnabled(),
                         asyncRunner))
-            .collect(Collectors.toList());
+            .toList();
 
     if (!remoteBeaconNodeEndpoints.getFailoverEndpoints().isEmpty()) {
       LOG.info(
@@ -223,7 +222,7 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
     final RemoteValidatorApiChannel primaryValidatorApi =
         createPrimaryValidatorApiChannel(
             validatorConfig, remoteBeaconNodeEndpoints, httpClient, spec, asyncRunner);
-    final List<RemoteValidatorApiChannel> failoverValidatorApis =
+    final List<? extends RemoteValidatorApiChannel> failoverValidatorApis =
         createFailoverValidatorApiChannel(
             validatorConfig, remoteBeaconNodeEndpoints, httpClient, spec, asyncRunner);
 

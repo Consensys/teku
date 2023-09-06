@@ -17,7 +17,6 @@ import com.google.common.base.Preconditions;
 import java.net.URI;
 import java.time.Duration;
 import java.util.List;
-import java.util.stream.Collectors;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import org.apache.logging.log4j.LogManager;
@@ -87,7 +86,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
             spec,
             validatorConfig.isValidatorClientUseSszBlocksEnabled(),
             asyncRunner);
-    final List<RemoteValidatorApiChannel> failoverValidatorApis =
+    final List<? extends RemoteValidatorApiChannel> failoverValidatorApis =
         failoverEndpoints.stream()
             .map(
                 endpoint ->
@@ -97,7 +96,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
                         spec,
                         validatorConfig.isValidatorClientUseSszBlocksEnabled(),
                         asyncRunner))
-            .collect(Collectors.toList());
+            .toList();
 
     final EventChannels eventChannels = serviceConfig.getEventChannels();
     final MetricsSystem metricsSystem = serviceConfig.getMetricsSystem();
@@ -185,7 +184,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
                     String.format(
                         "Failed to convert remote api endpoint (%s) to a valid url",
                         UrlSanitizer.sanitizePotentialUrl(endpoint.toString()))))
-        .collect(Collectors.toList());
+        .toList();
   }
 
   public static OkHttpClient createOkHttpClient(final List<HttpUrl> endpoints) {

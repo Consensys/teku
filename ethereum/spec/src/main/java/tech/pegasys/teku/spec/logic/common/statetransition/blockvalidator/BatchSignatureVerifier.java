@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -95,7 +94,7 @@ public class BatchSignatureVerifier implements BLSSignatureVerifier {
         toVerify.stream()
             .parallel()
             .map(job -> BLS.prepareBatchVerify(job.idx, job.publicKeys, job.message, job.signature))
-            .collect(Collectors.toList());
+            .toList();
     complete = true;
     if (batchSemiAggregates.isEmpty()) {
       return true;

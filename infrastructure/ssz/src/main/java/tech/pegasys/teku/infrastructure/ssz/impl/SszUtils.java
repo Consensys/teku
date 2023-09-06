@@ -15,7 +15,6 @@ package tech.pegasys.teku.infrastructure.ssz.impl;
 
 import com.google.common.collect.Streams;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.SszCollection;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
@@ -34,7 +33,7 @@ public class SszUtils {
 
   public static <C, V extends SszData> SszList<V> toSszList(
       SszSchema<? extends SszList<V>> type, Iterable<C> list, Function<C, V> converter) {
-    return toSszList(type, Streams.stream(list).map(converter).collect(Collectors.toList()));
+    return toSszList(type, Streams.stream(list).map(converter).toList());
   }
 
   public static <V extends SszData> SszList<V> toSszList(
@@ -46,7 +45,7 @@ public class SszUtils {
 
   public static <C, V extends SszData> SszVector<V> toSszVector(
       SszVectorSchema<V, ?> type, Iterable<C> list, Function<C, V> converter) {
-    return toSszVector(type, Streams.stream(list).map(converter).collect(Collectors.toList()));
+    return toSszVector(type, Streams.stream(list).map(converter).toList());
   }
 
   public static <V extends SszData> SszVector<V> toSszVector(

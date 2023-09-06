@@ -17,7 +17,6 @@ import java.net.URI;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -103,8 +102,7 @@ class RemoteSpecLoader {
       final List<URI> baseEndpoints) {
     final OkHttpClient.Builder httpClientBuilder =
         new OkHttpClient.Builder().readTimeout(30, TimeUnit.SECONDS);
-    List<HttpUrl> apiEndpoints =
-        baseEndpoints.stream().map(HttpUrl::get).collect(Collectors.toList());
+    List<HttpUrl> apiEndpoints = baseEndpoints.stream().map(HttpUrl::get).toList();
     if (apiEndpoints.size() > 1) {
       OkHttpClientAuth.addAuthInterceptorForMultipleEndpoints(apiEndpoints, httpClientBuilder);
     } else {
@@ -115,12 +113,12 @@ class RemoteSpecLoader {
     final OkHttpClient okHttpClient = httpClientBuilder.build();
     return apiEndpoints.stream()
         .map(apiEndpoint -> new OkHttpValidatorRestApiClient(apiEndpoint, okHttpClient))
-        .collect(Collectors.toList());
+        .toList();
   }
 
   private static List<HttpUrl> stripAuthentication(final List<HttpUrl> endpoints) {
     return endpoints.stream()
         .map(endpoint -> endpoint.newBuilder().username("").password("").build())
-        .collect(Collectors.toList());
+        .toList();
   }
 }

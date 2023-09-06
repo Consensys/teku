@@ -19,10 +19,10 @@ import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class Eth1ProviderSelector {
-  private final List<MonitorableEth1Provider> candidates;
+  private final List<? extends MonitorableEth1Provider> candidates;
   private final SafeFuture<Void> initialValidationCompleted;
 
-  public Eth1ProviderSelector(final List<MonitorableEth1Provider> candidates) {
+  public Eth1ProviderSelector(final List<? extends MonitorableEth1Provider> candidates) {
     Preconditions.checkArgument(candidates != null && !candidates.isEmpty());
     this.candidates = candidates;
     this.initialValidationCompleted = new SafeFuture<>();
@@ -36,7 +36,7 @@ public class Eth1ProviderSelector {
     return initialValidationCompleted.isDone();
   }
 
-  public List<MonitorableEth1Provider> getProviders() {
+  public List<? extends MonitorableEth1Provider> getProviders() {
     return candidates;
   }
 
@@ -45,7 +45,7 @@ public class Eth1ProviderSelector {
   }
 
   public class ValidEth1ProviderIterator {
-    private final Iterator<MonitorableEth1Provider> currentIterator;
+    private final Iterator<? extends MonitorableEth1Provider> currentIterator;
 
     private ValidEth1ProviderIterator() {
       this.currentIterator = candidates.iterator();

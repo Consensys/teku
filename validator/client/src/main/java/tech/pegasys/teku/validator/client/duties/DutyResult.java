@@ -133,7 +133,7 @@ public class DutyResult {
         combinedSyncingCount,
         combinedRoots,
         combinedErrors,
-        Stream.concat(context.stream(), other.context.stream()).collect(Collectors.toList()));
+        Stream.concat(context.stream(), other.context.stream()).toList());
   }
 
   public int getSuccessCount() {

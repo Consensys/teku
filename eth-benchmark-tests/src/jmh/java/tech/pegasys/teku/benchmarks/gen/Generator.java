@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.benchmarks.gen.BlockIO.Writer;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -45,7 +44,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
  */
 public class Generator {
 
-  @Disabled
   @Test
   public void generateBlocks() throws Exception {
     final Spec spec = TestSpecFactory.createMainnetAltair();
@@ -113,7 +111,6 @@ public class Generator {
     }
   }
 
-  @Disabled
   @Test
   public void generateKeyPairs() throws Exception {
     int randomSeed = 0;
@@ -153,5 +150,9 @@ public class Generator {
             .map(com -> com.stream().map(i -> "" + i).collect(Collectors.joining(",")))
             .collect(Collectors.joining("],["))
         + "]";
+  }
+
+  public static void main(String[] args) throws Exception {
+    new Generator().generateBlocks();
   }
 }

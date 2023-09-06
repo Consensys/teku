@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.builder;
 
-import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
@@ -74,19 +73,14 @@ public class BlindedBlobsBundleSchema
         this,
         getCommitmentsSchema()
             .createFromElements(
-                blobsBundle.getCommitments().stream()
-                    .map(SszKZGCommitment::new)
-                    .collect(Collectors.toList())),
+                blobsBundle.getCommitments().stream().map(SszKZGCommitment::new).toList()),
         getProofsSchema()
-            .createFromElements(
-                blobsBundle.getProofs().stream()
-                    .map(SszKZGProof::new)
-                    .collect(Collectors.toList())),
+            .createFromElements(blobsBundle.getProofs().stream().map(SszKZGProof::new).toList()),
         getBlobRootsSchema()
             .createFromElements(
                 blobsBundle.getBlobs().stream()
                     .map(Blob::hashTreeRoot)
                     .map(SszBytes32::of)
-                    .collect(Collectors.toList())));
+                    .toList()));
   }
 }

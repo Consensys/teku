@@ -73,7 +73,7 @@ public class VersionedEth2RpcMethod<
                         SingleProtocolEth2RpcMethod::getProtocolVersion)
                     .reversed())
             .map(SingleProtocolEth2RpcMethod::getId)
-            .collect(Collectors.toList());
+            .toList();
     final Map<String, SingleProtocolEth2RpcMethod<TRequest, TResponse>> protocolIdToMethod =
         methodVersions.stream()
             .collect(Collectors.toMap(SingleProtocolEth2RpcMethod::getId, m -> m));

@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -82,7 +81,7 @@ public class V4FinalizedKvStoreDao {
     return maybeRoots.stream()
         .flatMap(Collection::stream)
         .flatMap(root -> db.get(schema.getColumnNonCanonicalBlocksByRoot(), root).stream())
-        .collect(Collectors.toList());
+        .toList();
   }
 
   public Optional<BeaconState> getLatestAvailableFinalizedState(final UInt64 maxSlot) {
@@ -167,7 +166,7 @@ public class V4FinalizedKvStoreDao {
                 slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.ZERO),
             new SlotAndBlockRootAndBlobIndex(
                 slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.MAX_VALUE))) {
-      return streamKeys.collect(Collectors.toList());
+      return streamKeys.toList();
     }
   }
 
@@ -180,7 +179,7 @@ public class V4FinalizedKvStoreDao {
                 slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.ZERO),
             new SlotAndBlockRootAndBlobIndex(
                 slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.MAX_VALUE))) {
-      return streamKeys.collect(Collectors.toList());
+      return streamKeys.toList();
     }
   }
 
