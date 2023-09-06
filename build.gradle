@@ -150,9 +150,6 @@ allprojects {
     }
   }
 
-  components.java.withVariantsFromConfiguration(configurations.testFixturesApiElements) { skip() }
-  components.java.withVariantsFromConfiguration(configurations.testFixturesRuntimeElements) { skip() }
-
   dependencies {
     errorprone("com.google.errorprone:error_prone_core")
     errorprone("tech.pegasys.tools.epchecks:errorprone-checks")
@@ -726,6 +723,16 @@ subprojects {
               connection = 'scm:git:git://github.com/Consensys/teku.git'
               developerConnection = 'https://github.com/Consensys/teku.git'
               url = 'https://github.com/Consensys/teku'
+            }
+            // workaround
+            // https://stackoverflow.com/questions/69877418/why-does-every-pom-file-published-by-gradle-has-a-self-referential-dependency
+            // https://github.com/spring-gradle-plugins/dependency-management-plugin/issues/365
+            withXml {
+              asNode().dependencies.dependency.each { dep ->
+                if(dep["artifactId"].last().value().last() == artifactId) {
+                  assert dep.parent().remove(dep)
+                }
+              }
             }
           }
         }
