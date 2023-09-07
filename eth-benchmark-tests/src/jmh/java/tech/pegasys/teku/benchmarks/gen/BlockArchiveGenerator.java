@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
+import tech.pegasys.teku.spec.logic.common.util.EpochAttestationSchedule;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -99,36 +100,50 @@ public class BlockArchiveGenerator {
     localChain.initializeStorage();
 
     UInt64 currentSlot = localStorage.getHeadSlot();
-    List<Attestation> attestations = Collections.emptyList();
 
     System.out.printf(
         "Generating blocks for %s epochs, %s slots per epoch.%n", epochLimit, slotsPerEpoch);
 
     final SystemTimeProvider timeProvider = new SystemTimeProvider();
-
     try (BlockIO.Writer writer = BlockIO.createFileWriter(blocksFile)) {
 
       for (int j = 0; j < epochLimit; j++) {
         System.out.println(" => Processing epoch " + j);
+        final UInt64 epoch = UInt64.valueOf(j);
+        final BeaconState epochState =
+            localStorage
+                .retrieveBlockState(localStorage.getBestBlockRoot().orElse(null))
+                .join()
+                .orElseThrow();
+        final UInt64 committeCountPerSlot =
+            spec.atEpoch(UInt64.ZERO)
+                .beaconStateAccessors()
+                .getCommitteeCountPerSlot(epochState, epoch);
+        final EpochAttestationSchedule attestationCommitteeAssignments =
+            spec.atEpoch(epoch)
+                .getValidatorsUtil()
+                .getAttestationCommitteesAtEpoch(epochState, epoch, committeCountPerSlot);
         for (int i = 0; i < slotsPerEpoch; i++) {
           final UInt64 slotStart = timeProvider.getTimeInMillis();
           currentSlot = currentSlot.plus(UInt64.ONE);
-
-          final SignedBeaconBlock block =
-              localChain.createAndImportBlockAtSlotWithAttestations(
-                  currentSlot, AttestationGenerator.groupAndAggregateAttestations(attestations));
-          writer.accept(block);
-          final StateAndBlockSummary postState =
+          final StateAndBlockSummary preState =
               localStorage
                   .getStore()
-                  .retrieveStateAndBlockSummary(block.getMessage().hashTreeRoot())
-                  .join()
+                  .retrieveStateAndBlockSummary(localStorage.getBestBlockRoot().orElseThrow())
+                  .get()
                   .orElseThrow();
 
-          attestations =
+          final List<Attestation> attestations =
               UInt64.ONE.equals(currentSlot)
                   ? Collections.emptyList()
-                  : attestationGenerator.getAttestationsForSlot(postState, currentSlot);
+                  : attestationGenerator.getAttestationsForSlot(
+                      preState, currentSlot.decrement(), attestationCommitteeAssignments);
+          List<Attestation> aggregate =
+              AttestationGenerator.groupAndAggregateAttestations(attestations);
+
+          final SignedBeaconBlock block =
+              localChain.createAndImportBlockAtSlotWithAttestations(currentSlot, aggregate);
+          writer.accept(block);
 
           System.out.println(
               "   -> Processed: "
@@ -138,15 +153,16 @@ public class BlockArchiveGenerator {
                   + " ms");
         }
 
-        Optional<BeaconState> bestState =
+        final Optional<BeaconState> bestState =
             localStorage.retrieveBlockState(localStorage.getBestBlockRoot().orElse(null)).join();
-        final long epoch = j;
         bestState.ifPresent(
             beaconState ->
                 System.out.printf(
                     " => Epoch done: %s, Best State slot: %s, state hash: %s%n",
                     epoch, beaconState.getSlot(), beaconState.hashTreeRoot()));
       }
+    } catch (IllegalArgumentException e) {
+      System.out.println("Failed");
     }
   }
 }

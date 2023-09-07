@@ -46,21 +46,6 @@ public class ValidatorsUtil {
     this.beaconStateAccessors = beaconStateAccessors;
   }
 
-  /**
-   * Check if validator is eligible for activation.
-   *
-   * @param state the beacon state
-   * @param validator the validator
-   * @return true if the validator is eligible for activation
-   */
-  public boolean isEligibleForActivation(BeaconState state, Validator validator) {
-    return validator
-                .getActivationEligibilityEpoch()
-                .compareTo(state.getFinalizedCheckpoint().getEpoch())
-            <= 0
-        && validator.getActivationEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH);
-  }
-
   public boolean isEligibleForActivation(final UInt64 finalizedEpoch, final Validator validator) {
     return validator.getActivationEligibilityEpoch().compareTo(finalizedEpoch) <= 0
         && validator.getActivationEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH);
@@ -84,7 +69,7 @@ public class ValidatorsUtil {
    * @return Optional.of(CommitteeAssignment).
    */
   public Optional<CommitteeAssignment> getCommitteeAssignment(
-      BeaconState state, UInt64 epoch, int validatorIndex) {
+      final BeaconState state, final UInt64 epoch, final int validatorIndex) {
     return getCommitteeAssignment(
         state, epoch, validatorIndex, beaconStateAccessors.getCommitteeCountPerSlot(state, epoch));
   }
@@ -101,13 +86,16 @@ public class ValidatorsUtil {
    * @param committeeCountPerSlot the number of committees for the target epoch
    * @return Optional.of(CommitteeAssignment).
    */
-  public Optional<CommitteeAssignment> getCommitteeAssignment(
-      BeaconState state, UInt64 epoch, int validatorIndex, final UInt64 committeeCountPerSlot) {
-    UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).plus(UInt64.ONE);
+  private Optional<CommitteeAssignment> getCommitteeAssignment(
+      final BeaconState state,
+      final UInt64 epoch,
+      final int validatorIndex,
+      final UInt64 committeeCountPerSlot) {
+    final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).plus(UInt64.ONE);
     checkArgument(
         epoch.compareTo(nextEpoch) <= 0, "get_committee_assignment: Epoch number too high");
 
-    UInt64 startSlot = miscHelpers.computeStartSlotAtEpoch(epoch);
+    final UInt64 startSlot = miscHelpers.computeStartSlotAtEpoch(epoch);
     for (UInt64 slot = startSlot;
         slot.isLessThan(startSlot.plus(specConfig.getSlotsPerEpoch()));
         slot = slot.plus(UInt64.ONE)) {
@@ -122,6 +110,25 @@ public class ValidatorsUtil {
       }
     }
     return Optional.empty();
+  }
+
+  public EpochAttestationSchedule getAttestationCommitteesAtEpoch(
+      final BeaconState state, final UInt64 epoch, final UInt64 committeeCountPerSlot) {
+    final UInt64 nextEpoch = beaconStateAccessors.getCurrentEpoch(state).plus(UInt64.ONE);
+    checkArgument(
+        epoch.compareTo(nextEpoch) <= 0, "get_committee_assignment: Epoch number too high");
+    final UInt64 startSlot = miscHelpers.computeStartSlotAtEpoch(epoch);
+    final EpochAttestationSchedule.Builder builder = EpochAttestationSchedule.builder();
+    for (UInt64 slot = startSlot;
+        slot.isLessThan(startSlot.plus(specConfig.getSlotsPerEpoch()));
+        slot = slot.plus(UInt64.ONE)) {
+      for (UInt64 index = UInt64.ZERO;
+          index.isLessThan(committeeCountPerSlot);
+          index = index.plus(UInt64.ONE)) {
+        builder.add(slot, index, beaconStateAccessors.getBeaconCommittee(state, slot, index));
+      }
+    }
+    return builder.build();
   }
 
   public boolean isAggregator(final BLSSignature slotSignature, final int modulo) {
