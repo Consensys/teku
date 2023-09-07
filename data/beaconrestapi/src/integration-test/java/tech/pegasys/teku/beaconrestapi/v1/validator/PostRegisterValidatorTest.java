@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.v1.validator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
@@ -23,13 +24,20 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostRegisterValidator;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -44,6 +52,17 @@ public class PostRegisterValidatorTest extends AbstractDataBackedRestAPIIntegrat
   void setup() {
     startRestAPIAtGenesis(SpecMilestone.BELLATRIX);
     dataStructureUtil = new DataStructureUtil(spec);
+    when(validatorApiChannel.getValidatorStatuses(anyCollection()))
+        .thenAnswer(
+            args -> {
+              final Collection<BLSPublicKey> publicKeys = args.getArgument(0);
+              final Map<BLSPublicKey, ValidatorStatus> validatorStatuses =
+                  publicKeys.stream()
+                      .collect(
+                          Collectors.toMap(
+                              Function.identity(), __ -> ValidatorStatus.active_ongoing));
+              return SafeFuture.completedFuture(Optional.of(validatorStatuses));
+            });
   }
 
   @Test
@@ -67,6 +86,24 @@ public class PostRegisterValidatorTest extends AbstractDataBackedRestAPIIntegrat
     final SszList<SignedValidatorRegistration> request =
         dataStructureUtil.randomSignedValidatorRegistrations(10);
     when(validatorApiChannel.registerValidators(request))
+        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")));
+
+    try (Response response =
+        post(
+            PostRegisterValidator.ROUTE,
+            JsonUtil.serialize(
+                request, SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.getJsonTypeDefinition()))) {
+
+      assertThat(response.code()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
+      assertThat(response.body().string()).isEqualTo("{\"code\":500,\"message\":\"oopsy\"}");
+    }
+  }
+
+  @Test
+  void shouldReturnServerErrorWhenThereIsAnExceptionWhileGettingStatuses() throws IOException {
+    final SszList<SignedValidatorRegistration> request =
+        dataStructureUtil.randomSignedValidatorRegistrations(10);
+    when(validatorApiChannel.getValidatorStatuses(anyCollection()))
         .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")));
 
     try (Response response =

@@ -69,8 +69,11 @@ public class PostRegisterValidator extends RestApiEndpoint {
             .handle(
                 (__, error) -> {
                   if (error != null) {
-                    return AsyncApiResponse.respondWithError(
-                        SC_INTERNAL_SERVER_ERROR, error.getMessage());
+                    final String message =
+                        error.getCause() == null
+                            ? error.getMessage()
+                            : error.getCause().getMessage();
+                    return AsyncApiResponse.respondWithError(SC_INTERNAL_SERVER_ERROR, message);
                   }
                   return AsyncApiResponse.respondOk(null);
                 }));

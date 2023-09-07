@@ -306,7 +306,7 @@ public class ValidatorDataProvider {
             validatorRegistrations.stream()
                 .map(registration -> registration.getMessage().getPublicKey())
                 .collect(Collectors.toList()))
-        .thenCompose(
+        .thenComposeChecked(
             maybeValidatorStatuses -> {
               if (maybeValidatorStatuses.isEmpty()) {
                 final String errorMessage =
