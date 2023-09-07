@@ -393,30 +393,25 @@ public class KvStoreDatabase implements Database {
   }
 
   private boolean pruneToBlock(final UInt64 lastSlotToPrune, final int pruneLimit) {
-    final List<Pair<UInt64, Bytes32>> blocksToPruneWithExtra;
+    final List<Pair<UInt64, Bytes32>> blocksToPrune;
     LOG.debug("Pruning finalized blocks to slot {}", lastSlotToPrune);
     try (final Stream<SignedBeaconBlock> stream =
         dao.streamFinalizedBlocks(UInt64.ZERO, lastSlotToPrune)) {
-      blocksToPruneWithExtra =
-          stream
-              .limit(pruneLimit + 1)
-              .map(block -> Pair.of(block.getSlot(), block.getRoot()))
-              .toList();
+      blocksToPrune =
+          stream.limit(pruneLimit).map(block -> Pair.of(block.getSlot(), block.getRoot())).toList();
     }
 
-    if (blocksToPruneWithExtra.isEmpty()) {
+    if (blocksToPrune.isEmpty()) {
       LOG.debug("No finalized blocks to prune up to {} slot", lastSlotToPrune);
       return true;
     }
-    final boolean allPruned = blocksToPruneWithExtra.size() <= pruneLimit;
-    final List<Pair<UInt64, Bytes32>> blocksToPrune =
-        allPruned ? blocksToPruneWithExtra : blocksToPruneWithExtra.subList(0, pruneLimit);
     LOG.debug(
         "Pruning {} finalized blocks, last slot is {}",
         blocksToPrune.size(),
         blocksToPrune.get(blocksToPrune.size() - 1));
     deleteFinalizedBlocks(blocksToPrune);
-    return allPruned;
+    // It could be not true rarely but assuming we have large enough pruneLimit, very rarely
+    return blocksToPrune.size() < pruneLimit;
   }
 
   private void deleteFinalizedBlocks(final List<Pair<UInt64, Bytes32>> blocksToPrune) {
