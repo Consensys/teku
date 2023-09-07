@@ -53,51 +53,41 @@ public class SszGenericBasicVectorTestExecutor extends AbstractSszGenericTestExe
   @Override
   protected String parseString(final TestDefinition testDefinition, final String value) {
     switch (getElementType(testDefinition)) {
-      case "bool":
-        switch (value) {
-          case "false":
-            return "0";
-          case "true":
-            return "1";
-          default:
-            throw new IllegalArgumentException("Unexpected boolean value: " + value);
-        }
-      case "uint8":
+      case "bool" -> {
+        return switch (value) {
+          case "false" -> "0";
+          case "true" -> "1";
+          default -> throw new IllegalArgumentException("Unexpected boolean value: " + value);
+        };
+      }
+      case "uint8" -> {
         // Java will treat the byte as a signed byte so unsigned value to signed byte
         return Byte.toString((byte) Integer.parseUnsignedInt(value));
-      case "uint256":
+      }
+      case "uint256" -> {
         // UInt256.toString outputs hex whereas the tests use decimal - reformat to match
         return UInt256.valueOf(new BigInteger(value)).toString();
-      default:
+      }
+      default -> {
         return value;
+      }
     }
   }
 
   // vec_{element type}_{length}
   private SszSchema<?> getElementSchema(final TestDefinition testDefinition) {
     final String elementType = getElementType(testDefinition);
-    switch (elementType) {
+    return switch (elementType) {
         // bool is not a bit in this case, it's a full one byte boolean which we don't support
-      case "bool":
-      case "uint8":
-        return SszPrimitiveSchemas.BYTE_SCHEMA;
-      case "uint16":
-        return UINT16_SCHEMA;
-      case "uint64":
-        return SszPrimitiveSchemas.UINT64_SCHEMA;
-      case "uint256":
-        return SszPrimitiveSchemas.UINT256_SCHEMA;
-      case "uint32":
-      case "uint128":
-        throw new TestAbortedException(
-            "Element type not supported: "
-                + elementType
-                + " From: "
-                + testDefinition.getTestName());
-      default:
-        throw new UnsupportedOperationException(
-            "No schema for type: " + testDefinition.getTestName());
-    }
+      case "bool", "uint8" -> SszPrimitiveSchemas.BYTE_SCHEMA;
+      case "uint16" -> UINT16_SCHEMA;
+      case "uint64" -> SszPrimitiveSchemas.UINT64_SCHEMA;
+      case "uint256" -> SszPrimitiveSchemas.UINT256_SCHEMA;
+      case "uint32", "uint128" -> throw new TestAbortedException(
+          "Element type not supported: " + elementType + " From: " + testDefinition.getTestName());
+      default -> throw new UnsupportedOperationException(
+          "No schema for type: " + testDefinition.getTestName());
+    };
   }
 
   private String getElementType(final TestDefinition testDefinition) {
