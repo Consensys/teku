@@ -139,7 +139,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     }
     if (blockHash.equals(terminalBlockHash)) {
       // TBH flow
-      LOG.info("TBH: sending terminal block hash " + terminalBlockHash);
+      LOG.trace("TBH: sending terminal block hash " + terminalBlockHash);
       terminalBlockSent = true;
       return SafeFuture.completedFuture(Optional.of(terminalBlock));
     }
@@ -164,7 +164,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     }
     if (timeProvider.getTimeInSeconds().isGreaterThanOrEqualTo(transitionTime)) {
       // TTD flow
-      LOG.info("TTD: sending terminal block hash " + terminalBlockHash);
+      LOG.trace("TTD: sending terminal block hash " + terminalBlockHash);
       terminalBlockSent = true;
       return SafeFuture.completedFuture(terminalBlock);
     }
@@ -176,7 +176,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       final ForkChoiceState forkChoiceState,
       final Optional<PayloadBuildingAttributes> payloadBuildingAttributes) {
     if (!bellatrixActivationDetected) {
-      LOG.info(
+      LOG.trace(
           "forkChoiceUpdated received before terminalBlock has been sent. Assuming transition already happened");
 
       // do the activation check to be able to respond to terminal block verification
@@ -197,7 +197,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                   return payloadId;
                 }));
 
-    LOG.info(
+    LOG.trace(
         "forkChoiceUpdated: forkChoiceState: {} payloadBuildingAttributes: {} -> forkChoiceUpdatedResult: {}",
         forkChoiceState,
         payloadBuildingAttributes,
@@ -210,7 +210,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   public SafeFuture<GetPayloadResponse> engineGetPayload(
       final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
     if (!bellatrixActivationDetected) {
-      LOG.info(
+      LOG.trace(
           "getPayload received before terminalBlock has been sent. Assuming transition already happened");
 
       // do the activation check to be able to respond to terminal block verification
@@ -269,7 +269,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
     headAndAttrs.currentExecutionPayload = Optional.of(executionPayload);
 
-    LOG.info(
+    LOG.trace(
         "getPayload: payloadId: {} slot: {} -> executionPayload blockHash: {}",
         executionPayloadContext.getPayloadId(),
         slot,
@@ -280,7 +280,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
             .currentBlobsBundle
             .map(
                 blobsBundle -> {
-                  LOG.info("getPayload: blobsBundle: {}", blobsBundle.toBriefString());
+                  LOG.trace("getPayload: blobsBundle: {}", blobsBundle.toBriefString());
                   return new GetPayloadResponse(executionPayload, UInt256.ZERO, blobsBundle, false);
                 })
             .orElse(new GetPayloadResponse(executionPayload));
@@ -294,7 +294,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     final PayloadStatus returnedStatus =
         Optional.ofNullable(knownPosBlocks.get(executionPayload.getBlockHash()))
             .orElse(payloadStatus);
-    LOG.info(
+    LOG.trace(
         "newPayload: executionPayload blockHash: {}  versionedHashes: {} parentBeaconBlockRoot: {} -> {}",
         executionPayload.getBlockHash(),
         newPayloadRequest.getVersionedHashes(),
@@ -313,7 +313,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   public SafeFuture<HeaderWithFallbackData> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
     final UInt64 slot = state.getSlot();
-    LOG.info(
+    LOG.trace(
         "getPayloadHeader: payloadId: {} slot: {} ... delegating to getPayload ...",
         executionPayloadContext,
         slot);
@@ -324,7 +324,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         .thenApply(
             getPayloadResponse -> {
               final ExecutionPayload executionPayload = getPayloadResponse.getExecutionPayload();
-              LOG.info(
+              LOG.trace(
                   "getPayloadHeader: payloadId: {} slot: {} -> executionPayload blockHash: {}",
                   executionPayloadContext,
                   slot,
@@ -390,7 +390,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
             .equals(lastBuilderPayloadToBeUnblinded.get().hashTreeRoot()),
         "provided signed blinded block contains an execution payload header not matching the previously retrieved execution payload via getPayloadHeader");
 
-    LOG.info(
+    LOG.trace(
         "proposeBlindedBlock: slot: {} block: {} -> unblinded executionPayload blockHash: {}",
         slot,
         signedBlockContainer.getRoot(),
@@ -451,7 +451,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
   private void checkBellatrixActivation() {
     if (!bellatrixActivationDetected) {
-      LOG.info("Bellatrix activation detected");
+      LOG.trace("Bellatrix activation detected");
       bellatrixActivationDetected = true;
       prepareTransitionBlocks(timeProvider.getTimeInSeconds());
     }
@@ -463,13 +463,13 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     final SpecConfigBellatrix specConfigBellatrix =
         specVersion.getConfig().toVersionBellatrix().orElseThrow();
 
-    LOG.info("Preparing transition blocks using spec");
+    LOG.trace("Preparing transition blocks using spec");
     final Bytes32 configTerminalBlockHash = specConfigBellatrix.getTerminalBlockHash();
     final UInt256 terminalTotalDifficulty = specConfigBellatrix.getTerminalTotalDifficulty();
 
     if (configTerminalBlockHash.isZero()) {
       // TTD emulation
-      LOG.info("Transition via TTD: {}", terminalTotalDifficulty);
+      LOG.trace("Transition via TTD: {}", terminalTotalDifficulty);
 
       transitionTime = bellatrixActivationTime.plus(specConfigBellatrix.getSecondsPerSlot() - 1);
 
@@ -477,7 +477,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
     } else {
       // TBH emulation
-      LOG.info("Preparing transition via TBH: {}", configTerminalBlockHash);
+      LOG.trace("Preparing transition via TBH: {}", configTerminalBlockHash);
 
       // transition time is not relevant, just wait for the getPowBlock asking for the transition
       // block
