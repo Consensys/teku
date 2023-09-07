@@ -38,7 +38,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
-public class DefaultValidatorStatusLoggerTest {
+public class ValidatorStatusProviderTest {
 
   public static final String VALIDATOR_COUNTS_METRIC = "local_validator_counts";
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
@@ -46,24 +46,27 @@ public class DefaultValidatorStatusLoggerTest {
   private final Collection<BLSPublicKey> validatorKeys = Set.of(validatorKey);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
+  private final ValidatorStatusesChannel validatorStatusesChannel =
+      mock(ValidatorStatusesChannel.class);
 
-  private final DefaultValidatorStatusLogger logger =
-      new DefaultValidatorStatusLogger(
+  private final ValidatorStatusProvider provider =
+      new DefaultValidatorStatusProvider(
           metricsSystem,
           new OwnedValidators(
               Map.of(validatorKey, new Validator(validatorKey, NO_OP_SIGNER, Optional::empty))),
           validatorApiChannel,
+          validatorStatusesChannel,
           asyncRunner);
 
   @Test
   @SuppressWarnings("unchecked")
-  void shouldRetryPrintingInitialValidatorStatuses() {
+  void shouldRetryGettingInitialValidatorStatuses() {
     when(validatorApiChannel.getValidatorStatuses(validatorKeys))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(Collections.EMPTY_MAP)));
 
-    assertThat(logger.printInitialValidatorStatuses()).isNotCompleted();
+    assertThat(provider.initValidatorStatuses()).isNotCompleted();
     verify(validatorApiChannel).getValidatorStatuses(validatorKeys);
 
     asyncRunner.executeQueuedActions();
@@ -86,7 +89,7 @@ public class DefaultValidatorStatusLoggerTest {
             SafeFuture.completedFuture(
                 Optional.of(Map.of(validatorKey, ValidatorStatus.pending_initialized))));
 
-    assertThat(logger.printInitialValidatorStatuses()).isCompleted();
+    assertThat(provider.initValidatorStatuses()).isCompleted();
 
     final StubLabelledGauge gauge =
         metricsSystem.getLabelledGauge(TekuMetricCategory.VALIDATOR, VALIDATOR_COUNTS_METRIC);
@@ -106,7 +109,7 @@ public class DefaultValidatorStatusLoggerTest {
             SafeFuture.completedFuture(
                 Optional.of(Map.of(validatorKey, ValidatorStatus.active_ongoing))));
 
-    assertThat(logger.printInitialValidatorStatuses()).isCompleted();
+    assertThat(provider.initValidatorStatuses()).isCompleted();
 
     final StubLabelledGauge gauge =
         metricsSystem.getLabelledGauge(TekuMetricCategory.VALIDATOR, VALIDATOR_COUNTS_METRIC);
@@ -115,7 +118,7 @@ public class DefaultValidatorStatusLoggerTest {
     assertThat(gauge.getValue(ValidatorStatus.active_ongoing.name()))
         .isEqualTo(OptionalDouble.of(0));
 
-    logger.checkValidatorStatusChanges();
+    provider.updateValidatorStatuses();
 
     assertThat(gauge.getValue(ValidatorStatus.pending_initialized.name()))
         .isEqualTo(OptionalDouble.of(0));

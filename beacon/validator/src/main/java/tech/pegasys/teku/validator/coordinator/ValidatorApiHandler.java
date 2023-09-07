@@ -58,7 +58,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -631,26 +630,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Void> registerValidators(
       final SszList<SignedValidatorRegistration> validatorRegistrations) {
-    final List<BLSPublicKey> validatorIdentifiers =
-        validatorRegistrations.stream()
-            .map(SignedValidatorRegistration::getMessage)
-            .map(ValidatorRegistration::getPublicKey)
-            .collect(toList());
-    return getValidatorStatuses(validatorIdentifiers)
-        .thenCompose(
-            maybeValidatorStatuses -> {
-              if (maybeValidatorStatuses.isEmpty()) {
-                final String errorMessage =
-                    "Couldn't retrieve validator statuses during registering. Most likely the BN is still syncing.";
-                return SafeFuture.failedFuture(new IllegalStateException(errorMessage));
-              }
-              final SszList<SignedValidatorRegistration> applicableValidatorRegistrations =
-                  getApplicableValidatorRegistrations(
-                      validatorRegistrations, maybeValidatorStatuses.get());
-
-              return proposersDataManager.updateValidatorRegistrations(
-                  applicableValidatorRegistrations, combinedChainDataClient.getCurrentSlot());
-            });
+    return proposersDataManager.updateValidatorRegistrations(
+        validatorRegistrations, combinedChainDataClient.getCurrentSlot());
   }
 
   @Override
@@ -799,33 +780,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     return Optional.of(
         new SyncCommitteeDuty(
             state.getValidators().get(validatorIndex).getPublicKey(), validatorIndex, duties));
-  }
-
-  private SszList<SignedValidatorRegistration> getApplicableValidatorRegistrations(
-      final SszList<SignedValidatorRegistration> validatorRegistrations,
-      final Map<BLSPublicKey, ValidatorStatus> validatorStatuses) {
-    final List<SignedValidatorRegistration> applicableValidatorRegistrations =
-        validatorRegistrations.stream()
-            .filter(
-                signedValidatorRegistration -> {
-                  final BLSPublicKey validatorIdentifier =
-                      signedValidatorRegistration.getMessage().getPublicKey();
-                  final boolean unknownOrHasExited =
-                      Optional.ofNullable(validatorStatuses.get(validatorIdentifier))
-                          .map(ValidatorStatus::hasExited)
-                          .orElse(true);
-                  if (unknownOrHasExited) {
-                    LOG.debug(
-                        "Validator {} is unknown or has exited. It will be skipped for registering.",
-                        validatorIdentifier.toAbbreviatedString());
-                  }
-                  return !unknownOrHasExited;
-                })
-            .collect(toList());
-    if (validatorRegistrations.size() == applicableValidatorRegistrations.size()) {
-      return validatorRegistrations;
-    }
-    return validatorRegistrations.getSchema().createFromElements(applicableValidatorRegistrations);
   }
 
   private static <A, B, R> Optional<R> combine(

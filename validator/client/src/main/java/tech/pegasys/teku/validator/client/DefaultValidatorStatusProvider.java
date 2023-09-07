@@ -16,11 +16,9 @@ package tech.pegasys.teku.validator.client;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -37,29 +35,31 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
-public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
+public class DefaultValidatorStatusProvider implements ValidatorStatusProvider {
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final int VALIDATOR_KEYS_PRINT_LIMIT = 20;
   private static final Duration INITIAL_STATUS_CHECK_RETRY_PERIOD = Duration.ofSeconds(5);
 
-  final OwnedValidators validators;
-  final ValidatorApiChannel validatorApiChannel;
-  final AtomicReference<Map<BLSPublicKey, ValidatorStatus>> latestValidatorStatuses =
+  private final OwnedValidators validators;
+  private final ValidatorApiChannel validatorApiChannel;
+  private final ValidatorStatusesChannel validatorStatusesChannel;
+  private final AtomicReference<Map<BLSPublicKey, ValidatorStatus>> latestValidatorStatuses =
       new AtomicReference<>();
-  final AsyncRunner asyncRunner;
-  final AtomicBoolean startupComplete = new AtomicBoolean(false);
+  private final AsyncRunner asyncRunner;
+  private final AtomicBoolean startupComplete = new AtomicBoolean(false);
   private final SettableLabelledGauge localValidatorCounts;
 
-  public DefaultValidatorStatusLogger(
-      MetricsSystem metricsSystem,
-      OwnedValidators validators,
-      ValidatorApiChannel validatorApiChannel,
-      AsyncRunner asyncRunner) {
+  public DefaultValidatorStatusProvider(
+      final MetricsSystem metricsSystem,
+      final OwnedValidators validators,
+      final ValidatorApiChannel validatorApiChannel,
+      final ValidatorStatusesChannel validatorStatusesChannel,
+      final AsyncRunner asyncRunner) {
     this.validators = validators;
     this.validatorApiChannel = validatorApiChannel;
     this.asyncRunner = asyncRunner;
-    localValidatorCounts =
+    this.validatorStatusesChannel = validatorStatusesChannel;
+    this.localValidatorCounts =
         SettableLabelledGauge.create(
             metricsSystem,
             TekuMetricCategory.VALIDATOR,
@@ -69,7 +69,7 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
   }
 
   @Override
-  public SafeFuture<Void> printInitialValidatorStatuses() {
+  public SafeFuture<Void> initValidatorStatuses() {
     if (validators.hasNoValidators()) {
       return SafeFuture.COMPLETE;
     }
@@ -83,15 +83,12 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
                 return retryInitialValidatorStatusCheck();
               }
 
-              Map<BLSPublicKey, ValidatorStatus> validatorStatuses = maybeValidatorStatuses.get();
+              final Map<BLSPublicKey, ValidatorStatus> validatorStatuses =
+                  maybeValidatorStatuses.get();
               latestValidatorStatuses.set(validatorStatuses);
-              if (validators.getValidatorCount() < VALIDATOR_KEYS_PRINT_LIMIT) {
-                printValidatorStatusesOneByOne(validatorStatuses);
-              } else {
-                printValidatorStatusSummary(validatorStatuses);
-              }
               updateValidatorCountMetrics(validatorStatuses);
 
+              validatorStatusesChannel.onNewValidatorStatuses(validatorStatuses);
               startupComplete.set(true);
               return SafeFuture.COMPLETE;
             })
@@ -100,48 +97,11 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
 
   private SafeFuture<Void> retryInitialValidatorStatusCheck() {
     return asyncRunner.runAfterDelay(
-        this::printInitialValidatorStatuses, INITIAL_STATUS_CHECK_RETRY_PERIOD);
-  }
-
-  private void printValidatorStatusesOneByOne(
-      Map<BLSPublicKey, ValidatorStatus> validatorStatuses) {
-    for (BLSPublicKey publicKey : validators.getPublicKeys()) {
-      Optional<ValidatorStatus> maybeValidatorStatus =
-          Optional.ofNullable(validatorStatuses.get(publicKey));
-      maybeValidatorStatus.ifPresentOrElse(
-          validatorStatus ->
-              STATUS_LOG.validatorStatus(publicKey.toAbbreviatedString(), validatorStatus.name()),
-          () -> STATUS_LOG.unableToRetrieveValidatorStatus(publicKey.toAbbreviatedString()));
-    }
-  }
-
-  private void printValidatorStatusSummary(Map<BLSPublicKey, ValidatorStatus> validatorStatuses) {
-    Map<ValidatorStatus, AtomicInteger> validatorStatusCount = new HashMap<>();
-    final AtomicInteger unknownValidatorCountReference = new AtomicInteger(0);
-    for (BLSPublicKey publicKey : validators.getPublicKeys()) {
-      Optional<ValidatorStatus> maybeValidatorStatus =
-          Optional.ofNullable(validatorStatuses.get(publicKey));
-      maybeValidatorStatus.ifPresentOrElse(
-          status -> {
-            AtomicInteger count =
-                validatorStatusCount.computeIfAbsent(status, __ -> new AtomicInteger(0));
-            count.incrementAndGet();
-          },
-          unknownValidatorCountReference::incrementAndGet);
-    }
-
-    for (Map.Entry<ValidatorStatus, AtomicInteger> statusCount : validatorStatusCount.entrySet()) {
-      STATUS_LOG.validatorStatusSummary(statusCount.getValue().get(), statusCount.getKey().name());
-    }
-
-    final int unknownValidatorCount = unknownValidatorCountReference.get();
-    if (unknownValidatorCount > 0) {
-      STATUS_LOG.unableToRetrieveValidatorStatusSummary(unknownValidatorCountReference.get());
-    }
+        this::initValidatorStatuses, INITIAL_STATUS_CHECK_RETRY_PERIOD);
   }
 
   @Override
-  public void checkValidatorStatusChanges() {
+  public void updateValidatorStatuses() {
     if (!startupComplete.get() || validators.hasNoValidators()) {
       return;
     }
@@ -155,36 +115,23 @@ public class DefaultValidatorStatusLogger implements ValidatorStatusLogger {
                 return;
               }
 
-              Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses =
+              final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses =
                   maybeNewValidatorStatuses.get();
 
-              Map<BLSPublicKey, ValidatorStatus> oldValidatorStatuses =
+              final Map<BLSPublicKey, ValidatorStatus> oldValidatorStatuses =
                   latestValidatorStatuses.getAndSet(newValidatorStatuses);
+              validatorStatusesChannel.onNewValidatorStatuses(newValidatorStatuses);
               if (oldValidatorStatuses == null) {
                 return;
               }
-
-              for (Map.Entry<BLSPublicKey, ValidatorStatus> entry :
-                  newValidatorStatuses.entrySet()) {
-                BLSPublicKey key = entry.getKey();
-                ValidatorStatus newStatus = entry.getValue();
-                ValidatorStatus oldStatus = oldValidatorStatuses.get(key);
-
-                // report the status of a new validator
-                if (oldStatus == null) {
-                  STATUS_LOG.validatorStatus(key.toAbbreviatedString(), newStatus.name());
-                  continue;
-                }
-                if (oldStatus.equals(newStatus)) {
-                  continue;
-                }
-                STATUS_LOG.validatorStatusChange(
-                    oldStatus.name(), newStatus.name(), key.toAbbreviatedString());
-              }
-
               updateValidatorCountMetrics(newValidatorStatuses);
             })
         .finish(error -> LOG.error("Failed to update validator statuses", error));
+  }
+
+  @Override
+  public Optional<Map<BLSPublicKey, ValidatorStatus>> getStatuses() {
+    return Optional.ofNullable(latestValidatorStatuses.get());
   }
 
   private void updateValidatorCountMetrics(

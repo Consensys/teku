@@ -41,7 +41,6 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -49,7 +48,6 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
@@ -61,7 +59,6 @@ import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -1056,67 +1053,6 @@ class ValidatorApiHandlerTest {
     assertThat(result).isCompleted();
 
     verify(proposersDataManager).updateValidatorRegistrations(validatorRegistrations, ONE);
-  }
-
-  @Test
-  void registerValidators_shouldIgnoreExitedAndUnknownValidators() {
-    final int numOfValidatorRegistrationsAttempted = ValidatorStatus.values().length + 2;
-
-    final SszList<SignedValidatorRegistration> validatorRegistrations =
-        dataStructureUtil.randomSignedValidatorRegistrations(numOfValidatorRegistrationsAttempted);
-
-    final Map<BLSPublicKey, ValidatorStatus> knownValidators =
-        IntStream.range(0, ValidatorStatus.values().length)
-            .mapToObj(
-                statusIdx ->
-                    Map.entry(
-                        validatorRegistrations.get(statusIdx).getMessage().getPublicKey(),
-                        ValidatorStatus.values()[statusIdx]))
-            .collect(Collectors.toUnmodifiableMap(Entry::getKey, Entry::getValue));
-
-    final List<BLSPublicKey> exitedOrUnknownKeys =
-        IntStream.range(
-                ValidatorStatus.exited_unslashed.ordinal(), numOfValidatorRegistrationsAttempted)
-            .mapToObj(
-                statusOrdinal ->
-                    validatorRegistrations.get(statusOrdinal).getMessage().getPublicKey())
-            .collect(Collectors.toUnmodifiableList());
-
-    setupValidatorsState(validatorRegistrations, ValidatorStatus.values().length, knownValidators);
-
-    when(chainDataClient.getCurrentSlot()).thenReturn(ONE);
-
-    final SafeFuture<Void> result = validatorApiHandler.registerValidators(validatorRegistrations);
-
-    assertThat(result).isCompleted();
-
-    @SuppressWarnings("unchecked")
-    final ArgumentCaptor<SszList<SignedValidatorRegistration>> argumentCaptor =
-        ArgumentCaptor.forClass(SszList.class);
-
-    verify(proposersDataManager).updateValidatorRegistrations(argumentCaptor.capture(), eq(ONE));
-
-    final SszList<SignedValidatorRegistration> capturedRegistrations = argumentCaptor.getValue();
-
-    assertThat(capturedRegistrations)
-        .hasSize(5)
-        .map(signedRegistration -> signedRegistration.getMessage().getPublicKey())
-        .doesNotContainAnyElementsOf(exitedOrUnknownKeys);
-  }
-
-  @Test
-  void registerValidators_shouldReportErrorIfCannotRetrieveValidatorStatuses() {
-    final SszList<SignedValidatorRegistration> validatorRegistrations =
-        dataStructureUtil.randomSignedValidatorRegistrations(4);
-
-    when(chainDataProvider.getStateValidators(eq("head"), any(), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-
-    final SafeFuture<Void> result = validatorApiHandler.registerValidators(validatorRegistrations);
-
-    SafeFutureAssert.assertThatSafeFuture(result)
-        .isCompletedExceptionallyWithMessage(
-            "Couldn't retrieve validator statuses during registering. Most likely the BN is still syncing.");
   }
 
   @Test

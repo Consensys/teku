@@ -219,6 +219,15 @@ public interface ValidatorApiChannel extends ChannelInterface {
   SafeFuture<Void> prepareBeaconProposer(
       Collection<BeaconPreparableProposer> beaconPreparableProposers);
 
+  /**
+   * Note that only registrations for active or pending validators must be sent to the builder
+   * network. Registrations for unknown or exited validators must be filtered out and not sent to
+   * the builder network. Expects already filtered input.
+   *
+   * <p>See <a
+   * href="https://github.com/ethereum/beacon-APIs/blob/master/apis/validator/register_validator.yaml">validator
+   * registration endpoint spec</a>
+   */
   SafeFuture<Void> registerValidators(SszList<SignedValidatorRegistration> validatorRegistrations);
 
   SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> getValidatorsLiveness(

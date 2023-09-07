@@ -25,18 +25,18 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 public class ValidatorTimingActions implements ValidatorTimingChannel {
   private final ValidatorIndexProvider validatorIndexProvider;
   private final Collection<ValidatorTimingChannel> delegates;
-  private final ValidatorStatusLogger statusLogger;
+  private final ValidatorStatusProvider validatorStatusProvider;
   private final Spec spec;
 
   private final SettableGauge validatorCurrentEpoch;
 
   public ValidatorTimingActions(
-      final ValidatorStatusLogger statusLogger,
+      final ValidatorStatusProvider validatorStatusProvider,
       final ValidatorIndexProvider validatorIndexProvider,
       final Collection<ValidatorTimingChannel> delegates,
       final Spec spec,
       final MetricsSystem metricsSystem) {
-    this.statusLogger = statusLogger;
+    this.validatorStatusProvider = validatorStatusProvider;
     this.validatorIndexProvider = validatorIndexProvider;
     this.delegates = delegates;
     this.spec = spec;
@@ -57,7 +57,7 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
     final UInt64 firstSlotOfEpoch = spec.computeStartSlotAtEpoch(epoch);
     if (slot.equals(firstSlotOfEpoch.plus(1))) {
       validatorIndexProvider.lookupValidators();
-      statusLogger.checkValidatorStatusChanges();
+      validatorStatusProvider.updateValidatorStatuses();
     }
   }
 

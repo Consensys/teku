@@ -23,6 +23,7 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
@@ -300,7 +301,36 @@ public class ValidatorDataProvider {
 
   public SafeFuture<Void> registerValidators(
       SszList<SignedValidatorRegistration> validatorRegistrations) {
-    return validatorApiChannel.registerValidators(validatorRegistrations);
+    return validatorApiChannel
+        .getValidatorStatuses(
+            validatorRegistrations.stream()
+                .map(registration -> registration.getMessage().getPublicKey())
+                .collect(Collectors.toList()))
+        .thenCompose(
+            maybeValidatorStatuses -> {
+              if (maybeValidatorStatuses.isEmpty()) {
+                final String errorMessage =
+                    "Couldn't retrieve validator statuses during registering. Most likely the BN is still syncing.";
+                return SafeFuture.failedFuture(new IllegalStateException(errorMessage));
+              }
+
+              final List<SignedValidatorRegistration> activeAndPendingValidatorRegistrations =
+                  validatorRegistrations.stream()
+                      .filter(
+                          registration ->
+                              Optional.ofNullable(
+                                      maybeValidatorStatuses
+                                          .get()
+                                          .get(registration.getMessage().getPublicKey()))
+                                  .map(status -> !status.hasExited())
+                                  .orElse(false))
+                      .toList();
+
+              return validatorApiChannel.registerValidators(
+                  validatorRegistrations
+                      .getSchema()
+                      .createFromElements(activeAndPendingValidatorRegistrations));
+            });
   }
 
   public boolean isPhase0Slot(final UInt64 slot) {

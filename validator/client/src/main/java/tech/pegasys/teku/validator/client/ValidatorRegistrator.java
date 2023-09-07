@@ -17,7 +17,6 @@ import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -34,6 +33,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -60,6 +60,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
   private final Spec spec;
   private final OwnedValidators ownedValidators;
+  private final ValidatorStatusProvider validatorStatusProvider;
   private final ProposerConfigPropertiesProvider validatorRegistrationPropertiesProvider;
   private final ValidatorRegistrationSigningService validatorRegistrationSigningService;
   private final ValidatorApiChannel validatorApiChannel;
@@ -68,12 +69,14 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   public ValidatorRegistrator(
       final Spec spec,
       final OwnedValidators ownedValidators,
+      final ValidatorStatusProvider validatorStatusProvider,
       final ProposerConfigPropertiesProvider validatorRegistrationPropertiesProvider,
       final ValidatorRegistrationSigningService validatorRegistrationSigningService,
       final ValidatorApiChannel validatorApiChannel,
       final int batchSize) {
     this.spec = spec;
     this.ownedValidators = ownedValidators;
+    this.validatorStatusProvider = validatorStatusProvider;
     this.validatorRegistrationPropertiesProvider = validatorRegistrationPropertiesProvider;
     this.validatorRegistrationSigningService = validatorRegistrationSigningService;
     this.validatorApiChannel = validatorApiChannel;
@@ -137,7 +140,8 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   }
 
   private boolean isReadyToRegister() {
-    if (validatorRegistrationPropertiesProvider.isReadyToProvideProperties()) {
+    if (validatorRegistrationPropertiesProvider.isReadyToProvideProperties()
+        && validatorStatusProvider.getStatuses().isPresent()) {
       return true;
     }
     LOG.debug("Not ready to register validator(s).");
@@ -186,7 +190,14 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   }
 
   private SafeFuture<Void> processInBatches(final List<Validator> validators) {
-    final List<List<Validator>> batchedValidators = Lists.partition(validators, batchSize);
+    final List<Validator> activeAndPendingValidators = filterActiveAndPendingValidators(validators);
+    if (activeAndPendingValidators.isEmpty()) {
+      LOG.info(
+          "All owned validators are either exited or with unknown status. Skipping registration.");
+      return SafeFuture.COMPLETE;
+    }
+    final List<List<Validator>> batchedValidators =
+        Lists.partition(activeAndPendingValidators, batchSize);
 
     LOG.debug(
         "Going to prepare and send {} validator registration(s) to the Beacon Node in {} batch(es)",
@@ -209,8 +220,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
                   "Starting to process validators registration batch {}/{}",
                   currentBatch,
                   batchedValidators.size());
-              return filterActiveValidators(batch)
-                  .thenCompose(this::createValidatorRegistrations)
+              return createValidatorRegistrations(batch)
                   .thenCompose(this::sendValidatorRegistrations)
                   .thenApply(
                       size -> {
@@ -230,24 +240,26 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
                     successfullySentRegistrations.get(), validators.size()));
   }
 
-  private SafeFuture<List<Validator>> filterActiveValidators(final List<Validator> validators) {
+  private List<Validator> filterActiveAndPendingValidators(final List<Validator> validators) {
     final Function<Validator, BLSPublicKey> getKey =
         validator ->
             validatorRegistrationPropertiesProvider
                 .getBuilderRegistrationPublicKeyOverride(validator.getPublicKey())
                 .orElse(validator.getPublicKey());
-    final Map<BLSPublicKey, Validator> validatorMap =
-        validators.stream().collect(Collectors.toMap(getKey, Function.identity()));
-    return validatorApiChannel
-        .getValidatorStatuses(validators.stream().map(getKey).toList())
-        .thenApply(
-            maybeValidatorStatuses ->
-                maybeValidatorStatuses.map(Map::entrySet).stream()
-                    .flatMap(Collection::stream)
-                    .filter(statusEntry -> statusEntry.getValue().isActive())
-                    .map(statusEntry -> Optional.ofNullable(validatorMap.get(statusEntry.getKey())))
-                    .flatMap(Optional::stream)
-                    .toList());
+    final Map<BLSPublicKey, ValidatorStatus> statuses =
+        validatorStatusProvider
+            .getStatuses()
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "Expecting loaded validator statuses, but data was not provided"));
+    return validators.stream()
+        .filter(
+            validator ->
+                Optional.ofNullable(statuses.get(getKey.apply(validator)))
+                    .map(status -> !status.hasExited())
+                    .orElse(false))
+        .toList();
   }
 
   private SafeFuture<List<SignedValidatorRegistration>> createValidatorRegistrations(
