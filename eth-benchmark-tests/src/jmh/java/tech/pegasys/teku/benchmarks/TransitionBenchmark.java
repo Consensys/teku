@@ -30,7 +30,7 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import tech.pegasys.teku.benchmarks.gen.BlockIO;
-import tech.pegasys.teku.benchmarks.gen.BlsKeyPairIO;
+import tech.pegasys.teku.benchmarks.gen.KeyFileGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
@@ -82,11 +82,8 @@ public abstract class TransitionBenchmark {
             + "_validators_"
             + validatorsCount
             + ".ssz.gz";
-    String keysFile = "/bls-key-pairs/bls-key-pairs-400k-seed-0.txt.gz";
 
-    System.out.println("Generating keypairs from " + keysFile);
-    List<BLSKeyPair> validatorKeys =
-        BlsKeyPairIO.createReaderForResource(keysFile).readAll(validatorsCount);
+    final List<BLSKeyPair> validatorKeys = KeyFileGenerator.readValidatorKeys(validatorsCount);
 
     final BlockImportNotifications blockImportNotifications = mock(BlockImportNotifications.class);
     wsValidator = WeakSubjectivityFactory.lenientValidator();
