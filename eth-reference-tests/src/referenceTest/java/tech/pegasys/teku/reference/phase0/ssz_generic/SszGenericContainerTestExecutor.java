@@ -63,22 +63,16 @@ public class SszGenericContainerTestExecutor extends AbstractSszGenericTestExecu
   protected SszSchema<?> getSchema(final TestDefinition testDefinition) {
     final String testName = testDefinition.getTestName();
     final String type = testName.substring(testName.indexOf('/') + 1, testName.indexOf('_'));
-    switch (type) {
-      case "SingleFieldTestStruct":
-        return new SingleFieldTestStructSchema();
-      case "BitsStruct":
-        return new BitsStructSchema();
-      case "SmallTestStruct":
-        return new SmallTestStructSchema();
-      case "VarTestStruct":
-        return new VarTestStructSchema();
-      case "FixedTestStruct":
-        return new FixedTestStructSchema();
-      case "ComplexTestStruct": // Not implemented yet
-        return new ComplexTestStructSchema();
-      default:
-        throw new UnsupportedOperationException("Unsupported container type: " + type);
-    }
+    return switch (type) {
+      case "SingleFieldTestStruct" -> new SingleFieldTestStructSchema();
+      case "BitsStruct" -> new BitsStructSchema();
+      case "SmallTestStruct" -> new SmallTestStructSchema();
+      case "VarTestStruct" -> new VarTestStructSchema();
+      case "FixedTestStruct" -> new FixedTestStructSchema();
+      case "ComplexTestStruct" -> // Not implemented yet
+      new ComplexTestStructSchema();
+      default -> throw new UnsupportedOperationException("Unsupported container type: " + type);
+    };
   }
 
   @Override
