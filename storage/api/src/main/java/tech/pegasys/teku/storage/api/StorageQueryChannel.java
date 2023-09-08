@@ -94,6 +94,8 @@ public interface StorageQueryChannel extends ChannelInterface {
   /** This method could return non-canonical blob sidecar keys if the slot is not finalized */
   SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(UInt64 slot);
 
+  SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getAllBlobSidecarKeys(UInt64 slot);
+
   SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
       UInt64 startSlot, UInt64 endSlot, UInt64 limit);
 

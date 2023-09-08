@@ -186,6 +186,13 @@ public class ChainDataProvider {
         .getBlobSidecars(indices);
   }
 
+  public SafeFuture<Optional<List<BlobSidecar>>> getAllBlobSidecarsAtSlot(
+      final UInt64 slot, final List<UInt64> indices) {
+    return blobSidecarSelectorFactory
+        .nonCanonicalBlobSidecarsSelector(slot)
+        .getBlobSidecars(indices);
+  }
+
   public SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> getBlockRoot(final String blockIdParam) {
     return fromBlock(blockIdParam, SignedBeaconBlock::getRoot);
   }

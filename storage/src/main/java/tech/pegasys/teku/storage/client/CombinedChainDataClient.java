@@ -185,6 +185,14 @@ public class CombinedChainDataClient {
         .thenCompose(this::getBlobSidecars);
   }
 
+  public SafeFuture<List<BlobSidecar>> getAllBlobSidecars(
+      final UInt64 slot, final List<UInt64> indices) {
+    return historicalChainData
+        .getAllBlobSidecarKeys(slot)
+        .thenApply(keys -> filterBlobSidecarKeys(keys, indices))
+        .thenCompose(this::getAllBlobSidecars);
+  }
+
   private Stream<SlotAndBlockRootAndBlobIndex> filterBlobSidecarKeys(
       final List<SlotAndBlockRootAndBlobIndex> keys, final List<UInt64> indices) {
     if (indices.isEmpty()) {
@@ -194,6 +202,13 @@ public class CombinedChainDataClient {
   }
 
   private SafeFuture<List<BlobSidecar>> getBlobSidecars(
+      final Stream<SlotAndBlockRootAndBlobIndex> keys) {
+    return SafeFuture.collectAll(keys.map(this::getAllBlobSidecarByKey))
+        .thenApply(
+            blobSidecars -> blobSidecars.stream().flatMap(Optional::stream).collect(toList()));
+  }
+
+  private SafeFuture<List<BlobSidecar>> getAllBlobSidecars(
       final Stream<SlotAndBlockRootAndBlobIndex> keys) {
     return SafeFuture.collectAll(keys.map(this::getAllBlobSidecarByKey))
         .thenApply(

@@ -89,6 +89,10 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
     };
   }
 
+  public BlobSidecarSelector nonCanonicalBlobSidecarsSelector(final UInt64 slot) {
+    return indices -> client.getAllBlobSidecars(slot, indices).thenApply(Optional::of);
+  }
+
   private SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecarsForBlock(
       final Optional<SignedBeaconBlock> maybeBlock, final List<UInt64> indices) {
     if (maybeBlock.isEmpty()) {
