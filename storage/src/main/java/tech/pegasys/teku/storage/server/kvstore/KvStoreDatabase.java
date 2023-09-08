@@ -386,7 +386,7 @@ public class KvStoreDatabase implements Database {
     LOG.debug(
         () ->
             String.format(
-                "Earliest block slot stored is %s}",
+                "Earliest block slot stored is %s",
                 earliestBlockSlot.isEmpty() ? "EMPTY" : earliestBlockSlot.get().toString()));
     if (earliestBlockSlot.isEmpty()) {
       return lastSlotToPrune;
