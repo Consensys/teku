@@ -98,18 +98,18 @@ public class BlockPruner extends Service {
         finalizedEpoch.minusMinZero(spec.getNetworkingConfig().getMinEpochsForBlockRequests());
     final UInt64 earliestSlotToKeep = spec.computeStartSlotAtEpoch(earliestEpochToKeep);
     if (earliestSlotToKeep.isZero()) {
-      LOG.debug("Not pruning as epochs to keep includes genesis");
+      LOG.debug("Pruning is not performed as the epochs to retain include the genesis epoch.");
       return;
     }
-    LOG.info("Pruning finalized blocks before slot {}", earliestSlotToKeep);
+    LOG.info("Initiating pruning of finalized blocks prior to slot {}.", earliestSlotToKeep);
     try {
       final UInt64 lastPrunedSlot =
           database.pruneFinalizedBlocks(earliestSlotToKeep.decrement(), pruneLimit);
       if (lastPrunedSlot.equals(earliestEpochToKeep.decrement())) {
-        LOG.info("Finalized blocks before slot {} have been pruned.", earliestSlotToKeep);
+        LOG.info("Successfully pruned finalized blocks prior to slot {}.", earliestSlotToKeep);
       } else {
         LOG.info(
-            "{} finalized blocks before slot {} have been pruned, last pruned slot {}",
+            "Pruned {} finalized blocks prior to slot {}, last pruned slot was {}.",
             pruneLimit,
             earliestSlotToKeep,
             lastPrunedSlot);
