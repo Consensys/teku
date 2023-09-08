@@ -15,8 +15,11 @@ package tech.pegasys.teku.storage.server.pruner;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -36,6 +39,7 @@ import tech.pegasys.teku.storage.server.Database;
 class BlockPrunerTest {
 
   public static final Duration PRUNE_INTERVAL = Duration.ofSeconds(26);
+  private static final int PRUNE_SLOTS = 10;
   public int epochsToKeep;
   public static final int SLOTS_PER_EPOCH = 10;
   private final Spec spec =
@@ -50,6 +54,8 @@ class BlockPrunerTest {
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(1000);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner(timeProvider);
   private final Database database = mock(Database.class);
+  private final SettableLabelledGauge pruningActiveLabelledGauge =
+      mock(SettableLabelledGauge.class);
 
   private final BlockPruner pruner =
       new BlockPruner(
@@ -57,14 +63,16 @@ class BlockPrunerTest {
           database,
           asyncRunner,
           PRUNE_INTERVAL,
+          PRUNE_SLOTS,
           "test",
           mock(SettableLabelledGauge.class),
-          mock(SettableLabelledGauge.class));
+          pruningActiveLabelledGauge);
 
   @BeforeEach
   void setUp() {
     epochsToKeep = spec.getNetworkingConfig().getMinEpochsForBlockRequests();
     assertThat(pruner.start()).isCompleted();
+    when(database.pruneFinalizedBlocks(any(), anyInt())).thenReturn(UInt64.ZERO);
   }
 
   @Test
@@ -72,26 +80,29 @@ class BlockPrunerTest {
     when(database.getFinalizedCheckpoint())
         .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(UInt64.valueOf(50))));
     asyncRunner.executeDueActions();
-    verify(database).pruneFinalizedBlocks(any());
+    verify(database).pruneFinalizedBlocks(any(), eq(PRUNE_SLOTS));
+    verify(pruningActiveLabelledGauge).set(eq(0.), any());
   }
 
   @Test
   void shouldPruneAfterInterval() {
     when(database.getFinalizedCheckpoint()).thenReturn(Optional.empty());
     asyncRunner.executeDueActions();
-    verify(database, never()).pruneFinalizedBlocks(any());
+    verify(database, never()).pruneFinalizedBlocks(any(), eq(PRUNE_SLOTS));
 
     when(database.getFinalizedCheckpoint())
         .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(UInt64.valueOf(52))));
     triggerNextPruning();
-    verify(database).pruneFinalizedBlocks(any());
+    verify(database).pruneFinalizedBlocks(any(), eq(PRUNE_SLOTS));
+    verify(pruningActiveLabelledGauge, times(2)).set(eq(0.), any());
   }
 
   @Test
   void shouldNotPruneWhenFinalizedCheckpointNotSet() {
     when(database.getFinalizedCheckpoint()).thenReturn(Optional.empty());
     triggerNextPruning();
-    verify(database, never()).pruneFinalizedBlocks(any());
+    verify(database, never()).pruneFinalizedBlocks(any(), eq(PRUNE_SLOTS));
+    verify(pruningActiveLabelledGauge).set(eq(0.), any());
   }
 
   @Test
@@ -99,7 +110,8 @@ class BlockPrunerTest {
     when(database.getFinalizedCheckpoint())
         .thenReturn(Optional.of(dataStructureUtil.randomCheckpoint(epochsToKeep)));
     triggerNextPruning();
-    verify(database, never()).pruneFinalizedBlocks(any());
+    verify(database, never()).pruneFinalizedBlocks(any(), eq(PRUNE_SLOTS));
+    verify(pruningActiveLabelledGauge).set(eq(0.), any());
   }
 
   @Test
@@ -111,7 +123,8 @@ class BlockPrunerTest {
     // SlotToKeep = FinalizedEpoch (50) * SlotsPerEpoch(10) - EpochsToKeep(5) * SlotsPerEpoch(10)
     // = 500 - 50 = 450, last slot to prune = 450 - 1 = 449.
     final UInt64 lastSlotToPrune = UInt64.valueOf(449);
-    verify(database).pruneFinalizedBlocks(lastSlotToPrune);
+    verify(database).pruneFinalizedBlocks(lastSlotToPrune, PRUNE_SLOTS);
+    verify(pruningActiveLabelledGauge).set(eq(0.), any());
   }
 
   @Test
@@ -122,7 +135,8 @@ class BlockPrunerTest {
     triggerNextPruning();
     // Should prune all blocks in the first epoch (ie blocks 0 - 9)
     final UInt64 lastSlotToPrune = UInt64.valueOf(SLOTS_PER_EPOCH - 1);
-    verify(database).pruneFinalizedBlocks(lastSlotToPrune);
+    verify(database).pruneFinalizedBlocks(lastSlotToPrune, PRUNE_SLOTS);
+    verify(pruningActiveLabelledGauge).set(eq(0.), any());
   }
 
   private void triggerNextPruning() {
