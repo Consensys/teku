@@ -52,33 +52,24 @@ public class TransitionTestExecutor implements TestExecutor {
             testDefinition.getConfigName(),
             builder -> {
               switch (milestone) {
-                case ALTAIR:
-                  builder.altairBuilder(a -> a.altairForkEpoch(forkEpoch));
-                  break;
-                case BELLATRIX:
-                  builder
-                      .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
-                      .bellatrixBuilder(b -> b.bellatrixForkEpoch(forkEpoch));
-                  break;
-                case CAPELLA:
-                  builder
-                      .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
-                      .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
-                      .capellaBuilder(c -> c.capellaForkEpoch(forkEpoch));
-                  break;
-                case DENEB:
-                  builder
-                      .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
-                      .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
-                      .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
-                      .denebBuilder(d -> d.denebForkEpoch(forkEpoch).kzgNoop(true));
-                  break;
-                default:
-                  throw new IllegalStateException(
-                      "Unhandled fork transition for test "
-                          + testDefinition.getDisplayName()
-                          + ": "
-                          + milestone);
+                case ALTAIR -> builder.altairBuilder(a -> a.altairForkEpoch(forkEpoch));
+                case BELLATRIX -> builder
+                    .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                    .bellatrixBuilder(b -> b.bellatrixForkEpoch(forkEpoch));
+                case CAPELLA -> builder
+                    .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                    .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
+                    .capellaBuilder(c -> c.capellaForkEpoch(forkEpoch));
+                case DENEB -> builder
+                    .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                    .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
+                    .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
+                    .denebBuilder(d -> d.denebForkEpoch(forkEpoch).kzgNoop(true));
+                default -> throw new IllegalStateException(
+                    "Unhandled fork transition for test "
+                        + testDefinition.getDisplayName()
+                        + ": "
+                        + milestone);
               }
             });
     final Spec spec = SpecFactory.create(config);

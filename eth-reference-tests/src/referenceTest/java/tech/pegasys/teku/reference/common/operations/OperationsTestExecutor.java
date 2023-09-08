@@ -229,39 +229,39 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       final OperationProcessor processor)
       throws Exception {
     switch (operation) {
-      case ATTESTER_SLASHING:
+      case ATTESTER_SLASHING -> {
         final AttesterSlashing attesterSlashing = loadAttesterSlashing(testDefinition);
         processor.processAttesterSlashing(state, attesterSlashing);
-        break;
-      case PROPOSER_SLASHING:
+      }
+      case PROPOSER_SLASHING -> {
         final ProposerSlashing proposerSlashing = loadProposerSlashing(testDefinition);
         processor.processProposerSlashing(state, proposerSlashing);
-        break;
-      case PROCESS_BLOCK_HEADER:
+      }
+      case PROCESS_BLOCK_HEADER -> {
         final BeaconBlockSummary blockHeader =
             loadSsz(
                 testDefinition,
                 dataFileName,
                 testDefinition.getSpec().getGenesisSchemaDefinitions().getBeaconBlockSchema());
         processor.processBlockHeader(state, blockHeader);
-        break;
-      case DEPOSIT:
+      }
+      case DEPOSIT -> {
         final Deposit deposit = loadSsz(testDefinition, dataFileName, Deposit.SSZ_SCHEMA);
         processor.processDeposit(state, deposit);
-        break;
-      case VOLUNTARY_EXIT:
+      }
+      case VOLUNTARY_EXIT -> {
         final SignedVoluntaryExit voluntaryExit = loadVoluntaryExit(testDefinition);
         processor.processVoluntaryExit(state, voluntaryExit);
-        break;
-      case ATTESTATION:
+      }
+      case ATTESTATION -> {
         final Attestation attestation =
             loadSsz(
                 testDefinition,
                 dataFileName,
                 testDefinition.getSpec().getGenesisSchemaDefinitions().getAttestationSchema());
         processor.processAttestation(state, attestation);
-        break;
-      case SYNC_AGGREGATE:
+      }
+      case SYNC_AGGREGATE -> {
         final SyncAggregate syncAggregate =
             loadSsz(
                 testDefinition,
@@ -273,8 +273,8 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
                             .getBeaconBlockBodySchema())
                     .getSyncAggregateSchema());
         processor.processSyncCommittee(state, syncAggregate);
-        break;
-      case EXECUTION_PAYLOAD:
+      }
+      case EXECUTION_PAYLOAD -> {
         final ExecutionMeta executionMeta =
             loadYaml(testDefinition, "execution.yaml", ExecutionMeta.class);
 
@@ -295,16 +295,11 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
             beaconBlockBody,
             Optional.of(
                 (latestExecutionPayloadHeader, payloadToExecute) -> executionMeta.executionValid));
-        break;
-      case BLS_TO_EXECUTION_CHANGE:
-        processBlsToExecutionChange(testDefinition, state, processor);
-        break;
-      case WITHDRAWAL:
-        processWithdrawal(testDefinition, state, processor);
-        break;
-      default:
-        throw new UnsupportedOperationException(
-            "Operation " + operation + " not implemented in OperationTestExecutor");
+      }
+      case BLS_TO_EXECUTION_CHANGE -> processBlsToExecutionChange(testDefinition, state, processor);
+      case WITHDRAWAL -> processWithdrawal(testDefinition, state, processor);
+      default -> throw new UnsupportedOperationException(
+          "Operation " + operation + " not implemented in OperationTestExecutor");
     }
   }
 
@@ -358,26 +353,26 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
       final TestDefinition testDefinition, final BeaconState state, final boolean expectInclusion) {
     final Spec spec = testDefinition.getSpec();
     switch (operation) {
-      case ATTESTER_SLASHING:
+      case ATTESTER_SLASHING -> {
         final AttesterSlashing attesterSlashing = loadAttesterSlashing(testDefinition);
         final AttesterSlashingValidator validator = new AttesterSlashingValidator(null, spec);
         checkValidationForBlockInclusion(validator, state, attesterSlashing, expectInclusion);
-        break;
-      case PROPOSER_SLASHING:
+      }
+      case PROPOSER_SLASHING -> {
         final ProposerSlashing proposerSlashing = loadProposerSlashing(testDefinition);
         final ProposerSlashingValidator proposerValidator =
             new ProposerSlashingValidator(spec, null);
         checkValidationForBlockInclusion(
             proposerValidator, state, proposerSlashing, expectInclusion);
-        break;
-      case VOLUNTARY_EXIT:
+      }
+      case VOLUNTARY_EXIT -> {
         final SignedVoluntaryExit voluntaryExit = loadVoluntaryExit(testDefinition);
         final VoluntaryExitValidator voluntaryExitValidator =
             new VoluntaryExitValidator(spec, null);
         checkValidationForBlockInclusion(
             voluntaryExitValidator, state, voluntaryExit, expectInclusion);
-        break;
-      case BLS_TO_EXECUTION_CHANGE:
+      }
+      case BLS_TO_EXECUTION_CHANGE -> {
         final SignedBlsToExecutionChangeValidator blsToExecutionChangeValidator =
             new SignedBlsToExecutionChangeValidator(
                 spec, new SystemTimeProvider(), null, new SimpleSignatureVerificationService());
@@ -385,16 +380,14 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
             loadBlsToExecutionChange(testDefinition);
         checkValidationForBlockInclusion(
             blsToExecutionChangeValidator, state, blsToExecutionChange, expectInclusion);
-        break;
-
-      case PROCESS_BLOCK_HEADER:
-      case DEPOSIT:
-      case ATTESTATION:
-      case SYNC_AGGREGATE:
-      case EXECUTION_PAYLOAD:
-      case WITHDRAWAL:
+      }
         // Not yet testing inclusion rules
-        break;
+      case PROCESS_BLOCK_HEADER,
+          DEPOSIT,
+          ATTESTATION,
+          SYNC_AGGREGATE,
+          EXECUTION_PAYLOAD,
+          WITHDRAWAL -> {}
     }
   }
 
