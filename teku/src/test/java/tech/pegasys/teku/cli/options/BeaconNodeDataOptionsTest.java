@@ -207,14 +207,19 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
   void shouldSetBlockPruningOptions() {
     final TekuConfiguration config =
         getTekuConfigurationFromArguments(
-            "--data-storage-mode=MINIMAL", "--Xdata-storage-block-pruning-interval=150");
+            "--data-storage-mode=MINIMAL",
+            "--Xdata-storage-block-pruning-interval=150",
+            "--Xdata-storage-block-pruning-limit=50");
     assertThat(config.storageConfiguration().getDataStorageMode()).isEqualTo(MINIMAL);
     assertThat(config.storageConfiguration().getBlockPruningInterval())
         .isEqualTo(Duration.ofSeconds(150));
     assertThat(
             createConfigBuilder()
                 .storageConfiguration(
-                    b -> b.dataStorageMode(MINIMAL).blockPruningInterval(Duration.ofSeconds(150)))
+                    b ->
+                        b.dataStorageMode(MINIMAL)
+                            .blockPruningInterval(Duration.ofSeconds(150))
+                            .blockPruningLimit(50))
                 .sync(b -> b.fetchAllHistoricBlocks(false))
                 .build())
         .usingRecursiveComparison()

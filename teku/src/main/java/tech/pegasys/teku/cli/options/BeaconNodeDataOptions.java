@@ -107,6 +107,16 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
       StorageConfiguration.DEFAULT_BLOCK_PRUNING_INTERVAL.toSeconds();
 
   @CommandLine.Option(
+      names = {"--Xdata-storage-block-pruning-limit"},
+      hidden = true,
+      paramLabel = "<INTEGER>",
+      description = "Maximum number of blocks that can be pruned in each pruning session",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      arity = "0..1")
+  private int blockPruningLimit = StorageConfiguration.DEFAULT_BLOCK_PRUNING_LIMIT;
+
+  @CommandLine.Option(
       names = {"--Xdata-storage-blobs-pruning-interval"},
       hidden = true,
       paramLabel = "<INTEGER>",
@@ -143,6 +153,7 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
                 .storeNonCanonicalBlocks(storeNonCanonicalBlocksEnabled)
                 .maxKnownNodeCacheSize(maxKnownNodeCacheSize)
                 .blockPruningInterval(Duration.ofSeconds(blockPruningIntervalSeconds))
+                .blockPruningLimit(blockPruningLimit)
                 .blobsPruningInterval(Duration.ofSeconds(blobsPruningIntervalSeconds))
                 .blobsPruningLimit(blobsPruningLimit));
     builder.sync(
