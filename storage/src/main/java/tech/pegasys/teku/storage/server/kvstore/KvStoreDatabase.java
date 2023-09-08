@@ -419,7 +419,10 @@ public class KvStoreDatabase implements Database {
     if (blocksToPrune.size() > 0) {
       if (blocksToPrune.size() < 20) {
         LOG.debug(
-            "Received blocks ({}) to delete", blocksToPrune.stream().map(Pair::getLeft).toList());
+            () ->
+                String.format(
+                    "Received blocks (%s) to delete",
+                    blocksToPrune.stream().map(Pair::getLeft).toList()));
       } else {
         LOG.debug("Received {} finalized blocks to delete", blocksToPrune.size());
       }
