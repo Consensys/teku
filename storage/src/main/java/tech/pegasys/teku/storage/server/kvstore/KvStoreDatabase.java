@@ -384,10 +384,8 @@ public class KvStoreDatabase implements Database {
     final Optional<UInt64> earliestBlockSlot =
         dao.getEarliestFinalizedBlock().map(SignedBeaconBlock::getSlot);
     LOG.debug(
-        () ->
-            String.format(
-                "Earliest block slot stored is %s",
-                earliestBlockSlot.isEmpty() ? "EMPTY" : earliestBlockSlot.get().toString()));
+        "Earliest block slot stored is {}",
+        () -> earliestBlockSlot.isEmpty() ? "EMPTY" : earliestBlockSlot.get().toString());
     if (earliestBlockSlot.isEmpty()) {
       return lastSlotToPrune;
     }
@@ -421,10 +419,8 @@ public class KvStoreDatabase implements Database {
     if (blocksToPrune.size() > 0) {
       if (blocksToPrune.size() < 20) {
         LOG.debug(
-            () ->
-                String.format(
-                    "Received blocks (%s) to delete",
-                    blocksToPrune.stream().map(Pair::getLeft).toList()));
+            "Received blocks ({}) to delete",
+            () -> blocksToPrune.stream().map(Pair::getLeft).toList());
       } else {
         LOG.debug("Received {} finalized blocks to delete", blocksToPrune.size());
       }
