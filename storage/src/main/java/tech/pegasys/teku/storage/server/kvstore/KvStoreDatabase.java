@@ -380,21 +380,21 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public boolean pruneFinalizedBlocks(final UInt64 lastSlotToPrune, final int pruneLimit) {
+  public UInt64 pruneFinalizedBlocks(final UInt64 lastSlotToPrune, final int pruneLimit) {
     final Optional<UInt64> earliestBlockSlot =
         dao.getEarliestFinalizedBlock().map(SignedBeaconBlock::getSlot);
     LOG.debug(
         "Earliest block slot stored is {}",
         earliestBlockSlot.isEmpty() ? "EMPTY" : earliestBlockSlot.get().toString());
     if (earliestBlockSlot.isEmpty()) {
-      return true;
+      return lastSlotToPrune;
     }
     return pruneToBlock(lastSlotToPrune, pruneLimit);
   }
 
-  private boolean pruneToBlock(final UInt64 lastSlotToPrune, final int pruneLimit) {
+  private UInt64 pruneToBlock(final UInt64 lastSlotToPrune, final int pruneLimit) {
     final List<Pair<UInt64, Bytes32>> blocksToPrune;
-    LOG.debug("Pruning finalized blocks to slot {}", lastSlotToPrune);
+    LOG.debug("Pruning finalized blocks to slot {} (included)", lastSlotToPrune);
     try (final Stream<SignedBeaconBlock> stream =
         dao.streamFinalizedBlocks(UInt64.ZERO, lastSlotToPrune)) {
       blocksToPrune =
@@ -403,15 +403,16 @@ public class KvStoreDatabase implements Database {
 
     if (blocksToPrune.isEmpty()) {
       LOG.debug("No finalized blocks to prune up to {} slot", lastSlotToPrune);
-      return true;
+      return lastSlotToPrune;
     }
+    final UInt64 lastPrunedBlockSlot = blocksToPrune.get(blocksToPrune.size() - 1).getKey();
     LOG.debug(
-        "Pruning {} finalized blocks, last slot is {}",
+        "Pruning {} finalized blocks, last block slot is {}",
         blocksToPrune.size(),
-        blocksToPrune.get(blocksToPrune.size() - 1));
+        lastPrunedBlockSlot);
     deleteFinalizedBlocks(blocksToPrune);
-    // It could be not true rarely but assuming we have large enough pruneLimit, very rarely
-    return blocksToPrune.size() < pruneLimit;
+
+    return blocksToPrune.size() < pruneLimit ? lastSlotToPrune : lastPrunedBlockSlot;
   }
 
   private void deleteFinalizedBlocks(final List<Pair<UInt64, Bytes32>> blocksToPrune) {

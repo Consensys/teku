@@ -229,7 +229,7 @@ public interface Database extends AutoCloseable {
    *
    * @param lastSlotToPrune inclusive, not reached if limit happens first
    * @param pruneLimit slots limit
-   * @return true if number of pruned blocks reached the pruneLimit, false otherwise
+   * @return actual last pruned slot
    */
-  boolean pruneFinalizedBlocks(UInt64 lastSlotToPrune, int pruneLimit);
+  UInt64 pruneFinalizedBlocks(UInt64 lastSlotToPrune, int pruneLimit);
 }
