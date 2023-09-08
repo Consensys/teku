@@ -28,13 +28,28 @@ import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.util.EpochAttestationSchedule;
+import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockArchiveGenerator {
+  private final int validatorCount;
+  private final int epochCount;
+  private final Spec spec = TestSpecFactory.createMainnetAltair();
+  private final List<BLSKeyPair> validatorKeys;
+  private final RecentChainData localStorage;
+  private final AttestationGenerator attestationGenerator;
+  private final BeaconChainUtil localChain;
+  private final int slotsPerEpoch;
+  private final SystemTimeProvider timeProvider = new SystemTimeProvider();
+  private final ValidatorsUtil validatorsUtil;
+  private final BeaconStateAccessors beaconStateAccessors;
+
   public static void main(String[] args) throws Exception {
+    // default values if nothing is specified
     int validatorCount = 32_768;
     int epochCount = 50;
     if (args.length == 2) {
@@ -67,7 +82,30 @@ public class BlockArchiveGenerator {
     System.out.println("Validator count: " + validatorCount);
     System.out.println("Epochs: " + epochCount);
 
-    generateBlocks(validatorCount, epochCount);
+    // Instantiate and execute the generator
+    final BlockArchiveGenerator generator = new BlockArchiveGenerator(validatorCount, epochCount);
+    generator.generateBlocks();
+  }
+
+  private BlockArchiveGenerator(final int validatorCount, final int epochCount) {
+    this.validatorCount = validatorCount;
+    this.epochCount = epochCount;
+    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
+    this.validatorsUtil = spec.getGenesisSpec().getValidatorsUtil();
+    this.beaconStateAccessors = spec.getGenesisSpec().beaconStateAccessors();
+
+    this.validatorKeys = KeyFileGenerator.readValidatorKeys(validatorCount);
+    this.localStorage = MemoryOnlyRecentChainData.create(spec);
+    this.attestationGenerator = new AttestationGenerator(spec, validatorKeys);
+    this.slotsPerEpoch = spec.getGenesisSpecConfig().getSlotsPerEpoch();
+    this.localChain =
+        BeaconChainUtil.builder()
+            .specProvider(spec)
+            .recentChainData(localStorage)
+            .validatorKeys(validatorKeys)
+            .signDeposits(false)
+            .build();
+    localChain.initializeStorage();
   }
 
   private static void dieUsage(final Optional<String> maybeContext) {
@@ -76,73 +114,35 @@ public class BlockArchiveGenerator {
     System.exit(2);
   }
 
-  private static void generateBlocks(final int validatorsCount, final int epochLimit)
-      throws Exception {
-    final Spec spec = TestSpecFactory.createMainnetAltair();
+  private void generateBlocks() throws Exception {
 
-    AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
-
-    final List<BLSKeyPair> validatorKeys = KeyFileGenerator.readValidatorKeys(validatorsCount);
-    final RecentChainData localStorage = MemoryOnlyRecentChainData.create(spec);
-    final AttestationGenerator attestationGenerator = new AttestationGenerator(spec, validatorKeys);
-    final int slotsPerEpoch = spec.getGenesisSpecConfig().getSlotsPerEpoch();
     final String blocksFile =
         String.format(
             "blocks_%sEpochs_%sBlocksPerEpoch_%sValidators.ssz.gz",
-            epochLimit, slotsPerEpoch, validatorsCount);
-    final BeaconChainUtil localChain =
-        BeaconChainUtil.builder()
-            .specProvider(spec)
-            .recentChainData(localStorage)
-            .validatorKeys(validatorKeys)
-            .signDeposits(false)
-            .build();
-    localChain.initializeStorage();
-
-    UInt64 currentSlot = localStorage.getHeadSlot();
+            epochCount, slotsPerEpoch, validatorCount);
 
     System.out.printf(
-        "Generating blocks for %s epochs, %s slots per epoch.%n", epochLimit, slotsPerEpoch);
+        "Generating blocks for %s epochs, %s slots per epoch.%n", epochCount, slotsPerEpoch);
 
-    final SystemTimeProvider timeProvider = new SystemTimeProvider();
     try (BlockIO.Writer writer = BlockIO.createFileWriter(blocksFile)) {
 
-      for (int j = 0; j < epochLimit; j++) {
+      for (int j = 0; j < epochCount; j++) {
         System.out.println(" => Processing epoch " + j);
         final UInt64 epoch = UInt64.valueOf(j);
-        final BeaconState epochState =
-            localStorage
-                .retrieveBlockState(localStorage.getBestBlockRoot().orElse(null))
-                .join()
-                .orElseThrow();
+        final BeaconState epochState = getBestState().orElseThrow();
         final UInt64 committeCountPerSlot =
-            spec.atEpoch(UInt64.ZERO)
-                .beaconStateAccessors()
-                .getCommitteeCountPerSlot(epochState, epoch);
+            beaconStateAccessors.getCommitteeCountPerSlot(epochState, epoch);
         final EpochAttestationSchedule attestationCommitteeAssignments =
-            spec.atEpoch(epoch)
-                .getValidatorsUtil()
-                .getAttestationCommitteesAtEpoch(epochState, epoch, committeCountPerSlot);
+            validatorsUtil.getAttestationCommitteesAtEpoch(epochState, epoch, committeCountPerSlot);
         for (int i = 0; i < slotsPerEpoch; i++) {
           final UInt64 slotStart = timeProvider.getTimeInMillis();
-          currentSlot = currentSlot.plus(UInt64.ONE);
-          final StateAndBlockSummary preState =
-              localStorage
-                  .getStore()
-                  .retrieveStateAndBlockSummary(localStorage.getBestBlockRoot().orElseThrow())
-                  .get()
-                  .orElseThrow();
-
-          final List<Attestation> attestations =
-              UInt64.ONE.equals(currentSlot)
-                  ? Collections.emptyList()
-                  : attestationGenerator.getAttestationsForSlot(
-                      preState, currentSlot.decrement(), attestationCommitteeAssignments);
-          List<Attestation> aggregate =
-              AttestationGenerator.groupAndAggregateAttestations(attestations);
+          final UInt64 previousSlot = localStorage.getHeadSlot();
+          final UInt64 currentSlot = previousSlot.plus(UInt64.ONE);
+          final List<Attestation> aggregates =
+              getAggregatesForSlot(previousSlot, attestationCommitteeAssignments);
 
           final SignedBeaconBlock block =
-              localChain.createAndImportBlockAtSlotWithAttestations(currentSlot, aggregate);
+              localChain.createAndImportBlockAtSlotWithAttestations(currentSlot, aggregates);
           writer.accept(block);
 
           System.out.println(
@@ -153,8 +153,7 @@ public class BlockArchiveGenerator {
                   + " ms");
         }
 
-        final Optional<BeaconState> bestState =
-            localStorage.retrieveBlockState(localStorage.getBestBlockRoot().orElse(null)).join();
+        final Optional<BeaconState> bestState = getBestState();
         bestState.ifPresent(
             beaconState ->
                 System.out.printf(
@@ -162,7 +161,29 @@ public class BlockArchiveGenerator {
                     epoch, beaconState.getSlot(), beaconState.hashTreeRoot()));
       }
     } catch (IllegalArgumentException e) {
-      System.out.println("Failed");
+      System.out.printf("\n\nBlock archive generation failed: %s\n\n", e.getMessage());
     }
+  }
+
+  private Optional<BeaconState> getBestState() {
+    return localStorage.retrieveBlockState(localStorage.getBestBlockRoot().orElse(null)).join();
+  }
+
+  private List<Attestation> getAggregatesForSlot(
+      final UInt64 previousSlot, final EpochAttestationSchedule attestationCommitteeAssignments) {
+    final StateAndBlockSummary stateAndBlockSummary =
+        localStorage
+            .getStore()
+            .retrieveStateAndBlockSummary(localStorage.getBestBlockRoot().orElseThrow())
+            .join()
+            .orElseThrow();
+
+    final List<Attestation> attestations =
+        UInt64.ZERO.equals(previousSlot)
+            ? Collections.emptyList()
+            : attestationGenerator.getAttestationsForSlot(
+                stateAndBlockSummary, previousSlot, attestationCommitteeAssignments);
+
+    return AttestationGenerator.groupAndAggregateAttestations(attestations);
   }
 }
