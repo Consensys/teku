@@ -55,6 +55,7 @@ import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -122,6 +123,13 @@ public class VoluntaryExitCommand implements Callable<Integer> {
 
   @CommandLine.Mixin(name = "Data")
   private ValidatorClientDataOptions dataOptions;
+
+  @CommandLine.Option(
+      names = {"-n", "--network"},
+      paramLabel = "<NETWORK>",
+      description = "Represents which network to use.",
+      arity = "1")
+  private String network;
 
   @CommandLine.Option(
       names = {"--validator-public-keys"},
@@ -282,7 +290,13 @@ public class VoluntaryExitCommand implements Callable<Integer> {
             .map(RemoteSpecLoader::createApiClient)
             .orElseThrow();
 
-    spec = getSpec(apiClient);
+    if (network == null) {
+      SUB_COMMAND_LOG.display(" - Loading network settings from " + apiClient.getBaseEndpoint());
+      spec = getSpec(apiClient);
+    } else {
+      SUB_COMMAND_LOG.display(" - Loading local settings for " + network + " network");
+      spec = SpecFactory.create(network);
+    }
 
     validateOrDefaultEpoch();
     fork = spec.getForkSchedule().getFork(epoch);

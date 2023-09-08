@@ -29,8 +29,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
-import tech.pegasys.teku.benchmarks.gen.BlsKeyPairIO;
-import tech.pegasys.teku.benchmarks.gen.BlsKeyPairIO.Reader;
+import tech.pegasys.teku.benchmarks.gen.KeyFileGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
@@ -65,19 +64,7 @@ public class ProcessSyncAggregateBenchmark {
     spec = TestSpecFactory.createMainnetAltair();
     AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
 
-    String blocksFile =
-        "/blocks/blocks_epoch_"
-            + spec.getSlotsPerEpoch(UInt64.ZERO)
-            + "_validators_"
-            + validatorsCount
-            + ".ssz.gz";
-    String keysFile = "/bls-key-pairs/bls-key-pairs-400k-seed-0.txt.gz";
-
-    System.out.println("Generating keypairs from " + keysFile);
-    List<BLSKeyPair> validatorKeys;
-    try (final Reader reader = BlsKeyPairIO.createReaderForResource(keysFile)) {
-      validatorKeys = reader.readAll(validatorsCount);
-    }
+    final List<BLSKeyPair> validatorKeys = KeyFileGenerator.readValidatorKeys(validatorsCount);
 
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     state =
