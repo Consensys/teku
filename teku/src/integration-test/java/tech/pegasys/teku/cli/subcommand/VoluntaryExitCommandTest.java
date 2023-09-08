@@ -156,12 +156,40 @@ public class VoluntaryExitCommandTest {
             false,
             List.of("--validator-public-keys", keyManagerPubKey2 + "," + nonExistingKey));
 
-    int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+    final int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
 
     assertThat(parseResult).isEqualTo(0);
     assertValidatorsExited(keyManagerPubKey2);
     assertValidatorsNotExited(
         keyManagerPubKey1, validatorPubKey1, validatorPubKey2, nonExistingKey);
+  }
+
+  @Test
+  public void shouldAcceptNetworkOnCommandLine() {
+    // No beacon-api offered by spec, so would need to be loaded from local network option
+    final List<String> args =
+        getCommandArguments(
+            true,
+            false,
+            List.of("--network", "minimal", "--validator-public-keys", validatorPubKey1));
+
+    final int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+
+    assertThat(parseResult).isEqualTo(0);
+    assertThat(stdOut.toString(UTF_8)).contains("Loading local settings for minimal network");
+    assertValidatorsExited(validatorPubKey1);
+  }
+
+  @Test
+  public void shouldFailToRunExitWithoutASpec() {
+    // Network unset, no http service to fetch from
+    final List<String> args =
+        getCommandArguments(true, false, List.of("--validator-public-keys", validatorPubKey1));
+
+    final int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+    assertThat(parseResult).isEqualTo(1);
+
+    assertThat(stdOut.toString(UTF_8)).contains("Loading network settings from");
   }
 
   @Test

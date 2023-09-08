@@ -64,13 +64,6 @@ public class ProcessSyncAggregateBenchmark {
     spec = TestSpecFactory.createMainnetAltair();
     AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
 
-    String blocksFile =
-        "/blocks/blocks_epoch_"
-            + spec.getSlotsPerEpoch(UInt64.ZERO)
-            + "_validators_"
-            + validatorsCount
-            + ".ssz.gz";
-
     final List<BLSKeyPair> validatorKeys = KeyFileGenerator.readValidatorKeys(validatorsCount);
 
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);

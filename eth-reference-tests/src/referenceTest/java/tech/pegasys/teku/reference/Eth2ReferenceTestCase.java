@@ -88,26 +88,16 @@ public abstract class Eth2ReferenceTestCase {
   }
 
   private TestExecutor getExecutorFor(final TestDefinition testDefinition) {
-    TestExecutor testExecutor = null;
-
     // Look for fork-specific tests first
-    switch (testDefinition.getFork()) {
-      case TestFork.PHASE0:
-        testExecutor = PHASE_0_TEST_TYPES.get(testDefinition.getTestType());
-        break;
-      case TestFork.ALTAIR:
-        testExecutor = ALTAIR_TEST_TYPES.get(testDefinition.getTestType());
-        break;
-      case TestFork.BELLATRIX:
-        testExecutor = BELLATRIX_TEST_TYPES.get(testDefinition.getTestType());
-        break;
-      case TestFork.CAPELLA:
-        testExecutor = CAPELLA_TEST_TYPES.get(testDefinition.getTestType());
-        break;
-      case TestFork.DENEB:
-        testExecutor = DENEB_TEST_TYPES.get(testDefinition.getTestType());
-        break;
-    }
+    TestExecutor testExecutor =
+        switch (testDefinition.getFork()) {
+          case TestFork.PHASE0 -> PHASE_0_TEST_TYPES.get(testDefinition.getTestType());
+          case TestFork.ALTAIR -> ALTAIR_TEST_TYPES.get(testDefinition.getTestType());
+          case TestFork.BELLATRIX -> BELLATRIX_TEST_TYPES.get(testDefinition.getTestType());
+          case TestFork.CAPELLA -> CAPELLA_TEST_TYPES.get(testDefinition.getTestType());
+          case TestFork.DENEB -> DENEB_TEST_TYPES.get(testDefinition.getTestType());
+          default -> null;
+        };
 
     // Look for a common test type if no specific override present
     if (testExecutor == null) {

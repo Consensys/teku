@@ -31,41 +31,29 @@ public class SszGenericUIntTestExecutor extends AbstractSszGenericTestExecutor {
 
   @Override
   protected SszSchema<?> getSchema(final TestDefinition testDefinition) {
-    switch (getSize(testDefinition)) {
-      case 8:
-        return SszPrimitiveSchemas.BYTE_SCHEMA;
-      case 16:
-        return UINT16_SCHEMA;
-      case 64:
-        return SszPrimitiveSchemas.UINT64_SCHEMA;
-      case 256:
-        return SszPrimitiveSchemas.UINT256_SCHEMA;
-      case 32:
-      case 128:
-        throw new TestAbortedException("UInt type not supported: " + testDefinition.getTestName());
-      default:
-        throw new UnsupportedOperationException(
-            "No schema for type: " + testDefinition.getTestName());
-    }
+    return switch (getSize(testDefinition)) {
+      case 8 -> SszPrimitiveSchemas.BYTE_SCHEMA;
+      case 16 -> UINT16_SCHEMA;
+      case 64 -> SszPrimitiveSchemas.UINT64_SCHEMA;
+      case 256 -> SszPrimitiveSchemas.UINT256_SCHEMA;
+      case 32, 128 -> throw new TestAbortedException(
+          "UInt type not supported: " + testDefinition.getTestName());
+      default -> throw new UnsupportedOperationException(
+          "No schema for type: " + testDefinition.getTestName());
+    };
   }
 
   @Override
   protected Object parseString(final TestDefinition testDefinition, final String value) {
-    switch (getSize(testDefinition)) {
-      case 8:
-        return SszByte.of(Integer.parseInt(value));
-      case 16:
-        return SszUInt16.of(Integer.parseInt(value));
-      case 64:
-        return SszUInt64.of(UInt64.valueOf(value));
-      case 256:
-        return SszUInt256.of(UInt256.valueOf(new BigInteger(value)));
-      case 32:
-      case 128:
-        throw new TestAbortedException("UInt type not supported: " + testDefinition.getTestName());
-      default:
-        throw new UnsupportedOperationException(
-            "No parser for type: " + testDefinition.getTestName());
-    }
+    return switch (getSize(testDefinition)) {
+      case 8 -> SszByte.of(Integer.parseInt(value));
+      case 16 -> SszUInt16.of(Integer.parseInt(value));
+      case 64 -> SszUInt64.of(UInt64.valueOf(value));
+      case 256 -> SszUInt256.of(UInt256.valueOf(new BigInteger(value)));
+      case 32, 128 -> throw new TestAbortedException(
+          "UInt type not supported: " + testDefinition.getTestName());
+      default -> throw new UnsupportedOperationException(
+          "No parser for type: " + testDefinition.getTestName());
+    };
   }
 }
