@@ -243,7 +243,7 @@ public class NoOpDatabase implements Database {
   public void storeVotes(final Map<UInt64, VoteTracker> votes) {}
 
   @Override
-  public Map<String, Long> getColumnCounts() {
+  public Map<String, Long> getColumnCounts(final Optional<String> maybeColumnFilter) {
     return new HashMap<>();
   }
 

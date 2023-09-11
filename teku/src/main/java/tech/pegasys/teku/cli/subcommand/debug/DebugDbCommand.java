@@ -243,10 +243,14 @@ public class DebugDbCommand implements Runnable {
       footer = "Teku is licensed under the Apache License 2.0")
   public int getColumnCounts(
       @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
-      @Mixin final Eth2NetworkOptions eth2NetworkOptions)
+      @Mixin final Eth2NetworkOptions eth2NetworkOptions,
+      @Option(
+              names = {"--filter"},
+              description = "File to write the block matching the latest finalized state to")
+          final String filter)
       throws Exception {
     try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
-      database.getColumnCounts().forEach(this::printColumn);
+      database.getColumnCounts(Optional.ofNullable(filter)).forEach(this::printColumn);
     }
     return 0;
   }
