@@ -62,7 +62,7 @@ public class GetAllBlobSidecarsAtSlotIntegrationTest
     chainUpdater.advanceChainUntil(targetSlot);
 
     final ChainBuilder fork = chainBuilder.fork();
-    SignedBlockAndState nonCanonicalBlock = fork.generateNextBlock(chainUpdater.blockOptions);
+    final SignedBlockAndState nonCanonicalBlock = fork.generateNextBlock(chainUpdater.blockOptions);
 
     final List<BlobSidecar> nonCanonicalBlobSidecars =
         fork.getBlobSidecars(nonCanonicalBlock.getRoot());
@@ -103,7 +103,7 @@ public class GetAllBlobSidecarsAtSlotIntegrationTest
     chainUpdater.advanceChainUntil(targetSlot);
 
     final ChainBuilder fork = chainBuilder.fork();
-    SignedBlockAndState nonCanonicalBlock = fork.generateNextBlock(chainUpdater.blockOptions);
+    final SignedBlockAndState nonCanonicalBlock = fork.generateNextBlock(chainUpdater.blockOptions);
 
     final List<BlobSidecar> nonCanonicalBlobSidecars =
         fork.getBlobSidecars(nonCanonicalBlock.getRoot());
