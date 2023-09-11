@@ -246,7 +246,7 @@ public class DebugDbCommand implements Runnable {
       @Mixin final Eth2NetworkOptions eth2NetworkOptions,
       @Option(
               names = {"--filter"},
-              description = "File to write the block matching the latest finalized state to")
+              description = "Only count the columns that contain the specified filter.")
           final String filter)
       throws Exception {
     try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
