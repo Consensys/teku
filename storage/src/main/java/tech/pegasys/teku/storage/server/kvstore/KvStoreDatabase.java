@@ -36,6 +36,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -379,68 +380,54 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void pruneFinalizedBlocks(final UInt64 lastSlotToPrune) {
+  public UInt64 pruneFinalizedBlocks(final UInt64 lastSlotToPrune, final int pruneLimit) {
     final Optional<UInt64> earliestBlockSlot =
         dao.getEarliestFinalizedBlock().map(SignedBeaconBlock::getSlot);
     LOG.debug(
         "Earliest block slot stored is {}",
-        earliestBlockSlot.isEmpty() ? "EMPTY" : earliestBlockSlot.get().toString());
-    if (earliestBlockSlot.isPresent()
-        && lastSlotToPrune
-            .minusMinZero(earliestBlockSlot.get())
-            .isLessThanOrEqualTo(PRUNE_BLOCK_STREAM_LIMIT)) {
-      pruneToBlock(lastSlotToPrune);
-    } else {
-      pruneInBatchesToBlock(lastSlotToPrune);
+        () -> earliestBlockSlot.isEmpty() ? "EMPTY" : earliestBlockSlot.get().toString());
+    if (earliestBlockSlot.isEmpty()) {
+      return lastSlotToPrune;
     }
+    return pruneToBlock(lastSlotToPrune, pruneLimit);
   }
 
-  private void pruneToBlock(UInt64 lastSlotToPrune) {
-    final Map<UInt64, Bytes32> blocksToPrune;
-    LOG.debug("Pruning finalized blocks to slot {}", lastSlotToPrune);
+  private UInt64 pruneToBlock(final UInt64 lastSlotToPrune, final int pruneLimit) {
+    final List<Pair<UInt64, Bytes32>> blocksToPrune;
+    LOG.debug("Pruning finalized blocks to slot {} (included)", lastSlotToPrune);
     try (final Stream<SignedBeaconBlock> stream =
         dao.streamFinalizedBlocks(UInt64.ZERO, lastSlotToPrune)) {
       blocksToPrune =
-          stream
-              .limit(PRUNE_BLOCK_STREAM_LIMIT)
-              .collect(Collectors.toMap(SignedBeaconBlock::getSlot, SignedBeaconBlock::getRoot));
+          stream.limit(pruneLimit).map(block -> Pair.of(block.getSlot(), block.getRoot())).toList();
     }
+
+    if (blocksToPrune.isEmpty()) {
+      LOG.debug("No finalized blocks to prune up to {} slot", lastSlotToPrune);
+      return lastSlotToPrune;
+    }
+    final UInt64 lastPrunedBlockSlot = blocksToPrune.get(blocksToPrune.size() - 1).getKey();
     LOG.debug(
-        "Pruning {} finalized blocks, target last slot is {}",
+        "Pruning {} finalized blocks, last block slot is {}",
         blocksToPrune.size(),
-        lastSlotToPrune);
+        lastPrunedBlockSlot);
     deleteFinalizedBlocks(blocksToPrune);
+
+    return blocksToPrune.size() < pruneLimit ? lastSlotToPrune : lastPrunedBlockSlot;
   }
 
-  private void pruneInBatchesToBlock(UInt64 lastSlotToPrune) {
-    Map<UInt64, Bytes32> blocksToPrune;
-    do {
-      try (final Stream<Map.Entry<Bytes32, UInt64>> stream = dao.getFinalizedBlockRoots()) {
-        blocksToPrune =
-            stream
-                .filter(entry -> entry.getValue().isLessThanOrEqualTo(lastSlotToPrune))
-                .limit(PRUNE_BATCH_SIZE)
-                .collect(Collectors.toUnmodifiableMap(Map.Entry::getValue, Map.Entry::getKey));
-      }
-      LOG.debug(
-          "Pruning finalized blocks; batch size: {}, target last slot is {}",
-          blocksToPrune.size(),
-          lastSlotToPrune);
-      deleteFinalizedBlocks(blocksToPrune);
-
-    } while (blocksToPrune.size() > 0);
-  }
-
-  private void deleteFinalizedBlocks(final Map<UInt64, Bytes32> blocksToPrune) {
+  private void deleteFinalizedBlocks(final List<Pair<UInt64, Bytes32>> blocksToPrune) {
     if (blocksToPrune.size() > 0) {
       if (blocksToPrune.size() < 20) {
-        LOG.debug("Received blocks ({}) to delete", blocksToPrune.keySet());
+        LOG.debug(
+            "Received blocks ({}) to delete",
+            () -> blocksToPrune.stream().map(Pair::getLeft).toList());
       } else {
         LOG.debug("Received {} finalized blocks to delete", blocksToPrune.size());
       }
 
       try (final FinalizedUpdater updater = finalizedUpdater()) {
-        blocksToPrune.forEach(updater::deleteFinalizedBlock);
+        blocksToPrune.forEach(
+            pair -> updater.deleteFinalizedBlock(pair.getLeft(), pair.getRight()));
         updater.commit();
       }
     }

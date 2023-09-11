@@ -15,7 +15,6 @@ package tech.pegasys.teku.cli.subcommand;
 
 import static tech.pegasys.teku.cli.subcommand.RemoteSpecLoader.getSpec;
 
-import com.google.common.base.Throwables;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.net.ConnectException;
@@ -49,6 +48,7 @@ import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
@@ -163,12 +163,10 @@ public class VoluntaryExitCommand implements Callable<Integer> {
       }
       getValidatorIndices(validatorsMap).forEach(this::submitExitForValidator);
     } catch (Exception ex) {
-      if (ex instanceof InvalidConfigurationException) {
-        if (Throwables.getRootCause(ex) instanceof ConnectException) {
-          SUB_COMMAND_LOG.error(getFailedToConnectMessage());
-        } else {
-          SUB_COMMAND_LOG.error(ex.getMessage());
-        }
+      if (ExceptionUtil.hasCause(ex, ConnectException.class)) {
+        SUB_COMMAND_LOG.error(getFailedToConnectMessage());
+      } else if (ex instanceof InvalidConfigurationException) {
+        SUB_COMMAND_LOG.error(ex.getMessage());
       } else {
         SUB_COMMAND_LOG.error("Fatal error in VoluntaryExit. Exiting", ex);
       }
