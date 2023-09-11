@@ -90,7 +90,12 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
   }
 
   public BlobSidecarSelector slotSelectorForAll(final UInt64 slot) {
-    return indices -> client.getAllBlobSidecars(slot, indices).thenApply(Optional::of);
+    return indices ->
+        client
+            .getAllBlobSidecars(slot, indices)
+            .thenApply(
+                blobSidecars ->
+                    blobSidecars.isEmpty() ? Optional.empty() : Optional.of(blobSidecars));
   }
 
   private SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecarsForBlock(
