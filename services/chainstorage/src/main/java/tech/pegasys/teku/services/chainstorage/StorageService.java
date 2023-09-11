@@ -128,8 +128,7 @@ public class StorageService extends Service implements StorageServiceFacade {
                             config.isStoreNonCanonicalBlocksEnabled()));
               }
               final EventChannels eventChannels = serviceConfig.getEventChannels();
-              chainStorage =
-                  ChainStorage.create(database, config.getSpec());
+              chainStorage = ChainStorage.create(database, config.getSpec());
               final DepositStorage depositStorage =
                   DepositStorage.create(
                       eventChannels.getPublisher(Eth1EventsChannel.class),
