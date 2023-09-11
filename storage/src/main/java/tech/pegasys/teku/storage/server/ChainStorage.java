@@ -53,7 +53,6 @@ public class ChainStorage
   private final Database database;
   private final FinalizedStateCache finalizedStateCache;
 
-  @SuppressWarnings("UnusedVariable")
   private final StateStorageMode dataStorageMode;
 
   private Optional<OnDiskStoreData> cachedStoreData = Optional.empty();
