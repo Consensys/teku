@@ -29,7 +29,6 @@ import tech.pegasys.teku.beaconrestapi.addon.LightClientRestApiBuilderAddon;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Liveness;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.PutLogLevel;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.admin.Readiness;
-import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlobSidecarsAtSlot;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlocksAtSlot;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDepositSnapshot;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetDeposits;
@@ -291,7 +290,6 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new Liveness(dataProvider))
             .endpoint(new Readiness(dataProvider, executionClientDataProvider))
             .endpoint(new GetAllBlocksAtSlot(dataProvider, schemaCache))
-            .endpoint(new GetAllBlobSidecarsAtSlot(dataProvider, schemaCache))
             .endpoint(new GetPeersScore(dataProvider))
             .endpoint(new GetProposersData(dataProvider))
             .endpoint(new GetDeposits(eth1DataProvider))

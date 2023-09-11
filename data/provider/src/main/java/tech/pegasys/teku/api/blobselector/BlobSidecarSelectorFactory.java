@@ -89,7 +89,7 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
     };
   }
 
-  public BlobSidecarSelector nonCanonicalBlobSidecarsSelector(final UInt64 slot) {
+  public BlobSidecarSelector slotSelectorForAll(final UInt64 slot) {
     return indices -> client.getAllBlobSidecars(slot, indices).thenApply(Optional::of);
   }
 

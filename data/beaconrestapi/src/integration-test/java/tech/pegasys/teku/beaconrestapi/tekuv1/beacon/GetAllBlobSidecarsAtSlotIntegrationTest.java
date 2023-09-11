@@ -61,19 +61,31 @@ public class GetAllBlobSidecarsAtSlotIntegrationTest
         fork.getBlobSidecars(nonCanonicalBlock.getRoot());
     chainUpdater.saveBlock(nonCanonicalBlock, nonCanonicalBlobSidecars);
 
-    SignedBlockAndState canonical = chainBuilder.generateNextBlock(1);
-    chainUpdater.updateBestBlock(canonical);
+    final SignedBlockAndState canonicalBlock = chainBuilder.generateNextBlock(1);
+    final List<BlobSidecar> canonicalBlobSidecars = fork.getBlobSidecars(canonicalBlock.getRoot());
+    chainUpdater.saveBlock(canonicalBlock, canonicalBlobSidecars);
+    chainUpdater.updateBestBlock(canonicalBlock);
     chainUpdater.finalizeEpoch(targetSlot.plus(1));
 
-    final Response response =
+    final Response nonCanonicalBlobSidecarResponse =
         get(
             nonCanonicalBlock.getSlot(),
             List.of(UInt64.ZERO, UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3)));
 
-    assertThat(response.code()).isEqualTo(SC_OK);
+    assertThat(nonCanonicalBlobSidecarResponse.code()).isEqualTo(SC_OK);
 
-    final List<BlobSidecar> result = parseBlobSidecars(response);
-    assertThat(result).isEqualTo(nonCanonicalBlobSidecars);
+    final List<BlobSidecar> nonCanonicalResult = parseBlobSidecars(nonCanonicalBlobSidecarResponse);
+    assertThat(nonCanonicalResult).isEqualTo(nonCanonicalBlobSidecars);
+
+    final Response canonicalBlobSidecarResponse =
+        get(
+            canonicalBlock.getSlot(),
+            List.of(UInt64.ZERO, UInt64.ONE, UInt64.valueOf(2), UInt64.valueOf(3)));
+
+    assertThat(canonicalBlobSidecarResponse.code()).isEqualTo(SC_OK);
+
+    final List<BlobSidecar> canonicalResult = parseBlobSidecars(canonicalBlobSidecarResponse);
+    assertThat(canonicalResult).isEqualTo(canonicalBlobSidecars);
   }
 
   public Response get(final UInt64 slot, final List<UInt64> indices) throws IOException {

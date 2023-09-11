@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.addon;
 
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.beaconrestapi.RestApiBuilderAddon;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlobSidecarsAtSlot;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlobSidecars;
 import tech.pegasys.teku.infrastructure.restapi.RestApiBuilder;
 import tech.pegasys.teku.spec.Spec;
@@ -41,6 +42,8 @@ public class DenebRestApiBuilderAddon implements RestApiBuilderAddon {
 
   @Override
   public RestApiBuilder apply(final RestApiBuilder builder) {
-    return builder.endpoint(new GetBlobSidecars(dataProvider, schemaCache));
+    return builder
+        .endpoint(new GetBlobSidecars(dataProvider, schemaCache))
+        .endpoint(new GetAllBlobSidecarsAtSlot(dataProvider, schemaCache));
   }
 }
