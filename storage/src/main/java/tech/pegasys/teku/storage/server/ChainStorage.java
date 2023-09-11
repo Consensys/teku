@@ -50,21 +50,30 @@ import tech.pegasys.teku.storage.server.state.FinalizedStateCache;
 
 public class ChainStorage
     implements StorageUpdateChannel, StorageQueryChannel, VoteUpdateChannel, ChainStorageFacade {
-
   private final Database database;
   private final FinalizedStateCache finalizedStateCache;
 
+  @SuppressWarnings("UnusedVariable")
+  private final StateStorageMode dataStorageMode;
+
   private Optional<OnDiskStoreData> cachedStoreData = Optional.empty();
 
-  private ChainStorage(final Database database, final FinalizedStateCache finalizedStateCache) {
+  private ChainStorage(
+      final Database database,
+      final FinalizedStateCache finalizedStateCache,
+      final StateStorageMode dataStorageMode) {
     this.database = database;
     this.finalizedStateCache = finalizedStateCache;
+    this.dataStorageMode = dataStorageMode;
   }
 
-  public static ChainStorage create(final Database database, final Spec spec) {
+  public static ChainStorage create(
+      final Database database, final Spec spec, final StateStorageMode dataStorageMode) {
     final int finalizedStateCacheSize = spec.getSlotsPerEpoch(SpecConfig.GENESIS_EPOCH) * 3;
     return new ChainStorage(
-        database, new FinalizedStateCache(spec, database, finalizedStateCacheSize, true));
+        database,
+        new FinalizedStateCache(spec, database, finalizedStateCacheSize, true),
+        dataStorageMode);
   }
 
   private synchronized Optional<OnDiskStoreData> getStore() {
@@ -224,12 +233,18 @@ public class ChainStorage
 
   @Override
   public SafeFuture<Optional<BeaconState>> getLatestFinalizedStateAtSlot(final UInt64 slot) {
-    return SafeFuture.of(() -> getLatestFinalizedStateAtSlotSync(slot));
+    if (dataStorageMode.storesFinalizedStates()) {
+      return SafeFuture.of(() -> getLatestFinalizedStateAtSlotSync(slot));
+    }
+    return SafeFuture.completedFuture(Optional.empty());
   }
 
   @Override
   public SafeFuture<Optional<BeaconState>> getLatestAvailableFinalizedState(UInt64 slot) {
-    return SafeFuture.of(() -> getLatestAvailableFinalizedStateSync(slot));
+    if (dataStorageMode.storesFinalizedStates()) {
+      return SafeFuture.of(() -> getLatestAvailableFinalizedStateSync(slot));
+    }
+    return SafeFuture.completedFuture(Optional.empty());
   }
 
   @Override
@@ -239,8 +254,11 @@ public class ChainStorage
 
   @Override
   public SafeFuture<Optional<BeaconState>> getFinalizedStateByBlockRoot(final Bytes32 blockRoot) {
-    return getFinalizedSlotByBlockRoot(blockRoot)
-        .thenApply(slot -> slot.flatMap(this::getLatestFinalizedStateAtSlotSync));
+    if (dataStorageMode.storesFinalizedStates()) {
+      return getFinalizedSlotByBlockRoot(blockRoot)
+          .thenApply(slot -> slot.flatMap(this::getLatestFinalizedStateAtSlotSync));
+    }
+    return SafeFuture.completedFuture(Optional.empty());
   }
 
   @Override
@@ -259,11 +277,17 @@ public class ChainStorage
   }
 
   private Optional<BeaconState> getLatestFinalizedStateAtSlotSync(final UInt64 slot) {
-    return finalizedStateCache.getFinalizedState(slot);
+    if (dataStorageMode.storesFinalizedStates()) {
+      return finalizedStateCache.getFinalizedState(slot);
+    }
+    return Optional.empty();
   }
 
   private Optional<BeaconState> getLatestAvailableFinalizedStateSync(final UInt64 slot) {
-    return database.getLatestAvailableFinalizedState(slot);
+    if (dataStorageMode.storesFinalizedStates()) {
+      return database.getLatestAvailableFinalizedState(slot);
+    }
+    return Optional.empty();
   }
 
   @Override
