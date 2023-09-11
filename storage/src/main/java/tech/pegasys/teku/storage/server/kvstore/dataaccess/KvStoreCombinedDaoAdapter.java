@@ -211,9 +211,10 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
-  public Map<String, Long> getColumnCounts() {
-    final HashMap<String, Long> result = new LinkedHashMap<>(hotDao.getColumnCounts());
-    result.putAll(finalizedDao.getColumnCounts());
+  public Map<String, Long> getColumnCounts(final Optional<String> maybeColumnFilter) {
+    final HashMap<String, Long> result =
+        new LinkedHashMap<>(hotDao.getColumnCounts(maybeColumnFilter));
+    result.putAll(finalizedDao.getColumnCounts(maybeColumnFilter));
     return result;
   }
 
