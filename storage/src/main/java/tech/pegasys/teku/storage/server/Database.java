@@ -203,7 +203,7 @@ public interface Database extends AutoCloseable {
 
   void storeVotes(Map<UInt64, VoteTracker> votes);
 
-  Map<String, Long> getColumnCounts();
+  Map<String, Long> getColumnCounts(final Optional<String> maybeColumnFilter);
 
   long getBlobSidecarColumnCount();
 

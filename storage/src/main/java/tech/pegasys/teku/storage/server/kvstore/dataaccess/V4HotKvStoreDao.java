@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.server.kvstore.dataaccess;
 import com.google.errorprone.annotations.MustBeClosed;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -167,9 +168,18 @@ public class V4HotKvStoreDao {
     return db.getRaw(kvStoreColumn, key);
   }
 
-  public Map<String, Long> getColumnCounts() {
+  public Map<String, Long> getColumnCounts(final Optional<String> maybeColumnNameFilter) {
     final Map<String, Long> columnCounts = new LinkedHashMap<>();
-    schema.getColumnMap().forEach((k, v) -> columnCounts.put(k, db.size(v)));
+    schema
+        .getColumnMap()
+        .forEach(
+            (k, v) -> {
+              if (maybeColumnNameFilter.isEmpty()
+                  || k.contains(maybeColumnNameFilter.get().toUpperCase(Locale.ROOT))) {
+                columnCounts.put(k, db.size(v));
+              }
+            });
+
     return columnCounts;
   }
 

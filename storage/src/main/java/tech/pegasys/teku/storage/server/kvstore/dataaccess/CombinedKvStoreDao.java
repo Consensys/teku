@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -408,9 +409,17 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public Map<String, Long> getColumnCounts() {
+  public Map<String, Long> getColumnCounts(final Optional<String> maybeColumnFilter) {
     final Map<String, Long> columnCounts = new LinkedHashMap<>();
-    schema.getColumnMap().forEach((k, v) -> columnCounts.put(k, db.size(v)));
+    schema
+        .getColumnMap()
+        .forEach(
+            (k, v) -> {
+              if (maybeColumnFilter.isEmpty()
+                  || k.contains(maybeColumnFilter.get().toUpperCase(Locale.ROOT))) {
+                columnCounts.put(k, db.size(v));
+              }
+            });
     return columnCounts;
   }
 

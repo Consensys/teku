@@ -354,8 +354,8 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public Map<String, Long> getColumnCounts() {
-    return dao.getColumnCounts();
+  public Map<String, Long> getColumnCounts(final Optional<String> maybeColumnFilter) {
+    return dao.getColumnCounts(maybeColumnFilter);
   }
 
   @Override
