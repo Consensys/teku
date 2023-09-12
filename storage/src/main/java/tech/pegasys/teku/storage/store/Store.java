@@ -160,7 +160,8 @@ class Store implements UpdatableStore {
             TekuMetricCategory.STORAGE,
             "store_blocks_hits",
             "Number of Store blocks hits",
-            "type");
+            "type",
+            "hit");
     this.blocks =
         new MeteredMap<>(
             blocks,
