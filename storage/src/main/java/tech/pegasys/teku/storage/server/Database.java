@@ -91,12 +91,13 @@ public interface Database extends AutoCloseable {
       UInt64 startSlot, UInt64 endSlot);
 
   @MustBeClosed
-  default Stream<SlotAndBlockRootAndBlobIndex> streamNonCanonicalBlobSidecarKeys(UInt64 slot) {
+  default Stream<SlotAndBlockRootAndBlobIndex> streamNonCanonicalBlobSidecarKeys(
+      final UInt64 slot) {
     return streamNonCanonicalBlobSidecarKeys(slot, slot);
   }
 
   @MustBeClosed
-  default Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(UInt64 slot) {
+  default Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(final UInt64 slot) {
     return streamBlobSidecarKeys(slot, slot);
   }
 
