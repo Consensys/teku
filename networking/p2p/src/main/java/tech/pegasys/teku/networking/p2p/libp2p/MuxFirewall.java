@@ -191,7 +191,7 @@ public class MuxFirewall implements ChannelVisitor<Connection> {
         }
       };
     }
-    throw new IllegalArgumentException("Not supported type of mux frame: " + msg.getClass());
+    throw new IllegalArgumentException("Unsupported type of mux frame: " + msg.getClass());
   }
 
   private interface MuxFrame {
