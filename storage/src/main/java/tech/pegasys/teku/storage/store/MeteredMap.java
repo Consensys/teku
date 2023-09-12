@@ -74,7 +74,13 @@ final class MeteredMap<K, V> implements Map<K, V> {
 
   @Override
   public V replace(final K key, final V value) {
-    throw new RuntimeException("Not implemented");
+    final V oldValue = delegate.replace(key, value);
+    if (oldValue != null) {
+      labelledGauge.set(valueFunction.apply((K) key, Optional.of(value)), "replace", "true");
+    } else {
+      labelledGauge.set(valueFunction.apply((K) key, Optional.empty()), "replace", "false");
+    }
+    return oldValue;
   }
 
   @Override
