@@ -175,9 +175,11 @@ public class MuxFirewall implements ChannelVisitor<Connection> {
 
         @Override
         public boolean indicatesStreamOpening() {
-          return (yamuxFlags == YamuxFlags.SYN || yamuxFlags == YamuxFlags.ACK)
-              // ignore Ping type
-              && yamuxFrame.getType() != YamuxType.PING;
+          boolean isDataOrWindowUpdate =
+              yamuxFrame.getType() == YamuxType.DATA
+                  || yamuxFrame.getType() == YamuxType.WINDOW_UPDATE;
+          return isDataOrWindowUpdate
+              && (yamuxFlags == YamuxFlags.SYN || yamuxFlags == YamuxFlags.ACK);
         }
 
         @Override
