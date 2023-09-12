@@ -48,6 +48,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
+import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -153,7 +154,23 @@ class Store implements UpdatableStore {
     this.genesisTime = genesisTime;
     this.justifiedCheckpoint = justifiedCheckpoint;
     this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
-    this.blocks = blocks;
+    final SettableLabelledGauge blocksLabelledGauge =
+        SettableLabelledGauge.create(
+            metricsSystem,
+            TekuMetricCategory.STORAGE,
+            "store_blocks_hits",
+            "Number of Store blocks hits",
+            "type");
+    this.blocks =
+        new MeteredMap<>(
+            blocks,
+            blocksLabelledGauge,
+            (__, signedBeaconBlock) ->
+                signedBeaconBlock
+                    .map(
+                        beaconBlock ->
+                            spec.getCurrentSlot(this).minus(beaconBlock.getSlot()).doubleValue())
+                    .orElse(-1d));
     this.highestVotedValidatorIndex =
         votes.keySet().stream().max(Comparator.naturalOrder()).orElse(UInt64.ZERO);
     this.votes =
