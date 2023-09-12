@@ -36,6 +36,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.dataproviders.generators.CachingTaskQueue;
 import tech.pegasys.teku.dataproviders.generators.StateAtSlotTask;
 import tech.pegasys.teku.dataproviders.generators.StateGenerationTask;
@@ -48,7 +50,6 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
-import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -154,9 +155,8 @@ class Store implements UpdatableStore {
     this.genesisTime = genesisTime;
     this.justifiedCheckpoint = justifiedCheckpoint;
     this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
-    final SettableLabelledGauge blocksLabelledGauge =
-        SettableLabelledGauge.create(
-            metricsSystem,
+    final LabelledMetric<Counter> blocksLabelledCounter =
+        metricsSystem.createLabelledCounter(
             TekuMetricCategory.STORAGE,
             "store_blocks_hits",
             "Number of Store blocks hits",
@@ -165,15 +165,15 @@ class Store implements UpdatableStore {
     this.blocks =
         new MeteredMap<>(
             blocks,
-            blocksLabelledGauge,
+            blocksLabelledCounter,
             (__, signedBeaconBlock) ->
                 signedBeaconBlock
                     .map(
                         beaconBlock ->
                             spec.getCurrentSlot(this)
                                 .minusMinZero(beaconBlock.getSlot())
-                                .doubleValue())
-                    .orElse(-1d));
+                                .intValue())
+                    .orElse(-1));
     this.highestVotedValidatorIndex =
         votes.keySet().stream().max(Comparator.naturalOrder()).orElse(UInt64.ZERO);
     this.votes =

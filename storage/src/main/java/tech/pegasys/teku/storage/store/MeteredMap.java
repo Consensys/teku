@@ -20,20 +20,21 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 
 /** Map extension with customized metrics. */
 final class MeteredMap<K, V> implements Map<K, V> {
   final Map<K, V> delegate;
-  final SettableLabelledGauge labelledGauge;
-  final BiFunction<K, Optional<V>, Double> valueFunction;
+  final LabelledMetric<Counter> labelledCounter;
+  final BiFunction<K, Optional<V>, Integer> valueFunction;
 
   public MeteredMap(
       final Map<K, V> delegate,
-      final SettableLabelledGauge labelledGauge,
-      final BiFunction<K, Optional<V>, Double> valueFunction) {
+      final LabelledMetric<Counter> labelledCounter,
+      final BiFunction<K, Optional<V>, Integer> valueFunction) {
     this.delegate = delegate;
-    this.labelledGauge = labelledGauge;
+    this.labelledCounter = labelledCounter;
     this.valueFunction = valueFunction;
   }
 
@@ -74,13 +75,7 @@ final class MeteredMap<K, V> implements Map<K, V> {
 
   @Override
   public V replace(final K key, final V value) {
-    final V oldValue = delegate.replace(key, value);
-    if (oldValue != null) {
-      labelledGauge.set(valueFunction.apply(key, Optional.of(value)), "replace", "true");
-    } else {
-      labelledGauge.set(valueFunction.apply(key, Optional.empty()), "replace", "false");
-    }
-    return oldValue;
+    throw new RuntimeException("Not implemented");
   }
 
   @Override
@@ -123,9 +118,9 @@ final class MeteredMap<K, V> implements Map<K, V> {
   public boolean containsKey(final Object key) {
     final boolean containsKey = delegate.containsKey(key);
     if (containsKey) {
-      labelledGauge.set(valueFunction.apply((K) key, Optional.empty()), "contains", "true");
+      labelledCounter.labels("contains", "true").inc();
     } else {
-      labelledGauge.set(valueFunction.apply((K) key, Optional.empty()), "contains", "false");
+      labelledCounter.labels("contains", "false").inc();
     }
     return containsKey;
   }
@@ -140,9 +135,13 @@ final class MeteredMap<K, V> implements Map<K, V> {
   public V get(final Object key) {
     final V maybeValue = delegate.get(key);
     if (maybeValue != null) {
-      labelledGauge.set(valueFunction.apply((K) key, Optional.of(maybeValue)), "get", "true");
+      labelledCounter
+          .labels("get", String.valueOf(valueFunction.apply((K) key, Optional.of(maybeValue))))
+          .inc();
     } else {
-      labelledGauge.set(valueFunction.apply((K) key, Optional.empty()), "get", "false");
+      labelledCounter
+          .labels("get", String.valueOf(valueFunction.apply((K) key, Optional.empty())))
+          .inc();
     }
     return maybeValue;
   }
@@ -150,24 +149,26 @@ final class MeteredMap<K, V> implements Map<K, V> {
   @Override
   public V put(final K key, final V value) {
     final V oldValue = delegate.put(key, value);
-    if (oldValue != null) {
-      labelledGauge.set(valueFunction.apply(key, Optional.of(value)), "put", "true");
-    } else {
-      labelledGauge.set(valueFunction.apply(key, Optional.empty()), "put", "false");
-    }
+    labelledCounter
+        .labels("put", String.valueOf(valueFunction.apply(key, Optional.of(value))))
+        .inc();
     return oldValue;
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public V remove(final Object key) {
-    final V oldValue = delegate.remove(key);
-    if (oldValue != null) {
-      labelledGauge.set(valueFunction.apply((K) key, Optional.of(oldValue)), "remove", "true");
+    final V maybeValue = delegate.remove(key);
+    if (maybeValue != null) {
+      labelledCounter
+          .labels("remove", String.valueOf(valueFunction.apply((K) key, Optional.of(maybeValue))))
+          .inc();
     } else {
-      labelledGauge.set(valueFunction.apply((K) key, Optional.empty()), "remove", "false");
+      labelledCounter
+          .labels("remove", String.valueOf(valueFunction.apply((K) key, Optional.empty())))
+          .inc();
     }
-    return oldValue;
+    return maybeValue;
   }
 
   @Override
@@ -177,7 +178,6 @@ final class MeteredMap<K, V> implements Map<K, V> {
 
   @Override
   public void clear() {
-    labelledGauge.set(1d, "clear", "true");
     delegate.clear();
   }
 
