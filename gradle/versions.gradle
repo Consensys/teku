@@ -131,8 +131,6 @@ dependencyManagement {
 
     dependency 'org.xerial.snappy:snappy-java:1.1.10.3'
 
-    //just a bluff again
-
     dependency 'io.prometheus:simpleclient:0.9.0'
 
     dependencySet(group: 'org.hyperledger.besu.internal', version: '23.7.1') {
