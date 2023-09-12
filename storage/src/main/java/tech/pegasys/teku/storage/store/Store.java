@@ -170,7 +170,9 @@ class Store implements UpdatableStore {
                 signedBeaconBlock
                     .map(
                         beaconBlock ->
-                            spec.getCurrentSlot(this).minus(beaconBlock.getSlot()).doubleValue())
+                            spec.getCurrentSlot(this)
+                                .minusMinZero(beaconBlock.getSlot())
+                                .doubleValue())
                     .orElse(-1d));
     this.highestVotedValidatorIndex =
         votes.keySet().stream().max(Comparator.naturalOrder()).orElse(UInt64.ZERO);
