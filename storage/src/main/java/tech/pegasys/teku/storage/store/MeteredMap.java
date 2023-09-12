@@ -145,9 +145,9 @@ final class MeteredMap<K, V> implements Map<K, V> {
   public V put(final K key, final V value) {
     final V oldValue = delegate.put(key, value);
     if (oldValue != null) {
-      labelledGauge.set(valueFunction.apply((K) key, Optional.of(value)), "put", "true");
+      labelledGauge.set(valueFunction.apply(key, Optional.of(value)), "put", "true");
     } else {
-      labelledGauge.set(valueFunction.apply((K) key, Optional.empty()), "put", "false");
+      labelledGauge.set(valueFunction.apply(key, Optional.empty()), "put", "false");
     }
     return oldValue;
   }
