@@ -632,11 +632,11 @@ class RemoteValidatorApiHandlerTest {
         validatorLivenessAtEpoches =
             List.of(
                 new tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch(
-                    firstIndex, epoch, false),
+                    firstIndex, false),
                 new tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch(
-                    secondIndex, epoch, true),
+                    secondIndex, true),
                 new tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch(
-                    thirdIndex, epoch, true));
+                    thirdIndex, true));
     PostValidatorLivenessResponse postValidatorLivenessResponse =
         new PostValidatorLivenessResponse(validatorLivenessAtEpoches);
     when(apiClient.sendValidatorsLiveness(any(), any()))

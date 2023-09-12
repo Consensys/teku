@@ -64,8 +64,7 @@ public class PostValidatorLivenessIntegrationTest extends AbstractDataBackedRest
     assertThat(response.code()).isEqualTo(SC_OK);
     final PostValidatorLivenessResponse result =
         jsonProvider.jsonToObject(response.body().string(), PostValidatorLivenessResponse.class);
-    assertThat(result.data.get(0))
-        .isEqualTo(new ValidatorLivenessAtEpoch(validatorIndex, epoch, true));
+    assertThat(result.data.get(0)).isEqualTo(new ValidatorLivenessAtEpoch(validatorIndex, true));
   }
 
   private String getValidatorLivenessUrl(final UInt64 epoch) {
