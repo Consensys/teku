@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -111,6 +112,8 @@ class Store implements UpdatableStore {
   final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates;
   VoteTracker[] votes;
   UInt64 highestVotedValidatorIndex;
+  final LabelledMetric<Counter> blocksLabelledCounter;
+  final BiFunction<Bytes32, SignedBeaconBlock, String> blockToSlotMetrics;
 
   private Store(
       final MetricsSystem metricsSystem,
@@ -155,25 +158,24 @@ class Store implements UpdatableStore {
     this.genesisTime = genesisTime;
     this.justifiedCheckpoint = justifiedCheckpoint;
     this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
-    final LabelledMetric<Counter> blocksLabelledCounter =
+    this.blocksLabelledCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.STORAGE,
-            "store_blocks_hits",
+            "store_blocks_cache",
             "Number of Store blocks hits",
             "type",
-            "hit");
-    this.blocks =
-        new MeteredMap<>(
-            blocks,
-            blocksLabelledCounter,
-            (__, signedBeaconBlock) ->
-                signedBeaconBlock
-                    .map(
-                        beaconBlock ->
-                            spec.getCurrentSlot(this)
-                                .minusMinZero(beaconBlock.getSlot())
-                                .intValue())
-                    .orElse(-1));
+            "success",
+            "slots",
+            "path");
+    this.blockToSlotMetrics =
+        (__, beaconBlock) -> {
+          int diff = spec.getCurrentSlot(this).minusMinZero(beaconBlock.getSlot()).intValue();
+          if (diff > 99) {
+            diff = 99;
+          }
+          return String.format("%02d", diff);
+        };
+    this.blocks = new MeteredMap<>(blocks, blocksLabelledCounter, blockToSlotMetrics);
     this.highestVotedValidatorIndex =
         votes.keySet().stream().max(Comparator.naturalOrder()).orElse(UInt64.ZERO);
     this.votes =
@@ -196,7 +198,7 @@ class Store implements UpdatableStore {
                         .map((b) -> Map.of(b.getRoot(), b))
                         .orElseGet(Collections::emptyMap)),
             fromMap(this.blocks),
-            blockProvider);
+            BlockProvider.meteredFalse(blockProvider, blocksLabelledCounter, blockToSlotMetrics));
     this.blobSidecarsProvider = blobSidecarsProvider;
     this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
   }
@@ -519,6 +521,17 @@ class Store implements UpdatableStore {
         .getBlock(blockRoot)
         .thenApply(
             block -> {
+              if (block.isPresent()) {
+                blocksLabelledCounter
+                    .labels(
+                        "get",
+                        "false",
+                        blockToSlotMetrics.apply(blockRoot, block.get()),
+                        "retrieveSignedBlock")
+                    .inc();
+              } else {
+                blocksLabelledCounter.labels("get", "false", "-1", "retrieveSignedBlock").inc();
+              }
               block.ifPresent(this::putBlock);
               return block;
             });

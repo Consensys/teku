@@ -15,7 +15,6 @@ package tech.pegasys.teku.storage.store;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -27,12 +26,12 @@ import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 final class MeteredMap<K, V> implements Map<K, V> {
   final Map<K, V> delegate;
   final LabelledMetric<Counter> labelledCounter;
-  final BiFunction<K, Optional<V>, Integer> valueFunction;
+  final BiFunction<K, V, String> valueFunction;
 
   public MeteredMap(
       final Map<K, V> delegate,
       final LabelledMetric<Counter> labelledCounter,
-      final BiFunction<K, Optional<V>, Integer> valueFunction) {
+      final BiFunction<K, V, String> valueFunction) {
     this.delegate = delegate;
     this.labelledCounter = labelledCounter;
     this.valueFunction = valueFunction;
@@ -114,13 +113,12 @@ final class MeteredMap<K, V> implements Map<K, V> {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public boolean containsKey(final Object key) {
     final boolean containsKey = delegate.containsKey(key);
     if (containsKey) {
-      labelledCounter.labels("contains", "true").inc();
+      labelledCounter.labels("contains", "true", "-1", "containsKey").inc();
     } else {
-      labelledCounter.labels("contains", "false").inc();
+      labelledCounter.labels("contains", "false", "-1", "containsKey").inc();
     }
     return containsKey;
   }
@@ -135,13 +133,7 @@ final class MeteredMap<K, V> implements Map<K, V> {
   public V get(final Object key) {
     final V maybeValue = delegate.get(key);
     if (maybeValue != null) {
-      labelledCounter
-          .labels("get", String.valueOf(valueFunction.apply((K) key, Optional.of(maybeValue))))
-          .inc();
-    } else {
-      labelledCounter
-          .labels("get", String.valueOf(valueFunction.apply((K) key, Optional.empty())))
-          .inc();
+      labelledCounter.labels("get", "true", valueFunction.apply((K) key, maybeValue), "get").inc();
     }
     return maybeValue;
   }
@@ -150,7 +142,7 @@ final class MeteredMap<K, V> implements Map<K, V> {
   public V put(final K key, final V value) {
     final V oldValue = delegate.put(key, value);
     labelledCounter
-        .labels("put", String.valueOf(valueFunction.apply(key, Optional.of(value))))
+        .labels("put", String.valueOf(oldValue != null), valueFunction.apply(key, value), "put")
         .inc();
     return oldValue;
   }
@@ -161,11 +153,7 @@ final class MeteredMap<K, V> implements Map<K, V> {
     final V maybeValue = delegate.remove(key);
     if (maybeValue != null) {
       labelledCounter
-          .labels("remove", String.valueOf(valueFunction.apply((K) key, Optional.of(maybeValue))))
-          .inc();
-    } else {
-      labelledCounter
-          .labels("remove", String.valueOf(valueFunction.apply((K) key, Optional.empty())))
+          .labels("remove", "true", valueFunction.apply((K) key, maybeValue), "remove")
           .inc();
     }
     return maybeValue;

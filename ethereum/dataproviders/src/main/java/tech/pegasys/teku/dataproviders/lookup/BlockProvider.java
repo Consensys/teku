@@ -21,10 +21,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
@@ -82,6 +86,33 @@ public interface BlockProvider {
                 });
       }
       return result;
+    };
+  }
+
+  static BlockProvider meteredFalse(
+      final BlockProvider blockProvider,
+      final LabelledMetric<Counter> blocksLabelledCounter,
+      final BiFunction<Bytes32, SignedBeaconBlock, String> blockToSlotMetrics) {
+    return (final Set<Bytes32> blockRoots) -> {
+      final SafeFuture<Map<Bytes32, SignedBeaconBlock>> blocks =
+          blockProvider.getBlocks(blockRoots);
+      return blocks.thenPeek(
+          blocksMap -> {
+            blocksMap
+                .values()
+                .forEach(
+                    block ->
+                        blocksLabelledCounter
+                            .labels(
+                                "get",
+                                "false",
+                                blockToSlotMetrics.apply(block.getRoot(), block),
+                                "meteredFalse")
+                            .inc());
+            IntStream.range(0, blocksMap.size() - blockRoots.size())
+                .forEach(
+                    __ -> blocksLabelledCounter.labels("get", "false", "-1", "meteredFalse").inc());
+          });
     };
   }
 
