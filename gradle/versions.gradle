@@ -157,8 +157,6 @@ dependencyManagement {
       exclude 'org.apache.tuweni:units'
     }
 
-    //workaround
-
     dependencySet(group: 'org.jupnp', version: '2.7.1') {
       entry "org.jupnp"
       entry "org.jupnp.support"
