@@ -45,8 +45,7 @@ class RestApiTest {
 
   @Test
   @DisabledOnOs(OS.WINDOWS)
-  void start_shouldFailFastWhenTokenNotWritable(@TempDir final Path tempDir)
-      throws IOException {
+  void start_shouldFailFastWhenTokenNotWritable(@TempDir final Path tempDir) throws IOException {
 
     final Path managerDir = tempDir.resolve("manager");
     Files.createDirectory(
