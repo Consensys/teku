@@ -629,15 +629,11 @@ class RemoteValidatorApiHandlerTest {
 
     List<UInt64> validatorIndices = List.of(firstIndex, secondIndex, thirdIndex);
 
-    List<ValidatorLiveness>
-            validatorLivenesses =
-            List.of(
-                new ValidatorLiveness(
-                    firstIndex, false),
-                new ValidatorLiveness(
-                    secondIndex, true),
-                new ValidatorLiveness(
-                    thirdIndex, true));
+    List<ValidatorLiveness> validatorLivenesses =
+        List.of(
+            new ValidatorLiveness(firstIndex, false),
+            new ValidatorLiveness(secondIndex, true),
+            new ValidatorLiveness(thirdIndex, true));
     PostValidatorLivenessResponse postValidatorLivenessResponse =
         new PostValidatorLivenessResponse(validatorLivenesses);
     when(apiClient.sendValidatorsLiveness(any(), any()))

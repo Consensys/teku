@@ -22,8 +22,7 @@ public class PostValidatorLivenessResponse {
   public final List<ValidatorLiveness> data;
 
   @JsonCreator
-  public PostValidatorLivenessResponse(
-      @JsonProperty("data") final List<ValidatorLiveness> data) {
+  public PostValidatorLivenessResponse(@JsonProperty("data") final List<ValidatorLiveness> data) {
     this.data = data;
   }
 }
