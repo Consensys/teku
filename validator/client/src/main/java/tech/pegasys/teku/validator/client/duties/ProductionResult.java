@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -72,7 +74,7 @@ public class ProductionResult<T> {
       final Function<List<T>, SafeFuture<List<SubmitDataError>>> submitFunction) {
     // Split into results that produced a message to send vs those that failed already
     final List<ProductionResult<T>> messageCreated =
-        results.stream().filter(ProductionResult::producedMessage).toList();
+        results.stream().filter(ProductionResult::producedMessage).collect(Collectors.toList());
     final DutyResult combinedFailures =
         combineResults(results.stream().filter(ProductionResult::failedToProduceMessage).toList());
 
