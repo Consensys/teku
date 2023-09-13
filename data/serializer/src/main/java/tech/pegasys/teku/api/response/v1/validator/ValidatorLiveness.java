@@ -20,7 +20,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class ValidatorLivenessAtEpoch {
+public class ValidatorLiveness {
   @Schema(type = "string", format = "uint64")
   public final UInt64 index;
 
@@ -28,7 +28,7 @@ public class ValidatorLivenessAtEpoch {
   public final boolean isLive;
 
   @JsonCreator
-  public ValidatorLivenessAtEpoch(
+  public ValidatorLiveness(
       @JsonProperty("index") final UInt64 index, @JsonProperty("is_live") final boolean isLive) {
     this.index = index;
     this.isLive = isLive;
@@ -42,7 +42,7 @@ public class ValidatorLivenessAtEpoch {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final ValidatorLivenessAtEpoch that = (ValidatorLivenessAtEpoch) o;
+    final ValidatorLiveness that = (ValidatorLiveness) o;
     return isLive == that.isLive && Objects.equals(index, that.index);
   }
 

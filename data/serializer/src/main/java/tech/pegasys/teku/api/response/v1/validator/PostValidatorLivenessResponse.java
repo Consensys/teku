@@ -19,11 +19,11 @@ import java.util.List;
 
 public class PostValidatorLivenessResponse {
 
-  public final List<ValidatorLivenessAtEpoch> data;
+  public final List<ValidatorLiveness> data;
 
   @JsonCreator
   public PostValidatorLivenessResponse(
-      @JsonProperty("data") final List<ValidatorLivenessAtEpoch> data) {
+      @JsonProperty("data") final List<ValidatorLiveness> data) {
     this.data = data;
   }
 }
