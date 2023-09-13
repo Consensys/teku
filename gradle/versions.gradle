@@ -113,8 +113,6 @@ dependencyManagement {
       entry 'mockito-junit-jupiter'
     }
 
-    //hack
-
     dependencySet(group: "org.openjdk.jmh", version: "1.37") {
       entry 'jmh-core'
       entry 'jmh-generator-annprocess'
