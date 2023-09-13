@@ -45,7 +45,7 @@ class RestApiTest {
 
   @Test
   @DisabledOnOs(OS.WINDOWS)
-  void start_shouldThrowInvalidConfigurationExceptionWhenPortInUse(@TempDir final Path tempDir)
+  void start_shouldFailFastWhenTokenNotWritable(@TempDir final Path tempDir)
       throws IOException {
 
     final Path managerDir = tempDir.resolve("manager");
