@@ -76,7 +76,7 @@ public class RestApi extends Service {
         throw new IllegalStateException("Rest API failed to start", e);
       } else {
         // there may be non fatal exceptions, lets at least see an error.
-        LOG.error("Error encountered starting rest api", e);
+        LOG.error("Error encountered starting Rest API", e);
       }
     }
     return SafeFuture.COMPLETE;
