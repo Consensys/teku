@@ -497,13 +497,18 @@ jobs:
           paths:
             - .openapidoc/spec/teku.json
 
+  # longish story here: we store the openapi json spec in the `gh-pages` branch of teku on Github 
+  # The reason we don't use GHA and instead use Circle to push to GHA is:
+  # 1. We need assemble -> extractAPISpec -> publishAPISpec and this takes circa 10 mins to build in GHA,
+  # 2. We publish artifacts (openapi, docker, binaries etc) only after ALL tests and we can't check for all the jobs passing to kick this one off
+  # 3. Minor reason related to 2. single CI helps keep things in one place
   publishAPISpec:
     executor: node_executor
     steps:
       - checkout
       - add_ssh_keys:
           fingerprints:
-            - "45:36:58:67:43:15:c6:5f:2c:58:ec:7f:71:e2:e6:ef"
+            - "2d:5b:b7:9f:f9:b1:5c:2c:d4:5e:4a:bf:9f:2b:75:58"
       - attach_workspace:
           at: ~/project
       - restore_cache:
