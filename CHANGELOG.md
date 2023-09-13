@@ -16,3 +16,4 @@ For information on changes in released versions of Teku, see the [releases page]
 - Add `/teku/v1/beacon/blob_sidecars/{slot}` Teku API which returns all blob sidecars (canonical and non-canonical) at a specific slot
 
 ### Bug Fixes
+- When the rest-api's fail to start up they can now potentially 'fail fast' rather than silently ignoring the issue.
