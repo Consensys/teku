@@ -34,7 +34,7 @@ public class SlashingProtectedValidatorSource implements ValidatorSource {
   }
 
   @Override
-  public List<ValidatorProvider> getAvailableValidators() {
+  public List<? extends ValidatorProvider> getAvailableValidators() {
     return delegate.getAvailableValidators().stream()
         .map(SlashingProtectedValidatorProvider::new)
         .toList();

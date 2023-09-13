@@ -208,7 +208,7 @@ public class ExternalValidatorSourceTest {
     final BLSPublicKey publicKey2 = dataStructureUtil.randomPublicKey();
     createRemoteKeyFile(dataDirLayout, publicKey2, Optional.empty());
 
-    final List<ValidatorSource.ValidatorProvider> validators =
+    final List<? extends ValidatorSource.ValidatorProvider> validators =
         externalValidatorSource.getAvailableValidators();
 
     final List<ValidatorProviderInfo> result =
@@ -236,7 +236,7 @@ public class ExternalValidatorSourceTest {
 
     final ExternalValidatorSource externalValidatorSource =
         newExternalValidatorSource(tempDir, true);
-    final List<ValidatorSource.ValidatorProvider> validators =
+    final List<? extends ValidatorSource.ValidatorProvider> validators =
         externalValidatorSource.getAvailableValidators();
     final List<ValidatorProviderInfo> result =
         validators.stream()

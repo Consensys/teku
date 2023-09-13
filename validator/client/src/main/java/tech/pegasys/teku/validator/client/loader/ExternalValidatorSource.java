@@ -99,7 +99,7 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
   }
 
   @Override
-  public List<ValidatorProvider> getAvailableValidators() {
+  public List<? extends ValidatorProvider> getAvailableValidators() {
     if (readOnly) {
       return getAvailableReadOnlyValidators();
     }
@@ -109,7 +109,7 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
     return files.stream().map(this::getValidatorProvider).toList();
   }
 
-  private List<ValidatorProvider> getAvailableReadOnlyValidators() {
+  private List<? extends ValidatorProvider> getAvailableReadOnlyValidators() {
     final List<BLSPublicKey> publicKeys =
         publicKeyLoader.getPublicKeys(config.getValidatorExternalSignerPublicKeySources());
     return publicKeys.stream()

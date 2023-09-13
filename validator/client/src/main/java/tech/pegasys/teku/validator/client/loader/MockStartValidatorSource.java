@@ -44,7 +44,7 @@ public class MockStartValidatorSource implements ValidatorSource {
   }
 
   @Override
-  public List<ValidatorProvider> getAvailableValidators() {
+  public List<? extends ValidatorProvider> getAvailableValidators() {
     final int startIndex = config.getInteropOwnedValidatorStartIndex();
     final int endIndex = startIndex + config.getInteropOwnedValidatorCount();
     LOG.log(Level.DEBUG, "Owning validator range " + startIndex + " to " + endIndex);
