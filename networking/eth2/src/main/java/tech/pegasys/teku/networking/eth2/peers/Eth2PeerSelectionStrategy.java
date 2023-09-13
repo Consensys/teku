@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.peers;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableList;
-import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.networking.p2p.connection.PeerConnectionType.RANDOMLY_SELECTED;
 import static tech.pegasys.teku.networking.p2p.connection.PeerConnectionType.SCORE_BASED;
 
@@ -131,7 +130,7 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
                 .reversed())
         .flatMap(candidate -> checkCandidate(candidate, network).stream())
         .limit(scoreBasedPeersToAdd)
-        .collect(toList());
+        .toList();
   }
 
   private int getCurrentRandomlySelectedPeerCount(
@@ -186,7 +185,7 @@ public class Eth2PeerSelectionStrategy implements PeerSelectionStrategy {
             peersBySource.getOrDefault(SCORE_BASED, emptyList()).stream())
         .sorted(Comparator.comparing(peerScorer::scoreExistingPeer))
         .limit(peersToDrop)
-        .collect(toList());
+        .toList();
   }
 
   @FunctionalInterface

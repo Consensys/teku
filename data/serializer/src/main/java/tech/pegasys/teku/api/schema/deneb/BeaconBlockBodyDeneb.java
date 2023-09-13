@@ -14,7 +14,6 @@
 package tech.pegasys.teku.api.schema.deneb;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static java.util.stream.Collectors.toList;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -91,16 +90,14 @@ public class BeaconBlockBodyDeneb extends BeaconBlockBodyAltair {
     checkNotNull(
         message.getBlsToExecutionChanges(), "BlsToExecutionChanges are required for Deneb blocks");
     this.blsToExecutionChanges =
-        message.getBlsToExecutionChanges().stream()
-            .map(SignedBlsToExecutionChange::new)
-            .collect(toList());
+        message.getBlsToExecutionChanges().stream().map(SignedBlsToExecutionChange::new).toList();
     checkNotNull(
         message.getBlobKzgCommitments(), "BlobKzgCommitments are required for Deneb blocks");
     this.blobKZGCommitments =
         message.getBlobKzgCommitments().stream()
             .map(SszKZGCommitment::getKZGCommitment)
             .map(KZGCommitment::new)
-            .collect(toList());
+            .toList();
   }
 
   @Override

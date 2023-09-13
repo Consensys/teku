@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.validator.client.duties;
 
-import static java.util.stream.Collectors.toList;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -74,20 +72,16 @@ public class ProductionResult<T> {
       final Function<List<T>, SafeFuture<List<SubmitDataError>>> submitFunction) {
     // Split into results that produced a message to send vs those that failed already
     final List<ProductionResult<T>> messageCreated =
-        results.stream().filter(ProductionResult::producedMessage).collect(toList());
+        results.stream().filter(ProductionResult::producedMessage).toList();
     final DutyResult combinedFailures =
-        combineResults(
-            results.stream().filter(ProductionResult::failedToProduceMessage).collect(toList()));
+        combineResults(results.stream().filter(ProductionResult::failedToProduceMessage).toList());
 
     if (messageCreated.isEmpty()) {
       return SafeFuture.completedFuture(combinedFailures);
     }
 
     return submitFunction
-        .apply(
-            messageCreated.stream()
-                .map(result -> result.getMessage().orElseThrow())
-                .collect(toList()))
+        .apply(messageCreated.stream().map(result -> result.getMessage().orElseThrow()).toList())
         .thenApply(
             errors -> {
               errors.forEach(error -> replaceResult(messageCreated, error));

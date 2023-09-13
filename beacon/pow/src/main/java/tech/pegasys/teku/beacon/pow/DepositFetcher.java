@@ -207,7 +207,7 @@ public class DepositFetcher {
     return neededBlockHashes.stream()
         .map(BlockNumberAndHash::getHash)
         .map(eth1Provider::getGuaranteedEth1Block)
-        .collect(toList());
+        .toList();
   }
 
   private NavigableMap<BlockNumberAndHash, List<DepositEventEventResponse>>

@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.validator.api;
 
-import static java.util.stream.Collectors.toList;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Splitter;
@@ -154,6 +152,6 @@ public class KeyStoreFilesLocator {
   private List<Pair<Path, Path>> getFilePairs(Map<Path, Path> pathMap) {
     return pathMap.entrySet().stream()
         .map(entry -> Pair.of(entry.getKey(), entry.getValue()))
-        .collect(toList());
+        .toList();
   }
 }

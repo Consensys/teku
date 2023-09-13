@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
-import static java.util.stream.Collectors.toList;
-
 import java.net.URL;
 import java.util.List;
 import java.util.Optional;
@@ -53,7 +51,7 @@ public class MockStartValidatorSource implements ValidatorSource {
     return new MockStartValidatorKeyPairFactory()
         .generateKeyPairs(startIndex, endIndex).stream()
             .map(MockStartValidatorProvider::new)
-            .collect(toList());
+            .toList();
   }
 
   @Override
