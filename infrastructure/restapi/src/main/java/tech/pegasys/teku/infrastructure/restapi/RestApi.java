@@ -65,6 +65,18 @@ public class RestApi extends Service {
                 "TCP Port %d is already in use. "
                     + "You may need to stop another process or change the HTTP port for this process.",
                 app.port()));
+      } else if (e instanceof IllegalStateException
+          || Throwables.getRootCause(e) instanceof IllegalStateException) {
+        // IllegalStateException is a sign that something needed has failed to be initialised.
+        // throwing it here will terminate the process effectively.
+        LOG.error("Failed to start Rest API", e);
+        throw e;
+      } else if (app.jettyServer() == null || !app.jettyServer().started) {
+        // failing to create the jetty server or start the jetty server is fatal.
+        throw new IllegalStateException("Rest API failed to start", e);
+      } else {
+        // there may be non fatal exceptions, lets at least see an error.
+        LOG.error("Error encountered starting rest api", e);
       }
     }
     return SafeFuture.COMPLETE;
