@@ -125,7 +125,7 @@ final class MeteredMap<K, V> implements Map<K, V> {
 
   @Override
   public boolean containsValue(final Object value) {
-    throw new RuntimeException("Not implemented");
+    return delegate.containsValue(value);
   }
 
   @Override
@@ -171,16 +171,16 @@ final class MeteredMap<K, V> implements Map<K, V> {
 
   @Override
   public Set<K> keySet() {
-    throw new RuntimeException("Not implemented");
+    return delegate.keySet();
   }
 
   @Override
   public Collection<V> values() {
-    throw new RuntimeException("Not implemented");
+    return delegate.values();
   }
 
   @Override
   public Set<Entry<K, V>> entrySet() {
-    throw new RuntimeException("Not implemented");
+    return delegate.entrySet();
   }
 }
