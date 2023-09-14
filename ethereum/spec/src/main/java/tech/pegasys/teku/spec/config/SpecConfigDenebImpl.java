@@ -171,4 +171,34 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
         blobSidecarSubnetCount,
         maybeEpochsStoreBlobs);
   }
+
+  @Override
+  public String toString() {
+    return "SpecConfigDenebImpl{"
+        + "denebForkVersion="
+        + denebForkVersion
+        + ", denebForkEpoch="
+        + denebForkEpoch
+        + ", fieldElementsPerBlob="
+        + fieldElementsPerBlob
+        + ", maxBlobCommitmentsPerBlock="
+        + maxBlobCommitmentsPerBlock
+        + ", maxBlobsPerBlock="
+        + maxBlobsPerBlock
+        + ", trustedSetupPath="
+        + trustedSetupPath
+        + ", kzgNoop="
+        + kzgNoop
+        + ", maxRequestBlocksDeneb="
+        + maxRequestBlocksDeneb
+        + ", maxRequestBlobSidecars="
+        + maxRequestBlobSidecars
+        + ", minEpochsForBlobSidecarsRequests="
+        + minEpochsForBlobSidecarsRequests
+        + ", blobSidecarSubnetCount="
+        + blobSidecarSubnetCount
+        + ", maybeEpochsStoreBlobs="
+        + maybeEpochsStoreBlobs
+        + '}';
+  }
 }

@@ -18,14 +18,23 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.io.Resources;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.response.v1.config.GetSpecResponse;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigLoader;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 
 class RemoteSpecLoaderTest {
@@ -53,6 +62,29 @@ class RemoteSpecLoaderTest {
     assertThatThrownBy(() -> RemoteSpecLoader.getSpec(apiClient))
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessageContaining("GENESIS_FORK_VERSION");
+  }
+
+  @Test
+  void shouldProvideValidSpecConfigWithIncompleteRemoteConfig() throws IOException {
+    final String jsonConfig =
+        Resources.toString(
+            Resources.getResource(RemoteSpecLoaderTest.class, "spec_config.json"),
+            StandardCharsets.UTF_8);
+    final ObjectMapper objectMapper = new ObjectMapper();
+    TypeReference<Map<String, String>> typeReference = new TypeReference<>() {};
+    Map<String, String> data = objectMapper.readValue(jsonConfig, typeReference);
+
+    final SpecConfig specConfig = SpecConfigLoader.loadRemoteConfig(data);
+
+    final SpecConfig expectedConfig =
+        TestSpecFactory.getDenebSpecConfig(
+            Eth2Network.MAINNET,
+            UInt64.valueOf(74240),
+            UInt64.valueOf(144896),
+            UInt64.valueOf(194048),
+            UInt64.valueOf("18446744073709551615"),
+            false);
+    assertThat(specConfig).isEqualTo(expectedConfig);
   }
 
   private Map<String, String> getRawConfigForSpec(final Spec spec) {

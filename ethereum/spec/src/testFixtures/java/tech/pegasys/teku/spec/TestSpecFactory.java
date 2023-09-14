@@ -343,19 +343,30 @@ public class TestSpecFactory {
     return getDenebSpecConfig(network, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO, UInt64.ZERO);
   }
 
-  private static SpecConfigDeneb getDenebSpecConfig(
+  public static SpecConfigDeneb getDenebSpecConfig(
       final Eth2Network network,
       final UInt64 altairForkEpoch,
       final UInt64 bellatrixForkEpoch,
       final UInt64 capellaForkEpoch,
       final UInt64 denebForkEpoch) {
     return getDenebSpecConfig(
+        network, altairForkEpoch, bellatrixForkEpoch, capellaForkEpoch, denebForkEpoch, true);
+  }
+
+  public static SpecConfigDeneb getDenebSpecConfig(
+      final Eth2Network network,
+      final UInt64 altairForkEpoch,
+      final UInt64 bellatrixForkEpoch,
+      final UInt64 capellaForkEpoch,
+      final UInt64 denebForkEpoch,
+      final boolean kzgNoop) {
+    return getDenebSpecConfig(
         network,
         z ->
             z.altairBuilder(a -> a.altairForkEpoch(altairForkEpoch))
                 .bellatrixBuilder(b -> b.bellatrixForkEpoch(bellatrixForkEpoch))
                 .capellaBuilder(c -> c.capellaForkEpoch(capellaForkEpoch))
-                .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch).kzgNoop(true)));
+                .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch).kzgNoop(kzgNoop)));
   }
 
   private static SpecConfigDeneb getDenebSpecConfig(
