@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.store;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 
@@ -202,7 +203,7 @@ class StoreTest extends AbstractStoreTest {
 
     final SafeFuture<Optional<BeaconState>> result = store.retrieveCheckpointState(checkpoint);
     assertThatSafeFuture(result).isCompletedWithNonEmptyOptional();
-    final BeaconState checkpointState = result.join().orElseThrow();
+    final BeaconState checkpointState = safeJoin(result).orElseThrow();
     assertThat(checkpointState.getSlot()).isEqualTo(checkpoint.getEpochStartSlot(spec));
     assertThat(checkpointState.getLatestBlockHeader().hashTreeRoot())
         .isEqualTo(checkpoint.getRoot());
@@ -230,7 +231,7 @@ class StoreTest extends AbstractStoreTest {
     final SafeFuture<Optional<BeaconState>> resultFuture =
         store.retrieveCheckpointState(checkpoint, baseState);
     assertThatSafeFuture(resultFuture).isCompletedWithNonEmptyOptional();
-    final BeaconState result = resultFuture.join().orElseThrow();
+    final BeaconState result = safeJoin(resultFuture).orElseThrow();
     assertThat(result.getSlot()).isGreaterThan(baseState.getSlot());
     assertThat(result.getSlot()).isEqualTo(checkpoint.getEpochStartSlot(spec));
     assertThat(result.getLatestBlockHeader().hashTreeRoot()).isEqualTo(checkpoint.getRoot());
@@ -266,10 +267,10 @@ class StoreTest extends AbstractStoreTest {
 
     final SafeFuture<CheckpointState> result = store.retrieveFinalizedCheckpointAndState();
     assertThat(result).isCompleted();
-    assertThat(result.join().getCheckpoint()).isEqualTo(finalizedCheckpoint);
-    assertThat(result.join().getRoot()).isEqualTo(finalizedBlockAndState.getRoot());
-    assertThat(result.join().getState()).isNotEqualTo(finalizedBlockAndState.getState());
-    assertThat(result.join().getState().getSlot())
+    assertThat(safeJoin(result).getCheckpoint()).isEqualTo(finalizedCheckpoint);
+    assertThat(safeJoin(result).getRoot()).isEqualTo(finalizedBlockAndState.getRoot());
+    assertThat(safeJoin(result).getState()).isNotEqualTo(finalizedBlockAndState.getState());
+    assertThat(safeJoin(result).getState().getSlot())
         .isEqualTo(finalizedBlockAndState.getSlot().plus(1));
   }
 
@@ -398,7 +399,7 @@ class StoreTest extends AbstractStoreTest {
     final SafeFuture<CheckpointState> finalizedCheckpointState =
         store.retrieveFinalizedCheckpointAndState();
     assertThat(finalizedCheckpointState).isCompleted();
-    assertThat(finalizedCheckpointState.join().getCheckpoint()).isEqualTo(checkpoint1);
+    assertThat(safeJoin(finalizedCheckpointState).getCheckpoint()).isEqualTo(checkpoint1);
     // Check time
     assertThat(store.getTimeMillis()).isEqualTo(expectedTimeMillis);
     assertThat(store.getTimeSeconds()).isEqualTo(millisToSeconds(expectedTimeMillis));

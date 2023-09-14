@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.List;
@@ -408,7 +409,7 @@ class BlockProductionDutyTest {
   private void performAndReportDuty(final UInt64 slot) {
     final SafeFuture<DutyResult> result = duty.performDuty();
     assertThat(result).isCompleted();
-    result.join().report(TYPE, slot, validatorLogger);
+    safeJoin(result).report(TYPE, slot, validatorLogger);
   }
 
   static class PayloadSummary implements ExecutionPayloadSummary {
