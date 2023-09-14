@@ -113,7 +113,7 @@ class Store implements UpdatableStore {
   VoteTracker[] votes;
   UInt64 highestVotedValidatorIndex;
   final LabelledMetric<Counter> blocksLabelledCounter;
-  final BiFunction<Bytes32, SignedBeaconBlock, String> blockToSlotMetrics;
+  final BiFunction<Bytes32, SignedBeaconBlock, String> blockToEpochMetrics;
 
   private Store(
       final MetricsSystem metricsSystem,
@@ -161,21 +161,20 @@ class Store implements UpdatableStore {
     this.blocksLabelledCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.STORAGE,
-            "store_blocks_cache",
+            "store_block_cache",
             "Number of Store blocks hits",
             "type",
             "success",
-            "slots",
-            "path");
-    this.blockToSlotMetrics =
+            "epoch");
+    this.blockToEpochMetrics =
         (__, beaconBlock) -> {
           int diff = spec.getCurrentSlot(this).minusMinZero(beaconBlock.getSlot()).intValue();
           if (diff > 99) {
             diff = 99;
           }
-          return String.format("%02d", diff);
+          return String.valueOf(diff / 32);
         };
-    this.blocks = new MeteredMap<>(blocks, blocksLabelledCounter, blockToSlotMetrics);
+    this.blocks = new MeteredMap<>(blocks, blocksLabelledCounter, blockToEpochMetrics);
     this.highestVotedValidatorIndex =
         votes.keySet().stream().max(Comparator.naturalOrder()).orElse(UInt64.ZERO);
     this.votes =
@@ -198,7 +197,7 @@ class Store implements UpdatableStore {
                         .map((b) -> Map.of(b.getRoot(), b))
                         .orElseGet(Collections::emptyMap)),
             fromMap(this.blocks),
-            BlockProvider.meteredFalse(blockProvider, blocksLabelledCounter, blockToSlotMetrics));
+            BlockProvider.meteredFalse(blockProvider, blocksLabelledCounter, blockToEpochMetrics));
     this.blobSidecarsProvider = blobSidecarsProvider;
     this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
   }
@@ -224,7 +223,11 @@ class Store implements UpdatableStore {
 
     // Create limited collections for non-final data
     final Map<Bytes32, SignedBeaconBlock> blocks =
-        LimitedMap.createSynchronized(config.getBlockCacheSize());
+        LimitedMap.createSortedSynchronized(
+            config.getBlockCacheSize(),
+            Comparator.naturalOrder(),
+            Comparator.comparing(SignedBeaconBlock::getSlot)
+                .thenComparing(SignedBeaconBlock::getRoot));
     final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStateTaskQueue =
         CachingTaskQueue.create(
             asyncRunner,
@@ -521,17 +524,6 @@ class Store implements UpdatableStore {
         .getBlock(blockRoot)
         .thenApply(
             block -> {
-              if (block.isPresent()) {
-                blocksLabelledCounter
-                    .labels(
-                        "get",
-                        "false",
-                        blockToSlotMetrics.apply(blockRoot, block.get()),
-                        "retrieveSignedBlock")
-                    .inc();
-              } else {
-                blocksLabelledCounter.labels("get", "false", "-1", "retrieveSignedBlock").inc();
-              }
               block.ifPresent(this::putBlock);
               return block;
             });
@@ -849,16 +841,8 @@ class Store implements UpdatableStore {
   }
 
   private void putBlock(final SignedBeaconBlock block) {
-    final Lock writeLock = lock.writeLock();
-    writeLock.lock();
-    try {
-      if (containsBlock(block.getRoot())) {
-        blocks.put(block.getRoot(), block);
-        blockCountGauge.ifPresent(gauge -> gauge.set(blocks.size()));
-      }
-    } finally {
-      writeLock.unlock();
-    }
+    blockCountGauge.ifPresent(gauge -> gauge.set(blocks.size()));
+    // do nothing
   }
 
   @VisibleForTesting

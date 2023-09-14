@@ -104,14 +104,10 @@ public interface BlockProvider {
                     block ->
                         blocksLabelledCounter
                             .labels(
-                                "get",
-                                "false",
-                                blockToSlotMetrics.apply(block.getRoot(), block),
-                                "meteredFalse")
+                                "get", "false", blockToSlotMetrics.apply(block.getRoot(), block))
                             .inc());
             IntStream.range(0, blocksMap.size() - blockRoots.size())
-                .forEach(
-                    __ -> blocksLabelledCounter.labels("get", "false", "-1", "meteredFalse").inc());
+                .forEach(__ -> blocksLabelledCounter.labels("get", "false", "-1").inc());
           });
     };
   }

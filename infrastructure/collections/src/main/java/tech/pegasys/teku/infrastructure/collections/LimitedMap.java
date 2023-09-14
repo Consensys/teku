@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.collections;
 
 import com.google.common.cache.CacheBuilder;
+import java.util.Comparator;
 import java.util.Map;
 
 public interface LimitedMap<K, V> extends Map<K, V> {
@@ -46,6 +47,13 @@ public interface LimitedMap<K, V> extends Map<K, V> {
    */
   static <K, V> LimitedMap<K, V> createSynchronized(final int maxSize) {
     return new SynchronizedLimitedMap<>(maxSize);
+  }
+
+  static <K, V> LimitedMap<K, V> createSortedSynchronized(
+      final int maxSize,
+      final Comparator<? super K> keyComparator,
+      final Comparator<? super V> valueComparator) {
+    return new SynchronizedSortedLimitedMap<>(maxSize, keyComparator, valueComparator);
   }
 
   /**

@@ -14,12 +14,15 @@
 package tech.pegasys.teku.infrastructure.collections;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import org.apache.commons.collections4.bidimap.DualTreeBidiMap;
 
 abstract class AbstractLimitedMap<K, V> implements LimitedMap<K, V> {
 
@@ -28,6 +31,28 @@ abstract class AbstractLimitedMap<K, V> implements LimitedMap<K, V> {
       @Override
       protected boolean removeEldestEntry(final Map.Entry<K, V> eldest) {
         return this.size() > maxSize;
+      }
+    };
+  }
+
+  protected static <K, V> Map<K, V> createSortedLimitedMap(
+      final int maxSize,
+      final Comparator<? super K> keyComparator,
+      final Comparator<? super V> valueComparator) {
+    final TreeMap<V, K> reverseMap = new TreeMap<>(valueComparator);
+    return new DualTreeBidiMap<>(new TreeMap<>(keyComparator), reverseMap, null) {
+      @Override
+      public V put(final K key, final V value) {
+        V old = super.put(key, value);
+        if (size() > maxSize) {
+          remove(reverseMap.firstEntry().getValue());
+        }
+        return old;
+      }
+
+      @Override
+      public void putAll(final Map<? extends K, ? extends V> map) {
+        map.forEach(this::put);
       }
     };
   }

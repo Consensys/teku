@@ -20,15 +20,20 @@ import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSeconds;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.dataproviders.lookup.BlobSidecarsProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -295,6 +300,27 @@ class StoreTest extends AbstractStoreTest {
     final SafeFuture<Optional<BeaconState>> result = store.retrieveCheckpointState(checkpoint);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasCauseInstanceOf(InvalidCheckpointException.class);
+  }
+
+  @Test
+  public void testSortedMap() {
+    final Map<Bytes32, SignedBeaconBlock> blocks =
+        LimitedMap.createSortedSynchronized(
+            10,
+            Comparator.naturalOrder(),
+            Comparator.comparing(SignedBeaconBlock::getSlot)
+                .thenComparing(SignedBeaconBlock::getRoot));
+    chainBuilder.generateGenesis();
+    final List<SignedBlockAndState> signedBlockAndStates = chainBuilder.generateBlocksUpToSlot(100);
+    Collections.shuffle(signedBlockAndStates);
+    signedBlockAndStates.forEach(
+        signedBlockAndState ->
+            blocks.put(signedBlockAndState.getBlock().getRoot(), signedBlockAndState.getBlock()));
+    final Set<UInt64> actual =
+        blocks.values().stream().map(SignedBeaconBlock::getSlot).collect(Collectors.toSet());
+    final Set<UInt64> expected =
+        IntStream.rangeClosed(91, 100).mapToObj(UInt64::valueOf).collect(Collectors.toSet());
+    assertThat(actual).isEqualTo(expected);
   }
 
   private void testApplyChangesWhenTransactionCommits(final boolean withInterleavedTransaction) {
