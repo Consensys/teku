@@ -58,6 +58,8 @@ public class ValidatorConfig {
   public static final int DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE = 100;
   public static final UInt64 DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT = UInt64.valueOf(30_000_000);
 
+  public static final boolean DEFAULT_IS_REMOVE_VALIDATORS_ON_RELOAD = false;
+
   public static final int DEFAULT_EXECUTOR_THREADS = 5;
 
   private final List<String> validatorKeys;
@@ -92,6 +94,7 @@ public class ValidatorConfig {
   private final Optional<String> sentryNodeConfigurationFile;
 
   private final int executorThreads;
+  private final boolean removeValidatorsOnReloadEnabled;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -124,7 +127,8 @@ public class ValidatorConfig {
       final Optional<BLSPublicKey> builderRegistrationPublicKeyOverride,
       final int executorMaxQueueSize,
       final int executorThreads,
-      final Optional<String> sentryNodeConfigurationFile) {
+      final Optional<String> sentryNodeConfigurationFile,
+      final boolean removeValidatorsOnReloadEnabled) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -159,6 +163,7 @@ public class ValidatorConfig {
     this.executorMaxQueueSize = executorMaxQueueSize;
     this.executorThreads = executorThreads;
     this.sentryNodeConfigurationFile = sentryNodeConfigurationFile;
+    this.removeValidatorsOnReloadEnabled = removeValidatorsOnReloadEnabled;
   }
 
   public static Builder builder() {
@@ -191,6 +196,10 @@ public class ValidatorConfig {
 
   public int getValidatorExternalSignerConcurrentRequestLimit() {
     return validatorExternalSignerConcurrentRequestLimit;
+  }
+
+  public boolean isRemoveValidatorsOnReloadEnabled() {
+    return removeValidatorsOnReloadEnabled;
   }
 
   public Pair<Path, Path> getValidatorExternalSignerKeystorePasswordFilePair() {
@@ -340,6 +349,8 @@ public class ValidatorConfig {
 
     private int executorThreads = DEFAULT_EXECUTOR_THREADS;
 
+    private boolean removeValidatorsOnReloadEnabled = DEFAULT_IS_REMOVE_VALIDATORS_ON_RELOAD;
+
     private Builder() {}
 
     public Builder validatorKeys(List<String> validatorKeys) {
@@ -398,6 +409,11 @@ public class ValidatorConfig {
         final Path validatorExternalSignerKeystorePasswordFile) {
       this.validatorExternalSignerKeystorePasswordFile =
           validatorExternalSignerKeystorePasswordFile;
+      return this;
+    }
+
+    public Builder removeValidatorsOnReloadEnabled(final boolean removeValidatorsOnReloadEnabled) {
+      this.removeValidatorsOnReloadEnabled = removeValidatorsOnReloadEnabled;
       return this;
     }
 
@@ -582,7 +598,8 @@ public class ValidatorConfig {
           builderRegistrationPublicKeyOverride,
           executorMaxQueueSize,
           executorThreads,
-          sentryNodeConfigurationFile);
+          sentryNodeConfigurationFile,
+          removeValidatorsOnReloadEnabled);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {

@@ -403,7 +403,8 @@ class ValidatorLoaderTest {
             Optional.of(validatorSource),
             null,
             Optional.of(dataDirLayout),
-            slashingProtectionLogger);
+            slashingProtectionLogger,
+            true);
 
     when(validatorSource.deleteValidator(publicKey)).thenReturn(DeleteKeyResult.success());
     loader.deleteLocalMutableValidator(publicKey);
@@ -558,7 +559,7 @@ class ValidatorLoaderTest {
   }
 
   @Test
-  void shouldNotRemoveExternalValidatorsOnReload() {
+  void shouldRemoveExternalValidatorsOnReload() {
     final PublicKeyLoader publicKeyLoader = mock(PublicKeyLoader.class);
     final List<BLSPublicKey> initialKeys = List.of(PUBLIC_KEY1);
     final String publicKeysUrl = "http://example.com";
@@ -569,6 +570,7 @@ class ValidatorLoaderTest {
             .validatorExternalSignerUrl(SIGNER_URL)
             .validatorExternalSignerPublicKeySources(Collections.singletonList(publicKeysUrl))
             .validatorExternalSignerSlashingProtectionEnabled(true)
+            .removeValidatorsOnReloadEnabled(true)
             .build();
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
@@ -591,7 +593,7 @@ class ValidatorLoaderTest {
     when(publicKeyLoader.getPublicKeys(List.of(publicKeysUrl))).thenReturn(reconfiguredKeys);
 
     validatorLoader.loadValidators();
-    assertThat(validators.getPublicKeys()).containsExactlyInAnyOrder(PUBLIC_KEY1, PUBLIC_KEY2);
+    assertThat(validators.getPublicKeys()).containsExactlyInAnyOrder(PUBLIC_KEY2);
   }
 
   @Test

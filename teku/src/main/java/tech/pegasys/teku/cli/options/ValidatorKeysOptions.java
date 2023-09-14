@@ -104,6 +104,17 @@ public class ValidatorKeysOptions {
   private int validatorExternalSignerConcurrentRequestLimit =
       ValidatorConfig.DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT;
 
+  @CommandLine.Option(
+      names = {"--Xvalidators-remove-on-reload-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Remove validators on reload (HUP) if they are no longer present.",
+      hidden = true,
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      fallbackValue = "true",
+      arity = "0..1")
+  private boolean removeValidatorsOnReloadEnabled =
+      ValidatorConfig.DEFAULT_IS_REMOVE_VALIDATORS_ON_RELOAD;
+
   public void configure(TekuConfiguration.Builder builder) {
     builder.validator(
         config ->
@@ -118,6 +129,7 @@ public class ValidatorKeysOptions {
                 .validatorExternalSignerKeystorePasswordFile(
                     convertToPath(validatorExternalSignerKeystorePasswordFile))
                 .validatorExternalSignerTruststore(convertToPath(validatorExternalSignerTruststore))
+                .removeValidatorsOnReloadEnabled(removeValidatorsOnReloadEnabled)
                 .validatorExternalSignerTruststorePasswordFile(
                     convertToPath(validatorExternalSignerTruststorePasswordFile)));
   }

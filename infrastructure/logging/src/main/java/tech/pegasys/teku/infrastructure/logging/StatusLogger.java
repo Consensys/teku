@@ -168,6 +168,10 @@ public class StatusLogger {
     log.info("Loading {} validator keys...", validatorCount);
   }
 
+  public void removingValidators(final int removedValidatorCount) {
+    log.info("Removing {} validator keys no longer in config...", removedValidatorCount);
+  }
+
   public void atLoadedValidatorNumber(
       final int loadedValidatorCount, final int totalValidatorCount) {
     log.info("Loaded validator key {} of {}.", loadedValidatorCount, totalValidatorCount);

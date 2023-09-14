@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+
 import com.google.common.annotations.VisibleForTesting;
 import java.net.URL;
 import java.net.http.HttpClient;
@@ -55,24 +57,32 @@ public class ValidatorLoader {
   private final Optional<DataDirLayout> maybeDataDirLayout;
   private final SlashingProtectionLogger slashingProtectionLogger;
 
+  private final boolean removeValidatorsOnReload;
+
   private ValidatorLoader(
       final List<ValidatorSource> validatorSources,
       final Optional<ValidatorSource> mutableLocalValidatorSource,
       final Optional<ValidatorSource> mutableExternalValidatorSource,
       final GraffitiProvider graffitiProvider,
       final Optional<DataDirLayout> maybeDataDirLayout,
-      final SlashingProtectionLogger slashingProtectionLogger) {
+      final SlashingProtectionLogger slashingProtectionLogger,
+      final boolean remooveValidatorsOnReload) {
     this.validatorSources = validatorSources;
     this.mutableLocalValidatorSource = mutableLocalValidatorSource;
     this.mutableExternalValidatorSource = mutableExternalValidatorSource;
     this.graffitiProvider = graffitiProvider;
     this.maybeDataDirLayout = maybeDataDirLayout;
     this.slashingProtectionLogger = slashingProtectionLogger;
+    this.removeValidatorsOnReload = remooveValidatorsOnReload;
   }
 
   // synchronized to ensure that only one load is active at a time
   public synchronized void loadValidators() {
     final Map<BLSPublicKey, ValidatorProvider> validatorProviders = new HashMap<>();
+    if (removeValidatorsOnReload) {
+      removeKeysNoLongerValid();
+    }
+
     validatorSources.forEach(source -> addValidatorsFromSource(validatorProviders, source));
     MultithreadedValidatorLoader.loadValidators(
         ownedValidators, validatorProviders, graffitiProvider);
@@ -243,7 +253,8 @@ public class ValidatorLoader {
         validatorSources.getMutableExternalValidatorSource(),
         config.getGraffitiProvider(),
         maybeMutableDir,
-        slashingProtectionLogger);
+        slashingProtectionLogger,
+        config.isRemoveValidatorsOnReloadEnabled());
   }
 
   @VisibleForTesting
@@ -253,14 +264,47 @@ public class ValidatorLoader {
       final Optional<ValidatorSource> mutableExternalValidatorSource,
       final GraffitiProvider graffitiProvider,
       final Optional<DataDirLayout> maybeDataDirLayout,
-      final SlashingProtectionLogger slashingProtectionLogger) {
+      final SlashingProtectionLogger slashingProtectionLogger,
+      final boolean removeValidatorsOnReload) {
     return new ValidatorLoader(
         validatorSources,
         mutableLocalValidatorSource,
         mutableExternalValidatorSource,
         graffitiProvider,
         maybeDataDirLayout,
-        slashingProtectionLogger);
+        slashingProtectionLogger,
+        removeValidatorsOnReload);
+  }
+
+  private void removeKeysNoLongerValid() {
+    final List<BLSPublicKey> currentKeySet =
+        validatorSources.stream()
+            .map(ValidatorSource::getAvailableValidators)
+            .flatMap(List::stream)
+            .map(ValidatorProvider::getPublicKey)
+            .toList();
+    final List<BLSPublicKey> removeKeys =
+        ownedValidators.getPublicKeys().stream().filter(k -> !currentKeySet.contains(k)).toList();
+
+    if (removeKeys.isEmpty()) {
+      return;
+    }
+    STATUS_LOG.removingValidators(removeKeys.size());
+
+    removeKeys.forEach(
+        k -> {
+          ownedValidators
+              .getValidator(k)
+              .ifPresent(
+                  v -> {
+                    v.getSigner().delete();
+                    LOG.info("Removed validator: {}", k);
+                  });
+          final Optional<Validator> maybeValidator = ownedValidators.removeValidator(k);
+          if (maybeValidator.isEmpty()) {
+            LOG.warn("Attempted to remove validator {} but it was no longer found", k);
+          }
+        });
   }
 
   private void addValidatorsFromSource(
