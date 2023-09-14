@@ -102,7 +102,7 @@ dependencyManagement {
 
     dependency 'org.awaitility:awaitility:4.2.0'
 
-    dependency 'org.bouncycastle:bcprov-jdk15on:1.70'
+    dependency 'org.bouncycastle:bcprov-jdk18on:1.76'
 
     dependencySet(group: 'org.junit.jupiter', version: '5.10.0') {
       entry 'junit-jupiter-api'
