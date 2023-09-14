@@ -159,7 +159,10 @@ public class LibP2PNetworkBuilder {
 
           // yamux MUST take precedence during negotiation
           if (config.isYamuxEnabled()) {
-            b.getMuxers().add(StreamMuxerProtocol.getYamux());
+            // as a temporary workaround setting maxBufferedConnectionWrites to 150 MiB to handle
+            // overflowing the write buffer when serving the blocks by range requests
+            final int maxBufferedConnectionWrites = 150 * 1024 * 1024;
+            b.getMuxers().add(StreamMuxerProtocol.getYamux(maxBufferedConnectionWrites));
           }
           b.getMuxers().add(StreamMuxerProtocol.getMplex());
 
