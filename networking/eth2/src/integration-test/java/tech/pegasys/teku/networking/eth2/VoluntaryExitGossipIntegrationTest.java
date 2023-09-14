@@ -93,7 +93,7 @@ public class VoluntaryExitGossipIntegrationTest {
     final SafeFuture<Optional<BeaconState>> stateFuture =
         node1.storageClient().getStore().retrieveBlockState(block.getRoot());
     assertThat(stateFuture).isCompleted();
-    final BeaconState state = stateFuture.join().orElseThrow();
+    final BeaconState state = safeJoin(stateFuture).orElseThrow();
     final VoluntaryExitGenerator exitGenerator =
         new VoluntaryExitGenerator(spec, node1.chainUtil().getValidatorKeys());
     final SignedVoluntaryExit voluntaryExit = exitGenerator.valid(state, 0);

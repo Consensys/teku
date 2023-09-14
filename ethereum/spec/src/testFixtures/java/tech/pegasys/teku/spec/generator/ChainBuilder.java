@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.generator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Preconditions.checkState;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -593,7 +594,7 @@ public class ChainBuilder {
       final SszList<Attestation> attestations,
       final SszList<AttesterSlashing> attesterSlashings)
       throws EpochProcessingException, SlotProcessingException {
-    return SafeFutureAssert.safeJoin(
+    return safeJoin(
         blockProposalTestUtil.createBlock(
             signer,
             slot,
@@ -644,7 +645,7 @@ public class ChainBuilder {
     }
 
     final SignedBlockAndState nextBlockAndState =
-        SafeFutureAssert.safeJoin(
+        safeJoin(
             blockProposalTestUtil.createBlock(
                 signer,
                 slot,
@@ -718,7 +719,7 @@ public class ChainBuilder {
     }
 
     final SignedBlockAndState nextBlockAndState =
-        SafeFutureAssert.safeJoin(
+        safeJoin(
             blockProposalTestUtil.createBlockWithBlobs(
                 signer,
                 slot,
@@ -871,7 +872,7 @@ public class ChainBuilder {
       final int validatorId, final Function<Signer, SafeFuture<BLSSignature>> signFunction) {
     final SafeFuture<BLSSignature> result = signFunction.apply(getSigner(validatorId));
     assertThat(result).isCompleted();
-    return result.join();
+    return safeJoin(result);
   }
 
   public Signer getSigner(final int validatorId) {

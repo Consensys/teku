@@ -2371,7 +2371,7 @@ public class DatabaseTest {
               .map(
                   f -> {
                     assertThat(f).isCompleted();
-                    return f.join();
+                    return safeJoin(f);
                   })
               .flatMap(Optional::stream)
               .collect(toList());
@@ -2394,7 +2394,7 @@ public class DatabaseTest {
             .map(
                 f -> {
                   assertThat(f).isCompleted();
-                  return f.join();
+                  return safeJoin(f);
                 })
             .flatMap(Optional::stream)
             .collect(toList());

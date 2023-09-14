@@ -138,7 +138,7 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
     waitFor(() -> assertThat(res).isDone());
 
     assertThat(res).isCompleted();
-    final MetadataMessage metadata = res.join();
+    final MetadataMessage metadata = safeJoin(res);
     assertThat(metadata).isInstanceOf(expectedType);
     assertThat(metadata.getSeqNumber()).isEqualTo(UInt64.ZERO);
   }
