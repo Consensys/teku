@@ -114,10 +114,8 @@ public class DoppelgangerDetectorTest {
             SafeFuture.completedFuture(
                 Optional.of(
                     List.of(
-                        new ValidatorLivenessAtEpoch(
-                            UInt64.valueOf(4), dataStructureUtil.randomEpoch(), true),
-                        new ValidatorLivenessAtEpoch(
-                            UInt64.valueOf(5), dataStructureUtil.randomEpoch(), true)))));
+                        new ValidatorLivenessAtEpoch(UInt64.valueOf(4), true),
+                        new ValidatorLivenessAtEpoch(UInt64.valueOf(5), true)))));
 
     Set<BLSPublicKey> pubKeys = Set.of(pubKey1, pubKey2, pubKey3);
     SafeFuture<Map<UInt64, BLSPublicKey>> doppelgangerDetectorFuture =
@@ -139,12 +137,9 @@ public class DoppelgangerDetectorTest {
             SafeFuture.completedFuture(
                 Optional.of(
                     List.of(
-                        new ValidatorLivenessAtEpoch(
-                            UInt64.valueOf(1), dataStructureUtil.randomEpoch(), true),
-                        new ValidatorLivenessAtEpoch(
-                            UInt64.valueOf(2), dataStructureUtil.randomEpoch(), false),
-                        new ValidatorLivenessAtEpoch(
-                            UInt64.valueOf(3), dataStructureUtil.randomEpoch(), true)))));
+                        new ValidatorLivenessAtEpoch(UInt64.valueOf(1), true),
+                        new ValidatorLivenessAtEpoch(UInt64.valueOf(2), false),
+                        new ValidatorLivenessAtEpoch(UInt64.valueOf(3), true)))));
     Set<BLSPublicKey> pubKeys = Set.of(pubKey1, pubKey2, pubKey3);
     SafeFuture<Map<UInt64, BLSPublicKey>> doppelgangerDetectorFuture =
         doppelgangerDetector.performDoppelgangerDetection(pubKeys);
@@ -175,10 +170,8 @@ public class DoppelgangerDetectorTest {
             SafeFuture.completedFuture(
                 Optional.of(
                     List.of(
-                        new ValidatorLivenessAtEpoch(
-                            UInt64.valueOf(4), dataStructureUtil.randomEpoch(), true),
-                        new ValidatorLivenessAtEpoch(
-                            UInt64.valueOf(5), dataStructureUtil.randomEpoch(), true)))));
+                        new ValidatorLivenessAtEpoch(UInt64.valueOf(4), true),
+                        new ValidatorLivenessAtEpoch(UInt64.valueOf(5), true)))));
 
     SafeFuture<Map<UInt64, BLSPublicKey>> firstDoppelgangerDetectorFuture =
         doppelgangerDetector.performDoppelgangerDetection(Set.of(pubKey1));
@@ -206,12 +199,9 @@ public class DoppelgangerDetectorTest {
             SafeFuture.completedFuture(
                 Optional.of(
                     List.of(
-                        new ValidatorLivenessAtEpoch(
-                            UInt64.valueOf(1), dataStructureUtil.randomEpoch(), true),
-                        new ValidatorLivenessAtEpoch(
-                            UInt64.valueOf(2), dataStructureUtil.randomEpoch(), false),
-                        new ValidatorLivenessAtEpoch(
-                            UInt64.valueOf(3), dataStructureUtil.randomEpoch(), true)))));
+                        new ValidatorLivenessAtEpoch(UInt64.valueOf(1), true),
+                        new ValidatorLivenessAtEpoch(UInt64.valueOf(2), false),
+                        new ValidatorLivenessAtEpoch(UInt64.valueOf(3), true)))));
     SafeFuture<Map<UInt64, BLSPublicKey>> firstDoppelgangerDetectorFuture =
         doppelgangerDetector.performDoppelgangerDetection(Set.of(pubKey1));
     SafeFuture<Map<UInt64, BLSPublicKey>> secondDoppelgangerDetectorFuture =
@@ -248,12 +238,9 @@ public class DoppelgangerDetectorTest {
             SafeFuture.completedFuture(
                 Optional.of(
                     List.of(
-                        new ValidatorLivenessAtEpoch(
-                            UInt64.valueOf(1), dataStructureUtil.randomEpoch(), true),
-                        new ValidatorLivenessAtEpoch(
-                            UInt64.valueOf(2), dataStructureUtil.randomEpoch(), false),
-                        new ValidatorLivenessAtEpoch(
-                            UInt64.valueOf(3), dataStructureUtil.randomEpoch(), true)))));
+                        new ValidatorLivenessAtEpoch(UInt64.valueOf(1), true),
+                        new ValidatorLivenessAtEpoch(UInt64.valueOf(2), false),
+                        new ValidatorLivenessAtEpoch(UInt64.valueOf(3), true)))));
 
     final Exception validatorIndicesException = new Exception("Validator Indices Exception");
     when(validatorApiChannel.getValidatorIndices(Set.of(pubKey3)))
@@ -400,10 +387,8 @@ public class DoppelgangerDetectorTest {
             SafeFuture.completedFuture(
                 Optional.of(
                     List.of(
-                        new ValidatorLivenessAtEpoch(
-                            UInt64.valueOf(1), dataStructureUtil.randomEpoch(), true),
-                        new ValidatorLivenessAtEpoch(
-                            UInt64.valueOf(2), dataStructureUtil.randomEpoch(), false)))));
+                        new ValidatorLivenessAtEpoch(UInt64.valueOf(1), true),
+                        new ValidatorLivenessAtEpoch(UInt64.valueOf(2), false)))));
     SafeFuture<Map<UInt64, BLSPublicKey>> doppelgangerDetectorFuture =
         doppelgangerDetector.performDoppelgangerDetection(pubKeys);
     asyncRunner.executeQueuedActions();
@@ -447,12 +432,9 @@ public class DoppelgangerDetectorTest {
             SafeFuture.completedFuture(
                 Optional.of(
                     List.of(
-                        new ValidatorLivenessAtEpoch(
-                            UInt64.valueOf(1), dataStructureUtil.randomEpoch(), true),
-                        new ValidatorLivenessAtEpoch(
-                            UInt64.valueOf(2), dataStructureUtil.randomEpoch(), false),
-                        new ValidatorLivenessAtEpoch(
-                            UInt64.valueOf(3), dataStructureUtil.randomEpoch(), true)))));
+                        new ValidatorLivenessAtEpoch(UInt64.valueOf(1), true),
+                        new ValidatorLivenessAtEpoch(UInt64.valueOf(2), false),
+                        new ValidatorLivenessAtEpoch(UInt64.valueOf(3), true)))));
     Set<BLSPublicKey> pubKeys = Set.of(pubKey1, pubKey2, pubKey3);
     SafeFuture<Map<UInt64, BLSPublicKey>> doppelgangerDetectorFuture =
         doppelgangerDetector.performDoppelgangerDetection(pubKeys);
@@ -487,24 +469,18 @@ public class DoppelgangerDetectorTest {
             SafeFuture.completedFuture(
                 Optional.of(
                     List.of(
-                        new ValidatorLivenessAtEpoch(
-                            UInt64.valueOf(1), dataStructureUtil.randomEpoch(), false),
-                        new ValidatorLivenessAtEpoch(
-                            UInt64.valueOf(2), dataStructureUtil.randomEpoch(), false),
-                        new ValidatorLivenessAtEpoch(
-                            UInt64.valueOf(3), dataStructureUtil.randomEpoch(), false)))));
+                        new ValidatorLivenessAtEpoch(UInt64.valueOf(1), false),
+                        new ValidatorLivenessAtEpoch(UInt64.valueOf(2), false),
+                        new ValidatorLivenessAtEpoch(UInt64.valueOf(3), false)))));
     when(validatorApiChannel.getValidatorsLiveness(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(new ArrayList<>())))
         .thenReturn(
             SafeFuture.completedFuture(
                 Optional.of(
                     List.of(
-                        new ValidatorLivenessAtEpoch(
-                            UInt64.valueOf(1), dataStructureUtil.randomEpoch(), true),
-                        new ValidatorLivenessAtEpoch(
-                            UInt64.valueOf(2), dataStructureUtil.randomEpoch(), false),
-                        new ValidatorLivenessAtEpoch(
-                            UInt64.valueOf(3), dataStructureUtil.randomEpoch(), true)))));
+                        new ValidatorLivenessAtEpoch(UInt64.valueOf(1), true),
+                        new ValidatorLivenessAtEpoch(UInt64.valueOf(2), false),
+                        new ValidatorLivenessAtEpoch(UInt64.valueOf(3), true)))));
     Set<BLSPublicKey> pubKeys = Set.of(pubKey1, pubKey2, pubKey3);
     SafeFuture<Map<UInt64, BLSPublicKey>> doppelgangerDetectorFuture =
         doppelgangerDetector.performDoppelgangerDetection(pubKeys);

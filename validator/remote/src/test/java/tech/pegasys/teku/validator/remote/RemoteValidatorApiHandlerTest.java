@@ -53,6 +53,7 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
+import tech.pegasys.teku.api.response.v1.validator.ValidatorLiveness;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -628,17 +629,13 @@ class RemoteValidatorApiHandlerTest {
 
     List<UInt64> validatorIndices = List.of(firstIndex, secondIndex, thirdIndex);
 
-    List<tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch>
-        validatorLivenessAtEpoches =
-            List.of(
-                new tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch(
-                    firstIndex, epoch, false),
-                new tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch(
-                    secondIndex, epoch, true),
-                new tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch(
-                    thirdIndex, epoch, true));
+    List<ValidatorLiveness> validatorLivenesses =
+        List.of(
+            new ValidatorLiveness(firstIndex, false),
+            new ValidatorLiveness(secondIndex, true),
+            new ValidatorLiveness(thirdIndex, true));
     PostValidatorLivenessResponse postValidatorLivenessResponse =
-        new PostValidatorLivenessResponse(validatorLivenessAtEpoches);
+        new PostValidatorLivenessResponse(validatorLivenesses);
     when(apiClient.sendValidatorsLiveness(any(), any()))
         .thenReturn(Optional.of(postValidatorLivenessResponse));
 
