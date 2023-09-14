@@ -454,9 +454,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
         .map(
             validatorLivenessAtEpoch ->
                 new ValidatorLivenessAtEpoch(
-                    validatorLivenessAtEpoch.index,
-                    validatorLivenessAtEpoch.epoch,
-                    validatorLivenessAtEpoch.isLive))
+                    validatorLivenessAtEpoch.index, validatorLivenessAtEpoch.isLive))
         .toList();
   }
 

@@ -22,21 +22,15 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ValidatorLivenessAtEpoch {
   private final UInt64 index;
-  private final UInt64 epoch;
   private final boolean isLive;
 
-  public ValidatorLivenessAtEpoch(final UInt64 index, final UInt64 epoch, final boolean isLive) {
+  public ValidatorLivenessAtEpoch(final UInt64 index, final boolean isLive) {
     this.index = index;
-    this.epoch = epoch;
     this.isLive = isLive;
   }
 
   public UInt64 getIndex() {
     return index;
-  }
-
-  public UInt64 getEpoch() {
-    return epoch;
   }
 
   public boolean isLive() {
@@ -46,7 +40,6 @@ public class ValidatorLivenessAtEpoch {
   public static SerializableTypeDefinition<ValidatorLivenessAtEpoch> getJsonTypeDefinition() {
     return SerializableTypeDefinition.object(ValidatorLivenessAtEpoch.class)
         .withField("index", UINT64_TYPE, ValidatorLivenessAtEpoch::getIndex)
-        .withField("epoch", UINT64_TYPE, ValidatorLivenessAtEpoch::getEpoch)
         .withField("is_live", BOOLEAN_TYPE, ValidatorLivenessAtEpoch::isLive)
         .build();
   }
@@ -60,25 +53,16 @@ public class ValidatorLivenessAtEpoch {
       return false;
     }
     final ValidatorLivenessAtEpoch that = (ValidatorLivenessAtEpoch) o;
-    return isLive == that.isLive
-        && Objects.equals(index, that.index)
-        && Objects.equals(epoch, that.epoch);
+    return isLive == that.isLive && Objects.equals(index, that.index);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(index, epoch, isLive);
+    return Objects.hash(index, isLive);
   }
 
   @Override
   public String toString() {
-    return "ValidatorLivenessAtEpoch{"
-        + "index="
-        + index
-        + ", epoch="
-        + epoch
-        + ", isLive="
-        + isLive
-        + '}';
+    return "ValidatorLivenessAtEpoch{" + "index=" + index + ", isLive=" + isLive + '}';
   }
 }

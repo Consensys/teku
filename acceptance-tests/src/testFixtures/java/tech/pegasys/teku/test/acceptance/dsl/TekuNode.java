@@ -72,7 +72,7 @@ import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsRespo
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorResponse;
 import tech.pegasys.teku.api.response.v1.node.SyncingResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
-import tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch;
+import tech.pegasys.teku.api.response.v1.validator.ValidatorLiveness;
 import tech.pegasys.teku.api.response.v2.beacon.GetBlockResponseV2;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
@@ -264,7 +264,7 @@ public class TekuNode extends Node {
     final PostValidatorLivenessResponse livenessResponse =
         JSON_PROVIDER.jsonToObject(response, PostValidatorLivenessResponse.class);
     final Object2BooleanMap<UInt64> output = new Object2BooleanOpenHashMap<UInt64>();
-    for (ValidatorLivenessAtEpoch entry : livenessResponse.data) {
+    for (ValidatorLiveness entry : livenessResponse.data) {
       output.put(entry.index, entry.isLive);
     }
     return output;
