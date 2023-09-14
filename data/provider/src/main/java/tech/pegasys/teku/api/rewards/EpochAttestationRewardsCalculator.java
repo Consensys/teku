@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.api.rewards;
 
-import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.spec.constants.EthConstants.ETH_TO_GWEI;
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DENOMINATOR;
 import static tech.pegasys.teku.spec.constants.ParticipationFlags.TIMELY_HEAD_FLAG_INDEX;
@@ -73,7 +72,7 @@ public class EpochAttestationRewardsCalculator {
         .filter(i -> validatorStatuses.getStatuses().get(i).isEligibleValidator())
         .distinct()
         .boxed()
-        .collect(toList());
+        .toList();
   }
 
   @VisibleForTesting
@@ -98,7 +97,7 @@ public class EpochAttestationRewardsCalculator {
         IntStream.rangeClosed(0, 32)
             .boxed()
             .map(i -> new IdealAttestationReward(ETH_TO_GWEI.times(i)))
-            .collect(toList());
+            .toList();
 
     final TotalBalances totalBalances = validatorStatuses.getTotalBalances();
     final UInt64 baseRewardPerIncrement =
@@ -169,6 +168,6 @@ public class EpochAttestationRewardsCalculator {
     return validatorIndexes.stream()
         .map(i -> new ImmutablePair<>(i, totalRewardAndPenaltyDeltas.getDelta(i)))
         .map(p -> new TotalAttestationReward(p.left, p.right))
-        .collect(toList());
+        .toList();
   }
 }

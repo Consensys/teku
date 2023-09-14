@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
-import static java.util.stream.Collectors.toList;
-
 import java.net.URL;
 import java.util.List;
 import java.util.Optional;
@@ -46,14 +44,14 @@ public class MockStartValidatorSource implements ValidatorSource {
   }
 
   @Override
-  public List<ValidatorProvider> getAvailableValidators() {
+  public List<? extends ValidatorProvider> getAvailableValidators() {
     final int startIndex = config.getInteropOwnedValidatorStartIndex();
     final int endIndex = startIndex + config.getInteropOwnedValidatorCount();
     LOG.log(Level.DEBUG, "Owning validator range " + startIndex + " to " + endIndex);
     return new MockStartValidatorKeyPairFactory()
         .generateKeyPairs(startIndex, endIndex).stream()
             .map(MockStartValidatorProvider::new)
-            .collect(toList());
+            .toList();
   }
 
   @Override

@@ -42,6 +42,7 @@ import tech.pegasys.teku.beacon.pow.exception.RejectedRequestException;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 
 public class DepositsFetcherTest {
@@ -78,7 +79,8 @@ public class DepositsFetcherTest {
             mockDepositEventEventResponse(3, "0x2345", 2),
             mockDepositEventEventResponse(4, "0x5678", 5)));
 
-    depositFetcher.fetchDepositsInRange(BigInteger.ZERO, BigInteger.valueOf(10)).join();
+    SafeFutureAssert.safeJoin(
+        depositFetcher.fetchDepositsInRange(BigInteger.ZERO, BigInteger.valueOf(10)));
 
     final InOrder inOrder = inOrder(eth1EventsChannel, eth1BlockFetcher);
     inOrder.verify(eth1BlockFetcher).fetch(BigInteger.ZERO, BigInteger.ZERO);

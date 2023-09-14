@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.validator.client.duties.synccommittee;
 
-import static java.util.stream.Collectors.toList;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -178,14 +176,12 @@ public class SyncCommitteeAggregationDuty {
 
   private SafeFuture<DutyResult> sendAggregates(final List<AggregationResult> results) {
     final List<AggregationResult> producedAggregates =
-        results.stream()
-            .filter(result -> result.signedContributionAndProof.isPresent())
-            .collect(toList());
+        results.stream().filter(result -> result.signedContributionAndProof.isPresent()).toList();
     final DutyResult combinedFailures =
         combineResults(
             results.stream()
                 .filter(result -> result.signedContributionAndProof.isEmpty())
-                .collect(toList()));
+                .toList());
 
     if (producedAggregates.isEmpty()) {
       return SafeFuture.completedFuture(combinedFailures);
@@ -195,7 +191,7 @@ public class SyncCommitteeAggregationDuty {
         .sendSignedContributionAndProofs(
             producedAggregates.stream()
                 .map(result -> result.signedContributionAndProof.orElseThrow())
-                .collect(toList()))
+                .toList())
         .thenApply(__ -> combineResults(producedAggregates).combine(combinedFailures))
         .exceptionally(
             error ->

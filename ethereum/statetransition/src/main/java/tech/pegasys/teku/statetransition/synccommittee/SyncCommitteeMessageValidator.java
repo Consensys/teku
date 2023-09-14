@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition.synccommittee;
 
-import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.spec.config.Constants.VALID_SYNC_COMMITTEE_MESSAGE_SET_SIZE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
@@ -189,7 +188,7 @@ public class SyncCommitteeMessageValidator {
                         .mapToObj(
                             subnetId ->
                                 getUniquenessKey(message, subnetId, message.getBeaconBlockRoot()))
-                        .collect(toList()));
+                        .toList());
 
     // [IGNORE] There has been no other valid sync committee message for the declared slot for the
     // validator referenced by sync_committee_message.validator_index.

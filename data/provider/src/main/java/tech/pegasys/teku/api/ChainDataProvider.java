@@ -14,7 +14,6 @@
 package tech.pegasys.teku.api;
 
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse.getValidatorStatus;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -198,8 +197,7 @@ public class ChainDataProvider {
   public SafeFuture<Optional<ObjectAndMetaData<List<Attestation>>>> getBlockAttestations(
       final String blockIdParam) {
     return fromBlock(
-        blockIdParam,
-        block -> block.getMessage().getBody().getAttestations().stream().collect(toList()));
+        blockIdParam, block -> block.getMessage().getBody().getAttestations().stream().toList());
   }
 
   public boolean isStoreAvailable() {
@@ -386,7 +384,7 @@ public class ChainDataProvider {
         .filter(getStatusPredicate(state, statusFilter))
         .mapToObj(index -> StateValidatorData.fromState(state, index, epoch, FAR_FUTURE_EPOCH))
         .flatMap(Optional::stream)
-        .collect(toList());
+        .toList();
   }
 
   public Optional<ObjectAndMetaData<StateValidatorData>> getStateValidator(
@@ -468,7 +466,7 @@ public class ChainDataProvider {
     return combinedChainDataClient.getCommitteesFromState(state, epoch.orElse(stateEpoch)).stream()
         .filter(slotFilter)
         .filter(committeeFilter)
-        .collect(toList());
+        .toList();
   }
 
   private IntPredicate getStatusPredicate(
@@ -553,7 +551,7 @@ public class ChainDataProvider {
         committee.getPubkeys().stream()
             .flatMap(pubkey -> spec.getValidatorIndex(state, pubkey.getBLSPublicKey()).stream())
             .map(UInt64::valueOf)
-            .collect(toList());
+            .toList();
 
     return new StateSyncCommitteesData(
         committeeIndices,
