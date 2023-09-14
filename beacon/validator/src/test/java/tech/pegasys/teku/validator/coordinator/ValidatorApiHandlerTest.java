@@ -1156,9 +1156,9 @@ class ValidatorApiHandlerTest {
 
     List<ValidatorLivenessAtEpoch> validatorLivenessAtEpochs =
         List.of(
-            new ValidatorLivenessAtEpoch(firstIndex, epoch, false),
-            new ValidatorLivenessAtEpoch(secondIndex, epoch, true),
-            new ValidatorLivenessAtEpoch(thirdIndex, epoch, true));
+            new ValidatorLivenessAtEpoch(firstIndex, false),
+            new ValidatorLivenessAtEpoch(secondIndex, true),
+            new ValidatorLivenessAtEpoch(thirdIndex, true));
 
     when(nodeDataProvider.getValidatorLiveness(any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(validatorLivenessAtEpochs)));

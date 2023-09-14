@@ -24,7 +24,7 @@ import java.io.IOException;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
-import tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch;
+import tech.pegasys.teku.api.response.v1.validator.ValidatorLiveness;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostValidatorLiveness;
@@ -64,8 +64,7 @@ public class PostValidatorLivenessIntegrationTest extends AbstractDataBackedRest
     assertThat(response.code()).isEqualTo(SC_OK);
     final PostValidatorLivenessResponse result =
         jsonProvider.jsonToObject(response.body().string(), PostValidatorLivenessResponse.class);
-    assertThat(result.data.get(0))
-        .isEqualTo(new ValidatorLivenessAtEpoch(validatorIndex, epoch, true));
+    assertThat(result.data.get(0)).isEqualTo(new ValidatorLiveness(validatorIndex, true));
   }
 
   private String getValidatorLivenessUrl(final UInt64 epoch) {
