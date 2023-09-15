@@ -102,7 +102,7 @@ dependencyManagement {
 
     dependency 'org.awaitility:awaitility:4.2.0'
 
-    dependency 'org.bouncycastle:bcprov-jdk15on:1.70'
+    dependency 'org.bouncycastle:bcprov-jdk18on:1.76'
 
     dependencySet(group: 'org.junit.jupiter', version: '5.10.0') {
       entry 'junit-jupiter-api'
@@ -123,7 +123,7 @@ dependencyManagement {
     dependency 'org.rocksdb:rocksdbjni:7.7.3'
     dependency 'org.fusesource.leveldbjni:leveldbjni-win64:1.8'
     dependency 'org.fusesource.leveldbjni:leveldbjni-win32:1.8'
-    dependency 'tech.pegasys:leveldb-native:0.2.0'
+    dependency 'tech.pegasys:leveldb-native:0.3.0'
 
     dependencySet(group: "org.web3j", version: "4.10.1") {
       entry 'core'

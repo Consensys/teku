@@ -26,6 +26,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszData;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
@@ -155,7 +156,7 @@ class RemoteValidatorApiHandlerTest {
 
     asyncRunner.executeQueuedActions();
     assertThat(future).isCompleted();
-    assertThat(future.join()).isEmpty();
+    assertThat(safeJoin(future)).isEmpty();
   }
 
   @Test
@@ -176,7 +177,7 @@ class RemoteValidatorApiHandlerTest {
 
     asyncRunner.executeQueuedActions();
     assertThat(future).isCompleted();
-    assertThat(future.join()).containsOnly(entry(key1, 1), entry(key2, 2));
+    assertThat(safeJoin(future)).containsOnly(entry(key1, 1), entry(key2, 2));
     verify(apiClient).getValidators(expectedValidatorIds);
   }
 
@@ -216,7 +217,7 @@ class RemoteValidatorApiHandlerTest {
 
     asyncRunner.executeQueuedActions();
     assertThat(future).isCompleted();
-    assertThat(future.join())
+    assertThat(safeJoin(future))
         .containsOnly(
             entry(allKeys.get(0), 10),
             entry(allKeys.get(3), 11),

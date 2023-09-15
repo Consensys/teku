@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.client.loader;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.infrastructure.json.JsonUtil.parse;
 import static tech.pegasys.teku.infrastructure.json.JsonUtil.serialize;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
@@ -100,17 +99,17 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
   }
 
   @Override
-  public List<ValidatorProvider> getAvailableValidators() {
+  public List<? extends ValidatorProvider> getAvailableValidators() {
     if (readOnly) {
       return getAvailableReadOnlyValidators();
     }
 
     // Load from files
     final List<File> files = getValidatorFiles();
-    return files.stream().map(this::getValidatorProvider).collect(toList());
+    return files.stream().map(this::getValidatorProvider).toList();
   }
 
-  private List<ValidatorProvider> getAvailableReadOnlyValidators() {
+  private List<? extends ValidatorProvider> getAvailableReadOnlyValidators() {
     final List<BLSPublicKey> publicKeys =
         publicKeyLoader.getPublicKeys(config.getValidatorExternalSignerPublicKeySources());
     return publicKeys.stream()
@@ -125,7 +124,7 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
                     externalSignerTaskQueue,
                     metricsSystem,
                     readOnly))
-        .collect(toList());
+        .toList();
   }
 
   private List<File> getValidatorFiles() {

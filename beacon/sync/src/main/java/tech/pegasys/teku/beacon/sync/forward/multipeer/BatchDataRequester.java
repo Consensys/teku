@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.beacon.sync.forward.multipeer;
 
-import static java.util.stream.Collectors.toList;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -103,7 +101,7 @@ public class BatchDataRequester {
           final List<Batch> batchesToReplace =
               activeBatches.batchesAfterInclusive(strandedBatch).stream()
                   .takeWhile(batch -> !batch.getTargetChain().equals(targetChain))
-                  .collect(toList());
+                  .toList();
           batchesToReplace.forEach(
               batchToReplace ->
                   activeBatches.replace(

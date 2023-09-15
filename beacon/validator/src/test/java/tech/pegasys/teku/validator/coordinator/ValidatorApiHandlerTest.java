@@ -30,6 +30,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED;
@@ -563,7 +564,7 @@ class ValidatorApiHandlerTest {
         validatorApiHandler.createAttestationData(slot, committeeIndex);
 
     assertThat(result).isCompleted();
-    final Optional<AttestationData> maybeAttestation = result.join();
+    final Optional<AttestationData> maybeAttestation = safeJoin(result);
     assertThat(maybeAttestation).isPresent();
     final AttestationData attestationData = maybeAttestation.orElseThrow();
     assertThat(attestationData)
@@ -620,7 +621,7 @@ class ValidatorApiHandlerTest {
         validatorApiHandler.createAttestationData(slot, committeeIndex);
 
     assertThat(result).isCompleted();
-    final Optional<AttestationData> maybeAttestation = result.join();
+    final Optional<AttestationData> maybeAttestation = safeJoin(result);
     assertThat(maybeAttestation).isPresent();
     final AttestationData attestationData = maybeAttestation.orElseThrow();
     assertThat(attestationData)
@@ -890,7 +891,7 @@ class ValidatorApiHandlerTest {
     when(blockImportChannel.importBlock(block))
         .thenReturn(SafeFuture.completedFuture(BlockImportResult.successful(block)));
     final SafeFuture<SendSignedBlockResult> result = validatorApiHandler.sendSignedBlock(block);
-    result.join();
+    safeJoin(result);
 
     verifyNoInteractions(blobSidecarPool);
     verifyNoInteractions(blobSidecarGossipChannel);
@@ -1188,7 +1189,7 @@ class ValidatorApiHandlerTest {
 
   private <T> Optional<T> assertCompletedSuccessfully(final SafeFuture<Optional<T>> result) {
     assertThat(result).isCompleted();
-    return result.join();
+    return safeJoin(result);
   }
 
   private BeaconState createStateWithActiveValidators() {

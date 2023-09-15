@@ -23,6 +23,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.beacon.sync.forward.singlepeer.PeerSync.MAX_THROTTLED_REQUESTS;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -174,7 +175,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     }
 
     assertThat(syncFuture).isCompleted();
-    final PeerSyncResult result = syncFuture.join();
+    final PeerSyncResult result = safeJoin(syncFuture);
     if (shouldDisconnect) {
       verify(peer).disconnectCleanly(DisconnectReason.REMOTE_FAULT);
       assertThat(result).isEqualByComparingTo(PeerSyncResult.BAD_BLOCK);
@@ -215,7 +216,7 @@ public class PeerSyncTest extends AbstractSyncTest {
     verify(peer, never()).disconnectCleanly(any());
     verifyNoInteractions(blockImporter);
     assertThat(syncFuture).isCompleted();
-    PeerSyncResult result = syncFuture.join();
+    PeerSyncResult result = safeJoin(syncFuture);
     assertThat(result).isEqualByComparingTo(PeerSyncResult.CANCELLED);
 
     // check startingSlot

@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
@@ -279,10 +280,10 @@ public class StoreTransactionTest extends AbstractStoreTest {
 
     final SafeFuture<CheckpointState> result = tx.retrieveFinalizedCheckpointAndState();
     assertThat(result).isCompleted();
-    assertThat(result.join().getCheckpoint()).isEqualTo(finalizedCheckpoint);
-    assertThat(result.join().getRoot()).isEqualTo(finalizedBlockAndState.getRoot());
-    assertThat(result.join().getState()).isNotEqualTo(finalizedBlockAndState.getState());
-    assertThat(result.join().getState().getSlot())
+    assertThat(safeJoin(result).getCheckpoint()).isEqualTo(finalizedCheckpoint);
+    assertThat(safeJoin(result).getRoot()).isEqualTo(finalizedBlockAndState.getRoot());
+    assertThat(safeJoin(result).getState()).isNotEqualTo(finalizedBlockAndState.getState());
+    assertThat(safeJoin(result).getState().getSlot())
         .isEqualTo(finalizedBlockAndState.getSlot().plus(1));
   }
 
@@ -304,10 +305,10 @@ public class StoreTransactionTest extends AbstractStoreTest {
 
     final SafeFuture<CheckpointState> result = tx.retrieveFinalizedCheckpointAndState();
     assertThat(result).isCompleted();
-    assertThat(result.join().getCheckpoint()).isEqualTo(finalizedCheckpoint);
-    assertThat(result.join().getRoot()).isEqualTo(finalizedBlockAndState.getRoot());
-    assertThat(result.join().getState()).isNotEqualTo(finalizedBlockAndState.getState());
-    assertThat(result.join().getState().getSlot())
+    assertThat(safeJoin(result).getCheckpoint()).isEqualTo(finalizedCheckpoint);
+    assertThat(safeJoin(result).getRoot()).isEqualTo(finalizedBlockAndState.getRoot());
+    assertThat(safeJoin(result).getState()).isNotEqualTo(finalizedBlockAndState.getState());
+    assertThat(safeJoin(result).getState().getSlot())
         .isEqualTo(finalizedBlockAndState.getSlot().plus(1));
   }
 
@@ -329,10 +330,10 @@ public class StoreTransactionTest extends AbstractStoreTest {
 
     final SafeFuture<CheckpointState> result = tx.retrieveFinalizedCheckpointAndState();
     assertThat(result).isCompleted();
-    assertThat(result.join().getCheckpoint()).isEqualTo(finalizedCheckpoint);
-    assertThat(result.join().getRoot()).isEqualTo(finalizedBlockAndState.getRoot());
-    assertThat(result.join().getState()).isNotEqualTo(finalizedBlockAndState.getState());
-    assertThat(result.join().getState().getSlot())
+    assertThat(safeJoin(result).getCheckpoint()).isEqualTo(finalizedCheckpoint);
+    assertThat(safeJoin(result).getRoot()).isEqualTo(finalizedBlockAndState.getRoot());
+    assertThat(safeJoin(result).getState()).isNotEqualTo(finalizedBlockAndState.getState());
+    assertThat(safeJoin(result).getState().getSlot())
         .isEqualTo(finalizedBlockAndState.getSlot().plus(1));
   }
 
@@ -373,9 +374,9 @@ public class StoreTransactionTest extends AbstractStoreTest {
     // Check response from tx1 for finalized value
     final SafeFuture<CheckpointState> result = tx.retrieveFinalizedCheckpointAndState();
     assertThat(result).isCompleted();
-    assertThat(result.join().getCheckpoint()).isEqualTo(newerFinalizedCheckpoint);
-    assertThat(result.join().getRoot()).isEqualTo(newerFinalizedBlockAndState.getRoot());
-    assertThat(result.join().getState()).isEqualTo(newerFinalizedBlockAndState.getState());
+    assertThat(safeJoin(result).getCheckpoint()).isEqualTo(newerFinalizedCheckpoint);
+    assertThat(safeJoin(result).getRoot()).isEqualTo(newerFinalizedBlockAndState.getRoot());
+    assertThat(safeJoin(result).getState()).isEqualTo(newerFinalizedBlockAndState.getState());
   }
 
   @Test

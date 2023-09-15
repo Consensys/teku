@@ -19,6 +19,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
@@ -281,6 +282,6 @@ class SyncCommitteeAggregationDutyTest {
   private void produceAggregatesAndReport(final SyncCommitteeAggregationDuty duty) {
     final SafeFuture<DutyResult> result = duty.produceAggregates(slot, beaconBlockRoot);
     assertThat(result).isCompleted();
-    result.join().report(TYPE, slot, validatorLogger);
+    safeJoin(result).report(TYPE, slot, validatorLogger);
   }
 }
