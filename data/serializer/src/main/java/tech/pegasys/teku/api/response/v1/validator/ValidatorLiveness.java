@@ -20,23 +20,17 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class ValidatorLivenessAtEpoch {
+public class ValidatorLiveness {
   @Schema(type = "string", format = "uint64")
   public final UInt64 index;
-
-  @Schema(type = "string", format = "uint64")
-  public final UInt64 epoch;
 
   @JsonProperty("is_live")
   public final boolean isLive;
 
   @JsonCreator
-  public ValidatorLivenessAtEpoch(
-      @JsonProperty("index") final UInt64 index,
-      @JsonProperty("epoch") final UInt64 epoch,
-      @JsonProperty("is_live") final boolean isLive) {
+  public ValidatorLiveness(
+      @JsonProperty("index") final UInt64 index, @JsonProperty("is_live") final boolean isLive) {
     this.index = index;
-    this.epoch = epoch;
     this.isLive = isLive;
   }
 
@@ -48,23 +42,17 @@ public class ValidatorLivenessAtEpoch {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final ValidatorLivenessAtEpoch that = (ValidatorLivenessAtEpoch) o;
-    return isLive == that.isLive
-        && Objects.equals(index, that.index)
-        && Objects.equals(epoch, that.epoch);
+    final ValidatorLiveness that = (ValidatorLiveness) o;
+    return isLive == that.isLive && Objects.equals(index, that.index);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(index, epoch, isLive);
+    return Objects.hash(index, isLive);
   }
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("index", index)
-        .add("epoch", epoch)
-        .add("isLive", isLive)
-        .toString();
+    return MoreObjects.toStringHelper(this).add("index", index).add("isLive", isLive).toString();
   }
 }

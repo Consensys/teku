@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
-import static java.util.stream.Collectors.toList;
-
 import java.net.URL;
 import java.util.List;
 import java.util.Optional;
@@ -36,10 +34,10 @@ public class SlashingProtectedValidatorSource implements ValidatorSource {
   }
 
   @Override
-  public List<ValidatorProvider> getAvailableValidators() {
+  public List<? extends ValidatorProvider> getAvailableValidators() {
     return delegate.getAvailableValidators().stream()
         .map(SlashingProtectedValidatorProvider::new)
-        .collect(toList());
+        .toList();
   }
 
   @Override

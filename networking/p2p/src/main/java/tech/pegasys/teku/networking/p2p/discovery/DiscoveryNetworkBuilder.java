@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.p2p.discovery;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static java.util.stream.Collectors.toList;
 
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -93,9 +92,7 @@ public class DiscoveryNetworkBuilder {
         asyncRunner,
         p2pNetwork,
         peerSelectionStrategy,
-        discoveryConfig.getStaticPeers().stream()
-            .map(p2pNetwork::createPeerAddress)
-            .collect(toList()),
+        discoveryConfig.getStaticPeers().stream().map(p2pNetwork::createPeerAddress).toList(),
         peerPools);
   }
 

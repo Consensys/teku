@@ -21,6 +21,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.List;
@@ -147,7 +148,7 @@ class SyncCommitteePerformanceTrackerTest {
   private SyncCommitteePerformance calculatePerformance(final UInt64 epoch) {
     final SafeFuture<SyncCommitteePerformance> result = tracker.calculatePerformance(epoch);
     assertThat(result).isCompleted();
-    return result.join();
+    return safeJoin(result);
   }
 
   private void withSyncAggregate(final int slot, final Integer... includedCommitteeIndices) {

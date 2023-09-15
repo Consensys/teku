@@ -26,6 +26,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
@@ -53,7 +54,6 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -337,7 +337,7 @@ class ForkChoiceTest {
       UInt64 timeIntoSlotMillis =
           recentChainData.getStore().getTimeMillis().plus(advanceTimeSlotMillis);
       transaction.setTimeMillis(timeIntoSlotMillis);
-      SafeFutureAssert.safeJoin(transaction.commit());
+      safeJoin(transaction.commit());
     }
 
     importBlock(expectedChainHead);
@@ -1166,7 +1166,7 @@ class ForkChoiceTest {
   private void assertBlockImportedSuccessfully(
       final SafeFuture<BlockImportResult> importResult, final boolean optimistically) {
     assertThat(importResult).isCompleted();
-    final BlockImportResult result = importResult.join();
+    final BlockImportResult result = safeJoin(importResult);
     assertThat(result.isSuccessful()).describedAs(result.toString()).isTrue();
     assertThat(result.isImportedOptimistically())
         .describedAs(result.toString())
@@ -1190,7 +1190,7 @@ class ForkChoiceTest {
   private void assertBlockImportFailure(
       final SafeFuture<BlockImportResult> importResult, FailureReason failureReason) {
     assertThat(importResult).isCompleted();
-    final BlockImportResult result = importResult.join();
+    final BlockImportResult result = safeJoin(importResult);
     assertThat(result.getFailureReason()).isEqualTo(failureReason);
   }
 

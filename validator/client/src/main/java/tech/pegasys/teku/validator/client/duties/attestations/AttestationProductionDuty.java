@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.client.duties.attestations;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.stream.Collectors.toList;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -124,7 +123,7 @@ public class AttestationProductionDuty implements Duty {
             validator ->
                 signAttestationForValidatorInCommittee(
                     slot, forkInfo, committeeIndex, validator, unsignedAttestationFuture))
-        .collect(toList());
+        .toList();
   }
 
   private SafeFuture<ProductionResult<Attestation>> signAttestationForValidatorInCommittee(

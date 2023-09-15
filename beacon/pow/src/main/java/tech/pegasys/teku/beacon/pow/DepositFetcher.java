@@ -21,6 +21,7 @@ import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import com.google.common.base.Throwables;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,7 @@ import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -207,7 +209,7 @@ public class DepositFetcher {
     return neededBlockHashes.stream()
         .map(BlockNumberAndHash::getHash)
         .map(eth1Provider::getGuaranteedEth1Block)
-        .collect(toList());
+        .collect(Collectors.toCollection(ArrayList::new)); // mutable List is required
   }
 
   private NavigableMap<BlockNumberAndHash, List<DepositEventEventResponse>>

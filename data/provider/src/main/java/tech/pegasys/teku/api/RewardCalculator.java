@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.api;
 
-import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.PROPOSER_WEIGHT;
 import static tech.pegasys.teku.spec.constants.IncentivizationWeights.WEIGHT_DENOMINATOR;
 
@@ -103,7 +102,7 @@ public class RewardCalculator {
       final List<Integer> result =
           committeeKeys.stream()
               .flatMap(pubkey -> spec.getValidatorIndex(state, pubkey).stream())
-              .collect(toList());
+              .toList();
 
       return IntStream.range(0, result.size())
           .boxed()
@@ -141,7 +140,7 @@ public class RewardCalculator {
     final SyncCommittee committee =
         spec.getSyncCommitteeUtil(block.getSlot()).orElseThrow().getSyncCommittee(state, epoch);
     final List<BLSPublicKey> committeeKeys =
-        committee.getPubkeys().stream().map(SszPublicKey::getBLSPublicKey).collect(toList());
+        committee.getPubkeys().stream().map(SszPublicKey::getBLSPublicKey).toList();
     final Map<Integer, Integer> committeeIndices =
         getCommitteeIndices(committeeKeys, validators, state);
     final UInt64 participantReward = spec.getSyncCommitteeParticipantReward(state);

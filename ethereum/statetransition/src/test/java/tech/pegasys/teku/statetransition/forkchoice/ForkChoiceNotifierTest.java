@@ -25,6 +25,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
 import static tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdateData.RESEND_AFTER_MILLIS;
 
@@ -40,7 +41,6 @@ import org.mockito.invocation.InvocationOnMock;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -917,7 +917,7 @@ class ForkChoiceNotifierTest {
     }
     validatorRegistration.ifPresent(
         signedValidatorRegistration ->
-            SafeFutureAssert.safeJoin(
+            safeJoin(
                 proposersDataManager.updateValidatorRegistrations(
                     SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.createFromElements(
                         List.of(signedValidatorRegistration)),
@@ -1007,6 +1007,6 @@ class ForkChoiceNotifierTest {
   private BeaconState getHeadState() {
     final SafeFuture<BeaconState> stateFuture = recentChainData.getBestState().orElseThrow();
     assertThat(stateFuture).isCompleted();
-    return stateFuture.join();
+    return safeJoin(stateFuture);
   }
 }

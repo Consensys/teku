@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.api.schema.capella;
 
-import static java.util.stream.Collectors.toList;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
@@ -81,7 +79,7 @@ public class ExecutionPayloadCapella extends ExecutionPayloadBellatrix implement
     this.withdrawals =
         executionPayload.getOptionalWithdrawals().orElseThrow().stream()
             .map(Withdrawal::new)
-            .collect(toList());
+            .toList();
   }
 
   @Override
@@ -96,7 +94,7 @@ public class ExecutionPayloadCapella extends ExecutionPayloadBellatrix implement
                         withdrawal ->
                             withdrawal.asInternalWithdrawal(
                                 executionPayloadSchema.getWithdrawalSchemaRequired()))
-                    .collect(toList()));
+                    .toList());
   }
 
   @Override

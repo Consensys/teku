@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.IGNORE;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.REJECT;
@@ -134,6 +135,6 @@ public class ProposerSlashingValidatorTest {
   private BeaconState getBestState() {
     final SafeFuture<BeaconState> stateFuture = recentChainData.getBestState().orElseThrow();
     assertThat(stateFuture).isCompleted();
-    return stateFuture.join();
+    return safeJoin(stateFuture);
   }
 }

@@ -643,7 +643,7 @@ class FailoverValidatorApiHandlerTest {
     final Bytes32 randomBytes32 = DATA_STRUCTURE_UTIL.randomBytes32();
     final Attestation attestation = DATA_STRUCTURE_UTIL.randomAttestation();
     final ValidatorLivenessAtEpoch validatorLivenessAtEpoch =
-        new ValidatorLivenessAtEpoch(UInt64.ZERO, UInt64.ZERO, false);
+        new ValidatorLivenessAtEpoch(UInt64.ZERO, false);
 
     return Stream.of(
         getArguments(

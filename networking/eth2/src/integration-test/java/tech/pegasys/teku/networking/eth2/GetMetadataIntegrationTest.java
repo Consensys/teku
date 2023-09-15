@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.async.Waiter.waitFor;
 
 import java.util.List;
@@ -138,7 +139,7 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
     waitFor(() -> assertThat(res).isDone());
 
     assertThat(res).isCompleted();
-    final MetadataMessage metadata = res.join();
+    final MetadataMessage metadata = safeJoin(res);
     assertThat(metadata).isInstanceOf(expectedType);
     assertThat(metadata.getSeqNumber()).isEqualTo(UInt64.ZERO);
   }

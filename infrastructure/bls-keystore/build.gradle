@@ -15,7 +15,7 @@ apply plugin: 'java-library'
 
 dependencies {
   implementation 'com.fasterxml.jackson.core:jackson-databind'
-  implementation 'org.bouncycastle:bcprov-jdk15on'
+  implementation 'org.bouncycastle:bcprov-jdk18on'
   implementation 'com.google.guava:guava'
   implementation 'org.apache.logging.log4j:log4j-api'
   implementation 'org.apache.tuweni:tuweni-bytes'
