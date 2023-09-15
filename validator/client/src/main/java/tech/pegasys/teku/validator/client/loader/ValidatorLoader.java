@@ -66,21 +66,21 @@ public class ValidatorLoader {
       final GraffitiProvider graffitiProvider,
       final Optional<DataDirLayout> maybeDataDirLayout,
       final SlashingProtectionLogger slashingProtectionLogger,
-      final boolean remooveValidatorsOnReload) {
+      final boolean removeValidatorsOnReload) {
     this.validatorSources = validatorSources;
     this.mutableLocalValidatorSource = mutableLocalValidatorSource;
     this.mutableExternalValidatorSource = mutableExternalValidatorSource;
     this.graffitiProvider = graffitiProvider;
     this.maybeDataDirLayout = maybeDataDirLayout;
     this.slashingProtectionLogger = slashingProtectionLogger;
-    this.removeValidatorsOnReload = remooveValidatorsOnReload;
+    this.removeValidatorsOnReload = removeValidatorsOnReload;
   }
 
   // synchronized to ensure that only one load is active at a time
   public synchronized void loadValidators() {
     final Map<BLSPublicKey, ValidatorProvider> validatorProviders = new HashMap<>();
     if (removeValidatorsOnReload) {
-      removeKeysNoLongerValid();
+      removeKeysNoLongerInConfiguration();
     }
 
     validatorSources.forEach(source -> addValidatorsFromSource(validatorProviders, source));
@@ -276,22 +276,22 @@ public class ValidatorLoader {
         removeValidatorsOnReload);
   }
 
-  private void removeKeysNoLongerValid() {
+  private void removeKeysNoLongerInConfiguration() {
     final List<BLSPublicKey> currentKeySet =
         validatorSources.stream()
             .map(ValidatorSource::getAvailableValidators)
             .flatMap(List::stream)
             .map(ValidatorProvider::getPublicKey)
             .toList();
-    final List<BLSPublicKey> removeKeys =
+    final List<BLSPublicKey> keysToRemove =
         ownedValidators.getPublicKeys().stream().filter(k -> !currentKeySet.contains(k)).toList();
 
-    if (removeKeys.isEmpty()) {
+    if (keysToRemove.isEmpty()) {
       return;
     }
-    STATUS_LOG.removingValidators(removeKeys.size());
+    STATUS_LOG.removingValidators(keysToRemove.size());
 
-    removeKeys.forEach(
+    keysToRemove.forEach(
         k -> {
           ownedValidators
               .getValidator(k)
