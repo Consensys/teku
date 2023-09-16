@@ -1,4 +1,3 @@
-// Arbitrary change to refresh cache number: 3
 dependencyManagement {
   dependencies {
     dependency 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
@@ -33,7 +32,7 @@ dependencyManagement {
       entry 'javalin-rendering'
     }
 
-    dependency 'io.libp2p:jvm-libp2p:develop'
+    dependency 'io.libp2p:jvm-libp2p:1.0.1-RELEASE'
     dependency 'tech.pegasys:jblst:0.3.11'
     dependency 'tech.pegasys:jc-kzg-4844:0.7.2'
 
