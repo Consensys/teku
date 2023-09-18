@@ -65,7 +65,7 @@ class RemoteSpecLoaderTest {
   void shouldProvideValidSpecConfigWithIncompleteRemoteConfig() throws IOException {
     final String jsonConfig =
         Resources.toString(
-            Resources.getResource(RemoteSpecLoaderTest.class, "spec_config.json"),
+            Resources.getResource(RemoteSpecLoaderTest.class, "config_missing_network_fields.json"),
             StandardCharsets.UTF_8);
     final ObjectMapper objectMapper = new ObjectMapper();
     TypeReference<Map<String, String>> typeReference = new TypeReference<>() {};
