@@ -158,6 +158,6 @@ public class ValidatorClientCommand implements Callable<Integer> {
     loggingOptions.configureWireLogs(builder);
     interopOptions.configure(builder);
     metricsOptions.configure(builder);
-    return builder.build();
+    return builder.build(false);
   }
 }

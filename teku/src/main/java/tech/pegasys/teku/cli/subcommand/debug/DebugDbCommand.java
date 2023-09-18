@@ -212,7 +212,8 @@ public class DebugDbCommand implements Runnable {
                       StoreBuilder.create()
                           .onDiskStoreData(storeData)
                           .metricsSystem(new NoOpMetricsSystem())
-                          .specProvider(eth2NetworkOptions.getNetworkConfiguration().getSpec())
+                          .specProvider(
+                              eth2NetworkOptions.getNetworkConfigurationWithoutKzg().getSpec())
                           .blockProvider(BlockProvider.NOOP)
                           .stateProvider(StateAndBlockSummaryProvider.NOOP)
                           .build())
@@ -454,7 +455,7 @@ public class DebugDbCommand implements Runnable {
               showDefaultValue = Visibility.ALWAYS)
           final boolean deleteAll)
       throws Exception {
-    final Spec spec = eth2NetworkOptions.getNetworkConfiguration().getSpec();
+    final Spec spec = eth2NetworkOptions.getNetworkConfigurationWithoutKzg().getSpec();
     try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
       final Optional<Checkpoint> justified = database.getJustifiedCheckpoint();
       if (justified.isEmpty()) {
@@ -557,7 +558,7 @@ public class DebugDbCommand implements Runnable {
   private Database createDatabase(
       final BeaconNodeDataOptions beaconNodeDataOptions,
       final Eth2NetworkOptions eth2NetworkOptions) {
-    final Spec spec = eth2NetworkOptions.getNetworkConfiguration().getSpec();
+    final Spec spec = eth2NetworkOptions.getNetworkConfigurationWithoutKzg().getSpec();
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
             new NoOpMetricsSystem(),
@@ -565,7 +566,9 @@ public class DebugDbCommand implements Runnable {
                 .getBeaconDataDirectory(),
             StorageConfiguration.builder()
                 .eth1DepositContract(
-                    eth2NetworkOptions.getNetworkConfiguration().getEth1DepositContractAddress())
+                    eth2NetworkOptions
+                        .getNetworkConfigurationWithoutKzg()
+                        .getEth1DepositContractAddress())
                 .specProvider(spec)
                 .build());
     return databaseFactory.createDatabase();

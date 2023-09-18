@@ -190,6 +190,6 @@ public class ValidatorKeysCheckCommand implements Callable<Integer> {
     // we don't use the data path, but keep configuration happy.
     builder.data(config -> config.dataBasePath(Path.of(".")));
     builder.validator(config -> config.validatorKeystoreLockingEnabled(false));
-    return builder.build();
+    return builder.build(false);
   }
 }

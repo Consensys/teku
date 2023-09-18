@@ -88,11 +88,11 @@ public class RepairCommand implements Runnable {
         SlashingProtectionCommandUtils.getSlashingProtectionPath(dataOptions);
     SlashingProtectionCommandUtils.verifySlashingProtectionPathExists(
         SUB_COMMAND_LOG, slashProtectionPath);
-    final Spec spec = eth2NetworkOptions.getNetworkConfiguration().getSpec();
+    final Spec spec = eth2NetworkOptions.getNetworkConfigurationWithoutKzg().getSpec();
 
     final Optional<AnchorPoint> initialAnchor =
         wsInitializer.loadInitialAnchorPoint(
-            spec, eth2NetworkOptions.getNetworkConfiguration().getInitialState());
+            spec, eth2NetworkOptions.getNetworkConfigurationWithoutKzg().getInitialState());
 
     final UInt64 computedSlot = getComputedSlot(initialAnchor, spec);
     final UInt64 computedEpoch =

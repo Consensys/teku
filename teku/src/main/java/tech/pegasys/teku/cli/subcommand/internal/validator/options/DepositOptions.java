@@ -95,7 +95,7 @@ public class DepositOptions {
 
   public DepositSender createDepositSender(final boolean verboseOutputEnabled) {
     final Eth2NetworkConfiguration networkConfig =
-        Eth2NetworkConfiguration.builder(network).build();
+        Eth2NetworkConfiguration.builder(network).build(false);
     final tech.pegasys.teku.spec.Spec spec = networkConfig.getSpec();
     return new DepositSender(
         spec,

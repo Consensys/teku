@@ -103,7 +103,7 @@ public class WeakSubjectivityCommand implements Runnable {
   private Database createDatabase(
       final BeaconNodeDataOptions beaconNodeDataOptions,
       final Eth2NetworkOptions eth2NetworkOptions) {
-    final Spec spec = eth2NetworkOptions.getNetworkConfiguration().getSpec();
+    final Spec spec = eth2NetworkOptions.getNetworkConfigurationWithoutKzg().getSpec();
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
             new NoOpMetricsSystem(),
@@ -111,7 +111,9 @@ public class WeakSubjectivityCommand implements Runnable {
                 .getBeaconDataDirectory(),
             StorageConfiguration.builder()
                 .eth1DepositContract(
-                    eth2NetworkOptions.getNetworkConfiguration().getEth1DepositContractAddress())
+                    eth2NetworkOptions
+                        .getNetworkConfigurationWithoutKzg()
+                        .getEth1DepositContractAddress())
                 .specProvider(spec)
                 .build());
     return databaseFactory.createDatabase();

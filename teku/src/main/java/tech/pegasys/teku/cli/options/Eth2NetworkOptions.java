@@ -185,18 +185,22 @@ public class Eth2NetworkOptions {
       arity = "0..1")
   private String epochsStoreBlobs;
 
+  public Eth2NetworkConfiguration getNetworkConfigurationWithoutKzg() {
+    return createEth2NetworkConfig(false);
+  }
+
   public Eth2NetworkConfiguration getNetworkConfiguration() {
-    return createEth2NetworkConfig();
+    return createEth2NetworkConfig(true);
   }
 
   public void configure(final TekuConfiguration.Builder builder) {
     builder.eth2NetworkConfig(this::configureEth2Network);
   }
 
-  private Eth2NetworkConfiguration createEth2NetworkConfig() {
+  private Eth2NetworkConfiguration createEth2NetworkConfig(final boolean withKzg) {
     Eth2NetworkConfiguration.Builder builder = Eth2NetworkConfiguration.builder();
     configureEth2Network(builder);
-    return builder.build();
+    return builder.build(withKzg);
   }
 
   private void configureEth2Network(Eth2NetworkConfiguration.Builder builder) {

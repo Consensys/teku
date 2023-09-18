@@ -254,6 +254,10 @@ public class Eth2NetworkConfiguration {
     }
 
     public Eth2NetworkConfiguration build() {
+      return build(true);
+    }
+
+    public Eth2NetworkConfiguration build(final boolean forBeaconNode) {
       checkNotNull(constants, "Missing constants");
       checkArgument(
           safeSlotsToImportOptimistically >= 0, "Safe slots to import optimistically must be >= 0");
@@ -288,6 +292,10 @@ public class Eth2NetworkConfiguration {
                         trustedSetup.ifPresent(denebBuilder::trustedSetupPath);
                         if (maybeEpochsStoreBlobs.isPresent()) {
                           denebBuilder.epochsStoreBlobs(maybeEpochsStoreBlobs);
+                        }
+                        if (!forBeaconNode) {
+                          // Don't need KZG for anything except Beacon Node
+                          denebBuilder.kzgNoop(true);
                         }
                       });
                 });

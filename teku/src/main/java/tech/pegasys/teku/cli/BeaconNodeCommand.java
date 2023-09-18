@@ -410,7 +410,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       metricsOptions.configure(builder);
       storeOptions.configure(builder);
 
-      return builder.build();
+      return builder.build(true);
     } catch (IllegalArgumentException | NullPointerException e) {
       throw new InvalidConfigurationException(e);
     }
