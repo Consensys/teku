@@ -14,7 +14,6 @@
 package tech.pegasys.teku.cli.subcommand;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -28,7 +27,8 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.response.v1.config.GetSpecResponse;
-import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -51,15 +51,14 @@ class RemoteSpecLoaderTest {
   }
 
   @Test
-  void shouldFailWhenRequiredItemsAreMissing() {
+  void shouldFillWhenRequiredItemsAreMissing() {
     final Map<String, String> rawConfig = getRawConfigForSpec(spec);
     assertThat(rawConfig.remove("GENESIS_FORK_VERSION")).isNotNull();
 
     when(apiClient.getConfigSpec()).thenReturn(Optional.of(new GetSpecResponse(rawConfig)));
 
-    assertThatThrownBy(() -> RemoteSpecLoader.getSpec(apiClient))
-        .isInstanceOf(InvalidConfigurationException.class)
-        .hasMessageContaining("GENESIS_FORK_VERSION");
+    final SpecConfig config = RemoteSpecLoader.getSpec(apiClient).getSpecConfig(UInt64.ONE);
+    assertThat(config.getGenesisForkVersion()).isEqualTo(Bytes4.fromHexString("0x00000001"));
   }
 
   @Test
