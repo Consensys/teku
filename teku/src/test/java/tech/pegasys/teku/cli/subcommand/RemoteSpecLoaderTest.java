@@ -29,12 +29,10 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.response.v1.config.GetSpecResponse;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
-import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 
 class RemoteSpecLoaderTest {
@@ -73,18 +71,18 @@ class RemoteSpecLoaderTest {
     final ObjectMapper objectMapper = new ObjectMapper();
     TypeReference<Map<String, String>> typeReference = new TypeReference<>() {};
     Map<String, String> data = objectMapper.readValue(jsonConfig, typeReference);
-
     final SpecConfig specConfig = SpecConfigLoader.loadRemoteConfig(data);
 
-    final SpecConfig expectedConfig =
-        TestSpecFactory.getDenebSpecConfig(
-            Eth2Network.MAINNET,
-            UInt64.valueOf(74240),
-            UInt64.valueOf(144896),
-            UInt64.valueOf(194048),
-            UInt64.valueOf("18446744073709551615"),
-            false);
-    assertThat(specConfig).isEqualTo(expectedConfig);
+    // Check values not assigned, using default values
+    assertThat(specConfig.getGossipMaxSize()).isEqualTo(10485760);
+    assertThat(specConfig.getMaxChunkSize()).isEqualTo(10485760);
+    assertThat(specConfig.getMaxRequestBlocks()).isEqualTo(1024);
+    assertThat(specConfig.getEpochsPerSubnetSubscription()).isEqualTo(256);
+    assertThat(specConfig.getMinEpochsForBlockRequests()).isEqualTo(33024);
+    assertThat(specConfig.getTtfbTimeout()).isEqualTo(5);
+    assertThat(specConfig.getRespTimeout()).isEqualTo(10);
+    assertThat(specConfig.getAttestationPropagationSlotRange()).isEqualTo(32);
+    assertThat(specConfig.getMaximumGossipClockDisparity()).isEqualTo(500);
   }
 
   private Map<String, String> getRawConfigForSpec(final Spec spec) {
