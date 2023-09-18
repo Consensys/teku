@@ -64,6 +64,10 @@ public abstract class BeaconStateAccessors {
     return getValidatorChurnLimit(activeValidatorCount);
   }
 
+  public UInt64 getValidatorActivationChurnLimit(BeaconState state) {
+    return getValidatorChurnLimit(state);
+  }
+
   public UInt64 getValidatorChurnLimit(final int activeValidatorCount) {
     return UInt64.valueOf(config.getMinPerEpochChurnLimit())
         .max(UInt64.valueOf(activeValidatorCount / config.getChurnLimitQuotient()));
