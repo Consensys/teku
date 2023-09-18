@@ -103,6 +103,7 @@ public class SpecConfigReader {
           .put(Bytes4.class, fromString(Bytes4::fromHexString))
           .put(Bytes32.class, fromString(Bytes32::fromHexStringStrict))
           .put(boolean.class, fromString(Boolean::valueOf))
+          .put(Boolean.class, fromString(Boolean::valueOf))
           .put(Eth1Address.class, fromString(Eth1Address::fromHexString))
           .build();
 
