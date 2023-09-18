@@ -44,6 +44,8 @@ import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
+import tech.pegasys.teku.spec.logic.common.util.EpochAttestationSchedule;
+import tech.pegasys.teku.spec.logic.common.util.SlotAttestationSchedule;
 import tech.pegasys.teku.spec.signatures.LocalSigner;
 
 public class AttestationGenerator {
@@ -81,12 +83,7 @@ public class AttestationGenerator {
         .collect(Collectors.toList());
   }
 
-  /**
-   * Aggregates passed attestations
-   *
-   * @param srcAttestations attestations which should have the same {@link Attestation#getData()}
-   */
-  public static Attestation aggregateAttestations(List<Attestation> srcAttestations) {
+  private static Attestation aggregateAttestations(List<Attestation> srcAttestations) {
     Preconditions.checkArgument(!srcAttestations.isEmpty(), "Expected at least one attestation");
     final AttestationSchema attestationSchema = srcAttestations.get(0).getSchema();
     int targetBitlistSize =
@@ -148,6 +145,15 @@ public class AttestationGenerator {
     return streamAttestations(blockAndState, slot).collect(Collectors.toList());
   }
 
+  public List<Attestation> getAttestationsForSlot(
+      final StateAndBlockSummary blockAndState,
+      final UInt64 slot,
+      final EpochAttestationSchedule epochCommitteeAssignments) {
+
+    return streamAttestations(blockAndState, slot, epochCommitteeAssignments)
+        .collect(Collectors.toList());
+  }
+
   /**
    * Streams attestations for validators assigned to attest at {@code assignedSlot}, using the given
    * {@code headBlockAndState} as the calculated chain head.
@@ -159,6 +165,15 @@ public class AttestationGenerator {
   public Stream<Attestation> streamAttestations(
       final StateAndBlockSummary headBlockAndState, final UInt64 assignedSlot) {
     return AttestationIterator.create(spec, headBlockAndState, assignedSlot, validatorKeys)
+        .toStream();
+  }
+
+  public Stream<Attestation> streamAttestations(
+      final StateAndBlockSummary headBlockAndState,
+      final UInt64 assignedSlot,
+      final EpochAttestationSchedule epochCommitteeAssignments) {
+    return AttestationIterator.create(
+            spec, headBlockAndState, assignedSlot, epochCommitteeAssignments, validatorKeys)
         .toStream();
   }
 
@@ -198,12 +213,15 @@ public class AttestationGenerator {
     private Optional<Attestation> nextAttestation = Optional.empty();
     private int currentValidatorIndex = 0;
 
+    private final Optional<SlotAttestationSchedule> maybeSlotAttestationSchedule;
+
     private AttestationIterator(
         final Spec spec,
         final StateAndBlockSummary headBlockAndState,
         final UInt64 assignedSlot,
         final List<BLSKeyPair> validatorKeys,
-        final Function<Integer, BLSKeyPair> validatorKeySupplier) {
+        final Function<Integer, BLSKeyPair> validatorKeySupplier,
+        final Optional<SlotAttestationSchedule> maybeSlotAttestationSchedule) {
       this.spec = spec;
       this.headBlock = headBlockAndState;
       this.headState = generateHeadState(headBlockAndState.getState(), assignedSlot);
@@ -211,7 +229,23 @@ public class AttestationGenerator {
       this.assignedSlot = assignedSlot;
       this.assignedSlotEpoch = spec.computeEpochAtSlot(assignedSlot);
       this.validatorKeySupplier = validatorKeySupplier;
+      this.maybeSlotAttestationSchedule = maybeSlotAttestationSchedule;
       generateNextAttestation();
+    }
+
+    public static AttestationIterator create(
+        final Spec spec,
+        final StateAndBlockSummary headBlockAndState,
+        final UInt64 assignedSlot,
+        final EpochAttestationSchedule epochCommitteeAssignments,
+        final List<BLSKeyPair> validatorKeys) {
+      return new AttestationIterator(
+          spec,
+          headBlockAndState,
+          assignedSlot,
+          validatorKeys,
+          validatorKeys::get,
+          Optional.of(epochCommitteeAssignments.atSlot(assignedSlot)));
     }
 
     private BeaconState generateHeadState(final BeaconState state, final UInt64 slot) {
@@ -232,7 +266,12 @@ public class AttestationGenerator {
         final UInt64 assignedSlot,
         final List<BLSKeyPair> validatorKeys) {
       return new AttestationIterator(
-          spec, headBlockAndState, assignedSlot, validatorKeys, validatorKeys::get);
+          spec,
+          headBlockAndState,
+          assignedSlot,
+          validatorKeys,
+          validatorKeys::get,
+          Optional.empty());
     }
 
     public static AttestationIterator createWithInvalidSignatures(
@@ -242,7 +281,12 @@ public class AttestationGenerator {
         final List<BLSKeyPair> validatorKeys,
         final BLSKeyPair invalidKeyPair) {
       return new AttestationIterator(
-          spec, headBlockAndState, assignedSlot, validatorKeys, __ -> invalidKeyPair);
+          spec,
+          headBlockAndState,
+          assignedSlot,
+          validatorKeys,
+          __ -> invalidKeyPair,
+          Optional.empty());
     }
 
     public Stream<Attestation> toStream() {
@@ -271,6 +315,11 @@ public class AttestationGenerator {
     private void generateNextAttestation() {
       nextAttestation = Optional.empty();
 
+      if (maybeSlotAttestationSchedule.isPresent()) {
+        generateNextAttestationFromSchedule();
+        return;
+      }
+
       int lastProcessedValidatorIndex = currentValidatorIndex;
       for (int validatorIndex = currentValidatorIndex;
           validatorIndex < validatorKeys.size();
@@ -283,16 +332,16 @@ public class AttestationGenerator {
           continue;
         }
 
-        CommitteeAssignment assignment = maybeAssignment.get();
+        final CommitteeAssignment assignment = maybeAssignment.get();
         if (!assignment.getSlot().equals(assignedSlot)) {
           continue;
         }
 
-        IntList committeeIndices = assignment.getCommittee();
-        UInt64 committeeIndex = assignment.getCommitteeIndex();
-        Committee committee = new Committee(committeeIndex, committeeIndices);
-        int indexIntoCommittee = committeeIndices.indexOf(validatorIndex);
-        AttestationData genericAttestationData =
+        final IntList committeeIndices = assignment.getCommittee();
+        final UInt64 committeeIndex = assignment.getCommitteeIndex();
+        final Committee committee = new Committee(committeeIndex, committeeIndices);
+        final int indexIntoCommittee = committeeIndices.indexOf(validatorIndex);
+        final AttestationData genericAttestationData =
             spec.getGenericAttestationData(assignedSlot, headState, headBlock, committeeIndex);
         final BLSKeyPair validatorKeyPair = validatorKeySupplier.apply(validatorIndex);
         nextAttestation =
@@ -307,6 +356,27 @@ public class AttestationGenerator {
       }
 
       currentValidatorIndex = lastProcessedValidatorIndex + 1;
+    }
+
+    private void generateNextAttestationFromSchedule() {
+      final SlotAttestationSchedule schedule = maybeSlotAttestationSchedule.orElseThrow();
+      if (schedule.isDone()) {
+        nextAttestation = Optional.empty();
+      } else {
+        final UInt64 currentCommittee = schedule.getCurrentCommittee();
+        final IntList indices = schedule.getCommittee(currentCommittee);
+        final Integer indexIntoCommittee = schedule.getIndexIntoCommittee();
+        final Integer validatorIndex = indices.getInt(indexIntoCommittee);
+        final Committee cc = new Committee(currentCommittee, indices);
+        final BLSKeyPair validatorKeyPair = validatorKeySupplier.apply(validatorIndex);
+        final AttestationData genericAttestationData =
+            spec.getGenericAttestationData(assignedSlot, headState, headBlock, currentCommittee);
+        nextAttestation =
+            Optional.of(
+                createAttestation(
+                    headState, validatorKeyPair, indexIntoCommittee, cc, genericAttestationData));
+        schedule.next();
+      }
     }
 
     private Attestation createAttestation(

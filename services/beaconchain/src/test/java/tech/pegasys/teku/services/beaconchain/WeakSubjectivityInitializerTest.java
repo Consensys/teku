@@ -20,6 +20,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,7 +63,7 @@ public class WeakSubjectivityInitializerTest {
     assertThat(result).isCompleted();
     verify(queryChannel).getWeakSubjectivityState();
     verify(updateChannel, never()).onWeakSubjectivityUpdate(any());
-    assertThat(result.join()).usingRecursiveComparison().isEqualTo(defaultConfig);
+    assertThat(safeJoin(result)).usingRecursiveComparison().isEqualTo(defaultConfig);
   }
 
   @Test
@@ -87,7 +88,7 @@ public class WeakSubjectivityInitializerTest {
     verify(updateChannel)
         .onWeakSubjectivityUpdate(
             WeakSubjectivityUpdate.setWeakSubjectivityCheckpoint(cliCheckpoint));
-    assertThat(result.join()).usingRecursiveComparison().isEqualTo(cliConfig);
+    assertThat(safeJoin(result)).usingRecursiveComparison().isEqualTo(cliConfig);
   }
 
   @Test
@@ -107,7 +108,7 @@ public class WeakSubjectivityInitializerTest {
     assertThat(result).isCompleted();
     verify(queryChannel).getWeakSubjectivityState();
     verify(updateChannel, never()).onWeakSubjectivityUpdate(any());
-    assertThat(result.join())
+    assertThat(safeJoin(result))
         .usingRecursiveComparison()
         .isEqualTo(WeakSubjectivityConfig.builder(storedState).specProvider(spec).build());
   }
@@ -139,7 +140,7 @@ public class WeakSubjectivityInitializerTest {
     verify(updateChannel)
         .onWeakSubjectivityUpdate(
             WeakSubjectivityUpdate.setWeakSubjectivityCheckpoint(cliCheckpoint));
-    assertThat(result.join()).usingRecursiveComparison().isEqualTo(cliConfig);
+    assertThat(safeJoin(result)).usingRecursiveComparison().isEqualTo(cliConfig);
   }
 
   @Test
@@ -164,7 +165,7 @@ public class WeakSubjectivityInitializerTest {
     assertThat(result).isCompleted();
     verify(queryChannel).getWeakSubjectivityState();
     verify(updateChannel, never()).onWeakSubjectivityUpdate(any());
-    assertThat(result.join()).usingRecursiveComparison().isEqualTo(cliConfig);
+    assertThat(safeJoin(result)).usingRecursiveComparison().isEqualTo(cliConfig);
   }
 
   @Test

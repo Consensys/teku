@@ -19,7 +19,6 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
@@ -96,14 +95,12 @@ public class BlstBLS12381 implements BLS12381 {
 
   @Override
   public BlstPublicKey aggregatePublicKeys(List<? extends PublicKey> publicKeys) {
-    return BlstPublicKey.aggregate(
-        publicKeys.stream().map(BlstPublicKey::fromPublicKey).collect(Collectors.toList()));
+    return BlstPublicKey.aggregate(publicKeys.stream().map(BlstPublicKey::fromPublicKey).toList());
   }
 
   @Override
   public BlstSignature aggregateSignatures(List<? extends Signature> signatures) {
-    return BlstSignature.aggregate(
-        signatures.stream().map(BlstSignature::fromSignature).collect(Collectors.toList()));
+    return BlstSignature.aggregate(signatures.stream().map(BlstSignature::fromSignature).toList());
   }
 
   @Override

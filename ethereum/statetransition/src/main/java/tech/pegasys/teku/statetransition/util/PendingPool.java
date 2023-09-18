@@ -199,10 +199,7 @@ public class PendingPool<T> extends AbstractIgnoringFutureHistoricalSlot {
       return Collections.emptyList();
     }
 
-    return dependentRoots.stream()
-        .map(pendingItems::get)
-        .filter(Objects::nonNull)
-        .collect(Collectors.toList());
+    return dependentRoots.stream().map(pendingItems::get).filter(Objects::nonNull).toList();
   }
 
   /**
@@ -229,10 +226,7 @@ public class PendingPool<T> extends AbstractIgnoringFutureHistoricalSlot {
       requiredRoots = roots;
     }
 
-    return dependentRoots.stream()
-        .map(pendingItems::get)
-        .filter(Objects::nonNull)
-        .collect(Collectors.toList());
+    return dependentRoots.stream().map(pendingItems::get).filter(Objects::nonNull).toList();
   }
 
   public void subscribeRequiredBlockRoot(final RequiredBlockRootSubscriber subscriber) {

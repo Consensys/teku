@@ -15,7 +15,6 @@ package tech.pegasys.teku.api.blockselector;
 
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -89,9 +88,7 @@ public class BlockSelectorFactory extends AbstractSelectorFactory<BlockSelector>
         return SafeFuture.completedFuture(Collections.emptyList());
       }
       final ChainHead chainHead = maybeChainHead.get();
-      return client
-          .getAllBlocksAtSlot(slot, chainHead)
-          .thenApply(blocks -> new ArrayList<>(blocks));
+      return client.getAllBlocksAtSlot(slot, chainHead);
     };
   }
 

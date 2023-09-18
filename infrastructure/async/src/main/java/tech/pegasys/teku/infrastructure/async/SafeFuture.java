@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.infrastructure.async;
 
-import static java.util.stream.Collectors.toList;
-
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
@@ -189,8 +187,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
    */
   @SafeVarargs
   public static <T> SafeFuture<List<T>> collectAll(final SafeFuture<T>... futures) {
-    return allOf(futures)
-        .thenApply(__ -> Stream.of(futures).map(SafeFuture::join).collect(toList()));
+    return allOf(futures).thenApply(__ -> Stream.of(futures).map(SafeFuture::join).toList());
   }
 
   /**
@@ -212,7 +209,7 @@ public class SafeFuture<T> extends CompletableFuture<T> {
     final Stream<SafeFuture<Optional<T>>> optionalFutures =
         futures.map(future -> future.thenApply(Optional::of).exceptionally(__ -> Optional.empty()));
     return collectAll(optionalFutures)
-        .thenApply(results -> results.stream().flatMap(Optional::stream).collect(toList()));
+        .thenApply(results -> results.stream().flatMap(Optional::stream).toList());
   }
 
   /**

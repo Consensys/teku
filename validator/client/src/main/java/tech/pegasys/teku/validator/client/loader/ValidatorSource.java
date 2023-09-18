@@ -22,7 +22,7 @@ import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 
 public interface ValidatorSource {
-  List<ValidatorProvider> getAvailableValidators();
+  List<? extends ValidatorProvider> getAvailableValidators();
 
   boolean canUpdateValidators();
 

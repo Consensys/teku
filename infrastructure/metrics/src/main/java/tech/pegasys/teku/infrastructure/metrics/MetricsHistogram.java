@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.HdrHistogram.SynchronizedHistogram;
 import org.hyperledger.besu.metrics.prometheus.PrometheusMetricsSystem;
@@ -57,9 +56,7 @@ public class MetricsHistogram {
       final List<String> customLabelsNames) {
     this.numberOfSignificantValueDigits = numberOfSignificantValueDigits;
     this.highestTrackableValue = highestTrackableValue;
-    this.labels =
-        Stream.concat(customLabelsNames.stream(), Stream.of(QUANTILE_LABEL))
-            .collect(Collectors.toUnmodifiableList());
+    this.labels = Stream.concat(customLabelsNames.stream(), Stream.of(QUANTILE_LABEL)).toList();
   }
 
   /**
@@ -203,7 +200,7 @@ public class MetricsHistogram {
                                 labelsValuesToHistogram.getValue().getMaxValueAsDouble(),
                                 labelsValuesToHistogram.getValue())))
                 .flatMap(List::stream)
-                .collect(Collectors.toUnmodifiableList());
+                .toList();
 
         return Collections.singletonList(
             new MetricFamilySamples(metricName, Type.SUMMARY, help, samples));
@@ -220,8 +217,7 @@ public class MetricsHistogram {
     return new MetricFamilySamples.Sample(
         metricName,
         labels,
-        Stream.concat(labelValues.stream(), Stream.of(quantileLabelValue))
-            .collect(Collectors.toUnmodifiableList()),
+        Stream.concat(labelValues.stream(), Stream.of(quantileLabelValue)).toList(),
         histogram.getValueAtPercentile(percentile));
   }
 }

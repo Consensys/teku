@@ -44,27 +44,18 @@ public class ForkUpgradeTestExecutor implements TestExecutor {
 
   private void processUpgrade(final TestDefinition testDefinition, final SpecMilestone milestone) {
     final SpecVersion spec = testDefinition.getSpec().getGenesisSpec();
-    final BeaconStateSchema<?, ?> fromMilestoneSchema;
-    switch (milestone) {
-      case ALTAIR:
-        fromMilestoneSchema = BeaconStateSchemaPhase0.create(spec.getConfig());
-        break;
-      case BELLATRIX:
-        fromMilestoneSchema = BeaconStateSchemaAltair.create(spec.getConfig());
-        break;
-      case CAPELLA:
-        fromMilestoneSchema = BeaconStateSchemaBellatrix.create(spec.getConfig());
-        break;
-      case DENEB:
-        fromMilestoneSchema = BeaconStateSchemaCapella.create(spec.getConfig());
-        break;
-      default:
-        throw new IllegalStateException(
-            "Unhandled fork upgrade for test "
-                + testDefinition.getDisplayName()
-                + ": "
-                + milestone);
-    }
+    final BeaconStateSchema<?, ?> fromMilestoneSchema =
+        switch (milestone) {
+          case ALTAIR -> BeaconStateSchemaPhase0.create(spec.getConfig());
+          case BELLATRIX -> BeaconStateSchemaAltair.create(spec.getConfig());
+          case CAPELLA -> BeaconStateSchemaBellatrix.create(spec.getConfig());
+          case DENEB -> BeaconStateSchemaCapella.create(spec.getConfig());
+          default -> throw new IllegalStateException(
+              "Unhandled fork upgrade for test "
+                  + testDefinition.getDisplayName()
+                  + ": "
+                  + milestone);
+        };
     final BeaconState preState =
         TestDataUtils.loadSsz(testDefinition, "pre.ssz_snappy", fromMilestoneSchema);
     final BeaconState postState = TestDataUtils.loadStateFromSsz(testDefinition, "post.ssz_snappy");

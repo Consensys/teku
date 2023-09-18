@@ -82,7 +82,7 @@ public class SlashingProtectionLogger implements ValidatorTimingChannel {
         validatorRecords.stream()
             .filter(pair -> pair.getRight().isPresent())
             .map(pair -> Pair.of(pair.getLeft(), pair.getRight().get()))
-            .collect(Collectors.toList());
+            .toList();
     logLoadedProtectionValidators(protectedList);
     filterAndLogNotLoadedProtectionValidators(validatorRecords);
     Function<ValidatorSigningRecord, Boolean> outdatedSigningRecordClassifier =
@@ -90,7 +90,7 @@ public class SlashingProtectionLogger implements ValidatorTimingChannel {
     final List<Pair<Validator, ValidatorSigningRecord>> outdatedProtectionList =
         protectedList.stream()
             .filter(pair -> outdatedSigningRecordClassifier.apply(pair.getRight()))
-            .collect(Collectors.toList());
+            .toList();
     logOutdatedProtectedValidators(outdatedProtectionList);
   }
 

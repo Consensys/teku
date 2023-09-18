@@ -31,48 +31,22 @@ public class EpochProcessingExecutor {
   public void executeOperation(final EpochOperation operation, final MutableBeaconState state)
       throws EpochProcessingException {
     switch (operation) {
-      case PROCESS_SLASHINGS:
-        processSlashings(state);
-        break;
-      case PROCESS_REGISTRY_UPDATES:
-        processRegistryUpdates(state);
-        break;
-      case PROCESS_REWARDS_AND_PENALTIES:
-        processRewardsAndPenalties(state);
-        break;
-      case PROCESS_JUSTIFICATION_AND_FINALIZATION:
-        processJustificationAndFinalization(state);
-        break;
-      case PROCESS_EFFECTIVE_BALANCE_UPDATES:
-        processEffectiveBalanceUpdates(state);
-        break;
-      case PROCESS_PARTICIPATION_FLAG_UPDATES:
-        epochProcessor.processParticipationUpdates(state);
-        break;
-      case PROCESS_ETH1_DATA_RESET:
-        epochProcessor.processEth1DataReset(state);
-        break;
-      case PROCESS_SLASHINGS_RESET:
-        epochProcessor.processSlashingsReset(state);
-        break;
-      case PROCESS_RANDAO_MIXES_RESET:
-        epochProcessor.processRandaoMixesReset(state);
-        break;
-      case PROCESS_HISTORICAL_ROOTS_UPDATE:
-        epochProcessor.processHistoricalRootsUpdate(state);
-        break;
-      case PROCESS_HISTORICAL_SUMMARIES_UPDATE:
-        epochProcessor.processHistoricalSummariesUpdate(state);
-        break;
-      case SYNC_COMMITTEE_UPDATES:
-        epochProcessor.processSyncCommitteeUpdates(state);
-        break;
-      case INACTIVITY_UPDATES:
-        processInactivityUpdates(state);
-        break;
-      default:
-        throw new UnsupportedOperationException(
-            "Attempted to execute unknown operation type: " + operation);
+      case PROCESS_SLASHINGS -> processSlashings(state);
+      case PROCESS_REGISTRY_UPDATES -> processRegistryUpdates(state);
+      case PROCESS_REWARDS_AND_PENALTIES -> processRewardsAndPenalties(state);
+      case PROCESS_JUSTIFICATION_AND_FINALIZATION -> processJustificationAndFinalization(state);
+      case PROCESS_EFFECTIVE_BALANCE_UPDATES -> processEffectiveBalanceUpdates(state);
+      case PROCESS_PARTICIPATION_FLAG_UPDATES -> epochProcessor.processParticipationUpdates(state);
+      case PROCESS_ETH1_DATA_RESET -> epochProcessor.processEth1DataReset(state);
+      case PROCESS_SLASHINGS_RESET -> epochProcessor.processSlashingsReset(state);
+      case PROCESS_RANDAO_MIXES_RESET -> epochProcessor.processRandaoMixesReset(state);
+      case PROCESS_HISTORICAL_ROOTS_UPDATE -> epochProcessor.processHistoricalRootsUpdate(state);
+      case PROCESS_HISTORICAL_SUMMARIES_UPDATE -> epochProcessor.processHistoricalSummariesUpdate(
+          state);
+      case SYNC_COMMITTEE_UPDATES -> epochProcessor.processSyncCommitteeUpdates(state);
+      case INACTIVITY_UPDATES -> processInactivityUpdates(state);
+      default -> throw new UnsupportedOperationException(
+          "Attempted to execute unknown operation type: " + operation);
     }
   }
 

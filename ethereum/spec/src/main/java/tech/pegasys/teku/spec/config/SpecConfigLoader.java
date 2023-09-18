@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.networks.Eth2Network;
@@ -144,7 +143,7 @@ public class SpecConfigLoader {
     return Arrays.stream(Eth2Network.values())
         .map(Eth2Network::configName)
         .map(s -> CONFIG_PATH + s + ".yaml")
-        .collect(Collectors.toList());
+        .toList();
   }
 
   private static List<String> enumerateAvailablePresetResources() {
@@ -152,6 +151,6 @@ public class SpecConfigLoader {
         .map(Eth2Presets::presetName)
         .flatMap(
             s -> AVAILABLE_PRESETS.stream().map(preset -> PRESET_PATH + s + "/" + preset + ".yaml"))
-        .collect(Collectors.toList());
+        .toList();
   }
 }

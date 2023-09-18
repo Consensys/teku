@@ -25,7 +25,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
@@ -219,7 +218,7 @@ public class AggregatingAttestationPool implements SlotEventsChannel {
         .filter(filterForCommitteeIndex)
         .flatMap(MatchingDataAttestationGroup::stream)
         .map(ValidatableAttestation::getAttestation)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   private boolean isValid(

@@ -36,6 +36,7 @@ public class BlockPruner extends Service {
   private final Database database;
   private final AsyncRunner asyncRunner;
   private final Duration pruneInterval;
+  private final int pruneLimit;
   private final SettableLabelledGauge pruningTimingsLabelledGauge;
   private final SettableLabelledGauge pruningActiveLabelledGauge;
   private final String pruningMetricsType;
@@ -47,6 +48,7 @@ public class BlockPruner extends Service {
       final Database database,
       final AsyncRunner asyncRunner,
       final Duration pruneInterval,
+      final int pruneLimit,
       final String pruningMetricsType,
       final SettableLabelledGauge pruningTimingsLabelledGauge,
       final SettableLabelledGauge pruningActiveLabelledGauge) {
@@ -57,6 +59,7 @@ public class BlockPruner extends Service {
     this.pruningMetricsType = pruningMetricsType;
     this.pruningTimingsLabelledGauge = pruningTimingsLabelledGauge;
     this.pruningActiveLabelledGauge = pruningActiveLabelledGauge;
+    this.pruneLimit = pruneLimit;
   }
 
   @Override
@@ -95,13 +98,22 @@ public class BlockPruner extends Service {
         finalizedEpoch.minusMinZero(spec.getNetworkingConfig().getMinEpochsForBlockRequests());
     final UInt64 earliestSlotToKeep = spec.computeStartSlotAtEpoch(earliestEpochToKeep);
     if (earliestSlotToKeep.isZero()) {
-      LOG.debug("Not pruning as epochs to keep includes genesis");
+      LOG.debug("Pruning is not performed as the epochs to retain include the genesis epoch.");
       return;
     }
-    LOG.info("Pruning finalized blocks before slot {}", earliestSlotToKeep);
+    LOG.info("Initiating pruning of finalized blocks prior to slot {}.", earliestSlotToKeep);
     try {
-      database.pruneFinalizedBlocks(earliestSlotToKeep.decrement());
-      LOG.info("Finalized blocks before slot {} have been pruned.", earliestSlotToKeep);
+      final UInt64 lastPrunedSlot =
+          database.pruneFinalizedBlocks(earliestSlotToKeep.decrement(), pruneLimit);
+      if (lastPrunedSlot.equals(earliestEpochToKeep.decrement())) {
+        LOG.info("Successfully pruned finalized blocks prior to slot {}.", earliestSlotToKeep);
+      } else {
+        LOG.info(
+            "Pruned {} finalized blocks prior to slot {}, last pruned slot was {}.",
+            pruneLimit,
+            earliestSlotToKeep,
+            lastPrunedSlot);
+      }
     } catch (ShuttingDownException | RejectedExecutionException ex) {
       LOG.debug("Shutting down", ex);
     }

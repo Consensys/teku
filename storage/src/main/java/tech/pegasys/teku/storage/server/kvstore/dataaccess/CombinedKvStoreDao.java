@@ -20,11 +20,11 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -134,7 +134,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
       return stream
           .filter((column) -> column.getValue().getSlot().compareTo(slot) < 0)
           .map(ColumnEntry::getKey)
-          .collect(Collectors.toList());
+          .toList();
     }
   }
 
@@ -283,7 +283,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     return maybeRoots.stream()
         .flatMap(Collection::stream)
         .flatMap(root -> db.get(schema.getColumnNonCanonicalBlocksByRoot(), root).stream())
-        .collect(Collectors.toList());
+        .toList();
   }
 
   @Override
@@ -385,7 +385,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
                 slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.ZERO),
             new SlotAndBlockRootAndBlobIndex(
                 slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.MAX_VALUE))) {
-      return streamKeys.collect(Collectors.toList());
+      return streamKeys.toList();
     }
   }
 
@@ -399,7 +399,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
                 slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.ZERO),
             new SlotAndBlockRootAndBlobIndex(
                 slotAndBlockRoot.getSlot(), slotAndBlockRoot.getBlockRoot(), UInt64.MAX_VALUE))) {
-      return streamKeys.collect(Collectors.toList());
+      return streamKeys.toList();
     }
   }
 
@@ -409,9 +409,17 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public Map<String, Long> getColumnCounts() {
+  public Map<String, Long> getColumnCounts(final Optional<String> maybeColumnFilter) {
     final Map<String, Long> columnCounts = new LinkedHashMap<>();
-    schema.getColumnMap().forEach((k, v) -> columnCounts.put(k, db.size(v)));
+    schema
+        .getColumnMap()
+        .forEach(
+            (k, v) -> {
+              if (maybeColumnFilter.isEmpty()
+                  || k.contains(maybeColumnFilter.get().toUpperCase(Locale.ROOT))) {
+                columnCounts.put(k, db.size(v));
+              }
+            });
     return columnCounts;
   }
 

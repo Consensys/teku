@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
@@ -143,8 +142,7 @@ public class NodeDataProvider {
     }
 
     return SafeFuture.collectAll(maybeFutureErrors.stream())
-        .thenApply(
-            entries -> entries.stream().flatMap(Optional::stream).collect(Collectors.toList()));
+        .thenApply(entries -> entries.stream().flatMap(Optional::stream).toList());
   }
 
   private SafeFuture<Optional<SubmitDataError>> addBlsToExecutionChange(
@@ -232,8 +230,7 @@ public class NodeDataProvider {
               final List<ValidatorLivenessAtEpoch> livenessAtEpochs = new ArrayList<>();
               validatorLivenessMap.forEach(
                   (validatorIndex, liveness) ->
-                      livenessAtEpochs.add(
-                          new ValidatorLivenessAtEpoch(validatorIndex, epoch, liveness)));
+                      livenessAtEpochs.add(new ValidatorLivenessAtEpoch(validatorIndex, liveness)));
               return Optional.of(livenessAtEpochs);
             });
   }

@@ -21,7 +21,6 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -39,8 +38,7 @@ public class IndexedAttestation {
 
   public IndexedAttestation(
       tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation indexedAttestation) {
-    this.attesting_indices =
-        indexedAttestation.getAttestingIndices().streamUnboxed().collect(Collectors.toList());
+    this.attesting_indices = indexedAttestation.getAttestingIndices().streamUnboxed().toList();
     this.data = new AttestationData(indexedAttestation.getData());
     this.signature = new BLSSignature(indexedAttestation.getSignature());
   }

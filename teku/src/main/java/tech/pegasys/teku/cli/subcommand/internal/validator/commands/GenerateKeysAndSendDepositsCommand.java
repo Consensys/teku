@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import picocli.CommandLine.Command;
@@ -82,10 +81,7 @@ public class GenerateKeysAndSendDepositsCommand implements Runnable {
         depositOptions.createDepositSender(verbosityOptions.isVerboseOutputEnabled())) {
       depositSender.displayConfirmation(keyGenerationOptions.getValidatorCount());
       final List<SafeFuture<TransactionReceipt>> transactionReceipts =
-          keyGenerator
-              .generateKeysStream()
-              .map(registerValidator(depositSender))
-              .collect(Collectors.toList());
+          keyGenerator.generateKeysStream().map(registerValidator(depositSender)).toList();
       SafeFuture.allOf(transactionReceipts.toArray(SafeFuture[]::new)).get(2, TimeUnit.MINUTES);
     } catch (final Throwable t) {
       SUB_COMMAND_LOG.sendDepositFailure(t);

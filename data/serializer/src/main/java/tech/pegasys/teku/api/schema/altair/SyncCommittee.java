@@ -21,7 +21,6 @@ import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
@@ -48,7 +47,7 @@ public class SyncCommittee {
     pubkeys =
         committee.getPubkeys().asList().stream()
             .map(k -> new BLSPubKey(k.getBLSPublicKey()))
-            .collect(Collectors.toList());
+            .toList();
     aggregatePubkey = new BLSPubKey(committee.getAggregatePubkey().getBLSPublicKey());
   }
 
@@ -56,9 +55,7 @@ public class SyncCommittee {
       final SyncCommitteeSchema schema) {
     SszPublicKey aggregate = new SszPublicKey(aggregatePubkey.asBLSPublicKey());
     List<SszPublicKey> committee =
-        pubkeys.stream()
-            .map(key -> new SszPublicKey(key.asBLSPublicKey()))
-            .collect(Collectors.toList());
+        pubkeys.stream().map(key -> new SszPublicKey(key.asBLSPublicKey())).toList();
     return schema.create(committee, aggregate);
   }
 

@@ -26,6 +26,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszData;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
@@ -279,7 +280,7 @@ public class ValidatorDataProviderTest {
     final SafeFuture<Optional<AttestationData>> result =
         provider.createAttestationDataAtSlot(ONE, 0);
     assertThat(result).isCompleted();
-    AttestationData data = result.join().orElseThrow();
+    AttestationData data = safeJoin(result).orElseThrow();
     assertThat(data.getIndex()).isEqualTo(internalData.getIndex());
     assertThat(data.getSlot()).isEqualTo(internalData.getSlot());
     assertThat(data.getBeaconBlockRoot()).isEqualTo(internalData.getBeaconBlockRoot());
@@ -381,7 +382,7 @@ public class ValidatorDataProviderTest {
     final SafeFuture<Optional<AttesterDuties>> future =
         provider.getAttesterDuties(UInt64.ONE, IntList.of());
     assertThat(future).isCompleted();
-    Optional<AttesterDuties> maybeData = future.join();
+    Optional<AttesterDuties> maybeData = safeJoin(future);
     assertThat(maybeData.isPresent()).isTrue();
     assertThat(maybeData.get().getDuties()).isEmpty();
   }
@@ -400,7 +401,7 @@ public class ValidatorDataProviderTest {
     final SafeFuture<Optional<AttesterDuties>> future =
         provider.getAttesterDuties(ONE, IntList.of(1, 11));
     assertThat(future).isCompleted();
-    final Optional<AttesterDuties> maybeList = future.join();
+    final Optional<AttesterDuties> maybeList = safeJoin(future);
     final AttesterDuties list = maybeList.orElseThrow();
     assertThat(list.getDuties()).containsExactlyInAnyOrder(v1, v2);
   }

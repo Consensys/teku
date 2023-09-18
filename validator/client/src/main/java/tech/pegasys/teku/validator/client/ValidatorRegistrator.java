@@ -111,7 +111,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
         ownedValidators.getActiveValidators().stream()
             .filter(
                 validator -> !cachedValidatorRegistrations.containsKey(validator.getPublicKey()))
-            .collect(Collectors.toList());
+            .toList();
 
     registerValidators(newlyAddedValidators).finish(VALIDATOR_LOGGER::registeringValidatorsFailed);
   }

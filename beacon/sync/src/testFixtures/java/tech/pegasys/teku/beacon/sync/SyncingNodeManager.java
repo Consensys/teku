@@ -156,7 +156,9 @@ public class SyncingNodeManager {
             blockValidator,
             timeProvider,
             EVENT_LOG,
-            Optional.empty());
+            Optional.empty(),
+            true,
+            false);
 
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)

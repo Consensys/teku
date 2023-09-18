@@ -15,7 +15,6 @@ package tech.pegasys.teku.storage.client;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Verify.verifyNotNull;
-import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -24,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -186,6 +184,14 @@ public class CombinedChainDataClient {
         .thenCompose(this::getBlobSidecars);
   }
 
+  public SafeFuture<List<BlobSidecar>> getAllBlobSidecars(
+      final UInt64 slot, final List<UInt64> indices) {
+    return historicalChainData
+        .getAllBlobSidecarKeys(slot)
+        .thenApply(keys -> filterBlobSidecarKeys(keys, indices))
+        .thenCompose(this::getAllBlobSidecars);
+  }
+
   private Stream<SlotAndBlockRootAndBlobIndex> filterBlobSidecarKeys(
       final List<SlotAndBlockRootAndBlobIndex> keys, final List<UInt64> indices) {
     if (indices.isEmpty()) {
@@ -197,8 +203,13 @@ public class CombinedChainDataClient {
   private SafeFuture<List<BlobSidecar>> getBlobSidecars(
       final Stream<SlotAndBlockRootAndBlobIndex> keys) {
     return SafeFuture.collectAll(keys.map(this::getAllBlobSidecarByKey))
-        .thenApply(
-            blobSidecars -> blobSidecars.stream().flatMap(Optional::stream).collect(toList()));
+        .thenApply(blobSidecars -> blobSidecars.stream().flatMap(Optional::stream).toList());
+  }
+
+  private SafeFuture<List<BlobSidecar>> getAllBlobSidecars(
+      final Stream<SlotAndBlockRootAndBlobIndex> keys) {
+    return SafeFuture.collectAll(keys.map(this::getAllBlobSidecarByKey))
+        .thenApply(blobSidecars -> blobSidecars.stream().flatMap(Optional::stream).toList());
   }
 
   public SafeFuture<Optional<BeaconState>> getStateAtSlotExact(final UInt64 slot) {
@@ -688,7 +699,7 @@ public class CombinedChainDataClient {
                                 isCanonicalBlockCalculated(
                                     block.getSlot(), block.getRoot(), chainHead.getRoot()),
                                 isFinalized(block.getSlot())))
-                    .collect(Collectors.toList()));
+                    .toList());
   }
 
   List<BlockAndMetaData> mergeNonCanonicalAndCanonicalBlocks(
@@ -696,14 +707,14 @@ public class CombinedChainDataClient {
       final ChainHead chainHead,
       final Optional<SignedBeaconBlock> canonicalBlock) {
     verifyNotNull(signedBeaconBlocks, "Expected empty set but got null");
-    final List<BlockAndMetaData> result =
-        signedBeaconBlocks.stream()
-            .map(block -> toBlockAndMetaData(block, chainHead, false, false))
-            .collect(Collectors.toList());
-    canonicalBlock.ifPresent(
-        block ->
-            result.add(toBlockAndMetaData(block, chainHead, true, isFinalized(block.getSlot()))));
-    return result;
+    return Stream.concat(
+            signedBeaconBlocks.stream()
+                .map(block -> toBlockAndMetaData(block, chainHead, false, false)),
+            canonicalBlock.stream()
+                .map(
+                    block ->
+                        toBlockAndMetaData(block, chainHead, true, isFinalized(block.getSlot()))))
+        .toList();
   }
 
   private BlockAndMetaData toBlockAndMetaData(

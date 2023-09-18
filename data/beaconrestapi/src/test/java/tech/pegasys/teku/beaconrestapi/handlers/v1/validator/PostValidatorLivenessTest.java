@@ -36,7 +36,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class PostValidatorLivenessTest extends AbstractMigratedBeaconHandlerTest {
   private final List<ValidatorLivenessAtEpoch> responseData =
-      List.of(new ValidatorLivenessAtEpoch(UInt64.ONE, UInt64.ONE, false));
+      List.of(new ValidatorLivenessAtEpoch(UInt64.ONE, false));
 
   @BeforeEach
   void setup() {

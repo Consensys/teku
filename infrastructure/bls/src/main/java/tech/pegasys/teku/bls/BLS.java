@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Streams;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -118,10 +117,7 @@ public class BLS {
       checkArgument(signatures.size() > 0, "Aggregating zero signatures is invalid.");
       return new BLSSignature(
           getBlsImpl()
-              .aggregateSignatures(
-                  signatures.stream()
-                      .map(BLSSignature::getSignature)
-                      .collect(Collectors.toList())));
+              .aggregateSignatures(signatures.stream().map(BLSSignature::getSignature).toList()));
     } catch (IllegalArgumentException e) {
       throw new BlsException("Failed to aggregate signatures", e);
     }
@@ -158,7 +154,7 @@ public class BLS {
                     publicKeys.stream(),
                     messages.stream(),
                     (pk, msg) -> new PublicKeyMessagePair(pk.getPublicKey(), msg))
-                .collect(Collectors.toList());
+                .toList();
 
         return signature.getSignature().verify(publicKeyMessagePairs);
       } catch (BlsException e) {
@@ -195,7 +191,7 @@ public class BLS {
       }
       try {
         List<PublicKey> publicKeyObjects =
-            publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList());
+            publicKeys.stream().map(BLSPublicKey::getPublicKey).toList();
 
         return signature.getSignature().verify(publicKeyObjects, message);
       } catch (BlsException e) {
@@ -290,8 +286,7 @@ public class BLS {
       }
       if (doublePairing) {
         Stream<List<Integer>> pairsStream =
-            Lists.partition(IntStream.range(0, count).boxed().collect(Collectors.toList()), 2)
-                .stream();
+            Lists.partition(IntStream.range(0, count).boxed().toList(), 2).stream();
 
         if (parallel) {
           pairsStream = pairsStream.parallel();
@@ -314,7 +309,7 @@ public class BLS {
                                 publicKeys.get(idx.get(1)),
                                 messages.get(idx.get(1)),
                                 signatures.get(idx.get(1))))
-                .collect(Collectors.toList()));
+                .toList());
       } else {
         Stream<Integer> indexStream = IntStream.range(0, count).boxed();
 
@@ -327,7 +322,7 @@ public class BLS {
                     idx ->
                         prepareBatchVerify(
                             idx, publicKeys.get(idx), messages.get(idx), signatures.get(idx)))
-                .collect(Collectors.toList()));
+                .toList());
       }
     } catch (IllegalArgumentException e) {
       throw new BlsException("Failed to batchVerify", e);
@@ -355,7 +350,7 @@ public class BLS {
       return getBlsImpl()
           .prepareBatchVerify(
               index,
-              publicKeys.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
+              publicKeys.stream().map(BLSPublicKey::getPublicKey).toList(),
               message,
               signature.getSignature());
     } catch (BlsException e) {
@@ -382,10 +377,10 @@ public class BLS {
       return getBlsImpl()
           .prepareBatchVerify2(
               index,
-              publicKeys1.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
+              publicKeys1.stream().map(BLSPublicKey::getPublicKey).toList(),
               message1,
               signature1.getSignature(),
-              publicKeys2.stream().map(BLSPublicKey::getPublicKey).collect(Collectors.toList()),
+              publicKeys2.stream().map(BLSPublicKey::getPublicKey).toList(),
               message2,
               signature2.getSignature());
     } catch (BlsException e) {

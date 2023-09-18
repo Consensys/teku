@@ -16,7 +16,6 @@ package tech.pegasys.teku.infrastructure.restapi.endpoints;
 import com.google.common.base.Splitter;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 public class ListQueryParameterUtils {
@@ -32,9 +31,7 @@ public class ListQueryParameterUtils {
         throw new IllegalArgumentException(String.format(MISSING_QUERY_PARAMETER, key));
       }
       // if its an array, we should filter any individual empty values out for sanity
-      return parameterMap.get(key).stream()
-          .filter(StringUtils::isNotEmpty)
-          .collect(Collectors.toList());
+      return parameterMap.get(key).stream().filter(StringUtils::isNotEmpty).toList();
     }
     throw new IllegalArgumentException(String.format(MISSING_QUERY_PARAMETER, key));
   }
@@ -43,6 +40,6 @@ public class ListQueryParameterUtils {
       final Map<String, List<String>> parameterMap, final String key)
       throws IllegalArgumentException {
     final String list = String.join(",", validateQueryParameter(parameterMap, key));
-    return SPLITTER.splitToStream(list).distinct().map(String::trim).collect(Collectors.toList());
+    return SPLITTER.splitToStream(list).distinct().map(String::trim).toList();
   }
 }

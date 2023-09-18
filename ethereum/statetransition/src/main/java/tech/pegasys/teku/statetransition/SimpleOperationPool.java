@@ -23,7 +23,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -142,7 +141,7 @@ public class SimpleOperationPool<T extends SszData> implements OperationPool<T> 
         priorityOrderComparator
             .map(comparator -> operations.stream().sorted(comparator))
             .orElseGet(operations::stream)
-            .collect(Collectors.toList());
+            .toList();
     final List<T> selected = new ArrayList<>();
     for (final T item : sortedViableOperations) {
       if (!filter.test(item)) {

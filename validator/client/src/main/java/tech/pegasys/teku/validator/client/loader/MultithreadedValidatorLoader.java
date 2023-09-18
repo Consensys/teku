@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
-import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import java.util.ArrayList;
@@ -71,7 +70,7 @@ public class MultithreadedValidatorLoader {
                             }
                             return validator;
                           }))
-              .collect(toList());
+              .toList();
 
       final List<Validator> addedValidators = new ArrayList<>();
       for (Future<Validator> future : futures) {
@@ -85,7 +84,7 @@ public class MultithreadedValidatorLoader {
       STATUS_LOG.validatorsInitialised(
           addedValidators.stream()
               .map(validator -> validator.getPublicKey().toAbbreviatedString())
-              .collect(toList()));
+              .toList());
 
     } catch (InterruptedException e) {
       throw new RuntimeException("Interrupted while attempting to load validator key files", e);

@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
@@ -253,7 +252,7 @@ public class SignedContributionAndProofValidator {
                 participantIndex ->
                     getParticipantPublicKey(
                         state, syncCommittee, contribution, subcommitteeSize, participantIndex))
-            .collect(Collectors.toList());
+            .toList();
 
     if (!signatureVerifier.verify(
         contributorPublicKeys,

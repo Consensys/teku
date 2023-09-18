@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
@@ -2143,7 +2144,9 @@ public class DatabaseTest {
     justifyAndFinalizeEpoch(
         spec.computeEpochAtSlot(finalizedBlock.getSlot()).plus(1), finalizedBlock);
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(6))).isPresent();
-    database.pruneFinalizedBlocks(UInt64.valueOf(3));
+
+    final UInt64 lastPrunedSlot1 = database.pruneFinalizedBlocks(UInt64.valueOf(3), 100);
+    assertThat(lastPrunedSlot1).isEqualTo(UInt64.valueOf(3));
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(0))).isEmpty();
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(1))).isEmpty();
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(2))).isEmpty();
@@ -2152,10 +2155,14 @@ public class DatabaseTest {
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(5))).isPresent();
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(6))).isPresent();
 
-    database.pruneFinalizedBlocks(UInt64.valueOf(5));
+    final UInt64 lastPrunedSlot2 = database.pruneFinalizedBlocks(UInt64.valueOf(5), 1);
+    assertThat(lastPrunedSlot2).isEqualTo(UInt64.valueOf(4));
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(4))).isEmpty();
-    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(5))).isEmpty();
+    assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(5))).isPresent();
     assertThat(database.getFinalizedBlockAtSlot(UInt64.valueOf(6))).isPresent();
+
+    final UInt64 lastPrunedSlot3 = database.pruneFinalizedBlocks(UInt64.valueOf(4), 1);
+    assertThat(lastPrunedSlot3).isEqualTo(UInt64.valueOf(4));
   }
 
   private List<Map.Entry<Bytes32, UInt64>> getFinalizedStateRootsList() {
@@ -2365,7 +2372,7 @@ public class DatabaseTest {
               .map(
                   f -> {
                     assertThat(f).isCompleted();
-                    return f.join();
+                    return safeJoin(f);
                   })
               .flatMap(Optional::stream)
               .collect(toList());
@@ -2388,7 +2395,7 @@ public class DatabaseTest {
             .map(
                 f -> {
                   assertThat(f).isCompleted();
-                  return f.join();
+                  return safeJoin(f);
                 })
             .flatMap(Optional::stream)
             .collect(toList());

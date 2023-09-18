@@ -18,7 +18,6 @@ import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
-import java.util.stream.Collectors;
 import picocli.CommandLine;
 import picocli.CommandLine.ArgGroup;
 import picocli.CommandLine.Option;
@@ -112,7 +111,7 @@ public class ValidatorClientOptions {
                     e);
               }
             })
-        .collect(Collectors.toList());
+        .toList();
   }
 
   private static class ExclusiveParams {

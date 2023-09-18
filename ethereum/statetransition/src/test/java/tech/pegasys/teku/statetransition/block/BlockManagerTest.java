@@ -113,7 +113,7 @@ public class BlockManagerTest {
       LimitedMap.createSynchronized(500);
 
   private StorageSystem localChain;
-  private RecentChainData localRecentChainData;
+  private RecentChainData localRecentChainData = mock(RecentChainData.class);
 
   private final ForkChoiceNotifier forkChoiceNotifier = new StubForkChoiceNotifier();
   private MergeTransitionBlockValidator transitionBlockValidator;
@@ -185,7 +185,9 @@ public class BlockManagerTest {
             blockValidator,
             timeProvider,
             eventLogger,
-            Optional.of(mock(BlockImportMetrics.class)));
+            Optional.of(mock(BlockImportMetrics.class)),
+            true,
+            false);
     forwardBlockImportedNotificationsTo(blockManager);
     localChain
         .chainUpdater()
@@ -225,6 +227,10 @@ public class BlockManagerTest {
   @Test
   public void shouldNotifySubscribersOnImport() {
     final ImportedBlockListener subscriber = mock(ImportedBlockListener.class);
+    final RecentChainData localRecentChainData = mock(RecentChainData.class);
+    final BlockManager blockManager =
+        setupBlockManagerWithMockRecentChainData(localRecentChainData, false);
+
     blockManager.subscribeToReceivedBlocks(subscriber);
     final UInt64 nextSlot = GENESIS_SLOT.plus(UInt64.ONE);
     final SignedBeaconBlock nextBlock =
@@ -239,6 +245,10 @@ public class BlockManagerTest {
   @Test
   public void shouldNotifySubscribersOnKnownBlock() {
     final ImportedBlockListener subscriber = mock(ImportedBlockListener.class);
+    final RecentChainData localRecentChainData = mock(RecentChainData.class);
+    final BlockManager blockManager =
+        setupBlockManagerWithMockRecentChainData(localRecentChainData, false);
+
     blockManager.subscribeToReceivedBlocks(subscriber);
     final UInt64 nextSlot = GENESIS_SLOT.plus(UInt64.ONE);
     final SignedBeaconBlock nextBlock =
@@ -257,6 +267,9 @@ public class BlockManagerTest {
   public void shouldNotifySubscribersOnKnownOptimisticBlock() {
     final ImportedBlockListener subscriber = mock(ImportedBlockListener.class);
     executionLayer.setPayloadStatus(PayloadStatus.SYNCING);
+    final RecentChainData localRecentChainData = mock(RecentChainData.class);
+    final BlockManager blockManager =
+        setupBlockManagerWithMockRecentChainData(localRecentChainData, true);
     blockManager.subscribeToReceivedBlocks(subscriber);
     final UInt64 nextSlot = GENESIS_SLOT.plus(UInt64.ONE);
     final SignedBeaconBlock nextBlock =
@@ -281,6 +294,8 @@ public class BlockManagerTest {
     final SignedBeaconBlock invalidBlock =
         validBlock.getSchema().create(validBlock.getMessage(), dataStructureUtil.randomSignature());
     incrementSlot();
+    invalidBlockRoots.put(
+        invalidBlock.getRoot(), BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK);
 
     assertThatSafeFuture(blockManager.importBlock(invalidBlock))
         .isCompletedWithValueMatching(result -> !result.isSuccessful());
@@ -319,7 +334,9 @@ public class BlockManagerTest {
             mock(BlockValidator.class),
             timeProvider,
             eventLogger,
-            Optional.empty());
+            Optional.empty(),
+            true,
+            false);
     forwardBlockImportedNotificationsTo(blockManager);
     assertThat(blockManager.start()).isCompleted();
 
@@ -1055,5 +1072,24 @@ public class BlockManagerTest {
     localChain.chainUpdater().setCurrentSlot(currentSlot);
     blockManager.onSlot(currentSlot);
     return currentSlot;
+  }
+
+  private BlockManager setupBlockManagerWithMockRecentChainData(
+      final RecentChainData localRecentChainData, final boolean isChainHeadOptimistic) {
+
+    when(localRecentChainData.isChainHeadOptimistic()).thenReturn(isChainHeadOptimistic);
+    return new BlockManager(
+        localRecentChainData,
+        blockImporter,
+        blobSidecarPool,
+        pendingBlocks,
+        futureBlocks,
+        invalidBlockRoots,
+        mock(BlockValidator.class),
+        timeProvider,
+        eventLogger,
+        Optional.empty(),
+        true,
+        false);
   }
 }

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.api.schema.capella;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static java.util.stream.Collectors.toList;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -82,9 +81,7 @@ public class BeaconBlockBodyCapella extends BeaconBlockBodyAltair {
     checkNotNull(
         message.getBlsToExecutionChanges(), "BlsToExecutionChanges is required for capella blocks");
     this.blsToExecutionChanges =
-        message.getBlsToExecutionChanges().stream()
-            .map(SignedBlsToExecutionChange::new)
-            .collect(toList());
+        message.getBlsToExecutionChanges().stream().map(SignedBlsToExecutionChange::new).toList();
   }
 
   @Override

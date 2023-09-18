@@ -25,7 +25,6 @@ import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
@@ -85,9 +84,7 @@ public class PostSyncCommitteeSubscriptions extends RestApiEndpoint {
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final List<PostSyncCommitteeData> requestData = request.getRequestBody();
     final List<SyncCommitteeSubnetSubscription> subscriptions =
-        requestData.stream()
-            .map(PostSyncCommitteeData::toSyncCommitteeSubnetSubscription)
-            .collect(Collectors.toList());
+        requestData.stream().map(PostSyncCommitteeData::toSyncCommitteeSubnetSubscription).toList();
     request.respondAsync(
         provider
             .subscribeToSyncCommitteeSubnets(subscriptions)

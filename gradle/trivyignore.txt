@@ -2,3 +2,4 @@
 
 # The following comment is an example of how CVE entries should be used in this file:
 # CVE-2022-0123
+CVE-2023-39017

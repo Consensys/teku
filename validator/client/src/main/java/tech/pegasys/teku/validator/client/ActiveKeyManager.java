@@ -66,7 +66,7 @@ public class ActiveKeyManager implements KeyManager {
   public List<Validator> getActiveValidatorKeys() {
     return validatorLoader.getOwnedValidators().getActiveValidators().stream()
         .filter(validator -> validator.getSigner().isLocal())
-        .collect(Collectors.toList());
+        .toList();
   }
 
   @Override
@@ -74,7 +74,7 @@ public class ActiveKeyManager implements KeyManager {
     return validatorLoader.getOwnedValidators().getActiveValidators().stream()
         .filter(validator -> !validator.getSigner().isLocal())
         .map(ExternalValidator::create)
-        .collect(Collectors.toList());
+        .toList();
   }
 
   @Override
@@ -263,9 +263,7 @@ public class ActiveKeyManager implements KeyManager {
         validatorTimingChannel.onValidatorsAdded();
       }
     }
-    return importResults.stream()
-        .map(ValidatorImportResult::getPostKeyResult)
-        .collect(Collectors.toList());
+    return importResults.stream().map(ValidatorImportResult::getPostKeyResult).toList();
   }
 
   private void handleValidatorsDoppelgangers(
@@ -451,9 +449,7 @@ public class ActiveKeyManager implements KeyManager {
       }
     }
 
-    return importResults.stream()
-        .map(ValidatorImportResult::getPostKeyResult)
-        .collect(Collectors.toList());
+    return importResults.stream().map(ValidatorImportResult::getPostKeyResult).toList();
   }
 
   private void handleExternalValidatorDoppelgangers(

@@ -15,7 +15,6 @@ package tech.pegasys.teku.validator.remote;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 import com.google.common.base.Throwables;
@@ -159,8 +158,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   private <T> Optional<Map<BLSPublicKey, T>> requestValidatorObject(
       final List<BLSPublicKey> batch, Function<ValidatorResponse, T> valueExtractor) {
     return apiClient
-        .getValidators(
-            batch.stream().map(key -> key.toBytesCompressed().toHexString()).collect(toList()))
+        .getValidators(batch.stream().map(key -> key.toBytesCompressed().toHexString()).toList())
         .map(responses -> convertToValidatorMap(responses, valueExtractor));
   }
 
@@ -183,9 +181,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
                         new AttesterDuties(
                             response.executionOptimistic,
                             response.dependentRoot,
-                            response.data.stream()
-                                .map(this::mapToApiAttesterDuties)
-                                .collect(toList()))));
+                            response.data.stream().map(this::mapToApiAttesterDuties).toList())));
   }
 
   @Override
@@ -209,7 +205,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
                         duty.validatorIndex.intValue(),
                         IntOpenHashSet.toSet(
                             duty.committeeIndices.stream().mapToInt(UInt64::intValue))))
-            .collect(toList()));
+            .toList());
   }
 
   @Override
@@ -222,7 +218,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
                     response ->
                         new ProposerDuties(
                             response.dependentRoot,
-                            response.data.stream().map(this::mapToProposerDuties).collect(toList()),
+                            response.data.stream().map(this::mapToProposerDuties).toList(),
                             response.executionOptimistic)));
   }
 
@@ -256,7 +252,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
       final List<Attestation> attestations) {
     final List<tech.pegasys.teku.api.schema.Attestation> schemaAttestations =
-        attestations.stream().map(tech.pegasys.teku.api.schema.Attestation::new).collect(toList());
+        attestations.stream().map(tech.pegasys.teku.api.schema.Attestation::new).toList();
 
     return sendRequest(
         () ->
@@ -298,7 +294,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
                                     signature.getValidatorIndex(),
                                     new tech.pegasys.teku.api.schema.BLSSignature(
                                         signature.getSignature())))
-                        .collect(toList()))
+                        .toList())
                 .map(this::convertPostDataFailureResponseToSubmitDataErrors)
                 .orElse(emptyList()));
   }
@@ -308,9 +304,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
       final Collection<SignedContributionAndProof> signedContributionAndProofs) {
     final List<tech.pegasys.teku.api.schema.altair.SignedContributionAndProof>
         signedContributionsRestSchema =
-            signedContributionAndProofs.stream()
-                .map(this::asSignedContributionAndProofs)
-                .collect(toList());
+            signedContributionAndProofs.stream().map(this::asSignedContributionAndProofs).toList();
     return sendRequest(() -> apiClient.sendContributionAndProofs(signedContributionsRestSchema));
   }
 
@@ -344,7 +338,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
       final PostDataFailureResponse postDataFailureResponse) {
     return postDataFailureResponse.failures.stream()
         .map(i -> new SubmitDataError(i.index, i.message))
-        .collect(toList());
+        .toList();
   }
 
   @Override
@@ -379,7 +373,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
                 .sendAggregateAndProofs(
                     aggregateAndProofs.stream()
                         .map(tech.pegasys.teku.api.schema.SignedAggregateAndProof::new)
-                        .collect(toList()))
+                        .toList())
                 .map(this::convertPostDataFailureResponseToSubmitDataErrors)
                 .orElse(emptyList()));
   }
@@ -405,9 +399,9 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
                                     .getSyncCommitteeIndices()
                                     .intStream()
                                     .mapToObj(UInt64::valueOf)
-                                    .collect(toList()),
+                                    .toList(),
                                 subscription.getUntilEpoch()))
-                    .collect(toList())));
+                    .toList()));
   }
 
   @Override
@@ -435,7 +429,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
                         proposer ->
                             new tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer(
                                 proposer.getValidatorIndex(), proposer.getFeeRecipient()))
-                    .collect(toList())));
+                    .toList()));
   }
 
   @Override
@@ -460,10 +454,8 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
         .map(
             validatorLivenessAtEpoch ->
                 new ValidatorLivenessAtEpoch(
-                    validatorLivenessAtEpoch.index,
-                    validatorLivenessAtEpoch.epoch,
-                    validatorLivenessAtEpoch.isLive))
-        .collect(Collectors.toList());
+                    validatorLivenessAtEpoch.index, validatorLivenessAtEpoch.isLive))
+        .toList();
   }
 
   private SafeFuture<Void> sendRequest(final ExceptionThrowingRunnable requestExecutor) {

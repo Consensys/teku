@@ -23,6 +23,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -220,7 +221,7 @@ class ConnectionManagerTest {
     SafeFuture<?> startFuture = manager.start();
     search1.complete(emptyList());
     asyncRunner.executeDueActionsRepeatedly();
-    startFuture.join();
+    safeJoin(startFuture);
 
     verify(discoveryService, times(1)).searchForPeers();
 
@@ -242,7 +243,7 @@ class ConnectionManagerTest {
     SafeFuture<?> startFuture = manager.start();
     search1.completeExceptionally(new RuntimeException("Nope"));
     asyncRunner.executeDueActionsRepeatedly();
-    startFuture.join();
+    safeJoin(startFuture);
 
     verify(discoveryService, times(1)).searchForPeers();
 
@@ -268,8 +269,8 @@ class ConnectionManagerTest {
 
     SafeFuture<?> stopFuture = manager.stop();
 
-    startFuture.join();
-    stopFuture.join();
+    safeJoin(startFuture);
+    safeJoin(stopFuture);
 
     advanceTimeByWarmupSearchInterval();
     verify(discoveryService, times(1)).searchForPeers(); // Shouldn't search again
@@ -287,7 +288,7 @@ class ConnectionManagerTest {
 
     SafeFuture<?> startFuture = manager.start();
     search1.complete(emptyList());
-    startFuture.join();
+    safeJoin(startFuture);
     // First search is empty, second is successful, so we need to capture 2 searches
     asyncRunner.executeDueActionsRepeatedly();
     advanceTimeByWarmupSearchInterval();
@@ -310,7 +311,7 @@ class ConnectionManagerTest {
     SafeFuture<?> startFuture = manager.start();
     search1.complete(List.of(DISCOVERY_PEER1));
     asyncRunner.executeDueActionsRepeatedly();
-    startFuture.join();
+    safeJoin(startFuture);
     verify(discoveryService).searchForPeers();
     verify(network).connect(PEER1);
 
@@ -413,7 +414,7 @@ class ConnectionManagerTest {
     final ConnectionManager manager = createManager();
     SafeFuture<?> startFuture = manager.start();
     asyncRunner.executeDueActionsRepeatedly();
-    startFuture.join();
+    safeJoin(startFuture);
     // Start search
     verify(discoveryService, times(1)).searchForPeers();
 
