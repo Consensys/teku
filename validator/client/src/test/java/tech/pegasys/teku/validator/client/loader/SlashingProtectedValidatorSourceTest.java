@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client.loader;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -66,7 +67,7 @@ public class SlashingProtectedValidatorSourceTest {
     final ValidatorSource.ValidatorProvider provider =
         mock(ValidatorSource.ValidatorProvider.class);
     when(provider.isReadOnly()).thenReturn(true);
-    when(delegate.getAvailableValidators()).thenReturn(List.of(provider));
+    doReturn(List.of(provider)).when(delegate).getAvailableValidators();
     assertThat(validatorSource.getAvailableValidators().get(0).isReadOnly()).isTrue();
   }
 

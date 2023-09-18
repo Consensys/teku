@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.common.util;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
 import com.google.common.collect.Comparators;
@@ -246,7 +245,7 @@ public abstract class AttestationUtil {
         indices
             .streamUnboxed()
             .flatMap(i -> beaconStateAccessors.getValidatorPubKey(state, i).stream())
-            .collect(toList());
+            .toList();
     if (pubkeys.size() < indices.size()) {
       return completedFuture(
           AttestationProcessingResult.invalid("Attesting indices include non-existent validator"));

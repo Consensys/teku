@@ -14,7 +14,6 @@
 package tech.pegasys.teku.ethereum.pow.api;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.stream.Collectors.toList;
 
 import com.google.common.base.MoreObjects;
 import java.util.Comparator;
@@ -68,7 +67,7 @@ public class DepositsFromBlockEvent {
       final UInt64 blockTimestamp,
       final Stream<Deposit> deposits) {
     final List<Deposit> sortedDeposits =
-        deposits.sorted(Comparator.comparing(Deposit::getMerkle_tree_index)).collect(toList());
+        deposits.sorted(Comparator.comparing(Deposit::getMerkle_tree_index)).toList();
     return new DepositsFromBlockEvent(blockNumber, blockHash, blockTimestamp, sortedDeposits);
   }
 

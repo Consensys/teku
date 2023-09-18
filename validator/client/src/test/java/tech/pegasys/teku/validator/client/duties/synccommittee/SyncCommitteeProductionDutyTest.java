@@ -23,6 +23,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import java.util.Arrays;
@@ -229,7 +230,7 @@ class SyncCommitteeProductionDutyTest {
       final SyncCommitteeProductionDuty duties, final UInt64 slot) {
     final SafeFuture<DutyResult> result = duties.produceMessages(slot, blockRoot);
     assertThat(result).isCompleted();
-    result.join().report(MESSAGE_TYPE, slot, validatorLogger);
+    safeJoin(result).report(MESSAGE_TYPE, slot, validatorLogger);
   }
 
   private SyncCommitteeProductionDuty createDuty(

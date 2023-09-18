@@ -19,6 +19,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.List;
@@ -152,6 +153,6 @@ class SyncCommitteeDutyLoaderTest {
     final SafeFuture<Optional<SyncCommitteeScheduledDuties>> result =
         dutyLoader.loadDutiesForEpoch(epoch);
     assertThatSafeFuture(result).isCompletedWithNonEmptyOptional();
-    return result.join().orElseThrow();
+    return safeJoin(result).orElseThrow();
   }
 }

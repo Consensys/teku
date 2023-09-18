@@ -302,7 +302,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final SafeFuture<BlockImportResult> result =
         forkChoice.onBlock(block, Optional.empty(), executionLayer);
     assertThat(result).isCompleted();
-    final BlockImportResult importResult = result.join();
+    final BlockImportResult importResult = safeJoin(result);
     assertThat(importResult)
         .describedAs("Incorrect block import result for block %s", block)
         .has(new Condition<>(r -> r.isSuccessful() == valid, "isSuccessful matching " + valid));

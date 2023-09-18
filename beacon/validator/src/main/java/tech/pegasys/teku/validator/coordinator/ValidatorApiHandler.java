@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessageOrSimpleName;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
@@ -273,7 +272,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         : chainDataProvider
             .getStateValidators(
                 "head",
-                validatorIdentifiers.stream().map(BLSPublicKey::toString).collect(toList()),
+                validatorIdentifiers.stream().map(BLSPublicKey::toString).toList(),
                 new HashSet<>())
             .thenApply(
                 (maybeList) ->
@@ -572,7 +571,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         syncCommitteeMessages.stream()
             .map(ValidatableSyncCommitteeMessage::fromValidator)
             .map(this::processSyncCommitteeMessage)
-            .collect(toList());
+            .toList();
 
     return SafeFuture.collectAll(addedMessages.stream())
         .thenApply(this::getSendSyncCommitteesResultFromFutures);
@@ -611,7 +610,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                   results.stream()
                       .filter(InternalValidationResult::isReject)
                       .flatMap(result -> result.getDescription().stream())
-                      .collect(toList());
+                      .toList();
               if (!errorMessages.isEmpty()) {
                 throw new IllegalArgumentException(
                     "Invalid contribution and proofs: ;" + String.join(";", errorMessages));
@@ -635,7 +634,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         validatorRegistrations.stream()
             .map(SignedValidatorRegistration::getMessage)
             .map(ValidatorRegistration::getPublicKey)
-            .collect(toList());
+            .toList();
     return getValidatorStatuses(validatorIdentifiers)
         .thenCompose(
             maybeValidatorStatuses -> {
@@ -699,7 +698,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             .mapToObj(index -> createAttesterDuties(state, epoch, index))
             .filter(Optional::isPresent)
             .map(Optional::get)
-            .collect(toList()));
+            .toList());
   }
 
   private Optional<AttesterDuty> createAttesterDuties(
@@ -780,7 +779,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             .intStream()
             .mapToObj(validatorIndex -> getSyncCommitteeDuty(state, epoch, validatorIndex))
             .flatMap(Optional::stream)
-            .collect(toList()));
+            .toList());
   }
 
   private Optional<SyncCommitteeDuty> getSyncCommitteeDuty(
@@ -821,7 +820,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                   }
                   return !unknownOrHasExited;
                 })
-            .collect(toList());
+            .toList();
     if (validatorRegistrations.size() == applicableValidatorRegistrations.size()) {
       return validatorRegistrations;
     }

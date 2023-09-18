@@ -18,6 +18,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -208,8 +209,8 @@ class StateRegenerationBaseSelectorTest {
   private void assertSelectedBase(final SignedBlockAndState fromStore) {
     final SafeFuture<Optional<StateAndBlockSummary>> actual = getBestBase();
     assertThat(actual).isCompleted();
-    assertThat(actual.join()).isPresent();
-    assertThat(actual.join().get().getRoot()).isEqualTo(fromStore.getRoot());
+    assertThat(safeJoin(actual)).isPresent();
+    assertThat(safeJoin(actual).get().getRoot()).isEqualTo(fromStore.getRoot());
   }
 
   private SignedBlockAndState withClosestAvailableFromStoreAtSlot(final long slot) {

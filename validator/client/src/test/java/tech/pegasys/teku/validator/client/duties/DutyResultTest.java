@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.List;
 import java.util.Optional;
@@ -165,7 +166,7 @@ class DutyResultTest {
                 SafeFuture.completedFuture(DutyResult.success(root2))));
 
     assertThat(combinedFuture).isCompleted();
-    combinedFuture.join().report(TYPE, SLOT, validatorLogger);
+    safeJoin(combinedFuture).report(TYPE, SLOT, validatorLogger);
     verify(validatorLogger).dutyCompleted(TYPE, SLOT, 2, Set.of(root1, root2), Optional.empty());
     verify(validatorLogger).dutyFailed(TYPE, SLOT, validatorId, exception1);
     verify(validatorLogger).dutyFailed(TYPE, SLOT, Set.of(), exception2);
@@ -187,7 +188,7 @@ class DutyResultTest {
     future2.complete(DutyResult.success(root));
     assertThat(combinedFuture).isCompleted();
 
-    combinedFuture.join().report(TYPE, SLOT, validatorLogger);
+    safeJoin(combinedFuture).report(TYPE, SLOT, validatorLogger);
     verify(validatorLogger).dutyCompleted(TYPE, SLOT, 2, Set.of(root), Optional.empty());
     verifyNoMoreInteractions(validatorLogger);
   }

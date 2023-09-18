@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.interop;
 
-import static java.util.stream.Collectors.toList;
-
 import java.util.List;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -37,14 +35,12 @@ public class MockStartDepositGenerator {
   }
 
   public List<DepositData> createDeposits(final List<BLSKeyPair> validatorKeys) {
-    return validatorKeys.stream().map(this::createDepositData).collect(toList());
+    return validatorKeys.stream().map(this::createDepositData).toList();
   }
 
   public List<DepositData> createDeposits(
       final List<BLSKeyPair> validatorKeys, final UInt64 depositBalance) {
-    return validatorKeys.stream()
-        .map(key -> createDepositData(key, depositBalance))
-        .collect(toList());
+    return validatorKeys.stream().map(key -> createDepositData(key, depositBalance)).toList();
   }
 
   private DepositData createDepositData(final BLSKeyPair keyPair) {
