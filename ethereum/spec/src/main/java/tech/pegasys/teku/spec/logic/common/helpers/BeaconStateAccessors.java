@@ -58,19 +58,19 @@ public abstract class BeaconStateAccessors {
     return currentEpoch.equals(GENESIS_EPOCH) ? GENESIS_EPOCH : currentEpoch.minus(UInt64.ONE);
   }
 
-  public UInt64 getValidatorChurnLimit(BeaconState state) {
+  public UInt64 getValidatorChurnLimit(final BeaconState state) {
     final int activeValidatorCount =
         getActiveValidatorIndices(state, getCurrentEpoch(state)).size();
     return getValidatorChurnLimit(activeValidatorCount);
   }
 
-  public UInt64 getValidatorActivationChurnLimit(BeaconState state) {
-    return getValidatorChurnLimit(state);
-  }
-
   public UInt64 getValidatorChurnLimit(final int activeValidatorCount) {
     return UInt64.valueOf(config.getMinPerEpochChurnLimit())
         .max(UInt64.valueOf(activeValidatorCount / config.getChurnLimitQuotient()));
+  }
+
+  public UInt64 getValidatorActivationChurnLimit(final BeaconState state) {
+    return getValidatorChurnLimit(state);
   }
 
   public Optional<BLSPublicKey> getValidatorPubKey(BeaconState state, UInt64 validatorIndex) {
