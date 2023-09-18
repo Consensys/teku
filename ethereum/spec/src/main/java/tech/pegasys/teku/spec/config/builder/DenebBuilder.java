@@ -30,6 +30,7 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
   private Bytes4 denebForkVersion;
   private UInt64 denebForkEpoch;
 
+  private Integer maxPerEpochActivationChurnLimit;
   private Integer fieldElementsPerBlob;
   private Integer maxBlobCommitmentsPerBlock;
   private Integer maxBlobsPerBlock;
@@ -51,6 +52,7 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
         specConfig,
         denebForkVersion,
         denebForkEpoch,
+        maxPerEpochActivationChurnLimit,
         fieldElementsPerBlob,
         maxBlobCommitmentsPerBlock,
         maxBlobsPerBlock,
@@ -72,6 +74,13 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
   public DenebBuilder denebForkVersion(final Bytes4 denebForkVersion) {
     checkNotNull(denebForkVersion);
     this.denebForkVersion = denebForkVersion;
+    return this;
+  }
+
+  public DenebBuilder maxPerEpochActivationChurnLimit(
+      final Integer maxPerEpochActivationChurnLimit) {
+    checkNotNull(maxPerEpochActivationChurnLimit);
+    this.maxPerEpochActivationChurnLimit = maxPerEpochActivationChurnLimit;
     return this;
   }
 
@@ -140,6 +149,8 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
 
     SpecBuilderUtil.validateConstant("denebForkEpoch", denebForkEpoch);
     SpecBuilderUtil.validateConstant("denebForkVersion", denebForkVersion);
+    SpecBuilderUtil.validateConstant(
+        "maxPerEpochActivationChurnLimit", maxPerEpochActivationChurnLimit);
     SpecBuilderUtil.validateConstant("fieldElementsPerBlob", fieldElementsPerBlob);
     SpecBuilderUtil.validateConstant("maxBlobCommitmentsPerBlock", maxBlobCommitmentsPerBlock);
     SpecBuilderUtil.validateConstant("maxBlobsPerBlock", maxBlobsPerBlock);
