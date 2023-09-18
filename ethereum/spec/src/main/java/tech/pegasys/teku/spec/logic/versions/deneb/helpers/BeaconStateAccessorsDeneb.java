@@ -37,7 +37,6 @@ public class BeaconStateAccessorsDeneb extends BeaconStateAccessorsAltair {
   /** <a href="https://eips.ethereum.org/EIPS/eip-7514">EIP-7514: Add Max Epoch Churn Limit</a> */
   @Override
   public UInt64 getValidatorActivationChurnLimit(final BeaconState state) {
-    // Return the validator activation churn limit for the current epoch.
     return getValidatorChurnLimit(state).min(denebConfig.getMaxPerEpochActivationChurnLimit());
   }
 
