@@ -67,7 +67,8 @@ public class SpecConfigLoader {
         processConfig(configNameKey, reader, true);
       } catch (IllegalArgumentException exception) {
         LOG.debug(
-            String.format("Failed to load base configuration from %s", configNameKey),
+            "Failed to load base configuration from {}, {}",
+            () -> configNameKey,
             exception::getMessage);
       }
     }
