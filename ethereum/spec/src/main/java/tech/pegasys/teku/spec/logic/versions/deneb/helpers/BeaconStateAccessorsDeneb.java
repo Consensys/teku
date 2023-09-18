@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.logic.versions.deneb.helpers;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -25,11 +24,21 @@ import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessors
 
 public class BeaconStateAccessorsDeneb extends BeaconStateAccessorsAltair {
 
+  private final SpecConfigDeneb denebConfig;
+
   public BeaconStateAccessorsDeneb(
       final SpecConfigDeneb config,
       final Predicates predicates,
       final MiscHelpersDeneb miscHelpers) {
     super(config, predicates, miscHelpers);
+    this.denebConfig = config;
+  }
+
+  /** <a href="https://eips.ethereum.org/EIPS/eip-7514">EIP-7514: Add Max Epoch Churn Limit</a> */
+  @Override
+  public UInt64 getValidatorActivationChurnLimit(final BeaconState state) {
+    // Return the validator activation churn limit for the current epoch.
+    return getValidatorChurnLimit(state).min(denebConfig.getMaxPerEpochActivationChurnLimit());
   }
 
   /**
@@ -40,9 +49,7 @@ public class BeaconStateAccessorsDeneb extends BeaconStateAccessorsAltair {
   public Bytes32 getVoluntaryExitDomain(
       final UInt64 epoch, final Fork fork, final Bytes32 genesisValidatorsRoot) {
     return miscHelpers.computeDomain(
-        Domain.VOLUNTARY_EXIT,
-        SpecConfigCapella.required(config).getCapellaForkVersion(),
-        genesisValidatorsRoot);
+        Domain.VOLUNTARY_EXIT, denebConfig.getCapellaForkVersion(), genesisValidatorsRoot);
   }
 
   /**
@@ -54,13 +61,5 @@ public class BeaconStateAccessorsDeneb extends BeaconStateAccessorsAltair {
   protected boolean shouldSetTargetTimelinessFlag(
       final boolean isMatchingTarget, final UInt64 inclusionDelay) {
     return isMatchingTarget;
-  }
-
-  /** <a href="https://eips.ethereum.org/EIPS/eip-7514">EIP-7514: Add Max Epoch Churn Limit</a> */
-  @Override
-  public UInt64 getValidatorActivationChurnLimit(final BeaconState state) {
-    // Return the validator activation churn limit for the current epoch.
-    return getValidatorChurnLimit(state)
-        .min(SpecConfigDeneb.required(config).getMaxPerEpochActivationChurnLimit());
   }
 }
