@@ -47,6 +47,7 @@ public abstract class AbstractStoreTest {
   protected final Spec spec = TestSpecFactory.createMinimalDeneb();
   protected final StorageUpdateChannel storageUpdateChannel = new StubStorageUpdateChannel();
   protected final ChainBuilder chainBuilder = ChainBuilder.create(spec);
+  protected final StoreConfig defaultStoreConfig = StoreConfig.createDefault();
 
   protected void processChainWithLimitedCache(
       BiConsumer<UpdatableStore, SignedBlockAndState> chainProcessor) {
@@ -131,7 +132,7 @@ public abstract class AbstractStoreTest {
   }
 
   protected UpdatableStore createGenesisStore() {
-    return createGenesisStore(StoreConfig.createDefault());
+    return createGenesisStore(defaultStoreConfig);
   }
 
   protected UpdatableStore createGenesisStore(final StoreConfig pruningOptions) {

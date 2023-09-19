@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.store;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.Maps;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -109,7 +110,11 @@ class StoreTransactionUpdates {
     tx.genesisTime.ifPresent(value -> store.genesisTime = value);
     tx.justifiedCheckpoint.ifPresent(store::updateJustifiedCheckpoint);
     tx.bestJustifiedCheckpoint.ifPresent(store::updateBestJustifiedCheckpoint);
-    hotBlocks.forEach((root, value) -> store.blocks.put(root, value.getBlock()));
+    hotBlocks.values().stream()
+        .sorted(Comparator.comparing(BlockAndCheckpoints::getSlot))
+        .map(BlockAndCheckpoints::getBlock)
+        .forEach(block -> store.blocks.put(block.getRoot(), block));
+    store.blockCountGauge.ifPresent(gauge -> gauge.set(store.blocks.size()));
     store.states.cacheAll(Maps.transformValues(hotBlockAndStates, this::blockAndStateAsSummary));
     if (optimisticTransitionBlockRootSet) {
       store.finalizedOptimisticTransitionPayload =

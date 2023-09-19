@@ -83,7 +83,7 @@ class Store implements UpdatableStore {
   private final Lock readLock = lock.readLock();
 
   private final MetricsSystem metricsSystem;
-  private Optional<SettableGauge> blockCountGauge = Optional.empty();
+  Optional<SettableGauge> blockCountGauge = Optional.empty();
 
   private Optional<SettableGauge> epochStatesCountGauge = Optional.empty();
 
@@ -495,13 +495,7 @@ class Store implements UpdatableStore {
     }
 
     // Retrieve and cache block
-    return blockProvider
-        .getBlock(blockRoot)
-        .thenApply(
-            block -> {
-              block.ifPresent(this::putBlock);
-              return block;
-            });
+    return blockProvider.getBlock(blockRoot);
   }
 
   @Override
@@ -617,7 +611,6 @@ class Store implements UpdatableStore {
                       signedBeaconBlock ->
                           SafeFuture.completedFuture(Optional.of(signedBeaconBlock)))
                   .orElseGet(() -> blockProvider.getBlock(blockRoot))
-                  .thenPeek(block -> block.ifPresent(this::putBlock))
                   .thenApply(
                       block -> block.map(b -> new SignedBlockAndState(b, res.get().getState())));
             });
@@ -813,19 +806,6 @@ class Store implements UpdatableStore {
                     .miscHelpers()
                     .isSlotAtNthEpochBoundary(blockSlot, parentSlot, n))
         .orElse(false);
-  }
-
-  private void putBlock(final SignedBeaconBlock block) {
-    final Lock writeLock = lock.writeLock();
-    writeLock.lock();
-    try {
-      if (containsBlock(block.getRoot())) {
-        blocks.put(block.getRoot(), block);
-        blockCountGauge.ifPresent(gauge -> gauge.set(blocks.size()));
-      }
-    } finally {
-      writeLock.unlock();
-    }
   }
 
   @VisibleForTesting
