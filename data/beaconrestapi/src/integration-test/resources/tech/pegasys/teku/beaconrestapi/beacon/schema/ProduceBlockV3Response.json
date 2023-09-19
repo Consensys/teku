@@ -42,6 +42,10 @@
       }, {
         "$ref" : "#/components/schemas/BlindedBlockContentsDeneb"
       } ]
+    },
+    "version" : {
+      "type" : "string",
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb" ]
     }
   }
 }
