@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.v2.debug;
+package tech.pegasys.teku.beaconrestapi.v1.beacon;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
