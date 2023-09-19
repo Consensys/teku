@@ -155,7 +155,9 @@ class ForkChoiceTest {
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
             DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED,
-            DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED,
+            // will use the static const parameter in an upcoming PR which will update the ref tests
+            // and set the const to true
+            true,
             metricsSystem);
 
     // Starting and mocks
