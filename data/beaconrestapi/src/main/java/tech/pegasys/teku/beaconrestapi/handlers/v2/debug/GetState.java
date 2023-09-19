@@ -13,10 +13,14 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v2.debug;
 
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.sszResponseType;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_DEBUG;
 
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 
 public class GetState extends tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetState {
@@ -30,6 +34,26 @@ public class GetState extends tech.pegasys.teku.beaconrestapi.handlers.v1.beacon
   public GetState(
       final ChainDataProvider chainDataProvider,
       final SchemaDefinitionCache schemaDefinitionCache) {
-    super(chainDataProvider, schemaDefinitionCache, ROUTE, "getStateDebugV2", TAG_DEBUG, true);
+    super(chainDataProvider, getEndpointMetaData(schemaDefinitionCache));
+  }
+
+  private static EndpointMetadata getEndpointMetaData(
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    return EndpointMetadata.get(ROUTE)
+        .operationId("getStateDebugV2")
+        .summary("Get full BeaconState object")
+        .description(
+            "Returns full BeaconState object for given state_id.\n\n"
+                + "Use Accept header to select `application/octet-stream` if SSZ response type is required.")
+        .tags(TAG_DEBUG)
+        .deprecated(true)
+        .pathParam(PARAMETER_STATE_ID)
+        .response(
+            SC_OK,
+            "Request successful",
+            getResponseType(schemaDefinitionCache, TAG_DEBUG),
+            sszResponseType())
+        .withNotFoundResponse()
+        .build();
   }
 }

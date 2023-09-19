@@ -52,33 +52,11 @@ public class GetState extends RestApiEndpoint {
   public GetState(
       final ChainDataProvider chainDataProvider,
       final SchemaDefinitionCache schemaDefinitionCache) {
-    this(chainDataProvider, schemaDefinitionCache, ROUTE, "getStateV1", TAG_BEACON, false);
+    this(chainDataProvider, getEndpointMetaData(schemaDefinitionCache));
   }
 
-  public GetState(
-      final ChainDataProvider chainDataProvider,
-      final SchemaDefinitionCache schemaDefinitionCache,
-      final String route,
-      final String operationId,
-      final String tag,
-      final boolean deprecated) {
-    super(
-        EndpointMetadata.get(route)
-            .operationId(operationId)
-            .summary("Get full BeaconState object")
-            .description(
-                "Returns full BeaconState object for given state_id.\n\n"
-                    + "Use Accept header to select `application/octet-stream` if SSZ response type is required.")
-            .tags(tag)
-            .deprecated(deprecated)
-            .pathParam(PARAMETER_STATE_ID)
-            .response(
-                SC_OK,
-                "Request successful",
-                getResponseType(schemaDefinitionCache, tag),
-                sszResponseType())
-            .withNotFoundResponse()
-            .build());
+  public GetState(final ChainDataProvider chainDataProvider, final EndpointMetadata metadata) {
+    super(metadata);
     this.chainDataProvider = chainDataProvider;
   }
 
@@ -101,7 +79,26 @@ public class GetState extends RestApiEndpoint {
                     .orElseGet(AsyncApiResponse::respondNotFound)));
   }
 
-  private static SerializableTypeDefinition<StateAndMetaData> getResponseType(
+  private static EndpointMetadata getEndpointMetaData(
+      final SchemaDefinitionCache schemaDefinitionCache) {
+    return EndpointMetadata.get(ROUTE)
+        .operationId("getStateV1")
+        .summary("Get full BeaconState object")
+        .description(
+            "Returns full BeaconState object for given state_id.\n\n"
+                + "Use Accept header to select `application/octet-stream` if SSZ response type is required.")
+        .tags(TAG_BEACON)
+        .pathParam(PARAMETER_STATE_ID)
+        .response(
+            SC_OK,
+            "Request successful",
+            getResponseType(schemaDefinitionCache, TAG_BEACON),
+            sszResponseType())
+        .withNotFoundResponse()
+        .build();
+  }
+
+  protected static SerializableTypeDefinition<StateAndMetaData> getResponseType(
       SchemaDefinitionCache schemaDefinitionCache, final String tag) {
     return SerializableTypeDefinition.<StateAndMetaData>object()
         .name(String.format("Get%sStateResponse", tag))
