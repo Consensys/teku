@@ -31,12 +31,18 @@ public class BlockFactoryPhase0 implements BlockFactory {
   protected final Spec spec;
   protected final BlockOperationSelectorFactory operationSelector;
 
+  protected final boolean produceBlindedBlocks;
+
   public BlockFactoryPhase0(
-      final Spec spec, final BlockOperationSelectorFactory operationSelector) {
+      final Spec spec,
+      final BlockOperationSelectorFactory operationSelector,
+      final boolean produceBlindedBlocks) {
     this.spec = spec;
     this.operationSelector = operationSelector;
+    this.produceBlindedBlocks = produceBlindedBlocks;
   }
 
+  @Deprecated
   @Override
   public SafeFuture<BlockContainer> createUnsignedBlock(
       final BeaconState blockSlotState,
@@ -63,6 +69,34 @@ public class BlockFactoryPhase0 implements BlockFactory {
             operationSelector.createSelector(
                 parentRoot, blockSlotState, randaoReveal, optionalGraffiti),
             blinded)
+        .thenApply(BeaconBlockAndState::getBlock);
+  }
+
+  @Override
+  public SafeFuture<BlockContainer> createUnsignedBlock(
+      final BeaconState blockSlotState,
+      final UInt64 newSlot,
+      final BLSSignature randaoReveal,
+      final Optional<Bytes32> optionalGraffiti) {
+    checkArgument(
+        blockSlotState.getSlot().equals(newSlot),
+        "Block slot state for slot %s but should be for slot %s",
+        blockSlotState.getSlot(),
+        newSlot);
+
+    // Process empty slots up to the one before the new block slot
+    final UInt64 slotBeforeBlock = newSlot.minus(UInt64.ONE);
+
+    final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, slotBeforeBlock);
+
+    return spec.createNewUnsignedBlock(
+            newSlot,
+            spec.getBeaconProposerIndex(blockSlotState, newSlot),
+            blockSlotState,
+            parentRoot,
+            operationSelector.createSelector(
+                parentRoot, blockSlotState, randaoReveal, optionalGraffiti),
+            produceBlindedBlocks)
         .thenApply(BeaconBlockAndState::getBlock);
   }
 

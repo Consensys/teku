@@ -46,6 +46,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
@@ -100,6 +101,33 @@ public class ValidatorDataProvider {
       final BLSSignature randao,
       final Optional<Bytes32> graffiti,
       final boolean isBlinded) {
+    checkBlockProducingParameters(slot, randao);
+    return validatorApiChannel.createUnsignedBlock(slot, randao, graffiti, isBlinded);
+  }
+
+  public SafeFuture<Optional<BlockContainerAndMetaData>> produceBlock(
+      final UInt64 slot, final BLSSignature randao, final Optional<Bytes32> graffiti) {
+    checkBlockProducingParameters(slot, randao);
+    return validatorApiChannel
+        .createUnsignedBlock(slot, randao, graffiti)
+        .thenApply(this::lookupBlockData);
+  }
+
+  private Optional<BlockContainerAndMetaData> lookupBlockData(
+      final Optional<BlockContainer> maybeBlockContainer) {
+    if (maybeBlockContainer.isEmpty()) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        new BlockContainerAndMetaData(
+            maybeBlockContainer.get(),
+            spec.atSlot(maybeBlockContainer.get().getSlot()).getMilestone(),
+            false,
+            false,
+            false));
+  }
+
+  private void checkBlockProducingParameters(UInt64 slot, BLSSignature randao) {
     if (slot == null) {
       throw new IllegalArgumentException(NO_SLOT_PROVIDED);
     }
@@ -115,7 +143,6 @@ public class ValidatorDataProvider {
     if (currentSlot.isGreaterThan(slot)) {
       throw new IllegalArgumentException(CANNOT_PRODUCE_HISTORIC_BLOCK);
     }
-    return validatorApiChannel.createUnsignedBlock(slot, randao, graffiti, isBlinded);
   }
 
   public SafeFuture<Optional<BlockContainer>> getUnsignedBeaconBlockAtSlot(
