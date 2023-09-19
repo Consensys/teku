@@ -667,9 +667,9 @@ public class Eth2NetworkConfiguration {
           .startupTimeoutSeconds(120)
           .eth1DepositContractDeployBlock(0)
           .defaultInitialState(
-              "https://github.com/eth-clients/holesky/raw/afdcfcbb9282bf3c677eed8ccb3ec803276d108c/custom_config_data/genesis.ssz")
+              "https://checkpoint-sync.holesky.ethpandaops.io/eth/v2/debug/beacon/states/finalized")
           .customGenesisState(
-              "https://github.com/eth-clients/holesky/raw/afdcfcbb9282bf3c677eed8ccb3ec803276d108c/custom_config_data/genesis.ssz")
+              "https://checkpoint-sync.holesky.ethpandaops.io/eth/v2/debug/beacon/states/genesis")
           .discoveryBootnodes(
               // EF bootnodes
               "enr:-Iq4QJk4WqRkjsX5c2CXtOra6HnxN-BMXnWhmhEQO9Bn9iABTJGdjUOurM7Btj1ouKaFkvTRoju5vz2GPmVON2dffQKGAX53x8JigmlkgnY0gmlwhLKAlv6Jc2VjcDI1NmsxoQK6S-Cii_KmfFdUJL2TANL3ksaKUnNXvTCv1tLwXs0QgIN1ZHCCIyk",

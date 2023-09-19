@@ -141,6 +141,18 @@ public class WeakSubjectivityInitializer {
 
   public void validateInitialAnchor(
       final AnchorPoint initialAnchor, final UInt64 currentSlot, final Spec spec) {
+    final Fork expectedFork = spec.getForkSchedule().getFork(initialAnchor.getEpoch());
+    final Fork loadedFork = initialAnchor.getState().getFork();
+    if (!expectedFork.equals(loadedFork)) {
+      throw new InvalidConfigurationException(
+          String.format(
+              "The fork from the initial-state (%s:%s) does not match the configured fork schedule (%s:%s).\nPlease check that network in configuration matches the loaded state.",
+              loadedFork.getEpoch(),
+              loadedFork.getCurrentVersion().toHexString(),
+              expectedFork.getEpoch(),
+              expectedFork.getCurrentVersion()));
+    }
+
     if (initialAnchor.isGenesis()) {
       // Skip extra validations for genesis state
       return;
@@ -159,13 +171,6 @@ public class WeakSubjectivityInitializer {
     } else if (anchorEpoch.plus(2).isGreaterThan(currentEpoch)) {
       throw new IllegalStateException(
           "The provided initial state is too recent. Please check that the initial state corresponds to a finalized checkpoint.");
-    }
-
-    Fork expectedFork = spec.getForkSchedule().getFork(initialAnchor.getEpoch());
-    Fork loadedFork = initialAnchor.getState().getFork();
-    if (!expectedFork.equals(loadedFork)) {
-      throw new InvalidConfigurationException(
-          "The fork in loaded state does not match fork at the epoch from ForkSchedule. Please check that network in configuration matches the loaded state.");
     }
 
     if (slotsBetweenBlockAndEpochStart.isGreaterThan(UInt64.ZERO)) {

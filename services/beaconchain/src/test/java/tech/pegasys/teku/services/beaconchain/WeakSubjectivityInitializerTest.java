@@ -171,7 +171,8 @@ public class WeakSubjectivityInitializerTest {
   @Test
   public void validateInitialAnchor_forGenesisAtGenesisSlot() {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(0);
+    final AnchorPoint anchor =
+        dataStructureUtil.randomAnchorPoint(UInt64.ZERO, spec.fork(UInt64.ZERO));
 
     // Should not throw
     initializer.validateInitialAnchor(anchor, UInt64.ZERO, spec);
@@ -180,7 +181,8 @@ public class WeakSubjectivityInitializerTest {
   @Test
   public void validateInitialAnchor_forGenesisAfterGenesisSlot() {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(0);
+    final AnchorPoint anchor =
+        dataStructureUtil.randomAnchorPoint(UInt64.ZERO, spec.fork(UInt64.ZERO));
 
     // Should not throw
     initializer.validateInitialAnchor(anchor, UInt64.valueOf(10), spec);
@@ -192,7 +194,8 @@ public class WeakSubjectivityInitializerTest {
     final UInt64 currentSlot = spec.computeStartSlotAtEpoch(currentEpoch);
 
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(currentEpoch.plus(1));
+    final AnchorPoint anchor =
+        dataStructureUtil.randomAnchorPoint(currentEpoch.plus(1), spec.fork(currentEpoch));
 
     assertThatThrownBy(() -> initializer.validateInitialAnchor(anchor, currentSlot, spec))
         .isInstanceOf(IllegalStateException.class)
@@ -208,7 +211,8 @@ public class WeakSubjectivityInitializerTest {
     final UInt64 currentSlot = spec.computeStartSlotAtEpoch(currentEpoch).plus(1);
 
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final AnchorPoint anchor = dataStructureUtil.randomAnchorPoint(currentEpoch.minus(1));
+    final AnchorPoint anchor =
+        dataStructureUtil.randomAnchorPoint(currentEpoch.minus(1), spec.fork(currentEpoch));
 
     assertThatThrownBy(() -> initializer.validateInitialAnchor(anchor, currentSlot, spec))
         .isInstanceOf(IllegalStateException.class)
@@ -224,8 +228,7 @@ public class WeakSubjectivityInitializerTest {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     final UInt64 anchorEpoch = currentEpoch.min(2);
     final AnchorPoint anchor =
-        dataStructureUtil.randomAnchorPoint(
-            anchorEpoch, spec.getForkSchedule().getFork(anchorEpoch));
+        dataStructureUtil.randomAnchorPoint(anchorEpoch, spec.fork(currentEpoch));
 
     // Should not throw
     initializer.validateInitialAnchor(anchor, currentSlot, spec);
