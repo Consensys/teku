@@ -132,7 +132,7 @@ public class SpecConfigBuilder {
           }
         });
     validate();
-    SpecConfig config =
+    final SpecConfig config =
         new SpecConfigPhase0(
             rawConfig,
             eth1FollowDistance,
