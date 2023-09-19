@@ -1,5 +1,5 @@
 {
-  "title" : "GetStateV2Response",
+  "title" : "GetStateResponseDebug",
   "type" : "object",
   "required" : [ "version", "execution_optimistic", "finalized", "data" ],
   "properties" : {

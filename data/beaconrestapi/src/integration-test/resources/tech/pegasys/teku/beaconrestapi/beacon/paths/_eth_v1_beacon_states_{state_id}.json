@@ -1,10 +1,9 @@
 {
   "get" : {
-    "tags" : [ "Debug" ],
-    "operationId" : "getStateDebugV2",
+    "tags" : [ "Beacon" ],
+    "operationId" : "getStateV1",
     "summary" : "Get full BeaconState object",
     "description" : "Returns full BeaconState object for given state_id.\n\nUse Accept header to select `application/octet-stream` if SSZ response type is required.",
-    "deprecated" : true,
     "parameters" : [ {
       "name" : "state_id",
       "required" : true,
@@ -19,15 +18,15 @@
       "200" : {
         "description" : "Request successful",
         "content" : {
-          "application/json" : {
-            "schema" : {
-              "$ref" : "#/components/schemas/GetStateResponseDebug"
-            }
-          },
           "application/octet-stream" : {
             "schema" : {
               "type" : "string",
               "format" : "binary"
+            }
+          },
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetStateResponseBeacon"
             }
           }
         }

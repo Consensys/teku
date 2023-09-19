@@ -1,0 +1,32 @@
+{
+  "title" : "GetStateResponseBeacon",
+  "type" : "object",
+  "required" : [ "version", "execution_optimistic", "finalized", "data" ],
+  "properties" : {
+    "version" : {
+      "type" : "string",
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb" ]
+    },
+    "execution_optimistic" : {
+      "type" : "boolean"
+    },
+    "finalized" : {
+      "type" : "boolean"
+    },
+    "data" : {
+      "title" : "BeaconState",
+      "type" : "object",
+      "oneOf" : [ {
+        "$ref" : "#/components/schemas/BeaconStatePhase0"
+      }, {
+        "$ref" : "#/components/schemas/BeaconStateAltair"
+      }, {
+        "$ref" : "#/components/schemas/BeaconStateBellatrix"
+      }, {
+        "$ref" : "#/components/schemas/BeaconStateCapella"
+      }, {
+        "$ref" : "#/components/schemas/BeaconStateDeneb"
+      } ]
+    }
+  }
+}

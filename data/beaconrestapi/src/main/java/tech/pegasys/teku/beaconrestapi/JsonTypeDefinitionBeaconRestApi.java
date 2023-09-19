@@ -51,6 +51,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetFinalizedBlockRoot;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetFinalizedCheckpointState;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetGenesis;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetProposerSlashings;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetState;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateCommittees;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFinalityCheckpoints;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateFork;
@@ -99,7 +100,6 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostValidatorLiveness;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetChainHeadsV2;
-import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetState;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -213,6 +213,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new GetStateRoot(dataProvider))
             .endpoint(new GetStateFork(dataProvider))
             .endpoint(new GetStateFinalityCheckpoints(dataProvider))
+            .endpoint(new GetState(dataProvider, schemaCache))
             .endpoint(new GetStateValidators(dataProvider))
             .endpoint(new GetStateValidator(dataProvider))
             .endpoint(new GetStateValidatorBalances(dataProvider))
@@ -282,7 +283,9 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new GetSpec(dataProvider))
             // Debug Handlers
             .endpoint(new GetChainHeadsV2(dataProvider))
-            .endpoint(new GetState(dataProvider, schemaCache))
+            .endpoint(
+                new tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetState(
+                    dataProvider, schemaCache))
             .endpoint(new GetForkChoice(dataProvider))
             // Teku Specific Handlers
             .endpoint(new PutLogLevel())
