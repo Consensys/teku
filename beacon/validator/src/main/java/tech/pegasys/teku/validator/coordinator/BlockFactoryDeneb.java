@@ -43,8 +43,11 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
 
   private final SchemaDefinitionsDeneb schemaDefinitionsDeneb;
 
-  public BlockFactoryDeneb(final Spec spec, final BlockOperationSelectorFactory operationSelector) {
-    super(spec, operationSelector);
+  public BlockFactoryDeneb(
+      final Spec spec,
+      final BlockOperationSelectorFactory operationSelector,
+      final boolean produceBlindedBlocks) {
+    super(spec, operationSelector, produceBlindedBlocks);
     this.schemaDefinitionsDeneb =
         SchemaDefinitionsDeneb.required(
             spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions());
