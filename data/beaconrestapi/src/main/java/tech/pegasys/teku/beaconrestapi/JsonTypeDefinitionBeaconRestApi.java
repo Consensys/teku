@@ -100,6 +100,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostValidatorLiveness;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetChainHeadsV2;
+import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetDebugState;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -283,9 +284,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new GetSpec(dataProvider))
             // Debug Handlers
             .endpoint(new GetChainHeadsV2(dataProvider))
-            .endpoint(
-                new tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetState(
-                    dataProvider, schemaCache))
+            .endpoint(new GetDebugState(dataProvider, schemaCache))
             .endpoint(new GetForkChoice(dataProvider))
             // Teku Specific Handlers
             .endpoint(new PutLogLevel())

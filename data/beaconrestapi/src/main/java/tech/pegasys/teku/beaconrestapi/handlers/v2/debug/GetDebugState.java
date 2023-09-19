@@ -20,18 +20,19 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_DEBUG;
 
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetState;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 
-public class GetState extends tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetState {
+public class GetDebugState extends GetState {
   public static final String ROUTE = "/eth/v2/debug/beacon/states/{state_id}";
 
-  public GetState(
+  public GetDebugState(
       final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
     this(dataProvider.getChainDataProvider(), schemaDefinitionCache);
   }
 
-  public GetState(
+  public GetDebugState(
       final ChainDataProvider chainDataProvider,
       final SchemaDefinitionCache schemaDefinitionCache) {
     super(chainDataProvider, getEndpointMetaData(schemaDefinitionCache));
