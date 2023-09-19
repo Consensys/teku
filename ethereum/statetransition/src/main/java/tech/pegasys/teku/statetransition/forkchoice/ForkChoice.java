@@ -93,6 +93,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final MergeTransitionBlockValidator transitionBlockValidator;
   private final boolean forkChoiceUpdateHeadOnBlockImportEnabled;
+  private final boolean forkChoiceProposerBoostUniquenessEnabled;
   private final AttestationStateSelector attestationStateSelector;
   private final DeferredAttestations deferredAttestations = new DeferredAttestations();
 
@@ -111,6 +112,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final TickProcessor tickProcessor,
       final MergeTransitionBlockValidator transitionBlockValidator,
       final boolean forkChoiceUpdateHeadOnBlockImportEnabled,
+      final boolean forkChoiceProposerBoostUniquenessEnabled,
       final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
@@ -123,6 +125,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         new AttestationStateSelector(spec, recentChainData, metricsSystem);
     this.tickProcessor = tickProcessor;
     this.forkChoiceUpdateHeadOnBlockImportEnabled = forkChoiceUpdateHeadOnBlockImportEnabled;
+    this.forkChoiceProposerBoostUniquenessEnabled = forkChoiceProposerBoostUniquenessEnabled;
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
     forkChoiceNotifier.subscribeToForkChoiceUpdatedResult(this);
   }
@@ -149,6 +152,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         new ForkChoiceStateProvider(forkChoiceExecutor, recentChainData),
         new TickProcessor(spec, recentChainData),
         transitionBlockValidator,
+        true,
         true,
         metricsSystem);
   }
@@ -488,23 +492,20 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
 
     switch (blobSidecarsAndValidationResult.getValidationResult()) {
-      case VALID:
-      case NOT_REQUIRED:
-        LOG.debug(
-            "blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
-
-        break;
-      case NOT_AVAILABLE:
+      case VALID, NOT_REQUIRED -> LOG.debug(
+          "blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
+      case NOT_AVAILABLE -> {
         LOG.warn(
             "blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
         return BlockImportResult.failedDataAvailabilityCheckNotAvailable(
             blobSidecarsAndValidationResult.getCause());
-
-      case INVALID:
+      }
+      case INVALID -> {
         LOG.error(
             "blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
         return BlockImportResult.failedDataAvailabilityCheckInvalid(
             blobSidecarsAndValidationResult.getCause());
+      }
     }
 
     final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
@@ -542,13 +543,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         blobSidecars,
         earliestBlobSidecarsSlot);
 
-    if (spec.getCurrentSlot(transaction).equals(block.getSlot())) {
-      final UInt64 millisPerSlot = spec.getMillisPerSlot(block.getSlot());
-      final UInt64 timeIntoSlotMillis = getMillisIntoSlot(transaction, millisPerSlot);
-
-      if (isBeforeAttestingInterval(millisPerSlot, timeIntoSlotMillis)) {
-        transaction.setProposerBoostRoot(block.getRoot());
-      }
+    if (applyProposerBoost(block, transaction)) {
+      transaction.setProposerBoostRoot(block.getRoot());
     }
 
     blockImportPerformance.ifPresent(BlockImportPerformance::transactionReady);
@@ -580,6 +576,22 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
     notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
     return result;
+  }
+
+  private boolean applyProposerBoost(
+      final SignedBeaconBlock block, final StoreTransaction transaction) {
+    if (spec.getCurrentSlot(transaction).equals(block.getSlot())) {
+      final UInt64 millisPerSlot = spec.getMillisPerSlot(block.getSlot());
+      final UInt64 timeIntoSlotMillis = getMillisIntoSlot(transaction, millisPerSlot);
+
+      if (isBeforeAttestingInterval(millisPerSlot, timeIntoSlotMillis)) {
+        if (forkChoiceProposerBoostUniquenessEnabled) {
+          return transaction.getProposerBoostRoot().isEmpty();
+        }
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
