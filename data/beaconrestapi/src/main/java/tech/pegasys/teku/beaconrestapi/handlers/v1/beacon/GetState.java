@@ -104,7 +104,7 @@ public class GetState extends RestApiEndpoint {
   private static SerializableTypeDefinition<StateAndMetaData> getResponseType(
       SchemaDefinitionCache schemaDefinitionCache, final String tag) {
     return SerializableTypeDefinition.<StateAndMetaData>object()
-        .name("GetStateResponse" + tag)
+        .name(String.format("Get%sStateResponse", tag))
         .withField("version", MILESTONE_TYPE, ObjectAndMetaData::getMilestone)
         .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
         .withField(FINALIZED, BOOLEAN_TYPE, ObjectAndMetaData::isFinalized)

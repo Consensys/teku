@@ -1,5 +1,5 @@
 {
-  "title" : "GetStateResponseBeacon",
+  "title" : "GetBeaconStateResponse",
   "type" : "object",
   "required" : [ "version", "execution_optimistic", "finalized", "data" ],
   "properties" : {

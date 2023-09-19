@@ -21,7 +21,7 @@
         "content" : {
           "application/json" : {
             "schema" : {
-              "$ref" : "#/components/schemas/GetStateResponseDebug"
+              "$ref" : "#/components/schemas/GetDebugStateResponse"
             }
           },
           "application/octet-stream" : {
