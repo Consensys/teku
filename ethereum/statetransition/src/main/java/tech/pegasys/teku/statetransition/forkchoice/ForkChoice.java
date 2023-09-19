@@ -586,6 +586,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
       if (isBeforeAttestingInterval(millisPerSlot, timeIntoSlotMillis)) {
         if (forkChoiceProposerBoostUniquenessEnabled) {
+          // is_first_block
           return transaction.getProposerBoostRoot().isEmpty();
         }
         return true;
