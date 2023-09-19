@@ -1898,7 +1898,12 @@ public final class DataStructureUtil {
     UInt64 slot = computeStartSlotAtEpoch(epoch);
     final BeaconBlockAndState blockAndState =
         randomBlockAndState(
-            slot, stateBuilderDeneb().slot(slot).fork(currentFork).build(), randomBytes32());
+            slot,
+            stateBuilder(spec.atSlot(slot).getMilestone(), 10, 10)
+                .slot(slot)
+                .fork(currentFork)
+                .build(),
+            randomBytes32());
     return AnchorPoint.fromInitialBlockAndState(spec, toSigned(blockAndState));
   }
 
