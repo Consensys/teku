@@ -629,14 +629,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .spec(spec)
             .recentChainData(recentChainData)
             .combinedChainDataClient(combinedChainDataClient)
-            .executionLayerBlockProductionManager(executionLayerBlockProductionManager)
             .p2pNetwork(p2pNetwork)
             .syncService(syncService)
             .validatorApiChannel(
                 eventChannels.getPublisher(ValidatorApiChannel.class, beaconAsyncRunner))
             .attestationPool(attestationPool)
             .blockManager(blockManager)
-            .blobSidecarPool(blobSidecarPool)
             .attestationManager(attestationManager)
             .isLivenessTrackingEnabled(getLivenessTrackingEnabled(beaconConfig))
             .acceptBlsToExecutionMessages(

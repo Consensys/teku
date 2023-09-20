@@ -139,9 +139,7 @@ public class ExecutionLayerBlockProductionManagerImpl
 
   private ExecutionPayloadResult builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
-
     final SafeFuture<UInt256> executionPayloadValueFuture = new SafeFuture<>();
-
     final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture =
         executionLayerChannel
             .builderGetHeader(executionPayloadContext, state, executionPayloadValueFuture)
