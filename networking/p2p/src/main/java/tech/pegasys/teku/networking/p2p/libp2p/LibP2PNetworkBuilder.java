@@ -75,8 +75,8 @@ public class LibP2PNetworkBuilder {
   protected GossipTopicFilter gossipTopicFilter;
 
   protected Firewall firewall = new Firewall(Duration.ofSeconds(30));
-  protected MplexFirewall mplexFirewall =
-      new MplexFirewall(REMOTE_OPEN_STREAMS_RATE_LIMIT, REMOTE_PARALLEL_OPEN_STREAMS_COUNT_LIMIT);
+  protected MuxFirewall muxFirewall =
+      new MuxFirewall(REMOTE_OPEN_STREAMS_RATE_LIMIT, REMOTE_PARALLEL_OPEN_STREAMS_COUNT_LIMIT);
 
   protected LibP2PGossipNetwork gossipNetwork;
 
@@ -156,6 +156,13 @@ public class LibP2PNetworkBuilder {
           b.getIdentity().setFactory(() -> privKey);
           b.getTransports().add(TcpTransport::new);
           b.getSecureChannels().add(NoiseXXSecureChannel::new);
+
+          // yamux MUST take precedence during negotiation
+          if (config.isYamuxEnabled()) {
+            // TODO: https://github.com/Consensys/teku/issues/7532
+            final int maxBufferedConnectionWrites = 150 * 1024 * 1024;
+            b.getMuxers().add(StreamMuxerProtocol.getYamux(maxBufferedConnectionWrites));
+          }
           b.getMuxers().add(StreamMuxerProtocol.getMplex());
 
           b.getNetwork().listen(listenAddr.toString());
@@ -178,7 +185,7 @@ public class LibP2PNetworkBuilder {
 
           b.getConnectionHandlers().add(peerManager);
 
-          b.getDebug().getMuxFramesHandler().addHandler(mplexFirewall);
+          b.getDebug().getMuxFramesHandler().addHandler(muxFirewall);
         });
   }
 
@@ -265,8 +272,8 @@ public class LibP2PNetworkBuilder {
     return this;
   }
 
-  public LibP2PNetworkBuilder mplexFirewall(MplexFirewall mplexFirewall) {
-    this.mplexFirewall = mplexFirewall;
+  public LibP2PNetworkBuilder muxFirewall(MuxFirewall muxFirewall) {
+    this.muxFirewall = muxFirewall;
     return this;
   }
 }

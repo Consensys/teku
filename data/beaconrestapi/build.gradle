@@ -41,7 +41,7 @@ dependencies {
 
     testImplementation testFixtures(project(':infrastructure:json'))
 
-    testCompileOnly 'io.libp2p:jvm-libp2p-minimal'
+    testCompileOnly 'io.libp2p:jvm-libp2p'
 
     integrationTestImplementation testFixtures(project(':infrastructure:bls'))
     integrationTestImplementation testFixtures(project(':ethereum:spec'))
