@@ -35,17 +35,13 @@ public class MilestoneBasedBlockFactory implements BlockFactory {
   private final Spec spec;
 
   public MilestoneBasedBlockFactory(
-      final Spec spec,
-      final BlockOperationSelectorFactory operationSelector,
-      final boolean produceBlindedBlocks) {
+      final Spec spec, final BlockOperationSelectorFactory operationSelector) {
     this.spec = spec;
-    final BlockFactoryPhase0 blockFactoryPhase0 =
-        new BlockFactoryPhase0(spec, operationSelector, produceBlindedBlocks);
+    final BlockFactoryPhase0 blockFactoryPhase0 = new BlockFactoryPhase0(spec, operationSelector);
 
     // Not needed for all milestones
     final Supplier<BlockFactoryDeneb> blockFactoryDenebSupplier =
-        Suppliers.memoize(
-            () -> new BlockFactoryDeneb(spec, operationSelector, produceBlindedBlocks));
+        Suppliers.memoize(() -> new BlockFactoryDeneb(spec, operationSelector));
 
     // Populate forks factories
     spec.getEnabledMilestones()
