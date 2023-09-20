@@ -141,6 +141,15 @@ public class WeakSubjectivityInitializer {
 
   public void validateInitialAnchor(
       final AnchorPoint initialAnchor, final UInt64 currentSlot, final Spec spec) {
+    final Fork expectedFork = spec.getForkSchedule().getFork(initialAnchor.getEpoch());
+    final Fork loadedFork = initialAnchor.getState().getFork();
+    if (!isSameForkInfo(expectedFork, loadedFork)) {
+      throw new InvalidConfigurationException(
+          String.format(
+              "The fork from the initial-state (%s) does not match the configured fork schedule (%s).\nPlease check that network in configuration matches the loaded state.",
+              loadedFork, expectedFork));
+    }
+
     if (initialAnchor.isGenesis()) {
       // Skip extra validations for genesis state
       return;
@@ -161,13 +170,6 @@ public class WeakSubjectivityInitializer {
           "The provided initial state is too recent. Please check that the initial state corresponds to a finalized checkpoint.");
     }
 
-    Fork expectedFork = spec.getForkSchedule().getFork(initialAnchor.getEpoch());
-    Fork loadedFork = initialAnchor.getState().getFork();
-    if (!expectedFork.equals(loadedFork)) {
-      throw new InvalidConfigurationException(
-          "The fork in loaded state does not match fork at the epoch from ForkSchedule. Please check that network in configuration matches the loaded state.");
-    }
-
     if (slotsBetweenBlockAndEpochStart.isGreaterThan(UInt64.ZERO)) {
       Level level = slotsBetweenBlockAndEpochStart.isGreaterThan(2) ? Level.WARN : Level.INFO;
       STATUS_LOG.warnOnInitialStateWithSkippedSlots(
@@ -176,5 +178,16 @@ public class WeakSubjectivityInitializer {
           initialAnchor.getEpoch(),
           initialAnchor.getEpochStartSlot());
     }
+  }
+
+  private boolean isSameForkInfo(final Fork expectedFork, final Fork loadedFork) {
+    // at genesis there's inconsistency in reference tests where previous version is the same as
+    // current version this will cater for that, otherwise the fork check won't work at genesis
+    // because real networks set them differently if not starting from phase0
+    if (loadedFork.getEpoch().isZero()) {
+      return expectedFork.getEpoch().equals(loadedFork.getEpoch())
+          && expectedFork.getCurrentVersion().equals(loadedFork.getCurrentVersion());
+    }
+    return expectedFork.equals(loadedFork);
   }
 }

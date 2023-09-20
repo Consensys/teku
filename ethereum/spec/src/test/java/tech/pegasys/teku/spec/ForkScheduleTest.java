@@ -380,6 +380,13 @@ public class ForkScheduleTest {
     assertThat(forkSchedule.getSpecMilestoneAtForkVersion(UNKNOWN_FORK_VERSION)).isEmpty();
   }
 
+  public void getHoleskySchedule() {
+    final Spec spec = SpecFactory.create("holesky");
+    final ForkSchedule forkSchedule = spec.getForkSchedule();
+    final Fork fork = forkSchedule.getFork(UInt64.ZERO);
+    assertThat(fork.getPreviousVersion()).isNotEqualTo(fork.getCurrentVersion());
+  }
+
   private ForkSchedule buildForkSchedule(final SpecConfig specConfig) {
     final ForkSchedule.Builder builder = ForkSchedule.builder();
     builder.addNextMilestone(SpecVersion.createPhase0(specConfig));
