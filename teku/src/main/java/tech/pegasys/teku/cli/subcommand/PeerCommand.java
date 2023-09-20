@@ -15,8 +15,8 @@ package tech.pegasys.teku.cli.subcommand;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.libp2p.core.PeerId;
-import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
+import io.libp2p.core.crypto.KeyType;
 import io.libp2p.core.crypto.PrivKey;
 import io.libp2p.core.crypto.PubKey;
 import java.io.File;
@@ -100,7 +100,7 @@ public class PeerCommand {
       PrintWriter printWriter = new PrintWriter(fileWriter);
       printWriter.println("Private Key(Hex)\tPublic Key(Hex)\tPeerId(Base58)");
       for (int i = 0; i < number; i++) {
-        PrivKey privKey = KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1();
+        PrivKey privKey = KeyKt.generateKeyPair(KeyType.SECP256K1).component1();
         PubKey pubKey = privKey.publicKey();
         PeerId peerId = PeerId.fromPubKey(pubKey);
         printWriter.println(

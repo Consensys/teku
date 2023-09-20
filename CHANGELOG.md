@@ -1,4 +1,3 @@
-
 # Changelog
 
 ## Upcoming Breaking Changes
@@ -18,6 +17,7 @@ For information on changes in released versions of Teku, see the [releases page]
 - The voluntary exit subcommand now accepts `--network=<NETWORK>` command line option, using it to load the network specification rather than loading configuration from the rest api, if specified. 
 - Add `/teku/v1/beacon/blob_sidecars/{slot}` Teku API which returns all blob sidecars (canonical and non-canonical) at a specific slot
 - Updated LevelDb native library which is using LevelDb 1.23 using latest Snappy to 1.1.10 for compression (this change doesn't apply to Windows)
+- Updated holesky configuration with new genesis time of 28th September 12:00 UTC, and fork changes.
 - The `/eth/v1/beacon/states/{state_id}` endpoint has been created to query beacon states.
 
 ### Bug Fixes
