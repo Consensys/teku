@@ -146,11 +146,8 @@ public class WeakSubjectivityInitializer {
     if (!expectedFork.equals(loadedFork)) {
       throw new InvalidConfigurationException(
           String.format(
-              "The fork from the initial-state (%s:%s) does not match the configured fork schedule (%s:%s).\nPlease check that network in configuration matches the loaded state.",
-              loadedFork.getEpoch(),
-              loadedFork.getCurrentVersion().toHexString(),
-              expectedFork.getEpoch(),
-              expectedFork.getCurrentVersion()));
+              "The fork from the initial-state (%s) does not match the configured fork schedule (%s).\nPlease check that network in configuration matches the loaded state.",
+              loadedFork, expectedFork));
     }
 
     if (initialAnchor.isGenesis()) {
