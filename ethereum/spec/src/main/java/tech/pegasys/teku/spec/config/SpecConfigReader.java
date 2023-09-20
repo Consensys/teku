@@ -96,13 +96,14 @@ public class SpecConfigReader {
           .put(Integer.class, this::parseInt)
           .put(Long.TYPE, this::parseLong)
           .put(Long.class, this::parseLong)
+          .put(Boolean.TYPE, fromString(Boolean::valueOf))
+          .put(Boolean.class, fromString(Boolean::valueOf))
           .put(UInt64.class, fromString(UInt64::valueOf))
           .put(UInt256.class, fromString(str -> UInt256.valueOf(new BigInteger(str))))
           .put(String.class, Function.identity())
           .put(Bytes.class, fromString(Bytes::fromHexString))
           .put(Bytes4.class, fromString(Bytes4::fromHexString))
           .put(Bytes32.class, fromString(Bytes32::fromHexStringStrict))
-          .put(Boolean.class, fromString(Boolean::valueOf))
           .put(Eth1Address.class, fromString(Eth1Address::fromHexString))
           .build();
 
