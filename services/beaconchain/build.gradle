@@ -40,5 +40,5 @@ dependencies {
   testImplementation testFixtures(project(':infrastructure:bls'))
   testImplementation testFixtures(project(':infrastructure:metrics'))
 
-  implementation 'io.libp2p:jvm-libp2p-minimal'
+  implementation 'io.libp2p:jvm-libp2p'
 }

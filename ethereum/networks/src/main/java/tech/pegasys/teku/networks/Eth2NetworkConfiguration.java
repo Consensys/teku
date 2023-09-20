@@ -667,18 +667,19 @@ public class Eth2NetworkConfiguration {
           .startupTimeoutSeconds(120)
           .eth1DepositContractDeployBlock(0)
           .defaultInitialState(
-              "https://github.com/eth-clients/holesky/raw/afdcfcbb9282bf3c677eed8ccb3ec803276d108c/custom_config_data/genesis.ssz")
+              "https://checkpoint-sync.holesky.ethpandaops.io/eth/v2/debug/beacon/states/finalized")
           .customGenesisState(
-              "https://github.com/eth-clients/holesky/raw/afdcfcbb9282bf3c677eed8ccb3ec803276d108c/custom_config_data/genesis.ssz")
+              "https://github.com/eth-clients/holesky/raw/59cb4fcbc8b39e431c1d737937ae8188f4a19a98/custom_config_data/genesis.ssz")
           .discoveryBootnodes(
               // EF bootnodes
-              "enr:-Iq4QJk4WqRkjsX5c2CXtOra6HnxN-BMXnWhmhEQO9Bn9iABTJGdjUOurM7Btj1ouKaFkvTRoju5vz2GPmVON2dffQKGAX53x8JigmlkgnY0gmlwhLKAlv6Jc2VjcDI1NmsxoQK6S-Cii_KmfFdUJL2TANL3ksaKUnNXvTCv1tLwXs0QgIN1ZHCCIyk",
-              "enr:-Ly4QJLXSSAj3ggPBIcodvBU6IyfpU_yW7E9J-5syoJorBuvcYj_Fokcjr303bQoTdWXADf8po0ssh75Mr5wVGzZZsMBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCpfoNmMAFwAAABAAAAAAAAgmlkgnY0gmlwhJK-DYCJc2VjcDI1NmsxoQJrIlXIQDvQ6t9yDySqJYDXgZgLXzTvq8W7OI51jfmxJohzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
+              "enr:-Ku4QFo-9q73SspYI8cac_4kTX7yF800VXqJW4Lj3HkIkb5CMqFLxciNHePmMt4XdJzHvhrCC5ADI4D_GkAsxGJRLnQBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpAhnTT-AQFwAP__________gmlkgnY0gmlwhLKAiOmJc2VjcDI1NmsxoQORcM6e19T1T9gi7jxEZjk_sjVLGFscUNqAY9obgZaxbIN1ZHCCIyk",
+              "enr:-Ku4QPG7F72mbKx3gEQEx07wpYYusGDh-ni6SNkLvOS-hhN-BxIggN7tKlmalb0L5JPoAfqD-akTZ-gX06hFeBEz4WoBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpAhnTT-AQFwAP__________gmlkgnY0gmlwhJK-DYCJc2VjcDI1NmsxoQKLVXFOhp2uX6jeT0DvvDpPcU8FWMjQdR4wMuORMhpX24N1ZHCCIyk",
               "enr:-KG4QF6d6vMSboSujAXTI4vYqArccm0eIlXfcxf2Lx_VE1q6IkQo_2D5LAO3ZSBVUs0w5rrVDmABJZuMzISe_pZundADhGV0aDKQqX6DZjABcAAAAQAAAAAAAIJpZIJ2NIJpcISygIjpiXNlY3AyNTZrMaEDF3aSa7QSCvdqLpANNd8GML4PLEZVg45fKQwMWhDZjd2DdGNwgiMog3VkcIIjKA",
+              "enr:-Ly4QJLXSSAj3ggPBIcodvBU6IyfpU_yW7E9J-5syoJorBuvcYj_Fokcjr303bQoTdWXADf8po0ssh75Mr5wVGzZZsMBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCpfoNmMAFwAAABAAAAAAAAgmlkgnY0gmlwhJK-DYCJc2VjcDI1NmsxoQJrIlXIQDvQ6t9yDySqJYDXgZgLXzTvq8W7OI51jfmxJohzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
               // Sigma Prime
               "enr:-Le4QI88slOwzz66Ksq8Vnz324DPb1BzSiY-WYPvnoJIl-lceW9bmSJnwDzgNbCjp5wsBigg76x4tValvGgQPxxSjrMBhGV0aDKQqX6DZjABcAAAAQAAAAAAAIJpZIJ2NIJpcIQ5gR6Wg2lwNpAgAUHQBwEQAAAAAAAAADR-iXNlY3AyNTZrMaEDPMSNdcL92uNIyCsS177Z6KTXlbZakQqxv3aQcWawNXeDdWRwgiMohHVkcDaCI4I",
               // TEKU bootnode
-              "enr:-LK4QMlzEff6d-M0A1pSFG5lJ2c56i_I-ZftdojZbW3ehkGNM4pkQuHQqzVvF1BG9aDjIakjnmO23mCBFFZ2w5zOsugEh2F0dG5ldHOIAAAAAAYAAACEZXRoMpCpfoNmMAFwAAABAAAAAAAAgmlkgnY0gmlwhKyuI_mJc2VjcDI1NmsxoQIH1kQRCZW-4AIVyAeXj5o49m_IqNFKRHp6tSpfXMUrSYN0Y3CCIyiDdWRwgiMo");
+              "enr:-LS4QG0uV4qvcpJ-HFDJRGBmnlD3TJo7yc4jwK8iP7iKaTlfQ5kZvIDspLMJhk7j9KapuL9yyHaZmwTEZqr10k9XumyCEcmHYXR0bmV0c4gAAAAABgAAAIRldGgykGm32XQEAXAAAAEAAAAAAACCaWSCdjSCaXCErK4j-YlzZWNwMjU2azGhAgfWRBEJlb7gAhXIB5ePmjj2b8io0UpEenq1Kl9cxStJg3RjcIIjKIN1ZHCCIyg");
     }
 
     private Optional<Integer> validateAndParseEpochsStoreBlobs(final String epochsStoreBlobs) {

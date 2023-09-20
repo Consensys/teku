@@ -293,6 +293,16 @@ public class P2POptions {
   private boolean blsToExecutionChangesSubnetEnabled =
       P2PConfig.DEFAULT_BLS_TO_EXECUTION_CHANGES_SUBNET_ENABLED;
 
+  @Option(
+      names = {"--Xp2p-yamux-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Enables yamux multiplexing",
+      arity = "0..1",
+      hidden = true,
+      fallbackValue = "true")
+  private boolean yamuxEnabled = NetworkConfig.DEFAULT_YAMUX_ENABLED;
+
   private int getP2pLowerBound() {
     if (p2pLowerBound > p2pUpperBound) {
       STATUS_LOG.adjustingP2pLowerBoundToUpperBound(p2pUpperBound);
@@ -356,7 +366,8 @@ public class P2POptions {
               n.networkInterface(p2pInterface)
                   .isEnabled(p2pEnabled)
                   .listenPort(p2pPort)
-                  .advertisedIp(Optional.ofNullable(p2pAdvertisedIp));
+                  .advertisedIp(Optional.ofNullable(p2pAdvertisedIp))
+                  .yamuxEnabled(yamuxEnabled);
             })
         .sync(
             s ->
