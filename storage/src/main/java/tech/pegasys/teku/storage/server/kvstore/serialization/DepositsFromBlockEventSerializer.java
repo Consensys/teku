@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.storage.server.kvstore.serialization;
 
-import static java.util.stream.Collectors.toList;
-
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -50,8 +48,7 @@ class DepositsFromBlockEventSerializer implements KvStoreSerializer<DepositsFrom
               writer.writeUInt64(value.getBlockNumber().longValue());
               writer.writeFixedBytes(value.getBlockHash());
               writer.writeUInt64(value.getBlockTimestamp().longValue());
-              writer.writeBytesList(
-                  value.getDeposits().stream().map(this::encodeDeposit).collect(toList()));
+              writer.writeBytesList(value.getDeposits().stream().map(this::encodeDeposit).toList());
             });
     return bytes.toArrayUnsafe();
   }

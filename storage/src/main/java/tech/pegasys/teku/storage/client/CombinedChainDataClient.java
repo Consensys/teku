@@ -15,7 +15,6 @@ package tech.pegasys.teku.storage.client;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Verify.verifyNotNull;
-import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -185,6 +184,14 @@ public class CombinedChainDataClient {
         .thenCompose(this::getBlobSidecars);
   }
 
+  public SafeFuture<List<BlobSidecar>> getAllBlobSidecars(
+      final UInt64 slot, final List<UInt64> indices) {
+    return historicalChainData
+        .getAllBlobSidecarKeys(slot)
+        .thenApply(keys -> filterBlobSidecarKeys(keys, indices))
+        .thenCompose(this::getAllBlobSidecars);
+  }
+
   private Stream<SlotAndBlockRootAndBlobIndex> filterBlobSidecarKeys(
       final List<SlotAndBlockRootAndBlobIndex> keys, final List<UInt64> indices) {
     if (indices.isEmpty()) {
@@ -196,8 +203,13 @@ public class CombinedChainDataClient {
   private SafeFuture<List<BlobSidecar>> getBlobSidecars(
       final Stream<SlotAndBlockRootAndBlobIndex> keys) {
     return SafeFuture.collectAll(keys.map(this::getAllBlobSidecarByKey))
-        .thenApply(
-            blobSidecars -> blobSidecars.stream().flatMap(Optional::stream).collect(toList()));
+        .thenApply(blobSidecars -> blobSidecars.stream().flatMap(Optional::stream).toList());
+  }
+
+  private SafeFuture<List<BlobSidecar>> getAllBlobSidecars(
+      final Stream<SlotAndBlockRootAndBlobIndex> keys) {
+    return SafeFuture.collectAll(keys.map(this::getAllBlobSidecarByKey))
+        .thenApply(blobSidecars -> blobSidecars.stream().flatMap(Optional::stream).toList());
   }
 
   public SafeFuture<Optional<BeaconState>> getStateAtSlotExact(final UInt64 slot) {

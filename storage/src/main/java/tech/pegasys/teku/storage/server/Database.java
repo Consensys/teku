@@ -43,9 +43,6 @@ import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
 
 public interface Database extends AutoCloseable {
 
-  int PRUNE_BATCH_SIZE = 10_000;
-  int PRUNE_BLOCK_STREAM_LIMIT = 5_000;
-
   void storeInitialAnchor(AnchorPoint initialAnchor);
 
   UpdateResult update(StorageUpdate event);
@@ -94,7 +91,13 @@ public interface Database extends AutoCloseable {
       UInt64 startSlot, UInt64 endSlot);
 
   @MustBeClosed
-  default Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(UInt64 slot) {
+  default Stream<SlotAndBlockRootAndBlobIndex> streamNonCanonicalBlobSidecarKeys(
+      final UInt64 slot) {
+    return streamNonCanonicalBlobSidecarKeys(slot, slot);
+  }
+
+  @MustBeClosed
+  default Stream<SlotAndBlockRootAndBlobIndex> streamBlobSidecarKeys(final UInt64 slot) {
     return streamBlobSidecarKeys(slot, slot);
   }
 
@@ -206,7 +209,7 @@ public interface Database extends AutoCloseable {
 
   void storeVotes(Map<UInt64, VoteTracker> votes);
 
-  Map<String, Long> getColumnCounts();
+  Map<String, Long> getColumnCounts(final Optional<String> maybeColumnFilter);
 
   long getBlobSidecarColumnCount();
 
@@ -224,5 +227,15 @@ public interface Database extends AutoCloseable {
 
   void setFinalizedDepositSnapshot(DepositTreeSnapshot finalizedDepositSnapshot);
 
-  void pruneFinalizedBlocks(UInt64 lastSlotToPrune);
+  /**
+   * This prune method will delete finalized blocks starting from the oldest (by slot) up to block
+   * at {@code lastSlotToPrune} (inclusive). The pruning process will be stopped if {@code
+   * pruneLimit} reached completing the current slot. Main purpose of pruneLimit is to softly cap DB
+   * operation time.
+   *
+   * @param lastSlotToPrune inclusive, not reached if limit happens first
+   * @param pruneLimit slots limit
+   * @return actual last pruned slot
+   */
+  UInt64 pruneFinalizedBlocks(UInt64 lastSlotToPrune, int pruneLimit);
 }

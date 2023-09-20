@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.versions.altair.helpers;
 
 import static com.google.common.base.Preconditions.checkArgument;
-import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.infrastructure.crypto.Hash.getSha256Instance;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.integerSquareRoot;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.uint64ToBytes;
@@ -153,15 +152,14 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
         indices
             .intStream()
             .mapToObj(index -> getValidatorPubKey(state, UInt64.valueOf(index)).orElseThrow())
-            .collect(toList());
+            .toList();
     final BLSPublicKey aggregatePubkey = BLSPublicKey.aggregate(pubkeys);
 
     return state
         .getBeaconStateSchema()
         .getNextSyncCommitteeSchemaOrThrow()
         .create(
-            pubkeys.stream().map(SszPublicKey::new).collect(toList()),
-            new SszPublicKey(aggregatePubkey));
+            pubkeys.stream().map(SszPublicKey::new).toList(), new SszPublicKey(aggregatePubkey));
   }
 
   /**

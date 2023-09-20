@@ -21,6 +21,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import java.util.Collection;
@@ -86,7 +87,7 @@ class ProductionResultTest {
         ProductionResult.send(List.of(prodResult1, prodResult2, prodResult3), sendFunction);
 
     assertThatSafeFuture(result).isCompleted();
-    final DutyResult dutyResult = result.join();
+    final DutyResult dutyResult = safeJoin(result);
     dutyResult.report(PRODUCED_TYPE, SLOT, validatorLogger);
 
     verify(validatorLogger)
@@ -114,7 +115,7 @@ class ProductionResultTest {
         ProductionResult.send(List.of(prodResult1, prodResult2), sendFunction);
 
     assertThatSafeFuture(result).isCompleted();
-    final DutyResult dutyResult = result.join();
+    final DutyResult dutyResult = safeJoin(result);
     dutyResult.report(PRODUCED_TYPE, SLOT, validatorLogger);
 
     verify(validatorLogger)

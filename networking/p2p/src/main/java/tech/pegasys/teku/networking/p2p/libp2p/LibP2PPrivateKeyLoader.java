@@ -15,8 +15,8 @@ package tech.pegasys.teku.networking.p2p.libp2p;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
-import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
+import io.libp2p.core.crypto.KeyType;
 import io.libp2p.core.crypto.PrivKey;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
@@ -48,7 +48,7 @@ public class LibP2PPrivateKeyLoader implements LibP2PNetwork.PrivateKeyProvider 
     final Bytes privateKey;
     final Optional<Bytes> generatedKeyBytes = keyValueStore.get(GENERATED_NODE_KEY_KEY);
     if (generatedKeyBytes.isEmpty()) {
-      final PrivKey privKey = KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1();
+      final PrivKey privKey = KeyKt.generateKeyPair(KeyType.SECP256K1).component1();
       privateKey = Bytes.wrap(KeyKt.marshalPrivateKey(privKey));
       keyValueStore.put(GENERATED_NODE_KEY_KEY, privateKey);
       STATUS_LOG.usingGeneratedP2pPrivateKey(GENERATED_NODE_KEY_KEY, true);

@@ -607,12 +607,12 @@ public class BlockImporterTest {
 
     SafeFuture<CheckpointState> result = blockImporter.getLatestCheckpointState();
     assertThat(result).isCompleted();
-    assertThat(result.join().getRoot()).isEqualTo(genesis.getRoot());
+    assertThat(safeJoin(result).getRoot()).isEqualTo(genesis.getRoot());
 
     // Second call should be the same
     result = blockImporter.getLatestCheckpointState();
     assertThat(result).isCompleted();
-    assertThat(result.join().getRoot()).isEqualTo(genesis.getRoot());
+    assertThat(safeJoin(result).getRoot()).isEqualTo(genesis.getRoot());
   }
 
   @Test
@@ -641,7 +641,7 @@ public class BlockImporterTest {
     // Pull genesis checkpoint
     SafeFuture<CheckpointState> result = blockImporter.getLatestCheckpointState();
     assertThat(result).isCompleted();
-    assertThat(result.join().getRoot()).isEqualTo(genesis.getRoot());
+    assertThat(safeJoin(result).getRoot()).isEqualTo(genesis.getRoot());
 
     // Update latest finalized
     final UInt64 newFinalizedEpoch = UInt64.valueOf(2);
@@ -652,8 +652,8 @@ public class BlockImporterTest {
     // Second call should pull new finalized checkpoint
     result = blockImporter.getLatestCheckpointState();
     assertThat(result).isCompleted();
-    assertThat(result.join().getEpoch()).isEqualTo(newFinalizedEpoch);
-    assertThat(result.join().getRoot()).isEqualTo(newFinalizedBlock.getRoot());
+    assertThat(safeJoin(result).getEpoch()).isEqualTo(newFinalizedEpoch);
+    assertThat(safeJoin(result).getRoot()).isEqualTo(newFinalizedBlock.getRoot());
   }
 
   @SuppressWarnings("unchecked")
@@ -749,6 +749,6 @@ public class BlockImporterTest {
     assertThat(finalizedCheckpoint).isCompleted();
     UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
     verify(weakSubjectivityValidator)
-        .validateLatestFinalizedCheckpoint(finalizedCheckpoint.join(), currentSlot);
+        .validateLatestFinalizedCheckpoint(safeJoin(finalizedCheckpoint), currentSlot);
   }
 }

@@ -38,6 +38,7 @@ public class StorageConfiguration {
   public static final long DEFAULT_STORAGE_FREQUENCY = 2048L;
   public static final int DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE = 100_000;
   public static final Duration DEFAULT_BLOCK_PRUNING_INTERVAL = Duration.ofMinutes(15);
+  public static final int DEFAULT_BLOCK_PRUNING_LIMIT = 5000;
   public static final Duration DEFAULT_BLOBS_PRUNING_INTERVAL = Duration.ofMinutes(1);
 
   // 60/12 = 5 blocks per minute * 6 max blobs per block = 30 blobs per minute at maximum, 15 as
@@ -53,6 +54,7 @@ public class StorageConfiguration {
   private final boolean storeNonCanonicalBlocks;
   private final int maxKnownNodeCacheSize;
   private final Duration blockPruningInterval;
+  private final int blockPruningLimit;
   private final Duration blobsPruningInterval;
   private final int blobsPruningLimit;
 
@@ -64,6 +66,7 @@ public class StorageConfiguration {
       final boolean storeNonCanonicalBlocks,
       final int maxKnownNodeCacheSize,
       final Duration blockPruningInterval,
+      final int blockPruningLimit,
       final Duration blobsPruningInterval,
       final int blobsPruningLimit,
       final Spec spec) {
@@ -74,6 +77,7 @@ public class StorageConfiguration {
     this.storeNonCanonicalBlocks = storeNonCanonicalBlocks;
     this.maxKnownNodeCacheSize = maxKnownNodeCacheSize;
     this.blockPruningInterval = blockPruningInterval;
+    this.blockPruningLimit = blockPruningLimit;
     this.blobsPruningInterval = blobsPruningInterval;
     this.blobsPruningLimit = blobsPruningLimit;
     this.spec = spec;
@@ -111,6 +115,10 @@ public class StorageConfiguration {
     return blockPruningInterval;
   }
 
+  public int getBlockPruningLimit() {
+    return blockPruningLimit;
+  }
+
   public Duration getBlobsPruningInterval() {
     return blobsPruningInterval;
   }
@@ -134,6 +142,7 @@ public class StorageConfiguration {
     private boolean storeNonCanonicalBlocks = DEFAULT_STORE_NON_CANONICAL_BLOCKS_ENABLED;
     private int maxKnownNodeCacheSize = DEFAULT_MAX_KNOWN_NODE_CACHE_SIZE;
     private Duration blockPruningInterval = DEFAULT_BLOCK_PRUNING_INTERVAL;
+    private int blockPruningLimit = DEFAULT_BLOCK_PRUNING_LIMIT;
     private Duration blobsPruningInterval = DEFAULT_BLOBS_PRUNING_INTERVAL;
     private int blobsPruningLimit = DEFAULT_BLOBS_PRUNING_LIMIT;
 
@@ -202,6 +211,15 @@ public class StorageConfiguration {
       return this;
     }
 
+    public Builder blockPruningLimit(final int blockPruningLimit) {
+      if (blockPruningLimit < 0) {
+        throw new InvalidConfigurationException(
+            String.format("Invalid blockPruningLimit: %d", blockPruningLimit));
+      }
+      this.blockPruningLimit = blockPruningLimit;
+      return this;
+    }
+
     public Builder blobsPruningInterval(final Duration blobsPruningInterval) {
       if (blobsPruningInterval.isNegative() || blobsPruningInterval.isZero()) {
         throw new InvalidConfigurationException("Blobs pruning interval must be positive");
@@ -229,6 +247,7 @@ public class StorageConfiguration {
           storeNonCanonicalBlocks,
           maxKnownNodeCacheSize,
           blockPruningInterval,
+          blockPruningLimit,
           blobsPruningInterval,
           blobsPruningLimit,
           spec);

@@ -21,6 +21,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Collections;
@@ -247,7 +248,7 @@ class SyncCommitteeScheduledDutiesTest {
 
   private void reportDutyResult(final UInt64 slot, final SafeFuture<DutyResult> result) {
     assertThat(result).isCompleted();
-    result.join().report(TYPE, slot, validatorLogger);
+    safeJoin(result).report(TYPE, slot, validatorLogger);
   }
 
   private Validator createValidator() {

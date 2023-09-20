@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -168,7 +169,7 @@ class MergeTransitionBlockValidatorTest {
     assertThat(executionLayer.getRequestedPowBlocks())
         .contains(getExecutionPayload(transitionBlock).getParentHash());
     assertThat(result).isCompleted();
-    final PayloadValidationResult validationResult = result.join();
+    final PayloadValidationResult validationResult = safeJoin(result);
     assertThat(validationResult.getInvalidTransitionBlockRoot())
         .contains(transitionBlock.getRoot());
     assertThat(validationResult.getStatus()).matches(PayloadStatus::hasInvalidStatus);

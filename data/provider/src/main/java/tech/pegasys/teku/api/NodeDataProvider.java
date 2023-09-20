@@ -230,8 +230,7 @@ public class NodeDataProvider {
               final List<ValidatorLivenessAtEpoch> livenessAtEpochs = new ArrayList<>();
               validatorLivenessMap.forEach(
                   (validatorIndex, liveness) ->
-                      livenessAtEpochs.add(
-                          new ValidatorLivenessAtEpoch(validatorIndex, epoch, liveness)));
+                      livenessAtEpochs.add(new ValidatorLivenessAtEpoch(validatorIndex, liveness)));
               return Optional.of(livenessAtEpochs);
             });
   }

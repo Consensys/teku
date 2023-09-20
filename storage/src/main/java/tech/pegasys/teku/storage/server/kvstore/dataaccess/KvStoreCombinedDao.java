@@ -148,7 +148,7 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Optional<UInt64> getEarliestBlobSidecarSlot();
 
-  Map<String, Long> getColumnCounts();
+  Map<String, Long> getColumnCounts(final Optional<String> maybeColumnFilter);
 
   long getBlobSidecarColumnCount();
 

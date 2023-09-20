@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.p2p.discovery.discv5;
 
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -93,9 +92,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
     final NewAddressHandler maybeUpdateNodeRecordHandler =
         maybeUpdateNodeRecord(p2pConfig.hasUserExplicitlySetAdvertisedIp(), advertisedTcpPort);
     this.bootnodes =
-        discoConfig.getBootnodes().stream()
-            .map(NodeRecordFactory.DEFAULT::fromEnr)
-            .collect(toList());
+        discoConfig.getBootnodes().stream().map(NodeRecordFactory.DEFAULT::fromEnr).toList();
     final NodeRecordBuilder nodeRecordBuilder =
         new NodeRecordBuilder().secretKey(localNodePrivateKey).seq(seqNo);
     if (p2pConfig.hasUserExplicitlySetAdvertisedIp()) {
@@ -194,7 +191,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
         .flatMap(
             nodeRecord ->
                 nodeRecordConverter.convertToDiscoveryPeer(nodeRecord, schemaDefinitions).stream())
-        .collect(toList());
+        .toList();
   }
 
   @Override

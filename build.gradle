@@ -136,6 +136,7 @@ allprojects {
   repositories {
     mavenLocal()
     mavenCentral()
+    maven { url "https://jitpack.io" }
     maven {
       url "https://artifacts.consensys.net/public/maven/maven/"
       content { includeGroupByRegex('tech\\.pegasys($|\\..*)')}

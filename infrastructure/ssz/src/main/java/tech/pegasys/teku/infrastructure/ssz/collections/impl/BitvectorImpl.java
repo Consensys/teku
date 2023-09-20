@@ -15,7 +15,6 @@ package tech.pegasys.teku.infrastructure.ssz.collections.impl;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkElementIndex;
-import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil.bitsCeilToBytes;
 
 import com.google.common.base.Objects;
@@ -70,11 +69,11 @@ class BitvectorImpl {
   }
 
   public BitvectorImpl(int size, int... indicesToSet) {
-    this(size, Arrays.stream(indicesToSet).boxed().collect(toList()));
+    this(size, Arrays.stream(indicesToSet).boxed().toList());
   }
 
   public List<Integer> getSetBitIndices() {
-    return data.stream().boxed().collect(toList());
+    return data.stream().boxed().toList();
   }
 
   public BitvectorImpl withBit(int i) {

@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -76,7 +77,7 @@ class BatchAttestationSendingStrategyTest {
         ProductionResult.success(
             dataStructureUtil.randomPublicKey(), dataStructureUtil.randomBytes32(), attestation2));
     assertThat(result).isCompleted();
-    assertThat(result.join().getSuccessCount()).isEqualTo(3);
+    assertThat(safeJoin(result).getSuccessCount()).isEqualTo(3);
     verify(validatorApiChannel)
         .sendSignedAttestations(List.of(attestation1, attestation2, attestation3));
   }

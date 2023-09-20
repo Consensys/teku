@@ -26,8 +26,8 @@ import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.wit
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.libp2p.core.PeerId;
-import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
+import io.libp2p.core.crypto.KeyType;
 import io.libp2p.core.crypto.PrivKey;
 import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
@@ -72,7 +72,7 @@ import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsRespo
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorResponse;
 import tech.pegasys.teku.api.response.v1.node.SyncingResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
-import tech.pegasys.teku.api.response.v1.validator.ValidatorLivenessAtEpoch;
+import tech.pegasys.teku.api.response.v1.validator.ValidatorLiveness;
 import tech.pegasys.teku.api.response.v2.beacon.GetBlockResponseV2;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
@@ -264,7 +264,7 @@ public class TekuNode extends Node {
     final PostValidatorLivenessResponse livenessResponse =
         JSON_PROVIDER.jsonToObject(response, PostValidatorLivenessResponse.class);
     final Object2BooleanMap<UInt64> output = new Object2BooleanOpenHashMap<UInt64>();
-    for (ValidatorLivenessAtEpoch entry : livenessResponse.data) {
+    for (ValidatorLiveness entry : livenessResponse.data) {
       output.put(entry.index, entry.isLive);
     }
     return output;
@@ -791,7 +791,7 @@ public class TekuNode extends Node {
     private Optional<URL> maybeJwtFile = Optional.empty();
     private Optional<InitialStateData> maybeInitialState = Optional.empty();
 
-    private final PrivKey privateKey = KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1();
+    private final PrivKey privateKey = KeyKt.generateKeyPair(KeyType.SECP256K1).component1();
     private final PeerId peerId = PeerId.fromPubKey(privateKey.publicKey());
     private static final int DEFAULT_VALIDATOR_COUNT = 64;
 

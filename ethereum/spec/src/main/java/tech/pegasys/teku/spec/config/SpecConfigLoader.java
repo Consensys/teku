@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.networks.Eth2Network;
@@ -32,6 +34,8 @@ public class SpecConfigLoader {
       List.of("phase0", "altair", "bellatrix", "capella", "deneb");
   private static final String CONFIG_PATH = "configs/";
   private static final String PRESET_PATH = "presets/";
+
+  private static final Logger LOG = LogManager.getLogger();
 
   public static SpecConfig loadConfigStrict(final String configName) {
     return loadConfig(configName, false, __ -> {});
@@ -57,6 +61,17 @@ public class SpecConfigLoader {
 
   public static SpecConfig loadRemoteConfig(final Map<String, String> config) {
     final SpecConfigReader reader = new SpecConfigReader();
+    if (config.containsKey(SpecConfigReader.CONFIG_NAME_KEY)) {
+      final String configNameKey = config.get(SpecConfigReader.CONFIG_NAME_KEY);
+      try {
+        processConfig(configNameKey, reader, true);
+      } catch (IllegalArgumentException exception) {
+        LOG.debug(
+            "Failed to load base configuration from {}, {}",
+            () -> configNameKey,
+            exception::getMessage);
+      }
+    }
     if (config.containsKey(SpecConfigReader.PRESET_KEY)) {
       try {
         applyPreset("remote", reader, true, config.get(SpecConfigReader.PRESET_KEY));

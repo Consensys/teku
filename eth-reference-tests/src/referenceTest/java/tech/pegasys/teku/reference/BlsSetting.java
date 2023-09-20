@@ -19,15 +19,11 @@ public enum BlsSetting {
   IGNORED;
 
   public static BlsSetting forCode(final int code) {
-    switch (code) {
-      case 0:
-        return DEFAULT;
-      case 1:
-        return REQUIRED;
-      case 2:
-        return IGNORED;
-      default:
-        throw new IllegalArgumentException("Unsupported bls setting: " + code);
-    }
+    return switch (code) {
+      case 0 -> DEFAULT;
+      case 1 -> REQUIRED;
+      case 2 -> IGNORED;
+      default -> throw new IllegalArgumentException("Unsupported bls setting: " + code);
+    };
   }
 }

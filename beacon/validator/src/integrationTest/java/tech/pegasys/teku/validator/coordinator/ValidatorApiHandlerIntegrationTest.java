@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import java.util.Optional;
@@ -146,7 +147,7 @@ public class ValidatorApiHandlerIntegrationTest {
     final SafeFuture<Optional<AttestationData>> result =
         handler.createAttestationData(targetSlot, committeeIndex);
     assertThatSafeFuture(result).isCompletedWithNonEmptyOptional();
-    final AttestationData attestation = result.join().orElseThrow();
+    final AttestationData attestation = safeJoin(result).orElseThrow();
     assertThat(attestation.getBeaconBlockRoot()).isEqualTo(latestBlock.getRoot());
     assertThat(attestation.getSource()).isEqualTo(genesisCheckpoint);
     assertThat(attestation.getTarget()).isEqualTo(expectedTarget);
@@ -176,7 +177,7 @@ public class ValidatorApiHandlerIntegrationTest {
     final SafeFuture<Optional<AttestationData>> result =
         handler.createAttestationData(targetSlot, committeeIndex);
     assertThatSafeFuture(result).isCompletedWithNonEmptyOptional();
-    final AttestationData attestation = result.join().orElseThrow();
+    final AttestationData attestation = safeJoin(result).orElseThrow();
     assertThat(attestation.getBeaconBlockRoot()).isEqualTo(latestBlock.getRoot());
     assertThat(attestation.getSource()).isEqualTo(genesisCheckpoint);
     assertThat(attestation.getTarget()).isEqualTo(expectedTarget);

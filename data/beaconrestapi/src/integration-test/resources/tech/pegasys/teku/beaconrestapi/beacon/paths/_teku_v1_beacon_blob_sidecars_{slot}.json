@@ -1,0 +1,80 @@
+{
+  "get" : {
+    "tags" : [ "Beacon" ],
+    "operationId" : "getAllBlobSidecarsAtSlot",
+    "summary" : "Get blob sidecars at slot",
+    "description" : "Get all blob sidecars (canonical and non canonical) at slot",
+    "parameters" : [ {
+      "name" : "slot",
+      "required" : true,
+      "in" : "path",
+      "schema" : {
+        "type" : "string",
+        "description" : "slot of the blob sidecars to retrieve.",
+        "example" : "1",
+        "format" : "uint64"
+      }
+    }, {
+      "name" : "indices",
+      "in" : "query",
+      "schema" : {
+        "type" : "array",
+        "items" : {
+          "type" : "string",
+          "description" : "Array of indices for blob sidecars to request for in the specified block. Returns all blob sidecars in the block if not specified.",
+          "example" : "1",
+          "format" : "uint64"
+        },
+        "minItems" : "1"
+      }
+    } ],
+    "responses" : {
+      "200" : {
+        "description" : "Request successful",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/GetAllBlobSidecarsAtSlotResponse"
+            }
+          },
+          "application/octet-stream" : {
+            "schema" : {
+              "type" : "string",
+              "format" : "binary"
+            }
+          }
+        }
+      },
+      "404" : {
+        "description" : "Not found",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "The request could not be processed, check the response for more information.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.client.duties.attestations;
 
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 import java.util.ArrayList;
@@ -43,7 +42,7 @@ class ScheduledCommittee {
 
   public synchronized <T> List<SafeFuture<T>> forEach(
       final Function<ValidatorWithCommitteePositionAndIndex, SafeFuture<T>> action) {
-    return validators.stream().map(action).collect(toList());
+    return validators.stream().map(action).toList();
   }
 
   public List<ValidatorWithCommitteePositionAndIndex> getValidators() {

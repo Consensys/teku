@@ -15,7 +15,6 @@ package tech.pegasys.teku.cli.subcommand;
 
 import static tech.pegasys.teku.cli.subcommand.RemoteSpecLoader.getSpec;
 
-import com.google.common.base.Throwables;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.net.ConnectException;
@@ -49,12 +48,14 @@ import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -124,6 +125,13 @@ public class VoluntaryExitCommand implements Callable<Integer> {
   private ValidatorClientDataOptions dataOptions;
 
   @CommandLine.Option(
+      names = {"-n", "--network"},
+      paramLabel = "<NETWORK>",
+      description = "Represents which network to use.",
+      arity = "1")
+  private String network;
+
+  @CommandLine.Option(
       names = {"--validator-public-keys"},
       description =
           "Optionally restrict the exit command to a specified list of public keys. When the parameter is not used, all keys will be exited.",
@@ -155,12 +163,10 @@ public class VoluntaryExitCommand implements Callable<Integer> {
       }
       getValidatorIndices(validatorsMap).forEach(this::submitExitForValidator);
     } catch (Exception ex) {
-      if (ex instanceof InvalidConfigurationException) {
-        if (Throwables.getRootCause(ex) instanceof ConnectException) {
-          SUB_COMMAND_LOG.error(getFailedToConnectMessage());
-        } else {
-          SUB_COMMAND_LOG.error(ex.getMessage());
-        }
+      if (ExceptionUtil.hasCause(ex, ConnectException.class)) {
+        SUB_COMMAND_LOG.error(getFailedToConnectMessage());
+      } else if (ex instanceof InvalidConfigurationException) {
+        SUB_COMMAND_LOG.error(ex.getMessage());
       } else {
         SUB_COMMAND_LOG.error("Fatal error in VoluntaryExit. Exiting", ex);
       }
@@ -282,7 +288,13 @@ public class VoluntaryExitCommand implements Callable<Integer> {
             .map(RemoteSpecLoader::createApiClient)
             .orElseThrow();
 
-    spec = getSpec(apiClient);
+    if (network == null) {
+      SUB_COMMAND_LOG.display(" - Loading network settings from " + apiClient.getBaseEndpoint());
+      spec = getSpec(apiClient);
+    } else {
+      SUB_COMMAND_LOG.display(" - Loading local settings for " + network + " network");
+      spec = SpecFactory.create(network);
+    }
 
     validateOrDefaultEpoch();
     fork = spec.getForkSchedule().getFork(epoch);
