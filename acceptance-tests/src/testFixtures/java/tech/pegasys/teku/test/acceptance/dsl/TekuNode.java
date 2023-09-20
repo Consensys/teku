@@ -26,8 +26,8 @@ import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.wit
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.libp2p.core.PeerId;
-import io.libp2p.core.crypto.KEY_TYPE;
 import io.libp2p.core.crypto.KeyKt;
+import io.libp2p.core.crypto.KeyType;
 import io.libp2p.core.crypto.PrivKey;
 import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
@@ -791,7 +791,7 @@ public class TekuNode extends Node {
     private Optional<URL> maybeJwtFile = Optional.empty();
     private Optional<InitialStateData> maybeInitialState = Optional.empty();
 
-    private final PrivKey privateKey = KeyKt.generateKeyPair(KEY_TYPE.SECP256K1).component1();
+    private final PrivKey privateKey = KeyKt.generateKeyPair(KeyType.SECP256K1).component1();
     private final PeerId peerId = PeerId.fromPubKey(privateKey.publicKey());
     private static final int DEFAULT_VALIDATOR_COUNT = 64;
 

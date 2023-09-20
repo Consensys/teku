@@ -45,6 +45,7 @@ public class NetworkConfig {
 
   public static final String DEFAULT_P2P_INTERFACE = "0.0.0.0";
   public static final int DEFAULT_P2P_PORT = 9000;
+  public static final boolean DEFAULT_YAMUX_ENABLED = false;
 
   private final GossipConfig gossipConfig;
   private final WireLogsConfig wireLogsConfig;
@@ -55,6 +56,7 @@ public class NetworkConfig {
   private final Optional<String> advertisedIp;
   private final int listenPort;
   private final OptionalInt advertisedPort;
+  private final boolean yamuxEnabled;
 
   private NetworkConfig(
       final boolean isEnabled,
@@ -64,7 +66,8 @@ public class NetworkConfig {
       final String networkInterface,
       final Optional<String> advertisedIp,
       final int listenPort,
-      final OptionalInt advertisedPort) {
+      final OptionalInt advertisedPort,
+      final boolean yamuxEnabled) {
 
     this.privateKeySource = privateKeySource;
     this.networkInterface = networkInterface;
@@ -79,6 +82,7 @@ public class NetworkConfig {
 
     this.listenPort = listenPort;
     this.advertisedPort = advertisedPort;
+    this.yamuxEnabled = yamuxEnabled;
     this.gossipConfig = gossipConfig;
     this.wireLogsConfig = wireLogsConfig;
   }
@@ -113,6 +117,10 @@ public class NetworkConfig {
 
   public int getAdvertisedPort() {
     return advertisedPort.orElse(listenPort);
+  }
+
+  public boolean isYamuxEnabled() {
+    return yamuxEnabled;
   }
 
   public GossipConfig getGossipConfig() {
@@ -176,6 +184,7 @@ public class NetworkConfig {
     private Optional<String> advertisedIp = Optional.empty();
     private int listenPort = DEFAULT_P2P_PORT;
     private OptionalInt advertisedPort = OptionalInt.empty();
+    private boolean yamuxEnabled = DEFAULT_YAMUX_ENABLED;
 
     private Builder() {}
 
@@ -188,7 +197,8 @@ public class NetworkConfig {
           networkInterface,
           advertisedIp,
           listenPort,
-          advertisedPort);
+          advertisedPort,
+          yamuxEnabled);
     }
 
     private Optional<PrivateKeySource> createFileKeySource() {
@@ -253,6 +263,11 @@ public class NetworkConfig {
         }
       }
       this.advertisedPort = advertisedPort;
+      return this;
+    }
+
+    public Builder yamuxEnabled(final boolean yamuxEnabled) {
+      this.yamuxEnabled = yamuxEnabled;
       return this;
     }
   }

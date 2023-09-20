@@ -17,7 +17,8 @@ dependencies {
   implementation project(':storage:api')
   implementation project(':infrastructure:serviceutils')
 
-  implementation 'io.libp2p:jvm-libp2p-minimal'
+  implementation 'io.libp2p:jvm-libp2p'
+  implementation 'io.netty:netty-codec-http'
   implementation 'org.apache.tuweni:tuweni-ssz'
   implementation 'org.xerial.snappy:snappy-java'
 
@@ -53,7 +54,7 @@ dependencies {
   testFixturesImplementation project(':infrastructure:subscribers')
   testFixturesImplementation project(':infrastructure:serviceutils')
 
-  testFixturesImplementation 'io.libp2p:jvm-libp2p-minimal'
+  testFixturesImplementation 'io.libp2p:jvm-libp2p'
   testFixturesImplementation 'org.mockito:mockito-core'
   testFixturesImplementation 'org.hyperledger.besu:plugin-api'
   testFixturesImplementation 'org.hyperledger.besu.internal:metrics-core'
