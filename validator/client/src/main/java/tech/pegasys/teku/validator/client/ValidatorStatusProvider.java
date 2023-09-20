@@ -25,4 +25,6 @@ public interface ValidatorStatusProvider {
   void updateValidatorStatuses();
 
   Optional<Map<BLSPublicKey, ValidatorStatus>> getStatuses();
+
+  void subscribeNewValidatorStatuses(ValidatorStatusSubscriber subscriber);
 }

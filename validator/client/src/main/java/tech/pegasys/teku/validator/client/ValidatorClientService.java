@@ -150,7 +150,6 @@ public class ValidatorClientService extends Service {
             services.getMetricsSystem(),
             validatorLoader.getOwnedValidators(),
             validatorApiChannel,
-            eventChannels.getPublisher(ValidatorStatusesChannel.class),
             asyncRunner);
     final Optional<ProposerConfigManager> proposerConfigManager;
     Optional<BeaconProposerPreparer> beaconProposerPreparer = Optional.empty();
@@ -467,7 +466,8 @@ public class ValidatorClientService extends Service {
     }
     addValidatorCountMetric(metricsSystem, validators);
     final ValidatorStatusLogger validatorStatusLogger = new ValidatorStatusLogger(validators);
-    eventChannels.subscribe(ValidatorStatusesChannel.class, validatorStatusLogger);
+    validatorStatusProvider.subscribeNewValidatorStatuses(
+        validatorStatusLogger::onNewValidatorStatuses);
   }
 
   public static Path getSlashingProtectionPath(final DataDirLayout dataDirLayout) {

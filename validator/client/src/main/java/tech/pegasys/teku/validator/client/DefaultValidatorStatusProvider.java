@@ -32,6 +32,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
@@ -42,23 +43,23 @@ public class DefaultValidatorStatusProvider implements ValidatorStatusProvider {
 
   private final OwnedValidators validators;
   private final ValidatorApiChannel validatorApiChannel;
-  private final ValidatorStatusesChannel validatorStatusesChannel;
   private final AtomicReference<Map<BLSPublicKey, ValidatorStatus>> latestValidatorStatuses =
       new AtomicReference<>();
   private final AsyncRunner asyncRunner;
   private final AtomicBoolean startupComplete = new AtomicBoolean(false);
   private final SettableLabelledGauge localValidatorCounts;
 
+  private final Subscribers<ValidatorStatusSubscriber> validatorStatusSubscribers =
+      Subscribers.create(true);
+
   public DefaultValidatorStatusProvider(
       final MetricsSystem metricsSystem,
       final OwnedValidators validators,
       final ValidatorApiChannel validatorApiChannel,
-      final ValidatorStatusesChannel validatorStatusesChannel,
       final AsyncRunner asyncRunner) {
     this.validators = validators;
     this.validatorApiChannel = validatorApiChannel;
     this.asyncRunner = asyncRunner;
-    this.validatorStatusesChannel = validatorStatusesChannel;
     this.localValidatorCounts =
         SettableLabelledGauge.create(
             metricsSystem,
@@ -66,6 +67,11 @@ public class DefaultValidatorStatusProvider implements ValidatorStatusProvider {
             "local_validator_counts",
             "Current number of validators running in this validator client labelled by current status",
             "status");
+  }
+
+  @Override
+  public void subscribeNewValidatorStatuses(final ValidatorStatusSubscriber subscriber) {
+    validatorStatusSubscribers.subscribe(subscriber);
   }
 
   @Override
@@ -86,9 +92,8 @@ public class DefaultValidatorStatusProvider implements ValidatorStatusProvider {
               final Map<BLSPublicKey, ValidatorStatus> validatorStatuses =
                   maybeValidatorStatuses.get();
               latestValidatorStatuses.set(validatorStatuses);
+              validatorStatusSubscribers.forEach(s -> s.onValidatorStatuses(validatorStatuses));
               updateValidatorCountMetrics(validatorStatuses);
-
-              validatorStatusesChannel.onNewValidatorStatuses(validatorStatuses);
               startupComplete.set(true);
               return SafeFuture.COMPLETE;
             })
@@ -120,7 +125,7 @@ public class DefaultValidatorStatusProvider implements ValidatorStatusProvider {
 
               final Map<BLSPublicKey, ValidatorStatus> oldValidatorStatuses =
                   latestValidatorStatuses.getAndSet(newValidatorStatuses);
-              validatorStatusesChannel.onNewValidatorStatuses(newValidatorStatuses);
+              validatorStatusSubscribers.forEach(s -> s.onValidatorStatuses(newValidatorStatuses));
               if (oldValidatorStatuses == null) {
                 return;
               }

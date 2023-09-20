@@ -24,7 +24,7 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
-public class ValidatorStatusLogger implements ValidatorStatusesChannel {
+public class ValidatorStatusLogger {
   private static final int VALIDATOR_KEYS_PRINT_LIMIT = 20;
 
   final OwnedValidators validators;
@@ -35,7 +35,6 @@ public class ValidatorStatusLogger implements ValidatorStatusesChannel {
     this.validators = validators;
   }
 
-  @Override
   public void onNewValidatorStatuses(
       final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses) {
     final Map<BLSPublicKey, ValidatorStatus> oldValidatorStatuses =

@@ -46,8 +46,6 @@ public class ValidatorStatusProviderTest {
   private final Collection<BLSPublicKey> validatorKeys = Set.of(validatorKey);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
-  private final ValidatorStatusesChannel validatorStatusesChannel =
-      mock(ValidatorStatusesChannel.class);
 
   private final ValidatorStatusProvider provider =
       new DefaultValidatorStatusProvider(
@@ -55,7 +53,6 @@ public class ValidatorStatusProviderTest {
           new OwnedValidators(
               Map.of(validatorKey, new Validator(validatorKey, NO_OP_SIGNER, Optional::empty))),
           validatorApiChannel,
-          validatorStatusesChannel,
           asyncRunner);
 
   @Test
