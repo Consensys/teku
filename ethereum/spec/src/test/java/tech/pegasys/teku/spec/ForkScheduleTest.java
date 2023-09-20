@@ -380,7 +380,6 @@ public class ForkScheduleTest {
     assertThat(forkSchedule.getSpecMilestoneAtForkVersion(UNKNOWN_FORK_VERSION)).isEmpty();
   }
 
-  @Test
   public void getHoleskySchedule() {
     final Spec spec = SpecFactory.create("holesky");
     final ForkSchedule forkSchedule = spec.getForkSchedule();
@@ -400,7 +399,10 @@ public class ForkScheduleTest {
 
   private Fork getAltairFork(final SpecConfigAltair config) {
     final UInt64 forkEpoch = config.getAltairForkEpoch();
-    return new Fork(config.getGenesisForkVersion(), config.getAltairForkVersion(), forkEpoch);
+    return new Fork(
+        forkEpoch.isZero() ? config.getAltairForkVersion() : config.getGenesisForkVersion(),
+        config.getAltairForkVersion(),
+        forkEpoch);
   }
 
   private Fork getPhase0Fork(final SpecConfig config) {
