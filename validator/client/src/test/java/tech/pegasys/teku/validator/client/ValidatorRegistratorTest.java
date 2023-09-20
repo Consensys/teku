@@ -83,7 +83,7 @@ class ValidatorRegistratorTest {
 
   @BeforeEach
   @SuppressWarnings("unchecked")
-  void setUp(SpecContext specContext) {
+  void setUp(final SpecContext specContext) {
     this.specContext = specContext;
     slotsPerEpoch = specContext.getSpec().getGenesisSpecConfig().getSlotsPerEpoch();
     dataStructureUtil = specContext.getDataStructureUtil();

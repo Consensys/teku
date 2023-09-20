@@ -31,14 +31,14 @@ public class ValidatorStatusLogger implements ValidatorStatusesChannel {
   final AtomicReference<Map<BLSPublicKey, ValidatorStatus>> latestValidatorStatuses =
       new AtomicReference<>();
 
-  public ValidatorStatusLogger(OwnedValidators validators) {
+  public ValidatorStatusLogger(final OwnedValidators validators) {
     this.validators = validators;
   }
 
   @Override
   public void onNewValidatorStatuses(
       final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses) {
-    Map<BLSPublicKey, ValidatorStatus> oldValidatorStatuses =
+    final Map<BLSPublicKey, ValidatorStatus> oldValidatorStatuses =
         latestValidatorStatuses.getAndSet(newValidatorStatuses);
     // first run
     if (oldValidatorStatuses == null) {
@@ -51,10 +51,10 @@ public class ValidatorStatusLogger implements ValidatorStatusesChannel {
     }
 
     // updates
-    for (Map.Entry<BLSPublicKey, ValidatorStatus> entry : newValidatorStatuses.entrySet()) {
-      BLSPublicKey key = entry.getKey();
-      ValidatorStatus newStatus = entry.getValue();
-      ValidatorStatus oldStatus = oldValidatorStatuses.get(key);
+    for (final Map.Entry<BLSPublicKey, ValidatorStatus> entry : newValidatorStatuses.entrySet()) {
+      final BLSPublicKey key = entry.getKey();
+      final ValidatorStatus newStatus = entry.getValue();
+      final ValidatorStatus oldStatus = oldValidatorStatuses.get(key);
 
       // report the status of a new validator
       if (oldStatus == null) {
@@ -70,9 +70,9 @@ public class ValidatorStatusLogger implements ValidatorStatusesChannel {
   }
 
   private void printValidatorStatusesOneByOne(
-      Map<BLSPublicKey, ValidatorStatus> validatorStatuses) {
-    for (BLSPublicKey publicKey : validators.getPublicKeys()) {
-      Optional<ValidatorStatus> maybeValidatorStatus =
+      final Map<BLSPublicKey, ValidatorStatus> validatorStatuses) {
+    for (final BLSPublicKey publicKey : validators.getPublicKeys()) {
+      final Optional<ValidatorStatus> maybeValidatorStatus =
           Optional.ofNullable(validatorStatuses.get(publicKey));
       maybeValidatorStatus.ifPresentOrElse(
           validatorStatus ->
@@ -81,22 +81,24 @@ public class ValidatorStatusLogger implements ValidatorStatusesChannel {
     }
   }
 
-  private void printValidatorStatusSummary(Map<BLSPublicKey, ValidatorStatus> validatorStatuses) {
-    Map<ValidatorStatus, AtomicInteger> validatorStatusCount = new HashMap<>();
+  private void printValidatorStatusSummary(
+      final Map<BLSPublicKey, ValidatorStatus> validatorStatuses) {
+    final Map<ValidatorStatus, AtomicInteger> validatorStatusCount = new HashMap<>();
     final AtomicInteger unknownValidatorCountReference = new AtomicInteger(0);
-    for (BLSPublicKey publicKey : validators.getPublicKeys()) {
-      Optional<ValidatorStatus> maybeValidatorStatus =
+    for (final BLSPublicKey publicKey : validators.getPublicKeys()) {
+      final Optional<ValidatorStatus> maybeValidatorStatus =
           Optional.ofNullable(validatorStatuses.get(publicKey));
       maybeValidatorStatus.ifPresentOrElse(
           status -> {
-            AtomicInteger count =
+            final AtomicInteger count =
                 validatorStatusCount.computeIfAbsent(status, __ -> new AtomicInteger(0));
             count.incrementAndGet();
           },
           unknownValidatorCountReference::incrementAndGet);
     }
 
-    for (Map.Entry<ValidatorStatus, AtomicInteger> statusCount : validatorStatusCount.entrySet()) {
+    for (final Map.Entry<ValidatorStatus, AtomicInteger> statusCount :
+        validatorStatusCount.entrySet()) {
       STATUS_LOG.validatorStatusSummary(statusCount.getValue().get(), statusCount.getKey().name());
     }
 

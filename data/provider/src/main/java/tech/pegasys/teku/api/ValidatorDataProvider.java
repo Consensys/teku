@@ -256,7 +256,7 @@ public class ValidatorDataProvider {
   }
 
   public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
-      List<SignedAggregateAndProof> aggregateAndProofs) {
+      final List<SignedAggregateAndProof> aggregateAndProofs) {
     return validatorApiChannel.sendAggregateAndProofs(aggregateAndProofs);
   }
 
@@ -295,12 +295,12 @@ public class ValidatorDataProvider {
   }
 
   public SafeFuture<Void> prepareBeaconProposer(
-      List<BeaconPreparableProposer> beaconPreparableProposers) {
+      final List<BeaconPreparableProposer> beaconPreparableProposers) {
     return validatorApiChannel.prepareBeaconProposer(beaconPreparableProposers);
   }
 
   public SafeFuture<Void> registerValidators(
-      SszList<SignedValidatorRegistration> validatorRegistrations) {
+      final SszList<SignedValidatorRegistration> validatorRegistrations) {
     return validatorApiChannel
         .getValidatorStatuses(
             validatorRegistrations.stream()

@@ -56,7 +56,7 @@ class ValidatorRegistrationSigningServiceTest {
   private DataStructureUtil dataStructureUtil;
 
   @BeforeEach
-  void setUp(SpecContext specContext) {
+  void setUp(final SpecContext specContext) {
     dataStructureUtil = specContext.getDataStructureUtil();
     feeRecipient = dataStructureUtil.randomEth1Address();
     gasLimit = dataStructureUtil.randomUInt64();

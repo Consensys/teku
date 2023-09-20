@@ -71,7 +71,7 @@ public class PostRegisterValidatorTest extends AbstractDataBackedRestAPIIntegrat
         dataStructureUtil.randomSignedValidatorRegistrations(10);
     when(validatorApiChannel.registerValidators(request)).thenReturn(SafeFuture.COMPLETE);
 
-    try (Response response =
+    try (final Response response =
         post(
             PostRegisterValidator.ROUTE,
             JsonUtil.serialize(
@@ -88,7 +88,7 @@ public class PostRegisterValidatorTest extends AbstractDataBackedRestAPIIntegrat
     when(validatorApiChannel.registerValidators(request))
         .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")));
 
-    try (Response response =
+    try (final Response response =
         post(
             PostRegisterValidator.ROUTE,
             JsonUtil.serialize(
@@ -106,7 +106,7 @@ public class PostRegisterValidatorTest extends AbstractDataBackedRestAPIIntegrat
     when(validatorApiChannel.getValidatorStatuses(anyCollection()))
         .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")));
 
-    try (Response response =
+    try (final Response response =
         post(
             PostRegisterValidator.ROUTE,
             JsonUtil.serialize(
@@ -121,7 +121,7 @@ public class PostRegisterValidatorTest extends AbstractDataBackedRestAPIIntegrat
   @ValueSource(strings = {"[{}]", "{}", "invalid"})
   void shouldReturnBadRequest(final String body) throws IOException {
     when(validatorApiChannel.registerValidators(any())).thenReturn(SafeFuture.COMPLETE);
-    try (Response response = post(PostRegisterValidator.ROUTE, body)) {
+    try (final Response response = post(PostRegisterValidator.ROUTE, body)) {
       assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
     }
     verifyNoInteractions(validatorApiChannel);
@@ -130,7 +130,7 @@ public class PostRegisterValidatorTest extends AbstractDataBackedRestAPIIntegrat
   @Test
   void shouldHandleEmptyRequest() throws IOException {
     when(validatorApiChannel.registerValidators(any())).thenReturn(SafeFuture.COMPLETE);
-    try (Response response = post(PostRegisterValidator.ROUTE, "[]")) {
+    try (final Response response = post(PostRegisterValidator.ROUTE, "[]")) {
       assertThat(response.code()).isEqualTo(SC_OK);
     }
   }

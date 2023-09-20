@@ -198,7 +198,7 @@ public class ValidatorClientService extends Service {
       proposerConfigManager = Optional.empty();
     }
 
-    ValidatorClientService validatorClientService =
+    final ValidatorClientService validatorClientService =
         new ValidatorClientService(
             eventChannels,
             validatorLoader,
@@ -273,12 +273,12 @@ public class ValidatorClientService extends Service {
   }
 
   private void initializeDoppelgangerDetector(
-      AsyncRunner asyncRunner,
-      ValidatorApiChannel validatorApiChannel,
-      Spec spec,
-      TimeProvider timeProvider,
-      GenesisDataProvider genesisDataProvider) {
-    DoppelgangerDetector doppelgangerDetector =
+      final AsyncRunner asyncRunner,
+      final ValidatorApiChannel validatorApiChannel,
+      final Spec spec,
+      final TimeProvider timeProvider,
+      final GenesisDataProvider genesisDataProvider) {
+    final DoppelgangerDetector doppelgangerDetector =
         new DoppelgangerDetector(
             asyncRunner,
             validatorApiChannel,
