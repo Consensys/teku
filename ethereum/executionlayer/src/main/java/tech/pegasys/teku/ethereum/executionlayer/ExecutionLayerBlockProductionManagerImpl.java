@@ -16,6 +16,7 @@ package tech.pegasys.teku.ethereum.executionlayer;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -72,13 +73,19 @@ public class ExecutionLayerBlockProductionManagerImpl
       final boolean isBlind) {
     final ExecutionPayloadResult result;
     if (!isBlind) {
+      final SafeFuture<GetPayloadResponse> getPayloadResponseFuture =
+          executionLayerChannel.engineGetPayload(context, blockSlotState.getSlot());
       final SafeFuture<ExecutionPayload> executionPayloadFuture =
-          executionLayerChannel
-              .engineGetPayload(context, blockSlotState.getSlot())
-              .thenApply(GetPayloadResponse::getExecutionPayload);
+          getPayloadResponseFuture.thenApply(GetPayloadResponse::getExecutionPayload);
+      final SafeFuture<UInt256> blockValue =
+          getPayloadResponseFuture.thenApply(GetPayloadResponse::getBlockValue);
       result =
           new ExecutionPayloadResult(
-              context, Optional.of(executionPayloadFuture), Optional.empty(), Optional.empty());
+              context,
+              Optional.of(executionPayloadFuture),
+              Optional.empty(),
+              Optional.empty(),
+              Optional.of(blockValue));
     } else {
       result = builderGetHeader(context, blockSlotState);
     }
@@ -99,12 +106,15 @@ public class ExecutionLayerBlockProductionManagerImpl
           getPayloadResponseFuture.thenApply(GetPayloadResponse::getExecutionPayload);
       final SafeFuture<Optional<BlobsBundle>> blobsBundleFuture =
           getPayloadResponseFuture.thenApply(GetPayloadResponse::getBlobsBundle);
+      final SafeFuture<UInt256> blockValue =
+          getPayloadResponseFuture.thenApply(GetPayloadResponse::getBlockValue);
       result =
           new ExecutionPayloadResult(
               context,
               Optional.of(executionPayloadFuture),
               Optional.of(blobsBundleFuture),
-              Optional.empty());
+              Optional.empty(),
+              Optional.of(blockValue));
     } else {
       result = builderGetHeader(context, blockSlotState);
     }
@@ -136,6 +146,7 @@ public class ExecutionLayerBlockProductionManagerImpl
         executionPayloadContext,
         Optional.empty(),
         Optional.empty(),
-        Optional.of(headerWithFallbackDataFuture));
+        Optional.of(headerWithFallbackDataFuture),
+        Optional.empty());
   }
 }

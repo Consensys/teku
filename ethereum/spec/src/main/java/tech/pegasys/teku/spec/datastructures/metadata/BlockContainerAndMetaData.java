@@ -13,17 +13,44 @@
 
 package tech.pegasys.teku.spec.datastructures.metadata;
 
+import com.google.common.base.MoreObjects;
+import java.util.Objects;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 
 public class BlockContainerAndMetaData extends ObjectAndMetaData<BlockContainer> {
+
+  private final UInt256 blockValue;
 
   public BlockContainerAndMetaData(
       final BlockContainer data,
       final SpecMilestone milestone,
       final boolean executionOptimistic,
       final boolean canonical,
-      final boolean finalized) {
+      final boolean finalized,
+      final UInt256 blockValue) {
     super(data, milestone, executionOptimistic, canonical, finalized);
+    this.blockValue = blockValue;
+  }
+
+  public UInt256 getBlockValue() {
+    return blockValue;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), blockValue);
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("data", getData())
+        .add("milestone", getMilestone())
+        .add("executionOptimistic", isExecutionOptimistic())
+        .add("canonical", isCanonical())
+        .add("blockValue", blockValue.toDecimalString())
+        .toString();
   }
 }

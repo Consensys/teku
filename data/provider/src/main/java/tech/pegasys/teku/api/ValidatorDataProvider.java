@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
@@ -46,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -54,6 +56,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -83,12 +86,16 @@ public class ValidatorDataProvider {
   private static final int SC_OK = 200;
   private final Spec spec;
 
+  private final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager;
+
   public ValidatorDataProvider(
       final Spec spec,
       final ValidatorApiChannel validatorApiChannel,
-      final CombinedChainDataClient combinedChainDataClient) {
+      final CombinedChainDataClient combinedChainDataClient,
+      final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager) {
     this.validatorApiChannel = validatorApiChannel;
     this.combinedChainDataClient = combinedChainDataClient;
+    this.executionLayerBlockProductionManager = executionLayerBlockProductionManager;
     this.spec = spec;
   }
 
@@ -110,21 +117,34 @@ public class ValidatorDataProvider {
     checkBlockProducingParameters(slot, randao);
     return validatorApiChannel
         .createUnsignedBlock(slot, randao, graffiti)
-        .thenApply(this::lookupBlockData);
+        .thenCombine(retrieveBlockValue(slot), this::lookUpData);
   }
 
-  private Optional<BlockContainerAndMetaData> lookupBlockData(
-      final Optional<BlockContainer> maybeBlockContainer) {
+  private Optional<BlockContainerAndMetaData> lookUpData(
+      Optional<BlockContainer> maybeBlockContainer, UInt256 blockValue) {
     if (maybeBlockContainer.isEmpty()) {
       return Optional.empty();
+    } else {
+      return Optional.of(
+          new BlockContainerAndMetaData(
+              maybeBlockContainer.get(),
+              spec.atSlot(maybeBlockContainer.get().getSlot()).getMilestone(),
+              false,
+              false,
+              false,
+              blockValue));
     }
-    return Optional.of(
-        new BlockContainerAndMetaData(
-            maybeBlockContainer.get(),
-            spec.atSlot(maybeBlockContainer.get().getSlot()).getMilestone(),
-            false,
-            false,
-            false));
+  }
+
+  private SafeFuture<UInt256> retrieveBlockValue(UInt64 slot) {
+    final ExecutionPayloadResult payloadResult =
+        executionLayerBlockProductionManager
+            .getCachedPayloadResult(slot)
+            .orElseThrow(
+                () -> new IllegalStateException("ExecutionPayloadResult is not available"));
+    return payloadResult
+        .getBlockValue()
+        .orElseThrow(() -> new IllegalStateException("Execution Payload Value is not available"));
   }
 
   private void checkBlockProducingParameters(UInt64 slot, BLSSignature randao) {

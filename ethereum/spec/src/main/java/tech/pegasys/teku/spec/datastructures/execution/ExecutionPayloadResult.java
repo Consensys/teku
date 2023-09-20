@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.execution;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class ExecutionPayloadResult {
@@ -25,15 +26,19 @@ public class ExecutionPayloadResult {
   private final Optional<SafeFuture<Optional<BlobsBundle>>> blobsBundleFuture;
   private final Optional<SafeFuture<HeaderWithFallbackData>> headerWithFallbackDataFuture;
 
+  private final Optional<SafeFuture<UInt256>> blockValue;
+
   public ExecutionPayloadResult(
       final ExecutionPayloadContext executionPayloadContext,
       final Optional<SafeFuture<ExecutionPayload>> executionPayloadFuture,
       final Optional<SafeFuture<Optional<BlobsBundle>>> blobsBundleFuture,
-      final Optional<SafeFuture<HeaderWithFallbackData>> headerWithFallbackDataFuture) {
+      final Optional<SafeFuture<HeaderWithFallbackData>> headerWithFallbackDataFuture,
+      final Optional<SafeFuture<UInt256>> blockValue) {
     this.executionPayloadContext = executionPayloadContext;
     this.executionPayloadFuture = executionPayloadFuture;
     this.blobsBundleFuture = blobsBundleFuture;
     this.headerWithFallbackDataFuture = headerWithFallbackDataFuture;
+    this.blockValue = blockValue;
   }
 
   public ExecutionPayloadContext getExecutionPayloadContext() {
@@ -50,6 +55,10 @@ public class ExecutionPayloadResult {
 
   public Optional<SafeFuture<HeaderWithFallbackData>> getHeaderWithFallbackDataFuture() {
     return headerWithFallbackDataFuture;
+  }
+
+  public Optional<SafeFuture<UInt256>> getBlockValue() {
+    return blockValue;
   }
 
   @Override

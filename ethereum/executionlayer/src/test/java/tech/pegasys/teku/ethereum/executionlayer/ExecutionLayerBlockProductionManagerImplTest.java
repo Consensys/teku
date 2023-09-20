@@ -445,7 +445,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
                             executionPayloadContext,
                             Optional.empty(),
                             Optional.empty(),
-                            Optional.of(SafeFuture.completedFuture(headerWithFallbackData))))))
+                            Optional.of(SafeFuture.completedFuture(headerWithFallbackData)),
+                            Optional.empty()))))
         .isCompletedWithValue(builderPayload);
 
     // we expect no additional calls

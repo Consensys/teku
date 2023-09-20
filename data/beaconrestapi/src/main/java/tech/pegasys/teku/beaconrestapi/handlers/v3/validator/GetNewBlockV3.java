@@ -50,20 +50,20 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
-public class ProduceBlock extends RestApiEndpoint {
+public class GetNewBlockV3 extends RestApiEndpoint {
 
   public static final String ROUTE = "/eth/v3/validator/blocks/{slot}";
 
   protected final ValidatorDataProvider provider;
 
-  public ProduceBlock(
+  public GetNewBlockV3(
       final DataProvider dataProvider,
       final Spec spec,
       final SchemaDefinitionCache schemaDefinitionCache) {
     this(dataProvider.getValidatorDataProvider(), spec, schemaDefinitionCache);
   }
 
-  public ProduceBlock(
+  public GetNewBlockV3(
       final ValidatorDataProvider provider,
       final Spec spec,
       final SchemaDefinitionCache schemaDefinitionCache) {
@@ -139,7 +139,9 @@ public class ProduceBlock extends RestApiEndpoint {
                           request.header(
                               HEADER_EXECUTION_PAYLOAD_BLINDED,
                               Boolean.toString(blockContainer.getData().getBlock().isBlinded()));
-                          request.header(HEADER_EXECUTION_PAYLOAD_VALUE, "1234");
+                          request.header(
+                              HEADER_EXECUTION_PAYLOAD_VALUE,
+                              blockContainer.getBlockValue().toDecimalString());
                           return AsyncApiResponse.respondOk(blockContainer);
                         })
                     .orElseThrow(ChainDataUnavailableException::new)));
