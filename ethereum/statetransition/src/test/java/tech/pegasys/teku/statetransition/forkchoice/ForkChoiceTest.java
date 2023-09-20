@@ -417,8 +417,6 @@ class ForkChoiceTest {
 
   @Test
   void onBlock_shouldUpdateVotesBasedOnAttesterSlashingEquivocationsInBlocks() {
-    final SignedBlockAndState commonBlock = chainBuilder.generateNextBlock();
-    importBlock(commonBlock);
     final ChainBuilder forkChain = chainBuilder.fork();
     final SignedBlockAndState forkBlock =
         forkChain.generateNextBlock(
@@ -715,6 +713,27 @@ class ForkChoiceTest {
 
     // no notification is expected
     verifyNoMoreInteractions(optimisticSyncStateTracker);
+  }
+
+  @Test
+  void onBlock_shouldApplyProposerBoostToFirstBlock() {
+    final ChainBuilder forkChain = chainBuilder.fork();
+
+    final SignedBlockAndState block = chainBuilder.generateNextBlock();
+    final SignedBlockAndState forkBlock = forkChain.generateNextBlock();
+
+    final BlockOptions forkBlockOptions = BlockOptions.create();
+    final List<Attestation> forkAttestations =
+        forkChain.streamValidAttestationsWithTargetBlock(forkBlock).limit(2).toList();
+    forkAttestations.forEach(forkBlockOptions::addAttestation);
+    final SignedBlockAndState forkBlock1 = forkChain.generateNextBlock(forkBlockOptions);
+
+    importBlock(block);
+    importBlock(forkBlock);
+    importBlock(forkBlock1);
+
+    // proposer boost is given to the first block despite the fork chain having bigger weight
+    assertThat(recentChainData.getStore().getProposerBoostRoot()).hasValue(block.getRoot());
   }
 
   @Test
