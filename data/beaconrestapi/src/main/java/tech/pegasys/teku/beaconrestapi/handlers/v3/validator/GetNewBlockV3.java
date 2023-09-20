@@ -21,16 +21,19 @@ import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDepend
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_PAYLOAD_BLINDED;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_PAYLOAD_VALUE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_VALUE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_PATH_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT256_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
-import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
@@ -93,29 +96,11 @@ public class GetNewBlockV3 extends RestApiEndpoint {
         .response(
             SC_OK,
             "Request successful",
-            SerializableTypeDefinition.<BlockContainer>object()
-                .name("ProduceBlockV3Response")
-                .withField(
-                    "data",
-                    getMultipleSchemaDefinitionForAllSupportedMilestones(
-                        schemaDefinitionCache,
-                        "Block",
-                        (blockContainer, milestone) ->
-                            schemaDefinitionCache
-                                .milestoneAtSlot(blockContainer.getSlot())
-                                .equals(milestone),
-                        SchemaDefinitions::getBlockContainerSchema,
-                        SchemaDefinitions::getBlindedBlockContainerSchema),
-                    Function.identity())
-                .withField(
-                    "version",
-                    MILESTONE_TYPE,
-                    blockContainer ->
-                        schemaDefinitionCache.milestoneAtSlot(blockContainer.getSlot()))
-                .build(),
+            getResponseType(schemaDefinitionCache),
             sszResponseType(
-                blockContainer ->
-                    spec.getForkSchedule().getSpecMilestoneAtSlot(blockContainer.getSlot())))
+                blockContainerAndMetaData ->
+                    spec.getForkSchedule()
+                        .getSpecMilestoneAtSlot(blockContainerAndMetaData.getData().getSlot())))
         .build();
   }
 
@@ -132,18 +117,46 @@ public class GetNewBlockV3 extends RestApiEndpoint {
             maybeBlock ->
                 maybeBlock
                     .map(
-                        blockContainer -> {
+                        blockContainerAndMetaData -> {
                           request.header(
                               HEADER_CONSENSUS_VERSION,
-                              Version.fromMilestone(blockContainer.getMilestone()).name());
+                              Version.fromMilestone(blockContainerAndMetaData.getMilestone())
+                                  .name());
                           request.header(
                               HEADER_EXECUTION_PAYLOAD_BLINDED,
-                              Boolean.toString(blockContainer.getData().getBlock().isBlinded()));
+                              Boolean.toString(
+                                  blockContainerAndMetaData.getData().getBlock().isBlinded()));
                           request.header(
                               HEADER_EXECUTION_PAYLOAD_VALUE,
-                              blockContainer.getBlockValue().toDecimalString());
-                          return AsyncApiResponse.respondOk(blockContainer);
+                              blockContainerAndMetaData.getBlockValue().toDecimalString());
+                          return AsyncApiResponse.respondOk(blockContainerAndMetaData);
                         })
                     .orElseThrow(ChainDataUnavailableException::new)));
+  }
+
+  private static SerializableTypeDefinition<BlockContainerAndMetaData> getResponseType(
+      SchemaDefinitionCache schemaDefinitionCache) {
+    final SerializableTypeDefinition<BlockContainer> blockContainerType =
+        getMultipleSchemaDefinitionForAllSupportedMilestones(
+            schemaDefinitionCache,
+            "Block",
+            (blockContainer, milestone) ->
+                schemaDefinitionCache.milestoneAtSlot(blockContainer.getSlot()).equals(milestone),
+            SchemaDefinitions::getBlockContainerSchema,
+            SchemaDefinitions::getBlindedBlockContainerSchema);
+
+    return SerializableTypeDefinition.<BlockContainerAndMetaData>object()
+        .name("ProduceBlockV3Response")
+        .withField("version", MILESTONE_TYPE, BlockContainerAndMetaData::getMilestone)
+        .withField(
+            EXECUTION_PAYLOAD_BLINDED,
+            BOOLEAN_TYPE,
+            blockContainerAndMetaData -> blockContainerAndMetaData.getData().isBlinded())
+        .withField(
+            EXECUTION_PAYLOAD_VALUE,
+            UINT256_TYPE,
+            blockContainerAndMetaData -> blockContainerAndMetaData.getBlockValue())
+        .withField("data", blockContainerType, BlockContainerAndMetaData::getData)
+        .build();
   }
 }

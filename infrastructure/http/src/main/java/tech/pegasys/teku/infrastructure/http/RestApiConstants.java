@@ -130,6 +130,8 @@ public class RestApiConstants {
 
   public static final String EXECUTION_OPTIMISTIC = "execution_optimistic";
   public static final String FINALIZED = "finalized";
+  public static final String EXECUTION_PAYLOAD_BLINDED = "execution_payload_blinded";
+  public static final String EXECUTION_PAYLOAD_VALUE = "execution_payload_value";
   public static final String TARGET_PEER_COUNT = "target_peer_count";
   public static final String TARGET_PEER_COUNT_DESCRIPTION =
       "Returns "
