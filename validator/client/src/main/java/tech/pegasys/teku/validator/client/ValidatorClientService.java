@@ -87,8 +87,7 @@ public class ValidatorClientService extends Service {
   private final Spec spec;
 
   private final List<ValidatorTimingChannel> validatorTimingChannels = new ArrayList<>();
-  private ValidatorStatusLogger validatorStatusLogger;
-  private ValidatorStatusProvider validatorStatusProvider;
+  private final ValidatorStatusProvider validatorStatusProvider;
   private ValidatorIndexProvider validatorIndexProvider;
   private Optional<DoppelgangerDetector> maybeDoppelgangerDetector = Optional.empty();
   private final DoppelgangerDetectionAction doppelgangerDetectionAction;
@@ -467,14 +466,7 @@ public class ValidatorClientService extends Service {
       validatorRegistrator.ifPresent(validatorTimingChannels::add);
     }
     addValidatorCountMetric(metricsSystem, validators);
-    this.validatorStatusProvider =
-        new DefaultValidatorStatusProvider(
-            metricsSystem,
-            validators,
-            validatorApiChannel,
-            eventChannels.getPublisher(ValidatorStatusesChannel.class),
-            asyncRunner);
-    this.validatorStatusLogger = new ValidatorStatusLogger(validators);
+    final ValidatorStatusLogger validatorStatusLogger = new ValidatorStatusLogger(validators);
     eventChannels.subscribe(ValidatorStatusesChannel.class, validatorStatusLogger);
   }
 
