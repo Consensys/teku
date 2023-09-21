@@ -102,8 +102,7 @@ public class ValidatorSourceFactory {
   public List<ValidatorSource> createValidatorSources() {
     final List<ValidatorSource> validatorSources = new ArrayList<>();
     if (interopConfig.isInteropEnabled()) {
-      validatorSources.add(
-          slashingProtected(new MockStartValidatorSource(spec, interopConfig, asyncRunner)));
+      validatorSources.add(slashingProtected(addInteropValidatorSource()));
     } else {
       addExternalValidatorSource().ifPresent(validatorSources::add);
       addLocalValidatorSource().ifPresent(validatorSources::add);
@@ -150,6 +149,22 @@ public class ValidatorSourceFactory {
             maybeDataDir);
     mutableLocalValidatorSource = Optional.of(slashingProtected(localValidatorSource));
     return mutableLocalValidatorSource;
+  }
+
+  private ValidatorSource addInteropValidatorSource() {
+    final MockStartValidatorSource.Builder builder =
+        new MockStartValidatorSource.Builder(spec, interopConfig, asyncRunner);
+    if (config.getValidatorExternalSignerUrl() == null) {
+      return builder.useExternalSigner(false).build();
+    }
+
+    return builder
+        .useExternalSigner(true)
+        .config(config)
+        .externalSignerHttpClientFactory(externalSignerHttpClientFactory)
+        .metricsSystem(metricsSystem)
+        .externalSignerTaskQueue(initializeExternalSignerTaskQueue())
+        .build();
   }
 
   private Optional<ValidatorSource> addMutableExternalValidatorSource() {
