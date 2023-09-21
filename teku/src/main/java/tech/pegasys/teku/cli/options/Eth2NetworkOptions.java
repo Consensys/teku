@@ -166,8 +166,7 @@ public class Eth2NetworkOptions {
   private boolean forkChoiceUpdateHeadOnBlockImportEnabled =
       Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
 
-  // can be removed after all clients have rolled out the spec change:
-  // https://github.com/ethereum/consensus-specs/pull/3352
+  // https://github.com/Consensys/teku/issues/7537
   @Option(
       names = {"--Xfork-choice-proposer-boost-uniqueness-enabled"},
       paramLabel = "<BOOLEAN>",
