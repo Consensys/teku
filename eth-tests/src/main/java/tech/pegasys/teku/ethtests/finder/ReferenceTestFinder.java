@@ -19,7 +19,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 import tech.pegasys.teku.ethtests.TestFork;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingFunction;
@@ -32,10 +31,6 @@ public class ReferenceTestFinder {
   private static final List<String> SUPPORTED_FORKS =
       List.of(
           TestFork.PHASE0, TestFork.ALTAIR, TestFork.BELLATRIX, TestFork.CAPELLA, TestFork.DENEB);
-  // should only be used to temporarily disable specific reference tests,
-  // otherwise should return false
-  private static final Predicate<TestDefinition> IGNORE_TESTS =
-      test -> test.getFork().equals(TestFork.DENEB) && test.getTestType().startsWith("fork_choice");
 
   @MustBeClosed
   public static Stream<TestDefinition> findReferenceTests() throws IOException {
@@ -63,8 +58,7 @@ public class ReferenceTestFinder {
                       new SszTestFinder("ssz_static"),
                       new ShufflingTestFinder(),
                       new PyspecTestFinder())
-                  .flatMap(unchecked(finder -> finder.findTests(fork, spec, testsPath)))
-                  .filter(test -> !IGNORE_TESTS.test(test));
+                  .flatMap(unchecked(finder -> finder.findTests(fork, spec, testsPath)));
             });
   }
 
