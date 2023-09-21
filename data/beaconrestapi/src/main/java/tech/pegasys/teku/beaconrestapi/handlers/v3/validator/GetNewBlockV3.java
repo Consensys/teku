@@ -46,7 +46,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
@@ -60,22 +59,18 @@ public class GetNewBlockV3 extends RestApiEndpoint {
   protected final ValidatorDataProvider provider;
 
   public GetNewBlockV3(
-      final DataProvider dataProvider,
-      final Spec spec,
-      final SchemaDefinitionCache schemaDefinitionCache) {
-    this(dataProvider.getValidatorDataProvider(), spec, schemaDefinitionCache);
+      final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
+    this(dataProvider.getValidatorDataProvider(), schemaDefinitionCache);
   }
 
   public GetNewBlockV3(
-      final ValidatorDataProvider provider,
-      final Spec spec,
-      final SchemaDefinitionCache schemaDefinitionCache) {
-    super(getEndpointMetaData(spec, schemaDefinitionCache));
+      final ValidatorDataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
+    super(getEndpointMetaData(schemaDefinitionCache));
     this.provider = provider;
   }
 
   private static EndpointMetadata getEndpointMetaData(
-      final Spec spec, final SchemaDefinitionCache schemaDefinitionCache) {
+      final SchemaDefinitionCache schemaDefinitionCache) {
     return EndpointMetadata.get(ROUTE)
         .operationId("produceBlockV3")
         .summary("Produce a new block, without signature")
@@ -94,13 +89,7 @@ public class GetNewBlockV3 extends RestApiEndpoint {
         .queryParam(GRAFFITI_PARAMETER)
         .queryParam(SKIP_RANDAO_VERIFICATION_PARAMETER)
         .response(
-            SC_OK,
-            "Request successful",
-            getResponseType(schemaDefinitionCache),
-            sszResponseType(
-                blockContainerAndMetaData ->
-                    spec.getForkSchedule()
-                        .getSpecMilestoneAtSlot(blockContainerAndMetaData.getData().getSlot())))
+            SC_OK, "Request successful", getResponseType(schemaDefinitionCache), sszResponseType())
         .build();
   }
 

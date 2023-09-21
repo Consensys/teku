@@ -21,15 +21,21 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_VALUE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
+import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import okhttp3.Response;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
@@ -43,6 +49,8 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -52,6 +60,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
 
   private DataStructureUtil dataStructureUtil;
   private SpecMilestone specMilestone;
+  private final UInt256 blockValue = UInt256.valueOf(12345);
 
   @BeforeEach
   void setup(TestSpecInvocationContextProvider.SpecContext specContext) {
@@ -62,8 +71,8 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
   }
 
   @TestTemplate
-  void shouldGetBeaconBlock_asJson() throws IOException {
-    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX).isLessThanOrEqualTo(CAPELLA);
+  void shouldGetUnBlindedBeaconBlockAsJson() throws IOException {
+    assumeThat(specMilestone).isLessThan(DENEB);
     final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
     final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
     when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
@@ -76,11 +85,225 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
                     Optional.empty(),
                     Optional.empty(),
                     Optional.empty(),
-                    Optional.of(SafeFuture.completedFuture(UInt256.valueOf(12345))))));
+                    Optional.of(SafeFuture.completedFuture(blockValue)))));
     Response response = get(signature, ContentTypes.JSON);
     assertThat(response.code()).isEqualTo(SC_OK);
+    assertThat(response.header(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
+    assertThat(response.header(HEADER_EXECUTION_PAYLOAD_BLINDED))
+        .isEqualTo(Boolean.toString(false));
+    assertThat(response.header(HEADER_EXECUTION_PAYLOAD_VALUE))
+        .isEqualTo(blockValue.toDecimalString());
     final String body = response.body().string();
-    assertThat(body).isEqualTo(getExpectedBlockAsJson(specMilestone));
+    assertThat(body).isEqualTo(getExpectedBlockAsJson(specMilestone, false, false));
+  }
+
+  @TestTemplate
+  void shouldGetUnblindedBeaconBlockAsSsz() throws IOException {
+    assumeThat(specMilestone).isLessThan(DENEB);
+    final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
+    final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
+    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconBlock)));
+    when(executionLayerBlockProductionManager.getCachedPayloadResult(UInt64.ONE))
+        .thenReturn(
+            Optional.of(
+                new ExecutionPayloadResult(
+                    mock(ExecutionPayloadContext.class),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.of(SafeFuture.completedFuture(blockValue)))));
+    Response response = get(signature, ContentTypes.OCTET_STREAM);
+    assertThat(response.code()).isEqualTo(SC_OK);
+    assertThat(response.header(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
+    assertThat(response.header(HEADER_EXECUTION_PAYLOAD_BLINDED))
+        .isEqualTo(Boolean.toString(false));
+    assertThat(response.header(HEADER_EXECUTION_PAYLOAD_VALUE))
+        .isEqualTo(blockValue.toDecimalString());
+    final BeaconBlock result =
+        spec.getGenesisSchemaDefinitions()
+            .getBeaconBlockSchema()
+            .sszDeserialize(Bytes.of(response.body().bytes()));
+    assertThat(result).isEqualTo(beaconBlock);
+  }
+
+  @TestTemplate
+  void shouldGetBlindedBeaconBlockAsJson() throws IOException {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX).isLessThanOrEqualTo(CAPELLA);
+    final BeaconBlock beaconBlock = dataStructureUtil.randomBlindedBeaconBlock(ONE);
+    final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
+    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconBlock)));
+    when(executionLayerBlockProductionManager.getCachedPayloadResult(UInt64.ONE))
+        .thenReturn(
+            Optional.of(
+                new ExecutionPayloadResult(
+                    mock(ExecutionPayloadContext.class),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.of(SafeFuture.completedFuture(blockValue)))));
+    Response response = get(signature, ContentTypes.JSON);
+    assertThat(response.code()).isEqualTo(SC_OK);
+    assertThat(response.header(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
+    assertThat(response.header(HEADER_EXECUTION_PAYLOAD_BLINDED)).isEqualTo(Boolean.toString(true));
+    assertThat(response.header(HEADER_EXECUTION_PAYLOAD_VALUE))
+        .isEqualTo(blockValue.toDecimalString());
+    final String body = response.body().string();
+    assertThat(body).isEqualTo(getExpectedBlockAsJson(specMilestone, true, false));
+  }
+
+  @TestTemplate
+  void shouldGetBlindedBeaconBlockAsSsz() throws IOException {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX).isLessThanOrEqualTo(CAPELLA);
+    final BeaconBlock blindedBeaconBlock = dataStructureUtil.randomBlindedBeaconBlock(ONE);
+    final BLSSignature signature = blindedBeaconBlock.getBlock().getBody().getRandaoReveal();
+    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blindedBeaconBlock)));
+    when(executionLayerBlockProductionManager.getCachedPayloadResult(UInt64.ONE))
+        .thenReturn(
+            Optional.of(
+                new ExecutionPayloadResult(
+                    mock(ExecutionPayloadContext.class),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.of(SafeFuture.completedFuture(blockValue)))));
+    Response response = get(signature, ContentTypes.OCTET_STREAM);
+    assertThat(response.code()).isEqualTo(SC_OK);
+    assertThat(response.header(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
+    assertThat(response.header(HEADER_EXECUTION_PAYLOAD_BLINDED)).isEqualTo(Boolean.toString(true));
+    assertThat(response.header(HEADER_EXECUTION_PAYLOAD_VALUE))
+        .isEqualTo(blockValue.toDecimalString());
+    final BeaconBlock result =
+        spec.getGenesisSchemaDefinitions()
+            .getBlindedBeaconBlockSchema()
+            .sszDeserialize(Bytes.of(response.body().bytes()));
+    assertThat(result).isEqualTo(blindedBeaconBlock);
+  }
+
+  @TestTemplate
+  void shouldGetUnBlindedBlockContentAsJsonPostDenebAsJson() throws IOException {
+    assumeThat(specMilestone).isEqualTo(DENEB);
+    final BlockContents blockContents = dataStructureUtil.randomBlockContents(ONE);
+    final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
+    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockContents)));
+    when(executionLayerBlockProductionManager.getCachedPayloadResult(UInt64.ONE))
+        .thenReturn(
+            Optional.of(
+                new ExecutionPayloadResult(
+                    mock(ExecutionPayloadContext.class),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.of(SafeFuture.completedFuture(blockValue)))));
+    Response response = get(signature, ContentTypes.JSON);
+    assertThat(response.code()).isEqualTo(SC_OK);
+    assertThat(response.header(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
+    assertThat(response.header(HEADER_EXECUTION_PAYLOAD_BLINDED))
+        .isEqualTo(Boolean.toString(false));
+    assertThat(response.header(HEADER_EXECUTION_PAYLOAD_VALUE))
+        .isEqualTo(blockValue.toDecimalString());
+    final String body = response.body().string();
+    assertThat(body).isEqualTo(getExpectedBlockAsJson(specMilestone, false, true));
+  }
+
+  @TestTemplate
+  void shouldGetUnBlindedBlockContentAsJsonPostDenebAsSsz() throws IOException {
+    assumeThat(specMilestone).isEqualTo(DENEB);
+    final BlockContents blockContents = dataStructureUtil.randomBlockContents(ONE);
+    final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
+    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockContents)));
+    when(executionLayerBlockProductionManager.getCachedPayloadResult(UInt64.ONE))
+        .thenReturn(
+            Optional.of(
+                new ExecutionPayloadResult(
+                    mock(ExecutionPayloadContext.class),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.of(SafeFuture.completedFuture(blockValue)))));
+    Response response = get(signature, ContentTypes.OCTET_STREAM);
+    assertThat(response.code()).isEqualTo(SC_OK);
+    assertThat(response.header(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
+    assertThat(response.header(HEADER_EXECUTION_PAYLOAD_BLINDED))
+        .isEqualTo(Boolean.toString(false));
+    assertThat(response.header(HEADER_EXECUTION_PAYLOAD_VALUE))
+        .isEqualTo(blockValue.toDecimalString());
+    final BlockContents result =
+        (BlockContents)
+            spec.getGenesisSchemaDefinitions()
+                .getBlockContainerSchema()
+                .sszDeserialize(Bytes.of(response.body().bytes()));
+    assertThat(result).isEqualTo(blockContents);
+  }
+
+  @TestTemplate
+  void shouldGetBlindedBlockContentAsJsonPostDenebAsJson() throws IOException {
+    assumeThat(specMilestone).isEqualTo(DENEB);
+    final BlindedBlockContents blindedBlockContents =
+        dataStructureUtil.randomBlindedBlockContents(ONE);
+    final BLSSignature signature = blindedBlockContents.getBlock().getBody().getRandaoReveal();
+    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blindedBlockContents)));
+    when(executionLayerBlockProductionManager.getCachedPayloadResult(UInt64.ONE))
+        .thenReturn(
+            Optional.of(
+                new ExecutionPayloadResult(
+                    mock(ExecutionPayloadContext.class),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.of(SafeFuture.completedFuture(blockValue)))));
+    Response response = get(signature, ContentTypes.JSON);
+    assertThat(response.code()).isEqualTo(SC_OK);
+    assertThat(response.header(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
+    assertThat(response.header(HEADER_EXECUTION_PAYLOAD_BLINDED)).isEqualTo(Boolean.toString(true));
+    assertThat(response.header(HEADER_EXECUTION_PAYLOAD_VALUE))
+        .isEqualTo(blockValue.toDecimalString());
+    final String body = response.body().string();
+    assertThat(body).isEqualTo(getExpectedBlockAsJson(specMilestone, true, true));
+  }
+
+  @TestTemplate
+  void shouldGetBlindedBlockContentAsJsonPostDenebAsSsz() throws IOException {
+    assumeThat(specMilestone).isEqualTo(DENEB);
+    final BlindedBlockContents blindedBlockContents =
+        dataStructureUtil.randomBlindedBlockContents(ONE);
+    final BLSSignature signature = blindedBlockContents.getBlock().getBody().getRandaoReveal();
+    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blindedBlockContents)));
+    when(executionLayerBlockProductionManager.getCachedPayloadResult(UInt64.ONE))
+        .thenReturn(
+            Optional.of(
+                new ExecutionPayloadResult(
+                    mock(ExecutionPayloadContext.class),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.of(SafeFuture.completedFuture(blockValue)))));
+    Response response = get(signature, ContentTypes.OCTET_STREAM);
+    assertThat(response.code()).isEqualTo(SC_OK);
+    assertThat(response.header(HEADER_CONSENSUS_VERSION))
+        .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
+    assertThat(response.header(HEADER_EXECUTION_PAYLOAD_BLINDED)).isEqualTo(Boolean.toString(true));
+    assertThat(response.header(HEADER_EXECUTION_PAYLOAD_VALUE))
+        .isEqualTo(blockValue.toDecimalString());
+    final BlindedBlockContents result =
+        (BlindedBlockContents)
+            spec.getGenesisSchemaDefinitions()
+                .getBlindedBlockContainerSchema()
+                .sszDeserialize(Bytes.of(response.body().bytes()));
+    assertThat(result).isEqualTo(blindedBlockContents);
   }
 
   public Response get(final BLSSignature signature, final String contentType) throws IOException {
@@ -90,11 +313,16 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
         contentType);
   }
 
-  public String getExpectedBlockAsJson(SpecMilestone specMilestone) throws IOException {
+  public String getExpectedBlockAsJson(
+      final SpecMilestone specMilestone, final boolean blinded, final boolean blockContents)
+      throws IOException {
+    final String fileName =
+        String.format(
+            "new%s%s%s.json",
+            blinded ? "Blinded" : "",
+            blockContents ? "BlockContents" : "Block",
+            specMilestone.name());
     return Resources.toString(
-        Resources.getResource(
-            GetNewBlockV3IntegrationTest.class,
-            String.format("newBlock%s.json", specMilestone.name())),
-        UTF_8);
+        Resources.getResource(GetNewBlockV3IntegrationTest.class, fileName), UTF_8);
   }
 }
