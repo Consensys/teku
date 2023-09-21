@@ -579,23 +579,22 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   // from consensus-specs/fork-choice:
-  // get_current_slot(store) == block.slot and is_before_attesting_interval and is_first_block
   private boolean shouldApplyProposerBoost(
       final SignedBeaconBlock block, final StoreTransaction transaction) {
+    // get_current_slot(store) == block.slot
     if (!spec.getCurrentSlot(transaction).equals(block.getSlot())) {
       return false;
     }
-
+    // is_before_attesting_interval
     final UInt64 millisPerSlot = spec.getMillisPerSlot(block.getSlot());
     final UInt64 timeIntoSlotMillis = getMillisIntoSlot(transaction, millisPerSlot);
     if (!isBeforeAttestingInterval(millisPerSlot, timeIntoSlotMillis)) {
       return false;
     }
-
+    // is_first_block
     if (forkChoiceProposerBoostUniquenessEnabled) {
       return transaction.getProposerBoostRoot().isEmpty();
     }
-
     return true;
   }
 
