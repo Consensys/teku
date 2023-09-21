@@ -80,7 +80,13 @@ public class SpecConfigLoader {
       }
     }
     reader.loadFromMap(config, true);
-    return reader.build();
+    // remote is always not from beacon node, real kzg is not required
+    return reader.build(
+        specConfigBuilder ->
+            specConfigBuilder.denebBuilder(
+                denebBuilder -> {
+                  denebBuilder.kzgNoop(true);
+                }));
   }
 
   static void processConfig(
