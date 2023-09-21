@@ -166,6 +166,18 @@ public class Eth2NetworkOptions {
   private boolean forkChoiceUpdateHeadOnBlockImportEnabled =
       Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
 
+  // https://github.com/Consensys/teku/issues/7537
+  @Option(
+      names = {"--Xfork-choice-proposer-boost-uniqueness-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Apply proposer boost to first block in case of equivocation.",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private boolean forkChoiceProposerBoostUniquenessEnabled =
+      Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED;
+
   @Option(
       names = {"--Xeth1-deposit-contract-deploy-block-override"},
       hidden = true,
@@ -250,6 +262,7 @@ public class Eth2NetworkOptions {
     builder
         .safeSlotsToImportOptimistically(safeSlotsToImportOptimistically)
         .forkChoiceUpdateHeadOnBlockImportEnabled(forkChoiceUpdateHeadOnBlockImportEnabled)
+        .forkChoiceProposerBoostUniquenessEnabled(forkChoiceProposerBoostUniquenessEnabled)
         .epochsStoreBlobs(epochsStoreBlobs);
   }
 

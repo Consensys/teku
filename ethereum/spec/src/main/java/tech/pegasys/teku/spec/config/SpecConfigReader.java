@@ -53,7 +53,7 @@ import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 public class SpecConfigReader {
   private static final Logger LOG = LogManager.getLogger();
   public static final String PRESET_KEY = "PRESET_BASE";
-  private static final String CONFIG_NAME_KEY = "CONFIG_NAME";
+  public static final String CONFIG_NAME_KEY = "CONFIG_NAME";
   private static final ImmutableSet<String> KEYS_TO_IGNORE =
       ImmutableSet.of(
           PRESET_KEY,
@@ -96,13 +96,14 @@ public class SpecConfigReader {
           .put(Integer.class, this::parseInt)
           .put(Long.TYPE, this::parseLong)
           .put(Long.class, this::parseLong)
+          .put(Boolean.TYPE, fromString(Boolean::valueOf))
+          .put(Boolean.class, fromString(Boolean::valueOf))
           .put(UInt64.class, fromString(UInt64::valueOf))
           .put(UInt256.class, fromString(str -> UInt256.valueOf(new BigInteger(str))))
           .put(String.class, Function.identity())
           .put(Bytes.class, fromString(Bytes::fromHexString))
           .put(Bytes4.class, fromString(Bytes4::fromHexString))
           .put(Bytes32.class, fromString(Bytes32::fromHexStringStrict))
-          .put(boolean.class, fromString(Boolean::valueOf))
           .put(Eth1Address.class, fromString(Eth1Address::fromHexString))
           .build();
 

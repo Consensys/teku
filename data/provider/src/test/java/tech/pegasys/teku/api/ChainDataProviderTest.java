@@ -748,11 +748,11 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
     assertThat(withdrawals).hasSize(2);
     assertThat(withdrawals.get(0).getValidatorIndex()).isEqualTo(UInt64.valueOf(11));
     assertThat(withdrawals.get(0).getAddress())
-        .isEqualTo(Bytes20.fromHexString("0x93909e937fd7caf97f6bf6b7ab0d3c7ab1b3cde5"));
+        .isEqualTo(new Bytes20(validators.get(11).getWithdrawalCredentials().slice(12)));
     assertThat(withdrawals.get(0).getAmount()).isEqualTo(UInt64.valueOf(1));
     assertThat(withdrawals.get(1).getValidatorIndex()).isEqualTo(UInt64.valueOf(0));
     assertThat(withdrawals.get(1).getAddress())
-        .isEqualTo(Bytes20.fromHexString("0x9e5f4c933efa00bee9149c173e895bb108debfe1"));
+        .isEqualTo(new Bytes20(validators.get(0).getWithdrawalCredentials().slice(12)));
     assertThat(withdrawals.get(1).getAmount()).isEqualTo(UInt64.valueOf(1024_000));
   }
 

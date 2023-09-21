@@ -146,7 +146,8 @@ public class PeerManagerTest {
   public void shouldReportSuccessfulConnectionsToReputationManager() {
     final Connection connection = mock(Connection.class);
     final Session secureSession =
-        new Session(PeerId.random(), PeerId.random(), EcdsaKt.generateEcdsaKeyPair().component2());
+        new Session(
+            PeerId.random(), PeerId.random(), EcdsaKt.generateEcdsaKeyPair().component2(), null);
     when(connection.secureSession()).thenReturn(secureSession);
     when(connection.closeFuture()).thenReturn(new SafeFuture<>());
     final Multiaddr multiaddr = Multiaddr.fromString("/ip4/127.0.0.1/tcp/9000");
