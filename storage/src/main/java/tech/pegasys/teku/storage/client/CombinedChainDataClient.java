@@ -354,6 +354,8 @@ public class CombinedChainDataClient {
               if (maybeState.isPresent()) {
                 return completedFuture(maybeState);
               }
+              LOG.debug(
+                  "State not found in store, querying historicalData for {}", () -> blockRoot);
               return historicalChainData.getFinalizedStateByBlockRoot(blockRoot);
             });
   }
@@ -401,6 +403,10 @@ public class CombinedChainDataClient {
               if (maybeState.isPresent()) {
                 return SafeFuture.completedFuture(maybeState);
               }
+              LOG.debug(
+                  "State not found in store, querying historicalData for {}:{}",
+                  slotAndBlockRoot::getSlot,
+                  slotAndBlockRoot::getBlockRoot);
               return getFinalizedStateFromSlotAndBlock(slotAndBlockRoot);
             });
   }
@@ -424,6 +430,10 @@ public class CombinedChainDataClient {
       return Optional.empty();
     }
     try {
+      LOG.debug(
+          "Processing slots to regenerate state from slot {}, target slot {}",
+          preState::getSlot,
+          () -> slot);
       return Optional.of(spec.processSlots(preState, slot));
     } catch (SlotProcessingException | EpochProcessingException | IllegalArgumentException e) {
       LOG.debug("State Transition error", e);
