@@ -36,6 +36,8 @@ public interface SpecConfigDeneb extends SpecConfigCapella, NetworkingSpecConfig
 
   UInt64 getDenebForkEpoch();
 
+  int getMaxPerEpochActivationChurnLimit();
+
   int getFieldElementsPerBlob();
 
   /**

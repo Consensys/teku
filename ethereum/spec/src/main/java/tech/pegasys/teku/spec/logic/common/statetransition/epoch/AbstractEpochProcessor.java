@@ -362,7 +362,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
               .toList();
 
       // Dequeued validators for activation up to churn limit (without resetting activation epoch)
-      int churnLimit = beaconStateAccessors.getValidatorChurnLimit(state).intValue();
+      int churnLimit = beaconStateAccessors.getValidatorActivationChurnLimit(state).intValue();
       int sublistSize = Math.min(churnLimit, activationQueue.size());
       for (Integer index : activationQueue.subList(0, sublistSize)) {
         state
