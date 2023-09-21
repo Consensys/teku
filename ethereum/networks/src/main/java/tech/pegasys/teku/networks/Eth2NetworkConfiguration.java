@@ -48,7 +48,7 @@ public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
 
   public static final boolean DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED = false;
-  public static final boolean DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED = false;
+  public static final boolean DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED = true;
 
   public static final String INITIAL_STATE_URL_PATH = "eth/v2/debug/beacon/states/finalized";
   // 26 thousand years should be enough

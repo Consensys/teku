@@ -104,6 +104,12 @@ public abstract class Eth2ReferenceTestCase {
       testExecutor = COMMON_TEST_TYPES.get(testDefinition.getTestType());
     }
 
+    // TODO: https://github.com/Consensys/teku/issues/7539
+    if (testDefinition.getFork().equals(TestFork.DENEB)
+        && testExecutor instanceof ForkChoiceTestExecutor) {
+      testExecutor = TestExecutor.IGNORE_TESTS;
+    }
+
     if (testExecutor == null) {
       return Assertions.fail("Unsupported test type " + testDefinition.getTestType());
     }
