@@ -35,7 +35,7 @@ public class ReferenceTestFinder {
   // should only be used to temporarily disable specific reference tests,
   // otherwise should return false
   private static final Predicate<TestDefinition> IGNORE_TESTS =
-      test -> test.getFork().equals(TestFork.DENEB) && test.getTestType().startsWith("fork-choice");
+      test -> test.getFork().equals(TestFork.DENEB) && test.getTestType().startsWith("fork_choice");
 
   @MustBeClosed
   public static Stream<TestDefinition> findReferenceTests() throws IOException {
