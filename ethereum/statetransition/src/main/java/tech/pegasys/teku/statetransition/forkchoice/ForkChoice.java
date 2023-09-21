@@ -543,7 +543,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         blobSidecars,
         earliestBlobSidecarsSlot);
 
-    if (applyProposerBoost(block, transaction)) {
+    if (shouldApplyProposerBoost(block, transaction)) {
       transaction.setProposerBoostRoot(block.getRoot());
     }
 
@@ -578,21 +578,25 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     return result;
   }
 
-  private boolean applyProposerBoost(
+  // from consensus-specs/fork-choice:
+  // get_current_slot(store) == block.slot and is_before_attesting_interval and is_first_block
+  private boolean shouldApplyProposerBoost(
       final SignedBeaconBlock block, final StoreTransaction transaction) {
-    if (spec.getCurrentSlot(transaction).equals(block.getSlot())) {
-      final UInt64 millisPerSlot = spec.getMillisPerSlot(block.getSlot());
-      final UInt64 timeIntoSlotMillis = getMillisIntoSlot(transaction, millisPerSlot);
-
-      if (isBeforeAttestingInterval(millisPerSlot, timeIntoSlotMillis)) {
-        if (forkChoiceProposerBoostUniquenessEnabled) {
-          // is_first_block
-          return recentChainData.getStore().getProposerBoostRoot().isEmpty();
-        }
-        return true;
-      }
+    if (!spec.getCurrentSlot(transaction).equals(block.getSlot())) {
+      return false;
     }
-    return false;
+
+    final UInt64 millisPerSlot = spec.getMillisPerSlot(block.getSlot());
+    final UInt64 timeIntoSlotMillis = getMillisIntoSlot(transaction, millisPerSlot);
+    if (!isBeforeAttestingInterval(millisPerSlot, timeIntoSlotMillis)) {
+      return false;
+    }
+
+    if (forkChoiceProposerBoostUniquenessEnabled) {
+      return transaction.getProposerBoostRoot().isEmpty();
+    }
+
+    return true;
   }
 
   /**

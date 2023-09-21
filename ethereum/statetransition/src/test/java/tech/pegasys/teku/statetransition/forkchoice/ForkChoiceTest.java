@@ -1094,11 +1094,9 @@ class ForkChoiceTest {
             ZERO);
     executionLayer.addPowBlock(terminalBlock);
     executionLayer.addPowBlock(terminalParentBlock);
-    final SignedBlockAndState epoch4Block =
-        chainBuilder.generateBlockAtSlot(
-            storageSystem.chainUpdater().getHeadSlot().plus(1),
-            BlockOptions.create().setTerminalBlockHash(terminalBlockHash));
-    return epoch4Block;
+    return chainBuilder.generateBlockAtSlot(
+        storageSystem.chainUpdater().getHeadSlot().plus(1),
+        BlockOptions.create().setTerminalBlockHash(terminalBlockHash));
   }
 
   @Test
