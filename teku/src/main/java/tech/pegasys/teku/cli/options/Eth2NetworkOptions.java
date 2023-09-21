@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 
+import java.util.function.Consumer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -197,22 +198,25 @@ public class Eth2NetworkOptions {
       arity = "0..1")
   private String epochsStoreBlobs;
 
-  public Eth2NetworkConfiguration getNetworkConfigurationWithoutKzg() {
-    return createEth2NetworkConfig(false);
+  public Eth2NetworkConfiguration getNetworkConfiguration() {
+    return createEth2NetworkConfig(builder -> {});
   }
 
-  public Eth2NetworkConfiguration getNetworkConfiguration() {
-    return createEth2NetworkConfig(true);
+  public Eth2NetworkConfiguration getNetworkConfiguration(
+      final Consumer<Eth2NetworkConfiguration.Builder> modifier) {
+    return createEth2NetworkConfig(modifier);
   }
 
   public void configure(final TekuConfiguration.Builder builder) {
     builder.eth2NetworkConfig(this::configureEth2Network);
   }
 
-  private Eth2NetworkConfiguration createEth2NetworkConfig(final boolean withKzg) {
+  private Eth2NetworkConfiguration createEth2NetworkConfig(
+      final Consumer<Eth2NetworkConfiguration.Builder> modifier) {
     Eth2NetworkConfiguration.Builder builder = Eth2NetworkConfiguration.builder();
     configureEth2Network(builder);
-    return builder.build(withKzg);
+    modifier.accept(builder);
+    return builder.build();
   }
 
   private void configureEth2Network(Eth2NetworkConfiguration.Builder builder) {

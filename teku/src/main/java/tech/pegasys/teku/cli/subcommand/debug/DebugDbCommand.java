@@ -43,6 +43,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -213,7 +214,9 @@ public class DebugDbCommand implements Runnable {
                           .onDiskStoreData(storeData)
                           .metricsSystem(new NoOpMetricsSystem())
                           .specProvider(
-                              eth2NetworkOptions.getNetworkConfigurationWithoutKzg().getSpec())
+                              eth2NetworkOptions
+                                  .getNetworkConfiguration(config -> config.kzgNoop(true))
+                                  .getSpec())
                           .blockProvider(BlockProvider.NOOP)
                           .stateProvider(StateAndBlockSummaryProvider.NOOP)
                           .build())
@@ -455,7 +458,7 @@ public class DebugDbCommand implements Runnable {
               showDefaultValue = Visibility.ALWAYS)
           final boolean deleteAll)
       throws Exception {
-    final Spec spec = eth2NetworkOptions.getNetworkConfigurationWithoutKzg().getSpec();
+    final Spec spec = eth2NetworkOptions.getNetworkConfiguration(b -> b.kzgNoop(true)).getSpec();
     try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
       final Optional<Checkpoint> justified = database.getJustifiedCheckpoint();
       if (justified.isEmpty()) {
@@ -558,17 +561,16 @@ public class DebugDbCommand implements Runnable {
   private Database createDatabase(
       final BeaconNodeDataOptions beaconNodeDataOptions,
       final Eth2NetworkOptions eth2NetworkOptions) {
-    final Spec spec = eth2NetworkOptions.getNetworkConfigurationWithoutKzg().getSpec();
+    final Eth2NetworkConfiguration networkConfiguration =
+        eth2NetworkOptions.getNetworkConfiguration(b -> b.kzgNoop(true));
+    final Spec spec = networkConfiguration.getSpec();
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
             new NoOpMetricsSystem(),
             DataDirLayout.createFrom(beaconNodeDataOptions.getDataConfig())
                 .getBeaconDataDirectory(),
             StorageConfiguration.builder()
-                .eth1DepositContract(
-                    eth2NetworkOptions
-                        .getNetworkConfigurationWithoutKzg()
-                        .getEth1DepositContractAddress())
+                .eth1DepositContract(networkConfiguration.getEth1DepositContractAddress())
                 .specProvider(spec)
                 .build());
     return databaseFactory.createDatabase();

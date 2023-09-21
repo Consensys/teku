@@ -197,13 +197,9 @@ public class TekuConfiguration {
     private Builder() {}
 
     public TekuConfiguration build() {
-      return build(true);
-    }
-
-    public TekuConfiguration build(final boolean forBeaconNode) {
       // Create spec, and pass spec to other builders that require it
       final Eth2NetworkConfiguration eth2NetworkConfiguration =
-          eth2NetworkConfigurationBuilder.build(forBeaconNode);
+          eth2NetworkConfigurationBuilder.build();
       final Spec spec = eth2NetworkConfiguration.getSpec();
       final DataConfig dataConfig = dataConfigBuilder.build();
 

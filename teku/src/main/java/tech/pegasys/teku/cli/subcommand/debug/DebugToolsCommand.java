@@ -128,7 +128,9 @@ public class DebugToolsCommand implements Runnable {
               description = "Represents which network to use.")
           final String network)
       throws Exception {
-    final tech.pegasys.teku.spec.Spec spec = SpecFactory.create(network);
+    final tech.pegasys.teku.spec.Spec spec =
+        SpecFactory.create(
+            network, modifier -> modifier.denebBuilder(denebBuilder -> denebBuilder.kzgNoop(true)));
     if (!outputPath.toFile().mkdirs() && !outputPath.toFile().isDirectory()) {
       throw new InvalidConfigurationException(
           String.format(
@@ -220,7 +222,9 @@ public class DebugToolsCommand implements Runnable {
               description = "Represents which network to use.")
           final String network)
       throws Exception {
-    final tech.pegasys.teku.spec.Spec spec = SpecFactory.create(network);
+    final tech.pegasys.teku.spec.Spec spec =
+        SpecFactory.create(
+            network, modifier -> modifier.denebBuilder(denebBuilder -> denebBuilder.kzgNoop(true)));
     BeaconState state = spec.deserializeBeaconState(Bytes.wrap(Files.readAllBytes(statePath)));
 
     if (spec.getCurrentEpoch(state).isLessThan(epoch)) {

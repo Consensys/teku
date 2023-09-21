@@ -17,6 +17,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
@@ -24,6 +25,7 @@ import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
+import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpClientAuth;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
@@ -32,22 +34,24 @@ class RemoteSpecLoader {
 
   private static final long RETRY_DELAY = 5000;
 
-  static Spec getSpecWithRetry(final List<URI> beaconEndpoints) {
-    return retry(() -> getSpec(beaconEndpoints));
+  static Spec getSpecWithRetry(
+      final List<URI> beaconEndpoints, final Consumer<SpecConfigBuilder> modifier) {
+    return retry(() -> getSpec(beaconEndpoints, modifier));
   }
 
-  static Spec getSpec(final List<URI> beaconEndpoints) {
+  static Spec getSpec(final List<URI> beaconEndpoints, final Consumer<SpecConfigBuilder> modifier) {
     if (beaconEndpoints.size() > 1) {
-      return getSpecWithFailovers(createApiClients(beaconEndpoints));
+      return getSpecWithFailovers(createApiClients(beaconEndpoints), modifier);
     }
-    return getSpec(createApiClient(beaconEndpoints.get(0)));
+    return getSpec(createApiClient(beaconEndpoints.get(0)), modifier);
   }
 
-  static Spec getSpec(final OkHttpValidatorRestApiClient apiClient) {
+  static Spec getSpec(
+      final OkHttpValidatorRestApiClient apiClient, final Consumer<SpecConfigBuilder> modifier) {
     try {
       return apiClient
           .getConfigSpec()
-          .map(response -> SpecConfigLoader.loadRemoteConfig(response.data))
+          .map(response -> SpecConfigLoader.loadRemoteConfig(response.data, modifier))
           .map(SpecFactory::create)
           .orElseThrow();
     } catch (final Throwable ex) {
@@ -63,10 +67,12 @@ class RemoteSpecLoader {
     return createApiClients(List.of(endpoint)).get(0);
   }
 
-  private static Spec getSpecWithFailovers(final List<OkHttpValidatorRestApiClient> apiClients) {
+  private static Spec getSpecWithFailovers(
+      final List<OkHttpValidatorRestApiClient> apiClients,
+      final Consumer<SpecConfigBuilder> modifier) {
     for (final OkHttpValidatorRestApiClient apiClient : apiClients) {
       try {
-        return getSpec(apiClient);
+        return getSpec(apiClient, modifier);
       } catch (final Throwable ex) {
         logError(ex);
       }

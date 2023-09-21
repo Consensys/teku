@@ -17,6 +17,7 @@ import static tech.pegasys.teku.cli.subcommand.RemoteSpecLoader.getSpecWithRetry
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
+import java.util.function.Consumer;
 import org.apache.logging.log4j.Level;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -37,6 +38,7 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
+import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 
 @Command(
@@ -122,9 +124,10 @@ public class ValidatorClientCommand implements Callable<Integer> {
     LoggingConfigurator.setAllLevelsSilently("org.jupnp", Level.ERROR);
   }
 
-  private void configureWithSpecFromBeaconNode(Eth2NetworkConfiguration.Builder builder) {
+  private void configureWithSpecFromBeaconNode(
+      final Eth2NetworkConfiguration.Builder builder, final Consumer<SpecConfigBuilder> modifier) {
     try {
-      var spec = getSpecWithRetry(validatorClientOptions.getBeaconNodeApiEndpoints());
+      var spec = getSpecWithRetry(validatorClientOptions.getBeaconNodeApiEndpoints(), modifier);
       builder.spec(spec);
     } catch (Throwable e) {
       throw new InvalidConfigurationException(e);
@@ -142,9 +145,13 @@ public class ValidatorClientCommand implements Callable<Integer> {
     }
 
     if (isAutoDetectNetworkOption(networkOption)) {
-      builder.eth2NetworkConfig(this::configureWithSpecFromBeaconNode);
+      builder.eth2NetworkConfig(
+          config ->
+              configureWithSpecFromBeaconNode(
+                  config,
+                  modifier -> modifier.denebBuilder(denebBuilder -> denebBuilder.kzgNoop(true))));
     } else {
-      builder.eth2NetworkConfig(b -> b.applyNetworkDefaults(networkOption));
+      builder.eth2NetworkConfig(b -> b.applyNetworkDefaults(networkOption).kzgNoop(true));
     }
   }
 
@@ -158,6 +165,6 @@ public class ValidatorClientCommand implements Callable<Integer> {
     loggingOptions.configureWireLogs(builder);
     interopOptions.configure(builder);
     metricsOptions.configure(builder);
-    return builder.build(false);
+    return builder.build();
   }
 }

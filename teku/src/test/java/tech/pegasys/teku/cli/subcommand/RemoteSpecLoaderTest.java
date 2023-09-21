@@ -45,7 +45,7 @@ class RemoteSpecLoaderTest {
     final Map<String, String> rawConfig = getRawConfigForSpec(spec);
     rawConfig.put("UNKNOWN_ITEM", "foo");
     when(apiClient.getConfigSpec()).thenReturn(Optional.of(new GetSpecResponse(rawConfig)));
-    final Spec result = RemoteSpecLoader.getSpec(apiClient);
+    final Spec result = RemoteSpecLoader.getSpec(apiClient, modifier -> {});
     assertThat(getRawConfigForSpec(result)).containsExactlyInAnyOrderEntriesOf(rawConfig);
     assertThat(result.getGenesisSpecConfig()).isEqualTo(spec.getGenesisSpecConfig());
   }
@@ -57,7 +57,8 @@ class RemoteSpecLoaderTest {
 
     when(apiClient.getConfigSpec()).thenReturn(Optional.of(new GetSpecResponse(rawConfig)));
 
-    final SpecConfig config = RemoteSpecLoader.getSpec(apiClient).getSpecConfig(UInt64.ONE);
+    final SpecConfig config =
+        RemoteSpecLoader.getSpec(apiClient, modifier -> {}).getSpecConfig(UInt64.ONE);
     assertThat(config.getGenesisForkVersion()).isEqualTo(Bytes4.fromHexString("0x00000001"));
   }
 
@@ -70,7 +71,7 @@ class RemoteSpecLoaderTest {
     final ObjectMapper objectMapper = new ObjectMapper();
     TypeReference<Map<String, String>> typeReference = new TypeReference<>() {};
     Map<String, String> data = objectMapper.readValue(jsonConfig, typeReference);
-    final SpecConfig specConfig = SpecConfigLoader.loadRemoteConfig(data);
+    final SpecConfig specConfig = SpecConfigLoader.loadRemoteConfig(data, modifier -> {});
 
     // Check values not assigned, using default values
     assertThat(specConfig.getGossipMaxSize()).isEqualTo(10485760);

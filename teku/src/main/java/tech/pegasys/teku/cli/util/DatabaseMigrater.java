@@ -178,7 +178,8 @@ public class DatabaseMigrater {
   @VisibleForTesting
   KvStoreDatabase createDatabase(final Path databasePath, DatabaseVersion databaseVersion)
       throws DatabaseMigraterError {
-    final Eth2NetworkConfiguration config = Eth2NetworkConfiguration.builder(network).build(false);
+    final Eth2NetworkConfiguration config =
+        Eth2NetworkConfiguration.builder(network).kzgNoop(true).build();
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(
             new NoOpMetricsSystem(),
@@ -240,7 +241,11 @@ public class DatabaseMigrater {
       this.network = network;
       if (spec == null) {
         spec =
-            Eth2NetworkConfiguration.builder().applyNetworkDefaults(network).build(false).getSpec();
+            Eth2NetworkConfiguration.builder()
+                .applyNetworkDefaults(network)
+                .kzgNoop(true)
+                .build()
+                .getSpec();
       }
       return this;
     }

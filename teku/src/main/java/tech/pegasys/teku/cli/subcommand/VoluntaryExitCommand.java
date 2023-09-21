@@ -290,10 +290,15 @@ public class VoluntaryExitCommand implements Callable<Integer> {
 
     if (network == null) {
       SUB_COMMAND_LOG.display(" - Loading network settings from " + apiClient.getBaseEndpoint());
-      spec = getSpec(apiClient);
+      spec =
+          getSpec(
+              apiClient,
+              builder -> builder.denebBuilder(denebBuilder -> denebBuilder.kzgNoop(true)));
     } else {
       SUB_COMMAND_LOG.display(" - Loading local settings for " + network + " network");
-      spec = SpecFactory.create(network);
+      spec =
+          SpecFactory.create(
+              network, builder -> builder.denebBuilder(denebBuilder -> denebBuilder.kzgNoop(true)));
     }
 
     validateOrDefaultEpoch();
@@ -386,7 +391,8 @@ public class VoluntaryExitCommand implements Callable<Integer> {
     // we don't use the data path, but keep configuration happy.
     builder.data(config -> config.dataBasePath(Path.of(".")));
     builder.validator(config -> config.validatorKeystoreLockingEnabled(false));
-    return builder.build(false);
+    builder.eth2NetworkConfig(config -> config.kzgNoop(true));
+    return builder.build();
   }
 
   private String getFailedToConnectMessage() {
