@@ -353,7 +353,7 @@ public class ChainBuilder {
     final List<SignedBlockAndState> generated = new ArrayList<>();
 
     SignedBlockAndState latestBlock = getLatestBlockAndState();
-    while (latestBlock.getState().getSlot().compareTo(slot) < 0) {
+    while (latestBlock.getState().getSlot().isLessThan(slot)) {
       latestBlock = generateNextBlock();
       generated.add(latestBlock);
     }

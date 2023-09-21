@@ -678,6 +678,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             new TickProcessor(spec, recentChainData),
             new MergeTransitionBlockValidator(spec, recentChainData, executionLayer),
             beaconConfig.eth2NetworkConfig().isForkChoiceUpdateHeadOnBlockImportEnabled(),
+            beaconConfig.eth2NetworkConfig().isForkChoiceProposerBoostUniquenessEnabled(),
             metricsSystem);
     forkChoiceTrigger = new ForkChoiceTrigger(forkChoice);
   }
