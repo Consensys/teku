@@ -48,6 +48,7 @@ public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
 
   public static final boolean DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED = false;
+  public static final boolean DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED = false;
 
   public static final String INITIAL_STATE_URL_PATH = "eth/v2/debug/beacon/states/finalized";
   // 26 thousand years should be enough
@@ -70,6 +71,7 @@ public class Eth2NetworkConfiguration {
   private final Optional<String> trustedSetup;
 
   private final boolean forkChoiceUpdateHeadOnBlockImportEnabled;
+  private final boolean forkChoiceProposerBoostUniquenessEnabled;
   private final Optional<Bytes32> terminalBlockHashOverride;
   private final Optional<UInt256> totalTerminalDifficultyOverride;
   private final Optional<UInt64> terminalBlockHashEpochOverride;
@@ -89,6 +91,7 @@ public class Eth2NetworkConfiguration {
       final Optional<UInt64> eth1DepositContractDeployBlock,
       final Optional<String> trustedSetup,
       final boolean forkChoiceUpdateHeadOnBlockImportEnabled,
+      final boolean forkChoiceProposerBoostUniquenessEnabled,
       final Optional<UInt64> altairForkEpoch,
       final Optional<UInt64> bellatrixForkEpoch,
       final Optional<UInt64> capellaForkEpoch,
@@ -117,6 +120,7 @@ public class Eth2NetworkConfiguration {
     this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
     this.trustedSetup = trustedSetup;
     this.forkChoiceUpdateHeadOnBlockImportEnabled = forkChoiceUpdateHeadOnBlockImportEnabled;
+    this.forkChoiceProposerBoostUniquenessEnabled = forkChoiceProposerBoostUniquenessEnabled;
     this.terminalBlockHashOverride = terminalBlockHashOverride;
     this.totalTerminalDifficultyOverride = totalTerminalDifficultyOverride;
     this.terminalBlockHashEpochOverride = terminalBlockHashEpochOverride;
@@ -189,6 +193,10 @@ public class Eth2NetworkConfiguration {
     return forkChoiceUpdateHeadOnBlockImportEnabled;
   }
 
+  public boolean isForkChoiceProposerBoostUniquenessEnabled() {
+    return forkChoiceProposerBoostUniquenessEnabled;
+  }
+
   public Optional<UInt64> getForkEpoch(final SpecMilestone specMilestone) {
     return switch (specMilestone) {
       case ALTAIR -> altairForkEpoch;
@@ -248,6 +256,8 @@ public class Eth2NetworkConfiguration {
     private Spec spec;
     private boolean forkChoiceUpdateHeadOnBlockImportEnabled =
         DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
+    private boolean forkChoiceProposerBoostUniquenessEnabled =
+        DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED;
 
     public void spec(Spec spec) {
       this.spec = spec;
@@ -310,6 +320,7 @@ public class Eth2NetworkConfiguration {
           eth1DepositContractDeployBlock,
           trustedSetup,
           forkChoiceUpdateHeadOnBlockImportEnabled,
+          forkChoiceProposerBoostUniquenessEnabled,
           altairForkEpoch,
           bellatrixForkEpoch,
           capellaForkEpoch,
@@ -412,6 +423,12 @@ public class Eth2NetworkConfiguration {
     public Builder forkChoiceUpdateHeadOnBlockImportEnabled(
         final boolean forkChoiceUpdateHeadOnBlockImportEnabled) {
       this.forkChoiceUpdateHeadOnBlockImportEnabled = forkChoiceUpdateHeadOnBlockImportEnabled;
+      return this;
+    }
+
+    public Builder forkChoiceProposerBoostUniquenessEnabled(
+        final boolean forkChoiceProposerBoostUniquenessEnabled) {
+      this.forkChoiceProposerBoostUniquenessEnabled = forkChoiceProposerBoostUniquenessEnabled;
       return this;
     }
 
