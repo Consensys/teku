@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.http.ContentTypes.OCTET_STREAM;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONTENT_ENCODING;
 
 import java.io.IOException;
 import java.util.List;
@@ -82,8 +83,23 @@ public class GetBlockV2IntegrationTest extends AbstractDataBackedRestAPIIntegrat
     assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.altair.name());
   }
 
+  @Test
+  public void shouldGetAltairBlockAsGzip() throws IOException {
+    startRestAPIAtGenesis(SpecMilestone.ALTAIR);
+    createBlocksAtSlots(10);
+    final Response response = getGzip("head", OCTET_STREAM);
+    assertThat(response.code()).isEqualTo(SC_OK);
+    assertThat(response.header(HEADER_CONSENSUS_VERSION)).isEqualTo(Version.altair.name());
+    assertThat(response.header(HEADER_CONTENT_ENCODING)).isEqualTo("gzip");
+    // todo check response
+  }
+
   public Response get(final String blockIdString, final String contentType) throws IOException {
     return getResponse(GetBlock.ROUTE.replace("{block_id}", blockIdString), contentType);
+  }
+
+  public Response getGzip(final String blockIdString, final String contentType) throws IOException {
+    return getGzipResponse(GetBlock.ROUTE.replace("{block_id}", blockIdString), contentType);
   }
 
   public Response get(final String blockIdString) throws IOException {
