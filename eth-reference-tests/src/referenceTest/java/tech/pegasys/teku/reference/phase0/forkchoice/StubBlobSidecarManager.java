@@ -48,7 +48,7 @@ class StubBlobSidecarManager implements BlobSidecarManager {
     this.spec = spec;
   }
 
-  /** Manually provide blobs and proofs for a block * */
+  /** Prepare the blobs and proofs for a block provided by the reference test * */
   public void prepareBlobsAndProofsForBlock(
       final SignedBeaconBlock block, final List<Blob> blobs, final List<KZGProof> proofs) {
     blobsAndProofsByBlockRoot.put(block.getRoot(), new BlobsAndProofs(blobs, proofs));
@@ -80,8 +80,8 @@ class StubBlobSidecarManager implements BlobSidecarManager {
 
   /**
    * Creates an implementation of {@link BlobSidecarsAvailabilityChecker} which uses the simplified
-   * {@link MiscHelpers#isDataAvailable(List, List, List)} method with the already provided blobs
-   * and proofs by the reference test
+   * {@link MiscHelpers#isDataAvailable(List, List, List)} method with the blobs and proofs that the
+   * reference test has provided
    */
   @Override
   public BlobSidecarsAvailabilityChecker createAvailabilityChecker(final SignedBeaconBlock block) {
@@ -93,7 +93,7 @@ class StubBlobSidecarManager implements BlobSidecarManager {
 
       @Override
       public SafeFuture<BlobSidecarsAndValidationResult> getAvailabilityCheckResult() {
-        final BlobsAndProofs blobsAndProofs = blobsAndProofsByBlockRoot.get(block.getRoot());
+        final BlobsAndProofs blobsAndProofs = blobsAndProofsByBlockRoot.remove(block.getRoot());
         if (blobsAndProofs == null) {
           return SafeFuture.completedFuture(BlobSidecarsAndValidationResult.NOT_REQUIRED);
         }

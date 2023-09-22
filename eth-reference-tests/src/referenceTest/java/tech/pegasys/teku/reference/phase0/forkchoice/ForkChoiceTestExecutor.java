@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -309,27 +310,28 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final SignedBeaconBlock block =
         TestDataUtils.loadSsz(
             testDefinition, blockName + SSZ_SNAPPY_EXTENSION, spec::deserializeSignedBeaconBlock);
-    getOptionally(step, "blobs")
-        .ifPresent(
-            blobsName -> {
-              final List<Blob> blobs =
-                  TestDataUtils.loadSsz(
-                          testDefinition,
-                          blobsName + SSZ_SNAPPY_EXTENSION,
-                          sszBytes -> spec.deserializeBlobsInBlock(sszBytes, block.getSlot()))
-                      .asList();
-              @SuppressWarnings("unchecked")
-              final List<KZGProof> proofs =
-                  ((List<String>) get(step, "proofs"))
-                      .stream().map(KZGProof::fromHexString).toList();
-              LOG.info(
-                  "Preparing {} blobs with proofs {} for block {}",
-                  blobs.size(),
-                  proofs,
-                  block.getRoot());
-              blobSidecarManager.prepareBlobsAndProofsForBlock(block, blobs, proofs);
-            });
-
+    final List<Blob> blobs =
+        getOptionally(step, "blobs")
+            .map(
+                blobsName ->
+                    TestDataUtils.loadSsz(
+                            testDefinition,
+                            blobsName + SSZ_SNAPPY_EXTENSION,
+                            sszBytes -> spec.deserializeBlobsInBlock(sszBytes, block.getSlot()))
+                        .asList())
+            .orElse(Collections.emptyList());
+    @SuppressWarnings("unchecked")
+    final List<KZGProof> proofs =
+        getOptionally(step, "proofs")
+            .map(
+                proofsArray ->
+                    ((List<String>) proofsArray).stream().map(KZGProof::fromHexString).toList())
+            .orElse(Collections.emptyList());
+    if (block.getMessage().getBody().toVersionDeneb().isPresent()) {
+      LOG.info(
+          "Preparing {} blobs with proofs {} for block {}", blobs.size(), proofs, block.getRoot());
+      blobSidecarManager.prepareBlobsAndProofsForBlock(block, blobs, proofs);
+    }
     LOG.info(
         "Importing block {} at slot {} with parent {}",
         block.getRoot(),
