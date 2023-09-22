@@ -16,6 +16,7 @@ package tech.pegasys.teku.cli.subcommand;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.cli.subcommand.ValidatorClientCommand.DENEB_KZG_STUB;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,6 +33,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 
@@ -83,6 +85,18 @@ class RemoteSpecLoaderTest {
     assertThat(specConfig.getRespTimeout()).isEqualTo(10);
     assertThat(specConfig.getAttestationPropagationSlotRange()).isEqualTo(32);
     assertThat(specConfig.getMaximumGossipClockDisparity()).isEqualTo(500);
+  }
+
+  @Test
+  void shouldSetStubTrustedSetupPathForRemoteDeneb() {
+    final Spec spec = TestSpecFactory.createMainnetDeneb();
+    final Map<String, String> rawConfig = getRawConfigForSpec(spec);
+    when(apiClient.getConfigSpec()).thenReturn(Optional.of(new GetSpecResponse(rawConfig)));
+
+    final SpecConfig config =
+        RemoteSpecLoader.getSpec(apiClient, DENEB_KZG_STUB).getSpecConfig(UInt64.ONE);
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
+    assertThat(specConfigDeneb.isKZGNoop()).isTrue();
   }
 
   private Map<String, String> getRawConfigForSpec(final Spec spec) {

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.subcommand.debug;
 
+import static tech.pegasys.teku.cli.subcommand.ValidatorClientCommand.DENEB_KZG_STUB;
+
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -128,9 +130,7 @@ public class DebugToolsCommand implements Runnable {
               description = "Represents which network to use.")
           final String network)
       throws Exception {
-    final tech.pegasys.teku.spec.Spec spec =
-        SpecFactory.create(
-            network, modifier -> modifier.denebBuilder(denebBuilder -> denebBuilder.kzgNoop(true)));
+    final tech.pegasys.teku.spec.Spec spec = SpecFactory.create(network, DENEB_KZG_STUB);
     if (!outputPath.toFile().mkdirs() && !outputPath.toFile().isDirectory()) {
       throw new InvalidConfigurationException(
           String.format(
@@ -222,9 +222,7 @@ public class DebugToolsCommand implements Runnable {
               description = "Represents which network to use.")
           final String network)
       throws Exception {
-    final tech.pegasys.teku.spec.Spec spec =
-        SpecFactory.create(
-            network, modifier -> modifier.denebBuilder(denebBuilder -> denebBuilder.kzgNoop(true)));
+    final tech.pegasys.teku.spec.Spec spec = SpecFactory.create(network, DENEB_KZG_STUB);
     BeaconState state = spec.deserializeBeaconState(Bytes.wrap(Files.readAllBytes(statePath)));
 
     if (spec.getCurrentEpoch(state).isLessThan(epoch)) {
