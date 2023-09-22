@@ -38,37 +38,23 @@ public class TestSpecFactory {
   }
 
   public static Spec createMinimal(final SpecMilestone specMilestone) {
-    switch (specMilestone) {
-      case PHASE0:
-        return createMinimalPhase0();
-      case ALTAIR:
-        return createMinimalAltair();
-      case BELLATRIX:
-        return createMinimalBellatrix();
-      case CAPELLA:
-        return createMinimalCapella();
-      case DENEB:
-        return createMinimalDeneb();
-      default:
-        throw new IllegalStateException("unsupported milestone");
-    }
+    return switch (specMilestone) {
+      case PHASE0 -> createMinimalPhase0();
+      case ALTAIR -> createMinimalAltair();
+      case BELLATRIX -> createMinimalBellatrix();
+      case CAPELLA -> createMinimalCapella();
+      case DENEB -> createMinimalDeneb();
+    };
   }
 
   public static Spec createMainnet(final SpecMilestone specMilestone) {
-    switch (specMilestone) {
-      case PHASE0:
-        return createMainnetPhase0();
-      case ALTAIR:
-        return createMainnetAltair();
-      case BELLATRIX:
-        return createMainnetBellatrix();
-      case CAPELLA:
-        return createMainnetCapella();
-      case DENEB:
-        return createMainnetDeneb();
-      default:
-        throw new IllegalStateException("unsupported milestone");
-    }
+    return switch (specMilestone) {
+      case PHASE0 -> createMainnetPhase0();
+      case ALTAIR -> createMainnetAltair();
+      case BELLATRIX -> createMainnetBellatrix();
+      case CAPELLA -> createMainnetCapella();
+      case DENEB -> createMainnetDeneb();
+    };
   }
 
   public static Spec createMinimalWithAltairAndBellatrixForkEpoch(
@@ -226,44 +212,30 @@ public class TestSpecFactory {
       final SpecMilestone specMilestone,
       final Eth2Network network,
       final Consumer<SpecConfigBuilder> configModifier) {
-    final Consumer<SpecConfigBuilder> actualModifier;
-    switch (specMilestone) {
-      case PHASE0:
-        actualModifier = configModifier;
-        break;
-      case ALTAIR:
-        actualModifier =
-            configModifier.andThen(
-                builder -> builder.altairBuilder(altair -> altair.altairForkEpoch(UInt64.ZERO)));
-        break;
-      case BELLATRIX:
-        actualModifier =
-            configModifier.andThen(
-                c ->
-                    c.altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
-                        .bellatrixBuilder(m -> m.bellatrixForkEpoch(UInt64.ZERO)));
-        break;
-      case CAPELLA:
-        actualModifier =
-            configModifier.andThen(
-                z ->
-                    z.altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
-                        .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
-                        .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO)));
-        break;
-      case DENEB:
-        actualModifier =
-            configModifier.andThen(
-                z ->
-                    z.altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
-                        .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
-                        .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
-                        .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO).kzgNoop(true)));
-        break;
-      default:
-        throw new IllegalStateException("unsupported milestone");
-    }
-    return create(SpecConfigLoader.loadConfig(network.configName(), actualModifier), specMilestone);
+    final Consumer<SpecConfigBuilder> defaultModifier =
+        switch (specMilestone) {
+          case PHASE0 -> builder -> {};
+          case ALTAIR -> builder ->
+              builder.altairBuilder(altair -> altair.altairForkEpoch(UInt64.ZERO));
+          case BELLATRIX -> builder ->
+              builder
+                  .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                  .bellatrixBuilder(m -> m.bellatrixForkEpoch(UInt64.ZERO));
+          case CAPELLA -> builder ->
+              builder
+                  .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                  .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
+                  .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO));
+          case DENEB -> builder ->
+              builder
+                  .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                  .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
+                  .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
+                  .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO).kzgNoop(true));
+        };
+    return create(
+        SpecConfigLoader.loadConfig(network.configName(), defaultModifier.andThen(configModifier)),
+        specMilestone);
   }
 
   public static Spec create(
