@@ -50,7 +50,10 @@ public class AttesterSlashingGenerator {
   public AttesterSlashing createAttesterSlashingForAttestation(
       final Attestation goodAttestation, final SignedBlockAndState blockAndState) {
     if (!goodAttestation.getData().getSlot().equals(blockAndState.getSlot())) {
-      throw new RuntimeException("Good attestation slot and input block slot should match");
+      throw new RuntimeException(
+          String.format(
+              "Good attestation slot %s and input block slot %s should match",
+              goodAttestation.getData().getSlot(), blockAndState.getSlot()));
     }
     AttestationUtil attestationUtil = spec.atSlot(blockAndState.getSlot()).getAttestationUtil();
     IndexedAttestation indexedGoodAttestation =
