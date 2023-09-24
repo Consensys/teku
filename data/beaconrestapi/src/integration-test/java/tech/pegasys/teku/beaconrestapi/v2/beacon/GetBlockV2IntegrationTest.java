@@ -99,7 +99,7 @@ public class GetBlockV2IntegrationTest extends AbstractDataBackedRestAPIIntegrat
   }
 
   public Response getGzip(final String blockIdString, final String contentType) throws IOException {
-    return getGzipResponse(GetBlock.ROUTE.replace("{block_id}", blockIdString), contentType);
+    return getResponse(GetBlock.ROUTE.replace("{block_id}", blockIdString), contentType, "gzip");
   }
 
   public Response get(final String blockIdString) throws IOException {

@@ -340,13 +340,13 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
     assertThat(response.body().string()).isEqualTo(body);
   }
 
-  protected Response getGzipResponse(final String path, final String contentType)
+  protected Response getResponse(final String path, final String contentType, final String encoding)
       throws IOException {
     final Request request =
         new Request.Builder()
             .url(getUrl(path))
             .header("Accept", contentType)
-            .header("Accept-Encoding", "gzip")
+            .header("Accept-Encoding", encoding)
             .build();
     return client.newCall(request).execute();
   }
