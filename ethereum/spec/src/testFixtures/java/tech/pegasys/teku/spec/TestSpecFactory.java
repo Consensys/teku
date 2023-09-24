@@ -223,7 +223,7 @@ public class TestSpecFactory {
                   .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
                   .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
                   .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
-                  .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO));
+                  .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO).kzgNoop(true));
         };
     return create(
         SpecConfigLoader.loadConfig(network.configName(), defaultModifier.andThen(configModifier)),
@@ -316,7 +316,7 @@ public class TestSpecFactory {
                 .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
                 .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
                 .capellaBuilder(c -> c.capellaForkEpoch(capellaForkEpoch))
-                .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch)));
+                .denebBuilder(d -> d.denebForkEpoch(denebForkEpoch).kzgNoop(true)));
   }
 
   private static SpecConfigDeneb getDenebSpecConfig(
@@ -329,7 +329,7 @@ public class TestSpecFactory {
                   .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
                   .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
                   .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
-                  .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO));
+                  .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO).kzgNoop(true));
               configAdapter.accept(builder);
             }));
   }
