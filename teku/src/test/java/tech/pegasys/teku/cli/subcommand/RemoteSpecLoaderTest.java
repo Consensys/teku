@@ -16,7 +16,7 @@ package tech.pegasys.teku.cli.subcommand;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.cli.subcommand.ValidatorClientCommand.DENEB_KZG_STUB;
+import static tech.pegasys.teku.cli.subcommand.ValidatorClientCommand.DENEB_NOOP_KZG;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -94,7 +94,7 @@ class RemoteSpecLoaderTest {
     when(apiClient.getConfigSpec()).thenReturn(Optional.of(new GetSpecResponse(rawConfig)));
 
     final SpecConfig config =
-        RemoteSpecLoader.getSpec(apiClient, DENEB_KZG_STUB).getSpecConfig(UInt64.ONE);
+        RemoteSpecLoader.getSpec(apiClient, DENEB_NOOP_KZG).getSpecConfig(UInt64.ONE);
     final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     assertThat(specConfigDeneb.isKZGNoop()).isTrue();
   }
