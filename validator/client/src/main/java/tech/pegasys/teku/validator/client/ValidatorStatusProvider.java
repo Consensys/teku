@@ -13,18 +13,12 @@
 
 package tech.pegasys.teku.validator.client;
 
-import java.util.Map;
-import java.util.Optional;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
-public interface ValidatorStatusProvider {
-  SafeFuture<Void> initValidatorStatuses();
+public interface ValidatorStatusProvider extends ValidatorTimingChannel {
 
-  void updateValidatorStatuses();
-
-  Optional<Map<BLSPublicKey, ValidatorStatus>> getStatuses();
+  SafeFuture<Void> start();
 
   void subscribeNewValidatorStatuses(ValidatorStatusSubscriber subscriber);
 }

@@ -146,7 +146,7 @@ public class ValidatorClientService extends Service {
     final ValidatorLoader validatorLoader = createValidatorLoader(services, config, asyncRunner);
     final ValidatorRestApiConfig validatorApiConfig = config.getValidatorRestApiConfig();
     final ValidatorStatusProvider validatorStatusProvider =
-        new DefaultValidatorStatusProvider(
+        new OwnedValidatorStatusProvider(
             services.getMetricsSystem(),
             validatorLoader.getOwnedValidators(),
             validatorApiChannel,
@@ -181,18 +181,19 @@ public class ValidatorClientService extends Service {
                   Optional.empty(),
                   proposerConfigManager.get(),
                   config.getSpec()));
-
-      validatorRegistrator =
-          Optional.of(
-              new ValidatorRegistrator(
-                  config.getSpec(),
-                  validatorLoader.getOwnedValidators(),
-                  validatorStatusProvider,
-                  proposerConfigManager.get(),
-                  new ValidatorRegistrationSigningService(
-                      proposerConfigManager.get(), services.getTimeProvider()),
-                  validatorApiChannel,
-                  validatorConfig.getBuilderRegistrationSendingBatchSize()));
+      final ValidatorRegistrator validatorRegistratorImpl =
+          new ValidatorRegistrator(
+              config.getSpec(),
+              validatorLoader.getOwnedValidators(),
+              validatorStatusProvider,
+              proposerConfigManager.get(),
+              new ValidatorRegistrationSigningService(
+                  proposerConfigManager.get(), services.getTimeProvider()),
+              validatorApiChannel,
+              validatorConfig.getBuilderRegistrationSendingBatchSize());
+      validatorStatusProvider.subscribeNewValidatorStatuses(
+          validatorRegistratorImpl::onNewValidatorStatuses);
+      validatorRegistrator = Optional.of(validatorRegistratorImpl);
     } else {
       proposerConfigManager = Optional.empty();
     }

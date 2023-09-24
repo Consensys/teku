@@ -16,8 +16,10 @@ package tech.pegasys.teku.validator.client;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -25,6 +27,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -33,10 +36,12 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
-public class DefaultValidatorStatusProvider implements ValidatorStatusProvider {
+public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
   private static final Logger LOG = LogManager.getLogger();
 
   private static final Duration INITIAL_STATUS_CHECK_RETRY_PERIOD = Duration.ofSeconds(5);
@@ -48,11 +53,14 @@ public class DefaultValidatorStatusProvider implements ValidatorStatusProvider {
   private final AsyncRunner asyncRunner;
   private final AtomicBoolean startupComplete = new AtomicBoolean(false);
   private final SettableLabelledGauge localValidatorCounts;
+  private final AtomicReference<UInt64> lastRunEpoch = new AtomicReference<>();
+  private final AtomicReference<UInt64> currentEpoch = new AtomicReference<>();
+  private final Spec spec;
 
   private final Subscribers<ValidatorStatusSubscriber> validatorStatusSubscribers =
       Subscribers.create(true);
 
-  public DefaultValidatorStatusProvider(
+  public OwnedValidatorStatusProvider(
       final MetricsSystem metricsSystem,
       final OwnedValidators validators,
       final ValidatorApiChannel validatorApiChannel,
@@ -70,12 +78,52 @@ public class DefaultValidatorStatusProvider implements ValidatorStatusProvider {
   }
 
   @Override
+  public SafeFuture<Void> start() {
+    return initValidatorStatuses();
+  }
+
+  @Override
+  public void onSlot(UInt64 slot) {
+    final UInt64 epoch = spec.computeEpochAtSlot(slot);
+    currentEpoch.set(epoch);
+    final UInt64 firstSlotOfEpoch = spec.computeStartSlotAtEpoch(epoch);
+    if (slot.equals(firstSlotOfEpoch.plus(1))) {
+      updateValidatorStatuses();
+    }
+  }
+
+  @Override
+  public void onHeadUpdate(
+      UInt64 slot,
+      Bytes32 previousDutyDependentRoot,
+      Bytes32 currentDutyDependentRoot,
+      Bytes32 headBlockRoot) {}
+
+  @Override
+  public void onPossibleMissedEvents() {
+    updateValidatorStatuses();
+  }
+
+  @Override
+  public void onValidatorsAdded() {
+    updateValidatorStatuses();
+  }
+
+  @Override
+  public void onBlockProductionDue(UInt64 slot) {}
+
+  @Override
+  public void onAttestationCreationDue(UInt64 slot) {}
+
+  @Override
+  public void onAttestationAggregationDue(UInt64 slot) {}
+
+  @Override
   public void subscribeNewValidatorStatuses(final ValidatorStatusSubscriber subscriber) {
     validatorStatusSubscribers.subscribe(subscriber);
   }
 
-  @Override
-  public SafeFuture<Void> initValidatorStatuses() {
+  private SafeFuture<Void> initValidatorStatuses() {
     if (validators.hasNoValidators()) {
       return SafeFuture.COMPLETE;
     }
@@ -88,12 +136,7 @@ public class DefaultValidatorStatusProvider implements ValidatorStatusProvider {
               if (maybeValidatorStatuses.isEmpty()) {
                 return retryInitialValidatorStatusCheck();
               }
-
-              final Map<BLSPublicKey, ValidatorStatus> validatorStatuses =
-                  maybeValidatorStatuses.get();
-              latestValidatorStatuses.set(validatorStatuses);
-              validatorStatusSubscribers.forEach(s -> s.onValidatorStatuses(validatorStatuses));
-              updateValidatorCountMetrics(validatorStatuses);
+              onNewValidatorStatuses(maybeValidatorStatuses.get());
               startupComplete.set(true);
               return SafeFuture.COMPLETE;
             })
@@ -105,44 +148,68 @@ public class DefaultValidatorStatusProvider implements ValidatorStatusProvider {
         this::initValidatorStatuses, INITIAL_STATUS_CHECK_RETRY_PERIOD);
   }
 
-  @Override
   public void updateValidatorStatuses() {
     if (!startupComplete.get() || validators.hasNoValidators()) {
       return;
     }
 
-    validatorApiChannel
-        .getValidatorStatuses(validators.getPublicKeys())
-        .thenAccept(
-            maybeNewValidatorStatuses -> {
-              if (maybeNewValidatorStatuses.isEmpty()) {
-                STATUS_LOG.unableToRetrieveValidatorStatusesFromBeaconNode();
-                return;
-              }
-
-              final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses =
-                  maybeNewValidatorStatuses.get();
-
-              final Map<BLSPublicKey, ValidatorStatus> oldValidatorStatuses =
-                  latestValidatorStatuses.getAndSet(newValidatorStatuses);
-              validatorStatusSubscribers.forEach(s -> s.onValidatorStatuses(newValidatorStatuses));
-              if (oldValidatorStatuses == null) {
-                return;
-              }
-              updateValidatorCountMetrics(newValidatorStatuses);
-            })
-        .finish(error -> LOG.error("Failed to update validator statuses", error));
+    if (!needToUpdateAllStatuses()) {
+      final Set<BLSPublicKey> keysToUpdate =
+          validators.getPublicKeys().stream()
+              .filter(key -> !latestValidatorStatuses.get().containsKey(key))
+              .collect(Collectors.toSet());
+      if (keysToUpdate.isEmpty()) {
+        return;
+      }
+      validatorApiChannel
+          .getValidatorStatuses(keysToUpdate)
+          .thenAccept(
+              maybeNewValidatorStatuses -> {
+                if (maybeNewValidatorStatuses.isEmpty()) {
+                  return;
+                }
+                final Map<BLSPublicKey, ValidatorStatus> newStatuses =
+                    new HashMap<>(maybeNewValidatorStatuses.get());
+                final Map<BLSPublicKey, ValidatorStatus> oldStatuses =
+                    Optional.ofNullable(latestValidatorStatuses.get()).orElse(Map.of());
+                newStatuses.putAll(oldStatuses);
+                onNewValidatorStatuses(newStatuses);
+              })
+          .finish(error -> LOG.error("Failed to update validator statuses", error));
+    } else {
+      validatorApiChannel
+          .getValidatorStatuses(validators.getPublicKeys())
+          .thenAccept(
+              maybeNewValidatorStatuses -> {
+                if (maybeNewValidatorStatuses.isEmpty()) {
+                  STATUS_LOG.unableToRetrieveValidatorStatusesFromBeaconNode();
+                  return;
+                }
+                onNewValidatorStatuses(maybeNewValidatorStatuses.get());
+              })
+          .finish(error -> LOG.error("Failed to update validator statuses", error));
+    }
   }
 
-  @Override
-  public Optional<Map<BLSPublicKey, ValidatorStatus>> getStatuses() {
-    return Optional.ofNullable(latestValidatorStatuses.get());
+  private void onNewValidatorStatuses(
+      final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses) {
+    latestValidatorStatuses.getAndSet(newValidatorStatuses);
+    validatorStatusSubscribers.forEach(s -> s.onValidatorStatuses(newValidatorStatuses));
+    lastRunEpoch.set(currentEpoch.get());
+    updateValidatorCountMetrics(newValidatorStatuses);
+  }
+
+  private boolean needToUpdateAllStatuses() {
+    if (lastRunEpoch.get() == null) {
+      return true;
+    }
+    return currentEpoch.get().isGreaterThan(lastRunEpoch.get());
   }
 
   private void updateValidatorCountMetrics(
-      final Map<BLSPublicKey, ValidatorStatus> oldValidatorStatuses) {
+      final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses) {
     final Map<ValidatorStatus, Long> validatorCountByStatus =
-        oldValidatorStatuses.values().stream()
+        newValidatorStatuses.values().stream()
             .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
     Stream.of(ValidatorStatus.values())
         .forEach(
@@ -154,6 +221,6 @@ public class DefaultValidatorStatusProvider implements ValidatorStatusProvider {
     // subset of validators already seen on chain (with status pending*, active_*, exited_* and
     // withdrawal_*). Unknown validators are calculated by subtraction.
     localValidatorCounts.set(
-        validators.getValidatorCount() - oldValidatorStatuses.size(), "unknown");
+        validators.getValidatorCount() - newValidatorStatuses.size(), "unknown");
   }
 }

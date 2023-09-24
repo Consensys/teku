@@ -75,11 +75,13 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
 
   @Override
   public void onPossibleMissedEvents() {
+    validatorStatusProvider.updateValidatorStatuses();
     delegates.forEach(ValidatorTimingChannel::onPossibleMissedEvents);
   }
 
   @Override
   public void onValidatorsAdded() {
+    validatorStatusProvider.updateValidatorStatuses();
     delegates.forEach(ValidatorTimingChannel::onValidatorsAdded);
   }
 

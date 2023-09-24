@@ -56,6 +56,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
   private final AtomicBoolean firstCallDone = new AtomicBoolean(false);
   private final AtomicBoolean registrationInProgress = new AtomicBoolean(false);
+  private final AtomicReference<UInt64> currentEpoch = new AtomicReference<>();
   private final AtomicReference<UInt64> lastRunEpoch = new AtomicReference<>();
 
   private final Spec spec;
@@ -85,14 +86,8 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
   @Override
   public void onSlot(final UInt64 slot) {
-    if (!isReadyToRegister()) {
-      return;
-    }
-    if (registrationNeedsToBeRun(slot)) {
-      final UInt64 epoch = spec.computeEpochAtSlot(slot);
-      lastRunEpoch.set(epoch);
-      registerValidators();
-    }
+    final UInt64 epoch = spec.computeEpochAtSlot(slot);
+    currentEpoch.set(epoch);
   }
 
   @Override
@@ -103,28 +98,10 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       final Bytes32 headBlockRoot) {}
 
   @Override
-  public void onPossibleMissedEvents() {
-    if (!isReadyToRegister()) {
-      return;
-    }
-    registerValidators();
-  }
+  public void onPossibleMissedEvents() {}
 
   @Override
-  public void onValidatorsAdded() {
-    // don't execute if the first call hasn't been done yet
-    if (!isReadyToRegister() || !firstCallDone.get()) {
-      return;
-    }
-
-    final List<Validator> newlyAddedValidators =
-        ownedValidators.getActiveValidators().stream()
-            .filter(
-                validator -> !cachedValidatorRegistrations.containsKey(validator.getPublicKey()))
-            .toList();
-
-    registerValidators(newlyAddedValidators).finish(VALIDATOR_LOGGER::registeringValidatorsFailed);
-  }
+  public void onValidatorsAdded() {}
 
   @Override
   public void onBlockProductionDue(final UInt64 slot) {}
@@ -135,69 +112,84 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   @Override
   public void onAttestationAggregationDue(final UInt64 slot) {}
 
+  public void onNewValidatorStatuses(
+      final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses) {
+    if (!isReadyToRegister()) {
+      return;
+    }
+    final List<Validator> activeAndPendingValidators =
+        filterActiveAndPendingValidators(newValidatorStatuses);
+    if (registrationNeedsToBeRun()) {
+      registerValidators(activeAndPendingValidators, true);
+    } else {
+      final List<Validator> newValidators =
+          activeAndPendingValidators.stream()
+              .filter(
+                  validator -> !cachedValidatorRegistrations.containsKey(validator.getPublicKey()))
+              .toList();
+      if (newValidators.isEmpty()) {
+        return;
+      }
+      registerValidators(newValidators, false);
+    }
+  }
+
   public int getNumberOfCachedRegistrations() {
     return cachedValidatorRegistrations.size();
   }
 
   private boolean isReadyToRegister() {
-    if (validatorRegistrationPropertiesProvider.isReadyToProvideProperties()
-        && validatorStatusProvider.getStatuses().isPresent()) {
+    if (validatorRegistrationPropertiesProvider.isReadyToProvideProperties()) {
       return true;
     }
     LOG.debug("Not ready to register validator(s).");
     return false;
   }
 
-  private boolean registrationNeedsToBeRun(final UInt64 slot) {
+  private boolean registrationNeedsToBeRun() {
     final boolean isFirstCall = firstCallDone.compareAndSet(false, true);
     if (isFirstCall) {
       return true;
     }
-    final UInt64 currentEpoch = spec.computeEpochAtSlot(slot);
-    final boolean slotIsApplicable =
-        slot.mod(spec.getSlotsPerEpoch(slot))
-            .equals(SLOT_IN_THE_EPOCH_TO_RUN_REGISTRATION.minus(1));
-    return slotIsApplicable
-        && currentEpoch
-            .minus(lastRunEpoch.get())
-            .isGreaterThanOrEqualTo(Constants.EPOCHS_PER_VALIDATOR_REGISTRATION_SUBMISSION);
+
+    return currentEpoch
+        .get()
+        .minus(lastRunEpoch.get())
+        .isGreaterThanOrEqualTo(Constants.EPOCHS_PER_VALIDATOR_REGISTRATION_SUBMISSION);
   }
 
-  private void registerValidators() {
+  private void registerValidators(
+      final List<Validator> validators, final boolean updateLastRunEpoch) {
+    if (validators.isEmpty()) {
+      return;
+    }
     if (!registrationInProgress.compareAndSet(false, true)) {
-      LOG.debug(
+      LOG.warn(
           "Validator registration(s) is still in progress. Will skip sending registration(s).");
       return;
     }
-    final List<Validator> managedValidators = ownedValidators.getActiveValidators();
-    registerValidators(managedValidators)
+    if (updateLastRunEpoch) {
+      lastRunEpoch.set(currentEpoch.get());
+    }
+
+    validatorRegistrationPropertiesProvider
+        .refresh()
+        .thenCompose(__ -> processInBatches(validators))
         .handleException(VALIDATOR_LOGGER::registeringValidatorsFailed)
         .always(
             () -> {
               registrationInProgress.set(false);
-              cleanupCache(managedValidators);
+              cleanupCache(ownedValidators.getActiveValidators());
             });
   }
 
-  private SafeFuture<Void> registerValidators(final List<Validator> validators) {
-    if (validators.isEmpty()) {
-      return SafeFuture.COMPLETE;
-    }
-
-    return validatorRegistrationPropertiesProvider
-        .refresh()
-        .thenCompose(__ -> processInBatches(validators));
-  }
-
   private SafeFuture<Void> processInBatches(final List<Validator> validators) {
-    final List<Validator> activeAndPendingValidators = filterActiveAndPendingValidators(validators);
-    if (activeAndPendingValidators.isEmpty()) {
+    if (validators.isEmpty()) {
       LOG.info(
           "All owned validators are either exited or with unknown status. Skipping registration.");
       return SafeFuture.COMPLETE;
     }
-    final List<List<Validator>> batchedValidators =
-        Lists.partition(activeAndPendingValidators, batchSize);
+    final List<List<Validator>> batchedValidators = Lists.partition(validators, batchSize);
 
     LOG.debug(
         "Going to prepare and send {} validator registration(s) to the Beacon Node in {} batch(es)",
@@ -240,20 +232,14 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
                     successfullySentRegistrations.get(), validators.size()));
   }
 
-  private List<Validator> filterActiveAndPendingValidators(final List<Validator> validators) {
+  private List<Validator> filterActiveAndPendingValidators(
+      final Map<BLSPublicKey, ValidatorStatus> statuses) {
     final Function<Validator, BLSPublicKey> getKey =
         validator ->
             validatorRegistrationPropertiesProvider
                 .getBuilderRegistrationPublicKeyOverride(validator.getPublicKey())
                 .orElse(validator.getPublicKey());
-    final Map<BLSPublicKey, ValidatorStatus> statuses =
-        validatorStatusProvider
-            .getStatuses()
-            .orElseThrow(
-                () ->
-                    new IllegalStateException(
-                        "Expecting loaded validator statuses, but data was not provided"));
-    return validators.stream()
+    return ownedValidators.getActiveValidators().stream()
         .filter(
             validator ->
                 Optional.ofNullable(statuses.get(getKey.apply(validator)))

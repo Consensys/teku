@@ -48,7 +48,7 @@ public class ValidatorStatusProviderTest {
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private final ValidatorStatusProvider provider =
-      new DefaultValidatorStatusProvider(
+      new OwnedValidatorStatusProvider(
           metricsSystem,
           new OwnedValidators(
               Map.of(validatorKey, new Validator(validatorKey, NO_OP_SIGNER, Optional::empty))),
