@@ -56,7 +56,7 @@ import tech.pegasys.teku.storage.server.DatabaseStorageException;
     footer = "Teku is licensed under the Apache License 2.0")
 public class ValidatorClientCommand implements Callable<Integer> {
   public static final String LOG_FILE_PREFIX = "teku-validator";
-  public static final Consumer<SpecConfigBuilder> DENEB_NOOP_KZG =
+  public static final Consumer<SpecConfigBuilder> DENEB_KZG_NOOP =
       modifier -> modifier.denebBuilder(denebBuilder -> denebBuilder.kzgNoop(true));
 
   @Mixin(name = "Validator")
@@ -147,7 +147,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
     }
 
     if (isAutoDetectNetworkOption(networkOption)) {
-      builder.eth2NetworkConfig(config -> configureWithSpecFromBeaconNode(config, DENEB_NOOP_KZG));
+      builder.eth2NetworkConfig(config -> configureWithSpecFromBeaconNode(config, DENEB_KZG_NOOP));
     } else {
       builder.eth2NetworkConfig(b -> b.applyNetworkDefaults(networkOption).kzgNoop(true));
     }

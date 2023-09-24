@@ -14,7 +14,7 @@
 package tech.pegasys.teku.cli.subcommand;
 
 import static tech.pegasys.teku.cli.subcommand.RemoteSpecLoader.getSpec;
-import static tech.pegasys.teku.cli.subcommand.ValidatorClientCommand.DENEB_NOOP_KZG;
+import static tech.pegasys.teku.cli.subcommand.ValidatorClientCommand.DENEB_KZG_NOOP;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -291,10 +291,10 @@ public class VoluntaryExitCommand implements Callable<Integer> {
 
     if (network == null) {
       SUB_COMMAND_LOG.display(" - Loading network settings from " + apiClient.getBaseEndpoint());
-      spec = getSpec(apiClient, DENEB_NOOP_KZG);
+      spec = getSpec(apiClient, DENEB_KZG_NOOP);
     } else {
       SUB_COMMAND_LOG.display(" - Loading local settings for " + network + " network");
-      spec = SpecFactory.create(network, DENEB_NOOP_KZG);
+      spec = SpecFactory.create(network, DENEB_KZG_NOOP);
     }
 
     validateOrDefaultEpoch();
