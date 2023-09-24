@@ -34,10 +34,9 @@ import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManagerImpl;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-/** Simplified version of {@link BlobSidecarManagerImpl} which is used in reference tests */
+/** Simplified version of {@link BlobSidecarManager} which is used in reference tests */
 class StubBlobSidecarManager implements BlobSidecarManager {
 
   private final Map<Bytes32, BlobsAndProofs> blobsAndProofsByBlockRoot = new HashMap<>();
