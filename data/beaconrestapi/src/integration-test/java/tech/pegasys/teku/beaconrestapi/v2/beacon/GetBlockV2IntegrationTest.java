@@ -20,7 +20,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONS
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONTENT_ENCODING;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -37,13 +36,10 @@ import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
-import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 
 public class GetBlockV2IntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
-  private final JsonProvider jsonProvider = new JsonProvider();
-  private final ObjectMapper mapper = jsonProvider.getObjectMapper();
 
   @Test
   public void shouldGetBlock() throws IOException {
@@ -109,7 +105,7 @@ public class GetBlockV2IntegrationTest extends AbstractDataBackedRestAPIIntegrat
     String block = new String(bytesResult, StandardCharsets.UTF_8);
 
     // Check block signatures are equivalent to ensure same block
-    JsonNode node = mapper.readTree(block);
+    JsonNode node = jsonProvider.getObjectMapper().readTree(block);
     String blockSignature = node.get("data").get("signature").asText();
     String expectedSignature =
         chainBuilder.getLatestBlockAndState().getBlock().getSignature().toString();
