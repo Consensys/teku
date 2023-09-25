@@ -23,6 +23,7 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
   private final Bytes4 denebForkVersion;
   private final UInt64 denebForkEpoch;
 
+  private final int maxPerEpochActivationChurnLimit;
   private final int fieldElementsPerBlob;
   private final int maxBlobCommitmentsPerBlock;
   private final int maxBlobsPerBlock;
@@ -38,6 +39,7 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
       final SpecConfigCapella specConfig,
       final Bytes4 denebForkVersion,
       final UInt64 denebForkEpoch,
+      final int maxPerEpochActivationChurnLimit,
       final int fieldElementsPerBlob,
       final int maxBlobCommitmentsPerBlock,
       final int maxBlobsPerBlock,
@@ -51,6 +53,7 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
     super(specConfig);
     this.denebForkVersion = denebForkVersion;
     this.denebForkEpoch = denebForkEpoch;
+    this.maxPerEpochActivationChurnLimit = maxPerEpochActivationChurnLimit;
     this.fieldElementsPerBlob = fieldElementsPerBlob;
     this.maxBlobCommitmentsPerBlock = maxBlobCommitmentsPerBlock;
     this.maxBlobsPerBlock = maxBlobsPerBlock;
@@ -71,6 +74,11 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
   @Override
   public UInt64 getDenebForkEpoch() {
     return denebForkEpoch;
+  }
+
+  @Override
+  public int getMaxPerEpochActivationChurnLimit() {
+    return maxPerEpochActivationChurnLimit;
   }
 
   @Override
