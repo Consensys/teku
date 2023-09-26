@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.services.beaconchain.WeakSubjectivityInitializer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -88,11 +89,12 @@ public class RepairCommand implements Runnable {
         SlashingProtectionCommandUtils.getSlashingProtectionPath(dataOptions);
     SlashingProtectionCommandUtils.verifySlashingProtectionPathExists(
         SUB_COMMAND_LOG, slashProtectionPath);
-    final Spec spec = eth2NetworkOptions.getNetworkConfiguration().getSpec();
+    final Eth2NetworkConfiguration networkConfiguration =
+        eth2NetworkOptions.getNetworkConfiguration(config -> config.kzgNoop(true));
+    final Spec spec = networkConfiguration.getSpec();
 
     final Optional<AnchorPoint> initialAnchor =
-        wsInitializer.loadInitialAnchorPoint(
-            spec, eth2NetworkOptions.getNetworkConfiguration().getInitialState());
+        wsInitializer.loadInitialAnchorPoint(spec, networkConfiguration.getInitialState());
 
     final UInt64 computedSlot = getComputedSlot(initialAnchor, spec);
     final UInt64 computedEpoch =
