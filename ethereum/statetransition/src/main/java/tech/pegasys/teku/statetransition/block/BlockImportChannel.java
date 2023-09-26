@@ -24,4 +24,8 @@ public interface BlockImportChannel extends ChannelInterface {
 
   SafeFuture<BlockImportResult> importBlock(
       SignedBeaconBlock block, Optional<BroadcastValidation> broadcastValidation);
+
+  default SafeFuture<BlockImportResult> importBlock(final SignedBeaconBlock block) {
+    return importBlock(block, Optional.empty());
+  }
 }

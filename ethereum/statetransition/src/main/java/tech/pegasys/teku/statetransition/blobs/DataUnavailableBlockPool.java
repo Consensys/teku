@@ -103,7 +103,7 @@ public class DataUnavailableBlockPool {
 
       blockImportInProgress = true;
       blockManager
-          .importBlock(maybeSelectedBlock.get(), Optional.empty())
+          .importBlock(maybeSelectedBlock.get())
           .thenAccept(this::handleImportResult)
           .finish(error -> LOG.error("An error occurred during block import", error));
 

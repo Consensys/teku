@@ -198,8 +198,7 @@ public class SyncingNodeManager {
     final RecentBlocksFetchService recentBlocksFetcher =
         RecentBlocksFetchService.create(
             asyncRunner, pendingBlocks, BlobSidecarPool.NOOP, syncService, fetchBlockTaskFactory);
-    recentBlocksFetcher.subscribeBlockFetched(
-        block -> blockManager.importBlock(block, Optional.empty()));
+    recentBlocksFetcher.subscribeBlockFetched(blockManager::importBlock);
     blockManager.subscribeToReceivedBlocks(
         (block, executionOptimistic) ->
             recentBlocksFetcher.cancelRecentBlockRequest(block.getRoot()));

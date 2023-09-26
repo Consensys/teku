@@ -107,7 +107,7 @@ public class FailedExecutionPool {
 
   private synchronized void retryExecution(final SignedBeaconBlock block) {
     LOG.info("Retrying execution of block {}", block.toLogString());
-    SafeFuture.of(() -> blockManager.importBlock(block, Optional.empty()))
+    SafeFuture.of(() -> blockManager.importBlock(block))
         .exceptionally(BlockImportResult::internalError)
         .thenAccept(result -> handleExecutionResult(block, result))
         .finish(

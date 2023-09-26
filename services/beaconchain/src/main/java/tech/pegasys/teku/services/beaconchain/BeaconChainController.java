@@ -310,7 +310,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     recentBlocksFetcher.subscribeBlockFetched(
         (block) ->
             blockManager
-                .importBlock(block, Optional.empty())
+                .importBlock(block)
                 .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
     blockManager.subscribeToReceivedBlocks(
         (block, __) -> recentBlocksFetcher.cancelRecentBlockRequest(block.getRoot()));
