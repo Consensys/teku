@@ -27,6 +27,16 @@ public class MinimalEth2NetworkOptions {
       arity = "1")
   private String network = "mainnet";
 
+  @Option(
+          names = {"--Xtrusted-setup"},
+          hidden = true,
+          paramLabel = "<STRING>",
+          description =
+                  "The trusted setup which is needed for KZG commitments. Only required when creating a custom network. This value should be a file or URL pointing to a trusted setup.",
+          arity = "1")
+  private String trustedSetup = null; // Depends on network configuration
+
+
   public void configure(final TekuConfiguration.Builder builder) {
     builder.eth2NetworkConfig(b -> b.applyNetworkDefaults(network));
   }
@@ -36,6 +46,10 @@ public class MinimalEth2NetworkOptions {
   }
 
   private Eth2NetworkConfiguration getConfig() {
-    return Eth2NetworkConfiguration.builder(network).build();
+    Eth2NetworkConfiguration.Builder builder = Eth2NetworkConfiguration.builder(network);
+    if (trustedSetup != null) {
+      builder.trustedSetup(trustedSetup);
+    }
+     return builder.build();
   }
 }
