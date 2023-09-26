@@ -16,6 +16,7 @@ package tech.pegasys.teku.cli.subcommand;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.cli.subcommand.ValidatorClientCommand.DENEB_KZG_NOOP;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,6 +33,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 
@@ -45,7 +47,7 @@ class RemoteSpecLoaderTest {
     final Map<String, String> rawConfig = getRawConfigForSpec(spec);
     rawConfig.put("UNKNOWN_ITEM", "foo");
     when(apiClient.getConfigSpec()).thenReturn(Optional.of(new GetSpecResponse(rawConfig)));
-    final Spec result = RemoteSpecLoader.getSpec(apiClient);
+    final Spec result = RemoteSpecLoader.getSpec(apiClient, modifier -> {});
     assertThat(getRawConfigForSpec(result)).containsExactlyInAnyOrderEntriesOf(rawConfig);
     assertThat(result.getGenesisSpecConfig()).isEqualTo(spec.getGenesisSpecConfig());
   }
@@ -57,7 +59,8 @@ class RemoteSpecLoaderTest {
 
     when(apiClient.getConfigSpec()).thenReturn(Optional.of(new GetSpecResponse(rawConfig)));
 
-    final SpecConfig config = RemoteSpecLoader.getSpec(apiClient).getSpecConfig(UInt64.ONE);
+    final SpecConfig config =
+        RemoteSpecLoader.getSpec(apiClient, modifier -> {}).getSpecConfig(UInt64.ONE);
     assertThat(config.getGenesisForkVersion()).isEqualTo(Bytes4.fromHexString("0x00000001"));
   }
 
@@ -70,7 +73,7 @@ class RemoteSpecLoaderTest {
     final ObjectMapper objectMapper = new ObjectMapper();
     TypeReference<Map<String, String>> typeReference = new TypeReference<>() {};
     Map<String, String> data = objectMapper.readValue(jsonConfig, typeReference);
-    final SpecConfig specConfig = SpecConfigLoader.loadRemoteConfig(data);
+    final SpecConfig specConfig = SpecConfigLoader.loadRemoteConfig(data, modifier -> {});
 
     // Check values not assigned, using default values
     assertThat(specConfig.getGossipMaxSize()).isEqualTo(10485760);
@@ -82,6 +85,18 @@ class RemoteSpecLoaderTest {
     assertThat(specConfig.getRespTimeout()).isEqualTo(10);
     assertThat(specConfig.getAttestationPropagationSlotRange()).isEqualTo(32);
     assertThat(specConfig.getMaximumGossipClockDisparity()).isEqualTo(500);
+  }
+
+  @Test
+  void shouldSetStubTrustedSetupPathForRemoteDeneb() {
+    final Spec spec = TestSpecFactory.createMainnetDeneb();
+    final Map<String, String> rawConfig = getRawConfigForSpec(spec);
+    when(apiClient.getConfigSpec()).thenReturn(Optional.of(new GetSpecResponse(rawConfig)));
+
+    final SpecConfig config =
+        RemoteSpecLoader.getSpec(apiClient, DENEB_KZG_NOOP).getSpecConfig(UInt64.ONE);
+    final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
+    assertThat(specConfigDeneb.isKZGNoop()).isTrue();
   }
 
   private Map<String, String> getRawConfigForSpec(final Spec spec) {

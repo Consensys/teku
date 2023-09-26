@@ -258,6 +258,7 @@ public class Eth2NetworkConfiguration {
         DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
     private boolean forkChoiceProposerBoostUniquenessEnabled =
         DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED;
+    private Optional<Boolean> kzgNoop = Optional.empty();
 
     public void spec(Spec spec) {
       this.spec = spec;
@@ -299,6 +300,7 @@ public class Eth2NetworkConfiguration {
                         if (maybeEpochsStoreBlobs.isPresent()) {
                           denebBuilder.epochsStoreBlobs(maybeEpochsStoreBlobs);
                         }
+                        kzgNoop.ifPresent(denebBuilder::kzgNoop);
                       });
                 });
       }
@@ -479,6 +481,11 @@ public class Eth2NetworkConfiguration {
 
     public Builder epochsStoreBlobs(final String epochsStoreBlobs) {
       this.epochsStoreBlobs = epochsStoreBlobs;
+      return this;
+    }
+
+    public Builder kzgNoop(final boolean kzgNoop) {
+      this.kzgNoop = Optional.of(kzgNoop);
       return this;
     }
 

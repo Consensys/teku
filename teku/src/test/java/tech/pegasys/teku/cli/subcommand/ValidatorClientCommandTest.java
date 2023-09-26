@@ -25,6 +25,8 @@ import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingDestination;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 
 public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
 
@@ -208,6 +210,21 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
     assertThat(cmdOutput)
         .contains(
             "--Xvalidator-client-executor-threads must be greater than 0 and less than 5000.");
+  }
+
+  @Test
+  public void validatorShouldDisableKzgForDeneb() {
+    final String[] args = {"vc", "--network", pathFor("deneb_config.yaml")};
+
+    final TekuConfiguration configuration = getTekuConfigurationFromArguments(args);
+    final SpecConfigDeneb specConfigDeneb =
+        SpecConfigDeneb.required(
+            configuration
+                .eth2NetworkConfiguration()
+                .getSpec()
+                .forMilestone(SpecMilestone.DENEB)
+                .getConfig());
+    assertThat(specConfigDeneb.isKZGNoop()).isTrue();
   }
 
   private String pathFor(final String filename) {
