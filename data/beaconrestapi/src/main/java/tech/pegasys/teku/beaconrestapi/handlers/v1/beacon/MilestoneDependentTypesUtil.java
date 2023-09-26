@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
+import org.apache.commons.lang3.tuple.Pair;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
@@ -52,23 +53,27 @@ public class MilestoneDependentTypesUtil {
   }
 
   public static <T extends SszData>
-      SerializableOneOfTypeDefinition<T> getMultipleSchemaDefinitionForAllSupportedMilestones(
+      SerializableOneOfTypeDefinition<T> getMultipleSchemaDefinitionFromMilestone(
           final SchemaDefinitionCache schemaDefinitionCache,
           final String title,
           final Map<
-                  BiPredicate<T, SpecMilestone>,
+                  Pair<BiPredicate<T, SpecMilestone>, SpecMilestone>,
                   Function<SchemaDefinitions, SszSchema<? extends T>>>
               schemaGetters) {
     final SerializableOneOfTypeDefinitionBuilder<T> builder =
         new SerializableOneOfTypeDefinitionBuilder<T>().title(title);
     for (SpecMilestone milestone : schemaDefinitionCache.getSupportedMilestones()) {
       schemaGetters.forEach(
-          (predicate, schemaDefinition) -> {
+          (predicatePerMilestone, schemaDefinition) -> {
             final DeserializableTypeDefinition<? extends T> jsonTypeDefinition =
                 schemaDefinition
                     .apply(schemaDefinitionCache.getSchemaDefinition(milestone))
                     .getJsonTypeDefinition();
-            builder.withType(value -> predicate.test(value, milestone), jsonTypeDefinition);
+            if (milestone.isGreaterThanOrEqualTo(predicatePerMilestone.getRight())) {
+              builder.withType(
+                  value -> predicatePerMilestone.getLeft().test(value, milestone),
+                  jsonTypeDefinition);
+            }
           });
     }
     return builder.build();

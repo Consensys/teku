@@ -17,7 +17,7 @@ import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.GRAFFITI_PARAME
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.RANDAO_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SKIP_RANDAO_VERIFICATION_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getMultipleSchemaDefinitionForAllSupportedMilestones;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getMultipleSchemaDefinitionFromMilestone;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.sszResponseType;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -35,6 +35,7 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT256_TYPE
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
@@ -47,6 +48,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
@@ -127,21 +129,26 @@ public class GetNewBlockV3 extends RestApiEndpoint {
   private static SerializableTypeDefinition<BlockContainerAndMetaData> getResponseType(
       SchemaDefinitionCache schemaDefinitionCache) {
     final SerializableTypeDefinition<BlockContainer> blockContainerType =
-        getMultipleSchemaDefinitionForAllSupportedMilestones(
+        getMultipleSchemaDefinitionFromMilestone(
             schemaDefinitionCache,
             "Block",
             Map.of(
-                (blockContainer, milestone) ->
-                    schemaDefinitionCache
-                            .milestoneAtSlot(blockContainer.getSlot())
-                            .equals(milestone)
-                        && !blockContainer.isBlinded(),
+                Pair.of(
+                    (blockContainer, milestone) ->
+                        schemaDefinitionCache
+                                .milestoneAtSlot(blockContainer.getSlot())
+                                .equals(milestone)
+                            && !blockContainer.isBlinded(),
+                    SpecMilestone.PHASE0),
                 SchemaDefinitions::getBlockContainerSchema,
-                (blockContainer, milestone) ->
-                    schemaDefinitionCache
-                            .milestoneAtSlot(blockContainer.getSlot())
-                            .equals(milestone)
-                        && blockContainer.isBlinded(),
+                Pair.of(
+                    (blockContainer, milestone) ->
+                        schemaDefinitionCache
+                                .milestoneAtSlot(blockContainer.getSlot())
+                                .equals(milestone)
+                            && milestone.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)
+                            && blockContainer.isBlinded(),
+                    SpecMilestone.BELLATRIX),
                 SchemaDefinitions::getBlindedBlockContainerSchema));
 
     return SerializableTypeDefinition.<BlockContainerAndMetaData>object()
