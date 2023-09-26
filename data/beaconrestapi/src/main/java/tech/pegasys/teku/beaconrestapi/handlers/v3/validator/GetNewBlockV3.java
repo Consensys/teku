@@ -33,6 +33,7 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT256_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.DataProvider;
@@ -129,10 +130,19 @@ public class GetNewBlockV3 extends RestApiEndpoint {
         getMultipleSchemaDefinitionForAllSupportedMilestones(
             schemaDefinitionCache,
             "Block",
-            (blockContainer, milestone) ->
-                schemaDefinitionCache.milestoneAtSlot(blockContainer.getSlot()).equals(milestone),
-            SchemaDefinitions::getBlockContainerSchema,
-            SchemaDefinitions::getBlindedBlockContainerSchema);
+            Map.of(
+                (blockContainer, milestone) ->
+                    schemaDefinitionCache
+                            .milestoneAtSlot(blockContainer.getSlot())
+                            .equals(milestone)
+                        && !blockContainer.isBlinded(),
+                SchemaDefinitions::getBlockContainerSchema,
+                (blockContainer, milestone) ->
+                    schemaDefinitionCache
+                            .milestoneAtSlot(blockContainer.getSlot())
+                            .equals(milestone)
+                        && blockContainer.isBlinded(),
+                SchemaDefinitions::getBlindedBlockContainerSchema));
 
     return SerializableTypeDefinition.<BlockContainerAndMetaData>object()
         .name("ProduceBlockV3Response")
@@ -141,10 +151,7 @@ public class GetNewBlockV3 extends RestApiEndpoint {
             EXECUTION_PAYLOAD_BLINDED,
             BOOLEAN_TYPE,
             blockContainerAndMetaData -> blockContainerAndMetaData.getData().isBlinded())
-        .withField(
-            EXECUTION_PAYLOAD_VALUE,
-            UINT256_TYPE,
-            blockContainerAndMetaData -> blockContainerAndMetaData.getBlockValue())
+        .withField(EXECUTION_PAYLOAD_VALUE, UINT256_TYPE, BlockContainerAndMetaData::getBlockValue)
         .withField("data", blockContainerType, BlockContainerAndMetaData::getData)
         .build();
   }
