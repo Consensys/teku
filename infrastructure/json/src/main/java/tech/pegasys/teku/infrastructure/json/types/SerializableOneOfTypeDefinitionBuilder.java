@@ -52,12 +52,4 @@ public class SerializableOneOfTypeDefinitionBuilder<TObject> {
     types.put(predicate, typeDefinition);
     return this;
   }
-
-  public <T extends TObject> SerializableOneOfTypeDefinitionBuilder<TObject> withUniqueType(
-      final Predicate<TObject> predicate, final SerializableTypeDefinition<T> typeDefinition) {
-    if (!types.containsValue(typeDefinition)) {
-      types.put(predicate, typeDefinition);
-    }
-    return this;
-  }
 }
