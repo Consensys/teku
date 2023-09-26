@@ -198,14 +198,14 @@ public class BlockValidator {
                 return reject("Block signature is invalid");
               }
 
-              // if we are checking a locally produced block, we don't want to track the block.
-              // tracking blocks received via gossip allows us to reapply an equivocation check
-              // later again in the block import pipeline.
-              final boolean equivocationCheck =
+              // We want to add blocks in the infoSet only when they come from gossip.
+              // When dealing with locally produced block, we only want to check them against seen
+              // block coming from gossip.
+              final boolean equivocationCheckSuccessful =
                   isLocal
                       ? blockIsFirstBlockWithValidSignatureForSlot(block)
                       : receivedValidBlockInfoSet.add(new SlotAndProposer(block));
-              if (!equivocationCheck) {
+              if (!equivocationCheckSuccessful) {
                 return ignore(
                     "Block is not the first with valid signature for its slot. It will be dropped.");
               }

@@ -425,13 +425,14 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         blobSidecarsAvailabilityChecker
             .getAvailabilityCheckResult()
             .thenPeek(
-                result -> {
-                  if (result.isSuccess()) {
+                result ->
                     consensusValidation.ifPresent(
-                        voidSafeFuture ->
-                            voidSafeFuture.complete(BlockImportResult.successful(block)));
-                  }
-                });
+                        voidSafeFuture -> {
+                          // consensus validation is completed when DA check is completed
+                          if (result.isSuccess()) {
+                            voidSafeFuture.complete(BlockImportResult.successful(block));
+                          }
+                        }));
 
     final BeaconState postState;
     try {
