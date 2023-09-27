@@ -40,6 +40,9 @@ import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PRE
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PROCESSED_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TRANSACTION_COMMITTED_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TRANSACTION_PREPARED_EVENT_LABEL;
+import static tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidation.CONSENSUS_EQUIVOCATION;
+import static tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult.CONSENSUS_FAILURE;
+import static tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult.SUCCESS;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -88,9 +91,9 @@ import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
-import tech.pegasys.teku.statetransition.validation.BlockValidator;
-import tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastValidation;
-import tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastValidationResult;
+import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
+import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidation;
+import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -124,7 +127,9 @@ public class BlockManagerTest {
   private ForkChoice forkChoice;
 
   private ExecutionLayerChannelStub executionLayer;
-  private final BlockValidator blockValidator = mock(BlockValidator.class);
+  private final BlockGossipValidator blockGossipValidator = mock(BlockGossipValidator.class);
+  private final BlockBroadcastValidator blockBroadcastValidator =
+      mock(BlockBroadcastValidator.class);
 
   private BlockImporter blockImporter;
   private BlockManager blockManager;
@@ -185,7 +190,8 @@ public class BlockManagerTest {
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,
-            blockValidator,
+            blockGossipValidator,
+            blockBroadcastValidator,
             timeProvider,
             eventLogger,
             Optional.of(mock(BlockImportMetrics.class)),
@@ -334,7 +340,8 @@ public class BlockManagerTest {
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,
-            mock(BlockValidator.class),
+            mock(BlockGossipValidator.class),
+            mock(BlockBroadcastValidator.class),
             timeProvider,
             eventLogger,
             Optional.empty(),
@@ -652,12 +659,12 @@ public class BlockManagerTest {
         localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
     incrementSlot();
 
-    when(blockValidator.broadcastValidate(
+    when(blockBroadcastValidator.validate(
             eq(nextBlock),
-            eq(BroadcastValidation.CONSENSUS_EQUIVOCATION),
+            eq(CONSENSUS_EQUIVOCATION),
             argThat(importResult -> safeJoin(importResult).isSuccessful())))
-        .thenReturn(SafeFuture.completedFuture(BroadcastValidationResult.SUCCESS));
-    assertImportBlockSuccessfully(nextBlock, BroadcastValidation.CONSENSUS_EQUIVOCATION);
+        .thenReturn(SafeFuture.completedFuture(SUCCESS));
+    assertImportBlockSuccessfully(nextBlock, CONSENSUS_EQUIVOCATION);
   }
 
   @Test
@@ -669,7 +676,7 @@ public class BlockManagerTest {
             .generateBlockAtSlot(incrementSlot(), BlockOptions.create().setWrongProposer(true))
             .getBlock();
 
-    when(blockValidator.broadcastValidate(
+    when(blockBroadcastValidator.validate(
             eq(invalidBlock),
             eq(BroadcastValidation.CONSENSUS_EQUIVOCATION),
             // expecting consensus import state transition failure
@@ -678,7 +685,7 @@ public class BlockManagerTest {
                     safeJoin(importResult)
                         .getFailureReason()
                         .equals(FailureReason.FAILED_STATE_TRANSITION))))
-        .thenReturn(SafeFuture.completedFuture(BroadcastValidationResult.CONSENSUS_FAILURE));
+        .thenReturn(SafeFuture.completedFuture(CONSENSUS_FAILURE));
     assertImportBlockWithResult(
         invalidBlock,
         BroadcastValidation.CONSENSUS_EQUIVOCATION,
@@ -694,7 +701,7 @@ public class BlockManagerTest {
     // arrival time
     timeProvider.advanceTimeByMillis(7_000); // 1 second late
 
-    when(blockValidator.gossipValidate(any()))
+    when(blockGossipValidator.validate(any()))
         .thenAnswer(
             invocation -> {
               // advance to simulate processing time of 3000ms
@@ -737,7 +744,7 @@ public class BlockManagerTest {
     // arrival time
     timeProvider.advanceTimeByMillis(7_000); // 1 second late
 
-    when(blockValidator.gossipValidate(any()))
+    when(blockGossipValidator.validate(any()))
         .thenAnswer(
             invocation -> {
               // advance to simulate processing time of 500ms
@@ -1108,7 +1115,7 @@ public class BlockManagerTest {
   private void assertValidateAndImportBlockRejectWithoutValidation(final SignedBeaconBlock block) {
     assertThat(blockManager.validateAndImportBlock(block))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
-    verify(blockValidator, never()).gossipValidate(eq(block));
+    verify(blockGossipValidator, never()).validate(eq(block));
   }
 
   private void assertImportBlockSuccessfully(final SignedBeaconBlock block) {
@@ -1147,7 +1154,8 @@ public class BlockManagerTest {
         pendingBlocks,
         futureBlocks,
         invalidBlockRoots,
-        mock(BlockValidator.class),
+        mock(BlockGossipValidator.class),
+        mock(BlockBroadcastValidator.class),
         timeProvider,
         eventLogger,
         Optional.empty(),

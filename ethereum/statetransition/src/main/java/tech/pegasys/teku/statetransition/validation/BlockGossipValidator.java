@@ -34,10 +34,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class BlockValidator {
+public class BlockGossipValidator {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
@@ -46,7 +45,7 @@ public class BlockValidator {
   private final Set<SlotAndProposer> receivedValidBlockInfoSet =
       LimitedSet.createSynchronized(VALID_BLOCK_SET_SIZE);
 
-  public BlockValidator(
+  public BlockGossipValidator(
       final Spec spec,
       final RecentChainData recentChainData,
       final GossipValidationHelper gossipValidationHelper) {
@@ -55,67 +54,11 @@ public class BlockValidator {
     this.gossipValidationHelper = gossipValidationHelper;
   }
 
-  public SafeFuture<BroadcastValidationResult> broadcastValidate(
-      final SignedBeaconBlock block,
-      final BroadcastValidation broadcastValidation,
-      final SafeFuture<BlockImportResult> consensusValidationResult) {
-
-    // GOSSIP only validation
-    SafeFuture<BroadcastValidationResult> validationPipeline =
-        gossipValidate(block, true)
-            .thenApply(
-                gossipValidationResult -> {
-                  if (gossipValidationResult.isAccept()) {
-                    return BroadcastValidationResult.SUCCESS;
-                  }
-                  return BroadcastValidationResult.GOSSIP_FAILURE;
-                });
-
-    if (broadcastValidation == BroadcastValidation.GOSSIP) {
-      return validationPipeline;
-    }
-
-    // GOSSIP and CONSENSUS validation
-    validationPipeline =
-        validationPipeline.thenCombine(
-            consensusValidationResult,
-            (broadcastValidationResult, consensusValidation) -> {
-              if (broadcastValidationResult != BroadcastValidationResult.SUCCESS) {
-                // forward gossip validation failure
-                return broadcastValidationResult;
-              }
-              if (consensusValidation.isSuccessful()) {
-                return BroadcastValidationResult.SUCCESS;
-              }
-              return BroadcastValidationResult.CONSENSUS_FAILURE;
-            });
-
-    if (broadcastValidation == BroadcastValidation.CONSENSUS) {
-      return validationPipeline;
-    }
-
-    // GOSSIP, CONSENSUS and additional EQUIVOCATION validation
-    return validationPipeline.thenApply(
-        broadcastValidationResult -> {
-          if (broadcastValidationResult != BroadcastValidationResult.SUCCESS) {
-            // forward gossip or consensus validation failure
-            return broadcastValidationResult;
-          }
-
-          // perform final equivocation validation
-          if (blockIsFirstBlockWithValidSignatureForSlot(block)) {
-            return BroadcastValidationResult.SUCCESS;
-          }
-
-          return BroadcastValidationResult.FINAL_EQUIVOCATION_FAILURE;
-        });
+  public SafeFuture<InternalValidationResult> validate(final SignedBeaconBlock block) {
+    return validate(block, false);
   }
 
-  public SafeFuture<InternalValidationResult> gossipValidate(final SignedBeaconBlock block) {
-    return gossipValidate(block, false);
-  }
-
-  private SafeFuture<InternalValidationResult> gossipValidate(
+  SafeFuture<InternalValidationResult> validate(
       final SignedBeaconBlock block, final boolean isLocal) {
 
     if (gossipValidationHelper.isSlotFinalized(block.getSlot())
@@ -214,7 +157,7 @@ public class BlockValidator {
             });
   }
 
-  private boolean blockIsFirstBlockWithValidSignatureForSlot(final SignedBeaconBlock block) {
+  boolean blockIsFirstBlockWithValidSignatureForSlot(final SignedBeaconBlock block) {
     return !receivedValidBlockInfoSet.contains(new SlotAndProposer(block));
   }
 
@@ -237,19 +180,6 @@ public class BlockValidator {
         block.getMessage(),
         recentChainData.getStore(),
         recentChainData.getForkChoiceStrategy().orElseThrow());
-  }
-
-  public enum BroadcastValidation {
-    GOSSIP,
-    CONSENSUS,
-    CONSENSUS_EQUIVOCATION
-  }
-
-  public enum BroadcastValidationResult {
-    SUCCESS,
-    GOSSIP_FAILURE,
-    CONSENSUS_FAILURE,
-    FINAL_EQUIVOCATION_FAILURE
   }
 
   private static class SlotAndProposer {

@@ -46,12 +46,12 @@ import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 @TestSpecContext(milestone = {SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX, SpecMilestone.DENEB})
-public class BlockValidatorTest {
+public class BlockGossipValidatorTest {
   private Spec spec;
   private RecentChainData recentChainData;
   private StorageSystem storageSystem;
 
-  private BlockValidator blockValidator;
+  private BlockGossipValidator blockValidator;
 
   @BeforeAll
   public static void initSession() {
@@ -71,7 +71,7 @@ public class BlockValidatorTest {
     storageSystem.chainUpdater().initializeGenesis(false);
     recentChainData = storageSystem.recentChainData();
     blockValidator =
-        new BlockValidator(
+        new BlockGossipValidator(
             spec, recentChainData, new GossipValidationHelper(spec, recentChainData));
   }
 
@@ -83,7 +83,7 @@ public class BlockValidatorTest {
     final SignedBeaconBlock block = signedBlockAndState.getBlock();
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
 
-    InternalValidationResult result = blockValidator.gossipValidate(block).join();
+    InternalValidationResult result = blockValidator.validate(block).join();
     assertTrue(result.isAccept());
   }
 
@@ -91,7 +91,7 @@ public class BlockValidatorTest {
   void shouldIgnoreAlreadyImportedBlock() {
     final SignedBeaconBlock block = storageSystem.chainUpdater().advanceChain().getBlock();
 
-    InternalValidationResult result = blockValidator.gossipValidate(block).join();
+    InternalValidationResult result = blockValidator.validate(block).join();
     assertTrue(result.isIgnore());
   }
 
@@ -103,10 +103,10 @@ public class BlockValidatorTest {
     final SignedBeaconBlock block = signedBlockAndState.getBlock();
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
 
-    InternalValidationResult result1 = blockValidator.gossipValidate(block).join();
+    InternalValidationResult result1 = blockValidator.validate(block).join();
     assertTrue(result1.isAccept());
 
-    InternalValidationResult result2 = blockValidator.gossipValidate(block).join();
+    InternalValidationResult result2 = blockValidator.validate(block).join();
     assertTrue(result2.isIgnore());
   }
 
@@ -116,7 +116,7 @@ public class BlockValidatorTest {
     final SignedBeaconBlock block =
         storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
 
-    InternalValidationResult result = blockValidator.gossipValidate(block).join();
+    InternalValidationResult result = blockValidator.validate(block).join();
     assertTrue(result.isSaveForFuture());
   }
 
@@ -148,7 +148,7 @@ public class BlockValidatorTest {
     final SignedBeaconBlock blockWithNoParent =
         SignedBeaconBlock.create(spec, block, blockSignature);
 
-    InternalValidationResult result = blockValidator.gossipValidate(blockWithNoParent).join();
+    InternalValidationResult result = blockValidator.validate(blockWithNoParent).join();
     assertTrue(result.isSaveForFuture());
   }
 
@@ -164,7 +164,7 @@ public class BlockValidatorTest {
     final SignedBeaconBlock block =
         storageSystem2.chainBuilder().generateBlockAtSlot(finalizedSlot.minus(ONE)).getBlock();
 
-    InternalValidationResult result = blockValidator.gossipValidate(block).join();
+    InternalValidationResult result = blockValidator.validate(block).join();
     assertTrue(result.isIgnore());
   }
 
@@ -198,8 +198,7 @@ public class BlockValidatorTest {
     final SignedBeaconBlock invalidProposerSignedBlock =
         SignedBeaconBlock.create(spec, block, blockSignature);
 
-    InternalValidationResult result =
-        blockValidator.gossipValidate(invalidProposerSignedBlock).join();
+    InternalValidationResult result = blockValidator.validate(invalidProposerSignedBlock).join();
     assertTrue(result.isReject());
   }
 
@@ -214,7 +213,7 @@ public class BlockValidatorTest {
             storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock().getMessage(),
             BLSTestUtil.randomSignature(0));
 
-    InternalValidationResult result = blockValidator.gossipValidate(block).join();
+    InternalValidationResult result = blockValidator.validate(block).join();
     assertTrue(result.isReject());
   }
 
@@ -227,8 +226,8 @@ public class BlockValidatorTest {
     final ChainBuilder chainBuilder = ChainBuilder.create(spec, validatorKeys);
     final ChainUpdater chainUpdater = new ChainUpdater(localRecentChainData, chainBuilder, spec);
 
-    final BlockValidator blockValidator =
-        new BlockValidator(
+    final BlockGossipValidator blockValidator =
+        new BlockGossipValidator(
             spec, localRecentChainData, new GossipValidationHelper(spec, localRecentChainData));
     chainUpdater.initializeGenesis();
 
@@ -248,7 +247,7 @@ public class BlockValidatorTest {
         chainBuilderFork.generateBlockAtSlot(startSlotOfFinalizedEpoch.increment());
     chainUpdater.saveBlockTime(blockAndState);
     final SafeFuture<InternalValidationResult> result =
-        blockValidator.gossipValidate(blockAndState.getBlock());
+        blockValidator.validate(blockAndState.getBlock());
     assertThat(result).isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
@@ -263,7 +262,7 @@ public class BlockValidatorTest {
             false, specContext.getDataStructureUtil().randomExecutionPayloadHeader());
     recentChainData = storageSystem.recentChainData();
     blockValidator =
-        new BlockValidator(
+        new BlockGossipValidator(
             spec, recentChainData, new GossipValidationHelper(spec, recentChainData));
 
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
@@ -271,7 +270,7 @@ public class BlockValidatorTest {
 
     SignedBeaconBlock block = storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
 
-    InternalValidationResult result = blockValidator.gossipValidate(block).join();
+    InternalValidationResult result = blockValidator.validate(block).join();
     assertTrue(result.isAccept());
   }
 
@@ -286,7 +285,7 @@ public class BlockValidatorTest {
             false, specContext.getDataStructureUtil().randomExecutionPayloadHeader());
     recentChainData = storageSystem.recentChainData();
     blockValidator =
-        new BlockValidator(
+        new BlockGossipValidator(
             spec, recentChainData, new GossipValidationHelper(spec, recentChainData));
 
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
@@ -303,7 +302,7 @@ public class BlockValidatorTest {
                         specContext.getDataStructureUtil().randomExecutionPayload()));
 
     InternalValidationResult result =
-        blockValidator.gossipValidate(signedBlockAndState.getBlock()).join();
+        blockValidator.validate(signedBlockAndState.getBlock()).join();
     assertTrue(result.isReject());
   }
 }

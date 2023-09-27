@@ -143,7 +143,8 @@ import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidato
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarValidator;
-import tech.pegasys.teku.statetransition.validation.BlockValidator;
+import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
+import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ProposerSlashingValidator;
@@ -1052,8 +1053,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.debug("BeaconChainController.initBlockManager()");
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot, futureItemsMetric, "blocks");
-    final BlockValidator blockValidator =
-        new BlockValidator(spec, recentChainData, gossipValidationHelper);
+    final BlockGossipValidator blockGossipValidator =
+        new BlockGossipValidator(spec, recentChainData, gossipValidationHelper);
+    final BlockBroadcastValidator blockBroadcastValidator =
+        new BlockBroadcastValidator(blockGossipValidator);
     final Optional<BlockImportMetrics> importMetrics =
         beaconConfig.getMetricsConfig().isBlockPerformanceEnabled()
             ? Optional.of(BlockImportMetrics.create(metricsSystem))
@@ -1067,7 +1070,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,
-            blockValidator,
+            blockGossipValidator,
+            blockBroadcastValidator,
             timeProvider,
             EVENT_LOG,
             importMetrics,

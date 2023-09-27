@@ -33,8 +33,9 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
-import tech.pegasys.teku.statetransition.validation.BlockValidator;
-import tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastValidation;
+import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
+import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidation;
+import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -47,7 +48,8 @@ public class BlockManager extends Service
   private final BlockImporter blockImporter;
   private final BlobSidecarPool blobSidecarPool;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
-  private final BlockValidator validator;
+  private final BlockGossipValidator blockGossipValidator;
+  private final BlockBroadcastValidator blockBroadcastValidator;
   private final TimeProvider timeProvider;
   private final EventLogger eventLogger;
 
@@ -75,7 +77,8 @@ public class BlockManager extends Service
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final FutureItems<SignedBeaconBlock> futureBlocks,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
-      final BlockValidator validator,
+      final BlockGossipValidator blockGossipValidator,
+      final BlockBroadcastValidator blockBroadcastValidator,
       final TimeProvider timeProvider,
       final EventLogger eventLogger,
       final Optional<BlockImportMetrics> blockImportMetrics,
@@ -87,7 +90,8 @@ public class BlockManager extends Service
     this.pendingBlocks = pendingBlocks;
     this.futureBlocks = futureBlocks;
     this.invalidBlockRoots = invalidBlockRoots;
-    this.validator = validator;
+    this.blockGossipValidator = blockGossipValidator;
+    this.blockBroadcastValidator = blockBroadcastValidator;
     this.timeProvider = timeProvider;
     this.eventLogger = eventLogger;
     this.blockImportMetrics = blockImportMetrics;
@@ -125,9 +129,8 @@ public class BlockManager extends Service
         consensusValidationResult.or(importResult);
 
     final SafeFuture<BlockImportResult> finalImportResult =
-        validator
-            .broadcastValidate(
-                block, broadcastValidation.get(), consensusValidationResultOrImportFailure)
+        blockBroadcastValidator
+            .validate(block, broadcastValidation.get(), consensusValidationResultOrImportFailure)
             .thenCompose(
                 broadcastValidationResult ->
                     switch (broadcastValidationResult) {
@@ -163,7 +166,8 @@ public class BlockManager extends Service
           InternalValidationResult.reject("Block (or its parent) previously marked as invalid"));
     }
 
-    final SafeFuture<InternalValidationResult> validationResult = validator.gossipValidate(block);
+    final SafeFuture<InternalValidationResult> validationResult =
+        blockGossipValidator.validate(block);
     validationResult.thenAccept(
         result -> {
           if (result.code().equals(ValidationResultCode.ACCEPT)
