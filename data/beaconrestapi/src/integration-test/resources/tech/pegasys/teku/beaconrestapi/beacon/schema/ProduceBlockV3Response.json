@@ -24,17 +24,17 @@
       }, {
         "$ref" : "#/components/schemas/BeaconBlockAltair"
       }, {
-        "$ref" : "#/components/schemas/BlindedBlockBellatrix"
-      }, {
         "$ref" : "#/components/schemas/BeaconBlockBellatrix"
       }, {
-        "$ref" : "#/components/schemas/BlindedBlockCapella"
+        "$ref" : "#/components/schemas/BlindedBlockBellatrix"
       }, {
         "$ref" : "#/components/schemas/BeaconBlockCapella"
       }, {
-        "$ref" : "#/components/schemas/BlindedBlockContentsDeneb"
+        "$ref" : "#/components/schemas/BlindedBlockCapella"
       }, {
         "$ref" : "#/components/schemas/BlockContentsDeneb"
+      }, {
+        "$ref" : "#/components/schemas/BlindedBlockContentsDeneb"
       } ]
     }
   }

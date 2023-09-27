@@ -63,18 +63,17 @@ public class MilestoneDependentTypesUtil {
     final SerializableOneOfTypeDefinitionBuilder<T> builder =
         new SerializableOneOfTypeDefinitionBuilder<T>().title(title);
     for (SpecMilestone milestone : schemaDefinitionCache.getSupportedMilestones()) {
-      schemaGetters.forEach(
-          (predicatePerMilestone, schemaDefinition) -> {
-            final DeserializableTypeDefinition<? extends T> jsonTypeDefinition =
-                schemaDefinition
-                    .apply(schemaDefinitionCache.getSchemaDefinition(milestone))
-                    .getJsonTypeDefinition();
-            if (milestone.isGreaterThanOrEqualTo(predicatePerMilestone.getRight())) {
-              builder.withType(
-                  value -> predicatePerMilestone.getLeft().test(value, milestone),
-                  jsonTypeDefinition);
-            }
-          });
+      for (var schemaGetter : schemaGetters.entrySet()) {
+        if (milestone.isGreaterThanOrEqualTo(schemaGetter.getKey().getRight())) {
+          final DeserializableTypeDefinition<? extends T> jsonTypeDefinition =
+              schemaGetter
+                  .getValue()
+                  .apply(schemaDefinitionCache.getSchemaDefinition(milestone))
+                  .getJsonTypeDefinition();
+          builder.withType(
+              value -> schemaGetter.getKey().getLeft().test(value, milestone), jsonTypeDefinition);
+        }
+      }
     }
     return builder.build();
   }

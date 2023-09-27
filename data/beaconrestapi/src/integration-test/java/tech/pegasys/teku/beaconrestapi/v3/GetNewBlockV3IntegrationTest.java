@@ -306,14 +306,14 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
     assertThat(result).isEqualTo(blindedBlockContents);
   }
 
-  public Response get(final BLSSignature signature, final String contentType) throws IOException {
+  private Response get(final BLSSignature signature, final String contentType) throws IOException {
     return getResponse(
         GetNewBlockV3.ROUTE.replace("{slot}", "1"),
         Map.of("randao_reveal", signature.toString()),
         contentType);
   }
 
-  public String getExpectedBlockAsJson(
+  private String getExpectedBlockAsJson(
       final SpecMilestone specMilestone, final boolean blinded, final boolean blockContents)
       throws IOException {
     final String fileName =

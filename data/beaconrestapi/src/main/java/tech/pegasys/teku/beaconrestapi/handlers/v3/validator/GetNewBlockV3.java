@@ -33,8 +33,11 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT256_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiPredicate;
+import java.util.function.Function;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.DataProvider;
@@ -47,6 +50,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
@@ -128,28 +132,30 @@ public class GetNewBlockV3 extends RestApiEndpoint {
 
   private static SerializableTypeDefinition<BlockContainerAndMetaData> getResponseType(
       SchemaDefinitionCache schemaDefinitionCache) {
+
+    final Map<
+            Pair<BiPredicate<BlockContainer, SpecMilestone>, SpecMilestone>,
+            Function<SchemaDefinitions, SszSchema<? extends BlockContainer>>>
+        schemaGetters = new LinkedHashMap<>();
+
+    schemaGetters.put(
+        Pair.of(
+            (blockContainer, milestone) ->
+                schemaDefinitionCache.milestoneAtSlot(blockContainer.getSlot()).equals(milestone)
+                    && !blockContainer.isBlinded(),
+            SpecMilestone.PHASE0),
+        SchemaDefinitions::getBlockContainerSchema);
+    schemaGetters.put(
+        Pair.of(
+            (blockContainer, milestone) ->
+                schemaDefinitionCache.milestoneAtSlot(blockContainer.getSlot()).equals(milestone)
+                    && milestone.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)
+                    && blockContainer.isBlinded(),
+            SpecMilestone.BELLATRIX),
+        SchemaDefinitions::getBlindedBlockContainerSchema);
+
     final SerializableTypeDefinition<BlockContainer> blockContainerType =
-        getMultipleSchemaDefinitionFromMilestone(
-            schemaDefinitionCache,
-            "Block",
-            Map.of(
-                Pair.of(
-                    (blockContainer, milestone) ->
-                        schemaDefinitionCache
-                                .milestoneAtSlot(blockContainer.getSlot())
-                                .equals(milestone)
-                            && !blockContainer.isBlinded(),
-                    SpecMilestone.PHASE0),
-                SchemaDefinitions::getBlockContainerSchema,
-                Pair.of(
-                    (blockContainer, milestone) ->
-                        schemaDefinitionCache
-                                .milestoneAtSlot(blockContainer.getSlot())
-                                .equals(milestone)
-                            && milestone.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)
-                            && blockContainer.isBlinded(),
-                    SpecMilestone.BELLATRIX),
-                SchemaDefinitions::getBlindedBlockContainerSchema));
+        getMultipleSchemaDefinitionFromMilestone(schemaDefinitionCache, "Block", schemaGetters);
 
     return SerializableTypeDefinition.<BlockContainerAndMetaData>object()
         .name("ProduceBlockV3Response")
