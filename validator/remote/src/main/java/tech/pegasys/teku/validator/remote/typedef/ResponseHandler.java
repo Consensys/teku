@@ -35,7 +35,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableOneOfTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.validator.remote.apiclient.BeaconNodeApiErrorUtils;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
 
@@ -43,10 +45,9 @@ public class ResponseHandler<TObject> {
   private static final Logger LOG = LogManager.getLogger();
   private final Int2ObjectMap<ResponseHandler.Handler<TObject>> handlers =
       new Int2ObjectOpenHashMap<>();
-  private final Optional<DeserializableTypeDefinition<TObject>> maybeTypeDefinition;
+  private final Optional<SerializableTypeDefinition<TObject>> maybeTypeDefinition;
 
-  public ResponseHandler(
-      final Optional<DeserializableTypeDefinition<TObject>> maybeTypeDefinition) {
+  public ResponseHandler(final Optional<SerializableTypeDefinition<TObject>> maybeTypeDefinition) {
     this.maybeTypeDefinition = maybeTypeDefinition;
     withHandler(SC_OK, this::defaultOkHandler);
     withHandler(SC_ACCEPTED, this::noValueHandler);
@@ -61,6 +62,10 @@ public class ResponseHandler<TObject> {
 
   public ResponseHandler(final DeserializableTypeDefinition<TObject> typeDefinition) {
     this(Optional.of(typeDefinition));
+  }
+
+  public ResponseHandler(final DeserializableOneOfTypeDefinition<TObject, ?> oneOfTypeDefinition) {
+    this(Optional.of(oneOfTypeDefinition));
   }
 
   public ResponseHandler() {
@@ -78,7 +83,19 @@ public class ResponseHandler<TObject> {
     final ResponseBody responseBody = response.body();
     if (responseBody != null && maybeTypeDefinition.isPresent()) {
       try {
-        return Optional.of(JsonUtil.parse(responseBody.string(), maybeTypeDefinition.get()));
+        final SerializableTypeDefinition<TObject> typeDefinition = maybeTypeDefinition.get();
+        if (typeDefinition instanceof DeserializableOneOfTypeDefinition) {
+          return Optional.of(
+              JsonUtil.parse(
+                  responseBody.string(),
+                  (DeserializableOneOfTypeDefinition<? extends TObject, ?>) typeDefinition));
+        } else {
+          return Optional.of(
+              JsonUtil.parse(
+                  responseBody.string(),
+                  (DeserializableTypeDefinition<? extends TObject>) typeDefinition));
+        }
+
       } catch (JsonProcessingException ex) {
         LOG.debug("Failed to decode response body", ex);
       }
