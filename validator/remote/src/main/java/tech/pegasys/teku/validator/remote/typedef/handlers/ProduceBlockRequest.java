@@ -61,7 +61,7 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
   private final ResponseHandler<BlockResponse> responseHandler;
 
   public final DeserializableOneOfTypeDefinition<BlockResponse, BlockResponse>
-          produceBlockTypeDefinition;
+      produceBlockTypeDefinition;
 
   public ProduceBlockRequest(
       final HttpUrl baseEndpoint,
@@ -175,15 +175,14 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
         if (blinded) {
           return Optional.of(
               new ProduceBlockResponse(
-                  blockContainerSchema.sszDeserialize(Bytes.of(response.body().bytes()))));
+                  blindedBlockContainerSchema.sszDeserialize(Bytes.of(response.body().bytes()))));
         } else {
           return Optional.of(
               new ProduceBlockResponse(
-                  blindedBlockContainerSchema.sszDeserialize(Bytes.of(response.body().bytes()))));
+                  blockContainerSchema.sszDeserialize(Bytes.of(response.body().bytes()))));
         }
       } else {
-        return Optional.of(
-            JsonUtil.parse(response.body().string(), produceBlockTypeDefinition));
+        return Optional.of(JsonUtil.parse(response.body().string(), produceBlockTypeDefinition));
       }
     } catch (final IOException ex) {
       LOG.trace("Failed to parse response object creating block", ex);
