@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Predicate;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -58,10 +57,9 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
   private final DeserializableTypeDefinition<ProduceBlockResponse> produceBlockResponseDefinition;
   private final DeserializableTypeDefinition<ProduceBlockResponse>
       produceBlindedBlockResponseDefinition;
-  private final ResponseHandler<BlockResponse> responseHandler;
+  private final ResponseHandler<ProduceBlockResponse> responseHandler;
 
-  public final DeserializableOneOfTypeDefinition<BlockResponse, BlockResponse>
-      produceBlockTypeDefinition;
+  public final DeserializableOneOfTypeDefinition<ProduceBlockResponse> produceBlockTypeDefinition;
 
   public ProduceBlockRequest(
       final HttpUrl baseEndpoint,
@@ -127,14 +125,14 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
             .build();
 
     produceBlockTypeDefinition =
-        DeserializableOneOfTypeDefinition.object(BlockResponse.class, BlockResponse.class)
+        DeserializableOneOfTypeDefinition.object(ProduceBlockResponse.class)
             .description("meaningful description")
             .withType(
-                ProduceBlockResponse.isInstance,
+                x -> true,
                 s -> s.contains("\"execution_payload_blinded\":false"),
                 produceBlockResponseDefinition)
             .withType(
-                ProduceBlockResponse.isInstance,
+                x -> true,
                 s -> s.contains("\"execution_payload_blinded\":true"),
                 produceBlindedBlockResponseDefinition)
             .build();
@@ -162,10 +160,10 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
             queryParams,
             headers,
             responseHandler)
-        .map(BlockResponse::getData);
+        .map(ProduceBlockResponse::getData);
   }
 
-  private Optional<BlockResponse> handleBlockContainerResult(
+  private Optional<ProduceBlockResponse> handleBlockContainerResult(
       final Request request, final Response response) {
     final boolean blinded = Boolean.parseBoolean(response.header(HEADER_EXECUTION_PAYLOAD_BLINDED));
     try {
@@ -190,12 +188,7 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
     return Optional.empty();
   }
 
-  public interface BlockResponse {
-
-    BlockContainer getData();
-  }
-
-  static class ProduceBlockResponse implements BlockResponse {
+  static class ProduceBlockResponse {
     private BlockContainer data;
     private Boolean executionPayloadBlinded;
     private UInt256 executionPayloadValue;
@@ -207,7 +200,6 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
       this.data = data;
     }
 
-    @Override
     public BlockContainer getData() {
       return data;
     }
@@ -239,10 +231,5 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
     public void setSpecMilestone(final SpecMilestone specMilestone) {
       this.specMilestone = specMilestone;
     }
-
-    static Predicate<BlockResponse> isInstance =
-        produceBlock -> produceBlock instanceof ProduceBlockResponse;
   }
-
-  static class BlockResponseBuilder {}
 }

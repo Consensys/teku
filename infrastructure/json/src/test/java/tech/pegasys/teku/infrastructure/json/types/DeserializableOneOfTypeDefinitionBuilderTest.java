@@ -22,11 +22,9 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 
 public class DeserializableOneOfTypeDefinitionBuilderTest {
-  public static final DeserializableOneOfTypeDefinition<
-          OneOfTypeTestTypeDefinition.TestType, TestTypeBuilder>
+  public static final DeserializableOneOfTypeDefinition<OneOfTypeTestTypeDefinition.TestType>
       DESERIALIZABLE_ONE_OF_TYPE_DEFINITION =
-          DeserializableOneOfTypeDefinition.object(
-                  OneOfTypeTestTypeDefinition.TestType.class, TestTypeBuilder.class)
+          DeserializableOneOfTypeDefinition.object(OneOfTypeTestTypeDefinition.TestType.class)
               .description("meaningful description")
               .withType(
                   OneOfTypeTestTypeDefinition.TestObjA.isInstance,

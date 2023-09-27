@@ -64,7 +64,7 @@ public class ResponseHandler<TObject> {
     this(Optional.of(typeDefinition));
   }
 
-  public ResponseHandler(final DeserializableOneOfTypeDefinition<TObject, ?> oneOfTypeDefinition) {
+  public ResponseHandler(final DeserializableOneOfTypeDefinition<TObject> oneOfTypeDefinition) {
     this(Optional.of(oneOfTypeDefinition));
   }
 
@@ -88,7 +88,7 @@ public class ResponseHandler<TObject> {
           return Optional.of(
               JsonUtil.parse(
                   responseBody.string(),
-                  (DeserializableOneOfTypeDefinition<? extends TObject, ?>) typeDefinition));
+                  (DeserializableOneOfTypeDefinition<? extends TObject>) typeDefinition));
         } else {
           return Optional.of(
               JsonUtil.parse(

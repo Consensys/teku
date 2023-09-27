@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-public class DeserializableOneOfTypeDefinition<TObject, TBuilder>
+public class DeserializableOneOfTypeDefinition<TObject>
     extends SerializableOneOfTypeDefinition<TObject> {
 
   private final Map<Predicate<String>, DeserializableTypeDefinition<? extends TObject>> parserTypes;
@@ -36,8 +36,7 @@ public class DeserializableOneOfTypeDefinition<TObject, TBuilder>
 
   public static <TObject, TBuilder>
       DeserializableOneOfTypeDefinitionBuilder<TObject, TBuilder> object(
-          @SuppressWarnings("unused") final Class<TObject> type,
-          @SuppressWarnings("unused") final Class<TBuilder> builderType) {
+          @SuppressWarnings("unused") final Class<TObject> type) {
     return object();
   }
 

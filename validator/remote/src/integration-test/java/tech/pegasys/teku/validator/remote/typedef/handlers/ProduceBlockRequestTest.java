@@ -63,7 +63,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
   public void shouldGetUnblindedBeaconBlockAsJson() {
     assumeThat(specMilestone).isLessThan(DENEB);
     final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
-    ProduceBlockRequest.BlockResponse blockResponse =
+    ProduceBlockRequest.ProduceBlockResponse blockResponse =
         new ProduceBlockRequest.ProduceBlockResponse(beaconBlock);
 
     final String mockResponse = getExpectedBlockAsJson(specMilestone, false, false);
@@ -84,7 +84,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
   public void shouldGetUnblindedBeaconBlockAsSsz() {
     assumeThat(specMilestone).isLessThan(DENEB);
     final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
-    ProduceBlockRequest.BlockResponse blockResponse =
+    ProduceBlockRequest.ProduceBlockResponse blockResponse =
         new ProduceBlockRequest.ProduceBlockResponse(beaconBlock);
 
     responseBodyBuffer.write(
@@ -113,7 +113,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
   public void shouldGetBlindedBeaconBlockAsJson() {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX).isLessThanOrEqualTo(CAPELLA);
     final BeaconBlock blindedBeaconBlock = dataStructureUtil.randomBlindedBeaconBlock(ONE);
-    ProduceBlockRequest.BlockResponse blockResponse =
+    ProduceBlockRequest.ProduceBlockResponse blockResponse =
         new ProduceBlockRequest.ProduceBlockResponse(blindedBeaconBlock);
 
     final String mockResponse = getExpectedBlockAsJson(specMilestone, true, false);
@@ -134,7 +134,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
   public void shouldGetBlindedBeaconBlockAsSsz() {
     assumeThat(specMilestone).isLessThan(DENEB);
     final BeaconBlock blindedBeaconBlock = dataStructureUtil.randomBlindedBeaconBlock(ONE);
-    ProduceBlockRequest.BlockResponse blockResponse =
+    ProduceBlockRequest.ProduceBlockResponse blockResponse =
         new ProduceBlockRequest.ProduceBlockResponse(blindedBeaconBlock);
 
     responseBodyBuffer.write(
@@ -164,7 +164,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
   public void shouldGetUnblindedBlockContentsPostDenebAsJson() {
     assumeThat(specMilestone).isEqualTo(DENEB);
     final BlockContents blockContents = dataStructureUtil.randomBlockContents(ONE);
-    ProduceBlockRequest.BlockResponse blockResponse =
+    ProduceBlockRequest.ProduceBlockResponse blockResponse =
         new ProduceBlockRequest.ProduceBlockResponse(blockContents);
 
     final String mockResponse = getExpectedBlockAsJson(specMilestone, false, true);
@@ -185,7 +185,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
   public void shouldGetUnblindedBlockContentsPostDenebAsSsz() {
     assumeThat(specMilestone).isEqualTo(DENEB);
     final BlockContents blockContents = dataStructureUtil.randomBlockContents(ONE);
-    ProduceBlockRequest.BlockResponse blockResponse =
+    ProduceBlockRequest.ProduceBlockResponse blockResponse =
         new ProduceBlockRequest.ProduceBlockResponse(blockContents);
 
     responseBodyBuffer.write(
@@ -215,7 +215,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     assumeThat(specMilestone).isEqualTo(DENEB);
     final BlindedBlockContents blindedBlockContents =
         dataStructureUtil.randomBlindedBlockContents(ONE);
-    ProduceBlockRequest.BlockResponse blockResponse =
+    ProduceBlockRequest.ProduceBlockResponse blockResponse =
         new ProduceBlockRequest.ProduceBlockResponse(blindedBlockContents);
 
     final String mockResponse = getExpectedBlockAsJson(specMilestone, true, true);
@@ -237,7 +237,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     assumeThat(specMilestone).isEqualTo(DENEB);
     final BlindedBlockContents blindedBlockContents =
         dataStructureUtil.randomBlindedBlockContents(ONE);
-    ProduceBlockRequest.BlockResponse blockResponse =
+    ProduceBlockRequest.ProduceBlockResponse blockResponse =
         new ProduceBlockRequest.ProduceBlockResponse(blindedBlockContents);
 
     responseBodyBuffer.write(
