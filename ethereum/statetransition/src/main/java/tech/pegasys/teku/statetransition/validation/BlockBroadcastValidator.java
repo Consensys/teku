@@ -48,17 +48,19 @@ public class BlockBroadcastValidator {
 
     // GOSSIP and CONSENSUS validation
     validationPipeline =
-        validationPipeline.thenCombine(
-            consensusValidationResult,
-            (broadcastValidationResult, consensusValidation) -> {
+        validationPipeline.thenCompose(
+            broadcastValidationResult -> {
               if (broadcastValidationResult != BroadcastValidationResult.SUCCESS) {
                 // forward gossip validation failure
-                return broadcastValidationResult;
+                return SafeFuture.completedFuture(broadcastValidationResult);
               }
-              if (consensusValidation.isSuccessful()) {
-                return BroadcastValidationResult.SUCCESS;
-              }
-              return BroadcastValidationResult.CONSENSUS_FAILURE;
+              return consensusValidationResult.thenApply(
+                  consensusValidation -> {
+                    if (consensusValidation.isSuccessful()) {
+                      return BroadcastValidationResult.SUCCESS;
+                    }
+                    return BroadcastValidationResult.CONSENSUS_FAILURE;
+                  });
             });
 
     if (broadcastValidation == BroadcastValidation.CONSENSUS) {
