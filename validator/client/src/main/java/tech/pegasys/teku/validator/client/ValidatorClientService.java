@@ -150,6 +150,7 @@ public class ValidatorClientService extends Service {
             services.getMetricsSystem(),
             validatorLoader.getOwnedValidators(),
             validatorApiChannel,
+            config.getSpec(),
             asyncRunner);
     final Optional<ProposerConfigManager> proposerConfigManager;
     Optional<BeaconProposerPreparer> beaconProposerPreparer = Optional.empty();
@@ -185,7 +186,6 @@ public class ValidatorClientService extends Service {
           new ValidatorRegistrator(
               config.getSpec(),
               validatorLoader.getOwnedValidators(),
-              validatorStatusProvider,
               proposerConfigManager.get(),
               new ValidatorRegistrationSigningService(
                   proposerConfigManager.get(), services.getTimeProvider()),
@@ -534,12 +534,11 @@ public class ValidatorClientService extends Service {
               eventChannels.subscribe(
                   ValidatorTimingChannel.class,
                   new ValidatorTimingActions(
-                      validatorStatusProvider,
                       validatorIndexProvider,
                       validatorTimingChannels,
                       spec,
                       metricsSystem));
-              validatorStatusProvider.initValidatorStatuses().ifExceptionGetsHereRaiseABug();
+              validatorStatusProvider.start().ifExceptionGetsHereRaiseABug();
               return beaconNodeApi.subscribeToEvents();
             });
   }

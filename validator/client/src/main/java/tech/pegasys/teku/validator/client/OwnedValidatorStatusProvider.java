@@ -64,10 +64,12 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
       final MetricsSystem metricsSystem,
       final OwnedValidators validators,
       final ValidatorApiChannel validatorApiChannel,
+      final Spec spec,
       final AsyncRunner asyncRunner) {
     this.validators = validators;
     this.validatorApiChannel = validatorApiChannel;
     this.asyncRunner = asyncRunner;
+    this.spec = spec;
     this.localValidatorCounts =
         SettableLabelledGauge.create(
             metricsSystem,
@@ -153,7 +155,19 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
       return;
     }
 
-    if (!needToUpdateAllStatuses()) {
+    if (needToUpdateAllStatuses()) {
+      validatorApiChannel
+          .getValidatorStatuses(validators.getPublicKeys())
+          .thenAccept(
+              maybeNewValidatorStatuses -> {
+                if (maybeNewValidatorStatuses.isEmpty()) {
+                  STATUS_LOG.unableToRetrieveValidatorStatusesFromBeaconNode();
+                  return;
+                }
+                onNewValidatorStatuses(maybeNewValidatorStatuses.get());
+              })
+          .finish(error -> LOG.error("Failed to update validator statuses", error));
+    } else {
       final Set<BLSPublicKey> keysToUpdate =
           validators.getPublicKeys().stream()
               .filter(key -> !latestValidatorStatuses.get().containsKey(key))
@@ -174,18 +188,6 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
                     Optional.ofNullable(latestValidatorStatuses.get()).orElse(Map.of());
                 newStatuses.putAll(oldStatuses);
                 onNewValidatorStatuses(newStatuses);
-              })
-          .finish(error -> LOG.error("Failed to update validator statuses", error));
-    } else {
-      validatorApiChannel
-          .getValidatorStatuses(validators.getPublicKeys())
-          .thenAccept(
-              maybeNewValidatorStatuses -> {
-                if (maybeNewValidatorStatuses.isEmpty()) {
-                  STATUS_LOG.unableToRetrieveValidatorStatusesFromBeaconNode();
-                  return;
-                }
-                onNewValidatorStatuses(maybeNewValidatorStatuses.get());
               })
           .finish(error -> LOG.error("Failed to update validator statuses", error));
     }

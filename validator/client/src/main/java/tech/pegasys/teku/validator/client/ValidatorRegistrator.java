@@ -49,7 +49,6 @@ import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public class ValidatorRegistrator implements ValidatorTimingChannel {
   private static final Logger LOG = LogManager.getLogger();
-  private static final UInt64 SLOT_IN_THE_EPOCH_TO_RUN_REGISTRATION = UInt64.valueOf(3);
 
   private final Map<BLSPublicKey, SignedValidatorRegistration> cachedValidatorRegistrations =
       Maps.newConcurrentMap();
@@ -61,7 +60,6 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
   private final Spec spec;
   private final OwnedValidators ownedValidators;
-  private final ValidatorStatusProvider validatorStatusProvider;
   private final ProposerConfigPropertiesProvider validatorRegistrationPropertiesProvider;
   private final ValidatorRegistrationSigningService validatorRegistrationSigningService;
   private final ValidatorApiChannel validatorApiChannel;
@@ -70,14 +68,12 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   public ValidatorRegistrator(
       final Spec spec,
       final OwnedValidators ownedValidators,
-      final ValidatorStatusProvider validatorStatusProvider,
       final ProposerConfigPropertiesProvider validatorRegistrationPropertiesProvider,
       final ValidatorRegistrationSigningService validatorRegistrationSigningService,
       final ValidatorApiChannel validatorApiChannel,
       final int batchSize) {
     this.spec = spec;
     this.ownedValidators = ownedValidators;
-    this.validatorStatusProvider = validatorStatusProvider;
     this.validatorRegistrationPropertiesProvider = validatorRegistrationPropertiesProvider;
     this.validatorRegistrationSigningService = validatorRegistrationSigningService;
     this.validatorApiChannel = validatorApiChannel;
