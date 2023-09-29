@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -50,6 +51,7 @@ public class NodeDataProviderTest {
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
 
   private final BlockManager blockManager = mock(BlockManager.class);
+  private final BlobSidecarPool blobSidecarPool = mock(BlobSidecarPool.class);
   private final AttestationManager attestationManager = mock(AttestationManager.class);
   private final ActiveValidatorChannel validatorChannel = mock(ActiveValidatorChannel.class);
   private final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
@@ -78,6 +80,7 @@ public class NodeDataProviderTest {
             blsToExecutionChangePool,
             syncCommitteeContributionPool,
             blockManager,
+                blobSidecarPool,
             attestationManager,
             false,
             validatorChannel,
@@ -125,6 +128,7 @@ public class NodeDataProviderTest {
             blsToExecutionChangePool,
             syncCommitteeContributionPool,
             blockManager,
+                blobSidecarPool,
             attestationManager,
             false,
             validatorChannel,

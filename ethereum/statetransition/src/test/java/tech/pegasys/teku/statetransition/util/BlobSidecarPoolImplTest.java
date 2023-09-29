@@ -81,6 +81,7 @@ public class BlobSidecarPoolImplTest {
   private final List<Bytes32> requiredBlockRootDroppedEvents = new ArrayList<>();
   private final List<BlobIdentifier> requiredBlobSidecarEvents = new ArrayList<>();
   private final List<BlobIdentifier> requiredBlobSidecarDroppedEvents = new ArrayList<>();
+  private final List<BlobSidecar> newBlobSidecarEvents = new ArrayList<>();
 
   private Optional<Function<SlotAndBlockRoot, BlockBlobSidecarsTracker>> mockedTrackersFactory =
       Optional.empty();
@@ -92,6 +93,7 @@ public class BlobSidecarPoolImplTest {
     blobSidecarPool.subscribeRequiredBlockRootDropped(requiredBlockRootDroppedEvents::add);
     blobSidecarPool.subscribeRequiredBlobSidecar(requiredBlobSidecarEvents::add);
     blobSidecarPool.subscribeRequiredBlobSidecarDropped(requiredBlobSidecarDroppedEvents::add);
+    blobSidecarPool.subscribeNewBlobSidecar(newBlobSidecarEvents::add);
     setSlot(currentSlot);
   }
 
@@ -134,6 +136,7 @@ public class BlobSidecarPoolImplTest {
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
     assertThat(requiredBlobSidecarEvents).isEmpty();
     assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
+    assertThat(newBlobSidecarEvents).containsExactly(blobSidecar);
 
     assertBlobSidecarsCount(1);
     assertBlobSidecarsTrackersCount(1);
@@ -176,6 +179,7 @@ public class BlobSidecarPoolImplTest {
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
     assertThat(requiredBlobSidecarEvents).isEmpty();
     assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
+    assertThat(newBlobSidecarEvents).isEmpty();
 
     assertBlobSidecarsCount(0);
     assertBlobSidecarsTrackersCount(0);
@@ -200,6 +204,7 @@ public class BlobSidecarPoolImplTest {
     assertThat(requiredBlockRootEvents).isEmpty();
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
     assertThat(requiredBlobSidecarEvents).isEmpty();
+    assertThat(newBlobSidecarEvents).containsExactly(blobSidecar);
 
     assertBlobSidecarsCount(1);
     assertBlobSidecarsTrackersCount(1);
@@ -245,6 +250,7 @@ public class BlobSidecarPoolImplTest {
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
     assertThat(requiredBlobSidecarEvents).isEmpty();
     assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
+    assertThat(newBlobSidecarEvents).containsExactly(blobSidecar0, blobSidecar1);
 
     assertBlobSidecarsCount(2);
     assertBlobSidecarsTrackersCount(1);
@@ -267,6 +273,7 @@ public class BlobSidecarPoolImplTest {
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
     assertThat(requiredBlobSidecarEvents).isEmpty();
     assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
+    assertThat(newBlobSidecarEvents).isEmpty();
 
     assertBlobSidecarsCount(0);
     assertBlobSidecarsTrackersCount(2);
@@ -288,6 +295,7 @@ public class BlobSidecarPoolImplTest {
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
     assertThat(requiredBlobSidecarEvents).isEmpty();
     assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
+    assertThat(newBlobSidecarEvents).containsExactlyElementsOf(blobSidecars);
 
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
         blobSidecarPool.getBlobSidecarsTracker(block.getSlotAndBlockRoot());
@@ -317,6 +325,7 @@ public class BlobSidecarPoolImplTest {
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
     assertThat(requiredBlobSidecarEvents).isEmpty();
     assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
+    assertThat(newBlobSidecarEvents).containsExactlyElementsOf(blobSidecars);
 
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
         blobSidecarPool.getBlobSidecarsTracker(block.getSlotAndBlockRoot());
