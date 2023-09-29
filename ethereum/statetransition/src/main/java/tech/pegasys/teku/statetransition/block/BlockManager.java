@@ -33,9 +33,8 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
-import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
-import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidation;
-import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
+import tech.pegasys.teku.statetransition.validation.BlockValidator;
+import tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastValidationLevel;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -48,8 +47,7 @@ public class BlockManager extends Service
   private final BlockImporter blockImporter;
   private final BlobSidecarPool blobSidecarPool;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
-  private final BlockGossipValidator blockGossipValidator;
-  private final BlockBroadcastValidator blockBroadcastValidator;
+  private final BlockValidator blockValidator;
   private final TimeProvider timeProvider;
   private final EventLogger eventLogger;
 
@@ -77,8 +75,7 @@ public class BlockManager extends Service
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final FutureItems<SignedBeaconBlock> futureBlocks,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
-      final BlockGossipValidator blockGossipValidator,
-      final BlockBroadcastValidator blockBroadcastValidator,
+      final BlockValidator blockValidator,
       final TimeProvider timeProvider,
       final EventLogger eventLogger,
       final Optional<BlockImportMetrics> blockImportMetrics,
@@ -90,8 +87,7 @@ public class BlockManager extends Service
     this.pendingBlocks = pendingBlocks;
     this.futureBlocks = futureBlocks;
     this.invalidBlockRoots = invalidBlockRoots;
-    this.blockGossipValidator = blockGossipValidator;
-    this.blockBroadcastValidator = blockBroadcastValidator;
+    this.blockValidator = blockValidator;
     this.timeProvider = timeProvider;
     this.eventLogger = eventLogger;
     this.blockImportMetrics = blockImportMetrics;
@@ -111,7 +107,7 @@ public class BlockManager extends Service
 
   @Override
   public SafeFuture<BlockImportResult> importBlock(
-      final SignedBeaconBlock block, final Optional<BroadcastValidation> broadcastValidation) {
+      final SignedBeaconBlock block, final Optional<BroadcastValidationLevel> broadcastValidation) {
     LOG.trace("Preparing to import block: {}", block::toLogString);
 
     // NO broadcast validation, import the old way
@@ -119,22 +115,25 @@ public class BlockManager extends Service
       return doImportBlock(block, Optional.empty(), Optional.empty());
     }
 
-    final SafeFuture<BlockImportResult> consensusValidationResult = new SafeFuture<>();
+    final SafeFuture<BlockImportResult> consensusValidationListener = new SafeFuture<>();
     final SafeFuture<BlockImportResult> importResult =
-        doImportBlock(block, Optional.empty(), Optional.of(consensusValidationResult));
+        doImportBlock(block, Optional.empty(), Optional.of(consensusValidationListener));
 
     // we want a future that completes as soon as the consensus validation is done, or intercept any
     // early import results\exceptions happening before the consensus validation is completed
     final SafeFuture<BlockImportResult> consensusValidationResultOrImportFailure =
-        consensusValidationResult.or(importResult);
+        consensusValidationListener.or(importResult);
 
     final SafeFuture<BlockImportResult> finalImportResult =
-        blockBroadcastValidator
-            .validate(block, broadcastValidation.get(), consensusValidationResultOrImportFailure)
+        blockValidator
+            .validateBroadcast(
+                block, broadcastValidation.get(), consensusValidationResultOrImportFailure)
             .thenCompose(
                 broadcastValidationResult ->
                     switch (broadcastValidationResult) {
-                      case SUCCESS, CONSENSUS_FAILURE -> importResult;
+                      case SUCCESS -> SafeFuture.completedFuture(
+                          BlockImportResult.successful(block));
+                      case CONSENSUS_FAILURE -> importResult;
                       case GOSSIP_FAILURE -> SafeFuture.completedFuture(
                           BlockImportResult.FAILED_BROADCAST_GOSSIP_VALIDATION);
                       case FINAL_EQUIVOCATION_FAILURE -> SafeFuture.completedFuture(
@@ -167,7 +166,7 @@ public class BlockManager extends Service
     }
 
     final SafeFuture<InternalValidationResult> validationResult =
-        blockGossipValidator.validate(block);
+        blockValidator.validateGossip(block);
     validationResult.thenAccept(
         result -> {
           if (result.code().equals(ValidationResultCode.ACCEPT)
@@ -229,12 +228,12 @@ public class BlockManager extends Service
   private SafeFuture<BlockImportResult> doImportBlock(
       final SignedBeaconBlock block,
       final Optional<BlockImportPerformance> blockImportPerformance,
-      final Optional<SafeFuture<BlockImportResult>> consensusValidation) {
+      final Optional<SafeFuture<BlockImportResult>> consensusValidationListener) {
     return handleInvalidBlock(block)
         .or(() -> handleKnownBlock(block))
         .orElseGet(
             () ->
-                handleBlockImport(block, blockImportPerformance, consensusValidation)
+                handleBlockImport(block, blockImportPerformance, consensusValidationListener)
                     .thenPeek(
                         result -> lateBlockImportCheck(blockImportPerformance, block, result)))
         .thenPeek(
@@ -281,13 +280,13 @@ public class BlockManager extends Service
   private SafeFuture<BlockImportResult> handleBlockImport(
       final SignedBeaconBlock block,
       final Optional<BlockImportPerformance> blockImportPerformance,
-      final Optional<SafeFuture<BlockImportResult>> consensusValidation) {
+      final Optional<SafeFuture<BlockImportResult>> consensusValidationListener) {
 
     onBlockValidated(block);
     blobSidecarPool.onNewBlock(block);
 
     return blockImporter
-        .importBlock(block, blockImportPerformance, consensusValidation)
+        .importBlock(block, blockImportPerformance, consensusValidationListener)
         .thenPeek(
             result -> {
               if (result.isSuccessful()) {

@@ -33,19 +33,31 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidation;
-import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult;
+import tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastValidationLevel;
+import tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastValidationResult;
 
-public class BlockBroadcastValidatorTest {
+public class BlockValidatorTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   private final BlockGossipValidator blockGossipValidator = mock(BlockGossipValidator.class);
 
-  private final BlockBroadcastValidator blockBroadcastValidator =
-      new BlockBroadcastValidator(blockGossipValidator);
+  private final BlockValidator blockBroadcastValidator = new BlockValidator(blockGossipValidator);
 
   final SafeFuture<BlockImportResult> consensusValidationResult = new SafeFuture<>();
+
+  @Test
+  public void shouldExposeGossipValidation() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
+
+    when(blockGossipValidator.validate(eq(block), eq(false)))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+
+    assertThat(blockBroadcastValidator.validateGossip(block))
+        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+    verify(blockGossipValidator).validate(eq(block), eq(false));
+    verifyNoMoreInteractions(blockGossipValidator);
+  }
 
   @Test
   public void shouldReturnSuccessWhenValidationIsGossipAndGossipValidationReturnsAccept() {
@@ -55,8 +67,8 @@ public class BlockBroadcastValidatorTest {
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     assertThat(
-            blockBroadcastValidator.validate(
-                block, BroadcastValidation.GOSSIP, consensusValidationResult))
+            blockBroadcastValidator.validateBroadcast(
+                block, BroadcastValidationLevel.GOSSIP, consensusValidationResult))
         .isCompletedWithValueMatching(result -> result.equals(BroadcastValidationResult.SUCCESS));
     verify(blockGossipValidator).validate(eq(block), eq(true));
     verifyNoMoreInteractions(blockGossipValidator);
@@ -65,7 +77,7 @@ public class BlockBroadcastValidatorTest {
   @ParameterizedTest
   @MethodSource("provideBroadcastValidationsAndGossipFailures")
   public void shouldReturnGossipFailureImmediatelyWhenGossipValidationIsNotAccept(
-      final BroadcastValidation broadcastValidation,
+      final BroadcastValidationLevel broadcastValidation,
       final InternalValidationResult internalValidationResult) {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
 
@@ -73,7 +85,8 @@ public class BlockBroadcastValidatorTest {
         .thenReturn(SafeFuture.completedFuture(internalValidationResult));
 
     assertThat(
-            blockBroadcastValidator.validate(block, broadcastValidation, consensusValidationResult))
+            blockBroadcastValidator.validateBroadcast(
+                block, broadcastValidation, consensusValidationResult))
         .isCompletedWithValueMatching(
             result -> result.equals(BroadcastValidationResult.GOSSIP_FAILURE));
     verify(blockGossipValidator).validate(eq(block), eq(true));
@@ -82,10 +95,10 @@ public class BlockBroadcastValidatorTest {
 
   @ParameterizedTest
   @EnumSource(
-      value = BroadcastValidation.class,
+      value = BroadcastValidationLevel.class,
       names = {"CONSENSUS", "CONSENSUS_EQUIVOCATION"})
   public void shouldReturnConsensusFailureImmediatelyWhenConsensusValidationIsNotSuccessful(
-      final BroadcastValidation broadcastValidation) {
+      final BroadcastValidationLevel broadcastValidation) {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
 
     when(blockGossipValidator.validate(eq(block), eq(true)))
@@ -95,7 +108,8 @@ public class BlockBroadcastValidatorTest {
         BlockImportResult.failedStateTransition(new RuntimeException("error")));
 
     assertThat(
-            blockBroadcastValidator.validate(block, broadcastValidation, consensusValidationResult))
+            blockBroadcastValidator.validateBroadcast(
+                block, broadcastValidation, consensusValidationResult))
         .isCompletedWithValueMatching(
             result -> result.equals(BroadcastValidationResult.CONSENSUS_FAILURE));
     verify(blockGossipValidator).validate(eq(block), eq(true));
@@ -104,10 +118,10 @@ public class BlockBroadcastValidatorTest {
 
   @ParameterizedTest
   @EnumSource(
-      value = BroadcastValidation.class,
+      value = BroadcastValidationLevel.class,
       names = {"CONSENSUS", "CONSENSUS_EQUIVOCATION"})
   public void shouldReturnConsensusFailureImmediatelyWhenConsensusCompleteExceptionally(
-      final BroadcastValidation broadcastValidation) {
+      final BroadcastValidationLevel broadcastValidation) {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
 
     when(blockGossipValidator.validate(eq(block), eq(true)))
@@ -116,7 +130,8 @@ public class BlockBroadcastValidatorTest {
     consensusValidationResult.completeExceptionally(new RuntimeException("error"));
 
     assertThat(
-            blockBroadcastValidator.validate(block, broadcastValidation, consensusValidationResult))
+            blockBroadcastValidator.validateBroadcast(
+                block, broadcastValidation, consensusValidationResult))
         .isCompletedExceptionally();
     verify(blockGossipValidator).validate(eq(block), eq(true));
     verifyNoMoreInteractions(blockGossipValidator);
@@ -135,8 +150,8 @@ public class BlockBroadcastValidatorTest {
         .thenReturn(true);
 
     assertThat(
-            blockBroadcastValidator.validate(
-                block, BroadcastValidation.CONSENSUS_EQUIVOCATION, consensusValidationResult))
+            blockBroadcastValidator.validateBroadcast(
+                block, BroadcastValidationLevel.CONSENSUS_EQUIVOCATION, consensusValidationResult))
         .isCompletedWithValueMatching(result -> result.equals(BroadcastValidationResult.SUCCESS));
     verify(blockGossipValidator).validate(eq(block), eq(true));
     verify(blockGossipValidator).blockIsFirstBlockWithValidSignatureForSlot(eq(block));
@@ -156,8 +171,8 @@ public class BlockBroadcastValidatorTest {
         .thenReturn(false);
 
     assertThat(
-            blockBroadcastValidator.validate(
-                block, BroadcastValidation.CONSENSUS_EQUIVOCATION, consensusValidationResult))
+            blockBroadcastValidator.validateBroadcast(
+                block, BroadcastValidationLevel.CONSENSUS_EQUIVOCATION, consensusValidationResult))
         .isCompletedWithValueMatching(
             result -> result.equals(BroadcastValidationResult.FINAL_EQUIVOCATION_FAILURE));
     verify(blockGossipValidator).validate(eq(block), eq(true));
@@ -166,7 +181,7 @@ public class BlockBroadcastValidatorTest {
   }
 
   private static Stream<Arguments> provideBroadcastValidationsAndGossipFailures() {
-    return Arrays.stream(BroadcastValidation.values())
+    return Arrays.stream(BroadcastValidationLevel.values())
         .flatMap(
             broadcastValidation ->
                 Stream.of(

@@ -21,6 +21,7 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -83,6 +84,8 @@ import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
+import tech.pegasys.teku.spec.logic.common.block.BlockProcessor;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
@@ -131,9 +134,9 @@ class ForkChoiceTest {
     setupWithSpec(TestSpecFactory.createMinimalBellatrix());
   }
 
-  private void setupWithSpec(final Spec spec) {
+  private void setupWithSpec(final Spec unmockedSpec) {
     // Setting up spec and all dependants
-    this.spec = spec;
+    this.spec = spy(unmockedSpec);
     this.dataStructureUtil = new DataStructureUtil(spec);
     this.attestationSchema = spec.getGenesisSchemaDefinitions().getAttestationSchema();
     this.storageSystem =
@@ -265,6 +268,24 @@ class ForkChoiceTest {
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(wrongBlockAndState.getSlot());
 
     importBlockWithError(wrongBlockAndState, FailureReason.UNKNOWN_PARENT);
+
+    assertThatSafeFuture(consensusValidationResult.get()).isNotDone();
+  }
+
+  @Test
+  void onBlock_consensusValidationShouldNotResolveWhenStateTransitionFails()
+      throws StateTransitionException {
+    setupWithSpec(TestSpecFactory.createMinimalDeneb());
+    consensusValidationResult = Optional.of(new SafeFuture<>());
+    final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
+    storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
+
+    final BlockProcessor blockProcessor = mock(BlockProcessor.class);
+    when(spec.getBlockProcessor(blockAndState.getSlot())).thenReturn(blockProcessor);
+    when(blockProcessor.processAndValidateBlock(any(), any(), any(), any()))
+        .thenThrow(new StateTransitionException("error!"));
+
+    importBlockWithError(blockAndState, FailureReason.FAILED_STATE_TRANSITION);
 
     assertThatSafeFuture(consensusValidationResult.get()).isNotDone();
   }
@@ -1280,7 +1301,7 @@ class ForkChoiceTest {
   }
 
   private void assertBlockImportFailure(
-      final SafeFuture<BlockImportResult> importResult, FailureReason failureReason) {
+      final SafeFuture<BlockImportResult> importResult, final FailureReason failureReason) {
     assertThat(importResult).isCompleted();
     final BlockImportResult result = safeJoin(importResult);
     assertThat(result.getFailureReason()).isEqualTo(failureReason);

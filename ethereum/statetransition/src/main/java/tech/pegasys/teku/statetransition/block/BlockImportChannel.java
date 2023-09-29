@@ -18,12 +18,12 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidation;
+import tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastValidationLevel;
 
 public interface BlockImportChannel extends ChannelInterface {
 
   SafeFuture<BlockImportResult> importBlock(
-      SignedBeaconBlock block, Optional<BroadcastValidation> broadcastValidation);
+      SignedBeaconBlock block, Optional<BroadcastValidationLevel> broadcastValidation);
 
   default SafeFuture<BlockImportResult> importBlock(final SignedBeaconBlock block) {
     return importBlock(block, Optional.empty());

@@ -54,10 +54,6 @@ public class BlockGossipValidator {
     this.gossipValidationHelper = gossipValidationHelper;
   }
 
-  public SafeFuture<InternalValidationResult> validate(final SignedBeaconBlock block) {
-    return validate(block, false);
-  }
-
   SafeFuture<InternalValidationResult> validate(
       final SignedBeaconBlock block, final boolean isLocal) {
 
@@ -143,7 +139,10 @@ public class BlockGossipValidator {
 
               // We want to add blocks in the infoSet only when they come from gossip.
               // When dealing with locally produced block, we only want to check them against seen
-              // block coming from gossip.
+              // block coming from gossip because we may have to do two equivocation checks if
+              // BroadcastValidationLevel.CONSENSUS_EQUIVOCATION is used (one at the beginning of
+              // the blocks import,
+              // another after consensus validation)
               final boolean equivocationCheckSuccessful =
                   isLocal
                       ? blockIsFirstBlockWithValidSignatureForSlot(block)

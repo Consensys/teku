@@ -17,17 +17,21 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 
-public class BlockBroadcastValidator {
+public class BlockValidator {
 
   private final BlockGossipValidator blockGossipValidator;
 
-  public BlockBroadcastValidator(final BlockGossipValidator blockGossipValidator) {
+  public BlockValidator(final BlockGossipValidator blockGossipValidator) {
     this.blockGossipValidator = blockGossipValidator;
   }
 
-  public SafeFuture<BroadcastValidationResult> validate(
+  public SafeFuture<InternalValidationResult> validateGossip(final SignedBeaconBlock block) {
+    return blockGossipValidator.validate(block, false);
+  }
+
+  public SafeFuture<BroadcastValidationResult> validateBroadcast(
       final SignedBeaconBlock block,
-      final BroadcastValidation broadcastValidation,
+      final BroadcastValidationLevel broadcastValidationLevel,
       final SafeFuture<BlockImportResult> consensusValidationResult) {
 
     // GOSSIP only validation
@@ -42,7 +46,7 @@ public class BlockBroadcastValidator {
                   return BroadcastValidationResult.GOSSIP_FAILURE;
                 });
 
-    if (broadcastValidation == BroadcastValidation.GOSSIP) {
+    if (broadcastValidationLevel == BroadcastValidationLevel.GOSSIP) {
       return validationPipeline;
     }
 
@@ -63,7 +67,7 @@ public class BlockBroadcastValidator {
                   });
             });
 
-    if (broadcastValidation == BroadcastValidation.CONSENSUS) {
+    if (broadcastValidationLevel == BroadcastValidationLevel.CONSENSUS) {
       return validationPipeline;
     }
 
@@ -84,7 +88,7 @@ public class BlockBroadcastValidator {
         });
   }
 
-  public enum BroadcastValidation {
+  public enum BroadcastValidationLevel {
     GOSSIP,
     CONSENSUS,
     CONSENSUS_EQUIVOCATION
