@@ -222,7 +222,9 @@ public interface ValidatorApiChannel extends ChannelInterface {
   /**
    * Note that only registrations for active or pending validators must be sent to the builder
    * network. Registrations for unknown or exited validators must be filtered out and not sent to
-   * the builder network. Expects already filtered input.
+   * the builder network.
+   *
+   * <p>Method expects already filtered input.
    *
    * <p>See <a
    * href="https://github.com/ethereum/beacon-APIs/blob/master/apis/validator/register_validator.yaml">validator

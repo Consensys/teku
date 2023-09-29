@@ -534,10 +534,7 @@ public class ValidatorClientService extends Service {
               eventChannels.subscribe(
                   ValidatorTimingChannel.class,
                   new ValidatorTimingActions(
-                      validatorIndexProvider,
-                      validatorTimingChannels,
-                      spec,
-                      metricsSystem));
+                      validatorIndexProvider, validatorTimingChannels, spec, metricsSystem));
               validatorStatusProvider.start().ifExceptionGetsHereRaiseABug();
               return beaconNodeApi.subscribeToEvents();
             });

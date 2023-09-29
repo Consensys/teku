@@ -23,7 +23,6 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
@@ -305,7 +304,7 @@ public class ValidatorDataProvider {
         .getValidatorStatuses(
             validatorRegistrations.stream()
                 .map(registration -> registration.getMessage().getPublicKey())
-                .collect(Collectors.toList()))
+                .toList())
         .thenComposeChecked(
             maybeValidatorStatuses -> {
               if (maybeValidatorStatuses.isEmpty()) {
