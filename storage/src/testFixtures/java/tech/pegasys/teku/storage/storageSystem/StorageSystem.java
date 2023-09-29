@@ -90,7 +90,7 @@ public class StorageSystem implements AutoCloseable {
     final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
     // Create and start storage server
-    final ChainStorage chainStorageServer = ChainStorage.create(database, spec);
+    final ChainStorage chainStorageServer = ChainStorage.create(database, spec, storageMode);
 
     // Create recent chain data
     final FinalizedCheckpointChannel finalizedCheckpointChannel =

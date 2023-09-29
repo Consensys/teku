@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.subcommand.debug;
 
+import static tech.pegasys.teku.cli.subcommand.ValidatorClientCommand.DENEB_KZG_NOOP;
+
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
@@ -95,7 +97,8 @@ public class PrettyPrintCommand implements Callable<Integer> {
   @Override
   public Integer call() throws IOException {
     final SpecVersion spec =
-        SpecVersion.create(milestone, SpecConfigLoader.loadConfig(network)).orElseThrow();
+        SpecVersion.create(milestone, SpecConfigLoader.loadConfig(network, DENEB_KZG_NOOP))
+            .orElseThrow();
     final Bytes inputData;
     try (final InputStream in = openStream()) {
       inputData = Bytes.wrap(IOUtils.toByteArray(in));

@@ -19,6 +19,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -50,21 +52,30 @@ import tech.pegasys.teku.storage.server.state.FinalizedStateCache;
 
 public class ChainStorage
     implements StorageUpdateChannel, StorageQueryChannel, VoteUpdateChannel, ChainStorageFacade {
-
+  private static final Logger LOG = LogManager.getLogger();
   private final Database database;
   private final FinalizedStateCache finalizedStateCache;
 
+  private final StateStorageMode dataStorageMode;
+
   private Optional<OnDiskStoreData> cachedStoreData = Optional.empty();
 
-  private ChainStorage(final Database database, final FinalizedStateCache finalizedStateCache) {
+  private ChainStorage(
+      final Database database,
+      final FinalizedStateCache finalizedStateCache,
+      final StateStorageMode dataStorageMode) {
     this.database = database;
     this.finalizedStateCache = finalizedStateCache;
+    this.dataStorageMode = dataStorageMode;
   }
 
-  public static ChainStorage create(final Database database, final Spec spec) {
+  public static ChainStorage create(
+      final Database database, final Spec spec, final StateStorageMode dataStorageMode) {
     final int finalizedStateCacheSize = spec.getSlotsPerEpoch(SpecConfig.GENESIS_EPOCH) * 3;
     return new ChainStorage(
-        database, new FinalizedStateCache(spec, database, finalizedStateCacheSize, true));
+        database,
+        new FinalizedStateCache(spec, database, finalizedStateCacheSize, true),
+        dataStorageMode);
   }
 
   private synchronized Optional<OnDiskStoreData> getStore() {
@@ -224,12 +235,22 @@ public class ChainStorage
 
   @Override
   public SafeFuture<Optional<BeaconState>> getLatestFinalizedStateAtSlot(final UInt64 slot) {
-    return SafeFuture.of(() -> getLatestFinalizedStateAtSlotSync(slot));
+    if (dataStorageMode.storesFinalizedStates()) {
+      return SafeFuture.of(() -> getLatestFinalizedStateAtSlotSync(slot));
+    }
+    LOG.debug("Not storing archive states - not fetching finalized state at slot {}", slot);
+    return SafeFuture.completedFuture(Optional.empty());
   }
 
   @Override
   public SafeFuture<Optional<BeaconState>> getLatestAvailableFinalizedState(UInt64 slot) {
-    return SafeFuture.of(() -> getLatestAvailableFinalizedStateSync(slot));
+    if (dataStorageMode.storesFinalizedStates()) {
+      return SafeFuture.of(() -> getLatestAvailableFinalizedStateSync(slot));
+    }
+    LOG.debug(
+        "Not storing archive states - not fetching latest available finalized state at slot {}",
+        slot);
+    return SafeFuture.completedFuture(Optional.empty());
   }
 
   @Override
@@ -239,8 +260,12 @@ public class ChainStorage
 
   @Override
   public SafeFuture<Optional<BeaconState>> getFinalizedStateByBlockRoot(final Bytes32 blockRoot) {
-    return getFinalizedSlotByBlockRoot(blockRoot)
-        .thenApply(slot -> slot.flatMap(this::getLatestFinalizedStateAtSlotSync));
+    if (dataStorageMode.storesFinalizedStates()) {
+      return getFinalizedSlotByBlockRoot(blockRoot)
+          .thenApply(slot -> slot.flatMap(this::getLatestFinalizedStateAtSlotSync));
+    }
+    LOG.debug("Not storing archive states - not fetching finalized state at root {}", blockRoot);
+    return SafeFuture.completedFuture(Optional.empty());
   }
 
   @Override

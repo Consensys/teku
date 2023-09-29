@@ -426,6 +426,21 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     assertThat(specConfigDeneb.getEpochsStoreBlobs()).isEqualTo(12345);
   }
 
+  @Test
+  public void shouldHaveKzgForDeneb() {
+    final String[] args = {XDENEB_FORK_EPOCH_OPTION, "200000"};
+    beaconNodeCommand.parse(args);
+    final SpecConfigDeneb specConfigDeneb =
+        SpecConfigDeneb.required(
+            beaconNodeCommand
+                .tekuConfiguration()
+                .eth2NetworkConfiguration()
+                .getSpec()
+                .forMilestone(SpecMilestone.DENEB)
+                .getConfig());
+    assertThat(specConfigDeneb.isKZGNoop()).isFalse();
+  }
+
   private Path createConfigFile() throws IOException {
     final URL configFile = BeaconNodeCommandTest.class.getResource("/complete_config.yaml");
     final String updatedConfig =
