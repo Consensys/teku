@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -26,7 +27,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.Set;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSTestUtil;
@@ -35,6 +38,9 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
@@ -46,14 +52,23 @@ public class ValidatorStatusProviderTest {
   private final Collection<BLSPublicKey> validatorKeys = Set.of(validatorKey);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
+  final ValidatorStatusSubscriber validatorStatusSubscriber = mock(ValidatorStatusSubscriber.class);
+  private final Spec spec = TestSpecFactory.createDefault();
+  private OwnedValidators ownedValidators;
 
-  private final ValidatorStatusProvider provider =
-      new OwnedValidatorStatusProvider(
-          metricsSystem,
-          new OwnedValidators(
-              Map.of(validatorKey, new Validator(validatorKey, NO_OP_SIGNER, Optional::empty))),
-          validatorApiChannel,
-          asyncRunner);
+  private ValidatorStatusProvider provider;
+
+  @BeforeEach
+  void setup() {
+    ownedValidators =
+        new OwnedValidators(
+            Map.of(validatorKey, new Validator(validatorKey, NO_OP_SIGNER, Optional::empty)));
+    provider =
+        new OwnedValidatorStatusProvider(
+            metricsSystem, ownedValidators, validatorApiChannel, spec, asyncRunner);
+    provider.subscribeNewValidatorStatuses(validatorStatusSubscriber);
+    provider.onSlot(UInt64.ZERO);
+  }
 
   @Test
   @SuppressWarnings("unchecked")
@@ -63,7 +78,7 @@ public class ValidatorStatusProviderTest {
         .thenReturn(SafeFuture.completedFuture(Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(Collections.EMPTY_MAP)));
 
-    assertThat(provider.initValidatorStatuses()).isNotCompleted();
+    assertThat(provider.start()).isNotCompleted();
     verify(validatorApiChannel).getValidatorStatuses(validatorKeys);
 
     asyncRunner.executeQueuedActions();
@@ -73,10 +88,8 @@ public class ValidatorStatusProviderTest {
     asyncRunner.executeQueuedActions();
 
     verify(validatorApiChannel, times(3)).getValidatorStatuses(validatorKeys);
-
-    asyncRunner.executeUntilDone();
-
-    verify(validatorApiChannel, times(3)).getValidatorStatuses(validatorKeys);
+    verify(validatorStatusSubscriber).onValidatorStatuses(anyMap());
+    assertThat(provider.start()).isCompleted();
   }
 
   @Test
@@ -86,7 +99,7 @@ public class ValidatorStatusProviderTest {
             SafeFuture.completedFuture(
                 Optional.of(Map.of(validatorKey, ValidatorStatus.pending_initialized))));
 
-    assertThat(provider.initValidatorStatuses()).isCompleted();
+    assertThat(provider.start()).isCompleted();
 
     final StubLabelledGauge gauge =
         metricsSystem.getLabelledGauge(TekuMetricCategory.VALIDATOR, VALIDATOR_COUNTS_METRIC);
@@ -106,7 +119,7 @@ public class ValidatorStatusProviderTest {
             SafeFuture.completedFuture(
                 Optional.of(Map.of(validatorKey, ValidatorStatus.active_ongoing))));
 
-    assertThat(provider.initValidatorStatuses()).isCompleted();
+    assertThat(provider.start()).isCompleted();
 
     final StubLabelledGauge gauge =
         metricsSystem.getLabelledGauge(TekuMetricCategory.VALIDATOR, VALIDATOR_COUNTS_METRIC);
@@ -115,11 +128,43 @@ public class ValidatorStatusProviderTest {
     assertThat(gauge.getValue(ValidatorStatus.active_ongoing.name()))
         .isEqualTo(OptionalDouble.of(0));
 
-    provider.updateValidatorStatuses();
+    provider.onSlot(spec.computeStartSlotAtEpoch(UInt64.ONE).plus(1));
 
     assertThat(gauge.getValue(ValidatorStatus.pending_initialized.name()))
         .isEqualTo(OptionalDouble.of(0));
     assertThat(gauge.getValue(ValidatorStatus.active_ongoing.name()))
         .isEqualTo(OptionalDouble.of(1));
+  }
+
+  @Test
+  void shouldFireNewStatusesOnValidatorAdded() {
+    when(validatorApiChannel.getValidatorStatuses(validatorKeys))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(Map.of(validatorKey, ValidatorStatus.active_ongoing))));
+
+    assertThat(provider.start()).isCompleted();
+    @SuppressWarnings("unchecked")
+    final ArgumentCaptor<Map<BLSPublicKey, ValidatorStatus>> subscriberCapture =
+        ArgumentCaptor.forClass(Map.class);
+    verify(validatorStatusSubscriber).onValidatorStatuses(subscriberCapture.capture());
+    final Map<BLSPublicKey, ValidatorStatus> result1 = subscriberCapture.getValue();
+    assertThat(result1.size()).isEqualTo(1);
+    assertThat(result1.keySet().stream().findFirst()).contains(validatorKey);
+
+    final BLSPublicKey validatorKey2 = BLSTestUtil.randomPublicKey(1);
+    final Validator validator2 = new Validator(validatorKey2, NO_OP_SIGNER, Optional::empty);
+    // should check only new one
+    when(validatorApiChannel.getValidatorStatuses(Set.of(validatorKey2)))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(Map.of(validatorKey2, ValidatorStatus.active_ongoing))));
+    ownedValidators.addValidator(validator2);
+
+    provider.onValidatorsAdded();
+    verify(validatorStatusSubscriber, times(2)).onValidatorStatuses(subscriberCapture.capture());
+    final Map<BLSPublicKey, ValidatorStatus> result2 = subscriberCapture.getValue();
+    assertThat(result2.size()).isEqualTo(2);
+    assertThat(result2.keySet()).contains(validatorKey, validatorKey2);
   }
 }

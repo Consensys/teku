@@ -52,6 +52,7 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
       new AtomicReference<>();
   private final AsyncRunner asyncRunner;
   private final AtomicBoolean startupComplete = new AtomicBoolean(false);
+  private final AtomicBoolean lookupInProgress = new AtomicBoolean(false);
   private final SettableLabelledGauge localValidatorCounts;
   private final AtomicReference<UInt64> lastRunEpoch = new AtomicReference<>();
   private final AtomicReference<UInt64> currentEpoch = new AtomicReference<>();
@@ -129,6 +130,15 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
     if (validators.hasNoValidators()) {
       return SafeFuture.COMPLETE;
     }
+    if (currentEpoch.get() == null) {
+      LOG.debug("Delaying Validator status checking, currentEpoch not initialized yet");
+      return retryInitialValidatorStatusCheck();
+    }
+
+    if (!lookupInProgress.compareAndSet(false, true)) {
+      LOG.warn("Validator status lookup is still in progress. Will skip retrying.");
+      return retryInitialValidatorStatusCheck();
+    }
     // All validators are set to `unknown` until explicitly updated otherwise
     localValidatorCounts.set(validators.getValidatorCount(), "unknown");
     return validatorApiChannel
@@ -136,13 +146,19 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
         .thenCompose(
             maybeValidatorStatuses -> {
               if (maybeValidatorStatuses.isEmpty()) {
+                lookupInProgress.set(false);
                 return retryInitialValidatorStatusCheck();
               }
-              onNewValidatorStatuses(maybeValidatorStatuses.get());
+              onNewValidatorStatuses(maybeValidatorStatuses.get(), true);
               startupComplete.set(true);
+              lookupInProgress.set(false);
               return SafeFuture.COMPLETE;
             })
-        .exceptionallyCompose((__) -> retryInitialValidatorStatusCheck());
+        .exceptionallyCompose(
+            (__) -> {
+              lookupInProgress.set(false);
+              return retryInitialValidatorStatusCheck();
+            });
   }
 
   private SafeFuture<Void> retryInitialValidatorStatusCheck() {
@@ -152,6 +168,10 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
 
   public void updateValidatorStatuses() {
     if (!startupComplete.get() || validators.hasNoValidators()) {
+      return;
+    }
+    if (!lookupInProgress.compareAndSet(false, true)) {
+      LOG.warn("Validator status lookup is still in progress. Skipping update.");
       return;
     }
 
@@ -164,8 +184,9 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
                   STATUS_LOG.unableToRetrieveValidatorStatusesFromBeaconNode();
                   return;
                 }
-                onNewValidatorStatuses(maybeNewValidatorStatuses.get());
+                onNewValidatorStatuses(maybeNewValidatorStatuses.get(), true);
               })
+          .alwaysRun(() -> lookupInProgress.set(false))
           .finish(error -> LOG.error("Failed to update validator statuses", error));
     } else {
       final Set<BLSPublicKey> keysToUpdate =
@@ -187,17 +208,21 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
                 final Map<BLSPublicKey, ValidatorStatus> oldStatuses =
                     Optional.ofNullable(latestValidatorStatuses.get()).orElse(Map.of());
                 newStatuses.putAll(oldStatuses);
-                onNewValidatorStatuses(newStatuses);
+                onNewValidatorStatuses(newStatuses, false);
               })
+          .alwaysRun(() -> lookupInProgress.set(false))
           .finish(error -> LOG.error("Failed to update validator statuses", error));
     }
   }
 
   private void onNewValidatorStatuses(
-      final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses) {
+      final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
+      final boolean updateLastRunEpoch) {
     latestValidatorStatuses.getAndSet(newValidatorStatuses);
     validatorStatusSubscribers.forEach(s -> s.onValidatorStatuses(newValidatorStatuses));
-    lastRunEpoch.set(currentEpoch.get());
+    if (updateLastRunEpoch) {
+      lastRunEpoch.set(currentEpoch.get());
+    }
     updateValidatorCountMetrics(newValidatorStatuses);
   }
 
