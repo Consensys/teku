@@ -9,7 +9,7 @@
       "in" : "query",
       "schema" : {
         "type" : "string",
-        "description" : "Event types to subscribe to. Available values include: [`head`, `finalized_checkpoint`, `chain_reorg`, `block`, `attestation`, `voluntary_exit`, `contribution_and_proof`]\n\n",
+        "description" : "Event types to subscribe to. Available values include: [`head`, `finalized_checkpoint`, `chain_reorg`, `block`, `attestation`, `voluntary_exit`, `contribution_and_proof`, `blob_sidecar`]\n\n",
         "example" : "head"
       }
     } ],
