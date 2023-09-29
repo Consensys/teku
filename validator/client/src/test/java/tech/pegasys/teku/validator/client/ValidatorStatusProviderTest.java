@@ -152,6 +152,7 @@ public class ValidatorStatusProviderTest {
     assertThat(result1.size()).isEqualTo(1);
     assertThat(result1.keySet().stream().findFirst()).contains(validatorKey);
 
+    // Adding new validator
     final BLSPublicKey validatorKey2 = BLSTestUtil.randomPublicKey(1);
     final Validator validator2 = new Validator(validatorKey2, NO_OP_SIGNER, Optional::empty);
     // should check only new one

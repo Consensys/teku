@@ -135,10 +135,6 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
       return retryInitialValidatorStatusCheck();
     }
 
-    if (!lookupInProgress.compareAndSet(false, true)) {
-      LOG.warn("Validator status lookup is still in progress. Will skip retrying.");
-      return retryInitialValidatorStatusCheck();
-    }
     // All validators are set to `unknown` until explicitly updated otherwise
     localValidatorCounts.set(validators.getValidatorCount(), "unknown");
     return validatorApiChannel
@@ -146,19 +142,13 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
         .thenCompose(
             maybeValidatorStatuses -> {
               if (maybeValidatorStatuses.isEmpty()) {
-                lookupInProgress.set(false);
                 return retryInitialValidatorStatusCheck();
               }
               onNewValidatorStatuses(maybeValidatorStatuses.get(), true);
               startupComplete.set(true);
-              lookupInProgress.set(false);
               return SafeFuture.COMPLETE;
             })
-        .exceptionallyCompose(
-            (__) -> {
-              lookupInProgress.set(false);
-              return retryInitialValidatorStatusCheck();
-            });
+        .exceptionallyCompose((__) -> retryInitialValidatorStatusCheck());
   }
 
   private SafeFuture<Void> retryInitialValidatorStatusCheck() {
