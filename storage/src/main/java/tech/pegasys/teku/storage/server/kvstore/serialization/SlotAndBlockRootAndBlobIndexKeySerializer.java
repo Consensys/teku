@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.storage.server.kvstore.serialization;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.primitives.Longs;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -27,29 +29,22 @@ import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
  */
 class SlotAndBlockRootAndBlobIndexKeySerializer
     implements KvStoreSerializer<SlotAndBlockRootAndBlobIndex> {
-  static final int UINT64_SIZE = 64 / Byte.SIZE;
-  static final int BLOB_INDEX_OFFSET = Bytes32.SIZE + UINT64_SIZE;
+  static final int SLOT_SIZE = Long.BYTES;
+  static final int BLOCK_ROOT_SIZE = Bytes32.SIZE;
+  static final int BLOB_INDEX_SIZE = Long.BYTES;
+
+  static final int SLOT_OFFSET = 0;
+  static final int BLOCK_ROOT_OFFSET = SLOT_OFFSET + SLOT_SIZE;
+  static final int BLOB_INDEX_OFFSET = BLOCK_ROOT_OFFSET + BLOCK_ROOT_SIZE;
+  static final int DATA_SIZE = BLOB_INDEX_OFFSET + BLOB_INDEX_SIZE;
 
   @Override
   public SlotAndBlockRootAndBlobIndex deserialize(final byte[] data) {
-    final UInt64 slot =
-        UInt64.fromLongBits(
-            Longs.fromBytes(
-                data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7]));
-    final Bytes rootBytes = Bytes.wrap(data, UINT64_SIZE, Bytes32.SIZE);
-    final Bytes blobIndexBytes = Bytes.wrap(data, BLOB_INDEX_OFFSET, UINT64_SIZE);
-    final UInt64 blobIndex =
-        UInt64.fromLongBits(
-            Longs.fromBytes(
-                blobIndexBytes.get(0),
-                blobIndexBytes.get(1),
-                blobIndexBytes.get(2),
-                blobIndexBytes.get(3),
-                blobIndexBytes.get(4),
-                blobIndexBytes.get(5),
-                blobIndexBytes.get(6),
-                blobIndexBytes.get(7)));
-    return new SlotAndBlockRootAndBlobIndex(slot, Bytes32.wrap(rootBytes), blobIndex);
+    checkArgument(data.length == DATA_SIZE);
+    final UInt64 slot = deserializeUInt64(data, SLOT_OFFSET);
+    final Bytes32 blockRoot = Bytes32.wrap(data, BLOCK_ROOT_OFFSET);
+    final UInt64 blobIndex = deserializeUInt64(data, BLOB_INDEX_OFFSET);
+    return new SlotAndBlockRootAndBlobIndex(slot, blockRoot, blobIndex);
   }
 
   @Override
@@ -59,5 +54,10 @@ class SlotAndBlockRootAndBlobIndexKeySerializer
             value.getBlockRoot(),
             Bytes.wrap(Longs.toByteArray(value.getBlobIndex().longValue())))
         .toArrayUnsafe();
+  }
+
+  private UInt64 deserializeUInt64(final byte[] data, int offset) {
+    final Bytes uint64Bytes = Bytes.wrap(data, offset, Long.BYTES);
+    return UInt64.fromLongBits(Longs.fromByteArray(uint64Bytes.toArray()));
   }
 }
