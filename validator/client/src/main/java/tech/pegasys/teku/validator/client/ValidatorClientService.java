@@ -400,6 +400,7 @@ public class ValidatorClientService extends Service {
       ValidatorClientConfiguration config,
       ValidatorApiChannel validatorApiChannel,
       AsyncRunner asyncRunner) {
+    validatorTimingChannels.add(validatorStatusProvider);
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
     final BlockContainerSigner blockContainerSigner = new MilestoneBasedBlockContainerSigner(spec);
     final BlockDutyFactory blockDutyFactory =
