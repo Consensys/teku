@@ -9,6 +9,7 @@ For information on changes in released versions of Teku, see the [releases page]
 ## Unreleased Changes
 
 ### Breaking Changes
+- Added new `inactivity` field to `total_rewards` in `/eth/v1/beacon/rewards/attestations/{epoch}` endpoint response.
 
 ### Additions and Improvements
 
