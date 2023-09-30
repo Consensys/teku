@@ -42,7 +42,7 @@ public class BlockValidatorTest {
 
   private final BlockGossipValidator blockGossipValidator = mock(BlockGossipValidator.class);
 
-  private final BlockValidator blockBroadcastValidator = new BlockValidator(blockGossipValidator);
+  private final BlockValidator blockValidator = new BlockValidator(blockGossipValidator);
 
   final SafeFuture<BlockImportResult> consensusValidationResult = new SafeFuture<>();
 
@@ -53,7 +53,7 @@ public class BlockValidatorTest {
     when(blockGossipValidator.validate(eq(block), eq(false)))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
-    assertThat(blockBroadcastValidator.validateGossip(block))
+    assertThat(blockValidator.validateGossip(block))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
     verify(blockGossipValidator).validate(eq(block), eq(false));
     verifyNoMoreInteractions(blockGossipValidator);
@@ -67,7 +67,7 @@ public class BlockValidatorTest {
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     assertThat(
-            blockBroadcastValidator.validateBroadcast(
+            blockValidator.validateBroadcast(
                 block, BroadcastValidationLevel.GOSSIP, consensusValidationResult))
         .isCompletedWithValueMatching(result -> result.equals(BroadcastValidationResult.SUCCESS));
     verify(blockGossipValidator).validate(eq(block), eq(true));
@@ -85,8 +85,7 @@ public class BlockValidatorTest {
         .thenReturn(SafeFuture.completedFuture(internalValidationResult));
 
     assertThat(
-            blockBroadcastValidator.validateBroadcast(
-                block, broadcastValidation, consensusValidationResult))
+            blockValidator.validateBroadcast(block, broadcastValidation, consensusValidationResult))
         .isCompletedWithValueMatching(
             result -> result.equals(BroadcastValidationResult.GOSSIP_FAILURE));
     verify(blockGossipValidator).validate(eq(block), eq(true));
@@ -108,8 +107,7 @@ public class BlockValidatorTest {
         BlockImportResult.failedStateTransition(new RuntimeException("error")));
 
     assertThat(
-            blockBroadcastValidator.validateBroadcast(
-                block, broadcastValidation, consensusValidationResult))
+            blockValidator.validateBroadcast(block, broadcastValidation, consensusValidationResult))
         .isCompletedWithValueMatching(
             result -> result.equals(BroadcastValidationResult.CONSENSUS_FAILURE));
     verify(blockGossipValidator).validate(eq(block), eq(true));
@@ -130,8 +128,7 @@ public class BlockValidatorTest {
     consensusValidationResult.completeExceptionally(new RuntimeException("error"));
 
     assertThat(
-            blockBroadcastValidator.validateBroadcast(
-                block, broadcastValidation, consensusValidationResult))
+            blockValidator.validateBroadcast(block, broadcastValidation, consensusValidationResult))
         .isCompletedExceptionally();
     verify(blockGossipValidator).validate(eq(block), eq(true));
     verifyNoMoreInteractions(blockGossipValidator);
@@ -147,10 +144,10 @@ public class BlockValidatorTest {
     consensusValidationResult.complete(BlockImportResult.successful(block));
 
     when(blockGossipValidator.blockIsFirstBlockWithValidSignatureForSlot(eq(block)))
-        .thenReturn(true);
+        .thenReturn(Boolean.valueOf(true));
 
     assertThat(
-            blockBroadcastValidator.validateBroadcast(
+            blockValidator.validateBroadcast(
                 block, BroadcastValidationLevel.CONSENSUS_EQUIVOCATION, consensusValidationResult))
         .isCompletedWithValueMatching(result -> result.equals(BroadcastValidationResult.SUCCESS));
     verify(blockGossipValidator).validate(eq(block), eq(true));
@@ -168,10 +165,10 @@ public class BlockValidatorTest {
     consensusValidationResult.complete(BlockImportResult.successful(block));
 
     when(blockGossipValidator.blockIsFirstBlockWithValidSignatureForSlot(eq(block)))
-        .thenReturn(false);
+        .thenReturn(Boolean.valueOf(false));
 
     assertThat(
-            blockBroadcastValidator.validateBroadcast(
+            blockValidator.validateBroadcast(
                 block, BroadcastValidationLevel.CONSENSUS_EQUIVOCATION, consensusValidationResult))
         .isCompletedWithValueMatching(
             result -> result.equals(BroadcastValidationResult.FINAL_EQUIVOCATION_FAILURE));

@@ -107,11 +107,12 @@ public class BlockManager extends Service
 
   @Override
   public SafeFuture<BlockImportResult> importBlock(
-      final SignedBeaconBlock block, final Optional<BroadcastValidationLevel> broadcastValidation) {
+      final SignedBeaconBlock block,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
     LOG.trace("Preparing to import block: {}", block::toLogString);
 
     // NO broadcast validation, import the old way
-    if (broadcastValidation.isEmpty()) {
+    if (broadcastValidationLevel.isEmpty()) {
       return doImportBlock(block, Optional.empty(), Optional.empty());
     }
 
@@ -127,7 +128,7 @@ public class BlockManager extends Service
     final SafeFuture<BlockImportResult> finalImportResult =
         blockValidator
             .validateBroadcast(
-                block, broadcastValidation.get(), consensusValidationResultOrImportFailure)
+                block, broadcastValidationLevel.get(), consensusValidationResultOrImportFailure)
             .thenCompose(
                 broadcastValidationResult ->
                     switch (broadcastValidationResult) {

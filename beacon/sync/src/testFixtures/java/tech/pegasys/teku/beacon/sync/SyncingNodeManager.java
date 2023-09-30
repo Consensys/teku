@@ -128,7 +128,7 @@ public class SyncingNodeManager {
     final BlockGossipValidator blockGossipValidator =
         new BlockGossipValidator(
             spec, recentChainData, new GossipValidationHelper(spec, recentChainData));
-    final BlockValidator blockBroadcastValidator = new BlockValidator(blockGossipValidator);
+    final BlockValidator blockValidator = new BlockValidator(blockGossipValidator);
 
     final TimeProvider timeProvider = new SystemTimeProvider();
     final PoolFactory poolFactory = new PoolFactory(new NoOpMetricsSystem());
@@ -155,7 +155,7 @@ public class SyncingNodeManager {
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,
-            blockBroadcastValidator,
+            blockValidator,
             timeProvider,
             EVENT_LOG,
             Optional.empty(),
