@@ -149,6 +149,16 @@ class SyncCommitteeDutyLoaderTest {
         .isEqualTo(63.0);
   }
 
+  @Test
+  void shouldCreateJustASingleMetricsGauge() {
+    final UInt64 epoch = UInt64.valueOf(56);
+    when(validatorApiChannel.getSyncCommitteeDuties(epoch, validatorIndices))
+        .thenReturn(
+            SafeFuture.completedFuture(Optional.of(new SyncCommitteeDuties(false, List.of()))));
+    final SyncCommitteeScheduledDuties duties1 = loadDuties(epoch);
+    final SyncCommitteeScheduledDuties duties2 = loadDuties(epoch);
+  }
+
   private SyncCommitteeScheduledDuties loadDuties(final UInt64 epoch) {
     final SafeFuture<Optional<SyncCommitteeScheduledDuties>> result =
         dutyLoader.loadDutiesForEpoch(epoch);

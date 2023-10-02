@@ -17,6 +17,7 @@ import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -35,7 +36,8 @@ public class SyncCommitteeDutyLoader
   private final ChainHeadTracker chainHeadTracker;
   private final ForkProvider forkProvider;
 
-  private final MetricsSystem metricsSystem;
+  private final SettableGauge currentSyncDutyCount;
+  private final SettableGauge currentSyncCommitteeLastEpoch;
 
   public SyncCommitteeDutyLoader(
       final OwnedValidators validators,
@@ -50,7 +52,18 @@ public class SyncCommitteeDutyLoader
     this.validatorApiChannel = validatorApiChannel;
     this.chainHeadTracker = chainHeadTracker;
     this.forkProvider = forkProvider;
-    this.metricsSystem = metricsSystem;
+    this.currentSyncDutyCount =
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.VALIDATOR,
+            "scheduled_sync_committee_duties_current",
+            "Current number of Sync committee members performing duties");
+    this.currentSyncCommitteeLastEpoch =
+        SettableGauge.create(
+            metricsSystem,
+            TekuMetricCategory.VALIDATOR,
+            "current_sync_committee_last_epoch",
+            "The final epoch of the current sync committee period");
   }
 
   @Override
@@ -59,13 +72,8 @@ public class SyncCommitteeDutyLoader
     return validatorApiChannel
         .getSyncCommitteeDuties(epoch, validatorIndices)
         .thenPeek(
-            maybeDuties -> {
-              metricsSystem.createIntegerGauge(
-                  TekuMetricCategory.VALIDATOR,
-                  "scheduled_sync_committee_duties_current",
-                  "Current number of Sync committee members performing duties",
-                  () -> maybeDuties.map(d -> d.getDuties().size()).orElse(0));
-            });
+            maybeDuties ->
+                currentSyncDutyCount.set(maybeDuties.map(d -> d.getDuties().size()).orElse(0)));
   }
 
   @Override
@@ -86,11 +94,7 @@ public class SyncCommitteeDutyLoader
     final SyncCommitteeScheduledDuties scheduledDuties = dutyBuilder.build();
     scheduledDuties.subscribeToSubnets();
 
-    metricsSystem.createIntegerGauge(
-        TekuMetricCategory.VALIDATOR,
-        "current_sync_committee_last_epoch",
-        "The final epoch of the current sync committee period",
-        lastEpochInCommitteePeriod::intValue);
+    currentSyncCommitteeLastEpoch.set(lastEpochInCommitteePeriod.intValue());
     return SafeFuture.completedFuture(scheduledDuties);
   }
 
