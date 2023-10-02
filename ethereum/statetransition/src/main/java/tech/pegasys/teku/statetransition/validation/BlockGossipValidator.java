@@ -54,8 +54,16 @@ public class BlockGossipValidator {
     this.gossipValidationHelper = gossipValidationHelper;
   }
 
+  /**
+   * Perform gossip validation on a block.
+   *
+   * @param block
+   * @param isLocallyProduced whether the block was produced locally or received from gossip. The
+   *     locally produced flow applies only during broadcast validation.
+   * @return
+   */
   SafeFuture<InternalValidationResult> validate(
-      final SignedBeaconBlock block, final boolean isLocal) {
+      final SignedBeaconBlock block, final boolean isLocallyProduced) {
 
     if (gossipValidationHelper.isSlotFinalized(block.getSlot())
         || !blockIsFirstBlockWithValidSignatureForSlot(block)) {
@@ -144,7 +152,7 @@ public class BlockGossipValidator {
               // the blocks import,
               // another after consensus validation)
               final boolean equivocationCheckSuccessful =
-                  isLocal
+                  isLocallyProduced
                       ? blockIsFirstBlockWithValidSignatureForSlot(block)
                       : receivedValidBlockInfoSet.add(new SlotAndProposer(block));
               if (!equivocationCheckSuccessful) {
