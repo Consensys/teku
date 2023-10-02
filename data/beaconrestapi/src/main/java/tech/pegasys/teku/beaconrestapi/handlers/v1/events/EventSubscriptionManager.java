@@ -38,7 +38,9 @@ import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ListQueryParameterUtils;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -52,6 +54,7 @@ import tech.pegasys.teku.storage.api.ReorgContext;
 public class EventSubscriptionManager implements ChainHeadChannel, FinalizedCheckpointChannel {
   private static final Logger LOG = LogManager.getLogger();
 
+  private final Spec spec;
   private final ConfigProvider configProvider;
   private final ChainDataProvider provider;
   private final AsyncRunner asyncRunner;
@@ -61,6 +64,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
   private final Collection<EventSubscriber> eventSubscribers;
 
   public EventSubscriptionManager(
+      final Spec spec,
       final NodeDataProvider nodeDataProvider,
       final ChainDataProvider chainDataProvider,
       final SyncDataProvider syncDataProvider,
@@ -69,6 +73,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
       final EventChannels eventChannels,
       final TimeProvider timeProvider,
       final int maxPendingEvents) {
+    this.spec = spec;
     this.provider = chainDataProvider;
     this.asyncRunner = asyncRunner;
     this.timeProvider = timeProvider;
@@ -79,6 +84,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     eventChannels.subscribe(FinalizedCheckpointChannel.class, this);
     syncDataProvider.subscribeToSyncStateChanges(this::onSyncStateChange);
     nodeDataProvider.subscribeToReceivedBlocks(this::onNewBlock);
+    nodeDataProvider.subscribeToReceivedBlobSidecar(this::onNewBlobSidecar);
     nodeDataProvider.subscribeToValidAttestations(this::onNewAttestation);
     nodeDataProvider.subscribeToNewVoluntaryExits(this::onNewVoluntaryExit);
     nodeDataProvider.subscribeToSyncCommitteeContributions(this::onSyncCommitteeContribution);
@@ -180,6 +186,11 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
   protected void onNewBlock(final SignedBeaconBlock block, final boolean executionOptimistic) {
     final BlockEvent blockEvent = new BlockEvent(block, executionOptimistic);
     notifySubscribersOfEvent(EventType.block, blockEvent);
+  }
+
+  protected void onNewBlobSidecar(final BlobSidecar blobSidecar) {
+    final BlobSidecarEvent blobSidecarEvent = BlobSidecarEvent.create(spec, blobSidecar);
+    notifySubscribersOfEvent(EventType.blob_sidecar, blobSidecarEvent);
   }
 
   @Override

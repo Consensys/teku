@@ -77,6 +77,9 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   private final Subscribers<RequiredBlobSidecarDroppedSubscriber>
       requiredBlobSidecarDroppedSubscribers = Subscribers.create(true);
 
+  private final Subscribers<NewBlobSidecarSubscriber> newBlobSidecarSubscribers =
+      Subscribers.create(true);
+
   private int totalBlobSidecars;
 
   BlobSidecarPoolImpl(
@@ -151,6 +154,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
 
     if (blobSidecarsTracker.add(blobSidecar)) {
       sizeGauge.set(++totalBlobSidecars, GAUGE_BLOB_SIDECARS_LABEL);
+      newBlobSidecarSubscribers.deliver(NewBlobSidecarSubscriber::onNewBlobSidecar, blobSidecar);
     }
 
     if (orderedBlobSidecarsTrackers.add(slotAndBlockRoot)) {
@@ -192,7 +196,18 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     blobSidecarsTracker.setBlock(block);
 
     long addedBlobs =
-        blobSidecars.stream().map(blobSidecarsTracker::add).filter(Boolean::booleanValue).count();
+        blobSidecars.stream()
+            .map(
+                blobSidecar -> {
+                  final boolean isNew = blobSidecarsTracker.add(blobSidecar);
+                  if (isNew) {
+                    newBlobSidecarSubscribers.deliver(
+                        NewBlobSidecarSubscriber::onNewBlobSidecar, blobSidecar);
+                  }
+                  return isNew;
+                })
+            .filter(Boolean::booleanValue)
+            .count();
     totalBlobSidecars += (int) addedBlobs;
     sizeGauge.set(totalBlobSidecars, GAUGE_BLOB_SIDECARS_LABEL);
 
@@ -285,6 +300,11 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   public void subscribeRequiredBlockRootDropped(
       final RequiredBlockRootDroppedSubscriber requiredBlockRootDroppedSubscriber) {
     requiredBlockRootDroppedSubscribers.subscribe(requiredBlockRootDroppedSubscriber);
+  }
+
+  @Override
+  public void subscribeNewBlobSidecar(final NewBlobSidecarSubscriber newBlobSidecarSubscriber) {
+    newBlobSidecarSubscribers.subscribe(newBlobSidecarSubscriber);
   }
 
   public synchronized int getTotalBlobSidecars() {

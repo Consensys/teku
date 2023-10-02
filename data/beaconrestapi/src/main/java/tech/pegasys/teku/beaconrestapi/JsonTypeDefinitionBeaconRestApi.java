@@ -242,6 +242,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             // Event Handler
             .endpoint(
                 new GetEvents(
+                    spec,
                     dataProvider,
                     eventChannels,
                     asyncRunner,
