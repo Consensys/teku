@@ -37,7 +37,7 @@ class SlotAndBlockRootKeySerializer implements KvStoreSerializer<SlotAndBlockRoo
   @Override
   public SlotAndBlockRoot deserialize(final byte[] data) {
     checkArgument(data.length == DATA_SIZE);
-    final UInt64 slot = deserializeUInt64(data, SLOT_OFFSET);
+    final UInt64 slot = UInt64Serializer.deserialize(data, SLOT_OFFSET);
     final Bytes32 blockRoot = Bytes32.wrap(data, BLOCK_ROOT_OFFSET);
     return new SlotAndBlockRoot(slot, blockRoot);
   }
@@ -47,10 +47,5 @@ class SlotAndBlockRootKeySerializer implements KvStoreSerializer<SlotAndBlockRoo
     return Bytes.concatenate(
             Bytes.wrap(Longs.toByteArray(value.getSlot().longValue())), value.getBlockRoot())
         .toArrayUnsafe();
-  }
-
-  private UInt64 deserializeUInt64(final byte[] data, int offset) {
-    final Bytes uint64Bytes = Bytes.wrap(data, offset, Long.BYTES);
-    return UInt64.fromLongBits(Longs.fromByteArray(uint64Bytes.toArray()));
   }
 }
