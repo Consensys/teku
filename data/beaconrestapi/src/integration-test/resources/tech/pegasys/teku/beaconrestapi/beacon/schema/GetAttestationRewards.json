@@ -28,7 +28,8 @@
               "effective_balance",
               "head",
               "target",
-              "source"
+              "source",
+              "inactivity"
             ],
             "properties": {
               "effective_balance": {
