@@ -200,13 +200,19 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   public SafeFuture<BlockImportResult> onBlock(
       final SignedBeaconBlock block,
       final Optional<BlockImportPerformance> blockImportPerformance,
+      final Optional<SafeFuture<BlockImportResult>> consensusValidationListener,
       final ExecutionLayerChannel executionLayer) {
     return recentChainData
         .retrieveStateAtSlot(new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
         .thenPeek(__ -> blockImportPerformance.ifPresent(BlockImportPerformance::preStateRetrieved))
         .thenCompose(
             blockSlotState ->
-                onBlock(block, blockSlotState, blockImportPerformance, executionLayer));
+                onBlock(
+                    block,
+                    blockSlotState,
+                    blockImportPerformance,
+                    consensusValidationListener,
+                    executionLayer));
   }
 
   public SafeFuture<AttestationProcessingResult> onAttestation(
@@ -383,6 +389,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final SignedBeaconBlock block,
       final Optional<BeaconState> blockSlotState,
       final Optional<BlockImportPerformance> blockImportPerformance,
+      final Optional<SafeFuture<BlockImportResult>> consensusValidationListener,
       final ExecutionLayerChannel executionLayer) {
     if (blockSlotState.isEmpty()) {
       return SafeFuture.completedFuture(BlockImportResult.FAILED_UNKNOWN_PARENT);
@@ -430,12 +437,25 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
     blockImportPerformance.ifPresent(BlockImportPerformance::postStateCreated);
 
+    final SafeFuture<BlobSidecarsAndValidationResult> blobSidecarsAvailabilityResult =
+        blobSidecarsAvailabilityChecker
+            .getAvailabilityCheckResult()
+            .thenPeek(
+                result ->
+                    consensusValidationListener.ifPresent(
+                        voidSafeFuture -> {
+                          // consensus validation is completed when DA check is completed
+                          if (result.isSuccess()) {
+                            voidSafeFuture.complete(BlockImportResult.successful(block));
+                          }
+                        }));
+
     return payloadExecutor
         .getExecutionResult()
         .thenPeek(
             __ -> blockImportPerformance.ifPresent(BlockImportPerformance::executionResultReceived))
         .thenCombineAsync(
-            blobSidecarsAvailabilityChecker.getAvailabilityCheckResult(),
+            blobSidecarsAvailabilityResult,
             (payloadResult, blobSidecarsAndValidationResult) ->
                 importBlockAndState(
                     block,

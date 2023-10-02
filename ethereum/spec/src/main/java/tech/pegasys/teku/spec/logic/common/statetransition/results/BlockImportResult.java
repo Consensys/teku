@@ -34,6 +34,14 @@ public interface BlockImportResult {
   BlockImportResult FAILED_DESCENDANT_OF_INVALID_BLOCK =
       new FailedBlockImportResult(FailureReason.DESCENDANT_OF_INVALID_BLOCK, Optional.empty());
 
+  BlockImportResult FAILED_BROADCAST_GOSSIP_VALIDATION =
+      new FailedBlockImportResult(
+          FailureReason.FAILED_BROADCAST_GOSSIP_VALIDATION, Optional.empty());
+
+  BlockImportResult FAILED_BROADCAST_EQUIVOCATION_VALIDATION =
+      new FailedBlockImportResult(
+          FailureReason.FAILED_BROADCAST_EQUIVOCATION_VALIDATION, Optional.empty());
+
   static BlockImportResult failedDataAvailabilityCheckInvalid(final Optional<Throwable> cause) {
     return new FailedBlockImportResult(FailureReason.FAILED_DATA_AVAILABILITY_CHECK_INVALID, cause);
   }
@@ -80,6 +88,8 @@ public interface BlockImportResult {
     FAILED_EXECUTION_PAYLOAD_EXECUTION,
     FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING,
     DESCENDANT_OF_INVALID_BLOCK,
+    FAILED_BROADCAST_GOSSIP_VALIDATION,
+    FAILED_BROADCAST_EQUIVOCATION_VALIDATION,
     FAILED_DATA_AVAILABILITY_CHECK_INVALID,
     FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE,
     INTERNAL_ERROR // A catch-all category for unexpected errors (bugs)
