@@ -29,11 +29,11 @@ class UInt64Serializer implements KvStoreSerializer<UInt64> {
   }
 
   /**
-   * Assumes data is at least 8 bytes long and offset is within bounds
+   * Assumes data is at least 8 bytes long and offset is within bounds.
    *
-   * @param data
-   * @param offset
-   * @return
+   * @param data The byte array containing the UInt64 data.
+   * @param offset The offset to the UInt64 data.
+   * @return The deserialized UInt64 value.
    */
   public static UInt64 deserialize(final byte[] data, int offset) {
     return UInt64.fromLongBits(
