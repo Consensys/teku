@@ -137,7 +137,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   private boolean isReadyToRegister() {
     // Paranoid check
     if (currentEpoch.get() == null) {
-      LOG.error("Current epoch is not yet set, skipping validator registrations");
+      LOG.warn("Current epoch is not yet set, validator registrations delayed");
       return false;
     }
     if (validatorRegistrationPropertiesProvider.isReadyToProvideProperties()) {
