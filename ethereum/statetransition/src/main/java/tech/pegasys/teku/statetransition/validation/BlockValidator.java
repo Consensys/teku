@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,187 +13,91 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
-import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
-import static tech.pegasys.teku.spec.config.Constants.VALID_BLOCK_SET_SIZE;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
-import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
-
-import com.google.common.base.Objects;
-import java.util.Optional;
-import java.util.Set;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.collections.LimitedSet;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
-import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 
 public class BlockValidator {
-  private static final Logger LOG = LogManager.getLogger();
 
-  private final Spec spec;
-  private final RecentChainData recentChainData;
-  private final GossipValidationHelper gossipValidationHelper;
-  private final Set<SlotAndProposer> receivedValidBlockInfoSet =
-      LimitedSet.createSynchronized(VALID_BLOCK_SET_SIZE);
+  private final BlockGossipValidator blockGossipValidator;
 
-  public BlockValidator(
-      final Spec spec,
-      final RecentChainData recentChainData,
-      final GossipValidationHelper gossipValidationHelper) {
-    this.spec = spec;
-    this.recentChainData = recentChainData;
-    this.gossipValidationHelper = gossipValidationHelper;
+  public BlockValidator(final BlockGossipValidator blockGossipValidator) {
+    this.blockGossipValidator = blockGossipValidator;
   }
 
-  public SafeFuture<InternalValidationResult> validate(final SignedBeaconBlock block) {
+  public SafeFuture<InternalValidationResult> validateGossip(final SignedBeaconBlock block) {
+    return blockGossipValidator.validate(block, false);
+  }
 
-    if (gossipValidationHelper.isSlotFinalized(block.getSlot())
-        || !blockIsFirstBlockWithValidSignatureForSlot(block)) {
-      LOG.trace(
-          "BlockValidator: Block is either too old or is not the first block with valid signature for "
-              + "its slot. It will be dropped");
-      return completedFuture(InternalValidationResult.IGNORE);
+  public SafeFuture<BroadcastValidationResult> validateBroadcast(
+      final SignedBeaconBlock block,
+      final BroadcastValidationLevel broadcastValidationLevel,
+      final SafeFuture<BlockImportResult> consensusValidationResult) {
+
+    // GOSSIP only validation
+    SafeFuture<BroadcastValidationResult> validationPipeline =
+        blockGossipValidator
+            .validate(block, true)
+            .thenApply(
+                gossipValidationResult -> {
+                  if (gossipValidationResult.isAccept()) {
+                    return BroadcastValidationResult.SUCCESS;
+                  }
+                  return BroadcastValidationResult.GOSSIP_FAILURE;
+                });
+
+    if (broadcastValidationLevel == BroadcastValidationLevel.GOSSIP) {
+      return validationPipeline;
     }
 
-    if (gossipValidationHelper.isSlotFromFuture(block.getSlot())) {
-      LOG.trace("BlockValidator: Block is from the future. It will be saved for future processing");
-      return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
-    }
-
-    if (gossipValidationHelper.isBlockAvailable(block.getRoot())) {
-      LOG.trace("Block is already imported");
-      return completedFuture(InternalValidationResult.IGNORE);
-    }
-
-    if (!gossipValidationHelper.isBlockAvailable(block.getParentRoot())) {
-      LOG.trace("Block parent is not available. It will be saved for future processing");
-      return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
-    }
-
-    if (!currentFinalizedCheckpointIsAncestorOfBlock(block)) {
-      return completedFuture(reject("Block does not descend from finalized checkpoint"));
-    }
-
-    final Optional<UInt64> maybeParentBlockSlot =
-        gossipValidationHelper.getSlotForBlockRoot(block.getParentRoot());
-    if (maybeParentBlockSlot.isEmpty()) {
-      LOG.trace(
-          "BlockValidator: Parent block does not exist. It will be saved for future processing");
-      return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
-    }
-    final UInt64 parentBlockSlot = maybeParentBlockSlot.get();
-
-    if (parentBlockSlot.isGreaterThanOrEqualTo(block.getSlot())) {
-      return completedFuture(reject("Parent block is after child block."));
-    }
-
-    return gossipValidationHelper
-        .getParentStateInBlockEpoch(parentBlockSlot, block.getParentRoot(), block.getSlot())
-        .thenApply(
-            maybePostState -> {
-              if (maybePostState.isEmpty()) {
-                LOG.trace(
-                    "Block was available but state wasn't. Must have been pruned by finalized.");
-                return InternalValidationResult.IGNORE;
+    // GOSSIP and CONSENSUS validation
+    validationPipeline =
+        validationPipeline.thenCompose(
+            broadcastValidationResult -> {
+              if (broadcastValidationResult != BroadcastValidationResult.SUCCESS) {
+                // forward gossip validation failure
+                return SafeFuture.completedFuture(broadcastValidationResult);
               }
-              final BeaconState postState = maybePostState.get();
-
-              if (!gossipValidationHelper.isProposerTheExpectedProposer(
-                  block.getProposerIndex(), block.getSlot(), postState)) {
-                return reject(
-                    "Block proposed by incorrect proposer (%s)", block.getProposerIndex());
-              }
-              final MiscHelpers miscHelpers = spec.atSlot(block.getSlot()).miscHelpers();
-
-              if (miscHelpers.isMergeTransitionComplete(postState)) {
-                Optional<ExecutionPayload> executionPayload =
-                    block.getMessage().getBody().getOptionalExecutionPayload();
-
-                if (executionPayload.isEmpty()) {
-                  return reject("Missing execution payload");
-                }
-
-                if (executionPayload
-                        .get()
-                        .getTimestamp()
-                        .compareTo(spec.computeTimeAtSlot(postState, block.getSlot()))
-                    != 0) {
-                  return reject(
-                      "Execution Payload timestamp is not consistence with and block slot time");
-                }
-              }
-
-              if (!blockSignatureIsValidWithRespectToProposerIndex(block, postState)) {
-                return reject("Block signature is invalid");
-              }
-
-              if (!receivedValidBlockInfoSet.add(new SlotAndProposer(block))) {
-                return ignore(
-                    "Block is not the first with valid signature for its slot. It will be dropped.");
-              }
-
-              return InternalValidationResult.ACCEPT;
+              return consensusValidationResult.thenApply(
+                  consensusValidation -> {
+                    if (consensusValidation.isSuccessful()) {
+                      return BroadcastValidationResult.SUCCESS;
+                    }
+                    return BroadcastValidationResult.CONSENSUS_FAILURE;
+                  });
             });
-  }
 
-  private boolean blockIsFirstBlockWithValidSignatureForSlot(final SignedBeaconBlock block) {
-    return !receivedValidBlockInfoSet.contains(new SlotAndProposer(block));
-  }
-
-  private boolean blockSignatureIsValidWithRespectToProposerIndex(
-      final SignedBeaconBlock block, final BeaconState postState) {
-    final Bytes32 domain =
-        spec.getDomain(
-            Domain.BEACON_PROPOSER,
-            spec.getCurrentEpoch(postState),
-            postState.getFork(),
-            postState.getGenesisValidatorsRoot());
-    final Bytes signingRoot = spec.computeSigningRoot(block.getMessage(), domain);
-
-    return gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
-        signingRoot, block.getProposerIndex(), block.getSignature(), postState);
-  }
-
-  private boolean currentFinalizedCheckpointIsAncestorOfBlock(final SignedBeaconBlock block) {
-    return spec.blockDescendsFromLatestFinalizedBlock(
-        block.getMessage(),
-        recentChainData.getStore(),
-        recentChainData.getForkChoiceStrategy().orElseThrow());
-  }
-
-  private static class SlotAndProposer {
-    private final UInt64 slot;
-    private final UInt64 proposerIndex;
-
-    public SlotAndProposer(final SignedBeaconBlock block) {
-      this.slot = block.getSlot();
-      this.proposerIndex = block.getMessage().getProposerIndex();
+    if (broadcastValidationLevel == BroadcastValidationLevel.CONSENSUS) {
+      return validationPipeline;
     }
 
-    @Override
-    public boolean equals(final Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (!(o instanceof SlotAndProposer)) {
-        return false;
-      }
-      SlotAndProposer that = (SlotAndProposer) o;
-      return Objects.equal(slot, that.slot) && Objects.equal(proposerIndex, that.proposerIndex);
-    }
+    // GOSSIP, CONSENSUS and additional EQUIVOCATION validation
+    return validationPipeline.thenApply(
+        broadcastValidationResult -> {
+          if (broadcastValidationResult != BroadcastValidationResult.SUCCESS) {
+            // forward gossip or consensus validation failure
+            return broadcastValidationResult;
+          }
 
-    @Override
-    public int hashCode() {
-      return Objects.hashCode(slot, proposerIndex);
-    }
+          // perform final equivocation validation
+          if (blockGossipValidator.blockIsFirstBlockWithValidSignatureForSlot(block)) {
+            return BroadcastValidationResult.SUCCESS;
+          }
+
+          return BroadcastValidationResult.FINAL_EQUIVOCATION_FAILURE;
+        });
+  }
+
+  public enum BroadcastValidationLevel {
+    GOSSIP,
+    CONSENSUS,
+    CONSENSUS_EQUIVOCATION
+  }
+
+  public enum BroadcastValidationResult {
+    SUCCESS,
+    GOSSIP_FAILURE,
+    CONSENSUS_FAILURE,
+    FINAL_EQUIVOCATION_FAILURE
   }
 }
