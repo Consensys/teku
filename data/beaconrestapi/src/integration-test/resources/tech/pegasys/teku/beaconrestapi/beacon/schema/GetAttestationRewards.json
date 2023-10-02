@@ -31,11 +31,11 @@
               "source"
             ],
             "properties": {
-              "effective_balance" : {
-                "type" : "string",
-                "description" : "unsigned 64 bit integer",
-                "example" : "1",
-                "format" : "uint64"
+              "effective_balance": {
+                "type": "string",
+                "description": "unsigned 64 bit integer",
+                "example": "1",
+                "format": "uint64"
               },
               "head": {
                 "type": "string",
@@ -66,7 +66,8 @@
               "validator_index",
               "head",
               "target",
-              "source"
+              "source",
+              "inactivity"
             ],
             "properties": {
               "validator_index": {
@@ -93,11 +94,17 @@
                 "example": "1",
                 "format": "long"
               },
-              "inclusion_delay" : {
-                "type" : "string",
-                "description" : "unsigned 64 bit integer",
-                "example" : "1",
-                "format" : "uint64"
+              "inclusion_delay": {
+                "type": "string",
+                "description": "unsigned 64 bit integer",
+                "example": "1",
+                "format": "uint64"
+              },
+              "inactivity": {
+                "type": "string",
+                "description": "unsigned 64 bit integer",
+                "example": "1",
+                "format": "uint64"
               }
             }
           }

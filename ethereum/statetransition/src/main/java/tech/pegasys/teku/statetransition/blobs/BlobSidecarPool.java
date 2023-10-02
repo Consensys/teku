@@ -87,6 +87,9 @@ public interface BlobSidecarPool extends SlotEventsChannel {
         @Override
         public void subscribeRequiredBlockRootDropped(
             final RequiredBlockRootDroppedSubscriber requiredBlockRootDroppedSubscriber) {}
+
+        @Override
+        public void subscribeNewBlobSidecar(NewBlobSidecarSubscriber newBlobSidecarSubscriber) {}
       };
 
   void onNewBlobSidecar(BlobSidecar blobSidecar);
@@ -123,6 +126,8 @@ public interface BlobSidecarPool extends SlotEventsChannel {
   void subscribeRequiredBlockRootDropped(
       RequiredBlockRootDroppedSubscriber requiredBlockRootDroppedSubscriber);
 
+  void subscribeNewBlobSidecar(NewBlobSidecarSubscriber newBlobSidecarSubscriber);
+
   interface RequiredBlobSidecarSubscriber {
     void onRequiredBlobSidecar(BlobIdentifier blobIdentifier);
   }
@@ -137,5 +142,9 @@ public interface BlobSidecarPool extends SlotEventsChannel {
 
   interface RequiredBlockRootDroppedSubscriber {
     void onRequiredBlockRootDropped(Bytes32 blockRoot);
+  }
+
+  interface NewBlobSidecarSubscriber {
+    void onNewBlobSidecar(BlobSidecar blobSidecar);
   }
 }
