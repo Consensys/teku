@@ -54,7 +54,7 @@ import tech.pegasys.teku.storage.api.ReorgContext;
 public class EventSubscriptionManager implements ChainHeadChannel, FinalizedCheckpointChannel {
   private static final Logger LOG = LogManager.getLogger();
 
-  private Spec spec;
+  private final Spec spec;
   private final ConfigProvider configProvider;
   private final ChainDataProvider provider;
   private final AsyncRunner asyncRunner;

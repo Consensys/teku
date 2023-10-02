@@ -124,10 +124,30 @@ public class BlobSidecarPoolImplTest {
   }
 
   @Test
-  public void onNewBlobSidecar_addTrackerWithBlobSidecar() {
+  public void onNewBlobSidecar_addTrackerWithBlobSidecarIgnoringDuplicates() {
     final BlobSidecar blobSidecar =
         dataStructureUtil.createRandomBlobSidecarBuilder().slot(currentSlot).build();
 
+    blobSidecarPool.onNewBlobSidecar(blobSidecar);
+
+    assertThat(blobSidecarPool.containsBlobSidecar(blobIdentifierFromBlobSidecar(blobSidecar)))
+        .isTrue();
+    assertThat(requiredBlockRootEvents).isEmpty();
+    assertThat(requiredBlockRootDroppedEvents).isEmpty();
+    assertThat(requiredBlobSidecarEvents).isEmpty();
+    assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
+    assertThat(newBlobSidecarEvents).containsExactly(blobSidecar);
+
+    assertBlobSidecarsCount(1);
+    assertBlobSidecarsTrackersCount(1);
+  }
+
+  @Test
+  public void onNewBlobSidecar_shouldIgnoreDuplicates() {
+    final BlobSidecar blobSidecar =
+        dataStructureUtil.createRandomBlobSidecarBuilder().slot(currentSlot).build();
+
+    blobSidecarPool.onNewBlobSidecar(blobSidecar);
     blobSidecarPool.onNewBlobSidecar(blobSidecar);
 
     assertThat(blobSidecarPool.containsBlobSidecar(blobIdentifierFromBlobSidecar(blobSidecar)))
@@ -342,7 +362,7 @@ public class BlobSidecarPoolImplTest {
 
   @Test
   public void
-      getOrCreateBlockblockBlobSidecarsTracker_createATrackerWithBlockSetIgnoringHistoricalTolerance() {
+      getOrCreateBlocBlobSidecarsTracker_createATrackerWithBlockSetIgnoringHistoricalTolerance() {
     final UInt64 slot = currentSlot.minus(historicalTolerance).minus(UInt64.ONE);
 
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
