@@ -28,7 +28,7 @@ public class TotalAttestationReward {
   private final long target;
   private final long source;
   private final Optional<UInt64> inclusionDelay;
-  private final UInt64 inactivity;
+  private final long inactivity;
 
   public TotalAttestationReward(
       long validatorIndex,
@@ -36,7 +36,7 @@ public class TotalAttestationReward {
       long target,
       long source,
       Optional<UInt64> inclusionDelay,
-      UInt64 inactivity) {
+      long inactivity) {
     this.validatorIndex = validatorIndex;
     this.head = head;
     this.target = target;
@@ -69,7 +69,8 @@ public class TotalAttestationReward {
     this.inactivity =
         detailedRewardAndPenalty
             .getReward(RewardComponent.INACTIVITY)
-            .minus(detailedRewardAndPenalty.getPenalty(RewardComponent.INACTIVITY));
+            .minus(detailedRewardAndPenalty.getPenalty(RewardComponent.INACTIVITY))
+            .longValue();
   }
 
   public long getValidatorIndex() {
@@ -92,7 +93,7 @@ public class TotalAttestationReward {
     return inclusionDelay;
   }
 
-  public UInt64 getInactivity() {
+  public long getInactivity() {
     return inactivity;
   }
 
@@ -111,11 +112,12 @@ public class TotalAttestationReward {
         && head == that.head
         && target == that.target
         && source == that.source
-        && inclusionDelay.equals(that.inclusionDelay);
+        && inclusionDelay.equals(that.inclusionDelay)
+        && inactivity == that.inactivity;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(validatorIndex, head, target, source, inclusionDelay);
+    return Objects.hash(validatorIndex, head, target, source, inclusionDelay, inactivity);
   }
 }

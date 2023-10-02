@@ -64,7 +64,7 @@ public class GetAttestationRewards extends RestApiEndpoint {
           .withField("source", LONG_TYPE, TotalAttestationReward::getSource)
           .withOptionalField(
               "inclusion_delay", UINT64_TYPE, TotalAttestationReward::getInclusionDelay)
-          .withField("inactivity", UINT64_TYPE, TotalAttestationReward::getInactivity)
+          .withField("inactivity", LONG_TYPE, TotalAttestationReward::getInactivity)
           .build();
 
   private static final SerializableTypeDefinition<AttestationRewardsData> DATA_TYPE =

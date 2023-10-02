@@ -53,7 +53,7 @@ class GetAttestationRewardsTest extends AbstractMigratedBeaconHandlerTest {
     }
     TotalAttestationReward totalAttestationReward =
         new TotalAttestationReward(
-            0L, 2000L, 2000L, 4000L, Optional.of(UInt64.valueOf(2000L)), UInt64.valueOf(300));
+            0L, 2000L, 2000L, 4000L, Optional.of(UInt64.valueOf(2000L)), 300L);
     AttestationRewardsData attestationRewardsData =
         new AttestationRewardsData(
             List.of(idealAttestationReward), List.of(totalAttestationReward));
