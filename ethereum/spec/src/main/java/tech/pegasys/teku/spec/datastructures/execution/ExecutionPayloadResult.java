@@ -26,19 +26,19 @@ public class ExecutionPayloadResult {
   private final Optional<SafeFuture<Optional<BlobsBundle>>> blobsBundleFuture;
   private final Optional<SafeFuture<HeaderWithFallbackData>> headerWithFallbackDataFuture;
 
-  private final Optional<SafeFuture<UInt256>> blockValue;
+  private final Optional<SafeFuture<UInt256>> executionPayloadValueFuture;
 
   public ExecutionPayloadResult(
       final ExecutionPayloadContext executionPayloadContext,
       final Optional<SafeFuture<ExecutionPayload>> executionPayloadFuture,
       final Optional<SafeFuture<Optional<BlobsBundle>>> blobsBundleFuture,
       final Optional<SafeFuture<HeaderWithFallbackData>> headerWithFallbackDataFuture,
-      final Optional<SafeFuture<UInt256>> blockValue) {
+      final Optional<SafeFuture<UInt256>> executionPayloadValueFuture) {
     this.executionPayloadContext = executionPayloadContext;
     this.executionPayloadFuture = executionPayloadFuture;
     this.blobsBundleFuture = blobsBundleFuture;
     this.headerWithFallbackDataFuture = headerWithFallbackDataFuture;
-    this.blockValue = blockValue;
+    this.executionPayloadValueFuture = executionPayloadValueFuture;
   }
 
   public ExecutionPayloadContext getExecutionPayloadContext() {
@@ -57,8 +57,8 @@ public class ExecutionPayloadResult {
     return headerWithFallbackDataFuture;
   }
 
-  public Optional<SafeFuture<UInt256>> getBlockValue() {
-    return blockValue;
+  public Optional<SafeFuture<UInt256>> getExecutionPayloadValueFuture() {
+    return executionPayloadValueFuture;
   }
 
   @Override

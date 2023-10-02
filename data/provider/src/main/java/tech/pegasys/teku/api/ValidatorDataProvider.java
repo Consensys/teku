@@ -143,7 +143,7 @@ public class ValidatorDataProvider {
             .orElseThrow(
                 () -> new IllegalStateException("ExecutionPayloadResult is not available"));
     return payloadResult
-        .getBlockValue()
+        .getExecutionPayloadValueFuture()
         .orElseThrow(() -> new IllegalStateException("Execution Payload Value is not available"));
   }
 

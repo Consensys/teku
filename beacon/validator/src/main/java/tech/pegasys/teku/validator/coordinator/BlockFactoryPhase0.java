@@ -31,15 +31,10 @@ public class BlockFactoryPhase0 implements BlockFactory {
   protected final Spec spec;
   protected final BlockOperationSelectorFactory operationSelector;
 
-  protected final boolean produceBlindedBlocks;
-
   public BlockFactoryPhase0(
-      final Spec spec,
-      final BlockOperationSelectorFactory operationSelector,
-      final boolean produceBlindedBlocks) {
+      final Spec spec, final BlockOperationSelectorFactory operationSelector) {
     this.spec = spec;
     this.operationSelector = operationSelector;
-    this.produceBlindedBlocks = produceBlindedBlocks;
   }
 
   @Deprecated
@@ -95,8 +90,7 @@ public class BlockFactoryPhase0 implements BlockFactory {
             blockSlotState,
             parentRoot,
             operationSelector.createSelector(
-                parentRoot, blockSlotState, randaoReveal, optionalGraffiti),
-            produceBlindedBlocks)
+                parentRoot, blockSlotState, randaoReveal, optionalGraffiti))
         .thenApply(BeaconBlockAndState::getBlock);
   }
 

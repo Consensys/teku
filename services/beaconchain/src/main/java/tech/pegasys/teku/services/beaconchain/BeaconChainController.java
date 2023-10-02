@@ -788,9 +788,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             VersionProvider.getDefaultGraffiti(),
             forkChoiceNotifier,
             executionLayerBlockProductionManager);
-    final BlockFactory blockFactory =
-        new MilestoneBasedBlockFactory(
-            spec, operationSelector, beaconConfig.validatorConfig().isBlindedBeaconBlocksEnabled());
+    final BlockFactory blockFactory = new MilestoneBasedBlockFactory(spec, operationSelector);
     SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
             ? new AllSyncCommitteeSubscriptions(p2pNetwork, spec)
