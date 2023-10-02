@@ -622,6 +622,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 eventChannels.getPublisher(ValidatorApiChannel.class, beaconAsyncRunner))
             .attestationPool(attestationPool)
             .blockManager(blockManager)
+            .blobSidecarPool(blobSidecarPool)
             .attestationManager(attestationManager)
             .isLivenessTrackingEnabled(getLivenessTrackingEnabled(beaconConfig))
             .acceptBlsToExecutionMessages(
