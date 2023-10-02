@@ -26,7 +26,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
@@ -48,6 +48,14 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public class ValidatorRegistrator implements ValidatorTimingChannel {
+
+  static final BiFunction<Validator, ProposerConfigPropertiesProvider, BLSPublicKey>
+      VALIDATOR_BUILDER_PUBLICKEY =
+          (validator, propertiesProvider) ->
+              propertiesProvider
+                  .getBuilderRegistrationPublicKeyOverride(validator.getPublicKey())
+                  .orElse(validator.getPublicKey());
+
   private static final Logger LOG = LogManager.getLogger();
 
   private final Map<BLSPublicKey, SignedValidatorRegistration> cachedValidatorRegistrations =
@@ -235,15 +243,14 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
   private List<Validator> filterActiveAndPendingValidators(
       final Map<BLSPublicKey, ValidatorStatus> statuses) {
-    final Function<Validator, BLSPublicKey> getKey =
-        validator ->
-            validatorRegistrationPropertiesProvider
-                .getBuilderRegistrationPublicKeyOverride(validator.getPublicKey())
-                .orElse(validator.getPublicKey());
+
     return ownedValidators.getActiveValidators().stream()
         .filter(
             validator ->
-                Optional.ofNullable(statuses.get(getKey.apply(validator)))
+                Optional.ofNullable(
+                        statuses.get(
+                            VALIDATOR_BUILDER_PUBLICKEY.apply(
+                                validator, validatorRegistrationPropertiesProvider)))
                     .map(status -> !status.hasExited())
                     .orElse(false))
         .toList();

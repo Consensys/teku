@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.client;
 
+import static tech.pegasys.teku.validator.client.ValidatorRegistrator.VALIDATOR_BUILDER_PUBLICKEY;
+
 import java.util.Optional;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
@@ -77,12 +79,10 @@ public class ValidatorRegistrationSigningService {
 
     final Optional<UInt64> maybeTimestampOverride =
         validatorRegistrationPropertiesProvider.getBuilderRegistrationTimestampOverride(publicKey);
-    final Optional<BLSPublicKey> maybePublicKeyOverride =
-        validatorRegistrationPropertiesProvider.getBuilderRegistrationPublicKeyOverride(publicKey);
 
     final ValidatorRegistration validatorRegistration =
         createValidatorRegistration(
-            maybePublicKeyOverride.orElse(publicKey),
+            VALIDATOR_BUILDER_PUBLICKEY.apply(validator, validatorRegistrationPropertiesProvider),
             feeRecipient,
             gasLimit,
             maybeTimestampOverride.orElse(timeProvider.getTimeInSeconds()));
