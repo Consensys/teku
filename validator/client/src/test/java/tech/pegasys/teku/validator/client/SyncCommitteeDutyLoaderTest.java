@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -155,8 +156,9 @@ class SyncCommitteeDutyLoaderTest {
     when(validatorApiChannel.getSyncCommitteeDuties(epoch, validatorIndices))
         .thenReturn(
             SafeFuture.completedFuture(Optional.of(new SyncCommitteeDuties(false, List.of()))));
-    final SyncCommitteeScheduledDuties duties1 = loadDuties(epoch);
-    final SyncCommitteeScheduledDuties duties2 = loadDuties(epoch);
+    loadDuties(epoch);
+
+    assertThatCode(() -> loadDuties(epoch)).doesNotThrowAnyException();
   }
 
   private SyncCommitteeScheduledDuties loadDuties(final UInt64 epoch) {
