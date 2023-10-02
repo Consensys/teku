@@ -28,14 +28,21 @@ public class TotalAttestationReward {
   private final long target;
   private final long source;
   private final Optional<UInt64> inclusionDelay;
+  private final UInt64 inactivity;
 
   public TotalAttestationReward(
-      long validatorIndex, long head, long target, long source, Optional<UInt64> inclusionDelay) {
+      long validatorIndex,
+      long head,
+      long target,
+      long source,
+      Optional<UInt64> inclusionDelay,
+      UInt64 inactivity) {
     this.validatorIndex = validatorIndex;
     this.head = head;
     this.target = target;
     this.source = source;
     this.inclusionDelay = inclusionDelay;
+    this.inactivity = inactivity;
   }
 
   public TotalAttestationReward(long validatorIndex, final RewardAndPenalty rewardAndPenalty) {
@@ -59,6 +66,10 @@ public class TotalAttestationReward {
         detailedRewardAndPenalty.getReward(RewardComponent.SOURCE).longValue()
             - detailedRewardAndPenalty.getPenalty(RewardComponent.SOURCE).longValue();
     this.inclusionDelay = Optional.empty();
+    this.inactivity =
+        detailedRewardAndPenalty
+            .getReward(RewardComponent.INACTIVITY)
+            .minus(detailedRewardAndPenalty.getPenalty(RewardComponent.INACTIVITY));
   }
 
   public long getValidatorIndex() {
@@ -79,6 +90,10 @@ public class TotalAttestationReward {
 
   public Optional<UInt64> getInclusionDelay() {
     return inclusionDelay;
+  }
+
+  public UInt64 getInactivity() {
+    return inactivity;
   }
 
   @Override

@@ -36,6 +36,6 @@ public class MinimalEth2NetworkOptions {
   }
 
   private Eth2NetworkConfiguration getConfig() {
-    return Eth2NetworkConfiguration.builder(network).build();
+    return Eth2NetworkConfiguration.builder(network).kzgNoop(true).build();
   }
 }

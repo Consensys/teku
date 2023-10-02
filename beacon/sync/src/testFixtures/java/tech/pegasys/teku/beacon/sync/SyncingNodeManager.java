@@ -67,6 +67,7 @@ import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
+import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -124,9 +125,10 @@ public class SyncingNodeManager {
             transitionBlockValidator,
             new StubMetricsSystem());
 
-    final BlockValidator blockValidator =
-        new BlockValidator(
+    final BlockGossipValidator blockGossipValidator =
+        new BlockGossipValidator(
             spec, recentChainData, new GossipValidationHelper(spec, recentChainData));
+    final BlockValidator blockValidator = new BlockValidator(blockGossipValidator);
 
     final TimeProvider timeProvider = new SystemTimeProvider();
     final PoolFactory poolFactory = new PoolFactory(new NoOpMetricsSystem());
