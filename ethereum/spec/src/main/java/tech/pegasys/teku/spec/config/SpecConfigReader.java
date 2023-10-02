@@ -53,7 +53,7 @@ import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 public class SpecConfigReader {
   private static final Logger LOG = LogManager.getLogger();
   public static final String PRESET_KEY = "PRESET_BASE";
-  public static final String CONFIG_NAME_KEY = "CONFIG_NAME";
+  private static final String CONFIG_NAME_KEY = "CONFIG_NAME";
   private static final ImmutableSet<String> KEYS_TO_IGNORE =
       ImmutableSet.of(
           PRESET_KEY,

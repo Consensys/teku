@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.subcommand;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.cli.subcommand.ValidatorClientCommand.DENEB_KZG_NOOP;
@@ -28,7 +29,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.response.v1.config.GetSpecResponse;
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -59,13 +60,13 @@ class RemoteSpecLoaderTest {
 
     when(apiClient.getConfigSpec()).thenReturn(Optional.of(new GetSpecResponse(rawConfig)));
 
-    final SpecConfig config =
-        RemoteSpecLoader.getSpec(apiClient, modifier -> {}).getSpecConfig(UInt64.ONE);
-    assertThat(config.getGenesisForkVersion()).isEqualTo(Bytes4.fromHexString("0x00000001"));
+    assertThatThrownBy(() -> RemoteSpecLoader.getSpec(apiClient, modifier -> {}))
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessageContaining("GENESIS_FORK_VERSION");
   }
 
   @Test
-  void shouldProvideValidSpecConfigWithIncompleteRemoteConfig() throws IOException {
+  void shouldDefaultNetworkConfigThatMovedFromConstants() throws IOException {
     final String jsonConfig =
         Resources.toString(
             Resources.getResource(RemoteSpecLoaderTest.class, "config_missing_network_fields.json"),

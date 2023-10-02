@@ -19,6 +19,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -28,7 +30,7 @@ import tech.pegasys.teku.spec.config.SpecConfigPhase0;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
 public class SpecConfigBuilder {
-
+  private static final Logger LOG = LogManager.getLogger();
   private final Map<String, Object> rawConfig = new HashMap<>();
 
   // Misc
@@ -102,21 +104,21 @@ public class SpecConfigBuilder {
   private Eth1Address depositContractAddress;
 
   // Networking
-  private Integer gossipMaxSize;
-  private Integer maxChunkSize;
-  private Integer maxRequestBlocks;
-  private Integer epochsPerSubnetSubscription;
-  private Integer ttfbTimeout;
-  private Integer respTimeout;
-  private Integer attestationPropagationSlotRange;
-  private Integer maximumGossipClockDisparity;
-  private Bytes4 messageDomainInvalidSnappy;
-  private Bytes4 messageDomainValidSnappy;
+  private Integer gossipMaxSize = 10485760;
+  private Integer maxChunkSize = 10485760;
+  private Integer maxRequestBlocks = 1024;
+  private Integer epochsPerSubnetSubscription = 256;
+  private Integer ttfbTimeout = 5;
+  private Integer respTimeout = 10;
+  private Integer attestationPropagationSlotRange = 32;
+  private Integer maximumGossipClockDisparity = 500;
+  private Bytes4 messageDomainInvalidSnappy = Bytes4.fromHexString("0x00000000");
+  private Bytes4 messageDomainValidSnappy = Bytes4.fromHexString("0x01000000");
   private Integer subnetsPerNode;
-  private Integer minEpochsForBlockRequests;
-  private Integer attestationSubnetCount;
-  private Integer attestationSubnetExtraBits;
-  private Integer attestationSubnetPrefixBits;
+  private Integer minEpochsForBlockRequests = 33024;
+  private Integer attestationSubnetCount = 64;
+  private Integer attestationSubnetExtraBits = 0;
+  private Integer attestationSubnetPrefixBits = 6;
 
   private final BuilderChain<SpecConfig, SpecConfigDeneb> builderChain =
       BuilderChain.create(new AltairBuilder())
@@ -582,77 +584,93 @@ public class SpecConfigBuilder {
   }
 
   public SpecConfigBuilder gossipMaxSize(final Integer gossipMaxSize) {
+    LOG.debug("Updating GOSSIP_MAX_SIZE to {}", () -> gossipMaxSize);
     this.gossipMaxSize = gossipMaxSize;
     return this;
   }
 
   public SpecConfigBuilder maxChunkSize(final Integer maxChunkSize) {
+    LOG.debug("Updating MAX_CHUNK_SIZE to {}", () -> maxChunkSize);
     this.maxChunkSize = maxChunkSize;
     return this;
   }
 
   public SpecConfigBuilder maxRequestBlocks(final Integer maxRequestBlocks) {
+    LOG.debug("Updating MAX_REQUEST_BLOCKS to {}", () -> maxRequestBlocks);
     this.maxRequestBlocks = maxRequestBlocks;
     return this;
   }
 
   public SpecConfigBuilder epochsPerSubnetSubscription(final Integer epochsPerSubnetSubscription) {
+    LOG.debug("Updating EPOCHS_PER_SUBNET_SUBSCRIPTION to {}", () -> epochsPerSubnetSubscription);
     this.epochsPerSubnetSubscription = epochsPerSubnetSubscription;
     return this;
   }
 
   public SpecConfigBuilder minEpochsForBlockRequests(final Integer minEpochsForBlockRequests) {
+    LOG.debug("Updating MIN_EPOCHS_FOR_BLOCK_REQUESTS to {}", () -> minEpochsForBlockRequests);
     this.minEpochsForBlockRequests = minEpochsForBlockRequests;
     return this;
   }
 
   public SpecConfigBuilder ttfbTimeout(final Integer ttfbTimeout) {
+    LOG.debug("Updating TTFB_TIMEOUT to {}", () -> ttfbTimeout);
     this.ttfbTimeout = ttfbTimeout;
     return this;
   }
 
   public SpecConfigBuilder respTimeout(final Integer respTimeout) {
+    LOG.debug("Updating RESP_TIMEOUT to {}", () -> respTimeout);
     this.respTimeout = respTimeout;
     return this;
   }
 
   public SpecConfigBuilder attestationPropagationSlotRange(
       final Integer attestationPropagationSlotRange) {
+    LOG.debug(
+        "Updating ATTESTATION_PROPAGATION_SLOT_RANGE to {}", () -> attestationPropagationSlotRange);
     this.attestationPropagationSlotRange = attestationPropagationSlotRange;
     return this;
   }
 
   public SpecConfigBuilder maximumGossipClockDisparity(final Integer maximumGossipClockDisparity) {
+    LOG.debug("Updating MAXIMUM_CLOCK_DISPARITY to {}", () -> maximumGossipClockDisparity);
     this.maximumGossipClockDisparity = maximumGossipClockDisparity;
     return this;
   }
 
   public SpecConfigBuilder messageDomainInvalidSnappy(final Bytes4 messageDomainInvalidSnappy) {
+    LOG.debug("Updating MESSAGE_DOMAIN_INVALID_SNAPPY to {}", () -> messageDomainInvalidSnappy);
     this.messageDomainInvalidSnappy = messageDomainInvalidSnappy;
     return this;
   }
 
   public SpecConfigBuilder messageDomainValidSnappy(final Bytes4 messageDomainValidSnappy) {
+    LOG.debug("Updating MESSAGE_DOMAIN_VALID_SNAPPY  to {}", () -> messageDomainValidSnappy);
     this.messageDomainValidSnappy = messageDomainValidSnappy;
     return this;
   }
 
   public SpecConfigBuilder subnetsPerNode(final Integer subnetsPerNode) {
+    LOG.debug("Updating SUBNETS_PER_NODE  to {}", () -> subnetsPerNode);
     this.subnetsPerNode = subnetsPerNode;
     return this;
   }
 
   public SpecConfigBuilder attestationSubnetCount(final Integer attestationSubnetCount) {
+    LOG.debug("Updating ATTESTATION_SUBNET_COUNT  to {}", () -> attestationSubnetCount);
     this.attestationSubnetCount = attestationSubnetCount;
     return this;
   }
 
   public SpecConfigBuilder attestationSubnetExtraBits(final Integer attestationSubnetExtraBits) {
+    LOG.debug("Updating ATTESTATION_SUBNET_EXTRA_BITS  to {}", () -> attestationSubnetExtraBits);
     this.attestationSubnetExtraBits = attestationSubnetExtraBits;
     return this;
   }
 
   public SpecConfigBuilder attestationSubnetPrefixBits(final Integer attestationSubnetPrefixBits) {
+    LOG.debug("Updating ATTESTATION_SUBNET_PREFIX_BITS  to {}", () -> attestationSubnetPrefixBits);
     this.attestationSubnetPrefixBits = attestationSubnetPrefixBits;
     return this;
   }
