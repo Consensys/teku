@@ -49,6 +49,7 @@ class GetAttestationRewardsTest extends AbstractMigratedBeaconHandlerTest {
       idealAttestationReward.addHead(2500L);
       idealAttestationReward.addTarget(5000L);
       idealAttestationReward.addSource(5000L);
+      idealAttestationReward.addInactivity(300L);
     }
     TotalAttestationReward totalAttestationReward =
         new TotalAttestationReward(
