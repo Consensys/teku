@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -78,6 +79,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
   private ExecutionLayerManagerImpl executionLayerManager;
   private ExecutionLayerBlockProductionManagerImpl blockProductionManager;
 
+  private final UInt256 executionPayloadValue = UInt256.valueOf(12345);
+
   @BeforeEach
   public void setup() {
     this.executionLayerManager = createExecutionLayerChannelImpl(true, false);
@@ -95,7 +98,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
     final ExecutionPayload payload =
-        prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot);
+        prepareEngineGetPayloadResponse(executionPayloadContext, executionPayloadValue, slot);
 
     final ExecutionPayloadHeader header =
         spec.getGenesisSpec()
@@ -111,6 +114,9 @@ class ExecutionLayerBlockProductionManagerImplTest {
         .isEqualTo(executionPayloadContext);
     assertThat(executionPayloadResult.getExecutionPayloadFuture()).isEmpty();
     assertThat(executionPayloadResult.getBlobsBundleFuture()).isEmpty();
+    assertThat(executionPayloadResult.getExecutionPayloadValueFuture()).isPresent();
+    assertThat(executionPayloadResult.getExecutionPayloadValueFuture().orElseThrow().get())
+        .isEqualTo(executionPayloadValue);
 
     // we expect local engine header as result
     final HeaderWithFallbackData expectedResult =
@@ -150,7 +156,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
     // we expect result from the builder
     final BuilderBid builderBid = prepareBuilderGetHeaderResponse(executionPayloadContext, false);
-    prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot);
+    prepareEngineGetPayloadResponse(executionPayloadContext, executionPayloadValue, slot);
     final ExecutionPayloadHeader header = builderBid.getHeader();
     final HeaderWithFallbackData expectedResult = HeaderWithFallbackData.create(header);
 
@@ -163,10 +169,13 @@ class ExecutionLayerBlockProductionManagerImplTest {
     final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture =
         executionPayloadResult.getHeaderWithFallbackDataFuture().orElseThrow();
     assertThat(headerWithFallbackDataFuture.get()).isEqualTo(expectedResult);
+    final SafeFuture<UInt256> executionPayloadValueFuture =
+        executionPayloadResult.getExecutionPayloadValueFuture().orElseThrow();
+    assertThat(executionPayloadValueFuture.get()).isEqualTo(executionPayloadValue);
 
     // we expect both builder and local engine have been called
     verifyBuilderCalled(slot, executionPayloadContext);
-    verifyEngineCalled(executionPayloadContext, slot);
+    verifyEngineCalled(executionPayloadContext, slot, 2);
 
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
@@ -193,7 +202,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
     final ExecutionPayload payload =
-        prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot);
+        prepareEngineGetPayloadResponse(executionPayloadContext, executionPayloadValue, slot);
 
     final ExecutionPayloadResult executionPayloadResult =
         blockProductionManager.initiateBlockProduction(executionPayloadContext, state, false);
@@ -201,6 +210,9 @@ class ExecutionLayerBlockProductionManagerImplTest {
         .isEqualTo(executionPayloadContext);
     assertThat(executionPayloadResult.getHeaderWithFallbackDataFuture()).isEmpty();
     assertThat(executionPayloadResult.getBlobsBundleFuture()).isEmpty();
+    assertThat(executionPayloadResult.getExecutionPayloadValueFuture()).isPresent();
+    assertThat(executionPayloadResult.getExecutionPayloadValueFuture().orElseThrow().get())
+        .isEqualTo(executionPayloadValue);
 
     final ExecutionPayload executionPayload =
         executionPayloadResult.getExecutionPayloadFuture().orElseThrow().get();
@@ -227,7 +239,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
     final GetPayloadResponse getPayloadResponse =
-        prepareEngineGetPayloadResponseWithBlobs(executionPayloadContext, UInt256.ZERO, slot);
+        prepareEngineGetPayloadResponseWithBlobs(
+            executionPayloadContext, executionPayloadValue, slot);
 
     final ExecutionPayload payload = getPayloadResponse.getExecutionPayload();
     final BlobsBundle blobsBundle = getPayloadResponse.getBlobsBundle().orElseThrow();
@@ -248,6 +261,9 @@ class ExecutionLayerBlockProductionManagerImplTest {
         .isEqualTo(executionPayloadContext);
     assertThat(executionPayloadResult.getExecutionPayloadFuture()).isEmpty();
     assertThat(executionPayloadResult.getBlobsBundleFuture()).isEmpty();
+    assertThat(executionPayloadResult.getExecutionPayloadValueFuture()).isPresent();
+    assertThat(executionPayloadResult.getExecutionPayloadValueFuture().orElseThrow().get())
+        .isEqualTo(executionPayloadValue);
 
     // we expect local engine header as result
     final HeaderWithFallbackData expectedResult =
@@ -286,7 +302,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
     // we expect result from the builder
     final BuilderBid builderBid = prepareBuilderGetHeaderResponse(executionPayloadContext, false);
-    prepareEngineGetPayloadResponseWithBlobs(executionPayloadContext, UInt256.ZERO, slot);
+    prepareEngineGetPayloadResponseWithBlobs(executionPayloadContext, executionPayloadValue, slot);
 
     final HeaderWithFallbackData expectedResult =
         HeaderWithFallbackData.create(
@@ -307,7 +323,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
     // we expect both builder and local engine have been called
     verifyBuilderCalled(slot, executionPayloadContext);
-    verifyEngineCalled(executionPayloadContext, slot);
+    verifyEngineCalled(executionPayloadContext, slot, 2);
 
     final SignedBlindedBlockContents signedBlindedBlockContents =
         dataStructureUtil.randomSignedBlindedBlockContents(slot);
@@ -336,7 +352,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
     final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
     final GetPayloadResponse getPayloadResponse =
-        prepareEngineGetPayloadResponseWithBlobs(executionPayloadContext, UInt256.ZERO, slot);
+        prepareEngineGetPayloadResponseWithBlobs(
+            executionPayloadContext, executionPayloadValue, slot);
 
     final ExecutionPayloadResult executionPayloadResult =
         blockProductionManager.initiateBlockAndBlobsProduction(
@@ -344,6 +361,10 @@ class ExecutionLayerBlockProductionManagerImplTest {
     assertThat(executionPayloadResult.getExecutionPayloadContext())
         .isEqualTo(executionPayloadContext);
     assertThat(executionPayloadResult.getHeaderWithFallbackDataFuture()).isEmpty();
+
+    assertThat(executionPayloadResult.getExecutionPayloadValueFuture()).isPresent();
+    assertThat(executionPayloadResult.getExecutionPayloadValueFuture().orElseThrow().get())
+        .isEqualTo(executionPayloadValue);
 
     final ExecutionPayload executionPayload =
         executionPayloadResult.getExecutionPayloadFuture().orElseThrow().get();
@@ -412,7 +433,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
       // we expect only local engine have been called
       verifyNoInteractions(builderClient);
     }
-    verifyEngineCalled(executionPayloadContext, slot);
+    verifyEngineCalled(executionPayloadContext, slot, 2);
 
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
@@ -477,22 +498,23 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
   private ExecutionPayload prepareEngineGetPayloadResponse(
       final ExecutionPayloadContext executionPayloadContext,
-      final UInt256 blockValue,
+      final UInt256 executionPayloadValue,
       final UInt64 slot) {
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
     when(executionClientHandler.engineGetPayload(executionPayloadContext, slot))
-        .thenReturn(SafeFuture.completedFuture(new GetPayloadResponse(payload, blockValue)));
+        .thenReturn(
+            SafeFuture.completedFuture(new GetPayloadResponse(payload, executionPayloadValue)));
     return payload;
   }
 
   private GetPayloadResponse prepareEngineGetPayloadResponseWithBlobs(
       final ExecutionPayloadContext executionPayloadContext,
-      final UInt256 blockValue,
+      final UInt256 executionPayloadValue,
       final UInt64 slot) {
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
     final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
     final GetPayloadResponse getPayloadResponse =
-        new GetPayloadResponse(payload, blockValue, blobsBundle, false);
+        new GetPayloadResponse(payload, executionPayloadValue, blobsBundle, false);
     when(executionClientHandler.engineGetPayload(executionPayloadContext, slot))
         .thenReturn(SafeFuture.completedFuture(getPayloadResponse));
     return getPayloadResponse;
@@ -551,8 +573,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
   }
 
   private void verifyEngineCalled(
-      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
-    verify(executionClientHandler).engineGetPayload(executionPayloadContext, slot);
+      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot, final int times) {
+    verify(executionClientHandler, times(times)).engineGetPayload(executionPayloadContext, slot);
   }
 
   private void verifySourceCounter(final Source source, final FallbackReason reason) {

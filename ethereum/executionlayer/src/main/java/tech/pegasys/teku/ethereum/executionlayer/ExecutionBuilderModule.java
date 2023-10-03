@@ -186,7 +186,7 @@ public class ExecutionBuilderModule {
                 // Treat the local block value as zero if local payload is unavailable
                 final UInt256 localBlockValue =
                     maybeLocalGetPayloadResponse
-                        .map(GetPayloadResponse::getBlockValue)
+                        .map(GetPayloadResponse::getExecutionPayloadValue)
                         .orElse(UInt256.ZERO);
                 final UInt256 builderBidValue = signedBuilderBid.getMessage().getValue();
 

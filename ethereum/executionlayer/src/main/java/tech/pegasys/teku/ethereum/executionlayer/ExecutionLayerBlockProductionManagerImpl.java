@@ -77,15 +77,15 @@ public class ExecutionLayerBlockProductionManagerImpl
           executionLayerChannel.engineGetPayload(context, blockSlotState.getSlot());
       final SafeFuture<ExecutionPayload> executionPayloadFuture =
           getPayloadResponseFuture.thenApply(GetPayloadResponse::getExecutionPayload);
-      final SafeFuture<UInt256> blockValue =
-          getPayloadResponseFuture.thenApply(GetPayloadResponse::getBlockValue);
+      final SafeFuture<UInt256> executionPayloadValueFuture =
+          getPayloadResponseFuture.thenApply(GetPayloadResponse::getExecutionPayloadValue);
       result =
           new ExecutionPayloadResult(
               context,
               Optional.of(executionPayloadFuture),
               Optional.empty(),
               Optional.empty(),
-              Optional.of(blockValue));
+              Optional.of(executionPayloadValueFuture));
     } else {
       result = builderGetHeader(context, blockSlotState);
     }
@@ -106,15 +106,15 @@ public class ExecutionLayerBlockProductionManagerImpl
           getPayloadResponseFuture.thenApply(GetPayloadResponse::getExecutionPayload);
       final SafeFuture<Optional<BlobsBundle>> blobsBundleFuture =
           getPayloadResponseFuture.thenApply(GetPayloadResponse::getBlobsBundle);
-      final SafeFuture<UInt256> blockValue =
-          getPayloadResponseFuture.thenApply(GetPayloadResponse::getBlockValue);
+      final SafeFuture<UInt256> executionPayloadValueFuture =
+          getPayloadResponseFuture.thenApply(GetPayloadResponse::getExecutionPayloadValue);
       result =
           new ExecutionPayloadResult(
               context,
               Optional.of(executionPayloadFuture),
               Optional.of(blobsBundleFuture),
               Optional.empty(),
-              Optional.of(blockValue));
+              Optional.of(executionPayloadValueFuture));
     } else {
       result = builderGetHeader(context, blockSlotState);
     }
@@ -142,11 +142,17 @@ public class ExecutionLayerBlockProductionManagerImpl
     final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture =
         executionLayerChannel.builderGetHeader(executionPayloadContext, state);
 
+    final SafeFuture<GetPayloadResponse> getPayloadResponseFuture =
+        executionLayerChannel.engineGetPayload(executionPayloadContext, state.getSlot());
+
+    final SafeFuture<UInt256> executionPayloadValueFuture =
+        getPayloadResponseFuture.thenApply(GetPayloadResponse::getExecutionPayloadValue);
+
     return new ExecutionPayloadResult(
         executionPayloadContext,
         Optional.empty(),
         Optional.empty(),
         Optional.of(headerWithFallbackDataFuture),
-        Optional.empty());
+        Optional.of(executionPayloadValueFuture));
   }
 }

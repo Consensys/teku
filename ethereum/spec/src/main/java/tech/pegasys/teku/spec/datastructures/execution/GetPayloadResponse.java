@@ -21,31 +21,32 @@ import org.apache.tuweni.units.bigints.UInt256;
 public class GetPayloadResponse {
 
   private final ExecutionPayload executionPayload;
-  private final UInt256 blockValue;
+  private final UInt256 executionPayloadValue;
   private final Optional<BlobsBundle> blobsBundle;
   private final boolean shouldOverrideBuilder;
 
   public GetPayloadResponse(final ExecutionPayload executionPayload) {
     this.executionPayload = executionPayload;
-    this.blockValue = UInt256.ZERO;
+    this.executionPayloadValue = UInt256.ZERO;
     this.blobsBundle = Optional.empty();
     this.shouldOverrideBuilder = false;
   }
 
-  public GetPayloadResponse(final ExecutionPayload executionPayload, final UInt256 blockValue) {
+  public GetPayloadResponse(
+      final ExecutionPayload executionPayload, final UInt256 executionPayloadValue) {
     this.executionPayload = executionPayload;
-    this.blockValue = blockValue;
+    this.executionPayloadValue = executionPayloadValue;
     this.blobsBundle = Optional.empty();
     this.shouldOverrideBuilder = false;
   }
 
   public GetPayloadResponse(
       final ExecutionPayload executionPayload,
-      final UInt256 blockValue,
+      final UInt256 executionPayloadValue,
       final BlobsBundle blobsBundle,
       final boolean shouldOverrideBuilder) {
     this.executionPayload = executionPayload;
-    this.blockValue = blockValue;
+    this.executionPayloadValue = executionPayloadValue;
     this.blobsBundle = Optional.of(blobsBundle);
     this.shouldOverrideBuilder = shouldOverrideBuilder;
   }
@@ -54,8 +55,8 @@ public class GetPayloadResponse {
     return executionPayload;
   }
 
-  public UInt256 getBlockValue() {
-    return blockValue;
+  public UInt256 getExecutionPayloadValue() {
+    return executionPayloadValue;
   }
 
   public Optional<BlobsBundle> getBlobsBundle() {
@@ -77,20 +78,21 @@ public class GetPayloadResponse {
     final GetPayloadResponse that = (GetPayloadResponse) o;
     return shouldOverrideBuilder == that.shouldOverrideBuilder
         && Objects.equals(executionPayload, that.executionPayload)
-        && Objects.equals(blockValue, that.blockValue)
+        && Objects.equals(executionPayloadValue, that.executionPayloadValue)
         && Objects.equals(blobsBundle, that.blobsBundle);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(executionPayload, blockValue, blobsBundle, shouldOverrideBuilder);
+    return Objects.hash(
+        executionPayload, executionPayloadValue, blobsBundle, shouldOverrideBuilder);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("executionPayload", executionPayload)
-        .add("blockValue", blockValue)
+        .add("blockValue", executionPayloadValue)
         .add("blobsBundle", blobsBundle)
         .add("shouldOverrideBuilder", shouldOverrideBuilder)
         .toString();
