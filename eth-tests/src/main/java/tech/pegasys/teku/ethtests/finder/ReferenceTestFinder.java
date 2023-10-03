@@ -53,6 +53,7 @@ public class ReferenceTestFinder {
 
               return Stream.of(
                       new BlsTestFinder(),
+                      new KzgTestFinder(),
                       new BlsRefTestFinder(),
                       new SszTestFinder("ssz_generic"),
                       new SszTestFinder("ssz_static"),
