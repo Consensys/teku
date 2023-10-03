@@ -147,6 +147,12 @@ public class ExecutionLayerBlockProductionManagerImpl
             .builderGetHeader(executionPayloadContext, state, executionPayloadValueFuture)
             .whenException(executionPayloadValueFuture::completeExceptionally);
 
+    final SafeFuture<GetPayloadResponse> getPayloadResponseFuture =
+        executionLayerChannel.engineGetPayload(executionPayloadContext, state.getSlot());
+
+    final SafeFuture<UInt256> executionPayloadValueFuture =
+        getPayloadResponseFuture.thenApply(GetPayloadResponse::getExecutionPayloadValue);
+
     return new ExecutionPayloadResult(
         executionPayloadContext,
         Optional.empty(),
