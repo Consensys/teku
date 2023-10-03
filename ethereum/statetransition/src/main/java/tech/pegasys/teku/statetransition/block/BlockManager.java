@@ -332,6 +332,15 @@ public class BlockManager extends Service
                     dataUnavailableSubscribers.deliver(
                         DataUnavailableSubscriber::onDataUnavailable, block);
                     break;
+                  case FAILED_DATA_AVAILABILITY_CHECK_INVALID:
+                    // Block's commitments and known blobSidecars are not matching.
+                    // To be able to recover from this situation we remove all blobSidecars from the
+                    // pool and discard.
+                    // If next block builds on top of this one, we will re-download all blobSidecars
+                    // and block again via RPC by root.
+                    LOG.warn("Unable to import block {} due to invalid data", block.toLogString());
+                    blobSidecarPool.removeAllForBlock(block.getRoot());
+                    break;
                   default:
                     LOG.trace(
                         "Unable to import block for reason {}: {}",
