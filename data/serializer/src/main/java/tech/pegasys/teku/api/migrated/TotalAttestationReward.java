@@ -57,14 +57,20 @@ public class TotalAttestationReward {
                         "TotalAttestationRewards requires a DetailedRewardAndPenalty instance"));
 
     this.head =
-        detailedRewardAndPenalty.getReward(RewardComponent.HEAD).longValue()
-            - detailedRewardAndPenalty.getPenalty(RewardComponent.HEAD).longValue();
+        detailedRewardAndPenalty
+            .getReward(RewardComponent.HEAD)
+            .minus(detailedRewardAndPenalty.getPenalty(RewardComponent.HEAD))
+            .longValue();
     this.target =
-        detailedRewardAndPenalty.getReward(RewardComponent.TARGET).longValue()
-            - detailedRewardAndPenalty.getPenalty(RewardComponent.TARGET).longValue();
+        detailedRewardAndPenalty
+            .getReward(RewardComponent.TARGET)
+            .minus(detailedRewardAndPenalty.getPenalty(RewardComponent.TARGET))
+            .longValue();
     this.source =
-        detailedRewardAndPenalty.getReward(RewardComponent.SOURCE).longValue()
-            - detailedRewardAndPenalty.getPenalty(RewardComponent.SOURCE).longValue();
+        detailedRewardAndPenalty
+            .getReward(RewardComponent.SOURCE)
+            .minus(detailedRewardAndPenalty.getPenalty(RewardComponent.SOURCE))
+            .longValue();
     this.inclusionDelay = Optional.empty();
     this.inactivity =
         detailedRewardAndPenalty
