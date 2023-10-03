@@ -24,7 +24,7 @@ public class KzgTests {
           .put("kzg/compute_blob_kzg_proof", new KzgComputeBlobProofTestExecutor())
           // no KZG interface on CL side, EL responsibility
           .put("kzg/compute_kzg_proof", TestExecutor.IGNORE_TESTS)
-          // actually uses batch KZG interface
+          // actually uses verify_blob_kzg_proof_batch KZG interface
           .put("kzg/verify_blob_kzg_proof", new KzgVerifyBlobProofTestExecutor())
           .put("kzg/verify_blob_kzg_proof_batch", new KzgVerifyBlobProofBatchTestExecutor())
           // no KZG interface on CL side, EL responsibility
