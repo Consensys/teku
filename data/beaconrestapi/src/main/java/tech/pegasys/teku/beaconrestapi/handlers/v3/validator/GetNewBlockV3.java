@@ -124,7 +124,9 @@ public class GetNewBlockV3 extends RestApiEndpoint {
                                   blockContainerAndMetaData.getData().getBlock().isBlinded()));
                           request.header(
                               HEADER_EXECUTION_PAYLOAD_VALUE,
-                              blockContainerAndMetaData.getBlockValue().toDecimalString());
+                              blockContainerAndMetaData
+                                  .getExecutionPayloadValue()
+                                  .toDecimalString());
                           return AsyncApiResponse.respondOk(blockContainerAndMetaData);
                         })
                     .orElseThrow(ChainDataUnavailableException::new)));
@@ -164,7 +166,10 @@ public class GetNewBlockV3 extends RestApiEndpoint {
             EXECUTION_PAYLOAD_BLINDED,
             BOOLEAN_TYPE,
             blockContainerAndMetaData -> blockContainerAndMetaData.getData().isBlinded())
-        .withField(EXECUTION_PAYLOAD_VALUE, UINT256_TYPE, BlockContainerAndMetaData::getBlockValue)
+        .withField(
+            EXECUTION_PAYLOAD_VALUE,
+            UINT256_TYPE,
+            BlockContainerAndMetaData::getExecutionPayloadValue)
         .withField("data", blockContainerType, BlockContainerAndMetaData::getData)
         .build();
   }

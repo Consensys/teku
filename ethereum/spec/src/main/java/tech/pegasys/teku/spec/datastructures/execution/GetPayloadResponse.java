@@ -92,7 +92,7 @@ public class GetPayloadResponse {
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("executionPayload", executionPayload)
-        .add("blockValue", executionPayloadValue)
+        .add("executionPayloadValue", executionPayloadValue)
         .add("blobsBundle", blobsBundle)
         .add("shouldOverrideBuilder", shouldOverrideBuilder)
         .toString();

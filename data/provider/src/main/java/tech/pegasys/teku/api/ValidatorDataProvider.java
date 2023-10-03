@@ -117,11 +117,11 @@ public class ValidatorDataProvider {
     checkBlockProducingParameters(slot, randao);
     return validatorApiChannel
         .createUnsignedBlock(slot, randao, graffiti)
-        .thenCombine(retrieveBlockValue(slot), this::lookUpData);
+        .thenCombine(retrieveExecutionPayloadValue(slot), this::lookUpData);
   }
 
   private Optional<BlockContainerAndMetaData> lookUpData(
-      Optional<BlockContainer> maybeBlockContainer, UInt256 blockValue) {
+      Optional<BlockContainer> maybeBlockContainer, UInt256 executionPayloadValue) {
     if (maybeBlockContainer.isEmpty()) {
       return Optional.empty();
     } else {
@@ -132,11 +132,11 @@ public class ValidatorDataProvider {
               false,
               false,
               false,
-              blockValue));
+              executionPayloadValue));
     }
   }
 
-  private SafeFuture<UInt256> retrieveBlockValue(UInt64 slot) {
+  private SafeFuture<UInt256> retrieveExecutionPayloadValue(UInt64 slot) {
     final ExecutionPayloadResult payloadResult =
         executionLayerBlockProductionManager
             .getCachedPayloadResult(slot)

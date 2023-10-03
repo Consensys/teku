@@ -21,7 +21,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 
 public class BlockContainerAndMetaData extends ObjectAndMetaData<BlockContainer> {
 
-  private final UInt256 blockValue;
+  private final UInt256 executionPayloadValue;
 
   public BlockContainerAndMetaData(
       final BlockContainer data,
@@ -29,13 +29,13 @@ public class BlockContainerAndMetaData extends ObjectAndMetaData<BlockContainer>
       final boolean executionOptimistic,
       final boolean canonical,
       final boolean finalized,
-      final UInt256 blockValue) {
+      final UInt256 executionPayloadValue) {
     super(data, milestone, executionOptimistic, canonical, finalized);
-    this.blockValue = blockValue;
+    this.executionPayloadValue = executionPayloadValue;
   }
 
-  public UInt256 getBlockValue() {
-    return blockValue;
+  public UInt256 getExecutionPayloadValue() {
+    return executionPayloadValue;
   }
 
   @Override
@@ -47,12 +47,12 @@ public class BlockContainerAndMetaData extends ObjectAndMetaData<BlockContainer>
       return false;
     }
     final BlockContainerAndMetaData that = (BlockContainerAndMetaData) o;
-    return super.equals(o) && blockValue.equals(that.blockValue);
+    return super.equals(o) && executionPayloadValue.equals(that.executionPayloadValue);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(super.hashCode(), blockValue);
+    return Objects.hash(super.hashCode(), executionPayloadValue);
   }
 
   @Override
@@ -62,7 +62,7 @@ public class BlockContainerAndMetaData extends ObjectAndMetaData<BlockContainer>
         .add("milestone", getMilestone())
         .add("executionOptimistic", isExecutionOptimistic())
         .add("canonical", isCanonical())
-        .add("blockValue", blockValue.toDecimalString())
+        .add("executionPayloadValue", executionPayloadValue.toDecimalString())
         .toString();
   }
 }

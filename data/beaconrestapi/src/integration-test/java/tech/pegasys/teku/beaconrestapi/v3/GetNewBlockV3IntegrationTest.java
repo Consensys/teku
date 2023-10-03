@@ -60,7 +60,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
 
   private DataStructureUtil dataStructureUtil;
   private SpecMilestone specMilestone;
-  private final UInt256 blockValue = UInt256.valueOf(12345);
+  private final UInt256 executionPayloadValue = UInt256.valueOf(12345);
 
   @BeforeEach
   void setup(TestSpecInvocationContextProvider.SpecContext specContext) {
@@ -85,7 +85,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
                     Optional.empty(),
                     Optional.empty(),
                     Optional.empty(),
-                    Optional.of(SafeFuture.completedFuture(blockValue)))));
+                    Optional.of(SafeFuture.completedFuture(executionPayloadValue)))));
     Response response = get(signature, ContentTypes.JSON);
     assertThat(response.code()).isEqualTo(SC_OK);
     assertThat(response.header(HEADER_CONSENSUS_VERSION))
@@ -93,7 +93,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
     assertThat(response.header(HEADER_EXECUTION_PAYLOAD_BLINDED))
         .isEqualTo(Boolean.toString(false));
     assertThat(response.header(HEADER_EXECUTION_PAYLOAD_VALUE))
-        .isEqualTo(blockValue.toDecimalString());
+        .isEqualTo(executionPayloadValue.toDecimalString());
     final String body = response.body().string();
     assertThat(body).isEqualTo(getExpectedBlockAsJson(specMilestone, false, false));
   }
@@ -113,7 +113,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
                     Optional.empty(),
                     Optional.empty(),
                     Optional.empty(),
-                    Optional.of(SafeFuture.completedFuture(blockValue)))));
+                    Optional.of(SafeFuture.completedFuture(executionPayloadValue)))));
     Response response = get(signature, ContentTypes.OCTET_STREAM);
     assertThat(response.code()).isEqualTo(SC_OK);
     assertThat(response.header(HEADER_CONSENSUS_VERSION))
@@ -121,7 +121,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
     assertThat(response.header(HEADER_EXECUTION_PAYLOAD_BLINDED))
         .isEqualTo(Boolean.toString(false));
     assertThat(response.header(HEADER_EXECUTION_PAYLOAD_VALUE))
-        .isEqualTo(blockValue.toDecimalString());
+        .isEqualTo(executionPayloadValue.toDecimalString());
     final BeaconBlock result =
         spec.getGenesisSchemaDefinitions()
             .getBeaconBlockSchema()
@@ -144,14 +144,14 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
                     Optional.empty(),
                     Optional.empty(),
                     Optional.empty(),
-                    Optional.of(SafeFuture.completedFuture(blockValue)))));
+                    Optional.of(SafeFuture.completedFuture(executionPayloadValue)))));
     Response response = get(signature, ContentTypes.JSON);
     assertThat(response.code()).isEqualTo(SC_OK);
     assertThat(response.header(HEADER_CONSENSUS_VERSION))
         .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
     assertThat(response.header(HEADER_EXECUTION_PAYLOAD_BLINDED)).isEqualTo(Boolean.toString(true));
     assertThat(response.header(HEADER_EXECUTION_PAYLOAD_VALUE))
-        .isEqualTo(blockValue.toDecimalString());
+        .isEqualTo(executionPayloadValue.toDecimalString());
     final String body = response.body().string();
     assertThat(body).isEqualTo(getExpectedBlockAsJson(specMilestone, true, false));
   }
@@ -171,14 +171,14 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
                     Optional.empty(),
                     Optional.empty(),
                     Optional.empty(),
-                    Optional.of(SafeFuture.completedFuture(blockValue)))));
+                    Optional.of(SafeFuture.completedFuture(executionPayloadValue)))));
     Response response = get(signature, ContentTypes.OCTET_STREAM);
     assertThat(response.code()).isEqualTo(SC_OK);
     assertThat(response.header(HEADER_CONSENSUS_VERSION))
         .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
     assertThat(response.header(HEADER_EXECUTION_PAYLOAD_BLINDED)).isEqualTo(Boolean.toString(true));
     assertThat(response.header(HEADER_EXECUTION_PAYLOAD_VALUE))
-        .isEqualTo(blockValue.toDecimalString());
+        .isEqualTo(executionPayloadValue.toDecimalString());
     final BeaconBlock result =
         spec.getGenesisSchemaDefinitions()
             .getBlindedBeaconBlockSchema()
@@ -201,7 +201,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
                     Optional.empty(),
                     Optional.empty(),
                     Optional.empty(),
-                    Optional.of(SafeFuture.completedFuture(blockValue)))));
+                    Optional.of(SafeFuture.completedFuture(executionPayloadValue)))));
     Response response = get(signature, ContentTypes.JSON);
     assertThat(response.code()).isEqualTo(SC_OK);
     assertThat(response.header(HEADER_CONSENSUS_VERSION))
@@ -209,7 +209,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
     assertThat(response.header(HEADER_EXECUTION_PAYLOAD_BLINDED))
         .isEqualTo(Boolean.toString(false));
     assertThat(response.header(HEADER_EXECUTION_PAYLOAD_VALUE))
-        .isEqualTo(blockValue.toDecimalString());
+        .isEqualTo(executionPayloadValue.toDecimalString());
     final String body = response.body().string();
     assertThat(body).isEqualTo(getExpectedBlockAsJson(specMilestone, false, true));
   }
@@ -229,7 +229,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
                     Optional.empty(),
                     Optional.empty(),
                     Optional.empty(),
-                    Optional.of(SafeFuture.completedFuture(blockValue)))));
+                    Optional.of(SafeFuture.completedFuture(executionPayloadValue)))));
     Response response = get(signature, ContentTypes.OCTET_STREAM);
     assertThat(response.code()).isEqualTo(SC_OK);
     assertThat(response.header(HEADER_CONSENSUS_VERSION))
@@ -237,7 +237,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
     assertThat(response.header(HEADER_EXECUTION_PAYLOAD_BLINDED))
         .isEqualTo(Boolean.toString(false));
     assertThat(response.header(HEADER_EXECUTION_PAYLOAD_VALUE))
-        .isEqualTo(blockValue.toDecimalString());
+        .isEqualTo(executionPayloadValue.toDecimalString());
     final BlockContents result =
         (BlockContents)
             spec.getGenesisSchemaDefinitions()
@@ -262,14 +262,14 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
                     Optional.empty(),
                     Optional.empty(),
                     Optional.empty(),
-                    Optional.of(SafeFuture.completedFuture(blockValue)))));
+                    Optional.of(SafeFuture.completedFuture(executionPayloadValue)))));
     Response response = get(signature, ContentTypes.JSON);
     assertThat(response.code()).isEqualTo(SC_OK);
     assertThat(response.header(HEADER_CONSENSUS_VERSION))
         .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
     assertThat(response.header(HEADER_EXECUTION_PAYLOAD_BLINDED)).isEqualTo(Boolean.toString(true));
     assertThat(response.header(HEADER_EXECUTION_PAYLOAD_VALUE))
-        .isEqualTo(blockValue.toDecimalString());
+        .isEqualTo(executionPayloadValue.toDecimalString());
     final String body = response.body().string();
     assertThat(body).isEqualTo(getExpectedBlockAsJson(specMilestone, true, true));
   }
@@ -290,14 +290,14 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
                     Optional.empty(),
                     Optional.empty(),
                     Optional.empty(),
-                    Optional.of(SafeFuture.completedFuture(blockValue)))));
+                    Optional.of(SafeFuture.completedFuture(executionPayloadValue)))));
     Response response = get(signature, ContentTypes.OCTET_STREAM);
     assertThat(response.code()).isEqualTo(SC_OK);
     assertThat(response.header(HEADER_CONSENSUS_VERSION))
         .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
     assertThat(response.header(HEADER_EXECUTION_PAYLOAD_BLINDED)).isEqualTo(Boolean.toString(true));
     assertThat(response.header(HEADER_EXECUTION_PAYLOAD_VALUE))
-        .isEqualTo(blockValue.toDecimalString());
+        .isEqualTo(executionPayloadValue.toDecimalString());
     final BlindedBlockContents result =
         (BlindedBlockContents)
             spec.getGenesisSchemaDefinitions()
