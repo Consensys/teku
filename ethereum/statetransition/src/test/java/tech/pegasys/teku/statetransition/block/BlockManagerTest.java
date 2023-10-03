@@ -34,6 +34,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason.FAILED_DATA_AVAILABILITY_CHECK_INVALID;
 import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason.FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE;
+import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason.UNKNOWN_PARENT;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.ARRIVAL_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.BEGIN_IMPORTING_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.COMPLETED_EVENT_LABEL;
@@ -957,6 +958,12 @@ public class BlockManagerTest {
         localChain
             .chainBuilder()
             .generateBlockAtSlot(currentSlot, BlockOptions.create().setGenerateRandomBlobs(true));
+    final SignedBlockAndState signedBlockAndState2 =
+        localChain
+            .chainBuilder()
+            .generateBlockAtSlot(
+                currentSlot.increment(), BlockOptions.create().setGenerateRandomBlobs(true));
+
     final List<BlobSidecar> blobSidecars1 =
         localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
     assertThatNothingStoredForSlotRoot(signedBlockAndState1.getSlotAndBlockRoot());
@@ -978,6 +985,13 @@ public class BlockManagerTest {
         .isCompletedWithValue(Collections.emptyList());
     assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
         .isCompletedWithValueMatching(Optional::isEmpty);
+
+    verify(blobSidecarPool).removeAllForBlock(block1.getRoot());
+    assertThat(invalidBlockRoots).doesNotContainKeys(block1.getRoot());
+
+    // if we receive a block building on top of block1, we should trigger unknown parent flow
+    assertThat(blockManager.importBlock(signedBlockAndState2.getBlock(), Optional.empty()))
+        .isCompletedWithValueMatching(cause -> cause.getFailureReason().equals(UNKNOWN_PARENT));
   }
 
   @Test
