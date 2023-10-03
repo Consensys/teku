@@ -60,7 +60,7 @@ public class GetNewBlockV3 extends RestApiEndpoint {
 
   public static final String ROUTE = "/eth/v3/validator/blocks/{slot}";
 
-  protected final ValidatorDataProvider provider;
+  protected final ValidatorDataProvider validatorDataProvider;
 
   public GetNewBlockV3(
       final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
@@ -68,9 +68,10 @@ public class GetNewBlockV3 extends RestApiEndpoint {
   }
 
   public GetNewBlockV3(
-      final ValidatorDataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
+      final ValidatorDataProvider validatorDataProvider,
+      final SchemaDefinitionCache schemaDefinitionCache) {
     super(getEndpointMetaData(schemaDefinitionCache));
-    this.provider = provider;
+    this.validatorDataProvider = validatorDataProvider;
   }
 
   private static EndpointMetadata getEndpointMetaData(
@@ -107,7 +108,7 @@ public class GetNewBlockV3 extends RestApiEndpoint {
     final BLSSignature randao = request.getQueryParameter(RANDAO_PARAMETER);
     final Optional<Bytes32> graffiti = request.getOptionalQueryParameter(GRAFFITI_PARAMETER);
     final SafeFuture<Optional<BlockContainerAndMetaData<BlockContainer>>> result =
-        provider.produceBlock(slot, randao, graffiti);
+        validatorDataProvider.produceBlock(slot, randao, graffiti);
     request.respondAsync(
         result.thenApply(
             maybeBlock ->
