@@ -584,93 +584,93 @@ public class SpecConfigBuilder {
   }
 
   public SpecConfigBuilder gossipMaxSize(final Integer gossipMaxSize) {
-    LOG.debug("Updating GOSSIP_MAX_SIZE to {}", () -> gossipMaxSize);
+    LOG.trace("Updating GOSSIP_MAX_SIZE to {}", () -> gossipMaxSize);
     this.gossipMaxSize = gossipMaxSize;
     return this;
   }
 
   public SpecConfigBuilder maxChunkSize(final Integer maxChunkSize) {
-    LOG.debug("Updating MAX_CHUNK_SIZE to {}", () -> maxChunkSize);
+    LOG.trace("Updating MAX_CHUNK_SIZE to {}", () -> maxChunkSize);
     this.maxChunkSize = maxChunkSize;
     return this;
   }
 
   public SpecConfigBuilder maxRequestBlocks(final Integer maxRequestBlocks) {
-    LOG.debug("Updating MAX_REQUEST_BLOCKS to {}", () -> maxRequestBlocks);
+    LOG.trace("Updating MAX_REQUEST_BLOCKS to {}", () -> maxRequestBlocks);
     this.maxRequestBlocks = maxRequestBlocks;
     return this;
   }
 
   public SpecConfigBuilder epochsPerSubnetSubscription(final Integer epochsPerSubnetSubscription) {
-    LOG.debug("Updating EPOCHS_PER_SUBNET_SUBSCRIPTION to {}", () -> epochsPerSubnetSubscription);
+    LOG.trace("Updating EPOCHS_PER_SUBNET_SUBSCRIPTION to {}", () -> epochsPerSubnetSubscription);
     this.epochsPerSubnetSubscription = epochsPerSubnetSubscription;
     return this;
   }
 
   public SpecConfigBuilder minEpochsForBlockRequests(final Integer minEpochsForBlockRequests) {
-    LOG.debug("Updating MIN_EPOCHS_FOR_BLOCK_REQUESTS to {}", () -> minEpochsForBlockRequests);
+    LOG.trace("Updating MIN_EPOCHS_FOR_BLOCK_REQUESTS to {}", () -> minEpochsForBlockRequests);
     this.minEpochsForBlockRequests = minEpochsForBlockRequests;
     return this;
   }
 
   public SpecConfigBuilder ttfbTimeout(final Integer ttfbTimeout) {
-    LOG.debug("Updating TTFB_TIMEOUT to {}", () -> ttfbTimeout);
+    LOG.trace("Updating TTFB_TIMEOUT to {}", () -> ttfbTimeout);
     this.ttfbTimeout = ttfbTimeout;
     return this;
   }
 
   public SpecConfigBuilder respTimeout(final Integer respTimeout) {
-    LOG.debug("Updating RESP_TIMEOUT to {}", () -> respTimeout);
+    LOG.trace("Updating RESP_TIMEOUT to {}", () -> respTimeout);
     this.respTimeout = respTimeout;
     return this;
   }
 
   public SpecConfigBuilder attestationPropagationSlotRange(
       final Integer attestationPropagationSlotRange) {
-    LOG.debug(
+    LOG.trace(
         "Updating ATTESTATION_PROPAGATION_SLOT_RANGE to {}", () -> attestationPropagationSlotRange);
     this.attestationPropagationSlotRange = attestationPropagationSlotRange;
     return this;
   }
 
   public SpecConfigBuilder maximumGossipClockDisparity(final Integer maximumGossipClockDisparity) {
-    LOG.debug("Updating MAXIMUM_CLOCK_DISPARITY to {}", () -> maximumGossipClockDisparity);
+    LOG.trace("Updating MAXIMUM_CLOCK_DISPARITY to {}", () -> maximumGossipClockDisparity);
     this.maximumGossipClockDisparity = maximumGossipClockDisparity;
     return this;
   }
 
   public SpecConfigBuilder messageDomainInvalidSnappy(final Bytes4 messageDomainInvalidSnappy) {
-    LOG.debug("Updating MESSAGE_DOMAIN_INVALID_SNAPPY to {}", () -> messageDomainInvalidSnappy);
+    LOG.trace("Updating MESSAGE_DOMAIN_INVALID_SNAPPY to {}", () -> messageDomainInvalidSnappy);
     this.messageDomainInvalidSnappy = messageDomainInvalidSnappy;
     return this;
   }
 
   public SpecConfigBuilder messageDomainValidSnappy(final Bytes4 messageDomainValidSnappy) {
-    LOG.debug("Updating MESSAGE_DOMAIN_VALID_SNAPPY  to {}", () -> messageDomainValidSnappy);
+    LOG.trace("Updating MESSAGE_DOMAIN_VALID_SNAPPY  to {}", () -> messageDomainValidSnappy);
     this.messageDomainValidSnappy = messageDomainValidSnappy;
     return this;
   }
 
   public SpecConfigBuilder subnetsPerNode(final Integer subnetsPerNode) {
-    LOG.debug("Updating SUBNETS_PER_NODE  to {}", () -> subnetsPerNode);
+    LOG.trace("Updating SUBNETS_PER_NODE  to {}", () -> subnetsPerNode);
     this.subnetsPerNode = subnetsPerNode;
     return this;
   }
 
   public SpecConfigBuilder attestationSubnetCount(final Integer attestationSubnetCount) {
-    LOG.debug("Updating ATTESTATION_SUBNET_COUNT  to {}", () -> attestationSubnetCount);
+    LOG.trace("Updating ATTESTATION_SUBNET_COUNT  to {}", () -> attestationSubnetCount);
     this.attestationSubnetCount = attestationSubnetCount;
     return this;
   }
 
   public SpecConfigBuilder attestationSubnetExtraBits(final Integer attestationSubnetExtraBits) {
-    LOG.debug("Updating ATTESTATION_SUBNET_EXTRA_BITS  to {}", () -> attestationSubnetExtraBits);
+    LOG.trace("Updating ATTESTATION_SUBNET_EXTRA_BITS  to {}", () -> attestationSubnetExtraBits);
     this.attestationSubnetExtraBits = attestationSubnetExtraBits;
     return this;
   }
 
   public SpecConfigBuilder attestationSubnetPrefixBits(final Integer attestationSubnetPrefixBits) {
-    LOG.debug("Updating ATTESTATION_SUBNET_PREFIX_BITS  to {}", () -> attestationSubnetPrefixBits);
+    LOG.trace("Updating ATTESTATION_SUBNET_PREFIX_BITS  to {}", () -> attestationSubnetPrefixBits);
     this.attestationSubnetPrefixBits = attestationSubnetPrefixBits;
     return this;
   }
