@@ -90,7 +90,7 @@ import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
-import tech.pegasys.teku.validator.coordinator.duties.AttesterDutiesGenerater;
+import tech.pegasys.teku.validator.coordinator.duties.AttesterDutiesGenerator;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
 import tech.pegasys.teku.validator.coordinator.publisher.MilestoneBasedBlockPublisher;
@@ -124,7 +124,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final ProposersDataManager proposersDataManager;
   private final BlockPublisher blockPublisher;
 
-  private final AttesterDutiesGenerater attesterDutiesGenerater;
+  private final AttesterDutiesGenerator attesterDutiesGenerator;
 
   public ValidatorApiHandler(
       final ChainDataProvider chainDataProvider,
@@ -175,7 +175,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             blobSidecarGossipChannel,
             performanceTracker,
             dutyMetrics);
-    this.attesterDutiesGenerater = new AttesterDutiesGenerater(spec);
+    this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
   }
 
   @Override
@@ -237,7 +237,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             optionalState ->
                 optionalState.map(
                     state ->
-                        attesterDutiesGenerater.getAttesterDutiesFromIndicesAndState(
+                        attesterDutiesGenerator.getAttesterDutiesFromIndicesAndState(
                             state,
                             epoch,
                             validatorIndices,

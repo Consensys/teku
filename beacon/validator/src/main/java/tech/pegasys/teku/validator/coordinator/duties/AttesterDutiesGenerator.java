@@ -23,10 +23,10 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 
-public class AttesterDutiesGenerater {
+public class AttesterDutiesGenerator {
   private final Spec spec;
 
-  public AttesterDutiesGenerater(Spec spec) {
+  public AttesterDutiesGenerator(Spec spec) {
     this.spec = spec;
   }
 

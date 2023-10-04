@@ -20,12 +20,8 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
-import java.io.IOException;
-import java.io.StringWriter;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -77,7 +73,7 @@ public class AttesterDutiesGeneraterBenchmark {
           .build();
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private BeaconStateBellatrix state;
-  private AttesterDutiesGenerater attesterDutiesGenerater;
+  private AttesterDutiesGenerator attesterDutiesGenerator;
 
   private UInt64 epoch;
 
@@ -86,7 +82,7 @@ public class AttesterDutiesGeneraterBenchmark {
   @Param({"800000"})
   int validatorsCount = 800_000;
 
-  @Param({"50000"})
+  @Param({"500000"})
   int querySize = 50_000;
 
   @Setup(Level.Trial)
@@ -107,25 +103,19 @@ public class AttesterDutiesGeneraterBenchmark {
       validatorIndices.add(i);
     }
 
-    attesterDutiesGenerater = new AttesterDutiesGenerater(spec);
+    attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
     System.out.println("Done!");
     epoch = spec.computeEpochAtSlot(state.getSlot()).increment();
   }
 
   @Benchmark
-  @Warmup(iterations = 1, time = 2000, timeUnit = TimeUnit.MILLISECONDS)
-  @Measurement(iterations = 2)
+  @Warmup(iterations = 5, time = 2000, timeUnit = TimeUnit.MILLISECONDS)
+  @Measurement(iterations = 10)
   public void computeAttesterDuties(Blackhole bh) {
-    final StringWriter writer = new StringWriter();
     AttesterDuties attesterDutiesFromIndicesAndState =
-        attesterDutiesGenerater.getAttesterDutiesFromIndicesAndState(
+        attesterDutiesGenerator.getAttesterDutiesFromIndicesAndState(
             state, epoch, validatorIndices, false);
 
-    try (final JsonGenerator gen = new ObjectMapper().createGenerator(writer)) {
-      RESPONSE_TYPE.serialize(attesterDutiesFromIndicesAndState, gen);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
     bh.consume(attesterDutiesFromIndicesAndState);
   }
 }
