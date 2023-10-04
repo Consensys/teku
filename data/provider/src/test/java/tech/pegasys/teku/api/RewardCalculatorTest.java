@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
@@ -142,10 +143,10 @@ public class RewardCalculatorTest {
         new RewardCalculator(TestSpecFactory.createMinimalPhase0());
     final DataStructureUtil dataStructureUtil =
         new DataStructureUtil(TestSpecFactory.createMinimalPhase0());
-    final BlockAndMetaData blockAndMetaData = mock(BlockAndMetaData.class);
-    when(blockAndMetaData.getData()).thenReturn(dataStructureUtil.randomSignedBeaconBlock());
+    final BlockContainer blockContainer = mock(BlockContainer.class);
+    when(blockContainer.getBlock()).thenReturn(dataStructureUtil.randomBeaconBlock());
     assertThatThrownBy(
-            () -> rewardCalculator.getBlockRewardData(blockAndMetaData, mock(BeaconState.class)))
+            () -> rewardCalculator.getBlockRewardData(blockContainer, mock(BeaconState.class)))
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("is pre altair,");
   }

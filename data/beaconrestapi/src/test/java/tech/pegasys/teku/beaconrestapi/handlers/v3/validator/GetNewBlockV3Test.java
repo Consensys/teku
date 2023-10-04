@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_BLOCK_VALUE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_VALUE;
@@ -54,6 +55,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
 
   private SpecMilestone specMilestone;
   private final UInt256 executionPayloadValue = UInt256.valueOf(12345);
+  private final UInt256 consensusBlockValue = UInt256.valueOf(6789);
   protected final BLSSignature signature = BLSTestUtil.randomSignature(1234);
 
   @BeforeEach
@@ -73,7 +75,10 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
     final BeaconBlock blindedBeaconBlock = dataStructureUtil.randomBlindedBeaconBlock(ONE);
     final BlockContainerAndMetaData<BlockContainer> blockContainerAndMetaData =
         new BlockContainerAndMetaData<>(
-            blindedBeaconBlock, spec.getGenesisSpec().getMilestone(), executionPayloadValue);
+            blindedBeaconBlock,
+            spec.getGenesisSpec().getMilestone(),
+            executionPayloadValue,
+            consensusBlockValue);
     doReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)))
         .when(validatorDataProvider)
         .produceBlock(ONE, signature, Optional.empty());
@@ -88,6 +93,8 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
         .isEqualTo(Boolean.toString(true));
     assertThat(request.getHeader(HEADER_EXECUTION_PAYLOAD_VALUE))
         .isEqualTo(executionPayloadValue.toDecimalString());
+    assertThat(request.getHeader(HEADER_CONSENSUS_BLOCK_VALUE))
+        .isEqualTo(consensusBlockValue.toDecimalString());
   }
 
   @TestTemplate
@@ -96,7 +103,10 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
     final BeaconBlock beaconblock = dataStructureUtil.randomBeaconBlock(ONE);
     final BlockContainerAndMetaData<BlockContainer> blockContainerAndMetaData =
         new BlockContainerAndMetaData<>(
-            beaconblock, spec.getGenesisSpec().getMilestone(), executionPayloadValue);
+            beaconblock,
+            spec.getGenesisSpec().getMilestone(),
+            executionPayloadValue,
+            consensusBlockValue);
     doReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)))
         .when(validatorDataProvider)
         .produceBlock(ONE, signature, Optional.empty());
@@ -111,6 +121,8 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
         .isEqualTo(Boolean.toString(false));
     assertThat(request.getHeader(HEADER_EXECUTION_PAYLOAD_VALUE))
         .isEqualTo(executionPayloadValue.toDecimalString());
+    assertThat(request.getHeader(HEADER_CONSENSUS_BLOCK_VALUE))
+        .isEqualTo(consensusBlockValue.toDecimalString());
   }
 
   @TestTemplate
@@ -119,7 +131,10 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
     final BlockContents blockContents = dataStructureUtil.randomBlockContents(ONE);
     final BlockContainerAndMetaData<BlockContainer> blockContainerAndMetaData =
         new BlockContainerAndMetaData<>(
-            blockContents, spec.getGenesisSpec().getMilestone(), executionPayloadValue);
+            blockContents,
+            spec.getGenesisSpec().getMilestone(),
+            executionPayloadValue,
+            consensusBlockValue);
     doReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)))
         .when(validatorDataProvider)
         .produceBlock(ONE, signature, Optional.empty());
@@ -133,6 +148,8 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
     assertThat(request.getHeader(HEADER_EXECUTION_PAYLOAD_BLINDED)).isEqualTo("false");
     assertThat(request.getHeader(HEADER_EXECUTION_PAYLOAD_VALUE))
         .isEqualTo(executionPayloadValue.toDecimalString());
+    assertThat(request.getHeader(HEADER_CONSENSUS_BLOCK_VALUE))
+        .isEqualTo(consensusBlockValue.toDecimalString());
   }
 
   @TestTemplate
@@ -142,7 +159,10 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
         dataStructureUtil.randomBlindedBlockContents(ONE);
     final BlockContainerAndMetaData<BlockContainer> blockContainerAndMetaData =
         new BlockContainerAndMetaData<>(
-            blindedBlockContents, spec.getGenesisSpec().getMilestone(), executionPayloadValue);
+            blindedBlockContents,
+            spec.getGenesisSpec().getMilestone(),
+            executionPayloadValue,
+            consensusBlockValue);
     doReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)))
         .when(validatorDataProvider)
         .produceBlock(ONE, signature, Optional.empty());
@@ -156,6 +176,8 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
     assertThat(request.getHeader(HEADER_EXECUTION_PAYLOAD_BLINDED)).isEqualTo("true");
     assertThat(request.getHeader(HEADER_EXECUTION_PAYLOAD_VALUE))
         .isEqualTo(executionPayloadValue.toDecimalString());
+    assertThat(request.getHeader(HEADER_CONSENSUS_BLOCK_VALUE))
+        .isEqualTo(consensusBlockValue.toDecimalString());
   }
 
   @TestTemplate
