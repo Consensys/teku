@@ -25,6 +25,8 @@ import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -40,6 +42,9 @@ import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 public class SyncCommitteeMessagePool implements SlotEventsChannel {
+
+  private static final Logger LOG = LogManager.getLogger();
+
   private final Subscribers<OperationAddedSubscriber<ValidatableSyncCommitteeMessage>> subscribers =
       Subscribers.create(true);
 
@@ -176,10 +181,13 @@ public class SyncCommitteeMessagePool implements SlotEventsChannel {
       IntIterator iterator = participationIndices.iterator();
       while (iterator.hasNext()) {
         int index = iterator.nextInt();
-        if (!this.participationIndices.add(index)) {
-          throw new IllegalStateException("Already added " + index);
+        if (this.participationIndices.add(index)) {
+          this.signatures.add(signature);
+        } else {
+          LOG.debug(
+              "Ignoring already aggregated signature from subcommittee participant index = {}",
+              participationIndices);
         }
-        this.signatures.add(signature);
       }
     }
 
