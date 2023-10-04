@@ -185,7 +185,8 @@ public class SyncCommitteeMessagePool implements SlotEventsChannel {
           this.signatures.add(signature);
         } else {
           LOG.trace(
-              "Ignoring already aggregated signature from subcommittee participant index = {}", index);
+              "Ignoring already aggregated signature from subcommittee participant index = {}",
+              index);
         }
       }
     }
