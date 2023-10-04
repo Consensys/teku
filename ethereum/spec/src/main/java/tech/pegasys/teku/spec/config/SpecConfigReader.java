@@ -107,7 +107,28 @@ public class SpecConfigReader {
           .put(Eth1Address.class, fromString(Eth1Address::fromHexString))
           .build();
 
-  final SpecConfigBuilder configBuilder = SpecConfig.builder();
+  final SpecConfigBuilder configBuilder;
+
+  public SpecConfigReader() {
+    // Values moved from Constants that should be defaulted to reduce compatibility issues
+    configBuilder =
+        SpecConfig.builder()
+            .gossipMaxSize(10485760)
+            .maxChunkSize(10485760)
+            .maxRequestBlocks(1024)
+            .epochsPerSubnetSubscription(256)
+            .ttfbTimeout(5)
+            .respTimeout(10)
+            .attestationPropagationSlotRange(32)
+            .maximumGossipClockDisparity(500)
+            .messageDomainInvalidSnappy(Bytes4.fromHexString("0x00000000"))
+            .messageDomainValidSnappy(Bytes4.fromHexString("0x01000000"))
+            .subnetsPerNode(2)
+            .minEpochsForBlockRequests(33024)
+            .attestationSubnetCount(64)
+            .attestationSubnetExtraBits(0)
+            .attestationSubnetPrefixBits(6);
+  }
 
   public SpecConfig build() {
     return configBuilder.build();
