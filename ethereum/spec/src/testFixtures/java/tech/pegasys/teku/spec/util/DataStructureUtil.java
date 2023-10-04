@@ -2168,6 +2168,19 @@ public final class DataStructureUtil {
     return new RandomBlobSidecarBuilder().slot(slot).index(index).blockRoot(blockRoot).build();
   }
 
+  public BlobSidecar randomBlobSidecar(
+      final UInt64 slot,
+      final Bytes32 blockRoot,
+      final Bytes32 parentBlockRoot,
+      final UInt64 index) {
+    return new RandomBlobSidecarBuilder()
+        .slot(slot)
+        .index(index)
+        .blockRoot(blockRoot)
+        .blockParentRoot(parentBlockRoot)
+        .build();
+  }
+
   public BlobSidecar randomBlobSidecar(final Bytes32 blockRoot, final UInt64 index) {
     return new RandomBlobSidecarBuilder().index(index).blockRoot(blockRoot).build();
   }
