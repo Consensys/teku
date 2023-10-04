@@ -24,7 +24,7 @@ public class IdealAttestationReward {
   private long target = 0L;
   private long source = 0L;
   private final Optional<UInt64> inclusionDelay = Optional.empty();
-  private long inactivity;
+  private long inactivity = 0L;
 
   public IdealAttestationReward(final UInt64 effectiveBalance) {
     this.effectiveBalance = effectiveBalance;
