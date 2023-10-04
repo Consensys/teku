@@ -23,6 +23,10 @@ import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
 
+/**
+ * Actually uses {@link tech.pegasys.teku.kzg.KZG#verifyBlobKzgProofBatch(List, List, List)} KZG
+ * interface in absence of non-batch interface
+ */
 public class KzgVerifyBlobProofTestExecutor extends KzgTestExecutor {
 
   @Override
