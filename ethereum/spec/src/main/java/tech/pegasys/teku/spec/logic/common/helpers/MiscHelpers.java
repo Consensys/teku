@@ -350,7 +350,7 @@ public class MiscHelpers {
   public boolean isDataAvailable(
       final UInt64 slot,
       final Bytes32 beaconBlockRoot,
-      final List<KZGCommitment> kzgCommitments,
+      final List<KZGCommitment> kzgCommitmentsFromBlock,
       final List<BlobSidecar> blobSidecars) {
     return false;
   }

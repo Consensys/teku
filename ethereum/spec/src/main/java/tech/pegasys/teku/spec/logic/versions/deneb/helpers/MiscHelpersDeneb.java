@@ -16,8 +16,10 @@ package tech.pegasys.teku.spec.logic.versions.deneb.helpers;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
@@ -65,26 +67,43 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   public boolean isDataAvailable(
       final UInt64 slot,
       final Bytes32 beaconBlockRoot,
-      final List<KZGCommitment> kzgCommitments,
+      final List<KZGCommitment> kzgCommitmentsFromBlock,
       final List<BlobSidecar> blobSidecars) {
-    blobSidecars.forEach(
-        blobSidecar -> {
-          checkArgument(
-              slot.equals(blobSidecar.getSlot()),
-              "Blob sidecar slot %s does not match block slot %s",
-              blobSidecar.getSlot(),
-              slot);
-          checkArgument(
-              beaconBlockRoot.equals(blobSidecar.getBlockRoot()),
-              "Blob sidecar block root %s does not match block root %s",
-              blobSidecar.getBlockRoot(),
-              beaconBlockRoot);
-        });
-    final List<Bytes> blobs =
-        blobSidecars.stream().map(BlobSidecar::getBlob).map(Blob::getBytes).toList();
-    final List<KZGProof> proofs = blobSidecars.stream().map(BlobSidecar::getKZGProof).toList();
+    checkArgument(
+        blobSidecars.size() == kzgCommitmentsFromBlock.size(),
+        "Blob sidecars count %s does not match KZG commitments count %s",
+        blobSidecars.size(),
+        kzgCommitmentsFromBlock.size());
 
-    return kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, proofs);
+    final List<Bytes> blobs = new ArrayList<>();
+    final List<KZGProof> proofs = new ArrayList<>();
+
+    IntStream.range(0, blobSidecars.size())
+        .forEach(
+            index -> {
+              final BlobSidecar blobSidecar = blobSidecars.get(index);
+
+              checkArgument(
+                  slot.equals(blobSidecar.getSlot()),
+                  "Blob sidecar slot %s does not match block slot %s",
+                  blobSidecar.getSlot(),
+                  slot);
+              checkArgument(
+                  beaconBlockRoot.equals(blobSidecar.getBlockRoot()),
+                  "Blob sidecar block root %s does not match block root %s",
+                  blobSidecar.getBlockRoot(),
+                  beaconBlockRoot);
+              checkArgument(
+                  kzgCommitmentsFromBlock.get(index).equals(blobSidecar.getKZGCommitment()),
+                  "Blob sidecar KZG commitment %s does not match block KZG commitment %s",
+                  blobSidecar.getKZGCommitment(),
+                  kzgCommitmentsFromBlock.get(index));
+
+              blobs.add(blobSidecar.getBlob().getBytes());
+              proofs.add(blobSidecar.getKZGProof());
+            });
+
+    return kzg.verifyBlobKzgProofBatch(blobs, kzgCommitmentsFromBlock, proofs);
   }
 
   /**

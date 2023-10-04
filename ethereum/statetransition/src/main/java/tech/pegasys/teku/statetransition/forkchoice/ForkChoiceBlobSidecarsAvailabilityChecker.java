@@ -56,7 +56,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
 
   private final SafeFuture<BlobSidecarsAndValidationResult> validationResult = new SafeFuture<>();
 
-  private final Supplier<List<KZGCommitment>> kzgCommitmentsSupplier =
+  private final Supplier<List<KZGCommitment>> kzgCommitmentsFromBlockSupplier =
       createLazyKzgCommitmentsSupplier(this);
 
   private final Duration waitForTrackerCompletionTimeout;
@@ -106,17 +106,17 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
   @Override
   public BlobSidecarsAndValidationResult validateImmediately(final List<BlobSidecar> blobSidecars) {
 
-    final List<KZGCommitment> kzgCommitments = kzgCommitmentsSupplier.get();
+    final List<KZGCommitment> kzgCommitmentsFromBlock = kzgCommitmentsFromBlockSupplier.get();
 
     if (!blobSidecars.isEmpty()) {
-      return validateBatch(blobSidecars, kzgCommitments);
+      return validateBatch(blobSidecars, kzgCommitmentsFromBlock);
     }
 
     if (isBlockOutsideDataAvailabilityWindow()) {
       return BlobSidecarsAndValidationResult.NOT_REQUIRED;
     }
 
-    if (kzgCommitments.isEmpty()) {
+    if (kzgCommitmentsFromBlock.isEmpty()) {
       return BlobSidecarsAndValidationResult.validResult(List.of());
     }
 
@@ -124,7 +124,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
   }
 
   private BlobSidecarsAndValidationResult validateBatch(
-      final List<BlobSidecar> blobSidecars, final List<KZGCommitment> kzgCommitments) {
+      final List<BlobSidecar> blobSidecars, final List<KZGCommitment> kzgCommitmentsFromBlock) {
     final SlotAndBlockRoot slotAndBlockRoot = blockBlobSidecarsTracker.getSlotAndBlockRoot();
     try {
       if (!spec.atSlot(slotAndBlockRoot.getSlot())
@@ -132,7 +132,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
           .isDataAvailable(
               slotAndBlockRoot.getSlot(),
               slotAndBlockRoot.getBlockRoot(),
-              kzgCommitments,
+              kzgCommitmentsFromBlock,
               blobSidecars)) {
         return BlobSidecarsAndValidationResult.invalidResult(blobSidecars);
       }
@@ -153,7 +153,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
    *     be completed it returns empty
    */
   private Optional<BlobSidecarsAndValidationResult> validateImmediatelyAvailable() {
-    final List<KZGCommitment> kzgCommitmentsInBlock = kzgCommitmentsSupplier.get();
+    final List<KZGCommitment> kzgCommitmentsInBlock = kzgCommitmentsFromBlockSupplier.get();
 
     final List<KZGCommitment> kzgCommitmentsToValidate;
     final List<BlobSidecar> blobSidecarsToValidate;
@@ -266,7 +266,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
     final List<KZGCommitment> additionalKzgCommitmentsToBeValidated = new ArrayList<>();
     final List<BlobSidecar> additionalBlobSidecarsToBeValidated = new ArrayList<>();
 
-    final List<KZGCommitment> kzgCommitmentsInBlock = kzgCommitmentsSupplier.get();
+    final List<KZGCommitment> kzgCommitmentsInBlock = kzgCommitmentsFromBlockSupplier.get();
     final SortedMap<UInt64, BlobSidecar> completeBlobSidecars =
         blockBlobSidecarsTracker.getBlobSidecars();
 
@@ -330,7 +330,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
           completeValidatedBlobSidecars.add(blobSidecar);
         });
 
-    if (completeValidatedBlobSidecars.size() < kzgCommitmentsSupplier.get().size()) {
+    if (completeValidatedBlobSidecars.size() < kzgCommitmentsFromBlockSupplier.get().size()) {
       // we haven't verified enough blobs to match the commitments present in the block
       // this should never happen in practice. If it does, is likely a bug and should be fixed.
       checkState(
