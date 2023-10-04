@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.api.migrated;
 
-import java.security.InvalidParameterException;
 import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -53,30 +52,24 @@ public class TotalAttestationReward {
             .asDetailed()
             .orElseThrow(
                 () ->
-                    new InvalidParameterException(
+                    new IllegalArgumentException(
                         "TotalAttestationRewards requires a DetailedRewardAndPenalty instance"));
 
     this.head =
-        detailedRewardAndPenalty
-            .getReward(RewardComponent.HEAD)
-            .minus(detailedRewardAndPenalty.getPenalty(RewardComponent.HEAD))
-            .longValue();
+        detailedRewardAndPenalty.getReward(RewardComponent.HEAD).longValue()
+            - detailedRewardAndPenalty.getPenalty(RewardComponent.HEAD).longValue();
     this.target =
-        detailedRewardAndPenalty
-            .getReward(RewardComponent.TARGET)
-            .minus(detailedRewardAndPenalty.getPenalty(RewardComponent.TARGET))
-            .longValue();
+        detailedRewardAndPenalty.getReward(RewardComponent.TARGET).longValue()
+            - detailedRewardAndPenalty.getPenalty(RewardComponent.TARGET).longValue();
     this.source =
-        detailedRewardAndPenalty
-            .getReward(RewardComponent.SOURCE)
-            .minus(detailedRewardAndPenalty.getPenalty(RewardComponent.SOURCE))
-            .longValue();
-    this.inclusionDelay = Optional.empty();
+        detailedRewardAndPenalty.getReward(RewardComponent.SOURCE).longValue()
+            - detailedRewardAndPenalty.getPenalty(RewardComponent.SOURCE).longValue();
     this.inactivity =
-        detailedRewardAndPenalty
-            .getReward(RewardComponent.INACTIVITY)
-            .minus(detailedRewardAndPenalty.getPenalty(RewardComponent.INACTIVITY))
-            .longValue();
+        detailedRewardAndPenalty.getReward(RewardComponent.INACTIVITY).longValue()
+            - detailedRewardAndPenalty.getPenalty(RewardComponent.INACTIVITY).longValue();
+
+    // Inclusion delay will always be empty because we don't support phase0 on the Rewards API
+    this.inclusionDelay = Optional.empty();
   }
 
   public long getValidatorIndex() {
