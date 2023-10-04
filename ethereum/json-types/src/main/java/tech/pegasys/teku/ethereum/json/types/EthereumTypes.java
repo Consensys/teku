@@ -75,8 +75,9 @@ public class EthereumTypes {
           .formatter(KZGCommitment::toHexString)
           .parser(KZGCommitment::fromHexString)
           .example(
-              "0x1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505cc411d61252fb6cb3fa0017b679f8bb2305b26a285fa2737f175668d0dff91cc1b66ac1fb663c9bc59509846d6ec05345bd908eda73e670af888da41af171505")
-          .description("KZG Commitments")
+              "0xb09ce4964278eff81a976fbc552488cb84fc4a102f004c87"
+                  + "179cb912f49904d1e785ecaf5d184522a58e9035875440ef")
+          .description("KZG Commitment")
           .format("byte")
           .build();
 
