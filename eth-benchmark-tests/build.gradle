@@ -1,6 +1,8 @@
 idea {
   module {
     testSourceDirs += sourceSets.jmh.java.srcDirs
+    testSourceDirs += sourceSets.testFixtures.java.srcDirs
+
   }
 }
 
@@ -13,7 +15,7 @@ dependencies {
 
   implementation testFixtures(project(':ethereum:spec'))
   implementation testFixtures(project(':ethereum:statetransition'))
-  implementation testFixtures(project(':storage'))
+  jmhImplementation testFixtures(project(':eth-benchmark-tests'))
 
   implementation 'org.apache.tuweni:tuweni-bytes'
 
@@ -21,4 +23,17 @@ dependencies {
   jmhImplementation 'org.apache.tuweni:tuweni-ssz'
   jmhImplementation testFixtures(project(':ethereum:weaksubjectivity'))
   jmhImplementation testFixtures(project(':infrastructure:async'))
+
+  testFixturesImplementation project(':infrastructure:async')
+  testFixturesImplementation project(':infrastructure:bls')
+  testFixturesImplementation project(':infrastructure:time')
+  testFixturesImplementation project(':ethereum:spec')
+
+  testFixturesImplementation testFixtures(project(':infrastructure:bls'))
+  testFixturesImplementation testFixtures(project(':ethereum:spec'))
+  testFixturesImplementation testFixtures(project(':ethereum:statetransition'))
+  testFixturesImplementation testFixtures(project(':storage'))
+
+  testFixturesImplementation 'org.apache.tuweni:tuweni-bytes'
+  testFixturesImplementation 'org.apache.tuweni:tuweni-ssz'
 }
