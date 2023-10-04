@@ -63,6 +63,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
@@ -87,6 +88,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final Supplier<BlobSidecarsByRootRequestMessageSchema>
       blobSidecarsByRootRequestMessageSchema;
   private final Supplier<Integer> maxBlobsPerBlock;
+  private final Supplier<MiscHelpersDeneb> miscHelpersDeneb;
 
   DefaultEth2Peer(
       final Spec spec,
@@ -120,6 +122,9 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                         spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
                     .getBlobSidecarsByRootRequestMessageSchema());
     this.maxBlobsPerBlock = Suppliers.memoize(() -> getSpecConfigDeneb().getMaxBlobsPerBlock());
+    this.miscHelpersDeneb =
+        Suppliers.memoize(
+            () -> MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers()));
   }
 
   @Override
@@ -328,6 +333,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                       this,
                       listener,
                       maxBlobsPerBlock.get(),
+                      miscHelpersDeneb.get(),
                       request.getStartSlot(),
                       request.getCount()));
             })
