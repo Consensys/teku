@@ -180,13 +180,12 @@ public class SyncCommitteeMessagePool implements SlotEventsChannel {
     public void add(final IntSet participationIndices, final BLSSignature signature) {
       IntIterator iterator = participationIndices.iterator();
       while (iterator.hasNext()) {
-        int index = iterator.nextInt();
+        final int index = iterator.nextInt();
         if (this.participationIndices.add(index)) {
           this.signatures.add(signature);
         } else {
           LOG.debug(
-              "Ignoring already aggregated signature from subcommittee participant index = {}",
-              participationIndices);
+              "Ignoring already aggregated signature from subcommittee participant index = {}", index);
         }
       }
     }
