@@ -16,6 +16,11 @@ package tech.pegasys.teku.spec.config.builder;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -95,24 +100,40 @@ public class AltairBuilder implements ForkConfigBuilder<SpecConfig, SpecConfigAl
       SpecBuilderUtil.fillMissingValuesWithZeros(this);
     }
 
-    SpecBuilderUtil.validateConstant(
-        "inactivityPenaltyQuotientAltair", inactivityPenaltyQuotientAltair);
-    SpecBuilderUtil.validateConstant(
-        "minSlashingPenaltyQuotientAltair", minSlashingPenaltyQuotientAltair);
-    SpecBuilderUtil.validateConstant(
-        "proportionalSlashingMultiplierAltair", proportionalSlashingMultiplierAltair);
-    SpecBuilderUtil.validateConstant("syncCommitteeSize", syncCommitteeSize);
-    SpecBuilderUtil.validateConstant("inactivityScoreBias", inactivityScoreBias);
-    SpecBuilderUtil.validateConstant("inactivityScoreRecoveryRate", inactivityScoreRecoveryRate);
-    SpecBuilderUtil.validateConstant("epochsPerSyncCommitteePeriod", epochsPerSyncCommitteePeriod);
-    SpecBuilderUtil.validateConstant("altairForkVersion", altairForkVersion);
-    SpecBuilderUtil.validateConstant("altairForkEpoch", altairForkEpoch);
-    SpecBuilderUtil.validateConstant("minSyncCommitteeParticipants", minSyncCommitteeParticipants);
+    final List<Optional<String>> maybeErrors = new ArrayList<>();
+    final Map<String, Object> constants = getValidationMap();
+
+    constants.forEach((k, v) -> maybeErrors.add(SpecBuilderUtil.validateConstant(k, v)));
+
+    final List<String> fieldsFailingValidation =
+        maybeErrors.stream().filter(Optional::isPresent).map(Optional::get).toList();
+
+    if (!fieldsFailingValidation.isEmpty()) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Errors were found validating configuration, missing or invalid values for constants %s",
+              String.join(", ", fieldsFailingValidation)));
+    }
 
     // Config items were added after launch so provide defaults to preserve compatibility
     if (updateTimeout == null) {
       updateTimeout = epochsPerSyncCommitteePeriod * 32;
     }
+  }
+
+  private Map<String, Object> getValidationMap() {
+    final Map<String, Object> constants = new HashMap<>();
+    constants.put("inactivityPenaltyQuotientAltair", inactivityPenaltyQuotientAltair);
+    constants.put("minSlashingPenaltyQuotientAltair", minSlashingPenaltyQuotientAltair);
+    constants.put("proportionalSlashingMultiplierAltair", proportionalSlashingMultiplierAltair);
+    constants.put("syncCommitteeSize", syncCommitteeSize);
+    constants.put("inactivityScoreBias", inactivityScoreBias);
+    constants.put("inactivityScoreRecoveryRate", inactivityScoreRecoveryRate);
+    constants.put("epochsPerSyncCommitteePeriod", epochsPerSyncCommitteePeriod);
+    constants.put("altairForkVersion", altairForkVersion);
+    constants.put("altairForkEpoch", altairForkEpoch);
+    constants.put("minSyncCommitteeParticipants", minSyncCommitteeParticipants);
+    return constants;
   }
 
   @Override

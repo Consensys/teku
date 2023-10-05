@@ -16,6 +16,10 @@ package tech.pegasys.teku.spec.config.builder;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -147,21 +151,40 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
       SpecBuilderUtil.fillMissingValuesWithZeros(this);
     }
 
-    SpecBuilderUtil.validateConstant("denebForkEpoch", denebForkEpoch);
-    SpecBuilderUtil.validateConstant("denebForkVersion", denebForkVersion);
-    SpecBuilderUtil.validateConstant(
-        "maxPerEpochActivationChurnLimit", maxPerEpochActivationChurnLimit);
-    SpecBuilderUtil.validateConstant("fieldElementsPerBlob", fieldElementsPerBlob);
-    SpecBuilderUtil.validateConstant("maxBlobCommitmentsPerBlock", maxBlobCommitmentsPerBlock);
-    SpecBuilderUtil.validateConstant("maxBlobsPerBlock", maxBlobsPerBlock);
-    SpecBuilderUtil.validateConstant("maxRequestBlocksDeneb", maxRequestBlocksDeneb);
-    SpecBuilderUtil.validateConstant("maxRequestBlobSidecars", maxRequestBlobSidecars);
-    SpecBuilderUtil.validateConstant(
-        "minEpochsForBlobSidecarsRequests", minEpochsForBlobSidecarsRequests);
-    SpecBuilderUtil.validateConstant("blobSidecarSubnetCount", blobSidecarSubnetCount);
+    final List<Optional<String>> maybeErrors = new ArrayList<>();
+    final Map<String, Object> constants = getValidationMap();
+
+    constants.forEach((k, v) -> maybeErrors.add(SpecBuilderUtil.validateConstant(k, v)));
+
+    final List<String> fieldsFailingValidation =
+        maybeErrors.stream().filter(Optional::isPresent).map(Optional::get).toList();
+
+    if (!fieldsFailingValidation.isEmpty()) {
+      throw new IllegalArgumentException(
+          String.format(
+              "The specified network configuration had missing or invalid values for constants %s",
+              String.join(", ", fieldsFailingValidation)));
+    }
     if (!denebForkEpoch.equals(SpecConfig.FAR_FUTURE_EPOCH) && !kzgNoop) {
       SpecBuilderUtil.validateRequiredOptional("trustedSetupPath", trustedSetupPath);
     }
+  }
+
+  private Map<String, Object> getValidationMap() {
+    final Map<String, Object> constants = new HashMap<>();
+
+    constants.put("denebForkEpoch", denebForkEpoch);
+    constants.put("denebForkVersion", denebForkVersion);
+    constants.put("maxPerEpochActivationChurnLimit", maxPerEpochActivationChurnLimit);
+    constants.put("fieldElementsPerBlob", fieldElementsPerBlob);
+    constants.put("maxBlobCommitmentsPerBlock", maxBlobCommitmentsPerBlock);
+    constants.put("maxBlobsPerBlock", maxBlobsPerBlock);
+    constants.put("maxRequestBlocksDeneb", maxRequestBlocksDeneb);
+    constants.put("maxRequestBlobSidecars", maxRequestBlobSidecars);
+    constants.put("minEpochsForBlobSidecarsRequests", minEpochsForBlobSidecarsRequests);
+    constants.put("blobSidecarSubnetCount", blobSidecarSubnetCount);
+
+    return constants;
   }
 
   @Override

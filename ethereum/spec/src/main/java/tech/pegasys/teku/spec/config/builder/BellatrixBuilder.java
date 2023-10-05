@@ -18,6 +18,11 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -108,6 +113,36 @@ public class BellatrixBuilder implements ForkConfigBuilder<SpecConfigAltair, Spe
     SpecBuilderUtil.validateConstant("maxTransactionsPerPayload", maxTransactionsPerPayload);
     SpecBuilderUtil.validateConstant("bytesPerLogsBloom", bytesPerLogsBloom);
     SpecBuilderUtil.validateConstant("maxExtraDataBytes", maxExtraDataBytes);
+
+    final List<Optional<String>> maybeErrors = new ArrayList<>();
+    final Map<String, Object> constants = getValidationMap();
+
+    constants.forEach((k, v) -> maybeErrors.add(SpecBuilderUtil.validateConstant(k, v)));
+
+    final List<String> fieldsFailingValidation =
+        maybeErrors.stream().filter(Optional::isPresent).map(Optional::get).toList();
+
+    if (!fieldsFailingValidation.isEmpty()) {
+      throw new IllegalArgumentException(
+          String.format(
+              "The specified network configuration had missing or invalid values for constants %s",
+              String.join(", ", fieldsFailingValidation)));
+    }
+  }
+
+  private Map<String, Object> getValidationMap() {
+    final Map<String, Object> constants = new HashMap<>();
+    constants.put("bellatrixForkVersion", bellatrixForkVersion);
+    constants.put("bellatrixForkEpoch", bellatrixForkEpoch);
+    constants.put("inactivityPenaltyQuotientBellatrix", inactivityPenaltyQuotientBellatrix);
+    constants.put("minSlashingPenaltyQuotientBellatrix", minSlashingPenaltyQuotientBellatrix);
+    constants.put(
+        "proportionalSlashingMultiplierBellatrix", proportionalSlashingMultiplierBellatrix);
+    constants.put("maxBytesPerTransaction", maxBytesPerTransaction);
+    constants.put("maxTransactionsPerPayload", maxTransactionsPerPayload);
+    constants.put("bytesPerLogsBloom", bytesPerLogsBloom);
+    constants.put("maxExtraDataBytes", maxExtraDataBytes);
+    return constants;
   }
 
   @Override

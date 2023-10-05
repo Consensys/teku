@@ -22,12 +22,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.networks.Eth2Presets;
 
 public class SpecConfigLoader {
+  private static final Logger LOG = LogManager.getLogger();
   private static final List<String> AVAILABLE_PRESETS =
       List.of("phase0", "altair", "bellatrix", "capella", "deneb");
   private static final String CONFIG_PATH = "configs/";
@@ -63,6 +66,17 @@ public class SpecConfigLoader {
         applyPreset("remote", reader, true, config.get(SpecConfigReader.PRESET_KEY));
       } catch (IOException e) {
         throw new UncheckedIOException(e);
+      }
+    }
+    if (config.containsKey(SpecConfigReader.CONFIG_NAME_KEY)) {
+      final String configNameKey = config.get(SpecConfigReader.CONFIG_NAME_KEY);
+      try {
+        processConfig(configNameKey, reader, true);
+      } catch (IllegalArgumentException exception) {
+        LOG.debug(
+            "Failed to load base configuration from {}, {}",
+            () -> configNameKey,
+            exception::getMessage);
       }
     }
     reader.loadFromMap(config, true);

@@ -16,9 +16,14 @@ package tech.pegasys.teku.spec.config.builder;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -28,6 +33,7 @@ import tech.pegasys.teku.spec.config.SpecConfigPhase0;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
 public class SpecConfigBuilder {
+  private static final Logger LOG = LogManager.getLogger();
   private final Map<String, Object> rawConfig = new HashMap<>();
 
   // Misc
@@ -202,76 +208,91 @@ public class SpecConfigBuilder {
     return builderChain.build(config);
   }
 
-  private void validate() {
-    checkArgument(rawConfig.size() > 0, "Raw spec config must be provided");
-    SpecBuilderUtil.validateConstant("eth1FollowDistance", eth1FollowDistance);
-    SpecBuilderUtil.validateConstant("maxCommitteesPerSlot", maxCommitteesPerSlot);
-    SpecBuilderUtil.validateConstant("targetCommitteeSize", targetCommitteeSize);
-    SpecBuilderUtil.validateConstant("maxValidatorsPerCommittee", maxValidatorsPerCommittee);
-    SpecBuilderUtil.validateConstant("minPerEpochChurnLimit", minPerEpochChurnLimit);
-    SpecBuilderUtil.validateConstant("churnLimitQuotient", churnLimitQuotient);
-    SpecBuilderUtil.validateConstant("shuffleRoundCount", shuffleRoundCount);
-    SpecBuilderUtil.validateConstant(
-        "minGenesisActiveValidatorCount", minGenesisActiveValidatorCount);
-    SpecBuilderUtil.validateConstant("minGenesisTime", minGenesisTime);
-    SpecBuilderUtil.validateConstant("hysteresisQuotient", hysteresisQuotient);
-    SpecBuilderUtil.validateConstant("hysteresisDownwardMultiplier", hysteresisDownwardMultiplier);
-    SpecBuilderUtil.validateConstant("hysteresisUpwardMultiplier", hysteresisUpwardMultiplier);
-    SpecBuilderUtil.validateConstant(
-        "proportionalSlashingMultiplier", proportionalSlashingMultiplier);
-    SpecBuilderUtil.validateConstant("minDepositAmount", minDepositAmount);
-    SpecBuilderUtil.validateConstant("maxEffectiveBalance", maxEffectiveBalance);
-    SpecBuilderUtil.validateConstant("ejectionBalance", ejectionBalance);
-    SpecBuilderUtil.validateConstant("effectiveBalanceIncrement", effectiveBalanceIncrement);
-    SpecBuilderUtil.validateConstant("genesisForkVersion", genesisForkVersion);
-    SpecBuilderUtil.validateConstant("genesisDelay", genesisDelay);
-    SpecBuilderUtil.validateConstant("secondsPerSlot", secondsPerSlot);
-    SpecBuilderUtil.validateConstant("minAttestationInclusionDelay", minAttestationInclusionDelay);
-    SpecBuilderUtil.validateConstant("slotsPerEpoch", slotsPerEpoch);
-    SpecBuilderUtil.validateConstant("minSeedLookahead", minSeedLookahead);
-    SpecBuilderUtil.validateConstant("maxSeedLookahead", maxSeedLookahead);
-    SpecBuilderUtil.validateConstant("minEpochsToInactivityPenalty", minEpochsToInactivityPenalty);
-    SpecBuilderUtil.validateConstant("epochsPerEth1VotingPeriod", epochsPerEth1VotingPeriod);
-    SpecBuilderUtil.validateConstant("slotsPerHistoricalRoot", slotsPerHistoricalRoot);
-    SpecBuilderUtil.validateConstant(
-        "minValidatorWithdrawabilityDelay", minValidatorWithdrawabilityDelay);
-    SpecBuilderUtil.validateConstant("shardCommitteePeriod", shardCommitteePeriod);
-    SpecBuilderUtil.validateConstant("epochsPerHistoricalVector", epochsPerHistoricalVector);
-    SpecBuilderUtil.validateConstant("epochsPerSlashingsVector", epochsPerSlashingsVector);
-    SpecBuilderUtil.validateConstant("historicalRootsLimit", historicalRootsLimit);
-    SpecBuilderUtil.validateConstant("validatorRegistryLimit", validatorRegistryLimit);
-    SpecBuilderUtil.validateConstant("baseRewardFactor", baseRewardFactor);
-    SpecBuilderUtil.validateConstant("whistleblowerRewardQuotient", whistleblowerRewardQuotient);
-    SpecBuilderUtil.validateConstant("proposerRewardQuotient", proposerRewardQuotient);
-    SpecBuilderUtil.validateConstant("inactivityPenaltyQuotient", inactivityPenaltyQuotient);
-    SpecBuilderUtil.validateConstant("minSlashingPenaltyQuotient", minSlashingPenaltyQuotient);
-    SpecBuilderUtil.validateConstant("maxProposerSlashings", maxProposerSlashings);
-    SpecBuilderUtil.validateConstant("maxAttesterSlashings", maxAttesterSlashings);
-    SpecBuilderUtil.validateConstant("maxAttestations", maxAttestations);
-    SpecBuilderUtil.validateConstant("maxDeposits", maxDeposits);
-    SpecBuilderUtil.validateConstant("maxVoluntaryExits", maxVoluntaryExits);
-    SpecBuilderUtil.validateConstant("secondsPerEth1Block", secondsPerEth1Block);
-    SpecBuilderUtil.validateConstant("safeSlotsToUpdateJustified", safeSlotsToUpdateJustified);
-    SpecBuilderUtil.validateConstant("depositChainId", depositChainId);
-    SpecBuilderUtil.validateConstant("depositNetworkId", depositNetworkId);
-    SpecBuilderUtil.validateConstant("depositContractAddress", depositContractAddress);
+  private Map<String, Object> getValidationMap() {
+    final Map<String, Object> constants = new HashMap<>();
+    constants.put("eth1FollowDistance", eth1FollowDistance);
+    constants.put("maxCommitteesPerSlot", maxCommitteesPerSlot);
+    constants.put("targetCommitteeSize", targetCommitteeSize);
+    constants.put("maxValidatorsPerCommittee", maxValidatorsPerCommittee);
+    constants.put("minPerEpochChurnLimit", minPerEpochChurnLimit);
+    constants.put("churnLimitQuotient", churnLimitQuotient);
+    constants.put("shuffleRoundCount", shuffleRoundCount);
+    constants.put("minGenesisActiveValidatorCount", minGenesisActiveValidatorCount);
+    constants.put("minGenesisTime", minGenesisTime);
+    constants.put("hysteresisQuotient", hysteresisQuotient);
+    constants.put("hysteresisDownwardMultiplier", hysteresisDownwardMultiplier);
+    constants.put("hysteresisUpwardMultiplier", hysteresisUpwardMultiplier);
+    constants.put("proportionalSlashingMultiplier", proportionalSlashingMultiplier);
+    constants.put("minDepositAmount", minDepositAmount);
+    constants.put("maxEffectiveBalance", maxEffectiveBalance);
+    constants.put("ejectionBalance", ejectionBalance);
+    constants.put("effectiveBalanceIncrement", effectiveBalanceIncrement);
+    constants.put("genesisForkVersion", genesisForkVersion);
+    constants.put("genesisDelay", genesisDelay);
+    constants.put("secondsPerSlot", secondsPerSlot);
+    constants.put("minAttestationInclusionDelay", minAttestationInclusionDelay);
+    constants.put("slotsPerEpoch", slotsPerEpoch);
+    constants.put("minSeedLookahead", minSeedLookahead);
+    constants.put("maxSeedLookahead", maxSeedLookahead);
+    constants.put("minEpochsToInactivityPenalty", minEpochsToInactivityPenalty);
+    constants.put("epochsPerEth1VotingPeriod", epochsPerEth1VotingPeriod);
+    constants.put("slotsPerHistoricalRoot", slotsPerHistoricalRoot);
+    constants.put("minValidatorWithdrawabilityDelay", minValidatorWithdrawabilityDelay);
+    constants.put("shardCommitteePeriod", shardCommitteePeriod);
+    constants.put("epochsPerHistoricalVector", epochsPerHistoricalVector);
+    constants.put("epochsPerSlashingsVector", epochsPerSlashingsVector);
+    constants.put("historicalRootsLimit", historicalRootsLimit);
+    constants.put("validatorRegistryLimit", validatorRegistryLimit);
+    constants.put("baseRewardFactor", baseRewardFactor);
+    constants.put("whistleblowerRewardQuotient", whistleblowerRewardQuotient);
+    constants.put("proposerRewardQuotient", proposerRewardQuotient);
+    constants.put("inactivityPenaltyQuotient", inactivityPenaltyQuotient);
+    constants.put("minSlashingPenaltyQuotient", minSlashingPenaltyQuotient);
+    constants.put("maxProposerSlashings", maxProposerSlashings);
+    constants.put("maxAttesterSlashings", maxAttesterSlashings);
+    constants.put("maxAttestations", maxAttestations);
+    constants.put("maxDeposits", maxDeposits);
+    constants.put("maxVoluntaryExits", maxVoluntaryExits);
+    constants.put("secondsPerEth1Block", secondsPerEth1Block);
+    constants.put("safeSlotsToUpdateJustified", safeSlotsToUpdateJustified);
+    constants.put("depositChainId", depositChainId);
+    constants.put("depositNetworkId", depositNetworkId);
+    constants.put("depositContractAddress", depositContractAddress);
 
-    SpecBuilderUtil.validateConstant("gossipMaxSize", gossipMaxSize);
-    SpecBuilderUtil.validateConstant("maxChunkSize", maxChunkSize);
-    SpecBuilderUtil.validateConstant("maxRequestBlocks", maxRequestBlocks);
-    SpecBuilderUtil.validateConstant("epochsPerSubnetSubscription", epochsPerSubnetSubscription);
-    SpecBuilderUtil.validateConstant("minEpochsForBlockRequests", minEpochsForBlockRequests);
-    SpecBuilderUtil.validateConstant("ttfbTimeout", ttfbTimeout);
-    SpecBuilderUtil.validateConstant("respTimeout", respTimeout);
-    SpecBuilderUtil.validateConstant(
-        "attestationPropagationSlotRange", attestationPropagationSlotRange);
-    SpecBuilderUtil.validateConstant("maximumGossipClockDisparity", maximumGossipClockDisparity);
-    SpecBuilderUtil.validateConstant("messageDomainInvalidSnappy", messageDomainInvalidSnappy);
-    SpecBuilderUtil.validateConstant("messageDomainValidSnappy", messageDomainValidSnappy);
-    SpecBuilderUtil.validateConstant("subnetsPerNode", subnetsPerNode);
-    SpecBuilderUtil.validateConstant("attestationSubnetCount", attestationSubnetCount);
-    SpecBuilderUtil.validateConstant("attestationSubnetExtraBits", attestationSubnetExtraBits);
-    SpecBuilderUtil.validateConstant("attestationSubnetPrefixBits", attestationSubnetPrefixBits);
+    constants.put("gossipMaxSize", gossipMaxSize);
+    constants.put("maxChunkSize", maxChunkSize);
+    constants.put("maxRequestBlocks", maxRequestBlocks);
+    constants.put("epochsPerSubnetSubscription", epochsPerSubnetSubscription);
+    constants.put("minEpochsForBlockRequests", minEpochsForBlockRequests);
+    constants.put("ttfbTimeout", ttfbTimeout);
+    constants.put("respTimeout", respTimeout);
+    constants.put("attestationPropagationSlotRange", attestationPropagationSlotRange);
+    constants.put("maximumGossipClockDisparity", maximumGossipClockDisparity);
+    constants.put("messageDomainInvalidSnappy", messageDomainInvalidSnappy);
+    constants.put("messageDomainValidSnappy", messageDomainValidSnappy);
+    constants.put("subnetsPerNode", subnetsPerNode);
+    constants.put("attestationSubnetCount", attestationSubnetCount);
+    constants.put("attestationSubnetExtraBits", attestationSubnetExtraBits);
+    constants.put("attestationSubnetPrefixBits", attestationSubnetPrefixBits);
+    return constants;
+  }
+
+  private void validate() {
+    checkArgument(!rawConfig.isEmpty(), "Raw spec config must be provided");
+    final List<Optional<String>> maybeErrors = new ArrayList<>();
+    final Map<String, Object> constants = getValidationMap();
+
+    constants.forEach((k, v) -> maybeErrors.add(SpecBuilderUtil.validateConstant(k, v)));
+
+    final List<String> fieldsFailingValidation =
+        maybeErrors.stream().filter(Optional::isPresent).map(Optional::get).toList();
+
+    if (!fieldsFailingValidation.isEmpty()) {
+      throw new IllegalArgumentException(
+          String.format(
+              "The specified network configuration had missing or invalid values for constants %s",
+              String.join(", ", fieldsFailingValidation)));
+    }
 
     builderChain.validate();
   }

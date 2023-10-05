@@ -53,7 +53,7 @@ import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 public class SpecConfigReader {
   private static final Logger LOG = LogManager.getLogger();
   public static final String PRESET_KEY = "PRESET_BASE";
-  private static final String CONFIG_NAME_KEY = "CONFIG_NAME";
+  public static final String CONFIG_NAME_KEY = "CONFIG_NAME";
   private static final ImmutableSet<String> KEYS_TO_IGNORE =
       ImmutableSet.of(
           PRESET_KEY,
@@ -107,28 +107,7 @@ public class SpecConfigReader {
           .put(Eth1Address.class, fromString(Eth1Address::fromHexString))
           .build();
 
-  final SpecConfigBuilder configBuilder;
-
-  public SpecConfigReader() {
-    // Values moved from Constants that should be defaulted to reduce compatibility issues
-    configBuilder =
-        SpecConfig.builder()
-            .gossipMaxSize(10485760)
-            .maxChunkSize(10485760)
-            .maxRequestBlocks(1024)
-            .epochsPerSubnetSubscription(256)
-            .ttfbTimeout(5)
-            .respTimeout(10)
-            .attestationPropagationSlotRange(32)
-            .maximumGossipClockDisparity(500)
-            .messageDomainInvalidSnappy(Bytes4.fromHexString("0x00000000"))
-            .messageDomainValidSnappy(Bytes4.fromHexString("0x01000000"))
-            .subnetsPerNode(2)
-            .minEpochsForBlockRequests(33024)
-            .attestationSubnetCount(64)
-            .attestationSubnetExtraBits(0)
-            .attestationSubnetPrefixBits(6);
-  }
+  final SpecConfigBuilder configBuilder = SpecConfig.builder();
 
   public SpecConfig build() {
     return configBuilder.build();

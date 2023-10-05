@@ -31,7 +31,7 @@ public class SpecConfigReaderTest {
 
     assertThatThrownBy(reader::build)
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Missing value for spec constant 'MIN_PER_EPOCH_CHURN_LIMIT'");
+        .hasMessageContaining("MIN_PER_EPOCH_CHURN_LIMIT");
   }
 
   @Test
@@ -49,7 +49,7 @@ public class SpecConfigReaderTest {
                                 bellatrixBuilder ->
                                     bellatrixBuilder.bellatrixForkEpoch(UInt64.ZERO))))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Missing value for spec constant 'EPOCHS_PER_SYNC_COMMITTEE_PERIOD'");
+        .hasMessageContaining("EPOCHS_PER_SYNC_COMMITTEE_PERIOD");
   }
 
   @Test
@@ -88,7 +88,7 @@ public class SpecConfigReaderTest {
 
     assertThatThrownBy(reader::build)
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Missing value for spec constant");
+        .hasMessageContaining("missing or invalid values for constants");
   }
 
   @Test
