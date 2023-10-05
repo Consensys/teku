@@ -84,7 +84,7 @@ public class SlotBasedScheduledDuties<P extends Duty, A extends Duty> implements
       final NavigableMap<UInt64, ? extends Duty> duties, final UInt64 slot) {
     discardDutiesBeforeSlot(duties, slot);
 
-    final Duty duty = duties.remove(slot);
+    final Duty duty = duties.remove(slot); // todo this is the duty!
     if (duty == null) {
       return SafeFuture.completedFuture(DutyResult.NO_OP);
     }

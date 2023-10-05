@@ -17,4 +17,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public interface Duty {
   SafeFuture<DutyResult> performDuty();
+
+  // todo option get name / or check class duty type?
 }
