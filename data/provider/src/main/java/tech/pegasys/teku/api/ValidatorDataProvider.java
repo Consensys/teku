@@ -128,7 +128,11 @@ public class ValidatorDataProvider {
   }
 
   private SafeFuture<Optional<BlockContainerAndMetaData<BlockContainer>>> lookUpBlockValues(
+<<<<<<< HEAD
       final Optional<BlockContainer> maybeBlockContainer) {
+=======
+      Optional<BlockContainer> maybeBlockContainer) {
+>>>>>>> a39b19201b (update produce block request)
     return maybeBlockContainer
         .map(
             blockContainer ->
