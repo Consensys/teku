@@ -68,8 +68,21 @@ public class RewardCalculator {
 
   ObjectAndMetaData<BlockRewardData> getBlockRewardData(
       final BlockAndMetaData blockAndMetaData, final BeaconState parentState) {
+    final BeaconBlock block = blockAndMetaData.getData().getMessage();
+    if (!spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
+      throw new BadRequestException(
+          "Slot "
+              + block.getSlot()
+              + " is pre altair, and no sync committee information is available");
+    }
+
+    final BeaconState preState = getPreState(block.getSlot(), parentState);
+
+    final SpecVersion specVersion = spec.atSlot(preState.getSlot());
     return blockAndMetaData.map(
-        __ -> getBlockRewardData(blockAndMetaData.getData().getMessage(), parentState));
+        __ ->
+            calculateBlockRewards(
+                block, BlockProcessorAltair.required(specVersion.getBlockProcessor()), preState));
   }
 
   public BlockRewardData getBlockRewardData(
