@@ -23,4 +23,4 @@ the [releases page](https://github.com/Consensys/teku/releases).
   been updated to support older GLIBC versions (ie Ubuntu 20.04 and Debian 11).
 
 ### Bug Fixes
-- Fixed an issue in configuration loading, where network attributes moved from constants were stopping old configuration from loading.
+- During network configuration load, all missing fields will now be reported, rather than just the first missing field causing failure.
