@@ -320,7 +320,8 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
   @Test
   public void getSyncCommitteeRewardsFromBlockId_slotIsPreAltair() {
     final ChainDataProvider provider =
-        new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculatorMock);
+        new ChainDataProvider(
+            spec, recentChainData, combinedChainDataClient, new RewardCalculator(spec));
     final SafeFuture<Optional<SyncCommitteeRewardData>> future =
         provider.getSyncCommitteeRewardsFromBlockId("head", Set.of());
     assertThat(future).isCompletedExceptionally();

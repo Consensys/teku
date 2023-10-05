@@ -135,7 +135,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager =
       mock(ExecutionLayerBlockProductionManager.class);
 
-  protected final RewardCalculator rewardCalculator = mock(RewardCalculator.class);
+  protected RewardCalculator rewardCalculator = mock(RewardCalculator.class);
 
   protected OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
 

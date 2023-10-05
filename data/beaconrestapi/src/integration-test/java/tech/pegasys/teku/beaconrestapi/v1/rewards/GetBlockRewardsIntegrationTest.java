@@ -21,6 +21,7 @@ import java.io.IOException;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.RewardCalculator;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.rewards.GetBlockRewards;
 import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
@@ -37,6 +38,7 @@ public class GetBlockRewardsIntegrationTest extends AbstractDataBackedRestAPIInt
   @BeforeEach
   public void setup() {
     spec = TestSpecFactory.createMinimalAltair();
+    rewardCalculator = new RewardCalculator(spec);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
     chainBuilder.generateBlocksUpToSlot(10);

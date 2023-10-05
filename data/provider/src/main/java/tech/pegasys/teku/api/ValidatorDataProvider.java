@@ -129,12 +129,16 @@ public class ValidatorDataProvider {
 
   private SafeFuture<Optional<BlockContainerAndMetaData<BlockContainer>>> lookUpBlockValues(
       Optional<BlockContainer> maybeBlockContainer) {
-    final BlockContainer blockContainer = maybeBlockContainer.orElseThrow();
-    return retrieveExecutionPayloadValue(blockContainer.getSlot())
-        .thenCombine(
-            retrieveConsensusBlockRewards(blockContainer),
-            (executionPayloadValue, consensusBlockValue) ->
-                addMetaData(maybeBlockContainer, executionPayloadValue, consensusBlockValue));
+    return maybeBlockContainer
+        .map(
+            blockContainer ->
+                retrieveExecutionPayloadValue(maybeBlockContainer.get().getSlot())
+                    .thenCombine(
+                        retrieveConsensusBlockRewards(maybeBlockContainer.get()),
+                        (executionPayloadValue, consensusBlockValue) ->
+                            addMetaData(
+                                maybeBlockContainer, executionPayloadValue, consensusBlockValue)))
+        .orElse(SafeFuture.completedFuture(Optional.empty()));
   }
 
   private Optional<BlockContainerAndMetaData<BlockContainer>> addMetaData(
