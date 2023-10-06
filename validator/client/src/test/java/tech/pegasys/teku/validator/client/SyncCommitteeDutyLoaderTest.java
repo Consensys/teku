@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -147,6 +148,17 @@ class SyncCommitteeDutyLoaderTest {
                 .getGauge(TekuMetricCategory.VALIDATOR, "current_sync_committee_last_epoch")
                 .getValue())
         .isEqualTo(63.0);
+  }
+
+  @Test
+  void shouldCreateJustASingleMetricsGauge() {
+    final UInt64 epoch = UInt64.valueOf(56);
+    when(validatorApiChannel.getSyncCommitteeDuties(epoch, validatorIndices))
+        .thenReturn(
+            SafeFuture.completedFuture(Optional.of(new SyncCommitteeDuties(false, List.of()))));
+    loadDuties(epoch);
+
+    assertThatCode(() -> loadDuties(epoch)).doesNotThrowAnyException();
   }
 
   private SyncCommitteeScheduledDuties loadDuties(final UInt64 epoch) {

@@ -87,6 +87,7 @@ public class BlockArchiveGenerator {
     generator.generateBlocks();
   }
 
+  @SuppressWarnings("StaticAssignmentInConstructor")
   private BlockArchiveGenerator(final int validatorCount, final int epochCount) {
     this.validatorCount = validatorCount;
     this.epochCount = epochCount;
@@ -149,7 +150,7 @@ public class BlockArchiveGenerator {
               "   -> Processed: "
                   + currentSlot
                   + ", "
-                  + (timeProvider.getTimeInMillis().minusMinZero(slotStart))
+                  + timeProvider.getTimeInMillis().minusMinZero(slotStart)
                   + " ms");
         }
 

@@ -25,7 +25,8 @@ public enum EventType {
   chain_reorg,
   sync_state,
   contribution_and_proof,
-  bls_to_execution_change;
+  bls_to_execution_change,
+  blob_sidecar;
 
   public static List<EventType> getTopics(List<String> topics) {
     return topics.stream().map(EventType::valueOf).toList();

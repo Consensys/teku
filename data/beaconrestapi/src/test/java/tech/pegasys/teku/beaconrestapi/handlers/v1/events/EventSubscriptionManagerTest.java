@@ -44,6 +44,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -54,7 +55,7 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ReorgContext;
 
 public class EventSubscriptionManagerTest {
-  private final Spec spec = TestSpecFactory.createMinimalCapella();
+  private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final SpecConfig specConfig = spec.getGenesisSpecConfig();
   private final DataStructureUtil data = new DataStructureUtil(spec);
   protected final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
@@ -94,6 +95,7 @@ public class EventSubscriptionManagerTest {
   private final SyncState sampleSyncState = SyncState.IN_SYNC;
   private final SignedBeaconBlock sampleBlock =
       SignedBeaconBlock.create(data.randomSignedBeaconBlock(0));
+  private final BlobSidecar sampleBlobSidecar = data.randomBlobSidecar();
   private final Attestation sampleAttestation = data.randomAttestation(0);
   private final SignedVoluntaryExit sampleVoluntaryExit = data.randomSignedVoluntaryExit();
   private final SignedBlsToExecutionChange sampleBlsToExecutionChange =
@@ -116,6 +118,7 @@ public class EventSubscriptionManagerTest {
     when(res.getOutputStream()).thenReturn(outputStream);
     manager =
         new EventSubscriptionManager(
+            spec,
             nodeDataProvider,
             chainDataProvider,
             syncDataProvider,
@@ -206,6 +209,15 @@ public class EventSubscriptionManagerTest {
   }
 
   @Test
+  void shouldPropagateBlobSidecar() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=blob_sidecar");
+    manager.registerClient(client1);
+
+    triggerBlobSidecarEvent();
+    checkEvent("blob_sidecar", BlobSidecarEvent.create(spec, sampleBlobSidecar));
+  }
+
+  @Test
   void shouldPropagateAttestation() throws IOException {
     when(req.getQueryString()).thenReturn("&topics=attestation");
     manager.registerClient(client1);
@@ -255,6 +267,15 @@ public class EventSubscriptionManagerTest {
     manager.registerClient(client1);
 
     triggerBlockEvent();
+    assertThat(outputStream.countEvents()).isEqualTo(0);
+  }
+
+  @Test
+  void shouldNotGetBlobSidecarIfNotSubscribed() {
+    when(req.getQueryString()).thenReturn("&topics=head");
+    manager.registerClient(client1);
+
+    triggerBlobSidecarEvent();
     assertThat(outputStream.countEvents()).isEqualTo(0);
   }
 
@@ -312,6 +333,11 @@ public class EventSubscriptionManagerTest {
 
   private void triggerBlockEvent() {
     manager.onNewBlock(sampleBlock.asInternalSignedBeaconBlock(spec), false);
+    asyncRunner.executeQueuedActions();
+  }
+
+  private void triggerBlobSidecarEvent() {
+    manager.onNewBlobSidecar(sampleBlobSidecar);
     asyncRunner.executeQueuedActions();
   }
 

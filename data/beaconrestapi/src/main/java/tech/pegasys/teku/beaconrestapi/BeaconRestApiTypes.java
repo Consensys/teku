@@ -186,7 +186,7 @@ public class BeaconRestApiTypes {
           CoreTypes.string(
               "Event types to subscribe to."
                   + " Available values include: [`head`, `finalized_checkpoint`, `chain_reorg`, `block`, "
-                  + "`attestation`, `voluntary_exit`, `contribution_and_proof`]\n\n",
+                  + "`attestation`, `voluntary_exit`, `contribution_and_proof`, `blob_sidecar`]\n\n",
               "head"));
 
   public static final SerializableTypeDefinition<Bytes32> ROOT_TYPE =

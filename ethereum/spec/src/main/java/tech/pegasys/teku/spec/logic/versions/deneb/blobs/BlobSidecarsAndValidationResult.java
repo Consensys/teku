@@ -101,6 +101,10 @@ public class BlobSidecarsAndValidationResult {
     return isInvalid() || isNotAvailable();
   }
 
+  public boolean isSuccess() {
+    return isValid() || isNotRequired();
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {

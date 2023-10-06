@@ -28,14 +28,15 @@
               "effective_balance",
               "head",
               "target",
-              "source"
+              "source",
+              "inactivity"
             ],
             "properties": {
-              "effective_balance" : {
-                "type" : "string",
-                "description" : "unsigned 64 bit integer",
-                "example" : "1",
-                "format" : "uint64"
+              "effective_balance": {
+                "type": "string",
+                "description": "unsigned 64 bit integer",
+                "example": "1",
+                "format": "uint64"
               },
               "head": {
                 "type": "string",
@@ -54,6 +55,18 @@
                 "description": "long string",
                 "example": "1",
                 "format": "long"
+              },
+              "inclusion_delay": {
+                "type": "string",
+                "description": "unsigned 64 bit integer",
+                "example": "1",
+                "format": "uint64"
+              },
+              "inactivity": {
+                "type": "string",
+                "description": "long string",
+                "example": "1",
+                "format": "long"
               }
             }
           }
@@ -66,7 +79,8 @@
               "validator_index",
               "head",
               "target",
-              "source"
+              "source",
+              "inactivity"
             ],
             "properties": {
               "validator_index": {
@@ -93,11 +107,17 @@
                 "example": "1",
                 "format": "long"
               },
-              "inclusion_delay" : {
-                "type" : "string",
-                "description" : "unsigned 64 bit integer",
-                "example" : "1",
-                "format" : "uint64"
+              "inclusion_delay": {
+                "type": "string",
+                "description": "unsigned 64 bit integer",
+                "example": "1",
+                "format": "uint64"
+              },
+              "inactivity": {
+                "type": "string",
+                "description": "long string",
+                "example": "1",
+                "format": "long"
               }
             }
           }

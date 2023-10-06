@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.api.migrated;
 
-import java.security.InvalidParameterException;
 import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -28,14 +27,21 @@ public class TotalAttestationReward {
   private final long target;
   private final long source;
   private final Optional<UInt64> inclusionDelay;
+  private final long inactivity;
 
   public TotalAttestationReward(
-      long validatorIndex, long head, long target, long source, Optional<UInt64> inclusionDelay) {
+      long validatorIndex,
+      long head,
+      long target,
+      long source,
+      Optional<UInt64> inclusionDelay,
+      long inactivity) {
     this.validatorIndex = validatorIndex;
     this.head = head;
     this.target = target;
     this.source = source;
     this.inclusionDelay = inclusionDelay;
+    this.inactivity = inactivity;
   }
 
   public TotalAttestationReward(long validatorIndex, final RewardAndPenalty rewardAndPenalty) {
@@ -46,7 +52,7 @@ public class TotalAttestationReward {
             .asDetailed()
             .orElseThrow(
                 () ->
-                    new InvalidParameterException(
+                    new IllegalArgumentException(
                         "TotalAttestationRewards requires a DetailedRewardAndPenalty instance"));
 
     this.head =
@@ -58,6 +64,11 @@ public class TotalAttestationReward {
     this.source =
         detailedRewardAndPenalty.getReward(RewardComponent.SOURCE).longValue()
             - detailedRewardAndPenalty.getPenalty(RewardComponent.SOURCE).longValue();
+    this.inactivity =
+        detailedRewardAndPenalty.getReward(RewardComponent.INACTIVITY).longValue()
+            - detailedRewardAndPenalty.getPenalty(RewardComponent.INACTIVITY).longValue();
+
+    // Inclusion delay will always be empty because we don't support phase0 on the Rewards API
     this.inclusionDelay = Optional.empty();
   }
 
@@ -81,6 +92,10 @@ public class TotalAttestationReward {
     return inclusionDelay;
   }
 
+  public long getInactivity() {
+    return inactivity;
+  }
+
   @Override
   public boolean equals(Object o) {
     if (this == o) {
@@ -96,11 +111,12 @@ public class TotalAttestationReward {
         && head == that.head
         && target == that.target
         && source == that.source
-        && inclusionDelay.equals(that.inclusionDelay);
+        && inclusionDelay.equals(that.inclusionDelay)
+        && inactivity == that.inactivity;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(validatorIndex, head, target, source, inclusionDelay);
+    return Objects.hash(validatorIndex, head, target, source, inclusionDelay, inactivity);
   }
 }
