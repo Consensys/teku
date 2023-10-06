@@ -344,8 +344,8 @@ public class MiscHelpers {
   }
 
   /**
-   * Performs data availability by validating the blobs against the kzg commitments from the block.
-   * It will also check the slot and blockRoot consistency.
+   * Performs data availability check (just KZG validation) assuming blobSidecar content (slot,
+   * parent root, commitments) have been previously matched against the block
    */
   public boolean isDataAvailable(final List<BlobSidecar> blobSidecars) {
     return false;
