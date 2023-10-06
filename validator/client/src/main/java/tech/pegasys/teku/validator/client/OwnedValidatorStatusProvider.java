@@ -165,7 +165,7 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
       return;
     }
 
-    if (needToUpdateAllStatuses(possibleMissingEvents)) {
+    if (needToUpdateAllStatuses()) {
       validatorApiChannel
           .getValidatorStatuses(validators.getPublicKeys())
           .thenAccept(
@@ -185,6 +185,10 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
               .filter(key -> !latestValidatorStatuses.get().containsKey(key))
               .collect(Collectors.toSet());
       if (keysToUpdate.isEmpty()) {
+        if (possibleMissingEvents) {
+          validatorStatusSubscribers.forEach(
+              s -> s.onValidatorStatuses(latestValidatorStatuses.get(), true));
+        }
         return;
       }
       validatorApiChannel
@@ -219,8 +223,8 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
     updateValidatorCountMetrics(newValidatorStatuses);
   }
 
-  private boolean needToUpdateAllStatuses(final boolean possibleMissingEvents) {
-    if (lastRunEpoch.get() == null || possibleMissingEvents) {
+  private boolean needToUpdateAllStatuses() {
+    if (lastRunEpoch.get() == null) {
       return true;
     }
     return currentEpoch.get().isGreaterThan(lastRunEpoch.get());

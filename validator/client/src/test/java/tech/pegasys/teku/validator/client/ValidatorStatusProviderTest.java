@@ -14,11 +14,13 @@
 package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.spec.generator.signatures.NoOpLocalSigner.NO_OP_SIGNER;
 
@@ -181,10 +183,12 @@ public class ValidatorStatusProviderTest {
                 Optional.of(Map.of(validatorKey, ValidatorStatus.active_ongoing))));
 
     assertThat(provider.start()).isCompleted();
+    verify(validatorApiChannel).getValidatorStatuses(anyCollection());
     verify(validatorStatusSubscriber).onValidatorStatuses(anyMap(), eq(false));
 
     // Firing onPossibleMissedEvents()
     provider.onPossibleMissedEvents();
+    verifyNoMoreInteractions(validatorApiChannel);
     verify(validatorStatusSubscriber).onValidatorStatuses(anyMap(), eq(true));
   }
 }
