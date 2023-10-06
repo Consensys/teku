@@ -14,6 +14,7 @@
 package tech.pegasys.teku.api.migrated;
 
 import java.util.Objects;
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class IdealAttestationReward {
@@ -22,6 +23,8 @@ public class IdealAttestationReward {
   private long head = 0L;
   private long target = 0L;
   private long source = 0L;
+  private final Optional<UInt64> inclusionDelay = Optional.empty();
+  private long inactivity = 0L;
 
   public IdealAttestationReward(final UInt64 effectiveBalance) {
     this.effectiveBalance = effectiveBalance;
@@ -43,6 +46,14 @@ public class IdealAttestationReward {
     return source;
   }
 
+  public Optional<UInt64> getInclusionDelay() {
+    return inclusionDelay;
+  }
+
+  public long getInactivity() {
+    return inactivity;
+  }
+
   public void addHead(final long head) {
     this.head += head;
   }
@@ -53,6 +64,10 @@ public class IdealAttestationReward {
 
   public void addSource(final long source) {
     this.source += source;
+  }
+
+  public void addInactivity(final long inactivity) {
+    this.inactivity += inactivity;
   }
 
   @Override
@@ -69,11 +84,13 @@ public class IdealAttestationReward {
     return effectiveBalance.equals(that.effectiveBalance)
         && head == that.head
         && target == that.target
-        && source == that.source;
+        && source == that.source
+        && inclusionDelay.equals(that.inclusionDelay)
+        && inactivity == that.inactivity;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(effectiveBalance, head, target, source);
+    return Objects.hash(effectiveBalance, head, target, source, inclusionDelay, inactivity);
   }
 }

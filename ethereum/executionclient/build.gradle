@@ -16,7 +16,7 @@ dependencies {
   implementation 'io.jsonwebtoken:jjwt-api'
 
   runtimeOnly 'io.jsonwebtoken:jjwt-impl'
-  runtimeOnly 'io.jsonwebtoken:jjwt-jackson'
+  implementation 'io.jsonwebtoken:jjwt-jackson'
 
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':infrastructure:time'))
