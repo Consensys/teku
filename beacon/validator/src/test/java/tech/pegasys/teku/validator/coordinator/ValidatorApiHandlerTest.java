@@ -272,8 +272,6 @@ class ValidatorApiHandlerTest {
     final BeaconState state = createStateWithActiveValidators();
     when(chainDataClient.getStateAtSlotExact(previousEpochStartSlot))
         .thenReturn(completedFuture(Optional.of(state)));
-    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
-
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(ONE));
 
     final SafeFuture<Optional<AttesterDuties>> result =
@@ -313,7 +311,7 @@ class ValidatorApiHandlerTest {
         BLSPublicKey.fromBytesCompressed(state.getValidators().get(1).getPubkeyBytes());
     when(chainDataClient.getStateAtSlotExact(previousEpochStartSlot))
         .thenReturn(completedFuture(Optional.of(state)));
-    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(ONE));
 
     final SafeFuture<Optional<AttesterDuties>> result =
         validatorApiHandler.getAttestationDuties(EPOCH, IntList.of(1, 32));
@@ -329,7 +327,7 @@ class ValidatorApiHandlerTest {
         BLSPublicKey.fromBytesCompressed(state.getValidators().get(1).getPubkeyBytes());
     when(chainDataClient.getStateAtSlotExact(previousEpochStartSlot))
         .thenReturn(completedFuture(Optional.of(state)));
-    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(2));
 
     final SafeFuture<Optional<AttesterDuties>> result =
         validatorApiHandler.getAttestationDuties(EPOCH, IntList.of(1, 32));
@@ -1189,13 +1187,13 @@ class ValidatorApiHandlerTest {
                     && validatorLivenessAtEpoch.isLive());
   }
 
-  private BeaconState createStateWithActiveValidators() {
-    return createStateWithActiveValidators(previousEpochStartSlot);
-  }
-
   private <T> Optional<T> assertCompletedSuccessfully(final SafeFuture<Optional<T>> result) {
     assertThat(result).isCompleted();
     return safeJoin(result);
+  }
+
+  private BeaconState createStateWithActiveValidators() {
+    return createStateWithActiveValidators(previousEpochStartSlot);
   }
 
   private BeaconState createStateWithActiveValidators(final UInt64 slot) {
