@@ -207,6 +207,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
       final UInt64 epoch, final IntCollection validatorIndices) {
+
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
@@ -222,13 +223,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     }
     // what state can we use? If the current or next epoch, we can use the best state,
     // which would guarantee no state regeneration
-    final UInt64 currentEpoch = combinedChainDataClient.getCurrentEpoch();
-    final UInt64 slot;
-    if (epoch.isGreaterThanOrEqualTo(currentEpoch)) {
-      slot = combinedChainDataClient.getCurrentSlot();
-    } else {
-      slot = spec.getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(epoch);
-    }
+    final UInt64 slot = spec.getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(epoch);
 
     LOG.trace("Retrieving attestation duties from epoch {} using state at slot {}", epoch, slot);
     return combinedChainDataClient

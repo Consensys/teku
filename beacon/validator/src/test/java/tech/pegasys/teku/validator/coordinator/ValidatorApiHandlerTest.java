@@ -123,7 +123,6 @@ import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTra
 class ValidatorApiHandlerTest {
 
   private static final UInt64 EPOCH = UInt64.valueOf(13);
-  private static final UInt64 BEST_SLOT = UInt64.valueOf(108);
   private static final UInt64 PREVIOUS_EPOCH = EPOCH.minus(ONE);
 
   private final CombinedChainDataClient chainDataClient = mock(CombinedChainDataClient.class);
@@ -270,12 +269,12 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getAttestationDuties_shouldReturnNoDutiesWhenNoIndicesSpecified() {
-    final BeaconState state = createStateWithActiveValidators(BEST_SLOT);
-    when(chainDataClient.getStateAtSlotExact(BEST_SLOT))
+    final BeaconState state = createStateWithActiveValidators();
+    when(chainDataClient.getStateAtSlotExact(previousEpochStartSlot))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
 
-    when(chainDataClient.getCurrentSlot()).thenReturn(BEST_SLOT);
+    when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH.minus(ONE));
 
     final SafeFuture<Optional<AttesterDuties>> result =
         validatorApiHandler.getAttestationDuties(EPOCH, IntList.of());
@@ -309,11 +308,10 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getAttestationDuties_shouldReturnDutiesAndSkipMissingValidators() {
-    final BeaconState state = createStateWithActiveValidators(BEST_SLOT);
+    final BeaconState state = createStateWithActiveValidators();
     final BLSPublicKey validator1Key =
         BLSPublicKey.fromBytesCompressed(state.getValidators().get(1).getPubkeyBytes());
-    when(chainDataClient.getCurrentSlot()).thenReturn(BEST_SLOT);
-    when(chainDataClient.getStateAtSlotExact(BEST_SLOT))
+    when(chainDataClient.getStateAtSlotExact(previousEpochStartSlot))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
 
@@ -326,19 +324,18 @@ class ValidatorApiHandlerTest {
 
   @Test
   public void getAttestationDuties_shouldAllowOneEpochTolerance() {
-    final BeaconState state = createStateWithActiveValidators(BEST_SLOT);
+    final BeaconState state = createStateWithActiveValidators();
     final BLSPublicKey validator1Key =
         BLSPublicKey.fromBytesCompressed(state.getValidators().get(1).getPubkeyBytes());
-    when(chainDataClient.getCurrentSlot()).thenReturn(BEST_SLOT);
-    when(chainDataClient.getStateAtSlotExact(BEST_SLOT))
+    when(chainDataClient.getStateAtSlotExact(previousEpochStartSlot))
         .thenReturn(completedFuture(Optional.of(state)));
     when(chainDataClient.getCurrentEpoch()).thenReturn(EPOCH);
 
     final SafeFuture<Optional<AttesterDuties>> result =
-        validatorApiHandler.getAttestationDuties(EPOCH.plus(1), IntList.of(1, 32));
+        validatorApiHandler.getAttestationDuties(EPOCH, IntList.of(1, 32));
     final Optional<AttesterDuties> duties = assertCompletedSuccessfully(result);
     assertThat(duties.orElseThrow().getDuties())
-        .containsExactly(new AttesterDuty(validator1Key, 1, 4, 0, 1, 1, UInt64.valueOf(114)));
+        .containsExactly(new AttesterDuty(validator1Key, 1, 4, 0, 1, 1, UInt64.valueOf(108)));
   }
 
   @Test
@@ -1190,6 +1187,10 @@ class ValidatorApiHandlerTest {
             validatorLivenessAtEpoch ->
                 validatorLivenessAtEpoch.getIndex().equals(validatorIndex)
                     && validatorLivenessAtEpoch.isLive());
+  }
+
+  private BeaconState createStateWithActiveValidators() {
+    return createStateWithActiveValidators(previousEpochStartSlot);
   }
 
   private <T> Optional<T> assertCompletedSuccessfully(final SafeFuture<Optional<T>> result) {
