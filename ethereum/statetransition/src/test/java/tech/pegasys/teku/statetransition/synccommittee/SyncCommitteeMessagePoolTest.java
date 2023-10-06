@@ -247,6 +247,34 @@ class SyncCommitteeMessagePoolTest {
   }
 
   @Test
+  public void
+      shouldNotAggregateSignaturesFromRepeatedMessagesWhenSameSubcommitteeParticipationId() {
+    final SyncCommitteeMessage syncCommitteeMessage =
+        dataStructureUtil.randomSyncCommitteeMessage();
+
+    final ValidatableSyncCommitteeMessage message =
+        ValidatableSyncCommitteeMessage.fromNetwork(syncCommitteeMessage, 1);
+    message.setSubcommitteeAssignments(
+        SyncSubcommitteeAssignments.builder().addAssignment(1, 1).build());
+
+    addValidRemote(message);
+    // Duplicated message, should not aggregate signature a second time
+    addValidRemote(message);
+
+    final BLSSignature signature = message.getMessage().getSignature();
+    // Single signature expected on aggregate
+    final BLSSignature expectedAggregate = BLS.aggregate(List.of(signature));
+
+    final UInt64 slot = message.getSlot();
+    final Bytes32 blockRoot = message.getBeaconBlockRoot();
+
+    final Optional<SyncCommitteeContribution> contribution =
+        pool.createContribution(slot, blockRoot, 1);
+    assertThat(contribution).isPresent();
+    assertThat(contribution.orElseThrow().getSignature()).isEqualTo(expectedAggregate);
+  }
+
+  @Test
   void shouldAggregateSignatureMultipleTimesWhenValidatorInSameSubcommitteeMultipleTimes() {
     final ValidatableSyncCommitteeMessage message =
         ValidatableSyncCommitteeMessage.fromValidator(
