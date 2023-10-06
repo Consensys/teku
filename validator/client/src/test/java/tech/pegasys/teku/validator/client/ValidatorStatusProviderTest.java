@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -88,7 +89,7 @@ public class ValidatorStatusProviderTest {
     asyncRunner.executeQueuedActions();
 
     verify(validatorApiChannel, times(3)).getValidatorStatuses(validatorKeys);
-    verify(validatorStatusSubscriber).onValidatorStatuses(anyMap());
+    verify(validatorStatusSubscriber).onValidatorStatuses(anyMap(), eq(false));
     assertThat(provider.start()).isCompleted();
   }
 
@@ -120,7 +121,7 @@ public class ValidatorStatusProviderTest {
                 Optional.of(Map.of(validatorKey, ValidatorStatus.active_ongoing))));
 
     assertThat(provider.start()).isCompleted();
-    verify(validatorStatusSubscriber).onValidatorStatuses(anyMap());
+    verify(validatorStatusSubscriber).onValidatorStatuses(anyMap(), eq(false));
 
     final StubLabelledGauge gauge =
         metricsSystem.getLabelledGauge(TekuMetricCategory.VALIDATOR, VALIDATOR_COUNTS_METRIC);
@@ -130,7 +131,7 @@ public class ValidatorStatusProviderTest {
         .isEqualTo(OptionalDouble.of(0));
 
     provider.onSlot(spec.computeStartSlotAtEpoch(UInt64.ONE).plus(1));
-    verify(validatorStatusSubscriber, times(2)).onValidatorStatuses(anyMap());
+    verify(validatorStatusSubscriber, times(2)).onValidatorStatuses(anyMap(), eq(false));
 
     assertThat(gauge.getValue(ValidatorStatus.pending_initialized.name()))
         .isEqualTo(OptionalDouble.of(0));
@@ -149,7 +150,7 @@ public class ValidatorStatusProviderTest {
     @SuppressWarnings("unchecked")
     final ArgumentCaptor<Map<BLSPublicKey, ValidatorStatus>> subscriberCapture =
         ArgumentCaptor.forClass(Map.class);
-    verify(validatorStatusSubscriber).onValidatorStatuses(subscriberCapture.capture());
+    verify(validatorStatusSubscriber).onValidatorStatuses(subscriberCapture.capture(), eq(false));
     final Map<BLSPublicKey, ValidatorStatus> result1 = subscriberCapture.getValue();
     assertThat(result1.size()).isEqualTo(1);
     assertThat(result1.keySet().stream().findFirst()).contains(validatorKey);
@@ -165,9 +166,25 @@ public class ValidatorStatusProviderTest {
     ownedValidators.addValidator(validator2);
 
     provider.onValidatorsAdded();
-    verify(validatorStatusSubscriber, times(2)).onValidatorStatuses(subscriberCapture.capture());
+    verify(validatorStatusSubscriber, times(2))
+        .onValidatorStatuses(subscriberCapture.capture(), eq(false));
     final Map<BLSPublicKey, ValidatorStatus> result2 = subscriberCapture.getValue();
     assertThat(result2.size()).isEqualTo(2);
     assertThat(result2.keySet()).contains(validatorKey, validatorKey2);
+  }
+
+  @Test
+  void shouldPropagatePossibleMissingEvents() {
+    when(validatorApiChannel.getValidatorStatuses(validatorKeys))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(Map.of(validatorKey, ValidatorStatus.active_ongoing))));
+
+    assertThat(provider.start()).isCompleted();
+    verify(validatorStatusSubscriber).onValidatorStatuses(anyMap(), eq(false));
+
+    // Firing onPossibleMissedEvents()
+    provider.onPossibleMissedEvents();
+    verify(validatorStatusSubscriber).onValidatorStatuses(anyMap(), eq(true));
   }
 }

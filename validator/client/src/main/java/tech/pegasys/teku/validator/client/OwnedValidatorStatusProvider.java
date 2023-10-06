@@ -91,7 +91,7 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
     currentEpoch.set(epoch);
     final UInt64 firstSlotOfEpoch = spec.computeStartSlotAtEpoch(epoch);
     if (slot.equals(firstSlotOfEpoch.plus(1))) {
-      updateValidatorStatuses();
+      updateValidatorStatuses(false);
     }
   }
 
@@ -104,12 +104,12 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
 
   @Override
   public void onPossibleMissedEvents() {
-    updateValidatorStatuses();
+    updateValidatorStatuses(true);
   }
 
   @Override
   public void onValidatorsAdded() {
-    updateValidatorStatuses();
+    updateValidatorStatuses(false);
   }
 
   @Override
@@ -144,7 +144,7 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
               if (maybeValidatorStatuses.isEmpty()) {
                 return retryInitialValidatorStatusCheck();
               }
-              onUpdatedValidatorStatuses(maybeValidatorStatuses.get(), true);
+              onUpdatedValidatorStatuses(maybeValidatorStatuses.get(), false, true);
               startupComplete.set(true);
               return SafeFuture.COMPLETE;
             })
@@ -156,7 +156,7 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
         this::initValidatorStatuses, INITIAL_STATUS_CHECK_RETRY_PERIOD);
   }
 
-  public void updateValidatorStatuses() {
+  public void updateValidatorStatuses(final boolean possibleMissingEvents) {
     if (!startupComplete.get() || validators.hasNoValidators()) {
       return;
     }
@@ -165,7 +165,7 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
       return;
     }
 
-    if (needToUpdateAllStatuses()) {
+    if (needToUpdateAllStatuses(possibleMissingEvents)) {
       validatorApiChannel
           .getValidatorStatuses(validators.getPublicKeys())
           .thenAccept(
@@ -174,7 +174,8 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
                   STATUS_LOG.unableToRetrieveValidatorStatusesFromBeaconNode();
                   return;
                 }
-                onUpdatedValidatorStatuses(maybeNewValidatorStatuses.get(), true);
+                onUpdatedValidatorStatuses(
+                    maybeNewValidatorStatuses.get(), possibleMissingEvents, true);
               })
           .alwaysRun(() -> lookupInProgress.set(false))
           .finish(error -> LOG.error("Failed to update validator statuses", error));
@@ -198,7 +199,7 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
                 final Map<BLSPublicKey, ValidatorStatus> oldStatuses =
                     Optional.ofNullable(latestValidatorStatuses.get()).orElse(Map.of());
                 newStatuses.putAll(oldStatuses);
-                onUpdatedValidatorStatuses(newStatuses, false);
+                onUpdatedValidatorStatuses(newStatuses, possibleMissingEvents, false);
               })
           .alwaysRun(() -> lookupInProgress.set(false))
           .finish(error -> LOG.error("Failed to update validator statuses", error));
@@ -207,17 +208,19 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
 
   private void onUpdatedValidatorStatuses(
       final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
+      final boolean possibleMissingEvents,
       final boolean updateLastRunEpoch) {
     latestValidatorStatuses.getAndSet(newValidatorStatuses);
-    validatorStatusSubscribers.forEach(s -> s.onValidatorStatuses(newValidatorStatuses));
+    validatorStatusSubscribers.forEach(
+        s -> s.onValidatorStatuses(newValidatorStatuses, possibleMissingEvents));
     if (updateLastRunEpoch) {
       lastRunEpoch.set(currentEpoch.get());
     }
     updateValidatorCountMetrics(newValidatorStatuses);
   }
 
-  private boolean needToUpdateAllStatuses() {
-    if (lastRunEpoch.get() == null) {
+  private boolean needToUpdateAllStatuses(final boolean possibleMissingEvents) {
+    if (lastRunEpoch.get() == null || possibleMissingEvents) {
       return true;
     }
     return currentEpoch.get().isGreaterThan(lastRunEpoch.get());

@@ -159,6 +159,23 @@ class ValidatorRegistratorTest {
   }
 
   @TestTemplate
+  void registersValidatorsAgain_ifPossibleMissingEventsFiredInTheSameEpoch() {
+    setOwnedValidators(validator1, validator2, validator3);
+
+    // initially validators will be registered anyway since it's the first call
+    runRegistrationFlowForSlotWithSubscription(ZERO);
+
+    verify(validatorApiChannel).registerValidators(any());
+
+    // Even within the same epoch registration should occur again, when possible missing events are
+    // detected, because it may mean changing of BN which requires VC to run registration again
+    validatorRegistrator.onSlot(UInt64.valueOf(3));
+    validatorRegistrator.onUpdatedValidatorStatuses(validatorStatuses, true);
+
+    verify(validatorApiChannel, times(2)).registerValidators(any());
+  }
+
+  @TestTemplate
   void cleanupsCache_ifValidatorIsNoLongerOwned() {
     setOwnedValidators(validator1, validator2, validator3);
 
@@ -399,12 +416,12 @@ class ValidatorRegistratorTest {
 
   private void runRegistrationFlowForSlotWithSubscription(final UInt64 slot) {
     validatorRegistrator.onSlot(slot);
-    validatorRegistrator.onUpdatedValidatorStatuses(validatorStatuses);
+    validatorRegistrator.onUpdatedValidatorStatuses(validatorStatuses, false);
   }
 
   private void runRegistrationFlowWithSubscription(final int epoch) {
     validatorRegistrator.onSlot(UInt64.valueOf(epoch).times(slotsPerEpoch));
-    validatorRegistrator.onUpdatedValidatorStatuses(validatorStatuses);
+    validatorRegistrator.onUpdatedValidatorStatuses(validatorStatuses, false);
   }
 
   private List<List<SignedValidatorRegistration>> captureRegistrationCalls(final int times) {

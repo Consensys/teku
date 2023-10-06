@@ -101,6 +101,11 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       final Bytes32 currentDutyDependentRoot,
       final Bytes32 headBlockRoot) {}
 
+  /**
+   * When possible missing events are detected, it may mean changing of BN which requires VC to run
+   * registrations again. This event is handled by possibleMissingEvents flag in {@link
+   * #onUpdatedValidatorStatuses(Map, boolean)}
+   */
   @Override
   public void onPossibleMissedEvents() {}
 
@@ -117,13 +122,14 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   public void onAttestationAggregationDue(final UInt64 slot) {}
 
   public void onUpdatedValidatorStatuses(
-      final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses) {
+      final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
+      final boolean possibleMissingEvents) {
     if (!isReadyToRegister()) {
       return;
     }
     final List<Validator> activeAndPendingValidators =
         filterActiveAndPendingValidators(newValidatorStatuses);
-    if (registrationNeedsToBeRun()) {
+    if (registrationNeedsToBeRun(possibleMissingEvents)) {
       registerValidators(activeAndPendingValidators, true);
     } else {
       final List<Validator> newValidators =
@@ -155,9 +161,9 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     return false;
   }
 
-  private boolean registrationNeedsToBeRun() {
+  private boolean registrationNeedsToBeRun(final boolean possibleMissingEvents) {
     final boolean isFirstCall = firstCallDone.compareAndSet(false, true);
-    if (isFirstCall) {
+    if (isFirstCall || possibleMissingEvents) {
       return true;
     }
 

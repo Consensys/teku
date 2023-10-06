@@ -18,5 +18,6 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 
 public interface ValidatorStatusSubscriber {
-  void onValidatorStatuses(Map<BLSPublicKey, ValidatorStatus> validatorStatuses);
+  void onValidatorStatuses(
+      Map<BLSPublicKey, ValidatorStatus> validatorStatuses, boolean possibleMissingEvents);
 }

@@ -36,7 +36,8 @@ public class ValidatorStatusLogger {
   }
 
   public void onUpdatedValidatorStatuses(
-      final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses) {
+      final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
+      final boolean possibleMissingEvents) {
     final Map<BLSPublicKey, ValidatorStatus> oldValidatorStatuses =
         latestValidatorStatuses.getAndSet(newValidatorStatuses);
     // first run
