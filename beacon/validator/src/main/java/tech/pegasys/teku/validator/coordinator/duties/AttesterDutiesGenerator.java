@@ -61,7 +61,8 @@ public class AttesterDutiesGenerator {
         getValidatorIndexToCommitteeAssignmentMap(
             state, beaconStateAccessors, committeeCountPerSlot.intValue(), epoch);
     for (final Integer validatorIndex : validatorIndices) {
-      final CommitteeAssignment committeeAssignment = validatorIndexToCommitteeAssignmentMap.get(validatorIndex);
+      final CommitteeAssignment committeeAssignment =
+          validatorIndexToCommitteeAssignmentMap.get(validatorIndex);
       if (committeeAssignment != null) {
         maybeAttesterDutyList.add(
             attesterDutyFromCommitteeAssignment(
