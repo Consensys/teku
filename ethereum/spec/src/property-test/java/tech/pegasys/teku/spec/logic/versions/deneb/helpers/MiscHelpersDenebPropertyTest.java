@@ -20,16 +20,12 @@ import java.util.Objects;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.From;
 import net.jqwik.api.Property;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.propertytest.suppliers.SpecSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSidecarSupplier;
-import tech.pegasys.teku.spec.propertytest.suppliers.type.Bytes32Supplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.KZGCommitmentSupplier;
-import tech.pegasys.teku.spec.propertytest.suppliers.type.UInt64Supplier;
 
 public class MiscHelpersDenebPropertyTest {
   private final SpecConfigDeneb specConfig =
@@ -42,12 +38,9 @@ public class MiscHelpersDenebPropertyTest {
 
   @Property(tries = 100)
   void fuzzIsDataAvailable(
-      @ForAll(supplier = UInt64Supplier.class) final UInt64 slot,
-      @ForAll(supplier = Bytes32Supplier.class) final Bytes32 beaconBlockRoot,
-      @ForAll final List<@From(supplier = KZGCommitmentSupplier.class) KZGCommitment> commitments,
       @ForAll final List<@From(supplier = BlobSidecarSupplier.class) BlobSidecar> blobSidecars) {
     try {
-      miscHelpers.isDataAvailable(slot, beaconBlockRoot, commitments, blobSidecars);
+      miscHelpers.isDataAvailable(blobSidecars);
     } catch (Exception e) {
       assertThat(e).isInstanceOf(IllegalArgumentException.class);
     }

@@ -14,19 +14,14 @@
 package tech.pegasys.teku.spec.logic.versions.deneb.helpers;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG;
 
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class MiscHelpersDenebTest {
 
@@ -36,89 +31,9 @@ class MiscHelpersDenebTest {
           Bytes32.fromHexString(
               "0x391610cf24e7c540192b80ddcfea77b0d3912d94e922682f3b286eee041e6f76"));
 
-  private static final KZGCommitment KZG_COMMITMENT =
-      KZGCommitment.fromHexString(
-          "0xb09ce4964278eff81a976fbc552488cb84fc4a102f004c87179cb912f49904d1e785ecaf5d184522a58e9035875440ef");
-
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
-  protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final MiscHelpersDeneb miscHelpersDeneb =
       new MiscHelpersDeneb(spec.getGenesisSpecConfig().toVersionDeneb().orElseThrow());
-
-  @Test
-  public void isDataAvailable_shouldThrowIfCommitmentsDontMatch() {
-    final BlobSidecar blobSidecar =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .slot(UInt64.ONE)
-            .blockRoot(Bytes32.ZERO)
-            .build();
-
-    assertThatThrownBy(
-            () ->
-                miscHelpersDeneb.isDataAvailable(
-                    UInt64.valueOf(1), Bytes32.ZERO, List.of(KZG_COMMITMENT), List.of(blobSidecar)))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Blob sidecar KZG commitment")
-        .hasMessageContaining("does not match block KZG commitment");
-  }
-
-  @Test
-  public void isDataAvailable_shouldThrowIfSlotDoesntMatch() {
-    final BlobSidecar blobSidecar =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .slot(UInt64.valueOf(2))
-            .blockRoot(Bytes32.ZERO)
-            .build();
-
-    assertThatThrownBy(
-            () ->
-                miscHelpersDeneb.isDataAvailable(
-                    UInt64.ONE, Bytes32.ZERO, List.of(KZG_COMMITMENT), List.of(blobSidecar)))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Blob sidecar slot")
-        .hasMessageContaining("does not match block slot");
-  }
-
-  @Test
-  public void isDataAvailable_shouldThrowIfBlobSidecarsAndBlockCommitmentsHaveDifferentSizes() {
-    final BlobSidecar blobSidecar =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .slot(UInt64.ONE)
-            .blockRoot(Bytes32.ZERO)
-            .build();
-
-    assertThatThrownBy(
-            () ->
-                miscHelpersDeneb.isDataAvailable(
-                    UInt64.ONE,
-                    Bytes32.ZERO,
-                    List.of(KZG_COMMITMENT, KZG_COMMITMENT),
-                    List.of(blobSidecar)))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Blob sidecars count")
-        .hasMessageContaining("does not match KZG commitments count");
-  }
-
-  @Test
-  public void isDataAvailable_shouldThrowIfBlockRootDoesntMatch() {
-    final BlobSidecar blobSidecar =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .slot(UInt64.ONE)
-            .blockRoot(Bytes32.fromHexString("0x01"))
-            .build();
-
-    assertThatThrownBy(
-            () ->
-                miscHelpersDeneb.isDataAvailable(
-                    UInt64.ONE, Bytes32.ZERO, List.of(KZG_COMMITMENT), List.of(blobSidecar)))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Blob sidecar block root")
-        .hasMessageContaining("does not match block root");
-  }
 
   @Test
   public void versionedHash() {
