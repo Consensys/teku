@@ -313,7 +313,7 @@ class StoreTest extends AbstractStoreTest {
             blockAndState ->
                 tx.putBlockAndState(
                     blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState())));
-    tx.commit().join();
+    safeJoin(tx.commit());
     final List<SignedBlockAndState> last32 =
         chainBuilder
             .streamBlocksAndStates()
