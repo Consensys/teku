@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 
+import java.util.function.Consumer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -166,6 +167,18 @@ public class Eth2NetworkOptions {
   private boolean forkChoiceUpdateHeadOnBlockImportEnabled =
       Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
 
+  // https://github.com/Consensys/teku/issues/7537
+  @Option(
+      names = {"--Xfork-choice-proposer-boost-uniqueness-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Apply proposer boost to first block in case of equivocation.",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private boolean forkChoiceProposerBoostUniquenessEnabled =
+      Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED;
+
   @Option(
       names = {"--Xeth1-deposit-contract-deploy-block-override"},
       hidden = true,
@@ -186,16 +199,23 @@ public class Eth2NetworkOptions {
   private String epochsStoreBlobs;
 
   public Eth2NetworkConfiguration getNetworkConfiguration() {
-    return createEth2NetworkConfig();
+    return createEth2NetworkConfig(builder -> {});
+  }
+
+  public Eth2NetworkConfiguration getNetworkConfiguration(
+      final Consumer<Eth2NetworkConfiguration.Builder> modifier) {
+    return createEth2NetworkConfig(modifier);
   }
 
   public void configure(final TekuConfiguration.Builder builder) {
     builder.eth2NetworkConfig(this::configureEth2Network);
   }
 
-  private Eth2NetworkConfiguration createEth2NetworkConfig() {
+  private Eth2NetworkConfiguration createEth2NetworkConfig(
+      final Consumer<Eth2NetworkConfiguration.Builder> modifier) {
     Eth2NetworkConfiguration.Builder builder = Eth2NetworkConfiguration.builder();
     configureEth2Network(builder);
+    modifier.accept(builder);
     return builder.build();
   }
 
@@ -246,6 +266,7 @@ public class Eth2NetworkOptions {
     builder
         .safeSlotsToImportOptimistically(safeSlotsToImportOptimistically)
         .forkChoiceUpdateHeadOnBlockImportEnabled(forkChoiceUpdateHeadOnBlockImportEnabled)
+        .forkChoiceProposerBoostUniquenessEnabled(forkChoiceProposerBoostUniquenessEnabled)
         .epochsStoreBlobs(epochsStoreBlobs);
   }
 

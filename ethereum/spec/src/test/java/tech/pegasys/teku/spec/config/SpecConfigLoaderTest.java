@@ -95,7 +95,8 @@ public class SpecConfigLoaderTest {
       throws Exception {
     try (final InputStream in =
         Resources.getResource(SpecConfigLoaderTest.class, specFilename).openStream()) {
-      final SpecConfig config = SpecConfigLoader.loadRemoteConfig(readJsonConfig(in));
+      final SpecConfig config =
+          SpecConfigLoader.loadRemoteConfig(readJsonConfig(in), modifier -> {});
       assertAllAltairFieldsSet(config);
     }
   }

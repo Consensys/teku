@@ -93,7 +93,7 @@ public class GetBlobSidecars extends RestApiEndpoint {
             .getBlobSidecarSchema()
             .getJsonTypeDefinition();
     return SerializableTypeDefinition.<List<BlobSidecar>>object()
-        .name("GetBlobsResponse")
+        .name("GetBlobSidecarsResponse")
         .withField("data", listOf(blobSidecarType), Function.identity())
         .build();
   }

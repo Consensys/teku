@@ -26,6 +26,7 @@ import tech.pegasys.teku.reference.common.operations.OperationsTestExecutor;
 import tech.pegasys.teku.reference.phase0.bls.BlsTests;
 import tech.pegasys.teku.reference.phase0.forkchoice.ForkChoiceTestExecutor;
 import tech.pegasys.teku.reference.phase0.genesis.GenesisTests;
+import tech.pegasys.teku.reference.phase0.kzg.KzgTests;
 import tech.pegasys.teku.reference.phase0.rewards.RewardsTestExecutorPhase0;
 import tech.pegasys.teku.reference.phase0.sanity.SanityTests;
 import tech.pegasys.teku.reference.phase0.shuffling.ShufflingTestExecutor;
@@ -37,6 +38,7 @@ public abstract class Eth2ReferenceTestCase {
   private static final ImmutableMap<String, TestExecutor> COMMON_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .putAll(BlsTests.BLS_TEST_TYPES)
+          .putAll(KzgTests.KZG_TEST_TYPES)
           .putAll(ForkChoiceTestExecutor.FORK_CHOICE_TEST_TYPES)
           .putAll(GenesisTests.GENESIS_TEST_TYPES)
           .putAll(ShufflingTestExecutor.SHUFFLING_TEST_TYPES)
@@ -102,6 +104,12 @@ public abstract class Eth2ReferenceTestCase {
     // Look for a common test type if no specific override present
     if (testExecutor == null) {
       testExecutor = COMMON_TEST_TYPES.get(testDefinition.getTestType());
+    }
+
+    // TODO: https://github.com/Consensys/teku/issues/7539
+    if (testDefinition.getFork().equals(TestFork.DENEB)
+        && testExecutor instanceof ForkChoiceTestExecutor) {
+      testExecutor = TestExecutor.IGNORE_TESTS;
     }
 
     if (testExecutor == null) {

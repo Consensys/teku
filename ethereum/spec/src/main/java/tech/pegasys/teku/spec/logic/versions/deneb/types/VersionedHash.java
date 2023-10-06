@@ -41,6 +41,10 @@ public class VersionedHash {
     return new VersionedHash(version, hash.slice(1));
   }
 
+  public static VersionedHash fromHexString(final String hexVersionedHash) {
+    return new VersionedHash(Bytes32.fromHexString(hexVersionedHash));
+  }
+
   public Bytes getVersion() {
     return version;
   }

@@ -60,37 +60,21 @@ public class TestDefinition {
   }
 
   private void createSpec() {
-    final Eth2Network network;
-    final SpecMilestone highestSupportedMilestone;
-    switch (configName) {
-      case TestSpecConfig.MAINNET:
-        network = Eth2Network.MAINNET;
-        break;
-      case TestSpecConfig.MINIMAL:
-        network = Eth2Network.MINIMAL;
-        break;
-      default:
-        throw new IllegalArgumentException("Unknown configName: " + configName);
-    }
-    switch (fork) {
-      case TestFork.PHASE0:
-        highestSupportedMilestone = SpecMilestone.PHASE0;
-        break;
-      case TestFork.ALTAIR:
-        highestSupportedMilestone = SpecMilestone.ALTAIR;
-        break;
-      case TestFork.BELLATRIX:
-        highestSupportedMilestone = SpecMilestone.BELLATRIX;
-        break;
-      case TestFork.CAPELLA:
-        highestSupportedMilestone = SpecMilestone.CAPELLA;
-        break;
-      case TestFork.DENEB:
-        highestSupportedMilestone = SpecMilestone.DENEB;
-        break;
-      default:
-        throw new IllegalArgumentException("Unknown fork: " + fork);
-    }
+    final Eth2Network network =
+        switch (configName) {
+          case TestSpecConfig.MAINNET -> Eth2Network.MAINNET;
+          case TestSpecConfig.MINIMAL -> Eth2Network.MINIMAL;
+          default -> throw new IllegalArgumentException("Unknown configName: " + configName);
+        };
+    final SpecMilestone highestSupportedMilestone =
+        switch (fork) {
+          case TestFork.PHASE0 -> SpecMilestone.PHASE0;
+          case TestFork.ALTAIR -> SpecMilestone.ALTAIR;
+          case TestFork.BELLATRIX -> SpecMilestone.BELLATRIX;
+          case TestFork.CAPELLA -> SpecMilestone.CAPELLA;
+          case TestFork.DENEB -> SpecMilestone.DENEB;
+          default -> throw new IllegalArgumentException("Unknown fork: " + fork);
+        };
     spec = TestSpecFactory.create(highestSupportedMilestone, network);
   }
 

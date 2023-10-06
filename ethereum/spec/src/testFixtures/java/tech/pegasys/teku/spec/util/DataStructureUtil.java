@@ -1080,7 +1080,7 @@ public final class DataStructureUtil {
 
   private BeaconBlockAndState randomBlockAndState(
       final UInt64 slot, final BeaconState state, final Bytes32 parentRoot) {
-    final BeaconBlockBody body = randomBeaconBlockBody();
+    final BeaconBlockBody body = randomBeaconBlockBody(slot);
     final UInt64 proposerIndex = UInt64.valueOf(randomPositiveInt());
     final BeaconBlockHeader latestHeader =
         new BeaconBlockHeader(slot, proposerIndex, parentRoot, Bytes32.ZERO, body.hashTreeRoot());
@@ -1898,7 +1898,12 @@ public final class DataStructureUtil {
     UInt64 slot = computeStartSlotAtEpoch(epoch);
     final BeaconBlockAndState blockAndState =
         randomBlockAndState(
-            slot, stateBuilderPhase0().slot(slot).fork(currentFork).build(), randomBytes32());
+            slot,
+            stateBuilder(spec.atSlot(slot).getMilestone(), 10, 10)
+                .slot(slot)
+                .fork(currentFork)
+                .build(),
+            randomBytes32());
     return AnchorPoint.fromInitialBlockAndState(spec, toSigned(blockAndState));
   }
 

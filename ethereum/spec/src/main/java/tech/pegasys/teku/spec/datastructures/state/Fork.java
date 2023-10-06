@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.state;
 
+import com.google.common.base.MoreObjects;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
@@ -64,5 +65,14 @@ public class Fork extends Container3<Fork, SszBytes4, SszBytes4, SszUInt64> {
 
   public UInt64 getEpoch() {
     return getField2().get();
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+        .add("epoch", getEpoch())
+        .add("previous_version", getPreviousVersion())
+        .add("current_version", getCurrentVersion())
+        .toString();
   }
 }

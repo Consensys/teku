@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionclient.auth;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.jackson.io.JacksonSerializer;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
@@ -35,6 +36,7 @@ public class TokenProvider {
         Jwts.builder()
             .setIssuedAt(Date.from(Instant.ofEpochMilli(instantInMillis.longValue())))
             .signWith(jwtConfig.getKey(), SignatureAlgorithm.HS256)
+            .serializeToJsonWith(new JacksonSerializer<>())
             .compact();
     return Optional.of(new Token(jwtToken, expiry));
   }

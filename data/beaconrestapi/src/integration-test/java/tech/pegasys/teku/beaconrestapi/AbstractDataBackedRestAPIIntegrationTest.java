@@ -72,6 +72,7 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -225,6 +226,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             .syncService(syncService)
             .validatorApiChannel(validatorApiChannel)
             .blockManager(blockManager)
+            .blobSidecarPool(BlobSidecarPool.NOOP)
             .attestationManager(attestationManager)
             .activeValidatorChannel(activeValidatorChannel)
             .attestationPool(attestationPool)
@@ -338,6 +340,17 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
 
   protected void assertBodyEquals(final Response response, final String body) throws IOException {
     assertThat(response.body().string()).isEqualTo(body);
+  }
+
+  protected Response getResponse(final String path, final String contentType, final String encoding)
+      throws IOException {
+    final Request request =
+        new Request.Builder()
+            .url(getUrl(path))
+            .header("Accept", contentType)
+            .header("Accept-Encoding", encoding)
+            .build();
+    return client.newCall(request).execute();
   }
 
   protected Response getResponse(final String path, final String contentType) throws IOException {

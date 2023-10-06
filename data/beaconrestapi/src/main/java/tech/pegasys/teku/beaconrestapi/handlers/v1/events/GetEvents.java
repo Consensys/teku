@@ -31,18 +31,21 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.EventStreamResponseContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.spec.Spec;
 
 public class GetEvents extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/events";
   private final EventSubscriptionManager eventSubscriptionManager;
 
   public GetEvents(
+      final Spec spec,
       final DataProvider dataProvider,
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
       final int maxPendingEvents) {
     this(
+        spec,
         dataProvider.getNodeDataProvider(),
         dataProvider.getChainDataProvider(),
         dataProvider.getSyncDataProvider(),
@@ -54,6 +57,7 @@ public class GetEvents extends RestApiEndpoint {
   }
 
   GetEvents(
+      final Spec spec,
       final NodeDataProvider nodeDataProvider,
       final ChainDataProvider chainDataProvider,
       final SyncDataProvider syncDataProvider,
@@ -78,6 +82,7 @@ public class GetEvents extends RestApiEndpoint {
             .build());
     eventSubscriptionManager =
         new EventSubscriptionManager(
+            spec,
             nodeDataProvider,
             chainDataProvider,
             syncDataProvider,

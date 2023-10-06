@@ -287,6 +287,7 @@ public class ForkChoiceIntegrationTest {
         fc.onBlock(
                 block,
                 Optional.empty(),
+                Optional.empty(),
                 new ExecutionLayerChannelStub(SPEC, false, Optional.empty()))
             .join();
     return blockImportResult.isSuccessful();

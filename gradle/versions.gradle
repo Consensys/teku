@@ -32,7 +32,7 @@ dependencyManagement {
       entry 'javalin-rendering'
     }
 
-    dependency 'io.libp2p:jvm-libp2p-minimal:0.10.0-RELEASE'
+    dependency 'io.libp2p:jvm-libp2p:1.0.1-RELEASE'
     dependency 'tech.pegasys:jblst:0.3.11'
     dependency 'tech.pegasys:jc-kzg-4844:0.7.2'
 
@@ -57,11 +57,9 @@ dependencyManagement {
       entry 'oshi-core-java11'
     }
 
-    dependencySet(group: 'io.netty', version: '4.1.96.Final') {
-      entry('netty-all') {
-        exclude "io.netty:netty-transport-rxtx"
-        exclude "org.rxtx:rxtx"
-      }
+    dependencySet(group: 'io.netty', version: '4.1.97.Final') {
+      entry 'netty-handler'
+      entry 'netty-codec-http'
     }
 
     dependencySet(group: 'io.vertx', version: '4.4.4') {
@@ -123,7 +121,7 @@ dependencyManagement {
     dependency 'org.rocksdb:rocksdbjni:7.7.3'
     dependency 'org.fusesource.leveldbjni:leveldbjni-win64:1.8'
     dependency 'org.fusesource.leveldbjni:leveldbjni-win32:1.8'
-    dependency 'tech.pegasys:leveldb-native:0.3.0'
+    dependency 'tech.pegasys:leveldb-native:0.3.1'
 
     dependencySet(group: "org.web3j", version: "4.10.1") {
       entry 'core'
@@ -131,15 +129,12 @@ dependencyManagement {
       entry 'crypto'
     }
 
-    dependency 'org.xerial.snappy:snappy-java:1.1.10.3'
+    dependency 'org.xerial.snappy:snappy-java:1.1.10.4'
 
     dependency 'io.prometheus:simpleclient:0.9.0'
 
     dependencySet(group: 'org.hyperledger.besu.internal', version: '23.7.1') {
-      entry('metrics-core') {
-        // We include netty-all so omit the separated jars
-        exclude 'io.netty:netty-tcnative-boringssl-static'
-      }
+      entry('metrics-core')
       entry('core')
       entry('config')
     }

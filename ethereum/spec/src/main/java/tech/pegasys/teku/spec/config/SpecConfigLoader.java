@@ -59,7 +59,8 @@ public class SpecConfigLoader {
     return reader.build(modifier);
   }
 
-  public static SpecConfig loadRemoteConfig(final Map<String, String> config) {
+  public static SpecConfig loadRemoteConfig(
+      final Map<String, String> config, final Consumer<SpecConfigBuilder> modifier) {
     final SpecConfigReader reader = new SpecConfigReader();
     if (config.containsKey(SpecConfigReader.CONFIG_NAME_KEY)) {
       final String configNameKey = config.get(SpecConfigReader.CONFIG_NAME_KEY);
@@ -80,7 +81,7 @@ public class SpecConfigLoader {
       }
     }
     reader.loadFromMap(config, true);
-    return reader.build();
+    return reader.build(modifier);
   }
 
   static void processConfig(

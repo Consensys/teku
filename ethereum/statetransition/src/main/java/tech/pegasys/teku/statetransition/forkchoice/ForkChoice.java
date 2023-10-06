@@ -93,6 +93,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final MergeTransitionBlockValidator transitionBlockValidator;
   private final boolean forkChoiceUpdateHeadOnBlockImportEnabled;
+  private final boolean forkChoiceProposerBoostUniquenessEnabled;
   private final AttestationStateSelector attestationStateSelector;
   private final DeferredAttestations deferredAttestations = new DeferredAttestations();
 
@@ -111,6 +112,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final TickProcessor tickProcessor,
       final MergeTransitionBlockValidator transitionBlockValidator,
       final boolean forkChoiceUpdateHeadOnBlockImportEnabled,
+      final boolean forkChoiceProposerBoostUniquenessEnabled,
       final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
@@ -123,6 +125,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         new AttestationStateSelector(spec, recentChainData, metricsSystem);
     this.tickProcessor = tickProcessor;
     this.forkChoiceUpdateHeadOnBlockImportEnabled = forkChoiceUpdateHeadOnBlockImportEnabled;
+    this.forkChoiceProposerBoostUniquenessEnabled = forkChoiceProposerBoostUniquenessEnabled;
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
     forkChoiceNotifier.subscribeToForkChoiceUpdatedResult(this);
   }
@@ -149,6 +152,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         new ForkChoiceStateProvider(forkChoiceExecutor, recentChainData),
         new TickProcessor(spec, recentChainData),
         transitionBlockValidator,
+        true,
         true,
         metricsSystem);
   }
@@ -196,13 +200,19 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   public SafeFuture<BlockImportResult> onBlock(
       final SignedBeaconBlock block,
       final Optional<BlockImportPerformance> blockImportPerformance,
+      final Optional<SafeFuture<BlockImportResult>> consensusValidationListener,
       final ExecutionLayerChannel executionLayer) {
     return recentChainData
         .retrieveStateAtSlot(new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
         .thenPeek(__ -> blockImportPerformance.ifPresent(BlockImportPerformance::preStateRetrieved))
         .thenCompose(
             blockSlotState ->
-                onBlock(block, blockSlotState, blockImportPerformance, executionLayer));
+                onBlock(
+                    block,
+                    blockSlotState,
+                    blockImportPerformance,
+                    consensusValidationListener,
+                    executionLayer));
   }
 
   public SafeFuture<AttestationProcessingResult> onAttestation(
@@ -379,6 +389,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final SignedBeaconBlock block,
       final Optional<BeaconState> blockSlotState,
       final Optional<BlockImportPerformance> blockImportPerformance,
+      final Optional<SafeFuture<BlockImportResult>> consensusValidationListener,
       final ExecutionLayerChannel executionLayer) {
     if (blockSlotState.isEmpty()) {
       return SafeFuture.completedFuture(BlockImportResult.FAILED_UNKNOWN_PARENT);
@@ -426,12 +437,25 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
     blockImportPerformance.ifPresent(BlockImportPerformance::postStateCreated);
 
+    final SafeFuture<BlobSidecarsAndValidationResult> blobSidecarsAvailabilityResult =
+        blobSidecarsAvailabilityChecker
+            .getAvailabilityCheckResult()
+            .thenPeek(
+                result ->
+                    consensusValidationListener.ifPresent(
+                        voidSafeFuture -> {
+                          // consensus validation is completed when DA check is completed
+                          if (result.isSuccess()) {
+                            voidSafeFuture.complete(BlockImportResult.successful(block));
+                          }
+                        }));
+
     return payloadExecutor
         .getExecutionResult()
         .thenPeek(
             __ -> blockImportPerformance.ifPresent(BlockImportPerformance::executionResultReceived))
         .thenCombineAsync(
-            blobSidecarsAvailabilityChecker.getAvailabilityCheckResult(),
+            blobSidecarsAvailabilityResult,
             (payloadResult, blobSidecarsAndValidationResult) ->
                 importBlockAndState(
                     block,
@@ -488,23 +512,20 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
 
     switch (blobSidecarsAndValidationResult.getValidationResult()) {
-      case VALID:
-      case NOT_REQUIRED:
-        LOG.debug(
-            "blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
-
-        break;
-      case NOT_AVAILABLE:
+      case VALID, NOT_REQUIRED -> LOG.debug(
+          "blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
+      case NOT_AVAILABLE -> {
         LOG.warn(
             "blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
         return BlockImportResult.failedDataAvailabilityCheckNotAvailable(
             blobSidecarsAndValidationResult.getCause());
-
-      case INVALID:
+      }
+      case INVALID -> {
         LOG.error(
             "blobSidecars validation result: {}", blobSidecarsAndValidationResult::toLogString);
         return BlockImportResult.failedDataAvailabilityCheckInvalid(
             blobSidecarsAndValidationResult.getCause());
+      }
     }
 
     final ForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
@@ -542,13 +563,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         blobSidecars,
         earliestBlobSidecarsSlot);
 
-    if (spec.getCurrentSlot(transaction).equals(block.getSlot())) {
-      final UInt64 millisPerSlot = spec.getMillisPerSlot(block.getSlot());
-      final UInt64 timeIntoSlotMillis = getMillisIntoSlot(transaction, millisPerSlot);
-
-      if (isBeforeAttestingInterval(millisPerSlot, timeIntoSlotMillis)) {
-        transaction.setProposerBoostRoot(block.getRoot());
-      }
+    if (shouldApplyProposerBoost(block, transaction)) {
+      transaction.setProposerBoostRoot(block.getRoot());
     }
 
     blockImportPerformance.ifPresent(BlockImportPerformance::transactionReady);
@@ -580,6 +596,26 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     updateForkChoiceForImportedBlock(block, result, forkChoiceStrategy);
     notifyForkChoiceUpdatedAndOptimisticSyncingChanged(Optional.empty());
     return result;
+  }
+
+  // from consensus-specs/fork-choice:
+  private boolean shouldApplyProposerBoost(
+      final SignedBeaconBlock block, final StoreTransaction transaction) {
+    // get_current_slot(store) == block.slot
+    if (!spec.getCurrentSlot(transaction).equals(block.getSlot())) {
+      return false;
+    }
+    // is_before_attesting_interval
+    final UInt64 millisPerSlot = spec.getMillisPerSlot(block.getSlot());
+    final UInt64 timeIntoSlotMillis = getMillisIntoSlot(transaction, millisPerSlot);
+    if (!isBeforeAttestingInterval(millisPerSlot, timeIntoSlotMillis)) {
+      return false;
+    }
+    // is_first_block
+    if (forkChoiceProposerBoostUniquenessEnabled) {
+      return transaction.getProposerBoostRoot().isEmpty();
+    }
+    return true;
   }
 
   /**

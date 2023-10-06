@@ -312,6 +312,10 @@ public class StatusLogger {
     log.warn("Not loading specified initial state as chain data already exists.");
   }
 
+  public void warnFailedToLoadInitialState(final String message) {
+    log.warn(message);
+  }
+
   public void warnOnInitialStateWithSkippedSlots(
       final Level level,
       final UInt64 anchorBlockSlot,
