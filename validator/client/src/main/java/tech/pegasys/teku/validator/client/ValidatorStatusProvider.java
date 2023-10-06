@@ -20,5 +20,5 @@ public interface ValidatorStatusProvider extends ValidatorTimingChannel {
 
   SafeFuture<Void> start();
 
-  void subscribeNewValidatorStatuses(ValidatorStatusSubscriber subscriber);
+  void subscribeValidatorStatusesUpdates(ValidatorStatusSubscriber subscriber);
 }

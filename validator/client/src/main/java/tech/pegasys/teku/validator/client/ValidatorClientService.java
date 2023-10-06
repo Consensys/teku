@@ -187,12 +187,12 @@ public class ValidatorClientService extends Service {
               config.getSpec(),
               validatorLoader.getOwnedValidators(),
               proposerConfigManager.get(),
-              new ValidatorRegistrationSigningService(
+              new SignedValidatorRegistrationFactory(
                   proposerConfigManager.get(), services.getTimeProvider()),
               validatorApiChannel,
               validatorConfig.getBuilderRegistrationSendingBatchSize());
-      validatorStatusProvider.subscribeNewValidatorStatuses(
-          validatorRegistratorImpl::onNewValidatorStatuses);
+      validatorStatusProvider.subscribeValidatorStatusesUpdates(
+          validatorRegistratorImpl::onUpdatedValidatorStatuses);
       validatorRegistrator = Optional.of(validatorRegistratorImpl);
     } else {
       proposerConfigManager = Optional.empty();
@@ -468,8 +468,8 @@ public class ValidatorClientService extends Service {
     }
     addValidatorCountMetric(metricsSystem, validators);
     final ValidatorStatusLogger validatorStatusLogger = new ValidatorStatusLogger(validators);
-    validatorStatusProvider.subscribeNewValidatorStatuses(
-        validatorStatusLogger::onNewValidatorStatuses);
+    validatorStatusProvider.subscribeValidatorStatusesUpdates(
+        validatorStatusLogger::onUpdatedValidatorStatuses);
   }
 
   public static Path getSlashingProtectionPath(final DataDirLayout dataDirLayout) {

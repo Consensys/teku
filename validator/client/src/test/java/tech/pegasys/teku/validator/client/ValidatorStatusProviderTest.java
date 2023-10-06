@@ -66,7 +66,7 @@ public class ValidatorStatusProviderTest {
     provider =
         new OwnedValidatorStatusProvider(
             metricsSystem, ownedValidators, validatorApiChannel, spec, asyncRunner);
-    provider.subscribeNewValidatorStatuses(validatorStatusSubscriber);
+    provider.subscribeValidatorStatusesUpdates(validatorStatusSubscriber);
     provider.onSlot(UInt64.ZERO);
   }
 
@@ -110,7 +110,7 @@ public class ValidatorStatusProviderTest {
   }
 
   @Test
-  void shouldUpdateMetricsForValidatorStatuses() {
+  void shouldUpdateValidatorStatusesOnFirstEpochSlot() {
     when(validatorApiChannel.getValidatorStatuses(validatorKeys))
         .thenReturn(
             SafeFuture.completedFuture(
@@ -120,6 +120,7 @@ public class ValidatorStatusProviderTest {
                 Optional.of(Map.of(validatorKey, ValidatorStatus.active_ongoing))));
 
     assertThat(provider.start()).isCompleted();
+    verify(validatorStatusSubscriber).onValidatorStatuses(anyMap());
 
     final StubLabelledGauge gauge =
         metricsSystem.getLabelledGauge(TekuMetricCategory.VALIDATOR, VALIDATOR_COUNTS_METRIC);
@@ -129,6 +130,7 @@ public class ValidatorStatusProviderTest {
         .isEqualTo(OptionalDouble.of(0));
 
     provider.onSlot(spec.computeStartSlotAtEpoch(UInt64.ONE).plus(1));
+    verify(validatorStatusSubscriber, times(2)).onValidatorStatuses(anyMap());
 
     assertThat(gauge.getValue(ValidatorStatus.pending_initialized.name()))
         .isEqualTo(OptionalDouble.of(0));

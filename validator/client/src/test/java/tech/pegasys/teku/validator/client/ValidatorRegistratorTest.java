@@ -61,8 +61,8 @@ class ValidatorRegistratorTest {
   private final OwnedValidators ownedValidators = mock(OwnedValidators.class);
   private final ProposerConfigPropertiesProvider proposerConfigPropertiesProvider =
       mock(ProposerConfigPropertiesProvider.class);
-  private final ValidatorRegistrationSigningService validatorRegistrationSigningService =
-      mock(ValidatorRegistrationSigningService.class);
+  private final SignedValidatorRegistrationFactory signedValidatorRegistrationFactory =
+      mock(SignedValidatorRegistrationFactory.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final Signer signer = mock(Signer.class);
 
@@ -107,11 +107,11 @@ class ValidatorRegistratorTest {
             specContext.getSpec(),
             ownedValidators,
             proposerConfigPropertiesProvider,
-            validatorRegistrationSigningService,
+            signedValidatorRegistrationFactory,
             validatorApiChannel,
             BATCH_SIZE);
 
-    when(validatorRegistrationSigningService.createSignedValidatorRegistration(any(), any(), any()))
+    when(signedValidatorRegistrationFactory.createSignedValidatorRegistration(any(), any(), any()))
         .thenAnswer(
             args -> {
               final Validator validator = (Validator) args.getArguments()[0];
@@ -139,7 +139,7 @@ class ValidatorRegistratorTest {
     runRegistrationFlowWithSubscription(0);
 
     verifyNoInteractions(
-        ownedValidators, validatorApiChannel, validatorRegistrationSigningService, signer);
+        ownedValidators, validatorApiChannel, signedValidatorRegistrationFactory, signer);
   }
 
   @TestTemplate
@@ -180,7 +180,7 @@ class ValidatorRegistratorTest {
 
     validatorRegistrator.onPossibleMissedEvents();
     verifyNoInteractions(
-        ownedValidators, validatorRegistrationSigningService, validatorApiChannel, signer);
+        ownedValidators, signedValidatorRegistrationFactory, validatorApiChannel, signer);
   }
 
   @TestTemplate
@@ -190,7 +190,7 @@ class ValidatorRegistratorTest {
     validatorRegistrator.onValidatorsAdded();
 
     verifyNoInteractions(
-        ownedValidators, validatorRegistrationSigningService, validatorApiChannel, signer);
+        ownedValidators, signedValidatorRegistrationFactory, validatorApiChannel, signer);
   }
 
   @TestTemplate
@@ -198,7 +198,7 @@ class ValidatorRegistratorTest {
     validatorRegistrator.onValidatorsAdded();
 
     verifyNoInteractions(
-        ownedValidators, validatorRegistrationSigningService, validatorApiChannel, signer);
+        ownedValidators, signedValidatorRegistrationFactory, validatorApiChannel, signer);
   }
 
   @TestTemplate
@@ -227,8 +227,8 @@ class ValidatorRegistratorTest {
   void registerValidatorsEvenIfOneRegistrationSigningFails() {
     setOwnedValidators(validator1, validator2, validator3);
 
-    reset(validatorRegistrationSigningService);
-    when(validatorRegistrationSigningService.createSignedValidatorRegistration(any(), any(), any()))
+    reset(signedValidatorRegistrationFactory);
+    when(signedValidatorRegistrationFactory.createSignedValidatorRegistration(any(), any(), any()))
         .thenAnswer(
             args -> {
               final Validator validator = (Validator) args.getArguments()[0];
@@ -241,8 +241,8 @@ class ValidatorRegistratorTest {
             });
     runRegistrationFlowWithSubscription(0);
 
-    reset(validatorRegistrationSigningService);
-    when(validatorRegistrationSigningService.createSignedValidatorRegistration(any(), any(), any()))
+    reset(signedValidatorRegistrationFactory);
+    when(signedValidatorRegistrationFactory.createSignedValidatorRegistration(any(), any(), any()))
         .thenAnswer(
             args -> {
               final Validator validator = (Validator) args.getArguments()[0];
@@ -315,7 +315,7 @@ class ValidatorRegistratorTest {
 
     runRegistrationFlowForSlotWithSubscription(ZERO);
 
-    verifyNoInteractions(validatorApiChannel, signer, validatorRegistrationSigningService);
+    verifyNoInteractions(validatorApiChannel, signer, signedValidatorRegistrationFactory);
   }
 
   @TestTemplate
@@ -325,7 +325,7 @@ class ValidatorRegistratorTest {
             specContext.getSpec(),
             ownedValidators,
             proposerConfigPropertiesProvider,
-            validatorRegistrationSigningService,
+            signedValidatorRegistrationFactory,
             validatorApiChannel,
             2);
     setOwnedValidators(validator1, validator2, validator3);
@@ -350,7 +350,7 @@ class ValidatorRegistratorTest {
             specContext.getSpec(),
             ownedValidators,
             proposerConfigPropertiesProvider,
-            validatorRegistrationSigningService,
+            signedValidatorRegistrationFactory,
             validatorApiChannel,
             2);
     setOwnedValidators(validator1, validator2, validator3);
@@ -399,12 +399,12 @@ class ValidatorRegistratorTest {
 
   private void runRegistrationFlowForSlotWithSubscription(final UInt64 slot) {
     validatorRegistrator.onSlot(slot);
-    validatorRegistrator.onNewValidatorStatuses(validatorStatuses);
+    validatorRegistrator.onUpdatedValidatorStatuses(validatorStatuses);
   }
 
   private void runRegistrationFlowWithSubscription(final int epoch) {
     validatorRegistrator.onSlot(UInt64.valueOf(epoch).times(slotsPerEpoch));
-    validatorRegistrator.onNewValidatorStatuses(validatorStatuses);
+    validatorRegistrator.onUpdatedValidatorStatuses(validatorStatuses);
   }
 
   private List<List<SignedValidatorRegistration>> captureRegistrationCalls(final int times) {

@@ -69,7 +69,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   private final Spec spec;
   private final OwnedValidators ownedValidators;
   private final ProposerConfigPropertiesProvider validatorRegistrationPropertiesProvider;
-  private final ValidatorRegistrationSigningService validatorRegistrationSigningService;
+  private final SignedValidatorRegistrationFactory signedValidatorRegistrationFactory;
   private final ValidatorApiChannel validatorApiChannel;
   private final int batchSize;
 
@@ -77,13 +77,13 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       final Spec spec,
       final OwnedValidators ownedValidators,
       final ProposerConfigPropertiesProvider validatorRegistrationPropertiesProvider,
-      final ValidatorRegistrationSigningService validatorRegistrationSigningService,
+      final SignedValidatorRegistrationFactory signedValidatorRegistrationFactory,
       final ValidatorApiChannel validatorApiChannel,
       final int batchSize) {
     this.spec = spec;
     this.ownedValidators = ownedValidators;
     this.validatorRegistrationPropertiesProvider = validatorRegistrationPropertiesProvider;
-    this.validatorRegistrationSigningService = validatorRegistrationSigningService;
+    this.signedValidatorRegistrationFactory = signedValidatorRegistrationFactory;
     this.validatorApiChannel = validatorApiChannel;
     this.batchSize = batchSize;
   }
@@ -116,7 +116,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   @Override
   public void onAttestationAggregationDue(final UInt64 slot) {}
 
-  public void onNewValidatorStatuses(
+  public void onUpdatedValidatorStatuses(
       final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses) {
     if (!isReadyToRegister()) {
       return;
@@ -264,7 +264,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
                 validator -> {
                   final Optional<SafeFuture<SignedValidatorRegistration>>
                       maybeSignedValidatorRegistration =
-                          validatorRegistrationSigningService.createSignedValidatorRegistration(
+                          signedValidatorRegistrationFactory.createSignedValidatorRegistration(
                               validator,
                               Optional.ofNullable(
                                   cachedValidatorRegistrations.get(validator.getPublicKey())),

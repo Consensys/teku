@@ -29,13 +29,13 @@ import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
 import tech.pegasys.teku.spec.signatures.Signer;
 
-public class ValidatorRegistrationSigningService {
+public class SignedValidatorRegistrationFactory {
   private static final Logger LOG = LogManager.getLogger();
 
   private final ProposerConfigPropertiesProvider validatorRegistrationPropertiesProvider;
   private final TimeProvider timeProvider;
 
-  public ValidatorRegistrationSigningService(
+  public SignedValidatorRegistrationFactory(
       final ProposerConfigPropertiesProvider validatorRegistrationPropertiesProvider,
       final TimeProvider timeProvider) {
     this.validatorRegistrationPropertiesProvider = validatorRegistrationPropertiesProvider;

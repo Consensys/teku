@@ -42,7 +42,7 @@ import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @TestSpecContext(milestone = SpecMilestone.BELLATRIX)
-class ValidatorRegistrationSigningServiceTest {
+class SignedValidatorRegistrationFactoryTest {
 
   private final TimeProvider stubTimeProvider = StubTimeProvider.withTimeInSeconds(12);
   private final ProposerConfigPropertiesProvider proposerConfigPropertiesProvider =
@@ -52,7 +52,7 @@ class ValidatorRegistrationSigningServiceTest {
   private Validator validator;
   private Eth1Address feeRecipient;
   private UInt64 gasLimit;
-  private ValidatorRegistrationSigningService validatorRegistrationSigningService;
+  private SignedValidatorRegistrationFactory signedValidatorRegistrationFactory;
   private DataStructureUtil dataStructureUtil;
 
   @BeforeEach
@@ -76,14 +76,14 @@ class ValidatorRegistrationSigningServiceTest {
         .when(signer)
         .signValidatorRegistration(any(ValidatorRegistration.class));
 
-    validatorRegistrationSigningService =
-        new ValidatorRegistrationSigningService(proposerConfigPropertiesProvider, stubTimeProvider);
+    signedValidatorRegistrationFactory =
+        new SignedValidatorRegistrationFactory(proposerConfigPropertiesProvider, stubTimeProvider);
   }
 
   @TestTemplate
   public void whenCreateCalled_thenSigningRegistrationIsReturned() {
     final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration =
-        validatorRegistrationSigningService.createSignedValidatorRegistration(
+        signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator, Optional.empty(), throwable -> {});
 
     verify(signer).signValidatorRegistration(any());
@@ -100,7 +100,7 @@ class ValidatorRegistrationSigningServiceTest {
     final SignedValidatorRegistration oldSignedValidatorRegistration =
         createSignedValidatorRegistration(validator.getPublicKey(), feeRecipient);
     final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration =
-        validatorRegistrationSigningService.createSignedValidatorRegistration(
+        signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator, Optional.of(oldSignedValidatorRegistration), throwable -> {});
 
     verify(signer, never()).signValidatorRegistration(any());
@@ -119,7 +119,7 @@ class ValidatorRegistrationSigningServiceTest {
         createSignedValidatorRegistration(
             validator.getPublicKey(), dataStructureUtil.randomEth1Address());
     final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration =
-        validatorRegistrationSigningService.createSignedValidatorRegistration(
+        signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator, Optional.of(oldSignedValidatorRegistration), throwable -> {});
 
     verify(signer).signValidatorRegistration(any());
@@ -138,7 +138,7 @@ class ValidatorRegistrationSigningServiceTest {
     when(signer.signValidatorRegistration(any()))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("oops")));
     final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration =
-        validatorRegistrationSigningService.createSignedValidatorRegistration(
+        signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator, Optional.empty(), throwable -> {});
 
     verify(signer).signValidatorRegistration(any());
@@ -157,7 +157,7 @@ class ValidatorRegistrationSigningServiceTest {
         .thenReturn(Optional.of(timestampOverride));
 
     final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration =
-        validatorRegistrationSigningService.createSignedValidatorRegistration(
+        signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator, Optional.empty(), throwable -> {});
     verify(signer).signValidatorRegistration(any());
     assertThat(maybeSignedValidatorRegistration).isPresent();
@@ -178,7 +178,7 @@ class ValidatorRegistrationSigningServiceTest {
         .thenReturn(Optional.of(publicKeyOverride));
 
     final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration =
-        validatorRegistrationSigningService.createSignedValidatorRegistration(
+        signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator, Optional.empty(), throwable -> {});
     verify(signer).signValidatorRegistration(any());
     assertThat(maybeSignedValidatorRegistration).isPresent();
@@ -201,7 +201,7 @@ class ValidatorRegistrationSigningServiceTest {
 
     // Verify validator
     final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration =
-        validatorRegistrationSigningService.createSignedValidatorRegistration(
+        signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator, Optional.empty(), throwable -> {});
     verify(signer).signValidatorRegistration(any());
     assertThat(maybeSignedValidatorRegistration).isPresent();
@@ -215,7 +215,7 @@ class ValidatorRegistrationSigningServiceTest {
 
     // Verify validator2
     final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration2 =
-        validatorRegistrationSigningService.createSignedValidatorRegistration(
+        signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator2, Optional.empty(), throwable -> {});
     verify(signer, times(2)).signValidatorRegistration(any());
     assertThat(maybeSignedValidatorRegistration2).isPresent();
@@ -241,7 +241,7 @@ class ValidatorRegistrationSigningServiceTest {
 
     // Verify validator
     final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration =
-        validatorRegistrationSigningService.createSignedValidatorRegistration(
+        signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator, Optional.empty(), throwable -> {});
     verify(signer).signValidatorRegistration(any());
     assertThat(maybeSignedValidatorRegistration).isPresent();
@@ -258,7 +258,7 @@ class ValidatorRegistrationSigningServiceTest {
 
     // Verify validator2
     final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration2 =
-        validatorRegistrationSigningService.createSignedValidatorRegistration(
+        signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator2, Optional.empty(), throwable -> {});
     verify(signer, times(2)).signValidatorRegistration(any());
     assertThat(maybeSignedValidatorRegistration2).isPresent();
@@ -283,7 +283,7 @@ class ValidatorRegistrationSigningServiceTest {
 
     // Verify validator
     final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration =
-        validatorRegistrationSigningService.createSignedValidatorRegistration(
+        signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator, Optional.empty(), throwable -> {});
     verify(signer).signValidatorRegistration(any());
     assertThat(maybeSignedValidatorRegistration).isPresent();
@@ -297,7 +297,7 @@ class ValidatorRegistrationSigningServiceTest {
 
     // Verify validator2
     final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration2 =
-        validatorRegistrationSigningService.createSignedValidatorRegistration(
+        signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator2, Optional.empty(), throwable -> {});
     verify(signer, times(2)).signValidatorRegistration(any());
     assertThat(maybeSignedValidatorRegistration2).isPresent();
@@ -317,7 +317,7 @@ class ValidatorRegistrationSigningServiceTest {
         .thenReturn(Optional.empty());
 
     final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration =
-        validatorRegistrationSigningService.createSignedValidatorRegistration(
+        signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator, Optional.empty(), throwable -> {});
     verify(signer, never()).signValidatorRegistration(any());
     assertThat(maybeSignedValidatorRegistration).isEmpty();
@@ -330,7 +330,7 @@ class ValidatorRegistrationSigningServiceTest {
         .thenReturn(false);
 
     final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration =
-        validatorRegistrationSigningService.createSignedValidatorRegistration(
+        signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator, Optional.empty(), throwable -> {});
     verify(signer, never()).signValidatorRegistration(any());
     assertThat(maybeSignedValidatorRegistration).isEmpty();

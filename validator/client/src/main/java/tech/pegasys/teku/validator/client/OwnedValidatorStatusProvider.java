@@ -122,7 +122,7 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
   public void onAttestationAggregationDue(UInt64 slot) {}
 
   @Override
-  public void subscribeNewValidatorStatuses(final ValidatorStatusSubscriber subscriber) {
+  public void subscribeValidatorStatusesUpdates(final ValidatorStatusSubscriber subscriber) {
     validatorStatusSubscribers.subscribe(subscriber);
   }
 
@@ -144,7 +144,7 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
               if (maybeValidatorStatuses.isEmpty()) {
                 return retryInitialValidatorStatusCheck();
               }
-              onNewValidatorStatuses(maybeValidatorStatuses.get(), true);
+              onUpdatedValidatorStatuses(maybeValidatorStatuses.get(), true);
               startupComplete.set(true);
               return SafeFuture.COMPLETE;
             })
@@ -174,7 +174,7 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
                   STATUS_LOG.unableToRetrieveValidatorStatusesFromBeaconNode();
                   return;
                 }
-                onNewValidatorStatuses(maybeNewValidatorStatuses.get(), true);
+                onUpdatedValidatorStatuses(maybeNewValidatorStatuses.get(), true);
               })
           .alwaysRun(() -> lookupInProgress.set(false))
           .finish(error -> LOG.error("Failed to update validator statuses", error));
@@ -198,14 +198,14 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
                 final Map<BLSPublicKey, ValidatorStatus> oldStatuses =
                     Optional.ofNullable(latestValidatorStatuses.get()).orElse(Map.of());
                 newStatuses.putAll(oldStatuses);
-                onNewValidatorStatuses(newStatuses, false);
+                onUpdatedValidatorStatuses(newStatuses, false);
               })
           .alwaysRun(() -> lookupInProgress.set(false))
           .finish(error -> LOG.error("Failed to update validator statuses", error));
     }
   }
 
-  private void onNewValidatorStatuses(
+  private void onUpdatedValidatorStatuses(
       final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
       final boolean updateLastRunEpoch) {
     latestValidatorStatuses.getAndSet(newValidatorStatuses);
