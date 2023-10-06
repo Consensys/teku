@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.store;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.collect.Maps;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -104,21 +103,15 @@ class StoreTransactionUpdates {
 
   public void applyToStore(final Store store, final UpdateResult updateResult) {
     // Add new data
-    tx.timeMillis
-        .filter(t -> t.isGreaterThan(store.getTimeMillis()))
-        .ifPresent(value -> store.timeMillis = value);
-    tx.genesisTime.ifPresent(value -> store.genesisTime = value);
+    tx.timeMillis.ifPresent(store::cacheTimeMillis);
+    tx.genesisTime.ifPresent(store::cacheGenesisTime);
     tx.justifiedCheckpoint.ifPresent(store::updateJustifiedCheckpoint);
     tx.bestJustifiedCheckpoint.ifPresent(store::updateBestJustifiedCheckpoint);
-    hotBlocks.values().stream()
-        .sorted(Comparator.comparing(BlockAndCheckpoints::getSlot))
-        .map(BlockAndCheckpoints::getBlock)
-        .forEach(block -> store.blocks.put(block.getRoot(), block));
-    store.blockCountGauge.ifPresent(gauge -> gauge.set(store.blocks.size()));
-    store.states.cacheAll(Maps.transformValues(hotBlockAndStates, this::blockAndStateAsSummary));
+    store.cacheBlocks(hotBlocks.values());
+    store.cacheStates(Maps.transformValues(hotBlockAndStates, this::blockAndStateAsSummary));
     if (optimisticTransitionBlockRootSet) {
-      store.finalizedOptimisticTransitionPayload =
-          updateResult.getFinalizedOptimisticTransitionPayload();
+      store.cacheFinalizedOptimisticTransitionPayload(
+          updateResult.getFinalizedOptimisticTransitionPayload());
     }
 
     // Update finalized data
@@ -128,18 +121,20 @@ class StoreTransactionUpdates {
     // Prune blocks and states
     prunedHotBlockRoots.keySet().forEach(store::removeStateAndBlock);
 
-    store.checkpointStates.removeIf(
+    store.cleanupCheckpointStates(
         slotAndBlockRoot -> prunedHotBlockRoots.containsKey(slotAndBlockRoot.getBlockRoot()));
 
     if (tx.proposerBoostRootSet) {
-      store.proposerBoostRoot = tx.proposerBoostRoot;
+      store.cacheProposerBoostRoot(tx.proposerBoostRoot);
     }
 
-    store.forkChoiceStrategy.applyUpdate(
-        hotBlocks.values(),
-        tx.pulledUpBlockCheckpoints,
-        prunedHotBlockRoots,
-        store.getFinalizedCheckpoint());
+    store
+        .getForkChoiceStrategy()
+        .applyUpdate(
+            hotBlocks.values(),
+            tx.pulledUpBlockCheckpoints,
+            prunedHotBlockRoots,
+            store.getFinalizedCheckpoint());
   }
 
   private StateAndBlockSummary blockAndStateAsSummary(final SignedBlockAndState blockAndState) {

@@ -21,6 +21,7 @@ import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMilli
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -31,6 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -52,6 +54,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -71,7 +74,7 @@ import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.protoarray.ProtoArray;
 
-class Store implements UpdatableStore {
+class Store extends CacheableStore {
   private static final Logger LOG = LogManager.getLogger();
   public static final int VOTE_TRACKER_SPARE_CAPACITY = 1000;
 
@@ -83,32 +86,32 @@ class Store implements UpdatableStore {
   private final Lock readLock = lock.readLock();
 
   private final MetricsSystem metricsSystem;
-  Optional<SettableGauge> blockCountGauge = Optional.empty();
+  private Optional<SettableGauge> blockCountGauge = Optional.empty();
 
   private Optional<SettableGauge> epochStatesCountGauge = Optional.empty();
 
-  final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates;
+  private final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates;
 
   private final Spec spec;
   private final StateAndBlockSummaryProvider stateProvider;
   private final BlockProvider blockProvider;
   private final BlobSidecarsProvider blobSidecarsProvider;
   private final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider;
-  final ForkChoiceStrategy forkChoiceStrategy;
+  private final ForkChoiceStrategy forkChoiceStrategy;
 
   private final Optional<Checkpoint> initialCheckpoint;
-  UInt64 timeMillis;
-  UInt64 genesisTime;
-  AnchorPoint finalizedAnchor;
-  Checkpoint justifiedCheckpoint;
-  Checkpoint bestJustifiedCheckpoint;
-  Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload;
-  Optional<Bytes32> proposerBoostRoot = Optional.empty();
-  final CachingTaskQueue<Bytes32, StateAndBlockSummary> states;
-  final Map<Bytes32, SignedBeaconBlock> blocks;
-  final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates;
-  VoteTracker[] votes;
-  UInt64 highestVotedValidatorIndex;
+  private final CachingTaskQueue<Bytes32, StateAndBlockSummary> states;
+  private final Map<Bytes32, SignedBeaconBlock> blocks;
+  private final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates;
+  private UInt64 timeMillis;
+  private UInt64 genesisTime;
+  private AnchorPoint finalizedAnchor;
+  private Checkpoint justifiedCheckpoint;
+  private Checkpoint bestJustifiedCheckpoint;
+  private Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload;
+  private Optional<Bytes32> proposerBoostRoot = Optional.empty();
+  private VoteTracker[] votes;
+  private UInt64 highestVotedValidatorIndex;
 
   private Store(
       final MetricsSystem metricsSystem,
@@ -573,6 +576,74 @@ class Store implements UpdatableStore {
   @Override
   public SafeFuture<Optional<UInt64>> retrieveEarliestBlobSidecarSlot() {
     return earliestBlobSidecarSlotProvider.getEarliestBlobSidecarSlot();
+  }
+
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
+  @Override
+  void cacheBlocks(final Collection<BlockAndCheckpoints> blockAndCheckpoints) {
+    blockAndCheckpoints.stream()
+        .sorted(Comparator.comparing(BlockAndCheckpoints::getSlot))
+        .map(BlockAndCheckpoints::getBlock)
+        .forEach(block -> blocks.put(block.getRoot(), block));
+    blockCountGauge.ifPresent(gauge -> gauge.set(blocks.size()));
+  }
+
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
+  @Override
+  void cacheTimeMillis(final UInt64 timeMillis) {
+    if (timeMillis.isGreaterThanOrEqualTo(this.timeMillis)) {
+      this.timeMillis = timeMillis;
+    }
+  }
+
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
+  @Override
+  void cacheGenesisTime(final UInt64 genesisTime) {
+    this.genesisTime = genesisTime;
+  }
+
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
+  @Override
+  void cacheProposerBoostRoot(final Optional<Bytes32> proposerBoostRoot) {
+    this.proposerBoostRoot = proposerBoostRoot;
+  }
+
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
+  @Override
+  void cacheStates(final Map<Bytes32, StateAndBlockSummary> stateAndBlockSummaries) {
+    states.cacheAll(stateAndBlockSummaries);
+  }
+
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
+  @Override
+  void cacheFinalizedOptimisticTransitionPayload(
+      final Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload) {
+    this.finalizedOptimisticTransitionPayload = finalizedOptimisticTransitionPayload;
+  }
+
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
+  @Override
+  void cleanupCheckpointStates(final Predicate<SlotAndBlockRoot> removalCondition) {
+    checkpointStates.removeIf(removalCondition);
+  }
+
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
+  @Override
+  void setHighestVotedValidatorIndex(final UInt64 highestVotedValidatorIndex) {
+    this.highestVotedValidatorIndex = highestVotedValidatorIndex;
+
+    // Expand votes array if needed
+    if (highestVotedValidatorIndex.isGreaterThanOrEqualTo(votes.length)) {
+      this.votes =
+          Arrays.copyOf(
+              votes, highestVotedValidatorIndex.plus(VOTE_TRACKER_SPARE_CAPACITY).intValue());
+    }
+  }
+
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
+  @Override
+  void setVote(final int index, final VoteTracker voteTracker) {
+    votes[index] = voteTracker;
   }
 
   UInt64 getHighestVotedValidatorIndex() {
