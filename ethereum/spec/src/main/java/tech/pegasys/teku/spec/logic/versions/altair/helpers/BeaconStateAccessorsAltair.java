@@ -101,9 +101,7 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
     final UInt64 epoch = getCurrentEpoch(state).plus(1);
     final IntList activeValidatorIndices = getActiveValidatorIndices(state, epoch);
     final int activeValidatorCount = activeValidatorIndices.size();
-    checkArgument(
-        activeValidatorCount > 0,
-        "Provided state should have active validators, 0 validators are active");
+    checkArgument(activeValidatorCount > 0, "Provided state has no active validators");
 
     final Bytes32 seed = getSeed(state, epoch, Domain.SYNC_COMMITTEE);
     int i = 0;
