@@ -138,7 +138,7 @@ dependencyManagement {
       entry('core')
       entry('config')
     }
-    dependencySet(group: 'org.hyperledger.besu', version: '23.7.1') {
+    dependencySet(group: 'org.hyperledger.besu', version: '23.7.3') {
       entry('besu-datatypes')
       entry('evm')
       entry('plugin-api')
