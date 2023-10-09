@@ -15,17 +15,16 @@ package tech.pegasys.teku.ethereum.executionclient.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.Jwts.SIG;
 import java.security.Key;
 import javax.crypto.spec.SecretKeySpec;
 import org.apache.tuweni.bytes.Bytes;
 
 public class JwtTestHelper {
   public static SecretKeySpec generateJwtSecret() {
-    final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    final Key key = SIG.HS256.key().build();
     final byte[] keyData = key.getEncoded();
-    return new SecretKeySpec(keyData, SignatureAlgorithm.HS256.getJcaName());
+    return new SecretKeySpec(keyData, key.getAlgorithm());
   }
 
   public static void assertSecretEquals(final Key expected, final Key actual) {
