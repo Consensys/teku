@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.config;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllAltairFieldsSet;
 
 import java.io.IOException;
@@ -86,9 +87,17 @@ public class SpecConfigReaderTest {
   public void read_almostEmptyFile() {
     processFileAsInputStream(getInvalidConfigPath("almostEmpty"), this::readConfig);
 
-    assertThatThrownBy(reader::build)
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("missing or invalid values for constants");
+    try {
+      reader.build();
+      Assertions.fail("Should have received an exception");
+    } catch (IllegalArgumentException e) {
+      final String message = e.getMessage();
+      assertThat(message).contains("missing or invalid values for constants");
+      // this message contains a number of items separated by ", ".
+      // If there's only one field, then this test will return 1 element, but it should return all
+      // missing fields.
+      assertThat(message.split(", ")).hasSizeGreaterThan(1);
+    }
   }
 
   @Test

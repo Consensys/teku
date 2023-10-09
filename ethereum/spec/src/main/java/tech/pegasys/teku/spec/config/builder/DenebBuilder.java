@@ -16,9 +16,7 @@ package tech.pegasys.teku.spec.config.builder;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -151,26 +149,15 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
       SpecBuilderUtil.fillMissingValuesWithZeros(this);
     }
 
-    final List<Optional<String>> maybeErrors = new ArrayList<>();
-    final Map<String, Object> constants = getValidationMap();
+    validateConstants();
 
-    constants.forEach((k, v) -> maybeErrors.add(SpecBuilderUtil.validateConstant(k, v)));
-
-    final List<String> fieldsFailingValidation =
-        maybeErrors.stream().filter(Optional::isPresent).map(Optional::get).toList();
-
-    if (!fieldsFailingValidation.isEmpty()) {
-      throw new IllegalArgumentException(
-          String.format(
-              "The specified network configuration had missing or invalid values for constants %s",
-              String.join(", ", fieldsFailingValidation)));
-    }
     if (!denebForkEpoch.equals(SpecConfig.FAR_FUTURE_EPOCH) && !kzgNoop) {
       SpecBuilderUtil.validateRequiredOptional("trustedSetupPath", trustedSetupPath);
     }
   }
 
-  private Map<String, Object> getValidationMap() {
+  @Override
+  public Map<String, Object> getValidationMap() {
     final Map<String, Object> constants = new HashMap<>();
 
     constants.put("denebForkEpoch", denebForkEpoch);
