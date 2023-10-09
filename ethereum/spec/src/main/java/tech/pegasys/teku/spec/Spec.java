@@ -870,6 +870,13 @@ public class Spec {
     return atEpoch(epoch).getValidatorsUtil().getCommitteeAssignment(state, epoch, validatorIndex);
   }
 
+  public Map<Integer, CommitteeAssignment> getValidatorIndexToCommitteeAssignmentMap(
+      final BeaconState state, final UInt64 epoch) {
+    return atEpoch(epoch)
+        .getValidatorsUtil()
+        .getValidatorIndexToCommitteeAssignmentMap(state, epoch);
+  }
+
   // Attestation helpers
   public IntList getAttestingIndices(BeaconState state, AttestationData data, SszBitlist bits) {
     return atState(state).getAttestationUtil().getAttestingIndices(state, data, bits);
