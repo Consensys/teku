@@ -18,16 +18,16 @@ import static tech.pegasys.teku.ethereum.executionclient.auth.JwtConfig.TOLERANC
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import java.security.Key;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import javax.crypto.SecretKey;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class SafeTokenProviderTest {
-  private Key jwtSecretKey;
+  private SecretKey jwtSecretKey;
 
   private SafeTokenProvider safeTokenProvider;
 
@@ -76,14 +76,16 @@ class SafeTokenProviderTest {
   }
 
   public static void validateJwtTokenAtInstant(
-      final Key jwtSecretKey, final Optional<Token> optionalToken, final UInt64 instantInMillis) {
+      final SecretKey jwtSecretKey,
+      final Optional<Token> optionalToken,
+      final UInt64 instantInMillis) {
     Assertions.assertThat(optionalToken).isPresent();
     final long issuedAtInSeconds =
-        Jwts.parserBuilder()
-            .setSigningKey(jwtSecretKey)
+        Jwts.parser()
+            .verifyWith(jwtSecretKey)
             .build()
-            .parseClaimsJws(optionalToken.get().getJwtToken())
-            .getBody()
+            .parseSignedClaims(optionalToken.get().getJwtToken())
+            .getPayload()
             .get(Claims.ISSUED_AT, Long.class);
     assertThat(instantInMillis.plus(TimeUnit.SECONDS.toMillis(TOLERANCE_IN_SECONDS)))
         .isGreaterThan(UInt64.valueOf(TimeUnit.SECONDS.toMillis(issuedAtInSeconds)));

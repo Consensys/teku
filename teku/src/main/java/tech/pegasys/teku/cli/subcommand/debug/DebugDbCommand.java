@@ -14,6 +14,7 @@
 package tech.pegasys.teku.cli.subcommand.debug;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -95,7 +96,8 @@ public class DebugDbCommand implements Runnable {
       @Mixin final BeaconNodeDataOptions beaconNodeDataOptions,
       @Mixin final Eth2NetworkOptions eth2NetworkOptions)
       throws Exception {
-    try (final YamlEth1EventsChannel eth1EventsChannel = new YamlEth1EventsChannel(System.out);
+    final PrintStream printStream = System.out;
+    try (final YamlEth1EventsChannel eth1EventsChannel = new YamlEth1EventsChannel(printStream);
         final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
       final DepositStorage depositStorage =
           DepositStorage.create(eth1EventsChannel, database, false);

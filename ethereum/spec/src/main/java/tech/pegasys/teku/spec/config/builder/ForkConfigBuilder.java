@@ -13,6 +13,10 @@
 
 package tech.pegasys.teku.spec.config.builder;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import tech.pegasys.teku.spec.config.SpecConfig;
 
@@ -21,6 +25,25 @@ interface ForkConfigBuilder<ParentType extends SpecConfig, ForkType extends Pare
   ForkType build(ParentType specConfig);
 
   void validate();
+
+  Map<String, Object> getValidationMap();
+
+  default void validateConstants() {
+    final List<Optional<String>> maybeErrors = new ArrayList<>();
+    final Map<String, Object> constants = getValidationMap();
+
+    constants.forEach((k, v) -> maybeErrors.add(SpecBuilderUtil.validateConstant(k, v)));
+
+    final List<String> fieldsFailingValidation =
+        maybeErrors.stream().filter(Optional::isPresent).map(Optional::get).toList();
+
+    if (!fieldsFailingValidation.isEmpty()) {
+      throw new IllegalArgumentException(
+          String.format(
+              "The specified network configuration had missing or invalid values for constants %s",
+              String.join(", ", fieldsFailingValidation)));
+    }
+  }
 
   void addOverridableItemsToRawConfig(BiConsumer<String, Object> rawConfig);
 }
