@@ -60,8 +60,9 @@ public class GenesisCommand {
     final Spec spec = networkOptions.getSpec();
     final boolean outputToFile =
         genesisParams.outputFile != null && !genesisParams.outputFile.isBlank();
-    try (final OutputStream fileStream =
-        outputToFile ? new FileOutputStream(genesisParams.outputFile) : System.out) {
+    final OutputStream fileStream =
+        outputToFile ? new FileOutputStream(genesisParams.outputFile) : System.out;
+    try {
       if (outputToFile) {
         SUB_COMMAND_LOG.generatingMockGenesis(
             genesisParams.validatorCount, genesisParams.genesisTime);
@@ -81,6 +82,10 @@ public class GenesisCommand {
       fileStream.write(genesisState.sszSerialize().toArrayUnsafe());
       if (outputToFile) {
         SUB_COMMAND_LOG.storingGenesis(genesisParams.outputFile, true);
+      }
+    } finally {
+      if (fileStream instanceof FileOutputStream) {
+        fileStream.close();
       }
     }
   }

@@ -14,8 +14,8 @@
 package tech.pegasys.teku.ethereum.executionclient.auth;
 
 import java.nio.file.Path;
-import java.security.Key;
 import java.util.Optional;
+import javax.crypto.SecretKey;
 
 public class JwtConfig {
 
@@ -31,13 +31,13 @@ public class JwtConfig {
    */
   public static final long EXPIRES_IN_SECONDS = TOLERANCE_IN_SECONDS - 2;
 
-  private final Key key;
+  private final SecretKey key;
 
-  public JwtConfig(final Key key) {
+  public JwtConfig(final SecretKey key) {
     this.key = key;
   }
 
-  public Key getKey() {
+  public SecretKey getKey() {
     return key;
   }
 

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.config;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static tech.pegasys.teku.spec.config.SpecConfigAssertions.assertAllAltairFieldsSet;
 
 import java.io.IOException;
@@ -31,7 +32,7 @@ public class SpecConfigReaderTest {
 
     assertThatThrownBy(reader::build)
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Missing value for spec constant 'MIN_PER_EPOCH_CHURN_LIMIT'");
+        .hasMessageContaining("MIN_PER_EPOCH_CHURN_LIMIT");
   }
 
   @Test
@@ -49,7 +50,7 @@ public class SpecConfigReaderTest {
                                 bellatrixBuilder ->
                                     bellatrixBuilder.bellatrixForkEpoch(UInt64.ZERO))))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Missing value for spec constant 'EPOCHS_PER_SYNC_COMMITTEE_PERIOD'");
+        .hasMessageContaining("EPOCHS_PER_SYNC_COMMITTEE_PERIOD");
   }
 
   @Test
@@ -86,9 +87,17 @@ public class SpecConfigReaderTest {
   public void read_almostEmptyFile() {
     processFileAsInputStream(getInvalidConfigPath("almostEmpty"), this::readConfig);
 
-    assertThatThrownBy(reader::build)
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Missing value for spec constant");
+    try {
+      reader.build();
+      Assertions.fail("Should have received an exception");
+    } catch (IllegalArgumentException e) {
+      final String message = e.getMessage();
+      assertThat(message).contains("missing or invalid values for constants");
+      // this message contains a number of items separated by ", ".
+      // If there's only one field, then this test will return 1 element, but it should return all
+      // missing fields.
+      assertThat(message.split(", ")).hasSizeGreaterThan(1);
+    }
   }
 
   @Test
