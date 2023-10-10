@@ -14,14 +14,24 @@
 package tech.pegasys.teku.spec.logic.versions.deneb.helpers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG;
 
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class MiscHelpersDenebTest {
 
@@ -34,6 +44,7 @@ class MiscHelpersDenebTest {
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final MiscHelpersDeneb miscHelpersDeneb =
       new MiscHelpersDeneb(spec.getGenesisSpecConfig().toVersionDeneb().orElseThrow());
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @Test
   public void versionedHash() {
@@ -42,5 +53,96 @@ class MiscHelpersDenebTest {
             KZGCommitment.fromHexString(
                 "0x85d1edf1ee88f68260e750abb2c766398ad1125d4e94e1de04034075ccbd2bb79c5689b952ef15374fd03ca2b2475371"));
     assertThat(actual).isEqualTo(VERSIONED_HASH);
+  }
+
+  @Test
+  void validateBlobSidecarsAgainstBlock_shouldNotThrowOnValidBlobSidecar() {
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
+    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
+
+    // make sure we are testing something
+    assertThat(blobSidecars).isNotEmpty();
+
+    miscHelpersDeneb.validateBlobSidecarsAgainstBlock(
+        blobSidecars,
+        block.getMessage(),
+        BeaconBlockBodyDeneb.required(block.getMessage().getBody()).getBlobKzgCommitments().stream()
+            .map(SszKZGCommitment::getKZGCommitment)
+            .toList());
+  }
+
+  @ParameterizedTest
+  @EnumSource(value = BlobSidecarsAlteration.class)
+  void validateBlobSidecarsAgainstBlock_shouldThrowOnBlobSidecarNotMatching(
+      final BlobSidecarsAlteration blobSidecarsAlteration) {
+
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
+
+    final List<KZGCommitment> kzgCommitments =
+        BeaconBlockBodyDeneb.required(block.getMessage().getBody()).getBlobKzgCommitments().stream()
+            .map(SszKZGCommitment::getKZGCommitment)
+            .toList();
+
+    // make sure we are testing something
+    assertThat(kzgCommitments).isNotEmpty();
+
+    final Integer indexToBeAltered =
+        Math.toIntExact(dataStructureUtil.randomPositiveLong(kzgCommitments.size()));
+
+    // let's create blobs with only one altered with the given alteration
+    final List<BlobSidecar> blobSidecars =
+        dataStructureUtil.randomBlobSidecarsForBlock(
+            block,
+            (index, randomBlobSidecarBuilder) -> {
+              if (!indexToBeAltered.equals(index)) {
+                return randomBlobSidecarBuilder;
+              }
+
+              return switch (blobSidecarsAlteration) {
+                case BLOB_SIDECAR_PROPOSER_INDEX -> randomBlobSidecarBuilder.proposerIndex(
+                    block.getProposerIndex().plus(1));
+                case BLOB_SIDECAR_INDEX -> randomBlobSidecarBuilder.index(
+                    UInt64.valueOf(kzgCommitments.size())); // out of bounds
+                case BLOB_SIDECAR_PARENT_ROOT -> randomBlobSidecarBuilder.blockParentRoot(
+                    block.getParentRoot().not());
+                case BLOB_SIDECAR_KZG_COMMITMENT -> randomBlobSidecarBuilder.kzgCommitment(
+                    BeaconBlockBodyDeneb.required(block.getMessage().getBody())
+                        .getBlobKzgCommitments()
+                        .get(index)
+                        .getBytes()
+                        .not());
+              };
+            });
+
+    assertThatThrownBy(
+            () ->
+                miscHelpersDeneb.validateBlobSidecarsAgainstBlock(
+                    blobSidecars,
+                    block.getMessage(),
+                    BeaconBlockBodyDeneb.required(block.getMessage().getBody())
+                        .getBlobKzgCommitments()
+                        .stream()
+                        .map(SszKZGCommitment::getKZGCommitment)
+                        .toList()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageStartingWith(
+            switch (blobSidecarsAlteration) {
+              case BLOB_SIDECAR_PROPOSER_INDEX -> "Block and blob sidecar proposer index mismatch";
+              case BLOB_SIDECAR_INDEX -> "Blob sidecar index out of bound with respect to block";
+              case BLOB_SIDECAR_PARENT_ROOT -> "Block and blob sidecar parent block mismatch";
+              case BLOB_SIDECAR_KZG_COMMITMENT -> "Block and blob sidecar kzg commitments mismatch";
+            })
+        .hasMessageEndingWith(
+            "blob index %s",
+            blobSidecarsAlteration == BlobSidecarsAlteration.BLOB_SIDECAR_INDEX
+                ? kzgCommitments.size() // out of bounds altered index
+                : indexToBeAltered);
+  }
+
+  private enum BlobSidecarsAlteration {
+    BLOB_SIDECAR_PROPOSER_INDEX,
+    BLOB_SIDECAR_INDEX,
+    BLOB_SIDECAR_PARENT_ROOT,
+    BLOB_SIDECAR_KZG_COMMITMENT,
   }
 }

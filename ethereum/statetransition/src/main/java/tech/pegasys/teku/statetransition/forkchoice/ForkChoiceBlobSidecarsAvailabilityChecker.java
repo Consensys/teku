@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -41,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTracker;
@@ -130,11 +130,13 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
     final BeaconBlock block = blockBlobSidecarsTracker.getBlock().orElseThrow();
     final SlotAndBlockRoot slotAndBlockRoot = blockBlobSidecarsTracker.getSlotAndBlockRoot();
 
-    try {
-      blobSidecars.forEach(
-          blobSidecar -> validateBlobSidecarAgainstBlock(blobSidecar, block, slotAndBlockRoot));
+    final MiscHelpers miscHelpers = spec.atSlot(slotAndBlockRoot.getSlot()).miscHelpers();
 
-      if (!spec.atSlot(slotAndBlockRoot.getSlot()).miscHelpers().isDataAvailable(blobSidecars)) {
+    try {
+      miscHelpers.validateBlobSidecarsAgainstBlock(
+          blobSidecars, block, kzgCommitmentsFromBlockSupplier.get());
+
+      if (!miscHelpers.isDataAvailable(blobSidecars)) {
         return BlobSidecarsAndValidationResult.invalidResult(blobSidecars);
       }
     } catch (final Exception ex) {
@@ -142,40 +144,6 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
     }
 
     return BlobSidecarsAndValidationResult.validResult(blobSidecars);
-  }
-
-  private void validateBlobSidecarAgainstBlock(
-      final BlobSidecar blobSidecar,
-      final BeaconBlock block,
-      final SlotAndBlockRoot slotAndBlockRoot) {
-    final UInt64 blobIndex = blobSidecar.getIndex();
-    checkArgument(
-        blobSidecar.getSlot().equals(block.getSlot()),
-        "Block and blob sidecar slot mismatch for %s index %s",
-        slotAndBlockRoot,
-        blobIndex);
-    checkArgument(
-        blobSidecar.getBlockParentRoot().equals(block.getParentRoot()),
-        "Block and blob sidecar parent block mismatch for %s index %s",
-        slotAndBlockRoot,
-        blobIndex);
-
-    final KZGCommitment kzgCommitmentFromBlock;
-
-    try {
-      kzgCommitmentFromBlock = kzgCommitmentsFromBlockSupplier.get().get(blobIndex.intValue());
-    } catch (IndexOutOfBoundsException e) {
-      throw new IllegalArgumentException(
-          String.format(
-              "Blob sidecar index out of bound with respect to block %s index %s",
-              slotAndBlockRoot, blobIndex));
-    }
-
-    checkArgument(
-        blobSidecar.getKZGCommitment().equals(kzgCommitmentFromBlock),
-        "Block and blob sidecar kzg commitments mismatch for %s index %s",
-        slotAndBlockRoot,
-        blobIndex);
   }
 
   /**

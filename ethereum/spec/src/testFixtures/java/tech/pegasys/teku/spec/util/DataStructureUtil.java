@@ -2150,6 +2150,7 @@ public final class DataStructureUtil {
                       .slot(block.getSlot())
                       .blockRoot(block.getRoot())
                       .blockParentRoot(block.getParentRoot())
+                      .proposerIndex(block.getMessage().getProposerIndex())
                       .kzgCommitment(blobKzgCommitments.get(index).getBytes())
                       .index(UInt64.valueOf(index));
 

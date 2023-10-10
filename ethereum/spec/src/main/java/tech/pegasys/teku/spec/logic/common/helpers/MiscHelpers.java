@@ -355,6 +355,13 @@ public class MiscHelpers {
     throw new UnsupportedOperationException("No KZGCommitments before Deneb");
   }
 
+  public void validateBlobSidecarsAgainstBlock(
+      final List<BlobSidecar> blobSidecars,
+      final BeaconBlock block,
+      final List<KZGCommitment> kzgCommitmentsFromBlock) {
+    throw new UnsupportedOperationException("Blob Sidecars before Deneb");
+  }
+
   public UInt64 getMaxRequestBlocks() {
     return UInt64.valueOf(specConfig.getNetworkingConfig().getMaxRequestBlocks());
   }

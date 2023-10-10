@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.versions.deneb.helpers;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG;
 
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.logic.versions.capella.helpers.MiscHelpersCapella;
@@ -87,6 +89,56 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   public VersionedHash kzgCommitmentToVersionedHash(final KZGCommitment kzgCommitment) {
     return VersionedHash.create(
         VERSIONED_HASH_VERSION_KZG, Hash.sha256(kzgCommitment.getBytesCompressed()));
+  }
+
+  /**
+   * The validation assumes that blockRoot and Slot are already matching. This is guaranteed by
+   * BlobSidecarPool and BlockBlobSidecarsTracker
+   *
+   * @param blobSidecars blob sidecars to validate
+   * @param block block to validate blob sidecar against
+   * @param kzgCommitmentsFromBlock kzg commitments from block
+   */
+  @Override
+  public void validateBlobSidecarsAgainstBlock(
+      final List<BlobSidecar> blobSidecars,
+      final BeaconBlock block,
+      final List<KZGCommitment> kzgCommitmentsFromBlock) {
+
+    final String slotAndBlockRoot = block.getSlotAndBlockRoot().toLogString();
+
+    blobSidecars.forEach(
+        blobSidecar -> {
+          final UInt64 blobIndex = blobSidecar.getIndex();
+
+          checkArgument(
+              blobSidecar.getProposerIndex().equals(block.getProposerIndex()),
+              "Block and blob sidecar proposer index mismatch for %s, blob index %s",
+              slotAndBlockRoot,
+              blobIndex);
+          checkArgument(
+              blobSidecar.getBlockParentRoot().equals(block.getParentRoot()),
+              "Block and blob sidecar parent block mismatch for %s, blob index %s",
+              slotAndBlockRoot,
+              blobIndex);
+
+          final KZGCommitment kzgCommitmentFromBlock;
+
+          try {
+            kzgCommitmentFromBlock = kzgCommitmentsFromBlock.get(blobIndex.intValue());
+          } catch (IndexOutOfBoundsException e) {
+            throw new IllegalArgumentException(
+                String.format(
+                    "Blob sidecar index out of bound with respect to block %s, blob index %s",
+                    slotAndBlockRoot, blobIndex));
+          }
+
+          checkArgument(
+              blobSidecar.getKZGCommitment().equals(kzgCommitmentFromBlock),
+              "Block and blob sidecar kzg commitments mismatch for %s, blob index %s",
+              slotAndBlockRoot,
+              blobIndex);
+        });
   }
 
   @Override
