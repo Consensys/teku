@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -80,7 +79,6 @@ import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeMessagePool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuties;
-import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.api.ProposerDuties;
@@ -91,6 +89,7 @@ import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.coordinator.duties.AttesterDutiesGenerator;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.publisher.BlockPublisher;
 import tech.pegasys.teku.validator.coordinator.publisher.MilestoneBasedBlockPublisher;
@@ -123,6 +122,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
   private final ProposersDataManager proposersDataManager;
   private final BlockPublisher blockPublisher;
+
+  private final AttesterDutiesGenerator attesterDutiesGenerator;
 
   public ValidatorApiHandler(
       final ChainDataProvider chainDataProvider,
@@ -173,6 +174,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             blobSidecarGossipChannel,
             performanceTracker,
             dutyMetrics);
+    this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
   }
 
   @Override
@@ -204,6 +206,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
       final UInt64 epoch, final IntCollection validatorIndices) {
+
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
@@ -217,14 +220,22 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                   "Attestation duties were requested %s epochs ahead, only 1 epoch in future is supported.",
                   epoch.minus(combinedChainDataClient.getCurrentEpoch()).toString())));
     }
+    // what state can we use? If the current or next epoch, we can use the best state,
+    // which would guarantee no state regeneration
     final UInt64 slot = spec.getEarliestQueryableSlotForBeaconCommitteeInTargetEpoch(epoch);
+
     LOG.trace("Retrieving attestation duties from epoch {} using state at slot {}", epoch, slot);
     return combinedChainDataClient
         .getStateAtSlotExact(slot)
         .thenApply(
             optionalState ->
                 optionalState.map(
-                    state -> getAttesterDutiesFromIndicesAndState(state, epoch, validatorIndices)));
+                    state ->
+                        attesterDutiesGenerator.getAttesterDutiesFromIndicesAndState(
+                            state,
+                            epoch,
+                            validatorIndices,
+                            combinedChainDataClient.isChainHeadOptimistic())));
   }
 
   @Override
@@ -665,42 +676,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         combinedChainDataClient.isChainHeadOptimistic());
   }
 
-  private AttesterDuties getAttesterDutiesFromIndicesAndState(
-      final BeaconState state, final UInt64 epoch, final IntCollection validatorIndices) {
-    final Bytes32 dependentRoot =
-        epoch.isGreaterThan(spec.getCurrentEpoch(state))
-            ? spec.atEpoch(epoch).getBeaconStateUtil().getCurrentDutyDependentRoot(state)
-            : spec.atEpoch(epoch).getBeaconStateUtil().getPreviousDutyDependentRoot(state);
-    return new AttesterDuties(
-        combinedChainDataClient.isChainHeadOptimistic(),
-        dependentRoot,
-        validatorIndices
-            .intStream()
-            .mapToObj(index -> createAttesterDuties(state, epoch, index))
-            .filter(Optional::isPresent)
-            .map(Optional::get)
-            .toList());
-  }
-
-  private Optional<AttesterDuty> createAttesterDuties(
-      final BeaconState state, final UInt64 epoch, final int validatorIndex) {
-
-    return combine(
-        spec.getValidatorPubKey(state, UInt64.valueOf(validatorIndex)),
-        spec.getCommitteeAssignment(state, epoch, validatorIndex),
-        (pkey, committeeAssignment) -> {
-          final UInt64 committeeCountPerSlot = spec.getCommitteeCountPerSlot(state, epoch);
-          return new AttesterDuty(
-              pkey,
-              validatorIndex,
-              committeeAssignment.getCommittee().size(),
-              committeeAssignment.getCommitteeIndex().intValue(),
-              committeeCountPerSlot.intValue(),
-              committeeAssignment.getCommittee().indexOf(validatorIndex),
-              committeeAssignment.getSlot());
-        });
-  }
-
   private SafeFuture<Optional<BeaconState>> getStateForCommitteeDuties(
       final SpecVersion specVersion, final UInt64 epoch) {
     final Optional<SyncCommitteeUtil> maybeSyncCommitteeUtil = specVersion.getSyncCommitteeUtil();
@@ -779,14 +754,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     return Optional.of(
         new SyncCommitteeDuty(
             state.getValidators().get(validatorIndex).getPublicKey(), validatorIndex, duties));
-  }
-
-  private static <A, B, R> Optional<R> combine(
-      Optional<A> a, Optional<B> b, BiFunction<A, B, R> fun) {
-    if (a.isEmpty() || b.isEmpty()) {
-      return Optional.empty();
-    }
-    return Optional.ofNullable(fun.apply(a.get(), b.get()));
   }
 
   private List<ProposerDuty> getProposalSlotsForEpoch(final BeaconState state, final UInt64 epoch) {

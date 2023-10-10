@@ -13,8 +13,8 @@
 
 package tech.pegasys.teku.ethereum.executionclient.auth;
 
+import io.jsonwebtoken.Jwts.SIG;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -48,10 +48,9 @@ public class JwtSecretKeyLoader {
   }
 
   private SecretKeySpec generateNewSecret() {
-    final Key key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    final Key key = SIG.HS256.key().build();
     final byte[] keyData = key.getEncoded();
-    final SecretKeySpec wrappedKey =
-        new SecretKeySpec(keyData, SignatureAlgorithm.HS256.getJcaName());
+    final SecretKeySpec wrappedKey = new SecretKeySpec(keyData, key.getAlgorithm());
     writeGeneratedKeyToFile(wrappedKey);
     return wrappedKey;
   }

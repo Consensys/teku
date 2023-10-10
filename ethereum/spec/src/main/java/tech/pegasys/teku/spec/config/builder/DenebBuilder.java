@@ -16,6 +16,8 @@ package tech.pegasys.teku.spec.config.builder;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -147,21 +149,29 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
       SpecBuilderUtil.fillMissingValuesWithZeros(this);
     }
 
-    SpecBuilderUtil.validateConstant("denebForkEpoch", denebForkEpoch);
-    SpecBuilderUtil.validateConstant("denebForkVersion", denebForkVersion);
-    SpecBuilderUtil.validateConstant(
-        "maxPerEpochActivationChurnLimit", maxPerEpochActivationChurnLimit);
-    SpecBuilderUtil.validateConstant("fieldElementsPerBlob", fieldElementsPerBlob);
-    SpecBuilderUtil.validateConstant("maxBlobCommitmentsPerBlock", maxBlobCommitmentsPerBlock);
-    SpecBuilderUtil.validateConstant("maxBlobsPerBlock", maxBlobsPerBlock);
-    SpecBuilderUtil.validateConstant("maxRequestBlocksDeneb", maxRequestBlocksDeneb);
-    SpecBuilderUtil.validateConstant("maxRequestBlobSidecars", maxRequestBlobSidecars);
-    SpecBuilderUtil.validateConstant(
-        "minEpochsForBlobSidecarsRequests", minEpochsForBlobSidecarsRequests);
-    SpecBuilderUtil.validateConstant("blobSidecarSubnetCount", blobSidecarSubnetCount);
+    validateConstants();
+
     if (!denebForkEpoch.equals(SpecConfig.FAR_FUTURE_EPOCH) && !kzgNoop) {
       SpecBuilderUtil.validateRequiredOptional("trustedSetupPath", trustedSetupPath);
     }
+  }
+
+  @Override
+  public Map<String, Object> getValidationMap() {
+    final Map<String, Object> constants = new HashMap<>();
+
+    constants.put("denebForkEpoch", denebForkEpoch);
+    constants.put("denebForkVersion", denebForkVersion);
+    constants.put("maxPerEpochActivationChurnLimit", maxPerEpochActivationChurnLimit);
+    constants.put("fieldElementsPerBlob", fieldElementsPerBlob);
+    constants.put("maxBlobCommitmentsPerBlock", maxBlobCommitmentsPerBlock);
+    constants.put("maxBlobsPerBlock", maxBlobsPerBlock);
+    constants.put("maxRequestBlocksDeneb", maxRequestBlocksDeneb);
+    constants.put("maxRequestBlobSidecars", maxRequestBlobSidecars);
+    constants.put("minEpochsForBlobSidecarsRequests", minEpochsForBlobSidecarsRequests);
+    constants.put("blobSidecarSubnetCount", blobSidecarSubnetCount);
+
+    return constants;
   }
 
   @Override

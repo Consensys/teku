@@ -13,13 +13,14 @@
 
 package tech.pegasys.teku.spec.config.builder;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.config.SpecConfigFormatter.camelToSnakeCase;
 
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -27,6 +28,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SpecBuilderUtil {
+  private static final Logger LOG = LogManager.getLogger();
   private static final Map<Class<?>, Object> DEFAULT_ZERO_VALUES =
       Map.of(
           UInt64.class,
@@ -45,26 +47,37 @@ public class SpecBuilderUtil {
   // Placeholder version explicitly doesn't match MainNet (or any other known testnet)
   static final Bytes4 PLACEHOLDER_FORK_VERSION = Bytes4.fromHexString("0x99999999");
 
-  static void validateConstant(final String name, final Object value) {
-    validateNotNull(name, value);
+  static Optional<String> validateConstant(final String name, final Object value) {
+    return validateNotNull(name, value);
   }
 
-  static void validateConstant(final String name, final Long value) {
-    validateNotNull(name, value);
-    checkArgument(value >= 0, "Long values must be positive");
+  static Optional<String> validateConstant(final String name, final Integer value) {
+    final Optional<String> maybeError = validateNotNull(name, value);
+    if (maybeError.isPresent()) {
+      return maybeError;
+    }
+    if (value < 0) {
+      LOG.error(
+          "Value for constant '{}' ({}) failed to validate - Integer values must be positive",
+          name,
+          value);
+      return Optional.of(name);
+    }
+    return Optional.empty();
   }
 
-  static void validateConstant(final String name, final Integer value) {
-    validateNotNull(name, value);
-    checkArgument(value >= 0, "Integer values must be positive");
+  private static Optional<String> validateNotNull(final String name, final Object value) {
+    if (value == null) {
+      return Optional.of(camelToSnakeCase(name));
+    }
+    return Optional.empty();
   }
 
-  static void validateNotNull(final String name, final Object value) {
-    checkArgument(value != null, "Missing value for spec constant '%s'", camelToSnakeCase(name));
-  }
-
-  static <T> void validateRequiredOptional(final String name, final Optional<T> value) {
-    checkArgument(value.isPresent(), "Missing value for required '%s'", name);
+  static <T> Optional<String> validateRequiredOptional(final String name, final Optional<T> value) {
+    if (value.isEmpty()) {
+      return Optional.of(name);
+    }
+    return Optional.empty();
   }
 
   static void fillMissingValuesWithZeros(final ForkConfigBuilder<?, ?> builder) {
