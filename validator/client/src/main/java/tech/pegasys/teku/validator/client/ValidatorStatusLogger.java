@@ -13,11 +13,98 @@
 
 package tech.pegasys.teku.validator.client;
 
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
-public interface ValidatorStatusLogger {
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
-  SafeFuture<Void> printInitialValidatorStatuses();
+public class ValidatorStatusLogger {
+  private static final int VALIDATOR_KEYS_PRINT_LIMIT = 20;
 
-  void checkValidatorStatusChanges();
+  final OwnedValidators validators;
+  final AtomicReference<Map<BLSPublicKey, ValidatorStatus>> latestValidatorStatuses =
+      new AtomicReference<>();
+
+  public ValidatorStatusLogger(final OwnedValidators validators) {
+    this.validators = validators;
+  }
+
+  public void onUpdatedValidatorStatuses(
+      final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
+      final boolean possibleMissingEvents) {
+    final Map<BLSPublicKey, ValidatorStatus> oldValidatorStatuses =
+        latestValidatorStatuses.getAndSet(newValidatorStatuses);
+    // first run
+    if (oldValidatorStatuses == null) {
+      if (validators.getValidatorCount() < VALIDATOR_KEYS_PRINT_LIMIT) {
+        printValidatorStatusesOneByOne(newValidatorStatuses);
+      } else {
+        printValidatorStatusSummary(newValidatorStatuses);
+      }
+      return;
+    }
+
+    // updates
+    for (final Map.Entry<BLSPublicKey, ValidatorStatus> entry : newValidatorStatuses.entrySet()) {
+      final BLSPublicKey key = entry.getKey();
+      final ValidatorStatus newStatus = entry.getValue();
+      final ValidatorStatus oldStatus = oldValidatorStatuses.get(key);
+
+      // report the status of a new validator
+      if (oldStatus == null) {
+        STATUS_LOG.validatorStatus(key.toAbbreviatedString(), newStatus.name());
+        continue;
+      }
+      if (oldStatus.equals(newStatus)) {
+        continue;
+      }
+      STATUS_LOG.validatorStatusChange(
+          oldStatus.name(), newStatus.name(), key.toAbbreviatedString());
+    }
+  }
+
+  private void printValidatorStatusesOneByOne(
+      final Map<BLSPublicKey, ValidatorStatus> validatorStatuses) {
+    for (final BLSPublicKey publicKey : validators.getPublicKeys()) {
+      final Optional<ValidatorStatus> maybeValidatorStatus =
+          Optional.ofNullable(validatorStatuses.get(publicKey));
+      maybeValidatorStatus.ifPresentOrElse(
+          validatorStatus ->
+              STATUS_LOG.validatorStatus(publicKey.toAbbreviatedString(), validatorStatus.name()),
+          () -> STATUS_LOG.unableToRetrieveValidatorStatus(publicKey.toAbbreviatedString()));
+    }
+  }
+
+  private void printValidatorStatusSummary(
+      final Map<BLSPublicKey, ValidatorStatus> validatorStatuses) {
+    final Map<ValidatorStatus, AtomicInteger> validatorStatusCount = new HashMap<>();
+    final AtomicInteger unknownValidatorCountReference = new AtomicInteger(0);
+    for (final BLSPublicKey publicKey : validators.getPublicKeys()) {
+      final Optional<ValidatorStatus> maybeValidatorStatus =
+          Optional.ofNullable(validatorStatuses.get(publicKey));
+      maybeValidatorStatus.ifPresentOrElse(
+          status -> {
+            final AtomicInteger count =
+                validatorStatusCount.computeIfAbsent(status, __ -> new AtomicInteger(0));
+            count.incrementAndGet();
+          },
+          unknownValidatorCountReference::incrementAndGet);
+    }
+
+    for (final Map.Entry<ValidatorStatus, AtomicInteger> statusCount :
+        validatorStatusCount.entrySet()) {
+      STATUS_LOG.validatorStatusSummary(statusCount.getValue().get(), statusCount.getKey().name());
+    }
+
+    final int unknownValidatorCount = unknownValidatorCountReference.get();
+    if (unknownValidatorCount > 0) {
+      STATUS_LOG.unableToRetrieveValidatorStatusSummary(unknownValidatorCountReference.get());
+    }
+  }
 }
