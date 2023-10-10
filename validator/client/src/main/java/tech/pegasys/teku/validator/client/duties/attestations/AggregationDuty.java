@@ -55,7 +55,6 @@ public class AggregationDuty implements Duty {
       final ForkProvider forkProvider,
       final ValidatorLogger validatorLogger,
       final SendingStrategy<SignedAggregateAndProof> sendingStrategy) {
-    // ATTESTATION AGGREGATION
     this.spec = spec;
     this.slot = slot;
     this.validatorApiChannel = validatorApiChannel;
