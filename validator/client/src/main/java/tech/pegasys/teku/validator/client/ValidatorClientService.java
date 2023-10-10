@@ -409,7 +409,8 @@ public class ValidatorClientService extends Service {
                 validatorApiChannel,
                 forkProvider,
                 dependentRoot ->
-                    new SlotBasedScheduledDuties<>(attestationDutyFactory, dependentRoot),
+                    new SlotBasedScheduledDuties<>(
+                        attestationDutyFactory, dependentRoot, metricsSystem),
                 validators,
                 validatorIndexProvider,
                 beaconCommitteeSubscriptions,
@@ -419,7 +420,8 @@ public class ValidatorClientService extends Service {
             asyncRunner,
             new BlockProductionDutyLoader(
                 validatorApiChannel,
-                dependentRoot -> new SlotBasedScheduledDuties<>(blockDutyFactory, dependentRoot),
+                dependentRoot ->
+                    new SlotBasedScheduledDuties<>(blockDutyFactory, dependentRoot, metricsSystem),
                 validators,
                 validatorIndexProvider));
     validatorTimingChannels.add(new BlockDutyScheduler(metricsSystem, blockDutyLoader, spec));

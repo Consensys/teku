@@ -746,7 +746,9 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
         new AttestationDutyLoader(
             validatorApiChannel,
             forkProvider,
-            dependentRoot -> new SlotBasedScheduledDuties<>(attestationDutyFactory, dependentRoot),
+            dependentRoot ->
+                new SlotBasedScheduledDuties<>(
+                    attestationDutyFactory, dependentRoot, metricsSystem),
             new OwnedValidators(Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
             validatorIndexProvider,
             beaconCommitteeSubscriptions,
