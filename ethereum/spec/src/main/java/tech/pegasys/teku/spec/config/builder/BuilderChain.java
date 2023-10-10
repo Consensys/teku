@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.config.builder;
 
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -86,6 +87,11 @@ class BuilderChain<In extends SpecConfig, Out extends In> implements ForkConfigB
     tail.validate();
   }
 
+  @Override
+  public Map<String, Object> getValidationMap() {
+    return Map.of();
+  }
+
   private static class NoOpForkBuilder<T extends SpecConfig> implements ForkConfigBuilder<T, T> {
 
     @Override
@@ -95,6 +101,11 @@ class BuilderChain<In extends SpecConfig, Out extends In> implements ForkConfigB
 
     @Override
     public void validate() {}
+
+    @Override
+    public Map<String, Object> getValidationMap() {
+      return Map.of();
+    }
 
     @Override
     public void addOverridableItemsToRawConfig(final BiConsumer<String, Object> rawConfig) {}

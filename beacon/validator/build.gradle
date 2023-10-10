@@ -46,4 +46,5 @@ dependencies {
 
   jmhImplementation testFixtures(project(':ethereum:spec'))
   jmhImplementation 'org.mockito:mockito-core'
+  jmhImplementation testFixtures(project(':eth-benchmark-tests'))
 }

@@ -65,7 +65,7 @@ class RemoteSpecLoaderTest {
   }
 
   @Test
-  void shouldProvideValidSpecConfigWithIncompleteRemoteConfig() throws IOException {
+  void shouldDefaultNetworkConfigThatMovedFromConstants() throws IOException {
     final String jsonConfig =
         Resources.toString(
             Resources.getResource(RemoteSpecLoaderTest.class, "config_missing_network_fields.json"),
