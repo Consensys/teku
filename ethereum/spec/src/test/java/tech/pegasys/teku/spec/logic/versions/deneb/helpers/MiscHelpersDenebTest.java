@@ -86,7 +86,7 @@ class MiscHelpersDenebTest {
     // make sure we are testing something
     assertThat(kzgCommitments).isNotEmpty();
 
-    final Integer indexToBeAltered =
+    final int indexToBeAltered =
         Math.toIntExact(dataStructureUtil.randomPositiveLong(kzgCommitments.size()));
 
     // let's create blobs with only one altered with the given alteration
@@ -94,7 +94,7 @@ class MiscHelpersDenebTest {
         dataStructureUtil.randomBlobSidecarsForBlock(
             block,
             (index, randomBlobSidecarBuilder) -> {
-              if (!indexToBeAltered.equals(index)) {
+              if (!index.equals(indexToBeAltered)) {
                 return randomBlobSidecarBuilder;
               }
 

@@ -97,7 +97,8 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
    *
    * @param blobSidecars blob sidecars to validate
    * @param block block to validate blob sidecar against
-   * @param kzgCommitmentsFromBlock kzg commitments from block
+   * @param kzgCommitmentsFromBlock kzg commitments from block. They could be extracted from block
+   *     but since we already have them we can avoid extracting them again.
    */
   @Override
   public void validateBlobSidecarsAgainstBlock(
