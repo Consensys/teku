@@ -88,7 +88,7 @@ public class SlotBasedScheduledDuties<P extends Duty, A extends Duty> implements
     if (duty == null) {
       return SafeFuture.completedFuture(DutyResult.NO_OP);
     }
-    return duty.performDuty();
+    return duty.performDuty(); // todo bring into method and override to do metrics
   }
 
   private void discardDutiesBeforeSlot(

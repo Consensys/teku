@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,10 +13,18 @@
 
 package tech.pegasys.teku.validator.client.duties;
 
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+public enum DutyType {
+  ATTESTATION_AGGREGATION("attestation aggregation"),
+  ATTESTATION_PRODUCTION("attestation production"),
+  BLOCK_PRODUCTION("block production");
 
-public interface Duty {
-  DutyType getType();
+  private final String type;
 
-  SafeFuture<DutyResult> performDuty();
+  DutyType(final String type) {
+    this.type = type;
+  }
+
+  public String getType() {
+    return type;
+  }
 }
