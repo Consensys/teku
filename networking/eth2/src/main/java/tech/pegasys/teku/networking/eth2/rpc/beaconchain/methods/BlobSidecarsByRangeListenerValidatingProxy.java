@@ -28,7 +28,8 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 
-public class BlobSidecarsByRangeListenerWrapper implements RpcResponseListener<BlobSidecar> {
+public class BlobSidecarsByRangeListenerValidatingProxy
+    implements RpcResponseListener<BlobSidecar> {
 
   private final Peer peer;
   private final RpcResponseListener<BlobSidecar> blobSidecarResponseListener;
@@ -39,7 +40,7 @@ public class BlobSidecarsByRangeListenerWrapper implements RpcResponseListener<B
 
   private Optional<BlobSidecarSummary> maybeLastBlobSidecarSummary = Optional.empty();
 
-  public BlobSidecarsByRangeListenerWrapper(
+  public BlobSidecarsByRangeListenerValidatingProxy(
       final Peer peer,
       final RpcResponseListener<BlobSidecar> blobSidecarResponseListener,
       final Integer maxBlobsPerBlock,

@@ -33,7 +33,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
-import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRangeListenerWrapper;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRangeListenerValidatingProxy;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeListenerWrapper;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
@@ -329,7 +329,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
               return requestStream(
                   method,
                   request,
-                  new BlobSidecarsByRangeListenerWrapper(
+                  new BlobSidecarsByRangeListenerValidatingProxy(
                       this,
                       listener,
                       maxBlobsPerBlock.get(),
