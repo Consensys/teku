@@ -154,7 +154,7 @@ public class GetNewBlockV3 extends RestApiEndpoint {
   }
 
   private static List<MilestoneDependentTypesUtil.ConditionalSchemaGetter<BlockContainer>>
-      generateBlockContainerSchemaGetters(SchemaDefinitionCache schemaDefinitionCache) {
+      generateBlockContainerSchemaGetters(final SchemaDefinitionCache schemaDefinitionCache) {
     final List<MilestoneDependentTypesUtil.ConditionalSchemaGetter<BlockContainer>>
         schemaGetterList = new ArrayList<>();
 

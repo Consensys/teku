@@ -55,7 +55,7 @@ public class MilestoneDependentTypesUtil {
       SerializableOneOfTypeDefinition<T> getMultipleSchemaDefinitionFromMilestone(
           final SchemaDefinitionCache schemaDefinitionCache,
           final String title,
-          List<ConditionalSchemaGetter<T>> schemaGetterList) {
+          final List<ConditionalSchemaGetter<T>> schemaGetterList) {
     final SerializableOneOfTypeDefinitionBuilder<T> builder =
         new SerializableOneOfTypeDefinitionBuilder<T>().title(title);
     for (SpecMilestone milestone : schemaDefinitionCache.getSupportedMilestones()) {
