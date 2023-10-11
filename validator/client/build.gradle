@@ -26,6 +26,7 @@ dependencies {
   implementation project(':data:dataexchange')
   implementation project(':ethereum:signingrecord')
   implementation project(':infrastructure:bls-keystore')
+  implementation project(':infrastructure:subscribers')
 
   implementation 'org.apache.tuweni:tuweni-bytes'
   implementation 'commons-io:commons-io'
