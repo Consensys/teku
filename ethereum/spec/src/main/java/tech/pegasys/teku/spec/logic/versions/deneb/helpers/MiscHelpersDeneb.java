@@ -19,6 +19,7 @@ import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSI
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -168,13 +169,33 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
         });
   }
 
+  /**
+   * Verifies that blob sidecars are complete and with expected indexes
+   *
+   * @param completeVerifiedBlobSidecars blob sidecars to verify, It is assumed that it is an
+   *     ordered list based on BlobSidecar index
+   * @param kzgCommitmentsFromBlock kzg commitments from block.
+   */
   @Override
   public void verifyBlobSidecarCompleteness(
-      final List<BlobSidecar> verifiedBlobSidecars,
+      final List<BlobSidecar> completeVerifiedBlobSidecars,
       final List<KZGCommitment> kzgCommitmentsFromBlock) {
     checkArgument(
-        verifiedBlobSidecars.size() == kzgCommitmentsFromBlock.size(),
+        completeVerifiedBlobSidecars.size() == kzgCommitmentsFromBlock.size(),
         "Blob sidecars are not complete");
+
+    IntStream.range(0, completeVerifiedBlobSidecars.size())
+        .forEach(
+            index -> {
+              final BlobSidecar blobSidecar = completeVerifiedBlobSidecars.get(index);
+              final UInt64 blobIndex = blobSidecar.getIndex();
+
+              checkArgument(
+                  blobIndex.intValue() == index,
+                  "Blob sidecar index mismatch, expected %s, got %s",
+                  index,
+                  blobIndex);
+            });
   }
 
   /**
