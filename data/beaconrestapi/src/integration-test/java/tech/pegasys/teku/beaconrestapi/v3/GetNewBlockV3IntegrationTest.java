@@ -63,7 +63,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
   private final UInt256 executionPayloadValue = UInt256.valueOf(12345);
 
   @BeforeEach
-  void setup(TestSpecInvocationContextProvider.SpecContext specContext) {
+  void setup(final TestSpecInvocationContextProvider.SpecContext specContext) {
     spec = specContext.getSpec();
     specMilestone = specContext.getSpecMilestone();
     startRestAPIAtGenesis(specMilestone);

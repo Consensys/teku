@@ -70,7 +70,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX).isLessThanOrEqualTo(CAPELLA);
     dataStructureUtil = new DataStructureUtil(spec);
     final BeaconBlock blindedBeaconBlock = dataStructureUtil.randomBlindedBeaconBlock(ONE);
-    BlockContainerAndMetaData blockContainerAndMetaData =
+    final BlockContainerAndMetaData blockContainerAndMetaData =
         new BlockContainerAndMetaData(
             blindedBeaconBlock,
             spec.getGenesisSpec().getMilestone(),

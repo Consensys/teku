@@ -121,7 +121,7 @@ public class ValidatorDataProvider {
   }
 
   private Optional<BlockContainerAndMetaData> lookUpData(
-      Optional<BlockContainer> maybeBlockContainer, UInt256 executionPayloadValue) {
+      final Optional<BlockContainer> maybeBlockContainer, final UInt256 executionPayloadValue) {
     if (maybeBlockContainer.isEmpty()) {
       return Optional.empty();
     } else {
@@ -136,7 +136,7 @@ public class ValidatorDataProvider {
     }
   }
 
-  private SafeFuture<UInt256> retrieveExecutionPayloadValue(UInt64 slot) {
+  private SafeFuture<UInt256> retrieveExecutionPayloadValue(final UInt64 slot) {
     final ExecutionPayloadResult payloadResult =
         executionLayerBlockProductionManager
             .getCachedPayloadResult(slot)
@@ -147,7 +147,7 @@ public class ValidatorDataProvider {
         .orElseThrow(() -> new IllegalStateException("Execution Payload Value is not available"));
   }
 
-  private void checkBlockProducingParameters(UInt64 slot, BLSSignature randao) {
+  private void checkBlockProducingParameters(final UInt64 slot, final BLSSignature randao) {
     if (slot == null) {
       throw new IllegalArgumentException(NO_SLOT_PROVIDED);
     }

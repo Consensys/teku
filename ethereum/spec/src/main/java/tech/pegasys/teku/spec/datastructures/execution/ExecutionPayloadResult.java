@@ -25,7 +25,6 @@ public class ExecutionPayloadResult {
   private final Optional<SafeFuture<ExecutionPayload>> executionPayloadFuture;
   private final Optional<SafeFuture<Optional<BlobsBundle>>> blobsBundleFuture;
   private final Optional<SafeFuture<HeaderWithFallbackData>> headerWithFallbackDataFuture;
-
   private final Optional<SafeFuture<UInt256>> executionPayloadValueFuture;
 
   public ExecutionPayloadResult(
@@ -73,7 +72,8 @@ public class ExecutionPayloadResult {
     return Objects.equals(executionPayloadContext, that.executionPayloadContext)
         && Objects.equals(executionPayloadFuture, that.executionPayloadFuture)
         && Objects.equals(blobsBundleFuture, that.blobsBundleFuture)
-        && Objects.equals(headerWithFallbackDataFuture, that.headerWithFallbackDataFuture);
+        && Objects.equals(headerWithFallbackDataFuture, that.headerWithFallbackDataFuture)
+        && Objects.equals(executionPayloadValueFuture, that.executionPayloadValueFuture);
   }
 
   @Override
@@ -82,7 +82,8 @@ public class ExecutionPayloadResult {
         executionPayloadContext,
         executionPayloadFuture,
         blobsBundleFuture,
-        headerWithFallbackDataFuture);
+        headerWithFallbackDataFuture,
+        executionPayloadValueFuture);
   }
 
   @Override
@@ -92,6 +93,7 @@ public class ExecutionPayloadResult {
         .add("executionPayloadFuture", executionPayloadFuture)
         .add("blobsBundleFuture", blobsBundleFuture)
         .add("headerWithFallbackDataFuture", headerWithFallbackDataFuture)
+        .add("executionPayloadValueFuture", executionPayloadValueFuture)
         .toString();
   }
 }

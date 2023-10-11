@@ -62,6 +62,7 @@ public class BlockContainerAndMetaData extends ObjectAndMetaData<BlockContainer>
         .add("milestone", getMilestone())
         .add("executionOptimistic", isExecutionOptimistic())
         .add("canonical", isCanonical())
+        .add("finalized", isFinalized())
         .add("executionPayloadValue", executionPayloadValue.toDecimalString())
         .toString();
   }

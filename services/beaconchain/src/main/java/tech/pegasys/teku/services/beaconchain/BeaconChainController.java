@@ -768,7 +768,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   public void initExecutionLayerBlockProductionManager() {
     LOG.debug("BeaconChainController.initExecutionLayerBlockProductionManager()");
-    executionLayerBlockProductionManager =
+    this.executionLayerBlockProductionManager =
         ExecutionLayerBlockManagerFactory.create(executionLayer, eventChannels);
   }
 
