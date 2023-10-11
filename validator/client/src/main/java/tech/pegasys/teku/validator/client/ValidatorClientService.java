@@ -87,7 +87,7 @@ public class ValidatorClientService extends Service {
   private final Spec spec;
 
   private final List<ValidatorTimingChannel> validatorTimingChannels = new ArrayList<>();
-  private ValidatorStatusLogger validatorStatusLogger;
+  private final ValidatorStatusProvider validatorStatusProvider;
   private ValidatorIndexProvider validatorIndexProvider;
   private Optional<DoppelgangerDetector> maybeDoppelgangerDetector = Optional.empty();
   private final DoppelgangerDetectionAction doppelgangerDetectionAction;
@@ -106,6 +106,7 @@ public class ValidatorClientService extends Service {
       final ValidatorLoader validatorLoader,
       final BeaconNodeApi beaconNodeApi,
       final ForkProvider forkProvider,
+      final ValidatorStatusProvider validatorStatusProvider,
       final Optional<ProposerConfigManager> proposerConfigManager,
       final Optional<BeaconProposerPreparer> beaconProposerPreparer,
       final Optional<ValidatorRegistrator> validatorRegistrator,
@@ -117,6 +118,7 @@ public class ValidatorClientService extends Service {
     this.validatorLoader = validatorLoader;
     this.beaconNodeApi = beaconNodeApi;
     this.forkProvider = forkProvider;
+    this.validatorStatusProvider = validatorStatusProvider;
     this.proposerConfigManager = proposerConfigManager;
     this.beaconProposerPreparer = beaconProposerPreparer;
     this.validatorRegistrator = validatorRegistrator;
@@ -147,6 +149,13 @@ public class ValidatorClientService extends Service {
 
     final ValidatorLoader validatorLoader = createValidatorLoader(services, config, asyncRunner);
     final ValidatorRestApiConfig validatorApiConfig = config.getValidatorRestApiConfig();
+    final ValidatorStatusProvider validatorStatusProvider =
+        new OwnedValidatorStatusProvider(
+            services.getMetricsSystem(),
+            validatorLoader.getOwnedValidators(),
+            validatorApiChannel,
+            config.getSpec(),
+            asyncRunner);
     final Optional<ProposerConfigManager> proposerConfigManager;
     Optional<BeaconProposerPreparer> beaconProposerPreparer = Optional.empty();
     Optional<ValidatorRegistrator> validatorRegistrator = Optional.empty();
@@ -177,27 +186,29 @@ public class ValidatorClientService extends Service {
                   Optional.empty(),
                   proposerConfigManager.get(),
                   config.getSpec()));
-
-      validatorRegistrator =
-          Optional.of(
-              new ValidatorRegistrator(
-                  config.getSpec(),
-                  services.getTimeProvider(),
-                  validatorLoader.getOwnedValidators(),
-                  proposerConfigManager.get(),
-                  new ValidatorRegistrationBatchSender(
-                      validatorConfig.getBuilderRegistrationSendingBatchSize(),
-                      validatorApiChannel)));
+      final ValidatorRegistrator validatorRegistratorImpl =
+          new ValidatorRegistrator(
+              config.getSpec(),
+              validatorLoader.getOwnedValidators(),
+              proposerConfigManager.get(),
+              new SignedValidatorRegistrationFactory(
+                  proposerConfigManager.get(), services.getTimeProvider()),
+              validatorApiChannel,
+              validatorConfig.getBuilderRegistrationSendingBatchSize());
+      validatorStatusProvider.subscribeValidatorStatusesUpdates(
+          validatorRegistratorImpl::onUpdatedValidatorStatuses);
+      validatorRegistrator = Optional.of(validatorRegistratorImpl);
     } else {
       proposerConfigManager = Optional.empty();
     }
 
-    ValidatorClientService validatorClientService =
+    final ValidatorClientService validatorClientService =
         new ValidatorClientService(
             eventChannels,
             validatorLoader,
             beaconNodeApi,
             forkProvider,
+            validatorStatusProvider,
             proposerConfigManager,
             beaconProposerPreparer,
             validatorRegistrator,
@@ -267,12 +278,12 @@ public class ValidatorClientService extends Service {
   }
 
   private void initializeDoppelgangerDetector(
-      AsyncRunner asyncRunner,
-      ValidatorApiChannel validatorApiChannel,
-      Spec spec,
-      TimeProvider timeProvider,
-      GenesisDataProvider genesisDataProvider) {
-    DoppelgangerDetector doppelgangerDetector =
+      final AsyncRunner asyncRunner,
+      final ValidatorApiChannel validatorApiChannel,
+      final Spec spec,
+      final TimeProvider timeProvider,
+      final GenesisDataProvider genesisDataProvider) {
+    final DoppelgangerDetector doppelgangerDetector =
         new DoppelgangerDetector(
             asyncRunner,
             validatorApiChannel,
@@ -394,6 +405,7 @@ public class ValidatorClientService extends Service {
       ValidatorClientConfiguration config,
       ValidatorApiChannel validatorApiChannel,
       AsyncRunner asyncRunner) {
+    validatorTimingChannels.add(validatorStatusProvider);
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
     final BlockContainerSigner blockContainerSigner = new MilestoneBasedBlockContainerSigner(spec);
     final BlockDutyFactory blockDutyFactory =
@@ -463,9 +475,9 @@ public class ValidatorClientService extends Service {
       validatorRegistrator.ifPresent(validatorTimingChannels::add);
     }
     addValidatorCountMetric(metricsSystem, validators);
-    this.validatorStatusLogger =
-        new DefaultValidatorStatusLogger(
-            metricsSystem, validators, validatorApiChannel, asyncRunner);
+    final ValidatorStatusLogger validatorStatusLogger = new ValidatorStatusLogger(validators);
+    validatorStatusProvider.subscribeValidatorStatusesUpdates(
+        validatorStatusLogger::onUpdatedValidatorStatuses);
   }
 
   public static Path getSlashingProtectionPath(final DataDirLayout dataDirLayout) {
@@ -531,12 +543,8 @@ public class ValidatorClientService extends Service {
               eventChannels.subscribe(
                   ValidatorTimingChannel.class,
                   new ValidatorTimingActions(
-                      validatorStatusLogger,
-                      validatorIndexProvider,
-                      validatorTimingChannels,
-                      spec,
-                      metricsSystem));
-              validatorStatusLogger.printInitialValidatorStatuses().ifExceptionGetsHereRaiseABug();
+                      validatorIndexProvider, validatorTimingChannels, spec, metricsSystem));
+              validatorStatusProvider.start().ifExceptionGetsHereRaiseABug();
               return beaconNodeApi.subscribeToEvents();
             });
   }

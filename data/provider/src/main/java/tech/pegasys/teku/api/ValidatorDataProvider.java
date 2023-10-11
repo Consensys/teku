@@ -255,7 +255,7 @@ public class ValidatorDataProvider {
   }
 
   public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
-      List<SignedAggregateAndProof> aggregateAndProofs) {
+      final List<SignedAggregateAndProof> aggregateAndProofs) {
     return validatorApiChannel.sendAggregateAndProofs(aggregateAndProofs);
   }
 
@@ -294,13 +294,42 @@ public class ValidatorDataProvider {
   }
 
   public SafeFuture<Void> prepareBeaconProposer(
-      List<BeaconPreparableProposer> beaconPreparableProposers) {
+      final List<BeaconPreparableProposer> beaconPreparableProposers) {
     return validatorApiChannel.prepareBeaconProposer(beaconPreparableProposers);
   }
 
   public SafeFuture<Void> registerValidators(
-      SszList<SignedValidatorRegistration> validatorRegistrations) {
-    return validatorApiChannel.registerValidators(validatorRegistrations);
+      final SszList<SignedValidatorRegistration> validatorRegistrations) {
+    return validatorApiChannel
+        .getValidatorStatuses(
+            validatorRegistrations.stream()
+                .map(registration -> registration.getMessage().getPublicKey())
+                .toList())
+        .thenComposeChecked(
+            maybeValidatorStatuses -> {
+              if (maybeValidatorStatuses.isEmpty()) {
+                final String errorMessage =
+                    "Couldn't retrieve validator statuses during registering. Most likely the BN is still syncing.";
+                return SafeFuture.failedFuture(new IllegalStateException(errorMessage));
+              }
+
+              final List<SignedValidatorRegistration> activeAndPendingValidatorRegistrations =
+                  validatorRegistrations.stream()
+                      .filter(
+                          registration ->
+                              Optional.ofNullable(
+                                      maybeValidatorStatuses
+                                          .get()
+                                          .get(registration.getMessage().getPublicKey()))
+                                  .map(status -> !status.hasExited())
+                                  .orElse(false))
+                      .toList();
+
+              return validatorApiChannel.registerValidators(
+                  validatorRegistrations
+                      .getSchema()
+                      .createFromElements(activeAndPendingValidatorRegistrations));
+            });
   }
 
   public boolean isPhase0Slot(final UInt64 slot) {
