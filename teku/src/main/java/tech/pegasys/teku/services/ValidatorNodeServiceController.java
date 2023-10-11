@@ -24,6 +24,9 @@ public class ValidatorNodeServiceController extends ServiceController {
       final TekuConfiguration tekuConfig, final ServiceConfig serviceConfig) {
     this.services.add(
         ValidatorClientService.create(
-            serviceConfig, tekuConfig.validatorClient(), new DoppelgangerDetectionShutDown()));
+            serviceConfig,
+            tekuConfig.validatorClient(),
+            tekuConfig.metricsConfig().isMetricsEnabled(),
+            new DoppelgangerDetectionShutDown()));
   }
 }

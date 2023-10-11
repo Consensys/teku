@@ -54,7 +54,10 @@ public class BeaconNodeServiceController extends ServiceController {
         .ifPresent(services::add);
     services.add(
         ValidatorClientService.create(
-            serviceConfig, tekuConfig.validatorClient(), new DoppelgangerDetectionShutDown()));
+            serviceConfig,
+            tekuConfig.validatorClient(),
+            tekuConfig.metricsConfig().isMetricsEnabled(),
+            new DoppelgangerDetectionShutDown()));
   }
 
   private Optional<PowchainService> powchainService(

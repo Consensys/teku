@@ -99,6 +99,7 @@ public class ValidatorClientService extends Service {
   private final SafeFuture<Void> initializationComplete = new SafeFuture<>();
 
   private final MetricsSystem metricsSystem;
+  private final boolean metricsOn;
 
   private ValidatorClientService(
       final EventChannels eventChannels,
@@ -110,6 +111,7 @@ public class ValidatorClientService extends Service {
       final Optional<ValidatorRegistrator> validatorRegistrator,
       final Spec spec,
       final MetricsSystem metricsSystem,
+      final boolean metricsOn,
       final DoppelgangerDetectionAction doppelgangerDetectionAction) {
     this.eventChannels = eventChannels;
     this.validatorLoader = validatorLoader;
@@ -120,12 +122,14 @@ public class ValidatorClientService extends Service {
     this.validatorRegistrator = validatorRegistrator;
     this.spec = spec;
     this.metricsSystem = metricsSystem;
+    this.metricsOn = metricsOn;
     this.doppelgangerDetectionAction = doppelgangerDetectionAction;
   }
 
   public static ValidatorClientService create(
       final ServiceConfig services,
       final ValidatorClientConfiguration config,
+      final boolean metricsOn,
       final DoppelgangerDetectionAction doppelgangerDetectionAction) {
     final EventChannels eventChannels = services.getEventChannels();
     final ValidatorConfig validatorConfig = config.getValidatorConfig();
@@ -199,6 +203,7 @@ public class ValidatorClientService extends Service {
             validatorRegistrator,
             config.getSpec(),
             services.getMetricsSystem(),
+            metricsOn,
             doppelgangerDetectionAction);
 
     asyncRunner
@@ -410,7 +415,7 @@ public class ValidatorClientService extends Service {
                 forkProvider,
                 dependentRoot ->
                     new SlotBasedScheduledDuties<>(
-                        attestationDutyFactory, dependentRoot, metricsSystem),
+                        attestationDutyFactory, dependentRoot, metricsSystem, metricsOn),
                 validators,
                 validatorIndexProvider,
                 beaconCommitteeSubscriptions,
@@ -421,7 +426,8 @@ public class ValidatorClientService extends Service {
             new BlockProductionDutyLoader(
                 validatorApiChannel,
                 dependentRoot ->
-                    new SlotBasedScheduledDuties<>(blockDutyFactory, dependentRoot, metricsSystem),
+                    new SlotBasedScheduledDuties<>(
+                        blockDutyFactory, dependentRoot, metricsSystem, metricsOn),
                 validators,
                 validatorIndexProvider));
     validatorTimingChannels.add(new BlockDutyScheduler(metricsSystem, blockDutyLoader, spec));

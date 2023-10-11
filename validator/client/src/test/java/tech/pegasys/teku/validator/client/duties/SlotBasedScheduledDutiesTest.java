@@ -50,7 +50,8 @@ class SlotBasedScheduledDutiesTest {
   private final DutyFactory<ProductionDuty, AggregationDuty> dutyFactory = mock(DutyFactory.class);
 
   private final SlotBasedScheduledDuties<ProductionDuty, AggregationDuty> duties =
-      new SlotBasedScheduledDuties<>(dutyFactory, Bytes32.fromHexString("0x838382"), metricsSystem);
+      new SlotBasedScheduledDuties<>(
+          dutyFactory, Bytes32.fromHexString("0x838382"), metricsSystem, false);
 
   @Test
   public void shouldDiscardMissedProductionDuties() {

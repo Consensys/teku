@@ -38,12 +38,16 @@ public class SlotBasedScheduledDuties<P extends Duty, A extends Duty> implements
   private final OperationTimer blockProductionDutyTimer;
   private final OperationTimer attestationAggregationDutyTimer;
 
+  private final boolean metricsOn;
+
   public SlotBasedScheduledDuties(
       final DutyFactory<P, A> dutyFactory,
       final Bytes32 dependentRoot,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      final boolean metricsOn) {
     this.dutyFactory = dutyFactory;
     this.dependentRoot = dependentRoot;
+    this.metricsOn = metricsOn;
 
     this.attestationProductionDutyTimer =
         metricsSystem.createTimer(
@@ -115,7 +119,6 @@ public class SlotBasedScheduledDuties<P extends Duty, A extends Duty> implements
       return SafeFuture.completedFuture(DutyResult.NO_OP);
     }
 
-    final boolean metricsOn = true; // todo work out if metrics are turned on
     return metricsOn ? performDutyWithMetrics(duty) : duty.performDuty();
   }
 
