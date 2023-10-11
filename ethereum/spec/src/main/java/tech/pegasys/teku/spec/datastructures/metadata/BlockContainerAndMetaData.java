@@ -13,57 +13,9 @@
 
 package tech.pegasys.teku.spec.datastructures.metadata;
 
-import com.google.common.base.MoreObjects;
-import java.util.Objects;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 
-public class BlockContainerAndMetaData extends ObjectAndMetaData<BlockContainer> {
-
-  private final UInt256 executionPayloadValue;
-
-  public BlockContainerAndMetaData(
-      final BlockContainer data,
-      final SpecMilestone milestone,
-      final boolean executionOptimistic,
-      final boolean canonical,
-      final boolean finalized,
-      final UInt256 executionPayloadValue) {
-    super(data, milestone, executionOptimistic, canonical, finalized);
-    this.executionPayloadValue = executionPayloadValue;
-  }
-
-  public UInt256 getExecutionPayloadValue() {
-    return executionPayloadValue;
-  }
-
-  @Override
-  public boolean equals(final Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    final BlockContainerAndMetaData that = (BlockContainerAndMetaData) o;
-    return super.equals(o) && executionPayloadValue.equals(that.executionPayloadValue);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(super.hashCode(), executionPayloadValue);
-  }
-
-  @Override
-  public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("data", getData())
-        .add("milestone", getMilestone())
-        .add("executionOptimistic", isExecutionOptimistic())
-        .add("canonical", isCanonical())
-        .add("finalized", isFinalized())
-        .add("executionPayloadValue", executionPayloadValue.toDecimalString())
-        .toString();
-  }
-}
+public record BlockContainerAndMetaData<T extends BlockContainer>(
+    T blockContainer, SpecMilestone specMilestone, UInt256 executionPayloadValue) {}

@@ -112,7 +112,7 @@ public class ValidatorDataProvider {
     return validatorApiChannel.createUnsignedBlock(slot, randao, graffiti, isBlinded);
   }
 
-  public SafeFuture<Optional<BlockContainerAndMetaData>> produceBlock(
+  public SafeFuture<Optional<BlockContainerAndMetaData<BlockContainer>>> produceBlock(
       final UInt64 slot, final BLSSignature randao, final Optional<Bytes32> graffiti) {
     checkBlockProducingParameters(slot, randao);
     return validatorApiChannel
@@ -120,20 +120,14 @@ public class ValidatorDataProvider {
         .thenCombine(retrieveExecutionPayloadValue(slot), this::lookUpData);
   }
 
-  private Optional<BlockContainerAndMetaData> lookUpData(
+  private Optional<BlockContainerAndMetaData<BlockContainer>> lookUpData(
       final Optional<BlockContainer> maybeBlockContainer, final UInt256 executionPayloadValue) {
-    if (maybeBlockContainer.isEmpty()) {
-      return Optional.empty();
-    } else {
-      return Optional.of(
-          new BlockContainerAndMetaData(
-              maybeBlockContainer.get(),
-              spec.atSlot(maybeBlockContainer.get().getSlot()).getMilestone(),
-              false,
-              false,
-              false,
-              executionPayloadValue));
-    }
+    return maybeBlockContainer.map(
+        blockContainer ->
+            new BlockContainerAndMetaData<>(
+                blockContainer,
+                spec.atSlot(blockContainer.getSlot()).getMilestone(),
+                executionPayloadValue));
   }
 
   private SafeFuture<UInt256> retrieveExecutionPayloadValue(final UInt64 slot) {
