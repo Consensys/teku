@@ -14,11 +14,10 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.Map;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
-import org.apache.commons.lang3.tuple.Pair;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
@@ -56,24 +55,23 @@ public class MilestoneDependentTypesUtil {
       SerializableOneOfTypeDefinition<T> getMultipleSchemaDefinitionFromMilestone(
           final SchemaDefinitionCache schemaDefinitionCache,
           final String title,
-          final Map<
-                  Pair<BiPredicate<T, SpecMilestone>, SpecMilestone>,
-                  Function<SchemaDefinitions, SszSchema<? extends T>>>
-              schemaGetters) {
+          List<ConditionalSchemaGetter<T>> schemaGetterList) {
     final SerializableOneOfTypeDefinitionBuilder<T> builder =
         new SerializableOneOfTypeDefinitionBuilder<T>().title(title);
     for (SpecMilestone milestone : schemaDefinitionCache.getSupportedMilestones()) {
-      for (var schemaGetter : schemaGetters.entrySet()) {
-        if (milestone.isGreaterThanOrEqualTo(schemaGetter.getKey().getRight())) {
-          final DeserializableTypeDefinition<? extends T> jsonTypeDefinition =
-              schemaGetter
-                  .getValue()
-                  .apply(schemaDefinitionCache.getSchemaDefinition(milestone))
-                  .getJsonTypeDefinition();
-          builder.withType(
-              value -> schemaGetter.getKey().getLeft().test(value, milestone), jsonTypeDefinition);
-        }
-      }
+      schemaGetterList.forEach(
+          schemaGetter -> {
+            if (milestone.isGreaterThanOrEqualTo(schemaGetter.earliestMilestone())) {
+              final DeserializableTypeDefinition<? extends T> jsonTypeDefinition =
+                  schemaGetter
+                      .schemaGetter()
+                      .apply(schemaDefinitionCache.getSchemaDefinition(milestone))
+                      .getJsonTypeDefinition();
+              builder.withType(
+                  value -> schemaGetter.schemaPredicate().test(value, milestone),
+                  jsonTypeDefinition);
+            }
+          });
     }
     return builder.build();
   }
@@ -104,4 +102,9 @@ public class MilestoneDependentTypesUtil {
       throw new BadRequestException(e.getMessage());
     }
   }
+
+  public record ConditionalSchemaGetter<T>(
+      BiPredicate<T, SpecMilestone> schemaPredicate,
+      SpecMilestone earliestMilestone,
+      Function<SchemaDefinitions, SszSchema<? extends T>> schemaGetter) {}
 }

@@ -33,16 +33,14 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT256_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
-import java.util.function.BiPredicate;
-import java.util.function.Function;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.schema.Version;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
@@ -50,7 +48,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
@@ -135,26 +132,8 @@ public class GetNewBlockV3 extends RestApiEndpoint {
   private static SerializableTypeDefinition<BlockContainerAndMetaData> getResponseType(
       final SchemaDefinitionCache schemaDefinitionCache) {
 
-    final Map<
-            Pair<BiPredicate<BlockContainer, SpecMilestone>, SpecMilestone>,
-            Function<SchemaDefinitions, SszSchema<? extends BlockContainer>>>
-        schemaGetters = new LinkedHashMap<>();
-
-    schemaGetters.put(
-        Pair.of(
-            (blockContainer, milestone) ->
-                schemaDefinitionCache.milestoneAtSlot(blockContainer.getSlot()).equals(milestone)
-                    && !blockContainer.isBlinded(),
-            SpecMilestone.PHASE0),
-        SchemaDefinitions::getBlockContainerSchema);
-    schemaGetters.put(
-        Pair.of(
-            (blockContainer, milestone) ->
-                schemaDefinitionCache.milestoneAtSlot(blockContainer.getSlot()).equals(milestone)
-                    && milestone.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)
-                    && blockContainer.isBlinded(),
-            SpecMilestone.BELLATRIX),
-        SchemaDefinitions::getBlindedBlockContainerSchema);
+    final List<MilestoneDependentTypesUtil.ConditionalSchemaGetter<BlockContainer>> schemaGetters =
+        generateBlockContainerSchemaGetters(schemaDefinitionCache);
 
     final SerializableTypeDefinition<BlockContainer> blockContainerType =
         getMultipleSchemaDefinitionFromMilestone(schemaDefinitionCache, "Block", schemaGetters);
@@ -172,5 +151,29 @@ public class GetNewBlockV3 extends RestApiEndpoint {
             BlockContainerAndMetaData::getExecutionPayloadValue)
         .withField("data", blockContainerType, BlockContainerAndMetaData::getData)
         .build();
+  }
+
+  private static List<MilestoneDependentTypesUtil.ConditionalSchemaGetter<BlockContainer>>
+      generateBlockContainerSchemaGetters(SchemaDefinitionCache schemaDefinitionCache) {
+    final List<MilestoneDependentTypesUtil.ConditionalSchemaGetter<BlockContainer>>
+        schemaGetterList = new ArrayList<>();
+
+    schemaGetterList.add(
+        new MilestoneDependentTypesUtil.ConditionalSchemaGetter<>(
+            (blockContainer, milestone) ->
+                schemaDefinitionCache.milestoneAtSlot(blockContainer.getSlot()).equals(milestone)
+                    && !blockContainer.isBlinded(),
+            SpecMilestone.PHASE0,
+            SchemaDefinitions::getBlockContainerSchema));
+
+    schemaGetterList.add(
+        new MilestoneDependentTypesUtil.ConditionalSchemaGetter<>(
+            (blockContainer, milestone) ->
+                schemaDefinitionCache.milestoneAtSlot(blockContainer.getSlot()).equals(milestone)
+                    && milestone.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)
+                    && blockContainer.isBlinded(),
+            SpecMilestone.BELLATRIX,
+            SchemaDefinitions::getBlindedBlockContainerSchema));
+    return schemaGetterList;
   }
 }
