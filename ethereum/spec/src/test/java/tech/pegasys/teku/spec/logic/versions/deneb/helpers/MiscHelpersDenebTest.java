@@ -63,7 +63,7 @@ class MiscHelpersDenebTest {
     // make sure we are testing something
     assertThat(blobSidecars).isNotEmpty();
 
-    miscHelpersDeneb.validateBlobSidecarsAgainstBlock(
+    miscHelpersDeneb.validateBlobSidecarsBatchAgainstBlock(
         blobSidecars,
         block.getMessage(),
         BeaconBlockBodyDeneb.required(block.getMessage().getBody()).getBlobKzgCommitments().stream()
@@ -116,7 +116,7 @@ class MiscHelpersDenebTest {
 
     assertThatThrownBy(
             () ->
-                miscHelpersDeneb.validateBlobSidecarsAgainstBlock(
+                miscHelpersDeneb.validateBlobSidecarsBatchAgainstBlock(
                     blobSidecars,
                     block.getMessage(),
                     BeaconBlockBodyDeneb.required(block.getMessage().getBody())

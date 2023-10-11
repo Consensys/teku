@@ -96,6 +96,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
     asyncRunner
         .runAsync(this::validateImmediatelyAvailable)
         .thenCompose(this::completeValidation)
+        .thenApply(this::performCompletenessValidation)
         .propagateTo(validationResult);
 
     return true;
@@ -133,10 +134,10 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
     final MiscHelpers miscHelpers = spec.atSlot(slotAndBlockRoot.getSlot()).miscHelpers();
 
     try {
-      miscHelpers.validateBlobSidecarsAgainstBlock(
+      miscHelpers.validateBlobSidecarsBatchAgainstBlock(
           blobSidecars, block, kzgCommitmentsFromBlockSupplier.get());
 
-      if (!miscHelpers.isDataAvailable(blobSidecars)) {
+      if (!miscHelpers.verifyBlobKzgProofBatch(blobSidecars)) {
         return BlobSidecarsAndValidationResult.invalidResult(blobSidecars);
       }
     } catch (final Exception ex) {
@@ -289,9 +290,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
 
   /**
    * Computes the final validation result combining the already validated blobs from
-   * `validatedBlobSidecars` and the additional validation result containing (if validated) the
-   * required additional blobs to reconstruct the full list that will have to match the kzg
-   * commitments from the block
+   * `validatedBlobSidecars`
    *
    * @param additionalBlobSidecarsAndValidationResult
    * @return
@@ -308,21 +307,34 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
         .getBlobSidecars()
         .forEach(blobSidecar -> validatedBlobSidecars.put(blobSidecar.getIndex(), blobSidecar));
 
-    // let's create the final list of validated BlobSidecars making sure that indices and
-    // final order are consistent
-    final List<BlobSidecar> completeValidatedBlobSidecars = new ArrayList<>();
-    validatedBlobSidecars.forEach(
-        (index, blobSidecar) -> {
-          checkState(
-              index.equals(blobSidecar.getIndex())
-                  && index.equals(UInt64.valueOf(completeValidatedBlobSidecars.size())),
-              "Inconsistency detected during blob sidecar validation");
-          completeValidatedBlobSidecars.add(blobSidecar);
-        });
+    final List<BlobSidecar> completeValidatedBlobSidecars =
+        new ArrayList<>(validatedBlobSidecars.values());
 
-    if (completeValidatedBlobSidecars.size() < kzgCommitmentsFromBlockSupplier.get().size()) {
-      // we haven't verified enough blobs to match the commitments present in the block
-      // this should never happen in practice. If it does, is likely a bug and should be fixed.
+    return BlobSidecarsAndValidationResult.validResult(
+        Collections.unmodifiableList(completeValidatedBlobSidecars));
+  }
+
+  /**
+   * make sure that final blob sidecar list is complete
+   *
+   * @param additionalBlobSidecarsAndValidationResult
+   * @return
+   */
+  private BlobSidecarsAndValidationResult performCompletenessValidation(
+      final BlobSidecarsAndValidationResult additionalBlobSidecarsAndValidationResult) {
+
+    if (additionalBlobSidecarsAndValidationResult.isFailure()
+        || additionalBlobSidecarsAndValidationResult.isNotRequired()) {
+      return additionalBlobSidecarsAndValidationResult;
+    }
+
+    try {
+      spec.atSlot(blockBlobSidecarsTracker.getSlotAndBlockRoot().getSlot())
+          .miscHelpers()
+          .verifyBlobSidecarCompleteness(
+              additionalBlobSidecarsAndValidationResult.getBlobSidecars(),
+              kzgCommitmentsFromBlockSupplier.get());
+    } catch (final IllegalArgumentException ex) {
       checkState(
           isBlockOutsideDataAvailabilityWindow(),
           "Validated blobs are less than commitments present in block.");
@@ -332,8 +344,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
       return BlobSidecarsAndValidationResult.NOT_REQUIRED;
     }
 
-    return BlobSidecarsAndValidationResult.validResult(
-        Collections.unmodifiableList(completeValidatedBlobSidecars));
+    return additionalBlobSidecarsAndValidationResult;
   }
 
   private boolean isBlockOutsideDataAvailabilityWindow() {

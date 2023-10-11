@@ -23,8 +23,10 @@ import net.jqwik.api.Property;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.propertytest.suppliers.SpecSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSidecarSupplier;
+import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.BeaconBlockSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.KZGCommitmentSupplier;
 
 public class MiscHelpersDenebPropertyTest {
@@ -38,9 +40,10 @@ public class MiscHelpersDenebPropertyTest {
 
   @Property(tries = 100)
   void fuzzIsDataAvailable(
-      @ForAll final List<@From(supplier = BlobSidecarSupplier.class) BlobSidecar> blobSidecars) {
+      @ForAll final List<@From(supplier = BlobSidecarSupplier.class) BlobSidecar> blobSidecars,
+      @ForAll(supplier = BeaconBlockSupplier.class) final BeaconBlock block) {
     try {
-      miscHelpers.isDataAvailable(blobSidecars);
+      miscHelpers.isDataAvailable(blobSidecars, block);
     } catch (Exception e) {
       assertThat(e).isInstanceOf(IllegalArgumentException.class);
     }

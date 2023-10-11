@@ -30,6 +30,7 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableSortedMap;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -117,7 +118,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     asyncRunner.executeDueActions();
 
     // verify that kzg validation has been performed for the initial batch
-    verifyValidationAndDataAvailabilityCall(blobSidecarsInitial);
+    verifyValidationAndDataAvailabilityCall(blobSidecarsInitial, false);
 
     // mock the additional check to be OK.
     whenDataAvailability(blobSidecarsAdditional).thenReturn(true);
@@ -128,7 +129,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     Waiter.waitFor(availabilityCheckResult);
 
     // verify that kzg validation has been performed for the additional batch
-    verifyValidationAndDataAvailabilityCall(blobSidecarsAdditional);
+    verifyValidationAndDataAvailabilityCall(blobSidecarsAdditional, true);
 
     assertAvailable(availabilityCheckResult);
 
@@ -158,7 +159,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     asyncRunner.executeDueActions();
 
     // verify that kzg validation has been performed for the initial batch
-    verifyValidationAndDataAvailabilityCall(blobSidecarsComplete);
+    verifyValidationAndDataAvailabilityCall(blobSidecarsComplete, true);
 
     Waiter.waitFor(availabilityCheckResult);
 
@@ -228,7 +229,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     switch (batchFailure) {
         // blobsidecar validation check failure for the initial set
       case BLOB_SIDECAR_VALIDATION_EXCEPTION:
-        throwWhenValidatingBlobSidecar(blobSidecarsInitial, cause.get());
+        throwWhenValidatingBlobSidecarsBatchAgainstBlock(blobSidecarsInitial, cause.get());
         break;
 
         // mock kzg availability check failure for the initial set
@@ -275,7 +276,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     switch (batchFailure) {
         // blobsidecar validation check failure for the additional set
       case BLOB_SIDECAR_VALIDATION_EXCEPTION:
-        throwWhenValidatingBlobSidecar(blobSidecarsAdditional, cause.get());
+        throwWhenValidatingBlobSidecarsBatchAgainstBlock(blobSidecarsAdditional, cause.get());
         break;
 
         // mock kzg availability check failure for the additional set
@@ -318,12 +319,20 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     asyncRunner.executeDueActions();
 
     // verify that kzg validation has been performed for the initial batch
-    verifyValidationAndDataAvailabilityCall(blobSidecarsInitial);
+    verifyValidationAndDataAvailabilityCall(blobSidecarsInitial, false);
 
     // we complete the blobs without index 3
     final List<BlobSidecar> partialBlobs = blobSidecarsComplete.subList(1, 2);
     // we lie on availability check too (not actually possible)
     whenDataAvailability(partialBlobs).thenReturn(true);
+
+    final List<BlobSidecar> expectedIncompleteBlobSidecar = new ArrayList<>();
+    expectedIncompleteBlobSidecar.add(blobSidecarsComplete.get(0)); // blob 0
+    expectedIncompleteBlobSidecar.add(blobSidecarsComplete.get(1)); // blob 1
+    expectedIncompleteBlobSidecar.add(blobSidecarsComplete.get(2)); // blob 2
+
+    throwWhenVerifyingBlobSidecarCompleteness(
+        expectedIncompleteBlobSidecar, new IllegalArgumentException("oops"));
 
     // let the tracker complete with all blobSidecars
     completeTrackerWith(partialBlobs);
@@ -505,14 +514,14 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   private OngoingStubbing<Boolean> whenDataAvailability(final List<BlobSidecar> blobSidecars) {
-    return when(miscHelpers.isDataAvailable(eq(blobSidecars)));
+    return when(miscHelpers.verifyBlobKzgProofBatch(eq(blobSidecars)));
   }
 
-  private void throwWhenValidatingBlobSidecar(
+  private void throwWhenValidatingBlobSidecarsBatchAgainstBlock(
       final List<BlobSidecar> blobSidecars, final Throwable cause) {
     doThrow(cause)
         .when(miscHelpers)
-        .validateBlobSidecarsAgainstBlock(
+        .validateBlobSidecarsBatchAgainstBlock(
             eq(blobSidecars),
             argThat(block -> block.equals(this.block.getBeaconBlock().orElseThrow())),
             assertArg(
@@ -520,17 +529,37 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
                     assertThat(kzgCommitmentsArg).isEqualTo(kzgCommitmentsComplete)));
   }
 
-  private void verifyValidationAndDataAvailabilityCall(final List<BlobSidecar> blobSidecars) {
+  private void throwWhenVerifyingBlobSidecarCompleteness(
+      final List<BlobSidecar> blobSidecars, final Throwable cause) {
+    doThrow(cause)
+        .when(miscHelpers)
+        .verifyBlobSidecarCompleteness(
+            eq(blobSidecars),
+            assertArg(
+                kzgCommitmentsArg ->
+                    assertThat(kzgCommitmentsArg).isEqualTo(kzgCommitmentsComplete)));
+  }
 
+  private void verifyValidationAndDataAvailabilityCall(
+      final List<BlobSidecar> blobSidecars, final boolean isFinalValidation) {
     verify(miscHelpers, times(1))
-        .validateBlobSidecarsAgainstBlock(
+        .validateBlobSidecarsBatchAgainstBlock(
             eq(blobSidecars),
             argThat(block -> block.equals(this.block.getBeaconBlock().orElseThrow())),
             assertArg(
                 kzgCommitmentsArg ->
                     assertThat(kzgCommitmentsArg).isEqualTo(kzgCommitmentsComplete)));
 
-    verify(miscHelpers, times(1)).isDataAvailable(eq(blobSidecars));
+    verify(miscHelpers, times(1)).verifyBlobKzgProofBatch(eq(blobSidecars));
+
+    if (isFinalValidation) {
+      verify(miscHelpers, times(1))
+          .verifyBlobSidecarCompleteness(
+              eq(blobSidecarsComplete),
+              assertArg(
+                  kzgCommitmentsArg ->
+                      assertThat(kzgCommitmentsArg).isEqualTo(kzgCommitmentsComplete)));
+    }
 
     // assume we verified all interaction before resetting
     verifyNoMoreInteractions(miscHelpers);
@@ -538,7 +567,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   private void verifyDataAvailabilityNeverCalled() {
-    verify(miscHelpers, never()).isDataAvailable(any());
+    verify(miscHelpers, never()).verifyBlobKzgProofBatch(any());
   }
 
   private void prepareBlockAndBlobSidecarsOutsideAvailabilityWindow() {

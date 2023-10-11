@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.versions.capella.helpers.MiscHelpersCapella;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
@@ -59,41 +60,54 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   }
 
   /**
-   * <a
+   * Performs complete data availability check <a
    * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/fork-choice.md#is_data_available">is_data_available</a>
    *
    * <p>In Deneb we don't need to retrieve data, everything is already available via blob sidecars.
    */
   @Override
-  public boolean isDataAvailable(final List<BlobSidecar> blobSidecars) {
+  public boolean isDataAvailable(final List<BlobSidecar> blobSidecars, final BeaconBlock block) {
 
+    final List<KZGCommitment> kzgCommitmentsFromBlock =
+        BeaconBlockBodyDeneb.required(block.getBody()).getBlobKzgCommitments().stream()
+            .map(SszKZGCommitment::getKZGCommitment)
+            .toList();
+
+    validateBlobSidecarsBatchAgainstBlock(blobSidecars, block, kzgCommitmentsFromBlock);
+
+    if (!verifyBlobKzgProofBatch(blobSidecars)) {
+      return false;
+    }
+
+    verifyBlobSidecarCompleteness(blobSidecars, kzgCommitmentsFromBlock);
+
+    return true;
+  }
+
+  /**
+   * Performs a verifyBlobKzgProofBatch on the given blob sidecars
+   *
+   * @param blobSidecars blob sidecars to verify, can be a partial set
+   * @return true if all blob sidecars are valid
+   */
+  @Override
+  public boolean verifyBlobKzgProofBatch(final List<BlobSidecar> blobSidecars) {
     final List<Bytes> blobs = new ArrayList<>();
-    final List<KZGProof> proofs = new ArrayList<>();
+    final List<KZGProof> kzgProofs = new ArrayList<>();
     final List<KZGCommitment> kzgCommitments = new ArrayList<>();
 
     blobSidecars.forEach(
         blobSidecar -> {
           blobs.add(blobSidecar.getBlob().getBytes());
-          proofs.add(blobSidecar.getKZGProof());
+          kzgProofs.add(blobSidecar.getKZGProof());
           kzgCommitments.add(blobSidecar.getKZGCommitment());
         });
 
-    return kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, proofs);
+    return kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, kzgProofs);
   }
 
   /**
-   * <a
-   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/beacon-chain.md#kzg_commitment_to_versioned_hash">kzg_commitment_to_versioned_hash</a>
-   */
-  @Override
-  public VersionedHash kzgCommitmentToVersionedHash(final KZGCommitment kzgCommitment) {
-    return VersionedHash.create(
-        VERSIONED_HASH_VERSION_KZG, Hash.sha256(kzgCommitment.getBytesCompressed()));
-  }
-
-  /**
-   * The validation assumes that blockRoot and Slot are already matching. This is guaranteed by
-   * BlobSidecarPool and BlockBlobSidecarsTracker
+   * Validates blob sidecars against block by matching all fields they have in common
    *
    * @param blobSidecars blob sidecars to validate
    * @param block block to validate blob sidecar against
@@ -101,7 +115,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
    *     but since we already have them we can avoid extracting them again.
    */
   @Override
-  public void validateBlobSidecarsAgainstBlock(
+  public void validateBlobSidecarsBatchAgainstBlock(
       final List<BlobSidecar> blobSidecars,
       final BeaconBlock block,
       final List<KZGCommitment> kzgCommitmentsFromBlock) {
@@ -111,6 +125,18 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
     blobSidecars.forEach(
         blobSidecar -> {
           final UInt64 blobIndex = blobSidecar.getIndex();
+
+          checkArgument(
+              blobSidecar.getBlockRoot().equals(block.getRoot()),
+              "Block and blob sidecar slot mismatch for %s, blob index %s",
+              slotAndBlockRoot,
+              blobIndex);
+
+          checkArgument(
+              blobSidecar.getSlot().equals(block.getSlot()),
+              "Block and blob sidecar slot mismatch for %s, blob index %s",
+              slotAndBlockRoot,
+              blobIndex);
 
           checkArgument(
               blobSidecar.getProposerIndex().equals(block.getProposerIndex()),
@@ -140,6 +166,25 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
               slotAndBlockRoot,
               blobIndex);
         });
+  }
+
+  @Override
+  public void verifyBlobSidecarCompleteness(
+      final List<BlobSidecar> verifiedBlobSidecars,
+      final List<KZGCommitment> kzgCommitmentsFromBlock) {
+    checkArgument(
+        verifiedBlobSidecars.size() == kzgCommitmentsFromBlock.size(),
+        "Blob sidecars are not complete");
+  }
+
+  /**
+   * <a
+   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/beacon-chain.md#kzg_commitment_to_versioned_hash">kzg_commitment_to_versioned_hash</a>
+   */
+  @Override
+  public VersionedHash kzgCommitmentToVersionedHash(final KZGCommitment kzgCommitment) {
+    return VersionedHash.create(
+        VERSIONED_HASH_VERSION_KZG, Hash.sha256(kzgCommitment.getBytesCompressed()));
   }
 
   @Override

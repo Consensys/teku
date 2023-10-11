@@ -343,23 +343,29 @@ public class MiscHelpers {
     return false;
   }
 
-  /**
-   * Performs data availability check (just KZG validation) assuming blobSidecar content (slot,
-   * parent root, commitments) have been previously matched against the block
-   */
-  public boolean isDataAvailable(final List<BlobSidecar> blobSidecars) {
+  public boolean isDataAvailable(final List<BlobSidecar> blobSidecars, final BeaconBlock block) {
     return false;
   }
 
-  public VersionedHash kzgCommitmentToVersionedHash(final KZGCommitment kzgCommitment) {
-    throw new UnsupportedOperationException("No KZGCommitments before Deneb");
+  public boolean verifyBlobKzgProofBatch(final List<BlobSidecar> blobSidecars) {
+    return false;
   }
 
-  public void validateBlobSidecarsAgainstBlock(
+  public void validateBlobSidecarsBatchAgainstBlock(
       final List<BlobSidecar> blobSidecars,
       final BeaconBlock block,
       final List<KZGCommitment> kzgCommitmentsFromBlock) {
     throw new UnsupportedOperationException("Blob Sidecars before Deneb");
+  }
+
+  public void verifyBlobSidecarCompleteness(
+      final List<BlobSidecar> verifiedBlobSidecars,
+      final List<KZGCommitment> kzgCommitmentsFromBlock) {
+    throw new UnsupportedOperationException("No KZGCommitments before Deneb");
+  }
+
+  public VersionedHash kzgCommitmentToVersionedHash(final KZGCommitment kzgCommitment) {
+    throw new UnsupportedOperationException("No KZGCommitments before Deneb");
   }
 
   public UInt64 getMaxRequestBlocks() {
