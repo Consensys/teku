@@ -93,7 +93,6 @@ public class SlotBasedScheduledDuties<P extends Duty, A extends Duty> implements
     if (duty == null) {
       return SafeFuture.completedFuture(DutyResult.NO_OP);
     }
-
     return dutyFunction.apply(duty);
   }
 
