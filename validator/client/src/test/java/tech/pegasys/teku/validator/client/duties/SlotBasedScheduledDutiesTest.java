@@ -51,7 +51,7 @@ class SlotBasedScheduledDutiesTest {
 
   private final SlotBasedScheduledDuties<ProductionDuty, AggregationDuty> duties =
       new SlotBasedScheduledDuties<>(
-          dutyFactory, Bytes32.fromHexString("0x838382"), metricsSystem, false);
+          dutyFactory, Bytes32.fromHexString("0x838382"), Duty::performDuty);
 
   @Test
   public void shouldDiscardMissedProductionDuties() {

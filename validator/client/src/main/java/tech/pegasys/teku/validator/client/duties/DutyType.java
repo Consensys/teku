@@ -14,9 +14,9 @@
 package tech.pegasys.teku.validator.client.duties;
 
 public enum DutyType {
-  ATTESTATION_AGGREGATION("attestation aggregation"),
-  ATTESTATION_PRODUCTION("attestation production"),
-  BLOCK_PRODUCTION("block production");
+  ATTESTATION_AGGREGATION("attestation_aggregation"),
+  ATTESTATION_PRODUCTION("attestation_production"),
+  BLOCK_PRODUCTION("block_production");
 
   private final String type;
 

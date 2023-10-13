@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -53,7 +54,10 @@ import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAler
 import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.BlockDutyFactory;
+import tech.pegasys.teku.validator.client.duties.Duty;
+import tech.pegasys.teku.validator.client.duties.DutyResult;
 import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
+import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics;
 import tech.pegasys.teku.validator.client.duties.attestations.AttestationDutyFactory;
 import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTracker;
 import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
@@ -419,6 +423,15 @@ public class ValidatorClientService extends Service {
         new AttestationDutyFactory(spec, forkProvider, validatorApiChannel);
     final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
         new BeaconCommitteeSubscriptions(validatorApiChannel);
+
+    final Function<Duty, SafeFuture<DutyResult>> dutyFunction;
+    if (metricsOn) {
+      dutyFunction = Duty::performDuty;
+    } else {
+      final ValidatorDutyMetrics metrics = ValidatorDutyMetrics.create(metricsSystem);
+      dutyFunction = metrics::performDutyWithMetrics;
+    }
+
     final DutyLoader<?> attestationDutyLoader =
         new RetryingDutyLoader<>(
             asyncRunner,
@@ -427,7 +440,7 @@ public class ValidatorClientService extends Service {
                 forkProvider,
                 dependentRoot ->
                     new SlotBasedScheduledDuties<>(
-                        attestationDutyFactory, dependentRoot, metricsSystem, metricsOn),
+                        attestationDutyFactory, dependentRoot, dutyFunction),
                 validators,
                 validatorIndexProvider,
                 beaconCommitteeSubscriptions,
@@ -438,8 +451,7 @@ public class ValidatorClientService extends Service {
             new BlockProductionDutyLoader(
                 validatorApiChannel,
                 dependentRoot ->
-                    new SlotBasedScheduledDuties<>(
-                        blockDutyFactory, dependentRoot, metricsSystem, metricsOn),
+                    new SlotBasedScheduledDuties<>(blockDutyFactory, dependentRoot, dutyFunction),
                 validators,
                 validatorIndexProvider));
     validatorTimingChannels.add(new BlockDutyScheduler(metricsSystem, blockDutyLoader, spec));
