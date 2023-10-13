@@ -26,7 +26,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.dataproviders.lookup.BlobSidecarsProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -106,7 +105,6 @@ public class StorageBackedRecentChainDataTest {
             .specProvider(spec)
             .blockProvider(BlockProvider.NOOP)
             .stateProvider(StateAndBlockSummaryProvider.NOOP)
-            .blobSidecarsProvider(BlobSidecarsProvider.NOOP)
             .storeConfig(storeConfig)
             .build();
     StoreAssertions.assertStoresMatch(client.get().getStore(), expectedStore);
@@ -154,7 +152,6 @@ public class StorageBackedRecentChainDataTest {
             .specProvider(spec)
             .blockProvider(BlockProvider.NOOP)
             .stateProvider(StateAndBlockSummaryProvider.NOOP)
-            .blobSidecarsProvider(BlobSidecarsProvider.NOOP)
             .storeConfig(storeConfig)
             .build();
     client.get().initializeFromGenesis(initialState, UInt64.ZERO);
@@ -202,8 +199,7 @@ public class StorageBackedRecentChainDataTest {
             .metricsSystem(new StubMetricsSystem())
             .specProvider(spec)
             .blockProvider(BlockProvider.NOOP)
-            .stateProvider(StateAndBlockSummaryProvider.NOOP)
-            .blobSidecarsProvider(BlobSidecarsProvider.NOOP);
+            .stateProvider(StateAndBlockSummaryProvider.NOOP);
     storeRequestFuture.complete(Optional.of(storeData));
     assertThat(client).isCompleted();
     assertStoreInitialized(client.get());

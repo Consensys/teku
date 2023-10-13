@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.dataproviders.lookup.BlobSidecarsProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
@@ -41,7 +40,6 @@ public class StoreBuilder {
   private Spec spec;
   private BlockProvider blockProvider;
   private StateAndBlockSummaryProvider stateAndBlockProvider;
-  private BlobSidecarsProvider blobSidecarsProvider;
   private EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider;
   private StoreConfig storeConfig = StoreConfig.createDefault();
 
@@ -112,7 +110,6 @@ public class StoreBuilder {
         spec,
         blockProvider,
         stateAndBlockProvider,
-        blobSidecarsProvider,
         earliestBlobSidecarSlotProvider,
         anchor,
         time,
@@ -173,12 +170,6 @@ public class StoreBuilder {
   public StoreBuilder stateProvider(final StateAndBlockSummaryProvider stateProvider) {
     checkNotNull(stateProvider);
     this.stateAndBlockProvider = stateProvider;
-    return this;
-  }
-
-  public StoreBuilder blobSidecarsProvider(final BlobSidecarsProvider blobSidecarsProvider) {
-    checkNotNull(blobSidecarsProvider);
-    this.blobSidecarsProvider = blobSidecarsProvider;
     return this;
   }
 

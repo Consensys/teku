@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.forkchoice;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -43,7 +42,7 @@ public interface MutableStore extends ReadOnlyStore {
       SignedBeaconBlock block,
       BeaconState state,
       BlockCheckpoints checkpoints,
-      List<BlobSidecar> blobSidecars,
+      Optional<List<BlobSidecar>> blobSidecars,
       Optional<UInt64> earliestBlobSidecarSlot);
 
   default void putBlockAndState(
@@ -52,7 +51,7 @@ public interface MutableStore extends ReadOnlyStore {
         blockAndState.getBlock(),
         blockAndState.getState(),
         checkpoints,
-        Collections.emptyList(),
+        Optional.empty(),
         Optional.empty());
   }
 
@@ -64,7 +63,7 @@ public interface MutableStore extends ReadOnlyStore {
         blockAndState.getBlock(),
         blockAndState.getState(),
         checkpoints,
-        blobSidecars,
+        Optional.of(blobSidecars),
         Optional.empty());
   }
 

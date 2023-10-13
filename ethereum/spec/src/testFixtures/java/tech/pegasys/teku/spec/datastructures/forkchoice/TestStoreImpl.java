@@ -17,7 +17,6 @@ import static java.util.stream.Collectors.toList;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -248,10 +247,9 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public SafeFuture<List<BlobSidecar>> retrieveBlobSidecars(
+  public Optional<List<BlobSidecar>> getBlobSidecarsIfAvailable(
       final SlotAndBlockRoot slotAndBlockRoot) {
-    return SafeFuture.completedFuture(
-        Optional.ofNullable(blobSidecars.get(slotAndBlockRoot)).orElse(Collections.emptyList()));
+    return Optional.ofNullable(blobSidecars.get(slotAndBlockRoot));
   }
 
   @Override
@@ -265,14 +263,13 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
       final SignedBeaconBlock block,
       final BeaconState state,
       final BlockCheckpoints checkpoints,
-      final List<BlobSidecar> blobSidecars,
+      final Optional<List<BlobSidecar>> blobSidecars,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     blocks.put(block.getRoot(), block);
     blockStates.put(block.getRoot(), state);
     blockCheckpoints.put(block.getRoot(), checkpoints);
-    if (!blobSidecars.isEmpty()) {
-      this.blobSidecars.put(block.getSlotAndBlockRoot(), blobSidecars);
-    }
+    blobSidecars.ifPresent(
+        sidecars -> this.blobSidecars.put(block.getSlotAndBlockRoot(), sidecars));
     if (earliestBlobSidecarSlot.isEmpty()) {
       earliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot;
     }
