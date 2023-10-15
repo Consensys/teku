@@ -144,6 +144,14 @@ public class NodeDataProvider {
 
     for (int i = 0; i < blsToExecutionChanges.size(); i++) {
       maybeFutureErrors.add(addBlsToExecutionChange(i, blsToExecutionChanges.get(i)));
+      if (i % 1000 == 0) {
+        LOG.debug("Large batch of bls changes encountered, up to {}", i);
+        try {
+          Thread.sleep(200);
+        } catch (InterruptedException e) {
+          LOG.debug("Exception while waiting between bls batches", e);
+        }
+      }
     }
 
     return SafeFuture.collectAll(maybeFutureErrors.stream())
