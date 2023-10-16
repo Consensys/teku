@@ -121,6 +121,7 @@ class ValidatorRegistratorTest {
             });
 
     when(proposerConfigPropertiesProvider.isReadyToProvideProperties()).thenReturn(true);
+    when(proposerConfigPropertiesProvider.isBuilderEnabled(any())).thenReturn(true);
     when(proposerConfigPropertiesProvider.refresh()).thenReturn(SafeFuture.COMPLETE);
 
     // random signature for all signings
@@ -276,6 +277,21 @@ class ValidatorRegistratorTest {
   }
 
   @TestTemplate
+  void doesNotRegister_ifValidatorIsNotEnabled() {
+    setOwnedValidators(validator1, validator2, validator3);
+
+    // validator 1 is not enabled
+    when(proposerConfigPropertiesProvider.isBuilderEnabled(validator1.getPublicKey()))
+        .thenReturn(false);
+
+    runRegistrationFlowWithSubscription(0);
+
+    final List<List<SignedValidatorRegistration>> registrationCalls = captureRegistrationCalls(1);
+
+    verifyRegistrations(registrationCalls.get(0), List.of(validator2, validator3));
+  }
+
+  @TestTemplate
   void doesNotRegister_ifValidatorIsExited() {
     setOwnedValidators(validator1, validator2, validator3);
 
@@ -329,6 +345,24 @@ class ValidatorRegistratorTest {
   @TestTemplate
   void noRegistrationsAreSentIfEmpty() {
     setOwnedValidators();
+
+    runRegistrationFlowForSlotWithSubscription(ZERO);
+
+    verifyNoInteractions(validatorApiChannel, signer, signedValidatorRegistrationFactory);
+  }
+
+  @TestTemplate
+  void noRegistrationsAreSentIfValidatorsAreFilteredOut() {
+    setOwnedValidators(validator1, validator2, validator3);
+
+    // disable builder flow for validator1 and validator2
+    when(proposerConfigPropertiesProvider.isBuilderEnabled(validator1.getPublicKey()))
+        .thenReturn(false);
+    when(proposerConfigPropertiesProvider.isBuilderEnabled(validator2.getPublicKey()))
+        .thenReturn(false);
+
+    // validator3 is exited
+    validatorStatuses = Map.of(validator3.getPublicKey(), ValidatorStatus.withdrawal_done);
 
     runRegistrationFlowForSlotWithSubscription(ZERO);
 

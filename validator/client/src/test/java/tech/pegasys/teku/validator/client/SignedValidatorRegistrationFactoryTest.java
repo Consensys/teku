@@ -62,8 +62,6 @@ class SignedValidatorRegistrationFactoryTest {
     gasLimit = dataStructureUtil.randomUInt64();
     validator = new Validator(dataStructureUtil.randomPublicKey(), signer, Optional::empty);
 
-    when(proposerConfigPropertiesProvider.isBuilderEnabled(any())).thenReturn(true);
-
     when(proposerConfigPropertiesProvider.isReadyToProvideProperties()).thenReturn(true);
     when(proposerConfigPropertiesProvider.getFeeRecipient(any()))
         .thenReturn(Optional.of(feeRecipient));
@@ -315,19 +313,6 @@ class SignedValidatorRegistrationFactoryTest {
     // no fee recipient provided
     when(proposerConfigPropertiesProvider.getFeeRecipient(validator.getPublicKey()))
         .thenReturn(Optional.empty());
-
-    final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration =
-        signedValidatorRegistrationFactory.createSignedValidatorRegistration(
-            validator, Optional.empty(), throwable -> {});
-    verify(signer, never()).signValidatorRegistration(any());
-    assertThat(maybeSignedValidatorRegistration).isEmpty();
-  }
-
-  @TestTemplate
-  void doesNotCreateWhenValidatorRegistrationNotEnabled() {
-    // validator registration is disabled for validator2
-    when(proposerConfigPropertiesProvider.isBuilderEnabled(validator.getPublicKey()))
-        .thenReturn(false);
 
     final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration =
         signedValidatorRegistrationFactory.createSignedValidatorRegistration(

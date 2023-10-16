@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.validator.client;
 
-import static tech.pegasys.teku.validator.client.ValidatorRegistrator.VALIDATOR_BUILDER_PUBLICKEY;
+import static tech.pegasys.teku.validator.client.ValidatorRegistrator.VALIDATOR_BUILDER_PUBLIC_KEY;
 
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -32,13 +32,13 @@ import tech.pegasys.teku.spec.signatures.Signer;
 public class SignedValidatorRegistrationFactory {
   private static final Logger LOG = LogManager.getLogger();
 
-  private final ProposerConfigPropertiesProvider validatorRegistrationPropertiesProvider;
+  private final ProposerConfigPropertiesProvider proposerConfigPropertiesProvider;
   private final TimeProvider timeProvider;
 
   public SignedValidatorRegistrationFactory(
-      final ProposerConfigPropertiesProvider validatorRegistrationPropertiesProvider,
+      final ProposerConfigPropertiesProvider proposerConfigPropertiesProvider,
       final TimeProvider timeProvider) {
-    this.validatorRegistrationPropertiesProvider = validatorRegistrationPropertiesProvider;
+    this.proposerConfigPropertiesProvider = proposerConfigPropertiesProvider;
     this.timeProvider = timeProvider;
   }
 
@@ -56,16 +56,8 @@ public class SignedValidatorRegistrationFactory {
 
     final BLSPublicKey publicKey = validator.getPublicKey();
 
-    final boolean builderEnabled =
-        validatorRegistrationPropertiesProvider.isBuilderEnabled(publicKey);
-
-    if (!builderEnabled) {
-      LOG.trace("Validator registration is disabled for {}", publicKey);
-      return Optional.empty();
-    }
-
     final Optional<Eth1Address> maybeFeeRecipient =
-        validatorRegistrationPropertiesProvider.getFeeRecipient(publicKey);
+        proposerConfigPropertiesProvider.getFeeRecipient(publicKey);
 
     if (maybeFeeRecipient.isEmpty()) {
       LOG.debug(
@@ -75,14 +67,14 @@ public class SignedValidatorRegistrationFactory {
     }
 
     final Eth1Address feeRecipient = maybeFeeRecipient.get();
-    final UInt64 gasLimit = validatorRegistrationPropertiesProvider.getGasLimit(publicKey);
+    final UInt64 gasLimit = proposerConfigPropertiesProvider.getGasLimit(publicKey);
 
     final Optional<UInt64> maybeTimestampOverride =
-        validatorRegistrationPropertiesProvider.getBuilderRegistrationTimestampOverride(publicKey);
+        proposerConfigPropertiesProvider.getBuilderRegistrationTimestampOverride(publicKey);
 
     final ValidatorRegistration validatorRegistration =
         createValidatorRegistration(
-            VALIDATOR_BUILDER_PUBLICKEY.apply(validator, validatorRegistrationPropertiesProvider),
+            VALIDATOR_BUILDER_PUBLIC_KEY.apply(validator, proposerConfigPropertiesProvider),
             feeRecipient,
             gasLimit,
             maybeTimestampOverride.orElse(timeProvider.getTimeInSeconds()));

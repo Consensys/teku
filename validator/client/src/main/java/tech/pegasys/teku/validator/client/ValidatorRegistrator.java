@@ -50,7 +50,7 @@ import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 public class ValidatorRegistrator implements ValidatorTimingChannel {
 
   static final BiFunction<Validator, ProposerConfigPropertiesProvider, BLSPublicKey>
-      VALIDATOR_BUILDER_PUBLICKEY =
+      VALIDATOR_BUILDER_PUBLIC_KEY =
           (validator, propertiesProvider) ->
               propertiesProvider
                   .getBuilderRegistrationPublicKeyOverride(validator.getPublicKey())
@@ -68,7 +68,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
   private final Spec spec;
   private final OwnedValidators ownedValidators;
-  private final ProposerConfigPropertiesProvider validatorRegistrationPropertiesProvider;
+  private final ProposerConfigPropertiesProvider proposerConfigPropertiesProvider;
   private final SignedValidatorRegistrationFactory signedValidatorRegistrationFactory;
   private final ValidatorApiChannel validatorApiChannel;
   private final int batchSize;
@@ -76,13 +76,13 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   public ValidatorRegistrator(
       final Spec spec,
       final OwnedValidators ownedValidators,
-      final ProposerConfigPropertiesProvider validatorRegistrationPropertiesProvider,
+      final ProposerConfigPropertiesProvider proposerConfigPropertiesProvider,
       final SignedValidatorRegistrationFactory signedValidatorRegistrationFactory,
       final ValidatorApiChannel validatorApiChannel,
       final int batchSize) {
     this.spec = spec;
     this.ownedValidators = ownedValidators;
-    this.validatorRegistrationPropertiesProvider = validatorRegistrationPropertiesProvider;
+    this.proposerConfigPropertiesProvider = proposerConfigPropertiesProvider;
     this.signedValidatorRegistrationFactory = signedValidatorRegistrationFactory;
     this.validatorApiChannel = validatorApiChannel;
     this.batchSize = batchSize;
@@ -127,13 +127,16 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     if (!isReadyToRegister()) {
       return;
     }
-    final List<Validator> activeAndPendingValidators =
-        filterActiveAndPendingValidators(newValidatorStatuses);
+    final List<Validator> validators = getValidatorsRequiringRegistration(newValidatorStatuses);
+    if (validators.isEmpty()) {
+      LOG.debug("No validator registrations are required to be sent");
+      return;
+    }
     if (registrationNeedsToBeRun(possibleMissingEvents)) {
-      registerValidators(activeAndPendingValidators, true);
+      registerValidators(validators, true);
     } else {
       final List<Validator> newValidators =
-          activeAndPendingValidators.stream()
+          validators.stream()
               .filter(
                   validator -> !cachedValidatorRegistrations.containsKey(validator.getPublicKey()))
               .toList();
@@ -154,11 +157,32 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       LOG.warn("Current epoch is not yet set, validator registrations delayed");
       return false;
     }
-    if (validatorRegistrationPropertiesProvider.isReadyToProvideProperties()) {
+    if (proposerConfigPropertiesProvider.isReadyToProvideProperties()) {
       return true;
     }
     LOG.debug("Not ready to register validator(s).");
     return false;
+  }
+
+  private List<Validator> getValidatorsRequiringRegistration(
+      final Map<BLSPublicKey, ValidatorStatus> validatorStatuses) {
+
+    return ownedValidators.getActiveValidators().stream()
+        .filter(
+            validator -> {
+              // filtering out validators which don't have builder flow enabled
+              if (!proposerConfigPropertiesProvider.isBuilderEnabled(validator.getPublicKey())) {
+                return false;
+              }
+              // filtering out exited validators
+              return Optional.ofNullable(
+                      validatorStatuses.get(
+                          VALIDATOR_BUILDER_PUBLIC_KEY.apply(
+                              validator, proposerConfigPropertiesProvider)))
+                  .map(status -> !status.hasExited())
+                  .orElse(false);
+            })
+        .toList();
   }
 
   private boolean registrationNeedsToBeRun(final boolean possibleMissingEvents) {
@@ -175,9 +199,6 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
   private void registerValidators(
       final List<Validator> validators, final boolean updateLastRunEpoch) {
-    if (validators.isEmpty()) {
-      return;
-    }
     if (!registrationInProgress.compareAndSet(false, true)) {
       LOG.warn(
           "Validator registration(s) is still in progress. Will skip sending registration(s).");
@@ -187,7 +208,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       lastRunEpoch.set(currentEpoch.get());
     }
 
-    validatorRegistrationPropertiesProvider
+    proposerConfigPropertiesProvider
         .refresh()
         .thenCompose(__ -> processInBatches(validators))
         .handleException(VALIDATOR_LOGGER::registeringValidatorsFailed)
@@ -199,11 +220,6 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   }
 
   private SafeFuture<Void> processInBatches(final List<Validator> validators) {
-    if (validators.isEmpty()) {
-      LOG.info(
-          "All owned validators are either exited or with unknown status. Skipping registration.");
-      return SafeFuture.COMPLETE;
-    }
     final List<List<Validator>> batchedValidators = Lists.partition(validators, batchSize);
 
     LOG.debug(
@@ -245,21 +261,6 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
             () ->
                 VALIDATOR_LOGGER.validatorRegistrationsSentToTheBuilderNetwork(
                     successfullySentRegistrations.get(), validators.size()));
-  }
-
-  private List<Validator> filterActiveAndPendingValidators(
-      final Map<BLSPublicKey, ValidatorStatus> statuses) {
-
-    return ownedValidators.getActiveValidators().stream()
-        .filter(
-            validator ->
-                Optional.ofNullable(
-                        statuses.get(
-                            VALIDATOR_BUILDER_PUBLICKEY.apply(
-                                validator, validatorRegistrationPropertiesProvider)))
-                    .map(status -> !status.hasExited())
-                    .orElse(false))
-        .toList();
   }
 
   private SafeFuture<List<SignedValidatorRegistration>> createValidatorRegistrations(
