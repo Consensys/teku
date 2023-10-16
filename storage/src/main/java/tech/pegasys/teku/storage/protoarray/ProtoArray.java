@@ -596,7 +596,7 @@ public class ProtoArray {
    * Indicates if the node itself is viable for the head, or if it's best descendant is viable for
    * the head.
    */
-  private boolean nodeLeadsToViableHead(ProtoNode node) {
+  private boolean nodeLeadsToViableHead(final ProtoNode node) {
     if (nodeIsViableForHead(node)) {
       return true;
     }
