@@ -40,18 +40,19 @@ public interface BlockProvider {
 
   static BlockProvider fromMapWithLock(
       final Map<Bytes32, SignedBeaconBlock> blockMap, final Lock readLock) {
-    return (roots) -> {
-      readLock.lock();
-      try {
-        return SafeFuture.completedFuture(
-            roots.stream()
-                .map(blockMap::get)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity())));
-      } finally {
-        readLock.unlock();
-      }
-    };
+    return (roots) ->
+        SafeFuture.supplyAsync(
+            () -> {
+              readLock.lock();
+              try {
+                return roots.stream()
+                    .map(blockMap::get)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity()));
+              } finally {
+                readLock.unlock();
+              }
+            });
   }
 
   static BlockProvider fromMap(final Map<Bytes32, SignedBeaconBlock> blockMap) {

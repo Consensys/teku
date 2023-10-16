@@ -18,11 +18,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -131,5 +140,51 @@ public class BlockProviderTest {
     assertThat(provider.getBlock(blockA.getRoot())).isCompletedWithValue(Optional.empty());
     assertThat(provider.getBlock(blockB.getRoot()))
         .isCompletedWithValue(Optional.of(blockB.getBlock()));
+  }
+
+  @Test
+  void fromMapWithLock() throws ExecutionException, InterruptedException {
+    chainBuilder.generateGenesis();
+    final Map<Bytes32, SignedBeaconBlock> blocks =
+        chainBuilder
+            .streamBlocksAndStates(0)
+            .collect(Collectors.toMap(SignedBlockAndState::getRoot, SignedBlockAndState::getBlock));
+    // 1 block is ok for this test
+    assertThat(blocks.size()).isEqualTo(1);
+    final SignedBeaconBlock block = blocks.values().stream().findFirst().orElseThrow();
+
+    final ReadWriteLock lock = new ReentrantReadWriteLock();
+    final Lock readLock = lock.readLock();
+    final BlockProvider provider = BlockProvider.fromMapWithLock(blocks, readLock);
+
+    // Read block from provider
+    assertThat(provider.getBlock(block.getRoot()).get()).contains(block);
+
+    // Try the same when locked
+    final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
+    final CountDownLatch isNotBlocked = new CountDownLatch(1);
+    final AtomicBoolean notBlockedOnFuture = new AtomicBoolean(false);
+    // Write lock in main thread
+    lock.writeLock().lock();
+    try {
+      asyncRunner
+          .runAsync(
+              () -> {
+                try {
+                  final SafeFuture<Optional<SignedBeaconBlock>> blockFuture =
+                      provider.getBlock(block.getRoot());
+                  notBlockedOnFuture.set(true);
+                  // Attempt to read in other thread - will stuck here
+                  assertThat(blockFuture.get()).contains(block);
+                } finally {
+                  isNotBlocked.countDown();
+                }
+              })
+          .ifExceptionGetsHereRaiseABug();
+      assertThat(isNotBlocked.await(1, TimeUnit.SECONDS)).isFalse();
+      assertThat(notBlockedOnFuture).isTrue();
+    } finally {
+      lock.writeLock().unlock();
+    }
   }
 }
