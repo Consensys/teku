@@ -62,7 +62,7 @@ public class SignedValidatorRegistrationFactory {
             .orElseGet(
                 () -> {
                   LOG.warn(
-                      "Fee recipient not configured for {}. Will use a burn address for the validator registration",
+                      "Fee recipient not configured for {}. Will use a burn address for the validator registration.",
                       validator.getPublicKey());
                   return Eth1Address.ZERO;
                 });
