@@ -322,7 +322,8 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
                 new BlockProductionDutyLoader(
                     validatorApiChannel,
                     dependentRoot ->
-                        new SlotBasedScheduledDuties<>(blockDutyFactory, dependentRoot),
+                        new SlotBasedScheduledDuties<>(
+                            blockDutyFactory, dependentRoot, Duty::performDuty),
                     new OwnedValidators(
                         Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
                     validatorIndexProvider)),

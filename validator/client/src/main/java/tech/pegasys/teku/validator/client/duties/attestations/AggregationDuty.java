@@ -34,6 +34,7 @@ import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.duties.Duty;
 import tech.pegasys.teku.validator.client.duties.DutyResult;
+import tech.pegasys.teku.validator.client.duties.DutyType;
 import tech.pegasys.teku.validator.client.duties.ProductionResult;
 
 public class AggregationDuty implements Duty {
@@ -60,6 +61,11 @@ public class AggregationDuty implements Duty {
     this.forkProvider = forkProvider;
     this.validatorLogger = validatorLogger;
     this.sendingStrategy = sendingStrategy;
+  }
+
+  @Override
+  public DutyType getType() {
+    return DutyType.ATTESTATION_AGGREGATION;
   }
 
   /**

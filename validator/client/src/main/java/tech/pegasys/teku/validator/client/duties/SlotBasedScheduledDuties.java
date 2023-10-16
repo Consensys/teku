@@ -30,10 +30,15 @@ public class SlotBasedScheduledDuties<P extends Duty, A extends Duty> implements
   private final DutyFactory<P, A> dutyFactory;
   private final Bytes32 dependentRoot;
 
+  private final Function<Duty, SafeFuture<DutyResult>> dutyFunction;
+
   public SlotBasedScheduledDuties(
-      final DutyFactory<P, A> dutyFactory, final Bytes32 dependentRoot) {
+      final DutyFactory<P, A> dutyFactory,
+      final Bytes32 dependentRoot,
+      final Function<Duty, SafeFuture<DutyResult>> dutyFunction) {
     this.dutyFactory = dutyFactory;
     this.dependentRoot = dependentRoot;
+    this.dutyFunction = dutyFunction;
   }
 
   public Bytes32 getDependentRoot() {
@@ -88,7 +93,7 @@ public class SlotBasedScheduledDuties<P extends Duty, A extends Duty> implements
     if (duty == null) {
       return SafeFuture.completedFuture(DutyResult.NO_OP);
     }
-    return duty.performDuty();
+    return dutyFunction.apply(duty);
   }
 
   private void discardDutiesBeforeSlot(
