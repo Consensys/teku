@@ -42,31 +42,30 @@ public class SignedValidatorRegistrationFactory {
     this.timeProvider = timeProvider;
   }
 
-  public Optional<SafeFuture<SignedValidatorRegistration>> createSignedValidatorRegistration(
+  public SafeFuture<SignedValidatorRegistration> createSignedValidatorRegistration(
       final Validator validator,
       final Optional<SignedValidatorRegistration> oldValidatorRegistration,
       final Consumer<Throwable> errorHandler) {
     return createSignedValidatorRegistration(validator, oldValidatorRegistration)
-        .map(registrationFuture -> registrationFuture.whenException(errorHandler));
+        .whenException(errorHandler);
   }
 
-  private Optional<SafeFuture<SignedValidatorRegistration>> createSignedValidatorRegistration(
+  private SafeFuture<SignedValidatorRegistration> createSignedValidatorRegistration(
       final Validator validator,
       final Optional<SignedValidatorRegistration> oldValidatorRegistration) {
 
     final BLSPublicKey publicKey = validator.getPublicKey();
 
-    final Optional<Eth1Address> maybeFeeRecipient =
-        proposerConfigPropertiesProvider.getFeeRecipient(publicKey);
-
-    if (maybeFeeRecipient.isEmpty()) {
-      LOG.debug(
-          "Couldn't retrieve fee recipient for {}. Will skip registering this validator.",
-          publicKey);
-      return Optional.empty();
-    }
-
-    final Eth1Address feeRecipient = maybeFeeRecipient.get();
+    final Eth1Address feeRecipient =
+        proposerConfigPropertiesProvider
+            .getFeeRecipient(publicKey)
+            .orElseGet(
+                () -> {
+                  LOG.warn(
+                      "Fee recipient not configured for {}. Will use a burn address for the validator registration",
+                      validator.getPublicKey());
+                  return Eth1Address.ZERO;
+                });
     final UInt64 gasLimit = proposerConfigPropertiesProvider.getGasLimit(publicKey);
 
     final Optional<UInt64> maybeTimestampOverride =
@@ -95,11 +94,10 @@ public class SignedValidatorRegistrationFactory {
               return !needsUpdate;
             })
         .map(SafeFuture::completedFuture)
-        .or(
+        .orElseGet(
             () -> {
               final Signer signer = validator.getSigner();
-              return Optional.of(
-                  signAndCacheValidatorRegistration(publicKey, validatorRegistration, signer));
+              return signAndCacheValidatorRegistration(publicKey, validatorRegistration, signer);
             });
   }
 

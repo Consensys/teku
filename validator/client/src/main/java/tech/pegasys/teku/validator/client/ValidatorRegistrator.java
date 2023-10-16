@@ -29,7 +29,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -268,31 +267,23 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
     final Stream<SafeFuture<SignedValidatorRegistration>> validatorRegistrationsFutures =
         validators.stream()
             .map(
-                validator -> {
-                  final Optional<SafeFuture<SignedValidatorRegistration>>
-                      maybeSignedValidatorRegistration =
-                          signedValidatorRegistrationFactory.createSignedValidatorRegistration(
-                              validator,
-                              Optional.ofNullable(
-                                  cachedValidatorRegistrations.get(validator.getPublicKey())),
-                              throwable -> {
-                                final String errorMessage =
-                                    String.format(
-                                        "Exception while creating a validator registration for %s. Creation will be attempted again next epoch.",
-                                        validator.getPublicKey());
-                                LOG.warn(errorMessage, throwable);
-                              });
-                  return Pair.of(validator.getPublicKey(), maybeSignedValidatorRegistration);
-                })
-            .filter(pair -> pair.getRight().isPresent())
-            .map(
-                pair -> {
-                  final SafeFuture<SignedValidatorRegistration> registrationFuture =
-                      pair.getRight().get();
-                  return registrationFuture.thenPeek(
-                      registration ->
-                          cachedValidatorRegistrations.put(pair.getLeft(), registration));
-                });
+                validator ->
+                    signedValidatorRegistrationFactory
+                        .createSignedValidatorRegistration(
+                            validator,
+                            Optional.ofNullable(
+                                cachedValidatorRegistrations.get(validator.getPublicKey())),
+                            throwable -> {
+                              final String errorMessage =
+                                  String.format(
+                                      "Exception while creating a validator registration for %s. Creation will be attempted again next epoch.",
+                                      validator.getPublicKey());
+                              LOG.warn(errorMessage, throwable);
+                            })
+                        .thenPeek(
+                            registration ->
+                                cachedValidatorRegistrations.put(
+                                    validator.getPublicKey(), registration)));
     return SafeFuture.collectAllSuccessful(validatorRegistrationsFutures);
   }
 
