@@ -23,6 +23,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
@@ -70,7 +71,7 @@ public class PostRegisterValidator extends RestApiEndpoint {
                 (__, error) -> {
                   if (error != null) {
                     return AsyncApiResponse.respondWithError(
-                        SC_INTERNAL_SERVER_ERROR, error.getMessage());
+                        SC_INTERNAL_SERVER_ERROR, ExceptionUtil.getRootCauseMessage(error));
                   }
                   return AsyncApiResponse.respondOk(null);
                 }));

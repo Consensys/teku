@@ -26,6 +26,7 @@ import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -37,6 +38,7 @@ class SlotBasedScheduledDutiesTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   public static final UInt64 TWO = UInt64.valueOf(2);
   private final Validator validator = mock(Validator.class);
+  final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   @SuppressWarnings("unchecked")
   private final Function<ProductionDuty, String> productionDutyAdder = mock(Function.class);
@@ -48,7 +50,8 @@ class SlotBasedScheduledDutiesTest {
   private final DutyFactory<ProductionDuty, AggregationDuty> dutyFactory = mock(DutyFactory.class);
 
   private final SlotBasedScheduledDuties<ProductionDuty, AggregationDuty> duties =
-      new SlotBasedScheduledDuties<>(dutyFactory, Bytes32.fromHexString("0x838382"));
+      new SlotBasedScheduledDuties<>(
+          dutyFactory, Bytes32.fromHexString("0x838382"), Duty::performDuty);
 
   @Test
   public void shouldDiscardMissedProductionDuties() {

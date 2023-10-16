@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,12 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.duties;
+package tech.pegasys.teku.validator.client;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
-public interface Duty {
-  DutyType getType();
+public interface ValidatorStatusProvider extends ValidatorTimingChannel {
 
-  SafeFuture<DutyResult> performDuty();
+  SafeFuture<Void> start();
+
+  void subscribeValidatorStatusesUpdates(ValidatorStatusSubscriber subscriber);
 }
