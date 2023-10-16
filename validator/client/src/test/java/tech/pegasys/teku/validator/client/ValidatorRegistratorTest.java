@@ -274,10 +274,10 @@ class ValidatorRegistratorTest {
   }
 
   @TestTemplate
-  void doesNotRegister_ifValidatorIsNotEnabled() {
+  void doesNotRegister_ifValidatorBuilderFlowIsNotEnabled() {
     setOwnedValidators(validator1, validator2, validator3);
 
-    // validator 1 is not enabled
+    // disable builder flow for validator 1
     when(proposerConfigPropertiesProvider.isBuilderEnabled(validator1.getPublicKey()))
         .thenReturn(false);
 
