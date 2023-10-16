@@ -41,11 +41,6 @@ public class ValidatorDutyMetrics {
     final String dutyType = duty.getType().getType();
     final OperationTimer timer = dutyMetric.labels(dutyType, "total");
     final OperationTimer.TimingContext context = timer.startTimer();
-    return duty.performDuty()
-        .thenApply(
-            result -> {
-              context.stopTimer();
-              return result;
-            });
+    return duty.performDuty().alwaysRun(context::stopTimer);
   }
 }
