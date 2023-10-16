@@ -1,3 +1,4 @@
+
 # Changelog
 
 ## Upcoming Breaking Changes
@@ -12,5 +13,7 @@ the [releases page](https://github.com/Consensys/teku/releases).
 ### Breaking Changes
 
 ### Additions and Improvements
+ - Updated dependencies.
+ - Added `validator_duty_timer` metrics recording the time to perform `block_production`, `attestation_production` and `attestation_aggregation` duties.
 
 ### Bug Fixes

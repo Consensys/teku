@@ -63,6 +63,11 @@ public class BlockProductionDuty implements Duty {
   }
 
   @Override
+  public DutyType getType() {
+    return DutyType.BLOCK_PRODUCTION;
+  }
+
+  @Override
   public SafeFuture<DutyResult> performDuty() {
     LOG.trace("Creating block for validator {} at slot {}", validator.getPublicKey(), slot);
     return forkProvider.getForkInfo(slot).thenCompose(this::produceBlock);
