@@ -312,8 +312,8 @@ class Store extends CacheableStore {
               SettableGauge.create(
                   metricsSystem,
                   TekuMetricCategory.STORAGE,
-                  "memory_blob_sidecars_blocks_count",
-                  "Number of complete blob sidecars blocks held in the in-memory store"));
+                  "memory_blocks_with_cached_blobs_count",
+                  "Number of beacon blocks with complete blobs held in the in-memory store"));
 
       if (maybeEpochStates.isPresent()) {
         epochStatesCountGauge =
