@@ -22,7 +22,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 public class ValidatorDutyMetrics {
   private final LabelledMetric<OperationTimer> dutyMetric;
 
-  ValidatorDutyMetrics(final LabelledMetric<OperationTimer> dutyMetric) {
+  private ValidatorDutyMetrics(final LabelledMetric<OperationTimer> dutyMetric) {
     this.dutyMetric = dutyMetric;
   }
 
