@@ -59,10 +59,10 @@ class ValidatorDutyMetricsTest {
   }
 
   @Test
-  public void shouldRecordDutyTimeWhenDutySucceeds() throws Exception {
+  public void shouldRecordDutyTimeWhenDutySucceeds() {
     when(duty.performDuty()).thenReturn(SafeFuture.completedFuture(DutyResult.NO_OP));
 
-    validatorDutyMetrics.performDutyWithMetrics(duty).get();
+    assertThatSafeFuture(validatorDutyMetrics.performDutyWithMetrics(duty)).isCompleted();
 
     verify(operationTimer).startTimer();
     verify(timingContext).stopTimer();
