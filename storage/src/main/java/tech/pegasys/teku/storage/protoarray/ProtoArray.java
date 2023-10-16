@@ -597,13 +597,14 @@ public class ProtoArray {
    * the head.
    */
   private boolean nodeLeadsToViableHead(ProtoNode node) {
-    boolean bestDescendantIsViableForHead =
-        node.getBestDescendantIndex()
-            .map(this::getNodeByIndex)
-            .map(this::nodeIsViableForHead)
-            .orElse(false);
+    if (nodeIsViableForHead(node)) {
+      return true;
+    }
 
-    return bestDescendantIsViableForHead || nodeIsViableForHead(node);
+    return node.getBestDescendantIndex()
+        .map(this::getNodeByIndex)
+        .map(this::nodeIsViableForHead)
+        .orElse(false);
   }
 
   /**
