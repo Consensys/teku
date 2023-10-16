@@ -115,9 +115,8 @@ class ValidatorRegistratorTest {
         .thenAnswer(
             args -> {
               final Validator validator = (Validator) args.getArguments()[0];
-              return Optional.of(
-                  SafeFuture.completedFuture(
-                      createSignedValidatorRegistration(validator.getPublicKey())));
+              return SafeFuture.completedFuture(
+                  createSignedValidatorRegistration(validator.getPublicKey()));
             });
 
     when(proposerConfigPropertiesProvider.isReadyToProvideProperties()).thenReturn(true);
@@ -251,11 +250,10 @@ class ValidatorRegistratorTest {
             args -> {
               final Validator validator = (Validator) args.getArguments()[0];
               if (validator.equals(validator2)) {
-                return Optional.of(SafeFuture.failedFuture(new IllegalStateException("oopsy")));
+                return SafeFuture.failedFuture(new IllegalStateException("oopsy"));
               }
-              return Optional.of(
-                  SafeFuture.completedFuture(
-                      createSignedValidatorRegistration(validator.getPublicKey())));
+              return SafeFuture.completedFuture(
+                  createSignedValidatorRegistration(validator.getPublicKey()));
             });
     runRegistrationFlowWithSubscription(0);
 
@@ -264,9 +262,8 @@ class ValidatorRegistratorTest {
         .thenAnswer(
             args -> {
               final Validator validator = (Validator) args.getArguments()[0];
-              return Optional.of(
-                  SafeFuture.completedFuture(
-                      createSignedValidatorRegistration(validator.getPublicKey())));
+              return SafeFuture.completedFuture(
+                  createSignedValidatorRegistration(validator.getPublicKey()));
             });
     runRegistrationFlowWithSubscription(1);
 
