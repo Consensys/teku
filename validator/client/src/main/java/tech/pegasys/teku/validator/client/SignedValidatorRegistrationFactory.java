@@ -46,13 +46,6 @@ public class SignedValidatorRegistrationFactory {
       final Validator validator,
       final Optional<SignedValidatorRegistration> oldValidatorRegistration,
       final Consumer<Throwable> errorHandler) {
-    return createSignedValidatorRegistration(validator, oldValidatorRegistration)
-        .whenException(errorHandler);
-  }
-
-  private SafeFuture<SignedValidatorRegistration> createSignedValidatorRegistration(
-      final Validator validator,
-      final Optional<SignedValidatorRegistration> oldValidatorRegistration) {
 
     final BLSPublicKey publicKey = validator.getPublicKey();
 
@@ -98,7 +91,8 @@ public class SignedValidatorRegistrationFactory {
             () -> {
               final Signer signer = validator.getSigner();
               return signAndCacheValidatorRegistration(publicKey, validatorRegistration, signer);
-            });
+            })
+        .whenException(errorHandler);
   }
 
   private SafeFuture<SignedValidatorRegistration> signAndCacheValidatorRegistration(
