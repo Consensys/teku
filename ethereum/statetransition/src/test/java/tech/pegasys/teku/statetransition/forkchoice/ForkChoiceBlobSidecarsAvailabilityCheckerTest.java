@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.assertArg;
@@ -338,11 +339,12 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     completeTrackerWith(partialBlobs);
 
     SafeFutureAssert.assertThatSafeFuture(availabilityCheckResult)
-        .isCompletedExceptionallyWith(IllegalStateException.class);
+        .isCompletedExceptionallyWith(IllegalArgumentException.class)
+        .hasMessage("Validated blobs are less than commitments present in block.");
   }
 
   @Test
-  void validate_shouldReturnAvailable() {
+  void validateImmediately_shouldReturnAvailable() {
     prepareInitialAvailability(Availability.FULL);
 
     whenDataAvailability(blobSidecarsComplete).thenReturn(true);
@@ -353,7 +355,22 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   @Test
-  void validate_shouldNotAvailable() {
+  void validateImmediately_shouldThrowIfCompletenessCheckFails() {
+    prepareInitialAvailability(Availability.FULL);
+
+    whenDataAvailability(blobSidecarsComplete).thenReturn(true);
+    doThrow(new IllegalArgumentException("oops"))
+        .when(miscHelpers)
+        .verifyBlobSidecarCompleteness(any(), any());
+
+    assertThatThrownBy(
+            () -> blobSidecarsAvailabilityChecker.validateImmediately(blobSidecarsComplete))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Validated blobs are less than commitments present in block.");
+  }
+
+  @Test
+  void validateImmediately_shouldReturnNotAvailableWithEmptyBlobsButRequired() {
     prepareInitialAvailability(Availability.FULL);
 
     assertNotAvailable(
@@ -362,7 +379,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   @Test
-  void validate_shouldReturnAvailableOnEmptyBlobs() {
+  void validateImmediately_shouldReturnAvailableOnEmptyBlobs() {
     prepareInitialAvailabilityWithEmptyCommitmentsBlock();
 
     assertAvailable(
@@ -371,7 +388,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   @Test
-  void validate_shouldReturnNotRequiredWhenBlockIsOutsideAvailabilityWindow() {
+  void validateImmediately_shouldReturnNotRequiredWhenBlockIsOutsideAvailabilityWindow() {
     prepareBlockAndBlobSidecarsOutsideAvailabilityWindow();
 
     assertNotRequired(

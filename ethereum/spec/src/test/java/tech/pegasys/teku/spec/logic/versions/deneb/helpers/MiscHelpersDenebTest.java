@@ -139,6 +139,31 @@ class MiscHelpersDenebTest {
                 : indexToBeAltered);
   }
 
+  @Test
+  void verifyBlobSidecarCompleteness_shouldThrowWhenSizesDoNotMatch() {
+    assertThatThrownBy(
+            () ->
+                miscHelpersDeneb.verifyBlobSidecarCompleteness(
+                    dataStructureUtil.randomBlobSidecars(1),
+                    List.of(
+                        dataStructureUtil.randomKZGCommitment(),
+                        dataStructureUtil.randomKZGCommitment())))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage("Blob sidecars are not complete");
+  }
+
+  @Test
+  void verifyBlobSidecarCompleteness_shouldThrowWhenBlobSidecarIndexIsWrong() {
+    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecars(1);
+    assertThatThrownBy(
+            () ->
+                miscHelpersDeneb.verifyBlobSidecarCompleteness(
+                    blobSidecars, List.of(dataStructureUtil.randomKZGCommitment())))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(
+            "Blob sidecar index mismatch, expected 0, got %s", blobSidecars.get(0).getIndex());
+  }
+
   private enum BlobSidecarsAlteration {
     BLOB_SIDECAR_PROPOSER_INDEX,
     BLOB_SIDECAR_INDEX,

@@ -2129,7 +2129,7 @@ public final class DataStructureUtil {
 
   public List<BlobSidecar> randomBlobSidecarsForBlock(
       final SignedBeaconBlock block,
-      BiFunction<Integer, RandomBlobSidecarBuilder, RandomBlobSidecarBuilder> modifier) {
+      final BiFunction<Integer, RandomBlobSidecarBuilder, RandomBlobSidecarBuilder> modifier) {
     return randomSignedBlobSidecarsForBlock(block, modifier).stream()
         .map(SignedBlobSidecar::getBlobSidecar)
         .collect(toList());
@@ -2137,7 +2137,7 @@ public final class DataStructureUtil {
 
   public List<SignedBlobSidecar> randomSignedBlobSidecarsForBlock(
       final SignedBeaconBlock block,
-      BiFunction<Integer, RandomBlobSidecarBuilder, RandomBlobSidecarBuilder> modifier) {
+      final BiFunction<Integer, RandomBlobSidecarBuilder, RandomBlobSidecarBuilder> modifier) {
     final SszList<SszKZGCommitment> blobKzgCommitments =
         BeaconBlockBodyDeneb.required(block.getBeaconBlock().orElseThrow().getBody())
             .getBlobKzgCommitments();

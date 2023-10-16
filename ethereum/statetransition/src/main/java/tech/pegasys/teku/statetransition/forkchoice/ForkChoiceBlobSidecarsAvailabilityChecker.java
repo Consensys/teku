@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -113,8 +114,13 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
     final List<KZGCommitment> kzgCommitmentsFromBlock = kzgCommitmentsFromBlockSupplier.get();
 
     if (!blobSidecars.isEmpty()) {
-      return validateBatch(blobSidecars);
+      final BlobSidecarsAndValidationResult blobSidecarsAndValidationResult =
+          validateBatch(blobSidecars);
+      performCompletenessValidation(blobSidecarsAndValidationResult);
+      return blobSidecarsAndValidationResult;
     }
+
+    // no blob sidecars
 
     if (isBlockOutsideDataAvailabilityWindow()) {
       return BlobSidecarsAndValidationResult.NOT_REQUIRED;
@@ -317,25 +323,25 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
   /**
    * make sure that final blob sidecar list is complete
    *
-   * @param additionalBlobSidecarsAndValidationResult
+   * @param blobSidecarsAndValidationResult
    * @return
    */
   private BlobSidecarsAndValidationResult performCompletenessValidation(
-      final BlobSidecarsAndValidationResult additionalBlobSidecarsAndValidationResult) {
+      final BlobSidecarsAndValidationResult blobSidecarsAndValidationResult) {
 
-    if (additionalBlobSidecarsAndValidationResult.isFailure()
-        || additionalBlobSidecarsAndValidationResult.isNotRequired()) {
-      return additionalBlobSidecarsAndValidationResult;
+    if (blobSidecarsAndValidationResult.isFailure()
+        || blobSidecarsAndValidationResult.isNotRequired()) {
+      return blobSidecarsAndValidationResult;
     }
 
     try {
       spec.atSlot(blockBlobSidecarsTracker.getSlotAndBlockRoot().getSlot())
           .miscHelpers()
           .verifyBlobSidecarCompleteness(
-              additionalBlobSidecarsAndValidationResult.getBlobSidecars(),
+              blobSidecarsAndValidationResult.getBlobSidecars(),
               kzgCommitmentsFromBlockSupplier.get());
     } catch (final IllegalArgumentException ex) {
-      checkState(
+      checkArgument(
           isBlockOutsideDataAvailabilityWindow(),
           "Validated blobs are less than commitments present in block.");
 
@@ -344,7 +350,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
       return BlobSidecarsAndValidationResult.NOT_REQUIRED;
     }
 
-    return additionalBlobSidecarsAndValidationResult;
+    return blobSidecarsAndValidationResult;
   }
 
   private boolean isBlockOutsideDataAvailabilityWindow() {

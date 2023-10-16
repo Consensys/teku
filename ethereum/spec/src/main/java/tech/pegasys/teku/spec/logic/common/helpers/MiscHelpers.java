@@ -360,7 +360,8 @@ public class MiscHelpers {
 
   public void verifyBlobSidecarCompleteness(
       final List<BlobSidecar> verifiedBlobSidecars,
-      final List<KZGCommitment> kzgCommitmentsFromBlock) {
+      final List<KZGCommitment> kzgCommitmentsFromBlock)
+      throws IllegalArgumentException {
     throw new UnsupportedOperationException("No KZGCommitments before Deneb");
   }
 

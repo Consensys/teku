@@ -179,7 +179,8 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   @Override
   public void verifyBlobSidecarCompleteness(
       final List<BlobSidecar> completeVerifiedBlobSidecars,
-      final List<KZGCommitment> kzgCommitmentsFromBlock) {
+      final List<KZGCommitment> kzgCommitmentsFromBlock)
+      throws IllegalArgumentException {
     checkArgument(
         completeVerifiedBlobSidecars.size() == kzgCommitmentsFromBlock.size(),
         "Blob sidecars are not complete");
@@ -191,7 +192,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
               final UInt64 blobIndex = blobSidecar.getIndex();
 
               checkArgument(
-                  blobIndex.intValue() == index,
+                  blobIndex.longValue() == index,
                   "Blob sidecar index mismatch, expected %s, got %s",
                   index,
                   blobIndex);
