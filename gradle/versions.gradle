@@ -1,9 +1,9 @@
 dependencyManagement {
   dependencies {
-    dependency 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.15.2'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.15.2'
-    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2'
+    dependency 'com.fasterxml.jackson.core:jackson-databind:2.15.3'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.15.3'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.15.3'
+    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.15.3'
 
     dependencySet(group: 'com.google.errorprone', version: '2.22.0') {
       entry 'error_prone_annotation'
@@ -14,7 +14,7 @@ dependencyManagement {
 
     dependency 'tech.pegasys.tools.epchecks:errorprone-checks:1.1.1'
 
-    dependency 'com.google.guava:guava:32.1.2-jre'
+    dependency 'com.google.guava:guava:32.1.3-jre'
 
     dependency 'org.jsoup:jsoup:1.16.1'
 
@@ -27,10 +27,8 @@ dependencyManagement {
 
     dependency 'info.picocli:picocli:4.7.5'
 
-    dependencySet(group: 'io.javalin', version: '5.6.2') {
-      entry 'javalin'
-      entry 'javalin-rendering'
-    }
+    dependency 'io.javalin:javalin:5.6.3'
+    dependency 'io.javalin:javalin-rendering:5.6.2'
 
     dependency 'io.libp2p:jvm-libp2p:1.0.1-RELEASE'
     dependency 'tech.pegasys:jblst:0.3.11'
@@ -42,16 +40,16 @@ dependencyManagement {
 
     dependency 'org.mock-server:mockserver-junit-jupiter:5.15.0'
 
-    dependencySet(group: 'io.swagger.core.v3', version: '2.2.16') {
+    dependencySet(group: 'io.swagger.core.v3', version: '2.2.17') {
       entry 'swagger-parser'
       entry 'swagger-core'
       entry 'swagger-models'
       entry 'swagger-annotations'
     }
     // On update don't forget to change version in tech.pegasys.teku.infrastructure.restapi.SwaggerUIBuilder
-    dependency 'org.webjars:swagger-ui:5.4.2'
+    dependency 'org.webjars:swagger-ui:5.9.0'
     dependency 'org.thymeleaf:thymeleaf:3.1.2.RELEASE'
-    dependency 'io.github.classgraph:classgraph:4.8.162'
+    dependency 'io.github.classgraph:classgraph:4.8.163'
     dependencySet(group: 'com.github.oshi', version: '6.4.6') {
       entry 'oshi-core'
       entry 'oshi-core-java11'
@@ -68,7 +66,7 @@ dependencyManagement {
       entry 'vertx-unit'
       entry 'vertx-web'
     }
-    dependency 'io.projectreactor:reactor-core:3.5.10'
+    dependency 'io.projectreactor:reactor-core:3.5.11'
 
     dependency 'it.unimi.dsi:fastutil:8.5.12'
 
@@ -133,12 +131,12 @@ dependencyManagement {
 
     dependency 'io.prometheus:simpleclient:0.9.0'
 
-    dependencySet(group: 'org.hyperledger.besu.internal', version: '23.7.3') {
+    dependencySet(group: 'org.hyperledger.besu.internal', version: '23.10.0') {
       entry('metrics-core')
       entry('core')
       entry('config')
     }
-    dependencySet(group: 'org.hyperledger.besu', version: '23.7.3') {
+    dependencySet(group: 'org.hyperledger.besu', version: '23.10.0') {
       entry('besu-datatypes')
       entry('evm')
       entry('plugin-api')
@@ -162,7 +160,7 @@ dependencyManagement {
       entry "org.jupnp.support"
     }
 
-    dependencySet(group: 'io.jsonwebtoken', version: '0.12.2') {
+    dependencySet(group: 'io.jsonwebtoken', version: '0.12.3') {
       entry 'jjwt-api'
       entry 'jjwt-impl'
       entry 'jjwt-jackson'
