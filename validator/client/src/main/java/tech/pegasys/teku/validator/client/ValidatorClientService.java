@@ -54,6 +54,7 @@ import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.BlockDutyFactory;
 import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
+import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics;
 import tech.pegasys.teku.validator.client.duties.attestations.AttestationDutyFactory;
 import tech.pegasys.teku.validator.client.duties.synccommittee.ChainHeadTracker;
 import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
@@ -414,6 +415,7 @@ public class ValidatorClientService extends Service {
         new AttestationDutyFactory(spec, forkProvider, validatorApiChannel);
     final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
         new BeaconCommitteeSubscriptions(validatorApiChannel);
+    final ValidatorDutyMetrics validatorDutyMetrics = ValidatorDutyMetrics.create(metricsSystem);
     final DutyLoader<?> attestationDutyLoader =
         new RetryingDutyLoader<>(
             asyncRunner,
@@ -421,7 +423,10 @@ public class ValidatorClientService extends Service {
                 validatorApiChannel,
                 forkProvider,
                 dependentRoot ->
-                    new SlotBasedScheduledDuties<>(attestationDutyFactory, dependentRoot),
+                    new SlotBasedScheduledDuties<>(
+                        attestationDutyFactory,
+                        dependentRoot,
+                        validatorDutyMetrics::performDutyWithMetrics),
                 validators,
                 validatorIndexProvider,
                 beaconCommitteeSubscriptions,
@@ -431,7 +436,11 @@ public class ValidatorClientService extends Service {
             asyncRunner,
             new BlockProductionDutyLoader(
                 validatorApiChannel,
-                dependentRoot -> new SlotBasedScheduledDuties<>(blockDutyFactory, dependentRoot),
+                dependentRoot ->
+                    new SlotBasedScheduledDuties<>(
+                        blockDutyFactory,
+                        dependentRoot,
+                        validatorDutyMetrics::performDutyWithMetrics),
                 validators,
                 validatorIndexProvider));
     validatorTimingChannels.add(new BlockDutyScheduler(metricsSystem, blockDutyLoader, spec));
