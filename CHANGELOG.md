@@ -12,5 +12,6 @@ the [releases page](https://github.com/Consensys/teku/releases).
 ### Breaking Changes
 
 ### Additions and Improvements
+ - Updated dependencies.
 
 ### Bug Fixes
