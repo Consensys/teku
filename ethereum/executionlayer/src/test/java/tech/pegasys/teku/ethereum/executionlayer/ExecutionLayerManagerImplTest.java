@@ -76,6 +76,8 @@ class ExecutionLayerManagerImplTest {
   private final BuilderCircuitBreaker builderCircuitBreaker = mock(BuilderCircuitBreaker.class);
   private ExecutionLayerManagerImpl executionLayerManager;
 
+  private final UInt256 localExecutionPayloadValue = UInt256.valueOf(1234);
+
   @BeforeEach
   public void setup() {
     executionLayerManager = createExecutionLayerChannelImpl(true, false);
@@ -206,7 +208,11 @@ class ExecutionLayerManagerImplTest {
     prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot);
 
     // we expect result from the builder
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
+    assertThat(
+            executionLayerManager.builderGetHeader(
+                executionPayloadContext,
+                state,
+                SafeFuture.completedFuture(localExecutionPayloadValue)))
         .isCompletedWithValue(HeaderWithFallbackData.create(header));
 
     // we expect both builder and local engine have been called
@@ -260,7 +266,11 @@ class ExecutionLayerManagerImplTest {
         HeaderWithFallbackData.create(
             expectedHeader,
             new FallbackData(localExecutionPayload, FallbackReason.LOCAL_BLOCK_VALUE_WON));
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
+    assertThat(
+            executionLayerManager.builderGetHeader(
+                executionPayloadContext,
+                state,
+                SafeFuture.completedFuture(localExecutionPayloadValue)))
         .isCompletedWithValue(expectedResult);
     verifyFallbackToLocalEL(slot, executionPayloadContext, expectedResult);
   }
@@ -298,7 +308,11 @@ class ExecutionLayerManagerImplTest {
         HeaderWithFallbackData.create(
             expectedHeader,
             new FallbackData(localExecutionPayload, FallbackReason.LOCAL_BLOCK_VALUE_WON));
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
+    assertThat(
+            executionLayerManager.builderGetHeader(
+                executionPayloadContext,
+                state,
+                SafeFuture.completedFuture(localExecutionPayloadValue)))
         .isCompletedWithValue(expectedResult);
     verifyFallbackToLocalEL(slot, executionPayloadContext, expectedResult);
   }
@@ -321,7 +335,11 @@ class ExecutionLayerManagerImplTest {
     // we expect result from the builder
     final ExecutionPayloadHeader builderHeader = builderBid.getHeader();
     final HeaderWithFallbackData expectedResult = HeaderWithFallbackData.create(builderHeader);
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
+    assertThat(
+            executionLayerManager.builderGetHeader(
+                executionPayloadContext,
+                state,
+                SafeFuture.completedFuture(localExecutionPayloadValue)))
         .isCompletedWithValue(expectedResult);
   }
 
@@ -345,7 +363,11 @@ class ExecutionLayerManagerImplTest {
     // we expect result from the builder
     final ExecutionPayloadHeader builderHeader = builderBid.getHeader();
     final HeaderWithFallbackData expectedResult = HeaderWithFallbackData.create(builderHeader);
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
+    assertThat(
+            executionLayerManager.builderGetHeader(
+                executionPayloadContext,
+                state,
+                SafeFuture.completedFuture(localExecutionPayloadValue)))
         .isCompletedWithValue(expectedResult);
   }
 
@@ -378,7 +400,11 @@ class ExecutionLayerManagerImplTest {
     final HeaderWithFallbackData expectedResult =
         HeaderWithFallbackData.create(
             header, new FallbackData(payload, FallbackReason.BUILDER_ERROR));
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
+    assertThat(
+            executionLayerManager.builderGetHeader(
+                executionPayloadContext,
+                state,
+                SafeFuture.completedFuture(localExecutionPayloadValue)))
         .isCompletedWithValue(expectedResult);
 
     verifyFallbackToLocalEL(slot, executionPayloadContext, expectedResult);
@@ -410,7 +436,11 @@ class ExecutionLayerManagerImplTest {
     HeaderWithFallbackData expectedResult =
         HeaderWithFallbackData.create(
             header, new FallbackData(payload, FallbackReason.BUILDER_ERROR));
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
+    assertThat(
+            executionLayerManager.builderGetHeader(
+                executionPayloadContext,
+                state,
+                SafeFuture.completedFuture(localExecutionPayloadValue)))
         .isCompletedWithValue(expectedResult);
 
     // we expect both builder and local engine have been called
@@ -483,7 +513,11 @@ class ExecutionLayerManagerImplTest {
                 getPayloadResponse.getExecutionPayload(),
                 getPayloadResponse.getBlobsBundle(),
                 FallbackReason.SHOULD_OVERRIDE_BUILDER_FLAG_IS_TRUE));
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
+    assertThat(
+            executionLayerManager.builderGetHeader(
+                executionPayloadContext,
+                state,
+                SafeFuture.completedFuture(localExecutionPayloadValue)))
         .isCompletedWithValue(expectedResult);
     verifyFallbackToLocalEL(slot, executionPayloadContext, expectedResult);
   }
@@ -516,7 +550,11 @@ class ExecutionLayerManagerImplTest {
     final HeaderWithFallbackData expectedResult =
         HeaderWithFallbackData.create(
             header, new FallbackData(payload, FallbackReason.BUILDER_ERROR));
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
+    assertThat(
+            executionLayerManager.builderGetHeader(
+                executionPayloadContext,
+                state,
+                SafeFuture.completedFuture(localExecutionPayloadValue)))
         .isCompletedWithValue(expectedResult);
 
     verifyFallbackToLocalEL(slot, executionPayloadContext, expectedResult);
@@ -547,7 +585,11 @@ class ExecutionLayerManagerImplTest {
     final HeaderWithFallbackData expectedResult =
         HeaderWithFallbackData.create(
             header, new FallbackData(payload, FallbackReason.BUILDER_NOT_AVAILABLE));
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
+    assertThat(
+            executionLayerManager.builderGetHeader(
+                executionPayloadContext,
+                state,
+                SafeFuture.completedFuture(localExecutionPayloadValue)))
         .isCompletedWithValue(expectedResult);
 
     verifyFallbackToLocalEL(slot, executionPayloadContext, expectedResult);
@@ -581,7 +623,11 @@ class ExecutionLayerManagerImplTest {
     final HeaderWithFallbackData expectedResult =
         HeaderWithFallbackData.create(
             header, new FallbackData(payload, FallbackReason.BUILDER_HEADER_NOT_AVAILABLE));
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
+    assertThat(
+            executionLayerManager.builderGetHeader(
+                executionPayloadContext,
+                state,
+                SafeFuture.completedFuture(localExecutionPayloadValue)))
         .isCompletedWithValue(expectedResult);
 
     verifyFallbackToLocalEL(slot, executionPayloadContext, expectedResult);
@@ -613,7 +659,11 @@ class ExecutionLayerManagerImplTest {
     final HeaderWithFallbackData expectedResult =
         HeaderWithFallbackData.create(
             header, new FallbackData(payload, FallbackReason.TRANSITION_NOT_FINALIZED));
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
+    assertThat(
+            executionLayerManager.builderGetHeader(
+                executionPayloadContext,
+                state,
+                SafeFuture.completedFuture(localExecutionPayloadValue)))
         .isCompletedWithValue(expectedResult);
 
     verifyFallbackToLocalEL(slot, executionPayloadContext, expectedResult);
@@ -647,7 +697,11 @@ class ExecutionLayerManagerImplTest {
     final HeaderWithFallbackData expectedResult =
         HeaderWithFallbackData.create(
             header, new FallbackData(payload, FallbackReason.CIRCUIT_BREAKER_ENGAGED));
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
+    assertThat(
+            executionLayerManager.builderGetHeader(
+                executionPayloadContext,
+                state,
+                SafeFuture.completedFuture(localExecutionPayloadValue)))
         .isCompletedWithValue(expectedResult);
 
     verifyFallbackToLocalEL(slot, executionPayloadContext, expectedResult);
@@ -681,7 +735,11 @@ class ExecutionLayerManagerImplTest {
     final HeaderWithFallbackData expectedResult =
         HeaderWithFallbackData.create(
             header, new FallbackData(payload, FallbackReason.CIRCUIT_BREAKER_ENGAGED));
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
+    assertThat(
+            executionLayerManager.builderGetHeader(
+                executionPayloadContext,
+                state,
+                SafeFuture.completedFuture(localExecutionPayloadValue)))
         .isCompletedWithValue(expectedResult);
 
     verifyFallbackToLocalEL(slot, executionPayloadContext, expectedResult);
@@ -713,7 +771,11 @@ class ExecutionLayerManagerImplTest {
     final HeaderWithFallbackData expectedResult =
         HeaderWithFallbackData.create(
             header, new FallbackData(payload, FallbackReason.VALIDATOR_NOT_REGISTERED));
-    assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
+    assertThat(
+            executionLayerManager.builderGetHeader(
+                executionPayloadContext,
+                state,
+                SafeFuture.completedFuture(localExecutionPayloadValue)))
         .isCompletedWithValue(expectedResult);
 
     verifyFallbackToLocalEL(slot, executionPayloadContext, expectedResult);
@@ -731,7 +793,11 @@ class ExecutionLayerManagerImplTest {
                   dataStructureUtil.randomPayloadExecutionContext(slot, false);
               final BeaconState state = dataStructureUtil.randomBeaconState(slot);
               prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot);
-              assertThat(executionLayerManager.builderGetHeader(executionPayloadContext, state))
+              assertThat(
+                      executionLayerManager.builderGetHeader(
+                          executionPayloadContext,
+                          state,
+                          SafeFuture.completedFuture(localExecutionPayloadValue)))
                   .isCompleted();
             });
 

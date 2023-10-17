@@ -19,7 +19,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -175,7 +174,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
     // we expect both builder and local engine have been called
     verifyBuilderCalled(slot, executionPayloadContext);
-    verifyEngineCalled(executionPayloadContext, slot, 2);
+    verifyEngineCalled(executionPayloadContext, slot);
 
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
@@ -323,7 +322,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
     // we expect both builder and local engine have been called
     verifyBuilderCalled(slot, executionPayloadContext);
-    verifyEngineCalled(executionPayloadContext, slot, 2);
+    verifyEngineCalled(executionPayloadContext, slot);
 
     final SignedBlindedBlockContents signedBlindedBlockContents =
         dataStructureUtil.randomSignedBlindedBlockContents(slot);
@@ -433,7 +432,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
       // we expect only local engine have been called
       verifyNoInteractions(builderClient);
     }
-    verifyEngineCalled(executionPayloadContext, slot, 2);
+    verifyEngineCalled(executionPayloadContext, slot);
 
     final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
@@ -573,8 +572,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
   }
 
   private void verifyEngineCalled(
-      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot, final int times) {
-    verify(executionClientHandler, times(times)).engineGetPayload(executionPayloadContext, slot);
+      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
+    verify(executionClientHandler).engineGetPayload(executionPayloadContext, slot);
   }
 
   private void verifySourceCounter(final Source source, final FallbackReason reason) {

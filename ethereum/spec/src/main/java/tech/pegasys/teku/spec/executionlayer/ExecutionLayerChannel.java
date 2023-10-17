@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.executionlayer;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -83,7 +84,9 @@ public interface ExecutionLayerChannel extends ChannelInterface {
 
         @Override
         public SafeFuture<HeaderWithFallbackData> builderGetHeader(
-            final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
+            final ExecutionPayloadContext executionPayloadContext,
+            final BeaconState state,
+            final SafeFuture<UInt256> localExecutionPayloadValue) {
           return SafeFuture.completedFuture(null);
         }
       };
@@ -126,5 +129,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
    * BeaconState, boolean)} instead
    */
   SafeFuture<HeaderWithFallbackData> builderGetHeader(
-      ExecutionPayloadContext executionPayloadContext, BeaconState state);
+      ExecutionPayloadContext executionPayloadContext,
+      BeaconState state,
+      SafeFuture<UInt256> localExecutionPayloadValue);
 }
