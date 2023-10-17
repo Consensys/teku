@@ -91,7 +91,8 @@ public class ExecutionBuilderModule {
   private Optional<SafeFuture<HeaderWithFallbackData>> validateBuilderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
-      final SafeFuture<GetPayloadResponse> localGetPayloadResponse) {
+      final SafeFuture<GetPayloadResponse> localGetPayloadResponse,
+      final SafeFuture<UInt256> localPayloadValueResult) {
     final Optional<SignedValidatorRegistration> validatorRegistration =
         executionPayloadContext.getPayloadBuildingAttributes().getValidatorRegistration();
 
@@ -136,7 +137,8 @@ public class ExecutionBuilderModule {
             .whenException(ex -> localPayloadValueResult.complete(UInt256.ZERO));
 
     final Optional<SafeFuture<HeaderWithFallbackData>> validationResult =
-        validateBuilderGetHeader(executionPayloadContext, state, localGetPayloadResponse);
+        validateBuilderGetHeader(
+            executionPayloadContext, state, localGetPayloadResponse, localPayloadValueResult);
     if (validationResult.isPresent()) {
       return validationResult.get();
     }
