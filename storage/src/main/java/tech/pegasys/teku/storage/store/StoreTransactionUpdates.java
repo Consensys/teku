@@ -109,6 +109,7 @@ class StoreTransactionUpdates {
     tx.bestJustifiedCheckpoint.ifPresent(store::updateBestJustifiedCheckpoint);
     store.cacheBlocks(hotBlocks.values());
     store.cacheStates(Maps.transformValues(hotBlockAndStates, this::blockAndStateAsSummary));
+    store.cacheBlobSidecars(blobSidecars);
     if (optimisticTransitionBlockRootSet) {
       store.cacheFinalizedOptimisticTransitionPayload(
           updateResult.getFinalizedOptimisticTransitionPayload());

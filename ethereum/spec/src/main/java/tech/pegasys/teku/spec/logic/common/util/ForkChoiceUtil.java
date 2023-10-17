@@ -384,7 +384,7 @@ public class ForkChoiceUtil {
       final SignedBeaconBlock signedBlock,
       final BeaconState postState,
       final boolean isBlockOptimistic,
-      final List<BlobSidecar> blobSidecars,
+      final Optional<List<BlobSidecar>> blobSidecars,
       final Optional<UInt64> earliestBlobSidecarsSlot) {
 
     BlockCheckpoints blockCheckpoints = epochProcessor.calculateBlockCheckpoints(postState);
