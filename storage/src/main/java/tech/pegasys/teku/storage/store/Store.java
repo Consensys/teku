@@ -42,7 +42,6 @@ import tech.pegasys.teku.dataproviders.generators.CachingTaskQueue;
 import tech.pegasys.teku.dataproviders.generators.StateAtSlotTask;
 import tech.pegasys.teku.dataproviders.generators.StateGenerationTask;
 import tech.pegasys.teku.dataproviders.generators.StateRegenerationBaseSelector;
-import tech.pegasys.teku.dataproviders.lookup.BlobSidecarsProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
@@ -87,15 +86,14 @@ class Store extends CacheableStore {
 
   private final MetricsSystem metricsSystem;
   private Optional<SettableGauge> blockCountGauge = Optional.empty();
-
   private Optional<SettableGauge> epochStatesCountGauge = Optional.empty();
+  private Optional<SettableGauge> blobSidecarsBlocksCountGauge = Optional.empty();
 
   private final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates;
 
   private final Spec spec;
   private final StateAndBlockSummaryProvider stateProvider;
   private final BlockProvider blockProvider;
-  private final BlobSidecarsProvider blobSidecarsProvider;
   private final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider;
   private final ForkChoiceStrategy forkChoiceStrategy;
 
@@ -103,6 +101,7 @@ class Store extends CacheableStore {
   private final CachingTaskQueue<Bytes32, StateAndBlockSummary> states;
   private final Map<Bytes32, SignedBeaconBlock> blocks;
   private final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates;
+  private final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars;
   private UInt64 timeMillis;
   private UInt64 genesisTime;
   private AnchorPoint finalizedAnchor;
@@ -119,7 +118,6 @@ class Store extends CacheableStore {
       final int hotStatePersistenceFrequencyInEpochs,
       final BlockProvider blockProvider,
       final StateAndBlockSummaryProvider stateProvider,
-      final BlobSidecarsProvider blobSidecarsProvider,
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final CachingTaskQueue<Bytes32, StateAndBlockSummary> states,
       final Optional<Checkpoint> initialCheckpoint,
@@ -133,7 +131,8 @@ class Store extends CacheableStore {
       final Map<UInt64, VoteTracker> votes,
       final Map<Bytes32, SignedBeaconBlock> blocks,
       final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates,
-      final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates) {
+      final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates,
+      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars) {
     checkArgument(
         time.isGreaterThanOrEqualTo(genesisTime),
         "Time must be greater than or equal to genesisTime");
@@ -157,6 +156,7 @@ class Store extends CacheableStore {
     this.justifiedCheckpoint = justifiedCheckpoint;
     this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
     this.blocks = blocks;
+    this.blobSidecars = blobSidecars;
     this.highestVotedValidatorIndex =
         votes.keySet().stream().max(Comparator.naturalOrder()).orElse(UInt64.ZERO);
     this.votes =
@@ -180,7 +180,6 @@ class Store extends CacheableStore {
                         .orElseGet(Collections::emptyMap)),
             fromMap(this.blocks),
             blockProvider);
-    this.blobSidecarsProvider = blobSidecarsProvider;
     this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
   }
 
@@ -190,7 +189,6 @@ class Store extends CacheableStore {
       final Spec spec,
       final BlockProvider blockProvider,
       final StateAndBlockSummaryProvider stateAndBlockProvider,
-      final BlobSidecarsProvider blobSidecarsProvider,
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final Optional<Checkpoint> initialCheckpoint,
       final UInt64 time,
@@ -215,11 +213,12 @@ class Store extends CacheableStore {
     final CachingTaskQueue<Bytes32, StateAndBlockSummary> stateTaskQueue =
         CachingTaskQueue.create(
             asyncRunner, metricsSystem, "memory_states", config.getStateCacheSize());
-
     final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates =
         config.getEpochStateCacheSize() > 0
             ? Optional.of(LimitedMap.createSynchronized(config.getEpochStateCacheSize()))
             : Optional.empty();
+    final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars =
+        LimitedMap.createSynchronized(config.getBlockCacheSize());
 
     final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(time, genesisTime));
     final ForkChoiceStrategy forkChoiceStrategy =
@@ -239,7 +238,6 @@ class Store extends CacheableStore {
         config.getHotStatePersistenceFrequencyInEpochs(),
         blockProvider,
         stateAndBlockProvider,
-        blobSidecarsProvider,
         earliestBlobSidecarSlotProvider,
         stateTaskQueue,
         initialCheckpoint,
@@ -253,7 +251,8 @@ class Store extends CacheableStore {
         votes,
         blocks,
         checkpointStateTaskQueue,
-        maybeEpochStates);
+        maybeEpochStates,
+        blobSidecars);
   }
 
   private static ProtoArray buildProtoArray(
@@ -308,6 +307,13 @@ class Store extends CacheableStore {
                   TekuMetricCategory.STORAGE,
                   "memory_block_count",
                   "Number of beacon blocks held in the in-memory store"));
+      blobSidecarsBlocksCountGauge =
+          Optional.of(
+              SettableGauge.create(
+                  metricsSystem,
+                  TekuMetricCategory.STORAGE,
+                  "memory_blocks_with_cached_blobs_count",
+                  "Number of beacon blocks with complete blobs held in the in-memory store"));
 
       if (maybeEpochStates.isPresent()) {
         epochStatesCountGauge =
@@ -497,7 +503,7 @@ class Store extends CacheableStore {
       return SafeFuture.completedFuture(inMemoryBlock);
     }
 
-    // Retrieve and cache block
+    // Retrieve block
     return blockProvider.getBlock(blockRoot);
   }
 
@@ -568,9 +574,14 @@ class Store extends CacheableStore {
   }
 
   @Override
-  public SafeFuture<List<BlobSidecar>> retrieveBlobSidecars(
+  public Optional<List<BlobSidecar>> getBlobSidecarsIfAvailable(
       final SlotAndBlockRoot slotAndBlockRoot) {
-    return blobSidecarsProvider.getBlobSidecars(slotAndBlockRoot);
+    readLock.lock();
+    try {
+      return Optional.ofNullable(blobSidecars.get(slotAndBlockRoot));
+    } finally {
+      readLock.unlock();
+    }
   }
 
   @Override
@@ -612,6 +623,15 @@ class Store extends CacheableStore {
   @Override
   void cacheStates(final Map<Bytes32, StateAndBlockSummary> stateAndBlockSummaries) {
     states.cacheAll(stateAndBlockSummaries);
+  }
+
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
+  @Override
+  void cacheBlobSidecars(final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsMap) {
+    blobSidecarsMap.entrySet().stream()
+        .sorted(Map.Entry.comparingByKey())
+        .forEach(entry -> blobSidecars.put(entry.getKey(), entry.getValue()));
+    blobSidecarsBlocksCountGauge.ifPresent(gauge -> gauge.set(blobSidecars.size()));
   }
 
   /** Non-synchronized, no lock, unsafe if Store is not locked externally */

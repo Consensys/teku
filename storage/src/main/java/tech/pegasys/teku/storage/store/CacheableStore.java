@@ -14,11 +14,13 @@
 package tech.pegasys.teku.storage.store;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
@@ -37,6 +39,8 @@ public abstract class CacheableStore implements UpdatableStore {
   abstract void cacheBlocks(Collection<BlockAndCheckpoints> blockAndCheckpoints);
 
   abstract void cacheStates(Map<Bytes32, StateAndBlockSummary> stateAndBlockSummaries);
+
+  abstract void cacheBlobSidecars(Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsMap);
 
   abstract void cacheFinalizedOptimisticTransitionPayload(
       Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload);

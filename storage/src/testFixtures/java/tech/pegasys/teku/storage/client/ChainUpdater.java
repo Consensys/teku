@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkState;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -252,7 +251,7 @@ public class ChainUpdater {
         block.getBlock(),
         block.getState(),
         spec.calculateBlockCheckpoints(block.getState()),
-        Collections.emptyList(),
+        Optional.empty(),
         Optional.empty());
     assertThat(tx.commit()).isCompleted();
     recentChainData
@@ -271,7 +270,7 @@ public class ChainUpdater {
         block.getBlock(),
         block.getState(),
         spec.calculateBlockCheckpoints(block.getState()),
-        Collections.emptyList(),
+        Optional.empty(),
         Optional.empty());
     assertThat(tx.commit()).isCompleted();
     saveBlockTime(block);
@@ -290,7 +289,7 @@ public class ChainUpdater {
         block.getBlock(),
         block.getState(),
         spec.calculateBlockCheckpoints(block.getState()),
-        blobSidecars,
+        Optional.of(blobSidecars),
         Optional.of(earliestBlobSidecarSlot));
     assertThat(tx.commit()).isCompleted();
     recentChainData

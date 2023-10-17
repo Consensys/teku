@@ -63,7 +63,7 @@ public class GetBlobSidecarsIntegrationTest extends AbstractDataBackedRestAPIInt
     final SignedBlockAndState lastBlock = chainUpdater.advanceChainUntil(targetSlot);
     chainUpdater.updateBestBlock(lastBlock);
     final List<BlobSidecar> expected =
-        recentChainData.retrieveBlobSidecars(lastBlock.getSlotAndBlockRoot()).get();
+        recentChainData.getBlobSidecars(lastBlock.getSlotAndBlockRoot()).get();
 
     final Response responseAll = get("head");
     assertThat(responseAll.code()).isEqualTo(SC_OK);
@@ -116,7 +116,7 @@ public class GetBlobSidecarsIntegrationTest extends AbstractDataBackedRestAPIInt
     final SignedBlockAndState lastBlock = chainUpdater.advanceChainUntil(targetSlot);
     chainUpdater.updateBestBlock(lastBlock);
     final List<BlobSidecar> expected =
-        recentChainData.retrieveBlobSidecars(lastBlock.getSlotAndBlockRoot()).get();
+        recentChainData.getBlobSidecars(lastBlock.getSlotAndBlockRoot()).get();
 
     final Response response = get("head", OCTET_STREAM);
     assertThat(response.code()).isEqualTo(SC_OK);
