@@ -103,8 +103,8 @@ public class EthereumTypes {
         value -> getSszHeaders(__ -> value.getMilestone(), value.getData()));
   }
 
-  public static <T extends BlockContainerAndMetaData<BlockContainer>>
-      ResponseContentTypeDefinition<? extends T> blockContainerAndMetaDataSszResponseType() {
+  public static ResponseContentTypeDefinition<BlockContainerAndMetaData<BlockContainer>>
+      blockContainerAndMetaDataSszResponseType() {
     return new OctetStreamResponseContentTypeDefinition<>(
         (data, out) -> data.blockContainer().sszSerialize(out),
         value -> getSszHeaders(__ -> value.specMilestone(), value.blockContainer()));
