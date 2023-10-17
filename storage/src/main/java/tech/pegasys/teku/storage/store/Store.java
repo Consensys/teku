@@ -92,6 +92,9 @@ class Store extends CacheableStore {
 
   private final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates;
 
+  @SuppressWarnings("UnusedVariable")
+  private final AsyncRunner asyncRunner;
+
   private final Spec spec;
   private final StateAndBlockSummaryProvider stateProvider;
   private final BlockProvider blockProvider;
@@ -114,6 +117,7 @@ class Store extends CacheableStore {
   private UInt64 highestVotedValidatorIndex;
 
   private Store(
+      final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final Spec spec,
       final int hotStatePersistenceFrequencyInEpochs,
@@ -148,6 +152,7 @@ class Store extends CacheableStore {
     this.spec = spec;
     this.states = states;
     this.checkpointStates = checkpointStates;
+    this.asyncRunner = asyncRunner;
 
     // Store instance variables
     this.initialCheckpoint = initialCheckpoint;
@@ -178,7 +183,7 @@ class Store extends CacheableStore {
                         .getSignedBeaconBlock()
                         .map((b) -> Map.of(b.getRoot(), b))
                         .orElseGet(Collections::emptyMap)),
-            fromMapWithLock(this.blocks, readLock),
+            fromMapWithLock(this.blocks, asyncRunner, readLock),
             blockProvider);
     this.blobSidecarsProvider = blobSidecarsProvider;
     this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
@@ -234,6 +239,7 @@ class Store extends CacheableStore {
                 finalizedAnchor));
 
     return new Store(
+        asyncRunner,
         metricsSystem,
         spec,
         config.getHotStatePersistenceFrequencyInEpochs(),

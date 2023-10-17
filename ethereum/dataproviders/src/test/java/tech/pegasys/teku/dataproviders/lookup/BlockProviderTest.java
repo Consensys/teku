@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -155,13 +156,21 @@ public class BlockProviderTest {
 
     final ReadWriteLock lock = new ReentrantReadWriteLock();
     final Lock readLock = lock.readLock();
-    final BlockProvider provider = BlockProvider.fromMapWithLock(blocks, readLock);
+    final StubAsyncRunner stubAsyncRunner = new StubAsyncRunner();
+    final BlockProvider providerStubAsync =
+        BlockProvider.fromMapWithLock(blocks, stubAsyncRunner, readLock);
 
     // Read block from provider
-    assertThat(provider.getBlock(block.getRoot()).get()).contains(block);
+    final SafeFuture<Optional<SignedBeaconBlock>> blockFuture =
+        providerStubAsync.getBlock(block.getRoot());
+    stubAsyncRunner.executeQueuedActions();
+    assertThat(blockFuture.isCompletedNormally()).isTrue();
+    assertThat(blockFuture.get()).contains(block);
 
     // Try the same when locked
     final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
+    final BlockProvider providerAsync =
+        BlockProvider.fromMapWithLock(blocks, asyncRunner, readLock);
     final CountDownLatch isNotBlocked = new CountDownLatch(1);
     final AtomicBoolean notBlockedOnFuture = new AtomicBoolean(false);
     // Write lock in main thread
@@ -171,17 +180,17 @@ public class BlockProviderTest {
           .runAsync(
               () -> {
                 try {
-                  final SafeFuture<Optional<SignedBeaconBlock>> blockFuture =
-                      provider.getBlock(block.getRoot());
+                  final SafeFuture<Optional<SignedBeaconBlock>> blockFutureLocked =
+                      providerAsync.getBlock(block.getRoot());
                   notBlockedOnFuture.set(true);
                   // Attempt to read in other thread - will stuck here
-                  assertThat(blockFuture.get()).contains(block);
+                  assertThat(blockFutureLocked.get()).contains(block);
                 } finally {
                   isNotBlocked.countDown();
                 }
               })
           .ifExceptionGetsHereRaiseABug();
-      assertThat(isNotBlocked.await(1, TimeUnit.SECONDS)).isFalse();
+      assertThat(isNotBlocked.await(100, TimeUnit.MILLISECONDS)).isFalse();
       assertThat(notBlockedOnFuture).isTrue();
     } finally {
       lock.writeLock().unlock();

@@ -26,6 +26,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
@@ -39,9 +40,11 @@ public interface BlockProvider {
   }
 
   static BlockProvider fromMapWithLock(
-      final Map<Bytes32, SignedBeaconBlock> blockMap, final Lock readLock) {
+      final Map<Bytes32, SignedBeaconBlock> blockMap,
+      final AsyncRunner asyncRunner,
+      final Lock readLock) {
     return (roots) ->
-        SafeFuture.supplyAsync(
+        asyncRunner.runAsync(
             () -> {
               readLock.lock();
               try {
