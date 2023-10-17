@@ -18,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.assertArg;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
@@ -29,17 +30,16 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableSortedMap;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.ArgumentMatcher;
 import org.mockito.stubbing.OngoingStubbing;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
@@ -80,9 +80,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   private List<KZGCommitment> kzgCommitmentsComplete;
 
   private List<BlobSidecar> blobSidecarsInitial;
-  private List<KZGCommitment> kzgCommitmentsInitial;
   private List<BlobSidecar> blobSidecarsAdditional;
-  private List<KZGCommitment> kzgCommitmentsAdditional;
 
   private final SafeFuture<Void> trackerCompletionFuture = new SafeFuture<>();
 
@@ -115,16 +113,16 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     verify(blockBlobSidecarsTracker, never()).getBlobSidecars();
 
     // mock kzg availability check to be OK for the initial set
-    whenDataAvailability(blobSidecarsInitial, kzgCommitmentsInitial).thenReturn(true);
+    whenDataAvailability(blobSidecarsInitial).thenReturn(true);
 
     // let availability check to be performed.
     asyncRunner.executeDueActions();
 
     // verify that kzg validation has been performed for the initial batch
-    verifyDataAvailabilityCall(blobSidecarsInitial, kzgCommitmentsInitial);
+    verifyValidationAndDataAvailabilityCall(blobSidecarsInitial, false);
 
     // mock the additional check to be OK.
-    whenDataAvailability(blobSidecarsAdditional, kzgCommitmentsAdditional).thenReturn(true);
+    whenDataAvailability(blobSidecarsAdditional).thenReturn(true);
 
     // let the tracker complete with all blobSidecars
     completeTrackerWith(blobSidecarsComplete);
@@ -132,7 +130,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     Waiter.waitFor(availabilityCheckResult);
 
     // verify that kzg validation has been performed for the additional batch
-    verifyDataAvailabilityCall(blobSidecarsAdditional, kzgCommitmentsAdditional);
+    verifyValidationAndDataAvailabilityCall(blobSidecarsAdditional, true);
 
     assertAvailable(availabilityCheckResult);
 
@@ -153,7 +151,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     assertThat(blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
 
     // mock kzg availability check to be OK for the initial set
-    whenDataAvailability(blobSidecarsComplete, kzgCommitmentsComplete).thenReturn(true);
+    whenDataAvailability(blobSidecarsComplete).thenReturn(true);
 
     // tracker is completed in advance
     completeTrackerWith(blobSidecarsComplete);
@@ -162,7 +160,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     asyncRunner.executeDueActions();
 
     // verify that kzg validation has been performed for the initial batch
-    verifyDataAvailabilityCall(blobSidecarsComplete, kzgCommitmentsComplete);
+    verifyValidationAndDataAvailabilityCall(blobSidecarsComplete, true);
 
     Waiter.waitFor(availabilityCheckResult);
 
@@ -185,7 +183,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     verifyDataAvailabilityNeverCalled();
     verify(blockBlobSidecarsTracker, never()).getBlobSidecars();
 
-    whenDataAvailability(blobSidecarsInitial, kzgCommitmentsInitial).thenReturn(true);
+    whenDataAvailability(blobSidecarsInitial).thenReturn(true);
 
     asyncRunner.executeDueActions();
 
@@ -210,12 +208,16 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  void shouldReturnNotAvailableIfFirstBatchFails(final boolean failByException) {
+  @EnumSource(value = BatchFailure.class)
+  void shouldReturnNotAvailableIfFirstBatchFails(final BatchFailure batchFailure) {
     prepareInitialAvailability(Availability.PARTIAL);
 
     final Optional<Throwable> cause =
-        failByException ? Optional.of(new RuntimeException("oops")) : Optional.empty();
+        switch (batchFailure) {
+          case BLOB_SIDECAR_VALIDATION_EXCEPTION, IS_DATA_AVAILABLE_EXCEPTION -> Optional.of(
+              new RuntimeException("oops"));
+          default -> Optional.empty();
+        };
 
     final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
         blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
@@ -225,11 +227,20 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     // initiate availability check
     assertThat(blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
 
-    // mock kzg availability check failure for the initial set
-    if (failByException) {
-      whenDataAvailability(blobSidecarsInitial, kzgCommitmentsInitial).thenThrow(cause.get());
-    } else {
-      whenDataAvailability(blobSidecarsInitial, kzgCommitmentsInitial).thenReturn(false);
+    switch (batchFailure) {
+        // blobsidecar validation check failure for the initial set
+      case BLOB_SIDECAR_VALIDATION_EXCEPTION:
+        throwWhenValidatingBlobSidecarsBatchAgainstBlock(blobSidecarsInitial, cause.get());
+        break;
+
+        // mock kzg availability check failure for the initial set
+      case IS_DATA_AVAILABLE_EXCEPTION:
+        whenDataAvailability(blobSidecarsInitial).thenThrow(cause.get());
+        break;
+
+      case IS_DATA_AVAILABLE_RETURN_FALSE:
+        whenDataAvailability(blobSidecarsInitial).thenReturn(false);
+        break;
     }
 
     asyncRunner.executeDueActions();
@@ -238,12 +249,16 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  void shouldReturnNotAvailableIfSecondBatchFails(final boolean failByException) {
+  @EnumSource(value = BatchFailure.class)
+  void shouldReturnNotAvailableIfSecondBatchFails(final BatchFailure batchFailure) {
     prepareInitialAvailability(Availability.PARTIAL);
 
     final Optional<Throwable> cause =
-        failByException ? Optional.of(new RuntimeException("oops")) : Optional.empty();
+        switch (batchFailure) {
+          case BLOB_SIDECAR_VALIDATION_EXCEPTION, IS_DATA_AVAILABLE_EXCEPTION -> Optional.of(
+              new RuntimeException("oops"));
+          default -> Optional.empty();
+        };
 
     final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
         blobSidecarsAvailabilityChecker.getAvailabilityCheckResult();
@@ -254,16 +269,25 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     assertThat(blobSidecarsAvailabilityChecker.initiateDataAvailabilityCheck()).isTrue();
 
     // mock kzg availability check to be OK for the initial set
-    whenDataAvailability(blobSidecarsInitial, kzgCommitmentsInitial).thenReturn(true);
+    whenDataAvailability(blobSidecarsInitial).thenReturn(true);
 
     // let availability check to be performed.
     asyncRunner.executeDueActions();
 
-    // mock kzg availability check failure for the initial set
-    if (failByException) {
-      whenDataAvailability(blobSidecarsAdditional, kzgCommitmentsAdditional).thenThrow(cause.get());
-    } else {
-      whenDataAvailability(blobSidecarsAdditional, kzgCommitmentsAdditional).thenReturn(false);
+    switch (batchFailure) {
+        // blobsidecar validation check failure for the additional set
+      case BLOB_SIDECAR_VALIDATION_EXCEPTION:
+        throwWhenValidatingBlobSidecarsBatchAgainstBlock(blobSidecarsAdditional, cause.get());
+        break;
+
+        // mock kzg availability check failure for the additional set
+      case IS_DATA_AVAILABLE_EXCEPTION:
+        whenDataAvailability(blobSidecarsAdditional).thenThrow(cause.get());
+        break;
+
+      case IS_DATA_AVAILABLE_RETURN_FALSE:
+        whenDataAvailability(blobSidecarsAdditional).thenReturn(false);
+        break;
     }
 
     // let the tracker complete with all blobSidecars
@@ -273,7 +297,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   @Test
-  void shouldThrowIfTrackerLiesWithCompletionButItIsNot() {
+  void shouldReturnInvalidIfTrackerLiesWithCompletionButItIsNot() {
     prepareInitialAvailability(Availability.PARTIAL);
 
     final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
@@ -290,31 +314,44 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     verify(blockBlobSidecarsTracker, never()).getBlobSidecars();
 
     // mock kzg availability check to be OK for the initial set
-    whenDataAvailability(blobSidecarsInitial, kzgCommitmentsInitial).thenReturn(true);
+    whenDataAvailability(blobSidecarsInitial).thenReturn(true);
 
     // let availability check to be performed.
     asyncRunner.executeDueActions();
 
     // verify that kzg validation has been performed for the initial batch
-    verifyDataAvailabilityCall(blobSidecarsInitial, kzgCommitmentsInitial);
+    verifyValidationAndDataAvailabilityCall(blobSidecarsInitial, false);
 
     // we complete the blobs without index 3
     final List<BlobSidecar> partialBlobs = blobSidecarsComplete.subList(1, 2);
     // we lie on availability check too (not actually possible)
-    whenDataAvailability(partialBlobs, kzgCommitmentsAdditional).thenReturn(true);
+    whenDataAvailability(partialBlobs).thenReturn(true);
+
+    final List<BlobSidecar> expectedIncompleteBlobSidecar = new ArrayList<>();
+    expectedIncompleteBlobSidecar.add(blobSidecarsComplete.get(0)); // blob 0
+    expectedIncompleteBlobSidecar.add(blobSidecarsComplete.get(1)); // blob 1
+    expectedIncompleteBlobSidecar.add(blobSidecarsComplete.get(2)); // blob 2
+
+    final Throwable cause = new IllegalArgumentException("oops");
+
+    throwWhenVerifyingBlobSidecarCompleteness(expectedIncompleteBlobSidecar, cause);
 
     // let the tracker complete with all blobSidecars
     completeTrackerWith(partialBlobs);
 
-    SafeFutureAssert.assertThatSafeFuture(availabilityCheckResult)
-        .isCompletedExceptionallyWith(IllegalStateException.class);
+    assertInvalid(
+        availabilityCheckResult,
+        expectedIncompleteBlobSidecar,
+        Optional.of(
+            new IllegalArgumentException(
+                "Validated blobs are less than commitments present in block.", cause)));
   }
 
   @Test
-  void validate_shouldReturnAvailable() {
+  void validateImmediately_shouldReturnAvailable() {
     prepareInitialAvailability(Availability.FULL);
 
-    whenDataAvailability(blobSidecarsComplete, kzgCommitmentsComplete).thenReturn(true);
+    whenDataAvailability(blobSidecarsComplete).thenReturn(true);
 
     assertAvailable(
         SafeFuture.completedFuture(
@@ -322,7 +359,26 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   @Test
-  void validate_shouldNotAvailable() {
+  void validateImmediately_shouldReturnInvalidIfCompletenessCheckFails() {
+    prepareInitialAvailability(Availability.FULL);
+
+    whenDataAvailability(blobSidecarsComplete).thenReturn(true);
+    final Throwable cause = new IllegalArgumentException("oops");
+    doThrow(cause).when(miscHelpers).verifyBlobSidecarCompleteness(any(), any());
+
+    final BlobSidecarsAndValidationResult availabilityCheckResult =
+        blobSidecarsAvailabilityChecker.validateImmediately(blobSidecarsComplete);
+
+    assertInvalid(
+        SafeFuture.completedFuture(availabilityCheckResult),
+        blobSidecarsComplete,
+        Optional.of(
+            new IllegalArgumentException(
+                "Validated blobs are less than commitments present in block.", cause)));
+  }
+
+  @Test
+  void validateImmediately_shouldReturnNotAvailableWithEmptyBlobsButRequired() {
     prepareInitialAvailability(Availability.FULL);
 
     assertNotAvailable(
@@ -331,7 +387,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   @Test
-  void validate_shouldReturnAvailableOnEmptyBlobs() {
+  void validateImmediately_shouldReturnAvailableOnEmptyBlobs() {
     prepareInitialAvailabilityWithEmptyCommitmentsBlock();
 
     assertAvailable(
@@ -340,7 +396,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   @Test
-  void validate_shouldReturnNotRequiredWhenBlockIsOutsideAvailabilityWindow() {
+  void validateImmediately_shouldReturnNotRequiredWhenBlockIsOutsideAvailabilityWindow() {
     prepareBlockAndBlobSidecarsOutsideAvailabilityWindow();
 
     assertNotRequired(
@@ -371,7 +427,20 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
         .isCompletedWithValueMatching(
             result -> result.getBlobSidecars().equals(invalidBlobs), "doesn't have blob sidecars")
         .isCompletedWithValueMatching(
-            result -> result.getCause().equals(cause), "matches the cause");
+            result -> {
+              if (cause.isEmpty() != result.getCause().isEmpty()) {
+                return false;
+              }
+              return result
+                  .getCause()
+                  .map(
+                      resultCause ->
+                          resultCause.getClass().equals(cause.get().getClass())
+                              && Objects.equals(resultCause.getMessage(), cause.get().getMessage())
+                              && Objects.equals(resultCause.getCause(), cause.get().getCause()))
+                  .orElse(true);
+            },
+            "matches the cause");
   }
 
   private void assertNotAvailableDueToTimeout(
@@ -441,31 +510,22 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
             .getBlobKzgCommitments()
             .stream()
             .map(SszKZGCommitment::getKZGCommitment)
-            .collect(Collectors.toUnmodifiableList());
+            .toList();
 
     when(spec.isAvailabilityOfBlobSidecarsRequiredAtSlot(store, block.getSlot())).thenReturn(true);
 
     switch (blobsAvailability) {
       case FULL:
         blobSidecarsInitial = blobSidecarsComplete;
-        kzgCommitmentsInitial = kzgCommitmentsComplete;
         blobSidecarsAdditional = List.of();
-        kzgCommitmentsAdditional = List.of();
         break;
       case EMPTY:
         blobSidecarsInitial = List.of();
-        kzgCommitmentsInitial = List.of();
         blobSidecarsAdditional = blobSidecarsComplete;
-        kzgCommitmentsAdditional = kzgCommitmentsComplete;
         break;
       case PARTIAL:
         blobSidecarsInitial = List.of(blobSidecarsComplete.get(0), blobSidecarsComplete.get(2));
-        kzgCommitmentsInitial =
-            List.of(kzgCommitmentsComplete.get(0), kzgCommitmentsComplete.get(2));
-
         blobSidecarsAdditional = List.of(blobSidecarsComplete.get(1), blobSidecarsComplete.get(3));
-        kzgCommitmentsAdditional =
-            List.of(kzgCommitmentsComplete.get(1), kzgCommitmentsComplete.get(3));
         break;
     }
 
@@ -473,8 +533,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
         ImmutableSortedMap.naturalOrder();
     blobSidecarsInitial.forEach(blobSidecar -> mapBuilder.put(blobSidecar.getIndex(), blobSidecar));
 
-    when(blockBlobSidecarsTracker.getBlockBody())
-        .thenReturn(block.getMessage().getBody().toVersionDeneb());
+    when(blockBlobSidecarsTracker.getBlock()).thenReturn(block.getBeaconBlock());
     when(blockBlobSidecarsTracker.getBlobSidecars()).thenReturn(mapBuilder.build());
     when(blockBlobSidecarsTracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
 
@@ -492,25 +551,53 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     trackerCompletionFuture.complete(null);
   }
 
-  private OngoingStubbing<Boolean> whenDataAvailability(
-      final List<BlobSidecar> blobSidecars, final List<KZGCommitment> kzgCommitments) {
-    return when(
-        miscHelpers.isDataAvailable(
-            eq(block.getSlot()),
-            eq(block.getRoot()),
-            argThat(new KzgCommitmentsArgumentMatcher(kzgCommitments)),
-            eq(blobSidecars)));
+  private OngoingStubbing<Boolean> whenDataAvailability(final List<BlobSidecar> blobSidecars) {
+    return when(miscHelpers.verifyBlobKzgProofBatch(eq(blobSidecars)));
   }
 
-  private void verifyDataAvailabilityCall(
-      final List<BlobSidecar> blobSidecars, final List<KZGCommitment> kzgCommitments) {
+  private void throwWhenValidatingBlobSidecarsBatchAgainstBlock(
+      final List<BlobSidecar> blobSidecars, final Throwable cause) {
+    doThrow(cause)
+        .when(miscHelpers)
+        .validateBlobSidecarsBatchAgainstBlock(
+            eq(blobSidecars),
+            argThat(block -> block.equals(this.block.getBeaconBlock().orElseThrow())),
+            assertArg(
+                kzgCommitmentsArg ->
+                    assertThat(kzgCommitmentsArg).isEqualTo(kzgCommitmentsComplete)));
+  }
 
+  private void throwWhenVerifyingBlobSidecarCompleteness(
+      final List<BlobSidecar> blobSidecars, final Throwable cause) {
+    doThrow(cause)
+        .when(miscHelpers)
+        .verifyBlobSidecarCompleteness(
+            eq(blobSidecars),
+            assertArg(
+                kzgCommitmentsArg ->
+                    assertThat(kzgCommitmentsArg).isEqualTo(kzgCommitmentsComplete)));
+  }
+
+  private void verifyValidationAndDataAvailabilityCall(
+      final List<BlobSidecar> blobSidecars, final boolean isFinalValidation) {
     verify(miscHelpers, times(1))
-        .isDataAvailable(
-            eq(block.getSlot()),
-            eq(block.getRoot()),
-            assertArg(kzgCommitmentsArg -> assertThat(kzgCommitmentsArg).isEqualTo(kzgCommitments)),
-            eq(blobSidecars));
+        .validateBlobSidecarsBatchAgainstBlock(
+            eq(blobSidecars),
+            argThat(block -> block.equals(this.block.getBeaconBlock().orElseThrow())),
+            assertArg(
+                kzgCommitmentsArg ->
+                    assertThat(kzgCommitmentsArg).isEqualTo(kzgCommitmentsComplete)));
+
+    verify(miscHelpers, times(1)).verifyBlobKzgProofBatch(eq(blobSidecars));
+
+    if (isFinalValidation) {
+      verify(miscHelpers, times(1))
+          .verifyBlobSidecarCompleteness(
+              eq(blobSidecarsComplete),
+              assertArg(
+                  kzgCommitmentsArg ->
+                      assertThat(kzgCommitmentsArg).isEqualTo(kzgCommitmentsComplete)));
+    }
 
     // assume we verified all interaction before resetting
     verifyNoMoreInteractions(miscHelpers);
@@ -518,7 +605,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   private void verifyDataAvailabilityNeverCalled() {
-    verify(miscHelpers, never()).isDataAvailable(any(), any(), any(), any());
+    verify(miscHelpers, never()).verifyBlobKzgProofBatch(any());
   }
 
   private void prepareBlockAndBlobSidecarsOutsideAvailabilityWindow() {
@@ -531,8 +618,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
         blobSidecar -> mapBuilder.put(blobSidecar.getIndex(), blobSidecar));
 
     when(spec.isAvailabilityOfBlobSidecarsRequiredAtSlot(store, block.getSlot())).thenReturn(false);
-    when(blockBlobSidecarsTracker.getBlockBody())
-        .thenReturn(block.getMessage().getBody().toVersionDeneb());
+    when(blockBlobSidecarsTracker.getBlock()).thenReturn(block.getBeaconBlock());
     when(blockBlobSidecarsTracker.getCompletionFuture()).thenReturn(SafeFuture.COMPLETE);
     when(blockBlobSidecarsTracker.getBlobSidecars()).thenReturn(ImmutableSortedMap.of());
     when(blockBlobSidecarsTracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
@@ -548,18 +634,9 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     FULL
   }
 
-  private static class KzgCommitmentsArgumentMatcher
-      implements ArgumentMatcher<List<KZGCommitment>> {
-
-    private final List<KZGCommitment> kzgCommitments;
-
-    private KzgCommitmentsArgumentMatcher(final List<KZGCommitment> kzgCommitments) {
-      this.kzgCommitments = kzgCommitments;
-    }
-
-    @Override
-    public boolean matches(final List<KZGCommitment> argument) {
-      return kzgCommitments.equals(argument);
-    }
+  private enum BatchFailure {
+    BLOB_SIDECAR_VALIDATION_EXCEPTION,
+    IS_DATA_AVAILABLE_EXCEPTION,
+    IS_DATA_AVAILABLE_RETURN_FALSE,
   }
 }

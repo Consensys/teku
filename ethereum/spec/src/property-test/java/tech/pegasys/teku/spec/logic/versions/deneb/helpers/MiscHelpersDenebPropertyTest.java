@@ -20,16 +20,14 @@ import java.util.Objects;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.From;
 import net.jqwik.api.Property;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.propertytest.suppliers.SpecSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSidecarSupplier;
-import tech.pegasys.teku.spec.propertytest.suppliers.type.Bytes32Supplier;
+import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.BeaconBlockSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.KZGCommitmentSupplier;
-import tech.pegasys.teku.spec.propertytest.suppliers.type.UInt64Supplier;
 
 public class MiscHelpersDenebPropertyTest {
   private final SpecConfigDeneb specConfig =
@@ -40,22 +38,40 @@ public class MiscHelpersDenebPropertyTest {
           .orElseThrow();
   private final MiscHelpersDeneb miscHelpers = new MiscHelpersDeneb(specConfig);
 
+  @Property
+  void fuzzKzgCommitmentToVersionedHash(
+      @ForAll(supplier = KZGCommitmentSupplier.class) final KZGCommitment commitment) {
+    miscHelpers.kzgCommitmentToVersionedHash(commitment);
+  }
+
   @Property(tries = 100)
-  void fuzzIsDataAvailable(
-      @ForAll(supplier = UInt64Supplier.class) final UInt64 slot,
-      @ForAll(supplier = Bytes32Supplier.class) final Bytes32 beaconBlockRoot,
-      @ForAll final List<@From(supplier = KZGCommitmentSupplier.class) KZGCommitment> commitments,
+  void fuzzVerifyBlobKzgProofBatch(
       @ForAll final List<@From(supplier = BlobSidecarSupplier.class) BlobSidecar> blobSidecars) {
+    miscHelpers.verifyBlobKzgProofBatch(blobSidecars);
+  }
+
+  @Property(tries = 100)
+  void fuzzValidateBlobSidecarsBatchAgainstBlock(
+      @ForAll final List<@From(supplier = BlobSidecarSupplier.class) BlobSidecar> blobSidecars,
+      @ForAll(supplier = BeaconBlockSupplier.class) final BeaconBlock block,
+      @ForAll
+          final List<@From(supplier = KZGCommitmentSupplier.class) KZGCommitment> kzgCommitments) {
     try {
-      miscHelpers.isDataAvailable(slot, beaconBlockRoot, commitments, blobSidecars);
+      miscHelpers.validateBlobSidecarsBatchAgainstBlock(blobSidecars, block, kzgCommitments);
     } catch (Exception e) {
       assertThat(e).isInstanceOf(IllegalArgumentException.class);
     }
   }
 
-  @Property
-  void fuzzKzgCommitmentToVersionedHash(
-      @ForAll(supplier = KZGCommitmentSupplier.class) final KZGCommitment commitment) {
-    miscHelpers.kzgCommitmentToVersionedHash(commitment);
+  @Property(tries = 100)
+  void fuzzVerifyBlobSidecarCompleteness(
+      @ForAll final List<@From(supplier = BlobSidecarSupplier.class) BlobSidecar> blobSidecars,
+      @ForAll
+          final List<@From(supplier = KZGCommitmentSupplier.class) KZGCommitment> kzgCommitments) {
+    try {
+      miscHelpers.verifyBlobSidecarCompleteness(blobSidecars, kzgCommitments);
+    } catch (Exception e) {
+      assertThat(e).isInstanceOf(IllegalArgumentException.class);
+    }
   }
 }

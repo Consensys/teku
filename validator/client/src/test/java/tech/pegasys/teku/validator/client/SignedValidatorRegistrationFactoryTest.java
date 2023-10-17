@@ -30,6 +30,7 @@ import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -62,8 +63,6 @@ class SignedValidatorRegistrationFactoryTest {
     gasLimit = dataStructureUtil.randomUInt64();
     validator = new Validator(dataStructureUtil.randomPublicKey(), signer, Optional::empty);
 
-    when(proposerConfigPropertiesProvider.isBuilderEnabled(any())).thenReturn(true);
-
     when(proposerConfigPropertiesProvider.isReadyToProvideProperties()).thenReturn(true);
     when(proposerConfigPropertiesProvider.getFeeRecipient(any()))
         .thenReturn(Optional.of(feeRecipient));
@@ -82,14 +81,11 @@ class SignedValidatorRegistrationFactoryTest {
 
   @TestTemplate
   public void whenCreateCalled_thenSigningRegistrationIsReturned() {
-    final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration =
+    final SafeFuture<SignedValidatorRegistration> signedValidatorRegistration =
         signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator, Optional.empty(), throwable -> {});
 
     verify(signer).signValidatorRegistration(any());
-    assertThat(maybeSignedValidatorRegistration).isPresent();
-    final SafeFuture<SignedValidatorRegistration> signedValidatorRegistration =
-        maybeSignedValidatorRegistration.get();
     assertThat(signedValidatorRegistration)
         .isCompletedWithValueMatching(
             result -> result.getMessage().getPublicKey().equals(validator.getPublicKey()));
@@ -99,14 +95,11 @@ class SignedValidatorRegistrationFactoryTest {
   public void whenOldRegistrationDoesNotNeedToBeUpdated_thenSignerIsNotCalled() {
     final SignedValidatorRegistration oldSignedValidatorRegistration =
         createSignedValidatorRegistration(validator.getPublicKey(), feeRecipient);
-    final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration =
+    final SafeFuture<SignedValidatorRegistration> signedValidatorRegistration =
         signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator, Optional.of(oldSignedValidatorRegistration), throwable -> {});
 
     verify(signer, never()).signValidatorRegistration(any());
-    assertThat(maybeSignedValidatorRegistration).isPresent();
-    final SafeFuture<SignedValidatorRegistration> signedValidatorRegistration =
-        maybeSignedValidatorRegistration.get();
     assertThat(signedValidatorRegistration)
         .isCompletedWithValueMatching(
             result -> result.getMessage().getPublicKey().equals(validator.getPublicKey()));
@@ -118,14 +111,11 @@ class SignedValidatorRegistrationFactoryTest {
     final SignedValidatorRegistration oldSignedValidatorRegistration =
         createSignedValidatorRegistration(
             validator.getPublicKey(), dataStructureUtil.randomEth1Address());
-    final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration =
+    final SafeFuture<SignedValidatorRegistration> signedValidatorRegistration =
         signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator, Optional.of(oldSignedValidatorRegistration), throwable -> {});
 
     verify(signer).signValidatorRegistration(any());
-    assertThat(maybeSignedValidatorRegistration).isPresent();
-    final SafeFuture<SignedValidatorRegistration> signedValidatorRegistration =
-        maybeSignedValidatorRegistration.get();
     assertThat(signedValidatorRegistration)
         .isCompletedWithValueMatching(
             result ->
@@ -137,14 +127,11 @@ class SignedValidatorRegistrationFactoryTest {
   public void whenSigningIsCompletedExceptionally_thenExceptionIsPropagated() {
     when(signer.signValidatorRegistration(any()))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("oops")));
-    final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration =
+    final SafeFuture<SignedValidatorRegistration> signedValidatorRegistration =
         signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator, Optional.empty(), throwable -> {});
 
     verify(signer).signValidatorRegistration(any());
-    assertThat(maybeSignedValidatorRegistration).isPresent();
-    final SafeFuture<SignedValidatorRegistration> signedValidatorRegistration =
-        maybeSignedValidatorRegistration.get();
     assertThat(signedValidatorRegistration).isCompletedExceptionally();
   }
 
@@ -156,13 +143,10 @@ class SignedValidatorRegistrationFactoryTest {
             validator.getPublicKey()))
         .thenReturn(Optional.of(timestampOverride));
 
-    final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration =
+    final SafeFuture<SignedValidatorRegistration> signedValidatorRegistration =
         signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator, Optional.empty(), throwable -> {});
     verify(signer).signValidatorRegistration(any());
-    assertThat(maybeSignedValidatorRegistration).isPresent();
-    final SafeFuture<SignedValidatorRegistration> signedValidatorRegistration =
-        maybeSignedValidatorRegistration.get();
     assertThat(signedValidatorRegistration)
         .isCompletedWithValueMatching(
             result ->
@@ -177,13 +161,10 @@ class SignedValidatorRegistrationFactoryTest {
             validator.getPublicKey()))
         .thenReturn(Optional.of(publicKeyOverride));
 
-    final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration =
+    final SafeFuture<SignedValidatorRegistration> signedValidatorRegistration =
         signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator, Optional.empty(), throwable -> {});
     verify(signer).signValidatorRegistration(any());
-    assertThat(maybeSignedValidatorRegistration).isPresent();
-    final SafeFuture<SignedValidatorRegistration> signedValidatorRegistration =
-        maybeSignedValidatorRegistration.get();
     assertThat(signedValidatorRegistration)
         .isCompletedWithValueMatching(
             result -> result.getMessage().getPublicKey().equals(publicKeyOverride));
@@ -200,13 +181,10 @@ class SignedValidatorRegistrationFactoryTest {
         .thenReturn(validator2GasLimit);
 
     // Verify validator
-    final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration =
+    final SafeFuture<SignedValidatorRegistration> signedValidatorRegistration =
         signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator, Optional.empty(), throwable -> {});
     verify(signer).signValidatorRegistration(any());
-    assertThat(maybeSignedValidatorRegistration).isPresent();
-    final SafeFuture<SignedValidatorRegistration> signedValidatorRegistration =
-        maybeSignedValidatorRegistration.get();
     assertThat(signedValidatorRegistration)
         .isCompletedWithValueMatching(
             result ->
@@ -214,13 +192,10 @@ class SignedValidatorRegistrationFactoryTest {
                     && result.getMessage().getGasLimit().equals(gasLimit));
 
     // Verify validator2
-    final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration2 =
+    final SafeFuture<SignedValidatorRegistration> signedValidatorRegistration2 =
         signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator2, Optional.empty(), throwable -> {});
     verify(signer, times(2)).signValidatorRegistration(any());
-    assertThat(maybeSignedValidatorRegistration2).isPresent();
-    final SafeFuture<SignedValidatorRegistration> signedValidatorRegistration2 =
-        maybeSignedValidatorRegistration2.get();
     assertThat(signedValidatorRegistration2)
         .isCompletedWithValueMatching(
             result ->
@@ -240,13 +215,10 @@ class SignedValidatorRegistrationFactoryTest {
         .thenReturn(Optional.of(validator2Timestamp));
 
     // Verify validator
-    final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration =
+    final SafeFuture<SignedValidatorRegistration> signedValidatorRegistration =
         signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator, Optional.empty(), throwable -> {});
     verify(signer).signValidatorRegistration(any());
-    assertThat(maybeSignedValidatorRegistration).isPresent();
-    final SafeFuture<SignedValidatorRegistration> signedValidatorRegistration =
-        maybeSignedValidatorRegistration.get();
     assertThat(signedValidatorRegistration)
         .isCompletedWithValueMatching(
             result ->
@@ -257,13 +229,10 @@ class SignedValidatorRegistrationFactoryTest {
                         .equals(stubTimeProvider.getTimeInSeconds()));
 
     // Verify validator2
-    final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration2 =
+    final SafeFuture<SignedValidatorRegistration> signedValidatorRegistration2 =
         signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator2, Optional.empty(), throwable -> {});
     verify(signer, times(2)).signValidatorRegistration(any());
-    assertThat(maybeSignedValidatorRegistration2).isPresent();
-    final SafeFuture<SignedValidatorRegistration> signedValidatorRegistration2 =
-        maybeSignedValidatorRegistration2.get();
     assertThat(signedValidatorRegistration2)
         .isCompletedWithValueMatching(
             result ->
@@ -282,13 +251,10 @@ class SignedValidatorRegistrationFactoryTest {
         .thenReturn(Optional.of(validator2FeeRecipient));
 
     // Verify validator
-    final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration =
+    final SafeFuture<SignedValidatorRegistration> signedValidatorRegistration =
         signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator, Optional.empty(), throwable -> {});
     verify(signer).signValidatorRegistration(any());
-    assertThat(maybeSignedValidatorRegistration).isPresent();
-    final SafeFuture<SignedValidatorRegistration> signedValidatorRegistration =
-        maybeSignedValidatorRegistration.get();
     assertThat(signedValidatorRegistration)
         .isCompletedWithValueMatching(
             result ->
@@ -296,13 +262,10 @@ class SignedValidatorRegistrationFactoryTest {
                     && result.getMessage().getFeeRecipient().equals(feeRecipient));
 
     // Verify validator2
-    final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration2 =
+    final SafeFuture<SignedValidatorRegistration> signedValidatorRegistration2 =
         signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator2, Optional.empty(), throwable -> {});
     verify(signer, times(2)).signValidatorRegistration(any());
-    assertThat(maybeSignedValidatorRegistration2).isPresent();
-    final SafeFuture<SignedValidatorRegistration> signedValidatorRegistration2 =
-        maybeSignedValidatorRegistration2.get();
     assertThat(signedValidatorRegistration2)
         .isCompletedWithValueMatching(
             result ->
@@ -311,29 +274,20 @@ class SignedValidatorRegistrationFactoryTest {
   }
 
   @TestTemplate
-  void doesNotCreateWhenFeeRecipientNotSpecified() {
+  void throwsWhenFeeRecipientIsNotConfigured() {
     // no fee recipient provided
     when(proposerConfigPropertiesProvider.getFeeRecipient(validator.getPublicKey()))
         .thenReturn(Optional.empty());
 
-    final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration =
+    final SafeFuture<SignedValidatorRegistration> signedValidatorRegistration =
         signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator, Optional.empty(), throwable -> {});
     verify(signer, never()).signValidatorRegistration(any());
-    assertThat(maybeSignedValidatorRegistration).isEmpty();
-  }
-
-  @TestTemplate
-  void doesNotCreateWhenValidatorRegistrationNotEnabled() {
-    // validator registration is disabled for validator2
-    when(proposerConfigPropertiesProvider.isBuilderEnabled(validator.getPublicKey()))
-        .thenReturn(false);
-
-    final Optional<SafeFuture<SignedValidatorRegistration>> maybeSignedValidatorRegistration =
-        signedValidatorRegistrationFactory.createSignedValidatorRegistration(
-            validator, Optional.empty(), throwable -> {});
-    verify(signer, never()).signValidatorRegistration(any());
-    assertThat(maybeSignedValidatorRegistration).isEmpty();
+    SafeFutureAssert.assertThatSafeFuture(signedValidatorRegistration)
+        .isCompletedExceptionallyWithMessage(
+            String.format(
+                "Fee recipient not configured for %s. Will skip registering it.",
+                validator.getPublicKey()));
   }
 
   private SignedValidatorRegistration createSignedValidatorRegistration(
