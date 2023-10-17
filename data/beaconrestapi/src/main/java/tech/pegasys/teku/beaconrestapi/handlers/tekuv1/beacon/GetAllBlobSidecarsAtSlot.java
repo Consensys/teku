@@ -17,6 +17,7 @@ import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.BLOB_INDICES_PA
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -63,7 +64,7 @@ public class GetAllBlobSidecarsAtSlot extends RestApiEndpoint {
         .operationId("getAllBlobSidecarsAtSlot")
         .summary("Get blob sidecars at slot")
         .description("Get all blob sidecars (canonical and non canonical) at slot")
-        .tags(TAG_BEACON)
+        .tags(TAG_TEKU)
         .pathParam(SLOT_PARAMETER.withDescription("slot of the blob sidecars to retrieve."))
         .queryListParam(BLOB_INDICES_PARAMETER)
         .response(SC_OK, "Request successful", getResponseType(schemaCache), getSszResponseType())
