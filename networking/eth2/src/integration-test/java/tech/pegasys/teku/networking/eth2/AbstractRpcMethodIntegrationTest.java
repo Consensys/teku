@@ -19,7 +19,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.provider.Arguments;
@@ -261,12 +260,13 @@ public abstract class AbstractRpcMethodIntegrationTest {
         .flatMap(Optional::stream)
         .map(this::safeRetrieveBlobSidecars)
         .flatMap(Collection::stream)
-        .collect(Collectors.toUnmodifiableList());
+        .toList();
   }
 
   private List<BlobSidecar> safeRetrieveBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
     try {
-      return Waiter.waitFor(peerStorage.recentChainData().retrieveBlobSidecars(slotAndBlockRoot));
+      return Waiter.waitFor(
+          peerStorage.chainStorage().getBlobSidecarsBySlotAndBlockRoot(slotAndBlockRoot));
     } catch (Exception e) {
       throw new RuntimeException(e);
     }

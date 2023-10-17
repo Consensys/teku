@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -34,27 +35,35 @@ import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockI
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.capella.SignedBeaconBlockCapella;
 import tech.pegasys.teku.api.schema.deneb.SignedBeaconBlockDeneb;
 import tech.pegasys.teku.api.schema.phase0.SignedBeaconBlockPhase0;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
@@ -64,6 +73,7 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
+import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -404,5 +414,74 @@ public class ValidatorDataProviderTest {
     final Optional<AttesterDuties> maybeList = safeJoin(future);
     final AttesterDuties list = maybeList.orElseThrow();
     assertThat(list.getDuties()).containsExactlyInAnyOrder(v1, v2);
+  }
+
+  @TestTemplate
+  void registerValidators_shouldReportErrorIfCannotRetrieveValidatorStatuses() {
+    final SszList<SignedValidatorRegistration> validatorRegistrations =
+        dataStructureUtil.randomSignedValidatorRegistrations(4);
+
+    when(validatorApiChannel.getValidatorStatuses(anyCollection()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+
+    final SafeFuture<Void> result = provider.registerValidators(validatorRegistrations);
+
+    SafeFutureAssert.assertThatSafeFuture(result)
+        .isCompletedExceptionallyWithMessage(
+            "Couldn't retrieve validator statuses during registering. Most likely the BN is still syncing.");
+  }
+
+  @TestTemplate
+  void registerValidators_shouldIgnoreExitedAndUnknownValidators() {
+    final int numOfValidatorRegistrationsAttempted = ValidatorStatus.values().length + 2;
+
+    final SszList<SignedValidatorRegistration> validatorRegistrations =
+        dataStructureUtil.randomSignedValidatorRegistrations(numOfValidatorRegistrationsAttempted);
+
+    final Map<BLSPublicKey, ValidatorStatus> knownValidators =
+        IntStream.range(0, ValidatorStatus.values().length)
+            .mapToObj(
+                statusIdx ->
+                    Map.entry(
+                        validatorRegistrations.get(statusIdx).getMessage().getPublicKey(),
+                        ValidatorStatus.values()[statusIdx]))
+            .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+
+    final List<BLSPublicKey> exitedOrUnknownKeys =
+        IntStream.range(
+                ValidatorStatus.exited_unslashed.ordinal(), numOfValidatorRegistrationsAttempted)
+            .mapToObj(
+                statusOrdinal ->
+                    validatorRegistrations.get(statusOrdinal).getMessage().getPublicKey())
+            .toList();
+
+    when(validatorApiChannel.getValidatorStatuses(anyCollection()))
+        .thenAnswer(
+            args -> {
+              final Collection<BLSPublicKey> publicKeys = args.getArgument(0);
+              final Map<BLSPublicKey, ValidatorStatus> validatorStatuses =
+                  publicKeys.stream()
+                      .filter(knownValidators::containsKey)
+                      .collect(Collectors.toMap(Function.identity(), knownValidators::get));
+              return SafeFuture.completedFuture(Optional.of(validatorStatuses));
+            });
+    when(validatorApiChannel.registerValidators(any())).thenReturn(SafeFuture.COMPLETE);
+
+    final SafeFuture<Void> result = provider.registerValidators(validatorRegistrations);
+
+    assertThat(result).isCompleted();
+
+    @SuppressWarnings("unchecked")
+    final ArgumentCaptor<SszList<SignedValidatorRegistration>> argumentCaptor =
+        ArgumentCaptor.forClass(SszList.class);
+
+    verify(validatorApiChannel).registerValidators(argumentCaptor.capture());
+
+    final SszList<SignedValidatorRegistration> capturedRegistrations = argumentCaptor.getValue();
+
+    assertThat(capturedRegistrations)
+        .hasSize(5)
+        .map(signedRegistration -> signedRegistration.getMessage().getPublicKey())
+        .doesNotContainAnyElementsOf(exitedOrUnknownKeys);
   }
 }

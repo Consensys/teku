@@ -596,14 +596,15 @@ public class ProtoArray {
    * Indicates if the node itself is viable for the head, or if it's best descendant is viable for
    * the head.
    */
-  private boolean nodeLeadsToViableHead(ProtoNode node) {
-    boolean bestDescendantIsViableForHead =
-        node.getBestDescendantIndex()
-            .map(this::getNodeByIndex)
-            .map(this::nodeIsViableForHead)
-            .orElse(false);
+  private boolean nodeLeadsToViableHead(final ProtoNode node) {
+    if (nodeIsViableForHead(node)) {
+      return true;
+    }
 
-    return bestDescendantIsViableForHead || nodeIsViableForHead(node);
+    return node.getBestDescendantIndex()
+        .map(this::getNodeByIndex)
+        .map(this::nodeIsViableForHead)
+        .orElse(false);
   }
 
   /**

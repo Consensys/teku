@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,12 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.duties;
+package tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb;
 
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public interface Duty {
-  DutyType getType();
-
-  SafeFuture<DutyResult> performDuty();
+public class BeaconBlockSupplier extends DataStructureUtilSupplier<BeaconBlock> {
+  public BeaconBlockSupplier() {
+    super(DataStructureUtil::randomBeaconBlock, SpecMilestone.DENEB);
+  }
 }

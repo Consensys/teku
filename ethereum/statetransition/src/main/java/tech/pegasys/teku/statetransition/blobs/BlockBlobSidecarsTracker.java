@@ -31,6 +31,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
@@ -45,7 +46,7 @@ public class BlockBlobSidecarsTracker {
   private final SlotAndBlockRoot slotAndBlockRoot;
   private final UInt64 maxBlobsPerBlock;
 
-  private final AtomicReference<Optional<BeaconBlockBodyDeneb>> blockBody =
+  private final AtomicReference<Optional<BeaconBlock>> block =
       new AtomicReference<>(Optional.empty());
 
   private final NavigableMap<UInt64, BlobSidecar> blobSidecars = new ConcurrentSkipListMap<>();
@@ -80,8 +81,8 @@ public class BlockBlobSidecarsTracker {
     return newCompletionFuture;
   }
 
-  public Optional<BeaconBlockBodyDeneb> getBlockBody() {
-    return blockBody.get();
+  public Optional<BeaconBlock> getBlock() {
+    return block.get();
   }
 
   public boolean containsBlobSidecar(final BlobIdentifier blobIdentifier) {
@@ -91,9 +92,9 @@ public class BlockBlobSidecarsTracker {
   }
 
   public Stream<BlobIdentifier> getMissingBlobSidecars() {
-    final Optional<BeaconBlockBodyDeneb> body = blockBody.get();
-    if (body.isPresent()) {
-      return UInt64.range(UInt64.ZERO, UInt64.valueOf(body.get().getBlobKzgCommitments().size()))
+    final Optional<Integer> blockCommitmentsCount = getBlockKzgCommitmentsCount();
+    if (blockCommitmentsCount.isPresent()) {
+      return UInt64.range(UInt64.ZERO, UInt64.valueOf(blockCommitmentsCount.get()))
           .filter(blobIndex -> !blobSidecars.containsKey(blobIndex))
           .map(blobIndex -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), blobIndex));
     }
@@ -109,10 +110,10 @@ public class BlockBlobSidecarsTracker {
   }
 
   public Stream<BlobIdentifier> getUnusedBlobSidecarsForBlock() {
-    final Optional<BeaconBlockBodyDeneb> body = blockBody.get();
-    checkState(body.isPresent(), "Block must me known to call this method");
+    final Optional<Integer> blockCommitmentsCount = getBlockKzgCommitmentsCount();
+    checkState(blockCommitmentsCount.isPresent(), "Block must me known to call this method");
 
-    final UInt64 firstUnusedIndex = UInt64.valueOf(body.get().getBlobKzgCommitments().size());
+    final UInt64 firstUnusedIndex = UInt64.valueOf(blockCommitmentsCount.get());
     return UInt64.range(firstUnusedIndex, maxBlobsPerBlock)
         .map(blobIndex -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), blobIndex));
   }
@@ -150,9 +151,7 @@ public class BlockBlobSidecarsTracker {
 
   public boolean setBlock(final SignedBeaconBlock block) {
     checkArgument(block.getSlotAndBlockRoot().equals(slotAndBlockRoot), "Wrong block");
-    final Optional<BeaconBlockBodyDeneb> oldBlock =
-        blockBody.getAndSet(
-            Optional.of(BeaconBlockBodyDeneb.required(block.getMessage().getBody())));
+    final Optional<BeaconBlock> oldBlock = this.block.getAndSet(block.getBeaconBlock());
     if (oldBlock.isPresent()) {
       return false;
     }
@@ -196,10 +195,13 @@ public class BlockBlobSidecarsTracker {
   }
 
   private boolean areBlobsComplete() {
-    return blockBody
+    return getBlockKzgCommitmentsCount().map(count -> blobSidecars.size() >= count).orElse(false);
+  }
+
+  private Optional<Integer> getBlockKzgCommitmentsCount() {
+    return block
         .get()
-        .map(b -> blobSidecars.size() >= b.getBlobKzgCommitments().size())
-        .orElse(false);
+        .map(b -> BeaconBlockBodyDeneb.required(b.getBody()).getBlobKzgCommitments().size());
   }
 
   /**
@@ -252,7 +254,7 @@ public class BlockBlobSidecarsTracker {
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("slotAndBlockRoot", slotAndBlockRoot)
-        .add("isBlockBodyPresent", blockBody.get().isPresent())
+        .add("isBlockPresent", block.get().isPresent())
         .add("isCompleted", isCompleted())
         .add("fetchTriggered", fetchTriggered)
         .add(
