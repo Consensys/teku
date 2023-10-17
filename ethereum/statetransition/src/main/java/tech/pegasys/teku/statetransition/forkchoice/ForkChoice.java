@@ -22,7 +22,6 @@ import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.ad
 import com.google.common.base.Throwables;
 import java.net.ConnectException;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -540,12 +539,12 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     addParentStateRoots(spec, blockSlotState, transaction);
 
-    final List<BlobSidecar> blobSidecars;
+    final Optional<List<BlobSidecar>> blobSidecars;
     if (blobSidecarsAndValidationResult.isNotRequired()) {
       // Outside availability window or pre-Deneb
-      blobSidecars = Collections.emptyList();
+      blobSidecars = Optional.empty();
     } else if (blobSidecarsAndValidationResult.isValid()) {
-      blobSidecars = blobSidecarsAndValidationResult.getBlobSidecars();
+      blobSidecars = Optional.of(blobSidecarsAndValidationResult.getBlobSidecars());
     } else {
       throw new IllegalStateException(
           String.format(

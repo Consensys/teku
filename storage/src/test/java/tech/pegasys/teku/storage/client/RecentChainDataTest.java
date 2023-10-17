@@ -803,9 +803,9 @@ class RecentChainDataTest {
     assertThat(blobSidecars).isNotEmpty();
     storageSystem.chainUpdater().saveBlock(block, blobSidecars);
 
-    final SafeFuture<List<BlobSidecar>> blobSidecarsFuture =
-        recentChainData.retrieveBlobSidecars(block.getSlotAndBlockRoot());
-    assertThat(blobSidecarsFuture).isCompletedWithValue(blobSidecars);
+    final Optional<List<BlobSidecar>> maybeBlobSidecars =
+        recentChainData.getBlobSidecars(block.getSlotAndBlockRoot());
+    assertThat(maybeBlobSidecars).contains(blobSidecars);
   }
 
   @Test
@@ -817,9 +817,9 @@ class RecentChainDataTest {
     storageSystem.chainUpdater().saveBlock(block, blobSidecars);
     assertThat(blobSidecars).isEmpty();
 
-    final SafeFuture<List<BlobSidecar>> blobSidecarsFuture =
-        recentChainData.retrieveBlobSidecars(block.getSlotAndBlockRoot());
-    assertThat(blobSidecarsFuture).isCompletedWithValue(blobSidecars);
+    final Optional<List<BlobSidecar>> maybeBlobSidecars =
+        recentChainData.getBlobSidecars(block.getSlotAndBlockRoot());
+    assertThat(maybeBlobSidecars).contains(blobSidecars);
   }
 
   @Test

@@ -108,6 +108,8 @@ public interface ReadOnlyStore {
    */
   Optional<SignedBeaconBlock> getBlockIfAvailable(final Bytes32 blockRoot);
 
+  Optional<List<BlobSidecar>> getBlobSidecarsIfAvailable(SlotAndBlockRoot slotAndBlockRoot);
+
   default SafeFuture<Optional<BeaconBlock>> retrieveBlock(Bytes32 blockRoot) {
     return retrieveSignedBlock(blockRoot).thenApply(res -> res.map(SignedBeaconBlock::getMessage));
   }
@@ -123,8 +125,6 @@ public interface ReadOnlyStore {
   SafeFuture<Optional<BeaconState>> retrieveCheckpointState(Checkpoint checkpoint);
 
   SafeFuture<Optional<BeaconState>> retrieveStateAtSlot(SlotAndBlockRoot checkpoint);
-
-  SafeFuture<List<BlobSidecar>> retrieveBlobSidecars(SlotAndBlockRoot slotAndBlockRoot);
 
   SafeFuture<Optional<UInt64>> retrieveEarliestBlobSidecarSlot();
 
