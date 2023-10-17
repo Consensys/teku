@@ -241,7 +241,7 @@ class ValidatorRegistratorTest {
   }
 
   @TestTemplate
-  void registerValidatorsEvenIfOneRegistrationSigningFails() {
+  void registerValidatorsEvenIfOneRegistrationCreationFails() {
     setOwnedValidators(validator1, validator2, validator3);
 
     reset(signedValidatorRegistrationFactory);

@@ -123,27 +123,34 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   public void onUpdatedValidatorStatuses(
       final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
       final boolean possibleMissingEvents) {
-    if (!isReadyToRegister()) {
-      return;
-    }
-    final List<Validator> validators = getValidatorsRequiringRegistration(newValidatorStatuses);
-    if (validators.isEmpty()) {
-      LOG.debug("No validator registrations are required to be sent");
-      return;
-    }
-    if (registrationNeedsToBeRun(possibleMissingEvents)) {
-      registerValidators(validators, true);
-    } else {
-      final List<Validator> newValidators =
-          validators.stream()
-              .filter(
-                  validator -> !cachedValidatorRegistrations.containsKey(validator.getPublicKey()))
-              .toList();
-      if (newValidators.isEmpty()) {
-        return;
-      }
-      registerValidators(newValidators, false);
-    }
+    proposerConfigPropertiesProvider
+        .refresh()
+        .thenRun(
+            () -> {
+              if (!isReadyToRegister()) {
+                return;
+              }
+              final List<Validator> validators =
+                  getValidatorsRequiringRegistration(newValidatorStatuses);
+              if (validators.isEmpty()) {
+                LOG.debug("No validator registrations are required to be sent");
+                return;
+              }
+              if (registrationNeedsToBeRun(possibleMissingEvents)) {
+                registerValidators(validators, true);
+              } else {
+                final List<Validator> newValidators =
+                    validators.stream()
+                        .filter(
+                            validator ->
+                                !cachedValidatorRegistrations.containsKey(validator.getPublicKey()))
+                        .toList();
+                if (newValidators.isEmpty()) {
+                  return;
+                }
+                registerValidators(newValidators, false);
+              }
+            });
   }
 
   public int getNumberOfCachedRegistrations() {
@@ -207,9 +214,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       lastRunEpoch.set(currentEpoch.get());
     }
 
-    proposerConfigPropertiesProvider
-        .refresh()
-        .thenCompose(__ -> processInBatches(validators))
+    processInBatches(validators)
         .handleException(VALIDATOR_LOGGER::registeringValidatorsFailed)
         .always(
             () -> {

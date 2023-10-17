@@ -49,16 +49,16 @@ public class SignedValidatorRegistrationFactory {
 
     final BLSPublicKey publicKey = validator.getPublicKey();
 
-    final Eth1Address feeRecipient =
-        proposerConfigPropertiesProvider
-            .getFeeRecipient(publicKey)
-            .orElseGet(
-                () -> {
-                  LOG.warn(
-                      "Fee recipient not configured for {}. Will use a burn address for the validator registration.",
-                      validator.getPublicKey());
-                  return Eth1Address.ZERO;
-                });
+    final Optional<Eth1Address> feeRecipient =
+        proposerConfigPropertiesProvider.getFeeRecipient(publicKey);
+
+    if (feeRecipient.isEmpty()) {
+      return SafeFuture.failedFuture(
+          new IllegalStateException(
+              String.format(
+                  "Fee recipient not configured for %s. Will skip registering it.", publicKey)));
+    }
+
     final UInt64 gasLimit = proposerConfigPropertiesProvider.getGasLimit(publicKey);
 
     final Optional<UInt64> maybeTimestampOverride =
@@ -67,7 +67,7 @@ public class SignedValidatorRegistrationFactory {
     final ValidatorRegistration validatorRegistration =
         createValidatorRegistration(
             VALIDATOR_BUILDER_PUBLIC_KEY.apply(validator, proposerConfigPropertiesProvider),
-            feeRecipient,
+            feeRecipient.get(),
             gasLimit,
             maybeTimestampOverride.orElse(timeProvider.getTimeInSeconds()));
 

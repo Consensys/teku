@@ -30,6 +30,7 @@ import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -273,7 +274,7 @@ class SignedValidatorRegistrationFactoryTest {
   }
 
   @TestTemplate
-  void usesBurnAddressWhenFeeRecipientNotSpecified() {
+  void throwsWhenFeeRecipientIsNotConfigured() {
     // no fee recipient provided
     when(proposerConfigPropertiesProvider.getFeeRecipient(validator.getPublicKey()))
         .thenReturn(Optional.empty());
@@ -281,12 +282,12 @@ class SignedValidatorRegistrationFactoryTest {
     final SafeFuture<SignedValidatorRegistration> signedValidatorRegistration =
         signedValidatorRegistrationFactory.createSignedValidatorRegistration(
             validator, Optional.empty(), throwable -> {});
-    verify(signer).signValidatorRegistration(any());
-    assertThat(signedValidatorRegistration)
-        .isCompletedWithValueMatching(
-            result ->
-                result.getMessage().getPublicKey().equals(validator.getPublicKey())
-                    && result.getMessage().getFeeRecipient().equals(Eth1Address.ZERO));
+    verify(signer, never()).signValidatorRegistration(any());
+    SafeFutureAssert.assertThatSafeFuture(signedValidatorRegistration)
+        .isCompletedExceptionallyWithMessage(
+            String.format(
+                "Fee recipient not configured for %s. Will skip registering it.",
+                validator.getPublicKey()));
   }
 
   private SignedValidatorRegistration createSignedValidatorRegistration(
