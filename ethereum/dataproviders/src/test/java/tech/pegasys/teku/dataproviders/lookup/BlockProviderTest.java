@@ -190,7 +190,7 @@ public class BlockProviderTest {
                 }
               })
           .ifExceptionGetsHereRaiseABug();
-      assertThat(isNotBlocked.await(100, TimeUnit.MILLISECONDS)).isFalse();
+      assertThat(isNotBlocked.await(500, TimeUnit.MILLISECONDS)).isFalse();
       assertThat(notBlockedOnFuture).isTrue();
     } finally {
       lock.writeLock().unlock();
