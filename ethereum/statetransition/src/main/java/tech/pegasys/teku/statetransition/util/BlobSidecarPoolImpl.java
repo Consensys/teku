@@ -267,7 +267,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   @Override
   public synchronized boolean containsBlock(final Bytes32 blockRoot) {
     return Optional.ofNullable(blockBlobSidecarsTrackers.get(blockRoot))
-        .map(tracker -> tracker.getBlockBody().isPresent())
+        .map(tracker -> tracker.getBlock().isPresent())
         .orElse(false);
   }
 
@@ -432,7 +432,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
 
     blockBlobSidecarsTracker.setFetchTriggered();
 
-    if (blockBlobSidecarsTracker.getBlockBody().isEmpty()) {
+    if (blockBlobSidecarsTracker.getBlock().isEmpty()) {
       requiredBlockRootSubscribers.deliver(
           RequiredBlockRootSubscriber::onRequiredBlockRoot,
           blockBlobSidecarsTracker.getSlotAndBlockRoot().getBlockRoot());
@@ -452,7 +452,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
       return;
     }
 
-    if (blockBlobSidecarsTracker.getBlockBody().isEmpty()) {
+    if (blockBlobSidecarsTracker.getBlock().isEmpty()) {
       requiredBlockRootDroppedSubscribers.deliver(
           RequiredBlockRootDroppedSubscriber::onRequiredBlockRootDropped,
           blockBlobSidecarsTracker.getSlotAndBlockRoot().getBlockRoot());

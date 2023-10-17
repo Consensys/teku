@@ -343,16 +343,26 @@ public class MiscHelpers {
     return false;
   }
 
-  /**
-   * Performs data availability by validating the blobs against the kzg commitments from the block.
-   * It will also check the slot and blockRoot consistency.
-   */
-  public boolean isDataAvailable(
-      final UInt64 slot,
-      final Bytes32 beaconBlockRoot,
-      final List<KZGCommitment> kzgCommitments,
-      final List<BlobSidecar> blobSidecars) {
+  public boolean isDataAvailable(final List<BlobSidecar> blobSidecars, final BeaconBlock block) {
     return false;
+  }
+
+  public boolean verifyBlobKzgProofBatch(final List<BlobSidecar> blobSidecars) {
+    return false;
+  }
+
+  public void validateBlobSidecarsBatchAgainstBlock(
+      final List<BlobSidecar> blobSidecars,
+      final BeaconBlock block,
+      final List<KZGCommitment> kzgCommitmentsFromBlock) {
+    throw new UnsupportedOperationException("Blob Sidecars before Deneb");
+  }
+
+  public void verifyBlobSidecarCompleteness(
+      final List<BlobSidecar> verifiedBlobSidecars,
+      final List<KZGCommitment> kzgCommitmentsFromBlock)
+      throws IllegalArgumentException {
+    throw new UnsupportedOperationException("No KZGCommitments before Deneb");
   }
 
   public VersionedHash kzgCommitmentToVersionedHash(final KZGCommitment kzgCommitment) {
