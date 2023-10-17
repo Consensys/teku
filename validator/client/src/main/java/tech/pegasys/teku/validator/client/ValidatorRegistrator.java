@@ -125,19 +125,19 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
       final boolean possibleMissingEvents) {
     proposerConfigPropertiesProvider
         .refresh()
-        .thenRun(
-            () -> {
+        .thenCompose(
+            __ -> {
               if (!isReadyToRegister()) {
-                return;
+                return SafeFuture.COMPLETE;
               }
               final List<Validator> validators =
                   getValidatorsRequiringRegistration(newValidatorStatuses);
               if (validators.isEmpty()) {
                 LOG.debug("No validator registrations are required to be sent");
-                return;
+                return SafeFuture.COMPLETE;
               }
               if (registrationNeedsToBeRun(possibleMissingEvents)) {
-                registerValidators(validators, true);
+                return registerValidators(validators, true);
               } else {
                 final List<Validator> newValidators =
                     validators.stream()
@@ -146,11 +146,12 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
                                 !cachedValidatorRegistrations.containsKey(validator.getPublicKey()))
                         .toList();
                 if (newValidators.isEmpty()) {
-                  return;
+                  return SafeFuture.COMPLETE;
                 }
-                registerValidators(newValidators, false);
+                return registerValidators(newValidators, false);
               }
-            });
+            })
+        .finish(VALIDATOR_LOGGER::registeringValidatorsFailed);
   }
 
   public int getNumberOfCachedRegistrations() {
@@ -203,20 +204,19 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
         .isGreaterThanOrEqualTo(Constants.EPOCHS_PER_VALIDATOR_REGISTRATION_SUBMISSION);
   }
 
-  private void registerValidators(
+  private SafeFuture<Void> registerValidators(
       final List<Validator> validators, final boolean updateLastRunEpoch) {
     if (!registrationInProgress.compareAndSet(false, true)) {
       LOG.warn(
           "Validator registration(s) is still in progress. Will skip sending registration(s).");
-      return;
+      return SafeFuture.COMPLETE;
     }
     if (updateLastRunEpoch) {
       lastRunEpoch.set(currentEpoch.get());
     }
 
-    processInBatches(validators)
-        .handleException(VALIDATOR_LOGGER::registeringValidatorsFailed)
-        .always(
+    return processInBatches(validators)
+        .alwaysRun(
             () -> {
               registrationInProgress.set(false);
               cleanupCache(ownedValidators.getActiveValidators());
