@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -116,8 +115,8 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
     if (!blobSidecars.isEmpty()) {
       final BlobSidecarsAndValidationResult blobSidecarsAndValidationResult =
           validateBatch(blobSidecars);
-      performCompletenessValidation(blobSidecarsAndValidationResult);
-      return blobSidecarsAndValidationResult;
+
+      return performCompletenessValidation(blobSidecarsAndValidationResult);
     }
 
     // no blob sidecars
@@ -341,9 +340,12 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
               blobSidecarsAndValidationResult.getBlobSidecars(),
               kzgCommitmentsFromBlockSupplier.get());
     } catch (final IllegalArgumentException ex) {
-      checkArgument(
-          isBlockOutsideDataAvailabilityWindow(),
-          "Validated blobs are less than commitments present in block.");
+      if (!isBlockOutsideDataAvailabilityWindow()) {
+        return BlobSidecarsAndValidationResult.invalidResult(
+            blobSidecarsAndValidationResult.getBlobSidecars(),
+            new IllegalArgumentException(
+                "Validated blobs are less than commitments present in block.", ex));
+      }
 
       LOG.error(
           "Inconsistent state detected: validated blobs is less then commitments in block. Since slot is outside availability the window we can consider blobs as NOT_REQUIRED.");

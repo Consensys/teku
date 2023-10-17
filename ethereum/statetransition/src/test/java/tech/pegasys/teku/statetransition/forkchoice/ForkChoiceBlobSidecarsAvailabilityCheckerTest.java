@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.forkchoice;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.assertArg;
@@ -34,6 +33,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.BeforeEach;
@@ -297,7 +297,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   @Test
-  void shouldThrowIfTrackerLiesWithCompletionButItIsNot() {
+  void shouldReturnInvalidIfTrackerLiesWithCompletionButItIsNot() {
     prepareInitialAvailability(Availability.PARTIAL);
 
     final SafeFuture<BlobSidecarsAndValidationResult> availabilityCheckResult =
@@ -332,15 +332,19 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     expectedIncompleteBlobSidecar.add(blobSidecarsComplete.get(1)); // blob 1
     expectedIncompleteBlobSidecar.add(blobSidecarsComplete.get(2)); // blob 2
 
-    throwWhenVerifyingBlobSidecarCompleteness(
-        expectedIncompleteBlobSidecar, new IllegalArgumentException("oops"));
+    final Throwable cause = new IllegalArgumentException("oops");
+
+    throwWhenVerifyingBlobSidecarCompleteness(expectedIncompleteBlobSidecar, cause);
 
     // let the tracker complete with all blobSidecars
     completeTrackerWith(partialBlobs);
 
-    SafeFutureAssert.assertThatSafeFuture(availabilityCheckResult)
-        .isCompletedExceptionallyWith(IllegalArgumentException.class)
-        .hasMessage("Validated blobs are less than commitments present in block.");
+    assertInvalid(
+        availabilityCheckResult,
+        expectedIncompleteBlobSidecar,
+        Optional.of(
+            new IllegalArgumentException(
+                "Validated blobs are less than commitments present in block.", cause)));
   }
 
   @Test
@@ -355,18 +359,22 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   @Test
-  void validateImmediately_shouldThrowIfCompletenessCheckFails() {
+  void validateImmediately_shouldReturnInvalidIfCompletenessCheckFails() {
     prepareInitialAvailability(Availability.FULL);
 
     whenDataAvailability(blobSidecarsComplete).thenReturn(true);
-    doThrow(new IllegalArgumentException("oops"))
-        .when(miscHelpers)
-        .verifyBlobSidecarCompleteness(any(), any());
+    final Throwable cause = new IllegalArgumentException("oops");
+    doThrow(cause).when(miscHelpers).verifyBlobSidecarCompleteness(any(), any());
 
-    assertThatThrownBy(
-            () -> blobSidecarsAvailabilityChecker.validateImmediately(blobSidecarsComplete))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessage("Validated blobs are less than commitments present in block.");
+    final BlobSidecarsAndValidationResult availabilityCheckResult =
+        blobSidecarsAvailabilityChecker.validateImmediately(blobSidecarsComplete);
+
+    assertInvalid(
+        SafeFuture.completedFuture(availabilityCheckResult),
+        blobSidecarsComplete,
+        Optional.of(
+            new IllegalArgumentException(
+                "Validated blobs are less than commitments present in block.", cause)));
   }
 
   @Test
@@ -419,7 +427,20 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
         .isCompletedWithValueMatching(
             result -> result.getBlobSidecars().equals(invalidBlobs), "doesn't have blob sidecars")
         .isCompletedWithValueMatching(
-            result -> result.getCause().equals(cause), "matches the cause");
+            result -> {
+              if (cause.isEmpty() != result.getCause().isEmpty()) {
+                return false;
+              }
+              return result
+                  .getCause()
+                  .map(
+                      resultCause ->
+                          resultCause.getClass().equals(cause.get().getClass())
+                              && Objects.equals(resultCause.getMessage(), cause.get().getMessage())
+                              && Objects.equals(resultCause.getCause(), cause.get().getCause()))
+                  .orElse(true);
+            },
+            "matches the cause");
   }
 
   private void assertNotAvailableDueToTimeout(
