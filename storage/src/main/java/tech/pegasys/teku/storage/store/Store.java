@@ -96,6 +96,7 @@ class Store extends CacheableStore {
   private final BlockProvider blockProvider;
   private final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider;
   private final ForkChoiceStrategy forkChoiceStrategy;
+  private final AsyncRunner asyncRunner;
 
   private final Optional<Checkpoint> initialCheckpoint;
   private final CachingTaskQueue<Bytes32, StateAndBlockSummary> states;
@@ -148,6 +149,7 @@ class Store extends CacheableStore {
     this.spec = spec;
     this.states = states;
     this.checkpointStates = checkpointStates;
+    this.asyncRunner = asyncRunner;
 
     // Store instance variables
     this.initialCheckpoint = initialCheckpoint;
@@ -538,26 +540,30 @@ class Store extends CacheableStore {
 
   @Override
   public SafeFuture<CheckpointState> retrieveFinalizedCheckpointAndState() {
-    final AnchorPoint finalized;
+    final SafeFuture<AnchorPoint> finalizedAnchorFuture =
+        asyncRunner.runAsync(
+            () -> {
+              readLock.lock();
+              try {
+                return this.finalizedAnchor;
+              } finally {
+                readLock.unlock();
+              }
+            });
 
-    readLock.lock();
-    try {
-      finalized = this.finalizedAnchor;
-    } finally {
-      readLock.unlock();
-    }
-
-    return checkpointStates
-        .perform(
-            new StateAtSlotTask(
-                spec, finalized.getCheckpoint().toSlotAndBlockRoot(spec), fromAnchor(finalized)))
-        .thenApply(
-            maybeState ->
-                CheckpointState.create(
-                    spec,
-                    finalized.getCheckpoint(),
-                    finalized.getBlockSummary(),
-                    maybeState.orElseThrow()));
+    return finalizedAnchorFuture.thenCompose(
+        anchor ->
+            checkpointStates
+                .perform(
+                    new StateAtSlotTask(
+                        spec, anchor.getCheckpoint().toSlotAndBlockRoot(spec), fromAnchor(anchor)))
+                .thenApply(
+                    maybeState ->
+                        CheckpointState.create(
+                            spec,
+                            anchor.getCheckpoint(),
+                            anchor.getBlockSummary(),
+                            maybeState.orElseThrow())));
   }
 
   @Override
@@ -787,84 +793,100 @@ class Store extends CacheableStore {
 
     // Create a hash tree from the finalized root to the target state
     // Capture the latest epoch boundary root along the way
-    final HashTree.Builder treeBuilder = HashTree.builder();
     final AtomicReference<SlotAndBlockRoot> latestEpochBoundary = new AtomicReference<>();
-    readLock.lock();
-    try {
-      forkChoiceStrategy.processHashesInChain(
-          blockRoot,
-          (root, slot, parent) -> {
-            treeBuilder.childAndParentRoots(root, parent);
-            if (shouldPersistState(slot, parent)) {
-              latestEpochBoundary.compareAndExchange(null, new SlotAndBlockRoot(slot, root));
-            }
-          });
-      treeBuilder.rootHash(finalizedAnchor.getRoot());
-    } finally {
-      readLock.unlock();
-    }
+    final SafeFuture<HashTree.Builder> treeBuilderFuture =
+        asyncRunner.runAsync(
+            () -> {
+              readLock.lock();
+              try {
+                final HashTree.Builder treeBuilder = HashTree.builder();
+                forkChoiceStrategy.processHashesInChain(
+                    blockRoot,
+                    (root, slot, parent) -> {
+                      treeBuilder.childAndParentRoots(root, parent);
+                      if (shouldPersistState(slot, parent)) {
+                        latestEpochBoundary.compareAndExchange(
+                            null, new SlotAndBlockRoot(slot, root));
+                      }
+                    });
+                treeBuilder.rootHash(finalizedAnchor.getRoot());
+                return treeBuilder;
+              } finally {
+                readLock.unlock();
+              }
+            });
 
-    return SafeFuture.completedFuture(
-        Optional.of(
-            new StateGenerationTask(
-                spec,
-                blockRoot,
-                treeBuilder.build(),
-                blockProvider,
-                new StateRegenerationBaseSelector(
+    return treeBuilderFuture.thenApply(
+        treeBuilder ->
+            Optional.of(
+                new StateGenerationTask(
                     spec,
-                    Optional.ofNullable(latestEpochBoundary.get()),
-                    () -> getClosestAvailableBlockRootAndState(blockRoot),
-                    stateProvider,
-                    Optional.empty(),
-                    hotStatePersistenceFrequencyInEpochs))));
+                    blockRoot,
+                    treeBuilder.build(),
+                    blockProvider,
+                    new StateRegenerationBaseSelector(
+                        spec,
+                        Optional.ofNullable(latestEpochBoundary.get()),
+                        () -> getClosestAvailableBlockRootAndState(blockRoot),
+                        stateProvider,
+                        Optional.empty(),
+                        hotStatePersistenceFrequencyInEpochs))));
   }
 
-  private Optional<BlockRootAndState> getClosestAvailableBlockRootAndState(
+  private SafeFuture<Optional<BlockRootAndState>> getClosestAvailableBlockRootAndState(
       final Bytes32 blockRoot) {
     if (!containsBlock(blockRoot)) {
       // If we don't have the corresponding block, we can't possibly regenerate the state
-      return Optional.empty();
+      return SafeFuture.completedFuture(Optional.empty());
     }
 
     // Accumulate blocks hashes until we find our base state to build from
-    final HashTree.Builder treeBuilder = HashTree.builder();
     final AtomicReference<Bytes32> baseBlockRoot = new AtomicReference<>();
     final AtomicReference<BeaconState> baseState = new AtomicReference<>();
-    readLock.lock();
-    try {
-      forkChoiceStrategy.processHashesInChainWhile(
-          blockRoot,
-          (root, slot, parent, executionHash) -> {
-            treeBuilder.childAndParentRoots(root, parent);
-            final Optional<BeaconState> blockState = getBlockStateIfAvailable(root);
-            blockState.ifPresent(
-                (state) -> {
-                  // We found a base state
-                  treeBuilder.rootHash(root);
-                  baseBlockRoot.set(root);
-                  baseState.set(state);
-                });
-            return blockState.isEmpty();
-          });
-    } finally {
-      readLock.unlock();
-    }
+    final SafeFuture<HashTree.Builder> treeBuilderFuture =
+        asyncRunner.runAsync(
+            () -> {
+              readLock.lock();
+              try {
+                final HashTree.Builder treeBuilder = HashTree.builder();
+                forkChoiceStrategy.processHashesInChainWhile(
+                    blockRoot,
+                    (root, slot, parent, executionHash) -> {
+                      treeBuilder.childAndParentRoots(root, parent);
+                      final Optional<BeaconState> blockState = getBlockStateIfAvailable(root);
+                      blockState.ifPresent(
+                          (state) -> {
+                            // We found a base state
+                            treeBuilder.rootHash(root);
+                            baseBlockRoot.set(root);
+                            baseState.set(state);
+                          });
+                      return blockState.isEmpty();
+                    });
+                return treeBuilder;
+              } finally {
+                readLock.unlock();
+              }
+            });
 
-    if (baseBlockRoot.get() == null) {
-      // If we haven't found a base state yet, we must have walked back to the latest finalized
-      // block, check here for the base state
-      final AnchorPoint finalized = getLatestFinalized();
-      if (!treeBuilder.contains(finalized.getRoot())) {
-        // We must have finalized a new block while processing and moved past our target root
-        return Optional.empty();
-      }
-      baseBlockRoot.set(finalized.getRoot());
-      baseState.set(finalized.getState());
-      treeBuilder.rootHash(finalized.getRoot());
-    }
+    return treeBuilderFuture.thenApply(
+        treeBuilder -> {
+          if (baseBlockRoot.get() == null) {
+            // If we haven't found a base state yet, we must have walked back to the latest
+            // finalized
+            // block, check here for the base state
+            final AnchorPoint finalized = getLatestFinalized();
+            if (!treeBuilder.contains(finalized.getRoot())) {
+              // We must have finalized a new block while processing and moved past our target root
+              return Optional.empty();
+            }
+            baseBlockRoot.set(finalized.getRoot());
+            baseState.set(finalized.getState());
+            treeBuilder.rootHash(finalized.getRoot());
+          }
 
-    return Optional.of(new BlockRootAndState(baseBlockRoot.get(), baseState.get()));
+          return Optional.of(new BlockRootAndState(baseBlockRoot.get(), baseState.get()));
+        });
   }
 
   boolean shouldPersistState(final UInt64 blockSlot, final Bytes32 parentRoot) {

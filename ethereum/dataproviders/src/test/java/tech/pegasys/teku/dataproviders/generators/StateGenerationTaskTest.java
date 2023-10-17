@@ -144,9 +144,10 @@ class StateGenerationTaskTest {
             spec,
             epochBoundaryRoot,
             () ->
-                Optional.of(
-                    new BlockRootAndState(
-                        startBlockAndState.getRoot(), startBlockAndState.getState())),
+                SafeFuture.completedFuture(
+                    Optional.of(
+                        new BlockRootAndState(
+                            startBlockAndState.getRoot(), startBlockAndState.getState()))),
             getStateAndBlockProvider(),
             Optional.empty(),
             REPLAY_TOLERANCE_TO_AVOID_LOADING_IN_EPOCHS));

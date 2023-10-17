@@ -28,7 +28,7 @@ public class StateRegenerationBaseSelector {
 
   private final Spec spec;
   private final Optional<SlotAndBlockRoot> latestEpochBoundary;
-  private final Supplier<Optional<BlockRootAndState>> closestAvailableStateSupplier;
+  private final Supplier<SafeFuture<Optional<BlockRootAndState>>> closestAvailableStateSupplier;
   private final StateAndBlockSummaryProvider stateAndBlockProvider;
   private final Optional<StateAndBlockSummary> rebasedStartingPoint;
 
@@ -42,7 +42,7 @@ public class StateRegenerationBaseSelector {
   public StateRegenerationBaseSelector(
       final Spec spec,
       final Optional<SlotAndBlockRoot> latestEpochBoundary,
-      final Supplier<Optional<BlockRootAndState>> closestAvailableStateSupplier,
+      final Supplier<SafeFuture<Optional<BlockRootAndState>>> closestAvailableStateSupplier,
       final StateAndBlockSummaryProvider stateAndBlockProvider,
       final Optional<StateAndBlockSummary> rebasedStartingPoint,
       final long replayToleranceToAvoidLoadingInEpochs) {
@@ -82,34 +82,40 @@ public class StateRegenerationBaseSelector {
   }
 
   public SafeFuture<Optional<StateAndBlockSummary>> getBestBase() {
-    final Optional<BlockRootAndState> closestAvailableFromStore =
+    final SafeFuture<Optional<BlockRootAndState>> closestAvailableFromStoreFuture =
         closestAvailableStateSupplier.get();
-    if (closestAvailableFromStore.isEmpty()) {
-      // Can't be a valid target state or has since been finalized. No point regenerating.
-      return SafeFuture.completedFuture(Optional.empty());
-    }
+    return closestAvailableFromStoreFuture.thenCompose(
+        closestAvailableFromStore -> {
+          if (closestAvailableFromStore.isEmpty()) {
+            // Can't be a valid target state or has since been finalized. No point regenerating.
+            return SafeFuture.completedFuture(Optional.empty());
+          }
 
-    final Optional<UInt64> storeSlot = closestAvailableFromStore.map(BlockRootAndState::getSlot);
-    final Optional<UInt64> epochBoundarySlot =
-        getLatestEpochBoundarySlotMinusTolerance(latestEpochBoundary);
-    final Optional<UInt64> rebasedSlot = rebasedStartingPoint.map(StateAndBlockSummary::getSlot);
+          final Optional<UInt64> storeSlot =
+              closestAvailableFromStore.map(BlockRootAndState::getSlot);
+          final Optional<UInt64> epochBoundarySlot =
+              getLatestEpochBoundarySlotMinusTolerance(latestEpochBoundary);
+          final Optional<UInt64> rebasedSlot =
+              rebasedStartingPoint.map(StateAndBlockSummary::getSlot);
 
-    if (epochBoundarySlot.isPresent()
-        && isBestOption(epochBoundarySlot.get(), storeSlot, rebasedSlot)) {
-      return stateAndBlockProvider
-          .getStateAndBlock(latestEpochBoundary.get().getBlockRoot())
-          .thenApply(
-              maybeBlockAndState -> {
-                if (maybeBlockAndState.isEmpty()) {
-                  return getBestBaseExcludingLatestEpochBoundary(closestAvailableFromStore.get());
-                } else {
-                  return maybeBlockAndState;
-                }
-              });
-    }
+          if (epochBoundarySlot.isPresent()
+              && isBestOption(epochBoundarySlot.get(), storeSlot, rebasedSlot)) {
+            return stateAndBlockProvider
+                .getStateAndBlock(latestEpochBoundary.get().getBlockRoot())
+                .thenApply(
+                    maybeBlockAndState -> {
+                      if (maybeBlockAndState.isEmpty()) {
+                        return getBestBaseExcludingLatestEpochBoundary(
+                            closestAvailableFromStore.get());
+                      } else {
+                        return maybeBlockAndState;
+                      }
+                    });
+          }
 
-    return SafeFuture.completedFuture(
-        getBestBaseExcludingLatestEpochBoundary(closestAvailableFromStore.get()));
+          return SafeFuture.completedFuture(
+              getBestBaseExcludingLatestEpochBoundary(closestAvailableFromStore.get()));
+        });
   }
 
   private Optional<StateAndBlockSummary> getBestBaseExcludingLatestEpochBoundary(

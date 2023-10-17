@@ -43,7 +43,7 @@ class StateRegenerationBaseSelectorTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @SuppressWarnings("unchecked")
-  private final Supplier<Optional<BlockRootAndState>> closestAvailableStateSupplier =
+  private final Supplier<SafeFuture<Optional<BlockRootAndState>>> closestAvailableStateSupplier =
       mock(Supplier.class);
 
   private final StateAndBlockSummaryProvider stateAndBlockProvider =
@@ -248,7 +248,8 @@ class StateRegenerationBaseSelectorTest {
         closestBlockAndStateFromStore.map(
             blockAndState ->
                 new BlockRootAndState(blockAndState.getRoot(), blockAndState.getState()));
-    when(closestAvailableStateSupplier.get()).thenReturn(closestStateFromStore);
+    when(closestAvailableStateSupplier.get())
+        .thenReturn(SafeFuture.completedFuture(closestStateFromStore));
 
     closestBlockAndStateFromStore.ifPresent(
         blockAndState ->
