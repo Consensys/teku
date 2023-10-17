@@ -91,9 +91,6 @@ class Store extends CacheableStore {
 
   private final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates;
 
-  @SuppressWarnings("UnusedVariable")
-  private final AsyncRunner asyncRunner;
-
   private final Spec spec;
   private final StateAndBlockSummaryProvider stateProvider;
   private final BlockProvider blockProvider;
@@ -151,7 +148,6 @@ class Store extends CacheableStore {
     this.spec = spec;
     this.states = states;
     this.checkpointStates = checkpointStates;
-    this.asyncRunner = asyncRunner;
 
     // Store instance variables
     this.initialCheckpoint = initialCheckpoint;
