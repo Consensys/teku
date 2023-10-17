@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -2123,24 +2124,38 @@ public final class DataStructureUtil {
   }
 
   public List<BlobSidecar> randomBlobSidecarsForBlock(final SignedBeaconBlock block) {
-    return randomSignedBlobSidecarsForBlock(block).stream()
+    return randomBlobSidecarsForBlock(block, (__, builder) -> builder);
+  }
+
+  public List<BlobSidecar> randomBlobSidecarsForBlock(
+      final SignedBeaconBlock block,
+      final BiFunction<Integer, RandomBlobSidecarBuilder, RandomBlobSidecarBuilder> modifier) {
+    return randomSignedBlobSidecarsForBlock(block, modifier).stream()
         .map(SignedBlobSidecar::getBlobSidecar)
         .collect(toList());
   }
 
-  public List<SignedBlobSidecar> randomSignedBlobSidecarsForBlock(final SignedBeaconBlock block) {
-    final int numberOfKzgCommitments =
+  public List<SignedBlobSidecar> randomSignedBlobSidecarsForBlock(
+      final SignedBeaconBlock block,
+      final BiFunction<Integer, RandomBlobSidecarBuilder, RandomBlobSidecarBuilder> modifier) {
+    final SszList<SszKZGCommitment> blobKzgCommitments =
         BeaconBlockBodyDeneb.required(block.getBeaconBlock().orElseThrow().getBody())
-            .getBlobKzgCommitments()
-            .size();
-    return IntStream.range(0, numberOfKzgCommitments)
+            .getBlobKzgCommitments();
+
+    return IntStream.range(0, blobKzgCommitments.size())
         .mapToObj(
-            index ->
-                createRandomBlobSidecarBuilder()
-                    .slot(block.getSlot())
-                    .blockRoot(block.getRoot())
-                    .index(UInt64.valueOf(index))
-                    .buildSigned())
+            index -> {
+              final RandomBlobSidecarBuilder builder =
+                  createRandomBlobSidecarBuilder()
+                      .slot(block.getSlot())
+                      .blockRoot(block.getRoot())
+                      .blockParentRoot(block.getParentRoot())
+                      .proposerIndex(block.getMessage().getProposerIndex())
+                      .kzgCommitment(blobKzgCommitments.get(index).getBytes())
+                      .index(UInt64.valueOf(index));
+
+              return modifier.apply(index, builder).buildSigned();
+            })
         .collect(toList());
   }
 
