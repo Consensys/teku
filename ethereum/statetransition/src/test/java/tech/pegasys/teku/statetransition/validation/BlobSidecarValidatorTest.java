@@ -27,6 +27,7 @@ import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
@@ -99,6 +100,36 @@ public class BlobSidecarValidatorTest {
   void shouldAccept() {
     SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(signedBlobSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+  }
+
+  @TestTemplate
+  void shouldRejectWhenIndexIsTooBig(final SpecContext specContext) {
+
+    signedBlobSidecar =
+        specContext
+            .getDataStructureUtil()
+            .createRandomBlobSidecarBuilder()
+            .slot(slot)
+            .index(UInt64.valueOf(specContext.getSpec().getMaxBlobsPerBlock().orElseThrow()))
+            .proposerIndex(proposerIndex)
+            .blockRoot(blockRoot)
+            .blockParentRoot(blockParentRoot)
+            .buildSigned();
+
+    SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(signedBlobSidecar))
+        .isCompletedWithValueMatching(InternalValidationResult::isReject);
+  }
+
+  @TestTemplate
+  void shouldRejectWhenSlotIsNotDeneb() {
+    final Spec mockedSpec = mock(Spec.class);
+    when(mockedSpec.getMaxBlobsPerBlock(slot)).thenReturn(Optional.empty());
+
+    blobSidecarValidator =
+        BlobSidecarValidator.create(mockedSpec, invalidBlocks, gossipValidationHelper);
+
+    SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(signedBlobSidecar))
+        .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
   @TestTemplate
