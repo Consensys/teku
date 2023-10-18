@@ -26,7 +26,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.dataproviders.lookup.BlobSidecarsProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -62,7 +61,6 @@ class StoreTest extends AbstractStoreTest {
                     spec,
                     blockProviderFromChainBuilder(),
                     StateAndBlockSummaryProvider.NOOP,
-                    BlobSidecarsProvider.NOOP,
                     EarliestBlobSidecarSlotProvider.NOOP,
                     Optional.empty(),
                     genesisTime.minus(1),
@@ -73,7 +71,7 @@ class StoreTest extends AbstractStoreTest {
                     genesisCheckpoint,
                     Collections.emptyMap(),
                     Collections.emptyMap(),
-                    StoreConfig.createDefault()))
+                    defaultStoreConfig))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Time must be greater than or equal to genesisTime");
   }
@@ -296,6 +294,40 @@ class StoreTest extends AbstractStoreTest {
     final SafeFuture<Optional<BeaconState>> result = store.retrieveCheckpointState(checkpoint);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasCauseInstanceOf(InvalidCheckpointException.class);
+  }
+
+  @Test
+  public void shouldKeepOnlyMostRecentBlocksInBlockCache() {
+    final UpdatableStore store = createGenesisStore();
+    final UInt64 epoch = UInt64.valueOf(5);
+    final UInt64 startSlot = spec.computeStartSlotAtEpoch(epoch);
+    chainBuilder.generateBlocksUpToSlot(startSlot);
+
+    // Add blocks
+    final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
+    chainBuilder
+        .streamBlocksAndStates()
+        .forEach(
+            blockAndState ->
+                tx.putBlockAndState(
+                    blockAndState, spec.calculateBlockCheckpoints(blockAndState.getState())));
+    safeJoin(tx.commit());
+    final List<SignedBlockAndState> last32 =
+        chainBuilder
+            .streamBlocksAndStates()
+            .dropWhile(
+                signedBlockAndState ->
+                    signedBlockAndState
+                        .getSlot()
+                        .isLessThanOrEqualTo(
+                            chainBuilder
+                                .getLatestBlockAndState()
+                                .getSlot()
+                                .minus(defaultStoreConfig.getBlockCacheSize())))
+            .toList();
+    for (final SignedBlockAndState signedBlockAndState : last32) {
+      assertThat(store.getBlockIfAvailable(signedBlockAndState.getRoot())).isPresent();
+    }
   }
 
   private void testApplyChangesWhenTransactionCommits(final boolean withInterleavedTransaction) {

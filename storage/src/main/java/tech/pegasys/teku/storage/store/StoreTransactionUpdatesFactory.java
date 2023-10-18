@@ -118,8 +118,9 @@ class StoreTransactionUpdatesFactory {
       // Transition block was finalized by this transaction
       optimisticTransitionBlockRootSet = true;
       optimisticTransitionBlockRoot =
-          baseStore.forkChoiceStrategy.getOptimisticallySyncedTransitionBlockRoot(
-              latestFinalized.getRoot());
+          baseStore
+              .getForkChoiceStrategy()
+              .getOptimisticallySyncedTransitionBlockRoot(latestFinalized.getRoot());
     } else {
       optimisticTransitionBlockRootSet = false;
       optimisticTransitionBlockRoot = Optional.empty();
@@ -161,7 +162,7 @@ class StoreTransactionUpdatesFactory {
   private Optional<UInt64> blockSlot(final Bytes32 root) {
     return Optional.ofNullable(hotBlockAndStates.get(root))
         .map(SignedBlockAndState::getSlot)
-        .or(() -> baseStore.forkChoiceStrategy.blockSlot(root));
+        .or(() -> baseStore.getForkChoiceStrategy().blockSlot(root));
   }
 
   private Map<Bytes32, Bytes32> collectFinalizedRoots(final Bytes32 newlyFinalizedBlockRoot) {
@@ -176,10 +177,12 @@ class StoreTransactionUpdatesFactory {
     }
 
     // Add existing hot blocks that are now finalized
-    if (baseStore.forkChoiceStrategy.contains(finalizedChainHeadRoot)) {
-      baseStore.forkChoiceStrategy.processHashesInChain(
-          finalizedChainHeadRoot,
-          (blockRoot, slot, parentRoot) -> childToParent.put(blockRoot, parentRoot));
+    if (baseStore.getForkChoiceStrategy().contains(finalizedChainHeadRoot)) {
+      baseStore
+          .getForkChoiceStrategy()
+          .processHashesInChain(
+              finalizedChainHeadRoot,
+              (blockRoot, slot, parentRoot) -> childToParent.put(blockRoot, parentRoot));
     }
     return childToParent;
   }
@@ -214,12 +217,14 @@ class StoreTransactionUpdatesFactory {
 
   private void calculatePrunedHotBlockRoots() {
     final BeaconBlockSummary finalizedBlock = tx.getLatestFinalized().getBlockSummary();
-    baseStore.forkChoiceStrategy.processAllInOrder(
-        (blockRoot, slot, parentRoot) -> {
-          if (shouldPrune(finalizedBlock, blockRoot, slot, parentRoot)) {
-            prunedHotBlockRoots.put(blockRoot, slot);
-          }
-        });
+    baseStore
+        .getForkChoiceStrategy()
+        .processAllInOrder(
+            (blockRoot, slot, parentRoot) -> {
+              if (shouldPrune(finalizedBlock, blockRoot, slot, parentRoot)) {
+                prunedHotBlockRoots.put(blockRoot, slot);
+              }
+            });
 
     tx.blockData.values().stream()
         // Iterate new blocks in slot order to guarantee we see parents first

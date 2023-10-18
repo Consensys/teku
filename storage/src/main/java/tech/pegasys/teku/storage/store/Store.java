@@ -21,6 +21,7 @@ import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMilli
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -31,6 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,7 +42,6 @@ import tech.pegasys.teku.dataproviders.generators.CachingTaskQueue;
 import tech.pegasys.teku.dataproviders.generators.StateAtSlotTask;
 import tech.pegasys.teku.dataproviders.generators.StateGenerationTask;
 import tech.pegasys.teku.dataproviders.generators.StateRegenerationBaseSelector;
-import tech.pegasys.teku.dataproviders.lookup.BlobSidecarsProvider;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
@@ -52,6 +53,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -71,7 +73,7 @@ import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.protoarray.ProtoArray;
 
-class Store implements UpdatableStore {
+class Store extends CacheableStore {
   private static final Logger LOG = LogManager.getLogger();
   public static final int VOTE_TRACKER_SPARE_CAPACITY = 1000;
 
@@ -84,31 +86,31 @@ class Store implements UpdatableStore {
 
   private final MetricsSystem metricsSystem;
   private Optional<SettableGauge> blockCountGauge = Optional.empty();
-
   private Optional<SettableGauge> epochStatesCountGauge = Optional.empty();
+  private Optional<SettableGauge> blobSidecarsBlocksCountGauge = Optional.empty();
 
-  final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates;
+  private final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates;
 
   private final Spec spec;
   private final StateAndBlockSummaryProvider stateProvider;
   private final BlockProvider blockProvider;
-  private final BlobSidecarsProvider blobSidecarsProvider;
   private final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider;
-  final ForkChoiceStrategy forkChoiceStrategy;
+  private final ForkChoiceStrategy forkChoiceStrategy;
 
   private final Optional<Checkpoint> initialCheckpoint;
-  UInt64 timeMillis;
-  UInt64 genesisTime;
-  AnchorPoint finalizedAnchor;
-  Checkpoint justifiedCheckpoint;
-  Checkpoint bestJustifiedCheckpoint;
-  Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload;
-  Optional<Bytes32> proposerBoostRoot = Optional.empty();
-  final CachingTaskQueue<Bytes32, StateAndBlockSummary> states;
-  final Map<Bytes32, SignedBeaconBlock> blocks;
-  final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates;
-  VoteTracker[] votes;
-  UInt64 highestVotedValidatorIndex;
+  private final CachingTaskQueue<Bytes32, StateAndBlockSummary> states;
+  private final Map<Bytes32, SignedBeaconBlock> blocks;
+  private final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates;
+  private final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars;
+  private UInt64 timeMillis;
+  private UInt64 genesisTime;
+  private AnchorPoint finalizedAnchor;
+  private Checkpoint justifiedCheckpoint;
+  private Checkpoint bestJustifiedCheckpoint;
+  private Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload;
+  private Optional<Bytes32> proposerBoostRoot = Optional.empty();
+  private VoteTracker[] votes;
+  private UInt64 highestVotedValidatorIndex;
 
   private Store(
       final MetricsSystem metricsSystem,
@@ -116,7 +118,6 @@ class Store implements UpdatableStore {
       final int hotStatePersistenceFrequencyInEpochs,
       final BlockProvider blockProvider,
       final StateAndBlockSummaryProvider stateProvider,
-      final BlobSidecarsProvider blobSidecarsProvider,
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final CachingTaskQueue<Bytes32, StateAndBlockSummary> states,
       final Optional<Checkpoint> initialCheckpoint,
@@ -130,7 +131,8 @@ class Store implements UpdatableStore {
       final Map<UInt64, VoteTracker> votes,
       final Map<Bytes32, SignedBeaconBlock> blocks,
       final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates,
-      final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates) {
+      final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates,
+      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars) {
     checkArgument(
         time.isGreaterThanOrEqualTo(genesisTime),
         "Time must be greater than or equal to genesisTime");
@@ -154,6 +156,7 @@ class Store implements UpdatableStore {
     this.justifiedCheckpoint = justifiedCheckpoint;
     this.bestJustifiedCheckpoint = bestJustifiedCheckpoint;
     this.blocks = blocks;
+    this.blobSidecars = blobSidecars;
     this.highestVotedValidatorIndex =
         votes.keySet().stream().max(Comparator.naturalOrder()).orElse(UInt64.ZERO);
     this.votes =
@@ -177,7 +180,6 @@ class Store implements UpdatableStore {
                         .orElseGet(Collections::emptyMap)),
             fromMap(this.blocks),
             blockProvider);
-    this.blobSidecarsProvider = blobSidecarsProvider;
     this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
   }
 
@@ -187,7 +189,6 @@ class Store implements UpdatableStore {
       final Spec spec,
       final BlockProvider blockProvider,
       final StateAndBlockSummaryProvider stateAndBlockProvider,
-      final BlobSidecarsProvider blobSidecarsProvider,
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final Optional<Checkpoint> initialCheckpoint,
       final UInt64 time,
@@ -212,11 +213,12 @@ class Store implements UpdatableStore {
     final CachingTaskQueue<Bytes32, StateAndBlockSummary> stateTaskQueue =
         CachingTaskQueue.create(
             asyncRunner, metricsSystem, "memory_states", config.getStateCacheSize());
-
     final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates =
         config.getEpochStateCacheSize() > 0
             ? Optional.of(LimitedMap.createSynchronized(config.getEpochStateCacheSize()))
             : Optional.empty();
+    final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars =
+        LimitedMap.createSynchronized(config.getBlockCacheSize());
 
     final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(time, genesisTime));
     final ForkChoiceStrategy forkChoiceStrategy =
@@ -236,7 +238,6 @@ class Store implements UpdatableStore {
         config.getHotStatePersistenceFrequencyInEpochs(),
         blockProvider,
         stateAndBlockProvider,
-        blobSidecarsProvider,
         earliestBlobSidecarSlotProvider,
         stateTaskQueue,
         initialCheckpoint,
@@ -250,7 +251,8 @@ class Store implements UpdatableStore {
         votes,
         blocks,
         checkpointStateTaskQueue,
-        maybeEpochStates);
+        maybeEpochStates,
+        blobSidecars);
   }
 
   private static ProtoArray buildProtoArray(
@@ -305,6 +307,13 @@ class Store implements UpdatableStore {
                   TekuMetricCategory.STORAGE,
                   "memory_block_count",
                   "Number of beacon blocks held in the in-memory store"));
+      blobSidecarsBlocksCountGauge =
+          Optional.of(
+              SettableGauge.create(
+                  metricsSystem,
+                  TekuMetricCategory.STORAGE,
+                  "memory_blocks_with_cached_blobs_count",
+                  "Number of beacon blocks with complete blobs held in the in-memory store"));
 
       if (maybeEpochStates.isPresent()) {
         epochStatesCountGauge =
@@ -494,14 +503,8 @@ class Store implements UpdatableStore {
       return SafeFuture.completedFuture(inMemoryBlock);
     }
 
-    // Retrieve and cache block
-    return blockProvider
-        .getBlock(blockRoot)
-        .thenApply(
-            block -> {
-              block.ifPresent(this::putBlock);
-              return block;
-            });
+    // Retrieve block
+    return blockProvider.getBlock(blockRoot);
   }
 
   @Override
@@ -571,14 +574,96 @@ class Store implements UpdatableStore {
   }
 
   @Override
-  public SafeFuture<List<BlobSidecar>> retrieveBlobSidecars(
+  public Optional<List<BlobSidecar>> getBlobSidecarsIfAvailable(
       final SlotAndBlockRoot slotAndBlockRoot) {
-    return blobSidecarsProvider.getBlobSidecars(slotAndBlockRoot);
+    readLock.lock();
+    try {
+      return Optional.ofNullable(blobSidecars.get(slotAndBlockRoot));
+    } finally {
+      readLock.unlock();
+    }
   }
 
   @Override
   public SafeFuture<Optional<UInt64>> retrieveEarliestBlobSidecarSlot() {
     return earliestBlobSidecarSlotProvider.getEarliestBlobSidecarSlot();
+  }
+
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
+  @Override
+  void cacheBlocks(final Collection<BlockAndCheckpoints> blockAndCheckpoints) {
+    blockAndCheckpoints.stream()
+        .sorted(Comparator.comparing(BlockAndCheckpoints::getSlot))
+        .map(BlockAndCheckpoints::getBlock)
+        .forEach(block -> blocks.put(block.getRoot(), block));
+    blockCountGauge.ifPresent(gauge -> gauge.set(blocks.size()));
+  }
+
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
+  @Override
+  void cacheTimeMillis(final UInt64 timeMillis) {
+    if (timeMillis.isGreaterThanOrEqualTo(this.timeMillis)) {
+      this.timeMillis = timeMillis;
+    }
+  }
+
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
+  @Override
+  void cacheGenesisTime(final UInt64 genesisTime) {
+    this.genesisTime = genesisTime;
+  }
+
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
+  @Override
+  void cacheProposerBoostRoot(final Optional<Bytes32> proposerBoostRoot) {
+    this.proposerBoostRoot = proposerBoostRoot;
+  }
+
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
+  @Override
+  void cacheStates(final Map<Bytes32, StateAndBlockSummary> stateAndBlockSummaries) {
+    states.cacheAll(stateAndBlockSummaries);
+  }
+
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
+  @Override
+  void cacheBlobSidecars(final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsMap) {
+    blobSidecarsMap.entrySet().stream()
+        .sorted(Map.Entry.comparingByKey())
+        .forEach(entry -> blobSidecars.put(entry.getKey(), entry.getValue()));
+    blobSidecarsBlocksCountGauge.ifPresent(gauge -> gauge.set(blobSidecars.size()));
+  }
+
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
+  @Override
+  void cacheFinalizedOptimisticTransitionPayload(
+      final Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload) {
+    this.finalizedOptimisticTransitionPayload = finalizedOptimisticTransitionPayload;
+  }
+
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
+  @Override
+  void cleanupCheckpointStates(final Predicate<SlotAndBlockRoot> removalCondition) {
+    checkpointStates.removeIf(removalCondition);
+  }
+
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
+  @Override
+  void setHighestVotedValidatorIndex(final UInt64 highestVotedValidatorIndex) {
+    this.highestVotedValidatorIndex = highestVotedValidatorIndex;
+
+    // Expand votes array if needed
+    if (highestVotedValidatorIndex.isGreaterThanOrEqualTo(votes.length)) {
+      this.votes =
+          Arrays.copyOf(
+              votes, highestVotedValidatorIndex.plus(VOTE_TRACKER_SPARE_CAPACITY).intValue());
+    }
+  }
+
+  /** Non-synchronized, no lock, unsafe if Store is not locked externally */
+  @Override
+  void setVote(final int index, final VoteTracker voteTracker) {
+    votes[index] = voteTracker;
   }
 
   UInt64 getHighestVotedValidatorIndex() {
@@ -617,7 +702,6 @@ class Store implements UpdatableStore {
                       signedBeaconBlock ->
                           SafeFuture.completedFuture(Optional.of(signedBeaconBlock)))
                   .orElseGet(() -> blockProvider.getBlock(blockRoot))
-                  .thenPeek(block -> block.ifPresent(this::putBlock))
                   .thenApply(
                       block -> block.map(b -> new SignedBlockAndState(b, res.get().getState())));
             });
@@ -813,19 +897,6 @@ class Store implements UpdatableStore {
                     .miscHelpers()
                     .isSlotAtNthEpochBoundary(blockSlot, parentSlot, n))
         .orElse(false);
-  }
-
-  private void putBlock(final SignedBeaconBlock block) {
-    final Lock writeLock = lock.writeLock();
-    writeLock.lock();
-    try {
-      if (containsBlock(block.getRoot())) {
-        blocks.put(block.getRoot(), block);
-        blockCountGauge.ifPresent(gauge -> gauge.set(blocks.size()));
-      }
-    } finally {
-      writeLock.unlock();
-    }
   }
 
   @VisibleForTesting

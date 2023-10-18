@@ -103,17 +103,16 @@ class StoreTransactionUpdates {
 
   public void applyToStore(final Store store, final UpdateResult updateResult) {
     // Add new data
-    tx.timeMillis
-        .filter(t -> t.isGreaterThan(store.getTimeMillis()))
-        .ifPresent(value -> store.timeMillis = value);
-    tx.genesisTime.ifPresent(value -> store.genesisTime = value);
+    tx.timeMillis.ifPresent(store::cacheTimeMillis);
+    tx.genesisTime.ifPresent(store::cacheGenesisTime);
     tx.justifiedCheckpoint.ifPresent(store::updateJustifiedCheckpoint);
     tx.bestJustifiedCheckpoint.ifPresent(store::updateBestJustifiedCheckpoint);
-    hotBlocks.forEach((root, value) -> store.blocks.put(root, value.getBlock()));
-    store.states.cacheAll(Maps.transformValues(hotBlockAndStates, this::blockAndStateAsSummary));
+    store.cacheBlocks(hotBlocks.values());
+    store.cacheStates(Maps.transformValues(hotBlockAndStates, this::blockAndStateAsSummary));
+    store.cacheBlobSidecars(blobSidecars);
     if (optimisticTransitionBlockRootSet) {
-      store.finalizedOptimisticTransitionPayload =
-          updateResult.getFinalizedOptimisticTransitionPayload();
+      store.cacheFinalizedOptimisticTransitionPayload(
+          updateResult.getFinalizedOptimisticTransitionPayload());
     }
 
     // Update finalized data
@@ -123,18 +122,20 @@ class StoreTransactionUpdates {
     // Prune blocks and states
     prunedHotBlockRoots.keySet().forEach(store::removeStateAndBlock);
 
-    store.checkpointStates.removeIf(
+    store.cleanupCheckpointStates(
         slotAndBlockRoot -> prunedHotBlockRoots.containsKey(slotAndBlockRoot.getBlockRoot()));
 
     if (tx.proposerBoostRootSet) {
-      store.proposerBoostRoot = tx.proposerBoostRoot;
+      store.cacheProposerBoostRoot(tx.proposerBoostRoot);
     }
 
-    store.forkChoiceStrategy.applyUpdate(
-        hotBlocks.values(),
-        tx.pulledUpBlockCheckpoints,
-        prunedHotBlockRoots,
-        store.getFinalizedCheckpoint());
+    store
+        .getForkChoiceStrategy()
+        .applyUpdate(
+            hotBlocks.values(),
+            tx.pulledUpBlockCheckpoints,
+            prunedHotBlockRoots,
+            store.getFinalizedCheckpoint());
   }
 
   private StateAndBlockSummary blockAndStateAsSummary(final SignedBlockAndState blockAndState) {

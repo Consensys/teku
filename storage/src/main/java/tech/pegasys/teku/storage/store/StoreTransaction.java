@@ -93,11 +93,11 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       final SignedBeaconBlock block,
       final BeaconState state,
       final BlockCheckpoints blockCheckpoints,
-      final List<BlobSidecar> blobSidecars,
+      final Optional<List<BlobSidecar>> blobSidecars,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     blockData.put(block.getRoot(), new TransactionBlockData(block, state, blockCheckpoints));
     if (!blobSidecars.isEmpty()) {
-      this.blobSidecars.put(block.getSlotAndBlockRoot(), blobSidecars);
+      this.blobSidecars.put(block.getSlotAndBlockRoot(), blobSidecars.get());
     }
     if (needToUpdateEarliestBlobSidecarSlot(maybeEarliestBlobSidecarSlot)) {
       this.maybeEarliestBlobSidecarTransactionSlot = maybeEarliestBlobSidecarSlot;
@@ -332,8 +332,9 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
     lock.readLock().lock();
     try {
       final NavigableMap<UInt64, Bytes32> blockRootsBySlot = new TreeMap<>();
-      store.forkChoiceStrategy.processAllInOrder(
-          (root, slot, parent) -> blockRootsBySlot.put(slot, root));
+      store
+          .getForkChoiceStrategy()
+          .processAllInOrder((root, slot, parent) -> blockRootsBySlot.put(slot, root));
       this.blockData
           .values()
           .forEach(
@@ -458,13 +459,10 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public SafeFuture<List<BlobSidecar>> retrieveBlobSidecars(
+  public Optional<List<BlobSidecar>> getBlobSidecarsIfAvailable(
       final SlotAndBlockRoot slotAndBlockRoot) {
-    final Optional<List<BlobSidecar>> maybeBlobSidecars =
-        Optional.ofNullable(blobSidecars.get(slotAndBlockRoot));
-    return maybeBlobSidecars
-        .map(SafeFuture::completedFuture)
-        .orElseGet(() -> store.retrieveBlobSidecars(slotAndBlockRoot));
+    return Optional.ofNullable(blobSidecars.get(slotAndBlockRoot))
+        .or(() -> store.getBlobSidecarsIfAvailable(slotAndBlockRoot));
   }
 
   @Override

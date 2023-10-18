@@ -17,6 +17,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.spec.logic.common.helpers.MathHelpers.bytesToUInt64;
 
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -72,6 +74,27 @@ public class ValidatorsUtil {
       final BeaconState state, final UInt64 epoch, final int validatorIndex) {
     return getCommitteeAssignment(
         state, epoch, validatorIndex, beaconStateAccessors.getCommitteeCountPerSlot(state, epoch));
+  }
+
+  public Map<Integer, CommitteeAssignment> getValidatorIndexToCommitteeAssignmentMap(
+      final BeaconState state, final UInt64 epoch) {
+    final Map<Integer, CommitteeAssignment> assignmentMap = new HashMap<>();
+
+    final int slotsPerEpoch = specConfig.getSlotsPerEpoch();
+    final int committeeCountPerSlot =
+        beaconStateAccessors.getCommitteeCountPerSlot(state, epoch).intValue();
+    final UInt64 startSlot = miscHelpers.computeStartSlotAtEpoch(epoch);
+    for (int slotOffset = 0; slotOffset < slotsPerEpoch; slotOffset++) {
+      final UInt64 slot = startSlot.plus(slotOffset);
+      for (int i = 0; i < committeeCountPerSlot; i++) {
+        final UInt64 committeeIndex = UInt64.valueOf(i);
+        final IntList committee =
+            beaconStateAccessors.getBeaconCommittee(state, slot, committeeIndex);
+        committee.forEach(
+            j -> assignmentMap.put(j, new CommitteeAssignment(committee, committeeIndex, slot)));
+      }
+    }
+    return assignmentMap;
   }
 
   /**

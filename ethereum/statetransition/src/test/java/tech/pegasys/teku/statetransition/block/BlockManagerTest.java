@@ -941,8 +941,7 @@ public class BlockManagerTest {
     verify(blobSidecarsAvailabilityChecker1).getAvailabilityCheckResult();
     assertThat(localRecentChainData.retrieveBlockByRoot(block1.getRoot()))
         .isCompletedWithValue(Optional.of(block1.getMessage()));
-    assertThat(localRecentChainData.retrieveBlobSidecars(block1.getSlotAndBlockRoot()))
-        .isCompletedWithValue(Collections.emptyList());
+    assertThat(localRecentChainData.getBlobSidecars(block1.getSlotAndBlockRoot())).isEmpty();
     assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
         .isCompletedWithValueMatching(Optional::isEmpty);
   }
@@ -981,8 +980,7 @@ public class BlockManagerTest {
     verify(blobSidecarsAvailabilityChecker1).getAvailabilityCheckResult();
     assertThat(localRecentChainData.retrieveBlockByRoot(block1.getRoot()))
         .isCompletedWithValue(Optional.empty());
-    assertThat(localRecentChainData.retrieveBlobSidecars(block1.getSlotAndBlockRoot()))
-        .isCompletedWithValue(Collections.emptyList());
+    assertThat(localRecentChainData.getBlobSidecars(block1.getSlotAndBlockRoot())).isEmpty();
     assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
         .isCompletedWithValueMatching(Optional::isEmpty);
 
@@ -1022,8 +1020,7 @@ public class BlockManagerTest {
     verify(blobSidecarsAvailabilityChecker1).getAvailabilityCheckResult();
     assertThat(localRecentChainData.retrieveBlockByRoot(block1.getRoot()))
         .isCompletedWithValue(Optional.empty());
-    assertThat(localRecentChainData.retrieveBlobSidecars(block1.getSlotAndBlockRoot()))
-        .isCompletedWithValue(Collections.emptyList());
+    assertThat(localRecentChainData.getBlobSidecars(block1.getSlotAndBlockRoot())).isEmpty();
     assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
         .isCompletedWithValueMatching(Optional::isEmpty);
   }
@@ -1053,8 +1050,7 @@ public class BlockManagerTest {
     verify(blobSidecarsAvailabilityChecker1).getAvailabilityCheckResult();
     assertThat(localRecentChainData.retrieveBlockByRoot(block1.getRoot()))
         .isCompletedWithValue(Optional.of(block1.getMessage()));
-    assertThat(localRecentChainData.retrieveBlobSidecars(block1.getSlotAndBlockRoot()))
-        .isCompletedWithValue(Collections.emptyList());
+    assertThat(localRecentChainData.getBlobSidecars(block1.getSlotAndBlockRoot())).isEmpty();
     assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
         .isCompletedWithValueMatching(Optional::isEmpty);
   }
@@ -1115,15 +1111,14 @@ public class BlockManagerTest {
       final BeaconBlock beaconBlock, final List<BlobSidecar> blobSidecars) {
     assertThat(localRecentChainData.retrieveBlockByRoot(beaconBlock.getRoot()))
         .isCompletedWithValue(Optional.of(beaconBlock));
-    assertThat(localRecentChainData.retrieveBlobSidecars(beaconBlock.getSlotAndBlockRoot()))
-        .isCompletedWithValue(blobSidecars);
+    assertThat(localRecentChainData.getBlobSidecars(beaconBlock.getSlotAndBlockRoot()))
+        .contains(blobSidecars);
   }
 
   private void assertThatNothingStoredForSlotRoot(final SlotAndBlockRoot slotAndBlockRoot) {
     assertThat(localRecentChainData.retrieveBlockByRoot(slotAndBlockRoot.getBlockRoot()))
         .isCompletedWithValueMatching(Optional::isEmpty);
-    assertThat(localRecentChainData.retrieveBlobSidecars(slotAndBlockRoot))
-        .isCompletedWithValueMatching(List::isEmpty);
+    assertThat(localRecentChainData.getBlobSidecars(slotAndBlockRoot)).isEmpty();
   }
 
   private void assertImportBlockWithResult(

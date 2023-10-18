@@ -1,6 +1,6 @@
 {
   "get" : {
-    "tags" : [ "Beacon" ],
+    "tags" : [ "Teku" ],
     "operationId" : "getAllBlobSidecarsAtSlot",
     "summary" : "Get blob sidecars at slot",
     "description" : "Get all blob sidecars (canonical and non canonical) at slot",
