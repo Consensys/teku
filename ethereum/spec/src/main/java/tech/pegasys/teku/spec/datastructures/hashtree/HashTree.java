@@ -153,12 +153,16 @@ public class HashTree {
     return childToParent.size();
   }
 
-  /** @return A stream of all tree nodes in pre-order traversal order */
+  /**
+   * @return A stream of all tree nodes in pre-order traversal order
+   */
   public Stream<Bytes32> preOrderStream() {
     return preOrderStream(rootHash);
   }
 
-  /** @return A stream of all tree nodes in breadth-first traversal order */
+  /**
+   * @return A stream of all tree nodes in breadth-first traversal order
+   */
   public Stream<Bytes32> breadthFirstStream() {
     return createBreadthFirstStream(rootHash);
   }

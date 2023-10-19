@@ -179,7 +179,9 @@ class ScoringConfig {
         .intValue();
   }
 
-  /** @return The desired time to decay a single scoring event to zero */
+  /**
+   * @return The desired time to decay a single scoring event to zero
+   */
   public Duration getTargetScoreRetention() {
     return targetScoringDuration;
   }
@@ -192,7 +194,9 @@ class ScoringConfig {
     return calculateDecayFactor(getTargetScoreRetention());
   }
 
-  /** @return The target degree (number of peers) in each topic mesh */
+  /**
+   * @return The target degree (number of peers) in each topic mesh
+   */
   public int getD() {
     return d;
   }

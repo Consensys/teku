@@ -69,7 +69,9 @@ public class Eth1Data extends Container3<Eth1Data, SszBytes32, SszUInt64, SszByt
     return new Eth1Data(getDepositRoot(), getDepositCount(), blockHash);
   }
 
-  /** @return the deposit_root */
+  /**
+   * @return the deposit_root
+   */
   public Bytes32 getDepositRoot() {
     return getField0().get();
   }
@@ -78,7 +80,9 @@ public class Eth1Data extends Container3<Eth1Data, SszBytes32, SszUInt64, SszByt
     return getField1().get();
   }
 
-  /** @return the block_hash */
+  /**
+   * @return the block_hash
+   */
   public Bytes32 getBlockHash() {
     return getField2().get();
   }

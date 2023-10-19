@@ -46,6 +46,7 @@ public class DutyResult {
   private final int successCount;
   private final int nodeSyncingCount;
   private final Set<Bytes32> roots;
+
   /**
    * We combine failures based on the exception type to avoid logging thousands of the same type of
    * exception if a lot of validators fail at the same time.

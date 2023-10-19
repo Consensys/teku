@@ -49,7 +49,9 @@ public interface ReadOnlyStore {
 
   UInt64 getGenesisTime();
 
-  /** @return the genesis time in milliseconds */
+  /**
+   * @return the genesis time in milliseconds
+   */
   default UInt64 getGenesisTimeMillis() {
     return secondsToMillis(getGenesisTime());
   }

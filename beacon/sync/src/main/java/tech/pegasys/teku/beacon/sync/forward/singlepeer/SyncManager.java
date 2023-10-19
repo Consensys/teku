@@ -57,6 +57,7 @@ public class SyncManager extends Service {
 
   private boolean syncActive = false;
   private boolean syncQueued = false;
+
   /**
    * Tracks the last state we notified subscribers of. It differs from syncActive at the start of a
    * sync because we set syncActive as soon as we begin, but only notify subscribers once we've

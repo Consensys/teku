@@ -41,7 +41,9 @@ public interface GossipEncoding {
    */
   <T extends SszData> Bytes encode(T value);
 
-  /** @return A factory for creating PreparedGossipMessages */
+  /**
+   * @return A factory for creating PreparedGossipMessages
+   */
   Eth2PreparedGossipMessageFactory createPreparedGossipMessageFactory(
       ForkDigestToMilestone forkDigestToMilestone);
 

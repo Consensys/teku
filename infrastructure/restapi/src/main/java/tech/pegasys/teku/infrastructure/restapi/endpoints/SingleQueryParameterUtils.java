@@ -27,6 +27,7 @@ public class SingleQueryParameterUtils {
       "Unable to read Bytes96 data from query parameter.";
   public static final String INVALID_NUMERIC_VALUE =
       "Unable to read a numeric value from query parameter.";
+
   /**
    * Checks that a parameter exists, has a single entry, and is not an empty string
    *
