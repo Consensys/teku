@@ -52,6 +52,8 @@ public interface ReputationManager {
       final Optional<DisconnectReason> reason,
       final boolean locallyInitiated);
 
-  /** @return boolean representing whether the manager should disconnect. */
+  /**
+   * @return boolean representing whether the manager should disconnect.
+   */
   boolean adjustReputation(final PeerAddress peerAddress, final ReputationAdjustment effect);
 }

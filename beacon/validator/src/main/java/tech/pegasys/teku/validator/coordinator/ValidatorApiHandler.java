@@ -97,6 +97,7 @@ import tech.pegasys.teku.validator.coordinator.publisher.MilestoneBasedBlockPubl
 public class ValidatorApiHandler implements ValidatorApiChannel {
 
   private static final Logger LOG = LogManager.getLogger();
+
   /**
    * Number of epochs ahead of the current head that duties can be requested. This provides some
    * tolerance for validator clients clocks being slightly ahead while still limiting the number of

@@ -37,6 +37,7 @@ class BatchWriter implements AutoCloseable {
   BatchWriter(final int targetBatchSize, final Consumer<String> logger, final KvStoreAccessor db) {
     this(targetBatchSize, logger, db, Optional.empty());
   }
+
   /**
    * @param targetBatchSize target size (MB) for a batch
    * @param db database accessor object

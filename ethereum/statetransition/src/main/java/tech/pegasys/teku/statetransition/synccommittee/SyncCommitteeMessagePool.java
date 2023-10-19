@@ -50,6 +50,7 @@ public class SyncCommitteeMessagePool implements SlotEventsChannel {
 
   private final Spec spec;
   private final SyncCommitteeMessageValidator validator;
+
   /**
    * Effectively provides a mapping from (slot, blockRoot, subcommitteeIndex) -> ContributionData
    * but using a nested map under slot so that pruning based on slot is efficient.

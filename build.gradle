@@ -178,7 +178,7 @@ allprojects {
       endWithNewline()
       licenseHeaderFile "${rootDir}/gradle/spotless.java.license"
       // See gradle.properties for exports/opens flags required by JDK 16 and Google Java Format plugin
-      googleJavaFormat('1.13.0')
+      googleJavaFormat('1.17.0')
     }
   }
 
