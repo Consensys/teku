@@ -83,6 +83,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   @VisibleForTesting
   public static final BLSSignatureVerifier DEFAULT_DEPOSIT_SIGNATURE_VERIFIER =
       BLSSignatureVerifier.SIMPLE;
+
   /**
    * For debug/test purposes only enables/disables {@link DepositData} BLS signature verification
    * Setting to <code>false</code> significantly speeds up state initialization

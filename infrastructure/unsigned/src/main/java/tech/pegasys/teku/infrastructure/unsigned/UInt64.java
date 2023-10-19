@@ -509,6 +509,7 @@ public final class UInt64 implements Comparable<UInt64> {
   public BigInteger bigIntegerValue() {
     return toUnsignedBigInteger(value);
   }
+
   // From Guava UnsignedLong.bigIntegerValue(). Apache 2 license.
 
   private static BigInteger toUnsignedBigInteger(final long value) {

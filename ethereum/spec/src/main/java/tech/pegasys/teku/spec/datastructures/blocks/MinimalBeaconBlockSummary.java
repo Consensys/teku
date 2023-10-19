@@ -25,7 +25,9 @@ public interface MinimalBeaconBlockSummary {
 
   Bytes32 getStateRoot();
 
-  /** @return the hash tree root of the block */
+  /**
+   * @return the hash tree root of the block
+   */
   Bytes32 getRoot();
 
   default String toLogString() {
