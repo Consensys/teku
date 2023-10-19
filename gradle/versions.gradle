@@ -5,8 +5,6 @@ dependencyManagement {
     dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.15.3'
     dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.15.3'
 
-    dependency 'com.google.googlejavaformat:google-java-format:1.17.0'
-
     dependencySet(group: 'com.google.errorprone', version: '2.22.0') {
       entry 'error_prone_annotation'
       entry 'error_prone_check_api'
