@@ -1,4 +1,5 @@
 dependencies {
+  implementation 'org.apache.tuweni:tuweni-bytes'
   implementation project(':infrastructure:bytes')
   implementation project(':infrastructure:ssz')
 }
