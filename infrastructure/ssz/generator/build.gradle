@@ -1,6 +1,8 @@
 dependencies {
+  // for some reasons, if gradle 8.4 builds using java 21, build fails if we specify
+  //    implementation project(':infrastructure:bytes')
+  // so we use the following instead
   implementation 'org.apache.tuweni:tuweni-bytes'
-  implementation project(':infrastructure:bytes')
   implementation project(':infrastructure:ssz')
 }
 
