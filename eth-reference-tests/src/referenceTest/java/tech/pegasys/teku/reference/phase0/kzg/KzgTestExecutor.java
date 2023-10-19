@@ -25,19 +25,17 @@ import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 
 public abstract class KzgTestExecutor implements TestExecutor {
-  // We don't support config reloading and all tests are currently for mainnet
-  private static final String CONFIG_NAME = "mainnet";
 
   @Override
   public final void runTest(TestDefinition testDefinition) throws Throwable {
     final Eth2NetworkConfiguration networkConfig =
-        Eth2NetworkConfiguration.builder(CONFIG_NAME).build();
+        Eth2NetworkConfiguration.builder(testDefinition.getConfigName()).build();
     final SpecConfigDeneb specConfigDeneb =
         SpecConfigDeneb.required(networkConfig.getSpec().getGenesisSpecConfig());
 
     KZG kzg = null;
     try {
-      kzg = CKZG4844.createInstance(specConfigDeneb.getFieldElementsPerBlob());
+      kzg = CKZG4844.createInstance();
       kzg.loadTrustedSetup(specConfigDeneb.getTrustedSetupPath().orElseThrow());
       runTestImpl(testDefinition);
     } finally {

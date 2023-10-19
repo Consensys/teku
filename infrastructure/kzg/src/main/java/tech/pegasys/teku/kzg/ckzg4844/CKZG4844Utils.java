@@ -36,7 +36,7 @@ public class CKZG4844Utils {
   private static final int MAX_BYTES_TO_FLATTEN = 100_663_296; // ~100.66 MB or 768 blobs
 
   public static byte[] flattenBlobs(final List<Bytes> blobs) {
-    return flattenBytes(blobs, CKZG4844JNI.getBytesPerBlob() * blobs.size());
+    return flattenBytes(blobs, CKZG4844JNI.BYTES_PER_BLOB * blobs.size());
   }
 
   public static byte[] flattenCommitments(final List<KZGCommitment> commitments) {

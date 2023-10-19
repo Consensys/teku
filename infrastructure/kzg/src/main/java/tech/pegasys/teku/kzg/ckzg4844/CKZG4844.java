@@ -14,9 +14,7 @@
 package tech.pegasys.teku.kzg.ckzg4844;
 
 import ethereum.ckzg4844.CKZG4844JNI;
-import ethereum.ckzg4844.CKZG4844JNI.Preset;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -39,47 +37,26 @@ public final class CKZG4844 implements KZG {
 
   private static CKZG4844 instance;
 
-  private static int initializedFieldElementsPerBlob = -1;
-
   private Optional<Integer> loadedTrustedSetupHash = Optional.empty();
 
-  public static synchronized CKZG4844 createInstance(final int fieldElementsPerBlob) {
+  public static synchronized CKZG4844 createInstance() {
     if (instance == null) {
-      final Preset preset = getPreset(fieldElementsPerBlob);
-      instance = new CKZG4844(preset);
-      initializedFieldElementsPerBlob = fieldElementsPerBlob;
-      return instance;
-    }
-    if (fieldElementsPerBlob != initializedFieldElementsPerBlob) {
-      throw new KZGException(
-          "Can't reinitialize C-KZG-4844 library with a different value for fieldElementsPerBlob.");
+      instance = new CKZG4844();
     }
     return instance;
   }
 
   public static CKZG4844 getInstance() {
     if (instance == null) {
-      throw new KZGException("C-KZG-4844 library hasn't been initialized.");
+      throw new KZGException("C-KZG-4844 library hasn't been initialized");
     }
     return instance;
   }
 
-  private static Preset getPreset(final int fieldElementsPerBlob) {
-    return Arrays.stream(Preset.values())
-        .filter(preset -> preset.fieldElementsPerBlob == fieldElementsPerBlob)
-        .findFirst()
-        .orElseThrow(
-            () ->
-                new KZGException(
-                    String.format(
-                        "C-KZG-4844 library can't be initialized with %d fieldElementsPerBlob.",
-                        fieldElementsPerBlob)));
-  }
-
-  private CKZG4844(final Preset preset) {
+  private CKZG4844() {
     try {
-      CKZG4844JNI.loadNativeLibrary(preset);
-      LOG.debug("Loaded C-KZG-4844 with {} preset", preset);
+      CKZG4844JNI.loadNativeLibrary();
+      LOG.debug("Loaded C-KZG-4844 library");
     } catch (final Exception ex) {
       throw new KZGException("Failed to load C-KZG-4844 library", ex);
     }

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.versions.deneb.helpers;
 
 import com.google.common.io.Resources;
-import ethereum.ckzg4844.CKZG4844JNI;
 import java.util.Optional;
 import net.jqwik.api.Tuple;
 import net.jqwik.api.lifecycle.LifecycleContext;
@@ -56,9 +55,8 @@ class KzgResolver implements ResolveParameterHook {
 
   private static class KzgAutoLoadFree implements Store.CloseOnReset {
     private static final String TRUSTED_SETUP =
-        Resources.getResource(TrustedSetups.class, "mainnet/trusted_setup.txt").toExternalForm();
-    private final KZG kzg =
-        CKZG4844.createInstance(CKZG4844JNI.Preset.MAINNET.fieldElementsPerBlob);
+        Resources.getResource(TrustedSetups.class, "trusted_setup.txt").toExternalForm();
+    private final KZG kzg = CKZG4844.createInstance();
 
     private KzgAutoLoadFree() {
       kzg.loadTrustedSetup(TRUSTED_SETUP);
