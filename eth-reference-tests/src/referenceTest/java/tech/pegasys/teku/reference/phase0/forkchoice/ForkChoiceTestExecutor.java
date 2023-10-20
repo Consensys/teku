@@ -112,7 +112,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     // tests actually have one, so we currently don't bother trying to load it.
     final BeaconState anchorState =
         TestDataUtils.loadStateFromSsz(testDefinition, "anchor_state" + SSZ_SNAPPY_EXTENSION);
-    final Spec spec = testDefinition.getSpec();
+    final Spec spec = testDefinition.getSpec(false);
     final SignedBeaconBlock anchorBlock = loadAnchorBlock(testDefinition);
 
     final StorageSystem storageSystem =

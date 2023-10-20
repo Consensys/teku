@@ -56,13 +56,17 @@ public class TestDefinition {
   }
 
   public Spec getSpec() {
+    return getSpec(true);
+  }
+
+  public Spec getSpec(final boolean kzgNoop) {
     if (spec == null) {
-      createSpec();
+      createSpec(kzgNoop);
     }
     return spec;
   }
 
-  private void createSpec() {
+  private void createSpec(final boolean kzgNoop) {
     final Eth2Network network =
         switch (configName) {
           case TestSpecConfig.MAINNET -> Eth2Network.MAINNET;
@@ -82,10 +86,14 @@ public class TestDefinition {
         TestSpecFactory.create(
             highestSupportedMilestone,
             network,
-            configBuilder -> configBuilder.denebBuilder(denebConfigModifier(network)));
+            configBuilder -> {
+              if (!kzgNoop) {
+                configBuilder.denebBuilder(denebConfigKzgModifier(network));
+              }
+            });
   }
 
-  private Consumer<DenebBuilder> denebConfigModifier(final Eth2Network network) {
+  private Consumer<DenebBuilder> denebConfigKzgModifier(final Eth2Network network) {
     return builder -> {
       final String trustedSetupFilename =
           network.equals(Eth2Network.MAINNET)
