@@ -130,6 +130,7 @@ public class DiscoveryNetworkFactory {
                               throw new UnsupportedOperationException();
                             })
                         .gossipTopicFilter(topic -> true)
+                        .timeProvider(StubTimeProvider.withTimeInMillis(0))
                         .build())
                 .peerPools(peerPools)
                 .peerSelectionStrategy(peerSelectionStrategy)
