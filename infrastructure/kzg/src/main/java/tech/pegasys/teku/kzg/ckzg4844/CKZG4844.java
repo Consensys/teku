@@ -63,8 +63,15 @@ public final class CKZG4844 implements KZG {
     }
 
     try {
-      // allow reloading of trusted setup
-      loadedTrustedSetupFile.ifPresent(__ -> freeTrustedSetup());
+      // allow loading different trusted setup
+      loadedTrustedSetupFile.ifPresent(
+          currentTrustedSetupFile -> {
+            LOG.debug(
+                "Replacing current trusted setup {} with {}",
+                currentTrustedSetupFile,
+                trustedSetupFile);
+            freeTrustedSetup();
+          });
       final TrustedSetup trustedSetup = CKZG4844Utils.parseTrustedSetupFile(trustedSetupFile);
       final List<Bytes> g1Points = trustedSetup.g1Points();
       final List<Bytes> g2Points = trustedSetup.g2Points();
