@@ -447,7 +447,8 @@ class RemoteValidatorApiHandlerTest {
     SafeFuture<Optional<BlockContainer>> future =
         apiHandler.createUnsignedBlock(UInt64.ONE, blsSignature, graffiti, false);
 
-    assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(blockContents);
+    // using isEqualByAllMeansTo is extremely slow for a block with blob sidecars
+    assertThatSszData(unwrapToValue(future)).isEqualBySszTo(blockContents);
   }
 
   @Test
