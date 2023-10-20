@@ -62,25 +62,24 @@ public abstract class AbstractRpcMethodIntegrationTest {
 
   private void setUpNextSpec(final SpecMilestone nextSpecMilestone) {
     switch (baseSpec.getGenesisSpec().getMilestone()) {
-      case PHASE0:
+      case PHASE0 -> {
         checkState(nextSpecMilestone.equals(SpecMilestone.ALTAIR), "next spec should be altair");
         nextSpec = Optional.of(TestSpecFactory.createMinimalWithAltairForkEpoch(nextSpecEpoch));
-        break;
-      case ALTAIR:
+      }
+      case ALTAIR -> {
         checkState(
             nextSpecMilestone.equals(SpecMilestone.BELLATRIX), "next spec should be bellatrix");
         nextSpec = Optional.of(TestSpecFactory.createMinimalWithBellatrixForkEpoch(nextSpecEpoch));
-        break;
-      case BELLATRIX:
+      }
+      case BELLATRIX -> {
         checkState(nextSpecMilestone.equals(SpecMilestone.CAPELLA), "next spec should be capella");
         nextSpec = Optional.of(TestSpecFactory.createMinimalWithCapellaForkEpoch(nextSpecEpoch));
-        break;
-      case CAPELLA:
+      }
+      case CAPELLA -> {
         checkState(nextSpecMilestone.equals(SpecMilestone.DENEB), "next spec should be deneb");
         nextSpec = Optional.of(TestSpecFactory.createMinimalWithDenebForkEpoch(nextSpecEpoch));
-        break;
-      case DENEB:
-        throw new RuntimeException("Base spec is already latest supported milestone");
+      }
+      case DENEB -> throw new RuntimeException("Base spec is already latest supported milestone");
     }
     nextSpecSlot = nextSpec.orElseThrow().computeStartSlotAtEpoch(nextSpecEpoch);
   }
@@ -91,7 +90,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
   }
 
   protected Eth2Peer createPeer() {
-    return createRemotePeerAndNetwork().getPeer();
+    return createRemotePeerAndNetwork().peer();
   }
 
   private Spec getSpec(final boolean nextSpecEnabled) {
@@ -118,7 +117,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
 
     return createRemotePeerAndNetwork(
             getSpec(enableNextSpecLocally), getSpec(enableNextSpecRemotely))
-        .getPeer();
+        .peer();
   }
 
   /**
@@ -129,7 +128,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
    * @return An Eth2Peer to which we can send requests
    */
   protected Eth2Peer createPeer(final Spec spec) {
-    return createRemotePeerAndNetwork(spec, spec).getPeer();
+    return createRemotePeerAndNetwork(spec, spec).peer();
   }
 
   protected PeerAndNetwork createRemotePeerAndNetwork() {
@@ -201,23 +200,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
     }
   }
 
-  public static class PeerAndNetwork {
-    private final Eth2Peer peer;
-    private final Eth2P2PNetwork network;
-
-    public PeerAndNetwork(final Eth2Peer peer, final Eth2P2PNetwork network) {
-      this.peer = peer;
-      this.network = network;
-    }
-
-    public Eth2Peer getPeer() {
-      return peer;
-    }
-
-    public Eth2P2PNetwork getNetwork() {
-      return network;
-    }
-  }
+  public record PeerAndNetwork(Eth2Peer peer, Eth2P2PNetwork network) {}
 
   protected static Stream<Arguments> generateSpecTransitionWithCombinationParams() {
     return Arrays.stream(SpecMilestone.values())
@@ -273,19 +256,12 @@ public abstract class AbstractRpcMethodIntegrationTest {
   }
 
   protected static Class<?> milestoneToBeaconBlockBodyClass(final SpecMilestone milestone) {
-    switch (milestone) {
-      case PHASE0:
-        return BeaconBlockBodyPhase0.class;
-      case ALTAIR:
-        return BeaconBlockBodyAltair.class;
-      case BELLATRIX:
-        return BeaconBlockBodyBellatrix.class;
-      case CAPELLA:
-        return BeaconBlockBodyCapella.class;
-      case DENEB:
-        return BeaconBlockBodyDeneb.class;
-      default:
-        throw new UnsupportedOperationException("unsupported milestone: " + milestone);
-    }
+    return switch (milestone) {
+      case PHASE0 -> BeaconBlockBodyPhase0.class;
+      case ALTAIR -> BeaconBlockBodyAltair.class;
+      case BELLATRIX -> BeaconBlockBodyBellatrix.class;
+      case CAPELLA -> BeaconBlockBodyCapella.class;
+      case DENEB -> BeaconBlockBodyDeneb.class;
+    };
   }
 }

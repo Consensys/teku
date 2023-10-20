@@ -13,12 +13,10 @@
 
 package tech.pegasys.teku.kzg.ckzg4844;
 
-import static ethereum.ckzg4844.CKZG4844JNI.getBytesPerBlob;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import ethereum.ckzg4844.CKZG4844JNI;
-import ethereum.ckzg4844.CKZG4844JNI.Preset;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
@@ -29,7 +27,7 @@ class CKZG4844UtilsTest {
 
   @BeforeAll
   public static void setUp() {
-    CKZG4844JNI.loadNativeLibrary(Preset.MAINNET);
+    CKZG4844JNI.loadNativeLibrary();
   }
 
   @Test
@@ -45,7 +43,7 @@ class CKZG4844UtilsTest {
 
   @Test
   public void testFlattenBlobsWithBigBoySizeThrows() {
-    final int blobCount = Integer.MAX_VALUE / getBytesPerBlob();
+    final int blobCount = Integer.MAX_VALUE / CKZG4844JNI.BYTES_PER_BLOB;
     final List<Bytes> blobs = IntStream.range(0, blobCount).mapToObj(__ -> Bytes.of()).toList();
     final IllegalArgumentException exception =
         assertThrows(IllegalArgumentException.class, () -> CKZG4844Utils.flattenBlobs(blobs));
