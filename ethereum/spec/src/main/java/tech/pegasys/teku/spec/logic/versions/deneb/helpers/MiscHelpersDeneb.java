@@ -60,6 +60,10 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
     return kzg;
   }
 
+  public KZG getKzg() {
+    return kzg;
+  }
+
   /**
    * Performs complete data availability check <a
    * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/fork-choice.md#is_data_available">is_data_available</a>

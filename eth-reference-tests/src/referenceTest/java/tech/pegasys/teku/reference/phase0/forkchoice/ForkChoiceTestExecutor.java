@@ -42,10 +42,13 @@ import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -63,7 +66,9 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -156,6 +161,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
               + "\nProtoarray data:\n"
               + protoArrayData,
           e);
+    } finally {
+      freeTrustedSetupIfRequired(spec);
     }
   }
 
@@ -480,6 +487,14 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     assertThat(actual)
         .describedAs(checkpointType)
         .isEqualTo(new Checkpoint(expectedEpoch, expectedRoot));
+  }
+
+  private void freeTrustedSetupIfRequired(final Spec spec) {
+    Optional.ofNullable(spec.forMilestone(SpecMilestone.DENEB))
+        .map(SpecVersion::miscHelpers)
+        .flatMap(MiscHelpers::toVersionDeneb)
+        .map(MiscHelpersDeneb::getKzg)
+        .ifPresent(KZG::freeTrustedSetup);
   }
 
   @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
