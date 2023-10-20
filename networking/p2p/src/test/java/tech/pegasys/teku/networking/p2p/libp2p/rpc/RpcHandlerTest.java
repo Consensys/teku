@@ -29,6 +29,7 @@ import io.libp2p.core.StreamPromise;
 import io.libp2p.core.multistream.ProtocolBinding;
 import io.libp2p.core.mux.StreamMuxer.Session;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 import kotlin.Unit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -246,17 +247,21 @@ public class RpcHandlerTest {
     verify(stream).close();
   }
 
+  @SuppressWarnings("UnnecessaryAsync")
   private Class<? extends Exception> executeInterrupts(
       final boolean closeStream, final boolean exceedTimeout) {
-    Class<? extends Exception> expectedException = null;
+    final AtomicReference<Class<? extends Exception>> expectedException =
+        new AtomicReference<>(null);
     if (closeStream) {
       closeFuture.complete(null);
-      expectedException = PeerDisconnectedException.class;
-    } else if (exceedTimeout) {
-      asyncRunner.executeQueuedActions();
-      expectedException = StreamTimeoutException.class;
+      expectedException.set(PeerDisconnectedException.class);
     }
-    return expectedException;
+    if (exceedTimeout) {
+      asyncRunner.executeQueuedActions();
+      expectedException.compareAndSet(null, StreamTimeoutException.class);
+    }
+
+    return expectedException.get();
   }
 
   public static java.util.stream.Stream<Arguments> getInterruptParams() {
