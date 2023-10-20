@@ -20,7 +20,6 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
-import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
 
 public class KzgComputeBlobProofTestExecutor extends KzgTestExecutor {
 
@@ -32,8 +31,8 @@ public class KzgComputeBlobProofTestExecutor extends KzgTestExecutor {
     try {
       final Bytes blob = data.getInput().getBlob();
       final KZGCommitment commitment = data.getInput().getCommitment();
-      actualKzgProof = CKZG4844.getInstance().computeBlobKzgProof(blob, commitment);
-    } catch (RuntimeException e) {
+      actualKzgProof = kzg.computeBlobKzgProof(blob, commitment);
+    } catch (final RuntimeException ex) {
       actualKzgProof = null;
     }
     assertThat(actualKzgProof).isEqualTo(expectedKzgProof);

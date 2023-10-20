@@ -38,14 +38,14 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
       throws Exception {
     setUp(baseMilestone, Optional.empty());
     final PeerAndNetwork peerAndNetwork = createRemotePeerAndNetwork();
-    final Eth2Peer peer = peerAndNetwork.getPeer();
+    final Eth2Peer peer = peerAndNetwork.peer();
     MetadataMessage md1 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
     MetadataMessage md2 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
 
     assertThat(md1.getSeqNumber()).isEqualTo(md2.getSeqNumber());
     assertThat(md1.getAttnets().getBitCount()).isEqualTo(0);
 
-    peerAndNetwork.getNetwork().setLongTermAttestationSubnetSubscriptions(List.of(0, 1, 8));
+    peerAndNetwork.network().setLongTermAttestationSubnetSubscriptions(List.of(0, 1, 8));
     MetadataMessage md3 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
     assertThat(md3.getSeqNumber()).isGreaterThan(md2.getSeqNumber());
     assertThat(md3.getAttnets().getBitCount()).isEqualTo(3);
@@ -60,7 +60,7 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
       final SpecMilestone baseMilestone, final SpecMilestone nextMilestone) throws Exception {
     setUp(baseMilestone, Optional.of(nextMilestone));
     final PeerAndNetwork peerAndNetwork = createRemotePeerAndNetwork(true, true);
-    final Eth2Peer peer = peerAndNetwork.getPeer();
+    final Eth2Peer peer = peerAndNetwork.peer();
     MetadataMessage md1 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
     MetadataMessage md2 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
 
@@ -68,8 +68,8 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
     assertThat(md1.getAttnets().getBitCount()).isEqualTo(0);
 
     // Subscribe to some sync committee subnets
-    peerAndNetwork.getNetwork().subscribeToSyncCommitteeSubnetId(1);
-    peerAndNetwork.getNetwork().subscribeToSyncCommitteeSubnetId(2);
+    peerAndNetwork.network().subscribeToSyncCommitteeSubnetId(1);
+    peerAndNetwork.network().subscribeToSyncCommitteeSubnetId(2);
     MetadataMessage md3 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
     assertThat(md3).isInstanceOf(MetadataMessageAltair.class);
     final MetadataMessageAltair altairMetadata = (MetadataMessageAltair) md3;
@@ -81,7 +81,7 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
     assertThat(altairMetadata.getSyncnets().getBit(2)).isTrue();
 
     // Unsubscribe from sync committee subnet
-    peerAndNetwork.getNetwork().unsubscribeFromSyncCommitteeSubnetId(2);
+    peerAndNetwork.network().unsubscribeFromSyncCommitteeSubnetId(2);
     MetadataMessage md4 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
     assertThat(md4).isInstanceOf(MetadataMessageAltair.class);
     final MetadataMessageAltair altairMetadata2 = (MetadataMessageAltair) md4;
@@ -98,7 +98,7 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
       final SpecMilestone baseMilestone, final SpecMilestone nextMilestone) throws Exception {
     setUp(baseMilestone, Optional.of(nextMilestone));
     final PeerAndNetwork peerAndNetwork = createRemotePeerAndNetwork(true, true);
-    final Eth2Peer peer = peerAndNetwork.getPeer();
+    final Eth2Peer peer = peerAndNetwork.peer();
     MetadataMessage md1 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
     MetadataMessage md2 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
 
@@ -106,8 +106,8 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
     assertThat(md1.getAttnets().getBitCount()).isEqualTo(0);
 
     // Update attnets and syncnets
-    peerAndNetwork.getNetwork().subscribeToSyncCommitteeSubnetId(1);
-    peerAndNetwork.getNetwork().setLongTermAttestationSubnetSubscriptions(List.of(0, 1, 8));
+    peerAndNetwork.network().subscribeToSyncCommitteeSubnetId(1);
+    peerAndNetwork.network().setLongTermAttestationSubnetSubscriptions(List.of(0, 1, 8));
     MetadataMessage md3 = peer.requestMetadata().get(10, TimeUnit.SECONDS);
     assertThat(md3).isInstanceOf(MetadataMessageAltair.class);
     final MetadataMessageAltair altairMetadata = (MetadataMessageAltair) md3;
@@ -145,16 +145,9 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
   }
 
   private static Class<?> milestoneToMetadataClass(final SpecMilestone milestone) {
-    switch (milestone) {
-      case PHASE0:
-        return MetadataMessagePhase0.class;
-      case ALTAIR:
-      case BELLATRIX:
-      case CAPELLA:
-      case DENEB:
-        return MetadataMessageAltair.class;
-      default:
-        throw new UnsupportedOperationException("unsupported milestone: " + milestone);
-    }
+    return switch (milestone) {
+      case PHASE0 -> MetadataMessagePhase0.class;
+      case ALTAIR, BELLATRIX, CAPELLA, DENEB -> MetadataMessageAltair.class;
+    };
   }
 }

@@ -21,7 +21,6 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
-import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
 
 /**
  * Actually uses {@link tech.pegasys.teku.kzg.KZG#verifyBlobKzgProofBatch(List, List, List)} KZG
@@ -40,10 +39,8 @@ public class KzgVerifyBlobProofTestExecutor extends KzgTestExecutor {
       final KZGCommitment commitment = data.getInput().getCommitment();
       final KZGProof proof = data.getInput().getProof();
       actualVerificationResult =
-          CKZG4844
-              .getInstance()
-              .verifyBlobKzgProofBatch(List.of(blob), List.of(commitment), List.of(proof));
-    } catch (RuntimeException e) {
+          kzg.verifyBlobKzgProofBatch(List.of(blob), List.of(commitment), List.of(proof));
+    } catch (final RuntimeException ex) {
       actualVerificationResult = null;
     }
     assertThat(actualVerificationResult).isEqualTo(expectedVerificationResult);
