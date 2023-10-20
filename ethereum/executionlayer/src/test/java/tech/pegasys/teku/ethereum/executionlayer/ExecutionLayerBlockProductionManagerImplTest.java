@@ -116,6 +116,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     assertThat(executionPayloadResult.getExecutionPayloadValueFuture()).isPresent();
     assertThat(executionPayloadResult.getExecutionPayloadValueFuture().orElseThrow().get())
         .isEqualTo(executionPayloadValue);
+    verify(executionClientHandler).engineGetPayload(any(), any());
 
     // we expect local engine header as result
     final HeaderWithFallbackData expectedResult =
