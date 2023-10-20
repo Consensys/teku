@@ -20,6 +20,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
@@ -304,6 +306,58 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
                 .getBlindedBlockContainerSchema()
                 .sszDeserialize(Bytes.of(response.body().bytes()));
     assertThat(result).isEqualTo(blindedBlockContents);
+  }
+
+  @TestTemplate
+  void shouldReturnNoContentWhenNoBlockProduced() throws IOException {
+    final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
+    final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
+    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(executionLayerBlockProductionManager.getCachedPayloadResult(UInt64.ONE))
+        .thenReturn(
+            Optional.of(
+                new ExecutionPayloadResult(
+                    mock(ExecutionPayloadContext.class),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.of(SafeFuture.completedFuture(executionPayloadValue)))));
+    Response response = get(signature, ContentTypes.JSON);
+    assertThat(response.code()).isEqualTo(SC_NO_CONTENT);
+    final String body = response.body().string();
+    assertThat(body).isEmpty();
+  }
+
+  @TestTemplate
+  void shouldFailWhenNoCachedPayloadResult() throws IOException {
+    final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
+    final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
+    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(executionLayerBlockProductionManager.getCachedPayloadResult(UInt64.ONE))
+        .thenReturn(Optional.empty());
+    Response response = get(signature, ContentTypes.JSON);
+    assertThat(response.code()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
+  }
+
+  @TestTemplate
+  void shouldFailWhenNoExecutionPayloadValue() throws IOException {
+    final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
+    final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
+    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(executionLayerBlockProductionManager.getCachedPayloadResult(UInt64.ONE))
+        .thenReturn(
+            Optional.of(
+                new ExecutionPayloadResult(
+                    mock(ExecutionPayloadContext.class),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.empty())));
+    Response response = get(signature, ContentTypes.JSON);
+    assertThat(response.code()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
   }
 
   private Response get(final BLSSignature signature, final String contentType) throws IOException {

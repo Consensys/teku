@@ -163,7 +163,6 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
 
   @TestTemplate
   void shouldThrowExceptionWithEmptyBlock() throws Exception {
-
     doReturn(SafeFuture.completedFuture(Optional.empty()))
         .when(validatorDataProvider)
         .produceBlock(ONE, signature, Optional.empty());
