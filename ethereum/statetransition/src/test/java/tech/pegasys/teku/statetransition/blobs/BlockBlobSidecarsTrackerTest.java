@@ -167,14 +167,14 @@ public class BlockBlobSidecarsTrackerTest {
     blockBlobSidecarsTracker.add(toAdd);
 
     // we don't know the block, missing blobs are max blobs minus the blob we already have
-    final Set<BlobIdentifier> potentialMissingBlocks =
+    final Set<BlobIdentifier> potentialMissingBlobs =
         UInt64.range(UInt64.valueOf(1), maxBlobsPerBlock.plus(1))
             .map(index -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), index))
             .collect(Collectors.toSet());
 
     SafeFutureAssert.assertThatSafeFuture(completionFuture).isNotCompleted();
     assertThat(blockBlobSidecarsTracker.getMissingBlobSidecars())
-        .containsExactlyInAnyOrderElementsOf(potentialMissingBlocks);
+        .containsExactlyInAnyOrderElementsOf(potentialMissingBlobs);
     assertThat(blockBlobSidecarsTracker.getBlobSidecars())
         .containsExactlyInAnyOrderEntriesOf(added);
 
@@ -344,5 +344,67 @@ public class BlockBlobSidecarsTrackerTest {
 
     assertThat(blockBlobSidecarsTracker.getMissingBlobSidecars())
         .containsExactlyInAnyOrderElementsOf(knownMissing);
+  }
+
+  @Test
+  void shouldNotIgnoreExcessiveBlobSidecarWhenBlockIsUnknownAndWePruneItLater() {
+    final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
+        new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
+
+    final BlobSidecar legitBlobSidecar =
+        dataStructureUtil
+            .createRandomBlobSidecarBuilder()
+            .blockRoot(slotAndBlockRoot.getBlockRoot())
+            .slot(slotAndBlockRoot.getSlot())
+            .index(UInt64.valueOf(2))
+            .build();
+
+    final BlobSidecar excessiveBlobSidecar1 =
+        dataStructureUtil
+            .createRandomBlobSidecarBuilder()
+            .blockRoot(slotAndBlockRoot.getBlockRoot())
+            .slot(slotAndBlockRoot.getSlot())
+            .index(maxBlobsPerBlock)
+            .build();
+    final BlobSidecar excessiveBlobSidecar2 =
+        dataStructureUtil
+            .createRandomBlobSidecarBuilder()
+            .blockRoot(slotAndBlockRoot.getBlockRoot())
+            .slot(slotAndBlockRoot.getSlot())
+            .index(maxBlobsPerBlock.plus(1))
+            .build();
+
+    final List<BlobSidecar> toAddAltered =
+        List.of(legitBlobSidecar, excessiveBlobSidecar1, excessiveBlobSidecar2);
+
+    toAddAltered.forEach(blockBlobSidecarsTracker::add);
+
+    assertThat(blockBlobSidecarsTracker.getBlobSidecars().values())
+        .containsExactlyInAnyOrderElementsOf(toAddAltered);
+
+    blockBlobSidecarsTracker.setBlock(block);
+
+    assertThat(blockBlobSidecarsTracker.getBlobSidecars().values())
+        .containsExactlyInAnyOrderElementsOf(List.of(legitBlobSidecar));
+  }
+
+  @Test
+  void add_shouldIgnoreExcessiveBlobSidecarWhenBlockIsKnown() {
+    final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
+        new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
+
+    blockBlobSidecarsTracker.setBlock(block);
+
+    final BlobSidecar excessive =
+        dataStructureUtil
+            .createRandomBlobSidecarBuilder()
+            .blockRoot(slotAndBlockRoot.getBlockRoot())
+            .slot(slotAndBlockRoot.getSlot())
+            .index(UInt64.valueOf(100))
+            .build();
+
+    assertThat(blockBlobSidecarsTracker.add(excessive)).isFalse();
+
+    assertThat(blockBlobSidecarsTracker.getBlobSidecars()).isEmpty();
   }
 }
