@@ -99,13 +99,11 @@ public class TestDefinition {
           network.equals(Eth2Network.MAINNET)
               ? "mainnet-trusted-setup.txt"
               : "minimal-trusted-setup.txt";
-      builder.trustedSetupPath(getTrustedSetupPath(trustedSetupFilename)).kzgNoop(false);
+      final String trustedSetupPath =
+          Objects.requireNonNull(Eth2NetworkConfiguration.class.getResource(trustedSetupFilename))
+              .toExternalForm();
+      builder.trustedSetupPath(trustedSetupPath).kzgNoop(false);
     };
-  }
-
-  private String getTrustedSetupPath(final String trustedSetupFilename) {
-    return Objects.requireNonNull(Eth2NetworkConfiguration.class.getResource(trustedSetupFilename))
-        .toExternalForm();
   }
 
   public String getTestType() {
