@@ -207,12 +207,7 @@ public class BlobSidecarPoolImplTest {
   @Test
   public void onNewBlobSidecarOnNewBlock_addTrackerWithBothBlockAndBlobSidecar() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
-    final BlobSidecar blobSidecar =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .slot(currentSlot)
-            .blockRoot(block.getRoot())
-            .build();
+    final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecarsForBlock(block).get(0);
 
     blobSidecarPool.onNewBlobSidecar(blobSidecar);
     blobSidecarPool.onNewBlock(block);
