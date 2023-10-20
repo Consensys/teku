@@ -16,6 +16,7 @@ package tech.pegasys.teku.networks;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
+import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_ASYNC_BEACON_CHAIN_MAX_THREADS;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_ASYNC_P2P_MAX_THREADS;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
@@ -82,7 +83,7 @@ public class Eth2NetworkConfiguration {
 
   private final int asyncP2pMaxThreads;
   private final int asyncBeaconChainMaxThreads;
-
+  private final int asyncBeaconChainMaxQueue;
 
   private Eth2NetworkConfiguration(
       final Spec spec,
@@ -108,7 +109,8 @@ public class Eth2NetworkConfiguration {
       final Optional<Eth2Network> eth2Network,
       final Optional<Integer> epochsStoreBlobs,
       final int asyncP2pMaxThreads,
-      final int asyncBeaconChainMaxThreads) {
+      final int asyncBeaconChainMaxThreads,
+      final int asyncBeaconChainMaxQueue) {
     this.spec = spec;
     this.constants = constants;
     this.initialState = initialState;
@@ -136,6 +138,7 @@ public class Eth2NetworkConfiguration {
     this.epochsStoreBlobs = epochsStoreBlobs;
     this.asyncP2pMaxThreads = asyncP2pMaxThreads;
     this.asyncBeaconChainMaxThreads = asyncBeaconChainMaxThreads;
+    this.asyncBeaconChainMaxQueue = asyncBeaconChainMaxQueue;
   }
 
   public static Eth2NetworkConfiguration.Builder builder(final String network) {
@@ -245,6 +248,10 @@ public class Eth2NetworkConfiguration {
     return asyncBeaconChainMaxThreads;
   }
 
+  public int getAsyncBeaconChainMaxQueue() {
+    return asyncBeaconChainMaxQueue;
+  }
+
   @Override
   public String toString() {
     return constants;
@@ -261,6 +268,7 @@ public class Eth2NetworkConfiguration {
 
     private int asyncP2pMaxThreads = DEFAULT_ASYNC_P2P_MAX_THREADS;
     private int asyncBeaconChainMaxThreads = DEFAULT_ASYNC_BEACON_CHAIN_MAX_THREADS;
+    private int asyncBeaconChainMaxQueue = DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE;
     private List<String> discoveryBootnodes = new ArrayList<>();
     private Eth1Address eth1DepositContractAddress;
     private Optional<UInt64> eth1DepositContractDeployBlock = Optional.empty();
@@ -280,7 +288,6 @@ public class Eth2NetworkConfiguration {
     private boolean forkChoiceProposerBoostUniquenessEnabled =
         DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED;
     private Optional<Boolean> kzgNoop = Optional.empty();
-
 
     public void spec(Spec spec) {
       this.spec = spec;
@@ -355,7 +362,8 @@ public class Eth2NetworkConfiguration {
           eth2Network,
           maybeEpochsStoreBlobs,
           asyncP2pMaxThreads,
-              asyncBeaconChainMaxThreads);
+          asyncBeaconChainMaxThreads,
+          asyncBeaconChainMaxQueue);
     }
 
     public Builder constants(final String constants) {
@@ -394,6 +402,11 @@ public class Eth2NetworkConfiguration {
 
     public Builder asyncBeaconChainMaxThreads(final int asyncBeaconChainMaxThreads) {
       this.asyncBeaconChainMaxThreads = asyncBeaconChainMaxThreads;
+      return this;
+    }
+
+    public Builder asyncBeaconChainMaxQueue(final int asyncBeaconChainMaxQueue) {
+      this.asyncBeaconChainMaxQueue = asyncBeaconChainMaxQueue;
       return this;
     }
 
