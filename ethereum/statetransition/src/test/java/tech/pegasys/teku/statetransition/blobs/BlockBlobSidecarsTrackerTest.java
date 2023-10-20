@@ -351,33 +351,15 @@ public class BlockBlobSidecarsTrackerTest {
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
         new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
 
-    final BlobSidecar legitBlobSidecar =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .blockRoot(slotAndBlockRoot.getBlockRoot())
-            .slot(slotAndBlockRoot.getSlot())
-            .index(UInt64.valueOf(2))
-            .build();
-
-    final BlobSidecar excessiveBlobSidecar1 =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .blockRoot(slotAndBlockRoot.getBlockRoot())
-            .slot(slotAndBlockRoot.getSlot())
-            .index(maxBlobsPerBlock)
-            .build();
-    final BlobSidecar excessiveBlobSidecar2 =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .blockRoot(slotAndBlockRoot.getBlockRoot())
-            .slot(slotAndBlockRoot.getSlot())
-            .index(maxBlobsPerBlock.plus(1))
-            .build();
+    final BlobSidecar legitBlobSidecar = createBlobSidecar(UInt64.valueOf(2));
+    final BlobSidecar excessiveBlobSidecar1 = createBlobSidecar(maxBlobsPerBlock);
+    final BlobSidecar excessiveBlobSidecar2 = createBlobSidecar(maxBlobsPerBlock.plus(1));
 
     final List<BlobSidecar> toAddAltered =
         List.of(legitBlobSidecar, excessiveBlobSidecar1, excessiveBlobSidecar2);
 
-    toAddAltered.forEach(blockBlobSidecarsTracker::add);
+    toAddAltered.forEach(
+        blobSidecar -> assertThat(blockBlobSidecarsTracker.add(blobSidecar)).isTrue());
 
     assertThat(blockBlobSidecarsTracker.getBlobSidecars().values())
         .containsExactlyInAnyOrderElementsOf(toAddAltered);
@@ -395,16 +377,23 @@ public class BlockBlobSidecarsTrackerTest {
 
     blockBlobSidecarsTracker.setBlock(block);
 
-    final BlobSidecar excessive =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .blockRoot(slotAndBlockRoot.getBlockRoot())
-            .slot(slotAndBlockRoot.getSlot())
-            .index(UInt64.valueOf(100))
-            .build();
+    final BlobSidecar legitBlobSidecar = createBlobSidecar(UInt64.valueOf(2));
+    final BlobSidecar excessiveBlobSidecar1 = createBlobSidecar(maxBlobsPerBlock);
+    final BlobSidecar excessiveBlobSidecar2 = createBlobSidecar(maxBlobsPerBlock.plus(1));
 
-    assertThat(blockBlobSidecarsTracker.add(excessive)).isFalse();
+    assertThat(blockBlobSidecarsTracker.add(legitBlobSidecar)).isTrue();
+    assertThat(blockBlobSidecarsTracker.add(excessiveBlobSidecar1)).isFalse();
+    assertThat(blockBlobSidecarsTracker.add(excessiveBlobSidecar2)).isFalse();
 
-    assertThat(blockBlobSidecarsTracker.getBlobSidecars()).isEmpty();
+    assertThat(blockBlobSidecarsTracker.getBlobSidecars().size()).isEqualTo(1);
+  }
+
+  private BlobSidecar createBlobSidecar(final UInt64 index) {
+    return dataStructureUtil
+        .createRandomBlobSidecarBuilder()
+        .blockRoot(slotAndBlockRoot.getBlockRoot())
+        .slot(slotAndBlockRoot.getSlot())
+        .index(index)
+        .build();
   }
 }
