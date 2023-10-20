@@ -61,7 +61,6 @@ public final class CKZG4844 implements KZG {
       LOG.trace("Trusted setup from file {} is already loaded.", trustedSetupFile);
       return;
     }
-
     try {
       final TrustedSetup trustedSetup = CKZG4844Utils.parseTrustedSetupFile(trustedSetupFile);
       final List<Bytes> g1Points = trustedSetup.g1Points();

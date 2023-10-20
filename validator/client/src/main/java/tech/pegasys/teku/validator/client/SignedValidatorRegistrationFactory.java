@@ -90,13 +90,13 @@ public class SignedValidatorRegistrationFactory {
         .orElseGet(
             () -> {
               final Signer signer = validator.getSigner();
-              return signValidatorRegistration(publicKey, validatorRegistration, signer);
+              return signAndCacheValidatorRegistration(publicKey, validatorRegistration, signer);
             })
         .whenException(errorHandler);
   }
 
-  private SafeFuture<SignedValidatorRegistration> signValidatorRegistration(
-      final BLSPublicKey publicKey,
+  private SafeFuture<SignedValidatorRegistration> signAndCacheValidatorRegistration(
+      final BLSPublicKey cacheKey,
       final ValidatorRegistration validatorRegistration,
       final Signer signer) {
     return signer
@@ -106,7 +106,7 @@ public class SignedValidatorRegistrationFactory {
               final SignedValidatorRegistration signedValidatorRegistration =
                   ApiSchemas.SIGNED_VALIDATOR_REGISTRATION_SCHEMA.create(
                       validatorRegistration, signature);
-              LOG.debug("Validator registration signed for {}", publicKey);
+              LOG.debug("Validator registration signed for {}", cacheKey);
               return signedValidatorRegistration;
             });
   }
