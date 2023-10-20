@@ -383,7 +383,7 @@ public class Spec {
     return atSlot(slot)
         .getSchemaDefinitions()
         .toVersionDeneb()
-        .orElseThrow(() -> new RuntimeException("Deneb milestone is required to load blobs"))
+        .orElseThrow(() -> new RuntimeException("Deneb milestone is required to deserialize blobs"))
         .getBlobsInBlockSchema()
         .sszDeserialize(serializedBlobs);
   }
@@ -392,7 +392,8 @@ public class Spec {
     return atSlot(slot)
         .getSchemaDefinitions()
         .toVersionDeneb()
-        .orElseThrow(() -> new RuntimeException("Deneb milestone is required to load blob sidecar"))
+        .orElseThrow(
+            () -> new RuntimeException("Deneb milestone is required to deserialize blob sidecar"))
         .getBlobSidecarSchema()
         .sszDeserialize(serializedBlobSidecar);
   }
@@ -405,7 +406,7 @@ public class Spec {
         .orElseThrow(
             () ->
                 new RuntimeException(
-                    "Bellatrix milestone is required to load execution payload header"))
+                    "Bellatrix milestone is required to deserialize execution payload header"))
         .getExecutionPayloadHeaderSchema()
         .jsonDeserialize(objectMapper.createParser(jsonFile));
   }

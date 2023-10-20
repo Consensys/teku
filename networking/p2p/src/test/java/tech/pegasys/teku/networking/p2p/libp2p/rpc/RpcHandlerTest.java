@@ -246,7 +246,6 @@ public class RpcHandlerTest {
     verify(stream).close();
   }
 
-  @SuppressWarnings("UnnecessaryAsync")
   private Class<? extends Exception> executeInterrupts(
       final boolean closeStream, final boolean exceedTimeout) {
     Class<? extends Exception> expectedException = null;
