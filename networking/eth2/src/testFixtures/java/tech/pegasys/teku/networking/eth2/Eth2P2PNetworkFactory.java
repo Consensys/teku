@@ -282,6 +282,7 @@ public class Eth2P2PNetworkFactory {
                             gossipEncoding.createPreparedGossipMessageFactory(
                                 recentChainData::getMilestoneByForkDigest))
                         .gossipTopicFilter(gossipTopicsFilter)
+                        .timeProvider(timeProvider)
                         .build())
                 .peerPools(peerPools)
                 .peerSelectionStrategy(
