@@ -20,6 +20,7 @@ import static tech.pegasys.teku.infrastructure.time.TimeUtilities.millisToSecond
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.DEFAULT_MAXIMUM_ATTESTATION_COUNT;
+import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_EXECUTOR_THREADS;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Throwables;
@@ -276,9 +277,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
         slot -> spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();
     this.beaconDataDirectory = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
     this.asyncRunnerFactory = serviceConfig.getAsyncRunnerFactory();
-    this.beaconAsyncRunner = serviceConfig.createAsyncRunner("beaconchain");
+    this.beaconAsyncRunner = serviceConfig.createAsyncRunner("beaconchain", Math.max(beaconConfig.eth2NetworkConfig().getAsyncBeaconChainMaxThreads(), DEFAULT_EXECUTOR_THREADS));
     this.eventAsyncRunner = serviceConfig.createAsyncRunner("events", 10);
-    this.networkAsyncRunner = serviceConfig.createAsyncRunner("p2p", 10);
+    this.networkAsyncRunner =
+        serviceConfig.createAsyncRunner(
+            "p2p", beaconConfig.eth2NetworkConfig().getAsyncP2pMaxThreads());
     this.operationPoolAsyncRunner = serviceConfig.createAsyncRunner("operationPoolUpdater", 1);
     this.timeProvider = serviceConfig.getTimeProvider();
     this.eventChannels = serviceConfig.getEventChannels();

@@ -18,5 +18,9 @@ public class NetworkConstants {
   public static final int SYNC_COMMITTEE_SUBNET_COUNT = 4;
   public static final int INTERVALS_PER_SLOT = 3;
   public static final int DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY = 128;
+
+  public static final int DEFAULT_ASYNC_P2P_MAX_THREADS = 10;
+
+  public static final int DEFAULT_ASYNC_BEACON_CHAIN_MAX_THREADS = Runtime.getRuntime().availableProcessors();
   public static final int NODE_ID_BITS = 256;
 }
