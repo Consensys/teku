@@ -20,6 +20,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding.ForkDigestToMilestone;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
@@ -39,6 +40,7 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
   private final Uncompressor snappyCompressor;
   private final MessageIdCalculator messageIdCalculator;
   private final NetworkingSpecConfig networkingConfig;
+  private final Optional<UInt64> timestamp;
 
   private final Supplier<DecodedMessageResult> decodedResult =
       Suppliers.memoize(this::getDecodedMessage);
@@ -47,9 +49,10 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
       final String topic,
       final Bytes compressedData,
       final ForkDigestToMilestone forkDigestToMilestone,
-      final NetworkingSpecConfig networkingConfig) {
+      final NetworkingSpecConfig networkingConfig,
+      final Optional<UInt64> timestamp) {
     return new SnappyPreparedGossipMessage(
-        topic, compressedData, forkDigestToMilestone, null, null, networkingConfig);
+        topic, compressedData, forkDigestToMilestone, null, null, networkingConfig, timestamp);
   }
 
   static SnappyPreparedGossipMessage create(
@@ -58,14 +61,16 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
       final ForkDigestToMilestone forkDigestToMilestone,
       final SszSchema<?> valueType,
       final Uncompressor snappyCompressor,
-      final NetworkingSpecConfig networkingConfig) {
+      final NetworkingSpecConfig networkingConfig,
+      final Optional<UInt64> timestamp) {
     return new SnappyPreparedGossipMessage(
         topic,
         compressedData,
         forkDigestToMilestone,
         valueType,
         snappyCompressor,
-        networkingConfig);
+        networkingConfig,
+        timestamp);
   }
 
   private SnappyPreparedGossipMessage(
@@ -74,13 +79,15 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
       final ForkDigestToMilestone forkDigestToMilestone,
       final SszSchema<?> valueType,
       final Uncompressor snappyCompressor,
-      final NetworkingSpecConfig networkingConfig) {
+      final NetworkingSpecConfig networkingConfig,
+      final Optional<UInt64> timestamp) {
     this.compressedData = compressedData;
     this.valueType = valueType;
     this.snappyCompressor = snappyCompressor;
     this.networkingConfig = networkingConfig;
     this.messageIdCalculator =
         createMessageIdCalculator(topic, compressedData, forkDigestToMilestone);
+    this.timestamp = timestamp;
   }
 
   private MessageIdCalculator createMessageIdCalculator(
@@ -137,6 +144,11 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
     return getUncompressed()
         .map(messageIdCalculator::getValidMessageId)
         .orElseGet(messageIdCalculator::getInvalidMessageId);
+  }
+
+  @Override
+  public Optional<UInt64> getTimestamp() {
+    return timestamp;
   }
 
   @FunctionalInterface

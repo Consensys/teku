@@ -13,17 +13,20 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 @FunctionalInterface
-public interface OperationProcessor<T> {
-  SafeFuture<InternalValidationResult> process(T operation);
+public interface TimedOperationProcessor<T> {
+  SafeFuture<InternalValidationResult> process(T operation, Optional<UInt64> timestamp);
 
-  OperationProcessor<?> NOOP = (__) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+  TimedOperationProcessor<?> NOOP =
+      (__, ___) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
 
   @SuppressWarnings("unchecked")
-  static <T> OperationProcessor<T> noop() {
-    return (OperationProcessor<T>) NOOP;
+  static <T> TimedOperationProcessor<T> noop() {
+    return (TimedOperationProcessor<T>) NOOP;
   }
 }

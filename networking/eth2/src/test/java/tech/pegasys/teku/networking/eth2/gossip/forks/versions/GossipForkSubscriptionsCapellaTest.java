@@ -31,6 +31,7 @@ import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.SignedBlsToExecutionChangeGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
+import tech.pegasys.teku.networking.eth2.gossip.topics.TimedOperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -100,6 +101,7 @@ class GossipForkSubscriptionsCapellaTest {
     final RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec);
     final GossipEncoding gossipEncoding = mock(GossipEncoding.class);
     final OperationProcessor noopOperationProcessor = OperationProcessor.NOOP;
+    final TimedOperationProcessor noopTimedOperationProcessor = TimedOperationProcessor.NOOP;
 
     return new GossipForkSubscriptionsCapella(
         fork,
@@ -110,7 +112,7 @@ class GossipForkSubscriptionsCapellaTest {
         discoveryNetwork,
         recentChainData,
         gossipEncoding,
-        noopOperationProcessor,
+        noopTimedOperationProcessor,
         noopOperationProcessor,
         noopOperationProcessor,
         noopOperationProcessor,

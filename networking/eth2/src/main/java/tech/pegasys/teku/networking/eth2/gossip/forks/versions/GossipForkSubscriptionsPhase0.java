@@ -30,6 +30,7 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
+import tech.pegasys.teku.networking.eth2.gossip.topics.TimedOperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -52,7 +53,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   protected final GossipEncoding gossipEncoding;
 
   // Upstream consumers
-  private final OperationProcessor<SignedBeaconBlock> blockProcessor;
+  private final TimedOperationProcessor<SignedBeaconBlock> blockProcessor;
   private final OperationProcessor<ValidatableAttestation> attestationProcessor;
   private final OperationProcessor<ValidatableAttestation> aggregateProcessor;
   private final OperationProcessor<AttesterSlashing> attesterSlashingProcessor;
@@ -74,7 +75,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
       final DiscoveryNetwork<?> discoveryNetwork,
       final RecentChainData recentChainData,
       final GossipEncoding gossipEncoding,
-      final OperationProcessor<SignedBeaconBlock> blockProcessor,
+      final TimedOperationProcessor<SignedBeaconBlock> blockProcessor,
       final OperationProcessor<ValidatableAttestation> attestationProcessor,
       final OperationProcessor<ValidatableAttestation> aggregateProcessor,
       final OperationProcessor<AttesterSlashing> attesterSlashingProcessor,

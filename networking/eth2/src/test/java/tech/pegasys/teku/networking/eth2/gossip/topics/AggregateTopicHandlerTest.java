@@ -18,6 +18,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.libp2p.core.pubsub.ValidationResult;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.AggregateGossipManager;
@@ -45,7 +46,7 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validata
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(
             topicHandler.prepareMessage(
-                gossipEncoding.encode(aggregate.getSignedAggregateAndProof())));
+                gossipEncoding.encode(aggregate.getSignedAggregateAndProof()), Optional.empty()));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Valid);
   }
@@ -59,7 +60,7 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validata
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(
             topicHandler.prepareMessage(
-                gossipEncoding.encode(aggregate.getSignedAggregateAndProof())));
+                gossipEncoding.encode(aggregate.getSignedAggregateAndProof()), Optional.empty()));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
     verifyNoInteractions(processor);
@@ -76,7 +77,7 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validata
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(
             topicHandler.prepareMessage(
-                gossipEncoding.encode(aggregate.getSignedAggregateAndProof())));
+                gossipEncoding.encode(aggregate.getSignedAggregateAndProof()), Optional.empty()));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
   }
@@ -92,7 +93,7 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validata
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(
             topicHandler.prepareMessage(
-                gossipEncoding.encode(aggregate.getSignedAggregateAndProof())));
+                gossipEncoding.encode(aggregate.getSignedAggregateAndProof()), Optional.empty()));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
   }
@@ -108,7 +109,7 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validata
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(
             topicHandler.prepareMessage(
-                gossipEncoding.encode(aggregate.getSignedAggregateAndProof())));
+                gossipEncoding.encode(aggregate.getSignedAggregateAndProof()), Optional.empty()));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
   }

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p.gossip;
 
+import static com.google.common.base.Preconditions.checkState;
 import static tech.pegasys.teku.networking.p2p.libp2p.config.LibP2PParamsFactory.MAX_SUBSCRIPTIONS_PER_MESSAGE;
 import static tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork.NULL_SEQNO_GENERATOR;
 import static tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork.STRICT_FIELDS_VALIDATOR;
@@ -39,6 +40,8 @@ import io.netty.handler.logging.LoggingHandler;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
@@ -64,17 +67,32 @@ public class LibP2PGossipNetworkBuilder {
   protected PreparedGossipMessageFactory defaultMessageFactory;
   protected GossipTopicFilter gossipTopicFilter;
   protected boolean logWireGossip;
+  protected TimeProvider timeProvider;
 
   protected ChannelHandler debugGossipHandler = null;
 
   protected LibP2PGossipNetworkBuilder() {}
 
   public LibP2PGossipNetwork build() {
+    validate();
     GossipTopicHandlers topicHandlers = new GossipTopicHandlers();
     Gossip gossip = createGossip(gossipConfig, logWireGossip, gossipTopicFilter, topicHandlers);
     PubsubPublisherApi publisher = gossip.createPublisher(null, NULL_SEQNO_GENERATOR);
 
     return new LibP2PGossipNetwork(metricsSystem, gossip, publisher, topicHandlers);
+  }
+
+  private void validate() {
+    assertNotNull("metricsSystem", metricsSystem);
+    assertNotNull("gossipConfig", gossipConfig);
+    assertNotNull("networkingSpecConfig", networkingSpecConfig);
+    assertNotNull("defaultMessageFactory", defaultMessageFactory);
+    assertNotNull("gossipTopicFilter", gossipTopicFilter);
+    assertNotNull("timeProvider", timeProvider);
+  }
+
+  private void assertNotNull(String fieldName, Object fieldValue) {
+    checkState(fieldValue != null, "Field " + fieldName + " must be set.");
   }
 
   protected GossipRouter createGossipRouter(
@@ -109,14 +127,17 @@ public class LibP2PGossipNetworkBuilder {
           Preconditions.checkArgument(
               msg.getTopicIDsCount() == 1,
               "Unexpected number of topics for a single message: " + msg.getTopicIDsCount());
+          final UInt64 timestamp = timeProvider.getTimeInMillis();
           String topic = msg.getTopicIDs(0);
           Bytes payload = Bytes.wrap(msg.getData().toByteArray());
 
           PreparedGossipMessage preparedMessage =
               topicHandlers
                   .getHandlerForTopic(topic)
-                  .map(handler -> handler.prepareMessage(payload))
-                  .orElse(defaultMessageFactory.create(topic, payload, networkingSpecConfig));
+                  .map(handler -> handler.prepareMessage(payload, Optional.of(timestamp)))
+                  .orElse(
+                      defaultMessageFactory.create(
+                          topic, payload, networkingSpecConfig, Optional.empty()));
 
           return new PreparedPubsubMessage(msg, preparedMessage);
         });
@@ -178,6 +199,11 @@ public class LibP2PGossipNetworkBuilder {
 
   public LibP2PGossipNetworkBuilder debugGossipHandler(ChannelHandler debugGossipHandler) {
     this.debugGossipHandler = debugGossipHandler;
+    return this;
+  }
+
+  public LibP2PGossipNetworkBuilder timeProvider(final TimeProvider timeProvider) {
+    this.timeProvider = timeProvider;
     return this;
   }
 }

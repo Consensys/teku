@@ -44,6 +44,7 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubnetTopic
 import tech.pegasys.teku.networking.eth2.gossip.topics.Eth2GossipTopicFilter;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
+import tech.pegasys.teku.networking.eth2.gossip.topics.TimedOperationProcessor;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
@@ -94,7 +95,7 @@ public class Eth2P2PNetworkBuilder {
   protected P2PConfig config;
   protected EventChannels eventChannels;
   protected CombinedChainDataClient combinedChainDataClient;
-  protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
+  protected TimedOperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
   protected OperationProcessor<SignedBlobSidecar> gossipedBlobSidecarProcessor;
   protected OperationProcessor<ValidatableAttestation> gossipedAttestationConsumer;
   protected OperationProcessor<ValidatableAttestation> gossipedAggregateProcessor;
@@ -323,6 +324,7 @@ public class Eth2P2PNetworkBuilder {
             .peerHandlers(peerHandlers)
             .preparedGossipMessageFactory(defaultMessageFactory)
             .gossipTopicFilter(gossipTopicsFilter)
+            .timeProvider(timeProvider)
             .build();
 
     final AttestationSubnetTopicProvider attestationSubnetTopicProvider =
@@ -439,7 +441,7 @@ public class Eth2P2PNetworkBuilder {
   }
 
   public Eth2P2PNetworkBuilder gossipedBlockProcessor(
-      final OperationProcessor<SignedBeaconBlock> blockProcessor) {
+      final TimedOperationProcessor<SignedBeaconBlock> blockProcessor) {
     checkNotNull(blockProcessor);
     this.gossipedBlockProcessor = blockProcessor;
     return this;

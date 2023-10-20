@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.networking.eth2.gossip.encoding;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
@@ -28,5 +30,9 @@ public interface Eth2PreparedGossipMessageFactory extends PreparedGossipMessageF
    * @param valueType The concrete type to deserialize to
    */
   <T extends SszData> PreparedGossipMessage create(
-      String topic, Bytes data, SszSchema<T> valueType, NetworkingSpecConfig networkingConfig);
+      String topic,
+      Bytes data,
+      SszSchema<T> valueType,
+      NetworkingSpecConfig networkingConfig,
+      Optional<UInt64> timestamp);
 }

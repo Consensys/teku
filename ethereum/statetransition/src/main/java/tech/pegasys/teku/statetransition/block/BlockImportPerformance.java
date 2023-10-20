@@ -16,6 +16,9 @@ package tech.pegasys.teku.statetransition.block;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import java.util.Locale;
+import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.time.PerformanceTracker;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -25,7 +28,10 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockImportPerformance {
+  private static final Logger LOG = LogManager.getLogger();
+
   public static final String ARRIVAL_EVENT_LABEL = "arrival";
+  public static final String PRE_VALIDATE_EVENT_LABEL = "pre_validate";
   public static final String PRESTATE_RETRIEVED_EVENT_LABEL = "pre-state_retrieved";
   public static final String PROCESSED_EVENT_LABEL = "processed";
   public static final String TRANSACTION_PREPARED_EVENT_LABEL = "transaction_prepared";
@@ -53,12 +59,24 @@ public class BlockImportPerformance {
     this.blockImportMetrics = blockImportMetrics;
   }
 
-  public void arrival(final RecentChainData recentChainData, final UInt64 slot) {
+  public void arrival(
+      final RecentChainData recentChainData,
+      final UInt64 slot,
+      final Optional<UInt64> arrivalTimestamp) {
     timeAtSlotStartTimeStamp = secondsToMillis(recentChainData.computeTimeAtSlot(slot));
     timeWarningLimitTimeStamp =
         timeAtSlotStartTimeStamp.plus(
             secondsToMillis(recentChainData.getSpec().getSecondsPerSlot(slot)).dividedBy(3));
-    performanceTracker.addEvent(ARRIVAL_EVENT_LABEL);
+    if (arrivalTimestamp.isPresent()) {
+      performanceTracker.addEvent(ARRIVAL_EVENT_LABEL, arrivalTimestamp.get());
+    } else {
+      LOG.debug("Block arrival time missed for slot {}, setting current", slot);
+      performanceTracker.addEvent(ARRIVAL_EVENT_LABEL);
+    }
+  }
+
+  public void preValidate() {
+    performanceTracker.addEvent(PRE_VALIDATE_EVENT_LABEL);
   }
 
   public void preStateRetrieved() {

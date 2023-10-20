@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 
 import io.libp2p.core.pubsub.ValidationResult;
 import java.util.List;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
@@ -62,7 +63,7 @@ public class SingleAttestationTopicHandlerTest
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
     final SafeFuture<ValidationResult> result =
-        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized, Optional.empty()));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Valid);
   }
@@ -78,7 +79,7 @@ public class SingleAttestationTopicHandlerTest
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
     final SafeFuture<ValidationResult> result =
-        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized, Optional.empty()));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
     verifyNoInteractions(processor);
@@ -96,7 +97,7 @@ public class SingleAttestationTopicHandlerTest
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
     final SafeFuture<ValidationResult> result =
-        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized, Optional.empty()));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
   }
@@ -113,7 +114,7 @@ public class SingleAttestationTopicHandlerTest
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
     final SafeFuture<ValidationResult> result =
-        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized, Optional.empty()));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
   }
@@ -130,7 +131,7 @@ public class SingleAttestationTopicHandlerTest
     final Bytes serialized = gossipEncoding.encode(attestation.getAttestation());
 
     final SafeFuture<ValidationResult> result =
-        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized, Optional.empty()));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
   }
@@ -140,7 +141,7 @@ public class SingleAttestationTopicHandlerTest
     final Bytes serialized = Bytes.fromHexString("0x3456");
 
     final SafeFuture<ValidationResult> result =
-        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized, Optional.empty()));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
   }

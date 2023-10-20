@@ -37,6 +37,7 @@ import java.time.Duration;
 import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork.PrivateKeyProvider;
@@ -73,6 +74,7 @@ public class LibP2PNetworkBuilder {
   protected List<PeerHandler> peerHandlers;
   protected PreparedGossipMessageFactory preparedGossipMessageFactory;
   protected GossipTopicFilter gossipTopicFilter;
+  protected TimeProvider timeProvider;
 
   protected Firewall firewall = new Firewall(Duration.ofSeconds(30));
   protected MuxFirewall muxFirewall =
@@ -126,6 +128,7 @@ public class LibP2PNetworkBuilder {
         .defaultMessageFactory(preparedGossipMessageFactory)
         .gossipTopicFilter(gossipTopicFilter)
         .logWireGossip(config.getWireLogsConfig().isLogWireGossip())
+        .timeProvider(timeProvider)
         .build();
   }
 
@@ -274,6 +277,11 @@ public class LibP2PNetworkBuilder {
 
   public LibP2PNetworkBuilder muxFirewall(MuxFirewall muxFirewall) {
     this.muxFirewall = muxFirewall;
+    return this;
+  }
+
+  public LibP2PNetworkBuilder timeProvider(final TimeProvider timeProvider) {
+    this.timeProvider = timeProvider;
     return this;
   }
 }

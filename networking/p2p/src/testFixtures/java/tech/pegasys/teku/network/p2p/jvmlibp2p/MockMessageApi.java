@@ -20,11 +20,13 @@ import io.libp2p.pubsub.PubsubMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
 import pubsub.pb.Rpc.Message;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.networking.p2p.libp2p.gossip.PreparedPubsubMessage;
 
@@ -87,6 +89,11 @@ public class MockMessageApi implements MessageApi {
           @Override
           public Bytes getOriginalMessage() {
             return Bytes.wrapByteBuf(data);
+          }
+
+          @Override
+          public Optional<UInt64> getTimestamp() {
+            return Optional.empty();
           }
         };
     return new PreparedPubsubMessage(protoMessage, preparedMessage);

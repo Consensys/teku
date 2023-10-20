@@ -126,7 +126,7 @@ public class DiscoveryNetworkFactory {
                         .rpcMethods(Collections.emptyList())
                         .peerHandlers(Collections.emptyList())
                         .preparedGossipMessageFactory(
-                            (topic, payload, networkingSpecConfig) -> {
+                            (topic, payload, networkingSpecConfig, arrivalTimestamp) -> {
                               throw new UnsupportedOperationException();
                             })
                         .gossipTopicFilter(topic -> true)

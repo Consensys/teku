@@ -40,6 +40,7 @@ import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.BEG
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.COMPLETED_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.EXECUTION_PAYLOAD_RESULT_RECEIVED_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PRESTATE_RETRIEVED_EVENT_LABEL;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PRE_VALIDATE_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PROCESSED_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TRANSACTION_COMMITTED_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TRANSACTION_PREPARED_EVENT_LABEL;
@@ -637,10 +638,11 @@ public class BlockManagerTest {
     assertImportBlockWithResult(invalidBlock, FailureReason.FAILED_STATE_TRANSITION);
 
     // Gossip same invalid block, must reject with no actual validation
-    assertValidateAndImportBlockRejectWithoutValidation(invalidBlock);
+    assertValidateAndImportBlockRejectWithoutValidation(invalidBlock, Optional.empty());
 
     // Gossip invalid block descendants, must reject with no actual validation
-    invalidBlockDescendants.forEach(this::assertValidateAndImportBlockRejectWithoutValidation);
+    invalidBlockDescendants.forEach(
+        block -> assertValidateAndImportBlockRejectWithoutValidation(block, Optional.empty()));
 
     // If any invalid block is again imported, it should be ignored
     invalidBlockDescendants.forEach(
@@ -719,8 +721,10 @@ public class BlockManagerTest {
         localChain.chainBuilder().generateBlockAtSlot(incrementSlot()).getBlock();
     // slot 1 - secondPerSlot 6
 
-    // arrival time
-    timeProvider.advanceTimeByMillis(7_000); // 1 second late
+    // 1 second late
+    final Optional<UInt64> arrivalTime = Optional.of(UInt64.valueOf(7000));
+    // pre-validate time
+    timeProvider.advanceTimeByMillis(7_500);
 
     when(blockValidator.validateGossip(any()))
         .thenAnswer(
@@ -731,7 +735,7 @@ public class BlockManagerTest {
               return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
             });
 
-    assertThat(blockManager.validateAndImportBlock(block))
+    assertThat(blockManager.validateAndImportBlock(block, arrivalTime))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
     verify(eventLogger)
         .lateBlockImport(
@@ -740,6 +744,8 @@ public class BlockManagerTest {
             block.getProposerIndex(),
             ARRIVAL_EVENT_LABEL
                 + " 1000ms, "
+                + PRE_VALIDATE_EVENT_LABEL
+                + " +500ms, "
                 + PRESTATE_RETRIEVED_EVENT_LABEL
                 + " +3000ms, "
                 + PROCESSED_EVENT_LABEL
@@ -774,7 +780,7 @@ public class BlockManagerTest {
               return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
             });
 
-    assertThat(blockManager.validateAndImportBlock(block))
+    assertThat(blockManager.validateAndImportBlock(block, Optional.empty()))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
     verifyNoInteractions(eventLogger);
   }
@@ -1141,8 +1147,9 @@ public class BlockManagerTest {
         .isCompletedWithValueMatching(result -> result.getFailureReason().equals(failureReason));
   }
 
-  private void assertValidateAndImportBlockRejectWithoutValidation(final SignedBeaconBlock block) {
-    assertThat(blockManager.validateAndImportBlock(block))
+  private void assertValidateAndImportBlockRejectWithoutValidation(
+      final SignedBeaconBlock block, final Optional<UInt64> arrivalTimestamp) {
+    assertThat(blockManager.validateAndImportBlock(block, arrivalTimestamp))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
     verify(blockValidator, never()).validateGossip(eq(block));
     verify(blockValidator, never()).validateBroadcast(any(), any(), any());

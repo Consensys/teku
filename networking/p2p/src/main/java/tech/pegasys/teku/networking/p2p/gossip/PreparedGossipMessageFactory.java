@@ -13,12 +13,18 @@
 
 package tech.pegasys.teku.networking.p2p.gossip;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 
 /** Factory for {@link PreparedGossipMessage} instances */
 public interface PreparedGossipMessageFactory {
 
   /** Creates a {@link PreparedGossipMessage} instance */
-  PreparedGossipMessage create(String topic, Bytes payload, NetworkingSpecConfig networkingConfig);
+  PreparedGossipMessage create(
+      String topic,
+      Bytes payload,
+      NetworkingSpecConfig networkingConfig,
+      Optional<UInt64> timestamp);
 }

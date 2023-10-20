@@ -70,7 +70,7 @@ public class GossipMessageHandlerIntegrationTest {
         b ->
             b.gossipEncoding(gossipEncoding)
                 .gossipedBlockProcessor(
-                    (block) -> {
+                    (block, arrivalTimestamp) -> {
                       node2ReceivedBlocks.add(block);
                       return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
                     });
@@ -83,7 +83,7 @@ public class GossipMessageHandlerIntegrationTest {
         b ->
             b.gossipEncoding(gossipEncoding)
                 .gossipedBlockProcessor(
-                    (block) -> {
+                    (block, arrivalTimestamp) -> {
                       node3ReceivedBlocks.add(block);
                       return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
                     });
@@ -132,7 +132,7 @@ public class GossipMessageHandlerIntegrationTest {
             b1 ->
                 b1.gossipEncoding(gossipEncoding)
                     .gossipedBlockProcessor(
-                        block -> {
+                        (block, arrivalTimestamp) -> {
                           // Report block as invalid
                           return SafeFuture.completedFuture(InternalValidationResult.reject("No"));
                         }));
@@ -144,7 +144,7 @@ public class GossipMessageHandlerIntegrationTest {
             b ->
                 b.gossipEncoding(gossipEncoding)
                     .gossipedBlockProcessor(
-                        block -> {
+                        (block, arrivalTimestamp) -> {
                           node3ReceivedBlocks.add(block);
                           return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
                         }));

@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import io.libp2p.core.pubsub.ValidationResult;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -62,7 +63,7 @@ public class VoluntaryExitTopicHandlerTest extends AbstractTopicHandlerTest<Sign
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     Bytes serialized = gossipEncoding.encode(exit);
     final SafeFuture<ValidationResult> result =
-        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized, Optional.empty()));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Valid);
   }
@@ -74,7 +75,7 @@ public class VoluntaryExitTopicHandlerTest extends AbstractTopicHandlerTest<Sign
             getBestState(), spec.computeEpochAtSlot(wrongForkSlot).intValue(), 3);
     Bytes serialized = gossipEncoding.encode(exit);
     final SafeFuture<ValidationResult> result =
-        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized, Optional.empty()));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
     verifyNoInteractions(processor);
@@ -87,7 +88,7 @@ public class VoluntaryExitTopicHandlerTest extends AbstractTopicHandlerTest<Sign
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
     Bytes serialized = gossipEncoding.encode(exit);
     final SafeFuture<ValidationResult> result =
-        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized, Optional.empty()));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
   }
@@ -97,7 +98,9 @@ public class VoluntaryExitTopicHandlerTest extends AbstractTopicHandlerTest<Sign
     Bytes serialized = Bytes.fromHexString("0x1234");
 
     final ValidationResult result =
-        topicHandler.handleMessage(topicHandler.prepareMessage(serialized)).join();
+        topicHandler
+            .handleMessage(topicHandler.prepareMessage(serialized, Optional.empty()))
+            .join();
     assertThat(result).isEqualTo(ValidationResult.Invalid);
   }
 

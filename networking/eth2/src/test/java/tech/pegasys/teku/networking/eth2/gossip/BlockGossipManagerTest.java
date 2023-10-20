@@ -26,7 +26,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
-import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
+import tech.pegasys.teku.networking.eth2.gossip.topics.TimedOperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.Spec;
@@ -50,7 +50,8 @@ public class BlockGossipManagerTest {
       new ForkInfo(spec.fork(UInt64.ZERO), dataStructureUtil.randomBytes32());
 
   @SuppressWarnings("unchecked")
-  private final OperationProcessor<SignedBeaconBlock> processor = mock(OperationProcessor.class);
+  private final TimedOperationProcessor<SignedBeaconBlock> blockProcessor =
+      mock(TimedOperationProcessor.class);
 
   private BlockGossipManager blockGossipManager;
 
@@ -68,7 +69,7 @@ public class BlockGossipManagerTest {
             gossipNetwork,
             gossipEncoding,
             forkInfo,
-            processor);
+            blockProcessor);
     blockGossipManager.subscribe();
   }
 

@@ -18,6 +18,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.libp2p.core.pubsub.ValidationResult;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -43,7 +44,7 @@ public class AttesterSlashingTopicHandlerTest extends AbstractTopicHandlerTest<A
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result =
-        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized, Optional.empty()));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Valid);
   }
@@ -53,7 +54,7 @@ public class AttesterSlashingTopicHandlerTest extends AbstractTopicHandlerTest<A
     final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashingAtSlot(wrongForkSlot);
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result =
-        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized, Optional.empty()));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
     verifyNoInteractions(processor);
@@ -66,7 +67,7 @@ public class AttesterSlashingTopicHandlerTest extends AbstractTopicHandlerTest<A
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result =
-        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized, Optional.empty()));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
   }
@@ -78,7 +79,7 @@ public class AttesterSlashingTopicHandlerTest extends AbstractTopicHandlerTest<A
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("Nope")));
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result =
-        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized, Optional.empty()));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
   }
@@ -88,7 +89,7 @@ public class AttesterSlashingTopicHandlerTest extends AbstractTopicHandlerTest<A
     Bytes serialized = Bytes.fromHexString("0x1234");
 
     final SafeFuture<ValidationResult> result =
-        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized, Optional.empty()));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
   }
