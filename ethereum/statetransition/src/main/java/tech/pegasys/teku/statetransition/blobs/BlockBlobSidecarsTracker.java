@@ -56,6 +56,13 @@ public class BlockBlobSidecarsTracker {
 
   private final Optional<Map<UInt64, Long>> maybeDebugTimings;
 
+  /**
+   * {@link BlockBlobSidecarsTracker#add} and {@link BlockBlobSidecarsTracker#setBlock} methods are
+   * assumed to be called from BlobSidecarPool in a synchronized context
+   *
+   * @param slotAndBlockRoot slot and block root to create tracker for
+   * @param maxBlobsPerBlock max number of blobs per block for the slot
+   */
   public BlockBlobSidecarsTracker(
       final SlotAndBlockRoot slotAndBlockRoot, final UInt64 maxBlobsPerBlock) {
     this.slotAndBlockRoot = slotAndBlockRoot;
@@ -128,6 +135,13 @@ public class BlockBlobSidecarsTracker {
       return false;
     }
 
+    if (isExcessiveBlobSidecar(blobSidecar)) {
+      LOG.debug(
+          "Ignoring BlobSidecar {} - index is too high with respect to block commitments",
+          blobSidecar::toLogString);
+      return false;
+    }
+
     boolean addedNew = blobSidecars.put(blobSidecar.getIndex(), blobSidecar) == null;
 
     if (addedNew) {
@@ -160,6 +174,7 @@ public class BlockBlobSidecarsTracker {
     maybeDebugTimings.ifPresent(
         debugTimings -> debugTimings.put(BLOCK_ARRIVAL_TIMING_IDX, System.currentTimeMillis()));
 
+    pruneExcessiveBlobSidecars();
     checkCompletion();
 
     return true;
@@ -178,6 +193,17 @@ public class BlockBlobSidecarsTracker {
       blobSidecarsComplete.complete(null);
       maybeDebugTimings.ifPresent(this::printDebugTimings);
     }
+  }
+
+  private void pruneExcessiveBlobSidecars() {
+    getBlockKzgCommitmentsCount()
+        .ifPresent(count -> blobSidecars.tailMap(UInt64.valueOf(count), true).clear());
+  }
+
+  private boolean isExcessiveBlobSidecar(final BlobSidecar blobSidecar) {
+    return getBlockKzgCommitmentsCount()
+        .map(count -> blobSidecar.getIndex().isGreaterThanOrEqualTo(count))
+        .orElse(false);
   }
 
   public boolean isCompleted() {

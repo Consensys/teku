@@ -126,7 +126,9 @@ public interface Database extends AutoCloseable {
    */
   Optional<SignedBeaconBlock> getFinalizedBlockAtSlot(UInt64 slot);
 
-  /** @return The earliest available finalized block's slot */
+  /**
+   * @return The earliest available finalized block's slot
+   */
   Optional<UInt64> getEarliestAvailableBlockSlot();
 
   /** Return the earliest available finalized block */

@@ -30,7 +30,9 @@ public interface PreparedGossipMessage {
    */
   Bytes getMessageId();
 
-  /** @return Returns the decoded message content */
+  /**
+   * @return Returns the decoded message content
+   */
   DecodedMessageResult getDecodedMessage();
 
   Bytes getOriginalMessage();

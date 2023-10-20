@@ -33,6 +33,7 @@ class BlockCheckpointsSerializerTest {
           new Checkpoint(FINALIZED_EPOCH, Bytes32.fromHexString("0x02")),
           new Checkpoint(UInt64.valueOf(3255), Bytes32.fromHexString("0x04")),
           new Checkpoint(UInt64.valueOf(3266), Bytes32.fromHexString("0x05")));
+
   /**
    * The original serialization format for CheckpointEpochs. This may be written to existing
    * databases so if you need to update it, backwards compatibility is likely to have been broken.

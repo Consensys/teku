@@ -447,7 +447,8 @@ class RemoteValidatorApiHandlerTest {
     SafeFuture<Optional<BlockContainer>> future =
         apiHandler.createUnsignedBlock(UInt64.ONE, blsSignature, graffiti, false);
 
-    assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(blockContents);
+    // TODO: https://github.com/Consensys/teku/issues/7615
+    assertThatSszData(unwrapToValue(future)).isEqualBySszTo(blockContents);
   }
 
   @Test

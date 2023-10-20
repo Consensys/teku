@@ -90,6 +90,18 @@ public class BlobSidecarValidator {
      */
 
     /*
+    [REJECT] The sidecar's index is consistent with `MAX_BLOBS_PER_BLOCK` -- i.e. `sidecar.index < MAX_BLOBS_PER_BLOCK`
+     */
+    final Optional<Integer> maxBlobsPerBlockAtSlot =
+        spec.getMaxBlobsPerBlock(blobSidecar.getSlot());
+    if (maxBlobsPerBlockAtSlot.isEmpty()) {
+      return completedFuture(reject("BlobSidecar's slot is pre deneb"));
+    }
+    if (blobSidecar.getIndex().isGreaterThanOrEqualTo(maxBlobsPerBlockAtSlot.get())) {
+      return completedFuture(reject("BlobSidecar index is greater than MAX_BLOBS_PER_BLOCK"));
+    }
+
+    /*
     [REJECT] The sidecar's block's parent (defined by sidecar.block_parent_root) passes validation.
      */
     if (invalidBlockRoots.containsKey(blobSidecar.getBlockParentRoot())) {

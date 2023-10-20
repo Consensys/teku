@@ -292,6 +292,7 @@ public class Spec {
         .map(SpecConfigAltair::getSyncCommitteeSize)
         .orElse(0);
   }
+
   // Genesis
   public BeaconState initializeBeaconStateFromEth1(
       Bytes32 eth1BlockHash,

@@ -19,7 +19,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.kzg.KZGCommitment;
-import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
 
 public class KzgBlobToCommitmentTestExecutor extends KzgTestExecutor {
 
@@ -30,8 +29,8 @@ public class KzgBlobToCommitmentTestExecutor extends KzgTestExecutor {
     KZGCommitment actualKzgCommitment;
     try {
       final Bytes blob = data.getInput().getBlob();
-      actualKzgCommitment = CKZG4844.getInstance().blobToKzgCommitment(blob);
-    } catch (RuntimeException e) {
+      actualKzgCommitment = kzg.blobToKzgCommitment(blob);
+    } catch (final RuntimeException ex) {
       actualKzgCommitment = null;
     }
     assertThat(actualKzgCommitment).isEqualTo(expectedKzgCommitment);

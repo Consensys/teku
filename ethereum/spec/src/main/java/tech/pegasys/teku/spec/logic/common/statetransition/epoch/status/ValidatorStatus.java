@@ -116,7 +116,9 @@ public class ValidatorStatus {
     return currentEpochTargetAttester;
   }
 
-  /** @return True if the validator correctly attested to the correct head in the current epoch. */
+  /**
+   * @return True if the validator correctly attested to the correct head in the current epoch.
+   */
   public boolean isCurrentEpochHeadAttester() {
     return currentEpochHeadAttester;
   }

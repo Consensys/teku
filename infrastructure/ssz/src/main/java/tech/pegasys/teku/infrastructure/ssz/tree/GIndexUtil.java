@@ -77,6 +77,7 @@ public class GIndexUtil {
    * Effectively this is {@link Long#MIN_VALUE} or <code>0b10000...000L</code> in binary form
    */
   public static final long LEFTMOST_G_INDEX = gIdxLeftmostFrom(SELF_G_INDEX);
+
   /**
    * The generalized index (normally an index of non-existing node) of the rightmost possible node
    * Effectively this is <code>-1L</code> or <code>0b11111...111L</code> in binary form
