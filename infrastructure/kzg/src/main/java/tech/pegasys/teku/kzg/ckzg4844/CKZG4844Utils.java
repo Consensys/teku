@@ -59,11 +59,12 @@ public class CKZG4844Utils {
     return flattenBytes(g2Points, CKZG4844JNI.BYTES_PER_G2 * g2Points.size());
   }
 
-  public static TrustedSetup parseTrustedSetupFile(final String filePath) throws IOException {
-    final String sanitizedTrustedSetup = UrlSanitizer.sanitizePotentialUrl(filePath);
+  public static TrustedSetup parseTrustedSetupFile(final String trustedSetupFile)
+      throws IOException {
+    final String sanitizedTrustedSetup = UrlSanitizer.sanitizePotentialUrl(trustedSetupFile);
     final InputStream resource =
         ResourceLoader.urlOrFile("application/octet-stream")
-            .load(filePath)
+            .load(trustedSetupFile)
             .orElseThrow(() -> new FileNotFoundException(sanitizedTrustedSetup + " is not found"));
     try (BufferedReader reader =
         new BufferedReader(new InputStreamReader(resource, StandardCharsets.UTF_8))) {
@@ -87,7 +88,8 @@ public class CKZG4844Utils {
 
       return new TrustedSetup(g1Points, g2Points);
     } catch (final Exception ex) {
-      throw new IOException(String.format("Failed to parse trusted setup file\n: %s", filePath));
+      throw new IOException(
+          String.format("Failed to parse trusted setup file\n: %s", trustedSetupFile));
     }
   }
 

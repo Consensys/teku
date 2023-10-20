@@ -16,6 +16,8 @@ package tech.pegasys.teku.reference.phase0.kzg;
 import static tech.pegasys.teku.ethtests.finder.KzgTestFinder.KZG_DATA_FILE;
 
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
@@ -26,23 +28,32 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 
 public abstract class KzgTestExecutor implements TestExecutor {
 
+  private static final Pattern TEST_NAME_PATTERN = Pattern.compile("kzg-(.+)/.+");
+
+  protected final KZG kzg = CKZG4844.createInstance();
+
   @Override
-  public final void runTest(TestDefinition testDefinition) throws Throwable {
+  public final void runTest(final TestDefinition testDefinition) throws Throwable {
+    final String network = extractNetwork(testDefinition.getTestName());
     final Eth2NetworkConfiguration networkConfig =
-        Eth2NetworkConfiguration.builder(testDefinition.getConfigName()).build();
+        Eth2NetworkConfiguration.builder(network).build();
     final SpecConfigDeneb specConfigDeneb =
         SpecConfigDeneb.required(networkConfig.getSpec().getGenesisSpecConfig());
 
-    KZG kzg = null;
     try {
-      kzg = CKZG4844.createInstance();
       kzg.loadTrustedSetup(specConfigDeneb.getTrustedSetupPath().orElseThrow());
       runTestImpl(testDefinition);
     } finally {
-      if (kzg != null) {
-        kzg.freeTrustedSetup();
-      }
+      kzg.freeTrustedSetup();
     }
+  }
+
+  private String extractNetwork(final String testName) {
+    final Matcher matcher = TEST_NAME_PATTERN.matcher(testName);
+    if (matcher.find()) {
+      return matcher.group(1);
+    }
+    throw new IllegalArgumentException("Can't extract network from " + testName);
   }
 
   protected <T> T loadDataFile(final TestDefinition testDefinition, final Class<T> type)
