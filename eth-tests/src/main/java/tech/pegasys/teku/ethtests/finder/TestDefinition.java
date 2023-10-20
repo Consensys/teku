@@ -73,7 +73,7 @@ public class TestDefinition {
           case TestSpecConfig.MINIMAL -> Eth2Network.MINIMAL;
           default -> throw new IllegalArgumentException("Unknown configName: " + configName);
         };
-    final SpecMilestone highestSupportedMilestone =
+    final SpecMilestone milestone =
         switch (fork) {
           case TestFork.PHASE0 -> SpecMilestone.PHASE0;
           case TestFork.ALTAIR -> SpecMilestone.ALTAIR;
@@ -84,7 +84,7 @@ public class TestDefinition {
         };
     spec =
         TestSpecFactory.create(
-            highestSupportedMilestone,
+            milestone,
             network,
             configBuilder -> {
               if (!kzgNoop) {
