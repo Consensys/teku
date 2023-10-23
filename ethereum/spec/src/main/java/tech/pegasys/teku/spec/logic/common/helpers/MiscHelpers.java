@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -344,6 +345,13 @@ public class MiscHelpers {
   }
 
   public boolean isDataAvailable(final List<BlobSidecar> blobSidecars, final BeaconBlock block) {
+    return false;
+  }
+
+  public boolean isDataAvailable(
+      final List<Bytes> blobs,
+      final List<KZGCommitment> kzgCommitments,
+      final List<KZGProof> proofs) {
     return false;
   }
 
