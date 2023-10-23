@@ -87,7 +87,7 @@ public final class CKZG4844 implements KZG {
   }
 
   @Override
-  public void freeTrustedSetup() throws KZGException {
+  public synchronized void freeTrustedSetup() throws KZGException {
     try {
       CKZG4844JNI.freeTrustedSetup();
       loadedTrustedSetupFile = Optional.empty();
