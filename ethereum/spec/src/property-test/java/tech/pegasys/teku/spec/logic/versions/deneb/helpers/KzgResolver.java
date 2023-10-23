@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.logic.versions.deneb.helpers;
 
 import com.google.common.io.Resources;
-import ethereum.ckzg4844.CKZG4844JNI;
 import java.util.Optional;
 import net.jqwik.api.Tuple;
 import net.jqwik.api.lifecycle.LifecycleContext;
@@ -29,9 +28,7 @@ import tech.pegasys.teku.kzg.trusted_setups.TrustedSetups;
 
 /**
  * This class provides a KZG instance with a loaded trusted setup that will automatically free the
- * trusted setup when the property test is finished. It will re-use the same KZG instance for all
- * iterations of the test, but it will create a new instance for each method. For a class with three
- * property test methods, you can expect it to load/free three times.
+ * trusted setup when all the property tests are finished.
  */
 class KzgResolver implements ResolveParameterHook {
   public static final Tuple.Tuple2<Class<KzgResolver.KzgAutoLoadFree>, String> STORE_IDENTIFIER =
@@ -50,15 +47,15 @@ class KzgResolver implements ResolveParameterHook {
 
   private KZG getKzgWithTrustedSetup() {
     final Store<KzgResolver.KzgAutoLoadFree> kzgStore =
-        Store.getOrCreate(STORE_IDENTIFIER, Lifespan.PROPERTY, KzgResolver.KzgAutoLoadFree::new);
+        Store.getOrCreate(STORE_IDENTIFIER, Lifespan.RUN, KzgResolver.KzgAutoLoadFree::new);
     return kzgStore.get().kzg;
   }
 
   private static class KzgAutoLoadFree implements Store.CloseOnReset {
     private static final String TRUSTED_SETUP =
-        Resources.getResource(TrustedSetups.class, "mainnet/trusted_setup.txt").toExternalForm();
-    private final KZG kzg =
-        CKZG4844.createInstance(CKZG4844JNI.Preset.MAINNET.fieldElementsPerBlob);
+        Resources.getResource(TrustedSetups.class, "trusted_setup.txt").toExternalForm();
+
+    private final KZG kzg = CKZG4844.getInstance();
 
     private KzgAutoLoadFree() {
       kzg.loadTrustedSetup(TRUSTED_SETUP);
