@@ -28,9 +28,7 @@ import tech.pegasys.teku.kzg.trusted_setups.TrustedSetups;
 
 /**
  * This class provides a KZG instance with a loaded trusted setup that will automatically free the
- * trusted setup when the property test is finished. It will re-use the same KZG instance for all
- * iterations of the test, but it will create a new instance for each method. For a class with three
- * property test methods, you can expect it to load/free three times.
+ * trusted setup when all the property tests are finished.
  */
 class KzgResolver implements ResolveParameterHook {
   public static final Tuple.Tuple2<Class<KzgResolver.KzgAutoLoadFree>, String> STORE_IDENTIFIER =
@@ -49,7 +47,7 @@ class KzgResolver implements ResolveParameterHook {
 
   private KZG getKzgWithTrustedSetup() {
     final Store<KzgResolver.KzgAutoLoadFree> kzgStore =
-        Store.getOrCreate(STORE_IDENTIFIER, Lifespan.PROPERTY, KzgResolver.KzgAutoLoadFree::new);
+        Store.getOrCreate(STORE_IDENTIFIER, Lifespan.RUN, KzgResolver.KzgAutoLoadFree::new);
     return kzgStore.get().kzg;
   }
 
@@ -64,8 +62,8 @@ class KzgResolver implements ResolveParameterHook {
     }
 
     @Override
-    public void close() throws Exception {
-      kzg.close();
+    public void close() {
+      kzg.freeTrustedSetup();
     }
   }
 }

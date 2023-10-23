@@ -20,13 +20,16 @@ import org.apache.tuweni.bytes.Bytes;
  * This interface specifies all the KZG functions needed for the Deneb specification and is the
  * entry-point for all KZG operations in Teku.
  */
-public interface KZG extends AutoCloseable {
+public interface KZG {
 
   KZG NOOP =
       new KZG() {
 
         @Override
         public void loadTrustedSetup(final String trustedSetupFile) throws KZGException {}
+
+        @Override
+        public void freeTrustedSetup() throws KZGException {}
 
         @Override
         public boolean verifyBlobKzgProofBatch(
@@ -47,12 +50,11 @@ public interface KZG extends AutoCloseable {
             throws KZGException {
           return KZGProof.INFINITY;
         }
-
-        @Override
-        public void close() {}
       };
 
   void loadTrustedSetup(String trustedSetupFile) throws KZGException;
+
+  void freeTrustedSetup() throws KZGException;
 
   boolean verifyBlobKzgProofBatch(
       List<Bytes> blobs, List<KZGCommitment> kzgCommitments, List<KZGProof> kzgProofs)

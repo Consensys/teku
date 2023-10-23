@@ -35,7 +35,7 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -48,23 +48,22 @@ public final class KZGTest {
   private static final Random RND = new Random(RANDOM_SEED);
   private static final String TRUSTED_SETUP_PATH = "trusted_setup.txt";
 
-  private static KZG kzg;
+  private static final KZG KZG = CKZG4844.createInstance();
 
-  @BeforeAll
-  public static void setUp() {
-    kzg = CKZG4844.createInstance();
+  @BeforeEach
+  public void setUp() {
     loadTrustedSetup();
   }
 
   @AfterAll
-  public static void cleanUp() throws Exception {
-    kzg.close();
+  public static void cleanUp() {
+    KZG.freeTrustedSetup();
   }
 
   private static void loadTrustedSetup() {
     final String trustedSetup =
         Resources.getResource(TrustedSetups.class, TRUSTED_SETUP_PATH).toExternalForm();
-    kzg.loadTrustedSetup(trustedSetup);
+    KZG.loadTrustedSetup(trustedSetup);
   }
 
   @Test
@@ -73,27 +72,31 @@ public final class KZGTest {
   }
 
   @Test
-  public void testUsageWithoutLoadedTrustedSetup_shouldThrowException() throws Exception {
-    kzg.close();
+  public void testKzgFreeTrustedSetupTwice_shouldThrowException() {
+    KZG.freeTrustedSetup();
+    assertThrows(KZGException.class, KZG::freeTrustedSetup);
+  }
+
+  @Test
+  public void testUsageWithoutLoadedTrustedSetup_shouldThrowException() {
+    KZG.freeTrustedSetup();
     final List<KZGException> exceptions =
         List.of(
             assertThrows(
                 KZGException.class,
                 () ->
-                    kzg.verifyBlobKzgProofBatch(
+                    KZG.verifyBlobKzgProofBatch(
                         List.of(Bytes.fromHexString("0x", BYTES_PER_BLOB)),
                         List.of(KZGCommitment.infinity()),
                         List.of(KZGProof.INFINITY))),
-            assertThrows(KZGException.class, () -> kzg.blobToKzgCommitment(Bytes.EMPTY)),
+            assertThrows(KZGException.class, () -> KZG.blobToKzgCommitment(Bytes.EMPTY)),
             assertThrows(
                 KZGException.class,
-                () -> kzg.computeBlobKzgProof(Bytes.EMPTY, KZGCommitment.infinity())));
+                () -> KZG.computeBlobKzgProof(Bytes.EMPTY, KZGCommitment.infinity())));
 
     assertThat(exceptions)
         .allSatisfy(
             exception -> assertThat(exception).cause().hasMessage("Trusted Setup is not loaded."));
-    // load trusted setup again for other tests
-    loadTrustedSetup();
   }
 
   @Test
@@ -101,30 +104,30 @@ public final class KZGTest {
     final int numberOfBlobs = 4;
     final List<Bytes> blobs = getSampleBlobs(numberOfBlobs);
     final List<KZGCommitment> kzgCommitments =
-        blobs.stream().map(kzg::blobToKzgCommitment).collect(Collectors.toList());
+        blobs.stream().map(KZG::blobToKzgCommitment).collect(Collectors.toList());
     final List<KZGProof> kzgProofs =
         Streams.zip(
                 kzgCommitments.stream(),
                 blobs.stream(),
-                (kzgCommitment, blob) -> kzg.computeBlobKzgProof(blob, kzgCommitment))
+                (kzgCommitment, blob) -> KZG.computeBlobKzgProof(blob, kzgCommitment))
             .collect(Collectors.toList());
-    assertThat(kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, kzgProofs)).isTrue();
+    assertThat(KZG.verifyBlobKzgProofBatch(blobs, kzgCommitments, kzgProofs)).isTrue();
 
     assertThat(
-            kzg.verifyBlobKzgProofBatch(getSampleBlobs(numberOfBlobs), kzgCommitments, kzgProofs))
+            KZG.verifyBlobKzgProofBatch(getSampleBlobs(numberOfBlobs), kzgCommitments, kzgProofs))
         .isFalse();
-    assertThat(kzg.verifyBlobKzgProofBatch(blobs, getSampleCommitments(numberOfBlobs), kzgProofs))
+    assertThat(KZG.verifyBlobKzgProofBatch(blobs, getSampleCommitments(numberOfBlobs), kzgProofs))
         .isFalse();
     final List<KZGProof> invalidProofs =
         getSampleBlobs(numberOfBlobs).stream()
-            .map((Bytes blob) -> kzg.computeBlobKzgProof(blob, kzg.blobToKzgCommitment(blob)))
+            .map((Bytes blob) -> KZG.computeBlobKzgProof(blob, KZG.blobToKzgCommitment(blob)))
             .collect(Collectors.toList());
-    assertThat(kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, invalidProofs)).isFalse();
+    assertThat(KZG.verifyBlobKzgProofBatch(blobs, kzgCommitments, invalidProofs)).isFalse();
   }
 
   @Test
   public void testVerifyingEmptyBatch() {
-    assertThat(kzg.verifyBlobKzgProofBatch(List.of(), List.of(), List.of())).isTrue();
+    assertThat(KZG.verifyBlobKzgProofBatch(List.of(), List.of(), List.of())).isTrue();
   }
 
   @Test
@@ -132,26 +135,26 @@ public final class KZGTest {
     final int numberOfBlobs = 1;
     final List<Bytes> blobs = getSampleBlobs(numberOfBlobs);
     final List<KZGCommitment> kzgCommitments =
-        blobs.stream().map(kzg::blobToKzgCommitment).collect(Collectors.toList());
+        blobs.stream().map(KZG::blobToKzgCommitment).collect(Collectors.toList());
     final List<KZGProof> kzgProofs =
         Streams.zip(
                 kzgCommitments.stream(),
                 blobs.stream(),
-                (kzgCommitment, blob) -> kzg.computeBlobKzgProof(blob, kzgCommitment))
+                (kzgCommitment, blob) -> KZG.computeBlobKzgProof(blob, kzgCommitment))
             .collect(Collectors.toList());
     assertThat(kzgProofs.size()).isEqualTo(1);
-    assertThat(kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, kzgProofs)).isTrue();
+    assertThat(KZG.verifyBlobKzgProofBatch(blobs, kzgCommitments, kzgProofs)).isTrue();
 
     assertThat(
-            kzg.verifyBlobKzgProofBatch(getSampleBlobs(numberOfBlobs), kzgCommitments, kzgProofs))
+            KZG.verifyBlobKzgProofBatch(getSampleBlobs(numberOfBlobs), kzgCommitments, kzgProofs))
         .isFalse();
-    assertThat(kzg.verifyBlobKzgProofBatch(blobs, getSampleCommitments(numberOfBlobs), kzgProofs))
+    assertThat(KZG.verifyBlobKzgProofBatch(blobs, getSampleCommitments(numberOfBlobs), kzgProofs))
         .isFalse();
     final List<KZGProof> invalidProofs =
         getSampleBlobs(numberOfBlobs).stream()
-            .map((Bytes blob) -> kzg.computeBlobKzgProof(blob, kzg.blobToKzgCommitment(blob)))
+            .map((Bytes blob) -> KZG.computeBlobKzgProof(blob, KZG.blobToKzgCommitment(blob)))
             .collect(Collectors.toList());
-    assertThat(kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, invalidProofs)).isFalse();
+    assertThat(KZG.verifyBlobKzgProofBatch(blobs, kzgCommitments, invalidProofs)).isFalse();
   }
 
   @Test
@@ -159,25 +162,25 @@ public final class KZGTest {
     final int numberOfBlobs = 4;
     final List<Bytes> blobs = getSampleBlobs(numberOfBlobs);
     final List<KZGCommitment> kzgCommitments =
-        blobs.stream().map(kzg::blobToKzgCommitment).collect(Collectors.toList());
+        blobs.stream().map(KZG::blobToKzgCommitment).collect(Collectors.toList());
     final List<KZGProof> kzgProofs =
         Streams.zip(
                 kzgCommitments.stream(),
                 blobs.stream(),
-                (kzgCommitment, blob) -> kzg.computeBlobKzgProof(blob, kzgCommitment))
+                (kzgCommitment, blob) -> KZG.computeBlobKzgProof(blob, kzgCommitment))
             .collect(Collectors.toList());
     final KZGException kzgException1 =
         assertThrows(
             KZGException.class,
-            () -> kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, List.of(kzgProofs.get(0))));
+            () -> KZG.verifyBlobKzgProofBatch(blobs, kzgCommitments, List.of(kzgProofs.get(0))));
     final KZGException kzgException2 =
         assertThrows(
             KZGException.class,
-            () -> kzg.verifyBlobKzgProofBatch(blobs, List.of(kzgCommitments.get(0)), kzgProofs));
+            () -> KZG.verifyBlobKzgProofBatch(blobs, List.of(kzgCommitments.get(0)), kzgProofs));
     final KZGException kzgException3 =
         assertThrows(
             KZGException.class,
-            () -> kzg.verifyBlobKzgProofBatch(List.of(blobs.get(0)), kzgCommitments, kzgProofs));
+            () -> KZG.verifyBlobKzgProofBatch(List.of(blobs.get(0)), kzgCommitments, kzgProofs));
 
     Stream.of(kzgException1, kzgException2, kzgException3)
         .forEach(
@@ -201,7 +204,7 @@ public final class KZGTest {
 
     final KZGException kzgException =
         assertThrows(
-            KZGException.class, () -> kzg.computeBlobKzgProof(blob, kzg.blobToKzgCommitment(blob)));
+            KZGException.class, () -> KZG.computeBlobKzgProof(blob, KZG.blobToKzgCommitment(blob)));
 
     assertThat(kzgException)
         .cause()
@@ -226,10 +229,8 @@ public final class KZGTest {
   public void incorrectTrustedSetupFilesShouldThrow(final String path) {
     final String trustedSetup = Resources.getResource(TrustedSetups.class, path).toExternalForm();
     final Throwable cause =
-        assertThrows(KZGException.class, () -> kzg.loadTrustedSetup(trustedSetup)).getCause();
+        assertThrows(KZGException.class, () -> KZG.loadTrustedSetup(trustedSetup)).getCause();
     assertThat(cause.getMessage()).contains("Failed to parse trusted setup file");
-    // reload real trusted setup for other tests
-    loadTrustedSetup();
   }
 
   @Test
@@ -237,12 +238,10 @@ public final class KZGTest {
     final String trustedSetup =
         Resources.getResource(TrustedSetups.class, "trusted_setup_monomial.txt").toExternalForm();
     final KZGException kzgException =
-        assertThrows(KZGException.class, () -> kzg.loadTrustedSetup(trustedSetup));
+        assertThrows(KZGException.class, () -> KZG.loadTrustedSetup(trustedSetup));
     assertThat(kzgException.getMessage()).contains("Failed to load trusted setup");
     assertThat(kzgException.getCause().getMessage())
         .contains("There was an error while loading the Trusted Setup. (C_KZG_BADARGS)");
-    // reload real trusted setup for other tests
-    loadTrustedSetup();
   }
 
   @Test
@@ -271,7 +270,7 @@ public final class KZGTest {
   }
 
   private KZGCommitment getSampleCommitment() {
-    return kzg.blobToKzgCommitment(getSampleBlob());
+    return KZG.blobToKzgCommitment(getSampleBlob());
   }
 
   private UInt256 randomBLSFieldElement() {

@@ -87,6 +87,17 @@ public final class CKZG4844 implements KZG {
   }
 
   @Override
+  public void freeTrustedSetup() throws KZGException {
+    try {
+      CKZG4844JNI.freeTrustedSetup();
+      loadedTrustedSetupFile = Optional.empty();
+      LOG.debug("Trusted setup was freed");
+    } catch (final Exception ex) {
+      throw new KZGException("Failed to free trusted setup", ex);
+    }
+  }
+
+  @Override
   public boolean verifyBlobKzgProofBatch(
       final List<Bytes> blobs,
       final List<KZGCommitment> kzgCommitments,
@@ -124,22 +135,6 @@ public final class CKZG4844 implements KZG {
     } catch (final Exception ex) {
       throw new KZGException(
           "Failed to compute KZG proof for blob with commitment " + kzgCommitment, ex);
-    }
-  }
-
-  /** Frees the current trusted setup if any is loaded */
-  @Override
-  public void close() {
-    loadedTrustedSetupFile.ifPresent(__ -> freeTrustedSetup());
-  }
-
-  private void freeTrustedSetup() throws KZGException {
-    try {
-      CKZG4844JNI.freeTrustedSetup();
-      loadedTrustedSetupFile = Optional.empty();
-      LOG.debug("Trusted setup was freed");
-    } catch (final Exception ex) {
-      throw new KZGException("Failed to free trusted setup", ex);
     }
   }
 }
