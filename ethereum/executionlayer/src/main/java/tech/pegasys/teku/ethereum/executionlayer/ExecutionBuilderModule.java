@@ -131,9 +131,9 @@ public class ExecutionBuilderModule {
         executionLayerManager
             .engineGetPayloadForFallback(executionPayloadContext, state.getSlot())
             .thenPeek(
-                getPayloadResponse -> {
-                  localPayloadValueResult.complete(getPayloadResponse.getExecutionPayloadValue());
-                });
+                getPayloadResponse ->
+                    localPayloadValueResult.complete(
+                        getPayloadResponse.getExecutionPayloadValue()));
 
     final Optional<SafeFuture<HeaderWithFallbackData>> validationResult =
         validateBuilderGetHeader(executionPayloadContext, state, localGetPayloadResponse);
