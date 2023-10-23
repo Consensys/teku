@@ -36,7 +36,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilit
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-/** Simplified version of {@link BlobSidecarManager} which is used in reference tests */
+/** Simplified version of {@link BlobSidecarManager} which is used in fork choice reference tests */
 class StubBlobSidecarManager implements BlobSidecarManager {
 
   private final Map<Bytes32, BlobsAndProofs> blobsAndProofsByBlockRoot = new HashMap<>();
@@ -57,7 +57,7 @@ class StubBlobSidecarManager implements BlobSidecarManager {
   public SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
       final SignedBlobSidecar signedBlobSidecar) {
     return SafeFuture.failedFuture(
-        new UnsupportedOperationException("Not available in fork_choice reference tests"));
+        new UnsupportedOperationException("Not available in fork choice reference tests"));
   }
 
   @Override
@@ -96,16 +96,16 @@ class StubBlobSidecarManager implements BlobSidecarManager {
         if (blobsAndProofs == null) {
           return SafeFuture.completedFuture(BlobSidecarsAndValidationResult.NOT_REQUIRED);
         }
-        return SafeFuture.completedFuture(validateBatch(block, blobsAndProofs));
+        return SafeFuture.completedFuture(validateImmediately(block, blobsAndProofs));
       }
 
       @Override
       public BlobSidecarsAndValidationResult validateImmediately(
           final List<BlobSidecar> blobSidecars) {
-        throw new UnsupportedOperationException("Not available in fork_choice reference tests");
+        throw new UnsupportedOperationException("Not available in fork choice reference tests");
       }
 
-      public BlobSidecarsAndValidationResult validateBatch(
+      private BlobSidecarsAndValidationResult validateImmediately(
           final SignedBeaconBlock block, final BlobsAndProofs blobsAndProofs) {
         final List<KZGCommitment> kzgCommitments =
             BeaconBlockBodyDeneb.required(block.getMessage().getBody())
@@ -131,7 +131,7 @@ class StubBlobSidecarManager implements BlobSidecarManager {
   @Override
   public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
       final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
-    throw new UnsupportedOperationException("Not available in fork_choice reference tests");
+    throw new UnsupportedOperationException("Not available in fork choice reference tests");
   }
 
   private record BlobsAndProofs(List<Blob> blobs, List<KZGProof> proofs) {}
