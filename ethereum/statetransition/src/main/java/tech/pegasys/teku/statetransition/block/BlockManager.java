@@ -156,7 +156,7 @@ public class BlockManager extends Service
       final BlockImportPerformance performance =
           new BlockImportPerformance(timeProvider, blockImportMetrics.get());
       performance.arrival(recentChainData, block.getSlot(), arrivalTimestamp);
-      performance.preValidate();
+      performance.gossipValidation();
       blockImportPerformance = Optional.of(performance);
     } else {
       blockImportPerformance = Optional.empty();

@@ -34,5 +34,5 @@ public interface Eth2PreparedGossipMessageFactory extends PreparedGossipMessageF
       Bytes data,
       SszSchema<T> valueType,
       NetworkingSpecConfig networkingConfig,
-      Optional<UInt64> timestamp);
+      Optional<UInt64> arrivalTimestamp);
 }

@@ -40,7 +40,7 @@ public class SnappyPreparedGossipMessageFactory implements Eth2PreparedGossipMes
       final Bytes data,
       final SszSchema<T> valueType,
       final NetworkingSpecConfig networkingConfig,
-      final Optional<UInt64> timestamp) {
+      final Optional<UInt64> arrivalTimestamp) {
     return SnappyPreparedGossipMessage.create(
         topic,
         data,
@@ -48,7 +48,7 @@ public class SnappyPreparedGossipMessageFactory implements Eth2PreparedGossipMes
         valueType,
         snappyCompressor::uncompress,
         networkingConfig,
-        timestamp);
+        arrivalTimestamp);
   }
 
   @Override
@@ -56,8 +56,8 @@ public class SnappyPreparedGossipMessageFactory implements Eth2PreparedGossipMes
       final String topic,
       final Bytes data,
       final NetworkingSpecConfig networkingConfig,
-      final Optional<UInt64> timestamp) {
+      final Optional<UInt64> arrivalTimestamp) {
     return SnappyPreparedGossipMessage.createUnknown(
-        topic, data, forkDigestToMilestone, networkingConfig, timestamp);
+        topic, data, forkDigestToMilestone, networkingConfig, arrivalTimestamp);
   }
 }

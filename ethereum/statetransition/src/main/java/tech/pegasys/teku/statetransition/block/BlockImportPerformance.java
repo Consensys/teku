@@ -75,7 +75,7 @@ public class BlockImportPerformance {
     }
   }
 
-  public void preValidate() {
+  public void gossipValidation() {
     performanceTracker.addEvent(GOSSIP_VALIDATION_EVENT_LABEL);
   }
 

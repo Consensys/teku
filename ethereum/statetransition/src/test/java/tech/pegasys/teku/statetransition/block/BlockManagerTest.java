@@ -638,11 +638,11 @@ public class BlockManagerTest {
     assertImportBlockWithResult(invalidBlock, FailureReason.FAILED_STATE_TRANSITION);
 
     // Gossip same invalid block, must reject with no actual validation
-    assertValidateAndImportBlockRejectWithoutValidation(invalidBlock, Optional.empty());
+    assertValidateAndImportBlockRejectWithoutValidation(invalidBlock);
 
     // Gossip invalid block descendants, must reject with no actual validation
     invalidBlockDescendants.forEach(
-        block -> assertValidateAndImportBlockRejectWithoutValidation(block, Optional.empty()));
+        block -> assertValidateAndImportBlockRejectWithoutValidation(block));
 
     // If any invalid block is again imported, it should be ignored
     invalidBlockDescendants.forEach(
@@ -723,7 +723,7 @@ public class BlockManagerTest {
 
     // 1 second late
     final Optional<UInt64> arrivalTime = Optional.of(UInt64.valueOf(7000));
-    // pre-validate time
+    // gossip validation time
     timeProvider.advanceTimeByMillis(7_500);
 
     when(blockValidator.validateGossip(any()))
@@ -1147,9 +1147,8 @@ public class BlockManagerTest {
         .isCompletedWithValueMatching(result -> result.getFailureReason().equals(failureReason));
   }
 
-  private void assertValidateAndImportBlockRejectWithoutValidation(
-      final SignedBeaconBlock block, final Optional<UInt64> arrivalTimestamp) {
-    assertThat(blockManager.validateAndImportBlock(block, arrivalTimestamp))
+  private void assertValidateAndImportBlockRejectWithoutValidation(final SignedBeaconBlock block) {
+    assertThat(blockManager.validateAndImportBlock(block, Optional.empty()))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
     verify(blockValidator, never()).validateGossip(eq(block));
     verify(blockValidator, never()).validateBroadcast(any(), any(), any());
