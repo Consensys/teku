@@ -51,7 +51,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   private static KZG initKZG(final SpecConfigDeneb config) {
     final KZG kzg;
     if (!config.getDenebForkEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH) && !config.isKZGNoop()) {
-      kzg = CKZG4844.createInstance();
+      kzg = CKZG4844.getInstance();
       kzg.loadTrustedSetup(config.getTrustedSetupPath().orElseThrow());
     } else {
       kzg = KZG.NOOP;

@@ -38,7 +38,7 @@ public final class CKZG4844 implements KZG {
 
   private Optional<String> loadedTrustedSetupFile = Optional.empty();
 
-  public static synchronized CKZG4844 createInstance() {
+  public static synchronized CKZG4844 getInstance() {
     if (instance == null) {
       instance = new CKZG4844();
     }
@@ -54,14 +54,23 @@ public final class CKZG4844 implements KZG {
     }
   }
 
+  /** Only one trusted setup at a time can be loaded. */
   @Override
   public synchronized void loadTrustedSetup(final String trustedSetupFile) throws KZGException {
     if (loadedTrustedSetupFile.isPresent()
         && loadedTrustedSetupFile.get().equals(trustedSetupFile)) {
-      LOG.trace("Trusted setup from file {} is already loaded.", trustedSetupFile);
+      LOG.trace("Trusted setup from {} is already loaded", trustedSetupFile);
       return;
     }
     try {
+      loadedTrustedSetupFile.ifPresent(
+          currentTrustedSetupFile -> {
+            LOG.debug(
+                "Freeing current trusted setup {} in order to load trusted setup from {}",
+                currentTrustedSetupFile,
+                trustedSetupFile);
+            freeTrustedSetup();
+          });
       final TrustedSetup trustedSetup = CKZG4844Utils.parseTrustedSetupFile(trustedSetupFile);
       final List<Bytes> g1Points = trustedSetup.g1Points();
       final List<Bytes> g2Points = trustedSetup.g2Points();
@@ -70,10 +79,10 @@ public final class CKZG4844 implements KZG {
           g1Points.size(),
           CKZG4844Utils.flattenG2Points(g2Points),
           g2Points.size());
-      LOG.debug("Loaded trusted setup from file {}", trustedSetupFile);
+      LOG.debug("Loaded trusted setup from {}", trustedSetupFile);
       loadedTrustedSetupFile = Optional.of(trustedSetupFile);
     } catch (final Exception ex) {
-      throw new KZGException("Failed to load trusted setup from file " + trustedSetupFile, ex);
+      throw new KZGException("Failed to load trusted setup from " + trustedSetupFile, ex);
     }
   }
 

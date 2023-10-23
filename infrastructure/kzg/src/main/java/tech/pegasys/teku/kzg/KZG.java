@@ -24,6 +24,7 @@ public interface KZG {
 
   KZG NOOP =
       new KZG() {
+
         @Override
         public void loadTrustedSetup(final String trustedSetupFile) throws KZGException {}
 
