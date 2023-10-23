@@ -38,7 +38,7 @@ public final class CKZG4844 implements KZG {
 
   private Optional<String> loadedTrustedSetupFile = Optional.empty();
 
-  public static synchronized CKZG4844 createInstance() {
+  public static synchronized CKZG4844 getInstance() {
     if (instance == null) {
       instance = new CKZG4844();
     }

@@ -30,7 +30,7 @@ public abstract class KzgTestExecutor implements TestExecutor {
 
   private static final Pattern TEST_NAME_PATTERN = Pattern.compile("kzg-(.+)/.+");
 
-  protected final KZG kzg = CKZG4844.createInstance();
+  protected final KZG kzg = CKZG4844.getInstance();
 
   @Override
   public final void runTest(final TestDefinition testDefinition) throws Throwable {

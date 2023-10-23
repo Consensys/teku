@@ -55,7 +55,7 @@ class KzgResolver implements ResolveParameterHook {
     private static final String TRUSTED_SETUP =
         Resources.getResource(TrustedSetups.class, "trusted_setup.txt").toExternalForm();
 
-    private final KZG kzg = CKZG4844.createInstance();
+    private final KZG kzg = CKZG4844.getInstance();
 
     private KzgAutoLoadFree() {
       kzg.loadTrustedSetup(TRUSTED_SETUP);

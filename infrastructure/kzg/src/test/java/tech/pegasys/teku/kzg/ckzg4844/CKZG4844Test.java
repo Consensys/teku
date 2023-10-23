@@ -51,7 +51,7 @@ public final class CKZG4844Test {
   private static final Random RND = new Random(RANDOM_SEED);
   private static final String TRUSTED_SETUP_PATH = "trusted_setup.txt";
 
-  private static final CKZG4844 KZG = CKZG4844.createInstance();
+  private static final CKZG4844 KZG = CKZG4844.getInstance();
 
   @BeforeEach
   public void setUp() {
