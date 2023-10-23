@@ -143,8 +143,9 @@ public class ExecutionLayerBlockProductionManagerImpl
     final SafeFuture<UInt256> executionPayloadValueFuture = new SafeFuture<>();
 
     final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture =
-        executionLayerChannel.builderGetHeader(
-            executionPayloadContext, state, executionPayloadValueFuture);
+        executionLayerChannel
+            .builderGetHeader(executionPayloadContext, state, executionPayloadValueFuture)
+            .whenException(executionPayloadValueFuture::completeExceptionally);
 
     return new ExecutionPayloadResult(
         executionPayloadContext,

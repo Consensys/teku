@@ -326,6 +326,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         .thenApply(
             getPayloadResponse -> {
               final ExecutionPayload executionPayload = getPayloadResponse.getExecutionPayload();
+              localExecutionPayloadValue.complete(getPayloadResponse.getExecutionPayloadValue());
               LOG.info(
                   "getPayloadHeader: payloadId: {} slot: {} -> executionPayload blockHash: {}",
                   executionPayloadContext,

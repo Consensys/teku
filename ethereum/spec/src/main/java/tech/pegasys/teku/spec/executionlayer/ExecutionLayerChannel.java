@@ -87,6 +87,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
             final ExecutionPayloadContext executionPayloadContext,
             final BeaconState state,
             final SafeFuture<UInt256> localExecutionPayloadValue) {
+          localExecutionPayloadValue.complete(null);
           return SafeFuture.completedFuture(null);
         }
       };
