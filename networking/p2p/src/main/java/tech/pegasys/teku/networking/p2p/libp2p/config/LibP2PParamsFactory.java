@@ -56,8 +56,7 @@ public class LibP2PParamsFactory {
 
   private static void addGossipParamsDValues(
       final GossipConfig gossipConfig, final GossipParamsBuilder builder) {
-    builder
-        .D(gossipConfig.getD())
+    builder.D(gossipConfig.getD())
         .DLow(gossipConfig.getDLow())
         .DHigh(gossipConfig.getDHigh())
         .DLazy(gossipConfig.getDLazy())

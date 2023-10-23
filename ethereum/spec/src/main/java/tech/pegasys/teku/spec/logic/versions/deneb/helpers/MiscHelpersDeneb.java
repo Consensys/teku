@@ -63,12 +63,16 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   private static KZG initKZG(final SpecConfigDeneb config) {
     final KZG kzg;
     if (!config.getDenebForkEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH) && !config.isKZGNoop()) {
-      kzg = CKZG4844.createInstance(config.getFieldElementsPerBlob());
+      kzg = CKZG4844.getInstance();
       kzg.loadTrustedSetup(config.getTrustedSetupPath().orElseThrow());
     } else {
       kzg = KZG.NOOP;
     }
 
+    return kzg;
+  }
+
+  public KZG getKzg() {
     return kzg;
   }
 
@@ -98,6 +102,18 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   }
 
   /**
+   * Simplified version of {@link #isDataAvailable(List, BeaconBlock)} which accepts
+   * blobs,commitments and proofs directly instead of blob sidecars
+   */
+  @Override
+  public boolean isDataAvailable(
+      final List<Bytes> blobs,
+      final List<KZGCommitment> kzgCommitments,
+      final List<KZGProof> proofs) {
+    return kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, proofs);
+  }
+
+  /**
    * Performs a verifyBlobKzgProofBatch on the given blob sidecars
    *
    * @param blobSidecars blob sidecars to verify, can be a partial set
@@ -106,14 +122,14 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   @Override
   public boolean verifyBlobKzgProofBatch(final List<BlobSidecar> blobSidecars) {
     final List<Bytes> blobs = new ArrayList<>();
-    final List<KZGProof> kzgProofs = new ArrayList<>();
     final List<KZGCommitment> kzgCommitments = new ArrayList<>();
+    final List<KZGProof> kzgProofs = new ArrayList<>();
 
     blobSidecars.forEach(
         blobSidecar -> {
           blobs.add(blobSidecar.getBlob().getBytes());
-          kzgProofs.add(blobSidecar.getKZGProof());
           kzgCommitments.add(blobSidecar.getKZGCommitment());
+          kzgProofs.add(blobSidecar.getKZGProof());
         });
 
     return kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, kzgProofs);

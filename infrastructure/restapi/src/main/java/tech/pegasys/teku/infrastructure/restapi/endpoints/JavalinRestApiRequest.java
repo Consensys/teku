@@ -132,6 +132,7 @@ public class JavalinRestApiRequest implements RestApiRequest {
         statusCode);
     respondWithUndocumentedCode(statusCode);
   }
+
   /** This is only used when intending to return status code without a response body */
   @Override
   public void respondWithUndocumentedCode(final int statusCode) {

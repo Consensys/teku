@@ -193,7 +193,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return this.store == null;
   }
 
-  /** @return true if the chain head has been set, false otherwise. */
+  /**
+   * @return true if the chain head has been set, false otherwise.
+   */
   public boolean isPreForkChoice() {
     return chainHead.isEmpty();
   }
@@ -402,7 +404,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return getCurrentSlot().map(spec::computeEpochAtSlot);
   }
 
-  /** @return The current spec version according to the recorded time */
+  /**
+   * @return The current spec version according to the recorded time
+   */
   public SpecVersion getCurrentSpec() {
     return getCurrentSlot().map(spec::atSlot).orElseGet(spec::getGenesisSpec);
   }
@@ -411,7 +415,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return spec;
   }
 
-  /** @return The number of slots between our chainhead and the current slot by time */
+  /**
+   * @return The number of slots between our chainhead and the current slot by time
+   */
   public Optional<UInt64> getChainHeadSlotsBehind() {
     return chainHead
         .map(MinimalBeaconBlockSummary::getSlot)
@@ -454,7 +460,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return chainHead.map(MinimalBeaconBlockSummary::getRoot);
   }
 
-  /** @return The head of the chain. */
+  /**
+   * @return The head of the chain.
+   */
   public Optional<ChainHead> getChainHead() {
     return chainHead;
   }
@@ -463,7 +471,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return chainHead.map(ChainHead::isOptimistic).orElse(false);
   }
 
-  /** @return The block at the head of the chain. */
+  /**
+   * @return The block at the head of the chain.
+   */
   public Optional<MinimalBeaconBlockSummary> getHeadBlock() {
     return chainHead.map(a -> a);
   }

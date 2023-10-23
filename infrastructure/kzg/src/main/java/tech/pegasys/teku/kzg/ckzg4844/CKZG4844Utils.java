@@ -36,7 +36,7 @@ public class CKZG4844Utils {
   private static final int MAX_BYTES_TO_FLATTEN = 100_663_296; // ~100.66 MB or 768 blobs
 
   public static byte[] flattenBlobs(final List<Bytes> blobs) {
-    return flattenBytes(blobs, CKZG4844JNI.getBytesPerBlob() * blobs.size());
+    return flattenBytes(blobs, CKZG4844JNI.BYTES_PER_BLOB * blobs.size());
   }
 
   public static byte[] flattenCommitments(final List<KZGCommitment> commitments) {
@@ -59,11 +59,12 @@ public class CKZG4844Utils {
     return flattenBytes(g2Points, CKZG4844JNI.BYTES_PER_G2 * g2Points.size());
   }
 
-  public static TrustedSetup parseTrustedSetupFile(final String filePath) throws IOException {
-    final String sanitizedTrustedSetup = UrlSanitizer.sanitizePotentialUrl(filePath);
+  public static TrustedSetup parseTrustedSetupFile(final String trustedSetupFile)
+      throws IOException {
+    final String sanitizedTrustedSetup = UrlSanitizer.sanitizePotentialUrl(trustedSetupFile);
     final InputStream resource =
         ResourceLoader.urlOrFile("application/octet-stream")
-            .load(filePath)
+            .load(trustedSetupFile)
             .orElseThrow(() -> new FileNotFoundException(sanitizedTrustedSetup + " is not found"));
     try (BufferedReader reader =
         new BufferedReader(new InputStreamReader(resource, StandardCharsets.UTF_8))) {
@@ -87,7 +88,8 @@ public class CKZG4844Utils {
 
       return new TrustedSetup(g1Points, g2Points);
     } catch (final Exception ex) {
-      throw new IOException(String.format("Failed to parse trusted setup file\n: %s", filePath));
+      throw new IOException(
+          String.format("Failed to parse trusted setup file\n: %s", trustedSetupFile));
     }
   }
 
