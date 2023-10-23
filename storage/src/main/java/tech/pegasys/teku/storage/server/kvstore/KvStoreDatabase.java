@@ -1008,7 +1008,7 @@ public class KvStoreDatabase implements Database {
         "KvStoreDatabase::doUpdate",
         () ->
             String.format(
-                "Finalized data updated time: %d ms - Hot data updated time: %d ms of which finalized state updated time: %d ms",
+                "Finalized data updated time: %d ms - Hot data updated time: %d ms of which latest finalized state updated time: %d ms",
                 finalizedDataUpdatedTime - startTime,
                 endTime - finalizedDataUpdatedTime,
                 latestFinalizedStateUpdateEndTime - latestFinalizedStateUpdateStartTime),
