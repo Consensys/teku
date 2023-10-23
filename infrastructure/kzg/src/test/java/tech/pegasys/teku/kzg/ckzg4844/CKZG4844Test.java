@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.kzg;
+package tech.pegasys.teku.kzg.ckzg4844;
 
 import static ethereum.ckzg4844.CKZG4844JNI.BLS_MODULUS;
 import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_BLOB;
@@ -39,16 +39,19 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
+import tech.pegasys.teku.kzg.KZGCommitment;
+import tech.pegasys.teku.kzg.KZGException;
+import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.kzg.TrustedSetup;
 import tech.pegasys.teku.kzg.trusted_setups.TrustedSetups;
 
-public final class KZGTest {
+public final class CKZG4844Test {
 
   private static final int RANDOM_SEED = 5566;
   private static final Random RND = new Random(RANDOM_SEED);
   private static final String TRUSTED_SETUP_PATH = "trusted_setup.txt";
 
-  private static final KZG KZG = CKZG4844.createInstance();
+  private static final CKZG4844 KZG = CKZG4844.createInstance();
 
   @BeforeEach
   public void setUp() {
