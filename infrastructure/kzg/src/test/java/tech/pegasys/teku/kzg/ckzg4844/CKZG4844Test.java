@@ -65,8 +65,12 @@ public final class CKZG4844Test {
   }
 
   @AfterAll
-  public static void cleanUp() {
-    KZG.freeTrustedSetup();
+  public static void cleanUp() throws KZGException {
+    try {
+      KZG.freeTrustedSetup();
+    } catch (KZGException ex) {
+      // NOOP
+    }
   }
 
   @Test
