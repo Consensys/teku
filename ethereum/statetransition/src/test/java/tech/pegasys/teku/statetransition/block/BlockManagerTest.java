@@ -39,8 +39,8 @@ import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.ARR
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.BEGIN_IMPORTING_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.COMPLETED_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.EXECUTION_PAYLOAD_RESULT_RECEIVED_LABEL;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.GOSSIP_VALIDATION_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PRESTATE_RETRIEVED_EVENT_LABEL;
-import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PRE_VALIDATE_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PROCESSED_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TRANSACTION_COMMITTED_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TRANSACTION_PREPARED_EVENT_LABEL;
@@ -744,7 +744,7 @@ public class BlockManagerTest {
             block.getProposerIndex(),
             ARRIVAL_EVENT_LABEL
                 + " 1000ms, "
-                + PRE_VALIDATE_EVENT_LABEL
+                + GOSSIP_VALIDATION_EVENT_LABEL
                 + " +500ms, "
                 + PRESTATE_RETRIEVED_EVENT_LABEL
                 + " +3000ms, "

@@ -16,8 +16,8 @@ package tech.pegasys.teku.statetransition.block;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.ARRIVAL_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.COMPLETED_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.EXECUTION_PAYLOAD_RESULT_RECEIVED_LABEL;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.GOSSIP_VALIDATION_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PRESTATE_RETRIEVED_EVENT_LABEL;
-import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PRE_VALIDATE_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PROCESSED_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.SUCCESS_RESULT_METRIC_LABEL_VALUE;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TOTAL_PROCESSING_TIME_LABEL;
@@ -80,7 +80,7 @@ public class BlockImportMetrics {
             result ->
                 List.of(
                         ARRIVAL_EVENT_LABEL,
-                        PRE_VALIDATE_EVENT_LABEL,
+                        GOSSIP_VALIDATION_EVENT_LABEL,
                         PRESTATE_RETRIEVED_EVENT_LABEL,
                         PROCESSED_EVENT_LABEL,
                         TRANSACTION_PREPARED_EVENT_LABEL,

@@ -31,7 +31,7 @@ public class BlockImportPerformance {
   private static final Logger LOG = LogManager.getLogger();
 
   public static final String ARRIVAL_EVENT_LABEL = "arrival";
-  public static final String PRE_VALIDATE_EVENT_LABEL = "pre_validate";
+  public static final String GOSSIP_VALIDATION_EVENT_LABEL = "gossip_validation";
   public static final String PRESTATE_RETRIEVED_EVENT_LABEL = "pre-state_retrieved";
   public static final String PROCESSED_EVENT_LABEL = "processed";
   public static final String TRANSACTION_PREPARED_EVENT_LABEL = "transaction_prepared";
@@ -76,7 +76,7 @@ public class BlockImportPerformance {
   }
 
   public void preValidate() {
-    performanceTracker.addEvent(PRE_VALIDATE_EVENT_LABEL);
+    performanceTracker.addEvent(GOSSIP_VALIDATION_EVENT_LABEL);
   }
 
   public void preStateRetrieved() {
