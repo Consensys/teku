@@ -285,7 +285,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
             eth2NetworkConfig.getAsyncBeaconChainMaxQueue());
     this.eventAsyncRunner = serviceConfig.createAsyncRunner("events", 10);
     this.networkAsyncRunner =
-        serviceConfig.createAsyncRunner("p2p", eth2NetworkConfig.getAsyncP2pMaxThreads());
+        serviceConfig.createAsyncRunner(
+            "p2p",
+            eth2NetworkConfig.getAsyncP2pMaxThreads(),
+            eth2NetworkConfig.getAsyncP2pMaxQueue());
     this.operationPoolAsyncRunner = serviceConfig.createAsyncRunner("operationPoolUpdater", 1);
     this.timeProvider = serviceConfig.getTimeProvider();
     this.eventChannels = serviceConfig.getEventChannels();

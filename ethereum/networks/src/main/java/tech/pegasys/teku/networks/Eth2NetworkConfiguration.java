@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_ASYNC_BEACON_CHAIN_MAX_THREADS;
+import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_ASYNC_P2P_MAX_QUEUE;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_ASYNC_P2P_MAX_THREADS;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 import static tech.pegasys.teku.spec.networks.Eth2Network.CHIADO;
@@ -84,6 +85,7 @@ public class Eth2NetworkConfiguration {
   private final int asyncP2pMaxThreads;
   private final int asyncBeaconChainMaxThreads;
   private final int asyncBeaconChainMaxQueue;
+  private final int asyncP2pMaxQueue;
 
   private Eth2NetworkConfiguration(
       final Spec spec,
@@ -109,6 +111,7 @@ public class Eth2NetworkConfiguration {
       final Optional<Eth2Network> eth2Network,
       final Optional<Integer> epochsStoreBlobs,
       final int asyncP2pMaxThreads,
+      final int asyncP2pMaxQueue,
       final int asyncBeaconChainMaxThreads,
       final int asyncBeaconChainMaxQueue) {
     this.spec = spec;
@@ -137,6 +140,7 @@ public class Eth2NetworkConfiguration {
     this.eth2Network = eth2Network;
     this.epochsStoreBlobs = epochsStoreBlobs;
     this.asyncP2pMaxThreads = asyncP2pMaxThreads;
+    this.asyncP2pMaxQueue = asyncP2pMaxQueue;
     this.asyncBeaconChainMaxThreads = asyncBeaconChainMaxThreads;
     this.asyncBeaconChainMaxQueue = asyncBeaconChainMaxQueue;
   }
@@ -244,6 +248,10 @@ public class Eth2NetworkConfiguration {
     return asyncP2pMaxThreads;
   }
 
+  public int getAsyncP2pMaxQueue() {
+    return asyncP2pMaxQueue;
+  }
+
   public int getAsyncBeaconChainMaxThreads() {
     return asyncBeaconChainMaxThreads;
   }
@@ -267,6 +275,8 @@ public class Eth2NetworkConfiguration {
     private int startupTimeoutSeconds = DEFAULT_STARTUP_TIMEOUT_SECONDS;
 
     private int asyncP2pMaxThreads = DEFAULT_ASYNC_P2P_MAX_THREADS;
+
+    private int asyncP2pMaxQueue = DEFAULT_ASYNC_P2P_MAX_QUEUE;
     private int asyncBeaconChainMaxThreads = DEFAULT_ASYNC_BEACON_CHAIN_MAX_THREADS;
     private int asyncBeaconChainMaxQueue = DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE;
     private List<String> discoveryBootnodes = new ArrayList<>();
@@ -362,6 +372,7 @@ public class Eth2NetworkConfiguration {
           eth2Network,
           maybeEpochsStoreBlobs,
           asyncP2pMaxThreads,
+          asyncP2pMaxQueue,
           asyncBeaconChainMaxThreads,
           asyncBeaconChainMaxQueue);
     }
@@ -397,6 +408,11 @@ public class Eth2NetworkConfiguration {
 
     public Builder asyncP2pMaxThreads(final int asyncP2pMaxThreads) {
       this.asyncP2pMaxThreads = asyncP2pMaxThreads;
+      return this;
+    }
+
+    public Builder asyncP2pMaxQueue(Integer asyncP2pMaxQueue) {
+      this.asyncP2pMaxQueue = asyncP2pMaxQueue;
       return this;
     }
 

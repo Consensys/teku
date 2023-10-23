@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_ASYNC_BEACON_CHAIN_MAX_THREADS;
+import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_ASYNC_P2P_MAX_QUEUE;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_ASYNC_P2P_MAX_THREADS;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 
@@ -150,6 +151,14 @@ public class Eth2NetworkOptions {
       description = "Override the number of threads available to the p2p async runner",
       arity = "1")
   private Integer asyncP2pMaxThreads = DEFAULT_ASYNC_P2P_MAX_THREADS;
+
+  @Option(
+      names = {"--Xnetwork-async-p2p-max-queue"},
+      hidden = true,
+      paramLabel = "<NUMBER>",
+      description = "Override the queue size of the p2p async runner",
+      arity = "1")
+  private Integer asyncP2pMaxQueue = DEFAULT_ASYNC_P2P_MAX_QUEUE;
 
   @Option(
       names = {"--Xnetwork-async-beaconchain-max-threads"},
@@ -293,6 +302,7 @@ public class Eth2NetworkOptions {
     builder
         .safeSlotsToImportOptimistically(safeSlotsToImportOptimistically)
         .asyncP2pMaxThreads(asyncP2pMaxThreads)
+        .asyncP2pMaxQueue(asyncP2pMaxQueue)
         .asyncBeaconChainMaxThreads(asyncBeaconChainMaxThreads)
         .asyncBeaconChainMaxQueue(asyncBeaconChainMaxQueue)
         .forkChoiceUpdateHeadOnBlockImportEnabled(forkChoiceUpdateHeadOnBlockImportEnabled)
