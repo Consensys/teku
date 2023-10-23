@@ -110,9 +110,9 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
     // Note: The fork choice spec says there may be settings in a meta.yaml file but currently no
     // tests actually have one, so we currently don't bother trying to load it.
+    final Spec spec = testDefinition.getSpec(false);
     final BeaconState anchorState =
         TestDataUtils.loadStateFromSsz(testDefinition, "anchor_state" + SSZ_SNAPPY_EXTENSION);
-    final Spec spec = testDefinition.getSpec(false);
     final SignedBeaconBlock anchorBlock = loadAnchorBlock(testDefinition);
 
     final StorageSystem storageSystem =
