@@ -33,6 +33,7 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRangeListenerValidatingProxy;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeListenerWrapper;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
@@ -62,6 +63,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
@@ -86,6 +88,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final Supplier<BlobSidecarsByRootRequestMessageSchema>
       blobSidecarsByRootRequestMessageSchema;
   private final Supplier<Integer> maxBlobsPerBlock;
+  private final Supplier<MiscHelpersDeneb> miscHelpersDeneb;
 
   DefaultEth2Peer(
       final Spec spec,
@@ -119,6 +122,9 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                         spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
                     .getBlobSidecarsByRootRequestMessageSchema());
     this.maxBlobsPerBlock = Suppliers.memoize(() -> getSpecConfigDeneb().getMaxBlobsPerBlock());
+    this.miscHelpersDeneb =
+        Suppliers.memoize(
+            () -> MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers()));
   }
 
   @Override
@@ -320,7 +326,16 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                 request =
                     new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock.get());
               }
-              return requestStream(method, request, listener);
+              return requestStream(
+                  method,
+                  request,
+                  new BlobSidecarsByRangeListenerValidatingProxy(
+                      this,
+                      listener,
+                      maxBlobsPerBlock.get(),
+                      miscHelpersDeneb.get(),
+                      request.getStartSlot(),
+                      request.getCount()));
             })
         .orElse(failWithUnsupportedMethodException("BlobSidecarsByRange"));
   }

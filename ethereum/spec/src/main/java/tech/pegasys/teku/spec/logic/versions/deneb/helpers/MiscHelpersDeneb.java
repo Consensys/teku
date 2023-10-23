@@ -20,12 +20,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
+import tech.pegasys.teku.kzg.KZGException;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -36,12 +39,24 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.capella.helpers.MiscHelpersCapella;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public class MiscHelpersDeneb extends MiscHelpersCapella {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final KZG kzg;
+
+  public static MiscHelpersDeneb required(final MiscHelpers miscHelpers) {
+    return miscHelpers
+        .toVersionDeneb()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Expected Deneb misc helpers but got: "
+                        + miscHelpers.getClass().getSimpleName()));
+  }
 
   public MiscHelpersDeneb(final SpecConfigDeneb specConfig) {
     super(specConfig);
@@ -251,5 +266,17 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
         .map(BeaconBlockBodyDeneb::getBlobKzgCommitments)
         .map(SszList::size)
         .orElse(0);
+  }
+
+  public boolean verifyBlobSidecar(final BlobSidecar blobSidecar) {
+    try {
+      return kzg.verifyBlobKzgProofBatch(
+          List.of(blobSidecar.getBlob().getBytes()),
+          List.of(blobSidecar.getKZGCommitment()),
+          List.of(blobSidecar.getKZGProof()));
+    } catch (final KZGException ex) {
+      LOG.debug("KZG verification of BlobSidecar failed for: {}", blobSidecar::toLogString);
+      return false;
+    }
   }
 }
