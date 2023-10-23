@@ -349,7 +349,7 @@ public class ValidatorDataProvider {
   }
 
   public SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
-      List<SignedAggregateAndProof> aggregateAndProofs) {
+      final List<SignedAggregateAndProof> aggregateAndProofs) {
     return validatorApiChannel.sendAggregateAndProofs(aggregateAndProofs);
   }
 
