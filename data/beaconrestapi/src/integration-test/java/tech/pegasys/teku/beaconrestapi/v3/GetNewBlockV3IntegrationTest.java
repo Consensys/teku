@@ -21,7 +21,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
@@ -309,7 +308,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
   }
 
   @TestTemplate
-  void shouldReturnNoContentWhenNoBlockProduced() throws IOException {
+  void shouldFailWhenNoBlockProduced() throws IOException {
     final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
     final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
     when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
@@ -324,9 +323,9 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
                     Optional.empty(),
                     Optional.of(SafeFuture.completedFuture(executionPayloadValue)))));
     Response response = get(signature, ContentTypes.JSON);
-    assertThat(response.code()).isEqualTo(SC_NO_CONTENT);
+    assertThat(response.code()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
     final String body = response.body().string();
-    assertThat(body).isEmpty();
+    assertThat(body).contains("Unable to produce a block");
   }
 
   @TestTemplate

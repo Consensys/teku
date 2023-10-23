@@ -20,6 +20,7 @@ import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SLOT_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getMultipleSchemaDefinitionFromMilestone;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.blockContainerAndMetaDataSszResponseType;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_PAYLOAD_BLINDED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_PAYLOAD_VALUE;
@@ -54,7 +55,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
-import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
 public class GetNewBlockV3 extends RestApiEndpoint {
 
@@ -130,7 +130,10 @@ public class GetNewBlockV3 extends RestApiEndpoint {
                               blockContainerAndMetaData.executionPayloadValue().toDecimalString());
                           return AsyncApiResponse.respondOk(blockContainerAndMetaData);
                         })
-                    .orElseThrow(ChainDataUnavailableException::new)));
+                    .orElseGet(
+                        () ->
+                            AsyncApiResponse.respondWithError(
+                                SC_INTERNAL_SERVER_ERROR, "Unable to produce a block"))));
   }
 
   private static SerializableTypeDefinition<BlockContainerAndMetaData<BlockContainer>>

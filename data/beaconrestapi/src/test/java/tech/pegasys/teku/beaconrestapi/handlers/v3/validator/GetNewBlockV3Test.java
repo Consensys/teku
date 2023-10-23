@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_VALUE;
@@ -47,7 +48,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockC
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
 @TestSpecContext(allMilestones = true)
 public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
@@ -159,12 +159,13 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
   }
 
   @TestTemplate
-  void shouldThrowExceptionWithEmptyBlock() throws Exception {
+  void shouldThrowExceptionWhenEmptyBlock() throws Exception {
     doReturn(SafeFuture.completedFuture(Optional.empty()))
         .when(validatorDataProvider)
         .produceBlock(ONE, signature, Optional.empty());
 
     handler.handleRequest(request);
-    assertThat(request.getResponseError()).containsInstanceOf(ChainDataUnavailableException.class);
+    assertThat(request.getResponseCode()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
+    assertThat(request.getResponseBody().toString()).contains("Unable to produce a block");
   }
 }
