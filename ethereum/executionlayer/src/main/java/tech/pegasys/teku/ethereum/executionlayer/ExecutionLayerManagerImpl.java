@@ -250,9 +250,9 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   public SafeFuture<HeaderWithFallbackData> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
-      final SafeFuture<UInt256> localExecutionPayloadValue) {
+      final SafeFuture<UInt256> localPayloadValueResult) {
     return executionBuilderModule.builderGetHeader(
-        executionPayloadContext, state, localExecutionPayloadValue);
+        executionPayloadContext, state, localPayloadValueResult);
   }
 
   @VisibleForTesting
