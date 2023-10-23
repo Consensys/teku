@@ -132,8 +132,8 @@ public class ExecutionBuilderModule {
             .engineGetPayloadForFallback(executionPayloadContext, state.getSlot())
             .thenPeek(
                 getPayloadResponse ->
-                    localPayloadValueResult.complete(
-                        getPayloadResponse.getExecutionPayloadValue()));
+                    localPayloadValueResult.complete(getPayloadResponse.getExecutionPayloadValue()))
+            .whenException(ex -> localPayloadValueResult.complete(UInt256.ZERO));
 
     final Optional<SafeFuture<HeaderWithFallbackData>> validationResult =
         validateBuilderGetHeader(executionPayloadContext, state, localGetPayloadResponse);
@@ -157,17 +157,7 @@ public class ExecutionBuilderModule {
 
     // Ensures we can still propose a builder block even if getPayload fails
     final SafeFuture<Optional<GetPayloadResponse>> safeLocalGetPayloadResponse =
-        localGetPayloadResponse
-            .thenApply(
-                getPayloadResponse -> {
-                  localPayloadValueResult.complete(getPayloadResponse.getExecutionPayloadValue());
-                  return Optional.of(getPayloadResponse);
-                })
-            .exceptionally(
-                __ -> {
-                  localPayloadValueResult.complete(UInt256.ZERO);
-                  return Optional.empty();
-                });
+        localGetPayloadResponse.thenApply(Optional::of).exceptionally(__ -> Optional.empty());
 
     return builderClient
         .orElseThrow()
