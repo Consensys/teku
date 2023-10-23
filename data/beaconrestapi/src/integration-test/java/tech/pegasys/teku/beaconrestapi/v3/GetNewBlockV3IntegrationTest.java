@@ -189,7 +189,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
   }
 
   @TestTemplate
-  void shouldGetUnBlindedBlockContentAsJsonPostDenebAsJson() throws IOException {
+  void shouldGetUnBlindedBlockContentPostDenebAsJson() throws IOException {
     assumeThat(specMilestone).isEqualTo(DENEB);
     final BlockContents blockContents = dataStructureUtil.randomBlockContents(ONE);
     final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
@@ -217,7 +217,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
   }
 
   @TestTemplate
-  void shouldGetUnBlindedBlockContentAsJsonPostDenebAsSsz() throws IOException {
+  void shouldGetUnBlindedBlockContentPostDenebAsSsz() throws IOException {
     assumeThat(specMilestone).isEqualTo(DENEB);
     final BlockContents blockContents = dataStructureUtil.randomBlockContents(ONE);
     final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
@@ -249,7 +249,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
   }
 
   @TestTemplate
-  void shouldGetBlindedBlockContentAsJsonPostDenebAsJson() throws IOException {
+  void shouldGetBlindedBlockContentPostDenebAsJson() throws IOException {
     assumeThat(specMilestone).isEqualTo(DENEB);
     final BlindedBlockContents blindedBlockContents =
         dataStructureUtil.randomBlindedBlockContents(ONE);
@@ -277,7 +277,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
   }
 
   @TestTemplate
-  void shouldGetBlindedBlockContentAsJsonPostDenebAsSsz() throws IOException {
+  void shouldGetBlindedBlockContentPostDenebAsSsz() throws IOException {
     assumeThat(specMilestone).isEqualTo(DENEB);
     final BlindedBlockContents blindedBlockContents =
         dataStructureUtil.randomBlindedBlockContents(ONE);
