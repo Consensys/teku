@@ -13,10 +13,10 @@
 
 package tech.pegasys.teku.cli.options;
 
-import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE;
-import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_ASYNC_BEACON_CHAIN_MAX_THREADS;
-import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_ASYNC_P2P_MAX_QUEUE;
-import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_ASYNC_P2P_MAX_THREADS;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_ASYNC_BEACON_CHAIN_MAX_THREADS;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_ASYNC_P2P_MAX_QUEUE;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_ASYNC_P2P_MAX_THREADS;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 
 import java.util.function.Consumer;

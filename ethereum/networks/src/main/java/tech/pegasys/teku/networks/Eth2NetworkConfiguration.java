@@ -16,10 +16,7 @@ package tech.pegasys.teku.networks;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Arrays.asList;
-import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE;
-import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_ASYNC_BEACON_CHAIN_MAX_THREADS;
-import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_ASYNC_P2P_MAX_QUEUE;
-import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_ASYNC_P2P_MAX_THREADS;
+import static tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory.DEFAULT_MAX_QUEUE_SIZE;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 import static tech.pegasys.teku.spec.networks.Eth2Network.CHIADO;
 import static tech.pegasys.teku.spec.networks.Eth2Network.GNOSIS;
@@ -46,6 +43,7 @@ import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.networks.Eth2Network;
+import tech.pegasys.teku.validator.api.ValidatorConfig;
 
 public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
@@ -53,6 +51,16 @@ public class Eth2NetworkConfiguration {
 
   public static final boolean DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED = false;
   public static final boolean DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED = true;
+
+  public static final int DEFAULT_ASYNC_P2P_MAX_THREADS = 10;
+
+  public static final int DEFAULT_ASYNC_P2P_MAX_QUEUE = DEFAULT_MAX_QUEUE_SIZE;
+
+  public static final int DEFAULT_ASYNC_BEACON_CHAIN_MAX_THREADS =
+      Math.max(
+          Runtime.getRuntime().availableProcessors(), ValidatorConfig.DEFAULT_EXECUTOR_THREADS);
+
+  public static final int DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE = DEFAULT_MAX_QUEUE_SIZE;
 
   public static final String INITIAL_STATE_URL_PATH = "eth/v2/debug/beacon/states/finalized";
   // 26 thousand years should be enough
@@ -305,8 +313,8 @@ public class Eth2NetworkConfiguration {
 
     public Eth2NetworkConfiguration build() {
       checkNotNull(constants, "Missing constants");
-      checkArgument(
-          safeSlotsToImportOptimistically >= 0, "Safe slots to import optimistically must be >= 0");
+      validateCommandLineParameters();
+
       final Optional<Integer> maybeEpochsStoreBlobs =
           validateAndParseEpochsStoreBlobs(epochsStoreBlobs);
       if (spec == null) {
@@ -375,6 +383,31 @@ public class Eth2NetworkConfiguration {
           asyncP2pMaxQueue,
           asyncBeaconChainMaxThreads,
           asyncBeaconChainMaxQueue);
+    }
+
+    private void validateCommandLineParameters() {
+      checkArgument(
+          safeSlotsToImportOptimistically >= 0, "Safe slots to import optimistically must be >= 0");
+
+      checkArgument(
+          asyncP2pMaxThreads > 1,
+          "P2P Max threads must be >= 2 (Xnetwork-async-p2p-max-threads - default 10)");
+      checkArgument(
+          asyncP2pMaxThreads < 256,
+          "P2P Max threads must be <= 255 (Xnetwork-async-p2p-max-threads - default 10)");
+      checkArgument(
+          asyncP2pMaxQueue >= 2000,
+          "P2P Max Queue size must be at least 2000 (Xnetwork-async-p2p-max-queue - default 5000)");
+
+      checkArgument(
+          asyncBeaconChainMaxThreads > 1,
+          "P2P Max threads must be >= 2 (Xnetwork-async-beaconchain-max-threads - default 5)");
+      checkArgument(
+          asyncBeaconChainMaxThreads < 256,
+          "P2P Max threads must be <= 255 (Xnetwork-async-beaconchain-max-threads - default 5)");
+      checkArgument(
+          asyncBeaconChainMaxQueue >= 2000,
+          "BeaconChain Max Queue size must be at least 2000 (Xnetwork-async-beaconchain-max-queue - default 5000)");
     }
 
     public Builder constants(final String constants) {
