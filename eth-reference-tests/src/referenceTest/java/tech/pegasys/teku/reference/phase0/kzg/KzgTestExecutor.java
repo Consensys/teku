@@ -40,11 +40,9 @@ public abstract class KzgTestExecutor implements TestExecutor {
     final SpecConfigDeneb specConfigDeneb =
         SpecConfigDeneb.required(networkConfig.getSpec().getGenesisSpecConfig());
 
-    try {
+    try (kzg) {
       kzg.loadTrustedSetup(specConfigDeneb.getTrustedSetupPath().orElseThrow());
       runTestImpl(testDefinition);
-    } finally {
-      kzg.freeTrustedSetup();
     }
   }
 

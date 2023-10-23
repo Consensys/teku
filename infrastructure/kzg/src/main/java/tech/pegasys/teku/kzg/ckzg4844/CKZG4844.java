@@ -54,6 +54,7 @@ public final class CKZG4844 implements KZG {
     }
   }
 
+  /** Only one trusted setup at a time can be loaded. */
   @Override
   public synchronized void loadTrustedSetup(final String trustedSetupFile) throws KZGException {
     if (loadedTrustedSetupFile.isPresent()
@@ -62,6 +63,14 @@ public final class CKZG4844 implements KZG {
       return;
     }
     try {
+      loadedTrustedSetupFile.ifPresent(
+          currentTrustedSetupFile -> {
+            LOG.debug(
+                "Freeing current trusted setup {} in order to load trusted setup from {}",
+                currentTrustedSetupFile,
+                trustedSetupFile);
+            freeTrustedSetup();
+          });
       final TrustedSetup trustedSetup = CKZG4844Utils.parseTrustedSetupFile(trustedSetupFile);
       final List<Bytes> g1Points = trustedSetup.g1Points();
       final List<Bytes> g2Points = trustedSetup.g2Points();
@@ -74,17 +83,6 @@ public final class CKZG4844 implements KZG {
       loadedTrustedSetupFile = Optional.of(trustedSetupFile);
     } catch (final Exception ex) {
       throw new KZGException("Failed to load trusted setup from file " + trustedSetupFile, ex);
-    }
-  }
-
-  @Override
-  public synchronized void freeTrustedSetup() throws KZGException {
-    try {
-      CKZG4844JNI.freeTrustedSetup();
-      loadedTrustedSetupFile = Optional.empty();
-      LOG.debug("Trusted setup was freed");
-    } catch (final Exception ex) {
-      throw new KZGException("Failed to free trusted setup", ex);
     }
   }
 
@@ -126,6 +124,22 @@ public final class CKZG4844 implements KZG {
     } catch (final Exception ex) {
       throw new KZGException(
           "Failed to compute KZG proof for blob with commitment " + kzgCommitment, ex);
+    }
+  }
+
+  /** Frees the current trusted setup if any is loaded */
+  @Override
+  public void close() {
+    loadedTrustedSetupFile.ifPresent(__ -> freeTrustedSetup());
+  }
+
+  private void freeTrustedSetup() throws KZGException {
+    try {
+      CKZG4844JNI.freeTrustedSetup();
+      loadedTrustedSetupFile = Optional.empty();
+      LOG.debug("Trusted setup was freed");
+    } catch (final Exception ex) {
+      throw new KZGException("Failed to free trusted setup", ex);
     }
   }
 }
