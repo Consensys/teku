@@ -30,7 +30,7 @@ public abstract class KzgTestExecutor implements TestExecutor {
 
   private static final Pattern TEST_NAME_PATTERN = Pattern.compile("kzg-(.+)/.+");
 
-  protected final KZG kzg = CKZG4844.createInstance();
+  protected final KZG kzg = CKZG4844.getInstance();
 
   @Override
   public final void runTest(final TestDefinition testDefinition) throws Throwable {
@@ -40,12 +40,8 @@ public abstract class KzgTestExecutor implements TestExecutor {
     final SpecConfigDeneb specConfigDeneb =
         SpecConfigDeneb.required(networkConfig.getSpec().getGenesisSpecConfig());
 
-    try {
-      kzg.loadTrustedSetup(specConfigDeneb.getTrustedSetupPath().orElseThrow());
-      runTestImpl(testDefinition);
-    } finally {
-      kzg.freeTrustedSetup();
-    }
+    kzg.loadTrustedSetup(specConfigDeneb.getTrustedSetupPath().orElseThrow());
+    runTestImpl(testDefinition);
   }
 
   private String extractNetwork(final String testName) {
