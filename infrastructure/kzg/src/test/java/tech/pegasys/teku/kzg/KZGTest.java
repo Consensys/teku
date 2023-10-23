@@ -55,15 +55,15 @@ public final class KZGTest {
     loadTrustedSetup();
   }
 
-  @AfterAll
-  public static void cleanUp() {
-    KZG.freeTrustedSetup();
-  }
-
   private static void loadTrustedSetup() {
     final String trustedSetup =
         Resources.getResource(TrustedSetups.class, TRUSTED_SETUP_PATH).toExternalForm();
     KZG.loadTrustedSetup(trustedSetup);
+  }
+
+  @AfterAll
+  public static void cleanUp() {
+    KZG.freeTrustedSetup();
   }
 
   @Test
