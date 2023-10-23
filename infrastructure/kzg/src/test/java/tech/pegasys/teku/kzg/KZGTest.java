@@ -34,7 +34,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -53,38 +53,28 @@ public final class KZGTest {
   @BeforeAll
   public static void setUp() {
     kzg = CKZG4844.createInstance();
+    loadTrustedSetup();
   }
 
-  @AfterEach
-  public void cleanUpIfNeeded() {
-    try {
-      kzg.freeTrustedSetup();
-    } catch (final KZGException ex) {
-      // NOOP
-    }
+  @AfterAll
+  public static void cleanUp() throws Exception {
+    kzg.close();
+  }
+
+  private static void loadTrustedSetup() {
+    final String trustedSetup =
+        Resources.getResource(TrustedSetups.class, TRUSTED_SETUP_PATH).toExternalForm();
+    kzg.loadTrustedSetup(trustedSetup);
   }
 
   @Test
   public void testKzgLoadSameTrustedSetupTwice_shouldNotThrowException() {
     loadTrustedSetup();
-    loadTrustedSetup();
   }
 
   @Test
-  public void testKzLoadDifferentTrustedSetupTwice_shouldThrowException() {
-    loadTrustedSetup();
-    assertThrows(KZGException.class, () -> kzg.loadTrustedSetup("trusted_setup-not-existing.txt"));
-  }
-
-  @Test
-  public void testKzgFreeTrustedSetupTwice_shouldThrowException() {
-    loadTrustedSetup();
-    kzg.freeTrustedSetup();
-    assertThrows(KZGException.class, kzg::freeTrustedSetup);
-  }
-
-  @Test
-  public void testUsageWithoutLoadedTrustedSetup_shouldThrowException() {
+  public void testUsageWithoutLoadedTrustedSetup_shouldThrowException() throws Exception {
+    kzg.close();
     final List<KZGException> exceptions =
         List.of(
             assertThrows(
@@ -102,11 +92,12 @@ public final class KZGTest {
     assertThat(exceptions)
         .allSatisfy(
             exception -> assertThat(exception).cause().hasMessage("Trusted Setup is not loaded."));
+    // load trusted setup again for other tests
+    loadTrustedSetup();
   }
 
   @Test
   public void testComputingAndVerifyingBatchProofs() {
-    loadTrustedSetup();
     final int numberOfBlobs = 4;
     final List<Bytes> blobs = getSampleBlobs(numberOfBlobs);
     final List<KZGCommitment> kzgCommitments =
@@ -133,13 +124,11 @@ public final class KZGTest {
 
   @Test
   public void testVerifyingEmptyBatch() {
-    loadTrustedSetup();
     assertThat(kzg.verifyBlobKzgProofBatch(List.of(), List.of(), List.of())).isTrue();
   }
 
   @Test
   public void testComputingAndVerifyingBatchSingleProof() {
-    loadTrustedSetup();
     final int numberOfBlobs = 1;
     final List<Bytes> blobs = getSampleBlobs(numberOfBlobs);
     final List<KZGCommitment> kzgCommitments =
@@ -167,7 +156,6 @@ public final class KZGTest {
 
   @Test
   public void testVerifyingBatchProofsThrowsIfSizesDoesntMatch() {
-    loadTrustedSetup();
     final int numberOfBlobs = 4;
     final List<Bytes> blobs = getSampleBlobs(numberOfBlobs);
     final List<KZGCommitment> kzgCommitments =
@@ -209,7 +197,6 @@ public final class KZGTest {
         "0x925668a49d06f4"
       })
   public void testComputingProofWithIncorrectLengthBlobDoesNotCauseSegfault(final String blobHex) {
-    loadTrustedSetup();
     final Bytes blob = Bytes.fromHexString(blobHex);
 
     final KZGException kzgException =
@@ -241,6 +228,8 @@ public final class KZGTest {
     final Throwable cause =
         assertThrows(KZGException.class, () -> kzg.loadTrustedSetup(trustedSetup)).getCause();
     assertThat(cause.getMessage()).contains("Failed to parse trusted setup file");
+    // reload real trusted setup for other tests
+    loadTrustedSetup();
   }
 
   @Test
@@ -252,6 +241,8 @@ public final class KZGTest {
     assertThat(kzgException.getMessage()).contains("Failed to load trusted setup");
     assertThat(kzgException.getCause().getMessage())
         .contains("There was an error while loading the Trusted Setup. (C_KZG_BADARGS)");
+    // reload real trusted setup for other tests
+    loadTrustedSetup();
   }
 
   @Test
@@ -259,12 +250,6 @@ public final class KZGTest {
     assertThatThrownBy(() -> new TrustedSetup(List.of(), List.of(Bytes.fromHexString(""))))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage("Expected G2 point to be 96 bytes");
-  }
-
-  private void loadTrustedSetup() {
-    final String trustedSetup =
-        Resources.getResource(TrustedSetups.class, TRUSTED_SETUP_PATH).toExternalForm();
-    kzg.loadTrustedSetup(trustedSetup);
   }
 
   private List<Bytes> getSampleBlobs(final int count) {

@@ -56,6 +56,7 @@ class KzgResolver implements ResolveParameterHook {
   private static class KzgAutoLoadFree implements Store.CloseOnReset {
     private static final String TRUSTED_SETUP =
         Resources.getResource(TrustedSetups.class, "trusted_setup.txt").toExternalForm();
+
     private final KZG kzg = CKZG4844.createInstance();
 
     private KzgAutoLoadFree() {
@@ -63,8 +64,8 @@ class KzgResolver implements ResolveParameterHook {
     }
 
     @Override
-    public void close() {
-      kzg.freeTrustedSetup();
+    public void close() throws Exception {
+      kzg.close();
     }
   }
 }
