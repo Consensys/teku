@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -42,6 +44,7 @@ import tech.pegasys.teku.spec.logic.versions.capella.helpers.MiscHelpersCapella;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public class MiscHelpersDeneb extends MiscHelpersCapella {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final KZG kzg;
 
@@ -272,6 +275,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
           List.of(blobSidecar.getKZGCommitment()),
           List.of(blobSidecar.getKZGProof()));
     } catch (final KZGException ex) {
+      LOG.debug("KZG verification of BlobSidecar failed for: {}", blobSidecar::toLogString);
       return false;
     }
   }

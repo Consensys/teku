@@ -38,7 +38,7 @@ public class BlobSidecarsByRangeListenerValidatingProxy
   private final Integer maxBlobsPerBlock;
   private final MiscHelpersDeneb miscHelpersDeneb;
 
-  private Optional<BlobSidecarSummary> maybeLastBlobSidecarSummary = Optional.empty();
+  private volatile Optional<BlobSidecarSummary> maybeLastBlobSidecarSummary = Optional.empty();
 
   public BlobSidecarsByRangeListenerValidatingProxy(
       final Peer peer,
@@ -56,30 +56,30 @@ public class BlobSidecarsByRangeListenerValidatingProxy
   }
 
   @Override
-  public SafeFuture<?> onResponse(final BlobSidecar response) {
+  public SafeFuture<?> onResponse(final BlobSidecar blobSidecar) {
     return SafeFuture.of(
         () -> {
-          final UInt64 blobSidecarSlot = response.getSlot();
+          final UInt64 blobSidecarSlot = blobSidecar.getSlot();
           if (!blobSidecarSlotIsInRange(blobSidecarSlot)) {
             throw new BlobSidecarsByRangeResponseInvalidResponseException(
                 peer, BLOB_SIDECAR_SLOT_NOT_IN_RANGE);
           }
 
-          if (response.getIndex().isGreaterThanOrEqualTo(maxBlobsPerBlock)) {
+          if (blobSidecar.getIndex().isGreaterThanOrEqualTo(maxBlobsPerBlock)) {
             throw new BlobSidecarsByRangeResponseInvalidResponseException(
                 peer, BLOB_SIDECAR_UNEXPECTED_INDEX);
           }
 
-          final BlobSidecarSummary blobSidecarSummary = BlobSidecarSummary.create(response);
+          final BlobSidecarSummary blobSidecarSummary = BlobSidecarSummary.create(blobSidecar);
           verifyBlobSidecarIsAfterLast(blobSidecarSummary);
 
-          if (!miscHelpersDeneb.verifyBlobSidecar(response)) {
+          if (!miscHelpersDeneb.verifyBlobSidecar(blobSidecar)) {
             throw new BlobSidecarsByRangeResponseInvalidResponseException(
                 peer, BLOB_SIDECAR_KZG_VERIFICATION_FAILED);
           }
 
           maybeLastBlobSidecarSummary = Optional.of(blobSidecarSummary);
-          return blobSidecarResponseListener.onResponse(response);
+          return blobSidecarResponseListener.onResponse(blobSidecar);
         });
   }
 
