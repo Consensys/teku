@@ -1,8 +1,6 @@
 {
   "title" : "ProduceBlockV3Response",
   "type" : "object",
-  "required" : [ "data", "version" ],
-  "properties" : {
   "required" : [ "version", "execution_payload_blinded", "execution_payload_value", "data" ],
   "properties" : {
     "version" : {
@@ -38,10 +36,6 @@
       }, {
         "$ref" : "#/components/schemas/BlindedBlockContentsDeneb"
       } ]
-    },
-    "version" : {
-      "type" : "string",
-      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb" ]
     }
   }
 }
