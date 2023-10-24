@@ -205,15 +205,16 @@ class ExecutionLayerManagerImplTest {
 
     final ExecutionPayloadHeader header =
         prepareBuilderGetHeaderResponse(executionPayloadContext, false).getHeader();
-    prepareEngineGetPayloadResponse(executionPayloadContext, UInt256.ZERO, slot);
+    prepareEngineGetPayloadResponse(executionPayloadContext, localExecutionPayloadValue, slot);
+
+    final SafeFuture<UInt256> blockValueResult = new SafeFuture<>();
 
     // we expect result from the builder
     assertThat(
             executionLayerManager.builderGetHeader(
-                executionPayloadContext,
-                state,
-                SafeFuture.completedFuture(localExecutionPayloadValue)))
+                executionPayloadContext, state, blockValueResult))
         .isCompletedWithValue(HeaderWithFallbackData.create(header));
+    assertThat(blockValueResult).isCompletedWithValue(localExecutionPayloadValue);
 
     // we expect both builder and local engine have been called
     verifyBuilderCalled(slot, executionPayloadContext);
