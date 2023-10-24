@@ -15,6 +15,7 @@ package tech.pegasys.teku.infrastructure.logging;
 
 import static tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.print;
 
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.logging.ColorConsolePrinter.Color;
@@ -33,14 +34,17 @@ public class DbLogger {
   }
 
   public void onDbOpAlertThreshold(
-      final String opName, final long startTimeMillis, final long endTimeMillis) {
+      final String opName,
+      final Supplier<String> additionalInfo,
+      final long startTimeMillis,
+      final long endTimeMillis) {
     final long duration = endTimeMillis - startTimeMillis;
     if (dbOpAlertThresholdMillis > 0 && duration >= dbOpAlertThresholdMillis) {
       logger.warn(
           print(
               String.format(
-                  "DB operation %s took too long: %d ms. The alert threshold is set to: %d ms",
-                  opName, duration, dbOpAlertThresholdMillis),
+                  "DB operation %s took too long: %d ms. The alert threshold is set to: %d ms. Additional info: %s",
+                  opName, duration, dbOpAlertThresholdMillis, additionalInfo.get()),
               Color.YELLOW));
     }
   }

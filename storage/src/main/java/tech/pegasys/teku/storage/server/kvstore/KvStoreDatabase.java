@@ -946,6 +946,7 @@ public class KvStoreDatabase implements Database {
 
   private UpdateResult doUpdate(final StorageUpdate update) {
     LOG.trace("Applying finalized updates");
+    long startTime = System.currentTimeMillis();
     // Update finalized blocks and states
     final Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticExecutionPayload =
         updateFinalizedData(
@@ -964,9 +965,11 @@ public class KvStoreDatabase implements Database {
           update.getEarliestBlobSidecarSlot(),
           update.getBlobSidecars().values().stream().flatMap(Collection::stream));
     }
+    long finalizedDataUpdatedTime = System.currentTimeMillis();
 
     LOG.trace("Applying hot updates");
-    long startTime = System.currentTimeMillis();
+    final long latestFinalizedStateUpdateStartTime;
+    final long latestFinalizedStateUpdateEndTime;
     try (final HotUpdater updater = hotUpdater()) {
       // Store new hot data
       update.getGenesisTime().ifPresent(updater::setGenesisTime);
@@ -983,7 +986,9 @@ public class KvStoreDatabase implements Database {
 
       update.getJustifiedCheckpoint().ifPresent(updater::setJustifiedCheckpoint);
       update.getBestJustifiedCheckpoint().ifPresent(updater::setBestJustifiedCheckpoint);
+      latestFinalizedStateUpdateStartTime = System.currentTimeMillis();
       update.getLatestFinalizedState().ifPresent(updater::setLatestFinalizedState);
+      latestFinalizedStateUpdateEndTime = System.currentTimeMillis();
 
       updateHotBlocks(updater, update.getHotBlocks(), update.getDeletedHotBlocks().keySet());
       updater.addHotStates(update.getHotStates());
@@ -999,7 +1004,16 @@ public class KvStoreDatabase implements Database {
     }
 
     long endTime = System.currentTimeMillis();
-    DB_LOGGER.onDbOpAlertThreshold("KvStoreDatabase::doUpdate", startTime, endTime);
+    DB_LOGGER.onDbOpAlertThreshold(
+        "KvStoreDatabase::doUpdate",
+        () ->
+            String.format(
+                "Finalized data updated time: %d ms - Hot data updated time: %d ms of which latest finalized state updated time: %d ms",
+                finalizedDataUpdatedTime - startTime,
+                endTime - finalizedDataUpdatedTime,
+                latestFinalizedStateUpdateEndTime - latestFinalizedStateUpdateStartTime),
+        startTime,
+        endTime);
     LOG.trace("Update complete");
     return new UpdateResult(finalizedOptimisticExecutionPayload);
   }
