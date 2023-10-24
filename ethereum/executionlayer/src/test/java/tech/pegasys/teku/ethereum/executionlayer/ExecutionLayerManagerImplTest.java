@@ -239,6 +239,50 @@ class ExecutionLayerManagerImplTest {
   }
 
   @Test
+  public void builderGetHeaderGetPayload_shouldReturnHeaderAndPayloadViaBuilderWhenLocalIsFailed() {
+    setBuilderOnline();
+
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.randomPayloadExecutionContext(false, true);
+    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+    final BeaconState state = dataStructureUtil.randomBeaconState(slot);
+
+    final ExecutionPayloadHeader header =
+        prepareBuilderGetHeaderResponse(executionPayloadContext, false).getHeader();
+    prepareEngineFailedPayloadResponse(executionPayloadContext, slot);
+
+    final SafeFuture<UInt256> blockValueResult = new SafeFuture<>();
+
+    // we expect result from the builder
+    assertThat(
+            executionLayerManager.builderGetHeader(
+                executionPayloadContext, state, blockValueResult))
+        .isCompletedWithValue(HeaderWithFallbackData.create(header));
+    assertThat(blockValueResult).isCompletedWithValue(UInt256.ZERO);
+
+    // we expect both builder and local engine have been called
+    verifyBuilderCalled(slot, executionPayloadContext);
+    verifyEngineCalled(executionPayloadContext, slot);
+
+    final SignedBeaconBlock signedBlindedBeaconBlock =
+        dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
+
+    final ExecutionPayload payload = prepareBuilderGetPayloadResponse(signedBlindedBeaconBlock);
+
+    // we expect result from the builder
+    assertThat(
+            executionLayerManager.builderGetPayload(
+                signedBlindedBeaconBlock, (aSlot) -> Optional.empty()))
+        .isCompletedWithValue(payload);
+
+    // we expect both builder and local engine have been called
+    verify(builderClient).getPayload(signedBlindedBeaconBlock);
+    verifyNoMoreInteractions(executionClientHandler);
+
+    verifySourceCounter(Source.BUILDER, FallbackReason.NONE);
+  }
+
+  @Test
   public void builderGetHeaderGetPayload_shouldReturnHeaderAndPayloadViaEngineWhenValueHigher() {
     setBuilderOnline();
 
@@ -955,6 +999,12 @@ class ExecutionLayerManagerImplTest {
     when(executionClientHandler.engineGetPayload(executionPayloadContext, slot))
         .thenReturn(SafeFuture.completedFuture(getPayloadResponse));
     return getPayloadResponse;
+  }
+
+  private void prepareEngineFailedPayloadResponse(
+      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
+    when(executionClientHandler.engineGetPayload(executionPayloadContext, slot))
+        .thenReturn(SafeFuture.failedFuture(new RuntimeException("")));
   }
 
   private GetPayloadResponse prepareEngineGetPayloadResponse(
