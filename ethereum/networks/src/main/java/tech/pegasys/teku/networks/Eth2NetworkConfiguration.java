@@ -43,7 +43,6 @@ import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.networks.Eth2Network;
-import tech.pegasys.teku.validator.api.ValidatorConfig;
 
 public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
@@ -56,9 +55,10 @@ public class Eth2NetworkConfiguration {
 
   public static final int DEFAULT_ASYNC_P2P_MAX_QUEUE = DEFAULT_MAX_QUEUE_SIZE;
 
+  public static final int DEFAULT_VALIDATOR_EXECUTOR_THREADS = 5;
+
   public static final int DEFAULT_ASYNC_BEACON_CHAIN_MAX_THREADS =
-      Math.max(
-          Runtime.getRuntime().availableProcessors(), ValidatorConfig.DEFAULT_EXECUTOR_THREADS);
+      Math.max(Runtime.getRuntime().availableProcessors(), DEFAULT_VALIDATOR_EXECUTOR_THREADS);
 
   public static final int DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE = DEFAULT_MAX_QUEUE_SIZE;
 

@@ -5,7 +5,6 @@ dependencies {
     implementation project(':infrastructure:async')
     implementation project(':infrastructure:io')
     implementation project(':infrastructure:exceptions')
-    implementation project(':validator:api')
 
     implementation 'org.apache.tuweni:tuweni-units'
 
