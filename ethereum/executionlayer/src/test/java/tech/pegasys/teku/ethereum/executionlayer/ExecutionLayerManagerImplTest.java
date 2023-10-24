@@ -261,7 +261,9 @@ class ExecutionLayerManagerImplTest {
     // we expect result from the builder
     assertThat(
             executionLayerManager.builderGetHeader(
-                executionPayloadContext, state, blockValueResult))
+                executionPayloadContext,
+                state,
+                SafeFuture.completedFuture(localExecutionPayloadValue)))
         .isCompletedWithValue(HeaderWithFallbackData.create(header));
     assertThat(blockValueResult).isCompletedWithValue(builderExecutionPayloadValue);
 
