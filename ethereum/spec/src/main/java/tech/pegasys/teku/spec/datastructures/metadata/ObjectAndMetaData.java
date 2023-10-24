@@ -75,6 +75,7 @@ public class ObjectAndMetaData<T> {
     final ObjectAndMetaData<?> that = (ObjectAndMetaData<?>) o;
     return executionOptimistic == that.executionOptimistic
         && canonical == that.canonical
+        && finalized == that.finalized
         && Objects.equals(data, that.data)
         && milestone == that.milestone;
   }
@@ -91,6 +92,7 @@ public class ObjectAndMetaData<T> {
         .add("milestone", milestone)
         .add("executionOptimistic", executionOptimistic)
         .add("canonical", canonical)
+        .add("finalized", finalized)
         .toString();
   }
 }

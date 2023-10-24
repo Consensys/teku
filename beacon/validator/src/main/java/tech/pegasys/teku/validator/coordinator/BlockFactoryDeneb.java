@@ -50,6 +50,7 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
             spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions());
   }
 
+  @Deprecated
   @Override
   public SafeFuture<BlockContainer> createUnsignedBlock(
       final BeaconState blockSlotState,
@@ -59,6 +60,31 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
       final boolean blinded) {
     return super.createUnsignedBlock(
             blockSlotState, newSlot, randaoReveal, optionalGraffiti, blinded)
+        .thenApply(BlockContainer::getBlock)
+        .thenCompose(
+            block -> {
+              if (block.isBlinded()) {
+                return operationSelector
+                    .createBlindedBlobSidecarsSelector()
+                    .apply(block)
+                    .thenApply(
+                        blindedBlobSidecars ->
+                            createBlindedBlockContents(block, blindedBlobSidecars));
+              }
+              return operationSelector
+                  .createBlobSidecarsSelector()
+                  .apply(block)
+                  .thenApply(blobSidecars -> createBlockContents(block, blobSidecars));
+            });
+  }
+
+  @Override
+  public SafeFuture<BlockContainer> createUnsignedBlock(
+      final BeaconState blockSlotState,
+      final UInt64 newSlot,
+      final BLSSignature randaoReveal,
+      final Optional<Bytes32> optionalGraffiti) {
+    return super.createUnsignedBlock(blockSlotState, newSlot, randaoReveal, optionalGraffiti)
         .thenApply(BlockContainer::getBlock)
         .thenCompose(
             block -> {

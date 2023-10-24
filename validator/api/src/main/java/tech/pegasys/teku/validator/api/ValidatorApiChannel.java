@@ -78,9 +78,16 @@ public interface ValidatorApiChannel extends ChannelInterface {
           return SafeFuture.completedFuture(Optional.empty());
         }
 
+        @Deprecated
         @Override
         public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
             UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti, boolean blinded) {
+          return SafeFuture.completedFuture(Optional.empty());
+        }
+
+        @Override
+        public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
+            UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti) {
           return SafeFuture.completedFuture(Optional.empty());
         }
 
@@ -186,8 +193,12 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Optional<ProposerDuties>> getProposerDuties(UInt64 epoch);
 
+  @Deprecated
   SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
       UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti, boolean blinded);
+
+  SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
+      UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti);
 
   SafeFuture<Optional<AttestationData>> createAttestationData(UInt64 slot, int committeeIndex);
 

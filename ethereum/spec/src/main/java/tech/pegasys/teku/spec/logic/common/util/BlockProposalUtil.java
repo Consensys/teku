@@ -110,6 +110,16 @@ public class BlockProposalUtil {
             });
   }
 
+  public SafeFuture<BeaconBlockAndState> createNewUnsignedBlock(
+      final UInt64 newSlot,
+      final int proposerIndex,
+      final BeaconState blockSlotState,
+      final Bytes32 parentBlockSigningRoot,
+      final Consumer<BeaconBlockBodyBuilder> bodyBuilder) {
+    return createNewUnsignedBlock(
+        newSlot, proposerIndex, blockSlotState, parentBlockSigningRoot, bodyBuilder, true);
+  }
+
   private SafeFuture<? extends BeaconBlockBody> createBeaconBlockBody(
       final Consumer<BeaconBlockBodyBuilder> bodyBuilder) {
     return schemaDefinitions.getBeaconBlockBodySchema().createBlockBody(bodyBuilder);

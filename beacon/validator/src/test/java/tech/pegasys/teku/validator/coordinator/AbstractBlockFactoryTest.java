@@ -360,6 +360,7 @@ public abstract class AbstractBlockFactoryTest {
                       args.getArgument(0),
                       Optional.of(SafeFuture.completedFuture(executionPayload)),
                       Optional.empty(),
+                      Optional.empty(),
                       Optional.empty());
               cachedExecutionPayloadResult = executionPayloadResult;
               return executionPayloadResult;
@@ -374,7 +375,8 @@ public abstract class AbstractBlockFactoryTest {
                       Optional.empty(),
                       Optional.of(
                           SafeFuture.completedFuture(
-                              HeaderWithFallbackData.create(executionPayloadHeader))));
+                              HeaderWithFallbackData.create(executionPayloadHeader))),
+                      Optional.empty());
               cachedExecutionPayloadResult = executionPayloadResult;
               return executionPayloadResult;
             });
@@ -387,6 +389,7 @@ public abstract class AbstractBlockFactoryTest {
                       args.getArgument(0),
                       Optional.of(SafeFuture.completedFuture(executionPayload)),
                       Optional.of(SafeFuture.completedFuture(blobsBundle)),
+                      Optional.empty(),
                       Optional.empty());
               cachedExecutionPayloadResult = executionPayloadResult;
               return executionPayloadResult;
@@ -402,7 +405,8 @@ public abstract class AbstractBlockFactoryTest {
                       Optional.of(
                           SafeFuture.completedFuture(
                               HeaderWithFallbackData.create(
-                                  executionPayloadHeader, blindedBlobsBundle))));
+                                  executionPayloadHeader, blindedBlobsBundle))),
+                      Optional.empty());
               cachedExecutionPayloadResult = executionPayloadResult;
               return executionPayloadResult;
             });
@@ -418,6 +422,7 @@ public abstract class AbstractBlockFactoryTest {
             null,
             Optional.empty(),
             Optional.of(SafeFuture.completedFuture(blobsBundle)),
+            Optional.empty(),
             Optional.empty());
     when(executionLayer.getCachedPayloadResult(slot))
         .thenReturn(Optional.of(executionPayloadResult));

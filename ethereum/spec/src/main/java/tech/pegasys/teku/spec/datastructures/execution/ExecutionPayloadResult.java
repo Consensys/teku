@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.execution;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 
 public class ExecutionPayloadResult {
@@ -24,16 +25,19 @@ public class ExecutionPayloadResult {
   private final Optional<SafeFuture<ExecutionPayload>> executionPayloadFuture;
   private final Optional<SafeFuture<Optional<BlobsBundle>>> blobsBundleFuture;
   private final Optional<SafeFuture<HeaderWithFallbackData>> headerWithFallbackDataFuture;
+  private final Optional<SafeFuture<UInt256>> executionPayloadValueFuture;
 
   public ExecutionPayloadResult(
       final ExecutionPayloadContext executionPayloadContext,
       final Optional<SafeFuture<ExecutionPayload>> executionPayloadFuture,
       final Optional<SafeFuture<Optional<BlobsBundle>>> blobsBundleFuture,
-      final Optional<SafeFuture<HeaderWithFallbackData>> headerWithFallbackDataFuture) {
+      final Optional<SafeFuture<HeaderWithFallbackData>> headerWithFallbackDataFuture,
+      final Optional<SafeFuture<UInt256>> executionPayloadValueFuture) {
     this.executionPayloadContext = executionPayloadContext;
     this.executionPayloadFuture = executionPayloadFuture;
     this.blobsBundleFuture = blobsBundleFuture;
     this.headerWithFallbackDataFuture = headerWithFallbackDataFuture;
+    this.executionPayloadValueFuture = executionPayloadValueFuture;
   }
 
   public ExecutionPayloadContext getExecutionPayloadContext() {
@@ -52,6 +56,10 @@ public class ExecutionPayloadResult {
     return headerWithFallbackDataFuture;
   }
 
+  public Optional<SafeFuture<UInt256>> getExecutionPayloadValueFuture() {
+    return executionPayloadValueFuture;
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {
@@ -64,7 +72,8 @@ public class ExecutionPayloadResult {
     return Objects.equals(executionPayloadContext, that.executionPayloadContext)
         && Objects.equals(executionPayloadFuture, that.executionPayloadFuture)
         && Objects.equals(blobsBundleFuture, that.blobsBundleFuture)
-        && Objects.equals(headerWithFallbackDataFuture, that.headerWithFallbackDataFuture);
+        && Objects.equals(headerWithFallbackDataFuture, that.headerWithFallbackDataFuture)
+        && Objects.equals(executionPayloadValueFuture, that.executionPayloadValueFuture);
   }
 
   @Override
@@ -73,7 +82,8 @@ public class ExecutionPayloadResult {
         executionPayloadContext,
         executionPayloadFuture,
         blobsBundleFuture,
-        headerWithFallbackDataFuture);
+        headerWithFallbackDataFuture,
+        executionPayloadValueFuture);
   }
 
   @Override
@@ -83,6 +93,7 @@ public class ExecutionPayloadResult {
         .add("executionPayloadFuture", executionPayloadFuture)
         .add("blobsBundleFuture", blobsBundleFuture)
         .add("headerWithFallbackDataFuture", headerWithFallbackDataFuture)
+        .add("executionPayloadValueFuture", executionPayloadValueFuture)
         .toString();
   }
 }

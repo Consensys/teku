@@ -25,6 +25,7 @@ public enum ValidatorApiMethod {
   GET_DUTIES("validator/duties"),
   GET_UNSIGNED_BLOCK_V2("eth/v2/validator/blocks/:slot"),
   GET_UNSIGNED_BLINDED_BLOCK("eth/v1/validator/blinded_blocks/:slot"),
+  GET_UNSIGNED_BLOCK_V3("eth/v3/validator/blocks/:slot"),
   SEND_SIGNED_BLOCK("eth/v1/beacon/blocks"),
   SEND_SIGNED_BLINDED_BLOCK("eth/v1/beacon/blinded_blocks"),
   GET_ATTESTATION_DATA("eth/v1/validator/attestation_data"),

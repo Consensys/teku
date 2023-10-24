@@ -97,6 +97,7 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
     return dutiesProviderChannel.getProposerDuties(epoch);
   }
 
+  @Deprecated
   @Override
   public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
       final UInt64 slot,
@@ -106,6 +107,14 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
     return blockHandlerChannel
         .orElse(dutiesProviderChannel)
         .createUnsignedBlock(slot, randaoReveal, graffiti, blinded);
+  }
+
+  @Override
+  public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
+      final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
+    return blockHandlerChannel
+        .orElse(dutiesProviderChannel)
+        .createUnsignedBlock(slot, randaoReveal, graffiti);
   }
 
   @Override
