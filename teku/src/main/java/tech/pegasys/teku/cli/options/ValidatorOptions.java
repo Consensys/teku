@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.cli.options;
 
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_VALIDATOR_EXECUTOR_THREADS;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_DOPPELGANGER_DETECTION_ENABLED;
 
 import java.nio.file.Path;
@@ -117,7 +118,7 @@ public class ValidatorOptions {
       description = "Set the number of threads for the validator executor",
       hidden = true,
       arity = "1")
-  private int executorThreads = ValidatorConfig.DEFAULT_EXECUTOR_THREADS;
+  private int executorThreads = DEFAULT_VALIDATOR_EXECUTOR_THREADS;
 
   public void configure(TekuConfiguration.Builder builder) {
     builder.validator(

@@ -79,6 +79,7 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.networking.eth2.mock.NoOpEth2P2PNetwork;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
+import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerBlockManagerFactory;
@@ -271,15 +272,24 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   public BeaconChainController(
       final ServiceConfig serviceConfig, final BeaconChainConfiguration beaconConfig) {
+    final Eth2NetworkConfiguration eth2NetworkConfig = beaconConfig.eth2NetworkConfig();
     this.beaconConfig = beaconConfig;
     this.spec = beaconConfig.getSpec();
     this.beaconBlockSchemaSupplier =
         slot -> spec.atSlot(slot).getSchemaDefinitions().getBeaconBlockBodySchema();
     this.beaconDataDirectory = serviceConfig.getDataDirLayout().getBeaconDataDirectory();
     this.asyncRunnerFactory = serviceConfig.getAsyncRunnerFactory();
-    this.beaconAsyncRunner = serviceConfig.createAsyncRunner("beaconchain");
+    this.beaconAsyncRunner =
+        serviceConfig.createAsyncRunner(
+            "beaconchain",
+            eth2NetworkConfig.getAsyncBeaconChainMaxThreads(),
+            eth2NetworkConfig.getAsyncBeaconChainMaxQueue());
     this.eventAsyncRunner = serviceConfig.createAsyncRunner("events", 10);
-    this.networkAsyncRunner = serviceConfig.createAsyncRunner("p2p", 10);
+    this.networkAsyncRunner =
+        serviceConfig.createAsyncRunner(
+            "p2p",
+            eth2NetworkConfig.getAsyncP2pMaxThreads(),
+            eth2NetworkConfig.getAsyncP2pMaxQueue());
     this.operationPoolAsyncRunner = serviceConfig.createAsyncRunner("operationPoolUpdater", 1);
     this.timeProvider = serviceConfig.getTimeProvider();
     this.eventChannels = serviceConfig.getEventChannels();
