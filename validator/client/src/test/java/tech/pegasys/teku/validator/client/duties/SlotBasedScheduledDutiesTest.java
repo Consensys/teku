@@ -49,15 +49,20 @@ class SlotBasedScheduledDutiesTest {
   @SuppressWarnings("unchecked")
   private final DutyFactory<ProductionDuty, AggregationDuty> dutyFactory = mock(DutyFactory.class);
 
+  private final ValidatorDutyMetrics validatorDutyMetrics =
+      ValidatorDutyMetrics.create(metricsSystem);
+
   private final SlotBasedScheduledDuties<ProductionDuty, AggregationDuty> duties =
       new SlotBasedScheduledDuties<>(
-          dutyFactory, Bytes32.fromHexString("0x838382"), Duty::performDuty);
+          dutyFactory,
+          Bytes32.fromHexString("0x838382"),
+          validatorDutyMetrics::performDutyWithMetrics);
 
   @Test
   public void shouldDiscardMissedProductionDuties() {
-    final ProductionDuty duty0 = mockDuty(ProductionDuty.class);
-    final ProductionDuty duty1 = mockDuty(ProductionDuty.class);
-    final ProductionDuty duty2 = mockDuty(ProductionDuty.class);
+    final ProductionDuty duty0 = mockProductionDuty();
+    final ProductionDuty duty1 = mockProductionDuty();
+    final ProductionDuty duty2 = mockProductionDuty();
     when(dutyFactory.createProductionDuty(ZERO, validator)).thenReturn(duty0);
     when(dutyFactory.createProductionDuty(ONE, validator)).thenReturn(duty1);
     when(dutyFactory.createProductionDuty(TWO, validator)).thenReturn(duty2);
@@ -80,9 +85,9 @@ class SlotBasedScheduledDutiesTest {
 
   @Test
   public void shouldDiscardMissedAggregationDuties() {
-    final AggregationDuty duty0 = mockDuty(AggregationDuty.class);
-    final AggregationDuty duty1 = mockDuty(AggregationDuty.class);
-    final AggregationDuty duty2 = mockDuty(AggregationDuty.class);
+    final AggregationDuty duty0 = mockAggregationDuty();
+    final AggregationDuty duty1 = mockAggregationDuty();
+    final AggregationDuty duty2 = mockAggregationDuty();
     when(dutyFactory.createAggregationDuty(ZERO, validator)).thenReturn(duty0);
     when(dutyFactory.createAggregationDuty(ONE, validator)).thenReturn(duty1);
     when(dutyFactory.createAggregationDuty(TWO, validator)).thenReturn(duty2);
@@ -103,11 +108,23 @@ class SlotBasedScheduledDutiesTest {
     verify(duty2).performDuty();
   }
 
-  private <T extends Duty> T mockDuty(final Class<T> dutyType) {
-    final T mockDuty = mock(dutyType);
+  private AggregationDuty mockAggregationDuty() {
+    final AggregationDuty mockDuty = mock(AggregationDuty.class);
+    when(mockDuty.getType()).thenReturn(DutyType.ATTESTATION_AGGREGATION);
     when(mockDuty.performDuty())
         .thenReturn(
             SafeFuture.completedFuture(DutyResult.success(dataStructureUtil.randomBytes32())));
+
+    return mockDuty;
+  }
+
+  private ProductionDuty mockProductionDuty() {
+    final ProductionDuty mockDuty = mock(ProductionDuty.class);
+    when(mockDuty.getType()).thenReturn(DutyType.ATTESTATION_PRODUCTION);
+    when(mockDuty.performDuty())
+        .thenReturn(
+            SafeFuture.completedFuture(DutyResult.success(dataStructureUtil.randomBytes32())));
+
     return mockDuty;
   }
 
