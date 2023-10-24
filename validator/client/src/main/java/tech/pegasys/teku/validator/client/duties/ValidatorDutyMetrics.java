@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client.duties;
 
+import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import org.hyperledger.besu.plugin.services.metrics.OperationTimer;
@@ -38,9 +39,22 @@ public class ValidatorDutyMetrics {
   }
 
   public SafeFuture<DutyResult> performDutyWithMetrics(final Duty duty) {
-    final String dutyType = duty.getType().getType();
-    final OperationTimer timer = dutyMetric.labels(dutyType, "total");
-    final OperationTimer.TimingContext context = timer.startTimer();
+    final OperationTimer.TimingContext context = startTimer(getDutyType(duty), "total");
     return duty.performDuty().alwaysRun(context::stopTimer);
+  }
+
+  private OperationTimer.TimingContext startTimer(final String dutyType, final String step) {
+    final OperationTimer timer = dutyMetric.labels(dutyType, step);
+    return timer.startTimer();
+  }
+
+  private static String getDutyType(final Duty duty) {
+    return duty.getType().getType();
+  }
+
+  public <T> SafeFuture<T> record(
+      final Supplier<SafeFuture<T>> supplier, final String dutyType, final String step) {
+    final OperationTimer.TimingContext context = startTimer(dutyType, step);
+    return supplier.get().alwaysRun(context::stopTimer);
   }
 }

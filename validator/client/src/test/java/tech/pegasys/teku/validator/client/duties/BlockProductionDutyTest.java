@@ -104,7 +104,8 @@ class BlockProductionDutyTest {
             validatorApiChannel,
             blockContainerSigner,
             false,
-            spec);
+            spec,
+            mock(ValidatorDutyMetrics.class)); // todo fix
     when(forkProvider.getForkInfo(any())).thenReturn(completedFuture(fork));
   }
 
@@ -119,7 +120,8 @@ class BlockProductionDutyTest {
             validatorApiChannel,
             blockContainerSigner,
             isBlindedBlocksEnabled,
-            spec);
+            spec,
+            mock(ValidatorDutyMetrics.class)); // todo fix
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
     final BeaconBlock unsignedBlock;
@@ -164,7 +166,8 @@ class BlockProductionDutyTest {
             validatorApiChannel,
             blockContainerSigner,
             false,
-            spec);
+            spec,
+            mock(ValidatorDutyMetrics.class)); // todo fix
 
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
@@ -244,7 +247,8 @@ class BlockProductionDutyTest {
             validatorApiChannel,
             blockContainerSigner,
             true,
-            spec);
+            spec,
+            mock(ValidatorDutyMetrics.class)); // todo fix
 
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
