@@ -2,6 +2,7 @@ dependencies {
     api project(':ethereum:spec')
 
     implementation project(':ethereum:execution-types')
+    implementation project(':infrastructure:async')
     implementation project(':infrastructure:io')
     implementation project(':infrastructure:exceptions')
 
