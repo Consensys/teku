@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
+import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics.Step;
 import tech.pegasys.teku.validator.client.signer.BlockContainerSigner;
 
 public class BlockProductionDuty implements Duty {
@@ -80,14 +81,15 @@ public class BlockProductionDuty implements Duty {
     return createRandaoReveal(forkInfo)
         .thenCompose(
             signature ->
-                validatorDutyMetrics.record(() -> createUnsignedBlock(signature), this, "create"))
+                validatorDutyMetrics.record(
+                    () -> createUnsignedBlock(signature), this, Step.CREATE))
         .thenCompose(
             unsignedBlock ->
                 validatorDutyMetrics.record(
-                    () -> signBlockContainer(forkInfo, unsignedBlock), this, "sign"))
+                    () -> signBlockContainer(forkInfo, unsignedBlock), this, Step.SIGN))
         .thenCompose(
             signedBlockContainer ->
-                validatorDutyMetrics.record(() -> sendBlock(signedBlockContainer), this, "send"))
+                validatorDutyMetrics.record(() -> sendBlock(signedBlockContainer), this, Step.SEND))
         .exceptionally(error -> DutyResult.forError(validator.getPublicKey(), error));
   }
 
