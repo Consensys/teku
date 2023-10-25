@@ -19,8 +19,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.ethereum.pow.api.DepositConstants.DEPOSIT_CONTRACT_TREE_DEPTH;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -54,9 +56,54 @@ class DepositTreeTest {
 
       if (i >= nonFinalizedDepositCount) {
         final DepositTestCase finalisingTestCase = testCases.get(i - nonFinalizedDepositCount);
-        depositTree.finalize(finalisingTestCase.getEth1Data(), finalisingTestCase.getBlockHeight());
+        final Eth1Data correctEth1Data = finalisingTestCase.getEth1Data();
+        depositTree.finalize(
+            new Eth1Data(
+                correctEth1Data.getDepositRoot(),
+                correctEth1Data.getDepositCount().minus(1),
+                correctEth1Data.getBlockHash()),
+            finalisingTestCase.getBlockHeight());
         final Optional<DepositTreeSnapshot> snapshotOptional = depositTree.getSnapshot();
         assertThat(snapshotOptional).contains(finalisingTestCase.getSnapshot());
+      }
+    }
+  }
+
+  @Test
+  void snapshotShouldHaveCorrectDepositCount() {
+    final int depositsCount = 10;
+    final Bytes32 depositRoot = Bytes32.random();
+    final Bytes32 blockHash = Bytes32.random();
+    final Function<Integer, Eth1Data> eth1Generator =
+        deposits -> new Eth1Data(depositRoot, UInt64.valueOf(deposits), blockHash);
+
+    final List<Bytes32> leafs = new ArrayList<>();
+    for (int i = 0; i < depositsCount; ++i) {
+      leafs.add(Bytes32.random());
+    }
+    final DepositTree fullTree = new DepositTree();
+    leafs.forEach(fullTree::pushLeaf);
+    fullTree.finalize(eth1Generator.apply(depositsCount), UInt64.ZERO);
+    final DepositTreeSnapshot fullTreeSnapshot = fullTree.getSnapshot().orElseThrow();
+
+    for (int finalized = 0; finalized <= depositsCount; ++finalized) {
+      final DepositTree customTree = new DepositTree();
+      for (int j = 0; j < depositsCount; ++j) {
+        customTree.pushLeaf(leafs.get(j));
+      }
+      customTree.finalize(eth1Generator.apply(finalized), UInt64.ZERO);
+      final Optional<DepositTreeSnapshot> customTreeSnapshot = customTree.getSnapshot();
+      System.out.println(customTreeSnapshot);
+      switch (finalized) {
+        case 0 -> assertThat(customTreeSnapshot).isEmpty();
+        case depositsCount -> assertThat(customTreeSnapshot).contains(fullTreeSnapshot);
+        default -> {
+          assertThat(customTreeSnapshot).isPresent();
+          final DepositTreeSnapshot snapshot = customTreeSnapshot.get();
+          assertThat(snapshot.getDepositCount()).isEqualTo(finalized);
+          assertThat(snapshot.getDepositRoot()).isNotEqualTo(fullTreeSnapshot.getDepositRoot());
+          assertThat(snapshot.getFinalized()).isNotEqualTo(fullTreeSnapshot.getFinalized());
+        }
       }
     }
   }

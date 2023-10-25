@@ -95,6 +95,9 @@ public class DepositTree {
     checkArgument(
         totalDepositCount >= eth1Data.getDepositCount().longValue(),
         "Merkle tree does not contain all deposits to be finalized");
+    if (eth1Data.getDepositCount().equals(UInt64.ZERO)) {
+      return;
+    }
     finalizedExecutionBlock =
         Optional.of(new BlockHashAndHeight(eth1Data.getBlockHash(), blockHeight));
     finalizedDepositCount = eth1Data.getDepositCount().longValue();
