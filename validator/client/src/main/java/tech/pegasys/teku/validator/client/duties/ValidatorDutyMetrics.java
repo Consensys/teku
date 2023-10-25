@@ -43,6 +43,12 @@ public class ValidatorDutyMetrics {
     return duty.performDuty().alwaysRun(context::stopTimer);
   }
 
+  public <T> SafeFuture<T> record(
+          final Supplier<SafeFuture<T>> dutyStepFutureSupplier, final Duty duty, final String step) {
+    final OperationTimer.TimingContext context = startTimer(getDutyType(duty), step);
+    return dutyStepFutureSupplier.get().alwaysRun(context::stopTimer);
+  }
+
   private OperationTimer.TimingContext startTimer(final String dutyType, final String step) {
     final OperationTimer timer = dutyMetric.labels(dutyType, step);
     return timer.startTimer();
@@ -50,11 +56,5 @@ public class ValidatorDutyMetrics {
 
   private static String getDutyType(final Duty duty) {
     return duty.getType().getType();
-  }
-
-  public <T> SafeFuture<T> record(
-      final Supplier<SafeFuture<T>> supplier, final String dutyType, final String step) {
-    final OperationTimer.TimingContext context = startTimer(dutyType, step);
-    return supplier.get().alwaysRun(context::stopTimer);
   }
 }

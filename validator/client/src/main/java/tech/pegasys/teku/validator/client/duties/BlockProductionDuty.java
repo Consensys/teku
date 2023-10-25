@@ -77,20 +77,17 @@ public class BlockProductionDuty implements Duty {
   }
 
   public SafeFuture<DutyResult> produceBlock(final ForkInfo forkInfo) {
-    final String dutyType = getType().getType();
     return createRandaoReveal(forkInfo)
         .thenCompose(
             signature ->
-                validatorDutyMetrics.record(
-                    () -> createUnsignedBlock(signature), dutyType, "create"))
+                validatorDutyMetrics.record(() -> createUnsignedBlock(signature), this, "create"))
         .thenCompose(
             unsignedBlock ->
                 validatorDutyMetrics.record(
-                    () -> signBlockContainer(forkInfo, unsignedBlock), dutyType, "sign"))
+                    () -> signBlockContainer(forkInfo, unsignedBlock), this, "sign"))
         .thenCompose(
             signedBlockContainer ->
-                validatorDutyMetrics.record(
-                    () -> sendBlock(signedBlockContainer), dutyType, "send"))
+                validatorDutyMetrics.record(() -> sendBlock(signedBlockContainer), this, "send"))
         .exceptionally(error -> DutyResult.forError(validator.getPublicKey(), error));
   }
 
