@@ -404,18 +404,19 @@ public class ValidatorClientService extends Service {
     validatorTimingChannels.add(validatorStatusProvider);
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
     final BlockContainerSigner blockContainerSigner = new MilestoneBasedBlockContainerSigner(spec);
+    final ValidatorDutyMetrics validatorDutyMetrics = ValidatorDutyMetrics.create(metricsSystem);
     final BlockDutyFactory blockDutyFactory =
         new BlockDutyFactory(
             forkProvider,
             validatorApiChannel,
             blockContainerSigner,
             config.getValidatorConfig().isBlindedBeaconBlocksEnabled(),
-            spec);
+            spec,
+            validatorDutyMetrics);
     final AttestationDutyFactory attestationDutyFactory =
         new AttestationDutyFactory(spec, forkProvider, validatorApiChannel);
     final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
         new BeaconCommitteeSubscriptions(validatorApiChannel);
-    final ValidatorDutyMetrics validatorDutyMetrics = ValidatorDutyMetrics.create(metricsSystem);
     final DutyLoader<?> attestationDutyLoader =
         new RetryingDutyLoader<>(
             asyncRunner,

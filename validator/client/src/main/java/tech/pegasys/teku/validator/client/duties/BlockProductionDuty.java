@@ -44,6 +44,7 @@ public class BlockProductionDuty implements Duty {
   private final BlockContainerSigner blockContainerSigner;
   private final boolean useBlindedBlock;
   private final Spec spec;
+  private final ValidatorDutyMetrics validatorDutyMetrics;
 
   public BlockProductionDuty(
       final Validator validator,
@@ -52,7 +53,8 @@ public class BlockProductionDuty implements Duty {
       final ValidatorApiChannel validatorApiChannel,
       final BlockContainerSigner blockContainerSigner,
       final boolean useBlindedBlock,
-      final Spec spec) {
+      final Spec spec,
+      final ValidatorDutyMetrics validatorDutyMetrics) {
     this.validator = validator;
     this.slot = slot;
     this.forkProvider = forkProvider;
@@ -60,6 +62,7 @@ public class BlockProductionDuty implements Duty {
     this.blockContainerSigner = blockContainerSigner;
     this.useBlindedBlock = useBlindedBlock;
     this.spec = spec;
+    this.validatorDutyMetrics = validatorDutyMetrics;
   }
 
   @Override
@@ -75,9 +78,16 @@ public class BlockProductionDuty implements Duty {
 
   public SafeFuture<DutyResult> produceBlock(final ForkInfo forkInfo) {
     return createRandaoReveal(forkInfo)
-        .thenCompose(this::createUnsignedBlock)
-        .thenCompose(unsignedBlock -> signBlockContainer(forkInfo, unsignedBlock))
-        .thenCompose(this::sendBlock)
+        .thenCompose(
+            signature ->
+                validatorDutyMetrics.record(() -> createUnsignedBlock(signature), this, "create"))
+        .thenCompose(
+            unsignedBlock ->
+                validatorDutyMetrics.record(
+                    () -> signBlockContainer(forkInfo, unsignedBlock), this, "sign"))
+        .thenCompose(
+            signedBlockContainer ->
+                validatorDutyMetrics.record(() -> sendBlock(signedBlockContainer), this, "send"))
         .exceptionally(error -> DutyResult.forError(validator.getPublicKey(), error));
   }
 

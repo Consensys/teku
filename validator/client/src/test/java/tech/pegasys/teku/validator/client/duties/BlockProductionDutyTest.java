@@ -45,6 +45,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -92,6 +93,8 @@ class BlockProductionDutyTest {
   private final BlockContainerSigner blockContainerSigner =
       new MilestoneBasedBlockContainerSigner(spec);
 
+  private final StubMetricsSystem metricSystem = new StubMetricsSystem();
+
   private BlockProductionDuty duty;
 
   @BeforeEach
@@ -104,7 +107,8 @@ class BlockProductionDutyTest {
             validatorApiChannel,
             blockContainerSigner,
             false,
-            spec);
+            spec,
+            ValidatorDutyMetrics.create(metricSystem));
     when(forkProvider.getForkInfo(any())).thenReturn(completedFuture(fork));
   }
 
@@ -119,7 +123,8 @@ class BlockProductionDutyTest {
             validatorApiChannel,
             blockContainerSigner,
             isBlindedBlocksEnabled,
-            spec);
+            spec,
+            ValidatorDutyMetrics.create(metricSystem));
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
     final BeaconBlock unsignedBlock;
@@ -164,7 +169,8 @@ class BlockProductionDutyTest {
             validatorApiChannel,
             blockContainerSigner,
             false,
-            spec);
+            spec,
+            ValidatorDutyMetrics.create(metricSystem));
 
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
@@ -244,7 +250,8 @@ class BlockProductionDutyTest {
             validatorApiChannel,
             blockContainerSigner,
             true,
-            spec);
+            spec,
+            ValidatorDutyMetrics.create(metricSystem));
 
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
