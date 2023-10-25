@@ -14,6 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
@@ -50,6 +51,31 @@ public class MilestoneDependentTypesUtil {
     return builder.build();
   }
 
+  public static <T extends SszData>
+      SerializableOneOfTypeDefinition<T> getMultipleSchemaDefinitionFromMilestone(
+          final SchemaDefinitionCache schemaDefinitionCache,
+          final String title,
+          final List<ConditionalSchemaGetter<T>> schemaGetterList) {
+    final SerializableOneOfTypeDefinitionBuilder<T> builder =
+        new SerializableOneOfTypeDefinitionBuilder<T>().title(title);
+    for (SpecMilestone milestone : schemaDefinitionCache.getSupportedMilestones()) {
+      schemaGetterList.forEach(
+          schemaGetter -> {
+            if (milestone.isGreaterThanOrEqualTo(schemaGetter.earliestMilestone())) {
+              final DeserializableTypeDefinition<? extends T> jsonTypeDefinition =
+                  schemaGetter
+                      .schemaGetter()
+                      .apply(schemaDefinitionCache.getSchemaDefinition(milestone))
+                      .getJsonTypeDefinition();
+              builder.withType(
+                  value -> schemaGetter.schemaPredicate().test(value, milestone),
+                  jsonTypeDefinition);
+            }
+          });
+    }
+    return builder.build();
+  }
+
   public static <T extends SszData> DeserializableTypeDefinition<? extends T> slotBasedSelector(
       final String json,
       final SchemaDefinitionCache schemaDefinitionCache,
@@ -76,4 +102,9 @@ public class MilestoneDependentTypesUtil {
       throw new BadRequestException(e.getMessage());
     }
   }
+
+  public record ConditionalSchemaGetter<T>(
+      BiPredicate<T, SpecMilestone> schemaPredicate,
+      SpecMilestone earliestMilestone,
+      Function<SchemaDefinitions, SszSchema<? extends T>> schemaGetter) {}
 }

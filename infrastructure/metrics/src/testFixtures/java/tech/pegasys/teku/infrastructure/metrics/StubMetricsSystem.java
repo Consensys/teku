@@ -31,6 +31,8 @@ public class StubMetricsSystem implements MetricsSystem {
   private final Map<MetricCategory, Map<String, StubGauge>> gauges = new ConcurrentHashMap<>();
   private final Map<MetricCategory, Map<String, StubLabelledGauge>> labelledGauges =
       new ConcurrentHashMap<>();
+  private final Map<MetricCategory, Map<String, StubLabelledOperationTimer>>
+      labelledOperationTimers = new ConcurrentHashMap<>();
 
   private static final Pattern METRIC_NAME_PATTERN = Pattern.compile("[a-zA-Z_:][a-zA-Z0-9_:]*");
   private static final Pattern LABEL_NAME_PATTERN = Pattern.compile("[a-zA-Z_][a-zA-Z0-9_]*");
@@ -85,7 +87,9 @@ public class StubMetricsSystem implements MetricsSystem {
       final String... labelNames) {
     validateMetricName(name);
     validateLabelName(labelNames);
-    throw new UnsupportedOperationException("Timers not supported");
+    return labelledOperationTimers
+        .computeIfAbsent(category, __ -> new ConcurrentHashMap<>())
+        .computeIfAbsent(name, __ -> new StubLabelledOperationTimer(category, name, help));
   }
 
   public StubGauge getGauge(final MetricCategory category, final String name) {
@@ -109,6 +113,15 @@ public class StubMetricsSystem implements MetricsSystem {
         .map(categoryCounters -> categoryCounters.get(name))
         .orElseThrow(
             () -> new IllegalArgumentException("Unknown counter: " + category + " " + name));
+  }
+
+  public StubLabelledOperationTimer getLabelledOperationTimer(
+      final MetricCategory category, final String name) {
+    validateMetricName(name);
+    return Optional.ofNullable(labelledOperationTimers.get(category))
+        .map(categoryTimers -> categoryTimers.get(name))
+        .orElseThrow(
+            () -> new IllegalArgumentException("Unknown labelled timer: " + category + " " + name));
   }
 
   private void validateMetricName(String metricName) {

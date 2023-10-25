@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.api;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_VALIDATOR_EXECUTOR_THREADS;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -57,8 +58,6 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED = false;
   public static final int DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE = 100;
   public static final UInt64 DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT = UInt64.valueOf(30_000_000);
-
-  public static final int DEFAULT_EXECUTOR_THREADS = 5;
 
   private final List<String> validatorKeys;
   private final List<String> validatorExternalSignerPublicKeySources;
@@ -338,7 +337,7 @@ public class ValidatorConfig {
     private int executorMaxQueueSize = DEFAULT_EXECUTOR_MAX_QUEUE_SIZE;
     private Optional<String> sentryNodeConfigurationFile = Optional.empty();
 
-    private int executorThreads = DEFAULT_EXECUTOR_THREADS;
+    private int executorThreads = DEFAULT_VALIDATOR_EXECUTOR_THREADS;
 
     private Builder() {}
 
