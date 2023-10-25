@@ -63,9 +63,9 @@ class DepositTreeTest {
     }
   }
 
-  @Test
-  void snapshotShouldHaveCorrectDepositCount() {
-    final int depositsCount = 10;
+  @ParameterizedTest(name = "deposits: {0}")
+  @ValueSource(ints = {9, 10})
+  void partialSnapshotShouldHaveCorrectDepositCount(final int depositsCount) {
     final Bytes32 depositRoot = Bytes32.random();
     final Bytes32 blockHash = Bytes32.random();
     final Function<Integer, Eth1Data> eth1Generator =
@@ -80,25 +80,39 @@ class DepositTreeTest {
     fullTree.finalize(eth1Generator.apply(depositsCount), UInt64.ZERO);
     final DepositTreeSnapshot fullTreeSnapshot = fullTree.getSnapshot().orElseThrow();
 
+    Optional<DepositTreeSnapshot> maybePreviousSnapshot = Optional.empty();
     for (int finalized = 0; finalized <= depositsCount; ++finalized) {
+
       final DepositTree customTree = new DepositTree();
       for (int j = 0; j < depositsCount; ++j) {
         customTree.pushLeaf(leafs.get(j));
       }
       customTree.finalize(eth1Generator.apply(finalized), UInt64.ZERO);
       final Optional<DepositTreeSnapshot> customTreeSnapshot = customTree.getSnapshot();
-      System.out.println(customTreeSnapshot);
-      switch (finalized) {
-        case 0 -> assertThat(customTreeSnapshot).isEmpty();
-        case depositsCount -> assertThat(customTreeSnapshot).contains(fullTreeSnapshot);
-        default -> {
-          assertThat(customTreeSnapshot).isPresent();
-          final DepositTreeSnapshot snapshot = customTreeSnapshot.get();
+
+      if (finalized == 0) {
+        assertThat(customTreeSnapshot).isEmpty();
+      } else {
+        assertThat(customTreeSnapshot).isPresent();
+        final DepositTreeSnapshot snapshot = customTreeSnapshot.get();
+
+        // not equal to previous finalized
+        maybePreviousSnapshot.ifPresent(
+            previousSnapshot -> {
+              assertThat(snapshot.getDepositRoot()).isNotEqualTo(previousSnapshot.getDepositRoot());
+              assertThat(snapshot.getFinalized()).isNotEqualTo(previousSnapshot.getFinalized());
+            });
+        if (finalized == depositsCount) {
+          assertThat(customTreeSnapshot).contains(fullTreeSnapshot);
+        } else {
+          // not equal to full finalized
           assertThat(snapshot.getDepositCount()).isEqualTo(finalized);
           assertThat(snapshot.getDepositRoot()).isNotEqualTo(fullTreeSnapshot.getDepositRoot());
           assertThat(snapshot.getFinalized()).isNotEqualTo(fullTreeSnapshot.getFinalized());
         }
       }
+
+      maybePreviousSnapshot = customTreeSnapshot;
     }
   }
 
