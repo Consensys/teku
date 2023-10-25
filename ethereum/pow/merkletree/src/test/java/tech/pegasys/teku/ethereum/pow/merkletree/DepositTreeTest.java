@@ -56,13 +56,7 @@ class DepositTreeTest {
 
       if (i >= nonFinalizedDepositCount) {
         final DepositTestCase finalisingTestCase = testCases.get(i - nonFinalizedDepositCount);
-        final Eth1Data correctEth1Data = finalisingTestCase.getEth1Data();
-        depositTree.finalize(
-            new Eth1Data(
-                correctEth1Data.getDepositRoot(),
-                correctEth1Data.getDepositCount().minus(1),
-                correctEth1Data.getBlockHash()),
-            finalisingTestCase.getBlockHeight());
+        depositTree.finalize(finalisingTestCase.getEth1Data(), finalisingTestCase.getBlockHeight());
         final Optional<DepositTreeSnapshot> snapshotOptional = depositTree.getSnapshot();
         assertThat(snapshotOptional).contains(finalisingTestCase.getSnapshot());
       }
