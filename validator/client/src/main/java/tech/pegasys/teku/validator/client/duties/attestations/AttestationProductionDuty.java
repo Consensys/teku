@@ -38,6 +38,7 @@ import tech.pegasys.teku.validator.client.duties.Duty;
 import tech.pegasys.teku.validator.client.duties.DutyResult;
 import tech.pegasys.teku.validator.client.duties.DutyType;
 import tech.pegasys.teku.validator.client.duties.ProductionResult;
+import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics;
 
 public class AttestationProductionDuty implements Duty {
   private static final Logger LOG = LogManager.getLogger();
@@ -48,18 +49,21 @@ public class AttestationProductionDuty implements Duty {
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
   private final SendingStrategy<Attestation> sendingStrategy;
+  private final ValidatorDutyMetrics validatorDutyMetrics;
 
   public AttestationProductionDuty(
       final Spec spec,
       final UInt64 slot,
       final ForkProvider forkProvider,
       final ValidatorApiChannel validatorApiChannel,
-      final SendingStrategy<Attestation> sendingStrategy) {
+      final SendingStrategy<Attestation> sendingStrategy,
+      final ValidatorDutyMetrics validatorDutyMetrics) {
     this.spec = spec;
     this.slot = slot;
     this.forkProvider = forkProvider;
     this.validatorApiChannel = validatorApiChannel;
     this.sendingStrategy = sendingStrategy;
+    this.validatorDutyMetrics = validatorDutyMetrics;
   }
 
   @Override
@@ -121,14 +125,21 @@ public class AttestationProductionDuty implements Duty {
       final int committeeIndex,
       final ScheduledCommittee committee) {
     final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture =
-        validatorApiChannel.createAttestationData(slot, committeeIndex);
+        validatorDutyMetrics.record(
+            () -> validatorApiChannel.createAttestationData(slot, committeeIndex),
+            this,
+            ValidatorDutyMetrics.Step.CREATE);
     unsignedAttestationFuture.propagateTo(committee.getAttestationDataFuture());
 
     return committee.getValidators().stream()
         .map(
             validator ->
-                signAttestationForValidatorInCommittee(
-                    slot, forkInfo, committeeIndex, validator, unsignedAttestationFuture))
+                validatorDutyMetrics.record(
+                    () ->
+                        signAttestationForValidatorInCommittee(
+                            slot, forkInfo, committeeIndex, validator, unsignedAttestationFuture),
+                    this,
+                    ValidatorDutyMetrics.Step.SIGN))
         .toList();
   }
 
