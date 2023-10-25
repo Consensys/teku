@@ -54,9 +54,6 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
   private final boolean preferSszBlockEncoding;
   private final BlockContainerSchema<BlockContainer> blockContainerSchema;
   private final BlockContainerSchema<BlockContainer> blindedBlockContainerSchema;
-  private final DeserializableTypeDefinition<ProduceBlockResponse> produceBlockResponseDefinition;
-  private final DeserializableTypeDefinition<ProduceBlockResponse>
-      produceBlindedBlockResponseDefinition;
   private final ResponseHandler<ProduceBlockResponse> responseHandler;
 
   public final DeserializableOneOfTypeDefinition<ProduceBlockResponse> produceBlockTypeDefinition;
@@ -70,70 +67,24 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
     super(baseEndpoint, okHttpClient);
     this.slot = slot;
     this.preferSszBlockEncoding = preferSszBlockEncoding;
-    blockContainerSchema = spec.atSlot(slot).getSchemaDefinitions().getBlockContainerSchema();
-    blindedBlockContainerSchema =
+    this.blockContainerSchema = spec.atSlot(slot).getSchemaDefinitions().getBlockContainerSchema();
+    this.blindedBlockContainerSchema =
         spec.atSlot(slot).getSchemaDefinitions().getBlindedBlockContainerSchema();
 
-    produceBlockResponseDefinition =
-        DeserializableTypeDefinition.object(ProduceBlockResponse.class)
-            .initializer(ProduceBlockResponse::new)
-            .withField(
-                EXECUTION_PAYLOAD_BLINDED,
-                BOOLEAN_TYPE,
-                ProduceBlockResponse::getExecutionPayloadBlinded,
-                ProduceBlockResponse::setExecutionPayloadBlinded)
-            .withField(
-                EXECUTION_PAYLOAD_VALUE,
-                UINT256_TYPE,
-                ProduceBlockResponse::getExecutionPayloadValue,
-                ProduceBlockResponse::setExecutionPayloadValue)
-            .withField(
-                "data",
-                blockContainerSchema.getJsonTypeDefinition(),
-                ProduceBlockResponse::getData,
-                ProduceBlockResponse::setData)
-            .withField(
-                "version",
-                DeserializableTypeDefinition.enumOf(SpecMilestone.class),
-                ProduceBlockResponse::getSpecMilestone,
-                ProduceBlockResponse::setSpecMilestone)
-            .build();
+    final DeserializableTypeDefinition<ProduceBlockResponse> produceBlockResponseDefinition =
+        buildDeserializableTypeDefinition(blockContainerSchema.getJsonTypeDefinition());
+    final DeserializableTypeDefinition<ProduceBlockResponse> produceBlindedBlockResponseDefinition =
+        buildDeserializableTypeDefinition(blindedBlockContainerSchema.getJsonTypeDefinition());
 
-    produceBlindedBlockResponseDefinition =
-        DeserializableTypeDefinition.object(ProduceBlockResponse.class)
-            .initializer(ProduceBlockResponse::new)
-            .withField(
-                EXECUTION_PAYLOAD_BLINDED,
-                BOOLEAN_TYPE,
-                ProduceBlockResponse::getExecutionPayloadBlinded,
-                ProduceBlockResponse::setExecutionPayloadBlinded)
-            .withField(
-                EXECUTION_PAYLOAD_VALUE,
-                UINT256_TYPE,
-                ProduceBlockResponse::getExecutionPayloadValue,
-                ProduceBlockResponse::setExecutionPayloadValue)
-            .withField(
-                "data",
-                blindedBlockContainerSchema.getJsonTypeDefinition(),
-                ProduceBlockResponse::getData,
-                ProduceBlockResponse::setData)
-            .withField(
-                "version",
-                DeserializableTypeDefinition.enumOf(SpecMilestone.class),
-                ProduceBlockResponse::getSpecMilestone,
-                ProduceBlockResponse::setSpecMilestone)
-            .build();
-
-    produceBlockTypeDefinition =
+    this.produceBlockTypeDefinition =
         DeserializableOneOfTypeDefinition.object(ProduceBlockResponse.class)
-            .description("meaningful description")
             .withType(
                 x -> true,
-                s -> s.contains("\"execution_payload_blinded\":false"),
+                s -> s.matches(".*\"execution_payload_blinded\" *: *false.*"),
                 produceBlockResponseDefinition)
             .withType(
                 x -> true,
-                s -> s.contains("\"execution_payload_blinded\":true"),
+                s -> s.matches(".*\"execution_payload_blinded\" *: *true.*"),
                 produceBlindedBlockResponseDefinition)
             .build();
 
@@ -149,7 +100,7 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
     final Map<String, String> headers = new HashMap<>();
     graffiti.ifPresent(bytes32 -> queryParams.put("graffiti", bytes32.toHexString()));
 
-    if (preferSszBlockEncoding) {
+    if (this.preferSszBlockEncoding) {
       // application/octet-stream is preferred, but will accept application/json
       headers.put("Accept", "application/octet-stream;q=0.9, application/json;q=0.4");
     }
@@ -159,25 +110,25 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
             Map.of("slot", slot.toString()),
             queryParams,
             headers,
-            responseHandler)
+            this.responseHandler)
         .map(ProduceBlockResponse::getData);
   }
 
   private Optional<ProduceBlockResponse> handleBlockContainerResult(
       final Request request, final Response response) {
-    final boolean blinded = Boolean.parseBoolean(response.header(HEADER_EXECUTION_PAYLOAD_BLINDED));
     try {
       final String responseContentType = response.header("Content-Type");
       if (responseContentType != null
           && MediaType.parse(responseContentType).is(MediaType.OCTET_STREAM)) {
-        if (blinded) {
+        if (Boolean.parseBoolean(response.header(HEADER_EXECUTION_PAYLOAD_BLINDED))) {
           return Optional.of(
               new ProduceBlockResponse(
-                  blindedBlockContainerSchema.sszDeserialize(Bytes.of(response.body().bytes()))));
+                  this.blindedBlockContainerSchema.sszDeserialize(
+                      Bytes.of(response.body().bytes()))));
         } else {
           return Optional.of(
               new ProduceBlockResponse(
-                  blockContainerSchema.sszDeserialize(Bytes.of(response.body().bytes()))));
+                  this.blockContainerSchema.sszDeserialize(Bytes.of(response.body().bytes()))));
         }
       } else {
         return Optional.of(JsonUtil.parse(response.body().string(), produceBlockTypeDefinition));
@@ -186,6 +137,33 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
       LOG.trace("Failed to parse response object creating block", ex);
     }
     return Optional.empty();
+  }
+
+  private DeserializableTypeDefinition<ProduceBlockResponse> buildDeserializableTypeDefinition(
+      final DeserializableTypeDefinition<BlockContainer> jsonTypeDefinition) {
+    return DeserializableTypeDefinition.object(ProduceBlockResponse.class)
+        .initializer(ProduceBlockResponse::new)
+        .withField(
+            EXECUTION_PAYLOAD_BLINDED,
+            BOOLEAN_TYPE,
+            ProduceBlockResponse::getExecutionPayloadBlinded,
+            ProduceBlockResponse::setExecutionPayloadBlinded)
+        .withField(
+            EXECUTION_PAYLOAD_VALUE,
+            UINT256_TYPE,
+            ProduceBlockResponse::getExecutionPayloadValue,
+            ProduceBlockResponse::setExecutionPayloadValue)
+        .withField(
+            "data",
+            jsonTypeDefinition,
+            ProduceBlockResponse::getData,
+            ProduceBlockResponse::setData)
+        .withField(
+            "version",
+            DeserializableTypeDefinition.enumOf(SpecMilestone.class),
+            ProduceBlockResponse::getSpecMilestone,
+            ProduceBlockResponse::setSpecMilestone)
+        .build();
   }
 
   static class ProduceBlockResponse {
