@@ -42,30 +42,4 @@ public class DeserializableOneOfTypeDefinitionBuilderTest {
         JsonUtil.parse("{\"value1\":\"FOO\"}", DESERIALIZABLE_ONE_OF_TYPE_DEFINITION);
     assertThat(result).isInstanceOf(OneOfTypeTestTypeDefinition.TestObjA.class);
   }
-
-  @SuppressWarnings("unused")
-  private static class TestTypeBuilder {
-    private String value1;
-    private String value2;
-
-    public TestTypeBuilder value1(final String value1) {
-      this.value1 = value1;
-      return this;
-    }
-
-    public TestTypeBuilder value2(final String value2) {
-      this.value2 = value2;
-      return this;
-    }
-
-    public OneOfTypeTestTypeDefinition.TestType build() {
-      if (value1 != null) {
-        return new OneOfTypeTestTypeDefinition.TestObjA(value1);
-      }
-      if (value2 != null) {
-        return new OneOfTypeTestTypeDefinition.TestObjB(value2);
-      }
-      throw new IllegalArgumentException("No class matches");
-    }
-  }
 }
