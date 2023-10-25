@@ -81,14 +81,16 @@ public class BlockProductionDuty implements Duty {
     return createRandaoReveal(forkInfo)
         .thenCompose(
             signature ->
-                validatorDutyMetrics.record(() -> createUnsignedBlock(signature), dutyType, "create"))
+                validatorDutyMetrics.record(
+                    () -> createUnsignedBlock(signature), dutyType, "create"))
         .thenCompose(
             unsignedBlock ->
                 validatorDutyMetrics.record(
                     () -> signBlockContainer(forkInfo, unsignedBlock), dutyType, "sign"))
         .thenCompose(
             signedBlockContainer ->
-                validatorDutyMetrics.record(() -> sendBlock(signedBlockContainer), dutyType, "send"))
+                validatorDutyMetrics.record(
+                    () -> sendBlock(signedBlockContainer), dutyType, "send"))
         .exceptionally(error -> DutyResult.forError(validator.getPublicKey(), error));
   }
 
