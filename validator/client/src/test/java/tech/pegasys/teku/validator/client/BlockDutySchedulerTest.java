@@ -44,7 +44,9 @@ import tech.pegasys.teku.validator.client.duties.BlockDutyFactory;
 import tech.pegasys.teku.validator.client.duties.BlockProductionDuty;
 import tech.pegasys.teku.validator.client.duties.Duty;
 import tech.pegasys.teku.validator.client.duties.DutyResult;
+import tech.pegasys.teku.validator.client.duties.DutyType;
 import tech.pegasys.teku.validator.client.duties.SlotBasedScheduledDuties;
+import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
@@ -92,16 +94,15 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
                                 dataStructureUtil.randomPublicKey(), 6, UInt64.valueOf(4))),
                         false))));
 
-    final BlockProductionDuty blockCreationDuty = mock(BlockProductionDuty.class);
-    when(blockCreationDuty.performDuty()).thenReturn(new SafeFuture<>());
-    when(blockDutyFactory.createProductionDuty(blockProposerSlot, validator1))
-        .thenReturn(blockCreationDuty);
+    final BlockProductionDuty blockCreationDuty =
+        createBlockProductionDutyAtSlot(blockProposerSlot);
 
     // Load duties
     dutyScheduler.onSlot(spec.computeStartSlotAtEpoch(ZERO));
 
     // Execute
     dutyScheduler.onBlockProductionDue(blockProposerSlot);
+    verify(blockCreationDuty).getType();
     verify(blockCreationDuty).performDuty();
 
     // Somehow we triggered the same slot again.
@@ -122,10 +123,8 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
                     new ProposerDuties(
                         dataStructureUtil.randomBytes32(), List.of(validator1Duties), false))));
 
-    final BlockProductionDuty blockCreationDuty = mock(BlockProductionDuty.class);
-    when(blockCreationDuty.performDuty()).thenReturn(new SafeFuture<>());
-    when(blockDutyFactory.createProductionDuty(blockProposerSlot, validator1))
-        .thenReturn(blockCreationDuty);
+    final BlockProductionDuty blockCreationDuty =
+        createBlockProductionDutyAtSlot(blockProposerSlot);
 
     // Load duties
     dutyScheduler.onSlot(spec.computeStartSlotAtEpoch(ZERO));
@@ -133,6 +132,15 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
     // Execute
     dutyScheduler.onBlockProductionDue(blockProposerSlot);
     verify(blockCreationDuty).performDuty();
+  }
+
+  private BlockProductionDuty createBlockProductionDutyAtSlot(final UInt64 blockProposerSlot) {
+    final BlockProductionDuty blockCreationDuty = mock(BlockProductionDuty.class);
+    when(blockCreationDuty.getType()).thenReturn(DutyType.BLOCK_PRODUCTION);
+    when(blockCreationDuty.performDuty()).thenReturn(new SafeFuture<>());
+    when(blockDutyFactory.createProductionDuty(blockProposerSlot, validator1))
+        .thenReturn(blockCreationDuty);
+    return blockCreationDuty;
   }
 
   @Test
@@ -314,6 +322,8 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
   }
 
   private void createDutySchedulerWithRealDuties() {
+    final ValidatorDutyMetrics validatorDutyMetrics = ValidatorDutyMetrics.create(metricsSystem);
+
     dutyScheduler =
         new BlockDutyScheduler(
             metricsSystem,
@@ -323,7 +333,9 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
                     validatorApiChannel,
                     dependentRoot ->
                         new SlotBasedScheduledDuties<>(
-                            blockDutyFactory, dependentRoot, Duty::performDuty),
+                            blockDutyFactory,
+                            dependentRoot,
+                            validatorDutyMetrics::performDutyWithMetrics),
                     new OwnedValidators(
                         Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
                     validatorIndexProvider)),
