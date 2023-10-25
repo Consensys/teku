@@ -23,6 +23,7 @@ import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -247,8 +248,11 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   @Override
   public SafeFuture<HeaderWithFallbackData> builderGetHeader(
-      final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
-    return executionBuilderModule.builderGetHeader(executionPayloadContext, state);
+      final ExecutionPayloadContext executionPayloadContext,
+      final BeaconState state,
+      final SafeFuture<UInt256> localPayloadValueResult) {
+    return executionBuilderModule.builderGetHeader(
+        executionPayloadContext, state, localPayloadValueResult);
   }
 
   @VisibleForTesting
