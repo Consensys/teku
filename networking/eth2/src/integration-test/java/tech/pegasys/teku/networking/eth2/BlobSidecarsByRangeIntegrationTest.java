@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -125,8 +124,7 @@ public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegra
     final List<BlobSidecar> blobSidecars = new ArrayList<>();
     waitFor(
         peer.requestBlobSidecarsByRange(from, count, RpcResponseListener.from(blobSidecars::add)));
-    waitFor(
-        () -> assertThat(peer.getOutstandingRequests()).isEqualTo(0), 1, TimeUnit.MINUTES, false);
+    waitFor(() -> assertThat(peer.getOutstandingRequests()).isEqualTo(0));
     return blobSidecars;
   }
 }
