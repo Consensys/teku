@@ -44,7 +44,7 @@ public class ValidatorDutyMetrics {
   }
 
   public <T> SafeFuture<T> record(
-          final Supplier<SafeFuture<T>> dutyStepFutureSupplier, final Duty duty, final String step) {
+      final Supplier<SafeFuture<T>> dutyStepFutureSupplier, final Duty duty, final String step) {
     final OperationTimer.TimingContext context = startTimer(getDutyType(duty), step);
     return dutyStepFutureSupplier.get().alwaysRun(context::stopTimer);
   }
