@@ -24,11 +24,9 @@ public interface KZG {
 
   KZG NOOP =
       new KZG() {
-        @Override
-        public void loadTrustedSetup(final String trustedSetup) throws KZGException {}
 
         @Override
-        public void loadTrustedSetup(final TrustedSetup trustedSetup) throws KZGException {}
+        public void loadTrustedSetup(final String trustedSetupFile) throws KZGException {}
 
         @Override
         public void freeTrustedSetup() throws KZGException {}
@@ -54,9 +52,7 @@ public interface KZG {
         }
       };
 
-  void loadTrustedSetup(String trustedSetup) throws KZGException;
-
-  void loadTrustedSetup(TrustedSetup trustedSetup) throws KZGException;
+  void loadTrustedSetup(String trustedSetupFile) throws KZGException;
 
   void freeTrustedSetup() throws KZGException;
 

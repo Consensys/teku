@@ -639,11 +639,42 @@ public class ProtoArray {
                   .isGreaterThanOrEqualTo(currentEpoch);
     }
 
-    final UInt64 finalizedSlot = spec.computeStartSlotAtEpoch(finalizedCheckpoint.getEpoch());
     final boolean correctFinalized =
         node.getFinalizedCheckpoint().getEpoch().equals(initialEpoch)
-            || hasAncestorAtSlot(node, finalizedSlot, finalizedCheckpoint.getRoot());
+            || isFinalizedRootOrDescendant(node);
     return correctJustified && correctFinalized;
+  }
+
+  private boolean isFinalizedRootOrDescendant(final ProtoNode node) {
+    final UInt64 finalizedEpoch = finalizedCheckpoint.getEpoch();
+    final Bytes32 finalizedRoot = finalizedCheckpoint.getRoot();
+
+    final Checkpoint nodeFinalizedCheckpoint = node.getFinalizedCheckpoint();
+    if (nodeFinalizedCheckpoint.getEpoch().equals(finalizedEpoch)
+        && nodeFinalizedCheckpoint.getRoot().equals(finalizedRoot)) {
+      return true;
+    }
+
+    final Checkpoint nodeJustifiedCheckpoint = node.getJustifiedCheckpoint();
+    if (nodeJustifiedCheckpoint.getEpoch().equals(finalizedEpoch)
+        && nodeJustifiedCheckpoint.getRoot().equals(finalizedRoot)) {
+      return true;
+    }
+
+    final Checkpoint nodeUnrealizedFinalizedCheckpoint = node.getUnrealizedFinalizedCheckpoint();
+    if (nodeUnrealizedFinalizedCheckpoint.getEpoch().equals(finalizedEpoch)
+        && nodeUnrealizedFinalizedCheckpoint.getRoot().equals(finalizedRoot)) {
+      return true;
+    }
+
+    final Checkpoint nodeUnrealizedJustifiedCheckpoint = node.getUnrealizedJustifiedCheckpoint();
+    if (nodeUnrealizedJustifiedCheckpoint.getEpoch().equals(finalizedEpoch)
+        && nodeUnrealizedJustifiedCheckpoint.getRoot().equals(finalizedRoot)) {
+      return true;
+    }
+
+    final UInt64 finalizedSlot = spec.computeStartSlotAtEpoch(finalizedCheckpoint.getEpoch());
+    return hasAncestorAtSlot(node, finalizedSlot, finalizedRoot);
   }
 
   /**

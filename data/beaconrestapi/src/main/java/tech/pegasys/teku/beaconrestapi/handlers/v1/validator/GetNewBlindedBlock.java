@@ -76,6 +76,7 @@ public class GetNewBlindedBlock extends RestApiEndpoint {
                 + "will be added to as forks progress.\n\n"
                 + "Pre-Bellatrix, this endpoint will return a `BeaconBlock`.")
         .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
+        .deprecated(true)
         .pathParam(SLOT_PARAMETER.withDescription(SLOT_PATH_DESCRIPTION))
         .queryParamRequired(RANDAO_PARAMETER)
         .queryParam(GRAFFITI_PARAMETER)

@@ -116,6 +116,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
         BeaconNodeRequestLabels.GET_PROPOSER_DUTIES_REQUESTS_METHOD);
   }
 
+  @Deprecated
   @Override
   public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
       final UInt64 slot,
@@ -124,6 +125,14 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
       final boolean blinded) {
     return countOptionalDataRequest(
         delegate.createUnsignedBlock(slot, randaoReveal, graffiti, blinded),
+        BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
+      final UInt64 slot, final BLSSignature randaoReveal, Optional<Bytes32> graffiti) {
+    return countOptionalDataRequest(
+        delegate.createUnsignedBlock(slot, randaoReveal, graffiti),
         BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD);
   }
 

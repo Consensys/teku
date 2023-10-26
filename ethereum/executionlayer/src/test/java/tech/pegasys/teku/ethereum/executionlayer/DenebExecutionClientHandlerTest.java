@@ -75,7 +75,7 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
     verify(executionEngineClient).getPayloadV3(context.getPayloadId());
     assertThat(future).isCompleted();
     assertThat(future.get().getExecutionPayload()).isInstanceOf(ExecutionPayloadDeneb.class);
-    assertThat(future.get().getBlockValue()).isEqualTo(UInt256.MAX_VALUE);
+    assertThat(future.get().getExecutionPayloadValue()).isEqualTo(UInt256.MAX_VALUE);
     assertThat(future.get().getBlobsBundle()).isPresent();
     assertThat(future.get().getShouldOverrideBuilder()).isTrue();
   }

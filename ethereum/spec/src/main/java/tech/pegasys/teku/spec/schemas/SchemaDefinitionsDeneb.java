@@ -16,8 +16,11 @@ package tech.pegasys.teku.spec.schemas;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecarSchema;
@@ -74,6 +77,7 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   private final SignedBuilderBidSchema signedBuilderBidSchemaDeneb;
 
   private final BlobSchema blobSchema;
+  private final SszListSchema<Blob, ? extends SszList<Blob>> blobsInBlockSchema;
   private final BlobSidecarSchema blobSidecarSchema;
   private final SignedBlobSidecarSchema signedBlobSidecarSchema;
   private final BlindedBlobSidecarSchema blindedBlobSidecarSchema;
@@ -123,6 +127,7 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
         new SignedBuilderBidSchema("SignedBuilderBidDeneb", builderBidSchemaDeneb);
 
     this.blobSchema = new BlobSchema(specConfig);
+    this.blobsInBlockSchema = SszListSchema.create(blobSchema, specConfig.getMaxBlobsPerBlock());
     this.blobSidecarSchema = BlobSidecarSchema.create(blobSchema);
     this.signedBlobSidecarSchema = SignedBlobSidecarSchema.create(blobSidecarSchema);
     this.blindedBlobSidecarSchema = BlindedBlobSidecarSchema.create();
@@ -248,6 +253,10 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
 
   public BlobSchema getBlobSchema() {
     return blobSchema;
+  }
+
+  public SszListSchema<Blob, ? extends SszList<Blob>> getBlobsInBlockSchema() {
+    return blobsInBlockSchema;
   }
 
   public BlobSidecarSchema getBlobSidecarSchema() {

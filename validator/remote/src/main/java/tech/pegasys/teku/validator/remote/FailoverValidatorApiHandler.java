@@ -144,6 +144,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
         BeaconNodeRequestLabels.GET_PROPOSER_DUTIES_REQUESTS_METHOD);
   }
 
+  @Deprecated
   @Override
   public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
       final UInt64 slot,
@@ -154,6 +155,23 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
         apiChannel ->
             apiChannel
                 .createUnsignedBlock(slot, randaoReveal, graffiti, blinded)
+                .thenPeek(
+                    blockContainer -> {
+                      if (!failoverDelegates.isEmpty()
+                          && blockContainer.map(BlockContainer::isBlinded).orElse(false)) {
+                        blindedBlockCreatorCache.put(slot, apiChannel);
+                      }
+                    });
+    return tryRequestUntilSuccess(request, BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
+      final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
+    final ValidatorApiChannelRequest<Optional<BlockContainer>> request =
+        apiChannel ->
+            apiChannel
+                .createUnsignedBlock(slot, randaoReveal, graffiti)
                 .thenPeek(
                     blockContainer -> {
                       if (!failoverDelegates.isEmpty()

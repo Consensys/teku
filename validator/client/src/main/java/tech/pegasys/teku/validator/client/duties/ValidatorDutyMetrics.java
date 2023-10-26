@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client.duties;
 
+import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import org.hyperledger.besu.plugin.services.metrics.OperationTimer;
@@ -38,9 +39,42 @@ public class ValidatorDutyMetrics {
   }
 
   public SafeFuture<DutyResult> performDutyWithMetrics(final Duty duty) {
-    final String dutyType = duty.getType().getType();
-    final OperationTimer timer = dutyMetric.labels(dutyType, "total");
-    final OperationTimer.TimingContext context = timer.startTimer();
-    return duty.performDuty().alwaysRun(context::stopTimer);
+    try (final OperationTimer.TimingContext context =
+        startTimer(getDutyType(duty), Step.TOTAL.name)) {
+      return duty.performDuty().alwaysRun(context::stopTimer);
+    }
+  }
+
+  public <T> SafeFuture<T> record(
+      final Supplier<SafeFuture<T>> dutyStepFutureSupplier, final Duty duty, final Step step) {
+    try (final OperationTimer.TimingContext context = startTimer(getDutyType(duty), step.name)) {
+      return dutyStepFutureSupplier.get().alwaysRun(context::stopTimer);
+    }
+  }
+
+  private OperationTimer.TimingContext startTimer(final String dutyType, final String step) {
+    final OperationTimer timer = dutyMetric.labels(dutyType, step);
+    return timer.startTimer();
+  }
+
+  private static String getDutyType(final Duty duty) {
+    return duty.getType().getType();
+  }
+
+  public enum Step {
+    TOTAL("total"),
+    CREATE("create"),
+    SIGN("sign"),
+    SEND("send");
+
+    private final String name;
+
+    Step(final String name) {
+      this.name = name;
+    }
+
+    public String getName() {
+      return name;
+    }
   }
 }
