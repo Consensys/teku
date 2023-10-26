@@ -39,13 +39,13 @@ public class BlobsBundle
     checkArgument(
         commitments.size() == blobs.size(),
         "Expected %s commitments but got %s",
-        commitments.size(),
-        blobs.size());
+        blobs.size(),
+        commitments.size());
     checkArgument(
         proofs.size() == blobs.size(),
         "Expected %s proofs but got %s",
-        proofs.size(),
-        blobs.size());
+        blobs.size(),
+        proofs.size());
   }
 
   public SszList<SszKZGCommitment> getCommitments() {
