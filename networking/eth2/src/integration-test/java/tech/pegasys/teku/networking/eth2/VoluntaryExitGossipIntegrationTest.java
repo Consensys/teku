@@ -62,8 +62,8 @@ public class VoluntaryExitGossipIntegrationTest {
     // Set up publishers & consumers
     Set<SignedVoluntaryExit> receivedVoluntaryExits = new HashSet<>();
     final OperationProcessor<SignedVoluntaryExit> operationProcessor =
-        (voluntaryExit) -> {
-          receivedVoluntaryExits.add(voluntaryExit);
+        voluntaryExitAndMetadata -> {
+          receivedVoluntaryExits.add(voluntaryExitAndMetadata.operation());
           return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
         };
 
