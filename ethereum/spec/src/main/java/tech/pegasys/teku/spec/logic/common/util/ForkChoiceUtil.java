@@ -28,7 +28,6 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -432,7 +431,8 @@ public class ForkChoiceUtil {
     if (blockIsFromFuture(store, blockSlot)) {
       return BlockImportResult.FAILED_BLOCK_IS_FROM_FUTURE;
     }
-    if (!blockDescendsFromLatestFinalizedBlock(block, store, store.getForkChoiceStrategy())) {
+    if (!blockDescendsFromLatestFinalizedBlock(
+        block.getSlot(), block.getParentRoot(), store, store.getForkChoiceStrategy())) {
       return BlockImportResult.FAILED_INVALID_ANCESTRY;
     }
     // Successful so far
@@ -444,18 +444,18 @@ public class ForkChoiceUtil {
   }
 
   public boolean blockDescendsFromLatestFinalizedBlock(
-      final BeaconBlockSummary block,
+      final UInt64 blockSlot,
+      final Bytes32 parentBlockRoot,
       final ReadOnlyStore store,
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy) {
     final Checkpoint finalizedCheckpoint = store.getFinalizedCheckpoint();
-    final UInt64 blockSlot = block.getSlot();
 
     // Make sure this block's slot is after the latest finalized slot
     final UInt64 finalizedEpochStartSlot = getFinalizedCheckpointStartSlot(store);
     return blockIsAfterLatestFinalizedSlot(blockSlot, finalizedEpochStartSlot)
         && hasAncestorAtSlot(
             forkChoiceStrategy,
-            block.getParentRoot(),
+            parentBlockRoot,
             finalizedEpochStartSlot,
             finalizedCheckpoint.getRoot());
   }

@@ -692,12 +692,14 @@ public class Spec {
   }
 
   public boolean blockDescendsFromLatestFinalizedBlock(
-      final BeaconBlock block,
+      final UInt64 blockSlot,
+      final Bytes32 blockParentRoot,
       final ReadOnlyStore store,
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy) {
-    return atBlock(block)
+    return atSlot(blockSlot)
         .getForkChoiceUtil()
-        .blockDescendsFromLatestFinalizedBlock(block, store, forkChoiceStrategy);
+        .blockDescendsFromLatestFinalizedBlock(
+            blockSlot, blockParentRoot, store, forkChoiceStrategy);
   }
 
   public BeaconState processSlots(BeaconState preState, UInt64 slot)

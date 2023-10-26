@@ -35,13 +35,13 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSide
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.validation.BlobSidecarValidator.IndexAndBlockRoot;
+import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator.IndexAndBlockRoot;
 
 @TestSpecContext(milestone = {SpecMilestone.DENEB})
-public class BlobSidecarValidatorTest {
+public class BlobSidecarGossipValidatorTest {
   private final Map<Bytes32, BlockImportResult> invalidBlocks = new HashMap<>();
   private final GossipValidationHelper gossipValidationHelper = mock(GossipValidationHelper.class);
-  private BlobSidecarValidator blobSidecarValidator;
+  private BlobSidecarGossipValidator blobSidecarValidator;
 
   private UInt64 parentSlot;
   private BeaconState postState;
@@ -59,7 +59,8 @@ public class BlobSidecarValidatorTest {
     final DataStructureUtil dataStructureUtil = specContext.getDataStructureUtil();
 
     blobSidecarValidator =
-        BlobSidecarValidator.create(specContext.getSpec(), invalidBlocks, gossipValidationHelper);
+        BlobSidecarGossipValidator.create(
+            specContext.getSpec(), invalidBlocks, gossipValidationHelper);
 
     parentSlot = UInt64.valueOf(1);
 
@@ -90,6 +91,8 @@ public class BlobSidecarValidatorTest {
     when(gossipValidationHelper.getParentStateInBlockEpoch(parentSlot, blockParentRoot, slot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(postState)));
     when(gossipValidationHelper.isProposerTheExpectedProposer(proposerIndex, slot, postState))
+        .thenReturn(true);
+    when(gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(slot, blockParentRoot))
         .thenReturn(true);
     when(gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
             any(), eq(proposerIndex), any(), eq(postState)))
@@ -126,7 +129,7 @@ public class BlobSidecarValidatorTest {
     when(mockedSpec.getMaxBlobsPerBlock(slot)).thenReturn(Optional.empty());
 
     blobSidecarValidator =
-        BlobSidecarValidator.create(mockedSpec, invalidBlocks, gossipValidationHelper);
+        BlobSidecarGossipValidator.create(mockedSpec, invalidBlocks, gossipValidationHelper);
 
     SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(signedBlobSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
@@ -189,6 +192,16 @@ public class BlobSidecarValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(signedBlobSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isSaveForFuture);
+  }
+
+  @TestTemplate
+  void shouldRejectIfFinalizedCheckpointIsNotAnAncestorOfBlobSidecarsBlock() {
+    when(gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(
+            signedBlobSidecar.getSlot(), signedBlobSidecar.getBlobSidecar().getBlockParentRoot()))
+        .thenReturn(false);
+
+    SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(signedBlobSidecar))
+        .isCompletedWithValueMatching(InternalValidationResult::isReject);
   }
 
   @TestTemplate

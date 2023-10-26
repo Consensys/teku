@@ -79,6 +79,15 @@ public class GossipValidationHelper {
         : recentChainData.retrieveBlockState(parentBlockRoot);
   }
 
+  public boolean currentFinalizedCheckpointIsAncestorOfBlock(
+      final UInt64 blockSlot, final Bytes32 blockParentRoot) {
+    return spec.blockDescendsFromLatestFinalizedBlock(
+        blockSlot,
+        blockParentRoot,
+        recentChainData.getStore(),
+        recentChainData.getForkChoiceStrategy().orElseThrow());
+  }
+
   public boolean isProposerTheExpectedProposer(
       final UInt64 proposerIndex, final UInt64 slot, final BeaconState postState) {
     final int expectedProposerIndex = spec.getBeaconProposerIndex(postState, slot);
