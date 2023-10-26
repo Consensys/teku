@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.builder;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -34,6 +36,16 @@ public class BlobsBundle
       final SszList<SszKZGProof> proofs,
       final SszList<Blob> blobs) {
     super(schema, commitments, proofs, blobs);
+    checkArgument(
+        commitments.size() == blobs.size(),
+        "Expected %s commitments but got %s",
+        commitments.size(),
+        blobs.size());
+    checkArgument(
+        proofs.size() == blobs.size(),
+        "Expected %s proofs but got %s",
+        proofs.size(),
+        blobs.size());
   }
 
   public SszList<SszKZGCommitment> getCommitments() {
