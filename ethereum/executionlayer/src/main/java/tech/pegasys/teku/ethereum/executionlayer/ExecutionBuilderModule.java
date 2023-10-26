@@ -123,10 +123,18 @@ public class ExecutionBuilderModule {
   }
 
   public SafeFuture<HeaderWithFallbackData> builderGetHeader(
-      final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
+      final ExecutionPayloadContext executionPayloadContext,
+      final BeaconState state,
+      final SafeFuture<UInt256> localPayloadValueResult) {
 
     final SafeFuture<GetPayloadResponse> localGetPayloadResponse =
-        executionLayerManager.engineGetPayloadForFallback(executionPayloadContext, state.getSlot());
+        executionLayerManager
+            .engineGetPayloadForFallback(executionPayloadContext, state.getSlot())
+            .thenPeek(
+                getPayloadResponse ->
+                    localPayloadValueResult.complete(getPayloadResponse.getExecutionPayloadValue()))
+            .whenException(ex -> localPayloadValueResult.complete(UInt256.ZERO));
+
     final Optional<SafeFuture<HeaderWithFallbackData>> validationResult =
         validateBuilderGetHeader(executionPayloadContext, state, localGetPayloadResponse);
     if (validationResult.isPresent()) {
@@ -186,7 +194,7 @@ public class ExecutionBuilderModule {
                 // Treat the local block value as zero if local payload is unavailable
                 final UInt256 localBlockValue =
                     maybeLocalGetPayloadResponse
-                        .map(GetPayloadResponse::getBlockValue)
+                        .map(GetPayloadResponse::getExecutionPayloadValue)
                         .orElse(UInt256.ZERO);
                 final UInt256 builderBidValue = signedBuilderBid.getMessage().getValue();
 

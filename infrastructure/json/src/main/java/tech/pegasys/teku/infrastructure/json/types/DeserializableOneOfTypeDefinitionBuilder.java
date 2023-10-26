@@ -56,7 +56,7 @@ public class DeserializableOneOfTypeDefinitionBuilder<TObject, TBuilder> {
     return this;
   }
 
-  public DeserializableOneOfTypeDefinition<TObject, TBuilder> build() {
+  public DeserializableOneOfTypeDefinition<TObject> build() {
     return new DeserializableOneOfTypeDefinition<>(
         name, title.or(() -> name), description, types, parserTypes);
   }

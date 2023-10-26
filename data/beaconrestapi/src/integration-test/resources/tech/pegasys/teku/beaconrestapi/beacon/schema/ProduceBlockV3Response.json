@@ -1,0 +1,41 @@
+{
+  "title" : "ProduceBlockV3Response",
+  "type" : "object",
+  "required" : [ "version", "execution_payload_blinded", "execution_payload_value", "data" ],
+  "properties" : {
+    "version" : {
+      "type" : "string",
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb" ]
+    },
+    "execution_payload_blinded" : {
+      "type" : "boolean"
+    },
+    "execution_payload_value" : {
+      "type" : "string",
+      "description" : "unsigned 256 bit integer",
+      "example" : "1",
+      "format" : "uint256"
+    },
+    "data" : {
+      "title" : "Block",
+      "type" : "object",
+      "oneOf" : [ {
+        "$ref" : "#/components/schemas/BeaconBlockPhase0"
+      }, {
+        "$ref" : "#/components/schemas/BeaconBlockAltair"
+      }, {
+        "$ref" : "#/components/schemas/BeaconBlockBellatrix"
+      }, {
+        "$ref" : "#/components/schemas/BlindedBlockBellatrix"
+      }, {
+        "$ref" : "#/components/schemas/BeaconBlockCapella"
+      }, {
+        "$ref" : "#/components/schemas/BlindedBlockCapella"
+      }, {
+        "$ref" : "#/components/schemas/BlockContentsDeneb"
+      }, {
+        "$ref" : "#/components/schemas/BlindedBlockContentsDeneb"
+      } ]
+    }
+  }
+}

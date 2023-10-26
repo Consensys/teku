@@ -706,6 +706,7 @@ public class Spec {
   }
 
   // Block Proposal
+  @Deprecated
   public SafeFuture<BeaconBlockAndState> createNewUnsignedBlock(
       final UInt64 newSlot,
       final int proposerIndex,
@@ -717,6 +718,18 @@ public class Spec {
         .getBlockProposalUtil()
         .createNewUnsignedBlock(
             newSlot, proposerIndex, blockSlotState, parentBlockSigningRoot, bodyBuilder, blinded);
+  }
+
+  public SafeFuture<BeaconBlockAndState> createNewUnsignedBlock(
+      final UInt64 newSlot,
+      final int proposerIndex,
+      final BeaconState blockSlotState,
+      final Bytes32 parentBlockSigningRoot,
+      final Consumer<BeaconBlockBodyBuilder> bodyBuilder) {
+    return atSlot(newSlot)
+        .getBlockProposalUtil()
+        .createNewUnsignedBlock(
+            newSlot, proposerIndex, blockSlotState, parentBlockSigningRoot, bodyBuilder);
   }
 
   // Blind Block Utils

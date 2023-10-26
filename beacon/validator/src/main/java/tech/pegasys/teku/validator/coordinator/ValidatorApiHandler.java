@@ -297,6 +297,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                                         StateValidatorData::getStatus))));
   }
 
+  @Deprecated
   @Override
   public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
       final UInt64 slot,
@@ -313,6 +314,20 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .thenCompose(__ -> combinedChainDataClient.getStateAtSlotExact(slot))
         .thenCompose(
             blockSlotState -> createBlock(slot, randaoReveal, graffiti, blinded, blockSlotState));
+  }
+
+  @Override
+  public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
+      final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
+    LOG.info("Creating unsigned block for slot {}", slot);
+    performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(slot));
+    if (isSyncActive()) {
+      return NodeSyncingException.failedFuture();
+    }
+    return forkChoiceTrigger
+        .prepareForBlockProduction(slot)
+        .thenCompose(__ -> combinedChainDataClient.getStateAtSlotExact(slot))
+        .thenCompose(blockSlotState -> createBlock(slot, randaoReveal, graffiti, blockSlotState));
   }
 
   private SafeFuture<Optional<BlockContainer>> createBlock(
@@ -334,6 +349,27 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     }
     return blockFactory
         .createUnsignedBlock(blockSlotState, slot, randaoReveal, graffiti, blinded)
+        .thenApply(Optional::of);
+  }
+
+  private SafeFuture<Optional<BlockContainer>> createBlock(
+      final UInt64 slot,
+      final BLSSignature randaoReveal,
+      final Optional<Bytes32> graffiti,
+      final Optional<BeaconState> maybeBlockSlotState) {
+    if (maybeBlockSlotState.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    final BeaconState blockSlotState = maybeBlockSlotState.get();
+    final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, slot.minus(1));
+    if (combinedChainDataClient.isOptimisticBlock(parentRoot)) {
+      LOG.warn(
+          "Unable to produce block at slot {} because parent has optimistically validated payload",
+          slot);
+      throw new NodeSyncingException();
+    }
+    return blockFactory
+        .createUnsignedBlock(blockSlotState, slot, randaoReveal, graffiti)
         .thenApply(Optional::of);
   }
 

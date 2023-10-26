@@ -61,7 +61,7 @@ public class StateSelectorFactoryTest {
     final ChainHead chainHead = ChainHead.create(blockAndState);
     when(client.getChainHead()).thenReturn(Optional.of(chainHead));
     Optional<StateAndMetaData> result = safeJoin(factory.headSelector().getState());
-    assertThat(result).contains(withMetaData(blockAndState.getState()));
+    assertThat(result).contains(withMetaData(blockAndState.getState(), false));
   }
 
   @Test
@@ -69,14 +69,14 @@ public class StateSelectorFactoryTest {
     when(client.getLatestFinalized())
         .thenReturn(Optional.of(AnchorPoint.fromInitialState(spec, state)));
     Optional<StateAndMetaData> result = safeJoin(factory.finalizedSelector().getState());
-    assertThat(result).contains(withMetaData(state));
+    assertThat(result).contains(withMetaData(state, true));
   }
 
   @Test
   public void justifiedSelector_shouldGetJustifiedState() {
     when(client.getJustifiedState()).thenReturn(SafeFuture.completedFuture(Optional.of(state)));
     Optional<StateAndMetaData> result = safeJoin(factory.justifiedSelector().getState());
-    assertThat(result).contains(withMetaData(state));
+    assertThat(result).contains(withMetaData(state, false));
     verify(client).getJustifiedState();
   }
 
@@ -85,7 +85,7 @@ public class StateSelectorFactoryTest {
     when(client.getStateAtSlotExact(ZERO))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
     Optional<StateAndMetaData> result = safeJoin(factory.genesisSelector().getState());
-    assertThat(result).contains(withMetaData(state));
+    assertThat(result).contains(withMetaData(state, true));
     verify(client).getStateAtSlotExact(ZERO);
   }
 
@@ -98,7 +98,7 @@ public class StateSelectorFactoryTest {
     when(client.getStateAtSlotExact(state.getSlot(), chainHead.getRoot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
     Optional<StateAndMetaData> result = safeJoin(factory.slotSelector(state.getSlot()).getState());
-    assertThat(result).contains(withMetaData(state));
+    assertThat(result).contains(withMetaData(state, false));
   }
 
   @Test
@@ -125,7 +125,7 @@ public class StateSelectorFactoryTest {
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
     Optional<StateAndMetaData> result =
         safeJoin(factory.stateRootSelector(state.hashTreeRoot()).getState());
-    assertThat(result).contains(withMetaData(state));
+    assertThat(result).contains(withMetaData(state, false));
     verify(client).getStateByStateRoot(state.hashTreeRoot());
   }
 
@@ -168,7 +168,7 @@ public class StateSelectorFactoryTest {
     assertThat(selector).isNotNull();
   }
 
-  private StateAndMetaData withMetaData(final BeaconState state) {
-    return new StateAndMetaData(state, milestone, false, true, true);
+  private StateAndMetaData withMetaData(final BeaconState state, final boolean finalized) {
+    return new StateAndMetaData(state, milestone, false, true, finalized);
   }
 }

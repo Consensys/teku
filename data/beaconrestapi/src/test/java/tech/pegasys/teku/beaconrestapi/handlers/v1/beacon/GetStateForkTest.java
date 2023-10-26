@@ -44,7 +44,7 @@ public class GetStateForkTest extends AbstractMigratedBeaconHandlerWithChainData
 
     final BeaconState beaconState = recentChainData.getBestState().orElseThrow().get();
     responseData =
-        new StateAndMetaData(beaconState, spec.getGenesisSpec().getMilestone(), false, true, false);
+        new StateAndMetaData(beaconState, spec.getGenesisSpec().getMilestone(), false, true, true);
   }
 
   @Test

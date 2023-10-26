@@ -31,6 +31,7 @@ public class RestApiConstants {
   public static final String COMMITTEE_INDEX = "committee_index";
   public static final String SUBCOMMITTEE_INDEX = "subcommittee_index";
   public static final String RANDAO_REVEAL = "randao_reveal";
+  public static final String SKIP_RANDAO_VERIFICATION = "skip_randao_verification";
   public static final String GRAFFITI = "graffiti";
   public static final String ATTESTATION_DATA_ROOT = "attestation_data_root";
   public static final String INDEX = "index";
@@ -129,6 +130,8 @@ public class RestApiConstants {
 
   public static final String EXECUTION_OPTIMISTIC = "execution_optimistic";
   public static final String FINALIZED = "finalized";
+  public static final String EXECUTION_PAYLOAD_BLINDED = "execution_payload_blinded";
+  public static final String EXECUTION_PAYLOAD_VALUE = "execution_payload_value";
   public static final String TARGET_PEER_COUNT = "target_peer_count";
   public static final String TARGET_PEER_COUNT_DESCRIPTION =
       "Returns "
@@ -145,10 +148,16 @@ public class RestApiConstants {
       "Returns "
           + SC_SERVICE_UNAVAILABLE
           + " status code if set to true and no validators have been registered with the builder";
+  public static final String SKIP_RANDAO_VERIFICATION_PARAM_DESCRIPTION =
+      "Skip verification of the `randao_reveal` value. If this flag is set then the\n"
+          + " `randao_reveal` must be set to the point at infinity (`0xc0..00`). This query parameter\n"
+          + "  is a flag and does not take a value";
 
   public static final String HEADER_ACCEPT = "Accept";
 
   public static final String HEADER_CONSENSUS_VERSION = "Eth-Consensus-Version";
+  public static final String HEADER_EXECUTION_PAYLOAD_BLINDED = "Eth-Execution-Payload-Blinded";
+  public static final String HEADER_EXECUTION_PAYLOAD_VALUE = "Eth-Execution-Payload-Value";
   public static final String HEADER_CONTENT_DISPOSITION = "Content-Disposition";
   public static final String HEADER_CONTENT_ENCODING = "Content-Encoding";
 

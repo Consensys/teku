@@ -591,6 +591,7 @@ class BlockOperationSelectorFactoryTest {
                 executionPayloadContext,
                 Optional.of(SafeFuture.completedFuture(executionPayload)),
                 Optional.empty(),
+                Optional.empty(),
                 Optional.empty()));
   }
 
@@ -606,7 +607,8 @@ class BlockOperationSelectorFactoryTest {
                 Optional.empty(),
                 Optional.of(
                     SafeFuture.completedFuture(
-                        HeaderWithFallbackData.create(executionPayloadHeader)))));
+                        HeaderWithFallbackData.create(executionPayloadHeader))),
+                Optional.empty()));
   }
 
   private void prepareBlockAndBlobsProduction(
@@ -621,6 +623,7 @@ class BlockOperationSelectorFactoryTest {
                 executionPayloadContext,
                 Optional.of(SafeFuture.completedFuture(executionPayload)),
                 Optional.of(SafeFuture.completedFuture(Optional.of(blobsBundle))),
+                Optional.empty(),
                 Optional.empty()));
   }
 
@@ -638,7 +641,8 @@ class BlockOperationSelectorFactoryTest {
                 executionPayloadContext,
                 Optional.empty(),
                 Optional.empty(),
-                Optional.of(SafeFuture.completedFuture(headerWithFallbackData))));
+                Optional.of(SafeFuture.completedFuture(headerWithFallbackData)),
+                Optional.empty()));
   }
 
   private void prepareCachedPayloadResult(
@@ -653,6 +657,7 @@ class BlockOperationSelectorFactoryTest {
                     executionPayloadContext,
                     Optional.of(SafeFuture.completedFuture(executionPayload)),
                     Optional.of(SafeFuture.completedFuture(Optional.of(blobsBundle))),
+                    Optional.empty(),
                     Optional.empty())));
   }
 
@@ -667,7 +672,8 @@ class BlockOperationSelectorFactoryTest {
                     executionPayloadContext,
                     Optional.empty(),
                     Optional.empty(),
-                    Optional.of(SafeFuture.completedFuture(headerWithFallbackData)))));
+                    Optional.of(SafeFuture.completedFuture(headerWithFallbackData)),
+                    Optional.empty())));
   }
 
   private static class CapturingBeaconBlockBodyBuilder implements BeaconBlockBodyBuilder {
