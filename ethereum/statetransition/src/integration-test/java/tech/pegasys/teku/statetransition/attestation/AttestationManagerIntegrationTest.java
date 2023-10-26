@@ -26,6 +26,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.meta.OperationAndMetadata;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -146,7 +147,7 @@ class AttestationManagerIntegrationTest {
         createAttestation(attestationSlot, targetBlockAndState, phase0Fork);
 
     final SafeFuture<InternalValidationResult> result =
-        attestationManager.addAttestation(attestation);
+        attestationManager.addAttestation(OperationAndMetadata.create(attestation));
     assertThat(result).isCompletedWithValue(InternalValidationResult.ACCEPT);
   }
 
@@ -163,7 +164,7 @@ class AttestationManagerIntegrationTest {
         createAttestation(attestationSlot, targetBlockAndState, altairFork);
 
     final SafeFuture<InternalValidationResult> result =
-        attestationManager.addAttestation(attestation);
+        attestationManager.addAttestation(OperationAndMetadata.create(attestation));
     assertThat(result)
         .isCompletedWithValueMatching(InternalValidationResult::isReject, "is rejected");
   }
@@ -181,7 +182,7 @@ class AttestationManagerIntegrationTest {
         createAttestation(attestationSlot, targetBlockAndState, phase0Fork);
 
     final SafeFuture<InternalValidationResult> result =
-        attestationManager.addAttestation(attestation);
+        attestationManager.addAttestation(OperationAndMetadata.create(attestation));
     assertThat(result)
         .isCompletedWithValueMatching(InternalValidationResult::isReject, "is rejected");
   }
@@ -199,7 +200,7 @@ class AttestationManagerIntegrationTest {
         createAttestation(attestationSlot, targetBlockAndState, altairFork);
 
     final SafeFuture<InternalValidationResult> result =
-        attestationManager.addAttestation(attestation);
+        attestationManager.addAttestation(OperationAndMetadata.create(attestation));
     assertThat(result).isCompletedWithValue(InternalValidationResult.ACCEPT);
   }
 
@@ -216,7 +217,7 @@ class AttestationManagerIntegrationTest {
         ValidatableAttestation.aggregateFromValidator(spec, aggregate);
 
     final SafeFuture<InternalValidationResult> result =
-        attestationManager.addAggregate(attestation);
+        attestationManager.addAggregate(OperationAndMetadata.create(attestation));
 
     assertThat(result).isCompletedWithValue(InternalValidationResult.ACCEPT);
   }
@@ -237,7 +238,7 @@ class AttestationManagerIntegrationTest {
         createAttestation(attestationSlot, targetBlockAndState, altairFork);
 
     final SafeFuture<InternalValidationResult> result =
-        attestationManager.addAttestation(attestation);
+        attestationManager.addAttestation(OperationAndMetadata.create(attestation));
     assertThat(result).isCompletedWithValue(InternalValidationResult.ACCEPT);
   }
 
