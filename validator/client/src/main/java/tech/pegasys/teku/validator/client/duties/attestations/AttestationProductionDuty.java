@@ -151,13 +151,14 @@ public class AttestationProductionDuty implements Duty {
             maybeUnsignedAttestation ->
                 maybeUnsignedAttestation
                     .map(
-                        attestationData ->
-                            validatorDutyMetrics.record(
-                                () ->
-                                    signAttestationForValidator(
-                                        slot, forkInfo, attestationData, validator),
-                                this,
-                                Step.SIGN))
+                        attestationData -> {
+                          validateAttestationData(slot, attestationData);
+                          return validatorDutyMetrics.record(
+                              () ->
+                                  signAttestationForValidator(forkInfo, attestationData, validator),
+                              this,
+                              Step.SIGN);
+                        })
                     .orElseGet(
                         () ->
                             SafeFuture.completedFuture(
@@ -172,16 +173,19 @@ public class AttestationProductionDuty implements Duty {
         .exceptionally(error -> ProductionResult.failure(validator.getPublicKey(), error));
   }
 
-  private SafeFuture<ProductionResult<Attestation>> signAttestationForValidator(
-      final UInt64 slot,
-      final ForkInfo forkInfo,
-      final AttestationData attestationData,
-      final ValidatorWithCommitteePositionAndIndex validator) {
+  private static void validateAttestationData(
+      final UInt64 slot, final AttestationData attestationData) {
     checkArgument(
         attestationData.getSlot().equals(slot),
         "Unsigned attestation slot (%s) does not match expected slot %s",
         attestationData.getSlot(),
         slot);
+  }
+
+  private SafeFuture<ProductionResult<Attestation>> signAttestationForValidator(
+      final ForkInfo forkInfo,
+      final AttestationData attestationData,
+      final ValidatorWithCommitteePositionAndIndex validator) {
     return validator
         .getSigner()
         .signAttestationData(attestationData, forkInfo)
