@@ -29,6 +29,7 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.meta.OperationAndMetadata;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -207,7 +208,7 @@ class SyncCommitteeContributionPoolTest {
   }
 
   private void addValidRemote(final SignedContributionAndProof proof) {
-    assertThat(pool.addRemote(proof)).isCompletedWithValue(ACCEPT);
+    assertThat(pool.addRemote(OperationAndMetadata.create(proof))).isCompletedWithValue(ACCEPT);
   }
 
   private void assertSyncAggregateFromContribution(

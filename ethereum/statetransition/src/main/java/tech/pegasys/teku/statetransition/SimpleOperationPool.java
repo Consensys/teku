@@ -28,6 +28,7 @@ import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedSet;
+import tech.pegasys.teku.infrastructure.meta.OperationAndMetadata;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszCollection;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
@@ -167,8 +168,9 @@ public class SimpleOperationPool<T extends SszData> implements OperationPool<T> 
   }
 
   @Override
-  public SafeFuture<InternalValidationResult> addRemote(final T item) {
-    return add(item, true);
+  public SafeFuture<InternalValidationResult> addRemote(
+      final OperationAndMetadata<T> itemAndMetadata) {
+    return add(itemAndMetadata.operation(), true);
   }
 
   @Override

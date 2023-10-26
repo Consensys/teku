@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.gossip;
 
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.meta.OperationAndMetadata;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
@@ -41,10 +42,11 @@ public class AggregateGossipManager extends AbstractGossipManager<SignedAggregat
         gossipNetwork,
         gossipEncoding,
         forkInfo,
-        proofMessage ->
+        proofMessageAndMetadata ->
             processor.process(
-                ValidatableAttestation.aggregateFromNetwork(
-                    recentChainData.getSpec(), proofMessage)),
+                OperationAndMetadata.create(
+                    ValidatableAttestation.aggregateFromNetwork(
+                        recentChainData.getSpec(), proofMessageAndMetadata.operation()))),
         spec.atEpoch(forkInfo.getFork().getEpoch())
             .getSchemaDefinitions()
             .getSignedAggregateAndProofSchema(),

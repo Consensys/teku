@@ -22,6 +22,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.meta.OperationAndMetadata;
 import tech.pegasys.teku.networking.eth2.gossip.AttesterSlashingGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -40,7 +41,7 @@ public class AttesterSlashingTopicHandlerTest extends AbstractTopicHandlerTest<A
   @Test
   public void handleMessage_validSlashing() {
     final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashingAtSlot(validSlot);
-    when(processor.process(slashing))
+    when(processor.process(OperationAndMetadata.create(slashing)))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result =
@@ -63,7 +64,7 @@ public class AttesterSlashingTopicHandlerTest extends AbstractTopicHandlerTest<A
   @Test
   public void handleMessage_ignoredSlashing() {
     final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashingAtSlot(validSlot);
-    when(processor.process(slashing))
+    when(processor.process(OperationAndMetadata.create(slashing)))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result =
@@ -75,7 +76,7 @@ public class AttesterSlashingTopicHandlerTest extends AbstractTopicHandlerTest<A
   @Test
   public void handleMessage_rejectedSlashing() {
     final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashingAtSlot(validSlot);
-    when(processor.process(slashing))
+    when(processor.process(OperationAndMetadata.create(slashing)))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("Nope")));
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result =

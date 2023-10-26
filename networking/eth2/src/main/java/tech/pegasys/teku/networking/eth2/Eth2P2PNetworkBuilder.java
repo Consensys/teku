@@ -44,7 +44,6 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubnetTopic
 import tech.pegasys.teku.networking.eth2.gossip.topics.Eth2GossipTopicFilter;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
-import tech.pegasys.teku.networking.eth2.gossip.topics.TimedOperationProcessor;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
@@ -95,7 +94,7 @@ public class Eth2P2PNetworkBuilder {
   protected P2PConfig config;
   protected EventChannels eventChannels;
   protected CombinedChainDataClient combinedChainDataClient;
-  protected TimedOperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
+  protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
   protected OperationProcessor<SignedBlobSidecar> gossipedBlobSidecarProcessor;
   protected OperationProcessor<ValidatableAttestation> gossipedAttestationConsumer;
   protected OperationProcessor<ValidatableAttestation> gossipedAggregateProcessor;
@@ -121,6 +120,7 @@ public class Eth2P2PNetworkBuilder {
   protected OperationProcessor<ValidatableSyncCommitteeMessage>
       gossipedSyncCommitteeMessageProcessor;
   protected StatusMessageFactory statusMessageFactory;
+  protected boolean recordMessageArrival;
 
   protected Eth2P2PNetworkBuilder() {}
 
@@ -325,6 +325,7 @@ public class Eth2P2PNetworkBuilder {
             .preparedGossipMessageFactory(defaultMessageFactory)
             .gossipTopicFilter(gossipTopicsFilter)
             .timeProvider(timeProvider)
+            .recordMessageArrival(recordMessageArrival)
             .build();
 
     final AttestationSubnetTopicProvider attestationSubnetTopicProvider =
@@ -441,7 +442,7 @@ public class Eth2P2PNetworkBuilder {
   }
 
   public Eth2P2PNetworkBuilder gossipedBlockProcessor(
-      final TimedOperationProcessor<SignedBeaconBlock> blockProcessor) {
+      final OperationProcessor<SignedBeaconBlock> blockProcessor) {
     checkNotNull(blockProcessor);
     this.gossipedBlockProcessor = blockProcessor;
     return this;
@@ -571,6 +572,11 @@ public class Eth2P2PNetworkBuilder {
       final StatusMessageFactory statusMessageFactory) {
     checkNotNull(statusMessageFactory);
     this.statusMessageFactory = statusMessageFactory;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder recordMessageArrival(final boolean recordMessageArrival) {
+    this.recordMessageArrival = recordMessageArrival;
     return this;
   }
 }

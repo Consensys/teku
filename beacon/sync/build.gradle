@@ -8,6 +8,7 @@ dependencies {
     implementation project(':infrastructure:collections')
     implementation project(':infrastructure:exceptions')
     implementation project(':infrastructure:logging')
+    implementation project(':infrastructure:meta')
     implementation project(':infrastructure:metrics')
     implementation project(':infrastructure:subscribers')
     implementation project(':infrastructure:serviceutils')
@@ -35,6 +36,7 @@ dependencies {
 
     testFixturesImplementation project(':infrastructure:serviceutils')
     testFixturesImplementation project(':infrastructure:metrics')
+    testFixturesImplementation project(':infrastructure:meta')
     testFixturesImplementation project(':ethereum:statetransition')
     testFixturesImplementation project(':ethereum:weaksubjectivity')
 

@@ -52,9 +52,6 @@ public abstract class AbstractTopicHandlerTest<T> {
   @SuppressWarnings("unchecked")
   protected final OperationProcessor<T> processor = mock(OperationProcessor.class);
 
-  @SuppressWarnings("unchecked")
-  protected final TimedOperationProcessor<T> timedProcessor = mock(TimedOperationProcessor.class);
-
   protected Eth2TopicHandler<?> topicHandler;
 
   protected ForkInfo forkInfo;

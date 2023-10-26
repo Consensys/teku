@@ -92,7 +92,7 @@ public class MockMessageApi implements MessageApi {
           }
 
           @Override
-          public Optional<UInt64> getTimestamp() {
+          public Optional<UInt64> getArrivalTimestamp() {
             return Optional.empty();
           }
         };

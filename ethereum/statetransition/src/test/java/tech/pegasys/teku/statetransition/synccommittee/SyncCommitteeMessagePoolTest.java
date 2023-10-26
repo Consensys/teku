@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.meta.OperationAndMetadata;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -81,7 +82,7 @@ class SyncCommitteeMessagePoolTest {
     pool.subscribeOperationAdded(subscriber);
     when(validator.validate(message)).thenReturn(SafeFuture.completedFuture(ACCEPT));
 
-    assertThat(pool.addRemote(message)).isCompletedWithValue(ACCEPT);
+    assertThat(pool.addRemote(OperationAndMetadata.create(message))).isCompletedWithValue(ACCEPT);
     verify(subscriber).onOperationAdded(message, ACCEPT, true);
   }
 
@@ -383,7 +384,7 @@ class SyncCommitteeMessagePoolTest {
   }
 
   private void addValidRemote(final ValidatableSyncCommitteeMessage message0) {
-    assertThat(pool.addRemote(message0)).isCompletedWithValue(ACCEPT);
+    assertThat(pool.addRemote(OperationAndMetadata.create(message0))).isCompletedWithValue(ACCEPT);
   }
 
   private void assertMessagesPresentForSlots(

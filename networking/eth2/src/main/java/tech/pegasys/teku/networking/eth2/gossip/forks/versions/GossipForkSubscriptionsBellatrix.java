@@ -17,7 +17,6 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
-import tech.pegasys.teku.networking.eth2.gossip.topics.TimedOperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -40,7 +39,7 @@ public class GossipForkSubscriptionsBellatrix extends GossipForkSubscriptionsAlt
       final DiscoveryNetwork<?> discoveryNetwork,
       final RecentChainData recentChainData,
       final GossipEncoding gossipEncoding,
-      final TimedOperationProcessor<SignedBeaconBlock> blockProcessor,
+      final OperationProcessor<SignedBeaconBlock> blockProcessor,
       final OperationProcessor<ValidatableAttestation> attestationProcessor,
       final OperationProcessor<ValidatableAttestation> aggregateProcessor,
       final OperationProcessor<AttesterSlashing> attesterSlashingProcessor,

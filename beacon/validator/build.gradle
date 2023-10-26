@@ -26,6 +26,7 @@ dependencies {
   implementation project(':data:provider')
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:exceptions')
+  implementation project(':infrastructure:meta')
   implementation project(':infrastructure:metrics')
 
   implementation 'it.unimi.dsi:fastutil'

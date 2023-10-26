@@ -32,6 +32,7 @@ import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.meta.OperationAndMetadata;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -74,8 +75,8 @@ public class SyncCommitteeMessagePool implements SlotEventsChannel {
   }
 
   public SafeFuture<InternalValidationResult> addRemote(
-      final ValidatableSyncCommitteeMessage message) {
-    return add(message, true);
+      final OperationAndMetadata<ValidatableSyncCommitteeMessage> operationAndMetadata) {
+    return add(operationAndMetadata.operation(), true);
   }
 
   private SafeFuture<InternalValidationResult> add(

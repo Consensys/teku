@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.meta.OperationAndMetadata;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationMilestoneValidator;
@@ -165,15 +166,17 @@ public class BlobSidecarGossipManager implements GossipManager {
     }
 
     @Override
-    public SafeFuture<InternalValidationResult> process(final SignedBlobSidecar blobSidecar) {
-      final int blobSidecarSubnet = spec.computeSubnetForBlobSidecar(blobSidecar).intValue();
+    public SafeFuture<InternalValidationResult> process(
+        final OperationAndMetadata<SignedBlobSidecar> blobAndMetadata) {
+      final int blobSidecarSubnet =
+          spec.computeSubnetForBlobSidecar(blobAndMetadata.operation()).intValue();
       if (blobSidecarSubnet != subnetId) {
         return SafeFuture.completedFuture(
             InternalValidationResult.reject(
                 "blob sidecar with subnet_id %s does not match the topic subnet_id %d",
                 blobSidecarSubnet, subnetId));
       }
-      return delegate.process(blobSidecar);
+      return delegate.process(blobAndMetadata);
     }
   }
 }
