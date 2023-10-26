@@ -85,9 +85,9 @@ public class BlockProductionDuty implements Duty {
                     () -> createUnsignedBlock(signature), this, Step.CREATE))
         .thenCompose(this::validateBlock)
         .thenCompose(
-            block ->
+            blockContainer ->
                 validatorDutyMetrics.record(
-                    () -> signBlockContainer(forkInfo, block), this, Step.SIGN))
+                    () -> signBlockContainer(forkInfo, blockContainer), this, Step.SIGN))
         .thenCompose(
             signedBlockContainer ->
                 validatorDutyMetrics.record(() -> sendBlock(signedBlockContainer), this, Step.SEND))
