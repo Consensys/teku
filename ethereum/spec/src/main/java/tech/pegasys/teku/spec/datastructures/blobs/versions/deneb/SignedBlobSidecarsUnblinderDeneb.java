@@ -82,7 +82,6 @@ public class SignedBlobSidecarsUnblinderDeneb implements SignedBlobSidecarsUnbli
               blobsBundle.getNumberOfBlobs(), index));
     }
 
-    // Check that the blob root matches
     final Blob blob = blobsBundle.getBlobs().get(index);
     if (!blob.hashTreeRoot().equals(blindedBlobSidecar.getBlobRoot())) {
       throw new IllegalArgumentException(
@@ -91,7 +90,6 @@ public class SignedBlobSidecarsUnblinderDeneb implements SignedBlobSidecarsUnbli
               blob.hashTreeRoot(), blindedBlobSidecar));
     }
 
-    // Check that the commitment matches
     final KZGCommitment commitment = blobsBundle.getCommitments().get(index).getKZGCommitment();
     if (!commitment.equals(blindedBlobSidecar.getKZGCommitment())) {
       throw new IllegalArgumentException(
@@ -100,13 +98,12 @@ public class SignedBlobSidecarsUnblinderDeneb implements SignedBlobSidecarsUnbli
               commitment, blindedBlobSidecar));
     }
 
-    // Check that the proof matches
     final KZGProof proof = blobsBundle.getProofs().get(index).getKZGProof();
     if (!proof.equals(blindedBlobSidecar.getKZGProof())) {
       throw new IllegalArgumentException(
           String.format(
               "The proof in the BlobsBundle %s does not match the proof in the blinded blob sidecar %s",
-              commitment, blindedBlobSidecar));
+              proof, blindedBlobSidecar));
     }
 
     return blob;
