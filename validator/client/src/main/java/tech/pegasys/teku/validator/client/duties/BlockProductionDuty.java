@@ -94,16 +94,17 @@ public class BlockProductionDuty implements Duty {
         .exceptionally(error -> DutyResult.forError(validator.getPublicKey(), error));
   }
 
-  public SafeFuture<BLSSignature> createRandaoReveal(final ForkInfo forkInfo) {
+  private SafeFuture<BLSSignature> createRandaoReveal(final ForkInfo forkInfo) {
     return validator.getSigner().createRandaoReveal(spec.computeEpochAtSlot(slot), forkInfo);
   }
 
-  public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(final BLSSignature randaoReveal) {
+  private SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
+      final BLSSignature randaoReveal) {
     return validatorApiChannel.createUnsignedBlock(
         slot, randaoReveal, validator.getGraffiti(), useBlindedBlock);
   }
 
-  public SafeFuture<BlockContainer> validateBlock(
+  private SafeFuture<BlockContainer> validateBlock(
       final Optional<BlockContainer> maybeBlockContainer) {
     final BlockContainer unsignedBlockContainer =
         maybeBlockContainer.orElseThrow(
