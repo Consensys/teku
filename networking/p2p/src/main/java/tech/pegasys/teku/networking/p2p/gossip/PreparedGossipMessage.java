@@ -37,7 +37,7 @@ public interface PreparedGossipMessage {
 
   Bytes getOriginalMessage();
 
-  Optional<UInt64> getTimestamp();
+  Optional<UInt64> getArrivalTimestamp();
 
   class DecodedMessageResult {
     private final Optional<Bytes> decodedMessage;

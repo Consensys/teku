@@ -26,5 +26,5 @@ public interface PreparedGossipMessageFactory {
       String topic,
       Bytes payload,
       NetworkingSpecConfig networkingConfig,
-      Optional<UInt64> timestamp);
+      Optional<UInt64> arrivalTimestamp);
 }

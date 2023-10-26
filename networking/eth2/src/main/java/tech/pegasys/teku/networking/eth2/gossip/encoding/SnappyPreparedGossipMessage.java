@@ -40,7 +40,7 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
   private final Uncompressor snappyCompressor;
   private final MessageIdCalculator messageIdCalculator;
   private final NetworkingSpecConfig networkingConfig;
-  private final Optional<UInt64> timestamp;
+  private final Optional<UInt64> arrivalTimestamp;
 
   private final Supplier<DecodedMessageResult> decodedResult =
       Suppliers.memoize(this::getDecodedMessage);
@@ -50,9 +50,15 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
       final Bytes compressedData,
       final ForkDigestToMilestone forkDigestToMilestone,
       final NetworkingSpecConfig networkingConfig,
-      final Optional<UInt64> timestamp) {
+      final Optional<UInt64> arrivalTimestamp) {
     return new SnappyPreparedGossipMessage(
-        topic, compressedData, forkDigestToMilestone, null, null, networkingConfig, timestamp);
+        topic,
+        compressedData,
+        forkDigestToMilestone,
+        null,
+        null,
+        networkingConfig,
+        arrivalTimestamp);
   }
 
   static SnappyPreparedGossipMessage create(
@@ -62,7 +68,7 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
       final SszSchema<?> valueType,
       final Uncompressor snappyCompressor,
       final NetworkingSpecConfig networkingConfig,
-      final Optional<UInt64> timestamp) {
+      final Optional<UInt64> arrivalTimestamp) {
     return new SnappyPreparedGossipMessage(
         topic,
         compressedData,
@@ -70,7 +76,7 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
         valueType,
         snappyCompressor,
         networkingConfig,
-        timestamp);
+        arrivalTimestamp);
   }
 
   private SnappyPreparedGossipMessage(
@@ -80,14 +86,14 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
       final SszSchema<?> valueType,
       final Uncompressor snappyCompressor,
       final NetworkingSpecConfig networkingConfig,
-      final Optional<UInt64> timestamp) {
+      final Optional<UInt64> arrivalTimestamp) {
     this.compressedData = compressedData;
     this.valueType = valueType;
     this.snappyCompressor = snappyCompressor;
     this.networkingConfig = networkingConfig;
     this.messageIdCalculator =
         createMessageIdCalculator(topic, compressedData, forkDigestToMilestone);
-    this.timestamp = timestamp;
+    this.arrivalTimestamp = arrivalTimestamp;
   }
 
   private MessageIdCalculator createMessageIdCalculator(
@@ -147,8 +153,8 @@ class SnappyPreparedGossipMessage implements PreparedGossipMessage {
   }
 
   @Override
-  public Optional<UInt64> getTimestamp() {
-    return timestamp;
+  public Optional<UInt64> getArrivalTimestamp() {
+    return arrivalTimestamp;
   }
 
   @FunctionalInterface

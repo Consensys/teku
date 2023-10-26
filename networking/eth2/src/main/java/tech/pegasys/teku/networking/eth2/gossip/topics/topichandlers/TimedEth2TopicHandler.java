@@ -91,7 +91,7 @@ public class TimedEth2TopicHandler<MessageT extends SszData> extends Eth2TopicHa
               return asyncRunner.runAsync(
                   () ->
                       processor
-                          .process(deserialized, message.getTimestamp())
+                          .process(deserialized, message.getArrivalTimestamp())
                           .thenApply(
                               internalValidation -> {
                                 processMessage(internalValidation, message);
