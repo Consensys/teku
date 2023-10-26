@@ -404,7 +404,6 @@ class BlockProductionDutyTest {
     verifyNoMoreInteractions(validatorLogger);
 
     verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SIGN));
     verifyNoMoreInteractions(validatorDutyMetrics);
   }
 
