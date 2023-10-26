@@ -91,8 +91,7 @@ public class JsonUtil {
     return parse(() -> FACTORY.createParser(json), type);
   }
 
-  public static <T> T parse(
-      final String json, final DeserializableOneOfTypeDefinition<T, ?> oneOfType)
+  public static <T> T parse(final String json, final DeserializableOneOfTypeDefinition<T> oneOfType)
       throws JsonProcessingException {
     final DeserializableTypeDefinition<? extends T> typeDefinition =
         oneOfType.getMatchingType(json);
