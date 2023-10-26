@@ -77,20 +77,49 @@ public class BlockProductionDuty implements Duty {
     return forkProvider.getForkInfo(slot).thenCompose(this::produceBlock);
   }
 
-  public SafeFuture<DutyResult> produceBlock(final ForkInfo forkInfo) {
+  private SafeFuture<DutyResult> produceBlock(final ForkInfo forkInfo) {
     return createRandaoReveal(forkInfo)
         .thenCompose(
             signature ->
                 validatorDutyMetrics.record(
                     () -> createUnsignedBlock(signature), this, Step.CREATE))
+        .thenCompose(this::validateBlock)
         .thenCompose(
-            unsignedBlock ->
+            blockContainer ->
                 validatorDutyMetrics.record(
-                    () -> signBlockContainer(forkInfo, unsignedBlock), this, Step.SIGN))
+                    () -> signBlockContainer(forkInfo, blockContainer), this, Step.SIGN))
         .thenCompose(
             signedBlockContainer ->
                 validatorDutyMetrics.record(() -> sendBlock(signedBlockContainer), this, Step.SEND))
         .exceptionally(error -> DutyResult.forError(validator.getPublicKey(), error));
+  }
+
+  private SafeFuture<BLSSignature> createRandaoReveal(final ForkInfo forkInfo) {
+    return validator.getSigner().createRandaoReveal(spec.computeEpochAtSlot(slot), forkInfo);
+  }
+
+  private SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
+      final BLSSignature randaoReveal) {
+    return validatorApiChannel.createUnsignedBlock(
+        slot, randaoReveal, validator.getGraffiti(), useBlindedBlock);
+  }
+
+  private SafeFuture<BlockContainer> validateBlock(
+      final Optional<BlockContainer> maybeBlockContainer) {
+    final BlockContainer unsignedBlockContainer =
+        maybeBlockContainer.orElseThrow(
+            () -> new IllegalStateException("Node was not syncing but could not create block"));
+    checkArgument(
+        unsignedBlockContainer.getSlot().equals(slot),
+        "Unsigned block slot (%s) does not match expected slot %s",
+        unsignedBlockContainer.getSlot(),
+        slot);
+    return SafeFuture.completedFuture(unsignedBlockContainer);
+  }
+
+  private SafeFuture<SignedBlockContainer> signBlockContainer(
+      final ForkInfo forkInfo, final BlockContainer blockContainer) {
+    return blockContainerSigner.sign(blockContainer, validator, forkInfo);
   }
 
   private SafeFuture<DutyResult> sendBlock(final SignedBlockContainer signedBlockContainer) {
@@ -109,28 +138,6 @@ public class BlockProductionDuty implements Duty {
                       "Block was rejected by the beacon node: "
                           + result.getRejectionReason().orElse("<reason unknown>")));
             });
-  }
-
-  public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(final BLSSignature randaoReveal) {
-    return validatorApiChannel.createUnsignedBlock(
-        slot, randaoReveal, validator.getGraffiti(), useBlindedBlock);
-  }
-
-  public SafeFuture<BLSSignature> createRandaoReveal(final ForkInfo forkInfo) {
-    return validator.getSigner().createRandaoReveal(spec.computeEpochAtSlot(slot), forkInfo);
-  }
-
-  public SafeFuture<SignedBlockContainer> signBlockContainer(
-      final ForkInfo forkInfo, final Optional<BlockContainer> maybeBlockContainer) {
-    final BlockContainer unsignedBlockContainer =
-        maybeBlockContainer.orElseThrow(
-            () -> new IllegalStateException("Node was not syncing but could not create block"));
-    checkArgument(
-        unsignedBlockContainer.getSlot().equals(slot),
-        "Unsigned block slot (%s) does not match expected slot %s",
-        unsignedBlockContainer.getSlot(),
-        slot);
-    return blockContainerSigner.sign(unsignedBlockContainer, validator, forkInfo);
   }
 
   @Override
