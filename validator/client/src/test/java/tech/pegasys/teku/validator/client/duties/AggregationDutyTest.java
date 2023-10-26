@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -38,6 +39,7 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -54,10 +56,12 @@ import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
+import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics.Step;
 import tech.pegasys.teku.validator.client.duties.attestations.AggregationDuty;
 import tech.pegasys.teku.validator.client.duties.attestations.BatchAttestationSendingStrategy;
 
 class AggregationDutyTest {
+
   private static final String TYPE = "aggregate";
   private static final UInt64 SLOT = UInt64.valueOf(2832);
   private final Spec spec = TestSpecFactory.createDefault();
@@ -76,6 +80,8 @@ class AggregationDutyTest {
   private final Validator validator2 =
       new Validator(dataStructureUtil.randomPublicKey(), signer2, new FileBackedGraffitiProvider());
   private final ValidatorLogger validatorLogger = mock(ValidatorLogger.class);
+  private final ValidatorDutyMetrics validatorDutyMetrics =
+      spy(ValidatorDutyMetrics.create(new StubMetricsSystem()));
 
   private final AggregationDuty duty =
       new AggregationDuty(
@@ -84,7 +90,8 @@ class AggregationDutyTest {
           validatorApiChannel,
           forkProvider,
           validatorLogger,
-          new BatchAttestationSendingStrategy<>(validatorApiChannel::sendAggregateAndProofs));
+          new BatchAttestationSendingStrategy<>(validatorApiChannel::sendAggregateAndProofs),
+          validatorDutyMetrics);
 
   @BeforeEach
   public void setUp() {
@@ -129,6 +136,9 @@ class AggregationDutyTest {
             List.of(
                 signedAggregateAndProofSchema.create(
                     expectedAggregateAndProof, aggregateSignature)));
+
+    verify(validatorDutyMetrics).record(any(), any(AggregationDuty.class), eq(Step.CREATE));
+    verify(validatorDutyMetrics).record(any(), any(AggregationDuty.class), eq(Step.SIGN));
   }
 
   @SuppressWarnings("unchecked")
@@ -187,6 +197,11 @@ class AggregationDutyTest {
         .containsExactlyInAnyOrder(
             signedAggregateAndProofSchema.create(aggregateAndProof1, aggregateSignature1),
             signedAggregateAndProofSchema.create(aggregateAndProof2, aggregateSignature2));
+
+    // Metrics were recorded for the aggregation for each committee
+    verify(validatorDutyMetrics, times(2))
+        .record(any(), any(AggregationDuty.class), eq(Step.CREATE));
+    verify(validatorDutyMetrics, times(2)).record(any(), any(AggregationDuty.class), eq(Step.SIGN));
   }
 
   @Test
@@ -236,6 +251,10 @@ class AggregationDutyTest {
         .dutyCompleted(
             TYPE, SLOT, 1, Set.of(aggregate.getData().getBeaconBlockRoot()), Optional.empty());
     verifyNoMoreInteractions(validatorLogger);
+
+    // Only one aggregation was created, so we only capture the time for a single operation
+    verify(validatorDutyMetrics).record(any(), any(AggregationDuty.class), eq(Step.CREATE));
+    verify(validatorDutyMetrics).record(any(), any(AggregationDuty.class), eq(Step.SIGN));
   }
 
   @Test
@@ -252,6 +271,8 @@ class AggregationDutyTest {
             eq(Set.of(validator1.getPublicKey().toAbbreviatedString())),
             any(IllegalStateException.class));
     verifyNoMoreInteractions(validatorLogger);
+
+    verifyNoInteractions(validatorDutyMetrics);
   }
 
   @Test
@@ -265,6 +286,8 @@ class AggregationDutyTest {
     verify(validatorLogger)
         .dutyFailed(TYPE, SLOT, Set.of(validator1.getPublicKey().toAbbreviatedString()), exception);
     verifyNoMoreInteractions(validatorLogger);
+
+    verifyNoInteractions(validatorDutyMetrics);
   }
 
   @Test
@@ -283,6 +306,11 @@ class AggregationDutyTest {
     verify(validatorApiChannel, never()).sendAggregateAndProofs(anyList());
     verify(validatorLogger).aggregationSkipped(SLOT, 2);
     verifyNoMoreInteractions(validatorLogger);
+
+    // Even when we fail creating the aggregation, we capture the time taken
+    verify(validatorDutyMetrics).record(any(), any(AggregationDuty.class), eq(Step.CREATE));
+    // Because it failed creating the aggregation, we won't have a sign step time
+    verifyNoMoreInteractions(validatorDutyMetrics);
   }
 
   @Test
@@ -303,6 +331,11 @@ class AggregationDutyTest {
     verify(validatorLogger)
         .dutyFailed(TYPE, SLOT, Set.of(validator1.getPublicKey().toAbbreviatedString()), exception);
     verifyNoMoreInteractions(validatorLogger);
+
+    // Even when we fail creating the aggregation, we capture the time taken
+    verify(validatorDutyMetrics).record(any(), any(AggregationDuty.class), eq(Step.CREATE));
+    // Because it failed creating the aggregation, we won't have a sign step time
+    verifyNoMoreInteractions(validatorDutyMetrics);
   }
 
   private void performAndReportDuty() {

@@ -34,6 +34,7 @@ import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAttestationData
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetGenesisRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetSyncingStatusRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.ProduceBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.RegisterValidatorsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendSignedBlockRequest;
 
@@ -87,6 +88,7 @@ public class OkHttpValidatorTypeDefClient {
     return sendSignedBlockRequest.sendSignedBlock(blockContainer);
   }
 
+  @Deprecated
   public Optional<BlockContainer> createUnsignedBlock(
       final UInt64 slot,
       final BLSSignature randaoReveal,
@@ -103,6 +105,13 @@ public class OkHttpValidatorTypeDefClient {
           baseEndpoint);
       return createUnsignedBlock(slot, randaoReveal, graffiti, false);
     }
+  }
+
+  public Optional<BlockContainer> createUnsignedBlock(
+      final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
+    final ProduceBlockRequest produceBlockRequest =
+        new ProduceBlockRequest(baseEndpoint, okHttpClient, spec, slot, preferSszBlockEncoding);
+    return produceBlockRequest.createUnsignedBlock(randaoReveal, graffiti);
   }
 
   public void registerValidators(

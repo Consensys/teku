@@ -276,7 +276,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
       final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
-    throw new UnsupportedOperationException("Not yet implemented");
+    return sendRequest(() -> typeDefClient.createUnsignedBlock(slot, randaoReveal, graffiti));
   }
 
   @Override

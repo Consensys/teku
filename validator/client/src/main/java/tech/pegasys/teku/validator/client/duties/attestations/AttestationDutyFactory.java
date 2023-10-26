@@ -21,6 +21,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.duties.DutyFactory;
+import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics;
 
 public class AttestationDutyFactory
     implements DutyFactory<AttestationProductionDuty, AggregationDuty> {
@@ -29,13 +30,17 @@ public class AttestationDutyFactory
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
 
+  private final ValidatorDutyMetrics validatorDutyMetrics;
+
   public AttestationDutyFactory(
       final Spec spec,
       final ForkProvider forkProvider,
-      final ValidatorApiChannel validatorApiChannel) {
+      final ValidatorApiChannel validatorApiChannel,
+      final ValidatorDutyMetrics validatorDutyMetrics) {
     this.spec = spec;
     this.forkProvider = forkProvider;
     this.validatorApiChannel = validatorApiChannel;
+    this.validatorDutyMetrics = validatorDutyMetrics;
   }
 
   @Override
@@ -57,7 +62,8 @@ public class AttestationDutyFactory
         validatorApiChannel,
         forkProvider,
         VALIDATOR_LOGGER,
-        new BatchAttestationSendingStrategy<>(validatorApiChannel::sendAggregateAndProofs));
+        new BatchAttestationSendingStrategy<>(validatorApiChannel::sendAggregateAndProofs),
+        validatorDutyMetrics);
   }
 
   @Override
