@@ -118,7 +118,6 @@ class AttestationProductionDutyTest {
 
     verify(validatorDutyMetrics)
         .record(any(), any(AttestationProductionDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics).record(any(), any(AttestationProductionDuty.class), eq(Step.SIGN));
   }
 
   @Test
@@ -167,8 +166,7 @@ class AttestationProductionDutyTest {
 
     verify(validatorDutyMetrics, times(2))
         .record(any(), any(AttestationProductionDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics, times(2))
-        .record(any(), any(AttestationProductionDuty.class), eq(Step.SIGN));
+    verify(validatorDutyMetrics).record(any(), any(AttestationProductionDuty.class), eq(Step.SIGN));
   }
 
   @Test
@@ -216,8 +214,7 @@ class AttestationProductionDutyTest {
 
     verify(validatorDutyMetrics, times(2))
         .record(any(), any(AttestationProductionDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics, times(2))
-        .record(any(), any(AttestationProductionDuty.class), eq(Step.SIGN));
+    verify(validatorDutyMetrics).record(any(), any(AttestationProductionDuty.class), eq(Step.SIGN));
   }
 
   @Test

@@ -39,6 +39,7 @@ import tech.pegasys.teku.validator.client.duties.DutyResult;
 import tech.pegasys.teku.validator.client.duties.DutyType;
 import tech.pegasys.teku.validator.client.duties.ProductionResult;
 import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics;
+import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics.Step;
 
 public class AttestationProductionDuty implements Duty {
   private static final Logger LOG = LogManager.getLogger();
@@ -134,12 +135,8 @@ public class AttestationProductionDuty implements Duty {
     return committee.getValidators().stream()
         .map(
             validator ->
-                validatorDutyMetrics.record(
-                    () ->
-                        signAttestationForValidatorInCommittee(
-                            slot, forkInfo, committeeIndex, validator, unsignedAttestationFuture),
-                    this,
-                    ValidatorDutyMetrics.Step.SIGN))
+                signAttestationForValidatorInCommittee(
+                    slot, forkInfo, committeeIndex, validator, unsignedAttestationFuture))
         .toList();
   }
 
@@ -155,7 +152,12 @@ public class AttestationProductionDuty implements Duty {
                 maybeUnsignedAttestation
                     .map(
                         attestationData ->
-                            signAttestationForValidator(slot, forkInfo, attestationData, validator))
+                            validatorDutyMetrics.record(
+                                () ->
+                                    signAttestationForValidator(
+                                        slot, forkInfo, attestationData, validator),
+                                this,
+                                Step.SIGN))
                     .orElseGet(
                         () ->
                             SafeFuture.completedFuture(
