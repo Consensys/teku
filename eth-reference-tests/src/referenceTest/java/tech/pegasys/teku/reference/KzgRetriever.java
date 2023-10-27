@@ -17,10 +17,19 @@ import com.google.common.collect.Maps;
 import java.util.Map;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 
 public class KzgRetriever {
 
   private static final Map<String, String> TRUSTED_SETUP_FILES_BY_NETWORK = Maps.newHashMap();
+
+  public static KZG getKzgWithLoadedTrustedSetup(final Spec spec, final String network) {
+    if (!spec.isMilestoneSupported(SpecMilestone.DENEB)) {
+      return KZG.NOOP;
+    }
+    return getKzgWithLoadedTrustedSetup(network);
+  }
 
   public static KZG getKzgWithLoadedTrustedSetup(final String network) {
     final String trustedSetupFile =

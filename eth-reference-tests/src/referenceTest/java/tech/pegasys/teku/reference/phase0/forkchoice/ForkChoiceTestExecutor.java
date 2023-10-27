@@ -123,7 +123,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final MergeTransitionBlockValidator transitionBlockValidator =
         new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
     final InlineEventThread eventThread = new InlineEventThread();
-    final KZG kzg = KzgRetriever.getKzgWithLoadedTrustedSetup(testDefinition.getConfigName());
+    final KZG kzg = KzgRetriever.getKzgWithLoadedTrustedSetup(spec, testDefinition.getConfigName());
     final StubBlobSidecarManager blobSidecarManager = new StubBlobSidecarManager(kzg);
     final ForkChoice forkChoice =
         new ForkChoice(
