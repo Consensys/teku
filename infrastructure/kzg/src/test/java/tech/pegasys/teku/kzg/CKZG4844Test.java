@@ -53,7 +53,7 @@ public final class CKZG4844Test {
   }
 
   private static void loadTrustedSetup() {
-    TrustedSetupLoader.loadDefaultTrustedSetup(CKZG);
+    TrustedSetupLoader.loadTrustedSetupForTests(CKZG);
   }
 
   @AfterAll
@@ -226,11 +226,11 @@ public final class CKZG4844Test {
         "broken/trusted_setup_g2_length.txt",
         "broken/trusted_setup_g2_bytesize.txt"
       })
-  public void incorrectTrustedSetupFilesShouldThrow(final String resource) {
+  public void incorrectTrustedSetupFilesShouldThrow(final String filename) {
     final Throwable cause =
         assertThrows(
                 KZGException.class,
-                () -> CKZG.loadTrustedSetup(TrustedSetupLoader.getTrustedSetupFile(resource)))
+                () -> CKZG.loadTrustedSetup(TrustedSetupLoader.getTrustedSetupFile(filename)))
             .getCause();
     assertThat(cause.getMessage()).contains("Failed to parse trusted setup file");
   }

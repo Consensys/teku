@@ -17,19 +17,16 @@ import com.google.common.io.Resources;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGException;
 
+/** Loads trusted setup used in tests throughout the project. */
 public class TrustedSetupLoader {
 
-  private static final String DEFAULT_TRUSTED_SETUP = "trusted_setup.txt";
+  private static final String TEST_TRUSTED_SETUP = "trusted_setup.txt";
 
-  public static void loadDefaultTrustedSetup(final KZG kzg) throws KZGException {
-    loadTrustedSetup(kzg, DEFAULT_TRUSTED_SETUP);
+  public static void loadTrustedSetupForTests(final KZG kzg) throws KZGException {
+    kzg.loadTrustedSetup(getTrustedSetupFile(TEST_TRUSTED_SETUP));
   }
 
-  public static void loadTrustedSetup(final KZG kzg, final String resource) throws KZGException {
-    kzg.loadTrustedSetup(getTrustedSetupFile(resource));
-  }
-
-  public static String getTrustedSetupFile(final String resource) {
-    return Resources.getResource(TrustedSetupLoader.class, resource).toExternalForm();
+  public static String getTrustedSetupFile(final String filename) {
+    return Resources.getResource(TrustedSetupLoader.class, filename).toExternalForm();
   }
 }

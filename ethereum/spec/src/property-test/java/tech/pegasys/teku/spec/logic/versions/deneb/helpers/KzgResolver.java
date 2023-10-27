@@ -54,7 +54,7 @@ class KzgResolver implements ResolveParameterHook {
     private final KZG kzg = KZG.INSTANCE;
 
     private KzgAutoLoadFree() {
-      TrustedSetupLoader.loadDefaultTrustedSetup(kzg);
+      TrustedSetupLoader.loadTrustedSetupForTests(kzg);
     }
 
     @Override

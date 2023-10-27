@@ -111,7 +111,7 @@ public class ChainBuilder {
     final KZG kzg;
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       kzg = KZG.INSTANCE;
-      TrustedSetupLoader.loadDefaultTrustedSetup(kzg);
+      TrustedSetupLoader.loadTrustedSetupForTests(kzg);
     } else {
       kzg = KZG.NOOP;
     }
