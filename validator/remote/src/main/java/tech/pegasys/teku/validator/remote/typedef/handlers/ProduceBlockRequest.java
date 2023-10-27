@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CONSENSUS_BLOCK_VALUE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_PAYLOAD_BLINDED;
@@ -36,6 +37,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import org.identityconnectors.common.StringUtil;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableOneOfTypeDefinition;
@@ -52,11 +54,11 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
   private static final Logger LOG = LogManager.getLogger();
 
   private final UInt64 slot;
+  private final Spec spec;
   private final boolean preferSszBlockEncoding;
   private final BlockContainerSchema<BlockContainer> blockContainerSchema;
   private final BlockContainerSchema<BlockContainer> blindedBlockContainerSchema;
   private final ResponseHandler<ProduceBlockResponse> responseHandler;
-
   public final DeserializableOneOfTypeDefinition<ProduceBlockResponse> produceBlockTypeDefinition;
 
   public ProduceBlockRequest(
@@ -67,6 +69,7 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
       final boolean preferSszBlockEncoding) {
     super(baseEndpoint, okHttpClient);
     this.slot = slot;
+    this.spec = spec;
     this.preferSszBlockEncoding = preferSszBlockEncoding;
     this.blockContainerSchema = spec.atSlot(slot).getSchemaDefinitions().getBlockContainerSchema();
     this.blindedBlockContainerSchema =
@@ -91,7 +94,29 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
 
     this.responseHandler =
         new ResponseHandler<>(produceBlockTypeDefinition)
-            .withHandler(SC_OK, this::handleBlockContainerResult);
+            .withHandler(SC_OK, this::handleBlockContainerResult)
+            .withHandler(SC_NOT_FOUND, this::fallbackToBlockV2);
+  }
+
+  private Optional<ProduceBlockResponse> fallbackToBlockV2(Request request, Response response) {
+    LOG.warn("Block V3 request failed. Retrying with Block V2.");
+    final String graffitiParam = request.url().queryParameter("graffiti");
+    final Optional<Bytes32> graffiti =
+        StringUtil.isBlank(graffitiParam)
+            ? Optional.empty()
+            : Optional.of(Bytes32.fromHexString(graffitiParam));
+    final String randaoParam = request.url().queryParameter("randao_reveal");
+    if (StringUtil.isBlank(randaoParam)) {
+      return Optional.empty();
+    }
+    final BLSSignature randaoReveal =
+        BLSSignature.fromBytesCompressed(Bytes.fromBase64String(randaoParam));
+    final CreateBlockRequest createBlockRequest =
+        new CreateBlockRequest(baseEndpoint, httpClient, spec, slot, true, preferSszBlockEncoding);
+    final Optional<BlockContainer> maybeBlockContainer =
+        createBlockRequest.createUnsignedBlock(randaoReveal, graffiti);
+    return maybeBlockContainer.map(
+        blockContainer -> new ProduceBlockResponse(blockContainer.getBlock()));
   }
 
   public Optional<BlockContainer> createUnsignedBlock(

@@ -14,7 +14,9 @@
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assumptions.assumeThat;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
@@ -39,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockC
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase;
+import tech.pegasys.teku.validator.remote.typedef.BlindedBlockEndpointNotAvailableException;
 
 @TestSpecContext(allMilestones = true, network = Eth2Network.MINIMAL)
 public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
@@ -261,6 +264,98 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     assertThat(maybeBlockContainer).isPresent();
 
     assertThat(maybeBlockContainer.get()).isEqualTo(blockResponse.getData());
+  }
+
+  @TestTemplate
+  public void shouldFallbackToBlockV2WhenNotFound() {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX).isLessThanOrEqualTo(CAPELLA);
+    final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
+
+    final String mockResponse = readExpectedJsonResource(specMilestone, true, false);
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
+
+    final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
+
+    final Optional<BlockContainer> maybeBlockContainer =
+        request.createUnsignedBlock(signature, Optional.empty());
+
+    assertThat(maybeBlockContainer).isPresent();
+  }
+
+  @TestTemplate
+  public void shouldFallbackToBlockV2WhenNotFound_Blinded() {
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX).isLessThanOrEqualTo(CAPELLA);
+    final BeaconBlock blindedBeaconBlock = dataStructureUtil.randomBlindedBeaconBlock(ONE);
+    final ProduceBlockRequest.ProduceBlockResponse blockResponse =
+        new ProduceBlockRequest.ProduceBlockResponse(blindedBeaconBlock);
+
+    final String mockResponse = readExpectedJsonResource(specMilestone, true, false);
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
+
+    final BLSSignature signature = blindedBeaconBlock.getBlock().getBody().getRandaoReveal();
+
+    final Optional<BlockContainer> maybeBlockContainer =
+        request.createUnsignedBlock(signature, Optional.empty());
+
+    assertThat(maybeBlockContainer).isPresent();
+
+    assertThat(maybeBlockContainer.get()).isEqualTo(blockResponse.getData().getBlock());
+  }
+
+  @TestTemplate
+  public void shouldFallbackToBlockV2WhenNotFound_PostDeneb() {
+    assumeThat(specMilestone).isEqualTo(DENEB);
+    final BlockContents blockContents = dataStructureUtil.randomBlockContents(ONE);
+
+    final String mockResponse = readExpectedJsonResource(specMilestone, true, true);
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
+
+    final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
+
+    final Optional<BlockContainer> maybeBlockContainer =
+        request.createUnsignedBlock(signature, Optional.empty());
+
+    assertThat(maybeBlockContainer).isPresent();
+  }
+
+  @TestTemplate
+  public void shouldFallbackToBlockV2WhenNotFound_PostDeneb_Blinded() {
+    assumeThat(specMilestone).isEqualTo(DENEB);
+    final BlindedBlockContents blindedBlockContents =
+        dataStructureUtil.randomBlindedBlockContents(ONE);
+    final ProduceBlockRequest.ProduceBlockResponse blockResponse =
+        new ProduceBlockRequest.ProduceBlockResponse(blindedBlockContents);
+
+    final String mockResponse = readExpectedJsonResource(specMilestone, true, true);
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
+
+    final BLSSignature signature = blindedBlockContents.getBlock().getBody().getRandaoReveal();
+
+    final Optional<BlockContainer> maybeBlockContainer =
+        request.createUnsignedBlock(signature, Optional.empty());
+
+    assertThat(maybeBlockContainer).isPresent();
+    assertThat(maybeBlockContainer.get()).isEqualTo(blockResponse.getData().getBlock());
+  }
+
+  @TestTemplate
+  public void shouldFailWhenFallbackToV2Fails() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
+    assertThatThrownBy(
+            () ->
+                request.createUnsignedBlock(dataStructureUtil.randomSignature(), Optional.empty()))
+        .isInstanceOf(BlindedBlockEndpointNotAvailableException.class);
   }
 
   private String readExpectedJsonResource(

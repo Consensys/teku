@@ -40,8 +40,8 @@ public abstract class AbstractTypeDefRequest {
       MediaType.parse("application/json; charset=utf-8");
   private static final MediaType OCTET_STREAM = MediaType.parse("application/octet-stream");
   private static final Logger LOG = LogManager.getLogger();
-  private final HttpUrl baseEndpoint;
-  private final OkHttpClient httpClient;
+  protected final HttpUrl baseEndpoint;
+  protected final OkHttpClient httpClient;
 
   public AbstractTypeDefRequest(final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
     this.baseEndpoint = baseEndpoint;
