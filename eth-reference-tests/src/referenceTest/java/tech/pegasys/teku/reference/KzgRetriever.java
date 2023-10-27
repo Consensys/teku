@@ -32,7 +32,7 @@ public class KzgRetriever {
     final String trustedSetupFile =
         Objects.requireNonNull(Eth2NetworkConfiguration.class.getResource(trustedSetupFilename))
             .toExternalForm();
-    final KZG kzg = KZG.INSTANCE;
+    final KZG kzg = KZG.getInstance();
     kzg.loadTrustedSetup(trustedSetupFile);
     return kzg;
   }
