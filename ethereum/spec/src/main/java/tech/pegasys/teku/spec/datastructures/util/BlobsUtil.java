@@ -26,14 +26,15 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
-import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 
 public class BlobsUtil {
+
   private static final int RANDOM_SEED = 5566;
   private static final Random RND = new Random(RANDOM_SEED);
 
@@ -51,9 +52,11 @@ public class BlobsUtil {
               + "0000000000000000000000000000c100000000");
 
   private final Spec spec;
+  private final KZG kzg;
 
-  public BlobsUtil(final Spec spec) {
+  public BlobsUtil(final Spec spec, final KZG kzg) {
     this.spec = spec;
+    this.kzg = kzg;
   }
 
   public Bytes generateRawBlobTransactionFromKzgCommitments(
@@ -71,25 +74,21 @@ public class BlobsUtil {
     return blobTransaction;
   }
 
-  public List<KZGCommitment> blobsToKzgCommitments(final UInt64 slot, final List<Blob> blobs) {
-    final MiscHelpersDeneb miscHelpersDeneb = getMiscHelpers(slot);
-    return blobs.stream().map(miscHelpersDeneb::blobToKzgCommitment).toList();
+  public List<KZGCommitment> blobsToKzgCommitments(final List<Blob> blobs) {
+    return blobs.stream().map(Blob::getBytes).map(kzg::blobToKzgCommitment).toList();
+  }
+
+  public KZGProof computeKzgProof(final Blob blob, final KZGCommitment kzgCommitment) {
+    return kzg.computeBlobKzgProof(blob.getBytes(), kzgCommitment);
   }
 
   public List<KZGProof> computeKzgProofs(
-      final UInt64 slot, final List<Blob> blobs, final List<KZGCommitment> kzgCommitments) {
-    final MiscHelpersDeneb miscHelpersDeneb = getMiscHelpers(slot);
-    return Streams.zip(
-            blobs.stream(), kzgCommitments.stream(), miscHelpersDeneb::computeBlobKzgProof)
-        .toList();
+      final List<Blob> blobs, final List<KZGCommitment> kzgCommitments) {
+    return Streams.zip(blobs.stream(), kzgCommitments.stream(), this::computeKzgProof).toList();
   }
 
   public List<Blob> generateBlobs(final UInt64 slot, final int count) {
     return IntStream.range(0, count).mapToObj(__ -> generateBlob(slot)).toList();
-  }
-
-  private MiscHelpersDeneb getMiscHelpers(final UInt64 slot) {
-    return spec.atSlot(slot).miscHelpers().toVersionDeneb().orElseThrow();
   }
 
   private Blob generateBlob(final UInt64 slot) {

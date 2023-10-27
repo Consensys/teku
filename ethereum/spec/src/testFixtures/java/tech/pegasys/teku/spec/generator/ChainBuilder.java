@@ -41,8 +41,10 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.kzg.trusted_setups.TrustedSetupLoader;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
@@ -76,7 +78,6 @@ import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
-import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.signatures.LocalSigner;
@@ -107,7 +108,14 @@ public class ChainBuilder {
       final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     this.spec = spec;
     this.validatorKeys = validatorKeys;
-    this.blobsUtil = new BlobsUtil(spec);
+    final KZG kzg;
+    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
+      kzg = KZG.INSTANCE;
+      TrustedSetupLoader.loadDefaultTrustedSetup(kzg);
+    } else {
+      kzg = KZG.NOOP;
+    }
+    blobsUtil = new BlobsUtil(spec, kzg);
     attestationGenerator = new AttestationGenerator(spec, validatorKeys);
     attesterSlashingGenerator = new AttesterSlashingGenerator(spec, validatorKeys);
     blockProposalTestUtil = new BlockProposalTestUtil(spec);
@@ -626,14 +634,11 @@ public class ChainBuilder {
         options
             .getBlobSidecars()
             .map(
-                blobSidecars1 ->
-                    blobSidecars1.stream().map(BlobSidecar::getBlob).collect(Collectors.toList()))
+                blobSidecars ->
+                    blobSidecars.stream().map(BlobSidecar::getBlob).collect(Collectors.toList()))
             .or(options::getBlobs)
             .orElse(Collections.emptyList());
-    final MiscHelpersDeneb miscHelpers =
-        spec.forMilestone(SpecMilestone.DENEB).miscHelpers().toVersionDeneb().orElseThrow();
-    final List<KZGCommitment> kzgCommitments =
-        blobs.stream().map(miscHelpers::blobToKzgCommitment).collect(Collectors.toList());
+    final List<KZGCommitment> kzgCommitments = blobsUtil.blobsToKzgCommitments(blobs);
     final Optional<List<Bytes>> maybeGeneratedBlobTransactions;
     if (options.getTransactions().isEmpty() && !kzgCommitments.isEmpty()) {
       maybeGeneratedBlobTransactions =
@@ -683,7 +688,7 @@ public class ChainBuilder {
                         UInt64.ZERO,
                         blob,
                         kzgCommitment,
-                        miscHelpers.computeBlobKzgProof(blob, kzgCommitment));
+                        blobsUtil.computeKzgProof(blob, kzgCommitment));
                   })
               .collect(Collectors.toList());
       trackBlobSidecars(nextBlockAndState.getSlotAndBlockRoot(), blobSidecars);
@@ -704,10 +709,7 @@ public class ChainBuilder {
     final List<Blob> randomBlobs =
         blobsUtil.generateBlobs(
             slot, options.getGenerateRandomBlobsCount().orElse(RANDOM_BLOBS_COUNT));
-    final MiscHelpersDeneb miscHelpers =
-        spec.forMilestone(SpecMilestone.DENEB).miscHelpers().toVersionDeneb().orElseThrow();
-    final List<KZGCommitment> kzgCommitments =
-        randomBlobs.stream().map(miscHelpers::blobToKzgCommitment).collect(Collectors.toList());
+    final List<KZGCommitment> kzgCommitments = blobsUtil.blobsToKzgCommitments(randomBlobs);
     final Optional<List<Bytes>> maybeGeneratedBlobTransactions;
     if (options.getTransactions().isEmpty() && !kzgCommitments.isEmpty()) {
       maybeGeneratedBlobTransactions =
@@ -734,6 +736,7 @@ public class ChainBuilder {
                 options.getExecutionPayload(),
                 options.getSyncAggregate(),
                 options.getBlsToExecutionChange(),
+                blobsUtil,
                 randomBlobs,
                 options.getSkipStateTransition()));
 
@@ -757,7 +760,7 @@ public class ChainBuilder {
                         UInt64.ZERO,
                         randomBlobs.get(index),
                         kzgCommitments.get(index),
-                        miscHelpers.computeBlobKzgProof(blob, kzgCommitment));
+                        blobsUtil.computeKzgProof(blob, kzgCommitment));
                   })
               .collect(Collectors.toList());
       trackBlobSidecars(nextBlockAndState.getSlotAndBlockRoot(), blobSidecars);

@@ -67,6 +67,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
@@ -254,6 +255,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ForkChoiceStateProvider forkChoiceStateProvider;
   protected volatile ExecutionLayerChannel executionLayer;
   protected volatile GossipValidationHelper gossipValidationHelper;
+  protected volatile KZG kzg;
   protected volatile BlobSidecarManager blobSidecarManager;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
   protected volatile Optional<DataUnavailableBlockPool> dataUnavailableBlockPool = Optional.empty();
@@ -427,6 +429,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initRewardCalculator();
     initGossipValidationHelper();
     initBlockPoolsAndCaches();
+    initKzg();
     initBlobSidecarPool();
     initBlobSidecarManager();
     initForkChoiceStateProvider();
@@ -470,6 +473,23 @@ public class BeaconChainController extends Service implements BeaconChainControl
     executionLayer = eventChannels.getPublisher(ExecutionLayerChannel.class, beaconAsyncRunner);
   }
 
+  protected void initKzg() {
+    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
+      kzg = KZG.INSTANCE;
+      final String trustedSetupFile =
+          beaconConfig
+              .eth2NetworkConfig()
+              .getTrustedSetup()
+              .orElseThrow(
+                  () ->
+                      new InvalidConfigurationException(
+                          "Trusted setup should be specified when Deneb is enabled"));
+      kzg.loadTrustedSetup(trustedSetupFile);
+    } else {
+      kzg = KZG.NOOP;
+    }
+  }
+
   protected void initBlobSidecarManager() {
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       final FutureItems<SignedBlobSidecar> futureBlobSidecars =
@@ -487,6 +507,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               recentChainData,
               blobSidecarPool,
               blobSidecarValidator,
+              kzg,
               futureBlobSidecars,
               invalidBlobSidecarRoots);
       eventChannels.subscribe(SlotEventsChannel.class, blobSidecarManagerImpl);
@@ -989,6 +1010,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .keyValueStore(keyValueStore)
             .requiredCheckpoint(weakSubjectivityValidator.getWSCheckpoint())
             .specProvider(spec)
+            .kzg(kzg)
             .build();
 
     syncCommitteeMessagePool.subscribeOperationAdded(

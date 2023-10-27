@@ -50,10 +50,6 @@ public interface SpecConfigDeneb extends SpecConfigCapella, NetworkingSpecConfig
 
   int getMaxBlobsPerBlock();
 
-  Optional<String> getTrustedSetupPath();
-
-  boolean isKZGNoop();
-
   int getEpochsStoreBlobs();
 
   @Override

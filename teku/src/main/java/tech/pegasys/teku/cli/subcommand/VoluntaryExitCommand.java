@@ -14,7 +14,6 @@
 package tech.pegasys.teku.cli.subcommand;
 
 import static tech.pegasys.teku.cli.subcommand.RemoteSpecLoader.getSpec;
-import static tech.pegasys.teku.cli.subcommand.ValidatorClientCommand.DENEB_KZG_NOOP;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -291,10 +290,10 @@ public class VoluntaryExitCommand implements Callable<Integer> {
 
     if (network == null) {
       SUB_COMMAND_LOG.display(" - Loading network settings from " + apiClient.getBaseEndpoint());
-      spec = getSpec(apiClient, DENEB_KZG_NOOP);
+      spec = getSpec(apiClient);
     } else {
       SUB_COMMAND_LOG.display(" - Loading local settings for " + network + " network");
-      spec = SpecFactory.create(network, DENEB_KZG_NOOP);
+      spec = SpecFactory.create(network);
     }
 
     validateOrDefaultEpoch();
@@ -387,7 +386,6 @@ public class VoluntaryExitCommand implements Callable<Integer> {
     // we don't use the data path, but keep configuration happy.
     builder.data(config -> config.dataBasePath(Path.of(".")));
     builder.validator(config -> config.validatorKeystoreLockingEnabled(false));
-    builder.eth2NetworkConfig(config -> config.kzgNoop(true));
     return builder.build();
   }
 

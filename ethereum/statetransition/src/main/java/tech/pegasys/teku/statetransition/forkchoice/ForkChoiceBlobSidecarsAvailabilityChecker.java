@@ -33,6 +33,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -46,6 +47,10 @@ import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilit
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTracker;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
+/**
+ * Performs complete data availability check <a
+ * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/fork-choice.md#is_data_available">is_data_available</a>
+ */
 public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAvailabilityChecker {
   private static final Logger LOG = LogManager.getLogger();
 
@@ -53,6 +58,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
   private final BlockBlobSidecarsTracker blockBlobSidecarsTracker;
+  private final KZG kzg;
 
   private final NavigableMap<UInt64, BlobSidecar> validatedBlobSidecars =
       new ConcurrentSkipListMap<>();
@@ -68,11 +74,13 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
       final Spec spec,
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
-      final BlockBlobSidecarsTracker blockBlobSidecarsTracker) {
+      final BlockBlobSidecarsTracker blockBlobSidecarsTracker,
+      final KZG kzg) {
     this.spec = spec;
     this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
     this.blockBlobSidecarsTracker = blockBlobSidecarsTracker;
+    this.kzg = kzg;
     this.waitForTrackerCompletionTimeout =
         calculateCompletionTimeout(spec, blockBlobSidecarsTracker.getSlotAndBlockRoot().getSlot());
   }
@@ -83,11 +91,13 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
       final BlockBlobSidecarsTracker blockBlobSidecarsTracker,
+      final KZG kzg,
       final Duration waitForTrackerCompletionTimeout) {
     this.spec = spec;
     this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
     this.blockBlobSidecarsTracker = blockBlobSidecarsTracker;
+    this.kzg = kzg;
     this.waitForTrackerCompletionTimeout = waitForTrackerCompletionTimeout;
   }
 
@@ -142,7 +152,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
       miscHelpers.validateBlobSidecarsBatchAgainstBlock(
           blobSidecars, block, kzgCommitmentsFromBlockSupplier.get());
 
-      if (!miscHelpers.verifyBlobKzgProofBatch(blobSidecars)) {
+      if (!miscHelpers.verifyBlobKzgProofBatch(kzg, blobSidecars)) {
         return BlobSidecarsAndValidationResult.invalidResult(blobSidecars);
       }
     } catch (final Exception ex) {
@@ -296,9 +306,6 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
   /**
    * Computes the final validation result combining the already validated blobs from
    * `validatedBlobSidecars`
-   *
-   * @param additionalBlobSidecarsAndValidationResult
-   * @return
    */
   private BlobSidecarsAndValidationResult computeFinalValidationResult(
       final BlobSidecarsAndValidationResult additionalBlobSidecarsAndValidationResult) {
@@ -319,12 +326,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
         Collections.unmodifiableList(completeValidatedBlobSidecars));
   }
 
-  /**
-   * make sure that final blob sidecar list is complete
-   *
-   * @param blobSidecarsAndValidationResult
-   * @return
-   */
+  /** Makes sure that final blob sidecar list is complete */
   private BlobSidecarsAndValidationResult performCompletenessValidation(
       final BlobSidecarsAndValidationResult blobSidecarsAndValidationResult) {
 

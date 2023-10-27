@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.kzg.ckzg4844;
+package tech.pegasys.teku.kzg;
 
 import com.google.common.base.Preconditions;
 import ethereum.ckzg4844.CKZG4844JNI;
@@ -27,11 +27,8 @@ import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
-import tech.pegasys.teku.kzg.KZGCommitment;
-import tech.pegasys.teku.kzg.KZGProof;
-import tech.pegasys.teku.kzg.TrustedSetup;
 
-public class CKZG4844Utils {
+class CKZG4844Utils {
 
   private static final int MAX_BYTES_TO_FLATTEN = 100_663_296; // ~100.66 MB or 768 blobs
 

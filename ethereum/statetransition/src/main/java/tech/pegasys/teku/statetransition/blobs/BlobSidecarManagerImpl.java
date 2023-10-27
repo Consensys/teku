@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
@@ -40,6 +41,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
   private final BlobSidecarGossipValidator validator;
+  private final KZG kzg;
   private final BlobSidecarPool blobSidecarPool;
   private final FutureItems<SignedBlobSidecar> futureBlobSidecars;
   private final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots;
@@ -53,12 +55,14 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
       final RecentChainData recentChainData,
       final BlobSidecarPool blobSidecarPool,
       final BlobSidecarGossipValidator validator,
+      final KZG kzg,
       final FutureItems<SignedBlobSidecar> futureBlobSidecars,
       final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots) {
     this.spec = spec;
     this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
     this.validator = validator;
+    this.kzg = kzg;
     this.blobSidecarPool = blobSidecarPool;
     this.futureBlobSidecars = futureBlobSidecars;
     this.invalidBlobSidecarRoots = invalidBlobSidecarRoots;
@@ -130,7 +134,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
         blobSidecarPool.getOrCreateBlockBlobSidecarsTracker(block);
 
     return new ForkChoiceBlobSidecarsAvailabilityChecker(
-        spec, asyncRunner, recentChainData, blockBlobSidecarsTracker);
+        spec, asyncRunner, recentChainData, blockBlobSidecarsTracker, kzg);
   }
 
   @Override
@@ -148,7 +152,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
     blockBlobSidecarsTracker.setBlock(block);
 
     return new ForkChoiceBlobSidecarsAvailabilityChecker(
-            spec, asyncRunner, recentChainData, blockBlobSidecarsTracker)
+            spec, asyncRunner, recentChainData, blockBlobSidecarsTracker, kzg)
         .validateImmediately(blobSidecars);
   }
 
