@@ -13,25 +13,27 @@
 
 package tech.pegasys.teku.reference;
 
-import java.util.Objects;
+import com.google.common.collect.Maps;
+import java.util.Map;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 
 public class KzgRetriever {
 
-  private static final String MAINNET = "mainnet";
-  private static final String MINIMAL = "minimal";
+  private static final Map<String, String> TRUSTED_SETUP_FILES_BY_NETWORK = Maps.newHashMap();
 
   public static KZG getKzgWithLoadedTrustedSetup(final String network) {
-    final String trustedSetupFilename =
-        switch (network) {
-          case MAINNET -> "mainnet-trusted-setup.txt";
-          case MINIMAL -> "minimal-trusted-setup.txt";
-          default -> throw new IllegalArgumentException("Unknown network: " + network);
-        };
     final String trustedSetupFile =
-        Objects.requireNonNull(Eth2NetworkConfiguration.class.getResource(trustedSetupFilename))
-            .toExternalForm();
+        TRUSTED_SETUP_FILES_BY_NETWORK.computeIfAbsent(
+            network,
+            __ ->
+                Eth2NetworkConfiguration.builder(network)
+                    .build()
+                    .getTrustedSetup()
+                    .orElseThrow(
+                        () ->
+                            new IllegalArgumentException(
+                                "No trusted setup configured for " + network)));
     final KZG kzg = KZG.getInstance();
     kzg.loadTrustedSetup(trustedSetupFile);
     return kzg;
