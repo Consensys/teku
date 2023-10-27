@@ -110,6 +110,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         terminalBlockHashInTTDMode.orElse(Bytes32.fromHexStringLenient("0x01"));
     final KZG kzg;
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
+      // trusted setup loading will be handled by the BeaconChainController
       kzg = KZG.getInstance();
     } else {
       kzg = KZG.NOOP;
