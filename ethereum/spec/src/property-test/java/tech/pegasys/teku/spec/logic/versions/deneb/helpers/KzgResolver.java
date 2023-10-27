@@ -51,7 +51,7 @@ class KzgResolver implements ResolveParameterHook {
 
   private static class KzgAutoLoadFree implements Store.CloseOnReset {
 
-    private final KZG kzg = KZG.INSTANCE;
+    private final KZG kzg = KZG.getInstance();
 
     private KzgAutoLoadFree() {
       TrustedSetupLoader.loadTrustedSetupForTests(kzg);

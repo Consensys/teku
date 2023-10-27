@@ -22,7 +22,9 @@ import org.apache.tuweni.bytes.Bytes;
  */
 public interface KZG {
 
-  KZG INSTANCE = CKZG4844.getInstance();
+  static KZG getInstance() {
+    return CKZG4844.getInstance();
+  }
 
   KZG NOOP =
       new KZG() {

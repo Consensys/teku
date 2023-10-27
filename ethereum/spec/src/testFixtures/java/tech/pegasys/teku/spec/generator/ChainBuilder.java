@@ -44,7 +44,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
-import tech.pegasys.teku.kzg.trusted_setups.TrustedSetupLoader;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
@@ -108,14 +107,7 @@ public class ChainBuilder {
       final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     this.spec = spec;
     this.validatorKeys = validatorKeys;
-    final KZG kzg;
-    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
-      kzg = KZG.INSTANCE;
-      TrustedSetupLoader.loadTrustedSetupForTests(kzg);
-    } else {
-      kzg = KZG.NOOP;
-    }
-    blobsUtil = new BlobsUtil(spec, kzg);
+    blobsUtil = new BlobsUtil(spec, KZG.NOOP);
     attestationGenerator = new AttestationGenerator(spec, validatorKeys);
     attesterSlashingGenerator = new AttesterSlashingGenerator(spec, validatorKeys);
     blockProposalTestUtil = new BlockProposalTestUtil(spec);

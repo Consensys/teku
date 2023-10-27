@@ -108,7 +108,13 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     this.transitionEmulationEnabled = enableTransitionEmulation;
     this.terminalBlockHashInTTDMode =
         terminalBlockHashInTTDMode.orElse(Bytes32.fromHexStringLenient("0x01"));
-    this.blobsUtil = new BlobsUtil(spec, KZG.INSTANCE);
+    final KZG kzg;
+    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
+      kzg = KZG.getInstance();
+    } else {
+      kzg = KZG.NOOP;
+    }
+    this.blobsUtil = new BlobsUtil(spec, kzg);
   }
 
   public ExecutionLayerChannelStub(
