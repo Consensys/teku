@@ -30,6 +30,6 @@ public class TrustedSetupLoader {
   }
 
   public static String getTrustedSetupFile(final String resource) {
-    return Resources.getResource(resource).toExternalForm();
+    return Resources.getResource(TrustedSetupLoader.class, resource).toExternalForm();
   }
 }
