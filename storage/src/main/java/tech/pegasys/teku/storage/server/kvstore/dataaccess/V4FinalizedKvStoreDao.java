@@ -296,6 +296,12 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
+    public void addFinalizedBlock(final Bytes32 blockRoot, final SignedBeaconBlock block) {
+      transaction.put(schema.getColumnSlotsByFinalizedRoot(), blockRoot, block.getSlot());
+      transaction.put(schema.getColumnFinalizedBlocksBySlot(), block.getSlot(), block);
+    }
+
+    @Override
     public void addNonCanonicalBlock(final SignedBeaconBlock block) {
       transaction.put(schema.getColumnNonCanonicalBlocksByRoot(), block.getRoot(), block);
     }

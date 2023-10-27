@@ -518,6 +518,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
+    public void addFinalizedBlock(final Bytes32 blockRoot, final SignedBeaconBlock block) {
+      finalizedUpdater.addFinalizedBlock(blockRoot, block);
+    }
+
+    @Override
     public void addNonCanonicalBlock(final SignedBeaconBlock block) {
       finalizedUpdater.addNonCanonicalBlock(block);
     }

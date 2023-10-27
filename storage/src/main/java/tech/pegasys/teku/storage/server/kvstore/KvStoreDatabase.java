@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -241,8 +240,8 @@ public class KvStoreDatabase implements Database {
   @Override
   public Map<Bytes32, SignedBeaconBlock> getHotBlocks(final Set<Bytes32> blockRoots) {
     return blockRoots.stream()
-        .flatMap(root -> dao.getHotBlock(root).stream())
-        .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity()));
+        .flatMap(root -> dao.getHotBlock(root).map(block -> Map.entry(root, block)).stream())
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   @Override
@@ -441,8 +440,9 @@ public class KvStoreDatabase implements Database {
     deletedHotBlockRoots.forEach(updater::deleteHotBlock);
   }
 
-  protected void addFinalizedBlock(final SignedBeaconBlock block, final FinalizedUpdater updater) {
-    updater.addFinalizedBlock(block);
+  protected void addFinalizedBlock(
+      final Bytes32 blockRoot, final SignedBeaconBlock block, final FinalizedUpdater updater) {
+    updater.addFinalizedBlock(blockRoot, block);
   }
 
   protected void storeNonCanonicalBlocks(
@@ -1162,7 +1162,7 @@ public class KvStoreDatabase implements Database {
           final Bytes32 blockRoot = finalizedRoots.get(i);
 
           final Optional<SignedBeaconBlock> maybeBlock = blockProvider.getBlock(blockRoot).join();
-          maybeBlock.ifPresent(block -> addFinalizedBlock(block, updater));
+          maybeBlock.ifPresent(block -> addFinalizedBlock(blockRoot, block, updater));
           // If block is missing and doesn't match the initial anchor, throw
           if (maybeBlock.isEmpty() && initialBlockRoot.filter(r -> r.equals(blockRoot)).isEmpty()) {
             throw new IllegalStateException("Missing finalized block");
@@ -1206,7 +1206,7 @@ public class KvStoreDatabase implements Database {
         while (i < finalizedRoots.size() && (i - start) < TX_BATCH_SIZE) {
           final Bytes32 root = finalizedRoots.get(i);
           final Optional<SignedBeaconBlock> maybeBlock = blockProvider.getBlock(root).join();
-          maybeBlock.ifPresent(block -> addFinalizedBlock(block, updater));
+          maybeBlock.ifPresent(block -> addFinalizedBlock(root, block, updater));
 
           // If block is missing and doesn't match the initial anchor, throw
           if (maybeBlock.isEmpty() && initialBlockRoot.filter(r -> r.equals(root)).isEmpty()) {

@@ -15,10 +15,10 @@ package tech.pegasys.teku.dataproviders.lookup;
 
 import com.google.common.collect.Sets;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -33,17 +33,17 @@ public interface BlockProvider {
 
   BlockProvider NOOP = (roots) -> SafeFuture.completedFuture(Collections.emptyMap());
 
+  /** assumes that maps are blockRoot -> SignedBeaconBlock */
   static BlockProvider fromDynamicMap(Supplier<Map<Bytes32, SignedBeaconBlock>> mapSupplier) {
     return (roots) -> fromMap(mapSupplier.get()).getBlocks(roots);
   }
 
+  /**
+   * assumes that maps are blockRoot -> SignedBeaconBlock. Moreover, it makes sure the returned map
+   * is mutable
+   */
   static BlockProvider fromMap(final Map<Bytes32, SignedBeaconBlock> blockMap) {
-    return (roots) ->
-        SafeFuture.completedFuture(
-            roots.stream()
-                .map(blockMap::get)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity())));
+    return (roots) -> SafeFuture.completedFuture(new HashMap<>(blockMap));
   }
 
   static BlockProvider fromList(final List<SignedBeaconBlock> blockAndStates) {
