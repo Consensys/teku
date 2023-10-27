@@ -53,8 +53,11 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   }
 
   /**
-   * Performs a verifyBlobKzgProofBatch on the given blob sidecars
+   * Performs <a
+   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/polynomial-commitments.md#verify_blob_kzg_proof_batch">verify_blob_kzg_proof_batch</a>
+   * on the given blob sidecars
    *
+   * @param kzg the kzg implementation which will be used for verification
    * @param blobSidecars blob sidecars to verify, can be a partial set
    * @return true if all blob sidecars are valid
    */
