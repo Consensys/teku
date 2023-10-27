@@ -133,10 +133,10 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
   @TestTemplate
   void shouldGetBlindedBeaconBlockAsJson() throws IOException {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX).isLessThanOrEqualTo(CAPELLA);
-    final BeaconBlock beaconBlock = dataStructureUtil.randomBlindedBeaconBlock(ONE);
-    final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
+    final BeaconBlock blindedBeaconBlock = dataStructureUtil.randomBlindedBeaconBlock(ONE);
+    final BLSSignature signature = blindedBeaconBlock.getBlock().getBody().getRandaoReveal();
     when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconBlock)));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blindedBeaconBlock)));
     when(executionLayerBlockProductionManager.getCachedPayloadResult(UInt64.ONE))
         .thenReturn(
             Optional.of(
