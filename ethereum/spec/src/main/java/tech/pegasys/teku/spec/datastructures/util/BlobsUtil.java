@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.util;
 
-import static ethereum.ckzg4844.CKZG4844JNI.BLS_MODULUS;
+import static tech.pegasys.teku.spec.config.SpecConfigDeneb.BLS_MODULUS;
 import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG;
 
 import com.google.common.collect.Streams;
