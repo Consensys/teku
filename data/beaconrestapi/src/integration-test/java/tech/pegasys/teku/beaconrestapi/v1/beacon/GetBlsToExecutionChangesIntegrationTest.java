@@ -31,7 +31,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetBlsToExecutionChanges;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.meta.OperationAndMetadata;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -60,8 +59,7 @@ public class GetBlsToExecutionChangesIntegrationTest
     when(validator.validateForGossip(any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     for (SignedBlsToExecutionChange operation : expectedOperations) {
-      assertThat(blsToExecutionChangePool.addRemote(OperationAndMetadata.create(operation)))
-          .isCompleted();
+      assertThat(blsToExecutionChangePool.addRemote(operation)).isCompleted();
     }
 
     Response response = getResponse(GetBlsToExecutionChanges.ROUTE);
@@ -82,8 +80,7 @@ public class GetBlsToExecutionChangesIntegrationTest
     when(validator.validateForGossip(any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     assertThat(blsToExecutionChangePool.addLocal(localChange)).isCompleted();
-    assertThat(blsToExecutionChangePool.addRemote(OperationAndMetadata.create(remoteChange)))
-        .isCompleted();
+    assertThat(blsToExecutionChangePool.addRemote(remoteChange)).isCompleted();
 
     Response response =
         getResponse(GetBlsToExecutionChanges.ROUTE, Map.of("locally_submitted", "true"));

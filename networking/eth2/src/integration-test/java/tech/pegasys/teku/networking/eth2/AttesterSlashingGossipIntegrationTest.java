@@ -53,8 +53,8 @@ public class AttesterSlashingGossipIntegrationTest {
     // Set up publishers & consumers
     Set<AttesterSlashing> receivedGossip = new HashSet<>();
     final OperationProcessor<AttesterSlashing> operationProcessor =
-        (slashingAndMetadata) -> {
-          receivedGossip.add(slashingAndMetadata.operation());
+        (slashing) -> {
+          receivedGossip.add(slashing);
           return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
         };
 

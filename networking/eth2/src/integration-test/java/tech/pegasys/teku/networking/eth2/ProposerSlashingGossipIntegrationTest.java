@@ -54,8 +54,8 @@ public class ProposerSlashingGossipIntegrationTest {
     // Set up publishers & consumers
     Set<ProposerSlashing> receivedGossip = new HashSet<>();
     final OperationProcessor<ProposerSlashing> operationProcessor =
-        slashingAndMetadata -> {
-          receivedGossip.add(slashingAndMetadata.operation());
+        (slashing) -> {
+          receivedGossip.add(slashing);
           return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
         };
 

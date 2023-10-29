@@ -54,8 +54,8 @@ public class BlsToExecutionChangeGossipIntegrationTest {
 
     Set<SignedBlsToExecutionChange> receivedSignedBlsToExecutionChange = new HashSet<>();
     final OperationProcessor<SignedBlsToExecutionChange> operationProcessor =
-        (msgAndMetadata) -> {
-          receivedSignedBlsToExecutionChange.add(msgAndMetadata.operation());
+        (msg) -> {
+          receivedSignedBlsToExecutionChange.add(msg);
           return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
         };
 
