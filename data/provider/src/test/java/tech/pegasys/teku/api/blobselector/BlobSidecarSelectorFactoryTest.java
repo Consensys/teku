@@ -193,11 +193,14 @@ public class BlobSidecarSelectorFactoryTest {
     when(client.isFinalized(blockWithEmptyCommitments.getSlot())).thenReturn(false);
     when(client.getBlockAtSlotExact(blockWithEmptyCommitments.getSlot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockWithEmptyCommitments)));
-    blobSidecarSelectorFactory
-        .slotSelector(blockWithEmptyCommitments.getSlot())
-        .getBlobSidecars(indices)
-        .get();
+    Optional<List<BlobSidecar>> maybeBlobsidecars =
+        blobSidecarSelectorFactory
+            .slotSelector(blockWithEmptyCommitments.getSlot())
+            .getBlobSidecars(indices)
+            .get();
     verify(client, never()).getBlobSidecars(any(SlotAndBlockRoot.class), anyList());
+    assertThat(maybeBlobsidecars).isPresent();
+    assertThat(maybeBlobsidecars.get()).isEmpty();
   }
 
   @TestTemplate

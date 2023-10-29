@@ -51,7 +51,8 @@ public class AttestationDutyFactory
         slot,
         forkProvider,
         validatorApiChannel,
-        new BatchAttestationSendingStrategy<>(validatorApiChannel::sendSignedAttestations));
+        new BatchAttestationSendingStrategy<>(validatorApiChannel::sendSignedAttestations),
+        validatorDutyMetrics);
   }
 
   @Override
