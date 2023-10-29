@@ -34,7 +34,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
-import tech.pegasys.teku.infrastructure.meta.OperationAndMetadata;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
@@ -163,7 +162,7 @@ public class MappedOperationPoolTest {
     final SignedBlsToExecutionChange secondLocalEntry =
         dataStructureUtil.randomSignedBlsToExecutionChange();
 
-    assertThat(pool.addRemote(OperationAndMetadata.create(remoteEntry))).isCompleted();
+    assertThat(pool.addRemote(remoteEntry)).isCompleted();
     assertThat(pool.addLocal(secondLocalEntry)).isCompleted();
 
     final SszList<SignedBlsToExecutionChange> blockItems = pool.getItemsForBlock(state);
@@ -179,7 +178,7 @@ public class MappedOperationPoolTest {
     final SignedBlsToExecutionChange secondLocalEntry =
         dataStructureUtil.randomSignedBlsToExecutionChange();
 
-    assertThat(pool.addRemote(OperationAndMetadata.create(remoteEntry))).isCompleted();
+    assertThat(pool.addRemote(remoteEntry)).isCompleted();
     assertThat(pool.addLocal(secondLocalEntry)).isCompleted();
 
     assertThat(pool.getLocallySubmitted()).containsExactlyInAnyOrder(localEntry, secondLocalEntry);
@@ -242,7 +241,7 @@ public class MappedOperationPoolTest {
     final SignedBlsToExecutionChange remoteEntry =
         dataStructureUtil.randomSignedBlsToExecutionChange();
 
-    assertThat(pool.addRemote(OperationAndMetadata.create(remoteEntry))).isCompleted();
+    assertThat(pool.addRemote(remoteEntry)).isCompleted();
     verify(validator, times(1)).validateForGossip(any());
     stubTimeProvider.advanceTimeBySeconds(1_000_000);
     asyncRunner.executeDueActions();
@@ -259,7 +258,7 @@ public class MappedOperationPoolTest {
     when(validator.validateForGossip(item)).thenReturn(completedFuture(ACCEPT));
 
     if (isFromNetwork) {
-      assertThat(pool.addRemote(OperationAndMetadata.create(item))).isCompleted();
+      assertThat(pool.addRemote(item)).isCompleted();
     } else {
       assertThat(pool.addLocal(item)).isCompleted();
     }
@@ -276,7 +275,7 @@ public class MappedOperationPoolTest {
     when(validator.validateForGossip(item)).thenReturn(completedFuture(IGNORE));
 
     if (isFromNetwork) {
-      assertThat(pool.addRemote(OperationAndMetadata.create(item))).isCompleted();
+      assertThat(pool.addRemote(item)).isCompleted();
     } else {
       assertThat(pool.addLocal(item)).isCompleted();
     }
@@ -292,14 +291,14 @@ public class MappedOperationPoolTest {
     final SignedBlsToExecutionChange item = dataStructureUtil.randomSignedBlsToExecutionChange();
     when(validator.validateForGossip(item)).thenReturn(completedFuture(ACCEPT));
     // pre-populate cache
-    assertThat(pool.addRemote(OperationAndMetadata.create(item))).isCompleted();
+    assertThat(pool.addRemote(item)).isCompleted();
 
     final Subscription subscription = initialiseSubscriptions();
 
     final SafeFuture<InternalValidationResult> future;
     if (isFromNetwork) {
       // pre-populate cache, then try to add a second time.
-      future = pool.addRemote(OperationAndMetadata.create(item));
+      future = pool.addRemote(item);
     } else {
       future = pool.addLocal(item);
     }

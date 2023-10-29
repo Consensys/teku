@@ -59,7 +59,6 @@ import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
  * might be changed in any version in backward incompatible way
  */
 public class LibP2PNetworkBuilder {
-  public static final boolean DEFAULT_RECORD_MESSAGE_ARRIVAL = false;
 
   public static LibP2PNetworkBuilder create() {
     return new LibP2PNetworkBuilder();
@@ -88,7 +87,6 @@ public class LibP2PNetworkBuilder {
 
   protected List<? extends RpcHandler<?, ?, ?>> rpcHandlers;
   protected PeerManager peerManager;
-  protected boolean recordMessageArrival = DEFAULT_RECORD_MESSAGE_ARRIVAL;
 
   protected LibP2PNetworkBuilder() {}
 
@@ -131,7 +129,6 @@ public class LibP2PNetworkBuilder {
         .gossipTopicFilter(gossipTopicFilter)
         .logWireGossip(config.getWireLogsConfig().isLogWireGossip())
         .timeProvider(timeProvider)
-        .recordArrivalTime(recordMessageArrival)
         .build();
   }
 
@@ -285,11 +282,6 @@ public class LibP2PNetworkBuilder {
 
   public LibP2PNetworkBuilder timeProvider(final TimeProvider timeProvider) {
     this.timeProvider = timeProvider;
-    return this;
-  }
-
-  public LibP2PNetworkBuilder recordMessageArrival(final boolean recordMessageArrival) {
-    this.recordMessageArrival = recordMessageArrival;
     return this;
   }
 }

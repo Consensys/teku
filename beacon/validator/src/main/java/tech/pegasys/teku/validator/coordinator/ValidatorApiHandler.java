@@ -42,7 +42,6 @@ import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.meta.OperationAndMetadata;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
@@ -541,8 +540,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   private SafeFuture<InternalValidationResult> processAttestation(final Attestation attestation) {
     return attestationManager
-        .addAttestation(
-            OperationAndMetadata.create(ValidatableAttestation.fromValidator(spec, attestation)))
+        .addAttestation(ValidatableAttestation.fromValidator(spec, attestation))
         .thenPeek(
             result -> {
               if (!result.isReject()) {
@@ -593,9 +591,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private SafeFuture<InternalValidationResult> processAggregateAndProof(
       final SignedAggregateAndProof aggregateAndProof) {
     return attestationManager
-        .addAggregate(
-            OperationAndMetadata.create(
-                ValidatableAttestation.aggregateFromValidator(spec, aggregateAndProof)))
+        .addAggregate(ValidatableAttestation.aggregateFromValidator(spec, aggregateAndProof))
         .thenPeek(
             result -> {
               if (result.isReject()) {

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers;
 
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.infrastructure.meta.OperationAndMetadata;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationMilestoneValidator;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
@@ -39,11 +38,9 @@ public class SingleAttestationTopicHandler {
 
     final Spec spec = recentChainData.getSpec();
     OperationProcessor<Attestation> convertingProcessor =
-        attMessageAndMetadata ->
+        attMessage ->
             operationProcessor.process(
-                OperationAndMetadata.create(
-                    ValidatableAttestation.fromNetwork(
-                        spec, attMessageAndMetadata.operation(), subnetId)));
+                ValidatableAttestation.fromNetwork(spec, attMessage, subnetId));
 
     return new Eth2TopicHandler<>(
         recentChainData,

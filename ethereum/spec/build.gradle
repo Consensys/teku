@@ -25,7 +25,6 @@ dependencies {
     implementation project(':infrastructure:io')
     implementation project(':infrastructure:kzg')
     implementation project(':infrastructure:logging')
-    implementation project(':infrastructure:meta')
     implementation project(':infrastructure:ssz')
     implementation project(':infrastructure:time')
 

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,15 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.infrastructure.meta;
+package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
-public record OperationAndMetadata<OperationT>(
-    OperationT operation, Optional<UInt64> arrivalTimestamp) {
+@FunctionalInterface
+public interface TimedOperationProcessor<T> {
+  SafeFuture<InternalValidationResult> process(T operation, Optional<UInt64> timestamp);
 
-  public static <OperationT> OperationAndMetadata<OperationT> create(final OperationT operation) {
-    return new OperationAndMetadata<>(operation, Optional.empty());
+  TimedOperationProcessor<?> NOOP =
+      (__, ___) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+
+  @SuppressWarnings("unchecked")
+  static <T> TimedOperationProcessor<T> noop() {
+    return (TimedOperationProcessor<T>) NOOP;
   }
 }

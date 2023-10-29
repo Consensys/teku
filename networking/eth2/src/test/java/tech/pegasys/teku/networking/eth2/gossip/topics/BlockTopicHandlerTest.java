@@ -14,6 +14,8 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -22,7 +24,6 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.meta.OperationAndMetadata;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
@@ -35,7 +36,13 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
   @Override
   protected Eth2TopicHandler<SignedBeaconBlock> createHandler() {
     return new BlockGossipManager(
-            recentChainData, spec, asyncRunner, gossipNetwork, gossipEncoding, forkInfo, processor)
+            recentChainData,
+            spec,
+            asyncRunner,
+            gossipNetwork,
+            gossipEncoding,
+            forkInfo,
+            timedProcessor)
         .getTopicHandler();
   }
 
@@ -45,7 +52,7 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
     final SignedBeaconBlock block = chainBuilder.generateBlockAtSlot(nextSlot).getBlock();
     Bytes serialized = gossipEncoding.encode(block);
 
-    when(processor.process(OperationAndMetadata.create(block)))
+    when(timedProcessor.process(eq(block), any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     final SafeFuture<ValidationResult> result =
@@ -60,7 +67,7 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
     final SignedBeaconBlock block = chainBuilder.generateBlockAtSlot(nextSlot).getBlock();
     Bytes serialized = gossipEncoding.encode(block);
 
-    when(processor.process(OperationAndMetadata.create(block)))
+    when(timedProcessor.process(eq(block), any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
 
     final SafeFuture<ValidationResult> result =
@@ -74,7 +81,7 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
     SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(validSlot);
     Bytes serialized = gossipEncoding.encode(block);
 
-    when(processor.process(OperationAndMetadata.create(block)))
+    when(timedProcessor.process(eq(block), any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
 
     final SafeFuture<ValidationResult> result =

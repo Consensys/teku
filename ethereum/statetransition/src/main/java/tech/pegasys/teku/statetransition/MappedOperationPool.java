@@ -33,7 +33,6 @@ import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
-import tech.pegasys.teku.infrastructure.meta.OperationAndMetadata;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszCollection;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -214,9 +213,7 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
   }
 
   @Override
-  public SafeFuture<InternalValidationResult> addRemote(
-      final OperationAndMetadata<T> operationAndMetadata) {
-    final T item = operationAndMetadata.operation();
+  public SafeFuture<InternalValidationResult> addRemote(final T item) {
     final int validatorIndex = item.getValidatorId();
     if (operations.containsKey(validatorIndex)) {
       return SafeFuture.completedFuture(rejectForDuplicatedMessage(metricType, validatorIndex))

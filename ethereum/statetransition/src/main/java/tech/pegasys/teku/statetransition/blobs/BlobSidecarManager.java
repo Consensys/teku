@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.blobs;
 
 import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.meta.OperationAndMetadata;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
@@ -30,7 +29,7 @@ public interface BlobSidecarManager {
 
         @Override
         public SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
-            final OperationAndMetadata<SignedBlobSidecar> signedBlobSidecar) {
+            final SignedBlobSidecar signedBlobSidecar) {
           return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
         }
 
@@ -60,7 +59,7 @@ public interface BlobSidecarManager {
       };
 
   SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
-      OperationAndMetadata<SignedBlobSidecar> signedBlobSidecar);
+      SignedBlobSidecar signedBlobSidecar);
 
   void prepareForBlockImport(BlobSidecar blobSidecar);
 

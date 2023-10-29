@@ -64,7 +64,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
-import tech.pegasys.teku.infrastructure.meta.OperationAndMetadata;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
@@ -736,7 +735,7 @@ public class BlockManagerTest {
               return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
             });
 
-    assertThat(blockManager.validateAndImportBlock(new OperationAndMetadata<>(block, arrivalTime)))
+    assertThat(blockManager.validateAndImportBlock(block, arrivalTime))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
     verify(eventLogger)
         .lateBlockImport(
@@ -781,7 +780,7 @@ public class BlockManagerTest {
               return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
             });
 
-    assertThat(blockManager.validateAndImportBlock(OperationAndMetadata.create(block)))
+    assertThat(blockManager.validateAndImportBlock(block, Optional.empty()))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
     verifyNoInteractions(eventLogger);
   }
@@ -1149,7 +1148,7 @@ public class BlockManagerTest {
   }
 
   private void assertValidateAndImportBlockRejectWithoutValidation(final SignedBeaconBlock block) {
-    assertThat(blockManager.validateAndImportBlock(OperationAndMetadata.create(block)))
+    assertThat(blockManager.validateAndImportBlock(block, Optional.empty()))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
     verify(blockValidator, never()).validateGossip(eq(block));
     verify(blockValidator, never()).validateBroadcast(any(), any(), any());

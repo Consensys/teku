@@ -14,12 +14,11 @@
 package tech.pegasys.teku.networking.eth2.gossip.topics;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.meta.OperationAndMetadata;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
 @FunctionalInterface
 public interface OperationProcessor<T> {
-  SafeFuture<InternalValidationResult> process(OperationAndMetadata<T> operationAndMetadata);
+  SafeFuture<InternalValidationResult> process(T operation);
 
   OperationProcessor<?> NOOP = (__) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
 

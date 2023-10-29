@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.gossip.subnets;
 
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.meta.OperationAndMetadata;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
@@ -67,11 +66,8 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
   @Override
   protected Eth2TopicHandler<?> createTopicHandler(final int subnetId) {
     final OperationProcessor<SyncCommitteeMessage> convertingProcessor =
-        messageAndMetadata ->
-            processor.process(
-                OperationAndMetadata.create(
-                    ValidatableSyncCommitteeMessage.fromNetwork(
-                        messageAndMetadata.operation(), subnetId)));
+        message ->
+            processor.process(ValidatableSyncCommitteeMessage.fromNetwork(message, subnetId));
     return new Eth2TopicHandler<>(
         recentChainData,
         asyncRunner,

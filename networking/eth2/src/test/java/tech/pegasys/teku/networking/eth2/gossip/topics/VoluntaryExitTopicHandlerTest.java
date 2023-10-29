@@ -23,7 +23,6 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.meta.OperationAndMetadata;
 import tech.pegasys.teku.networking.eth2.gossip.VoluntaryExitGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -60,7 +59,7 @@ public class VoluntaryExitTopicHandlerTest extends AbstractTopicHandlerTest<Sign
   @Test
   public void handleMessage_validExit() {
     final SignedVoluntaryExit exit = exitGenerator.withEpoch(getBestState(), validEpoch, 3);
-    when(processor.process(OperationAndMetadata.create(exit)))
+    when(processor.process(exit))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     Bytes serialized = gossipEncoding.encode(exit);
     final SafeFuture<ValidationResult> result =
@@ -85,7 +84,7 @@ public class VoluntaryExitTopicHandlerTest extends AbstractTopicHandlerTest<Sign
   @Test
   public void handleMessage_ignoredExit() {
     final SignedVoluntaryExit exit = exitGenerator.withEpoch(getBestState(), validEpoch, 3);
-    when(processor.process(OperationAndMetadata.create(exit)))
+    when(processor.process(exit))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
     Bytes serialized = gossipEncoding.encode(exit);
     final SafeFuture<ValidationResult> result =

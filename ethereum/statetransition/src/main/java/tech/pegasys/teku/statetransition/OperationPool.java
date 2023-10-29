@@ -18,7 +18,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.meta.OperationAndMetadata;
 import tech.pegasys.teku.infrastructure.ssz.SszCollection;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -39,7 +38,7 @@ public interface OperationPool<T extends SszData> {
 
   SafeFuture<InternalValidationResult> addLocal(T item);
 
-  SafeFuture<InternalValidationResult> addRemote(OperationAndMetadata<T> item);
+  SafeFuture<InternalValidationResult> addRemote(T item);
 
   void addAll(SszCollection<T> items);
 

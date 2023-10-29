@@ -25,7 +25,6 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
-import tech.pegasys.teku.infrastructure.meta.OperationAndMetadata;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -112,18 +111,15 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
                         InternalValidationResult.reject("Incorrect spec milestone")));
               }
               return asyncRunner.runAsync(
-                  () -> {
-                    final OperationAndMetadata<MessageT> operationAndMetadata =
-                        prepareMessageAndMetadata(deserialized, message.getArrivalTimestamp());
-                    return processor
-                        .process(operationAndMetadata)
-                        .thenApply(
-                            internalValidation -> {
-                              processMessage(internalValidation, message);
-                              return GossipSubValidationUtil.fromInternalValidationResult(
-                                  internalValidation);
-                            });
-                  });
+                  () ->
+                      processor
+                          .process(deserialized)
+                          .thenApply(
+                              internalValidation -> {
+                                processMessage(internalValidation, message);
+                                return GossipSubValidationUtil.fromInternalValidationResult(
+                                    internalValidation);
+                              }));
             })
         .exceptionally(error -> handleMessageProcessingError(message, error));
   }
@@ -183,7 +179,6 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
     return response;
   }
 
-  // FIXME: do we need to pack arrival time twice?
   @Override
   public PreparedGossipMessage prepareMessage(
       final Bytes payload, final Optional<UInt64> arrivalTimestamp) {
@@ -198,11 +193,6 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
 
   protected MessageT deserialize(PreparedGossipMessage message) throws DecodingException {
     return getGossipEncoding().decodeMessage(message, getMessageType());
-  }
-
-  private OperationAndMetadata<MessageT> prepareMessageAndMetadata(
-      final MessageT message, final Optional<UInt64> arrivalTimestamp) {
-    return new OperationAndMetadata<>(message, arrivalTimestamp);
   }
 
   public OperationProcessor<MessageT> getProcessor() {

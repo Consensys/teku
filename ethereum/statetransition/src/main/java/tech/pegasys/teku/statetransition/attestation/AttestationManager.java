@@ -19,7 +19,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.meta.OperationAndMetadata;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -138,19 +137,15 @@ public class AttestationManager extends Service
     }
   }
 
-  public SafeFuture<InternalValidationResult> addAttestation(
-      final OperationAndMetadata<ValidatableAttestation> attestationAndMetadata) {
-    final ValidatableAttestation attestation = attestationAndMetadata.operation();
-    final SafeFuture<InternalValidationResult> validationResult =
+  public SafeFuture<InternalValidationResult> addAttestation(ValidatableAttestation attestation) {
+    SafeFuture<InternalValidationResult> validationResult =
         attestationValidator.validate(attestation);
     processInternallyValidatedAttestation(validationResult, attestation);
     return validationResult;
   }
 
-  public SafeFuture<InternalValidationResult> addAggregate(
-      final OperationAndMetadata<ValidatableAttestation> attestationAndMetadata) {
-    final ValidatableAttestation attestation = attestationAndMetadata.operation();
-    final SafeFuture<InternalValidationResult> validationResult =
+  public SafeFuture<InternalValidationResult> addAggregate(ValidatableAttestation attestation) {
+    SafeFuture<InternalValidationResult> validationResult =
         aggregateValidator.validate(attestation);
     processInternallyValidatedAttestation(validationResult, attestation);
     return validationResult;

@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.p2p.libp2p.gossip;
 
 import static com.google.common.base.Preconditions.checkState;
-import static tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetworkBuilder.DEFAULT_RECORD_MESSAGE_ARRIVAL;
 import static tech.pegasys.teku.networking.p2p.libp2p.config.LibP2PParamsFactory.MAX_SUBSCRIPTIONS_PER_MESSAGE;
 import static tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork.NULL_SEQNO_GENERATOR;
 import static tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork.STRICT_FIELDS_VALIDATOR;
@@ -69,7 +68,6 @@ public class LibP2PGossipNetworkBuilder {
   protected GossipTopicFilter gossipTopicFilter;
   protected boolean logWireGossip;
   protected TimeProvider timeProvider;
-  protected boolean recordArrivalTime = DEFAULT_RECORD_MESSAGE_ARRIVAL;
 
   protected ChannelHandler debugGossipHandler = null;
 
@@ -130,22 +128,17 @@ public class LibP2PGossipNetworkBuilder {
           Preconditions.checkArgument(
               msg.getTopicIDsCount() == 1,
               "Unexpected number of topics for a single message: " + msg.getTopicIDsCount());
-          final Optional<UInt64> arrivalTimestamp;
-          if (recordArrivalTime) {
-            arrivalTimestamp = Optional.of(timeProvider.getTimeInMillis());
-          } else {
-            arrivalTimestamp = Optional.empty();
-          }
+          final UInt64 timestamp = timeProvider.getTimeInMillis();
           final String topic = msg.getTopicIDs(0);
           final Bytes payload = Bytes.wrap(msg.getData().toByteArray());
 
           final PreparedGossipMessage preparedMessage =
               topicHandlers
                   .getHandlerForTopic(topic)
-                  .map(handler -> handler.prepareMessage(payload, arrivalTimestamp))
+                  .map(handler -> handler.prepareMessage(payload, Optional.of(timestamp)))
                   .orElse(
                       defaultMessageFactory.create(
-                          topic, payload, networkingSpecConfig, arrivalTimestamp));
+                          topic, payload, networkingSpecConfig, Optional.empty()));
 
           return new PreparedPubsubMessage(msg, preparedMessage);
         });
@@ -212,11 +205,6 @@ public class LibP2PGossipNetworkBuilder {
 
   public LibP2PGossipNetworkBuilder timeProvider(final TimeProvider timeProvider) {
     this.timeProvider = timeProvider;
-    return this;
-  }
-
-  public LibP2PGossipNetworkBuilder recordArrivalTime(final boolean recordArrivalTime) {
-    this.recordArrivalTime = recordArrivalTime;
     return this;
   }
 }

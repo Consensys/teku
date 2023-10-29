@@ -22,7 +22,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
-import tech.pegasys.teku.infrastructure.meta.OperationAndMetadata;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -149,15 +148,14 @@ public class BlockManager extends Service
 
   @SuppressWarnings("FutureReturnValueIgnored")
   public SafeFuture<InternalValidationResult> validateAndImportBlock(
-      final OperationAndMetadata<SignedBeaconBlock> blockAndMetadata) {
-    final SignedBeaconBlock block = blockAndMetadata.operation();
+      final SignedBeaconBlock block, final Optional<UInt64> arrivalTimestamp) {
 
     final Optional<BlockImportPerformance> blockImportPerformance;
 
     if (blockImportMetrics.isPresent()) {
       final BlockImportPerformance performance =
           new BlockImportPerformance(timeProvider, blockImportMetrics.get());
-      performance.arrival(recentChainData, block.getSlot(), blockAndMetadata.arrivalTimestamp());
+      performance.arrival(recentChainData, block.getSlot(), arrivalTimestamp);
       performance.gossipValidation();
       blockImportPerformance = Optional.of(performance);
     } else {

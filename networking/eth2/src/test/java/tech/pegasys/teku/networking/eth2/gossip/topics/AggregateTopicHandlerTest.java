@@ -21,7 +21,6 @@ import io.libp2p.core.pubsub.ValidationResult;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.meta.OperationAndMetadata;
 import tech.pegasys.teku.networking.eth2.gossip.AggregateGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -41,7 +40,7 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validata
     final ValidatableAttestation aggregate =
         ValidatableAttestation.aggregateFromValidator(
             spec, dataStructureUtil.randomSignedAggregateAndProof(validSlot));
-    when(processor.process(OperationAndMetadata.create(aggregate)))
+    when(processor.process(aggregate))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     final SafeFuture<ValidationResult> result =
@@ -72,7 +71,7 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validata
     final ValidatableAttestation aggregate =
         ValidatableAttestation.aggregateFromValidator(
             spec, dataStructureUtil.randomSignedAggregateAndProof(validSlot));
-    when(processor.process(OperationAndMetadata.create(aggregate)))
+    when(processor.process(aggregate))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
 
     final SafeFuture<ValidationResult> result =
@@ -88,7 +87,7 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validata
     final ValidatableAttestation aggregate =
         ValidatableAttestation.aggregateFromValidator(
             spec, dataStructureUtil.randomSignedAggregateAndProof(validSlot));
-    when(processor.process(OperationAndMetadata.create(aggregate)))
+    when(processor.process(aggregate))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
 
     final SafeFuture<ValidationResult> result =
@@ -104,7 +103,7 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validata
     final ValidatableAttestation aggregate =
         ValidatableAttestation.aggregateFromValidator(
             spec, dataStructureUtil.randomSignedAggregateAndProof(validSlot));
-    when(processor.process(OperationAndMetadata.create(aggregate)))
+    when(processor.process(aggregate))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("Nope")));
 
     final SafeFuture<ValidationResult> result =

@@ -1,3 +1,0 @@
-dependencies {
-  api 'org.apache.tuweni:tuweni-bytes'
-}

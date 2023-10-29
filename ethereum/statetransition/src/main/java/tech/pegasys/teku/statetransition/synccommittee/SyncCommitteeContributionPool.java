@@ -24,7 +24,6 @@ import java.util.TreeMap;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.meta.OperationAndMetadata;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -61,8 +60,8 @@ public class SyncCommitteeContributionPool implements SlotEventsChannel {
   }
 
   public SafeFuture<InternalValidationResult> addRemote(
-      final OperationAndMetadata<SignedContributionAndProof> contributionAndMetadata) {
-    return add(contributionAndMetadata.operation(), true);
+      final SignedContributionAndProof signedContributionAndProof) {
+    return add(signedContributionAndProof, true);
   }
 
   private SafeFuture<InternalValidationResult> add(

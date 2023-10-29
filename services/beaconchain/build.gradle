@@ -3,7 +3,6 @@ dependencies {
   implementation project(':beacon:validator')
   implementation project(':infrastructure:events')
   implementation project(':data:beaconrestapi')
-  implementation project(':infrastructure:meta')
   implementation project(':infrastructure:metrics')
   implementation project(':data:provider')
   implementation project(':ethereum:events')
