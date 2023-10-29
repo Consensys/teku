@@ -60,7 +60,6 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubnetTopic
 import tech.pegasys.teku.networking.eth2.gossip.topics.Eth2GossipTopicFilter;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.ProcessedAttestationSubscriptionProvider;
-import tech.pegasys.teku.networking.eth2.gossip.topics.TimedOperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.VerifiedBlockAttestationsSubscriptionProvider;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerManager;
 import tech.pegasys.teku.networking.eth2.peers.Eth2PeerSelectionStrategy;
@@ -131,7 +130,7 @@ public class Eth2P2PNetworkFactory {
     protected EventChannels eventChannels;
     protected RecentChainData recentChainData;
     protected StorageQueryChannel historicalChainData = new StubStorageQueryChannel();
-    protected TimedOperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
+    protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
     protected OperationProcessor<SignedBlobSidecar> gossipedBlobSidecarProcessor;
     protected OperationProcessor<ValidatableAttestation> gossipedAttestationProcessor;
     protected OperationProcessor<ValidatableAttestation> gossipedAggregateProcessor;
@@ -495,7 +494,7 @@ public class Eth2P2PNetworkFactory {
         verifiedBlockAttestationsSubscriptionProvider = subscribers::subscribe;
       }
       if (gossipedBlockProcessor == null) {
-        gossipedBlockProcessor = TimedOperationProcessor.noop();
+        gossipedBlockProcessor = OperationProcessor.noop();
       }
       if (gossipedBlobSidecarProcessor == null) {
         gossipedBlobSidecarProcessor = OperationProcessor.noop();
@@ -581,7 +580,7 @@ public class Eth2P2PNetworkFactory {
     }
 
     public Eth2P2PNetworkBuilder gossipedBlockProcessor(
-        final TimedOperationProcessor<SignedBeaconBlock> gossipedBlockProcessor) {
+        final OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor) {
       checkNotNull(gossipedBlockProcessor);
       this.gossipedBlockProcessor = gossipedBlockProcessor;
       return this;

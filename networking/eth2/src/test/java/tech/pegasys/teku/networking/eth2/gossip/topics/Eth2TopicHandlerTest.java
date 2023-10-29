@@ -63,7 +63,7 @@ public class Eth2TopicHandlerTest {
             recentChainData,
             spec,
             asyncRunner,
-            (b) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+            (b, __) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes, Optional.empty()));
@@ -78,7 +78,7 @@ public class Eth2TopicHandlerTest {
             recentChainData,
             spec,
             asyncRunner,
-            (b) -> SafeFuture.completedFuture(InternalValidationResult.reject("Nope")));
+            (b, __) -> SafeFuture.completedFuture(InternalValidationResult.reject("Nope")));
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes, Optional.empty()));
@@ -93,7 +93,7 @@ public class Eth2TopicHandlerTest {
             recentChainData,
             spec,
             asyncRunner,
-            (b) -> SafeFuture.completedFuture(InternalValidationResult.IGNORE));
+            (b, __) -> SafeFuture.completedFuture(InternalValidationResult.IGNORE));
 
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(blockBytes, Optional.empty()));
@@ -108,7 +108,7 @@ public class Eth2TopicHandlerTest {
             recentChainData,
             spec,
             asyncRunner,
-            (b) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+            (b, __) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     final Bytes invalidBytes = Bytes.fromHexString("0x0102");
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(invalidBytes, Optional.empty()));
@@ -124,7 +124,7 @@ public class Eth2TopicHandlerTest {
             recentChainData,
             spec,
             asyncRunner,
-            (b) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+            (b, __) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     topicHandler.setDeserializer(
         (b) -> {
           throw new DecodingException("oops");
@@ -144,7 +144,7 @@ public class Eth2TopicHandlerTest {
             recentChainData,
             spec,
             asyncRunner,
-            (b) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+            (b, __) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     topicHandler.setDeserializer(
         (b) -> {
           throw new CompletionException(new DecodingException("oops"));
@@ -164,7 +164,7 @@ public class Eth2TopicHandlerTest {
             recentChainData,
             spec,
             asyncRunner,
-            (b) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+            (b, __) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     topicHandler.setDeserializer(
         (b) -> {
           throw new DecodingException("oops", new RuntimeException("oops"));
@@ -184,7 +184,7 @@ public class Eth2TopicHandlerTest {
             recentChainData,
             spec,
             asyncRunner,
-            (b) -> {
+            (b, __) -> {
               throw new RejectedExecutionException("No more capacity");
             });
 
@@ -202,7 +202,7 @@ public class Eth2TopicHandlerTest {
             recentChainData,
             spec,
             asyncRunner,
-            (b) -> {
+            (b, __) -> {
               throw new CompletionException(new RejectedExecutionException("No more capacity"));
             });
 
@@ -220,7 +220,7 @@ public class Eth2TopicHandlerTest {
             recentChainData,
             spec,
             asyncRunner,
-            (b) -> {
+            (b, __) -> {
               throw new RejectedExecutionException("No more capacity", new NullPointerException());
             });
 
@@ -238,7 +238,7 @@ public class Eth2TopicHandlerTest {
             recentChainData,
             spec,
             asyncRunner,
-            (b) -> {
+            (b, __) -> {
               throw new ServiceCapacityExceededException("No more capacity");
             });
 
@@ -256,7 +256,7 @@ public class Eth2TopicHandlerTest {
             recentChainData,
             spec,
             asyncRunner,
-            (b) -> {
+            (b, __) -> {
               throw new CompletionException(
                   new ServiceCapacityExceededException("No more capacity"));
             });
@@ -275,7 +275,7 @@ public class Eth2TopicHandlerTest {
             recentChainData,
             spec,
             asyncRunner,
-            (b) -> {
+            (b, __) -> {
               throw new NullPointerException();
             });
 

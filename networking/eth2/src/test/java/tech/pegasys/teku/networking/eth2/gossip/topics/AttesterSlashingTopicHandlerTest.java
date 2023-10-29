@@ -40,7 +40,7 @@ public class AttesterSlashingTopicHandlerTest extends AbstractTopicHandlerTest<A
   @Test
   public void handleMessage_validSlashing() {
     final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashingAtSlot(validSlot);
-    when(processor.process(slashing))
+    when(processor.process(slashing, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result =
@@ -63,7 +63,7 @@ public class AttesterSlashingTopicHandlerTest extends AbstractTopicHandlerTest<A
   @Test
   public void handleMessage_ignoredSlashing() {
     final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashingAtSlot(validSlot);
-    when(processor.process(slashing))
+    when(processor.process(slashing, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result =
@@ -75,7 +75,7 @@ public class AttesterSlashingTopicHandlerTest extends AbstractTopicHandlerTest<A
   @Test
   public void handleMessage_rejectedSlashing() {
     final AttesterSlashing slashing = dataStructureUtil.randomAttesterSlashingAtSlot(validSlot);
-    when(processor.process(slashing))
+    when(processor.process(slashing, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("Nope")));
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result =

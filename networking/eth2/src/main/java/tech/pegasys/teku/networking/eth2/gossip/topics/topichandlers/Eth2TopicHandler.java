@@ -113,7 +113,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
               return asyncRunner.runAsync(
                   () ->
                       processor
-                          .process(deserialized)
+                          .process(deserialized, message.getArrivalTimestamp())
                           .thenApply(
                               internalValidation -> {
                                 processMessage(internalValidation, message);

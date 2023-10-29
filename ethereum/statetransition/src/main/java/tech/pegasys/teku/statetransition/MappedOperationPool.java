@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -213,7 +214,8 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
   }
 
   @Override
-  public SafeFuture<InternalValidationResult> addRemote(final T item) {
+  public SafeFuture<InternalValidationResult> addRemote(
+      final T item, final Optional<UInt64> arrivalTimestamp) {
     final int validatorIndex = item.getValidatorId();
     if (operations.containsKey(validatorIndex)) {
       return SafeFuture.completedFuture(rejectForDuplicatedMessage(metricType, validatorIndex))

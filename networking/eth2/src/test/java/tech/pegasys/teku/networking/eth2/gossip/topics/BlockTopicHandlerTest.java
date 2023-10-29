@@ -36,13 +36,7 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
   @Override
   protected Eth2TopicHandler<SignedBeaconBlock> createHandler() {
     return new BlockGossipManager(
-            recentChainData,
-            spec,
-            asyncRunner,
-            gossipNetwork,
-            gossipEncoding,
-            forkInfo,
-            timedProcessor)
+            recentChainData, spec, asyncRunner, gossipNetwork, gossipEncoding, forkInfo, processor)
         .getTopicHandler();
   }
 
@@ -52,7 +46,7 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
     final SignedBeaconBlock block = chainBuilder.generateBlockAtSlot(nextSlot).getBlock();
     Bytes serialized = gossipEncoding.encode(block);
 
-    when(timedProcessor.process(eq(block), any()))
+    when(processor.process(eq(block), any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     final SafeFuture<ValidationResult> result =
@@ -67,7 +61,7 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
     final SignedBeaconBlock block = chainBuilder.generateBlockAtSlot(nextSlot).getBlock();
     Bytes serialized = gossipEncoding.encode(block);
 
-    when(timedProcessor.process(eq(block), any()))
+    when(processor.process(eq(block), any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
 
     final SafeFuture<ValidationResult> result =
@@ -81,7 +75,7 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
     SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(validSlot);
     Bytes serialized = gossipEncoding.encode(block);
 
-    when(timedProcessor.process(eq(block), any()))
+    when(processor.process(eq(block), any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
 
     final SafeFuture<ValidationResult> result =

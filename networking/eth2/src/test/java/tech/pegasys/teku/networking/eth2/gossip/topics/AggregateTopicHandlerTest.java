@@ -40,7 +40,7 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validata
     final ValidatableAttestation aggregate =
         ValidatableAttestation.aggregateFromValidator(
             spec, dataStructureUtil.randomSignedAggregateAndProof(validSlot));
-    when(processor.process(aggregate))
+    when(processor.process(aggregate, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
     final SafeFuture<ValidationResult> result =
@@ -71,7 +71,7 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validata
     final ValidatableAttestation aggregate =
         ValidatableAttestation.aggregateFromValidator(
             spec, dataStructureUtil.randomSignedAggregateAndProof(validSlot));
-    when(processor.process(aggregate))
+    when(processor.process(aggregate, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
 
     final SafeFuture<ValidationResult> result =
@@ -87,7 +87,7 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validata
     final ValidatableAttestation aggregate =
         ValidatableAttestation.aggregateFromValidator(
             spec, dataStructureUtil.randomSignedAggregateAndProof(validSlot));
-    when(processor.process(aggregate))
+    when(processor.process(aggregate, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
 
     final SafeFuture<ValidationResult> result =
@@ -103,7 +103,7 @@ public class AggregateTopicHandlerTest extends AbstractTopicHandlerTest<Validata
     final ValidatableAttestation aggregate =
         ValidatableAttestation.aggregateFromValidator(
             spec, dataStructureUtil.randomSignedAggregateAndProof(validSlot));
-    when(processor.process(aggregate))
+    when(processor.process(aggregate, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("Nope")));
 
     final SafeFuture<ValidationResult> result =

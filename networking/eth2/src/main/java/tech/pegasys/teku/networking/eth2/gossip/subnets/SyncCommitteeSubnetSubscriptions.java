@@ -66,8 +66,9 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
   @Override
   protected Eth2TopicHandler<?> createTopicHandler(final int subnetId) {
     final OperationProcessor<SyncCommitteeMessage> convertingProcessor =
-        message ->
-            processor.process(ValidatableSyncCommitteeMessage.fromNetwork(message, subnetId));
+        (message, arrivalTimestamp) ->
+            processor.process(
+                ValidatableSyncCommitteeMessage.fromNetwork(message, subnetId), arrivalTimestamp);
     return new Eth2TopicHandler<>(
         recentChainData,
         asyncRunner,

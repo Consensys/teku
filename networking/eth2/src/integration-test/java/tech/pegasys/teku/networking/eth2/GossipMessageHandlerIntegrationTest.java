@@ -192,7 +192,7 @@ public class GossipMessageHandlerIntegrationTest {
         b -> {
           b.gossipEncoding(gossipEncoding);
           b.gossipedAttestationProcessor(
-              (attestation) -> {
+              (attestation, __) -> {
                 node2attestations.add(attestation);
                 return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
               });
@@ -242,7 +242,7 @@ public class GossipMessageHandlerIntegrationTest {
         b -> {
           b.gossipEncoding(gossipEncoding);
           b.gossipedAttestationProcessor(
-              (attestation) -> {
+              (attestation, __) -> {
                 node2attestations.add(attestation);
                 return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
               });
@@ -299,7 +299,7 @@ public class GossipMessageHandlerIntegrationTest {
         b -> {
           b.gossipEncoding(gossipEncoding);
           b.gossipedAttestationProcessor(
-              (__) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+              (__, ___) -> SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
           b.processedAttestationSubscriptionProvider(processedAttestationSubscribers::subscribe);
         };
 
@@ -307,7 +307,7 @@ public class GossipMessageHandlerIntegrationTest {
         b -> {
           b.gossipEncoding(gossipEncoding);
           b.gossipedAttestationProcessor(
-              (attestation) -> {
+              (attestation, __) -> {
                 node2attestations.add(attestation);
                 return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
               });

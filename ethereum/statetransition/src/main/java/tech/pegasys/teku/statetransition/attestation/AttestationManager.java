@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.attestation;
 
 import java.util.List;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -137,14 +138,16 @@ public class AttestationManager extends Service
     }
   }
 
-  public SafeFuture<InternalValidationResult> addAttestation(ValidatableAttestation attestation) {
+  public SafeFuture<InternalValidationResult> addAttestation(
+      final ValidatableAttestation attestation, final Optional<UInt64> arrivalTime) {
     SafeFuture<InternalValidationResult> validationResult =
         attestationValidator.validate(attestation);
     processInternallyValidatedAttestation(validationResult, attestation);
     return validationResult;
   }
 
-  public SafeFuture<InternalValidationResult> addAggregate(ValidatableAttestation attestation) {
+  public SafeFuture<InternalValidationResult> addAggregate(
+      final ValidatableAttestation attestation, final Optional<UInt64> arrivalTime) {
     SafeFuture<InternalValidationResult> validationResult =
         aggregateValidator.validate(attestation);
     processInternallyValidatedAttestation(validationResult, attestation);
@@ -153,7 +156,8 @@ public class AttestationManager extends Service
 
   @SuppressWarnings("FutureReturnValueIgnored")
   private void processInternallyValidatedAttestation(
-      SafeFuture<InternalValidationResult> validationResult, ValidatableAttestation attestation) {
+      final SafeFuture<InternalValidationResult> validationResult,
+      final ValidatableAttestation attestation) {
     validationResult.thenAccept(
         internalValidationResult -> {
           if (internalValidationResult.code().equals(ValidationResultCode.ACCEPT)

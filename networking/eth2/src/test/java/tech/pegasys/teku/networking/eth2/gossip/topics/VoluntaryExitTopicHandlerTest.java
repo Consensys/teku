@@ -59,7 +59,7 @@ public class VoluntaryExitTopicHandlerTest extends AbstractTopicHandlerTest<Sign
   @Test
   public void handleMessage_validExit() {
     final SignedVoluntaryExit exit = exitGenerator.withEpoch(getBestState(), validEpoch, 3);
-    when(processor.process(exit))
+    when(processor.process(exit, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     Bytes serialized = gossipEncoding.encode(exit);
     final SafeFuture<ValidationResult> result =
@@ -84,7 +84,7 @@ public class VoluntaryExitTopicHandlerTest extends AbstractTopicHandlerTest<Sign
   @Test
   public void handleMessage_ignoredExit() {
     final SignedVoluntaryExit exit = exitGenerator.withEpoch(getBestState(), validEpoch, 3);
-    when(processor.process(exit))
+    when(processor.process(exit, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
     Bytes serialized = gossipEncoding.encode(exit);
     final SafeFuture<ValidationResult> result =

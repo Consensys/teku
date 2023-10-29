@@ -67,7 +67,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
   public SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
-      final SignedBlobSidecar signedBlobSidecar) {
+      final SignedBlobSidecar signedBlobSidecar, final Optional<UInt64> arrivalTimestamp) {
 
     final Optional<InternalValidationResult> maybeInvalid =
         Optional.ofNullable(
@@ -161,6 +161,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
         .prune(slot)
         .forEach(
             blobSidecar ->
-                validateAndPrepareForBlockImport(blobSidecar).ifExceptionGetsHereRaiseABug());
+                validateAndPrepareForBlockImport(blobSidecar, Optional.empty())
+                    .ifExceptionGetsHereRaiseABug());
   }
 }
