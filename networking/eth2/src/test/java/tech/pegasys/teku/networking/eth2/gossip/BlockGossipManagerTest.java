@@ -50,8 +50,7 @@ public class BlockGossipManagerTest {
       new ForkInfo(spec.fork(UInt64.ZERO), dataStructureUtil.randomBytes32());
 
   @SuppressWarnings("unchecked")
-  private final OperationProcessor<SignedBeaconBlock> blockProcessor =
-      mock(OperationProcessor.class);
+  private final OperationProcessor<SignedBeaconBlock> processor = mock(OperationProcessor.class);
 
   private BlockGossipManager blockGossipManager;
 
@@ -69,7 +68,7 @@ public class BlockGossipManagerTest {
             gossipNetwork,
             gossipEncoding,
             forkInfo,
-            blockProcessor);
+            processor);
     blockGossipManager.subscribe();
   }
 

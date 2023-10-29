@@ -45,15 +45,15 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler {
   private static final Logger LOG = LogManager.getLogger();
+  private final AsyncRunner asyncRunner;
   private final OperationProcessor<MessageT> processor;
   private final GossipEncoding gossipEncoding;
   private final Bytes4 forkDigest;
   private final String topicName;
   private final SszSchema<MessageT> messageType;
   private final Eth2PreparedGossipMessageFactory preparedGossipMessageFactory;
+  private final OperationMilestoneValidator<MessageT> forkValidator;
   private final NetworkingSpecConfig networkingConfig;
-  final AsyncRunner asyncRunner;
-  final OperationMilestoneValidator<MessageT> forkValidator;
 
   public Eth2TopicHandler(
       final RecentChainData recentChainData,
@@ -124,7 +124,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
         .exceptionally(error -> handleMessageProcessingError(message, error));
   }
 
-  void processMessage(
+  private void processMessage(
       final InternalValidationResult internalValidationResult,
       final PreparedGossipMessage message) {
     switch (internalValidationResult.code()) {

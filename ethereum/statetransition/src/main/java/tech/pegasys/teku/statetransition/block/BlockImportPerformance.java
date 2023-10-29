@@ -70,7 +70,7 @@ public class BlockImportPerformance {
     if (arrivalTimestamp.isPresent()) {
       performanceTracker.addEvent(ARRIVAL_EVENT_LABEL, arrivalTimestamp.get());
     } else {
-      LOG.debug("Block arrival time missed for slot {}, setting current", slot);
+      LOG.trace("Block arrival time missed for slot {}, setting current", slot);
       performanceTracker.addEvent(ARRIVAL_EVENT_LABEL);
     }
   }
