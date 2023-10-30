@@ -38,6 +38,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
@@ -107,7 +108,14 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     this.transitionEmulationEnabled = enableTransitionEmulation;
     this.terminalBlockHashInTTDMode =
         terminalBlockHashInTTDMode.orElse(Bytes32.fromHexStringLenient("0x01"));
-    this.blobsUtil = new BlobsUtil(spec, spec.getKzgInstance());
+    final KZG kzg;
+    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
+      // trusted setup loading will be handled by the BeaconChainController
+      kzg = KZG.getInstance();
+    } else {
+      kzg = KZG.NOOP;
+    }
+    this.blobsUtil = new BlobsUtil(spec, kzg);
   }
 
   public ExecutionLayerChannelStub(
