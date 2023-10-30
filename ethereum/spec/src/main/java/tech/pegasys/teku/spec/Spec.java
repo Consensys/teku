@@ -42,6 +42,7 @@ import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfigDeneb;
@@ -982,6 +983,14 @@ public class Spec {
     return getSpecConfigDeneb()
         .map(SpecConfigDeneb::getDenebForkEpoch)
         .map(this::computeStartSlotAtEpoch);
+  }
+
+  // trusted setup loading is handled by the BeaconChainController
+  public KZG getKzgInstance() {
+    if (isMilestoneSupported(DENEB)) {
+      return KZG.getInstance();
+    }
+    return KZG.NOOP;
   }
 
   // Deneb private helpers

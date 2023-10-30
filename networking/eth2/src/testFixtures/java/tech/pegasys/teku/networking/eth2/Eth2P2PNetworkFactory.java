@@ -44,7 +44,6 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
 import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -224,13 +223,12 @@ public class Eth2P2PNetworkFactory {
                 timeProvider,
                 500,
                 50,
-                spec,
-                KZG.NOOP);
+                spec);
 
         List<RpcMethod<?, ?, ?>> rpcMethods =
             eth2PeerManager.getBeaconChainMethods().all().stream()
                 .flatMap(rpcMethodsModifier)
-                .collect(toList());
+                .toList();
 
         this.peerHandler(eth2PeerManager);
 

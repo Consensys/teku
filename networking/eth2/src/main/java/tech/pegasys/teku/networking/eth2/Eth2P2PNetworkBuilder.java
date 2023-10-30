@@ -30,7 +30,6 @@ import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkSubscriptions;
@@ -121,7 +120,6 @@ public class Eth2P2PNetworkBuilder {
   protected OperationProcessor<ValidatableSyncCommitteeMessage>
       gossipedSyncCommitteeMessageProcessor;
   protected StatusMessageFactory statusMessageFactory;
-  protected KZG kzg;
 
   protected Eth2P2PNetworkBuilder() {}
 
@@ -156,8 +154,7 @@ public class Eth2P2PNetworkBuilder {
             timeProvider,
             config.getPeerRateLimit(),
             config.getPeerRequestLimit(),
-            spec,
-            kzg);
+            spec);
     final Collection<RpcMethod<?, ?, ?>> eth2RpcMethods =
         eth2PeerManager.getBeaconChainMethods().all();
     rpcMethods.addAll(eth2RpcMethods);
@@ -564,12 +561,6 @@ public class Eth2P2PNetworkBuilder {
       final StatusMessageFactory statusMessageFactory) {
     checkNotNull(statusMessageFactory);
     this.statusMessageFactory = statusMessageFactory;
-    return this;
-  }
-
-  public Eth2P2PNetworkBuilder kzg(final KZG kzg) {
-    checkNotNull(kzg);
-    this.kzg = kzg;
     return this;
   }
 }
