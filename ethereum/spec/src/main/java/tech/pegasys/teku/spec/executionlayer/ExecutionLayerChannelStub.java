@@ -313,7 +313,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   public SafeFuture<HeaderWithFallbackData> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
-      final SafeFuture<UInt256> localPayloadValueResult) {
+      final SafeFuture<UInt256> payloadValueResult) {
     final UInt64 slot = state.getSlot();
     LOG.info(
         "getPayloadHeader: payloadId: {} slot: {} ... delegating to getPayload ...",
@@ -326,7 +326,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         .thenApply(
             getPayloadResponse -> {
               final ExecutionPayload executionPayload = getPayloadResponse.getExecutionPayload();
-              localPayloadValueResult.complete(getPayloadResponse.getExecutionPayloadValue());
+              payloadValueResult.complete(getPayloadResponse.getExecutionPayloadValue());
               LOG.info(
                   "getPayloadHeader: payloadId: {} slot: {} -> executionPayload blockHash: {}",
                   executionPayloadContext,
