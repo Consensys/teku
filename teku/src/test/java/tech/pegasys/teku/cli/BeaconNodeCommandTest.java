@@ -426,6 +426,15 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     assertThat(specConfigDeneb.getEpochsStoreBlobs()).isEqualTo(12345);
   }
 
+  @Test
+  public void shouldHaveTrustedSetupConfiguredForDeneb() {
+    final String[] args = {XDENEB_FORK_EPOCH_OPTION, "200000"};
+    beaconNodeCommand.parse(args);
+    final Optional<String> trustedSetup =
+        beaconNodeCommand.tekuConfiguration().eth2NetworkConfiguration().getTrustedSetup();
+    assertThat(trustedSetup).isPresent();
+  }
+
   private Path createConfigFile() throws IOException {
     final URL configFile = BeaconNodeCommandTest.class.getResource("/complete_config.yaml");
     final String updatedConfig =
