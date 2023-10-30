@@ -171,7 +171,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     assertThat(headerWithFallbackDataFuture.get()).isEqualTo(expectedResult);
     final SafeFuture<UInt256> executionPayloadValueFuture =
         executionPayloadResult.getExecutionPayloadValueFuture().orElseThrow();
-    assertThat(executionPayloadValueFuture.get()).isEqualTo(executionPayloadValue);
+    assertThat(executionPayloadValueFuture.get()).isEqualTo(builderBid.getValue());
 
     // we expect both builder and local engine have been called
     verifyBuilderCalled(slot, executionPayloadContext);
