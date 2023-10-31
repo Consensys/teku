@@ -16,7 +16,8 @@ package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
 import java.util.List;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGCommitment;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundle;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -73,20 +74,38 @@ public class SignedBlobSidecarsUnblinderDeneb implements SignedBlobSidecarsUnbli
 
   private Blob findBlobByIndex(
       final BlobsBundle blobsBundle, final BlindedBlobSidecar blindedBlobSidecar) {
-    final UInt64 blindedBlobSidecarIndex = blindedBlobSidecar.getIndex();
-    if (blindedBlobSidecarIndex.isGreaterThanOrEqualTo(blobsBundle.getNumberOfBlobs())) {
+    final int index = blindedBlobSidecar.getIndex().intValue();
+    if (index >= blobsBundle.getNumberOfBlobs()) {
       throw new IllegalArgumentException(
           String.format(
-              "There are %d number of blobs in the BlobsBundle but a blinded blob sidecar with index %s has been requested to be unblinded",
-              blobsBundle.getNumberOfBlobs(), blindedBlobSidecarIndex));
+              "There are %d blobs in the BlobsBundle but a blinded blob sidecar with index %s has been requested to be unblinded",
+              blobsBundle.getNumberOfBlobs(), index));
     }
-    final Blob blob = blobsBundle.getBlobs().get(blindedBlobSidecarIndex.intValue());
+
+    final Blob blob = blobsBundle.getBlobs().get(index);
     if (!blob.hashTreeRoot().equals(blindedBlobSidecar.getBlobRoot())) {
       throw new IllegalArgumentException(
           String.format(
               "The blob root in the BlobsBundle %s does not match the blob root in the blinded blob sidecar %s",
               blob.hashTreeRoot(), blindedBlobSidecar));
     }
+
+    final KZGCommitment commitment = blobsBundle.getCommitments().get(index).getKZGCommitment();
+    if (!commitment.equals(blindedBlobSidecar.getKZGCommitment())) {
+      throw new IllegalArgumentException(
+          String.format(
+              "The commitment in the BlobsBundle %s does not match the commitment in the blinded blob sidecar %s",
+              commitment, blindedBlobSidecar));
+    }
+
+    final KZGProof proof = blobsBundle.getProofs().get(index).getKZGProof();
+    if (!proof.equals(blindedBlobSidecar.getKZGProof())) {
+      throw new IllegalArgumentException(
+          String.format(
+              "The proof in the BlobsBundle %s does not match the proof in the blinded blob sidecar %s",
+              proof, blindedBlobSidecar));
+    }
+
     return blob;
   }
 }
