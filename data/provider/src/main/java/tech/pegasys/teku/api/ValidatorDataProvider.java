@@ -128,7 +128,7 @@ public class ValidatorDataProvider {
   }
 
   private SafeFuture<Optional<BlockContainerAndMetaData<BlockContainer>>> lookUpBlockValues(
-      Optional<BlockContainer> maybeBlockContainer) {
+      final Optional<BlockContainer> maybeBlockContainer) {
     return maybeBlockContainer
         .map(
             blockContainer ->
@@ -171,15 +171,21 @@ public class ValidatorDataProvider {
         .thenApply(
             maybeParentState ->
                 maybeParentState.map(
-                    state -> rewardCalculator.getBlockRewardData(blockContainer, state)))
+                    parentState ->
+                        rewardCalculator.getBlockRewardData(blockContainer, parentState)))
         .thenApply(
             blockRewardData ->
                 blockRewardData.map(
                     rewardData -> EthConstants.GWEI_TO_WEI.multiply(rewardData.getTotal())))
         .thenApply(
-            maybeTotalRewards ->
-                maybeTotalRewards.orElseThrow(
-                    () -> new IllegalStateException("Unable to calculate consensus block value")))
+            maybeTotalRewards -> {
+              if (maybeTotalRewards.isEmpty()) {
+                LOG.warn("Unable to calculate block rewards. Setting value to 0");
+                return UInt256.ZERO;
+              } else {
+                return maybeTotalRewards.get();
+              }
+            })
         .exceptionally(
             throwable -> {
               LOG.error("Unable to calculate block value", throwable);

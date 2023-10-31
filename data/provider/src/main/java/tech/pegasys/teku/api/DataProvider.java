@@ -131,7 +131,7 @@ public class DataProvider {
       return this;
     }
 
-    public Builder rewardCalculator(RewardCalculator rewardCalculator) {
+    public Builder rewardCalculator(final RewardCalculator rewardCalculator) {
       this.rewardCalculator = rewardCalculator;
       return this;
     }
