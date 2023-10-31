@@ -66,6 +66,9 @@ public class Eth2NetworkConfiguration {
   // 26 thousand years should be enough
   public static final Integer MAX_EPOCHS_STORE_BLOBS = Integer.MAX_VALUE;
 
+  private static final String MAINNET_TRUSTED_SETUP_FILENAME = "mainnet-trusted-setup.txt";
+  private static final String MINIMAL_TRUSTED_SETUP_FILENAME = "minimal-trusted-setup.txt";
+
   private final Spec spec;
   private final String constants;
   private final Optional<String> initialState;
@@ -622,7 +625,7 @@ public class Eth2NetworkConfiguration {
 
     public Builder applyMinimalNetworkDefaults() {
       return applyTestnetDefaults()
-          .trustedSetupFromClasspath("minimal-trusted-setup.txt")
+          .trustedSetupFromClasspath(MINIMAL_TRUSTED_SETUP_FILENAME)
           .constants(MINIMAL.configName())
           .startupTargetPeerCount(0);
     }
@@ -640,7 +643,7 @@ public class Eth2NetworkConfiguration {
           .constants(MAINNET.configName())
           .initialStateFromClasspath("mainnet-genesis.ssz")
           .genesisStateFromClasspath("mainnet-genesis.ssz")
-          .trustedSetupFromClasspath("mainnet-trusted-setup.txt")
+          .trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME)
           .startupTimeoutSeconds(120)
           .eth1DepositContractDeployBlock(11052984)
           .discoveryBootnodes(
