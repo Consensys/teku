@@ -641,8 +641,7 @@ public class BlockManagerTest {
     assertValidateAndImportBlockRejectWithoutValidation(invalidBlock);
 
     // Gossip invalid block descendants, must reject with no actual validation
-    invalidBlockDescendants.forEach(
-        block -> assertValidateAndImportBlockRejectWithoutValidation(block));
+    invalidBlockDescendants.forEach(this::assertValidateAndImportBlockRejectWithoutValidation);
 
     // If any invalid block is again imported, it should be ignored
     invalidBlockDescendants.forEach(
