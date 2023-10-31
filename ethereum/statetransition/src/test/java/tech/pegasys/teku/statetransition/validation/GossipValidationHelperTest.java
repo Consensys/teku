@@ -16,12 +16,15 @@ package tech.pegasys.teku.statetransition.validation;
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
+import tech.pegasys.teku.bls.BLSKeyGenerator;
+import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -32,8 +35,10 @@ import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
@@ -214,5 +219,55 @@ public class GossipValidationHelperTest {
                 firstSlotAtEpoch1))
         .isCompletedWithValueMatching(
             beaconState -> beaconState.orElseThrow().getSlot().equals(firstSlotAtEpoch1));
+  }
+
+  @TestTemplate
+  void currentFinalizedCheckpointIsAncestorOfBlock_shouldReturnValid() {
+    final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
+    final SignedBlockAndState signedBlockAndState =
+        storageSystem.chainBuilder().generateBlockAtSlot(nextSlot);
+    final SignedBeaconBlock block = signedBlockAndState.getBlock();
+    storageSystem.chainUpdater().setCurrentSlot(nextSlot);
+
+    assertThat(
+            gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(
+                block.getSlot(), block.getParentRoot()))
+        .isTrue();
+  }
+
+  @TestTemplate
+  void
+      currentFinalizedCheckpointIsAncestorOfBlock_shouldReturnInvalidForBlockThatDoesNotDescendFromFinalizedCheckpoint() {
+    List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(4);
+
+    final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    final RecentChainData localRecentChainData = storageSystem.recentChainData();
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec, validatorKeys);
+    final ChainUpdater chainUpdater = new ChainUpdater(localRecentChainData, chainBuilder, spec);
+
+    final GossipValidationHelper gossipValidationHelper =
+        new GossipValidationHelper(spec, localRecentChainData);
+    chainUpdater.initializeGenesis();
+
+    chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(1));
+
+    final ChainBuilder chainBuilderFork = chainBuilder.fork();
+    final ChainUpdater chainUpdaterFork =
+        new ChainUpdater(storageSystem.recentChainData(), chainBuilderFork, spec);
+
+    final UInt64 startSlotOfFinalizedEpoch = spec.computeStartSlotAtEpoch(UInt64.valueOf(4));
+
+    chainUpdaterFork.advanceChain(20);
+
+    chainUpdater.finalizeEpoch(4);
+
+    SignedBlockAndState blockAndState =
+        chainBuilderFork.generateBlockAtSlot(startSlotOfFinalizedEpoch.increment());
+    chainUpdater.saveBlockTime(blockAndState);
+
+    assertThat(
+            gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(
+                blockAndState.getSlot(), blockAndState.getParentRoot()))
+        .isFalse();
   }
 }

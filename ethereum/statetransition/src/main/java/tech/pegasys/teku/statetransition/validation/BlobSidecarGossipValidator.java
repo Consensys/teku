@@ -41,7 +41,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
  * This class supposed to implement gossip validation rules as per <a
  * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/p2p-interface.md#the-gossip-domain-gossipsub">spec</a>
  */
-public class BlobSidecarValidator {
+public class BlobSidecarGossipValidator {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
@@ -49,7 +49,7 @@ public class BlobSidecarValidator {
   private final GossipValidationHelper gossipValidationHelper;
   final Map<Bytes32, BlockImportResult> invalidBlockRoots;
 
-  public static BlobSidecarValidator create(
+  public static BlobSidecarGossipValidator create(
       final Spec spec,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
       final GossipValidationHelper validationHelper) {
@@ -58,7 +58,7 @@ public class BlobSidecarValidator {
 
     final int validInfoSize = VALID_BLOCK_SET_SIZE * maybeMaxBlobsPerBlock.orElse(1);
 
-    return new BlobSidecarValidator(
+    return new BlobSidecarGossipValidator(
         spec, invalidBlockRoots, validationHelper, LimitedSet.createSynchronized(validInfoSize));
   }
 
@@ -67,7 +67,7 @@ public class BlobSidecarValidator {
     return receivedValidBlobSidecarInfoSet;
   }
 
-  private BlobSidecarValidator(
+  private BlobSidecarGossipValidator(
       final Spec spec,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
       final GossipValidationHelper gossipValidationHelper,
@@ -150,6 +150,14 @@ public class BlobSidecarValidator {
       return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
     }
     final UInt64 parentBlockSlot = maybeParentBlockSlot.get();
+
+    /*
+    [REJECT] The current finalized_checkpoint is an ancestor of the sidecar's block's parent -- i.e. `get_checkpoint_block(store, sidecar.block_parent_root, store.finalized_checkpoint.epoch) == store.finalized_checkpoint.root`.
+     */
+    if (!gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(
+        blobSidecar.getSlot(), blobSidecar.getBlockParentRoot())) {
+      return completedFuture(reject("BlobSidecar does not descend from finalized checkpoint"));
+    }
 
     /*
     [REJECT] The sidecar is from a higher slot than the sidecar's block's parent (defined by sidecar.block_parent_root).

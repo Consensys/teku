@@ -38,6 +38,8 @@ import tech.pegasys.teku.validator.client.duties.Duty;
 import tech.pegasys.teku.validator.client.duties.DutyResult;
 import tech.pegasys.teku.validator.client.duties.DutyType;
 import tech.pegasys.teku.validator.client.duties.ProductionResult;
+import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics;
+import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics.Step;
 
 public class AttestationProductionDuty implements Duty {
   private static final Logger LOG = LogManager.getLogger();
@@ -48,18 +50,21 @@ public class AttestationProductionDuty implements Duty {
   private final ForkProvider forkProvider;
   private final ValidatorApiChannel validatorApiChannel;
   private final SendingStrategy<Attestation> sendingStrategy;
+  private final ValidatorDutyMetrics validatorDutyMetrics;
 
   public AttestationProductionDuty(
       final Spec spec,
       final UInt64 slot,
       final ForkProvider forkProvider,
       final ValidatorApiChannel validatorApiChannel,
-      final SendingStrategy<Attestation> sendingStrategy) {
+      final SendingStrategy<Attestation> sendingStrategy,
+      final ValidatorDutyMetrics validatorDutyMetrics) {
     this.spec = spec;
     this.slot = slot;
     this.forkProvider = forkProvider;
     this.validatorApiChannel = validatorApiChannel;
     this.sendingStrategy = sendingStrategy;
+    this.validatorDutyMetrics = validatorDutyMetrics;
   }
 
   @Override
@@ -121,7 +126,10 @@ public class AttestationProductionDuty implements Duty {
       final int committeeIndex,
       final ScheduledCommittee committee) {
     final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture =
-        validatorApiChannel.createAttestationData(slot, committeeIndex);
+        validatorDutyMetrics.record(
+            () -> validatorApiChannel.createAttestationData(slot, committeeIndex),
+            this,
+            ValidatorDutyMetrics.Step.CREATE);
     unsignedAttestationFuture.propagateTo(committee.getAttestationDataFuture());
 
     return committee.getValidators().stream()
@@ -143,8 +151,14 @@ public class AttestationProductionDuty implements Duty {
             maybeUnsignedAttestation ->
                 maybeUnsignedAttestation
                     .map(
-                        attestationData ->
-                            signAttestationForValidator(slot, forkInfo, attestationData, validator))
+                        attestationData -> {
+                          validateAttestationData(slot, attestationData);
+                          return validatorDutyMetrics.record(
+                              () ->
+                                  signAttestationForValidator(forkInfo, attestationData, validator),
+                              this,
+                              Step.SIGN);
+                        })
                     .orElseGet(
                         () ->
                             SafeFuture.completedFuture(
@@ -159,16 +173,19 @@ public class AttestationProductionDuty implements Duty {
         .exceptionally(error -> ProductionResult.failure(validator.getPublicKey(), error));
   }
 
-  private SafeFuture<ProductionResult<Attestation>> signAttestationForValidator(
-      final UInt64 slot,
-      final ForkInfo forkInfo,
-      final AttestationData attestationData,
-      final ValidatorWithCommitteePositionAndIndex validator) {
+  private static void validateAttestationData(
+      final UInt64 slot, final AttestationData attestationData) {
     checkArgument(
         attestationData.getSlot().equals(slot),
         "Unsigned attestation slot (%s) does not match expected slot %s",
         attestationData.getSlot(),
         slot);
+  }
+
+  private SafeFuture<ProductionResult<Attestation>> signAttestationForValidator(
+      final ForkInfo forkInfo,
+      final AttestationData attestationData,
+      final ValidatorWithCommitteePositionAndIndex validator) {
     return validator
         .getSigner()
         .signAttestationData(attestationData, forkInfo)

@@ -143,7 +143,7 @@ import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
-import tech.pegasys.teku.statetransition.validation.BlobSidecarValidator;
+import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
@@ -476,8 +476,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
       final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots =
           LimitedMap.createSynchronized(500);
 
-      final BlobSidecarValidator blobSidecarValidator =
-          BlobSidecarValidator.create(spec, invalidBlockRoots, gossipValidationHelper);
+      final BlobSidecarGossipValidator blobSidecarValidator =
+          BlobSidecarGossipValidator.create(spec, invalidBlockRoots, gossipValidationHelper);
       final BlobSidecarManagerImpl blobSidecarManagerImpl =
           new BlobSidecarManagerImpl(
               spec,
@@ -1072,7 +1072,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot, futureItemsMetric, "blocks");
     final BlockGossipValidator blockGossipValidator =
-        new BlockGossipValidator(spec, recentChainData, gossipValidationHelper);
+        new BlockGossipValidator(spec, gossipValidationHelper);
     final BlockValidator blockValidator = new BlockValidator(blockGossipValidator);
     final Optional<BlockImportMetrics> importMetrics =
         beaconConfig.getMetricsConfig().isBlockPerformanceEnabled()
