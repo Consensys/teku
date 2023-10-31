@@ -588,7 +588,9 @@ public class Eth2NetworkConfiguration {
     }
 
     private Builder resetAndApplyBasicDefaults(final String networkName) {
-      return reset().trustedSetupFromClasspath("mainnet-trusted-setup.txt").constants(networkName);
+      return reset()
+          .trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME)
+          .constants(networkName);
     }
 
     public Builder applyNetworkDefaults(final Eth2Network network) {
