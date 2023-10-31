@@ -86,8 +86,8 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         public SafeFuture<HeaderWithFallbackData> builderGetHeader(
             final ExecutionPayloadContext executionPayloadContext,
             final BeaconState state,
-            final SafeFuture<UInt256> localPayloadValueResult) {
-          localPayloadValueResult.complete(null);
+            final SafeFuture<UInt256> payloadValueResult) {
+          payloadValueResult.complete(null);
           return SafeFuture.completedFuture(null);
         }
       };
@@ -131,10 +131,11 @@ public interface ExecutionLayerChannel extends ChannelInterface {
    *
    * @param executionPayloadContext The execution payload context
    * @param state The beacon state
-   * @param localPayloadValueResult A callback that will contain the local execution value
+   * @param payloadValueResult A callback that will contain the payload execution value (local or
+   *     builder, whichever payload is chosen)
    */
   SafeFuture<HeaderWithFallbackData> builderGetHeader(
       ExecutionPayloadContext executionPayloadContext,
       BeaconState state,
-      SafeFuture<UInt256> localPayloadValueResult);
+      SafeFuture<UInt256> payloadValueResult);
 }

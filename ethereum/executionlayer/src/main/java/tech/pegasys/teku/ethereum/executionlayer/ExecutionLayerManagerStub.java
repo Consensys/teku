@@ -52,8 +52,8 @@ public class ExecutionLayerManagerStub extends ExecutionLayerChannelStub
   public SafeFuture<HeaderWithFallbackData> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
-      final SafeFuture<UInt256> localPayloadValueResult) {
+      final SafeFuture<UInt256> payloadValueResult) {
     LOG.info("Builder Circuit Breaker isEngaged: " + builderCircuitBreaker.isEngaged(state));
-    return super.builderGetHeader(executionPayloadContext, state, localPayloadValueResult);
+    return super.builderGetHeader(executionPayloadContext, state, payloadValueResult);
   }
 }
