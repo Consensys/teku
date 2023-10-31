@@ -166,6 +166,7 @@ public class ValidatorDataProvider {
   }
 
   private SafeFuture<UInt256> retrieveConsensusBlockRewards(final BlockContainer blockContainer) {
+    final String rewardCalculationError = "Unable to calculate block rewards. Setting value to 0";
     return combinedChainDataClient
         .getStateAtSlotExact(blockContainer.getBlock().getSlot().decrement())
         .thenApply(
@@ -180,7 +181,7 @@ public class ValidatorDataProvider {
         .thenApply(
             maybeTotalRewards -> {
               if (maybeTotalRewards.isEmpty()) {
-                LOG.warn("Unable to calculate block rewards. Setting value to 0");
+                LOG.warn(rewardCalculationError);
                 return UInt256.ZERO;
               } else {
                 return maybeTotalRewards.get();
@@ -188,8 +189,8 @@ public class ValidatorDataProvider {
             })
         .exceptionally(
             throwable -> {
-              LOG.error("Unable to calculate block value", throwable);
-              return null;
+              LOG.warn(rewardCalculationError, throwable);
+              return UInt256.ZERO;
             });
   }
 

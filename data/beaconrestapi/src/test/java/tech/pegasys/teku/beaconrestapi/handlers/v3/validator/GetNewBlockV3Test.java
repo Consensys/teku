@@ -29,6 +29,7 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RANDAO_REVE
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
@@ -40,6 +41,7 @@ import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.api.RewardCalculator;
 import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -56,6 +58,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockC
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -255,6 +258,67 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
       assertThat(logCaptor.getWarnLogs())
           .containsExactly("Unable to calculate block rewards. Setting value to 0");
       assertThat(logCaptor.getThrowable(0)).isEmpty();
+    }
+  }
+
+  @TestTemplate
+  void shouldSetConsensusBlockRewardToZeroPreAltair() throws Exception {
+    assumeThat(specMilestone).isLessThan(ALTAIR);
+    final BlockContainer blockContainer;
+    blockContainer = dataStructureUtil.randomBeaconBlock(ONE);
+    final ValidatorApiChannel validatorApiChannelMock = mock(ValidatorApiChannel.class);
+    when(validatorApiChannelMock.createUnsignedBlock(any(), any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainer)));
+    final BeaconState parentStateMock = mock(BeaconState.class);
+    final CombinedChainDataClient combinedChainDataClientMock = mock(CombinedChainDataClient.class);
+    when(combinedChainDataClientMock.getCurrentSlot()).thenReturn(ZERO);
+    when(combinedChainDataClientMock.getStateAtSlotExact(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(parentStateMock)));
+    final ExecutionLayerBlockProductionManager executionLayerBlockProductionManagerMock =
+        mock(ExecutionLayerBlockProductionManager.class);
+    final ExecutionPayloadResult executionPayloadResultMock = mock(ExecutionPayloadResult.class);
+    when(executionPayloadResultMock.getExecutionPayloadValueFuture())
+        .thenReturn(Optional.of(SafeFuture.completedFuture(executionPayloadValue)));
+    when(executionLayerBlockProductionManagerMock.getCachedPayloadResult(any()))
+        .thenReturn(Optional.of(executionPayloadResultMock));
+    final RewardCalculator rewardCalculatorMock = new RewardCalculator(spec);
+
+    validatorDataProvider =
+        new ValidatorDataProvider(
+            spec,
+            validatorApiChannelMock,
+            combinedChainDataClientMock,
+            executionLayerBlockProductionManagerMock,
+            rewardCalculatorMock);
+
+    try (final LogCaptor logCaptor = LogCaptor.forClass(ValidatorDataProvider.class)) {
+      setHandler(new GetNewBlockV3(validatorDataProvider, schemaDefinitionCache));
+      request.setPathParameter(SLOT, "1");
+      request.setQueryParameter(RANDAO_REVEAL, signature.toBytesCompressed().toHexString());
+
+      handler.handleRequest(request);
+      assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+
+      final BlockContainerAndMetaData<BlockContainer> blockContainerAndMetaData =
+          new BlockContainerAndMetaData<>(
+              blockContainer,
+              spec.getGenesisSpec().getMilestone(),
+              executionPayloadValue,
+              UInt256.ZERO);
+
+      assertThat(request.getResponseBody()).isEqualTo(blockContainerAndMetaData);
+      assertThat(request.getHeader(HEADER_CONSENSUS_BLOCK_VALUE))
+          .isEqualTo(UInt256.ZERO.toDecimalString());
+      assertThat(logCaptor.getWarnLogs())
+          .containsExactly("Unable to calculate block rewards. Setting value to 0");
+      assertThat(logCaptor.getThrowable(0)).isPresent();
+      assertThat(logCaptor.getThrowable(0).get().getCause())
+          .isInstanceOf(BadRequestException.class);
+      assertThat(logCaptor.getThrowable(0).get().getCause().getMessage())
+          .isEqualTo(
+              String.format(
+                  "Slot %d is pre altair, and no sync committee information is available",
+                  blockContainer.getSlot().intValue()));
     }
   }
 }
