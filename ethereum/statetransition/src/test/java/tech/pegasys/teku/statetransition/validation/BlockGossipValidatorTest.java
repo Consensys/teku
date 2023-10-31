@@ -71,8 +71,7 @@ public class BlockGossipValidatorTest {
     storageSystem.chainUpdater().initializeGenesis(false);
     recentChainData = storageSystem.recentChainData();
     blockGossipValidator =
-        new BlockGossipValidator(
-            spec, recentChainData, new GossipValidationHelper(spec, recentChainData));
+        new BlockGossipValidator(spec, new GossipValidationHelper(spec, recentChainData));
   }
 
   @TestTemplate
@@ -227,8 +226,7 @@ public class BlockGossipValidatorTest {
     final ChainUpdater chainUpdater = new ChainUpdater(localRecentChainData, chainBuilder, spec);
 
     final BlockGossipValidator blockValidator =
-        new BlockGossipValidator(
-            spec, localRecentChainData, new GossipValidationHelper(spec, localRecentChainData));
+        new BlockGossipValidator(spec, new GossipValidationHelper(spec, localRecentChainData));
     chainUpdater.initializeGenesis();
 
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(1));
@@ -262,8 +260,7 @@ public class BlockGossipValidatorTest {
             false, specContext.getDataStructureUtil().randomExecutionPayloadHeader());
     recentChainData = storageSystem.recentChainData();
     blockGossipValidator =
-        new BlockGossipValidator(
-            spec, recentChainData, new GossipValidationHelper(spec, recentChainData));
+        new BlockGossipValidator(spec, new GossipValidationHelper(spec, recentChainData));
 
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
@@ -285,8 +282,7 @@ public class BlockGossipValidatorTest {
             false, specContext.getDataStructureUtil().randomExecutionPayloadHeader());
     recentChainData = storageSystem.recentChainData();
     blockGossipValidator =
-        new BlockGossipValidator(
-            spec, recentChainData, new GossipValidationHelper(spec, recentChainData));
+        new BlockGossipValidator(spec, new GossipValidationHelper(spec, recentChainData));
 
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);

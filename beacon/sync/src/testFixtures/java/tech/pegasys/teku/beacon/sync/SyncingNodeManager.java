@@ -126,8 +126,7 @@ public class SyncingNodeManager {
             new StubMetricsSystem());
 
     final BlockGossipValidator blockGossipValidator =
-        new BlockGossipValidator(
-            spec, recentChainData, new GossipValidationHelper(spec, recentChainData));
+        new BlockGossipValidator(spec, new GossipValidationHelper(spec, recentChainData));
     final BlockValidator blockValidator = new BlockValidator(blockGossipValidator);
 
     final TimeProvider timeProvider = new SystemTimeProvider();

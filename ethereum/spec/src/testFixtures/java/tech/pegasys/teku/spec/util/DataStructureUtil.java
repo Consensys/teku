@@ -597,6 +597,14 @@ public final class DataStructureUtil {
   }
 
   public BuilderBid randomBuilderBid(final BLSPublicKey builderPublicKey) {
+    // 1 ETH is 10^18 wei, Uint256 max is more than 10^77, so just to avoid
+    // overflows in
+    // computation
+    final UInt256 value = randomUInt256().divide(1000);
+    return randomBuilderBid(builderPublicKey, value);
+  }
+
+  public BuilderBid randomBuilderBid(final BLSPublicKey builderPublicKey, final UInt256 value) {
     final SchemaDefinitionsBellatrix schemaDefinitions =
         getBellatrixSchemaDefinitions(randomSlot());
     return schemaDefinitions
@@ -605,10 +613,7 @@ public final class DataStructureUtil {
             builder -> {
               builder
                   .header(randomExecutionPayloadHeader(spec.getGenesisSpec()))
-                  // 1 ETH is 10^18 wei, Uint256 max is more than 10^77, so just to avoid
-                  // overflows in
-                  // computation
-                  .value(randomUInt256().divide(1000))
+                  .value(value)
                   .publicKey(builderPublicKey);
               schemaDefinitions
                   .toVersionDeneb()
@@ -631,6 +636,12 @@ public final class DataStructureUtil {
                   .toVersionDeneb()
                   .ifPresent(__ -> builder.blindedBlobsBundle(randomBlindedBlobsBundle()));
             });
+  }
+
+  public SignedBuilderBid randomSignedBuilderBid(final BuilderBid builderBid) {
+    return getBellatrixSchemaDefinitions(randomSlot())
+        .getSignedBuilderBidSchema()
+        .create(builderBid, randomSignature());
   }
 
   public SignedBuilderBid randomSignedBuilderBid() {
