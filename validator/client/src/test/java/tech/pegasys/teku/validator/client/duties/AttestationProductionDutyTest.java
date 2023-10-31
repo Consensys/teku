@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -39,6 +40,7 @@ import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -54,6 +56,7 @@ import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
+import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics.Step;
 import tech.pegasys.teku.validator.client.duties.attestations.AttestationProductionDuty;
 import tech.pegasys.teku.validator.client.duties.attestations.BatchAttestationSendingStrategy;
 
@@ -68,6 +71,8 @@ class AttestationProductionDutyTest {
   private final ForkProvider forkProvider = mock(ForkProvider.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private final ValidatorLogger validatorLogger = mock(ValidatorLogger.class);
+  private final ValidatorDutyMetrics validatorDutyMetrics =
+      spy(ValidatorDutyMetrics.create(new StubMetricsSystem()));
 
   private final AttestationProductionDuty duty =
       new AttestationProductionDuty(
@@ -75,7 +80,8 @@ class AttestationProductionDutyTest {
           SLOT,
           forkProvider,
           validatorApiChannel,
-          new BatchAttestationSendingStrategy<>(validatorApiChannel::sendSignedAttestations));
+          new BatchAttestationSendingStrategy<>(validatorApiChannel::sendSignedAttestations),
+          validatorDutyMetrics);
 
   @BeforeEach
   public void setUp() {
@@ -88,7 +94,7 @@ class AttestationProductionDutyTest {
   public void shouldNotProduceAnyAttestationsWhenNoValidatorsAdded() {
     performAndReportDuty();
 
-    verifyNoInteractions(validatorApiChannel, validatorLogger);
+    verifyNoInteractions(validatorApiChannel, validatorLogger, validatorDutyMetrics);
   }
 
   @Test
@@ -109,6 +115,9 @@ class AttestationProductionDutyTest {
             eq(Set.of(validator.getPublicKey().toAbbreviatedString())),
             any(IllegalStateException.class));
     verifyNoMoreInteractions(validatorLogger);
+
+    verify(validatorDutyMetrics)
+        .record(any(), any(AttestationProductionDuty.class), eq(Step.CREATE));
   }
 
   @Test
@@ -154,6 +163,10 @@ class AttestationProductionDutyTest {
             eq(Set.of(validator1.getPublicKey().toAbbreviatedString())),
             any(IllegalStateException.class));
     verifyNoMoreInteractions(validatorLogger);
+
+    verify(validatorDutyMetrics, times(2))
+        .record(any(), any(AttestationProductionDuty.class), eq(Step.CREATE));
+    verify(validatorDutyMetrics).record(any(), any(AttestationProductionDuty.class), eq(Step.SIGN));
   }
 
   @Test
@@ -198,6 +211,10 @@ class AttestationProductionDutyTest {
     verify(validatorLogger)
         .dutyFailed(TYPE, SLOT, Set.of(validator1.getPublicKey().toAbbreviatedString()), failure);
     verifyNoMoreInteractions(validatorLogger);
+
+    verify(validatorDutyMetrics, times(2))
+        .record(any(), any(AttestationProductionDuty.class), eq(Step.CREATE));
+    verify(validatorDutyMetrics).record(any(), any(AttestationProductionDuty.class), eq(Step.SIGN));
   }
 
   @Test
@@ -237,6 +254,11 @@ class AttestationProductionDutyTest {
         .dutyFailed(
             TYPE, SLOT, Set.of(validator1.getPublicKey().toAbbreviatedString()), signingFailure);
     verifyNoMoreInteractions(validatorLogger);
+
+    verify(validatorDutyMetrics)
+        .record(any(), any(AttestationProductionDuty.class), eq(Step.CREATE));
+    verify(validatorDutyMetrics, times(2))
+        .record(any(), any(AttestationProductionDuty.class), eq(Step.SIGN));
   }
 
   @Test
@@ -260,6 +282,10 @@ class AttestationProductionDutyTest {
         .dutyCompleted(
             TYPE, SLOT, 1, Set.of(attestationData.getBeaconBlockRoot()), Optional.empty());
     verifyNoMoreInteractions(validatorLogger);
+
+    verify(validatorDutyMetrics)
+        .record(any(), any(AttestationProductionDuty.class), eq(Step.CREATE));
+    verify(validatorDutyMetrics).record(any(), any(AttestationProductionDuty.class), eq(Step.SIGN));
   }
 
   @Test
@@ -294,6 +320,10 @@ class AttestationProductionDutyTest {
                     error instanceof RestApiReportedException
                         && error.getMessage().equals("Naughty attestation")));
     verifyNoMoreInteractions(validatorLogger);
+
+    verify(validatorDutyMetrics)
+        .record(any(), any(AttestationProductionDuty.class), eq(Step.CREATE));
+    verify(validatorDutyMetrics).record(any(), any(AttestationProductionDuty.class), eq(Step.SIGN));
   }
 
   @SuppressWarnings("unchecked")
@@ -345,6 +375,11 @@ class AttestationProductionDutyTest {
         .dutyCompleted(
             TYPE, SLOT, 3, Set.of(attestationData.getBeaconBlockRoot()), Optional.empty());
     verifyNoMoreInteractions(validatorLogger);
+
+    verify(validatorDutyMetrics)
+        .record(any(), any(AttestationProductionDuty.class), eq(Step.CREATE));
+    verify(validatorDutyMetrics, times(3))
+        .record(any(), any(AttestationProductionDuty.class), eq(Step.SIGN));
   }
 
   @SuppressWarnings("unchecked")
@@ -406,6 +441,11 @@ class AttestationProductionDutyTest {
                 unsignedAttestation2.getBeaconBlockRoot()),
             Optional.empty());
     verifyNoMoreInteractions(validatorLogger);
+
+    verify(validatorDutyMetrics, times(2))
+        .record(any(), any(AttestationProductionDuty.class), eq(Step.CREATE));
+    verify(validatorDutyMetrics, times(3))
+        .record(any(), any(AttestationProductionDuty.class), eq(Step.SIGN));
   }
 
   public Validator createValidator() {

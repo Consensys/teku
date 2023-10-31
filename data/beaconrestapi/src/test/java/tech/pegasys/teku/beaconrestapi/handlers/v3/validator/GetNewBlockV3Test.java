@@ -264,8 +264,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
   @TestTemplate
   void shouldSetConsensusBlockRewardToZeroPreAltair() throws Exception {
     assumeThat(specMilestone).isLessThan(ALTAIR);
-    final BlockContainer blockContainer;
-    blockContainer = dataStructureUtil.randomBeaconBlock(ONE);
+    final BlockContainer blockContainer = dataStructureUtil.randomBeaconBlock(ONE);
     final ValidatorApiChannel validatorApiChannelMock = mock(ValidatorApiChannel.class);
     when(validatorApiChannelMock.createUnsignedBlock(any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainer)));
