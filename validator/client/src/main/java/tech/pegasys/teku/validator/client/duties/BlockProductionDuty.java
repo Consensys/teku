@@ -124,7 +124,7 @@ public class BlockProductionDuty implements Duty {
 
   private SafeFuture<DutyResult> sendBlock(final SignedBlockContainer signedBlockContainer) {
     return validatorApiChannel
-        .sendSignedBlock(signedBlockContainer)
+        .sendSignedBlock(signedBlockContainer, Optional.empty())
         .thenApply(
             result -> {
               if (result.isPublished()) {

@@ -76,7 +76,7 @@ public class PostBlindedBlock extends RestApiEndpoint {
 
     request.respondAsync(
         validatorDataProvider
-            .submitSignedBlindedBlock(requestBody)
+            .submitSignedBlindedBlock(requestBody, Optional.empty())
             .thenApply(
                 blockResult -> {
                   if (blockResult.getRejectionReason().isEmpty()) {

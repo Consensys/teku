@@ -59,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
@@ -306,19 +307,24 @@ public class ValidatorDataProvider {
   }
 
   public SafeFuture<ValidatorBlockResult> submitSignedBlock(
-      final SignedBeaconBlock signedBeaconBlock) {
-    return submitSignedBlock(signedBeaconBlock.asInternalSignedBeaconBlock(spec))
+      final SignedBeaconBlock signedBeaconBlock,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    return submitSignedBlock(
+            signedBeaconBlock.asInternalSignedBeaconBlock(spec), broadcastValidationLevel)
         .thenApply(ValidatorDataProvider::generateSubmitSignedBlockResponse);
   }
 
   public SafeFuture<SendSignedBlockResult> submitSignedBlock(
-      final SignedBlockContainer signedBlockContainer) {
-    return validatorApiChannel.sendSignedBlock(signedBlockContainer);
+      final SignedBlockContainer signedBlockContainer,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    return validatorApiChannel.sendSignedBlock(signedBlockContainer, broadcastValidationLevel);
   }
 
   public SafeFuture<SendSignedBlockResult> submitSignedBlindedBlock(
-      final SignedBlindedBlockContainer signedBlindedBlockContainer) {
-    return validatorApiChannel.sendSignedBlock(signedBlindedBlockContainer);
+      final SignedBlindedBlockContainer signedBlindedBlockContainer,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    return validatorApiChannel.sendSignedBlock(
+        signedBlindedBlockContainer, broadcastValidationLevel);
   }
 
   public SafeFuture<List<SubmitDataError>> submitCommitteeSignatures(

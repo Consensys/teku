@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.validation;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 
 public class BlockValidator {
@@ -86,12 +87,6 @@ public class BlockValidator {
 
           return BroadcastValidationResult.FINAL_EQUIVOCATION_FAILURE;
         });
-  }
-
-  public enum BroadcastValidationLevel {
-    GOSSIP,
-    CONSENSUS,
-    CONSENSUS_EQUIVOCATION
   }
 
   public enum BroadcastValidationResult {

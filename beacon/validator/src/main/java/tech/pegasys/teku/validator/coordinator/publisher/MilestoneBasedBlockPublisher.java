@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.coordinator.publisher;
 import com.google.common.base.Suppliers;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
@@ -23,6 +24,7 @@ import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
@@ -77,9 +79,12 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
 
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
-      final SignedBlockContainer maybeBlindedBlockContainer) {
+      final SignedBlockContainer maybeBlindedBlockContainer,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
     final SpecMilestone blockMilestone =
         spec.atSlot(maybeBlindedBlockContainer.getSlot()).getMilestone();
-    return registeredPublishers.get(blockMilestone).sendSignedBlock(maybeBlindedBlockContainer);
+    return registeredPublishers
+        .get(blockMilestone)
+        .sendSignedBlock(maybeBlindedBlockContainer, broadcastValidationLevel);
   }
 }

@@ -333,10 +333,10 @@ public class ValidatorDataProviderTest {
     final SafeFuture<SendSignedBlockResult> successImportResult =
         completedFuture(SendSignedBlockResult.success(internalSignedBeaconBlock.getRoot()));
 
-    when(validatorApiChannel.sendSignedBlock(any())).thenReturn(successImportResult);
+    when(validatorApiChannel.sendSignedBlock(any(), any())).thenReturn(successImportResult);
 
     final SafeFuture<ValidatorBlockResult> validatorBlockResultSafeFuture =
-        provider.submitSignedBlock(signedBeaconBlock);
+        provider.submitSignedBlock(signedBeaconBlock, Optional.empty());
 
     assertThat(validatorBlockResultSafeFuture.get().getResponseCode()).isEqualTo(200);
   }
@@ -358,10 +358,10 @@ public class ValidatorDataProviderTest {
               final SafeFuture<SendSignedBlockResult> failImportResult =
                   completedFuture(SendSignedBlockResult.notImported(failureReason.name()));
 
-              when(validatorApiChannel.sendSignedBlock(any())).thenReturn(failImportResult);
+              when(validatorApiChannel.sendSignedBlock(any(), any())).thenReturn(failImportResult);
 
               final SafeFuture<ValidatorBlockResult> validatorBlockResultSafeFuture =
-                  provider.submitSignedBlock(signedBeaconBlock);
+                  provider.submitSignedBlock(signedBeaconBlock, Optional.empty());
 
               try {
                 assertThat(validatorBlockResultSafeFuture.get().getResponseCode()).isEqualTo(202);
@@ -385,10 +385,10 @@ public class ValidatorDataProviderTest {
     final SafeFuture<SendSignedBlockResult> failImportResult =
         completedFuture(SendSignedBlockResult.rejected(FailureReason.INTERNAL_ERROR.name()));
 
-    when(validatorApiChannel.sendSignedBlock(any())).thenReturn(failImportResult);
+    when(validatorApiChannel.sendSignedBlock(any(), any())).thenReturn(failImportResult);
 
     final SafeFuture<ValidatorBlockResult> validatorBlockResultSafeFuture =
-        provider.submitSignedBlock(signedBeaconBlock);
+        provider.submitSignedBlock(signedBeaconBlock, Optional.empty());
 
     assertThat(validatorBlockResultSafeFuture.get().getResponseCode()).isEqualTo(500);
   }

@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 
 public interface ValidatorApiChannel extends ChannelInterface {
@@ -141,7 +142,8 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
         @Override
         public SafeFuture<SendSignedBlockResult> sendSignedBlock(
-            SignedBlockContainer blockContainer) {
+            SignedBlockContainer blockContainer,
+            Optional<BroadcastValidationLevel> broadcastValidationLevel) {
           return SafeFuture.completedFuture(SendSignedBlockResult.rejected("NO OP Implementation"));
         }
 
@@ -219,7 +221,9 @@ public interface ValidatorApiChannel extends ChannelInterface {
   SafeFuture<List<SubmitDataError>> sendAggregateAndProofs(
       List<SignedAggregateAndProof> aggregateAndProofs);
 
-  SafeFuture<SendSignedBlockResult> sendSignedBlock(SignedBlockContainer blockContainer);
+  SafeFuture<SendSignedBlockResult> sendSignedBlock(
+      SignedBlockContainer blockContainer,
+      Optional<BroadcastValidationLevel> broadcastValidationLevel);
 
   SafeFuture<List<SubmitDataError>> sendSyncCommitteeMessages(
       List<SyncCommitteeMessage> syncCommitteeMessages);

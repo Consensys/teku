@@ -15,10 +15,12 @@ package tech.pegasys.teku.validator.coordinator.publisher;
 
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
@@ -48,11 +50,14 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
 
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
-      final SignedBlockContainer maybeBlindedBlockContainer) {
+      final SignedBlockContainer maybeBlindedBlockContainer,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
     return blockFactory
         .unblindSignedBlockIfBlinded(maybeBlindedBlockContainer)
         .thenPeek(performanceTracker::saveProducedBlock)
-        .thenCompose(this::gossipAndImportUnblindedSignedBlock)
+        .thenCompose(
+            signedBlockContainer ->
+                gossipAndImportUnblindedSignedBlock(signedBlockContainer, broadcastValidationLevel))
         .thenApply(
             result -> {
               if (result.isSuccessful()) {
@@ -80,5 +85,6 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
   }
 
   abstract SafeFuture<BlockImportResult> gossipAndImportUnblindedSignedBlock(
-      final SignedBlockContainer blockContainer);
+      final SignedBlockContainer blockContainer,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel);
 }

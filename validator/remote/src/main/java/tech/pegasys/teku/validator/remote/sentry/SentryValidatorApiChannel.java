@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
@@ -181,8 +182,11 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
-      final SignedBlockContainer blockContainer) {
-    return blockHandlerChannel.orElse(dutiesProviderChannel).sendSignedBlock(blockContainer);
+      final SignedBlockContainer blockContainer,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+    return blockHandlerChannel
+        .orElse(dutiesProviderChannel)
+        .sendSignedBlock(blockContainer, broadcastValidationLevel);
   }
 
   @Override

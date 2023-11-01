@@ -316,9 +316,9 @@ class SentryValidatorApiChannelTest {
   @Test
   void sendSignedBlockShouldUseBlockHandlerChannelWhenAvailable() {
     final SignedBeaconBlock signedBeaconBlock = mock(SignedBeaconBlock.class);
-    sentryValidatorApiChannel.sendSignedBlock(signedBeaconBlock);
+    sentryValidatorApiChannel.sendSignedBlock(signedBeaconBlock, Optional.empty());
 
-    verify(blockHandlerChannel).sendSignedBlock(eq(signedBeaconBlock));
+    verify(blockHandlerChannel).sendSignedBlock(eq(signedBeaconBlock), eq(Optional.empty()));
     verifyNoInteractions(dutiesProviderChannel);
     verifyNoInteractions(attestationPublisherChannel);
   }
@@ -330,9 +330,9 @@ class SentryValidatorApiChannelTest {
         new SentryValidatorApiChannel(
             dutiesProviderChannel, Optional.empty(), Optional.of(attestationPublisherChannel));
 
-    sentryValidatorApiChannel.sendSignedBlock(signedBeaconBlock);
+    sentryValidatorApiChannel.sendSignedBlock(signedBeaconBlock, Optional.empty());
 
-    verify(dutiesProviderChannel).sendSignedBlock(eq(signedBeaconBlock));
+    verify(dutiesProviderChannel).sendSignedBlock(eq(signedBeaconBlock), Optional.empty());
     verifyNoInteractions(blockHandlerChannel);
     verifyNoInteractions(attestationPublisherChannel);
   }

@@ -464,7 +464,8 @@ class RemoteValidatorApiHandlerTest {
     ArgumentCaptor<SignedBeaconBlock> argumentCaptor =
         ArgumentCaptor.forClass(SignedBeaconBlock.class);
 
-    final SafeFuture<SendSignedBlockResult> result = apiHandler.sendSignedBlock(signedBeaconBlock);
+    final SafeFuture<SendSignedBlockResult> result =
+        apiHandler.sendSignedBlock(signedBeaconBlock, Optional.empty());
     asyncRunner.executeQueuedActions();
 
     verify(typeDefClient).sendSignedBlock(argumentCaptor.capture());

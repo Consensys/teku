@@ -13,10 +13,12 @@
 
 package tech.pegasys.teku.validator.coordinator.publisher;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
@@ -38,7 +40,8 @@ public class BlockPublisherPhase0 extends AbstractBlockPublisher {
 
   @Override
   protected SafeFuture<BlockImportResult> gossipAndImportUnblindedSignedBlock(
-      final SignedBlockContainer blockContainer) {
+      final SignedBlockContainer blockContainer,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
     final SignedBeaconBlock block = blockContainer.getSignedBlock();
     blockGossipChannel.publishBlock(block);
     return blockImportChannel.importBlock(block);

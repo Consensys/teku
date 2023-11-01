@@ -13,11 +13,15 @@
 
 package tech.pegasys.teku.validator.coordinator.publisher;
 
+import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
@@ -26,6 +30,7 @@ import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
 public class BlockPublisherDeneb extends AbstractBlockPublisher {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final BlobSidecarPool blobSidecarPool;
   private final BlockGossipChannel blockGossipChannel;
@@ -47,11 +52,27 @@ public class BlockPublisherDeneb extends AbstractBlockPublisher {
 
   @Override
   protected SafeFuture<BlockImportResult> gossipAndImportUnblindedSignedBlock(
-      final SignedBlockContainer blockContainer) {
+      final SignedBlockContainer blockContainer,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
     gossipAndImportBlobSidecars(blockContainer);
     final SignedBeaconBlock block = blockContainer.getSignedBlock();
-    blockGossipChannel.publishBlock(block);
-    return blockImportChannel.importBlock(block);
+
+    if (broadcastValidationLevel.isPresent()) {
+      final SafeFuture<BlockImportResult> result =
+          blockImportChannel.importBlock(block, broadcastValidationLevel);
+      result
+          .thenAccept(
+              blockImportResult -> {
+                if (blockImportResult.isSuccessful()) {
+                  blockGossipChannel.publishBlock(block);
+                }
+              })
+          .always(() -> LOG.debug("Block publishing initiated"));
+      return result;
+    } else {
+      blockGossipChannel.publishBlock(block);
+      return blockImportChannel.importBlock(block);
+    }
   }
 
   private void gossipAndImportBlobSidecars(final SignedBlockContainer blockContainer) {

@@ -110,7 +110,7 @@ public class PostBlock extends RestApiEndpoint {
 
     request.respondAsync(
         validatorDataProvider
-            .submitSignedBlock(requestBody)
+            .submitSignedBlock(requestBody, Optional.empty())
             .thenApply(
                 result -> {
                   if (result.getRejectionReason().isEmpty()) {

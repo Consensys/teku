@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
@@ -202,9 +203,11 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
-      final SignedBlockContainer blockContainer) {
+      final SignedBlockContainer blockContainer,
+      Optional<BroadcastValidationLevel> broadcastValidationLevel) {
     return countDataRequest(
-        delegate.sendSignedBlock(blockContainer), BeaconNodeRequestLabels.PUBLISH_BLOCK_METHOD);
+        delegate.sendSignedBlock(blockContainer, broadcastValidationLevel),
+        BeaconNodeRequestLabels.PUBLISH_BLOCK_METHOD);
   }
 
   @Override

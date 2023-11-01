@@ -593,7 +593,7 @@ class FailoverValidatorApiHandlerTest {
         DATA_STRUCTURE_UTIL.randomSignedBlindedBeaconBlock(UInt64.ONE);
 
     final ValidatorApiChannelRequest<SendSignedBlockResult> publishingRequest =
-        apiChannel -> apiChannel.sendSignedBlock(blindedSignedBlock);
+        apiChannel -> apiChannel.sendSignedBlock(blindedSignedBlock, Optional.empty());
 
     setupSuccesses(
         publishingRequest,
@@ -604,10 +604,10 @@ class FailoverValidatorApiHandlerTest {
 
     SafeFutureAssert.assertThatSafeFuture(publishingRequest.run(failoverApiHandler)).isCompleted();
 
-    verify(failoverApiChannel1).sendSignedBlock(blindedSignedBlock);
+    verify(failoverApiChannel1).sendSignedBlock(blindedSignedBlock, Optional.empty());
 
-    verify(primaryApiChannel, never()).sendSignedBlock(blindedSignedBlock);
-    verify(failoverApiChannel2, never()).sendSignedBlock(blindedSignedBlock);
+    verify(primaryApiChannel, never()).sendSignedBlock(blindedSignedBlock, Optional.empty());
+    verify(failoverApiChannel2, never()).sendSignedBlock(blindedSignedBlock, Optional.empty());
   }
 
   private <T> void setupSuccesses(
@@ -758,8 +758,8 @@ class FailoverValidatorApiHandlerTest {
             List.of(submitDataError)),
         getArguments(
             "sendSignedBlock",
-            apiChannel -> apiChannel.sendSignedBlock(signedBeaconBlock),
-            apiChannel -> verify(apiChannel).sendSignedBlock(signedBeaconBlock),
+            apiChannel -> apiChannel.sendSignedBlock(signedBeaconBlock, Optional.empty()),
+            apiChannel -> verify(apiChannel).sendSignedBlock(signedBeaconBlock, Optional.empty()),
             BeaconNodeRequestLabels.PUBLISH_BLOCK_METHOD,
             mock(SendSignedBlockResult.class)),
         getArguments(
