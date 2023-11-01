@@ -1,0 +1,95 @@
+{
+  "post" : {
+    "tags" : [ "Beacon", "Validator Required Api" ],
+    "operationId" : "publishBlockV2",
+    "summary" : "Publish a signed block",
+    "description" : "Instructs the beacon node to broadcast a newly signed beacon block to the beacon network, to be included in the beacon chain. A success response (20x) indicates that the block passed gossip validation and was successfully broadcast onto the network. The beacon node is also expected to integrate the block into the state, but may broadcast it before doing so, so as to aid timely delivery of the block. Should the block fail full validation, a separate success response code (202) is used to indicate that the block was successfully broadcast but failed integration. After Deneb, this additionally instructs the beacon node to broadcast all given signed blobs. The broadcast behaviour may be adjusted via the `broadcast_validation` query parameter.",
+    "parameters" : [ {
+      "name" : "broadcast_validation",
+      "in" : "query",
+      "schema" : {
+        "type" : "string",
+        "description" : "Level of validation that must be applied to a block before it is broadcast. Possible values:\n- **`gossip`** (default): lightweight gossip checks only\n- **`consensus`**: full consensus checks, including validation of all signatures and   blocks fields _except_ for the execution payload transactions.\n- **`consensus_and_equivocation`**: the same as `consensus`, with an extra equivocation   check immediately before the block is broadcast. If the block is found to be an\n  equivocation it fails validation.\nIf the block fails the requested level of a validation a 400 status MUST be returned immediately and the block MUST NOT be broadcast to the network.\nIf validation succeeds, the block must still be fully verified before it is incorporated into the state and a 20x status is returned to the caller.",
+        "example" : "consensus_and_equivocation",
+        "format" : "string"
+      }
+    } ],
+    "requestBody" : {
+      "content" : {
+        "application/octet-stream" : {
+          "schema" : {
+            "type" : "string",
+            "format" : "binary"
+          }
+        },
+        "application/json" : {
+          "schema" : {
+            "title" : "SignedBlock",
+            "type" : "object",
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/SignedBeaconBlockPhase0"
+            }, {
+              "$ref" : "#/components/schemas/SignedBeaconBlockAltair"
+            }, {
+              "$ref" : "#/components/schemas/SignedBeaconBlockBellatrix"
+            }, {
+              "$ref" : "#/components/schemas/SignedBeaconBlockCapella"
+            }, {
+              "$ref" : "#/components/schemas/SignedBlockContentsDeneb"
+            } ]
+          }
+        }
+      }
+    },
+    "responses" : {
+      "415" : {
+        "description" : "Unsupported media-type supplied",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "200" : {
+        "description" : "Block has been successfully broadcast, validated and imported.",
+        "content" : { }
+      },
+      "202" : {
+        "description" : "Block has been successfully broadcast, but failed validation and has not been imported.",
+        "content" : { }
+      },
+      "400" : {
+        "description" : "Unable to parse request body.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "503" : {
+        "description" : "Beacon node is currently syncing.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}
