@@ -99,7 +99,7 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
   }
 
   private Optional<ProduceBlockResponse> fallbackToBlockV2(Request request, Response response) {
-    LOG.warn("Block V3 request failed. Retrying with Block V2.");
+    LOG.warn("Block V3 request failed. Retrying with Block V2");
     final String graffitiParam = request.url().queryParameter("graffiti");
     final Optional<Bytes32> graffiti =
         StringUtil.isBlank(graffitiParam)
