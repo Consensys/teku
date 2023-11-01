@@ -101,6 +101,8 @@ public class ValidatorDataProviderTest {
       mock(CombinedChainDataClient.class);
   private final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager =
       mock(ExecutionLayerBlockProductionManager.class);
+
+  private final RewardCalculator rewardCalculator = mock(RewardCalculator.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private ValidatorDataProvider provider;
   private BeaconBlock blockInternal;
@@ -117,7 +119,8 @@ public class ValidatorDataProviderTest {
             spec,
             validatorApiChannel,
             combinedChainDataClient,
-            executionLayerBlockProductionManager);
+            executionLayerBlockProductionManager,
+            rewardCalculator);
     blockInternal = dataStructureUtil.randomBeaconBlock(123);
     specMilestone = specContext.getSpecMilestone();
   }

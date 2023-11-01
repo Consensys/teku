@@ -41,6 +41,7 @@ import okhttp3.Response;
 import org.junit.jupiter.api.AfterEach;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ExecutionClientDataProvider;
+import tech.pegasys.teku.api.RewardCalculator;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -133,6 +134,8 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
 
   protected final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager =
       mock(ExecutionLayerBlockProductionManager.class);
+
+  protected RewardCalculator rewardCalculator = mock(RewardCalculator.class);
 
   protected OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
 
@@ -241,6 +244,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             .syncCommitteeContributionPool(syncCommitteeContributionPool)
             .proposersDataManager(proposersDataManager)
             .executionLayerBlockProductionManager(executionLayerBlockProductionManager)
+            .rewardCalculator(rewardCalculator)
             .build();
 
     beaconRestApi =

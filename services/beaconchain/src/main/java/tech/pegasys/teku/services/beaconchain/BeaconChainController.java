@@ -40,6 +40,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ExecutionClientDataProvider;
+import tech.pegasys.teku.api.RewardCalculator;
 import tech.pegasys.teku.beacon.sync.DefaultSyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.SyncServiceFactory;
@@ -262,7 +263,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile StorageUpdateChannel storageUpdateChannel;
   protected volatile StableSubnetSubscriber stableSubnetSubscriber;
   protected volatile ExecutionLayerBlockProductionManager executionLayerBlockProductionManager;
-
+  protected volatile RewardCalculator rewardCalculator;
   protected UInt64 genesisTimeTracker = ZERO;
   protected BlockManager blockManager;
   protected TimerService timerService;
@@ -423,6 +424,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initKeyValueStore();
     initExecutionLayer();
     initExecutionLayerBlockProductionManager();
+    initRewardCalculator();
     initGossipValidationHelper();
     initBlockPoolsAndCaches();
     initBlobSidecarPool();
@@ -630,6 +632,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .recentChainData(recentChainData)
             .combinedChainDataClient(combinedChainDataClient)
             .executionLayerBlockProductionManager(executionLayerBlockProductionManager)
+            .rewardCalculator(rewardCalculator)
             .p2pNetwork(p2pNetwork)
             .syncService(syncService)
             .validatorApiChannel(
@@ -782,6 +785,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
         ExecutionLayerBlockManagerFactory.create(executionLayer, eventChannels);
   }
 
+  public void initRewardCalculator() {
+    LOG.debug("BeaconChainController.initRewardCalculator()");
+    rewardCalculator = new RewardCalculator(spec);
+  }
+
   public void initValidatorApiHandler() {
     LOG.debug("BeaconChainController.initValidatorApiHandler()");
     final BlockOperationSelectorFactory operationSelector =
@@ -815,7 +823,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
-            new ChainDataProvider(spec, recentChainData, combinedChainDataClient),
+            new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculator),
             dataProvider.getNodeDataProvider(),
             combinedChainDataClient,
             syncService,

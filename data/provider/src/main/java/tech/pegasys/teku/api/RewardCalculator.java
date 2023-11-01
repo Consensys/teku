@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
@@ -61,13 +62,19 @@ public class RewardCalculator {
   private final Spec spec;
   private static final Logger LOG = LogManager.getLogger();
 
-  RewardCalculator(Spec spec) {
+  public RewardCalculator(Spec spec) {
     this.spec = spec;
   }
 
   ObjectAndMetaData<BlockRewardData> getBlockRewardData(
       final BlockAndMetaData blockAndMetaData, final BeaconState parentState) {
-    final BeaconBlock block = blockAndMetaData.getData().getMessage();
+    return blockAndMetaData.map(
+        __ -> getBlockRewardData(blockAndMetaData.getData().getMessage(), parentState));
+  }
+
+  public BlockRewardData getBlockRewardData(
+      final BlockContainer blockContainer, final BeaconState parentState) {
+    final BeaconBlock block = blockContainer.getBlock();
     if (!spec.atSlot(block.getSlot()).getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
       throw new BadRequestException(
           "Slot "
@@ -78,10 +85,8 @@ public class RewardCalculator {
     final BeaconState preState = getPreState(block.getSlot(), parentState);
 
     final SpecVersion specVersion = spec.atSlot(preState.getSlot());
-    return blockAndMetaData.map(
-        __ ->
-            calculateBlockRewards(
-                block, BlockProcessorAltair.required(specVersion.getBlockProcessor()), preState));
+    return calculateBlockRewards(
+        block, BlockProcessorAltair.required(specVersion.getBlockProcessor()), preState);
   }
 
   @VisibleForTesting
