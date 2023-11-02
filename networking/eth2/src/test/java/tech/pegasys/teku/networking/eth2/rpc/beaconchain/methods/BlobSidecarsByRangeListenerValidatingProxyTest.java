@@ -66,10 +66,10 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar1);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get)
-        .hasCauseExactlyInstanceOf(BlobSidecarsByRangeResponseInvalidResponseException.class);
+        .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);
     assertThatThrownBy(result::get)
         .hasMessageContaining(
-            BlobSidecarsByRangeResponseInvalidResponseException.InvalidResponseType
+            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
                 .BLOB_SIDECAR_KZG_VERIFICATION_FAILED
                 .describe());
   }
@@ -89,10 +89,10 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar0);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get)
-        .hasCauseExactlyInstanceOf(BlobSidecarsByRangeResponseInvalidResponseException.class);
+        .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);
     assertThatThrownBy(result::get)
         .hasMessageContaining(
-            BlobSidecarsByRangeResponseInvalidResponseException.InvalidResponseType
+            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
                 .BLOB_SIDECAR_SLOT_NOT_IN_RANGE
                 .describe());
   }
@@ -161,10 +161,10 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar5);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get)
-        .hasCauseExactlyInstanceOf(BlobSidecarsByRangeResponseInvalidResponseException.class);
+        .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);
     assertThatThrownBy(result::get)
         .hasMessageContaining(
-            BlobSidecarsByRangeResponseInvalidResponseException.InvalidResponseType
+            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
                 .BLOB_SIDECAR_SLOT_NOT_IN_RANGE
                 .describe());
   }
@@ -190,10 +190,10 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar2);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get)
-        .hasCauseExactlyInstanceOf(BlobSidecarsByRangeResponseInvalidResponseException.class);
+        .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);
     assertThatThrownBy(result::get)
         .hasMessageContaining(
-            BlobSidecarsByRangeResponseInvalidResponseException.InvalidResponseType
+            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
                 .BLOB_SIDECAR_UNKNOWN_PARENT
                 .describe());
   }
@@ -238,10 +238,10 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar7);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get)
-        .hasCauseExactlyInstanceOf(BlobSidecarsByRangeResponseInvalidResponseException.class);
+        .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);
     assertThatThrownBy(result::get)
         .hasMessageContaining(
-            BlobSidecarsByRangeResponseInvalidResponseException.InvalidResponseType
+            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
                 .BLOB_SIDECAR_UNEXPECTED_INDEX
                 .describe());
   }
@@ -270,10 +270,10 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar3);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get)
-        .hasCauseExactlyInstanceOf(BlobSidecarsByRangeResponseInvalidResponseException.class);
+        .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);
     assertThatThrownBy(result::get)
         .hasMessageContaining(
-            BlobSidecarsByRangeResponseInvalidResponseException.InvalidResponseType
+            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
                 .BLOB_SIDECAR_UNEXPECTED_INDEX
                 .describe());
   }
@@ -293,10 +293,10 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar1);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get)
-        .hasCauseExactlyInstanceOf(BlobSidecarsByRangeResponseInvalidResponseException.class);
+        .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);
     assertThatThrownBy(result::get)
         .hasMessageContaining(
-            BlobSidecarsByRangeResponseInvalidResponseException.InvalidResponseType
+            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
                 .BLOB_SIDECAR_UNEXPECTED_INDEX
                 .describe());
   }
@@ -321,10 +321,10 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar2);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get)
-        .hasCauseExactlyInstanceOf(BlobSidecarsByRangeResponseInvalidResponseException.class);
+        .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);
     assertThatThrownBy(result::get)
         .hasMessageContaining(
-            BlobSidecarsByRangeResponseInvalidResponseException.InvalidResponseType
+            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
                 .BLOB_SIDECAR_UNEXPECTED_INDEX
                 .describe());
   }
@@ -353,10 +353,10 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar4);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get)
-        .hasCauseExactlyInstanceOf(BlobSidecarsByRangeResponseInvalidResponseException.class);
+        .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);
     assertThatThrownBy(result::get)
         .hasMessageContaining(
-            BlobSidecarsByRangeResponseInvalidResponseException.InvalidResponseType
+            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
                 .BLOB_SIDECAR_UNEXPECTED_INDEX
                 .describe());
   }
@@ -381,10 +381,10 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar2);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get)
-        .hasCauseExactlyInstanceOf(BlobSidecarsByRangeResponseInvalidResponseException.class);
+        .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);
     assertThatThrownBy(result::get)
         .hasMessageContaining(
-            BlobSidecarsByRangeResponseInvalidResponseException.InvalidResponseType
+            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
                 .BLOB_SIDECAR_UNEXPECTED_SLOT
                 .describe());
   }

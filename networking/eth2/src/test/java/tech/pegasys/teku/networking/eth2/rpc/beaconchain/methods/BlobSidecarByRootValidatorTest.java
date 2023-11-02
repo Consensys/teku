@@ -1,0 +1,91 @@
+/*
+ * Copyright Consensys Software Inc., 2022
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.Set;
+import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
+import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
+import tech.pegasys.teku.spec.util.DataStructureUtil;
+
+public class BlobSidecarByRootValidatorTest {
+  private final Spec spec = TestSpecFactory.createMainnetDeneb();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private BlobSidecarByRootValidator validator;
+  private final Eth2Peer peer = mock(Eth2Peer.class);
+  private final KZG kzg = mock(KZG.class);
+
+  @BeforeEach
+  void setUp() {
+    when(kzg.verifyBlobKzgProof(any(), any(), any())).thenReturn(true);
+  }
+
+  @Test
+  void blobSidecarIsCorrect() {
+    final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
+    final BlobIdentifier blobIdentifier1 = new BlobIdentifier(blockRoot1, UInt64.ZERO);
+    final BlobSidecar blobSidecar1 =
+        dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
+
+    validator = new BlobSidecarByRootValidator(peer, spec, kzg, Set.of(blobIdentifier1));
+    assertDoesNotThrow(() -> validator.validateBlobSidecar(blobSidecar1));
+  }
+
+  @Test
+  void blobSidecarIdentifierNotRequested() {
+    final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
+    final BlobIdentifier blobIdentifier2 =
+        new BlobIdentifier(dataStructureUtil.randomBytes32(), UInt64.ZERO);
+    final BlobSidecar blobSidecar1 =
+        dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
+
+    validator = new BlobSidecarByRootValidator(peer, spec, kzg, Set.of(blobIdentifier2));
+    assertThatThrownBy(() -> validator.validateBlobSidecar(blobSidecar1))
+        .isExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class)
+        .hasMessageContaining(
+            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
+                .BLOB_SIDECAR_UNEXPECTED_IDENTIFIER
+                .describe());
+  }
+
+  @Test
+  void blobSidecarFailsKzgVerification() {
+    when(kzg.verifyBlobKzgProof(any(), any(), any())).thenReturn(false);
+    final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
+    final BlobIdentifier blobIdentifier1 = new BlobIdentifier(blockRoot1, UInt64.ZERO);
+    final BlobSidecar blobSidecar1 =
+        dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
+
+    validator = new BlobSidecarByRootValidator(peer, spec, kzg, Set.of(blobIdentifier1));
+    assertThatThrownBy(() -> validator.validateBlobSidecar(blobSidecar1))
+        .isExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class)
+        .hasMessageContaining(
+            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
+                .BLOB_SIDECAR_KZG_VERIFICATION_FAILED
+                .describe());
+  }
+}
