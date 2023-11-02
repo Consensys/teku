@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
-import java.util.HashSet;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.kzg.KZG;
@@ -34,7 +33,7 @@ public class BlobSidecarsByRootListenerValidatingProxy extends BlobSidecarsByRoo
       final RpcResponseListener<BlobSidecar> delegate,
       final KZG kzg,
       final List<BlobIdentifier> expectedBlobIdentifiers) {
-    super(peer, spec, kzg, new HashSet<>(expectedBlobIdentifiers));
+    super(peer, spec, kzg, expectedBlobIdentifiers);
     this.delegate = delegate;
   }
 
