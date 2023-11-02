@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
@@ -280,21 +279,23 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     return rpcMethods
         .blobSidecarsByRoot()
         .map(
-            method ->
-                requestOptionalItem(
-                        method,
-                        new BlobSidecarsByRootRequestMessage(
-                            blobSidecarsByRootRequestMessageSchema.get(),
-                            Collections.singletonList(blobIdentifier)))
-                    .thenPeek(
-                        maybeBlobSidecar ->
-                            maybeBlobSidecar.ifPresent(
-                                blobSidecar -> {
-                                  final BlobSidecarsByRootValidator validator =
-                                      new BlobSidecarsByRootValidator(
-                                          this, spec, kzg, Set.of(blobIdentifier));
-                                  validator.validate(blobSidecar);
-                                })))
+            method -> {
+              final List<BlobIdentifier> blobIdentifiers =
+                  Collections.singletonList(blobIdentifier);
+              return requestOptionalItem(
+                      method,
+                      new BlobSidecarsByRootRequestMessage(
+                          blobSidecarsByRootRequestMessageSchema.get(), blobIdentifiers))
+                  .thenPeek(
+                      maybeBlobSidecar ->
+                          maybeBlobSidecar.ifPresent(
+                              blobSidecar -> {
+                                final BlobSidecarsByRootValidator validator =
+                                    new BlobSidecarsByRootValidator(
+                                        this, spec, kzg, blobIdentifiers);
+                                validator.validate(blobSidecar);
+                              }));
+            })
         .orElse(failWithUnsupportedMethodException("BlobSidecarsByRoot"));
   }
 

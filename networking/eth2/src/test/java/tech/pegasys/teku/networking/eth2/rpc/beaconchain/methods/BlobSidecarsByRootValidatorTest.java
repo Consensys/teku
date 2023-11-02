@@ -19,7 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.Set;
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,7 +51,7 @@ public class BlobSidecarsByRootValidatorTest {
     final BlobSidecar blobSidecar1 =
         dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
 
-    validator = new BlobSidecarsByRootValidator(peer, spec, kzg, Set.of(blobIdentifier1));
+    validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier1));
     assertDoesNotThrow(() -> validator.validate(blobSidecar1));
   }
 
@@ -63,7 +63,7 @@ public class BlobSidecarsByRootValidatorTest {
     final BlobSidecar blobSidecar1 =
         dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
 
-    validator = new BlobSidecarsByRootValidator(peer, spec, kzg, Set.of(blobIdentifier2));
+    validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier2));
     assertThatThrownBy(() -> validator.validate(blobSidecar1))
         .isExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class)
         .hasMessageContaining(
@@ -80,7 +80,7 @@ public class BlobSidecarsByRootValidatorTest {
     final BlobSidecar blobSidecar1 =
         dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
 
-    validator = new BlobSidecarsByRootValidator(peer, spec, kzg, Set.of(blobIdentifier1));
+    validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier1));
     assertThatThrownBy(() -> validator.validate(blobSidecar1))
         .isExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class)
         .hasMessageContaining(
