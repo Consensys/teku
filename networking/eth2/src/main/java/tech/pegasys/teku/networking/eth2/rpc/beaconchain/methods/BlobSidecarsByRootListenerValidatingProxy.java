@@ -25,16 +25,16 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifie
 public class BlobSidecarsByRootListenerValidatingProxy extends BlobSidecarsByRootValidator
     implements RpcResponseListener<BlobSidecar> {
 
-  private final RpcResponseListener<BlobSidecar> delegate;
+  private final RpcResponseListener<BlobSidecar> listener;
 
   public BlobSidecarsByRootListenerValidatingProxy(
       final Peer peer,
       final Spec spec,
-      final RpcResponseListener<BlobSidecar> delegate,
+      final RpcResponseListener<BlobSidecar> listener,
       final KZG kzg,
       final List<BlobIdentifier> expectedBlobIdentifiers) {
     super(peer, spec, kzg, expectedBlobIdentifiers);
-    this.delegate = delegate;
+    this.listener = listener;
   }
 
   @Override
@@ -42,7 +42,7 @@ public class BlobSidecarsByRootListenerValidatingProxy extends BlobSidecarsByRoo
     return SafeFuture.of(
         () -> {
           validate(blobSidecar);
-          return delegate.onResponse(blobSidecar);
+          return listener.onResponse(blobSidecar);
         });
   }
 }
