@@ -66,6 +66,9 @@ public class Eth2NetworkConfiguration {
   // 26 thousand years should be enough
   public static final Integer MAX_EPOCHS_STORE_BLOBS = Integer.MAX_VALUE;
 
+  private static final String MAINNET_TRUSTED_SETUP_FILENAME = "mainnet-trusted-setup.txt";
+  private static final String MINIMAL_TRUSTED_SETUP_FILENAME = "minimal-trusted-setup.txt";
+
   private final Spec spec;
   private final String constants;
   private final Optional<String> initialState;
@@ -305,7 +308,6 @@ public class Eth2NetworkConfiguration {
         DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
     private boolean forkChoiceProposerBoostUniquenessEnabled =
         DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED;
-    private Optional<Boolean> kzgNoop = Optional.empty();
 
     public void spec(Spec spec) {
       this.spec = spec;
@@ -343,11 +345,9 @@ public class Eth2NetworkConfiguration {
                   builder.denebBuilder(
                       denebBuilder -> {
                         denebForkEpoch.ifPresent(denebBuilder::denebForkEpoch);
-                        trustedSetup.ifPresent(denebBuilder::trustedSetupPath);
                         if (maybeEpochsStoreBlobs.isPresent()) {
                           denebBuilder.epochsStoreBlobs(maybeEpochsStoreBlobs);
                         }
-                        kzgNoop.ifPresent(denebBuilder::kzgNoop);
                       });
                 });
       }
@@ -580,11 +580,6 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
-    public Builder kzgNoop(final boolean kzgNoop) {
-      this.kzgNoop = Optional.of(kzgNoop);
-      return this;
-    }
-
     public Builder applyNetworkDefaults(final String networkName) {
       Eth2Network.fromStringLenient(networkName)
           .ifPresentOrElse(
@@ -593,7 +588,9 @@ public class Eth2NetworkConfiguration {
     }
 
     private Builder resetAndApplyBasicDefaults(final String networkName) {
-      return reset().trustedSetupFromClasspath("mainnet-trusted-setup.txt").constants(networkName);
+      return reset()
+          .trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME)
+          .constants(networkName);
     }
 
     public Builder applyNetworkDefaults(final Eth2Network network) {
@@ -630,7 +627,7 @@ public class Eth2NetworkConfiguration {
 
     public Builder applyMinimalNetworkDefaults() {
       return applyTestnetDefaults()
-          .trustedSetupFromClasspath("minimal-trusted-setup.txt")
+          .trustedSetupFromClasspath(MINIMAL_TRUSTED_SETUP_FILENAME)
           .constants(MINIMAL.configName())
           .startupTargetPeerCount(0);
     }
@@ -648,7 +645,7 @@ public class Eth2NetworkConfiguration {
           .constants(MAINNET.configName())
           .initialStateFromClasspath("mainnet-genesis.ssz")
           .genesisStateFromClasspath("mainnet-genesis.ssz")
-          .trustedSetupFromClasspath("mainnet-trusted-setup.txt")
+          .trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME)
           .startupTimeoutSeconds(120)
           .eth1DepositContractDeployBlock(11052984)
           .discoveryBootnodes(

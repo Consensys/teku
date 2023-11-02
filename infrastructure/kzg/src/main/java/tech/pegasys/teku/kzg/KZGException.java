@@ -15,10 +15,6 @@ package tech.pegasys.teku.kzg;
 
 public class KZGException extends RuntimeException {
 
-  public KZGException(final String message) {
-    super(message);
-  }
-
   public KZGException(final String message, final Throwable cause) {
     super(message, cause);
   }

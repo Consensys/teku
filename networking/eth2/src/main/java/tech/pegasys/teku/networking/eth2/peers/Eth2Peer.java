@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
@@ -46,7 +47,8 @@ public interface Eth2Peer extends Peer, SyncSource {
       final PeerChainValidator peerChainValidator,
       final RateTracker blockRequestTracker,
       final RateTracker blobSidecarsRequestTracker,
-      final RateTracker requestTracker) {
+      final RateTracker requestTracker,
+      final KZG kzg) {
     return new DefaultEth2Peer(
         spec,
         peer,
@@ -56,7 +58,8 @@ public interface Eth2Peer extends Peer, SyncSource {
         peerChainValidator,
         blockRequestTracker,
         blobSidecarsRequestTracker,
-        requestTracker);
+        requestTracker,
+        kzg);
   }
 
   void updateStatus(PeerStatus status);

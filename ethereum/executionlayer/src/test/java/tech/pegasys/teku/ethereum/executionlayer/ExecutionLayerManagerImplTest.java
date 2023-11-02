@@ -1062,7 +1062,6 @@ class ExecutionLayerManagerImplTest {
             ? new BuilderBidValidatorImpl(eventLogger)
             : BuilderBidValidator.NOOP,
         builderCircuitBreaker,
-        BlobsBundleValidator.NOOP,
         builderBidCompareFactor,
         true);
   }

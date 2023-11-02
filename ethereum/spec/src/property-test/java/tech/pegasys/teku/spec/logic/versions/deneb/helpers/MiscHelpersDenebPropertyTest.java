@@ -20,7 +20,11 @@ import java.util.Objects;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.From;
 import net.jqwik.api.Property;
+import net.jqwik.api.lifecycle.AddLifecycleHook;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
+import tech.pegasys.teku.kzg.KZGException;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -30,24 +34,42 @@ import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.Beaco
 import tech.pegasys.teku.spec.propertytest.suppliers.type.KZGCommitmentSupplier;
 
 public class MiscHelpersDenebPropertyTest {
+
   private final SpecConfigDeneb specConfig =
-      Objects.requireNonNull(new SpecSupplier().get())
+      Objects.requireNonNull(new SpecSupplier(SpecMilestone.DENEB).get())
           .sample()
           .getGenesisSpecConfig()
           .toVersionDeneb()
           .orElseThrow();
   private final MiscHelpersDeneb miscHelpers = new MiscHelpersDeneb(specConfig);
 
-  @Property
+  @Property(tries = 100)
   void fuzzKzgCommitmentToVersionedHash(
       @ForAll(supplier = KZGCommitmentSupplier.class) final KZGCommitment commitment) {
     miscHelpers.kzgCommitmentToVersionedHash(commitment);
   }
 
+  @AddLifecycleHook(KzgResolver.class)
+  @Property(tries = 100)
+  void fuzzVerifyBlobKzgProof(
+      final KZG kzg, @ForAll(supplier = BlobSidecarSupplier.class) BlobSidecar blobSidecar) {
+    try {
+      miscHelpers.verifyBlobKzgProof(kzg, blobSidecar);
+    } catch (Exception e) {
+      assertThat(e).isInstanceOf(KZGException.class);
+    }
+  }
+
+  @AddLifecycleHook(KzgResolver.class)
   @Property(tries = 100)
   void fuzzVerifyBlobKzgProofBatch(
+      final KZG kzg,
       @ForAll final List<@From(supplier = BlobSidecarSupplier.class) BlobSidecar> blobSidecars) {
-    miscHelpers.verifyBlobKzgProofBatch(blobSidecars);
+    try {
+      miscHelpers.verifyBlobKzgProofBatch(kzg, blobSidecars);
+    } catch (Exception e) {
+      assertThat(e).isInstanceOf(KZGException.class);
+    }
   }
 
   @Property(tries = 100)

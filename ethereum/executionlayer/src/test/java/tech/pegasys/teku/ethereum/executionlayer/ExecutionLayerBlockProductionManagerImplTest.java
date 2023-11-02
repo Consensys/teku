@@ -533,7 +533,6 @@ class ExecutionLayerBlockProductionManagerImplTest {
             ? new BuilderBidValidatorImpl(eventLogger)
             : BuilderBidValidator.NOOP,
         builderCircuitBreaker,
-        BlobsBundleValidator.NOOP,
         Optional.of(100),
         true);
   }
