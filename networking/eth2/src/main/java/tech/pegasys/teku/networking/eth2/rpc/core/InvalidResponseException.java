@@ -18,4 +18,8 @@ public class InvalidResponseException extends RuntimeException {
   public InvalidResponseException(final String message) {
     super(message);
   }
+
+  public InvalidResponseException(final String message, final Exception cause) {
+    super(message, cause);
+  }
 }

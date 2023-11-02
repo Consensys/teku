@@ -19,18 +19,22 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 public class BlobSidecarsResponseInvalidResponseException extends InvalidResponseException {
 
   public BlobSidecarsResponseInvalidResponseException(
-      Peer peer, InvalidResponseType invalidResponseType) {
+      final Peer peer, final InvalidResponseType invalidResponseType) {
     super(
         String.format(
             "Received invalid response from peer %s: %s", peer, invalidResponseType.describe()));
   }
 
-  public BlobSidecarsResponseInvalidResponseException(InvalidResponseType invalidResponseType) {
-    super("Received invalid response: " + invalidResponseType.describe());
+  public BlobSidecarsResponseInvalidResponseException(
+      final Peer peer, final InvalidResponseType invalidResponseType, final Exception cause) {
+    super(
+        String.format(
+            "Received invalid response from peer %s: %s", peer, invalidResponseType.describe()),
+        cause);
   }
 
   public enum InvalidResponseType {
-    BLOB_SIDECAR_KZG_VERIFICATION_FAILED("KZG verification for BlobSidecar is failed"),
+    BLOB_SIDECAR_KZG_VERIFICATION_FAILED("KZG verification for BlobSidecar has failed"),
     BLOB_SIDECAR_SLOT_NOT_IN_RANGE("BlobSidecar slot not in requested range"),
     BLOB_SIDECAR_UNEXPECTED_INDEX("BlobSidecar with unexpected index"),
     BLOB_SIDECAR_UNKNOWN_PARENT(

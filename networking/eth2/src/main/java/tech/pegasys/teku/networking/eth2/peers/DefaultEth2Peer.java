@@ -35,9 +35,9 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
-import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarByRootValidator;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRangeListenerValidatingProxy;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRootListenerValidatingProxy;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRootValidator;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeListenerWrapper;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
@@ -290,10 +290,10 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                         maybeBlobSidecar ->
                             maybeBlobSidecar.ifPresent(
                                 blobSidecar -> {
-                                  final BlobSidecarByRootValidator blobSidecarByRootValidator =
-                                      new BlobSidecarByRootValidator(
+                                  final BlobSidecarsByRootValidator validator =
+                                      new BlobSidecarsByRootValidator(
                                           this, spec, kzg, Set.of(blobIdentifier));
-                                  blobSidecarByRootValidator.validateBlobSidecar(blobSidecar);
+                                  validator.validate(blobSidecar);
                                 })))
         .orElse(failWithUnsupportedMethodException("BlobSidecarsByRoot"));
   }

@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
@@ -24,35 +23,27 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 
-public class BlobSidecarsByRootListenerValidatingProxy implements RpcResponseListener<BlobSidecar> {
+public class BlobSidecarsByRootListenerValidatingProxy extends BlobSidecarsByRootValidator
+    implements RpcResponseListener<BlobSidecar> {
 
-  private final Peer peer;
-  private final Spec spec;
-  private final RpcResponseListener<BlobSidecar> blobSidecarResponseListener;
-  private final Set<BlobIdentifier> expectedBlobIdentifiers;
-  private final KZG kzg;
+  private final RpcResponseListener<BlobSidecar> delegate;
 
   public BlobSidecarsByRootListenerValidatingProxy(
       final Peer peer,
       final Spec spec,
-      final RpcResponseListener<BlobSidecar> blobSidecarResponseListener,
+      final RpcResponseListener<BlobSidecar> delegate,
       final KZG kzg,
       final List<BlobIdentifier> expectedBlobIdentifiers) {
-    this.peer = peer;
-    this.spec = spec;
-    this.blobSidecarResponseListener = blobSidecarResponseListener;
-    this.kzg = kzg;
-    this.expectedBlobIdentifiers = new HashSet<>(expectedBlobIdentifiers);
+    super(peer, spec, kzg, new HashSet<>(expectedBlobIdentifiers));
+    this.delegate = delegate;
   }
 
   @Override
   public SafeFuture<?> onResponse(final BlobSidecar blobSidecar) {
     return SafeFuture.of(
         () -> {
-          final BlobSidecarByRootValidator blobSidecarByRootValidator =
-              new BlobSidecarByRootValidator(peer, spec, kzg, expectedBlobIdentifiers);
-          blobSidecarByRootValidator.validateBlobSidecar(blobSidecar);
-          return blobSidecarResponseListener.onResponse(blobSidecar);
+          validate(blobSidecar);
+          return delegate.onResponse(blobSidecar);
         });
   }
 }
