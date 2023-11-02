@@ -341,6 +341,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                   method,
                   request,
                   new BlobSidecarsByRangeListenerValidatingProxy(
+                      spec,
                       this,
                       listener,
                       maxBlobsPerBlock.get(),

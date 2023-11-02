@@ -344,6 +344,10 @@ public class MiscHelpers {
     return false;
   }
 
+  public boolean verifyBlobKzgProof(final KZG kzg, final BlobSidecar blobSidecar) {
+    return false;
+  }
+
   public boolean verifyBlobKzgProofBatch(final KZG kzg, final List<BlobSidecar> blobSidecars) {
     return false;
   }

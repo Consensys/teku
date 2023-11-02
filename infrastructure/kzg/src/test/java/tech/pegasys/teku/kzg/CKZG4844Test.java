@@ -130,6 +130,22 @@ public final class CKZG4844Test {
   }
 
   @Test
+  public void testComputingAndVerifyingSingleProof() {
+    final Bytes blob = getSampleBlob();
+    final KZGCommitment kzgCommitment = CKZG.blobToKzgCommitment(blob);
+    final KZGProof kzgProof = CKZG.computeBlobKzgProof(blob, kzgCommitment);
+
+    assertThat(CKZG.verifyBlobKzgProof(blob, kzgCommitment, kzgProof)).isTrue();
+
+    assertThat(CKZG.verifyBlobKzgProof(getSampleBlob(), kzgCommitment, kzgProof)).isFalse();
+    assertThat(CKZG.verifyBlobKzgProof(blob, getSampleCommitment(), kzgProof)).isFalse();
+    final Bytes randomBlob = getSampleBlob();
+    final KZGProof invalidProof =
+        CKZG.computeBlobKzgProof(randomBlob, CKZG.blobToKzgCommitment(randomBlob));
+    assertThat(CKZG.verifyBlobKzgProof(blob, kzgCommitment, invalidProof)).isFalse();
+  }
+
+  @Test
   public void testComputingAndVerifyingBatchSingleProof() {
     final int numberOfBlobs = 1;
     final List<Bytes> blobs = getSampleBlobs(numberOfBlobs);
