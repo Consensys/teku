@@ -92,7 +92,8 @@ public class ChainDataProvider {
   public ChainDataProvider(
       final Spec spec,
       final RecentChainData recentChainData,
-      final CombinedChainDataClient combinedChainDataClient) {
+      final CombinedChainDataClient combinedChainDataClient,
+      final RewardCalculator rewardCalculator) {
     this(
         spec,
         recentChainData,
@@ -100,7 +101,7 @@ public class ChainDataProvider {
         new BlockSelectorFactory(spec, combinedChainDataClient),
         new StateSelectorFactory(spec, combinedChainDataClient),
         new BlobSidecarSelectorFactory(combinedChainDataClient),
-        new RewardCalculator(spec));
+        rewardCalculator);
   }
 
   @VisibleForTesting

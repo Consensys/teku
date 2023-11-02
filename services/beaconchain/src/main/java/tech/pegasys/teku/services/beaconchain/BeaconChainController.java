@@ -40,6 +40,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ExecutionClientDataProvider;
+import tech.pegasys.teku.api.RewardCalculator;
 import tech.pegasys.teku.beacon.sync.DefaultSyncServiceFactory;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.beacon.sync.SyncServiceFactory;
@@ -66,6 +67,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
@@ -253,6 +255,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ForkChoiceStateProvider forkChoiceStateProvider;
   protected volatile ExecutionLayerChannel executionLayer;
   protected volatile GossipValidationHelper gossipValidationHelper;
+  protected volatile KZG kzg;
   protected volatile BlobSidecarManager blobSidecarManager;
   protected volatile Optional<TerminalPowBlockMonitor> terminalPowBlockMonitor = Optional.empty();
   protected volatile Optional<DataUnavailableBlockPool> dataUnavailableBlockPool = Optional.empty();
@@ -262,7 +265,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile StorageUpdateChannel storageUpdateChannel;
   protected volatile StableSubnetSubscriber stableSubnetSubscriber;
   protected volatile ExecutionLayerBlockProductionManager executionLayerBlockProductionManager;
-
+  protected volatile RewardCalculator rewardCalculator;
   protected UInt64 genesisTimeTracker = ZERO;
   protected BlockManager blockManager;
   protected TimerService timerService;
@@ -423,8 +426,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initKeyValueStore();
     initExecutionLayer();
     initExecutionLayerBlockProductionManager();
+    initRewardCalculator();
     initGossipValidationHelper();
     initBlockPoolsAndCaches();
+    initKzg();
     initBlobSidecarPool();
     initBlobSidecarManager();
     initForkChoiceStateProvider();
@@ -468,6 +473,23 @@ public class BeaconChainController extends Service implements BeaconChainControl
     executionLayer = eventChannels.getPublisher(ExecutionLayerChannel.class, beaconAsyncRunner);
   }
 
+  protected void initKzg() {
+    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
+      kzg = KZG.getInstance();
+      final String trustedSetupFile =
+          beaconConfig
+              .eth2NetworkConfig()
+              .getTrustedSetup()
+              .orElseThrow(
+                  () ->
+                      new InvalidConfigurationException(
+                          "Trusted setup should be specified when Deneb is enabled"));
+      kzg.loadTrustedSetup(trustedSetupFile);
+    } else {
+      kzg = KZG.NOOP;
+    }
+  }
+
   protected void initBlobSidecarManager() {
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       final FutureItems<SignedBlobSidecar> futureBlobSidecars =
@@ -485,6 +507,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               recentChainData,
               blobSidecarPool,
               blobSidecarValidator,
+              kzg,
               futureBlobSidecars,
               invalidBlobSidecarRoots);
       eventChannels.subscribe(SlotEventsChannel.class, blobSidecarManagerImpl);
@@ -630,6 +653,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .recentChainData(recentChainData)
             .combinedChainDataClient(combinedChainDataClient)
             .executionLayerBlockProductionManager(executionLayerBlockProductionManager)
+            .rewardCalculator(rewardCalculator)
             .p2pNetwork(p2pNetwork)
             .syncService(syncService)
             .validatorApiChannel(
@@ -782,6 +806,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
         ExecutionLayerBlockManagerFactory.create(executionLayer, eventChannels);
   }
 
+  public void initRewardCalculator() {
+    LOG.debug("BeaconChainController.initRewardCalculator()");
+    rewardCalculator = new RewardCalculator(spec);
+  }
+
   public void initValidatorApiHandler() {
     LOG.debug("BeaconChainController.initValidatorApiHandler()");
     final BlockOperationSelectorFactory operationSelector =
@@ -815,7 +844,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
-            new ChainDataProvider(spec, recentChainData, combinedChainDataClient),
+            new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculator),
             dataProvider.getNodeDataProvider(),
             combinedChainDataClient,
             syncService,
@@ -981,6 +1010,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .keyValueStore(keyValueStore)
             .requiredCheckpoint(weakSubjectivityValidator.getWSCheckpoint())
             .specProvider(spec)
+            .kzg(kzg)
             .recordMessageArrival(true)
             .build();
 

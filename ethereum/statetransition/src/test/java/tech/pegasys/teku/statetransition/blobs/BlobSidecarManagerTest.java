@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -56,6 +57,7 @@ public class BlobSidecarManagerTest {
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final BlobSidecarGossipValidator blobSidecarValidator =
       mock(BlobSidecarGossipValidator.class);
+  private final KZG kzg = mock(KZG.class);
   private final BlobSidecarPoolImpl blobSidecarPool = mock(BlobSidecarPoolImpl.class);
   private final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots = new HashMap<>();
 
@@ -69,6 +71,7 @@ public class BlobSidecarManagerTest {
           recentChainData,
           blobSidecarPool,
           blobSidecarValidator,
+          kzg,
           futureBlobSidecars,
           invalidBlobSidecarRoots);
 

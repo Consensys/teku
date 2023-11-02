@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.kzg.ckzg4844;
+package tech.pegasys.teku.kzg;
 
 import ethereum.ckzg4844.CKZG4844JNI;
 import java.util.List;
@@ -19,36 +19,31 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.KZGCommitment;
-import tech.pegasys.teku.kzg.KZGException;
-import tech.pegasys.teku.kzg.KZGProof;
-import tech.pegasys.teku.kzg.TrustedSetup;
 
 /**
  * Wrapper around jc-kzg-4844
  *
  * <p>This class should be a singleton
  */
-public final class CKZG4844 implements KZG {
+final class CKZG4844 implements KZG {
 
   private static final Logger LOG = LogManager.getLogger();
 
   private static CKZG4844 instance;
 
-  private Optional<String> loadedTrustedSetupFile = Optional.empty();
-
-  public static synchronized CKZG4844 getInstance() {
+  static synchronized CKZG4844 getInstance() {
     if (instance == null) {
       instance = new CKZG4844();
     }
     return instance;
   }
 
+  private Optional<String> loadedTrustedSetupFile = Optional.empty();
+
   private CKZG4844() {
     try {
       CKZG4844JNI.loadNativeLibrary();
-      LOG.debug("Loaded C-KZG-4844 library");
+      LOG.info("Loaded C-KZG-4844 library");
     } catch (final Exception ex) {
       throw new KZGException("Failed to load C-KZG-4844 library", ex);
     }
@@ -94,6 +89,19 @@ public final class CKZG4844 implements KZG {
       LOG.debug("Trusted setup was freed");
     } catch (final Exception ex) {
       throw new KZGException("Failed to free trusted setup", ex);
+    }
+  }
+
+  @Override
+  public boolean verifyBlobKzgProof(
+      final Bytes blob, final KZGCommitment kzgCommitment, final KZGProof kzgProof)
+      throws KZGException {
+    try {
+      return CKZG4844JNI.verifyBlobKzgProof(
+          blob.toArrayUnsafe(), kzgCommitment.toArrayUnsafe(), kzgProof.toArrayUnsafe());
+    } catch (final Exception ex) {
+      throw new KZGException(
+          "Failed to verify blob and commitment against KZG proof " + kzgProof, ex);
     }
   }
 

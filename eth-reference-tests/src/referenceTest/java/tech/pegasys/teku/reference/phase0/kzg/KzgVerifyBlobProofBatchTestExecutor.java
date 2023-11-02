@@ -19,13 +19,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 
 public class KzgVerifyBlobProofBatchTestExecutor extends KzgTestExecutor {
 
   @Override
-  public void runTestImpl(final TestDefinition testDefinition) throws Throwable {
+  public void runTest(final TestDefinition testDefinition, final KZG kzg) throws Throwable {
     final Data data = loadDataFile(testDefinition, Data.class);
     final Boolean expectedVerificationResult = data.getOutput();
     Boolean actualVerificationResult;

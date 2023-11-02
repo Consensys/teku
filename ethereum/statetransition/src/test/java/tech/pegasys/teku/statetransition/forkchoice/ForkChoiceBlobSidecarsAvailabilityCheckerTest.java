@@ -46,6 +46,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
@@ -68,6 +69,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
 
   private final Spec spec = mock(Spec.class);
   private final SpecVersion specVersion = mock(SpecVersion.class);
+  private final KZG kzg = mock(KZG.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final UpdatableStore store = mock(UpdatableStore.class);
   private final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
@@ -229,18 +231,13 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
 
     switch (batchFailure) {
         // blobsidecar validation check failure for the initial set
-      case BLOB_SIDECAR_VALIDATION_EXCEPTION:
-        throwWhenValidatingBlobSidecarsBatchAgainstBlock(blobSidecarsInitial, cause.get());
-        break;
-
+      case BLOB_SIDECAR_VALIDATION_EXCEPTION -> throwWhenValidatingBlobSidecarsBatchAgainstBlock(
+          blobSidecarsInitial, cause.get());
         // mock kzg availability check failure for the initial set
-      case IS_DATA_AVAILABLE_EXCEPTION:
-        whenDataAvailability(blobSidecarsInitial).thenThrow(cause.get());
-        break;
-
-      case IS_DATA_AVAILABLE_RETURN_FALSE:
-        whenDataAvailability(blobSidecarsInitial).thenReturn(false);
-        break;
+      case IS_DATA_AVAILABLE_EXCEPTION -> whenDataAvailability(blobSidecarsInitial)
+          .thenThrow(cause.get());
+      case IS_DATA_AVAILABLE_RETURN_FALSE -> whenDataAvailability(blobSidecarsInitial)
+          .thenReturn(false);
     }
 
     asyncRunner.executeDueActions();
@@ -276,18 +273,13 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
 
     switch (batchFailure) {
         // blobsidecar validation check failure for the additional set
-      case BLOB_SIDECAR_VALIDATION_EXCEPTION:
-        throwWhenValidatingBlobSidecarsBatchAgainstBlock(blobSidecarsAdditional, cause.get());
-        break;
-
+      case BLOB_SIDECAR_VALIDATION_EXCEPTION -> throwWhenValidatingBlobSidecarsBatchAgainstBlock(
+          blobSidecarsAdditional, cause.get());
         // mock kzg availability check failure for the additional set
-      case IS_DATA_AVAILABLE_EXCEPTION:
-        whenDataAvailability(blobSidecarsAdditional).thenThrow(cause.get());
-        break;
-
-      case IS_DATA_AVAILABLE_RETURN_FALSE:
-        whenDataAvailability(blobSidecarsAdditional).thenReturn(false);
-        break;
+      case IS_DATA_AVAILABLE_EXCEPTION -> whenDataAvailability(blobSidecarsAdditional)
+          .thenThrow(cause.get());
+      case IS_DATA_AVAILABLE_RETURN_FALSE -> whenDataAvailability(blobSidecarsAdditional)
+          .thenReturn(false);
     }
 
     // let the tracker complete with all blobSidecars
@@ -515,18 +507,18 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     when(spec.isAvailabilityOfBlobSidecarsRequiredAtSlot(store, block.getSlot())).thenReturn(true);
 
     switch (blobsAvailability) {
-      case FULL:
+      case FULL -> {
         blobSidecarsInitial = blobSidecarsComplete;
         blobSidecarsAdditional = List.of();
-        break;
-      case EMPTY:
+      }
+      case EMPTY -> {
         blobSidecarsInitial = List.of();
         blobSidecarsAdditional = blobSidecarsComplete;
-        break;
-      case PARTIAL:
+      }
+      case PARTIAL -> {
         blobSidecarsInitial = List.of(blobSidecarsComplete.get(0), blobSidecarsComplete.get(2));
         blobSidecarsAdditional = List.of(blobSidecarsComplete.get(1), blobSidecarsComplete.get(3));
-        break;
+      }
     }
 
     final ImmutableSortedMap.Builder<UInt64, BlobSidecar> mapBuilder =
@@ -539,7 +531,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
 
     blobSidecarsAvailabilityChecker =
         new ForkChoiceBlobSidecarsAvailabilityChecker(
-            spec, asyncRunner, recentChainData, blockBlobSidecarsTracker, timeout);
+            spec, asyncRunner, recentChainData, blockBlobSidecarsTracker, kzg, timeout);
   }
 
   private void completeTrackerWith(final List<BlobSidecar> blobSidecars) {
@@ -552,7 +544,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   private OngoingStubbing<Boolean> whenDataAvailability(final List<BlobSidecar> blobSidecars) {
-    return when(miscHelpers.verifyBlobKzgProofBatch(eq(blobSidecars)));
+    return when(miscHelpers.verifyBlobKzgProofBatch(kzg, blobSidecars));
   }
 
   private void throwWhenValidatingBlobSidecarsBatchAgainstBlock(
@@ -588,7 +580,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
                 kzgCommitmentsArg ->
                     assertThat(kzgCommitmentsArg).isEqualTo(kzgCommitmentsComplete)));
 
-    verify(miscHelpers, times(1)).verifyBlobKzgProofBatch(eq(blobSidecars));
+    verify(miscHelpers, times(1)).verifyBlobKzgProofBatch(kzg, blobSidecars);
 
     if (isFinalValidation) {
       verify(miscHelpers, times(1))
@@ -605,7 +597,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   private void verifyDataAvailabilityNeverCalled() {
-    verify(miscHelpers, never()).verifyBlobKzgProofBatch(any());
+    verify(miscHelpers, never()).verifyBlobKzgProofBatch(eq(kzg), any());
   }
 
   private void prepareBlockAndBlobSidecarsOutsideAvailabilityWindow() {
@@ -625,7 +617,12 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
 
     blobSidecarsAvailabilityChecker =
         new ForkChoiceBlobSidecarsAvailabilityChecker(
-            spec, asyncRunner, recentChainData, blockBlobSidecarsTracker, Duration.ofSeconds(30));
+            spec,
+            asyncRunner,
+            recentChainData,
+            blockBlobSidecarsTracker,
+            kzg,
+            Duration.ofSeconds(30));
   }
 
   private enum Availability {

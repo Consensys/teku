@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CONSENSUS_BLOCK_VALUE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_PAYLOAD_BLINDED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_PAYLOAD_VALUE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
@@ -154,6 +155,11 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
             ProduceBlockResponse::getExecutionPayloadValue,
             ProduceBlockResponse::setExecutionPayloadValue)
         .withField(
+            CONSENSUS_BLOCK_VALUE,
+            UINT256_TYPE,
+            ProduceBlockResponse::getConsensusBlockValue,
+            ProduceBlockResponse::setConsensusBlockValue)
+        .withField(
             "data",
             jsonTypeDefinition,
             ProduceBlockResponse::getData,
@@ -170,6 +176,7 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
     private BlockContainer data;
     private Boolean executionPayloadBlinded;
     private UInt256 executionPayloadValue;
+    private UInt256 consensusBlockValue;
     private SpecMilestone specMilestone;
 
     public ProduceBlockResponse() {}
@@ -192,6 +199,14 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
 
     public void setExecutionPayloadBlinded(Boolean executionPayloadBlinded) {
       this.executionPayloadBlinded = executionPayloadBlinded;
+    }
+
+    public UInt256 getConsensusBlockValue() {
+      return consensusBlockValue;
+    }
+
+    public void setConsensusBlockValue(UInt256 consensusBlockValue) {
+      this.consensusBlockValue = consensusBlockValue;
     }
 
     public UInt256 getExecutionPayloadValue() {

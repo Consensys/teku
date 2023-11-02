@@ -20,28 +20,19 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
-import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
+import tech.pegasys.teku.reference.KzgRetriever;
 import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 
 public abstract class KzgTestExecutor implements TestExecutor {
 
   private static final Pattern TEST_NAME_PATTERN = Pattern.compile("kzg-(.+)/.+");
 
-  protected final KZG kzg = CKZG4844.getInstance();
-
   @Override
   public final void runTest(final TestDefinition testDefinition) throws Throwable {
     final String network = extractNetwork(testDefinition.getTestName());
-    final Eth2NetworkConfiguration networkConfig =
-        Eth2NetworkConfiguration.builder(network).build();
-    final SpecConfigDeneb specConfigDeneb =
-        SpecConfigDeneb.required(networkConfig.getSpec().getGenesisSpecConfig());
-
-    kzg.loadTrustedSetup(specConfigDeneb.getTrustedSetupPath().orElseThrow());
-    runTestImpl(testDefinition);
+    final KZG kzg = KzgRetriever.getKzgWithLoadedTrustedSetup(network);
+    runTest(testDefinition, kzg);
   }
 
   private String extractNetwork(final String testName) {
@@ -61,5 +52,5 @@ public abstract class KzgTestExecutor implements TestExecutor {
     return TestDataUtils.loadYaml(testDefinition, dataFile, type);
   }
 
-  protected abstract void runTestImpl(TestDefinition testDefinition) throws Throwable;
+  protected abstract void runTest(TestDefinition testDefinition, KZG kzg) throws Throwable;
 }
