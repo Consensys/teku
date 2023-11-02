@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRangeListenerValidatingProxy;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRootListenerValidatingProxy;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeListenerWrapper;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
@@ -247,7 +249,8 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                     method,
                     new BlobSidecarsByRootRequestMessage(
                         blobSidecarsByRootRequestMessageSchema.get(), blobIdentifiers),
-                    listener))
+                    new BlobSidecarsByRootListenerValidatingProxy(
+                        this, listener, miscHelpersDeneb.get(), blobIdentifiers)))
         .orElse(failWithUnsupportedMethodException("BlobSidecarsByRoot"));
   }
 
@@ -279,10 +282,19 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
         .map(
             method ->
                 requestOptionalItem(
-                    method,
-                    new BlobSidecarsByRootRequestMessage(
-                        blobSidecarsByRootRequestMessageSchema.get(),
-                        Collections.singletonList(blobIdentifier))))
+                        method,
+                        new BlobSidecarsByRootRequestMessage(
+                            blobSidecarsByRootRequestMessageSchema.get(),
+                            Collections.singletonList(blobIdentifier)))
+                    .thenPeek(
+                        maybeBlobSidecar ->
+                            maybeBlobSidecar.ifPresent(
+                                blobSidecar ->
+                                    BlobSidecarsByRootListenerValidatingProxy.validateBlobSidecar(
+                                        blobSidecar,
+                                        Set.of(blobIdentifier),
+                                        miscHelpersDeneb.get(),
+                                        this))))
         .orElse(failWithUnsupportedMethodException("BlobSidecarsByRoot"));
   }
 
