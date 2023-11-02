@@ -13,11 +13,11 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
-import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRangeResponseInvalidResponseException.InvalidResponseType.BLOB_SIDECAR_KZG_VERIFICATION_FAILED;
-import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRangeResponseInvalidResponseException.InvalidResponseType.BLOB_SIDECAR_SLOT_NOT_IN_RANGE;
-import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRangeResponseInvalidResponseException.InvalidResponseType.BLOB_SIDECAR_UNEXPECTED_INDEX;
-import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRangeResponseInvalidResponseException.InvalidResponseType.BLOB_SIDECAR_UNEXPECTED_SLOT;
-import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRangeResponseInvalidResponseException.InvalidResponseType.BLOB_SIDECAR_UNKNOWN_PARENT;
+import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsResponseInvalidResponseException.InvalidResponseType.BLOB_SIDECAR_KZG_VERIFICATION_FAILED;
+import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsResponseInvalidResponseException.InvalidResponseType.BLOB_SIDECAR_SLOT_NOT_IN_RANGE;
+import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsResponseInvalidResponseException.InvalidResponseType.BLOB_SIDECAR_UNEXPECTED_INDEX;
+import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsResponseInvalidResponseException.InvalidResponseType.BLOB_SIDECAR_UNEXPECTED_SLOT;
+import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsResponseInvalidResponseException.InvalidResponseType.BLOB_SIDECAR_UNKNOWN_PARENT;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -29,7 +29,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 
-public class BlobSidecarsByRangeListenerValidatingProxy extends AbstractBlobSidecarsValidatingProxy
+public class BlobSidecarsByRangeListenerValidatingProxy extends AbstractBlobSidecarsValidator
     implements RpcResponseListener<BlobSidecar> {
 
   private final Peer peer;
@@ -62,20 +62,20 @@ public class BlobSidecarsByRangeListenerValidatingProxy extends AbstractBlobSide
         () -> {
           final UInt64 blobSidecarSlot = blobSidecar.getSlot();
           if (!blobSidecarSlotIsInRange(blobSidecarSlot)) {
-            throw new BlobSidecarsByRangeResponseInvalidResponseException(
+            throw new BlobSidecarsResponseInvalidResponseException(
                 peer, BLOB_SIDECAR_SLOT_NOT_IN_RANGE);
           }
 
           if (blobSidecar.getIndex().isGreaterThanOrEqualTo(maxBlobsPerBlock)) {
-            throw new BlobSidecarsByRangeResponseInvalidResponseException(
+            throw new BlobSidecarsResponseInvalidResponseException(
                 peer, BLOB_SIDECAR_UNEXPECTED_INDEX);
           }
 
           final BlobSidecarSummary blobSidecarSummary = BlobSidecarSummary.create(blobSidecar);
           verifyBlobSidecarIsAfterLast(blobSidecarSummary);
 
-          if (!verifyBlobSidecar(blobSidecar)) {
-            throw new BlobSidecarsByRangeResponseInvalidResponseException(
+          if (!verifyBlobSidecarKzg(blobSidecar)) {
+            throw new BlobSidecarsResponseInvalidResponseException(
                 peer, BLOB_SIDECAR_KZG_VERIFICATION_FAILED);
           }
 
@@ -92,34 +92,29 @@ public class BlobSidecarsByRangeListenerValidatingProxy extends AbstractBlobSide
   private void verifyBlobSidecarIsAfterLast(final BlobSidecarSummary blobSidecarSummary) {
     if (maybeLastBlobSidecarSummary.isEmpty()) {
       if (!blobSidecarSummary.index().equals(UInt64.ZERO)) {
-        throw new BlobSidecarsByRangeResponseInvalidResponseException(
-            peer, BLOB_SIDECAR_UNEXPECTED_INDEX);
+        throw new BlobSidecarsResponseInvalidResponseException(peer, BLOB_SIDECAR_UNEXPECTED_INDEX);
       }
       return;
     }
 
     if (blobSidecarSummary.inTheSameBlock(maybeLastBlobSidecarSummary.get())) {
       if (!blobSidecarSummary.index().equals(maybeLastBlobSidecarSummary.get().index().plus(1))) {
-        throw new BlobSidecarsByRangeResponseInvalidResponseException(
-            peer, BLOB_SIDECAR_UNEXPECTED_INDEX);
+        throw new BlobSidecarsResponseInvalidResponseException(peer, BLOB_SIDECAR_UNEXPECTED_INDEX);
       }
     } else {
 
       if (!blobSidecarSummary.index().equals(UInt64.ZERO)) {
-        throw new BlobSidecarsByRangeResponseInvalidResponseException(
-            peer, BLOB_SIDECAR_UNEXPECTED_INDEX);
+        throw new BlobSidecarsResponseInvalidResponseException(peer, BLOB_SIDECAR_UNEXPECTED_INDEX);
       }
 
       if (!blobSidecarSummary
           .blockParentRoot()
           .equals(maybeLastBlobSidecarSummary.get().blockRoot())) {
-        throw new BlobSidecarsByRangeResponseInvalidResponseException(
-            peer, BLOB_SIDECAR_UNKNOWN_PARENT);
+        throw new BlobSidecarsResponseInvalidResponseException(peer, BLOB_SIDECAR_UNKNOWN_PARENT);
       }
 
       if (!blobSidecarSummary.slot().isGreaterThan(maybeLastBlobSidecarSummary.get().slot())) {
-        throw new BlobSidecarsByRangeResponseInvalidResponseException(
-            peer, BLOB_SIDECAR_UNEXPECTED_SLOT);
+        throw new BlobSidecarsResponseInvalidResponseException(peer, BLOB_SIDECAR_UNEXPECTED_SLOT);
       }
     }
   }
