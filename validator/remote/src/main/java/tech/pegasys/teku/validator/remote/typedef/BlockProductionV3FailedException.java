@@ -13,4 +13,4 @@
 
 package tech.pegasys.teku.validator.remote.typedef;
 
-public class BlockProductionFailedException extends RuntimeException {}
+public class BlockProductionV3FailedException extends RuntimeException {}

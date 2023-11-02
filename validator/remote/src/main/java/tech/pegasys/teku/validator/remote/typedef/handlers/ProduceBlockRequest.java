@@ -46,7 +46,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
-import tech.pegasys.teku.validator.remote.typedef.BlockProductionFailedException;
+import tech.pegasys.teku.validator.remote.typedef.BlockProductionV3FailedException;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class ProduceBlockRequest extends AbstractTypeDefRequest {
@@ -96,7 +96,7 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
             .withHandler(
                 SC_NOT_FOUND,
                 (__, ___) -> {
-                  throw new BlockProductionFailedException();
+                  throw new BlockProductionV3FailedException();
                 });
   }
 
