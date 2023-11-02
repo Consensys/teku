@@ -23,6 +23,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.tuweni.bytes.Bytes;
@@ -92,7 +93,7 @@ public class BlobSidecarGossipManagerTest {
             })
         .when(gossipNetwork)
         .subscribe(any(), any());
-    when(processor.process(any()))
+    when(processor.process(any(), any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     blobSidecarGossipManager =
         BlobSidecarGossipManager.create(
@@ -164,7 +165,8 @@ public class BlobSidecarGossipManagerTest {
     // processing blob sidecar with subnet_id 1 should be accepted
     final SignedBlobSidecar blobSidecar = dataStructureUtil.randomSignedBlobSidecar(UInt64.ONE);
     final InternalValidationResult validationResult =
-        SafeFutureAssert.safeJoin(topicHandler.getProcessor().process(blobSidecar));
+        SafeFutureAssert.safeJoin(
+            topicHandler.getProcessor().process(blobSidecar, Optional.empty()));
 
     assertThat(validationResult).isEqualTo(InternalValidationResult.ACCEPT);
   }
@@ -179,7 +181,8 @@ public class BlobSidecarGossipManagerTest {
     final SignedBlobSidecar blobSidecar =
         dataStructureUtil.randomSignedBlobSidecar(UInt64.valueOf(2));
     final InternalValidationResult validationResult =
-        SafeFutureAssert.safeJoin(topicHandler.getProcessor().process(blobSidecar));
+        SafeFutureAssert.safeJoin(
+            topicHandler.getProcessor().process(blobSidecar, Optional.empty()));
 
     assertThat(validationResult.isReject()).isTrue();
     assertThat(validationResult.getDescription())

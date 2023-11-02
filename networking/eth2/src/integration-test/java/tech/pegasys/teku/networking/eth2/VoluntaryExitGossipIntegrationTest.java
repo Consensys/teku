@@ -62,7 +62,7 @@ public class VoluntaryExitGossipIntegrationTest {
     // Set up publishers & consumers
     Set<SignedVoluntaryExit> receivedVoluntaryExits = new HashSet<>();
     final OperationProcessor<SignedVoluntaryExit> operationProcessor =
-        (voluntaryExit) -> {
+        (voluntaryExit, __) -> {
           receivedVoluntaryExits.add(voluntaryExit);
           return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
         };

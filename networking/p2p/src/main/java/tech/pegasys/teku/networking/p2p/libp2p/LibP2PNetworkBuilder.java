@@ -37,6 +37,7 @@ import java.time.Duration;
 import java.util.List;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetwork.PrivateKeyProvider;
@@ -58,6 +59,7 @@ import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
  * might be changed in any version in backward incompatible way
  */
 public class LibP2PNetworkBuilder {
+  public static final boolean DEFAULT_RECORD_MESSAGE_ARRIVAL = false;
 
   public static LibP2PNetworkBuilder create() {
     return new LibP2PNetworkBuilder();
@@ -73,6 +75,7 @@ public class LibP2PNetworkBuilder {
   protected List<PeerHandler> peerHandlers;
   protected PreparedGossipMessageFactory preparedGossipMessageFactory;
   protected GossipTopicFilter gossipTopicFilter;
+  protected TimeProvider timeProvider;
 
   protected Firewall firewall = new Firewall(Duration.ofSeconds(30));
   protected MuxFirewall muxFirewall =
@@ -85,6 +88,7 @@ public class LibP2PNetworkBuilder {
 
   protected List<? extends RpcHandler<?, ?, ?>> rpcHandlers;
   protected PeerManager peerManager;
+  protected boolean recordMessageArrival = DEFAULT_RECORD_MESSAGE_ARRIVAL;
 
   protected LibP2PNetworkBuilder() {}
 
@@ -126,6 +130,8 @@ public class LibP2PNetworkBuilder {
         .defaultMessageFactory(preparedGossipMessageFactory)
         .gossipTopicFilter(gossipTopicFilter)
         .logWireGossip(config.getWireLogsConfig().isLogWireGossip())
+        .timeProvider(timeProvider)
+        .recordArrivalTime(recordMessageArrival)
         .build();
   }
 
@@ -274,6 +280,16 @@ public class LibP2PNetworkBuilder {
 
   public LibP2PNetworkBuilder muxFirewall(MuxFirewall muxFirewall) {
     this.muxFirewall = muxFirewall;
+    return this;
+  }
+
+  public LibP2PNetworkBuilder timeProvider(final TimeProvider timeProvider) {
+    this.timeProvider = timeProvider;
+    return this;
+  }
+
+  public LibP2PNetworkBuilder recordMessageArrival(final boolean recordMessageArrival) {
+    this.recordMessageArrival = recordMessageArrival;
     return this;
   }
 }

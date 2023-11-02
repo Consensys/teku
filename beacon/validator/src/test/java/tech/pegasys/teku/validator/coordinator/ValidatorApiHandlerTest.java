@@ -716,19 +716,20 @@ class ValidatorApiHandlerTest {
   @Test
   public void sendSignedAttestations_shouldAddAttestationToAttestationManager() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
-    when(attestationManager.addAttestation(any(ValidatableAttestation.class)))
+    when(attestationManager.addAttestation(any(ValidatableAttestation.class), any()))
         .thenReturn(completedFuture(InternalValidationResult.ACCEPT));
     final SafeFuture<List<SubmitDataError>> result =
         validatorApiHandler.sendSignedAttestations(List.of(attestation));
     assertThat(result).isCompletedWithValue(emptyList());
 
-    verify(attestationManager).addAttestation(ValidatableAttestation.from(spec, attestation));
+    verify(attestationManager)
+        .addAttestation(ValidatableAttestation.from(spec, attestation), Optional.empty());
   }
 
   @Test
   void sendSignedAttestations_shouldAddToDutyMetricsAndPerformanceTrackerWhenNotInvalid() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
-    when(attestationManager.addAttestation(any(ValidatableAttestation.class)))
+    when(attestationManager.addAttestation(any(ValidatableAttestation.class), any()))
         .thenReturn(completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
 
     final SafeFuture<List<SubmitDataError>> result =
@@ -742,7 +743,7 @@ class ValidatorApiHandlerTest {
   @Test
   void sendSignedAttestations_shouldNotAddToDutyMetricsAndPerformanceTrackerWhenInvalid() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
-    when(attestationManager.addAttestation(any(ValidatableAttestation.class)))
+    when(attestationManager.addAttestation(any(ValidatableAttestation.class), any()))
         .thenReturn(completedFuture(InternalValidationResult.reject("Bad juju")));
 
     final SafeFuture<List<SubmitDataError>> result =
@@ -757,9 +758,9 @@ class ValidatorApiHandlerTest {
   void sendSignedAttestations_shouldProcessMixOfValidAndInvalidAttestations() {
     final Attestation invalidAttestation = dataStructureUtil.randomAttestation();
     final Attestation validAttestation = dataStructureUtil.randomAttestation();
-    when(attestationManager.addAttestation(validatableAttestationOf(invalidAttestation)))
+    when(attestationManager.addAttestation(validatableAttestationOf(invalidAttestation), any()))
         .thenReturn(completedFuture(InternalValidationResult.reject("Bad juju")));
-    when(attestationManager.addAttestation(validatableAttestationOf(validAttestation)))
+    when(attestationManager.addAttestation(validatableAttestationOf(validAttestation), any()))
         .thenReturn(completedFuture(InternalValidationResult.ACCEPT));
 
     final SafeFuture<List<SubmitDataError>> result =
@@ -905,14 +906,16 @@ class ValidatorApiHandlerTest {
   public void sendAggregateAndProofs_shouldPostAggregateAndProof() {
     final SignedAggregateAndProof aggregateAndProof =
         dataStructureUtil.randomSignedAggregateAndProof();
-    when(attestationManager.addAggregate(any(ValidatableAttestation.class)))
+    when(attestationManager.addAggregate(any(ValidatableAttestation.class), any()))
         .thenReturn(completedFuture(InternalValidationResult.ACCEPT));
     final SafeFuture<List<SubmitDataError>> result =
         validatorApiHandler.sendAggregateAndProofs(List.of(aggregateAndProof));
     assertThat(result).isCompletedWithValue(emptyList());
 
     verify(attestationManager)
-        .addAggregate(ValidatableAttestation.aggregateFromValidator(spec, aggregateAndProof));
+        .addAggregate(
+            ValidatableAttestation.aggregateFromValidator(spec, aggregateAndProof),
+            Optional.empty());
   }
 
   @Test
@@ -922,10 +925,11 @@ class ValidatorApiHandlerTest {
     final SignedAggregateAndProof validAggregate =
         dataStructureUtil.randomSignedAggregateAndProof();
     when(attestationManager.addAggregate(
-            ValidatableAttestation.aggregateFromValidator(spec, invalidAggregate)))
+            ValidatableAttestation.aggregateFromValidator(spec, invalidAggregate),
+            Optional.empty()))
         .thenReturn(completedFuture(InternalValidationResult.reject("Bad juju")));
     when(attestationManager.addAggregate(
-            ValidatableAttestation.aggregateFromValidator(spec, validAggregate)))
+            ValidatableAttestation.aggregateFromValidator(spec, validAggregate), Optional.empty()))
         .thenReturn(completedFuture(InternalValidationResult.ACCEPT));
 
     final SafeFuture<List<SubmitDataError>> result =
@@ -937,12 +941,14 @@ class ValidatorApiHandlerTest {
         .addAggregate(
             argThat(
                 validatableAttestation ->
-                    validatableAttestation.getSignedAggregateAndProof().equals(validAggregate)));
+                    validatableAttestation.getSignedAggregateAndProof().equals(validAggregate)),
+            any());
     verify(attestationManager)
         .addAggregate(
             argThat(
                 validatableAttestation ->
-                    validatableAttestation.getSignedAggregateAndProof().equals(invalidAggregate)));
+                    validatableAttestation.getSignedAggregateAndProof().equals(invalidAggregate)),
+            any());
   }
 
   @Test

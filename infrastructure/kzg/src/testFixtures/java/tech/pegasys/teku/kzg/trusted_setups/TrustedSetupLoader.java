@@ -13,4 +13,20 @@
 
 package tech.pegasys.teku.kzg.trusted_setups;
 
-public class TrustedSetups {}
+import com.google.common.io.Resources;
+import tech.pegasys.teku.kzg.KZG;
+import tech.pegasys.teku.kzg.KZGException;
+
+/** Loads trusted setup used in tests throughout the project. */
+public class TrustedSetupLoader {
+
+  private static final String TEST_TRUSTED_SETUP = "trusted_setup.txt";
+
+  public static void loadTrustedSetupForTests(final KZG kzg) throws KZGException {
+    kzg.loadTrustedSetup(getTrustedSetupFile(TEST_TRUSTED_SETUP));
+  }
+
+  public static String getTrustedSetupFile(final String filename) {
+    return Resources.getResource(TrustedSetupLoader.class, filename).toExternalForm();
+  }
+}

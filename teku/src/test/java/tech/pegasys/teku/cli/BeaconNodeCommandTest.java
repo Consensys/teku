@@ -427,18 +427,12 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void shouldHaveKzgForDeneb() {
+  public void shouldHaveTrustedSetupConfiguredForDeneb() {
     final String[] args = {XDENEB_FORK_EPOCH_OPTION, "200000"};
     beaconNodeCommand.parse(args);
-    final SpecConfigDeneb specConfigDeneb =
-        SpecConfigDeneb.required(
-            beaconNodeCommand
-                .tekuConfiguration()
-                .eth2NetworkConfiguration()
-                .getSpec()
-                .forMilestone(SpecMilestone.DENEB)
-                .getConfig());
-    assertThat(specConfigDeneb.isKZGNoop()).isFalse();
+    final Optional<String> trustedSetup =
+        beaconNodeCommand.tekuConfiguration().eth2NetworkConfiguration().getTrustedSetup();
+    assertThat(trustedSetup).isPresent();
   }
 
   private Path createConfigFile() throws IOException {

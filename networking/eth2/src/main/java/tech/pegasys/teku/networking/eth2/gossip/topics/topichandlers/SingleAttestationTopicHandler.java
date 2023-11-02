@@ -38,9 +38,9 @@ public class SingleAttestationTopicHandler {
 
     final Spec spec = recentChainData.getSpec();
     OperationProcessor<Attestation> convertingProcessor =
-        attMessage ->
+        (attMessage, arrivalTimestamp) ->
             operationProcessor.process(
-                ValidatableAttestation.fromNetwork(spec, attMessage, subnetId));
+                ValidatableAttestation.fromNetwork(spec, attMessage, subnetId), arrivalTimestamp);
 
     return new Eth2TopicHandler<>(
         recentChainData,
