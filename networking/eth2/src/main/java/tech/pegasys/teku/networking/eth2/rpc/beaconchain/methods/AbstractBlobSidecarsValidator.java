@@ -20,19 +20,19 @@ import tech.pegasys.teku.kzg.KZGException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 
-public class AbstractBlobSidecarsValidatingProxy {
+public class AbstractBlobSidecarsValidator {
 
   private static final Logger LOG = LogManager.getLogger();
 
   protected final Spec spec;
   protected final KZG kzg;
 
-  public AbstractBlobSidecarsValidatingProxy(final Spec spec, final KZG kzg) {
+  public AbstractBlobSidecarsValidator(final Spec spec, final KZG kzg) {
     this.spec = spec;
     this.kzg = kzg;
   }
 
-  protected boolean verifyBlobSidecar(final BlobSidecar blobSidecar) {
+  boolean verifyBlobSidecarKzg(final BlobSidecar blobSidecar) {
     try {
       return spec.atSlot(blobSidecar.getSlot()).miscHelpers().verifyBlobKzgProof(kzg, blobSidecar);
     } catch (final KZGException ex) {

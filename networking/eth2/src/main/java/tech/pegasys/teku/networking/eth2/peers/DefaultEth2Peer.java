@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarByRootValidator;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRangeListenerValidatingProxy;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRootListenerValidatingProxy;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeListenerWrapper;
@@ -249,7 +250,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                     new BlobSidecarsByRootRequestMessage(
                         blobSidecarsByRootRequestMessageSchema.get(), blobIdentifiers),
                     new BlobSidecarsByRootListenerValidatingProxy(
-                        this, listener, miscHelpersDeneb.get(), blobIdentifiers)))
+                        this, spec, listener, kzg, blobIdentifiers)))
         .orElse(failWithUnsupportedMethodException("BlobSidecarsByRoot"));
   }
 
@@ -288,12 +289,12 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                     .thenPeek(
                         maybeBlobSidecar ->
                             maybeBlobSidecar.ifPresent(
-                                blobSidecar ->
-                                    BlobSidecarsByRootListenerValidatingProxy.validateBlobSidecar(
-                                        blobSidecar,
-                                        Set.of(blobIdentifier),
-                                        miscHelpersDeneb.get(),
-                                        this))))
+                                blobSidecar -> {
+                                  final BlobSidecarByRootValidator blobSidecarByRootValidator =
+                                      new BlobSidecarByRootValidator(
+                                          this, spec, kzg, Set.of(blobIdentifier));
+                                  blobSidecarByRootValidator.validateBlobSidecar(blobSidecar);
+                                })))
         .orElse(failWithUnsupportedMethodException("BlobSidecarsByRoot"));
   }
 

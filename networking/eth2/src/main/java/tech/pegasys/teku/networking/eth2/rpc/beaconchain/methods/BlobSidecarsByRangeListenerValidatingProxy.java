@@ -29,7 +29,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 
-public class BlobSidecarsByRangeListenerValidatingProxy extends AbstractBlobSidecarsValidatingProxy
+public class BlobSidecarsByRangeListenerValidatingProxy extends AbstractBlobSidecarsValidator
     implements RpcResponseListener<BlobSidecar> {
 
   private final Peer peer;
@@ -74,7 +74,7 @@ public class BlobSidecarsByRangeListenerValidatingProxy extends AbstractBlobSide
           final BlobSidecarSummary blobSidecarSummary = BlobSidecarSummary.create(blobSidecar);
           verifyBlobSidecarIsAfterLast(blobSidecarSummary);
 
-          if (!verifyBlobSidecar(blobSidecar)) {
+          if (!verifyBlobSidecarKzg(blobSidecar)) {
             throw new BlobSidecarsResponseInvalidResponseException(
                 peer, BLOB_SIDECAR_KZG_VERIFICATION_FAILED);
           }

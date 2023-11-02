@@ -26,13 +26,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
-import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BlobSidecarsByRootListenerValidatingProxyTest {
@@ -40,7 +40,7 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private BlobSidecarsByRootListenerValidatingProxy listenerWrapper;
   private final Eth2Peer peer = mock(Eth2Peer.class);
-  private final MiscHelpersDeneb miscHelpersDeneb = mock(MiscHelpersDeneb.class);
+  private final KZG kzg = mock(KZG.class);
 
   @SuppressWarnings("unchecked")
   private final RpcResponseListener<BlobSidecar> listener = mock(RpcResponseListener.class);
@@ -48,7 +48,7 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
   @BeforeEach
   void setUp() {
     when(listener.onResponse(any())).thenReturn(SafeFuture.completedFuture(null));
-    when(miscHelpersDeneb.verifyBlobSidecar(any())).thenReturn(true);
+    when(kzg.verifyBlobKzgProof(any(), any(), any())).thenReturn(true);
   }
 
   @Test
@@ -66,8 +66,7 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
             new BlobIdentifier(blockRoot3, UInt64.ZERO),
             new BlobIdentifier(blockRoot4, UInt64.ZERO));
     listenerWrapper =
-        new BlobSidecarsByRootListenerValidatingProxy(
-            peer, listener, miscHelpersDeneb, blobIdentifiers);
+        new BlobSidecarsByRootListenerValidatingProxy(peer, spec, listener, kzg, blobIdentifiers);
 
     final BlobSidecar blobSidecar10 =
         dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
@@ -96,8 +95,7 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
             new BlobIdentifier(blockRoot1, UInt64.ZERO),
             new BlobIdentifier(blockRoot1, UInt64.ONE));
     listenerWrapper =
-        new BlobSidecarsByRootListenerValidatingProxy(
-            peer, listener, miscHelpersDeneb, blobIdentifiers);
+        new BlobSidecarsByRootListenerValidatingProxy(peer, spec, listener, kzg, blobIdentifiers);
 
     final BlobSidecar blobSidecar10 =
         dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
@@ -121,12 +119,12 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
 
   @Test
   void blobSidecarFailsKzgVerification() {
-    when(miscHelpersDeneb.verifyBlobSidecar(any())).thenReturn(false);
+    when(kzg.verifyBlobKzgProof(any(), any(), any())).thenReturn(false);
     final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
     final BlobIdentifier blobIdentifier = new BlobIdentifier(blockRoot1, UInt64.ZERO);
     listenerWrapper =
         new BlobSidecarsByRootListenerValidatingProxy(
-            peer, listener, miscHelpersDeneb, List.of(blobIdentifier));
+            peer, spec, listener, kzg, List.of(blobIdentifier));
 
     final BlobSidecar blobSidecar1 =
         dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
