@@ -19,7 +19,6 @@ import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSide
 import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRangeResponseInvalidResponseException.InvalidResponseType.BLOB_SIDECAR_UNEXPECTED_SLOT;
 import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRangeResponseInvalidResponseException.InvalidResponseType.BLOB_SIDECAR_UNKNOWN_PARENT;
 
-import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -131,10 +130,10 @@ public class BlobSidecarsByRangeListenerValidatingProxy
 
   public boolean verifyBlobSidecar(final BlobSidecar blobSidecar) {
     try {
-      return kzg.verifyBlobKzgProofBatch(
-          List.of(blobSidecar.getBlob().getBytes()),
-          List.of(blobSidecar.getKZGCommitment()),
-          List.of(blobSidecar.getKZGProof()));
+      return kzg.verifyBlobKzgProof(
+          blobSidecar.getBlob().getBytes(),
+          blobSidecar.getKZGCommitment(),
+          blobSidecar.getKZGProof());
     } catch (final KZGException ex) {
       LOG.debug("KZG verification failed for BlobSidecar {}", blobSidecar.toLogString());
       return false;

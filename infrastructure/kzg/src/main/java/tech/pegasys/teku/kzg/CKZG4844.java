@@ -93,6 +93,19 @@ final class CKZG4844 implements KZG {
   }
 
   @Override
+  public boolean verifyBlobKzgProof(
+      final Bytes blob, final KZGCommitment kzgCommitment, final KZGProof kzgProof)
+      throws KZGException {
+    try {
+      return CKZG4844JNI.verifyBlobKzgProof(
+          blob.toArrayUnsafe(), kzgCommitment.toArrayUnsafe(), kzgProof.toArrayUnsafe());
+    } catch (final Exception ex) {
+      throw new KZGException(
+          "Failed to verify blob and commitment against KZG proof " + kzgProof, ex);
+    }
+  }
+
+  @Override
   public boolean verifyBlobKzgProofBatch(
       final List<Bytes> blobs,
       final List<KZGCommitment> kzgCommitments,

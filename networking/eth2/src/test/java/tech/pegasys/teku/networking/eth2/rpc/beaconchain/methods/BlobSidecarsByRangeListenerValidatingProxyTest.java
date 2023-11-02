@@ -47,12 +47,12 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
   @BeforeEach
   void setUp() {
     when(listener.onResponse(any())).thenReturn(SafeFuture.completedFuture(null));
-    when(kzg.verifyBlobKzgProofBatch(any(), any(), any())).thenReturn(true);
+    when(kzg.verifyBlobKzgProof(any(), any(), any())).thenReturn(true);
   }
 
   @Test
   void blobSidecarFailsKzgVerification() {
-    when(kzg.verifyBlobKzgProofBatch(any(), any(), any())).thenReturn(false);
+    when(kzg.verifyBlobKzgProof(any(), any(), any())).thenReturn(false);
     final UInt64 startSlot = UInt64.valueOf(1);
     final UInt64 count = UInt64.valueOf(4);
     listenerWrapper =

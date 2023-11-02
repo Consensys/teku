@@ -16,17 +16,12 @@ package tech.pegasys.teku.reference.phase0.kzg;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 
-/**
- * Actually uses {@link tech.pegasys.teku.kzg.KZG#verifyBlobKzgProofBatch(List, List, List)} KZG
- * interface in absence of non-batch interface
- */
 public class KzgVerifyBlobProofTestExecutor extends KzgTestExecutor {
 
   @Override
@@ -39,8 +34,7 @@ public class KzgVerifyBlobProofTestExecutor extends KzgTestExecutor {
       final Bytes blob = data.getInput().getBlob();
       final KZGCommitment commitment = data.getInput().getCommitment();
       final KZGProof proof = data.getInput().getProof();
-      actualVerificationResult =
-          kzg.verifyBlobKzgProofBatch(List.of(blob), List.of(commitment), List.of(proof));
+      actualVerificationResult = kzg.verifyBlobKzgProof(blob, commitment, proof);
     } catch (final RuntimeException ex) {
       actualVerificationResult = null;
     }
