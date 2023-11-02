@@ -190,7 +190,6 @@ public class ValidatorKeysCheckCommand implements Callable<Integer> {
     // we don't use the data path, but keep configuration happy.
     builder.data(config -> config.dataBasePath(Path.of(".")));
     builder.validator(config -> config.validatorKeystoreLockingEnabled(false));
-    builder.eth2NetworkConfig(config -> config.kzgNoop(true));
     return builder.build();
   }
 }

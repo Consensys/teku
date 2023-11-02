@@ -33,6 +33,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRangeListenerValidatingProxy;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRootListenerValidatingProxy;
@@ -65,7 +66,6 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
@@ -86,11 +86,11 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final RateTracker blockRequestTracker;
   private final RateTracker blobSidecarsRequestTracker;
   private final RateTracker requestTracker;
+  private final KZG kzg;
   private final Supplier<UInt64> firstSlotSupportingBlobSidecarsByRange;
   private final Supplier<BlobSidecarsByRootRequestMessageSchema>
       blobSidecarsByRootRequestMessageSchema;
   private final Supplier<Integer> maxBlobsPerBlock;
-  private final Supplier<MiscHelpersDeneb> miscHelpersDeneb;
 
   DefaultEth2Peer(
       final Spec spec,
@@ -101,7 +101,8 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final PeerChainValidator peerChainValidator,
       final RateTracker blockRequestTracker,
       final RateTracker blobSidecarsRequestTracker,
-      final RateTracker requestTracker) {
+      final RateTracker requestTracker,
+      final KZG kzg) {
     super(peer);
     this.spec = spec;
     this.rpcMethods = rpcMethods;
@@ -111,6 +112,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     this.blockRequestTracker = blockRequestTracker;
     this.blobSidecarsRequestTracker = blobSidecarsRequestTracker;
     this.requestTracker = requestTracker;
+    this.kzg = kzg;
     this.firstSlotSupportingBlobSidecarsByRange =
         Suppliers.memoize(
             () -> {
@@ -124,9 +126,6 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                         spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
                     .getBlobSidecarsByRootRequestMessageSchema());
     this.maxBlobsPerBlock = Suppliers.memoize(() -> getSpecConfigDeneb().getMaxBlobsPerBlock());
-    this.miscHelpersDeneb =
-        Suppliers.memoize(
-            () -> MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers()));
   }
 
   @Override
@@ -345,7 +344,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                       this,
                       listener,
                       maxBlobsPerBlock.get(),
-                      miscHelpersDeneb.get(),
+                      kzg,
                       request.getStartSlot(),
                       request.getCount()));
             })

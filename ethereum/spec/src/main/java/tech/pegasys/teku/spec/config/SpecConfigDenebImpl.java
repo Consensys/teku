@@ -27,8 +27,6 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
   private final int fieldElementsPerBlob;
   private final int maxBlobCommitmentsPerBlock;
   private final int maxBlobsPerBlock;
-  private final Optional<String> trustedSetupPath;
-  private final boolean kzgNoop;
   private final int maxRequestBlocksDeneb;
   private final int maxRequestBlobSidecars;
   private final int minEpochsForBlobSidecarsRequests;
@@ -43,8 +41,6 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
       final int fieldElementsPerBlob,
       final int maxBlobCommitmentsPerBlock,
       final int maxBlobsPerBlock,
-      final Optional<String> trustedSetupPath,
-      final boolean kzgNoop,
       final int maxRequestBlocksDeneb,
       final int maxRequestBlobSidecars,
       final int minEpochsForBlobSidecarsRequests,
@@ -57,8 +53,6 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
     this.fieldElementsPerBlob = fieldElementsPerBlob;
     this.maxBlobCommitmentsPerBlock = maxBlobCommitmentsPerBlock;
     this.maxBlobsPerBlock = maxBlobsPerBlock;
-    this.trustedSetupPath = trustedSetupPath;
-    this.kzgNoop = kzgNoop;
     this.maxRequestBlocksDeneb = maxRequestBlocksDeneb;
     this.maxRequestBlobSidecars = maxRequestBlobSidecars;
     this.minEpochsForBlobSidecarsRequests = minEpochsForBlobSidecarsRequests;
@@ -94,16 +88,6 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
   @Override
   public int getMaxBlobsPerBlock() {
     return maxBlobsPerBlock;
-  }
-
-  @Override
-  public Optional<String> getTrustedSetupPath() {
-    return trustedSetupPath;
-  }
-
-  @Override
-  public boolean isKZGNoop() {
-    return kzgNoop;
   }
 
   @Override
@@ -154,8 +138,6 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
         && fieldElementsPerBlob == that.fieldElementsPerBlob
         && maxBlobCommitmentsPerBlock == that.maxBlobCommitmentsPerBlock
         && maxBlobsPerBlock == that.maxBlobsPerBlock
-        && Objects.equals(trustedSetupPath, that.trustedSetupPath)
-        && kzgNoop == that.kzgNoop
         && maxRequestBlocksDeneb == that.maxRequestBlocksDeneb
         && maxRequestBlobSidecars == that.maxRequestBlobSidecars
         && minEpochsForBlobSidecarsRequests == that.minEpochsForBlobSidecarsRequests
@@ -171,8 +153,6 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
         fieldElementsPerBlob,
         maxBlobCommitmentsPerBlock,
         maxBlobsPerBlock,
-        trustedSetupPath,
-        kzgNoop,
         maxRequestBlocksDeneb,
         maxRequestBlobSidecars,
         minEpochsForBlobSidecarsRequests,

@@ -17,7 +17,6 @@ import static tech.pegasys.teku.cli.subcommand.RemoteSpecLoader.getSpecWithRetry
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
-import java.util.function.Consumer;
 import org.apache.logging.log4j.Level;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -38,7 +37,6 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
-import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 
 @Command(
@@ -56,8 +54,6 @@ import tech.pegasys.teku.storage.server.DatabaseStorageException;
     footer = "Teku is licensed under the Apache License 2.0")
 public class ValidatorClientCommand implements Callable<Integer> {
   public static final String LOG_FILE_PREFIX = "teku-validator";
-  public static final Consumer<SpecConfigBuilder> DENEB_KZG_NOOP =
-      modifier -> modifier.denebBuilder(denebBuilder -> denebBuilder.kzgNoop(true));
 
   @Mixin(name = "Validator")
   private ValidatorOptions validatorOptions;
@@ -126,10 +122,9 @@ public class ValidatorClientCommand implements Callable<Integer> {
     LoggingConfigurator.setAllLevelsSilently("org.jupnp", Level.ERROR);
   }
 
-  private void configureWithSpecFromBeaconNode(
-      final Eth2NetworkConfiguration.Builder builder, final Consumer<SpecConfigBuilder> modifier) {
+  private void configureWithSpecFromBeaconNode(final Eth2NetworkConfiguration.Builder builder) {
     try {
-      var spec = getSpecWithRetry(validatorClientOptions.getBeaconNodeApiEndpoints(), modifier);
+      var spec = getSpecWithRetry(validatorClientOptions.getBeaconNodeApiEndpoints());
       builder.spec(spec);
     } catch (Throwable e) {
       throw new InvalidConfigurationException(e);
@@ -147,9 +142,9 @@ public class ValidatorClientCommand implements Callable<Integer> {
     }
 
     if (isAutoDetectNetworkOption(networkOption)) {
-      builder.eth2NetworkConfig(config -> configureWithSpecFromBeaconNode(config, DENEB_KZG_NOOP));
+      builder.eth2NetworkConfig(this::configureWithSpecFromBeaconNode);
     } else {
-      builder.eth2NetworkConfig(b -> b.applyNetworkDefaults(networkOption).kzgNoop(true));
+      builder.eth2NetworkConfig(b -> b.applyNetworkDefaults(networkOption));
     }
   }
 

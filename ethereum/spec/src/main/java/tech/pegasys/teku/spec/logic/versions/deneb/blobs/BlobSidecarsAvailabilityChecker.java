@@ -21,7 +21,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
-import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 
 public interface BlobSidecarsAvailabilityChecker {
 
@@ -57,6 +56,6 @@ public interface BlobSidecarsAvailabilityChecker {
 
   SafeFuture<BlobSidecarsAndValidationResult> getAvailabilityCheckResult();
 
-  /** Only perform the {@link MiscHelpersDeneb#isDataAvailable} check */
+  /** Perform the data availability check immediately on the provided blob sidecars */
   BlobSidecarsAndValidationResult validateImmediately(List<BlobSidecar> blobSidecars);
 }
