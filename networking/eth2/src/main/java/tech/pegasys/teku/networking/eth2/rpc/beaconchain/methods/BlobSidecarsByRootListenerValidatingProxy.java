@@ -29,7 +29,7 @@ public class BlobSidecarsByRootListenerValidatingProxy implements RpcResponseLis
   private final Peer peer;
   private final Spec spec;
   private final RpcResponseListener<BlobSidecar> blobSidecarResponseListener;
-  private final Set<BlobIdentifier> blobIdentifiers;
+  private final Set<BlobIdentifier> expectedBlobIdentifiers;
   private final KZG kzg;
 
   public BlobSidecarsByRootListenerValidatingProxy(
@@ -37,12 +37,12 @@ public class BlobSidecarsByRootListenerValidatingProxy implements RpcResponseLis
       final Spec spec,
       final RpcResponseListener<BlobSidecar> blobSidecarResponseListener,
       final KZG kzg,
-      final List<BlobIdentifier> blobIdentifiers) {
+      final List<BlobIdentifier> expectedBlobIdentifiers) {
     this.peer = peer;
     this.spec = spec;
     this.blobSidecarResponseListener = blobSidecarResponseListener;
     this.kzg = kzg;
-    this.blobIdentifiers = new HashSet<>(blobIdentifiers);
+    this.expectedBlobIdentifiers = new HashSet<>(expectedBlobIdentifiers);
   }
 
   @Override
@@ -50,7 +50,7 @@ public class BlobSidecarsByRootListenerValidatingProxy implements RpcResponseLis
     return SafeFuture.of(
         () -> {
           final BlobSidecarByRootValidator blobSidecarByRootValidator =
-              new BlobSidecarByRootValidator(peer, spec, kzg, blobIdentifiers);
+              new BlobSidecarByRootValidator(peer, spec, kzg, expectedBlobIdentifiers);
           blobSidecarByRootValidator.validateBlobSidecar(blobSidecar);
           return blobSidecarResponseListener.onResponse(blobSidecar);
         });

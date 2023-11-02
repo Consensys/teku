@@ -26,19 +26,22 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifie
 public class BlobSidecarByRootValidator extends AbstractBlobSidecarsValidator {
 
   private final Peer peer;
-  private final Set<BlobIdentifier> blobIdentifiers;
+  private final Set<BlobIdentifier> expectedBlobIdentifiers;
 
   public BlobSidecarByRootValidator(
-      final Peer peer, final Spec spec, final KZG kzg, final Set<BlobIdentifier> blobIdentifiers) {
+      final Peer peer,
+      final Spec spec,
+      final KZG kzg,
+      final Set<BlobIdentifier> expectedBlobIdentifiers) {
     super(spec, kzg);
     this.peer = peer;
-    this.blobIdentifiers = blobIdentifiers;
+    this.expectedBlobIdentifiers = expectedBlobIdentifiers;
   }
 
   public void validateBlobSidecar(final BlobSidecar blobSidecar) {
     final BlobIdentifier blobIdentifier =
         new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
-    if (!blobIdentifiers.contains(blobIdentifier)) {
+    if (!expectedBlobIdentifiers.contains(blobIdentifier)) {
       throw new BlobSidecarsResponseInvalidResponseException(
           peer, BLOB_SIDECAR_UNEXPECTED_IDENTIFIER);
     }
