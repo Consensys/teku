@@ -115,7 +115,7 @@ public class OkHttpValidatorTypeDefClient {
     try {
       return produceBlockRequest.createUnsignedBlock(randaoReveal, graffiti);
     } catch (final BlockProductionV3FailedException ex) {
-      LOG.warn("Block V3 request failed. Retrying with Block V2");
+      LOG.warn("Produce Block V3 request failed at slot {}. Retrying with Block V2", slot);
       return createUnsignedBlock(
           slot, randaoReveal, graffiti, ValidatorsUtil.DEFAULT_PRODUCE_BLINDED_BLOCK);
     }
