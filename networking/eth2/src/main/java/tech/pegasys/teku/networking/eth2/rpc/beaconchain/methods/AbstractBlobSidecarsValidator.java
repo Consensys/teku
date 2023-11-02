@@ -27,9 +27,8 @@ public class AbstractBlobSidecarsValidator {
   private static final Logger LOG = LogManager.getLogger();
 
   protected final Peer peer;
-
-  private final Spec spec;
-  private final KZG kzg;
+  protected final Spec spec;
+  protected final KZG kzg;
 
   public AbstractBlobSidecarsValidator(final Peer peer, final Spec spec, final KZG kzg) {
     this.peer = peer;
@@ -37,7 +36,7 @@ public class AbstractBlobSidecarsValidator {
     this.kzg = kzg;
   }
 
-  void verifyKzg(final BlobSidecar blobSidecar) {
+  protected void verifyKzg(final BlobSidecar blobSidecar) {
     if (!verifyBlobKzgProof(blobSidecar)) {
       throw new BlobSidecarsResponseInvalidResponseException(
           peer, BLOB_SIDECAR_KZG_VERIFICATION_FAILED);
