@@ -410,7 +410,7 @@ public class ValidatorClientService extends Service {
             forkProvider,
             validatorApiChannel,
             blockContainerSigner,
-            config.getValidatorConfig().isFailoversPublishSignedDutiesEnabled(),
+            config.getValidatorConfig().isBlindedBeaconBlocksEnabled(),
             config.getValidatorConfig().isBlockV3Enabled(),
             spec,
             validatorDutyMetrics);

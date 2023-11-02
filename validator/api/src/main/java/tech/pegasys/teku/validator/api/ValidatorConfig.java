@@ -84,7 +84,7 @@ public class ValidatorConfig {
   private final boolean doppelgangerDetectionEnabled;
   private final boolean failoversSendSubnetSubscriptionsEnabled;
   private final boolean failoversPublishSignedDutiesEnabled;
-  private final boolean blockV3enabled;
+  private final boolean blockV3Enabled;
   private final UInt64 builderRegistrationDefaultGasLimit;
   private final int builderRegistrationSendingBatchSize;
   private final Optional<UInt64> builderRegistrationTimestampOverride;
@@ -119,7 +119,7 @@ public class ValidatorConfig {
       final boolean doppelgangerDetectionEnabled,
       final boolean failoversSendSubnetSubscriptionsEnabled,
       final boolean failoversPublishSignedDutiesEnabled,
-      final boolean blockV3enabled,
+      final boolean blockV3Enabled,
       final UInt64 builderRegistrationDefaultGasLimit,
       final int builderRegistrationSendingBatchSize,
       final Optional<UInt64> builderRegistrationTimestampOverride,
@@ -154,7 +154,7 @@ public class ValidatorConfig {
     this.doppelgangerDetectionEnabled = doppelgangerDetectionEnabled;
     this.failoversSendSubnetSubscriptionsEnabled = failoversSendSubnetSubscriptionsEnabled;
     this.failoversPublishSignedDutiesEnabled = failoversPublishSignedDutiesEnabled;
-    this.blockV3enabled = blockV3enabled;
+    this.blockV3Enabled = blockV3Enabled;
     this.builderRegistrationDefaultGasLimit = builderRegistrationDefaultGasLimit;
     this.builderRegistrationSendingBatchSize = builderRegistrationSendingBatchSize;
     this.builderRegistrationTimestampOverride = builderRegistrationTimestampOverride;
@@ -276,7 +276,7 @@ public class ValidatorConfig {
   }
 
   public boolean isBlockV3Enabled() {
-    return blockV3enabled;
+    return blockV3Enabled;
   }
 
   public boolean isBuilderRegistrationDefaultEnabled() {
