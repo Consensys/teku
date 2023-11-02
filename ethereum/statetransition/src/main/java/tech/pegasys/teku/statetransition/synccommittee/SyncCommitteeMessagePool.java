@@ -74,7 +74,7 @@ public class SyncCommitteeMessagePool implements SlotEventsChannel {
   }
 
   public SafeFuture<InternalValidationResult> addRemote(
-      final ValidatableSyncCommitteeMessage message) {
+      final ValidatableSyncCommitteeMessage message, final Optional<UInt64> arrivalTimestamp) {
     return add(message, true);
   }
 

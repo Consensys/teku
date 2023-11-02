@@ -26,6 +26,7 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -207,7 +208,7 @@ class SyncCommitteeContributionPoolTest {
   }
 
   private void addValidRemote(final SignedContributionAndProof proof) {
-    assertThat(pool.addRemote(proof)).isCompletedWithValue(ACCEPT);
+    assertThat(pool.addRemote(proof, Optional.empty())).isCompletedWithValue(ACCEPT);
   }
 
   private void assertSyncAggregateFromContribution(

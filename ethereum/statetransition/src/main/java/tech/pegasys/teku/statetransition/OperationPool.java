@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -21,6 +22,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszCollection;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
@@ -38,7 +40,7 @@ public interface OperationPool<T extends SszData> {
 
   SafeFuture<InternalValidationResult> addLocal(T item);
 
-  SafeFuture<InternalValidationResult> addRemote(T item);
+  SafeFuture<InternalValidationResult> addRemote(T item, Optional<UInt64> arrivalTimestamp);
 
   void addAll(SszCollection<T> items);
 

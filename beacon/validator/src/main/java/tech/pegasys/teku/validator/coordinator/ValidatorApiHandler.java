@@ -540,7 +540,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   private SafeFuture<InternalValidationResult> processAttestation(final Attestation attestation) {
     return attestationManager
-        .addAttestation(ValidatableAttestation.fromValidator(spec, attestation))
+        .addAttestation(ValidatableAttestation.fromValidator(spec, attestation), Optional.empty())
         .thenPeek(
             result -> {
               if (!result.isReject()) {
@@ -591,7 +591,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private SafeFuture<InternalValidationResult> processAggregateAndProof(
       final SignedAggregateAndProof aggregateAndProof) {
     return attestationManager
-        .addAggregate(ValidatableAttestation.aggregateFromValidator(spec, aggregateAndProof))
+        .addAggregate(
+            ValidatableAttestation.aggregateFromValidator(spec, aggregateAndProof),
+            Optional.empty())
         .thenPeek(
             result -> {
               if (result.isReject()) {

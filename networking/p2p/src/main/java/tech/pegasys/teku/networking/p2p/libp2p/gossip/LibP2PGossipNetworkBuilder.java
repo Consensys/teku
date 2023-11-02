@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.p2p.libp2p.gossip;
 
+import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.networking.p2p.libp2p.LibP2PNetworkBuilder.DEFAULT_RECORD_MESSAGE_ARRIVAL;
 import static tech.pegasys.teku.networking.p2p.libp2p.config.LibP2PParamsFactory.MAX_SUBSCRIPTIONS_PER_MESSAGE;
 import static tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork.NULL_SEQNO_GENERATOR;
 import static tech.pegasys.teku.networking.p2p.libp2p.gossip.LibP2PGossipNetwork.STRICT_FIELDS_VALIDATOR;
@@ -39,6 +41,8 @@ import io.netty.handler.logging.LoggingHandler;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
@@ -64,23 +68,40 @@ public class LibP2PGossipNetworkBuilder {
   protected PreparedGossipMessageFactory defaultMessageFactory;
   protected GossipTopicFilter gossipTopicFilter;
   protected boolean logWireGossip;
+  protected TimeProvider timeProvider;
+  protected boolean recordArrivalTime = DEFAULT_RECORD_MESSAGE_ARRIVAL;
 
   protected ChannelHandler debugGossipHandler = null;
 
   protected LibP2PGossipNetworkBuilder() {}
 
   public LibP2PGossipNetwork build() {
-    GossipTopicHandlers topicHandlers = new GossipTopicHandlers();
-    Gossip gossip = createGossip(gossipConfig, logWireGossip, gossipTopicFilter, topicHandlers);
-    PubsubPublisherApi publisher = gossip.createPublisher(null, NULL_SEQNO_GENERATOR);
+    validate();
+    final GossipTopicHandlers topicHandlers = new GossipTopicHandlers();
+    final Gossip gossip =
+        createGossip(gossipConfig, logWireGossip, gossipTopicFilter, topicHandlers);
+    final PubsubPublisherApi publisher = gossip.createPublisher(null, NULL_SEQNO_GENERATOR);
 
     return new LibP2PGossipNetwork(metricsSystem, gossip, publisher, topicHandlers);
   }
 
+  private void validate() {
+    assertNotNull("metricsSystem", metricsSystem);
+    assertNotNull("gossipConfig", gossipConfig);
+    assertNotNull("networkingSpecConfig", networkingSpecConfig);
+    assertNotNull("defaultMessageFactory", defaultMessageFactory);
+    assertNotNull("gossipTopicFilter", gossipTopicFilter);
+    assertNotNull("timeProvider", timeProvider);
+  }
+
+  private void assertNotNull(final String fieldName, final Object fieldValue) {
+    checkState(fieldValue != null, "Field " + fieldName + " must be set.");
+  }
+
   protected GossipRouter createGossipRouter(
-      GossipConfig gossipConfig,
-      GossipTopicFilter gossipTopicFilter,
-      GossipTopicHandlers topicHandlers) {
+      final GossipConfig gossipConfig,
+      final GossipTopicFilter gossipTopicFilter,
+      final GossipTopicHandlers topicHandlers) {
 
     final GossipParams gossipParams = LibP2PParamsFactory.createGossipParams(gossipConfig);
     final GossipScoreParams scoreParams =
@@ -109,14 +130,22 @@ public class LibP2PGossipNetworkBuilder {
           Preconditions.checkArgument(
               msg.getTopicIDsCount() == 1,
               "Unexpected number of topics for a single message: " + msg.getTopicIDsCount());
-          String topic = msg.getTopicIDs(0);
-          Bytes payload = Bytes.wrap(msg.getData().toByteArray());
+          final Optional<UInt64> arrivalTimestamp;
+          if (recordArrivalTime) {
+            arrivalTimestamp = Optional.of(timeProvider.getTimeInMillis());
+          } else {
+            arrivalTimestamp = Optional.empty();
+          }
+          final String topic = msg.getTopicIDs(0);
+          final Bytes payload = Bytes.wrap(msg.getData().toByteArray());
 
-          PreparedGossipMessage preparedMessage =
+          final PreparedGossipMessage preparedMessage =
               topicHandlers
                   .getHandlerForTopic(topic)
-                  .map(handler -> handler.prepareMessage(payload))
-                  .orElse(defaultMessageFactory.create(topic, payload, networkingSpecConfig));
+                  .map(handler -> handler.prepareMessage(payload, arrivalTimestamp))
+                  .orElse(
+                      defaultMessageFactory.create(
+                          topic, payload, networkingSpecConfig, arrivalTimestamp));
 
           return new PreparedPubsubMessage(msg, preparedMessage);
         });
@@ -125,12 +154,12 @@ public class LibP2PGossipNetworkBuilder {
   }
 
   protected Gossip createGossip(
-      GossipConfig gossipConfig,
-      boolean gossipLogsEnabled,
-      GossipTopicFilter gossipTopicFilter,
-      GossipTopicHandlers topicHandlers) {
+      final GossipConfig gossipConfig,
+      final boolean gossipLogsEnabled,
+      final GossipTopicFilter gossipTopicFilter,
+      final GossipTopicHandlers topicHandlers) {
 
-    GossipRouter router = createGossipRouter(gossipConfig, gossipTopicFilter, topicHandlers);
+    final GossipRouter router = createGossipRouter(gossipConfig, gossipTopicFilter, topicHandlers);
 
     if (gossipLogsEnabled) {
       if (debugGossipHandler != null) {
@@ -139,17 +168,17 @@ public class LibP2PGossipNetworkBuilder {
       }
       debugGossipHandler = new LoggingHandler("wire.gossip", LogLevel.DEBUG);
     }
-    PubsubApi pubsubApi = PubsubApiKt.createPubsubApi(router);
+    final PubsubApi pubsubApi = PubsubApiKt.createPubsubApi(router);
 
     return new Gossip(router, pubsubApi, debugGossipHandler);
   }
 
-  public LibP2PGossipNetworkBuilder metricsSystem(MetricsSystem metricsSystem) {
+  public LibP2PGossipNetworkBuilder metricsSystem(final MetricsSystem metricsSystem) {
     this.metricsSystem = metricsSystem;
     return this;
   }
 
-  public LibP2PGossipNetworkBuilder gossipConfig(GossipConfig gossipConfig) {
+  public LibP2PGossipNetworkBuilder gossipConfig(final GossipConfig gossipConfig) {
     this.gossipConfig = gossipConfig;
     return this;
   }
@@ -161,23 +190,33 @@ public class LibP2PGossipNetworkBuilder {
   }
 
   public LibP2PGossipNetworkBuilder defaultMessageFactory(
-      PreparedGossipMessageFactory defaultMessageFactory) {
+      final PreparedGossipMessageFactory defaultMessageFactory) {
     this.defaultMessageFactory = defaultMessageFactory;
     return this;
   }
 
-  public LibP2PGossipNetworkBuilder gossipTopicFilter(GossipTopicFilter gossipTopicFilter) {
+  public LibP2PGossipNetworkBuilder gossipTopicFilter(final GossipTopicFilter gossipTopicFilter) {
     this.gossipTopicFilter = gossipTopicFilter;
     return this;
   }
 
-  public LibP2PGossipNetworkBuilder logWireGossip(boolean logWireGossip) {
+  public LibP2PGossipNetworkBuilder logWireGossip(final boolean logWireGossip) {
     this.logWireGossip = logWireGossip;
     return this;
   }
 
-  public LibP2PGossipNetworkBuilder debugGossipHandler(ChannelHandler debugGossipHandler) {
+  public LibP2PGossipNetworkBuilder debugGossipHandler(final ChannelHandler debugGossipHandler) {
     this.debugGossipHandler = debugGossipHandler;
+    return this;
+  }
+
+  public LibP2PGossipNetworkBuilder timeProvider(final TimeProvider timeProvider) {
+    this.timeProvider = timeProvider;
+    return this;
+  }
+
+  public LibP2PGossipNetworkBuilder recordArrivalTime(final boolean recordArrivalTime) {
+    this.recordArrivalTime = recordArrivalTime;
     return this;
   }
 }

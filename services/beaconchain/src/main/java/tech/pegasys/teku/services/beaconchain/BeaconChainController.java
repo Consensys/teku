@@ -1011,6 +1011,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .requiredCheckpoint(weakSubjectivityValidator.getWSCheckpoint())
             .specProvider(spec)
             .kzg(kzg)
+            .recordMessageArrival(true)
             .build();
 
     syncCommitteeMessagePool.subscribeOperationAdded(

@@ -28,10 +28,14 @@ public class PerformanceTracker {
     this.timeProvider = timeProvider;
   }
 
-  public UInt64 addEvent(final String label) {
-    final UInt64 timestamp = timeProvider.getTimeInMillis();
+  public UInt64 addEvent(final String label, final UInt64 timestamp) {
     events.add(Pair.of(label, timestamp));
     return timestamp;
+  }
+
+  public UInt64 addEvent(final String label) {
+    final UInt64 timestamp = timeProvider.getTimeInMillis();
+    return addEvent(label, timestamp);
   }
 
   public void report(

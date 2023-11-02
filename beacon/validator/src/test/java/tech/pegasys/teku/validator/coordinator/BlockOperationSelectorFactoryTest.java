@@ -254,7 +254,7 @@ class BlockOperationSelectorFactoryTest {
   }
 
   private <T extends SszData> void addToPool(final OperationPool<T> pool, final T operation) {
-    assertThat(pool.addRemote(operation)).isCompletedWithValue(ACCEPT);
+    assertThat(pool.addRemote(operation, Optional.empty())).isCompletedWithValue(ACCEPT);
   }
 
   @Test
@@ -294,7 +294,8 @@ class BlockOperationSelectorFactoryTest {
     addToPool(attesterSlashingPool, attesterSlashing1);
     addToPool(attesterSlashingPool, attesterSlashing2);
     addToPool(attesterSlashingPool, attesterSlashing3);
-    assertThat(contributionPool.addRemote(contribution)).isCompletedWithValue(ACCEPT);
+    assertThat(contributionPool.addRemote(contribution, Optional.empty()))
+        .isCompletedWithValue(ACCEPT);
     addToPool(blsToExecutionChangePool, blsToExecutionChange1);
     addToPool(blsToExecutionChangePool, blsToExecutionChange2);
 

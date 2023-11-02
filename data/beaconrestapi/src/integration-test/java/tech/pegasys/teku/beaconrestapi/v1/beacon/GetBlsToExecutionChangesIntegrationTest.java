@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.type.CollectionType;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import okhttp3.Response;
@@ -59,7 +60,7 @@ public class GetBlsToExecutionChangesIntegrationTest
     when(validator.validateForGossip(any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     for (SignedBlsToExecutionChange operation : expectedOperations) {
-      assertThat(blsToExecutionChangePool.addRemote(operation)).isCompleted();
+      assertThat(blsToExecutionChangePool.addRemote(operation, Optional.empty())).isCompleted();
     }
 
     Response response = getResponse(GetBlsToExecutionChanges.ROUTE);
@@ -80,7 +81,7 @@ public class GetBlsToExecutionChangesIntegrationTest
     when(validator.validateForGossip(any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     assertThat(blsToExecutionChangePool.addLocal(localChange)).isCompleted();
-    assertThat(blsToExecutionChangePool.addRemote(remoteChange)).isCompleted();
+    assertThat(blsToExecutionChangePool.addRemote(remoteChange, Optional.empty())).isCompleted();
 
     Response response =
         getResponse(GetBlsToExecutionChanges.ROUTE, Map.of("locally_submitted", "true"));

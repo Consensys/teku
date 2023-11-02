@@ -18,6 +18,7 @@ import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool.DEFAULT_MAXIMUM_ATTESTATION_COUNT;
 
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.util.Optional;
 import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -146,7 +147,7 @@ class AttestationManagerIntegrationTest {
         createAttestation(attestationSlot, targetBlockAndState, phase0Fork);
 
     final SafeFuture<InternalValidationResult> result =
-        attestationManager.addAttestation(attestation);
+        attestationManager.addAttestation(attestation, Optional.empty());
     assertThat(result).isCompletedWithValue(InternalValidationResult.ACCEPT);
   }
 
@@ -163,7 +164,7 @@ class AttestationManagerIntegrationTest {
         createAttestation(attestationSlot, targetBlockAndState, altairFork);
 
     final SafeFuture<InternalValidationResult> result =
-        attestationManager.addAttestation(attestation);
+        attestationManager.addAttestation(attestation, Optional.empty());
     assertThat(result)
         .isCompletedWithValueMatching(InternalValidationResult::isReject, "is rejected");
   }
@@ -181,7 +182,7 @@ class AttestationManagerIntegrationTest {
         createAttestation(attestationSlot, targetBlockAndState, phase0Fork);
 
     final SafeFuture<InternalValidationResult> result =
-        attestationManager.addAttestation(attestation);
+        attestationManager.addAttestation(attestation, Optional.empty());
     assertThat(result)
         .isCompletedWithValueMatching(InternalValidationResult::isReject, "is rejected");
   }
@@ -199,7 +200,7 @@ class AttestationManagerIntegrationTest {
         createAttestation(attestationSlot, targetBlockAndState, altairFork);
 
     final SafeFuture<InternalValidationResult> result =
-        attestationManager.addAttestation(attestation);
+        attestationManager.addAttestation(attestation, Optional.empty());
     assertThat(result).isCompletedWithValue(InternalValidationResult.ACCEPT);
   }
 
@@ -216,7 +217,7 @@ class AttestationManagerIntegrationTest {
         ValidatableAttestation.aggregateFromValidator(spec, aggregate);
 
     final SafeFuture<InternalValidationResult> result =
-        attestationManager.addAggregate(attestation);
+        attestationManager.addAggregate(attestation, Optional.empty());
 
     assertThat(result).isCompletedWithValue(InternalValidationResult.ACCEPT);
   }
@@ -237,7 +238,7 @@ class AttestationManagerIntegrationTest {
         createAttestation(attestationSlot, targetBlockAndState, altairFork);
 
     final SafeFuture<InternalValidationResult> result =
-        attestationManager.addAttestation(attestation);
+        attestationManager.addAttestation(attestation, Optional.empty());
     assertThat(result).isCompletedWithValue(InternalValidationResult.ACCEPT);
   }
 

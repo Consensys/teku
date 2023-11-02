@@ -41,10 +41,11 @@ public class AggregateGossipManager extends AbstractGossipManager<SignedAggregat
         gossipNetwork,
         gossipEncoding,
         forkInfo,
-        proofMessage ->
+        (proofMessage, arrivalTimestamp) ->
             processor.process(
                 ValidatableAttestation.aggregateFromNetwork(
-                    recentChainData.getSpec(), proofMessage)),
+                    recentChainData.getSpec(), proofMessage),
+                arrivalTimestamp),
         spec.atEpoch(forkInfo.getFork().getEpoch())
             .getSchemaDefinitions()
             .getSignedAggregateAndProofSchema(),

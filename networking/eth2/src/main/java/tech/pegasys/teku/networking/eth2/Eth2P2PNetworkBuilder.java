@@ -122,6 +122,7 @@ public class Eth2P2PNetworkBuilder {
       gossipedSyncCommitteeMessageProcessor;
   protected StatusMessageFactory statusMessageFactory;
   protected KZG kzg;
+  protected boolean recordMessageArrival;
 
   protected Eth2P2PNetworkBuilder() {}
 
@@ -318,6 +319,8 @@ public class Eth2P2PNetworkBuilder {
             .peerHandlers(peerHandlers)
             .preparedGossipMessageFactory(defaultMessageFactory)
             .gossipTopicFilter(gossipTopicsFilter)
+            .timeProvider(timeProvider)
+            .recordMessageArrival(recordMessageArrival)
             .build();
 
     final AttestationSubnetTopicProvider attestationSubnetTopicProvider =
@@ -570,6 +573,11 @@ public class Eth2P2PNetworkBuilder {
   public Eth2P2PNetworkBuilder kzg(final KZG kzg) {
     checkNotNull(kzg);
     this.kzg = kzg;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder recordMessageArrival(final boolean recordMessageArrival) {
+    this.recordMessageArrival = recordMessageArrival;
     return this;
   }
 }
