@@ -51,10 +51,10 @@ public class MiscHelpersDenebPropertyTest {
 
   @AddLifecycleHook(KzgResolver.class)
   @Property(tries = 100)
-  void fuzzVerifyBlobSidecar(
+  void fuzzVerifyBlobKzgProof(
       final KZG kzg, @ForAll(supplier = BlobSidecarSupplier.class) BlobSidecar blobSidecar) {
     try {
-      miscHelpers.verifyBlobSidecar(kzg, blobSidecar);
+      miscHelpers.verifyBlobKzgProof(kzg, blobSidecar);
     } catch (Exception e) {
       assertThat(e).isInstanceOf(KZGException.class);
     }
@@ -62,11 +62,11 @@ public class MiscHelpersDenebPropertyTest {
 
   @AddLifecycleHook(KzgResolver.class)
   @Property(tries = 100)
-  void fuzzVerifyBlobSidecars(
+  void fuzzVerifyBlobKzgProofBatch(
       final KZG kzg,
       @ForAll final List<@From(supplier = BlobSidecarSupplier.class) BlobSidecar> blobSidecars) {
     try {
-      miscHelpers.verifyBlobSidecars(kzg, blobSidecars);
+      miscHelpers.verifyBlobKzgProofBatch(kzg, blobSidecars);
     } catch (Exception e) {
       assertThat(e).isInstanceOf(KZGException.class);
     }

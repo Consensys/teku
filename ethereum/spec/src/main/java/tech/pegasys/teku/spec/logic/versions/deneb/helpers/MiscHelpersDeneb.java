@@ -62,7 +62,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
    * @return true if blob sidecar is valid
    */
   @Override
-  public boolean verifyBlobSidecar(final KZG kzg, final BlobSidecar blobSidecar) {
+  public boolean verifyBlobKzgProof(final KZG kzg, final BlobSidecar blobSidecar) {
     return kzg.verifyBlobKzgProof(
         blobSidecar.getBlob().getBytes(),
         blobSidecar.getKZGCommitment(),
@@ -79,7 +79,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
    * @return true if all blob sidecars are valid
    */
   @Override
-  public boolean verifyBlobSidecars(final KZG kzg, final List<BlobSidecar> blobSidecars) {
+  public boolean verifyBlobKzgProofBatch(final KZG kzg, final List<BlobSidecar> blobSidecars) {
     final List<Bytes> blobs = new ArrayList<>();
     final List<KZGCommitment> kzgCommitments = new ArrayList<>();
     final List<KZGProof> kzgProofs = new ArrayList<>();

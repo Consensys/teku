@@ -544,7 +544,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   private OngoingStubbing<Boolean> whenDataAvailability(final List<BlobSidecar> blobSidecars) {
-    return when(miscHelpers.verifyBlobSidecars(kzg, blobSidecars));
+    return when(miscHelpers.verifyBlobKzgProofBatch(kzg, blobSidecars));
   }
 
   private void throwWhenValidatingBlobSidecarsBatchAgainstBlock(
@@ -580,7 +580,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
                 kzgCommitmentsArg ->
                     assertThat(kzgCommitmentsArg).isEqualTo(kzgCommitmentsComplete)));
 
-    verify(miscHelpers, times(1)).verifyBlobSidecars(kzg, blobSidecars);
+    verify(miscHelpers, times(1)).verifyBlobKzgProofBatch(kzg, blobSidecars);
 
     if (isFinalValidation) {
       verify(miscHelpers, times(1))
@@ -597,7 +597,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   private void verifyDataAvailabilityNeverCalled() {
-    verify(miscHelpers, never()).verifyBlobSidecars(eq(kzg), any());
+    verify(miscHelpers, never()).verifyBlobKzgProofBatch(eq(kzg), any());
   }
 
   private void prepareBlockAndBlobSidecarsOutsideAvailabilityWindow() {

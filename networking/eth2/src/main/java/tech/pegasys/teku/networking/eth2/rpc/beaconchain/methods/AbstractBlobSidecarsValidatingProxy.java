@@ -34,7 +34,7 @@ public class AbstractBlobSidecarsValidatingProxy {
 
   protected boolean verifyBlobSidecar(final BlobSidecar blobSidecar) {
     try {
-      return spec.atSlot(blobSidecar.getSlot()).miscHelpers().verifyBlobSidecar(kzg, blobSidecar);
+      return spec.atSlot(blobSidecar.getSlot()).miscHelpers().verifyBlobKzgProof(kzg, blobSidecar);
     } catch (final KZGException ex) {
       LOG.debug("KZG verification failed for BlobSidecar {}", blobSidecar.toLogString());
       return false;

@@ -344,11 +344,11 @@ public class MiscHelpers {
     return false;
   }
 
-  public boolean verifyBlobSidecar(final KZG kzg, final BlobSidecar blobSidecar) {
+  public boolean verifyBlobKzgProof(final KZG kzg, final BlobSidecar blobSidecar) {
     return false;
   }
 
-  public boolean verifyBlobSidecars(final KZG kzg, final List<BlobSidecar> blobSidecars) {
+  public boolean verifyBlobKzgProofBatch(final KZG kzg, final List<BlobSidecar> blobSidecars) {
     return false;
   }
 
