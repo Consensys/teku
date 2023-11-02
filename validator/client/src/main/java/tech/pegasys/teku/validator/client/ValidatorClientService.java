@@ -411,6 +411,7 @@ public class ValidatorClientService extends Service {
             validatorApiChannel,
             blockContainerSigner,
             config.getValidatorConfig().isBlindedBeaconBlocksEnabled(),
+            config.getValidatorConfig().isBlockV3Enabled(),
             spec,
             validatorDutyMetrics);
     final AttestationDutyFactory attestationDutyFactory =
