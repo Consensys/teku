@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.versions.deneb.helpers;
 
-import com.google.common.io.Resources;
 import java.util.Optional;
 import net.jqwik.api.Tuple;
 import net.jqwik.api.lifecycle.LifecycleContext;
@@ -23,8 +22,7 @@ import net.jqwik.api.lifecycle.PropagationMode;
 import net.jqwik.api.lifecycle.ResolveParameterHook;
 import net.jqwik.api.lifecycle.Store;
 import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
-import tech.pegasys.teku.kzg.trusted_setups.TrustedSetups;
+import tech.pegasys.teku.kzg.trusted_setups.TrustedSetupLoader;
 
 /**
  * This class provides a KZG instance with a loaded trusted setup that will automatically free the
@@ -52,13 +50,11 @@ class KzgResolver implements ResolveParameterHook {
   }
 
   private static class KzgAutoLoadFree implements Store.CloseOnReset {
-    private static final String TRUSTED_SETUP =
-        Resources.getResource(TrustedSetups.class, "trusted_setup.txt").toExternalForm();
 
-    private final KZG kzg = CKZG4844.getInstance();
+    private final KZG kzg = KZG.getInstance();
 
     private KzgAutoLoadFree() {
-      kzg.loadTrustedSetup(TRUSTED_SETUP);
+      TrustedSetupLoader.loadTrustedSetupForTests(kzg);
     }
 
     @Override

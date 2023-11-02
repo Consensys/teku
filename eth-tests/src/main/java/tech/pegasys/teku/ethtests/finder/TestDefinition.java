@@ -14,15 +14,11 @@
 package tech.pegasys.teku.ethtests.finder;
 
 import java.nio.file.Path;
-import java.util.Objects;
-import java.util.function.Consumer;
 import tech.pegasys.teku.ethtests.TestFork;
 import tech.pegasys.teku.ethtests.TestSpecConfig;
-import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.builder.DenebBuilder;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class TestDefinition {
@@ -56,17 +52,13 @@ public class TestDefinition {
   }
 
   public Spec getSpec() {
-    return getSpec(true);
-  }
-
-  public Spec getSpec(final boolean kzgNoop) {
     if (spec == null) {
-      createSpec(kzgNoop);
+      createSpec();
     }
     return spec;
   }
 
-  private void createSpec(final boolean kzgNoop) {
+  private void createSpec() {
     final Eth2Network network =
         switch (configName) {
           case TestSpecConfig.MAINNET -> Eth2Network.MAINNET;
@@ -82,28 +74,7 @@ public class TestDefinition {
           case TestFork.DENEB -> SpecMilestone.DENEB;
           default -> throw new IllegalArgumentException("Unknown fork: " + fork);
         };
-    spec =
-        TestSpecFactory.create(
-            milestone,
-            network,
-            configBuilder -> {
-              if (!kzgNoop) {
-                configBuilder.denebBuilder(denebConfigKzgModifier(network));
-              }
-            });
-  }
-
-  private Consumer<DenebBuilder> denebConfigKzgModifier(final Eth2Network network) {
-    return builder -> {
-      final String trustedSetupFilename =
-          network.equals(Eth2Network.MAINNET)
-              ? "mainnet-trusted-setup.txt"
-              : "minimal-trusted-setup.txt";
-      final String trustedSetupPath =
-          Objects.requireNonNull(Eth2NetworkConfiguration.class.getResource(trustedSetupFilename))
-              .toExternalForm();
-      builder.trustedSetupPath(trustedSetupPath).kzgNoop(false);
-    };
+    spec = TestSpecFactory.create(milestone, network);
   }
 
   public String getTestType() {

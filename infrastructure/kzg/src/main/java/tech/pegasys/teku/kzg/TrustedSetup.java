@@ -20,7 +20,7 @@ import static ethereum.ckzg4844.CKZG4844JNI.BYTES_PER_G2;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 
-public record TrustedSetup(List<Bytes> g1Points, List<Bytes> g2Points) {
+record TrustedSetup(List<Bytes> g1Points, List<Bytes> g2Points) {
 
   public TrustedSetup {
     g1Points.forEach(this::validateG1Point);

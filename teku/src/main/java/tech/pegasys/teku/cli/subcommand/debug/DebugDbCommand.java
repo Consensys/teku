@@ -215,10 +215,7 @@ public class DebugDbCommand implements Runnable {
                       StoreBuilder.create()
                           .onDiskStoreData(storeData)
                           .metricsSystem(new NoOpMetricsSystem())
-                          .specProvider(
-                              eth2NetworkOptions
-                                  .getNetworkConfiguration(config -> config.kzgNoop(true))
-                                  .getSpec())
+                          .specProvider(eth2NetworkOptions.getNetworkConfiguration().getSpec())
                           .blockProvider(BlockProvider.NOOP)
                           .stateProvider(StateAndBlockSummaryProvider.NOOP)
                           .build())
@@ -460,7 +457,7 @@ public class DebugDbCommand implements Runnable {
               showDefaultValue = Visibility.ALWAYS)
           final boolean deleteAll)
       throws Exception {
-    final Spec spec = eth2NetworkOptions.getNetworkConfiguration(b -> b.kzgNoop(true)).getSpec();
+    final Spec spec = eth2NetworkOptions.getNetworkConfiguration().getSpec();
     try (final Database database = createDatabase(beaconNodeDataOptions, eth2NetworkOptions)) {
       final Optional<Checkpoint> justified = database.getJustifiedCheckpoint();
       if (justified.isEmpty()) {
@@ -564,7 +561,7 @@ public class DebugDbCommand implements Runnable {
       final BeaconNodeDataOptions beaconNodeDataOptions,
       final Eth2NetworkOptions eth2NetworkOptions) {
     final Eth2NetworkConfiguration networkConfiguration =
-        eth2NetworkOptions.getNetworkConfiguration(b -> b.kzgNoop(true));
+        eth2NetworkOptions.getNetworkConfiguration();
     final Spec spec = networkConfiguration.getSpec();
     final VersionedDatabaseFactory databaseFactory =
         new VersionedDatabaseFactory(

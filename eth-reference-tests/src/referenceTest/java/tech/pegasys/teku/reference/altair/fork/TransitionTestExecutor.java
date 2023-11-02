@@ -64,7 +64,7 @@ public class TransitionTestExecutor implements TestExecutor {
                     .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
                     .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
                     .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
-                    .denebBuilder(d -> d.denebForkEpoch(forkEpoch).kzgNoop(true));
+                    .denebBuilder(d -> d.denebForkEpoch(forkEpoch));
                 default -> throw new IllegalStateException(
                     "Unhandled fork transition for test "
                         + testDefinition.getDisplayName()

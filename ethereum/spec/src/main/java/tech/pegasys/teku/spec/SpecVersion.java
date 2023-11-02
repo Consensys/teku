@@ -51,20 +51,13 @@ public class SpecVersion extends DelegatingSpecLogic {
 
   public static Optional<SpecVersion> create(
       final SpecMilestone milestone, final SpecConfig specConfig) {
-    switch (milestone) {
-      case PHASE0:
-        return Optional.of(createPhase0(specConfig));
-      case ALTAIR:
-        return specConfig.toVersionAltair().map(SpecVersion::createAltair);
-      case BELLATRIX:
-        return specConfig.toVersionBellatrix().map(SpecVersion::createBellatrix);
-      case CAPELLA:
-        return specConfig.toVersionCapella().map(SpecVersion::createCapella);
-      case DENEB:
-        return specConfig.toVersionDeneb().map(SpecVersion::createDeneb);
-      default:
-        throw new UnsupportedOperationException("Unknown milestone requested: " + milestone);
-    }
+    return switch (milestone) {
+      case PHASE0 -> Optional.of(createPhase0(specConfig));
+      case ALTAIR -> specConfig.toVersionAltair().map(SpecVersion::createAltair);
+      case BELLATRIX -> specConfig.toVersionBellatrix().map(SpecVersion::createBellatrix);
+      case CAPELLA -> specConfig.toVersionCapella().map(SpecVersion::createCapella);
+      case DENEB -> specConfig.toVersionDeneb().map(SpecVersion::createDeneb);
+    };
   }
 
   static SpecVersion createPhase0(final SpecConfig specConfig) {
