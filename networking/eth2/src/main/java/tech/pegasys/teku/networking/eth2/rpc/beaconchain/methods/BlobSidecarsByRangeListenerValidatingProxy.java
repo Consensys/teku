@@ -20,42 +20,38 @@ import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSide
 import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRangeResponseInvalidResponseException.InvalidResponseType.BLOB_SIDECAR_UNKNOWN_PARENT;
 
 import java.util.Optional;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.KZGException;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 
-public class BlobSidecarsByRangeListenerValidatingProxy
+public class BlobSidecarsByRangeListenerValidatingProxy extends AbstractBlobSidecarsValidatingProxy
     implements RpcResponseListener<BlobSidecar> {
-
-  private static final Logger LOG = LogManager.getLogger();
 
   private final Peer peer;
   private final RpcResponseListener<BlobSidecar> blobSidecarResponseListener;
   private final Integer maxBlobsPerBlock;
-  private final KZG kzg;
   private final UInt64 startSlot;
   private final UInt64 endSlot;
 
   private volatile Optional<BlobSidecarSummary> maybeLastBlobSidecarSummary = Optional.empty();
 
   public BlobSidecarsByRangeListenerValidatingProxy(
+      final Spec spec,
       final Peer peer,
       final RpcResponseListener<BlobSidecar> blobSidecarResponseListener,
       final Integer maxBlobsPerBlock,
       final KZG kzg,
       final UInt64 startSlot,
       final UInt64 count) {
+    super(spec, kzg);
     this.peer = peer;
     this.blobSidecarResponseListener = blobSidecarResponseListener;
     this.maxBlobsPerBlock = maxBlobsPerBlock;
-    this.kzg = kzg;
     this.startSlot = startSlot;
     this.endSlot = startSlot.plus(count);
   }
@@ -125,18 +121,6 @@ public class BlobSidecarsByRangeListenerValidatingProxy
         throw new BlobSidecarsByRangeResponseInvalidResponseException(
             peer, BLOB_SIDECAR_UNEXPECTED_SLOT);
       }
-    }
-  }
-
-  public boolean verifyBlobSidecar(final BlobSidecar blobSidecar) {
-    try {
-      return kzg.verifyBlobKzgProof(
-          blobSidecar.getBlob().getBytes(),
-          blobSidecar.getKZGCommitment(),
-          blobSidecar.getKZGProof());
-    } catch (final KZGException ex) {
-      LOG.debug("KZG verification failed for BlobSidecar {}", blobSidecar.toLogString());
-      return false;
     }
   }
 

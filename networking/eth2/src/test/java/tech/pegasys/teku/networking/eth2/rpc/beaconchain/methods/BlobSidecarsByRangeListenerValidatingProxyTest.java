@@ -57,7 +57,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     final UInt64 count = UInt64.valueOf(4);
     listenerWrapper =
         new BlobSidecarsByRangeListenerValidatingProxy(
-            peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
+            spec, peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
 
     final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
     final BlobSidecar blobSidecar1 =
@@ -80,7 +80,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     final UInt64 count = UInt64.valueOf(4);
     listenerWrapper =
         new BlobSidecarsByRangeListenerValidatingProxy(
-            peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
+            spec, peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
 
     final BlobSidecar blobSidecar0 =
         dataStructureUtil.randomBlobSidecar(
@@ -103,7 +103,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     final UInt64 count = UInt64.valueOf(4);
     listenerWrapper =
         new BlobSidecarsByRangeListenerValidatingProxy(
-            peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
+            spec, peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
 
     final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
     final BlobSidecar blobSidecar10 =
@@ -134,7 +134,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     // end slot is 9 (1 + 8), so slot 10 will be unexpected
     listenerWrapper =
         new BlobSidecarsByRangeListenerValidatingProxy(
-            peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
+            spec, peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
 
     final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
     final BlobSidecar blobSidecar1 =
@@ -175,7 +175,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     final UInt64 count = UInt64.valueOf(4);
     listenerWrapper =
         new BlobSidecarsByRangeListenerValidatingProxy(
-            peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
+            spec, peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
 
     final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
     final BlobSidecar blobSidecar1 =
@@ -205,7 +205,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
 
     listenerWrapper =
         new BlobSidecarsByRangeListenerValidatingProxy(
-            peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
+            spec, peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
 
     final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
     final BlobSidecar blobSidecar1 =
@@ -253,7 +253,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
 
     listenerWrapper =
         new BlobSidecarsByRangeListenerValidatingProxy(
-            peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
+            spec, peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
 
     final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
     final BlobSidecar blobSidecar1 =
@@ -284,7 +284,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     final UInt64 count = UInt64.valueOf(4);
     listenerWrapper =
         new BlobSidecarsByRangeListenerValidatingProxy(
-            peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
+            spec, peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
 
     final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
     final BlobSidecar blobSidecar1 =
@@ -307,7 +307,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     final UInt64 count = UInt64.valueOf(4);
     listenerWrapper =
         new BlobSidecarsByRangeListenerValidatingProxy(
-            peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
+            spec, peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
 
     final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
     final BlobSidecar blobSidecar1 =
@@ -336,7 +336,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
 
     listenerWrapper =
         new BlobSidecarsByRangeListenerValidatingProxy(
-            peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
+            spec, peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
 
     final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
     final BlobSidecar blobSidecar1 =
@@ -367,7 +367,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     final UInt64 count = UInt64.valueOf(4);
     listenerWrapper =
         new BlobSidecarsByRangeListenerValidatingProxy(
-            peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
+            spec, peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
 
     final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
     final BlobSidecar blobSidecar1 =
