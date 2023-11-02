@@ -51,38 +51,22 @@ public class BlockPublisherDeneb extends AbstractBlockPublisher {
   }
 
   @Override
-  protected SafeFuture<BlockImportResult> gossipAndImportUnblindedSignedBlock(
+  protected SafeFuture<BlockImportResult> importBlock(
       final SignedBlockContainer blockContainer,
       final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
-    gossipAndImportBlobSidecars(blockContainer);
     final SignedBeaconBlock block = blockContainer.getSignedBlock();
 
-    if (broadcastValidationLevel.isPresent()) {
-      final SafeFuture<BlockImportResult> result =
-          blockImportChannel.importBlock(block, broadcastValidationLevel);
-      result
-          .thenAccept(
-              blockImportResult -> {
-                if (blockImportResult.isSuccessful()) {
-                  blockGossipChannel.publishBlock(block);
-                }
-              })
-          .always(() -> LOG.debug("Block publishing initiated"));
-      return result;
-    } else {
-      blockGossipChannel.publishBlock(block);
-      return blockImportChannel.importBlock(block);
-    }
-  }
-
-  private void gossipAndImportBlobSidecars(final SignedBlockContainer blockContainer) {
     blockContainer
         .getSignedBlobSidecars()
         .ifPresent(
-            signedBlobSidecars -> {
-              blobSidecarGossipChannel.publishBlobSidecars(signedBlobSidecars);
-              blobSidecarPool.onCompletedBlockAndSignedBlobSidecars(
-                  blockContainer.getSignedBlock(), signedBlobSidecars);
-            });
+            signedBlobSidecars ->
+                blobSidecarPool.onCompletedBlockAndSignedBlobSidecars(block, signedBlobSidecars));
+    return blockImportChannel.importBlock(block, broadcastValidationLevel);
+  }
+
+  @Override
+  void publishBlock(final SignedBlockContainer blockContainer) {
+    blockContainer.getSignedBlobSidecars().ifPresent(blobSidecarGossipChannel::publishBlobSidecars);
+    blockGossipChannel.publishBlock(blockContainer.getSignedBlock());
   }
 }

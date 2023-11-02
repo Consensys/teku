@@ -14,7 +14,6 @@
 package tech.pegasys.teku.beaconrestapi.v1.validator;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
@@ -81,7 +80,7 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
           spec.atSlot(UInt64.ONE).getSchemaDefinitions().getSignedBeaconBlockSchema();
     }
 
-    when(validatorApiChannel.sendSignedBlock(request, any()))
+    when(validatorApiChannel.sendSignedBlock(request, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(SendSignedBlockResult.success(request.getRoot())));
 
     Optional<String> milestone = Optional.empty();
@@ -130,7 +129,7 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
           spec.atSlot(UInt64.ONE).getSchemaDefinitions().getSignedBlockContainerSchema();
     }
 
-    when(validatorApiChannel.sendSignedBlock(request, any()))
+    when(validatorApiChannel.sendSignedBlock(request, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(SendSignedBlockResult.success(request.getRoot())));
 
     Optional<String> milestone = Optional.empty();

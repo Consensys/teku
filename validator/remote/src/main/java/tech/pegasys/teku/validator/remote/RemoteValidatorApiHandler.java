@@ -284,7 +284,10 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBlockContainer blockContainer,
       final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
-    // TODO: implement path parameter
+    // we are not going to use V2 to send blocks, so we can ignore it
+    if(broadcastValidationLevel.isPresent()) {
+      LOG.warn("broadcastValidationLevel has been specified but will be ignored.");
+    }
     return sendRequest(() -> typeDefClient.sendSignedBlock(blockContainer));
   }
 

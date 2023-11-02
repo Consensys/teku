@@ -84,7 +84,39 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
             });
   }
 
-  abstract SafeFuture<BlockImportResult> gossipAndImportUnblindedSignedBlock(
+  private SafeFuture<BlockImportResult> gossipAndImportUnblindedSignedBlock(
+      final SignedBlockContainer blockContainer,
+      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+
+    if (broadcastValidationLevel.isPresent()) {
+      // when broadcast validation is enabled, we need to wait for the validation to complete before publishing the block
+
+      final SafeFuture<BlockImportResult> result =
+          importBlock(blockContainer, broadcastValidationLevel);
+
+      result
+          .thenAccept(
+              blockImportResult -> {
+                if (blockImportResult.isSuccessful()) {
+                  publishBlock(blockContainer);
+                }
+              })
+          .always(
+              () ->
+                  LOG.debug(
+                      "Block import broadcast validation complete and block (and blob sidecars) publishing initiated according to validation result."));
+
+      return result;
+    }
+
+    // when broadcast validation is disabled, we can publish the block immediately and then import
+    publishBlock(blockContainer);
+    return importBlock(blockContainer, Optional.empty());
+  }
+
+  abstract SafeFuture<BlockImportResult> importBlock(
       final SignedBlockContainer blockContainer,
       final Optional<BroadcastValidationLevel> broadcastValidationLevel);
+
+  abstract void publishBlock(final SignedBlockContainer blockContainer);
 }
