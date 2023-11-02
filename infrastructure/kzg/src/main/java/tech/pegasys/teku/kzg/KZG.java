@@ -36,6 +36,13 @@ public interface KZG {
         public void freeTrustedSetup() throws KZGException {}
 
         @Override
+        public boolean verifyBlobKzgProof(
+            final Bytes blob, final KZGCommitment kzgCommitment, final KZGProof kzgProof)
+            throws KZGException {
+          return true;
+        }
+
+        @Override
         public boolean verifyBlobKzgProofBatch(
             final List<Bytes> blobs,
             final List<KZGCommitment> kzgCommitments,
@@ -59,6 +66,9 @@ public interface KZG {
   void loadTrustedSetup(String trustedSetupFile) throws KZGException;
 
   void freeTrustedSetup() throws KZGException;
+
+  boolean verifyBlobKzgProof(Bytes blob, KZGCommitment kzgCommitment, KZGProof kzgProof)
+      throws KZGException;
 
   boolean verifyBlobKzgProofBatch(
       List<Bytes> blobs, List<KZGCommitment> kzgCommitments, List<KZGProof> kzgProofs)
