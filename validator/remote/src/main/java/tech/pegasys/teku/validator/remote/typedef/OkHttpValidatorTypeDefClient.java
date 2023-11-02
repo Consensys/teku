@@ -111,7 +111,12 @@ public class OkHttpValidatorTypeDefClient {
       final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
     final ProduceBlockRequest produceBlockRequest =
         new ProduceBlockRequest(baseEndpoint, okHttpClient, spec, slot, preferSszBlockEncoding);
-    return produceBlockRequest.createUnsignedBlock(randaoReveal, graffiti);
+    try {
+      return produceBlockRequest.createUnsignedBlock(randaoReveal, graffiti);
+    } catch (BlockProductionFailedException ex) {
+      LOG.warn("Block V3 request failed. Retrying with Block V2");
+      return createUnsignedBlock(slot, randaoReveal, graffiti, true);
+    }
   }
 
   public void registerValidators(

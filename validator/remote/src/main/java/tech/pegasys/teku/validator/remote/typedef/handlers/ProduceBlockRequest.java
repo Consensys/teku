@@ -37,7 +37,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import org.identityconnectors.common.StringUtil;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableOneOfTypeDefinition;
@@ -47,6 +46,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
+import tech.pegasys.teku.validator.remote.typedef.BlockProductionFailedException;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class ProduceBlockRequest extends AbstractTypeDefRequest {
@@ -54,7 +54,6 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
   private static final Logger LOG = LogManager.getLogger();
 
   private final UInt64 slot;
-  private final Spec spec;
   private final boolean preferSszBlockEncoding;
   private final BlockContainerSchema<BlockContainer> blockContainerSchema;
   private final BlockContainerSchema<BlockContainer> blindedBlockContainerSchema;
@@ -69,7 +68,6 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
       final boolean preferSszBlockEncoding) {
     super(baseEndpoint, okHttpClient);
     this.slot = slot;
-    this.spec = spec;
     this.preferSszBlockEncoding = preferSszBlockEncoding;
     this.blockContainerSchema = spec.atSlot(slot).getSchemaDefinitions().getBlockContainerSchema();
     this.blindedBlockContainerSchema =
@@ -95,28 +93,11 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
     this.responseHandler =
         new ResponseHandler<>(produceBlockTypeDefinition)
             .withHandler(SC_OK, this::handleBlockContainerResult)
-            .withHandler(SC_NOT_FOUND, this::fallbackToBlockV2);
-  }
-
-  private Optional<ProduceBlockResponse> fallbackToBlockV2(Request request, Response response) {
-    LOG.warn("Block V3 request failed. Retrying with Block V2");
-    final String graffitiParam = request.url().queryParameter("graffiti");
-    final Optional<Bytes32> graffiti =
-        StringUtil.isBlank(graffitiParam)
-            ? Optional.empty()
-            : Optional.of(Bytes32.fromHexString(graffitiParam));
-    final String randaoParam = request.url().queryParameter("randao_reveal");
-    if (StringUtil.isBlank(randaoParam)) {
-      return Optional.empty();
-    }
-    final BLSSignature randaoReveal =
-        BLSSignature.fromBytesCompressed(Bytes.fromBase64String(randaoParam));
-    final CreateBlockRequest createBlockRequest =
-        new CreateBlockRequest(baseEndpoint, httpClient, spec, slot, true, preferSszBlockEncoding);
-    final Optional<BlockContainer> maybeBlockContainer =
-        createBlockRequest.createUnsignedBlock(randaoReveal, graffiti);
-    return maybeBlockContainer.map(
-        blockContainer -> new ProduceBlockResponse(blockContainer.getBlock()));
+            .withHandler(
+                SC_NOT_FOUND,
+                (__, ___) -> {
+                  throw new BlockProductionFailedException();
+                });
   }
 
   public Optional<BlockContainer> createUnsignedBlock(

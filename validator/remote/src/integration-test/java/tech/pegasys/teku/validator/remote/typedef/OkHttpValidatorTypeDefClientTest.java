@@ -15,6 +15,8 @@ package tech.pegasys.teku.validator.remote.typedef;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
+import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -296,6 +298,44 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     verifyRegisterValidatorsPostRequest(mockWebServer.takeRequest(), JSON_CONTENT_TYPE);
   }
 
+  @TestTemplate
+  void blockV3ShouldFallbacksToBlockV2WhenNotFound()
+      throws JsonProcessingException, InterruptedException {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(404));
+
+    final BlockContainer blockContainer;
+    if (specMilestone.isGreaterThanOrEqualTo(DENEB)) {
+      blockContainer = dataStructureUtil.randomBlindedBlockContents(ONE);
+    } else {
+      blockContainer = dataStructureUtil.randomBlindedBeaconBlock(ONE);
+    }
+
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(200)
+            .setBody(
+                "{\"data\": "
+                    + serializeBlockContainer(blockContainer)
+                    + ", \"version\": \""
+                    + specMilestone
+                    + "\"}"));
+
+    final Optional<BlockContainer> producedBlock =
+        okHttpValidatorTypeDefClient.createUnsignedBlock(
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomSignature(),
+            Optional.empty());
+
+    assertThat(producedBlock).hasValue(blockContainer);
+
+    assertThat(mockWebServer.getRequestCount()).isEqualTo(2);
+
+    final RecordedRequest firstRequest = mockWebServer.takeRequest();
+    assertThat(firstRequest.getPath()).startsWith("/eth/v3/validator/blocks");
+    final RecordedRequest secondRequest = mockWebServer.takeRequest();
+    assertThat(secondRequest.getPath()).startsWith("/eth/v1/validator/blinded_blocks");
+  }
+
   private void verifyRegisterValidatorsPostRequest(
       final RecordedRequest recordedRequest, final String expectedContentType) {
     assertThat(recordedRequest.getPath()).isEqualTo("/eth/v1/validator/register_validator");
@@ -315,6 +355,9 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   private String serializeBlockContainer(final BlockContainer blockContainer)
       throws JsonProcessingException {
     return JsonUtil.serialize(
-        blockContainer, schemaDefinitions.getBlockContainerSchema().getJsonTypeDefinition());
+        blockContainer,
+        blockContainer.isBlinded()
+            ? schemaDefinitions.getBlindedBlockContainerSchema().getJsonTypeDefinition()
+            : schemaDefinitions.getBlockContainerSchema().getJsonTypeDefinition());
   }
 }
