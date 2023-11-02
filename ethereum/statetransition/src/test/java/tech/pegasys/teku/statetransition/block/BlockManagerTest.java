@@ -39,6 +39,7 @@ import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.ARR
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.BEGIN_IMPORTING_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.COMPLETED_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.EXECUTION_PAYLOAD_RESULT_RECEIVED_LABEL;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.GOSSIP_VALIDATION_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PRESTATE_RETRIEVED_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PROCESSED_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TRANSACTION_COMMITTED_EVENT_LABEL;
@@ -719,8 +720,10 @@ public class BlockManagerTest {
         localChain.chainBuilder().generateBlockAtSlot(incrementSlot()).getBlock();
     // slot 1 - secondPerSlot 6
 
-    // arrival time
-    timeProvider.advanceTimeByMillis(7_000); // 1 second late
+    // 1 second late
+    final Optional<UInt64> arrivalTime = Optional.of(UInt64.valueOf(7000));
+    // gossip validation time
+    timeProvider.advanceTimeByMillis(7_500);
 
     when(blockValidator.validateGossip(any()))
         .thenAnswer(
@@ -731,7 +734,7 @@ public class BlockManagerTest {
               return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
             });
 
-    assertThat(blockManager.validateAndImportBlock(block))
+    assertThat(blockManager.validateAndImportBlock(block, arrivalTime))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
     verify(eventLogger)
         .lateBlockImport(
@@ -740,6 +743,8 @@ public class BlockManagerTest {
             block.getProposerIndex(),
             ARRIVAL_EVENT_LABEL
                 + " 1000ms, "
+                + GOSSIP_VALIDATION_EVENT_LABEL
+                + " +500ms, "
                 + PRESTATE_RETRIEVED_EVENT_LABEL
                 + " +3000ms, "
                 + PROCESSED_EVENT_LABEL
@@ -774,7 +779,7 @@ public class BlockManagerTest {
               return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
             });
 
-    assertThat(blockManager.validateAndImportBlock(block))
+    assertThat(blockManager.validateAndImportBlock(block, Optional.empty()))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);
     verifyNoInteractions(eventLogger);
   }
@@ -1142,7 +1147,7 @@ public class BlockManagerTest {
   }
 
   private void assertValidateAndImportBlockRejectWithoutValidation(final SignedBeaconBlock block) {
-    assertThat(blockManager.validateAndImportBlock(block))
+    assertThat(blockManager.validateAndImportBlock(block, Optional.empty()))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
     verify(blockValidator, never()).validateGossip(eq(block));
     verify(blockValidator, never()).validateBroadcast(any(), any(), any());

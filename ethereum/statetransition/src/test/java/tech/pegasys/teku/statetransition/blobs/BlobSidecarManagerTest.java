@@ -25,6 +25,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -89,7 +90,9 @@ public class BlobSidecarManagerTest {
 
   @Test
   void validateAndPrepareForBlockImport_shouldPrepareBlobSidecar() {
-    assertThatSafeFuture(blobSidecarManager.validateAndPrepareForBlockImport(signedBlobSidecar))
+    assertThatSafeFuture(
+            blobSidecarManager.validateAndPrepareForBlockImport(
+                signedBlobSidecar, Optional.empty()))
         .isCompletedWithValue(InternalValidationResult.ACCEPT);
 
     verify(blobSidecarPool).onNewBlobSidecar(blobSidecar);
@@ -104,7 +107,9 @@ public class BlobSidecarManagerTest {
     when(blobSidecarValidator.validate(any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.SAVE_FOR_FUTURE));
 
-    assertThatSafeFuture(blobSidecarManager.validateAndPrepareForBlockImport(signedBlobSidecar))
+    assertThatSafeFuture(
+            blobSidecarManager.validateAndPrepareForBlockImport(
+                signedBlobSidecar, Optional.empty()))
         .isCompletedWithValue(InternalValidationResult.SAVE_FOR_FUTURE);
 
     verify(blobSidecarPool, never()).onNewBlobSidecar(blobSidecar);
@@ -119,7 +124,9 @@ public class BlobSidecarManagerTest {
     when(blobSidecarValidator.validate(any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("no way")));
 
-    assertThatSafeFuture(blobSidecarManager.validateAndPrepareForBlockImport(signedBlobSidecar))
+    assertThatSafeFuture(
+            blobSidecarManager.validateAndPrepareForBlockImport(
+                signedBlobSidecar, Optional.empty()))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
 
     verify(blobSidecarPool, never()).onNewBlobSidecar(blobSidecar);
@@ -136,7 +143,9 @@ public class BlobSidecarManagerTest {
     when(blobSidecarValidator.validate(any()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
 
-    assertThatSafeFuture(blobSidecarManager.validateAndPrepareForBlockImport(signedBlobSidecar))
+    assertThatSafeFuture(
+            blobSidecarManager.validateAndPrepareForBlockImport(
+                signedBlobSidecar, Optional.empty()))
         .isCompletedWithValue(InternalValidationResult.IGNORE);
 
     verify(blobSidecarPool, never()).onNewBlobSidecar(blobSidecar);
@@ -151,7 +160,9 @@ public class BlobSidecarManagerTest {
     invalidBlobSidecarRoots.put(
         blobSidecar.hashTreeRoot(), InternalValidationResult.reject("no way"));
 
-    assertThatSafeFuture(blobSidecarManager.validateAndPrepareForBlockImport(signedBlobSidecar))
+    assertThatSafeFuture(
+            blobSidecarManager.validateAndPrepareForBlockImport(
+                signedBlobSidecar, Optional.empty()))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
 
     verify(blobSidecarValidator, never()).validate(any());

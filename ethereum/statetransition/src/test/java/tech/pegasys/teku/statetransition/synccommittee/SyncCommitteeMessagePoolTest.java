@@ -81,7 +81,7 @@ class SyncCommitteeMessagePoolTest {
     pool.subscribeOperationAdded(subscriber);
     when(validator.validate(message)).thenReturn(SafeFuture.completedFuture(ACCEPT));
 
-    assertThat(pool.addRemote(message)).isCompletedWithValue(ACCEPT);
+    assertThat(pool.addRemote(message, Optional.empty())).isCompletedWithValue(ACCEPT);
     verify(subscriber).onOperationAdded(message, ACCEPT, true);
   }
 
@@ -383,7 +383,7 @@ class SyncCommitteeMessagePoolTest {
   }
 
   private void addValidRemote(final ValidatableSyncCommitteeMessage message0) {
-    assertThat(pool.addRemote(message0)).isCompletedWithValue(ACCEPT);
+    assertThat(pool.addRemote(message0, Optional.empty())).isCompletedWithValue(ACCEPT);
   }
 
   private void assertMessagesPresentForSlots(

@@ -53,7 +53,7 @@ public class SszSnappyGossipEncodingTest {
     return encoding.decodeMessage(
         encoding
             .createPreparedGossipMessageFactory(__ -> Optional.of(SpecMilestone.PHASE0))
-            .create(topic, data, valueType, spec.getNetworkingConfig()),
+            .create(topic, data, valueType, spec.getNetworkingConfig(), Optional.empty()),
         valueType);
   }
 

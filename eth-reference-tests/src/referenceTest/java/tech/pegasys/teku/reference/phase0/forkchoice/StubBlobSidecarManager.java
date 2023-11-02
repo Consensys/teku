@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -54,7 +55,7 @@ class StubBlobSidecarManager implements BlobSidecarManager {
 
   @Override
   public SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
-      final SignedBlobSidecar signedBlobSidecar) {
+      final SignedBlobSidecar signedBlobSidecar, final Optional<UInt64> arrivalTimestamp) {
     return SafeFuture.failedFuture(
         new UnsupportedOperationException("Not available in fork choice reference tests"));
   }
