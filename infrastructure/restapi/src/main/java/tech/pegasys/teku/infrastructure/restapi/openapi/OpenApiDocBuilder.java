@@ -14,7 +14,17 @@
 package tech.pegasys.teku.infrastructure.restapi.openapi;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static java.util.stream.Collectors.toSet;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BUILDER;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_CONFIG;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_DEBUG;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EVENTS;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_NODE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_REWARDS;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,10 +32,15 @@ import io.javalin.http.HandlerType;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import tech.pegasys.teku.infrastructure.json.types.OpenApiTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
@@ -115,7 +130,9 @@ public class OpenApiDocBuilder {
 
   private void writePaths(final JsonGenerator gen) throws IOException {
     gen.writeObjectFieldStart("paths");
-    for (final Entry<String, Map<HandlerType, RestApiEndpoint>> pathEntry : endpoints.entrySet()) {
+    final List<Entry<String, Map<HandlerType, RestApiEndpoint>>> sortedEndpoints =
+        sortRestApiEndpoints(endpoints);
+    for (final Entry<String, Map<HandlerType, RestApiEndpoint>> pathEntry : sortedEndpoints) {
       gen.writeObjectFieldStart(pathEntry.getKey());
       for (RestApiEndpoint endpoint : pathEntry.getValue().values()) {
         final EndpointMetadata metadata = endpoint.getMetadata();
@@ -124,6 +141,51 @@ public class OpenApiDocBuilder {
       gen.writeEndObject();
     }
     gen.writeEndObject();
+  }
+
+  @SuppressWarnings("unchecked")
+  private List<Entry<String, Map<HandlerType, RestApiEndpoint>>> sortRestApiEndpoints(
+      final Map<String, Map<HandlerType, RestApiEndpoint>> endpoints) {
+    final List<Entry<String, Map<HandlerType, RestApiEndpoint>>> entries =
+        new ArrayList<>(endpoints.entrySet());
+
+    // fill desired order for tags
+    final Map<String, Integer> tagOrder = new HashMap<>();
+    final List<String> tags =
+        List.of(
+            TAG_BEACON,
+            TAG_VALIDATOR_REQUIRED,
+            TAG_VALIDATOR,
+            TAG_BUILDER,
+            TAG_REWARDS,
+            TAG_EVENTS,
+            TAG_CONFIG,
+            TAG_NODE,
+            TAG_TEKU,
+            TAG_DEBUG,
+            TAG_EXPERIMENTAL);
+    IntStream.range(0, tags.size()).forEach(i -> tagOrder.put(tags.get(i), i));
+
+    // sort by tag, then by path, tag order is not guaranteed, endpoint could have several tags,
+    // first appearance of any tag defines its order on UI
+    final int endOrder = 999;
+    entries.sort(
+        Comparator.comparingInt(
+                entry ->
+                    ((Entry<String, Map<HandlerType, RestApiEndpoint>>) entry)
+                        .getValue().values().stream()
+                            .findFirst()
+                            .map(
+                                restApiEndpoint ->
+                                    restApiEndpoint.getMetadata().getTags().stream()
+                                        .mapToInt(tag -> tagOrder.getOrDefault(tag, endOrder))
+                                        .min()
+                                        .orElse(endOrder))
+                            .orElse(endOrder))
+            .thenComparing(
+                entry -> ((Entry<String, Map<HandlerType, RestApiEndpoint>>) entry).getKey()));
+
+    return entries;
   }
 
   private void writeComponents(final JsonGenerator gen) throws IOException {
@@ -146,12 +208,16 @@ public class OpenApiDocBuilder {
   }
 
   private void writeSchemas(final JsonGenerator gen) throws IOException {
-    final Set<OpenApiTypeDefinition> typeDefinitions =
+    final List<OpenApiTypeDefinition> typeDefinitions =
         endpoints.values().stream()
             .flatMap(pathEndpoints -> pathEndpoints.values().stream())
             .flatMap(endpoint -> endpoint.getMetadata().getReferencedTypeDefinitions().stream())
             .filter(type -> type.getTypeName().isPresent())
-            .collect(toSet());
+            .distinct()
+            .collect(Collectors.toList());
+    // sort by name
+    typeDefinitions.sort(
+        Comparator.comparing(typeDefinition -> typeDefinition.getTypeName().orElseThrow()));
     gen.writeObjectFieldStart("schemas");
     for (OpenApiTypeDefinition type : typeDefinitions) {
       gen.writeFieldName(type.getTypeName().orElseThrow());
