@@ -17,20 +17,20 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
-import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
@@ -41,10 +41,10 @@ class StubBlobSidecarManager implements BlobSidecarManager {
 
   private final Map<Bytes32, BlobsAndProofs> blobsAndProofsByBlockRoot = new HashMap<>();
 
-  private final Spec spec;
+  private final KZG kzg;
 
-  StubBlobSidecarManager(final Spec spec) {
-    this.spec = spec;
+  StubBlobSidecarManager(final KZG kzg) {
+    this.kzg = kzg;
   }
 
   /** Prepare the blobs and proofs for a block provided by the reference test * */
@@ -55,7 +55,7 @@ class StubBlobSidecarManager implements BlobSidecarManager {
 
   @Override
   public SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
-      final SignedBlobSidecar signedBlobSidecar) {
+      final SignedBlobSidecar signedBlobSidecar, final Optional<UInt64> arrivalTimestamp) {
     return SafeFuture.failedFuture(
         new UnsupportedOperationException("Not available in fork choice reference tests"));
   }
@@ -78,8 +78,8 @@ class StubBlobSidecarManager implements BlobSidecarManager {
   }
 
   /**
-   * Creates an implementation of {@link BlobSidecarsAvailabilityChecker} which uses the simplified
-   * {@link MiscHelpers#isDataAvailable(List, List, List)} method with the blobs and proofs that the
+   * Creates an implementation of {@link BlobSidecarsAvailabilityChecker} which uses {@link
+   * KZG#verifyBlobKzgProofBatch(List, List, List)} method with the blobs and proofs that the
    * reference test has provided
    */
   @Override
@@ -115,9 +115,7 @@ class StubBlobSidecarManager implements BlobSidecarManager {
                 .toList();
         final List<Bytes> blobs = blobsAndProofs.blobs.stream().map(Blob::getBytes).toList();
         try {
-          if (!spec.atSlot(block.getSlot())
-              .miscHelpers()
-              .isDataAvailable(blobs, kzgCommitments, blobsAndProofs.proofs)) {
+          if (!kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, blobsAndProofs.proofs)) {
             return BlobSidecarsAndValidationResult.invalidResult(Collections.emptyList());
           }
         } catch (final Exception ex) {

@@ -27,6 +27,7 @@ public class BlockDutyFactory implements DutyFactory<BlockProductionDuty, Duty> 
   private final BlockContainerSigner blockContainerSigner;
   private final Spec spec;
   private final boolean useBlindedBlock;
+  private final boolean blockV3Enabled;
   private final ValidatorDutyMetrics validatorDutyMetrics;
 
   public BlockDutyFactory(
@@ -34,12 +35,14 @@ public class BlockDutyFactory implements DutyFactory<BlockProductionDuty, Duty> 
       final ValidatorApiChannel validatorApiChannel,
       final BlockContainerSigner blockContainerSigner,
       final boolean useBlindedBlock,
+      final boolean blockV3Enabled,
       final Spec spec,
       final ValidatorDutyMetrics validatorDutyMetrics) {
     this.forkProvider = forkProvider;
     this.validatorApiChannel = validatorApiChannel;
     this.blockContainerSigner = blockContainerSigner;
     this.useBlindedBlock = useBlindedBlock;
+    this.blockV3Enabled = blockV3Enabled;
     this.spec = spec;
     this.validatorDutyMetrics = validatorDutyMetrics;
   }
@@ -53,6 +56,7 @@ public class BlockDutyFactory implements DutyFactory<BlockProductionDuty, Duty> 
         validatorApiChannel,
         blockContainerSigner,
         useBlindedBlock,
+        blockV3Enabled,
         spec,
         validatorDutyMetrics);
   }

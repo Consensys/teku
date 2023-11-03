@@ -42,7 +42,9 @@ import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.reference.KzgRetriever;
 import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
@@ -105,7 +107,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
     // Note: The fork choice spec says there may be settings in a meta.yaml file but currently no
     // tests actually have one, so we currently don't bother trying to load it.
-    final Spec spec = testDefinition.getSpec(false);
+    final Spec spec = testDefinition.getSpec();
     final BeaconState anchorState =
         TestDataUtils.loadStateFromSsz(testDefinition, "anchor_state" + SSZ_SNAPPY_EXTENSION);
     final SignedBeaconBlock anchorBlock = loadAnchorBlock(testDefinition);
@@ -121,7 +123,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final MergeTransitionBlockValidator transitionBlockValidator =
         new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
     final InlineEventThread eventThread = new InlineEventThread();
-    final StubBlobSidecarManager blobSidecarManager = new StubBlobSidecarManager(spec);
+    final KZG kzg = KzgRetriever.getKzgWithLoadedTrustedSetup(spec, testDefinition.getConfigName());
+    final StubBlobSidecarManager blobSidecarManager = new StubBlobSidecarManager(kzg);
     final ForkChoice forkChoice =
         new ForkChoice(
             spec,

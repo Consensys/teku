@@ -18,6 +18,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import io.libp2p.core.pubsub.ValidationResult;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -46,11 +47,11 @@ public class ProposerSlashingTopicHandlerTest extends AbstractTopicHandlerTest<P
   public void handleMessage_validSlashing() {
     final ProposerSlashing slashing =
         dataStructureUtil.randomProposerSlashing(validSlot, UInt64.ZERO);
-    when(processor.process(slashing))
+    when(processor.process(slashing, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result =
-        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized, Optional.empty()));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Valid);
   }
@@ -61,7 +62,7 @@ public class ProposerSlashingTopicHandlerTest extends AbstractTopicHandlerTest<P
         dataStructureUtil.randomProposerSlashing(wrongForkSlot, UInt64.ZERO);
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result =
-        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized, Optional.empty()));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
     verifyNoInteractions(processor);
@@ -71,11 +72,11 @@ public class ProposerSlashingTopicHandlerTest extends AbstractTopicHandlerTest<P
   public void handleMessage_ignoredSlashing() {
     final ProposerSlashing slashing =
         dataStructureUtil.randomProposerSlashing(validSlot, UInt64.ZERO);
-    when(processor.process(slashing))
+    when(processor.process(slashing, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result =
-        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized, Optional.empty()));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Ignore);
   }
@@ -84,11 +85,11 @@ public class ProposerSlashingTopicHandlerTest extends AbstractTopicHandlerTest<P
   public void handleMessage_rejectedSlashing() {
     final ProposerSlashing slashing =
         dataStructureUtil.randomProposerSlashing(validSlot, UInt64.ZERO);
-    when(processor.process(slashing))
+    when(processor.process(slashing, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("Nope")));
     Bytes serialized = gossipEncoding.encode(slashing);
     final SafeFuture<ValidationResult> result =
-        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized, Optional.empty()));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
   }
@@ -98,7 +99,7 @@ public class ProposerSlashingTopicHandlerTest extends AbstractTopicHandlerTest<P
     Bytes serialized = Bytes.fromHexString("0x1234");
 
     final SafeFuture<ValidationResult> result =
-        topicHandler.handleMessage(topicHandler.prepareMessage(serialized));
+        topicHandler.handleMessage(topicHandler.prepareMessage(serialized, Optional.empty()));
     asyncRunner.executeQueuedActions();
     assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
   }

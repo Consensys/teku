@@ -28,7 +28,7 @@ public class MinimalEth2NetworkOptions {
   private String network = "mainnet";
 
   public void configure(final TekuConfiguration.Builder builder) {
-    builder.eth2NetworkConfig(config -> config.applyNetworkDefaults(network).kzgNoop(true));
+    builder.eth2NetworkConfig(config -> config.applyNetworkDefaults(network));
   }
 
   public Spec getSpec() {
@@ -36,6 +36,6 @@ public class MinimalEth2NetworkOptions {
   }
 
   private Eth2NetworkConfiguration getConfig() {
-    return Eth2NetworkConfiguration.builder(network).kzgNoop(true).build();
+    return Eth2NetworkConfiguration.builder(network).build();
   }
 }

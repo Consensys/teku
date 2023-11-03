@@ -95,6 +95,7 @@ public class DataProvider {
     private RecentChainData recentChainData;
     private CombinedChainDataClient combinedChainDataClient;
     private ExecutionLayerBlockProductionManager executionLayerBlockProductionManager;
+    private RewardCalculator rewardCalculator;
     private Eth2P2PNetwork p2pNetwork;
     private SyncService syncService;
     private ValidatorApiChannel validatorApiChannel;
@@ -127,6 +128,11 @@ public class DataProvider {
     public Builder executionLayerBlockProductionManager(
         final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager) {
       this.executionLayerBlockProductionManager = executionLayerBlockProductionManager;
+      return this;
+    }
+
+    public Builder rewardCalculator(final RewardCalculator rewardCalculator) {
+      this.rewardCalculator = rewardCalculator;
       return this;
     }
 
@@ -238,7 +244,7 @@ public class DataProvider {
               proposersDataManager,
               acceptBlsToExecutionMessages);
       final ChainDataProvider chainDataProvider =
-          new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
+          new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculator);
       final SyncDataProvider syncDataProvider =
           new SyncDataProvider(syncService, rejectedExecutionSupplier);
       final ValidatorDataProvider validatorDataProvider =
@@ -246,7 +252,8 @@ public class DataProvider {
               spec,
               validatorApiChannel,
               combinedChainDataClient,
-              executionLayerBlockProductionManager);
+              executionLayerBlockProductionManager,
+              rewardCalculator);
 
       checkNotNull(configProvider, "Expect config Provider");
       checkNotNull(networkDataProvider, "Expect Network Data Provider");

@@ -38,6 +38,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
@@ -107,7 +108,14 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     this.transitionEmulationEnabled = enableTransitionEmulation;
     this.terminalBlockHashInTTDMode =
         terminalBlockHashInTTDMode.orElse(Bytes32.fromHexStringLenient("0x01"));
-    this.blobsUtil = new BlobsUtil(spec);
+    final KZG kzg;
+    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
+      // trusted setup loading will be handled by the BeaconChainController
+      kzg = KZG.getInstance();
+    } else {
+      kzg = KZG.NOOP;
+    }
+    this.blobsUtil = new BlobsUtil(spec, kzg);
   }
 
   public ExecutionLayerChannelStub(
@@ -313,7 +321,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   public SafeFuture<HeaderWithFallbackData> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
-      final SafeFuture<UInt256> localPayloadValueResult) {
+      final SafeFuture<UInt256> payloadValueResult) {
     final UInt64 slot = state.getSlot();
     LOG.info(
         "getPayloadHeader: payloadId: {} slot: {} ... delegating to getPayload ...",
@@ -326,7 +334,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         .thenApply(
             getPayloadResponse -> {
               final ExecutionPayload executionPayload = getPayloadResponse.getExecutionPayload();
-              localPayloadValueResult.complete(getPayloadResponse.getExecutionPayloadValue());
+              payloadValueResult.complete(getPayloadResponse.getExecutionPayloadValue());
               LOG.info(
                   "getPayloadHeader: payloadId: {} slot: {} -> executionPayload blockHash: {}",
                   executionPayloadContext,
@@ -526,8 +534,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
             slot,
             blobsToGenerate.orElseGet(
                 () -> random.nextInt(spec.getMaxBlobsPerBlock().orElseThrow() + 1)));
-    final List<KZGCommitment> commitments = blobsUtil.blobsToKzgCommitments(slot, blobs);
-    final List<KZGProof> proofs = blobsUtil.computeKzgProofs(slot, blobs, commitments);
+    final List<KZGCommitment> commitments = blobsUtil.blobsToKzgCommitments(blobs);
+    final List<KZGProof> proofs = blobsUtil.computeKzgProofs(blobs, commitments);
 
     final BlobsBundle blobsBundle = new BlobsBundle(commitments, proofs, blobs);
 

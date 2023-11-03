@@ -13,12 +13,16 @@
 
 package tech.pegasys.teku.spec.config;
 
+import java.math.BigInteger;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface SpecConfigDeneb extends SpecConfigCapella, NetworkingSpecConfigDeneb {
+  BigInteger BLS_MODULUS =
+      new BigInteger(
+          "52435875175126190479447740508185965837690552500527637822603658699938581184513");
   Bytes VERSIONED_HASH_VERSION_KZG = Bytes.fromHexString("0x01");
   UInt64 BYTES_PER_FIELD_ELEMENT = UInt64.valueOf(32);
 
@@ -49,10 +53,6 @@ public interface SpecConfigDeneb extends SpecConfigCapella, NetworkingSpecConfig
   int getMaxBlobCommitmentsPerBlock();
 
   int getMaxBlobsPerBlock();
-
-  Optional<String> getTrustedSetupPath();
-
-  boolean isKZGNoop();
 
   int getEpochsStoreBlobs();
 

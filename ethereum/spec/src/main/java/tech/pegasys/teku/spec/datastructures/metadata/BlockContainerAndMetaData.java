@@ -18,4 +18,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 
 public record BlockContainerAndMetaData<T extends BlockContainer>(
-    T blockContainer, SpecMilestone specMilestone, UInt256 executionPayloadValue) {}
+    T blockContainer,
+    SpecMilestone specMilestone,
+    UInt256 executionPayloadValue,
+    UInt256 consensusBlockValue) {}

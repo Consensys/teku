@@ -22,6 +22,10 @@ import org.apache.tuweni.bytes.Bytes;
  */
 public interface KZG {
 
+  static KZG getInstance() {
+    return CKZG4844.getInstance();
+  }
+
   KZG NOOP =
       new KZG() {
 
@@ -30,6 +34,13 @@ public interface KZG {
 
         @Override
         public void freeTrustedSetup() throws KZGException {}
+
+        @Override
+        public boolean verifyBlobKzgProof(
+            final Bytes blob, final KZGCommitment kzgCommitment, final KZGProof kzgProof)
+            throws KZGException {
+          return true;
+        }
 
         @Override
         public boolean verifyBlobKzgProofBatch(
@@ -55,6 +66,9 @@ public interface KZG {
   void loadTrustedSetup(String trustedSetupFile) throws KZGException;
 
   void freeTrustedSetup() throws KZGException;
+
+  boolean verifyBlobKzgProof(Bytes blob, KZGCommitment kzgCommitment, KZGProof kzgProof)
+      throws KZGException;
 
   boolean verifyBlobKzgProofBatch(
       List<Bytes> blobs, List<KZGCommitment> kzgCommitments, List<KZGProof> kzgProofs)

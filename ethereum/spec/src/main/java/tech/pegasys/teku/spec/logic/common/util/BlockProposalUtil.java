@@ -117,7 +117,12 @@ public class BlockProposalUtil {
       final Bytes32 parentBlockSigningRoot,
       final Consumer<BeaconBlockBodyBuilder> bodyBuilder) {
     return createNewUnsignedBlock(
-        newSlot, proposerIndex, blockSlotState, parentBlockSigningRoot, bodyBuilder, true);
+        newSlot,
+        proposerIndex,
+        blockSlotState,
+        parentBlockSigningRoot,
+        bodyBuilder,
+        ValidatorsUtil.DEFAULT_PRODUCE_BLINDED_BLOCK);
   }
 
   private SafeFuture<? extends BeaconBlockBody> createBeaconBlockBody(

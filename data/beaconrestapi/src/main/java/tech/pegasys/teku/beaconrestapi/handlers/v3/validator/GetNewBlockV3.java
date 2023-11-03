@@ -22,8 +22,10 @@ import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.blockContainerAndMetaDataSszResponseType;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CONSENSUS_BLOCK_VALUE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_PAYLOAD_BLINDED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_PAYLOAD_VALUE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_BLOCK_VALUE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_VALUE;
@@ -60,7 +62,7 @@ public class GetNewBlockV3 extends RestApiEndpoint {
 
   public static final String ROUTE = "/eth/v3/validator/blocks/{slot}";
 
-  protected final ValidatorDataProvider provider;
+  protected final ValidatorDataProvider validatorDataProvider;
 
   public GetNewBlockV3(
       final DataProvider dataProvider, final SchemaDefinitionCache schemaDefinitionCache) {
@@ -68,9 +70,10 @@ public class GetNewBlockV3 extends RestApiEndpoint {
   }
 
   public GetNewBlockV3(
-      final ValidatorDataProvider provider, final SchemaDefinitionCache schemaDefinitionCache) {
+      final ValidatorDataProvider validatorDataProvider,
+      final SchemaDefinitionCache schemaDefinitionCache) {
     super(getEndpointMetaData(schemaDefinitionCache));
-    this.provider = provider;
+    this.validatorDataProvider = validatorDataProvider;
   }
 
   private static EndpointMetadata getEndpointMetaData(
@@ -107,7 +110,7 @@ public class GetNewBlockV3 extends RestApiEndpoint {
     final BLSSignature randao = request.getQueryParameter(RANDAO_PARAMETER);
     final Optional<Bytes32> graffiti = request.getOptionalQueryParameter(GRAFFITI_PARAMETER);
     final SafeFuture<Optional<BlockContainerAndMetaData<BlockContainer>>> result =
-        provider.produceBlock(slot, randao, graffiti);
+        validatorDataProvider.produceBlock(slot, randao, graffiti);
     request.respondAsync(
         result.thenApply(
             maybeBlock ->
@@ -128,6 +131,9 @@ public class GetNewBlockV3 extends RestApiEndpoint {
                           request.header(
                               HEADER_EXECUTION_PAYLOAD_VALUE,
                               blockContainerAndMetaData.executionPayloadValue().toDecimalString());
+                          request.header(
+                              HEADER_CONSENSUS_BLOCK_VALUE,
+                              blockContainerAndMetaData.consensusBlockValue().toDecimalString());
                           return AsyncApiResponse.respondOk(blockContainerAndMetaData);
                         })
                     .orElseGet(
@@ -154,6 +160,8 @@ public class GetNewBlockV3 extends RestApiEndpoint {
             blockContainerAndMetaData -> blockContainerAndMetaData.blockContainer().isBlinded())
         .withField(
             EXECUTION_PAYLOAD_VALUE, UINT256_TYPE, BlockContainerAndMetaData::executionPayloadValue)
+        .withField(
+            CONSENSUS_BLOCK_VALUE, UINT256_TYPE, BlockContainerAndMetaData::consensusBlockValue)
         .withField("data", blockContainerType, BlockContainerAndMetaData::blockContainer)
         .build();
   }

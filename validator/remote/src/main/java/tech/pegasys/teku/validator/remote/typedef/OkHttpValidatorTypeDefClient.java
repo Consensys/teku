@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAttestationDataRequest;
@@ -111,7 +112,13 @@ public class OkHttpValidatorTypeDefClient {
       final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
     final ProduceBlockRequest produceBlockRequest =
         new ProduceBlockRequest(baseEndpoint, okHttpClient, spec, slot, preferSszBlockEncoding);
-    return produceBlockRequest.createUnsignedBlock(randaoReveal, graffiti);
+    try {
+      return produceBlockRequest.createUnsignedBlock(randaoReveal, graffiti);
+    } catch (final BlockProductionV3FailedException ex) {
+      LOG.warn("Produce Block V3 request failed at slot {}. Retrying with Block V2", slot);
+      return createUnsignedBlock(
+          slot, randaoReveal, graffiti, ValidatorsUtil.DEFAULT_PRODUCE_BLINDED_BLOCK);
+    }
   }
 
   public void registerValidators(

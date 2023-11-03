@@ -1,7 +1,7 @@
 {
   "title" : "ProduceBlockV3Response",
   "type" : "object",
-  "required" : [ "version", "execution_payload_blinded", "execution_payload_value", "data" ],
+  "required" : [ "version", "execution_payload_blinded", "execution_payload_value", "consensus_block_value", "data" ],
   "properties" : {
     "version" : {
       "type" : "string",
@@ -11,6 +11,12 @@
       "type" : "boolean"
     },
     "execution_payload_value" : {
+      "type" : "string",
+      "description" : "unsigned 256 bit integer",
+      "example" : "1",
+      "format" : "uint256"
+    },
+    "consensus_block_value" : {
       "type" : "string",
       "description" : "unsigned 256 bit integer",
       "example" : "1",

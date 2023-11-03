@@ -16,6 +16,7 @@ package tech.pegasys.teku.api.migrated;
 import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
+/** Represents the block rewards in GWei and the block proposer index */
 public class BlockRewardData {
   private UInt64 proposerIndex;
   private final long attestations;

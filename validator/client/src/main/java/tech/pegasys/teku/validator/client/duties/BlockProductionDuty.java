@@ -44,6 +44,7 @@ public class BlockProductionDuty implements Duty {
   private final ValidatorApiChannel validatorApiChannel;
   private final BlockContainerSigner blockContainerSigner;
   private final boolean useBlindedBlock;
+  private final boolean blockV3Enabled;
   private final Spec spec;
   private final ValidatorDutyMetrics validatorDutyMetrics;
 
@@ -54,6 +55,7 @@ public class BlockProductionDuty implements Duty {
       final ValidatorApiChannel validatorApiChannel,
       final BlockContainerSigner blockContainerSigner,
       final boolean useBlindedBlock,
+      final boolean blockV3Enabled,
       final Spec spec,
       final ValidatorDutyMetrics validatorDutyMetrics) {
     this.validator = validator;
@@ -62,6 +64,7 @@ public class BlockProductionDuty implements Duty {
     this.validatorApiChannel = validatorApiChannel;
     this.blockContainerSigner = blockContainerSigner;
     this.useBlindedBlock = useBlindedBlock;
+    this.blockV3Enabled = blockV3Enabled;
     this.spec = spec;
     this.validatorDutyMetrics = validatorDutyMetrics;
   }
@@ -100,8 +103,12 @@ public class BlockProductionDuty implements Duty {
 
   private SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
       final BLSSignature randaoReveal) {
-    return validatorApiChannel.createUnsignedBlock(
-        slot, randaoReveal, validator.getGraffiti(), useBlindedBlock);
+    if (blockV3Enabled) {
+      return validatorApiChannel.createUnsignedBlock(slot, randaoReveal, validator.getGraffiti());
+    } else {
+      return validatorApiChannel.createUnsignedBlock(
+          slot, randaoReveal, validator.getGraffiti(), useBlindedBlock);
+    }
   }
 
   private SafeFuture<BlockContainer> validateBlock(

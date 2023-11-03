@@ -67,10 +67,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   private final Spec spec;
   private final ExecutionClientHandler executionClientHandler;
-
-  @SuppressWarnings("unused")
-  private final BlobsBundleValidator blobsBundleValidator;
-
   private final ExecutionBuilderModule executionBuilderModule;
   private final LabelledMetric<Counter> executionPayloadSourceCounter;
 
@@ -82,7 +78,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final MetricsSystem metricsSystem,
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
-      final BlobsBundleValidator blobsBundleValidator,
       final Optional<Integer> builderBidCompareFactor,
       final boolean useShouldOverrideBuilderFlag) {
     final LabelledMetric<Counter> executionPayloadSourceCounter =
@@ -112,7 +107,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         builderBidValidator,
         builderCircuitBreaker,
         executionPayloadSourceCounter,
-        blobsBundleValidator,
         builderBidCompareFactor,
         useShouldOverrideBuilderFlag);
   }
@@ -151,12 +145,10 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
       final LabelledMetric<Counter> executionPayloadSourceCounter,
-      final BlobsBundleValidator blobsBundleValidator,
       final Optional<Integer> builderBidCompareFactor,
       final boolean useShouldOverrideBuilderFlag) {
     this.executionClientHandler = executionClientHandler;
     this.spec = spec;
-    this.blobsBundleValidator = blobsBundleValidator;
     this.executionPayloadSourceCounter = executionPayloadSourceCounter;
     this.executionBuilderModule =
         new ExecutionBuilderModule(
@@ -250,9 +242,9 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   public SafeFuture<HeaderWithFallbackData> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
-      final SafeFuture<UInt256> localPayloadValueResult) {
+      final SafeFuture<UInt256> payloadValueResult) {
     return executionBuilderModule.builderGetHeader(
-        executionPayloadContext, state, localPayloadValueResult);
+        executionPayloadContext, state, payloadValueResult);
   }
 
   @VisibleForTesting

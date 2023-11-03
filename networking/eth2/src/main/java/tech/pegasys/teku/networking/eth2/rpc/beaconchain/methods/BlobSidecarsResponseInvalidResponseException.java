@@ -16,17 +16,16 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 import tech.pegasys.teku.networking.eth2.rpc.core.InvalidResponseException;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 
-public class BlobSidecarsByRangeResponseInvalidResponseException extends InvalidResponseException {
+public class BlobSidecarsResponseInvalidResponseException extends InvalidResponseException {
 
-  public BlobSidecarsByRangeResponseInvalidResponseException(
+  public BlobSidecarsResponseInvalidResponseException(
       Peer peer, InvalidResponseType invalidResponseType) {
     super(
         String.format(
             "Received invalid response from peer %s: %s", peer, invalidResponseType.describe()));
   }
 
-  public BlobSidecarsByRangeResponseInvalidResponseException(
-      InvalidResponseType invalidResponseType) {
+  public BlobSidecarsResponseInvalidResponseException(InvalidResponseType invalidResponseType) {
     super("Received invalid response: " + invalidResponseType.describe());
   }
 
@@ -36,7 +35,8 @@ public class BlobSidecarsByRangeResponseInvalidResponseException extends Invalid
     BLOB_SIDECAR_UNEXPECTED_INDEX("BlobSidecar with unexpected index"),
     BLOB_SIDECAR_UNKNOWN_PARENT(
         "BlobSidecar parent blockRoot doesn't match previous blobSidecar blockRoot"),
-    BLOB_SIDECAR_UNEXPECTED_SLOT("BlobSidecar slot is from block with incorrect slot");
+    BLOB_SIDECAR_UNEXPECTED_SLOT("BlobSidecar slot is from block with incorrect slot"),
+    BLOB_SIDECAR_UNEXPECTED_IDENTIFIER("BlobSidecar is not within requested identifiers");
 
     private final String description;
 

@@ -61,7 +61,7 @@ public abstract class AbstractChainDataProviderTest {
   protected BeaconState beaconStateInternal;
   protected SignedBlockAndState bestBlock;
   protected Bytes32 blockRoot;
-  protected RewardCalculator rewardCalculator = mock(RewardCalculator.class);
+  protected RewardCalculator rewardCalculatorMock = mock(RewardCalculator.class);
   protected final CombinedChainDataClient mockCombinedChainDataClient =
       mock(CombinedChainDataClient.class);
 
@@ -113,7 +113,7 @@ public abstract class AbstractChainDataProviderTest {
             blockSelectorFactory,
             stateSelectorFactory,
             blobSidecarSelectorFactory,
-            rewardCalculator);
+            rewardCalculatorMock);
 
     if (spec.getGenesisSpec().getMilestone().isGreaterThanOrEqualTo(SpecMilestone.ALTAIR)) {
       final SszList<Validator> validators =

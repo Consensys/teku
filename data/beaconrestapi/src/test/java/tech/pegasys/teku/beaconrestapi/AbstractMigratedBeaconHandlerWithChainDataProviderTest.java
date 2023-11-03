@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi;
 
 import java.util.List;
 import tech.pegasys.teku.api.ChainDataProvider;
+import tech.pegasys.teku.api.RewardCalculator;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -68,6 +69,8 @@ public class AbstractMigratedBeaconHandlerWithChainDataProviderTest
 
     chainBuilder = ChainBuilder.create(spec, VALIDATOR_KEYS);
     chainUpdater = new ChainUpdater(recentChainData, chainBuilder, spec);
-    chainDataProvider = new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
+    chainDataProvider =
+        new ChainDataProvider(
+            spec, recentChainData, combinedChainDataClient, new RewardCalculator(spec));
   }
 }

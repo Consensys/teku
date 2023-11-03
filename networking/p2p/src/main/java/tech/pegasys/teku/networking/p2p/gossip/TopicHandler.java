@@ -14,20 +14,22 @@
 package tech.pegasys.teku.networking.p2p.gossip;
 
 import io.libp2p.core.pubsub.ValidationResult;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface TopicHandler {
-
   /**
    * Preprocess 'raw' Gossip message returning the instance which may calculate Gossip 'message-id'
    * and cache intermediate data for later message handling with {@link
-   * #handleMessage(PreparedGossipMessage)}
+   * #handleMessage(PreparedGossipMessage)}. Also packs it with arrivalTimestamp when available
    */
-  PreparedGossipMessage prepareMessage(Bytes payload);
+  PreparedGossipMessage prepareMessage(Bytes payload, Optional<UInt64> arrivalTimestamp);
 
   /**
-   * Validates and handles gossip message preprocessed earlier by {@link #prepareMessage(Bytes)}
+   * Validates and handles gossip message preprocessed earlier by {@link #prepareMessage(Bytes,
+   * Optional)}
    *
    * @param message The preprocessed gossip message
    * @return Message validation promise
