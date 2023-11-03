@@ -13,10 +13,12 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
+import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsResponseInvalidResponseException.InvalidResponseType.BLOB_SIDECAR_KZG_VERIFICATION_FAILED;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.KZGException;
+import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 
@@ -24,20 +26,30 @@ public class AbstractBlobSidecarsValidator {
 
   private static final Logger LOG = LogManager.getLogger();
 
+  protected final Peer peer;
   protected final Spec spec;
   protected final KZG kzg;
 
-  public AbstractBlobSidecarsValidator(final Spec spec, final KZG kzg) {
+  public AbstractBlobSidecarsValidator(final Peer peer, final Spec spec, final KZG kzg) {
+    this.peer = peer;
     this.spec = spec;
     this.kzg = kzg;
   }
 
-  boolean verifyBlobSidecarKzg(final BlobSidecar blobSidecar) {
+  protected void verifyKzg(final BlobSidecar blobSidecar) {
+    if (!verifyBlobKzgProof(blobSidecar)) {
+      throw new BlobSidecarsResponseInvalidResponseException(
+          peer, BLOB_SIDECAR_KZG_VERIFICATION_FAILED);
+    }
+  }
+
+  private boolean verifyBlobKzgProof(final BlobSidecar blobSidecar) {
     try {
       return spec.atSlot(blobSidecar.getSlot()).miscHelpers().verifyBlobKzgProof(kzg, blobSidecar);
-    } catch (final KZGException ex) {
+    } catch (final Exception ex) {
       LOG.debug("KZG verification failed for BlobSidecar {}", blobSidecar.toLogString());
-      return false;
+      throw new BlobSidecarsResponseInvalidResponseException(
+          peer, BLOB_SIDECAR_KZG_VERIFICATION_FAILED, ex);
     }
   }
 }

@@ -31,6 +31,20 @@ import tech.pegasys.teku.spec.propertytest.suppliers.type.KZGProofSupplier;
 
 @AddLifecycleHook(KzgResolver.class)
 public class CKZG4844PropertyTest {
+
+  @Property(tries = 100)
+  void fuzzVerifyBlobKzgProof(
+      final KZG kzg,
+      @ForAll(supplier = DiverseBlobBytesSupplier.class) final Bytes blob,
+      @ForAll(supplier = KZGCommitmentSupplier.class) final KZGCommitment commitment,
+      @ForAll(supplier = KZGProofSupplier.class) final KZGProof proof) {
+    try {
+      kzg.verifyBlobKzgProof(blob, commitment, proof);
+    } catch (Exception e) {
+      assertThat(e).isInstanceOf(KZGException.class);
+    }
+  }
+
   @Property(tries = 100)
   void fuzzVerifyBlobKzgProofBatch(
       final KZG kzg,

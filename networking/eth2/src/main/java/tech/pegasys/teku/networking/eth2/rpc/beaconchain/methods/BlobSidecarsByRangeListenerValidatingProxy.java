@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
-import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsResponseInvalidResponseException.InvalidResponseType.BLOB_SIDECAR_KZG_VERIFICATION_FAILED;
 import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsResponseInvalidResponseException.InvalidResponseType.BLOB_SIDECAR_SLOT_NOT_IN_RANGE;
 import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsResponseInvalidResponseException.InvalidResponseType.BLOB_SIDECAR_UNEXPECTED_INDEX;
 import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsResponseInvalidResponseException.InvalidResponseType.BLOB_SIDECAR_UNEXPECTED_SLOT;
@@ -32,7 +31,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 public class BlobSidecarsByRangeListenerValidatingProxy extends AbstractBlobSidecarsValidator
     implements RpcResponseListener<BlobSidecar> {
 
-  private final Peer peer;
   private final RpcResponseListener<BlobSidecar> blobSidecarResponseListener;
   private final Integer maxBlobsPerBlock;
   private final UInt64 startSlot;
@@ -48,8 +46,7 @@ public class BlobSidecarsByRangeListenerValidatingProxy extends AbstractBlobSide
       final KZG kzg,
       final UInt64 startSlot,
       final UInt64 count) {
-    super(spec, kzg);
-    this.peer = peer;
+    super(peer, spec, kzg);
     this.blobSidecarResponseListener = blobSidecarResponseListener;
     this.maxBlobsPerBlock = maxBlobsPerBlock;
     this.startSlot = startSlot;
@@ -74,10 +71,7 @@ public class BlobSidecarsByRangeListenerValidatingProxy extends AbstractBlobSide
           final BlobSidecarSummary blobSidecarSummary = BlobSidecarSummary.create(blobSidecar);
           verifyBlobSidecarIsAfterLast(blobSidecarSummary);
 
-          if (!verifyBlobSidecarKzg(blobSidecar)) {
-            throw new BlobSidecarsResponseInvalidResponseException(
-                peer, BLOB_SIDECAR_KZG_VERIFICATION_FAILED);
-          }
+          verifyKzg(blobSidecar);
 
           maybeLastBlobSidecarSummary = Optional.of(blobSidecarSummary);
           return blobSidecarResponseListener.onResponse(blobSidecar);
