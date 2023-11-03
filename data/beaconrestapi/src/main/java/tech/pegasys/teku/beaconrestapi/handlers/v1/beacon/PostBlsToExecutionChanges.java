@@ -76,6 +76,13 @@ public class PostBlsToExecutionChanges extends RestApiEndpoint {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final List<SignedBlsToExecutionChange> blsToExecutionChanges = request.getRequestBody();
+    if (blsToExecutionChanges.size() > 5000) {
+      request.respondError(
+          SC_BAD_REQUEST,
+          "A maximum of 5,000 SignedBLSToExecutionChange objects can be submitted to the node's pool at one time");
+      return;
+    }
+
     final SafeFuture<List<SubmitDataError>> future =
         nodeDataProvider.postBlsToExecutionChanges(blsToExecutionChanges);
 
