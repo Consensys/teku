@@ -91,8 +91,7 @@ public class BlocksByRangeListenerWrapperTest {
     final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(2, block1.getRoot());
     final SignedBeaconBlock block3 = dataStructureUtil.randomSignedBeaconBlock(5, block2.getRoot());
     final SignedBeaconBlock block4 = dataStructureUtil.randomSignedBeaconBlock(8, block3.getRoot());
-    final SignedBeaconBlock block5 =
-        dataStructureUtil.randomSignedBeaconBlock(9, block4.getRoot());
+    final SignedBeaconBlock block5 = dataStructureUtil.randomSignedBeaconBlock(9, block4.getRoot());
     listenerWrapper.onResponse(block1).join();
     listenerWrapper.onResponse(block2).join();
     listenerWrapper.onResponse(block3).join();
