@@ -230,7 +230,7 @@ public class BlockManagerTest {
         localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
     incrementSlot();
 
-    safeJoin(blockManager.importBlock(nextBlock, Optional.empty()));
+    safeJoin(blockManager.importBlock(nextBlock, Optional.empty()).blockImportResult());
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }
 
@@ -247,7 +247,7 @@ public class BlockManagerTest {
         localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
     incrementSlot();
 
-    safeJoin(blockManager.importBlock(nextBlock, Optional.empty()));
+    safeJoin(blockManager.importBlock(nextBlock, Optional.empty()).blockImportResult());
     verify(subscriber).onBlockImported(nextBlock, false);
     verify(blobSidecarPool).removeAllForBlock(nextBlock.getRoot());
   }
@@ -265,10 +265,10 @@ public class BlockManagerTest {
         localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
     incrementSlot();
 
-    safeJoin(blockManager.importBlock(nextBlock, Optional.empty()));
+    safeJoin(blockManager.importBlock(nextBlock, Optional.empty()).blockImportResult());
     verify(subscriber).onBlockImported(nextBlock, false);
 
-    assertThatSafeFuture(blockManager.importBlock(nextBlock, Optional.empty()))
+    assertThatSafeFuture(blockManager.importBlock(nextBlock, Optional.empty()).blockImportResult())
         .isCompletedWithValue(BlockImportResult.knownBlock(nextBlock, false));
     verify(subscriber, times(2)).onBlockImported(nextBlock, false);
   }
@@ -286,10 +286,10 @@ public class BlockManagerTest {
         localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
     incrementSlot();
 
-    safeJoin(blockManager.importBlock(nextBlock, Optional.empty()));
+    safeJoin(blockManager.importBlock(nextBlock, Optional.empty()).blockImportResult());
     verify(subscriber).onBlockImported(nextBlock, true);
 
-    assertThatSafeFuture(blockManager.importBlock(nextBlock, Optional.empty()))
+    assertThatSafeFuture(blockManager.importBlock(nextBlock, Optional.empty()).blockImportResult())
         .isCompletedWithValue(BlockImportResult.knownBlock(nextBlock, true));
     verify(subscriber, times(2)).onBlockImported(nextBlock, true);
   }
@@ -307,7 +307,8 @@ public class BlockManagerTest {
     invalidBlockRoots.put(
         invalidBlock.getRoot(), BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK);
 
-    assertThatSafeFuture(blockManager.importBlock(invalidBlock, Optional.empty()))
+    assertThatSafeFuture(
+            blockManager.importBlock(invalidBlock, Optional.empty()).blockImportResult())
         .isCompletedWithValueMatching(result -> !result.isSuccessful());
     verifyNoInteractions(subscriber);
   }
@@ -323,7 +324,7 @@ public class BlockManagerTest {
 
     incrementSlot();
     incrementSlot();
-    safeJoin(blockManager.importBlock(nextNextBlock, Optional.empty()));
+    safeJoin(blockManager.importBlock(nextNextBlock, Optional.empty()).blockImportResult());
     assertThat(pendingBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.size()).isEqualTo(0);
     assertThat(pendingBlocks.contains(nextNextBlock)).isTrue();
@@ -386,7 +387,7 @@ public class BlockManagerTest {
     final SignedBeaconBlock nextBlock =
         localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
 
-    safeJoin(blockManager.importBlock(nextBlock, Optional.empty()));
+    safeJoin(blockManager.importBlock(nextBlock, Optional.empty()).blockImportResult());
     assertThat(pendingBlocks.size()).isEqualTo(0);
     assertThat(futureBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.contains(nextBlock)).isTrue();
@@ -402,7 +403,7 @@ public class BlockManagerTest {
         localChain.chainBuilder().generateBlockAtSlot(nextNextSlot).getBlock();
 
     incrementSlot();
-    safeJoin(blockManager.importBlock(nextNextBlock, Optional.empty()));
+    safeJoin(blockManager.importBlock(nextNextBlock, Optional.empty()).blockImportResult());
     assertThat(pendingBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.size()).isEqualTo(0);
     assertThat(pendingBlocks.contains(nextNextBlock)).isTrue();
@@ -415,7 +416,8 @@ public class BlockManagerTest {
         localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
     incrementSlot();
 
-    assertThat(blockManager.importBlock(nextBlock, Optional.empty())).isCompleted();
+    assertThat(blockManager.importBlock(nextBlock, Optional.empty()).blockImportResult())
+        .isCompleted();
     assertThat(pendingBlocks.size()).isEqualTo(0);
 
     // pool should get notified for new block and then should be notified to drop content due to
@@ -430,7 +432,8 @@ public class BlockManagerTest {
     final SignedBeaconBlock nextBlock =
         localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
 
-    assertThat(blockManager.importBlock(nextBlock, Optional.empty())).isCompleted();
+    assertThat(blockManager.importBlock(nextBlock, Optional.empty()).blockImportResult())
+        .isCompleted();
     assertThat(pendingBlocks.size()).isEqualTo(0);
     assertThat(futureBlocks.size()).isEqualTo(1);
     assertThat(futureBlocks.contains(nextBlock)).isTrue();
@@ -807,7 +810,7 @@ public class BlockManagerTest {
     final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker1 =
         createAvailabilityCheckerWithValidBlobSidecars(block1, blobSidecars1);
 
-    assertThat(blockManager.importBlock(block1, Optional.empty()))
+    assertThat(blockManager.importBlock(block1, Optional.empty()).blockImportResult())
         .isCompletedWithValueMatching(BlockImportResult::isSuccessful);
     verify(blobSidecarsAvailabilityChecker1).getAvailabilityCheckResult();
     assertThatStored(block1.getMessage(), blobSidecars1);
@@ -830,7 +833,7 @@ public class BlockManagerTest {
     final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker2 =
         createAvailabilityCheckerWithValidBlobSidecars(block2, blobSidecars2);
 
-    assertThat(blockManager.importBlock(block2, Optional.empty()))
+    assertThat(blockManager.importBlock(block2, Optional.empty()).blockImportResult())
         .isCompletedWithValueMatching(BlockImportResult::isSuccessful);
     verify(blobSidecarsAvailabilityChecker2).getAvailabilityCheckResult();
     assertThatStored(block2.getMessage(), blobSidecars2);
@@ -854,7 +857,7 @@ public class BlockManagerTest {
     final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker3 =
         createAvailabilityCheckerWithValidBlobSidecars(block3, blobSidecars3);
 
-    assertThat(blockManager.importBlock(block3, Optional.empty()))
+    assertThat(blockManager.importBlock(block3, Optional.empty()).blockImportResult())
         .isCompletedWithValueMatching(BlockImportResult::isSuccessful);
     verify(blobSidecarsAvailabilityChecker3).getAvailabilityCheckResult();
     assertThatStored(block3.getMessage(), blobSidecars3);
@@ -881,7 +884,7 @@ public class BlockManagerTest {
     final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker1 =
         createAvailabilityCheckerWithValidBlobSidecars(block1, blobSidecars1);
 
-    assertThat(blockManager.importBlock(block1, Optional.empty()))
+    assertThat(blockManager.importBlock(block1, Optional.empty()).blockImportResult())
         .isCompletedWithValueMatching(BlockImportResult::isSuccessful);
     verify(blobSidecarsAvailabilityChecker1).getAvailabilityCheckResult();
     assertThatStored(block1.getMessage(), blobSidecars1);
@@ -911,7 +914,7 @@ public class BlockManagerTest {
     final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker1 =
         createAvailabilityCheckerWithValidBlobSidecars(block1, blobSidecars1);
 
-    assertThat(blockManager.importBlock(block1, Optional.empty()))
+    assertThat(blockManager.importBlock(block1, Optional.empty()).blockImportResult())
         .isCompletedWithValueMatching(BlockImportResult::isSuccessful);
     verify(blobSidecarsAvailabilityChecker1).getAvailabilityCheckResult();
     assertThatStored(block1.getMessage(), blobSidecars1);
@@ -941,7 +944,7 @@ public class BlockManagerTest {
     final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker1 =
         createAvailabilityCheckerWithNotRequiredBlobSidecars(block1);
 
-    assertThat(blockManager.importBlock(block1, Optional.empty()))
+    assertThat(blockManager.importBlock(block1, Optional.empty()).blockImportResult())
         .isCompletedWithValueMatching(BlockImportResult::isSuccessful);
     verify(blobSidecarsAvailabilityChecker1).getAvailabilityCheckResult();
     assertThat(localRecentChainData.retrieveBlockByRoot(block1.getRoot()))
@@ -979,7 +982,7 @@ public class BlockManagerTest {
     final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker1 =
         createAvailabilityCheckerWithInvalidBlobSidecars(block1, blobSidecars1);
 
-    assertThat(blockManager.importBlock(block1, Optional.empty()))
+    assertThat(blockManager.importBlock(block1, Optional.empty()).blockImportResult())
         .isCompletedWithValueMatching(
             cause -> cause.getFailureReason().equals(FAILED_DATA_AVAILABILITY_CHECK_INVALID));
     verify(blobSidecarsAvailabilityChecker1).getAvailabilityCheckResult();
@@ -993,7 +996,10 @@ public class BlockManagerTest {
     assertThat(invalidBlockRoots).doesNotContainKeys(block1.getRoot());
 
     // if we receive a block building on top of block1, we should trigger unknown parent flow
-    assertThat(blockManager.importBlock(signedBlockAndState2.getBlock(), Optional.empty()))
+    assertThat(
+            blockManager
+                .importBlock(signedBlockAndState2.getBlock(), Optional.empty())
+                .blockImportResult())
         .isCompletedWithValueMatching(cause -> cause.getFailureReason().equals(UNKNOWN_PARENT));
   }
 
@@ -1019,7 +1025,7 @@ public class BlockManagerTest {
     final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker1 =
         createAvailabilityCheckerWithNotAvailableBlobSidecars(block1);
 
-    assertThat(blockManager.importBlock(block1, Optional.empty()))
+    assertThat(blockManager.importBlock(block1, Optional.empty()).blockImportResult())
         .isCompletedWithValueMatching(
             cause -> cause.getFailureReason().equals(FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE));
     verify(blobSidecarsAvailabilityChecker1).getAvailabilityCheckResult();
@@ -1050,7 +1056,7 @@ public class BlockManagerTest {
     final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker1 =
         createAvailabilityCheckerWithNotRequiredBlobSidecars(block1);
 
-    assertThat(blockManager.importBlock(block1, Optional.empty()))
+    assertThat(blockManager.importBlock(block1, Optional.empty()).blockImportResult())
         .isCompletedWithValueMatching(BlockImportResult::isSuccessful);
     verify(blobSidecarsAvailabilityChecker1).getAvailabilityCheckResult();
     assertThat(localRecentChainData.retrieveBlockByRoot(block1.getRoot()))
@@ -1128,13 +1134,13 @@ public class BlockManagerTest {
 
   private void assertImportBlockWithResult(
       final SignedBeaconBlock block, final FailureReason failureReason) {
-    assertThat(blockManager.importBlock(block, Optional.empty()))
+    assertThat(blockManager.importBlock(block, Optional.empty()).blockImportResult())
         .isCompletedWithValueMatching(result -> result.getFailureReason().equals(failureReason));
   }
 
   private void assertImportBlockWithResult(
       final SignedBeaconBlock block, final BlockImportResult importResult) {
-    assertThat(blockManager.importBlock(block, Optional.empty()))
+    assertThat(blockManager.importBlock(block, Optional.empty()).blockImportResult())
         .isCompletedWithValueMatching(result -> result.equals(importResult));
   }
 
@@ -1142,7 +1148,10 @@ public class BlockManagerTest {
       final SignedBeaconBlock block,
       final BroadcastValidationLevel broadcastValidationLevel,
       final FailureReason failureReason) {
-    assertThat(blockManager.importBlock(block, Optional.of(broadcastValidationLevel)))
+    assertThat(
+            blockManager
+                .importBlock(block, Optional.of(broadcastValidationLevel))
+                .blockImportResult())
         .isCompletedWithValueMatching(result -> result.getFailureReason().equals(failureReason));
   }
 
@@ -1154,13 +1163,16 @@ public class BlockManagerTest {
   }
 
   private void assertImportBlockSuccessfully(final SignedBeaconBlock block) {
-    assertThat(blockManager.importBlock(block, Optional.empty()))
+    assertThat(blockManager.importBlock(block, Optional.empty()).blockImportResult())
         .isCompletedWithValueMatching(BlockImportResult::isSuccessful);
   }
 
   private void assertImportBlockSuccessfully(
       final SignedBeaconBlock block, final BroadcastValidationLevel broadcastValidationLevel) {
-    assertThat(blockManager.importBlock(block, Optional.of(broadcastValidationLevel)))
+    assertThat(
+            blockManager
+                .importBlock(block, Optional.of(broadcastValidationLevel))
+                .blockImportResult())
         .isCompletedWithValueMatching(BlockImportResult::isSuccessful);
   }
 

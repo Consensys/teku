@@ -24,6 +24,8 @@ import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportResultWithBroadcastValidationResult;
+import tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastValidationResult;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
@@ -89,32 +91,39 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
       final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
 
     if (broadcastValidationLevel.isPresent()) {
-      // when broadcast validation is enabled, we need to wait for the validation to complete before publishing the block
+      // when broadcast validation is enabled, we need to wait for the validation to complete before
+      // publishing the block
 
-      final SafeFuture<BlockImportResult> result =
-          importBlock(blockContainer, broadcastValidationLevel);
+      final BlockImportResultWithBroadcastValidationResult
+          importResultWithBroadcastValidationResult =
+              importBlock(blockContainer, broadcastValidationLevel);
 
-      result
-          .thenAccept(
-              blockImportResult -> {
-                if (blockImportResult.isSuccessful()) {
+      return importResultWithBroadcastValidationResult
+          .broadcastValidationResult()
+          .orElseThrow()
+          .thenPeek(
+              broadcastValidationResult -> {
+                if (broadcastValidationResult == BroadcastValidationResult.SUCCESS) {
                   publishBlock(blockContainer);
                 }
               })
-          .always(
-              () ->
-                  LOG.debug(
-                      "Block import broadcast validation complete and block (and blob sidecars) publishing initiated according to validation result."));
-
-      return result;
+          .thenCombine(
+              importResultWithBroadcastValidationResult.blockImportResult(),
+              (broadcastValidationResult, blockImportResult) ->
+                  switch (broadcastValidationResult) {
+                    case SUCCESS, CONSENSUS_FAILURE -> blockImportResult;
+                    case GOSSIP_FAILURE -> BlockImportResult.FAILED_BROADCAST_GOSSIP_VALIDATION;
+                    case FINAL_EQUIVOCATION_FAILURE -> BlockImportResult
+                        .FAILED_BROADCAST_EQUIVOCATION_VALIDATION;
+                  });
     }
 
     // when broadcast validation is disabled, we can publish the block immediately and then import
     publishBlock(blockContainer);
-    return importBlock(blockContainer, Optional.empty());
+    return importBlock(blockContainer, Optional.empty()).blockImportResult();
   }
 
-  abstract SafeFuture<BlockImportResult> importBlock(
+  abstract BlockImportResultWithBroadcastValidationResult importBlock(
       final SignedBlockContainer blockContainer,
       final Optional<BroadcastValidationLevel> broadcastValidationLevel);
 

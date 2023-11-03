@@ -462,14 +462,14 @@ class BlockProductionDutyTest {
     when(signer.signBlock(unsignedBlock, fork)).thenReturn(completedFuture(blockSignature));
     final SignedBeaconBlock signedBlock =
         dataStructureUtil.signedBlock(unsignedBlock, blockSignature);
-    when(validatorApiChannel.sendSignedBlock(signedBlock))
+    when(validatorApiChannel.sendSignedBlock(signedBlock, Optional.empty()))
         .thenReturn(completedFuture(SendSignedBlockResult.success(signedBlock.getRoot())));
 
     performAndReportDuty();
     verify(validatorApiChannel)
         .createUnsignedBlock(CAPELLA_SLOT, randaoReveal, Optional.of(graffiti));
 
-    verify(validatorApiChannel).sendSignedBlock(signedBlock);
+    verify(validatorApiChannel).sendSignedBlock(signedBlock, Optional.empty());
     verify(validatorLogger)
         .dutyCompleted(
             eq(TYPE),
@@ -521,7 +521,7 @@ class BlockProductionDutyTest {
                     blobSidecarsSignatures.get((BlobSidecar) invocation.getArgument(0))));
     when(validatorApiChannel.createUnsignedBlock(denebSlot, randaoReveal, Optional.of(graffiti)))
         .thenReturn(completedFuture(Optional.of(unsignedBlockContents)));
-    when(validatorApiChannel.sendSignedBlock(any()))
+    when(validatorApiChannel.sendSignedBlock(any(), any()))
         .thenReturn(completedFuture(SendSignedBlockResult.success(unsignedBlock.getRoot())));
 
     performAndReportDuty(denebSlot);
@@ -531,7 +531,8 @@ class BlockProductionDutyTest {
     final ArgumentCaptor<SignedBlockContents> signedBlockContentsArgumentCaptor =
         ArgumentCaptor.forClass(SignedBlockContents.class);
 
-    verify(validatorApiChannel).sendSignedBlock(signedBlockContentsArgumentCaptor.capture());
+    verify(validatorApiChannel)
+        .sendSignedBlock(signedBlockContentsArgumentCaptor.capture(), eq(Optional.empty()));
     verify(validatorLogger)
         .dutyCompleted(
             eq(TYPE),

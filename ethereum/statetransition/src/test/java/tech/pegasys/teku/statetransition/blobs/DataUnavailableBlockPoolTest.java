@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportResultWithBroadcastValidationResult;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 
 public class DataUnavailableBlockPoolTest {
@@ -61,8 +62,14 @@ public class DataUnavailableBlockPoolTest {
     when(blobSidecarPool.getBlockBlobSidecarsTracker(block2))
         .thenReturn(Optional.of(block2Tracker));
 
-    when(blockManager.importBlock(block1)).thenReturn(block1ImportResult);
-    when(blockManager.importBlock(block2)).thenReturn(block2ImportResult);
+    when(blockManager.importBlock(block1, Optional.empty()))
+        .thenReturn(
+            new BlockImportResultWithBroadcastValidationResult(
+                block1ImportResult, Optional.empty()));
+    when(blockManager.importBlock(block2, Optional.empty()))
+        .thenReturn(
+            new BlockImportResultWithBroadcastValidationResult(
+                block2ImportResult, Optional.empty()));
   }
 
   @Test
@@ -85,16 +92,16 @@ public class DataUnavailableBlockPoolTest {
     dataUnavailableBlockPool.addDataUnavailableBlock(block1);
     dataUnavailableBlockPool.addDataUnavailableBlock(block2);
 
-    verify(blockManager).importBlock(block1);
+    verify(blockManager).importBlock(block1, Optional.empty());
 
     // should wait block1 to finish import
-    verify(blockManager, never()).importBlock(block2);
+    verify(blockManager, never()).importBlock(block2, Optional.empty());
 
     // block import finishes
     block1ImportResult.complete(BlockImportResult.successful(block1));
 
     // import immediately the second
-    verify(blockManager).importBlock(block2);
+    verify(blockManager).importBlock(block2, Optional.empty());
     block2ImportResult.complete(BlockImportResult.successful(block2));
 
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
@@ -109,8 +116,8 @@ public class DataUnavailableBlockPoolTest {
     dataUnavailableBlockPool.addDataUnavailableBlock(block1);
     dataUnavailableBlockPool.addDataUnavailableBlock(block2);
 
-    verify(blockManager, never()).importBlock(block1);
-    verify(blockManager, never()).importBlock(block2);
+    verify(blockManager, never()).importBlock(block1, Optional.empty());
+    verify(blockManager, never()).importBlock(block2, Optional.empty());
 
     // there is a queued task because we added block1 first.
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
@@ -119,8 +126,8 @@ public class DataUnavailableBlockPoolTest {
     asyncRunner.executeQueuedActions();
 
     // block2 is selected for import
-    verify(blockManager, never()).importBlock(block1);
-    verify(blockManager).importBlock(block2);
+    verify(blockManager, never()).importBlock(block1, Optional.empty());
+    verify(blockManager).importBlock(block2, Optional.empty());
 
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
 
@@ -129,14 +136,14 @@ public class DataUnavailableBlockPoolTest {
 
     // we still have a queued task, because we have block1 still incomplete
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
-    verify(blockManager, never()).importBlock(block1);
+    verify(blockManager, never()).importBlock(block1, Optional.empty());
 
     // lets complete block1 and run the delayed task
     when(block1Tracker.isCompleted()).thenReturn(true);
     asyncRunner.executeQueuedActions();
 
     // block1 is imported
-    verify(blockManager).importBlock(block1);
+    verify(blockManager).importBlock(block1, Optional.empty());
     block1ImportResult.complete(BlockImportResult.successful(block1));
 
     // no other delayed task
@@ -153,8 +160,8 @@ public class DataUnavailableBlockPoolTest {
     dataUnavailableBlockPool.addDataUnavailableBlock(block1);
     dataUnavailableBlockPool.addDataUnavailableBlock(block2);
 
-    verify(blockManager, never()).importBlock(block1);
-    verify(blockManager, never()).importBlock(block2);
+    verify(blockManager, never()).importBlock(block1, Optional.empty());
+    verify(blockManager, never()).importBlock(block2, Optional.empty());
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
 

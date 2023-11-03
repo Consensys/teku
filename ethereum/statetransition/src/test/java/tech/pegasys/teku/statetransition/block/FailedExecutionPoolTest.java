@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.SocketTimeoutException;
 import java.time.Duration;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportResultWithBroadcastValidationResult;
 
 class FailedExecutionPoolTest {
 
@@ -64,7 +66,7 @@ class FailedExecutionPoolTest {
     timeProvider.advanceTimeBy(FailedExecutionPool.SHORT_DELAY);
     asyncRunner.executeDueActions();
 
-    verify(blockManager).importBlock(block);
+    verify(blockManager).importBlock(block, Optional.empty());
   }
 
   @Test
@@ -75,11 +77,11 @@ class FailedExecutionPoolTest {
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
-    verify(blockManager).importBlock(block);
+    verify(blockManager).importBlock(block, Optional.empty());
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
-    verify(blockManager, times(2)).importBlock(block);
+    verify(blockManager, times(2)).importBlock(block, Optional.empty());
   }
 
   @Test
@@ -90,7 +92,7 @@ class FailedExecutionPoolTest {
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
-    verify(blockManager).importBlock(block);
+    verify(blockManager).importBlock(block, Optional.empty());
 
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
   }
@@ -104,7 +106,7 @@ class FailedExecutionPoolTest {
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
-    verify(blockManager).importBlock(block);
+    verify(blockManager).importBlock(block, Optional.empty());
 
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
   }
@@ -117,7 +119,7 @@ class FailedExecutionPoolTest {
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
-    verify(blockManager).importBlock(block);
+    verify(blockManager).importBlock(block, Optional.empty());
 
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
   }
@@ -131,7 +133,7 @@ class FailedExecutionPoolTest {
 
     withImportResult(BlockImportResult.optimisticallySuccessful(block));
     asyncRunner.executeQueuedActions();
-    verify(blockManager).importBlock(block);
+    verify(blockManager).importBlock(block, Optional.empty());
 
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
   }
@@ -144,17 +146,17 @@ class FailedExecutionPoolTest {
 
     timeProvider.advanceTimeBy(FailedExecutionPool.SHORT_DELAY);
     asyncRunner.executeDueActions();
-    verify(blockManager, times(1)).importBlock(block);
+    verify(blockManager, times(1)).importBlock(block, Optional.empty());
 
     // Not retried after the delay
     timeProvider.advanceTimeBy(FailedExecutionPool.SHORT_DELAY);
     asyncRunner.executeDueActions();
-    verify(blockManager, times(1)).importBlock(block);
+    verify(blockManager, times(1)).importBlock(block, Optional.empty());
 
     // But retries after double the time
     timeProvider.advanceTimeBy(FailedExecutionPool.SHORT_DELAY);
     asyncRunner.executeDueActions();
-    verify(blockManager, times(2)).importBlock(block);
+    verify(blockManager, times(2)).importBlock(block, Optional.empty());
   }
 
   @Test
@@ -166,19 +168,19 @@ class FailedExecutionPoolTest {
 
     timeProvider.advanceTimeBy(FailedExecutionPool.SHORT_DELAY);
     asyncRunner.executeDueActions();
-    verify(blockManager, times(1)).importBlock(block);
+    verify(blockManager, times(1)).importBlock(block, Optional.empty());
 
     // Succeeds when retried the second time
     withImportResult(BlockImportResult.successful(block));
     timeProvider.advanceTimeBy(FailedExecutionPool.SHORT_DELAY.multipliedBy(2));
     asyncRunner.executeDueActions();
-    verify(blockManager, times(2)).importBlock(block);
+    verify(blockManager, times(2)).importBlock(block, Optional.empty());
 
     // New block fails and should be retried with a short timeout again
     failurePool.addFailedBlock(block2);
     timeProvider.advanceTimeBy(FailedExecutionPool.SHORT_DELAY);
     asyncRunner.executeDueActions();
-    verify(blockManager).importBlock(block2);
+    verify(blockManager).importBlock(block2, Optional.empty());
   }
 
   @Test
@@ -190,7 +192,7 @@ class FailedExecutionPoolTest {
     failurePool.addFailedBlock(block2);
 
     asyncRunner.executeQueuedActions();
-    verify(blockManager, times(1)).importBlock(any());
+    verify(blockManager, times(1)).importBlock(any(), any());
   }
 
   @Test
@@ -202,9 +204,9 @@ class FailedExecutionPoolTest {
     failurePool.addFailedBlock(block2);
 
     asyncRunner.executeQueuedActions();
-    verify(blockManager).importBlock(block);
+    verify(blockManager).importBlock(block, Optional.empty());
     // Should immediately try to execute next pending block
-    verify(blockManager).importBlock(block2);
+    verify(blockManager).importBlock(block2, Optional.empty());
   }
 
   @Test
@@ -216,14 +218,14 @@ class FailedExecutionPoolTest {
     for (int i = 0; i < 5; i++) {
       timeProvider.advanceTimeBy(expectedDelay);
       asyncRunner.executeDueActions();
-      verify(blockManager, times(i + 1)).importBlock(block);
+      verify(blockManager, times(i + 1)).importBlock(block, Optional.empty());
       expectedDelay = expectedDelay.multipliedBy(2);
     }
 
     // Should not increase delay beyond maximum
     timeProvider.advanceTimeBy(FailedExecutionPool.MAX_RETRY_DELAY);
     asyncRunner.executeDueActions();
-    verify(blockManager, times(6)).importBlock(block);
+    verify(blockManager, times(6)).importBlock(block, Optional.empty());
   }
 
   @Test
@@ -235,14 +237,14 @@ class FailedExecutionPoolTest {
     for (int i = 0; i < 5; i++) {
       timeProvider.advanceTimeBy(expectedDelay);
       asyncRunner.executeDueActions();
-      verify(blockManager, times(i + 1)).importBlock(block);
+      verify(blockManager, times(i + 1)).importBlock(block, Optional.empty());
       expectedDelay = expectedDelay.multipliedBy(2);
     }
 
     // Should not increase delay beyond maximum
     timeProvider.advanceTimeBy(FailedExecutionPool.MAX_RETRY_DELAY);
     asyncRunner.executeDueActions();
-    verify(blockManager, times(6)).importBlock(block);
+    verify(blockManager, times(6)).importBlock(block, Optional.empty());
   }
 
   @Test
@@ -254,14 +256,14 @@ class FailedExecutionPoolTest {
     for (int i = 0; i < 5; i++) {
       timeProvider.advanceTimeBy(expectedDelay);
       asyncRunner.executeDueActions();
-      verify(blockManager, times(i + 1)).importBlock(block);
+      verify(blockManager, times(i + 1)).importBlock(block, Optional.empty());
       expectedDelay = expectedDelay.multipliedBy(2);
     }
 
     // Should not increase delay beyond maximum
     timeProvider.advanceTimeBy(FailedExecutionPool.MAX_RETRY_DELAY);
     asyncRunner.executeDueActions();
-    verify(blockManager, times(6)).importBlock(block);
+    verify(blockManager, times(6)).importBlock(block, Optional.empty());
   }
 
   @Test
@@ -273,10 +275,10 @@ class FailedExecutionPoolTest {
     failurePool.addFailedBlock(block2);
 
     asyncRunner.executeQueuedActions();
-    verify(blockManager).importBlock(block);
+    verify(blockManager).importBlock(block, Optional.empty());
 
     asyncRunner.executeQueuedActions();
-    verify(blockManager, times(2)).importBlock(block);
+    verify(blockManager, times(2)).importBlock(block, Optional.empty());
   }
 
   @Test
@@ -288,10 +290,10 @@ class FailedExecutionPoolTest {
     failurePool.addFailedBlock(block2);
 
     asyncRunner.executeQueuedActions();
-    verify(blockManager).importBlock(block);
+    verify(blockManager).importBlock(block, Optional.empty());
 
     asyncRunner.executeQueuedActions();
-    verify(blockManager).importBlock(block2);
+    verify(blockManager).importBlock(block2, Optional.empty());
   }
 
   @Test
@@ -303,32 +305,39 @@ class FailedExecutionPoolTest {
     failurePool.addFailedBlock(block2);
 
     asyncRunner.executeQueuedActions();
-    verify(blockManager).importBlock(block);
+    verify(blockManager).importBlock(block, Optional.empty());
 
     asyncRunner.executeQueuedActions();
-    verify(blockManager).importBlock(block2);
+    verify(blockManager).importBlock(block2, Optional.empty());
   }
 
   @Test
   void shouldStopRetryingBlockWhenImportThrowsExceptionInsteadOfReturningFailedFuture() {
     final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(2);
-    when(blockManager.importBlock(block)).thenThrow(new RuntimeException("Whoops"));
-    when(blockManager.importBlock(block2))
-        .thenReturn(SafeFuture.completedFuture(BlockImportResult.successful(block2)));
+    when(blockManager.importBlock(block, Optional.empty()))
+        .thenThrow(new RuntimeException("Whoops"));
+    when(blockManager.importBlock(block2, Optional.empty()))
+        .thenReturn(
+            new BlockImportResultWithBroadcastValidationResult(
+                SafeFuture.completedFuture(BlockImportResult.successful(block2)),
+                Optional.empty()));
 
     failurePool.addFailedBlock(block);
     failurePool.addFailedBlock(block2);
 
     asyncRunner.executeQueuedActions();
-    verify(blockManager).importBlock(block);
-    verify(blockManager).importBlock(block2);
+    verify(blockManager).importBlock(block, Optional.empty());
+    verify(blockManager).importBlock(block2, Optional.empty());
 
     verifyNoMoreInteractions(blockManager);
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
   }
 
   private void withImportResult(final BlockImportResult result) {
-    when(blockManager.importBlock(any())).thenReturn(SafeFuture.completedFuture(result));
+    when(blockManager.importBlock(any(), any()))
+        .thenReturn(
+            new BlockImportResultWithBroadcastValidationResult(
+                SafeFuture.completedFuture(result), Optional.empty()));
   }
 
   private static InterruptedIOException timeoutException() {
