@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import tech.pegasys.teku.kzg.KZG;
@@ -32,7 +34,8 @@ public class BlobSidecarsByRootValidator extends AbstractBlobSidecarsValidator {
       final KZG kzg,
       final List<BlobIdentifier> expectedBlobIdentifiers) {
     super(peer, spec, kzg);
-    this.expectedBlobIdentifiers = Set.copyOf(expectedBlobIdentifiers);
+    this.expectedBlobIdentifiers = Collections.synchronizedSet(new HashSet<>());
+    this.expectedBlobIdentifiers.addAll(expectedBlobIdentifiers);
   }
 
   public void validate(final BlobSidecar blobSidecar) {
@@ -44,5 +47,9 @@ public class BlobSidecarsByRootValidator extends AbstractBlobSidecarsValidator {
     }
 
     verifyKzg(blobSidecar);
+
+    synchronized (expectedBlobIdentifiers) {
+      expectedBlobIdentifiers.remove(blobIdentifier);
+    }
   }
 }
