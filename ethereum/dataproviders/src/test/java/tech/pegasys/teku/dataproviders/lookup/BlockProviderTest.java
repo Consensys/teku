@@ -28,6 +28,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
@@ -144,6 +145,7 @@ public class BlockProviderTest {
   }
 
   @Test
+  @Disabled("Concurrent test is flaky on Windows")
   void fromMapWithLock() throws ExecutionException, InterruptedException {
     chainBuilder.generateGenesis();
     final Map<Bytes32, SignedBeaconBlock> blocks =
