@@ -98,27 +98,27 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
           importResultWithBroadcastValidationResult =
               importBlock(blockContainer, broadcastValidationLevel);
 
+      importResultWithBroadcastValidationResult
+          .thenCompose(
+              blockImportAndBroadcastValidationResults ->
+                  blockImportAndBroadcastValidationResults
+                      .broadcastValidationResult()
+                      .orElseThrow()
+                      .thenAccept(
+                          broadcastValidationResult -> {
+                            if (broadcastValidationResult == BroadcastValidationResult.SUCCESS) {
+                              publishBlock(blockContainer);
+                              LOG.debug("Block (and blob sidecars) publishing initiated");
+                            } else {
+                              LOG.debug(
+                                  "Block (and blob sidecars) publishing skipped due to broadcast validation result {}",
+                                  broadcastValidationResult);
+                            }
+                          }))
+          .finish(err -> LOG.debug("Block (and blob sidecars) publishing failed", err));
+
       return importResultWithBroadcastValidationResult.thenCompose(
-          blockImportAndBroadcastValidationResults ->
-              blockImportAndBroadcastValidationResults
-                  .broadcastValidationResult()
-                  .orElseThrow()
-                  .thenPeek(
-                      broadcastValidationResult -> {
-                        if (broadcastValidationResult == BroadcastValidationResult.SUCCESS) {
-                          publishBlock(blockContainer);
-                        }
-                      })
-                  .thenCombine(
-                      blockImportAndBroadcastValidationResults.blockImportResult(),
-                      (broadcastValidationResult, blockImportResult) ->
-                          switch (broadcastValidationResult) {
-                            case SUCCESS, CONSENSUS_FAILURE -> blockImportResult;
-                            case GOSSIP_FAILURE -> BlockImportResult
-                                .FAILED_BROADCAST_GOSSIP_VALIDATION;
-                            case FINAL_EQUIVOCATION_FAILURE -> BlockImportResult
-                                .FAILED_BROADCAST_EQUIVOCATION_VALIDATION;
-                          }));
+          BlockImportAndBroadcastValidationResults::blockImportResult);
     }
 
     // when broadcast validation is disabled, we can publish the block immediately and then import
