@@ -783,9 +783,7 @@ class ValidatorApiHandlerTest {
   public void sendSignedBlock_shouldConvertSuccessfulResult() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
     when(blockImportChannel.importBlock(block, Optional.empty()))
-        .thenReturn(
-            new BlockImportAndBroadcastValidationResults(
-                SafeFuture.completedFuture(BlockImportResult.successful(block)), Optional.empty()));
+        .thenReturn(prepareBlockImportResult(BlockImportResult.successful(block)));
     final SafeFuture<SendSignedBlockResult> result =
         validatorApiHandler.sendSignedBlock(block, Optional.empty());
 
@@ -798,10 +796,8 @@ class ValidatorApiHandlerTest {
   public void sendSignedBlock_shouldConvertFailedResult() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
     when(blockImportChannel.importBlock(block, Optional.empty()))
-        .thenReturn(
-            new BlockImportAndBroadcastValidationResults(
-                SafeFuture.completedFuture(BlockImportResult.FAILED_INVALID_ANCESTRY),
-                Optional.empty()));
+        .thenReturn(prepareBlockImportResult(BlockImportResult.FAILED_INVALID_ANCESTRY));
+
     final SafeFuture<SendSignedBlockResult> result =
         validatorApiHandler.sendSignedBlock(block, Optional.empty());
 
@@ -816,10 +812,7 @@ class ValidatorApiHandlerTest {
   public void sendSignedBlock_shouldConvertKnownBlockResult() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
     when(blockImportChannel.importBlock(block, Optional.empty()))
-        .thenReturn(
-            new BlockImportAndBroadcastValidationResults(
-                SafeFuture.completedFuture(BlockImportResult.knownBlock(block, false)),
-                Optional.empty()));
+        .thenReturn(prepareBlockImportResult(BlockImportResult.knownBlock(block, false)));
     final SafeFuture<SendSignedBlockResult> result =
         validatorApiHandler.sendSignedBlock(block, Optional.empty());
 
@@ -838,9 +831,7 @@ class ValidatorApiHandlerTest {
         blockContents.getSignedBlobSidecars().orElseThrow();
 
     when(blockImportChannel.importBlock(block, Optional.empty()))
-        .thenReturn(
-            new BlockImportAndBroadcastValidationResults(
-                SafeFuture.completedFuture(BlockImportResult.successful(block)), Optional.empty()));
+        .thenReturn(prepareBlockImportResult(BlockImportResult.successful(block)));
     final SafeFuture<SendSignedBlockResult> result =
         validatorApiHandler.sendSignedBlock(blockContents, Optional.empty());
 
@@ -861,10 +852,7 @@ class ValidatorApiHandlerTest {
         blockContents.getSignedBlobSidecars().orElseThrow();
 
     when(blockImportChannel.importBlock(block, Optional.empty()))
-        .thenReturn(
-            new BlockImportAndBroadcastValidationResults(
-                SafeFuture.completedFuture(BlockImportResult.FAILED_INVALID_ANCESTRY),
-                Optional.empty()));
+        .thenReturn(prepareBlockImportResult(BlockImportResult.FAILED_INVALID_ANCESTRY));
     final SafeFuture<SendSignedBlockResult> result =
         validatorApiHandler.sendSignedBlock(blockContents, Optional.empty());
 
@@ -887,10 +875,7 @@ class ValidatorApiHandlerTest {
         blockContents.getSignedBlobSidecars().orElseThrow();
 
     when(blockImportChannel.importBlock(block, Optional.empty()))
-        .thenReturn(
-            new BlockImportAndBroadcastValidationResults(
-                SafeFuture.completedFuture(BlockImportResult.knownBlock(block, false)),
-                Optional.empty()));
+        .thenReturn(prepareBlockImportResult(BlockImportResult.knownBlock(block, false)));
     final SafeFuture<SendSignedBlockResult> result =
         validatorApiHandler.sendSignedBlock(blockContents, Optional.empty());
 
@@ -907,9 +892,7 @@ class ValidatorApiHandlerTest {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
 
     when(blockImportChannel.importBlock(block, Optional.empty()))
-        .thenReturn(
-            new BlockImportAndBroadcastValidationResults(
-                SafeFuture.completedFuture(BlockImportResult.successful(block)), Optional.empty()));
+        .thenReturn(prepareBlockImportResult(BlockImportResult.successful(block)));
     final SafeFuture<SendSignedBlockResult> result =
         validatorApiHandler.sendSignedBlock(block, Optional.empty());
     safeJoin(result);
@@ -1248,5 +1231,12 @@ class ValidatorApiHandlerTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager);
+  }
+
+  private SafeFuture<BlockImportAndBroadcastValidationResults> prepareBlockImportResult(
+      final BlockImportResult blockImportResult) {
+    return SafeFuture.completedFuture(
+        new BlockImportAndBroadcastValidationResults(
+            SafeFuture.completedFuture(blockImportResult), Optional.empty()));
   }
 }

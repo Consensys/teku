@@ -1167,12 +1167,6 @@ public class BlockManagerTest {
     assertThatBlockImport(block).isCompletedWithValueMatching(BlockImportResult::isSuccessful);
   }
 
-  private void assertImportBlockSuccessfully(
-      final SignedBeaconBlock block, final BroadcastValidationLevel broadcastValidationLevel) {
-    assertThatBlockImport(block, Optional.of(broadcastValidationLevel))
-        .isCompletedWithValueMatching(BlockImportResult::isSuccessful);
-  }
-
   private void incrementSlotTo(final UInt64 toSlotInclusive) {
     assertThat(toSlotInclusive.isGreaterThanOrEqualTo(currentSlot)).isTrue();
     while (toSlotInclusive.isGreaterThan(currentSlot)) {
