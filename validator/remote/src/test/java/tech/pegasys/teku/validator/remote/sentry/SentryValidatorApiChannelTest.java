@@ -332,7 +332,7 @@ class SentryValidatorApiChannelTest {
 
     sentryValidatorApiChannel.sendSignedBlock(signedBeaconBlock, Optional.empty());
 
-    verify(dutiesProviderChannel).sendSignedBlock(eq(signedBeaconBlock), Optional.empty());
+    verify(dutiesProviderChannel).sendSignedBlock(eq(signedBeaconBlock), eq(Optional.empty()));
     verifyNoInteractions(blockHandlerChannel);
     verifyNoInteractions(attestationPublisherChannel);
   }
