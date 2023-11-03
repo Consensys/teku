@@ -106,7 +106,7 @@ class PostBlsToExecutionChangesTest extends AbstractMigratedBeaconHandlerTest {
         .isEqualTo(
             new HttpErrorResponse(
                 SC_BAD_REQUEST,
-                "A maximum of 5,000 SignedBLSToExecutionChange objects can be submitted to the node's pool at one time"));
+                "A maximum of 5000 SignedBLSToExecutionChange objects can be submitted to the node's pool at one time"));
   }
 
   @Test
