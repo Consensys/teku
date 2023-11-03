@@ -84,15 +84,15 @@ public class BlocksByRangeListenerWrapperTest {
   void blockSlotGreaterThanToSlot() {
     UInt64 startSlot = UInt64.valueOf(1);
     UInt64 count = UInt64.valueOf(8);
-    // end slot is 9 (1 + 8), so slot 10 will be unexpected
+    // This requests 8 slots (1, 2, 3, 4, 5, 6, 7, 8) so 9 will be unexpected.
     listenerWrapper = new BlocksByRangeListenerWrapper(peer, listener, startSlot, count);
 
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(1);
     final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(2, block1.getRoot());
     final SignedBeaconBlock block3 = dataStructureUtil.randomSignedBeaconBlock(5, block2.getRoot());
-    final SignedBeaconBlock block4 = dataStructureUtil.randomSignedBeaconBlock(9, block3.getRoot());
+    final SignedBeaconBlock block4 = dataStructureUtil.randomSignedBeaconBlock(8, block3.getRoot());
     final SignedBeaconBlock block5 =
-        dataStructureUtil.randomSignedBeaconBlock(10, block4.getRoot());
+        dataStructureUtil.randomSignedBeaconBlock(9, block4.getRoot());
     listenerWrapper.onResponse(block1).join();
     listenerWrapper.onResponse(block2).join();
     listenerWrapper.onResponse(block3).join();
@@ -113,7 +113,6 @@ public class BlocksByRangeListenerWrapperTest {
   void blockParentRootDoesNotMatch() {
     UInt64 startSlot = UInt64.valueOf(1);
     UInt64 count = UInt64.valueOf(4);
-    // end slot is 9
     listenerWrapper = new BlocksByRangeListenerWrapper(peer, listener, startSlot, count);
 
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(1);
@@ -136,7 +135,6 @@ public class BlocksByRangeListenerWrapperTest {
   void blockSlotGreaterThanPreviousBlockSlot() {
     UInt64 startSlot = UInt64.valueOf(1);
     UInt64 count = UInt64.valueOf(4);
-    // end slot is 9
     listenerWrapper = new BlocksByRangeListenerWrapper(peer, listener, startSlot, count);
 
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(1);
