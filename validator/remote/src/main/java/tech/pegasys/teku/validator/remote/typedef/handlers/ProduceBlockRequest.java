@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CONSENSUS_BLOCK_VALUE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_PAYLOAD_BLINDED;
@@ -45,6 +46,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
+import tech.pegasys.teku.validator.remote.typedef.BlockProductionV3FailedException;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class ProduceBlockRequest extends AbstractTypeDefRequest {
@@ -56,7 +58,6 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
   private final BlockContainerSchema<BlockContainer> blockContainerSchema;
   private final BlockContainerSchema<BlockContainer> blindedBlockContainerSchema;
   private final ResponseHandler<ProduceBlockResponse> responseHandler;
-
   public final DeserializableOneOfTypeDefinition<ProduceBlockResponse> produceBlockTypeDefinition;
 
   public ProduceBlockRequest(
@@ -91,7 +92,12 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
 
     this.responseHandler =
         new ResponseHandler<>(produceBlockTypeDefinition)
-            .withHandler(SC_OK, this::handleBlockContainerResult);
+            .withHandler(SC_OK, this::handleBlockContainerResult)
+            .withHandler(
+                SC_NOT_FOUND,
+                (__, ___) -> {
+                  throw new BlockProductionV3FailedException();
+                });
   }
 
   public Optional<BlockContainer> createUnsignedBlock(
