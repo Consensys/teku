@@ -36,7 +36,7 @@ import tech.pegasys.teku.validator.api.SubmitDataError;
 
 public class PostBlsToExecutionChanges extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/pool/bls_to_execution_changes";
-  private static final int MAX_BLS_MESSENGER_PER_REQUEST = 5000;
+  private static final int MAX_BLS_MESSAGES_PER_REQUEST = 5000;
   private final NodeDataProvider nodeDataProvider;
 
   public PostBlsToExecutionChanges(
@@ -77,7 +77,7 @@ public class PostBlsToExecutionChanges extends RestApiEndpoint {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final List<SignedBlsToExecutionChange> blsToExecutionChanges = request.getRequestBody();
-    if (blsToExecutionChanges.size() > MAX_BLS_MESSENGER_PER_REQUEST) {
+    if (blsToExecutionChanges.size() > MAX_BLS_MESSAGES_PER_REQUEST) {
       request.respondError(
           SC_BAD_REQUEST,
           "A maximum of 5,000 SignedBLSToExecutionChange objects can be submitted to the node's pool at one time");
