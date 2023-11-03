@@ -46,7 +46,7 @@ public class BlocksByRangeListenerWrapper implements RpcResponseListener<SignedB
     this.blockResponseListener = blockResponseListener;
     this.startSlot = startSlot;
     this.step = UInt64.ONE;
-    this.endSlot = startSlot.plus(step.times(count));
+    this.endSlot = startSlot.plus(step.times(count)).minusMinZero(1);
   }
 
   @Override
@@ -80,7 +80,7 @@ public class BlocksByRangeListenerWrapper implements RpcResponseListener<SignedB
   }
 
   private boolean blockSlotIsInRange(UInt64 blockSlot) {
-    return blockSlot.compareTo(startSlot) >= 0 && blockSlot.compareTo(endSlot) < 0;
+    return blockSlot.compareTo(startSlot) >= 0 && blockSlot.compareTo(endSlot) <= 0;
   }
 
   private boolean blockSlotMatchesTheStep(UInt64 blockSlot) {
