@@ -131,7 +131,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
   void blobSidecarSlotGreaterThanToSlot() {
     final UInt64 startSlot = UInt64.valueOf(1);
     final UInt64 count = UInt64.valueOf(8);
-    // end slot is 9 (1 + 8), so slot 10 will be unexpected
+    // This requests 8 slots (1, 2, 3, 4, 5, 6, 7, 8) so 9 will be unexpected.
     listenerWrapper =
         new BlobSidecarsByRangeListenerValidatingProxy(
             spec, peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
@@ -147,11 +147,10 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
         dataStructureUtil.randomBlobSidecar(UInt64.valueOf(5), blockRoot3, blockRoot2, UInt64.ZERO);
     final Bytes32 blockRoot4 = dataStructureUtil.randomBytes32();
     final BlobSidecar blobSidecar4 =
-        dataStructureUtil.randomBlobSidecar(UInt64.valueOf(9), blockRoot4, blockRoot3, UInt64.ZERO);
+        dataStructureUtil.randomBlobSidecar(UInt64.valueOf(8), blockRoot4, blockRoot3, UInt64.ZERO);
     final Bytes32 blockRoot5 = dataStructureUtil.randomBytes32();
     final BlobSidecar blobSidecar5 =
-        dataStructureUtil.randomBlobSidecar(
-            UInt64.valueOf(10), blockRoot5, blockRoot4, UInt64.ZERO);
+        dataStructureUtil.randomBlobSidecar(UInt64.valueOf(9), blockRoot5, blockRoot4, UInt64.ZERO);
 
     listenerWrapper.onResponse(blobSidecar1).join();
     listenerWrapper.onResponse(blobSidecar2).join();
