@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
+import tech.pegasys.teku.infrastructure.io.DataAccessor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -43,7 +43,7 @@ public class SlashingProtectedValidatorSourceTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final ValidatorSource delegate = mock(ValidatorSource.class);
   private final Path baseDir = Path.of("/data");
-  private final SyncDataAccessor dataWriter = mock(SyncDataAccessor.class);
+  private final DataAccessor dataWriter = mock(DataAccessor.class);
   private final SlashingProtector slashingProtector =
       new LocalSlashingProtector(dataWriter, baseDir);
   private final ValidatorSource validatorSource =

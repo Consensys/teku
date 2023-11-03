@@ -48,6 +48,8 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED = true;
   public static final boolean DEFAULT_DOPPELGANGER_DETECTION_ENABLED = false;
   public static final int DEFAULT_EXECUTOR_MAX_QUEUE_SIZE = 20_000;
+
+  public static final boolean DEFAULT_SYNCHRONOUS_SLASHING_DATA_FILE_WRITES_ENABLED = true;
   public static final Duration DEFAULT_VALIDATOR_EXTERNAL_SIGNER_TIMEOUT = Duration.ofSeconds(5);
   public static final int DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT = 32;
   public static final boolean DEFAULT_VALIDATOR_KEYSTORE_LOCKING_ENABLED = true;
@@ -92,6 +94,8 @@ public class ValidatorConfig {
   private final int executorMaxQueueSize;
   private final Optional<String> sentryNodeConfigurationFile;
 
+  private final boolean synchronousSlashingProtectionFileWritesEnabled;
+
   private final int executorThreads;
 
   private ValidatorConfig(
@@ -126,7 +130,8 @@ public class ValidatorConfig {
       final Optional<BLSPublicKey> builderRegistrationPublicKeyOverride,
       final int executorMaxQueueSize,
       final int executorThreads,
-      final Optional<String> sentryNodeConfigurationFile) {
+      final Optional<String> sentryNodeConfigurationFile,
+      boolean synchronousSlashingProtectionFileWritesEnabled) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -162,6 +167,8 @@ public class ValidatorConfig {
     this.executorMaxQueueSize = executorMaxQueueSize;
     this.executorThreads = executorThreads;
     this.sentryNodeConfigurationFile = sentryNodeConfigurationFile;
+    this.synchronousSlashingProtectionFileWritesEnabled =
+        synchronousSlashingProtectionFileWritesEnabled;
   }
 
   public static Builder builder() {
@@ -203,6 +210,10 @@ public class ValidatorConfig {
   public Pair<Path, Path> getValidatorExternalSignerTruststorePasswordFilePair() {
     return Pair.of(
         validatorExternalSignerTruststore, validatorExternalSignerTruststorePasswordFile);
+  }
+
+  public boolean isSynchronousSlashingProtectionFileWritesEnabled() {
+    return synchronousSlashingProtectionFileWritesEnabled;
   }
 
   public Optional<URI> getPrimaryBeaconNodeApiEndpoint() {
@@ -347,6 +358,8 @@ public class ValidatorConfig {
     private Optional<String> sentryNodeConfigurationFile = Optional.empty();
 
     private int executorThreads = DEFAULT_VALIDATOR_EXECUTOR_THREADS;
+    private boolean synchronousSlashingProtectionFileWritesEnabled =
+        DEFAULT_SYNCHRONOUS_SLASHING_DATA_FILE_WRITES_ENABLED;
 
     private Builder() {}
 
@@ -439,6 +452,13 @@ public class ValidatorConfig {
 
     public Builder validatorKeystoreLockingEnabled(boolean validatorKeystoreLockingEnabled) {
       this.validatorKeystoreLockingEnabled = validatorKeystoreLockingEnabled;
+      return this;
+    }
+
+    public Builder synchronousSlashingProtectionFileWritesEnabled(
+        boolean synchronousSlashingProtectionFileWritesEnabled) {
+      this.synchronousSlashingProtectionFileWritesEnabled =
+          synchronousSlashingProtectionFileWritesEnabled;
       return this;
     }
 
@@ -596,7 +616,8 @@ public class ValidatorConfig {
           builderRegistrationPublicKeyOverride,
           executorMaxQueueSize,
           executorThreads,
-          sentryNodeConfigurationFile);
+          sentryNodeConfigurationFile,
+          synchronousSlashingProtectionFileWritesEnabled);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {

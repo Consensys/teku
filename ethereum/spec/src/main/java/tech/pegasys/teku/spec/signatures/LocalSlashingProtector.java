@@ -15,31 +15,33 @@ package tech.pegasys.teku.spec.signatures;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
+import tech.pegasys.teku.infrastructure.io.DataAccessor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class LocalSlashingProtector implements SlashingProtector {
 
-  private final Map<BLSPublicKey, ValidatorSigningRecord> signingRecords = new HashMap<>();
+  private final Map<BLSPublicKey, ValidatorSigningRecord> signingRecords =
+      new ConcurrentHashMap<>();
+  private final Map<BLSPublicKey, Path> slashingProtectionPath = new ConcurrentHashMap<>();
 
-  private final SyncDataAccessor dataAccessor;
+  private final DataAccessor dataAccessor;
   private final Path slashingProtectionBaseDir;
 
   public LocalSlashingProtector(
-      final SyncDataAccessor dataAccessor, final Path slashingProtectionBaseDir) {
+      final DataAccessor dataAccessor, final Path slashingProtectionBaseDir) {
     this.dataAccessor = dataAccessor;
-    this.slashingProtectionBaseDir = slashingProtectionBaseDir;
+    this.slashingProtectionBaseDir = slashingProtectionBaseDir.toAbsolutePath();
   }
 
   @Override
-  public synchronized SafeFuture<Boolean> maySignBlock(
+  public SafeFuture<Boolean> maySignBlock(
       final BLSPublicKey validator, final Bytes32 genesisValidatorsRoot, final UInt64 slot) {
     return SafeFuture.of(
         () -> {
@@ -50,7 +52,7 @@ public class LocalSlashingProtector implements SlashingProtector {
   }
 
   @Override
-  public synchronized SafeFuture<Boolean> maySignAttestation(
+  public SafeFuture<Boolean> maySignAttestation(
       final BLSPublicKey validator,
       final Bytes32 genesisValidatorsRoot,
       final UInt64 sourceEpoch,
@@ -101,12 +103,15 @@ public class LocalSlashingProtector implements SlashingProtector {
 
   private void writeSigningRecord(final BLSPublicKey validator, final ValidatorSigningRecord record)
       throws IOException {
-    dataAccessor.syncedWrite(validatorRecordPath(validator), record.toBytes());
+    dataAccessor.write(validatorRecordPath(validator), record.toBytes());
     signingRecords.put(validator, record);
   }
 
   private Path validatorRecordPath(final BLSPublicKey validator) {
-    return slashingProtectionBaseDir.resolve(
-        validator.toBytesCompressed().toUnprefixedHexString() + ".yml");
+    return slashingProtectionPath.computeIfAbsent(
+        validator,
+        __ ->
+            slashingProtectionBaseDir.resolve(
+                validator.toBytesCompressed().toUnprefixedHexString() + ".yml"));
   }
 }

@@ -29,7 +29,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.cli.OSUtils;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
-public class SyncDataAccessorTest {
+public class DataAccessorTest {
 
   @Test
   public void shouldThrowInvalidConfigurationExceptionWhenDirectoryNotWritable(
@@ -37,7 +37,7 @@ public class SyncDataAccessorTest {
 
     OSUtils.makeNonWritable(tempDir);
     assumeThat(tempDir.toFile().canWrite()).describedAs("Directory %s writable").isFalse();
-    assertThatThrownBy(() -> SyncDataAccessor.create(tempDir))
+    assertThatThrownBy(() -> DataAccessor.create(tempDir, true))
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessageContaining("Cannot write to folder");
   }
@@ -48,15 +48,15 @@ public class SyncDataAccessorTest {
       throws IOException {
     final Path filePath = Paths.get(tempDir.toString() + "/myfile.tmp");
     assertThat(Files.exists(filePath)).isFalse();
-    final SyncDataAccessor syncDataAccessor = new SyncDataAccessor(useAtomicMove);
-    syncDataAccessor.syncedWrite(filePath, Bytes.fromHexString("0x41"));
+    final DataAccessor dataAccessor = new DataAccessor(useAtomicMove, true);
+    dataAccessor.syncedWrite(filePath, Bytes.fromHexString("0x41"));
     assertThat(Files.exists(filePath)).isTrue();
 
     String content = Files.readString(filePath);
     assertThat(content).isEqualTo("A");
 
     assertThat(Files.exists(filePath)).isTrue();
-    syncDataAccessor.syncedWrite(filePath, Bytes.fromHexString("0x42"));
+    dataAccessor.syncedWrite(filePath, Bytes.fromHexString("0x42"));
 
     content = Files.readString(filePath);
     assertThat(content).isEqualTo("B");

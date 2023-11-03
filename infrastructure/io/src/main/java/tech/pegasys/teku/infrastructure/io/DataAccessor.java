@@ -30,18 +30,23 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 
 /**
  * A wrapper class for reading and writing files, ensuring that the contents is immediately flushed
- * to disk.
+ * to disk. Note that it's possible to create this with synchronous writing turned off, which would
+ * revert to a normal buffered write to file, using the same interface. Also note that atomic file
+ * move is not supported by all systems. In this case, the file will still be written and flushed,
+ * as long as `useSynchronousWrite` is enabled.
  */
-public class SyncDataAccessor {
+public class DataAccessor {
 
   private static final Logger LOG = LogManager.getLogger();
   private boolean atomicFileMoveSupport;
+  private boolean useSynchronousWrite;
 
-  SyncDataAccessor(final boolean atomicFileMoveSupport) {
+  DataAccessor(final boolean atomicFileMoveSupport, final boolean useSynchronousWrite) {
     this.atomicFileMoveSupport = atomicFileMoveSupport;
+    this.useSynchronousWrite = useSynchronousWrite;
   }
 
-  public static SyncDataAccessor create(final Path path) {
+  public static DataAccessor create(final Path path, final boolean useSynchronousWrite) {
 
     boolean atomicFileMoveSupport = false;
     final Path tmpFile;
@@ -52,9 +57,12 @@ public class SyncDataAccessor {
     }
 
     try {
-      atomicSyncedWrite(tmpFile, Bytes32.ZERO);
+      ensurePathExists(path);
+      if (useSynchronousWrite) {
+        atomicSyncedWrite(tmpFile, Bytes32.ZERO);
 
-      atomicFileMoveSupport = true;
+        atomicFileMoveSupport = true;
+      }
     } catch (AtomicMoveNotSupportedException e) {
       LOG.debug("File system doesn't support atomic move");
       atomicFileMoveSupport = false;
@@ -68,7 +76,7 @@ public class SyncDataAccessor {
         LOG.debug("Failed to delete the temporary file ", e);
       }
     }
-    return new SyncDataAccessor(atomicFileMoveSupport);
+    return new DataAccessor(atomicFileMoveSupport, useSynchronousWrite);
   }
 
   /**
@@ -87,6 +95,14 @@ public class SyncDataAccessor {
     }
   }
 
+  public void write(final Path path, final Bytes bytes) throws IOException {
+    if (useSynchronousWrite) {
+      syncedWrite(path, bytes);
+    } else {
+      bufferedWrite(path, bytes);
+    }
+  }
+
   /**
    * Writes data to the specified path, ensuring both the file content and metadata is immediately
    * flushed to hardware storage. If the filesystem support atomic operation it creates a temporary
@@ -97,7 +113,7 @@ public class SyncDataAccessor {
    * @param data the data to write
    * @exception IOException if an IO error occurs while writing
    */
-  public void syncedWrite(final Path path, final Bytes data) throws IOException {
+  void syncedWrite(final Path path, final Bytes data) throws IOException {
     if (atomicFileMoveSupport) {
       atomicSyncedWrite(path, data);
     } else {
@@ -105,14 +121,16 @@ public class SyncDataAccessor {
     }
   }
 
+  private void bufferedWrite(final Path path, final Bytes data) throws IOException {
+    Files.write(
+        path,
+        data.toArrayUnsafe(),
+        StandardOpenOption.CREATE,
+        StandardOpenOption.TRUNCATE_EXISTING);
+  }
+
   private static void nonAtomicSyncedWrite(final Path path, final Bytes data) throws IOException {
     final Path absolutePath = path.toAbsolutePath();
-    if (absolutePath.getParent() != null) {
-      final File parentDirectory = absolutePath.getParent().toFile();
-      if (!parentDirectory.mkdirs() && !parentDirectory.isDirectory()) {
-        throw new IOException("Unable to create directory " + parentDirectory);
-      }
-    }
     Files.write(
         absolutePath,
         data.toArrayUnsafe(),
@@ -127,5 +145,14 @@ public class SyncDataAccessor {
     nonAtomicSyncedWrite(tmpFile, data);
     Files.move(
         tmpFile, absolutePath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+  }
+
+  private static void ensurePathExists(final Path absolutePath) throws IOException {
+    if (absolutePath != null) {
+      final File file = absolutePath.toFile();
+      if (!file.mkdirs() && !file.isDirectory()) {
+        throw new IOException("Unable to create directory " + file);
+      }
+    }
   }
 }

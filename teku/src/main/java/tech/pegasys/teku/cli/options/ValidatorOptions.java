@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_VALIDATOR_EXECUTOR_THREADS;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_DOPPELGANGER_DETECTION_ENABLED;
+import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_SYNCHRONOUS_SLASHING_DATA_FILE_WRITES_ENABLED;
 
 import java.nio.file.Path;
 import java.util.Optional;
@@ -120,6 +121,18 @@ public class ValidatorOptions {
       arity = "1")
   private int executorThreads = DEFAULT_VALIDATOR_EXECUTOR_THREADS;
 
+  @Option(
+      names = {"--Xvalidator-client-synchronous-slashing-data-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Enable Synchronous file writes when storing slashing protection data (recommended)",
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      arity = "0..1",
+      hidden = true,
+      fallbackValue = "true")
+  private boolean synchronousSlashingDataFileWritesEnabled =
+      DEFAULT_SYNCHRONOUS_SLASHING_DATA_FILE_WRITES_ENABLED;
+
   public void configure(TekuConfiguration.Builder builder) {
     builder.validator(
         config ->
@@ -134,6 +147,8 @@ public class ValidatorOptions {
                 .generateEarlyAttestations(generateEarlyAttestations)
                 .executorMaxQueueSize(executorMaxQueueSize)
                 .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled)
+                .synchronousSlashingProtectionFileWritesEnabled(
+                    synchronousSlashingDataFileWritesEnabled)
                 .executorThreads(executorThreads));
     validatorProposerOptions.configure(builder);
     validatorKeysOptions.configure(builder);

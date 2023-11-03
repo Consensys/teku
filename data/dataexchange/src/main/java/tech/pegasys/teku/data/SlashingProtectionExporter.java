@@ -37,19 +37,19 @@ import tech.pegasys.teku.data.slashinginterchange.Metadata;
 import tech.pegasys.teku.data.slashinginterchange.SigningHistory;
 import tech.pegasys.teku.data.slashinginterchange.SlashingProtectionInterchangeFormat;
 import tech.pegasys.teku.ethereum.signingrecord.ValidatorSigningRecord;
-import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
+import tech.pegasys.teku.infrastructure.io.DataAccessor;
 import tech.pegasys.teku.provider.JsonProvider;
 
 public class SlashingProtectionExporter {
   private final JsonProvider jsonProvider = new JsonProvider();
   private final List<SigningHistory> signingHistoryList = new ArrayList<>();
   private Bytes32 genesisValidatorsRoot = null;
-  private final SyncDataAccessor syncDataAccessor;
+  private final DataAccessor dataAccessor;
   protected final Path slashProtectionPath;
 
   public SlashingProtectionExporter(final Path slashProtectionPath) {
     this.slashProtectionPath = slashProtectionPath;
-    this.syncDataAccessor = SyncDataAccessor.create(slashProtectionPath);
+    this.dataAccessor = DataAccessor.create(slashProtectionPath, true);
   }
 
   // returns a map of errors and the associated keys.
@@ -73,7 +73,7 @@ public class SlashingProtectionExporter {
   Optional<String> readSlashProtectionFile(final File file, final Consumer<String> infoLogger) {
     try {
       Optional<ValidatorSigningRecord> maybeRecord =
-          syncDataAccessor.read(file.toPath()).map(ValidatorSigningRecord::fromBytes);
+          dataAccessor.read(file.toPath()).map(ValidatorSigningRecord::fromBytes);
       if (maybeRecord.isEmpty()) {
         return Optional.of("Failed to read from file " + file.getName());
       }
@@ -106,7 +106,7 @@ public class SlashingProtectionExporter {
 
   public void saveToFile(final String toFileName, final Consumer<String> infoLogger)
       throws IOException {
-    syncDataAccessor.syncedWrite(Path.of(toFileName), getJsonByteData());
+    dataAccessor.write(Path.of(toFileName), getJsonByteData());
     infoLogger.accept(
         "Wrote "
             + signingHistoryList.size()

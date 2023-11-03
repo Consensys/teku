@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.tuweni.bytes.Bytes;
 import org.jetbrains.annotations.NotNull;
-import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
+import tech.pegasys.teku.infrastructure.io.DataAccessor;
 
 /**
  * The key-value store implementation with String keys and Bytes values which stores each entry in a
@@ -30,13 +30,13 @@ import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
  */
 public class FileKeyValueStore implements KeyValueStore<String, Bytes> {
 
-  private final SyncDataAccessor syncDataAccessor;
+  private final DataAccessor dataAccessor;
   private final Path dataDir;
   private final ConcurrentMap<String, Object> keyMutexes = new ConcurrentHashMap<>();
 
   public FileKeyValueStore(Path dataDir) {
     this.dataDir = dataDir;
-    this.syncDataAccessor = SyncDataAccessor.create(dataDir);
+    this.dataAccessor = DataAccessor.create(dataDir, true);
   }
 
   private Object keyMutex(String key) {
@@ -50,7 +50,7 @@ public class FileKeyValueStore implements KeyValueStore<String, Bytes> {
     Path file = dataDir.resolve(key + ".dat");
     try {
       synchronized (keyMutex(key)) {
-        syncDataAccessor.syncedWrite(file, value);
+        dataAccessor.write(file, value);
       }
     } catch (IOException e) {
       throw new RuntimeException("Error writing file: " + file, e);
@@ -70,7 +70,7 @@ public class FileKeyValueStore implements KeyValueStore<String, Bytes> {
     Path file = dataDir.resolve(key + ".dat");
     try {
       synchronized (keyMutex(key)) {
-        return syncDataAccessor.read(file);
+        return dataAccessor.read(file);
       }
     } catch (Exception e) {
       throw new RuntimeException("Error reading file: " + file, e);

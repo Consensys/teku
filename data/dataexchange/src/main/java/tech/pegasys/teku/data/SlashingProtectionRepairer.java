@@ -27,14 +27,14 @@ import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.PublicKeyException;
 import tech.pegasys.teku.data.slashinginterchange.SigningHistory;
 import tech.pegasys.teku.ethereum.signingrecord.ValidatorSigningRecord;
-import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
+import tech.pegasys.teku.infrastructure.io.DataAccessor;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class SlashingProtectionRepairer {
   private final List<SigningHistory> signingHistoryList = new ArrayList<>();
   private final Set<String> invalidRecords = new HashSet<>();
-  private final SyncDataAccessor syncDataAccessor;
+  private final DataAccessor dataAccessor;
   private final List<String> errorList = new ArrayList<>();
   private final SubCommandLogger log;
   private Path slashingProtectionPath;
@@ -44,7 +44,7 @@ public class SlashingProtectionRepairer {
       final SubCommandLogger log, final boolean updateAllEnabled, final Path path) {
     this.log = log;
     this.updateAllEnabled = updateAllEnabled;
-    this.syncDataAccessor = SyncDataAccessor.create(path);
+    this.dataAccessor = DataAccessor.create(path, true);
   }
 
   public static SlashingProtectionRepairer create(
@@ -72,7 +72,7 @@ public class SlashingProtectionRepairer {
       BLSPubKey pubkey = BLSPubKey.fromHexString(filePrefix);
 
       Optional<ValidatorSigningRecord> maybeRecord =
-          syncDataAccessor.read(file.toPath()).map(ValidatorSigningRecord::fromBytes);
+          dataAccessor.read(file.toPath()).map(ValidatorSigningRecord::fromBytes);
       if (maybeRecord.isEmpty() && invalidRecords.add(filePrefix)) {
         log.display(filePrefix + ": Empty slashing protection record");
         return;
@@ -121,7 +121,7 @@ public class SlashingProtectionRepairer {
     log.display(pubkey + ": updating");
     Path outputFile = slashingProtectionPath.resolve(pubkey + ".yml");
     try {
-      syncDataAccessor.syncedWrite(outputFile, updatedRecord.toBytes());
+      dataAccessor.write(outputFile, updatedRecord.toBytes());
     } catch (IOException e) {
       errorList.add(pubkey + ": update failed, " + e.getMessage());
     }

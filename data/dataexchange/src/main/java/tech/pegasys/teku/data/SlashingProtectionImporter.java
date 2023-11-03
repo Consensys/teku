@@ -41,7 +41,7 @@ import tech.pegasys.teku.data.slashinginterchange.SignedAttestation;
 import tech.pegasys.teku.data.slashinginterchange.SignedBlock;
 import tech.pegasys.teku.data.slashinginterchange.SigningHistory;
 import tech.pegasys.teku.ethereum.signingrecord.ValidatorSigningRecord;
-import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
+import tech.pegasys.teku.infrastructure.io.DataAccessor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 
@@ -50,11 +50,11 @@ public class SlashingProtectionImporter {
   private final Path slashingProtectionPath;
   private List<SigningHistory> data = new ArrayList<>();
   private Metadata metadata;
-  private final SyncDataAccessor syncDataAccessor;
+  private final DataAccessor dataAccessor;
 
   public SlashingProtectionImporter(final Path slashingProtectionPath) {
     this.slashingProtectionPath = slashingProtectionPath;
-    syncDataAccessor = SyncDataAccessor.create(slashingProtectionPath);
+    dataAccessor = DataAccessor.create(slashingProtectionPath, true);
   }
 
   public Optional<String> initialise(final File inputFile) throws IOException {
@@ -174,7 +174,7 @@ public class SlashingProtectionImporter {
     Optional<ValidatorSigningRecord> existingRecord = Optional.empty();
     if (outputFile.toFile().exists()) {
       try {
-        existingRecord = syncDataAccessor.read(outputFile).map(ValidatorSigningRecord::fromBytes);
+        existingRecord = dataAccessor.read(outputFile).map(ValidatorSigningRecord::fromBytes);
       } catch (UncheckedIOException | IOException e) {
         statusConsumer.accept("Failed to read existing file: " + outputFile);
         return Optional.of("unable to load existing record.");
@@ -193,7 +193,7 @@ public class SlashingProtectionImporter {
     }
 
     try {
-      syncDataAccessor.syncedWrite(
+      dataAccessor.write(
           outputFile,
           signingHistory
               .toValidatorSigningRecord(existingRecord, metadata.genesisValidatorsRoot)

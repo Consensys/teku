@@ -31,7 +31,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.signingrecord.ValidatorSigningRecord;
-import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
+import tech.pegasys.teku.infrastructure.io.DataAccessor;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -45,7 +45,7 @@ class LocalSlashingProtectorTest {
       new DataStructureUtil(TestSpecFactory.createDefault());
 
   private final BLSPublicKey validator = dataStructureUtil.randomPublicKey();
-  private final SyncDataAccessor dataWriter = mock(SyncDataAccessor.class);
+  private final DataAccessor dataWriter = mock(DataAccessor.class);
 
   private final Path baseDir = Path.of("/data");
   private final Path signingRecordPath =
@@ -150,7 +150,7 @@ class LocalSlashingProtectorTest {
             lastSignedAttestation.isPresent() ? ATTESTATION_TEST_BLOCK_SLOT : UInt64.ZERO,
             sourceEpoch,
             targetEpoch);
-    verify(dataWriter).syncedWrite(signingRecordPath, updatedRecord.toBytes());
+    verify(dataWriter).write(signingRecordPath, updatedRecord.toBytes());
   }
 
   private void assertAttestationSigningDisallowed(
@@ -165,7 +165,7 @@ class LocalSlashingProtectorTest {
             slashingProtectionStorage.maySignAttestation(
                 validator, GENESIS_VALIDATORS_ROOT, sourceEpoch, targetEpoch))
         .isCompletedWithValue(false);
-    verify(dataWriter, never()).syncedWrite(any(), any());
+    verify(dataWriter, never()).write(any(), any());
   }
 
   private void assertBlockSigningAllowed(
@@ -187,7 +187,7 @@ class LocalSlashingProtectorTest {
                     ValidatorSigningRecord.NEVER_SIGNED,
                     ValidatorSigningRecord.NEVER_SIGNED)
                 .toBytes();
-    verify(dataWriter).syncedWrite(signingRecordPath, updatedRecord);
+    verify(dataWriter).write(signingRecordPath, updatedRecord);
   }
 
   private Bytes blockTestSigningRecord(final UInt64 blockSlot) {
@@ -206,6 +206,6 @@ class LocalSlashingProtectorTest {
                 validator, GENESIS_VALIDATORS_ROOT, newBlockSlot))
         .isCompletedWithValue(false);
 
-    verify(dataWriter, never()).syncedWrite(any(), any());
+    verify(dataWriter, never()).write(any(), any());
   }
 }
