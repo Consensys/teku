@@ -29,6 +29,7 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.io.Resources;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.beaconrestapi.schema.ErrorListBadRequest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -88,6 +90,23 @@ class PostBlsToExecutionChangesTest extends AbstractMigratedBeaconHandlerTest {
             List.of(new SubmitDataError(UInt64.ZERO, "Operation invalid")));
     assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
     assertThat(request.getResponseBody()).isEqualTo(expectedBody);
+  }
+
+  @Test
+  void shouldReturnBadRequestWhenInvalidNumberOfOperationsSubmitted() throws Exception {
+    final SignedBlsToExecutionChange blsToExecutionChange =
+        dataStructureUtil.randomSignedBlsToExecutionChange();
+    List<SignedBlsToExecutionChange> requestBody = Collections.nCopies(5001, blsToExecutionChange);
+
+    request.setRequestBody(requestBody);
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(request.getResponseBody())
+        .isEqualTo(
+            new HttpErrorResponse(
+                SC_BAD_REQUEST,
+                "A maximum of 5,000 SignedBLSToExecutionChange objects can be submitted to the node's pool at one time"));
   }
 
   @Test
