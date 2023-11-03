@@ -16,6 +16,9 @@ package tech.pegasys.teku.validator.coordinator;
 import static java.util.stream.Collectors.toMap;
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessageOrSimpleName;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
+import static tech.pegasys.teku.infrastructure.metrics.Validator.DutyType.ATTESTATION_PRODUCTION;
+import static tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils.startTimer;
+import static tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps.CREATE;
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -33,6 +36,7 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.metrics.OperationTimer;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.migrated.StateValidatorData;
@@ -393,48 +397,59 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                   + currentSlot));
     }
 
-    final UInt64 epoch = spec.computeEpochAtSlot(slot);
-    final UInt64 minQuerySlot = spec.computeStartSlotAtEpoch(epoch);
+    try (final OperationTimer.TimingContext context =
+        startTimer(
+            dutyMetrics.getValidatorDutyMetric(),
+            ATTESTATION_PRODUCTION.getName(),
+            CREATE.getName())) {
 
-    return forkChoiceTrigger
-        .prepareForAttestationProduction(slot)
-        .thenCompose(
-            __ ->
-                combinedChainDataClient
-                    .getSignedBlockAndStateInEffectAtSlot(slot)
-                    .thenCompose(
-                        maybeBlockAndState -> {
-                          if (maybeBlockAndState.isEmpty()) {
-                            return SafeFuture.completedFuture(Optional.empty());
-                          }
-                          final SignedBlockAndState blockAndState = maybeBlockAndState.get();
-                          final BeaconBlock block = blockAndState.getBlock().getMessage();
+      final UInt64 epoch = spec.computeEpochAtSlot(slot);
+      final UInt64 minQuerySlot = spec.computeStartSlotAtEpoch(epoch);
 
-                          // The head block must not be optimistically synced.
-                          if (combinedChainDataClient.isOptimisticBlock(block.getRoot())) {
-                            return NodeSyncingException.failedFuture();
-                          }
-                          if (blockAndState.getSlot().compareTo(minQuerySlot) < 0) {
-                            // The current effective block is too far in the past - so roll the
-                            // state forward to the current epoch. Ensures we have the latest
-                            // justified checkpoint
-                            return combinedChainDataClient
-                                .getCheckpointState(epoch, blockAndState)
-                                .thenApply(
-                                    checkpointState ->
-                                        Optional.of(
-                                            createAttestationData(
-                                                block,
-                                                checkpointState.getState(),
-                                                slot,
-                                                committeeIndex)));
-                          } else {
-                            final AttestationData attestationData =
-                                createAttestationData(
-                                    block, blockAndState.getState(), slot, committeeIndex);
-                            return SafeFuture.completedFuture(Optional.of(attestationData));
-                          }
-                        }));
+      return forkChoiceTrigger
+          .prepareForAttestationProduction(slot)
+          .thenCompose(
+              __ -> {
+                final SafeFuture<Optional<AttestationData>> future =
+                    combinedChainDataClient
+                        .getSignedBlockAndStateInEffectAtSlot(slot)
+                        .thenCompose(
+                            maybeBlockAndState -> {
+                              if (maybeBlockAndState.isEmpty()) {
+                                return SafeFuture.completedFuture(Optional.empty());
+                              }
+                              final SignedBlockAndState blockAndState = maybeBlockAndState.get();
+                              final BeaconBlock block = blockAndState.getBlock().getMessage();
+
+                              // The head block must not be optimistically synced.
+                              if (combinedChainDataClient.isOptimisticBlock(block.getRoot())) {
+                                return NodeSyncingException.failedFuture();
+                              }
+                              if (blockAndState.getSlot().compareTo(minQuerySlot) < 0) {
+                                // The current effective block is too far in the past - so roll the
+                                // state forward to the current epoch. Ensures we have the latest
+                                // justified checkpoint
+                                return combinedChainDataClient
+                                    .getCheckpointState(epoch, blockAndState)
+                                    .thenApply(
+                                        checkpointState ->
+                                            Optional.of(
+                                                createAttestationData(
+                                                    block,
+                                                    checkpointState.getState(),
+                                                    slot,
+                                                    committeeIndex)));
+                              } else {
+                                final AttestationData attestationData =
+                                    createAttestationData(
+                                        block, blockAndState.getState(), slot, committeeIndex);
+                                return SafeFuture.completedFuture(Optional.of(attestationData));
+                              }
+                            });
+                future.always(context::stopTimer);
+                return future;
+              });
+    }
   }
 
   private AttestationData createAttestationData(

@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,13 +11,22 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.duties;
+package tech.pegasys.teku.infrastructure.metrics.Validator;
 
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.metrics.Validator.DutyType;
+public enum ValidatorDutyMetricsSteps {
+  TOTAL("total"),
+  CREATE_TOTAL("create_total"),
+  CREATE("create"),
+  SIGN("sign"),
+  SEND("send");
 
-public interface Duty {
-  DutyType getType();
+  private final String name;
 
-  SafeFuture<DutyResult> performDuty();
+  ValidatorDutyMetricsSteps(final String name) {
+    this.name = name;
+  }
+
+  public String getName() {
+    return name;
+  }
 }

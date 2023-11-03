@@ -20,8 +20,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import org.hyperledger.besu.plugin.services.metrics.OperationTimer;
 import tech.pegasys.teku.infrastructure.metrics.MetricsCountersByIntervals;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -34,6 +37,7 @@ public class DutyMetrics {
   private final MetricsCountersByIntervals attestationTimings;
   private final MetricsCountersByIntervals blockTimings;
   private final Spec spec;
+  private final LabelledMetric<OperationTimer> validatorDutyMetric;
 
   @VisibleForTesting
   DutyMetrics(
@@ -41,11 +45,13 @@ public class DutyMetrics {
       final RecentChainData recentChainData,
       final MetricsCountersByIntervals attestationTimings,
       final MetricsCountersByIntervals blockTimings,
+      LabelledMetric<OperationTimer> validatorDutyMetric,
       final Spec spec) {
     this.timeProvider = timeProvider;
     this.recentChainData = recentChainData;
     this.attestationTimings = attestationTimings;
     this.blockTimings = blockTimings;
+    this.validatorDutyMetric = validatorDutyMetric;
     this.spec = spec;
   }
 
@@ -70,7 +76,10 @@ public class DutyMetrics {
             "Counter of blocks published in different time intervals after their due time",
             Collections.emptyList(),
             Map.of(List.of(), List.of(1L, 500L, 1000L, 2000L, 3000L, 4000L, 5000L, 8000L, 12000L)));
-    return new DutyMetrics(timeProvider, recentChainData, attestationTimings, blockTimings, spec);
+    final LabelledMetric<OperationTimer> dutyMetric =
+        ValidatorDutyMetricUtils.createValidatorDutyMetric(metricsSystem);
+    return new DutyMetrics(
+        timeProvider, recentChainData, attestationTimings, blockTimings, dutyMetric, spec);
   }
 
   public void onAttestationPublished(final UInt64 slot) {
@@ -99,5 +108,9 @@ public class DutyMetrics {
   private UInt64 calculateSlotStartTimeMillis(final UInt64 slot) {
     final UInt64 genesisTime = recentChainData.getGenesisTimeMillis();
     return spec.getSlotStartTimeMillis(slot, genesisTime);
+  }
+
+  public LabelledMetric<OperationTimer> getValidatorDutyMetric() {
+    return validatorDutyMetric;
   }
 }
