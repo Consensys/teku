@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import java.util.List;
+import java.util.Set;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsResponseInvalidResponseException.InvalidResponseType;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
@@ -23,7 +24,7 @@ import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifie
 
 public class BlobSidecarsByRootValidator extends AbstractBlobSidecarsValidator {
 
-  private final List<BlobIdentifier> expectedBlobIdentifiers;
+  private final Set<BlobIdentifier> expectedBlobIdentifiers;
 
   public BlobSidecarsByRootValidator(
       final Peer peer,
@@ -31,7 +32,7 @@ public class BlobSidecarsByRootValidator extends AbstractBlobSidecarsValidator {
       final KZG kzg,
       final List<BlobIdentifier> expectedBlobIdentifiers) {
     super(peer, spec, kzg);
-    this.expectedBlobIdentifiers = expectedBlobIdentifiers;
+    this.expectedBlobIdentifiers = Set.copyOf(expectedBlobIdentifiers);
   }
 
   public void validate(final BlobSidecar blobSidecar) {
