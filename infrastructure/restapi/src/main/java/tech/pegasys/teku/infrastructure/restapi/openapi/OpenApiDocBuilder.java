@@ -14,17 +14,7 @@
 package tech.pegasys.teku.infrastructure.restapi.openapi;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BUILDER;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_CONFIG;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_DEBUG;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EVENTS;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_NODE;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_REWARDS;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PREFERRED_DISPLAY_TAGS_ORDER;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -151,20 +141,8 @@ public class OpenApiDocBuilder {
 
     // fill desired order for tags
     final Map<String, Integer> tagOrder = new HashMap<>();
-    final List<String> tags =
-        List.of(
-            TAG_BEACON,
-            TAG_VALIDATOR_REQUIRED,
-            TAG_VALIDATOR,
-            TAG_BUILDER,
-            TAG_REWARDS,
-            TAG_EVENTS,
-            TAG_CONFIG,
-            TAG_NODE,
-            TAG_TEKU,
-            TAG_DEBUG,
-            TAG_EXPERIMENTAL);
-    IntStream.range(0, tags.size()).forEach(i -> tagOrder.put(tags.get(i), i));
+    IntStream.range(0, PREFERRED_DISPLAY_TAGS_ORDER.size())
+        .forEach(i -> tagOrder.put(PREFERRED_DISPLAY_TAGS_ORDER.get(i), i));
 
     // sort by tag, then by path, tag order is not guaranteed, endpoint could have several tags,
     // first appearance of any tag defines its order on UI
