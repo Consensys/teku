@@ -134,8 +134,7 @@ public class BlockManager extends Service
 
     return SafeFuture.completedFuture(
         new BlockImportAndBroadcastValidationResults(
-            doImportBlock(block, Optional.empty(), Optional.of(consensusValidationListener)),
-            Optional.of(broadcastValidationResult)));
+            importResult, Optional.of(broadcastValidationResult)));
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
