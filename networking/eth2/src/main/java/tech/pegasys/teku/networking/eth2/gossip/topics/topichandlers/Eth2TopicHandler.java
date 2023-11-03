@@ -16,6 +16,7 @@ package tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers;
 import static tech.pegasys.teku.infrastructure.logging.P2PLogger.P2P_LOG;
 
 import io.libp2p.core.pubsub.ValidationResult;
+import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,6 +27,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.Eth2PreparedGossipMessageFactory;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
@@ -111,7 +113,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
               return asyncRunner.runAsync(
                   () ->
                       processor
-                          .process(deserialized)
+                          .process(deserialized, message.getArrivalTimestamp())
                           .thenApply(
                               internalValidation -> {
                                 processMessage(internalValidation, message);
@@ -178,9 +180,10 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   }
 
   @Override
-  public PreparedGossipMessage prepareMessage(Bytes payload) {
+  public PreparedGossipMessage prepareMessage(
+      final Bytes payload, final Optional<UInt64> arrivalTimestamp) {
     return preparedGossipMessageFactory.create(
-        getTopic(), payload, getMessageType(), networkingConfig);
+        getTopic(), payload, getMessageType(), networkingConfig, arrivalTimestamp);
   }
 
   @Override

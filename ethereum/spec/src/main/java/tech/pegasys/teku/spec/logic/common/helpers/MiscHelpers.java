@@ -34,6 +34,7 @@ import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
@@ -343,11 +344,11 @@ public class MiscHelpers {
     return false;
   }
 
-  public boolean isDataAvailable(final List<BlobSidecar> blobSidecars, final BeaconBlock block) {
+  public boolean verifyBlobKzgProof(final KZG kzg, final BlobSidecar blobSidecar) {
     return false;
   }
 
-  public boolean verifyBlobKzgProofBatch(final List<BlobSidecar> blobSidecars) {
+  public boolean verifyBlobKzgProofBatch(final KZG kzg, final List<BlobSidecar> blobSidecars) {
     return false;
   }
 
@@ -355,14 +356,14 @@ public class MiscHelpers {
       final List<BlobSidecar> blobSidecars,
       final BeaconBlock block,
       final List<KZGCommitment> kzgCommitmentsFromBlock) {
-    throw new UnsupportedOperationException("Blob Sidecars before Deneb");
+    throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
   }
 
   public void verifyBlobSidecarCompleteness(
       final List<BlobSidecar> verifiedBlobSidecars,
       final List<KZGCommitment> kzgCommitmentsFromBlock)
       throws IllegalArgumentException {
-    throw new UnsupportedOperationException("No KZGCommitments before Deneb");
+    throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
   }
 
   public VersionedHash kzgCommitmentToVersionedHash(final KZGCommitment kzgCommitment) {

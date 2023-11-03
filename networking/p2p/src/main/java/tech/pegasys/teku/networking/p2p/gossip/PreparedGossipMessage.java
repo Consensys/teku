@@ -15,11 +15,12 @@ package tech.pegasys.teku.networking.p2p.gossip;
 
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /**
  * Semi-processed raw gossip message which can supply Gossip 'message-id'
  *
- * @see TopicHandler#prepareMessage(Bytes)
+ * @see TopicHandler#prepareMessage(Bytes, Optional)
  */
 public interface PreparedGossipMessage {
 
@@ -29,10 +30,14 @@ public interface PreparedGossipMessage {
    */
   Bytes getMessageId();
 
-  /** @return Returns the decoded message content */
+  /**
+   * @return Returns the decoded message content
+   */
   DecodedMessageResult getDecodedMessage();
 
   Bytes getOriginalMessage();
+
+  Optional<UInt64> getArrivalTimestamp();
 
   class DecodedMessageResult {
     private final Optional<Bytes> decodedMessage;

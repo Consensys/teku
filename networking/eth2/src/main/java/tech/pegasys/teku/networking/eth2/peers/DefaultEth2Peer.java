@@ -32,7 +32,11 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRangeListenerValidatingProxy;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRootListenerValidatingProxy;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRootValidator;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeListenerWrapper;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
@@ -82,6 +86,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   private final RateTracker blockRequestTracker;
   private final RateTracker blobSidecarsRequestTracker;
   private final RateTracker requestTracker;
+  private final KZG kzg;
   private final Supplier<UInt64> firstSlotSupportingBlobSidecarsByRange;
   private final Supplier<BlobSidecarsByRootRequestMessageSchema>
       blobSidecarsByRootRequestMessageSchema;
@@ -96,7 +101,8 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
       final PeerChainValidator peerChainValidator,
       final RateTracker blockRequestTracker,
       final RateTracker blobSidecarsRequestTracker,
-      final RateTracker requestTracker) {
+      final RateTracker requestTracker,
+      final KZG kzg) {
     super(peer);
     this.spec = spec;
     this.rpcMethods = rpcMethods;
@@ -106,6 +112,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     this.blockRequestTracker = blockRequestTracker;
     this.blobSidecarsRequestTracker = blobSidecarsRequestTracker;
     this.requestTracker = requestTracker;
+    this.kzg = kzg;
     this.firstSlotSupportingBlobSidecarsByRange =
         Suppliers.memoize(
             () -> {
@@ -241,7 +248,8 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                     method,
                     new BlobSidecarsByRootRequestMessage(
                         blobSidecarsByRootRequestMessageSchema.get(), blobIdentifiers),
-                    listener))
+                    new BlobSidecarsByRootListenerValidatingProxy(
+                        this, spec, listener, kzg, blobIdentifiers)))
         .orElse(failWithUnsupportedMethodException("BlobSidecarsByRoot"));
   }
 
@@ -271,12 +279,23 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     return rpcMethods
         .blobSidecarsByRoot()
         .map(
-            method ->
-                requestOptionalItem(
-                    method,
-                    new BlobSidecarsByRootRequestMessage(
-                        blobSidecarsByRootRequestMessageSchema.get(),
-                        Collections.singletonList(blobIdentifier))))
+            method -> {
+              final List<BlobIdentifier> blobIdentifiers =
+                  Collections.singletonList(blobIdentifier);
+              return requestOptionalItem(
+                      method,
+                      new BlobSidecarsByRootRequestMessage(
+                          blobSidecarsByRootRequestMessageSchema.get(), blobIdentifiers))
+                  .thenPeek(
+                      maybeBlobSidecar ->
+                          maybeBlobSidecar.ifPresent(
+                              blobSidecar -> {
+                                final BlobSidecarsByRootValidator validator =
+                                    new BlobSidecarsByRootValidator(
+                                        this, spec, kzg, blobIdentifiers);
+                                validator.validate(blobSidecar);
+                              }));
+            })
         .orElse(failWithUnsupportedMethodException("BlobSidecarsByRoot"));
   }
 
@@ -320,7 +339,17 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
                 request =
                     new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock.get());
               }
-              return requestStream(method, request, listener);
+              return requestStream(
+                  method,
+                  request,
+                  new BlobSidecarsByRangeListenerValidatingProxy(
+                      spec,
+                      this,
+                      listener,
+                      maxBlobsPerBlock.get(),
+                      kzg,
+                      request.getStartSlot(),
+                      request.getCount()));
             })
         .orElse(failWithUnsupportedMethodException("BlobSidecarsByRange"));
   }

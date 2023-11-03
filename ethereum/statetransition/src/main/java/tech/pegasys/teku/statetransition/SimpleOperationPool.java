@@ -167,7 +167,8 @@ public class SimpleOperationPool<T extends SszData> implements OperationPool<T> 
   }
 
   @Override
-  public SafeFuture<InternalValidationResult> addRemote(final T item) {
+  public SafeFuture<InternalValidationResult> addRemote(
+      final T item, final Optional<UInt64> arrivalTimestamp) {
     return add(item, true);
   }
 

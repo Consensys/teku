@@ -17,6 +17,7 @@ import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -49,8 +50,10 @@ public class ExecutionLayerManagerStub extends ExecutionLayerChannelStub
 
   @Override
   public SafeFuture<HeaderWithFallbackData> builderGetHeader(
-      ExecutionPayloadContext executionPayloadContext, BeaconState state) {
+      final ExecutionPayloadContext executionPayloadContext,
+      final BeaconState state,
+      final SafeFuture<UInt256> payloadValueResult) {
     LOG.info("Builder Circuit Breaker isEngaged: " + builderCircuitBreaker.isEngaged(state));
-    return super.builderGetHeader(executionPayloadContext, state);
+    return super.builderGetHeader(executionPayloadContext, state, payloadValueResult);
   }
 }

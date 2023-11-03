@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
@@ -93,6 +94,8 @@ public class DataProvider {
     private Spec spec;
     private RecentChainData recentChainData;
     private CombinedChainDataClient combinedChainDataClient;
+    private ExecutionLayerBlockProductionManager executionLayerBlockProductionManager;
+    private RewardCalculator rewardCalculator;
     private Eth2P2PNetwork p2pNetwork;
     private SyncService syncService;
     private ValidatorApiChannel validatorApiChannel;
@@ -119,6 +122,17 @@ public class DataProvider {
 
     public Builder combinedChainDataClient(final CombinedChainDataClient combinedChainDataClient) {
       this.combinedChainDataClient = combinedChainDataClient;
+      return this;
+    }
+
+    public Builder executionLayerBlockProductionManager(
+        final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager) {
+      this.executionLayerBlockProductionManager = executionLayerBlockProductionManager;
+      return this;
+    }
+
+    public Builder rewardCalculator(final RewardCalculator rewardCalculator) {
+      this.rewardCalculator = rewardCalculator;
       return this;
     }
 
@@ -230,11 +244,16 @@ public class DataProvider {
               proposersDataManager,
               acceptBlsToExecutionMessages);
       final ChainDataProvider chainDataProvider =
-          new ChainDataProvider(spec, recentChainData, combinedChainDataClient);
+          new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculator);
       final SyncDataProvider syncDataProvider =
           new SyncDataProvider(syncService, rejectedExecutionSupplier);
       final ValidatorDataProvider validatorDataProvider =
-          new ValidatorDataProvider(spec, validatorApiChannel, combinedChainDataClient);
+          new ValidatorDataProvider(
+              spec,
+              validatorApiChannel,
+              combinedChainDataClient,
+              executionLayerBlockProductionManager,
+              rewardCalculator);
 
       checkNotNull(configProvider, "Expect config Provider");
       checkNotNull(networkDataProvider, "Expect Network Data Provider");

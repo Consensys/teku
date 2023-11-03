@@ -27,81 +27,68 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
-import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.versions.capella.helpers.MiscHelpersCapella;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public class MiscHelpersDeneb extends MiscHelpersCapella {
 
-  private final KZG kzg;
+  public static MiscHelpersDeneb required(final MiscHelpers miscHelpers) {
+    return miscHelpers
+        .toVersionDeneb()
+        .orElseThrow(
+            () ->
+                new IllegalArgumentException(
+                    "Expected Deneb misc helpers but got: "
+                        + miscHelpers.getClass().getSimpleName()));
+  }
 
   public MiscHelpersDeneb(final SpecConfigDeneb specConfig) {
     super(specConfig);
-    this.kzg = initKZG(specConfig);
-  }
-
-  private static KZG initKZG(final SpecConfigDeneb config) {
-    final KZG kzg;
-    if (!config.getDenebForkEpoch().equals(SpecConfig.FAR_FUTURE_EPOCH) && !config.isKZGNoop()) {
-      kzg = CKZG4844.createInstance(config.getFieldElementsPerBlob());
-      kzg.loadTrustedSetup(config.getTrustedSetupPath().orElseThrow());
-    } else {
-      kzg = KZG.NOOP;
-    }
-
-    return kzg;
   }
 
   /**
-   * Performs complete data availability check <a
-   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/fork-choice.md#is_data_available">is_data_available</a>
+   * Performs <a
+   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/polynomial-commitments.md#verify_blob_kzg_proof">verify_blob_kzg_proof</a>
+   * on the given blob sidecar
    *
-   * <p>In Deneb we don't need to retrieve data, everything is already available via blob sidecars.
+   * @param kzg the kzg implementation which will be used for verification
+   * @param blobSidecar blob sidecar to verify
+   * @return true if blob sidecar is valid
    */
   @Override
-  public boolean isDataAvailable(final List<BlobSidecar> blobSidecars, final BeaconBlock block) {
-
-    final List<KZGCommitment> kzgCommitmentsFromBlock =
-        BeaconBlockBodyDeneb.required(block.getBody()).getBlobKzgCommitments().stream()
-            .map(SszKZGCommitment::getKZGCommitment)
-            .toList();
-
-    validateBlobSidecarsBatchAgainstBlock(blobSidecars, block, kzgCommitmentsFromBlock);
-
-    if (!verifyBlobKzgProofBatch(blobSidecars)) {
-      return false;
-    }
-
-    verifyBlobSidecarCompleteness(blobSidecars, kzgCommitmentsFromBlock);
-
-    return true;
+  public boolean verifyBlobKzgProof(final KZG kzg, final BlobSidecar blobSidecar) {
+    return kzg.verifyBlobKzgProof(
+        blobSidecar.getBlob().getBytes(),
+        blobSidecar.getKZGCommitment(),
+        blobSidecar.getKZGProof());
   }
 
   /**
-   * Performs a verifyBlobKzgProofBatch on the given blob sidecars
+   * Performs <a
+   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/polynomial-commitments.md#verify_blob_kzg_proof_batch">verify_blob_kzg_proof_batch</a>
+   * on the given blob sidecars
    *
+   * @param kzg the kzg implementation which will be used for verification
    * @param blobSidecars blob sidecars to verify, can be a partial set
    * @return true if all blob sidecars are valid
    */
   @Override
-  public boolean verifyBlobKzgProofBatch(final List<BlobSidecar> blobSidecars) {
+  public boolean verifyBlobKzgProofBatch(final KZG kzg, final List<BlobSidecar> blobSidecars) {
     final List<Bytes> blobs = new ArrayList<>();
-    final List<KZGProof> kzgProofs = new ArrayList<>();
     final List<KZGCommitment> kzgCommitments = new ArrayList<>();
+    final List<KZGProof> kzgProofs = new ArrayList<>();
 
     blobSidecars.forEach(
         blobSidecar -> {
           blobs.add(blobSidecar.getBlob().getBytes());
-          kzgProofs.add(blobSidecar.getKZGProof());
           kzgCommitments.add(blobSidecar.getKZGCommitment());
+          kzgProofs.add(blobSidecar.getKZGProof());
         });
 
     return kzg.verifyBlobKzgProofBatch(blobs, kzgCommitments, kzgProofs);
@@ -217,14 +204,6 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   @Override
   public Optional<MiscHelpersDeneb> toVersionDeneb() {
     return Optional.of(this);
-  }
-
-  public KZGCommitment blobToKzgCommitment(final Blob blob) {
-    return kzg.blobToKzgCommitment(blob.getBytes());
-  }
-
-  public KZGProof computeBlobKzgProof(final Blob blob, final KZGCommitment kzgCommitment) {
-    return kzg.computeBlobKzgProof(blob.getBytes(), kzgCommitment);
   }
 
   public int getBlobKzgCommitmentsCount(final SignedBeaconBlock signedBeaconBlock) {

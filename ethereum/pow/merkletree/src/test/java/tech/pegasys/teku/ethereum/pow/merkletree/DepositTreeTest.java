@@ -19,8 +19,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.ethereum.pow.api.DepositConstants.DEPOSIT_CONTRACT_TREE_DEPTH;
 
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -58,6 +60,59 @@ class DepositTreeTest {
         final Optional<DepositTreeSnapshot> snapshotOptional = depositTree.getSnapshot();
         assertThat(snapshotOptional).contains(finalisingTestCase.getSnapshot());
       }
+    }
+  }
+
+  @ParameterizedTest(name = "deposits: {0}")
+  @ValueSource(ints = {9, 10})
+  void partialSnapshotShouldHaveCorrectDepositCount(final int depositsCount) {
+    final Bytes32 depositRoot = Bytes32.random();
+    final Bytes32 blockHash = Bytes32.random();
+    final Function<Integer, Eth1Data> eth1Generator =
+        deposits -> new Eth1Data(depositRoot, UInt64.valueOf(deposits), blockHash);
+
+    final List<Bytes32> leafs = new ArrayList<>();
+    for (int i = 0; i < depositsCount; ++i) {
+      leafs.add(Bytes32.random());
+    }
+    final DepositTree fullTree = new DepositTree();
+    leafs.forEach(fullTree::pushLeaf);
+    fullTree.finalize(eth1Generator.apply(depositsCount), UInt64.ZERO);
+    final DepositTreeSnapshot fullTreeSnapshot = fullTree.getSnapshot().orElseThrow();
+
+    Optional<DepositTreeSnapshot> maybePreviousSnapshot = Optional.empty();
+    for (int finalized = 0; finalized <= depositsCount; ++finalized) {
+
+      final DepositTree customTree = new DepositTree();
+      for (int j = 0; j < depositsCount; ++j) {
+        customTree.pushLeaf(leafs.get(j));
+      }
+      customTree.finalize(eth1Generator.apply(finalized), UInt64.ZERO);
+      final Optional<DepositTreeSnapshot> customTreeSnapshot = customTree.getSnapshot();
+
+      if (finalized == 0) {
+        assertThat(customTreeSnapshot).isEmpty();
+      } else {
+        assertThat(customTreeSnapshot).isPresent();
+        final DepositTreeSnapshot snapshot = customTreeSnapshot.get();
+
+        // not equal to previous finalized
+        maybePreviousSnapshot.ifPresent(
+            previousSnapshot -> {
+              assertThat(snapshot.getDepositRoot()).isNotEqualTo(previousSnapshot.getDepositRoot());
+              assertThat(snapshot.getFinalized()).isNotEqualTo(previousSnapshot.getFinalized());
+            });
+        if (finalized == depositsCount) {
+          assertThat(customTreeSnapshot).contains(fullTreeSnapshot);
+        } else {
+          // not equal to full finalized
+          assertThat(snapshot.getDepositCount()).isEqualTo(finalized);
+          assertThat(snapshot.getDepositRoot()).isNotEqualTo(fullTreeSnapshot.getDepositRoot());
+          assertThat(snapshot.getFinalized()).isNotEqualTo(fullTreeSnapshot.getFinalized());
+        }
+      }
+
+      maybePreviousSnapshot = customTreeSnapshot;
     }
   }
 

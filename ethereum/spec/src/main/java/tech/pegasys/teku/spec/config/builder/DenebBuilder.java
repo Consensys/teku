@@ -36,10 +36,6 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
   private Integer fieldElementsPerBlob;
   private Integer maxBlobCommitmentsPerBlock;
   private Integer maxBlobsPerBlock;
-
-  private Optional<String> trustedSetupPath = Optional.empty();
-  private Boolean kzgNoop = false;
-
   private Integer maxRequestBlocksDeneb;
   private Integer maxRequestBlobSidecars;
   private Integer minEpochsForBlobSidecarsRequests;
@@ -58,8 +54,6 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
         fieldElementsPerBlob,
         maxBlobCommitmentsPerBlock,
         maxBlobsPerBlock,
-        trustedSetupPath,
-        kzgNoop,
         maxRequestBlocksDeneb,
         maxRequestBlobSidecars,
         minEpochsForBlobSidecarsRequests,
@@ -98,16 +92,6 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
 
   public DenebBuilder maxBlobsPerBlock(final Integer maxBlobsPerBlock) {
     this.maxBlobsPerBlock = maxBlobsPerBlock;
-    return this;
-  }
-
-  public DenebBuilder trustedSetupPath(final String trustedSetupPath) {
-    this.trustedSetupPath = Optional.of(trustedSetupPath);
-    return this;
-  }
-
-  public DenebBuilder kzgNoop(final Boolean kzgNoop) {
-    this.kzgNoop = kzgNoop;
     return this;
   }
 
@@ -150,10 +134,6 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
     }
 
     validateConstants();
-
-    if (!denebForkEpoch.equals(SpecConfig.FAR_FUTURE_EPOCH) && !kzgNoop) {
-      SpecBuilderUtil.validateRequiredOptional("trustedSetupPath", trustedSetupPath);
-    }
   }
 
   @Override

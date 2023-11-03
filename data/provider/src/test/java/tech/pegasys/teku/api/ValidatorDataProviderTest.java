@@ -76,6 +76,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -98,6 +99,10 @@ public class ValidatorDataProviderTest {
   private SchemaObjectProvider schemaProvider;
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
+  private final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager =
+      mock(ExecutionLayerBlockProductionManager.class);
+
+  private final RewardCalculator rewardCalculator = mock(RewardCalculator.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private ValidatorDataProvider provider;
   private BeaconBlock blockInternal;
@@ -109,7 +114,13 @@ public class ValidatorDataProviderTest {
     spec = specContext.getSpec();
     dataStructureUtil = specContext.getDataStructureUtil();
     schemaProvider = new SchemaObjectProvider(spec);
-    provider = new ValidatorDataProvider(spec, validatorApiChannel, combinedChainDataClient);
+    provider =
+        new ValidatorDataProvider(
+            spec,
+            validatorApiChannel,
+            combinedChainDataClient,
+            executionLayerBlockProductionManager,
+            rewardCalculator);
     blockInternal = dataStructureUtil.randomBeaconBlock(123);
     specMilestone = specContext.getSpecMilestone();
   }

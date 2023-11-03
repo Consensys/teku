@@ -26,6 +26,7 @@ import java.util.Map;
 import okhttp3.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.RewardCalculator;
 import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.rewards.GetSyncCommitteeRewards;
@@ -46,6 +47,7 @@ public class GetSyncCommitteeRewardsIntegrationTest
   @BeforeEach
   public void setup() {
     spec = TestSpecFactory.createMinimalAltair();
+    rewardCalculator = new RewardCalculator(spec);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
     final SyncAggregate syncAggregate =

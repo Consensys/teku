@@ -162,7 +162,7 @@ public class MappedOperationPoolTest {
     final SignedBlsToExecutionChange secondLocalEntry =
         dataStructureUtil.randomSignedBlsToExecutionChange();
 
-    assertThat(pool.addRemote(remoteEntry)).isCompleted();
+    assertThat(pool.addRemote(remoteEntry, Optional.empty())).isCompleted();
     assertThat(pool.addLocal(secondLocalEntry)).isCompleted();
 
     final SszList<SignedBlsToExecutionChange> blockItems = pool.getItemsForBlock(state);
@@ -178,7 +178,7 @@ public class MappedOperationPoolTest {
     final SignedBlsToExecutionChange secondLocalEntry =
         dataStructureUtil.randomSignedBlsToExecutionChange();
 
-    assertThat(pool.addRemote(remoteEntry)).isCompleted();
+    assertThat(pool.addRemote(remoteEntry, Optional.empty())).isCompleted();
     assertThat(pool.addLocal(secondLocalEntry)).isCompleted();
 
     assertThat(pool.getLocallySubmitted()).containsExactlyInAnyOrder(localEntry, secondLocalEntry);
@@ -241,7 +241,7 @@ public class MappedOperationPoolTest {
     final SignedBlsToExecutionChange remoteEntry =
         dataStructureUtil.randomSignedBlsToExecutionChange();
 
-    assertThat(pool.addRemote(remoteEntry)).isCompleted();
+    assertThat(pool.addRemote(remoteEntry, Optional.empty())).isCompleted();
     verify(validator, times(1)).validateForGossip(any());
     stubTimeProvider.advanceTimeBySeconds(1_000_000);
     asyncRunner.executeDueActions();
@@ -258,7 +258,7 @@ public class MappedOperationPoolTest {
     when(validator.validateForGossip(item)).thenReturn(completedFuture(ACCEPT));
 
     if (isFromNetwork) {
-      assertThat(pool.addRemote(item)).isCompleted();
+      assertThat(pool.addRemote(item, Optional.empty())).isCompleted();
     } else {
       assertThat(pool.addLocal(item)).isCompleted();
     }
@@ -275,7 +275,7 @@ public class MappedOperationPoolTest {
     when(validator.validateForGossip(item)).thenReturn(completedFuture(IGNORE));
 
     if (isFromNetwork) {
-      assertThat(pool.addRemote(item)).isCompleted();
+      assertThat(pool.addRemote(item, Optional.empty())).isCompleted();
     } else {
       assertThat(pool.addLocal(item)).isCompleted();
     }
@@ -291,14 +291,14 @@ public class MappedOperationPoolTest {
     final SignedBlsToExecutionChange item = dataStructureUtil.randomSignedBlsToExecutionChange();
     when(validator.validateForGossip(item)).thenReturn(completedFuture(ACCEPT));
     // pre-populate cache
-    assertThat(pool.addRemote(item)).isCompleted();
+    assertThat(pool.addRemote(item, Optional.empty())).isCompleted();
 
     final Subscription subscription = initialiseSubscriptions();
 
     final SafeFuture<InternalValidationResult> future;
     if (isFromNetwork) {
       // pre-populate cache, then try to add a second time.
-      future = pool.addRemote(item);
+      future = pool.addRemote(item, Optional.empty());
     } else {
       future = pool.addLocal(item);
     }

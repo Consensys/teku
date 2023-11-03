@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -158,12 +159,24 @@ public class SnappyPreparedGossipMessageTest {
   private SnappyPreparedGossipMessage getPhase0Message(
       final Bytes rawMessage, final String topic, final Uncompressor uncompressor) {
     return SnappyPreparedGossipMessage.create(
-        topic, rawMessage, forkDigestToMilestone, schema, uncompressor, spec.getNetworkingConfig());
+        topic,
+        rawMessage,
+        forkDigestToMilestone,
+        schema,
+        uncompressor,
+        spec.getNetworkingConfig(),
+        Optional.empty());
   }
 
   private SnappyPreparedGossipMessage getAltairMessage(
       final Bytes rawMessage, final String topic, final Uncompressor uncompressor) {
     return SnappyPreparedGossipMessage.create(
-        topic, rawMessage, forkDigestToMilestone, schema, uncompressor, spec.getNetworkingConfig());
+        topic,
+        rawMessage,
+        forkDigestToMilestone,
+        schema,
+        uncompressor,
+        spec.getNetworkingConfig(),
+        Optional.empty());
   }
 }

@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 
 public interface GossipEncoding {
 
@@ -41,7 +42,9 @@ public interface GossipEncoding {
    */
   <T extends SszData> Bytes encode(T value);
 
-  /** @return A factory for creating PreparedGossipMessages */
+  /**
+   * @return A factory for creating PreparedGossipMessages
+   */
   Eth2PreparedGossipMessageFactory createPreparedGossipMessageFactory(
       ForkDigestToMilestone forkDigestToMilestone);
 
@@ -49,7 +52,8 @@ public interface GossipEncoding {
    * Decodes preprocessed message
    *
    * @param message preprocessed raw bytes message returned earlier by {@link
-   *     Eth2PreparedGossipMessageFactory#create(String, Bytes, SszSchema)}
+   *     Eth2PreparedGossipMessageFactory#create(String, Bytes, SszSchema, NetworkingSpecConfig,
+   *     Optional)}
    * @param valueType The concrete type to deserialize to
    * @return The deserialized value
    * @throws DecodingException If deserialization fails

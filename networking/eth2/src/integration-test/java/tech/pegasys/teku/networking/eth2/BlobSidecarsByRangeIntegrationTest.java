@@ -124,7 +124,7 @@ public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegra
     final List<BlobSidecar> blobSidecars = new ArrayList<>();
     waitFor(
         peer.requestBlobSidecarsByRange(from, count, RpcResponseListener.from(blobSidecars::add)));
-    assertThat(peer.getOutstandingRequests()).isEqualTo(0);
+    waitFor(() -> assertThat(peer.getOutstandingRequests()).isEqualTo(0));
     return blobSidecars;
   }
 }

@@ -74,6 +74,7 @@ public class GetNewBlock extends RestApiEndpoint {
                 + "Metadata in the response indicates the type of block produced, and the supported types of block "
                 + "will be added to as forks progress.")
         .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
+        .deprecated(true)
         .pathParam(SLOT_PARAMETER.withDescription(SLOT_PATH_DESCRIPTION))
         .queryParamRequired(RANDAO_PARAMETER)
         .queryParam(GRAFFITI_PARAMETER)

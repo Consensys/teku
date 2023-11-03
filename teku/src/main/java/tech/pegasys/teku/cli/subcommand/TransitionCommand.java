@@ -240,7 +240,9 @@ public class TransitionCommand implements Runnable {
 
   private interface StateTransitionFunction {
     BeaconState applyTransition(final Spec spec, BeaconState state)
-        throws StateTransitionException, EpochProcessingException, SlotProcessingException,
+        throws StateTransitionException,
+            EpochProcessingException,
+            SlotProcessingException,
             IOException;
   }
 }

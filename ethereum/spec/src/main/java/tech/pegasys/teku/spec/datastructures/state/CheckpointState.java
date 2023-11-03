@@ -72,7 +72,9 @@ public class CheckpointState {
     return block.getSlot();
   }
 
-  /** @return The checkpoint state which is advanced to the checkpoint epoch boundary */
+  /**
+   * @return The checkpoint state which is advanced to the checkpoint epoch boundary
+   */
   public BeaconState getState() {
     return state;
   }
