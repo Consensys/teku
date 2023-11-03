@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportResultWithBroadcastValidationResult;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 
 public class DataUnavailableBlockPoolTest {
@@ -64,12 +64,14 @@ public class DataUnavailableBlockPoolTest {
 
     when(blockManager.importBlock(block1, Optional.empty()))
         .thenReturn(
-            new BlockImportResultWithBroadcastValidationResult(
-                block1ImportResult, Optional.empty()));
+            SafeFuture.completedFuture(
+                new BlockImportAndBroadcastValidationResults(
+                    block1ImportResult, Optional.empty())));
     when(blockManager.importBlock(block2, Optional.empty()))
         .thenReturn(
-            new BlockImportResultWithBroadcastValidationResult(
-                block2ImportResult, Optional.empty()));
+            SafeFuture.completedFuture(
+                new BlockImportAndBroadcastValidationResults(
+                    block2ImportResult, Optional.empty())));
   }
 
   @Test

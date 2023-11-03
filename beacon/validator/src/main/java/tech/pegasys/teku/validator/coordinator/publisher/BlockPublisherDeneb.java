@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.coordinator.publisher;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -21,7 +22,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
-import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportResultWithBroadcastValidationResult;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
@@ -47,7 +48,7 @@ public class BlockPublisherDeneb extends AbstractBlockPublisher {
   }
 
   @Override
-  protected BlockImportResultWithBroadcastValidationResult importBlock(
+  protected SafeFuture<BlockImportAndBroadcastValidationResults> importBlock(
       final SignedBlockContainer blockContainer,
       final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
     final SignedBeaconBlock block = blockContainer.getSignedBlock();

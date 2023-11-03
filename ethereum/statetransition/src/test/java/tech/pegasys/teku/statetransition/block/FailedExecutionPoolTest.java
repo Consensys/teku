@@ -36,7 +36,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportResultWithBroadcastValidationResult;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 
 class FailedExecutionPoolTest {
 
@@ -318,9 +318,10 @@ class FailedExecutionPoolTest {
         .thenThrow(new RuntimeException("Whoops"));
     when(blockManager.importBlock(block2, Optional.empty()))
         .thenReturn(
-            new BlockImportResultWithBroadcastValidationResult(
-                SafeFuture.completedFuture(BlockImportResult.successful(block2)),
-                Optional.empty()));
+            SafeFuture.completedFuture(
+                new BlockImportAndBroadcastValidationResults(
+                    SafeFuture.completedFuture(BlockImportResult.successful(block2)),
+                    Optional.empty())));
 
     failurePool.addFailedBlock(block);
     failurePool.addFailedBlock(block2);
@@ -336,8 +337,9 @@ class FailedExecutionPoolTest {
   private void withImportResult(final BlockImportResult result) {
     when(blockManager.importBlock(any(), any()))
         .thenReturn(
-            new BlockImportResultWithBroadcastValidationResult(
-                SafeFuture.completedFuture(result), Optional.empty()));
+            SafeFuture.completedFuture(
+                new BlockImportAndBroadcastValidationResults(
+                    SafeFuture.completedFuture(result), Optional.empty())));
   }
 
   private static InterruptedIOException timeoutException() {

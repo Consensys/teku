@@ -107,15 +107,16 @@ public class BlockManager extends Service
   }
 
   @Override
-  public BlockImportResultWithBroadcastValidationResult importBlock(
+  public SafeFuture<BlockImportAndBroadcastValidationResults> importBlock(
       final SignedBeaconBlock block,
       final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
     LOG.trace("Preparing to import block: {}", block::toLogString);
 
     // NO broadcast validation, import the old way
     if (broadcastValidationLevel.isEmpty()) {
-      return new BlockImportResultWithBroadcastValidationResult(
-          doImportBlock(block, Optional.empty(), Optional.empty()), Optional.empty());
+      return SafeFuture.completedFuture(
+          new BlockImportAndBroadcastValidationResults(
+              doImportBlock(block, Optional.empty(), Optional.empty()), Optional.empty()));
     }
 
     final SafeFuture<BlockImportResult> consensusValidationListener = new SafeFuture<>();
@@ -131,9 +132,10 @@ public class BlockManager extends Service
         blockValidator.validateBroadcast(
             block, broadcastValidationLevel.get(), consensusValidationResultOrImportFailure);
 
-    return new BlockImportResultWithBroadcastValidationResult(
-        doImportBlock(block, Optional.empty(), Optional.of(consensusValidationListener)),
-        Optional.of(broadcastValidationResult));
+    return SafeFuture.completedFuture(
+        new BlockImportAndBroadcastValidationResults(
+            doImportBlock(block, Optional.empty(), Optional.of(consensusValidationListener)),
+            Optional.of(broadcastValidationResult)));
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")

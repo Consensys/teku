@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Cancellable;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 
 /**
@@ -104,7 +105,7 @@ public class DataUnavailableBlockPool {
       blockImportInProgress = true;
       blockManager
           .importBlock(maybeSelectedBlock.get(), Optional.empty())
-          .blockImportResult()
+          .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult)
           .thenAccept(this::handleImportResult)
           .finish(error -> LOG.error("An error occurred during block import", error));
 
