@@ -28,7 +28,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.DelayedExecutorAsyncRunner;
@@ -145,7 +144,6 @@ public class BlockProviderTest {
   }
 
   @Test
-  @Disabled("Concurrent test is flaky on Windows")
   void fromMapWithLock() throws ExecutionException, InterruptedException {
     chainBuilder.generateGenesis();
     final Map<Bytes32, SignedBeaconBlock> blocks =
@@ -173,6 +171,7 @@ public class BlockProviderTest {
     final AsyncRunner asyncRunner = DelayedExecutorAsyncRunner.create();
     final BlockProvider providerAsync =
         BlockProvider.fromMapWithLock(blocks, asyncRunner, readLock);
+    final CountDownLatch isStarted = new CountDownLatch(1);
     final CountDownLatch isNotBlocked = new CountDownLatch(1);
     final AtomicBoolean notBlockedOnFuture = new AtomicBoolean(false);
     // Write lock in main thread
@@ -182,6 +181,9 @@ public class BlockProviderTest {
           .runAsync(
               () -> {
                 try {
+                  // Avoids flakiness, when whole asyncRunner execution is delayed due to busy
+                  // threads in parallel tests running
+                  isStarted.countDown();
                   final SafeFuture<Optional<SignedBeaconBlock>> blockFutureLocked =
                       providerAsync.getBlock(block.getRoot());
                   notBlockedOnFuture.set(true);
@@ -192,7 +194,8 @@ public class BlockProviderTest {
                 }
               })
           .ifExceptionGetsHereRaiseABug();
-      assertThat(isNotBlocked.await(500, TimeUnit.MILLISECONDS)).isFalse();
+      isStarted.await();
+      assertThat(isNotBlocked.await(50, TimeUnit.MILLISECONDS)).isFalse();
       assertThat(notBlockedOnFuture).isTrue();
     } finally {
       lock.writeLock().unlock();
