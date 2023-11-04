@@ -97,6 +97,7 @@ import tech.pegasys.teku.validator.coordinator.publisher.MilestoneBasedBlockPubl
 public class ValidatorApiHandler implements ValidatorApiChannel {
 
   private static final Logger LOG = LogManager.getLogger();
+
   /**
    * Number of epochs ahead of the current head that duties can be requested. This provides some
    * tolerance for validator clients clocks being slightly ahead while still limiting the number of
@@ -295,6 +296,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                                         StateValidatorData::getStatus))));
   }
 
+  @Deprecated
   @Override
   public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
       final UInt64 slot,
@@ -311,6 +313,20 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .thenCompose(__ -> combinedChainDataClient.getStateAtSlotExact(slot))
         .thenCompose(
             blockSlotState -> createBlock(slot, randaoReveal, graffiti, blinded, blockSlotState));
+  }
+
+  @Override
+  public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
+      final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
+    LOG.info("Creating unsigned block for slot {}", slot);
+    performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(slot));
+    if (isSyncActive()) {
+      return NodeSyncingException.failedFuture();
+    }
+    return forkChoiceTrigger
+        .prepareForBlockProduction(slot)
+        .thenCompose(__ -> combinedChainDataClient.getStateAtSlotExact(slot))
+        .thenCompose(blockSlotState -> createBlock(slot, randaoReveal, graffiti, blockSlotState));
   }
 
   private SafeFuture<Optional<BlockContainer>> createBlock(
@@ -332,6 +348,27 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     }
     return blockFactory
         .createUnsignedBlock(blockSlotState, slot, randaoReveal, graffiti, blinded)
+        .thenApply(Optional::of);
+  }
+
+  private SafeFuture<Optional<BlockContainer>> createBlock(
+      final UInt64 slot,
+      final BLSSignature randaoReveal,
+      final Optional<Bytes32> graffiti,
+      final Optional<BeaconState> maybeBlockSlotState) {
+    if (maybeBlockSlotState.isEmpty()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    final BeaconState blockSlotState = maybeBlockSlotState.get();
+    final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, slot.minus(1));
+    if (combinedChainDataClient.isOptimisticBlock(parentRoot)) {
+      LOG.warn(
+          "Unable to produce block at slot {} because parent has optimistically validated payload",
+          slot);
+      throw new NodeSyncingException();
+    }
+    return blockFactory
+        .createUnsignedBlock(blockSlotState, slot, randaoReveal, graffiti)
         .thenApply(Optional::of);
   }
 
@@ -503,7 +540,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
 
   private SafeFuture<InternalValidationResult> processAttestation(final Attestation attestation) {
     return attestationManager
-        .addAttestation(ValidatableAttestation.fromValidator(spec, attestation))
+        .addAttestation(ValidatableAttestation.fromValidator(spec, attestation), Optional.empty())
         .thenPeek(
             result -> {
               if (!result.isReject()) {
@@ -554,7 +591,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private SafeFuture<InternalValidationResult> processAggregateAndProof(
       final SignedAggregateAndProof aggregateAndProof) {
     return attestationManager
-        .addAggregate(ValidatableAttestation.aggregateFromValidator(spec, aggregateAndProof))
+        .addAggregate(
+            ValidatableAttestation.aggregateFromValidator(spec, aggregateAndProof),
+            Optional.empty())
         .thenPeek(
             result -> {
               if (result.isReject()) {

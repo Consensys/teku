@@ -55,7 +55,6 @@ public class TestDefinition {
     if (spec == null) {
       createSpec();
     }
-
     return spec;
   }
 
@@ -66,7 +65,7 @@ public class TestDefinition {
           case TestSpecConfig.MINIMAL -> Eth2Network.MINIMAL;
           default -> throw new IllegalArgumentException("Unknown configName: " + configName);
         };
-    final SpecMilestone highestSupportedMilestone =
+    final SpecMilestone milestone =
         switch (fork) {
           case TestFork.PHASE0 -> SpecMilestone.PHASE0;
           case TestFork.ALTAIR -> SpecMilestone.ALTAIR;
@@ -75,7 +74,7 @@ public class TestDefinition {
           case TestFork.DENEB -> SpecMilestone.DENEB;
           default -> throw new IllegalArgumentException("Unknown fork: " + fork);
         };
-    spec = TestSpecFactory.create(highestSupportedMilestone, network);
+    spec = TestSpecFactory.create(milestone, network);
   }
 
   public String getTestType() {

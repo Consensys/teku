@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 
 class SwaggerWebjarIntegrityTest {
   private static final String VENDOR_COPY_PATH = "/swagger-ui/vendor";
+
   /**
    * `infrastructure/restapi/src/main/resources/swagger-ui/vendor` contains several files which
    * should match files with the same names in 'org.webjars:swagger-ui'.

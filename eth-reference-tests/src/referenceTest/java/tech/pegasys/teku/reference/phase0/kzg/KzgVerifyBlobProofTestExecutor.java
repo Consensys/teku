@@ -16,21 +16,16 @@ package tech.pegasys.teku.reference.phase0.kzg;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
-import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
 
-/**
- * Actually uses {@link tech.pegasys.teku.kzg.KZG#verifyBlobKzgProofBatch(List, List, List)} KZG
- * interface in absence of non-batch interface
- */
 public class KzgVerifyBlobProofTestExecutor extends KzgTestExecutor {
 
   @Override
-  public void runTestImpl(final TestDefinition testDefinition) throws Throwable {
+  public void runTest(final TestDefinition testDefinition, final KZG kzg) throws Throwable {
     final Data data = loadDataFile(testDefinition, Data.class);
 
     final Boolean expectedVerificationResult = data.getOutput();
@@ -39,11 +34,8 @@ public class KzgVerifyBlobProofTestExecutor extends KzgTestExecutor {
       final Bytes blob = data.getInput().getBlob();
       final KZGCommitment commitment = data.getInput().getCommitment();
       final KZGProof proof = data.getInput().getProof();
-      actualVerificationResult =
-          CKZG4844
-              .getInstance()
-              .verifyBlobKzgProofBatch(List.of(blob), List.of(commitment), List.of(proof));
-    } catch (RuntimeException e) {
+      actualVerificationResult = kzg.verifyBlobKzgProof(blob, commitment, proof);
+    } catch (final RuntimeException ex) {
       actualVerificationResult = null;
     }
     assertThat(actualVerificationResult).isEqualTo(expectedVerificationResult);

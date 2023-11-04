@@ -56,6 +56,7 @@ public class MilestoneBasedBlockFactory implements BlockFactory {
             });
   }
 
+  @Deprecated
   @Override
   public SafeFuture<BlockContainer> createUnsignedBlock(
       final BeaconState blockSlotState,
@@ -67,6 +68,18 @@ public class MilestoneBasedBlockFactory implements BlockFactory {
     return registeredFactories
         .get(milestone)
         .createUnsignedBlock(blockSlotState, newSlot, randaoReveal, optionalGraffiti, blinded);
+  }
+
+  @Override
+  public SafeFuture<BlockContainer> createUnsignedBlock(
+      final BeaconState blockSlotState,
+      final UInt64 newSlot,
+      final BLSSignature randaoReveal,
+      final Optional<Bytes32> optionalGraffiti) {
+    final SpecMilestone milestone = getMilestone(newSlot);
+    return registeredFactories
+        .get(milestone)
+        .createUnsignedBlock(blockSlotState, newSlot, randaoReveal, optionalGraffiti);
   }
 
   @Override

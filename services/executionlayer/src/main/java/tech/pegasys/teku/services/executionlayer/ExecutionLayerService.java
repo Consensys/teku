@@ -31,8 +31,6 @@ import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestClientProvider;
 import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
-import tech.pegasys.teku.ethereum.executionlayer.BlobsBundleValidator;
-import tech.pegasys.teku.ethereum.executionlayer.BlobsBundleValidatorImpl;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderBidValidatorImpl;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreaker;
 import tech.pegasys.teku.ethereum.executionlayer.BuilderCircuitBreakerImpl;
@@ -48,9 +46,7 @@ import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
-import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
-import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 
 public class ExecutionLayerService extends Service {
 
@@ -199,12 +195,6 @@ public class ExecutionLayerService extends Service {
                     metricsSystem,
                     config.getBuilderSetUserAgentHeader()));
 
-    final BlobsBundleValidator blobsBundleValidator =
-        config.getSpec().isMilestoneSupported(SpecMilestone.DENEB)
-            ? new BlobsBundleValidatorImpl(
-                (MiscHelpersDeneb) config.getSpec().forMilestone(SpecMilestone.DENEB).miscHelpers())
-            : BlobsBundleValidator.NOOP;
-
     return ExecutionLayerManagerImpl.create(
         EVENT_LOG,
         executionClientHandler,
@@ -213,7 +203,6 @@ public class ExecutionLayerService extends Service {
         metricsSystem,
         new BuilderBidValidatorImpl(EVENT_LOG),
         builderCircuitBreaker,
-        blobsBundleValidator,
         config.getBuilderBidCompareFactor(),
         config.getUseShouldOverrideBuilderFlag());
   }

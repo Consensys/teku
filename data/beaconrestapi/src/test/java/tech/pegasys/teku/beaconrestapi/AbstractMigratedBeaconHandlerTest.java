@@ -51,7 +51,7 @@ public abstract class AbstractMigratedBeaconHandlerTest {
   protected DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   protected ChainDataProvider chainDataProvider = mock(ChainDataProvider.class);
-  protected final ValidatorDataProvider validatorDataProvider = mock(ValidatorDataProvider.class);
+  protected ValidatorDataProvider validatorDataProvider = mock(ValidatorDataProvider.class);
   protected final NodeDataProvider nodeDataProvider = mock(NodeDataProvider.class);
   protected final ExecutionClientDataProvider executionClientDataProvider =
       mock(ExecutionClientDataProvider.class);

@@ -148,14 +148,15 @@ public class BlockManager extends Service
 
   @SuppressWarnings("FutureReturnValueIgnored")
   public SafeFuture<InternalValidationResult> validateAndImportBlock(
-      final SignedBeaconBlock block) {
+      final SignedBeaconBlock block, final Optional<UInt64> arrivalTimestamp) {
 
     final Optional<BlockImportPerformance> blockImportPerformance;
 
     if (blockImportMetrics.isPresent()) {
       final BlockImportPerformance performance =
           new BlockImportPerformance(timeProvider, blockImportMetrics.get());
-      performance.arrival(recentChainData, block.getSlot());
+      performance.arrival(recentChainData, block.getSlot(), arrivalTimestamp);
+      performance.gossipValidation();
       blockImportPerformance = Optional.of(performance);
     } else {
       blockImportPerformance = Optional.empty();

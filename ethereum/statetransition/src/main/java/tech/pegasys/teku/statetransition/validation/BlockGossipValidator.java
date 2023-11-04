@@ -34,23 +34,18 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
-import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockGossipValidator {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
-  private final RecentChainData recentChainData;
   private final GossipValidationHelper gossipValidationHelper;
   private final Set<SlotAndProposer> receivedValidBlockInfoSet =
       LimitedSet.createSynchronized(VALID_BLOCK_SET_SIZE);
 
   public BlockGossipValidator(
-      final Spec spec,
-      final RecentChainData recentChainData,
-      final GossipValidationHelper gossipValidationHelper) {
+      final Spec spec, final GossipValidationHelper gossipValidationHelper) {
     this.spec = spec;
-    this.recentChainData = recentChainData;
     this.gossipValidationHelper = gossipValidationHelper;
   }
 
@@ -88,7 +83,8 @@ public class BlockGossipValidator {
       return completedFuture(InternalValidationResult.SAVE_FOR_FUTURE);
     }
 
-    if (!currentFinalizedCheckpointIsAncestorOfBlock(block)) {
+    if (!gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(
+        block.getSlot(), block.getParentRoot())) {
       return completedFuture(reject("Block does not descend from finalized checkpoint"));
     }
 
@@ -180,13 +176,6 @@ public class BlockGossipValidator {
 
     return gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
         signingRoot, block.getProposerIndex(), block.getSignature(), postState);
-  }
-
-  private boolean currentFinalizedCheckpointIsAncestorOfBlock(final SignedBeaconBlock block) {
-    return spec.blockDescendsFromLatestFinalizedBlock(
-        block.getMessage(),
-        recentChainData.getStore(),
-        recentChainData.getForkChoiceStrategy().orElseThrow());
   }
 
   private static class SlotAndProposer {

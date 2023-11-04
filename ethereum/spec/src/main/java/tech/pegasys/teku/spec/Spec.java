@@ -39,6 +39,7 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
@@ -51,6 +52,7 @@ import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
@@ -292,6 +294,7 @@ public class Spec {
         .map(SpecConfigAltair::getSyncCommitteeSize)
         .orElse(0);
   }
+
   // Genesis
   public BeaconState initializeBeaconStateFromEth1(
       Bytes32 eth1BlockHash,
@@ -376,11 +379,21 @@ public class Spec {
         .sszDeserialize(serializedBlock);
   }
 
+  public SszList<Blob> deserializeBlobsInBlock(final Bytes serializedBlobs, final UInt64 slot) {
+    return atSlot(slot)
+        .getSchemaDefinitions()
+        .toVersionDeneb()
+        .orElseThrow(() -> new RuntimeException("Deneb milestone is required to deserialize blobs"))
+        .getBlobsInBlockSchema()
+        .sszDeserialize(serializedBlobs);
+  }
+
   public BlobSidecar deserializeBlobSidecar(final Bytes serializedBlobSidecar, final UInt64 slot) {
     return atSlot(slot)
         .getSchemaDefinitions()
         .toVersionDeneb()
-        .orElseThrow(() -> new RuntimeException("Deneb milestone is required to load blob sidecar"))
+        .orElseThrow(
+            () -> new RuntimeException("Deneb milestone is required to deserialize blob sidecar"))
         .getBlobSidecarSchema()
         .sszDeserialize(serializedBlobSidecar);
   }
@@ -393,7 +406,7 @@ public class Spec {
         .orElseThrow(
             () ->
                 new RuntimeException(
-                    "Bellatrix milestone is required to load execution payload header"))
+                    "Bellatrix milestone is required to deserialize execution payload header"))
         .getExecutionPayloadHeaderSchema()
         .jsonDeserialize(objectMapper.createParser(jsonFile));
   }
@@ -679,12 +692,14 @@ public class Spec {
   }
 
   public boolean blockDescendsFromLatestFinalizedBlock(
-      final BeaconBlock block,
+      final UInt64 blockSlot,
+      final Bytes32 blockParentRoot,
       final ReadOnlyStore store,
       final ReadOnlyForkChoiceStrategy forkChoiceStrategy) {
-    return atBlock(block)
+    return atSlot(blockSlot)
         .getForkChoiceUtil()
-        .blockDescendsFromLatestFinalizedBlock(block, store, forkChoiceStrategy);
+        .blockDescendsFromLatestFinalizedBlock(
+            blockSlot, blockParentRoot, store, forkChoiceStrategy);
   }
 
   public BeaconState processSlots(BeaconState preState, UInt64 slot)
@@ -693,6 +708,7 @@ public class Spec {
   }
 
   // Block Proposal
+  @Deprecated
   public SafeFuture<BeaconBlockAndState> createNewUnsignedBlock(
       final UInt64 newSlot,
       final int proposerIndex,
@@ -704,6 +720,18 @@ public class Spec {
         .getBlockProposalUtil()
         .createNewUnsignedBlock(
             newSlot, proposerIndex, blockSlotState, parentBlockSigningRoot, bodyBuilder, blinded);
+  }
+
+  public SafeFuture<BeaconBlockAndState> createNewUnsignedBlock(
+      final UInt64 newSlot,
+      final int proposerIndex,
+      final BeaconState blockSlotState,
+      final Bytes32 parentBlockSigningRoot,
+      final Consumer<BeaconBlockBodyBuilder> bodyBuilder) {
+    return atSlot(newSlot)
+        .getBlockProposalUtil()
+        .createNewUnsignedBlock(
+            newSlot, proposerIndex, blockSlotState, parentBlockSigningRoot, bodyBuilder);
   }
 
   // Blind Block Utils

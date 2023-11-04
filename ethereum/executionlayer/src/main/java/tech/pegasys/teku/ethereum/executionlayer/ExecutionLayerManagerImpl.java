@@ -23,6 +23,7 @@ import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -66,10 +67,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   private final Spec spec;
   private final ExecutionClientHandler executionClientHandler;
-
-  @SuppressWarnings("unused")
-  private final BlobsBundleValidator blobsBundleValidator;
-
   private final ExecutionBuilderModule executionBuilderModule;
   private final LabelledMetric<Counter> executionPayloadSourceCounter;
 
@@ -81,7 +78,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final MetricsSystem metricsSystem,
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
-      final BlobsBundleValidator blobsBundleValidator,
       final Optional<Integer> builderBidCompareFactor,
       final boolean useShouldOverrideBuilderFlag) {
     final LabelledMetric<Counter> executionPayloadSourceCounter =
@@ -111,7 +107,6 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
         builderBidValidator,
         builderCircuitBreaker,
         executionPayloadSourceCounter,
-        blobsBundleValidator,
         builderBidCompareFactor,
         useShouldOverrideBuilderFlag);
   }
@@ -150,12 +145,10 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
       final LabelledMetric<Counter> executionPayloadSourceCounter,
-      final BlobsBundleValidator blobsBundleValidator,
       final Optional<Integer> builderBidCompareFactor,
       final boolean useShouldOverrideBuilderFlag) {
     this.executionClientHandler = executionClientHandler;
     this.spec = spec;
-    this.blobsBundleValidator = blobsBundleValidator;
     this.executionPayloadSourceCounter = executionPayloadSourceCounter;
     this.executionBuilderModule =
         new ExecutionBuilderModule(
@@ -247,8 +240,11 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   @Override
   public SafeFuture<HeaderWithFallbackData> builderGetHeader(
-      final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
-    return executionBuilderModule.builderGetHeader(executionPayloadContext, state);
+      final ExecutionPayloadContext executionPayloadContext,
+      final BeaconState state,
+      final SafeFuture<UInt256> payloadValueResult) {
+    return executionBuilderModule.builderGetHeader(
+        executionPayloadContext, state, payloadValueResult);
   }
 
   @VisibleForTesting

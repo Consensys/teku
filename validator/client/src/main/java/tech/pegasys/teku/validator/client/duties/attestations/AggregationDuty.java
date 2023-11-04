@@ -36,6 +36,8 @@ import tech.pegasys.teku.validator.client.duties.Duty;
 import tech.pegasys.teku.validator.client.duties.DutyResult;
 import tech.pegasys.teku.validator.client.duties.DutyType;
 import tech.pegasys.teku.validator.client.duties.ProductionResult;
+import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics;
+import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics.Step;
 
 public class AggregationDuty implements Duty {
   private static final Logger LOG = LogManager.getLogger();
@@ -47,6 +49,7 @@ public class AggregationDuty implements Duty {
   private final ForkProvider forkProvider;
   private final ValidatorLogger validatorLogger;
   private final SendingStrategy<SignedAggregateAndProof> sendingStrategy;
+  private final ValidatorDutyMetrics validatorDutyMetrics;
 
   public AggregationDuty(
       final Spec spec,
@@ -54,13 +57,15 @@ public class AggregationDuty implements Duty {
       final ValidatorApiChannel validatorApiChannel,
       final ForkProvider forkProvider,
       final ValidatorLogger validatorLogger,
-      final SendingStrategy<SignedAggregateAndProof> sendingStrategy) {
+      final SendingStrategy<SignedAggregateAndProof> sendingStrategy,
+      final ValidatorDutyMetrics validatorDutyMetrics) {
     this.spec = spec;
     this.slot = slot;
     this.validatorApiChannel = validatorApiChannel;
     this.forkProvider = forkProvider;
     this.validatorLogger = validatorLogger;
     this.sendingStrategy = sendingStrategy;
+    this.validatorDutyMetrics = validatorDutyMetrics;
   }
 
   @Override
@@ -125,19 +130,26 @@ public class AggregationDuty implements Duty {
               new IllegalStateException(
                   "Unable to perform aggregation for committee because no attestation was produced")));
     }
+
     final AttestationData attestationData = maybeAttestation.get();
-    return validatorApiChannel
-        .createAggregate(slot, attestationData.hashTreeRoot())
-        .thenCompose(
-            maybeAggregate -> {
-              if (maybeAggregate.isEmpty()) {
-                validatorLogger.aggregationSkipped(slot, aggregator.attestationCommitteeIndex);
-                return SafeFuture.completedFuture(
-                    ProductionResult.noop(aggregator.validator.getPublicKey()));
-              }
-              final Attestation aggregate = maybeAggregate.get();
-              return createSignedAggregateAndProof(aggregator, aggregate);
-            });
+
+    final SafeFuture<Optional<Attestation>> createAggregationFuture =
+        validatorDutyMetrics.record(
+            () -> validatorApiChannel.createAggregate(slot, attestationData.hashTreeRoot()),
+            this,
+            Step.CREATE);
+
+    return createAggregationFuture.thenCompose(
+        maybeAggregate -> {
+          if (maybeAggregate.isEmpty()) {
+            validatorLogger.aggregationSkipped(slot, aggregator.attestationCommitteeIndex);
+            return SafeFuture.completedFuture(
+                ProductionResult.noop(aggregator.validator.getPublicKey()));
+          }
+          final Attestation aggregate = maybeAggregate.get();
+          return validatorDutyMetrics.record(
+              () -> createSignedAggregateAndProof(aggregator, aggregate), this, Step.SIGN);
+        });
   }
 
   private SafeFuture<ProductionResult<SignedAggregateAndProof>> createSignedAggregateAndProof(

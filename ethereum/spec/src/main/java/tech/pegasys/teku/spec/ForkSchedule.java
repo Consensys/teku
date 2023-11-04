@@ -70,7 +70,9 @@ public class ForkSchedule {
     return SpecMilestone.getMilestonesUpTo(getHighestSupportedMilestone());
   }
 
-  /** @return The latest milestone that is supported */
+  /**
+   * @return The latest milestone that is supported
+   */
   public SpecMilestone getHighestSupportedMilestone() {
     return epochToMilestone.lastEntry().getValue();
   }

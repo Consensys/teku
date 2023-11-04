@@ -18,7 +18,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
@@ -49,9 +48,8 @@ public interface BlockProvider {
               readLock.lock();
               try {
                 return roots.stream()
-                    .map(blockMap::get)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity()));
+                    .filter(blockMap::containsKey)
+                    .collect(Collectors.toMap(Function.identity(), blockMap::get));
               } finally {
                 readLock.unlock();
               }
@@ -62,9 +60,8 @@ public interface BlockProvider {
     return (roots) ->
         SafeFuture.completedFuture(
             roots.stream()
-                .map(blockMap::get)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toMap(SignedBeaconBlock::getRoot, Function.identity())));
+                .filter(blockMap::containsKey)
+                .collect(Collectors.toMap(Function.identity(), blockMap::get)));
   }
 
   static BlockProvider fromList(final List<SignedBeaconBlock> blockAndStates) {

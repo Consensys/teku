@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
 public class ValidatorsUtil {
 
+  public static final boolean DEFAULT_PRODUCE_BLINDED_BLOCK = true;
   private final SpecConfig specConfig;
   private final MiscHelpers miscHelpers;
   private final BeaconStateAccessors beaconStateAccessors;

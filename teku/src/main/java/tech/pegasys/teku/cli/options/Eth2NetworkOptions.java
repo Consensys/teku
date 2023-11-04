@@ -13,6 +13,10 @@
 
 package tech.pegasys.teku.cli.options;
 
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_ASYNC_BEACON_CHAIN_MAX_THREADS;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_ASYNC_P2P_MAX_QUEUE;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_ASYNC_P2P_MAX_THREADS;
 import static tech.pegasys.teku.spec.constants.NetworkConstants.DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 
 import java.util.function.Consumer;
@@ -141,6 +145,38 @@ public class Eth2NetworkOptions {
   private Integer safeSlotsToImportOptimistically = DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
 
   @Option(
+      names = {"--Xnetwork-async-p2p-max-threads"},
+      hidden = true,
+      paramLabel = "<NUMBER>",
+      description = "Override the number of threads available to the p2p async runner",
+      arity = "1")
+  private Integer asyncP2pMaxThreads = DEFAULT_ASYNC_P2P_MAX_THREADS;
+
+  @Option(
+      names = {"--Xnetwork-async-p2p-max-queue"},
+      hidden = true,
+      paramLabel = "<NUMBER>",
+      description = "Override the queue size of the p2p async runner",
+      arity = "1")
+  private Integer asyncP2pMaxQueue = DEFAULT_ASYNC_P2P_MAX_QUEUE;
+
+  @Option(
+      names = {"--Xnetwork-async-beaconchain-max-threads"},
+      hidden = true,
+      paramLabel = "<NUMBER>",
+      description = "Override the number of threads available to the beaconchain async runner",
+      arity = "1")
+  private Integer asyncBeaconChainMaxThreads = DEFAULT_ASYNC_BEACON_CHAIN_MAX_THREADS;
+
+  @Option(
+      names = {"--Xnetwork-async-beaconchain-max-queue"},
+      hidden = true,
+      paramLabel = "<NUMBER>",
+      description = "Override the queue size of the beaconchain queue",
+      arity = "1")
+  private Integer asyncBeaconChainMaxQueue = DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE;
+
+  @Option(
       names = {"--Xstartup-target-peer-count"},
       paramLabel = "<NUMBER>",
       description = "Number of peers to wait for before considering the node in sync.",
@@ -265,6 +301,10 @@ public class Eth2NetworkOptions {
     }
     builder
         .safeSlotsToImportOptimistically(safeSlotsToImportOptimistically)
+        .asyncP2pMaxThreads(asyncP2pMaxThreads)
+        .asyncP2pMaxQueue(asyncP2pMaxQueue)
+        .asyncBeaconChainMaxThreads(asyncBeaconChainMaxThreads)
+        .asyncBeaconChainMaxQueue(asyncBeaconChainMaxQueue)
         .forkChoiceUpdateHeadOnBlockImportEnabled(forkChoiceUpdateHeadOnBlockImportEnabled)
         .forkChoiceProposerBoostUniquenessEnabled(forkChoiceProposerBoostUniquenessEnabled)
         .epochsStoreBlobs(epochsStoreBlobs);

@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
+import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics.Step;
 import tech.pegasys.teku.validator.client.signer.BlockContainerSigner;
 
 public class BlockProductionDuty implements Duty {
@@ -43,7 +44,9 @@ public class BlockProductionDuty implements Duty {
   private final ValidatorApiChannel validatorApiChannel;
   private final BlockContainerSigner blockContainerSigner;
   private final boolean useBlindedBlock;
+  private final boolean blockV3Enabled;
   private final Spec spec;
+  private final ValidatorDutyMetrics validatorDutyMetrics;
 
   public BlockProductionDuty(
       final Validator validator,
@@ -52,14 +55,18 @@ public class BlockProductionDuty implements Duty {
       final ValidatorApiChannel validatorApiChannel,
       final BlockContainerSigner blockContainerSigner,
       final boolean useBlindedBlock,
-      final Spec spec) {
+      final boolean blockV3Enabled,
+      final Spec spec,
+      final ValidatorDutyMetrics validatorDutyMetrics) {
     this.validator = validator;
     this.slot = slot;
     this.forkProvider = forkProvider;
     this.validatorApiChannel = validatorApiChannel;
     this.blockContainerSigner = blockContainerSigner;
     this.useBlindedBlock = useBlindedBlock;
+    this.blockV3Enabled = blockV3Enabled;
     this.spec = spec;
+    this.validatorDutyMetrics = validatorDutyMetrics;
   }
 
   @Override
@@ -73,12 +80,53 @@ public class BlockProductionDuty implements Duty {
     return forkProvider.getForkInfo(slot).thenCompose(this::produceBlock);
   }
 
-  public SafeFuture<DutyResult> produceBlock(final ForkInfo forkInfo) {
+  private SafeFuture<DutyResult> produceBlock(final ForkInfo forkInfo) {
     return createRandaoReveal(forkInfo)
-        .thenCompose(this::createUnsignedBlock)
-        .thenCompose(unsignedBlock -> signBlockContainer(forkInfo, unsignedBlock))
-        .thenCompose(this::sendBlock)
+        .thenCompose(
+            signature ->
+                validatorDutyMetrics.record(
+                    () -> createUnsignedBlock(signature), this, Step.CREATE))
+        .thenCompose(this::validateBlock)
+        .thenCompose(
+            blockContainer ->
+                validatorDutyMetrics.record(
+                    () -> signBlockContainer(forkInfo, blockContainer), this, Step.SIGN))
+        .thenCompose(
+            signedBlockContainer ->
+                validatorDutyMetrics.record(() -> sendBlock(signedBlockContainer), this, Step.SEND))
         .exceptionally(error -> DutyResult.forError(validator.getPublicKey(), error));
+  }
+
+  private SafeFuture<BLSSignature> createRandaoReveal(final ForkInfo forkInfo) {
+    return validator.getSigner().createRandaoReveal(spec.computeEpochAtSlot(slot), forkInfo);
+  }
+
+  private SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
+      final BLSSignature randaoReveal) {
+    if (blockV3Enabled) {
+      return validatorApiChannel.createUnsignedBlock(slot, randaoReveal, validator.getGraffiti());
+    } else {
+      return validatorApiChannel.createUnsignedBlock(
+          slot, randaoReveal, validator.getGraffiti(), useBlindedBlock);
+    }
+  }
+
+  private SafeFuture<BlockContainer> validateBlock(
+      final Optional<BlockContainer> maybeBlockContainer) {
+    final BlockContainer unsignedBlockContainer =
+        maybeBlockContainer.orElseThrow(
+            () -> new IllegalStateException("Node was not syncing but could not create block"));
+    checkArgument(
+        unsignedBlockContainer.getSlot().equals(slot),
+        "Unsigned block slot (%s) does not match expected slot %s",
+        unsignedBlockContainer.getSlot(),
+        slot);
+    return SafeFuture.completedFuture(unsignedBlockContainer);
+  }
+
+  private SafeFuture<SignedBlockContainer> signBlockContainer(
+      final ForkInfo forkInfo, final BlockContainer blockContainer) {
+    return blockContainerSigner.sign(blockContainer, validator, forkInfo);
   }
 
   private SafeFuture<DutyResult> sendBlock(final SignedBlockContainer signedBlockContainer) {
@@ -97,28 +145,6 @@ public class BlockProductionDuty implements Duty {
                       "Block was rejected by the beacon node: "
                           + result.getRejectionReason().orElse("<reason unknown>")));
             });
-  }
-
-  public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(final BLSSignature randaoReveal) {
-    return validatorApiChannel.createUnsignedBlock(
-        slot, randaoReveal, validator.getGraffiti(), useBlindedBlock);
-  }
-
-  public SafeFuture<BLSSignature> createRandaoReveal(final ForkInfo forkInfo) {
-    return validator.getSigner().createRandaoReveal(spec.computeEpochAtSlot(slot), forkInfo);
-  }
-
-  public SafeFuture<SignedBlockContainer> signBlockContainer(
-      final ForkInfo forkInfo, final Optional<BlockContainer> maybeBlockContainer) {
-    final BlockContainer unsignedBlockContainer =
-        maybeBlockContainer.orElseThrow(
-            () -> new IllegalStateException("Node was not syncing but could not create block"));
-    checkArgument(
-        unsignedBlockContainer.getSlot().equals(slot),
-        "Unsigned block slot (%s) does not match expected slot %s",
-        unsignedBlockContainer.getSlot(),
-        slot);
-    return blockContainerSigner.sign(unsignedBlockContainer, validator, forkInfo);
   }
 
   @Override

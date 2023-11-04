@@ -33,7 +33,8 @@ public class P2PConfig {
   public static final int DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT = 2;
   public static final boolean DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED = false;
   public static final boolean DEFAULT_GOSSIP_SCORING_ENABLED = true;
-  public static final int DEFAULT_BATCH_VERIFY_MAX_THREADS = 2;
+  public static final int DEFAULT_BATCH_VERIFY_MAX_THREADS =
+      Math.max(2, Runtime.getRuntime().availableProcessors() / 2);
   public static final int DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY = 15_000;
   public static final int DEFAULT_BATCH_VERIFY_MAX_BATCH_SIZE = 250;
   public static final boolean DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED = false;

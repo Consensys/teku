@@ -23,7 +23,10 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.ValidatorBlockResult;
@@ -42,10 +45,13 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.constants.EthConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
@@ -53,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -68,6 +75,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class ValidatorDataProvider {
 
+  private static final Logger LOG = LogManager.getLogger();
   public static final String CANNOT_PRODUCE_HISTORIC_BLOCK =
       "Cannot produce a block for a historic slot.";
   public static final String NO_SLOT_PROVIDED = "No slot was provided.";
@@ -82,13 +90,20 @@ public class ValidatorDataProvider {
   private static final int SC_OK = 200;
   private final Spec spec;
 
+  private final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager;
+  private final RewardCalculator rewardCalculator;
+
   public ValidatorDataProvider(
       final Spec spec,
       final ValidatorApiChannel validatorApiChannel,
-      final CombinedChainDataClient combinedChainDataClient) {
+      final CombinedChainDataClient combinedChainDataClient,
+      final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager,
+      final RewardCalculator rewardCalculator) {
     this.validatorApiChannel = validatorApiChannel;
     this.combinedChainDataClient = combinedChainDataClient;
+    this.executionLayerBlockProductionManager = executionLayerBlockProductionManager;
     this.spec = spec;
+    this.rewardCalculator = rewardCalculator;
   }
 
   public boolean isStoreAvailable() {
@@ -100,6 +115,86 @@ public class ValidatorDataProvider {
       final BLSSignature randao,
       final Optional<Bytes32> graffiti,
       final boolean isBlinded) {
+    checkBlockProducingParameters(slot, randao);
+    return validatorApiChannel.createUnsignedBlock(slot, randao, graffiti, isBlinded);
+  }
+
+  public SafeFuture<Optional<BlockContainerAndMetaData<BlockContainer>>> produceBlock(
+      final UInt64 slot, final BLSSignature randao, final Optional<Bytes32> graffiti) {
+    checkBlockProducingParameters(slot, randao);
+    return validatorApiChannel
+        .createUnsignedBlock(slot, randao, graffiti)
+        .thenCompose(this::lookUpBlockValues);
+  }
+
+  private SafeFuture<Optional<BlockContainerAndMetaData<BlockContainer>>> lookUpBlockValues(
+      final Optional<BlockContainer> maybeBlockContainer) {
+    return maybeBlockContainer
+        .map(
+            blockContainer ->
+                retrieveExecutionPayloadValue(maybeBlockContainer.get().getSlot())
+                    .thenCombine(
+                        retrieveConsensusBlockRewards(maybeBlockContainer.get()),
+                        (executionPayloadValue, consensusBlockValue) ->
+                            addMetaData(
+                                maybeBlockContainer, executionPayloadValue, consensusBlockValue)))
+        .orElse(SafeFuture.completedFuture(Optional.empty()));
+  }
+
+  private Optional<BlockContainerAndMetaData<BlockContainer>> addMetaData(
+      final Optional<BlockContainer> maybeBlockContainer,
+      final UInt256 executionPayloadValue,
+      final UInt256 consensusBlockValue) {
+    return maybeBlockContainer.map(
+        blockContainer ->
+            new BlockContainerAndMetaData<>(
+                blockContainer,
+                spec.atSlot(blockContainer.getSlot()).getMilestone(),
+                executionPayloadValue,
+                consensusBlockValue));
+  }
+
+  private SafeFuture<UInt256> retrieveExecutionPayloadValue(final UInt64 slot) {
+    final ExecutionPayloadResult payloadResult =
+        executionLayerBlockProductionManager
+            .getCachedPayloadResult(slot)
+            .orElseThrow(
+                () -> new IllegalStateException("ExecutionPayloadResult is not available"));
+    return payloadResult
+        .getExecutionPayloadValueFuture()
+        .orElseThrow(() -> new IllegalStateException("Execution Payload Value is not available"));
+  }
+
+  private SafeFuture<UInt256> retrieveConsensusBlockRewards(final BlockContainer blockContainer) {
+    final String rewardCalculationError = "Unable to calculate block rewards. Setting value to 0";
+    return combinedChainDataClient
+        .getStateAtSlotExact(blockContainer.getBlock().getSlot().decrement())
+        .thenApply(
+            maybeParentState ->
+                maybeParentState.map(
+                    parentState ->
+                        rewardCalculator.getBlockRewardData(blockContainer, parentState)))
+        .thenApply(
+            blockRewardData ->
+                blockRewardData.map(
+                    rewardData -> EthConstants.GWEI_TO_WEI.multiply(rewardData.getTotal())))
+        .thenApply(
+            maybeTotalRewards -> {
+              if (maybeTotalRewards.isEmpty()) {
+                LOG.warn(rewardCalculationError);
+                return UInt256.ZERO;
+              } else {
+                return maybeTotalRewards.get();
+              }
+            })
+        .exceptionally(
+            throwable -> {
+              LOG.warn(rewardCalculationError, throwable);
+              return UInt256.ZERO;
+            });
+  }
+
+  private void checkBlockProducingParameters(final UInt64 slot, final BLSSignature randao) {
     if (slot == null) {
       throw new IllegalArgumentException(NO_SLOT_PROVIDED);
     }
@@ -115,7 +210,6 @@ public class ValidatorDataProvider {
     if (currentSlot.isGreaterThan(slot)) {
       throw new IllegalArgumentException(CANNOT_PRODUCE_HISTORIC_BLOCK);
     }
-    return validatorApiChannel.createUnsignedBlock(slot, randao, graffiti, isBlinded);
   }
 
   public SafeFuture<Optional<BlockContainer>> getUnsignedBeaconBlockAtSlot(

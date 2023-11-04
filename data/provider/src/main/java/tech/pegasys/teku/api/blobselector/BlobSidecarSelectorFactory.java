@@ -15,6 +15,7 @@ package tech.pegasys.teku.api.blobselector;
 
 import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_SLOT;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
@@ -105,8 +106,11 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
     }
     final Optional<BeaconBlockBodyDeneb> maybeDenebBlock =
         maybeBlock.get().getMessage().getBody().toVersionDeneb();
-    if (maybeDenebBlock.isEmpty() || maybeDenebBlock.get().getBlobKzgCommitments().isEmpty()) {
+    if (maybeDenebBlock.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
+    }
+    if (maybeDenebBlock.get().getBlobKzgCommitments().isEmpty()) {
+      return SafeFuture.completedFuture(Optional.of(Collections.emptyList()));
     }
     final SignedBeaconBlock block = maybeBlock.get();
     return getBlobSidecars(block.getSlotAndBlockRoot(), indices);

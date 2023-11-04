@@ -254,7 +254,7 @@ class BlockOperationSelectorFactoryTest {
   }
 
   private <T extends SszData> void addToPool(final OperationPool<T> pool, final T operation) {
-    assertThat(pool.addRemote(operation)).isCompletedWithValue(ACCEPT);
+    assertThat(pool.addRemote(operation, Optional.empty())).isCompletedWithValue(ACCEPT);
   }
 
   @Test
@@ -294,7 +294,8 @@ class BlockOperationSelectorFactoryTest {
     addToPool(attesterSlashingPool, attesterSlashing1);
     addToPool(attesterSlashingPool, attesterSlashing2);
     addToPool(attesterSlashingPool, attesterSlashing3);
-    assertThat(contributionPool.addRemote(contribution)).isCompletedWithValue(ACCEPT);
+    assertThat(contributionPool.addRemote(contribution, Optional.empty()))
+        .isCompletedWithValue(ACCEPT);
     addToPool(blsToExecutionChangePool, blsToExecutionChange1);
     addToPool(blsToExecutionChangePool, blsToExecutionChange2);
 
@@ -589,6 +590,7 @@ class BlockOperationSelectorFactoryTest {
                 executionPayloadContext,
                 Optional.of(SafeFuture.completedFuture(executionPayload)),
                 Optional.empty(),
+                Optional.empty(),
                 Optional.empty()));
   }
 
@@ -604,7 +606,8 @@ class BlockOperationSelectorFactoryTest {
                 Optional.empty(),
                 Optional.of(
                     SafeFuture.completedFuture(
-                        HeaderWithFallbackData.create(executionPayloadHeader)))));
+                        HeaderWithFallbackData.create(executionPayloadHeader))),
+                Optional.empty()));
   }
 
   private void prepareBlockAndBlobsProduction(
@@ -619,6 +622,7 @@ class BlockOperationSelectorFactoryTest {
                 executionPayloadContext,
                 Optional.of(SafeFuture.completedFuture(executionPayload)),
                 Optional.of(SafeFuture.completedFuture(Optional.of(blobsBundle))),
+                Optional.empty(),
                 Optional.empty()));
   }
 
@@ -636,7 +640,8 @@ class BlockOperationSelectorFactoryTest {
                 executionPayloadContext,
                 Optional.empty(),
                 Optional.empty(),
-                Optional.of(SafeFuture.completedFuture(headerWithFallbackData))));
+                Optional.of(SafeFuture.completedFuture(headerWithFallbackData)),
+                Optional.empty()));
   }
 
   private void prepareCachedPayloadResult(
@@ -651,6 +656,7 @@ class BlockOperationSelectorFactoryTest {
                     executionPayloadContext,
                     Optional.of(SafeFuture.completedFuture(executionPayload)),
                     Optional.of(SafeFuture.completedFuture(Optional.of(blobsBundle))),
+                    Optional.empty(),
                     Optional.empty())));
   }
 
@@ -665,7 +671,8 @@ class BlockOperationSelectorFactoryTest {
                     executionPayloadContext,
                     Optional.empty(),
                     Optional.empty(),
-                    Optional.of(SafeFuture.completedFuture(headerWithFallbackData)))));
+                    Optional.of(SafeFuture.completedFuture(headerWithFallbackData)),
+                    Optional.empty())));
   }
 
   private static class CapturingBeaconBlockBodyBuilder implements BeaconBlockBodyBuilder {

@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.Optional;
 import java.util.TreeMap;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
@@ -60,7 +61,8 @@ public class SyncCommitteeContributionPool implements SlotEventsChannel {
   }
 
   public SafeFuture<InternalValidationResult> addRemote(
-      final SignedContributionAndProof signedContributionAndProof) {
+      final SignedContributionAndProof signedContributionAndProof,
+      final Optional<UInt64> arrivalTimestamp) {
     return add(signedContributionAndProof, true);
   }
 

@@ -24,12 +24,19 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public interface BlockFactory {
 
+  @Deprecated
   SafeFuture<BlockContainer> createUnsignedBlock(
       BeaconState blockSlotState,
       UInt64 newSlot,
       BLSSignature randaoReveal,
       Optional<Bytes32> optionalGraffiti,
       boolean blinded);
+
+  SafeFuture<BlockContainer> createUnsignedBlock(
+      BeaconState blockSlotState,
+      UInt64 newSlot,
+      BLSSignature randaoReveal,
+      Optional<Bytes32> optionalGraffiti);
 
   SafeFuture<SignedBlockContainer> unblindSignedBlockIfBlinded(
       SignedBlockContainer maybeBlindedBlockContainer);

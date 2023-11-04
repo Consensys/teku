@@ -16,35 +16,31 @@ package tech.pegasys.teku.reference.phase0.kzg;
 import static tech.pegasys.teku.ethtests.finder.KzgTestFinder.KZG_DATA_FILE;
 
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.kzg.KZG;
-import tech.pegasys.teku.kzg.ckzg4844.CKZG4844;
-import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
+import tech.pegasys.teku.reference.KzgRetriever;
 import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 
 public abstract class KzgTestExecutor implements TestExecutor {
-  // We don't support config reloading and all tests are currently for mainnet
-  private static final String CONFIG_NAME = "mainnet";
+
+  private static final Pattern TEST_NAME_PATTERN = Pattern.compile("kzg-(.+)/.+");
 
   @Override
-  public final void runTest(TestDefinition testDefinition) throws Throwable {
-    final Eth2NetworkConfiguration networkConfig =
-        Eth2NetworkConfiguration.builder(CONFIG_NAME).build();
-    final SpecConfigDeneb specConfigDeneb =
-        SpecConfigDeneb.required(networkConfig.getSpec().getGenesisSpecConfig());
+  public final void runTest(final TestDefinition testDefinition) throws Throwable {
+    final String network = extractNetwork(testDefinition.getTestName());
+    final KZG kzg = KzgRetriever.getKzgWithLoadedTrustedSetup(network);
+    runTest(testDefinition, kzg);
+  }
 
-    KZG kzg = null;
-    try {
-      kzg = CKZG4844.createInstance(specConfigDeneb.getFieldElementsPerBlob());
-      kzg.loadTrustedSetup(specConfigDeneb.getTrustedSetupPath().orElseThrow());
-      runTestImpl(testDefinition);
-    } finally {
-      if (kzg != null) {
-        kzg.freeTrustedSetup();
-      }
+  private String extractNetwork(final String testName) {
+    final Matcher matcher = TEST_NAME_PATTERN.matcher(testName);
+    if (matcher.find()) {
+      return matcher.group(1);
     }
+    throw new IllegalArgumentException("Can't extract network from " + testName);
   }
 
   protected <T> T loadDataFile(final TestDefinition testDefinition, final Class<T> type)
@@ -56,5 +52,5 @@ public abstract class KzgTestExecutor implements TestExecutor {
     return TestDataUtils.loadYaml(testDefinition, dataFile, type);
   }
 
-  protected abstract void runTestImpl(TestDefinition testDefinition) throws Throwable;
+  protected abstract void runTest(TestDefinition testDefinition, KZG kzg) throws Throwable;
 }

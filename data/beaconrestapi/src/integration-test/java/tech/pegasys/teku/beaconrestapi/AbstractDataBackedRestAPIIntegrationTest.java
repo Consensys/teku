@@ -41,6 +41,7 @@ import okhttp3.Response;
 import org.junit.jupiter.api.AfterEach;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.ExecutionClientDataProvider;
+import tech.pegasys.teku.api.RewardCalculator;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
 import tech.pegasys.teku.bls.BLSKeyPair;
@@ -65,6 +66,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.statetransition.MappedOperationPool;
@@ -129,6 +131,11 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
   protected final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
   protected final OperationPool<SignedVoluntaryExit> voluntaryExitPool = mock(OperationPool.class);
+
+  protected final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager =
+      mock(ExecutionLayerBlockProductionManager.class);
+
+  protected RewardCalculator rewardCalculator = mock(RewardCalculator.class);
 
   protected OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
 
@@ -236,6 +243,8 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             .blsToExecutionChangePool(blsToExecutionChangePool)
             .syncCommitteeContributionPool(syncCommitteeContributionPool)
             .proposersDataManager(proposersDataManager)
+            .executionLayerBlockProductionManager(executionLayerBlockProductionManager)
+            .rewardCalculator(rewardCalculator)
             .build();
 
     beaconRestApi =

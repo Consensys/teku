@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -41,10 +42,14 @@ import tech.pegasys.teku.ethtests.finder.TestDefinition;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
+import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.reference.KzgRetriever;
 import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -61,7 +66,6 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.executionlayer.ExecutionPayloadStatus;
 import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -76,6 +80,7 @@ import tech.pegasys.teku.storage.store.UpdatableStore;
 
 public class ForkChoiceTestExecutor implements TestExecutor {
   private static final Logger LOG = LogManager.getLogger();
+  private static final String SSZ_SNAPPY_EXTENSION = ".ssz_snappy";
   public static final ImmutableMap<String, TestExecutor> FORK_CHOICE_TEST_TYPES =
       ImmutableMap.<String, TestExecutor>builder()
           .put("fork_choice/get_head", new ForkChoiceTestExecutor())
@@ -102,9 +107,9 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
     // Note: The fork choice spec says there may be settings in a meta.yaml file but currently no
     // tests actually have one, so we currently don't bother trying to load it.
-    final BeaconState anchorState =
-        TestDataUtils.loadStateFromSsz(testDefinition, "anchor_state.ssz_snappy");
     final Spec spec = testDefinition.getSpec();
+    final BeaconState anchorState =
+        TestDataUtils.loadStateFromSsz(testDefinition, "anchor_state" + SSZ_SNAPPY_EXTENSION);
     final SignedBeaconBlock anchorBlock = loadAnchorBlock(testDefinition);
 
     final StorageSystem storageSystem =
@@ -118,12 +123,14 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final MergeTransitionBlockValidator transitionBlockValidator =
         new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
     final InlineEventThread eventThread = new InlineEventThread();
+    final KZG kzg = KzgRetriever.getKzgWithLoadedTrustedSetup(spec, testDefinition.getConfigName());
+    final StubBlobSidecarManager blobSidecarManager = new StubBlobSidecarManager(kzg);
     final ForkChoice forkChoice =
         new ForkChoice(
             spec,
             eventThread,
             recentChainData,
-            BlobSidecarManager.NOOP,
+            blobSidecarManager,
             new StubForkChoiceNotifier(),
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
@@ -135,7 +142,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         new ExecutionLayerChannelStub(spec, false, Optional.empty());
 
     try {
-      runSteps(testDefinition, spec, recentChainData, forkChoice, executionLayer);
+      runSteps(
+          testDefinition, spec, recentChainData, blobSidecarManager, forkChoice, executionLayer);
     } catch (final AssertionError e) {
       final String protoArrayData =
           recentChainData.getForkChoiceStrategy().orElseThrow().getBlockData().stream()
@@ -165,7 +173,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final BeaconBlock anchorBlock =
         TestDataUtils.loadSsz(
             testDefinition,
-            "anchor_block.ssz_snappy",
+            "anchor_block" + SSZ_SNAPPY_EXTENSION,
             testDefinition.getSpec()::deserializeBeaconBlock);
     return SignedBeaconBlock.create(testDefinition.getSpec(), anchorBlock, BLSSignature.empty());
   }
@@ -174,6 +182,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final TestDefinition testDefinition,
       final Spec spec,
       final RecentChainData recentChainData,
+      final StubBlobSidecarManager blobSidecarManager,
       final ForkChoice forkChoice,
       final ExecutionLayerChannelStub executionLayer)
       throws IOException {
@@ -188,7 +197,14 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         final UInt64 currentSlot = recentChainData.getCurrentSlot().orElse(UInt64.ZERO);
         LOG.info("Current slot: {} Epoch: {}", currentSlot, spec.computeEpochAtSlot(currentSlot));
       } else if (step.containsKey("block")) {
-        applyBlock(testDefinition, spec, recentChainData, forkChoice, step, executionLayer);
+        applyBlock(
+            testDefinition,
+            spec,
+            recentChainData,
+            blobSidecarManager,
+            forkChoice,
+            step,
+            executionLayer);
 
       } else if (step.containsKey("attestation")) {
         applyAttestation(testDefinition, forkChoice, step);
@@ -214,7 +230,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final ExecutionLayerChannelStub executionLayer) {
     final String filename = (String) step.get("pow_block");
     final PowBlock block =
-        TestDataUtils.loadSsz(testDefinition, filename + ".ssz_snappy", this::parsePowBlock);
+        TestDataUtils.loadSsz(testDefinition, filename + SSZ_SNAPPY_EXTENSION, this::parsePowBlock);
     executionLayer.addPowBlock(block);
   }
 
@@ -262,7 +278,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final Attestation attestation =
         TestDataUtils.loadSsz(
             testDefinition,
-            attestationName + ".ssz_snappy",
+            attestationName + SSZ_SNAPPY_EXTENSION,
             testDefinition.getSpec().getGenesisSchemaDefinitions().getAttestationSchema());
     final Spec spec = testDefinition.getSpec();
     assertThat(forkChoice.onAttestation(ValidatableAttestation.from(spec, attestation)))
@@ -277,7 +293,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final AttesterSlashing attesterSlashing =
         TestDataUtils.loadSsz(
             testDefinition,
-            slashingName + ".ssz_snappy",
+            slashingName + SSZ_SNAPPY_EXTENSION,
             testDefinition.getSpec().getGenesisSchemaDefinitions().getAttesterSlashingSchema());
     assertDoesNotThrow(
         () ->
@@ -288,6 +304,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
       final TestDefinition testDefinition,
       final Spec spec,
       final RecentChainData recentChainData,
+      final StubBlobSidecarManager blobSidecarManager,
       final ForkChoice forkChoice,
       final Map<String, Object> step,
       final ExecutionLayerChannelStub executionLayer) {
@@ -295,7 +312,29 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final boolean valid = !step.containsKey("valid") || (boolean) step.get("valid");
     final SignedBeaconBlock block =
         TestDataUtils.loadSsz(
-            testDefinition, blockName + ".ssz_snappy", spec::deserializeSignedBeaconBlock);
+            testDefinition, blockName + SSZ_SNAPPY_EXTENSION, spec::deserializeSignedBeaconBlock);
+    final List<Blob> blobs =
+        getOptionally(step, "blobs")
+            .map(
+                blobsName ->
+                    TestDataUtils.loadSsz(
+                            testDefinition,
+                            blobsName + SSZ_SNAPPY_EXTENSION,
+                            sszBytes -> spec.deserializeBlobsInBlock(sszBytes, block.getSlot()))
+                        .asList())
+            .orElse(Collections.emptyList());
+    @SuppressWarnings("unchecked")
+    final List<KZGProof> proofs =
+        getOptionally(step, "proofs")
+            .map(
+                proofsArray ->
+                    ((List<String>) proofsArray).stream().map(KZGProof::fromHexString).toList())
+            .orElse(Collections.emptyList());
+    if (block.getMessage().getBody().toVersionDeneb().isPresent()) {
+      LOG.info(
+          "Preparing {} blobs with proofs {} for block {}", blobs.size(), proofs, block.getRoot());
+      blobSidecarManager.prepareBlobsAndProofsForBlock(block, blobs, proofs);
+    }
     LOG.info(
         "Importing block {} at slot {} with parent {}",
         block.getRoot(),
