@@ -14,15 +14,10 @@
 package tech.pegasys.teku.networks;
 
 public class StateBoostrapConfig {
-  private boolean isUsingCustomGenesisState;
   private boolean isUsingCustomInitialState;
   private boolean isUsingCheckpointSync;
 
   StateBoostrapConfig() {}
-
-  public void setUsingCustomGenesisState(final boolean usingCustomGenesisState) {
-    isUsingCustomGenesisState = usingCustomGenesisState;
-  }
 
   public void setUsingCustomInitialState(final boolean usingCustomInitialState) {
     isUsingCustomInitialState = usingCustomInitialState;
@@ -30,10 +25,6 @@ public class StateBoostrapConfig {
 
   public void setUsingCheckpointSync(final boolean usingCheckpointSync) {
     isUsingCheckpointSync = usingCheckpointSync;
-  }
-
-  public boolean isUsingCustomGenesisState() {
-    return isUsingCustomGenesisState;
   }
 
   public boolean isUsingCustomInitialState() {

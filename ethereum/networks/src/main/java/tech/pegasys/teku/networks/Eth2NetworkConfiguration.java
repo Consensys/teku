@@ -445,7 +445,6 @@ public class Eth2NetworkConfiguration {
 
     public Builder customGenesisState(final String genesisState) {
       this.genesisState = Optional.of(genesisState);
-      this.stateBoostrapConfig.setUsingCustomGenesisState(true);
       return this;
     }
 
