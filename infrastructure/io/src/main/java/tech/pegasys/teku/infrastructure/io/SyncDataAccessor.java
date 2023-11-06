@@ -52,6 +52,13 @@ public class SyncDataAccessor {
     }
 
     try {
+      ensurePathExists(path);
+    } catch (IOException e) {
+      throw new IllegalStateException(
+          "Could not create slashing protection path: " + e.getMessage());
+    }
+
+    try {
       atomicSyncedWrite(tmpFile, Bytes32.ZERO);
 
       atomicFileMoveSupport = true;
@@ -106,15 +113,8 @@ public class SyncDataAccessor {
   }
 
   private static void nonAtomicSyncedWrite(final Path path, final Bytes data) throws IOException {
-    final Path absolutePath = path.toAbsolutePath();
-    if (absolutePath.getParent() != null) {
-      final File parentDirectory = absolutePath.getParent().toFile();
-      if (!parentDirectory.mkdirs() && !parentDirectory.isDirectory()) {
-        throw new IOException("Unable to create directory " + parentDirectory);
-      }
-    }
     Files.write(
-        absolutePath,
+        path,
         data.toArrayUnsafe(),
         StandardOpenOption.SYNC,
         StandardOpenOption.CREATE,
@@ -127,5 +127,14 @@ public class SyncDataAccessor {
     nonAtomicSyncedWrite(tmpFile, data);
     Files.move(
         tmpFile, absolutePath, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+  }
+
+  private static void ensurePathExists(final Path absolutePath) throws IOException {
+    if (absolutePath != null) {
+      final File file = absolutePath.toFile();
+      if (!file.mkdirs() && !file.isDirectory()) {
+        throw new IOException("Unable to create directory " + file);
+      }
+    }
   }
 }
