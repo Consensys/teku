@@ -482,12 +482,12 @@ public class BlockManagerTest {
     // Gossip all blocks except the first
     invalidBlockDescendants.forEach(
         invalidBlockDescendant ->
-            assertImportAndBroadcastValidationResult(
+            assertImportBlockWithResult(
                 invalidBlockDescendant, BlockImportResult.FAILED_UNKNOWN_PARENT));
     assertThat(pendingBlocks.size()).isEqualTo(invalidChainDepth);
 
     // Gossip next block, causing dependent blocks to be dropped when the import fails
-    assertImportAndBroadcastValidationResult(invalidBlock, FailureReason.FAILED_STATE_TRANSITION);
+    assertImportBlockWithResult(invalidBlock, FailureReason.FAILED_STATE_TRANSITION);
     assertThat(pendingBlocks.size()).isEqualTo(0);
 
     // verify blob sidecars pool get notified to drop content
@@ -498,7 +498,7 @@ public class BlockManagerTest {
     // If any invalid block is again gossiped, it should be ignored
     invalidBlockDescendants.forEach(
         invalidBlockDescendant ->
-            assertImportAndBroadcastValidationResult(
+            assertImportBlockWithResult(
                 invalidBlockDescendant, BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK));
     assertThat(pendingBlocks.size()).isEqualTo(0);
   }
@@ -527,22 +527,22 @@ public class BlockManagerTest {
         .subList(1, invalidChainDepth)
         .forEach(
             invalidBlockDescendant ->
-                assertImportAndBroadcastValidationResult(
+                assertImportBlockWithResult(
                     invalidBlockDescendant, BlockImportResult.FAILED_UNKNOWN_PARENT));
     assertThat(pendingBlocks.size()).isEqualTo(invalidChainDepth - 1);
 
     // Gossip invalid block, which should fail to import and be marked invalid
-    assertImportAndBroadcastValidationResult(invalidBlock, FailureReason.FAILED_STATE_TRANSITION);
+    assertImportBlockWithResult(invalidBlock, FailureReason.FAILED_STATE_TRANSITION);
     assertThat(pendingBlocks.size()).isEqualTo(invalidChainDepth - 1);
 
     // Gossip the child of the invalid block, which should also be marked invalid causing
     // the rest of the chain to be marked invalid and dropped
-    assertImportAndBroadcastValidationResult(
+    assertImportBlockWithResult(
         invalidBlockDescendants.get(0), BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK);
     assertThat(pendingBlocks.size()).isEqualTo(0);
 
     // If the last block is imported, it should be rejected
-    assertImportAndBroadcastValidationResult(
+    assertImportBlockWithResult(
         invalidBlockDescendants.get(invalidChainDepth - 1),
         BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK);
     assertThat(pendingBlocks.size()).isEqualTo(0);
@@ -595,8 +595,7 @@ public class BlockManagerTest {
 
     // gossip the first block with execution payload failure
     executionLayer.setPayloadStatus(PayloadStatus.failedExecution(new Error("error")));
-    assertImportAndBroadcastValidationResult(
-        blocks.get(0), FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION);
+    assertImportBlockWithResult(blocks.get(0), FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION);
 
     // EL is now alive
     executionLayer.setPayloadStatus(PayloadStatus.VALID);
@@ -605,9 +604,7 @@ public class BlockManagerTest {
     blocks
         .subList(1, blockCount)
         .forEach(
-            block ->
-                assertImportAndBroadcastValidationResult(
-                    block, BlockImportResult.FAILED_UNKNOWN_PARENT));
+            block -> assertImportBlockWithResult(block, BlockImportResult.FAILED_UNKNOWN_PARENT));
     assertThat(pendingBlocks.size()).isEqualTo(blockCount - 1);
 
     // Import first block again (from gossip or ReexecutingExecutionPayloadBlockManagerTest)
@@ -637,7 +634,7 @@ public class BlockManagerTest {
     }
 
     // import invalid block, which should fail to import and be marked invalid
-    assertImportAndBroadcastValidationResult(invalidBlock, FailureReason.FAILED_STATE_TRANSITION);
+    assertImportBlockWithResult(invalidBlock, FailureReason.FAILED_STATE_TRANSITION);
 
     // Gossip same invalid block, must reject with no actual validation
     assertValidateAndImportBlockRejectWithoutValidation(invalidBlock);
@@ -648,7 +645,7 @@ public class BlockManagerTest {
     // If any invalid block is again imported, it should be ignored
     invalidBlockDescendants.forEach(
         invalidBlockDescendant ->
-            assertImportAndBroadcastValidationResult(
+            assertImportBlockWithResult(
                 invalidBlockDescendant, BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK));
 
     assertThat(pendingBlocks.size()).isEqualTo(0);
@@ -1144,13 +1141,13 @@ public class BlockManagerTest {
     assertThat(localRecentChainData.getBlobSidecars(slotAndBlockRoot)).isEmpty();
   }
 
-  private void assertImportAndBroadcastValidationResult(
+  private void assertImportBlockWithResult(
       final SignedBeaconBlock block, final FailureReason failureReason) {
     assertThatBlockImport(block)
         .isCompletedWithValueMatching(result -> result.getFailureReason().equals(failureReason));
   }
 
-  private void assertImportAndBroadcastValidationResult(
+  private void assertImportBlockWithResult(
       final SignedBeaconBlock block, final BlockImportResult importResult) {
     assertThatBlockImport(block)
         .isCompletedWithValueMatching(result -> result.equals(importResult));
@@ -1201,14 +1198,9 @@ public class BlockManagerTest {
   }
 
   private SafeFutureAssert<BlockImportResult> assertThatBlockImport(final SignedBeaconBlock block) {
-    return assertThatBlockImport(block, BroadcastValidationLevel.NOT_REQUIRED);
-  }
-
-  private SafeFutureAssert<BlockImportResult> assertThatBlockImport(
-      final SignedBeaconBlock block, final BroadcastValidationLevel broadcastValidationLevel) {
     return assertThatSafeFuture(
         blockManager
-            .importBlock(block, broadcastValidationLevel)
+            .importBlock(block, BroadcastValidationLevel.NOT_REQUIRED)
             .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult));
   }
 
@@ -1219,14 +1211,9 @@ public class BlockManagerTest {
   }
 
   private void safeJoinBlockImport(final SignedBeaconBlock block) {
-    safeJoinBlockImport(block, BroadcastValidationLevel.NOT_REQUIRED);
-  }
-
-  private void safeJoinBlockImport(
-      final SignedBeaconBlock block, final BroadcastValidationLevel broadcastValidationLevel) {
     safeJoin(
         blockManager
-            .importBlock(block, broadcastValidationLevel)
+            .importBlock(block, BroadcastValidationLevel.NOT_REQUIRED)
             .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult));
   }
 }
