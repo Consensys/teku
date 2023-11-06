@@ -239,7 +239,8 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRoot(
-      final List<BlobIdentifier> blobIdentifiers, final RpcResponseListener<BlobSidecarOld> listener) {
+      final List<BlobIdentifier> blobIdentifiers,
+      final RpcResponseListener<BlobSidecarOld> listener) {
     return rpcMethods
         .blobSidecarsByRoot()
         .map(
@@ -314,7 +315,9 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRange(
-      final UInt64 startSlot, final UInt64 count, final RpcResponseListener<BlobSidecarOld> listener) {
+      final UInt64 startSlot,
+      final UInt64 count,
+      final RpcResponseListener<BlobSidecarOld> listener) {
     return rpcMethods
         .blobSidecarsByRange()
         .map(
@@ -373,7 +376,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public Optional<RequestApproval> approveBlobSidecarsRequest(
-          final ResponseCallback<BlobSidecarOld> callback, long blobSidecarsCount) {
+      final ResponseCallback<BlobSidecarOld> callback, long blobSidecarsCount) {
     return approveObjectsRequest(
         "blob sidecars", blobSidecarsRequestTracker, blobSidecarsCount, callback);
   }

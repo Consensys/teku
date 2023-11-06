@@ -110,7 +110,7 @@ public interface Eth2Peer extends Peer, SyncSource {
   void adjustBlocksRequest(RequestApproval blocksRequest, long returnedBlocksCount);
 
   Optional<RequestApproval> approveBlobSidecarsRequest(
-          ResponseCallback<BlobSidecarOld> callback, long blobSidecarsCount);
+      ResponseCallback<BlobSidecarOld> callback, long blobSidecarsCount);
 
   void adjustBlobSidecarsRequest(
       RequestApproval blobSidecarsRequest, long returnedBlobSidecarsCount);

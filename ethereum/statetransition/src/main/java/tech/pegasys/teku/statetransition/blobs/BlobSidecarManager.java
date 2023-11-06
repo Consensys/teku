@@ -30,7 +30,7 @@ public interface BlobSidecarManager {
 
         @Override
         public SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
-                final SignedBlobSidecarOld signedBlobSidecar, final Optional<UInt64> arrivalTimestamp) {
+            final SignedBlobSidecarOld signedBlobSidecar, final Optional<UInt64> arrivalTimestamp) {
           return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
         }
 
@@ -60,7 +60,7 @@ public interface BlobSidecarManager {
       };
 
   SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
-          SignedBlobSidecarOld signedBlobSidecar, Optional<UInt64> arrivalTimestamp);
+      SignedBlobSidecarOld signedBlobSidecar, Optional<UInt64> arrivalTimestamp);
 
   void prepareForBlockImport(BlobSidecarOld blobSidecar);
 

@@ -49,7 +49,8 @@ public class SigningRootUtil {
     return spec.computeSigningRoot(block, getDomainForSignBlock(block.getSlot(), forkInfo));
   }
 
-  public Bytes signingRootForBlobSidecar(final BlobSidecarOld blobSidecar, final ForkInfo forkInfo) {
+  public Bytes signingRootForBlobSidecar(
+      final BlobSidecarOld blobSidecar, final ForkInfo forkInfo) {
     final Bytes32 domain =
         spec.getDomain(
             Domain.DOMAIN_BLOB_SIDECAR,

@@ -548,7 +548,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   private void throwWhenValidatingBlobSidecarsBatchAgainstBlock(
-          final List<BlobSidecarOld> blobSidecars, final Throwable cause) {
+      final List<BlobSidecarOld> blobSidecars, final Throwable cause) {
     doThrow(cause)
         .when(miscHelpers)
         .validateBlobSidecarsBatchAgainstBlock(
@@ -560,7 +560,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   private void throwWhenVerifyingBlobSidecarCompleteness(
-          final List<BlobSidecarOld> blobSidecars, final Throwable cause) {
+      final List<BlobSidecarOld> blobSidecars, final Throwable cause) {
     doThrow(cause)
         .when(miscHelpers)
         .verifyBlobSidecarCompleteness(
@@ -571,7 +571,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   private void verifyValidationAndDataAvailabilityCall(
-          final List<BlobSidecarOld> blobSidecars, final boolean isFinalValidation) {
+      final List<BlobSidecarOld> blobSidecars, final boolean isFinalValidation) {
     verify(miscHelpers, times(1))
         .validateBlobSidecarsBatchAgainstBlock(
             eq(blobSidecars),

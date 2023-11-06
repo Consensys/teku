@@ -67,7 +67,7 @@ public class SlashingProtectedSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signBlobSidecar(
-          final BlobSidecarOld blobSidecar, final ForkInfo forkInfo) {
+      final BlobSidecarOld blobSidecar, final ForkInfo forkInfo) {
     return delegate.signBlobSidecar(blobSidecar, forkInfo);
   }
 

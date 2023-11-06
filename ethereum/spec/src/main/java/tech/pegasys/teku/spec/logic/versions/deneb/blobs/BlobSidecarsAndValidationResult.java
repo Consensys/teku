@@ -38,7 +38,8 @@ public class BlobSidecarsAndValidationResult {
   public static final SafeFuture<BlobSidecarsAndValidationResult> NOT_REQUIRED_RESULT_FUTURE =
       SafeFuture.completedFuture(NOT_REQUIRED);
 
-  public static BlobSidecarsAndValidationResult validResult(final List<BlobSidecarOld> blobSidecars) {
+  public static BlobSidecarsAndValidationResult validResult(
+      final List<BlobSidecarOld> blobSidecars) {
     return new BlobSidecarsAndValidationResult(
         BlobSidecarsValidationResult.VALID, blobSidecars, Optional.empty());
   }
@@ -50,7 +51,7 @@ public class BlobSidecarsAndValidationResult {
   }
 
   public static BlobSidecarsAndValidationResult invalidResult(
-          final List<BlobSidecarOld> blobSidecars, final Throwable cause) {
+      final List<BlobSidecarOld> blobSidecars, final Throwable cause) {
     return new BlobSidecarsAndValidationResult(
         BlobSidecarsValidationResult.INVALID, blobSidecars, Optional.of(cause));
   }

@@ -53,7 +53,8 @@ public class BlockContentsSchema
     return new BlockContentsSchema(containerName, specConfig, beaconBlockSchema, blobSidecarSchema);
   }
 
-  public BlockContents create(final BeaconBlock beaconBlock, final List<BlobSidecarOld> blobSidecars) {
+  public BlockContents create(
+      final BeaconBlock beaconBlock, final List<BlobSidecarOld> blobSidecars) {
     return new BlockContents(this, beaconBlock, blobSidecars);
   }
 

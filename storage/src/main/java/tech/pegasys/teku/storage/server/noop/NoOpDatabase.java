@@ -287,7 +287,8 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public Optional<BlobSidecarOld> getNonCanonicalBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+  public Optional<BlobSidecarOld> getNonCanonicalBlobSidecar(
+      final SlotAndBlockRootAndBlobIndex key) {
     return Optional.empty();
   }
 

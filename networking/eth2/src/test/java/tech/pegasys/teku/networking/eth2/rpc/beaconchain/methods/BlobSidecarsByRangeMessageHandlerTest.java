@@ -261,7 +261,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock);
 
-    final List<BlobSidecarOld> expectedSent = setUpBlobSidecarsData(startSlot, request.getMaxSlot());
+    final List<BlobSidecarOld> expectedSent =
+        setUpBlobSidecarsData(startSlot, request.getMaxSlot());
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
@@ -273,7 +274,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
         .adjustBlobSidecarsRequest(
             eq(allowedObjectsRequest.get()), eq(Long.valueOf(expectedSent.size())));
 
-    final ArgumentCaptor<BlobSidecarOld> argumentCaptor = ArgumentCaptor.forClass(BlobSidecarOld.class);
+    final ArgumentCaptor<BlobSidecarOld> argumentCaptor =
+        ArgumentCaptor.forClass(BlobSidecarOld.class);
 
     verify(listener, times(expectedSent.size())).respond(argumentCaptor.capture());
 
@@ -331,7 +333,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
         .adjustBlobSidecarsRequest(
             eq(allowedObjectsRequest.get()), eq(Long.valueOf(expectedSent.size())));
 
-    final ArgumentCaptor<BlobSidecarOld> argumentCaptor = ArgumentCaptor.forClass(BlobSidecarOld.class);
+    final ArgumentCaptor<BlobSidecarOld> argumentCaptor =
+        ArgumentCaptor.forClass(BlobSidecarOld.class);
 
     verify(listener, times(expectedSent.size())).respond(argumentCaptor.capture());
 
@@ -357,7 +360,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     // no adjustment
     verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
 
-    final ArgumentCaptor<BlobSidecarOld> argumentCaptor = ArgumentCaptor.forClass(BlobSidecarOld.class);
+    final ArgumentCaptor<BlobSidecarOld> argumentCaptor =
+        ArgumentCaptor.forClass(BlobSidecarOld.class);
 
     verify(listener, never()).respond(argumentCaptor.capture());
 
@@ -385,7 +389,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     // no adjustment
     verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
 
-    final ArgumentCaptor<BlobSidecarOld> argumentCaptor = ArgumentCaptor.forClass(BlobSidecarOld.class);
+    final ArgumentCaptor<BlobSidecarOld> argumentCaptor =
+        ArgumentCaptor.forClass(BlobSidecarOld.class);
 
     verify(listener, never()).respond(argumentCaptor.capture());
 

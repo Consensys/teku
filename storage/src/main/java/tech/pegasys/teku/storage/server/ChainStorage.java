@@ -307,7 +307,8 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Optional<BlobSidecarOld>> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+  public SafeFuture<Optional<BlobSidecarOld>> getBlobSidecar(
+      final SlotAndBlockRootAndBlobIndex key) {
     return SafeFuture.of(() -> database.getBlobSidecar(key));
   }
 

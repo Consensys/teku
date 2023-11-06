@@ -131,7 +131,7 @@ public class ExternalSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signBlobSidecar(
-          final BlobSidecarOld blobSidecar, final ForkInfo forkInfo) {
+      final BlobSidecarOld blobSidecar, final ForkInfo forkInfo) {
     return sign(
         signingRootUtil.signingRootForBlobSidecar(blobSidecar, forkInfo),
         SignType.BLOB_SIDECAR, // both blobSidecar and blindedBlobSidecar uses same SignType

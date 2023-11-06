@@ -78,7 +78,8 @@ public class BlobSidecarGossipValidator {
     this.receivedValidBlobSidecarInfoSet = receivedValidBlobSidecarInfoSet;
   }
 
-  public SafeFuture<InternalValidationResult> validate(final SignedBlobSidecarOld signedBlobSidecar) {
+  public SafeFuture<InternalValidationResult> validate(
+      final SignedBlobSidecarOld signedBlobSidecar) {
     final BlobSidecarOld blobSidecar = signedBlobSidecar.getBlobSidecar();
 
     /*

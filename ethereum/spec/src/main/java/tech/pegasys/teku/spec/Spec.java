@@ -388,7 +388,8 @@ public class Spec {
         .sszDeserialize(serializedBlobs);
   }
 
-  public BlobSidecarOld deserializeBlobSidecar(final Bytes serializedBlobSidecar, final UInt64 slot) {
+  public BlobSidecarOld deserializeBlobSidecar(
+      final Bytes serializedBlobSidecar, final UInt64 slot) {
     return atSlot(slot)
         .getSchemaDefinitions()
         .toVersionDeneb()

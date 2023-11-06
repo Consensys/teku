@@ -802,7 +802,8 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public Optional<BlobSidecarOld> getNonCanonicalBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+  public Optional<BlobSidecarOld> getNonCanonicalBlobSidecar(
+      final SlotAndBlockRootAndBlobIndex key) {
     final Optional<Bytes> maybePayload = dao.getNonCanonicalBlobSidecar(key);
     return maybePayload.map(payload -> spec.deserializeBlobSidecar(payload, key.getSlot()));
   }
@@ -1019,7 +1020,8 @@ public class KvStoreDatabase implements Database {
   }
 
   private void updateBlobSidecarData(
-      final Optional<UInt64> getEarliestBlobSidecarSlot, final Stream<BlobSidecarOld> blobSidecars) {
+      final Optional<UInt64> getEarliestBlobSidecarSlot,
+      final Stream<BlobSidecarOld> blobSidecars) {
     LOG.trace("Applying blob sidecar updates");
 
     try (final FinalizedUpdater updater = finalizedUpdater()) {

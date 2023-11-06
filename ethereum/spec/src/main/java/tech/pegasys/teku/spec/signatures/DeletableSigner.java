@@ -67,7 +67,7 @@ public class DeletableSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signBlobSidecar(
-          final BlobSidecarOld blobSidecar, final ForkInfo forkInfo) {
+      final BlobSidecarOld blobSidecar, final ForkInfo forkInfo) {
     return sign(() -> delegate.signBlobSidecar(blobSidecar, forkInfo));
   }
 

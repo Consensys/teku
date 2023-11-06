@@ -38,7 +38,8 @@ public class StubSyncSource implements SyncSource {
   private Optional<RpcResponseListener<SignedBeaconBlock>> currentBlockListener = Optional.empty();
 
   private Optional<SafeFuture<Void>> currentBlobSidecarRequest = Optional.empty();
-  private Optional<RpcResponseListener<BlobSidecarOld>> currentBlobSidecarListener = Optional.empty();
+  private Optional<RpcResponseListener<BlobSidecarOld>> currentBlobSidecarListener =
+      Optional.empty();
 
   public void receiveBlocks(final SignedBeaconBlock... blocks) {
     final RpcResponseListener<SignedBeaconBlock> listener = currentBlockListener.orElseThrow();
@@ -72,7 +73,9 @@ public class StubSyncSource implements SyncSource {
 
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRange(
-      final UInt64 startSlot, final UInt64 count, final RpcResponseListener<BlobSidecarOld> listener) {
+      final UInt64 startSlot,
+      final UInt64 count,
+      final RpcResponseListener<BlobSidecarOld> listener) {
     checkArgument(count.isGreaterThan(UInt64.ZERO), "Count must be greater than zero");
     blobSidecarsRequests.add(new Request(startSlot, count));
     final SafeFuture<Void> request = new SafeFuture<>();

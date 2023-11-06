@@ -19,7 +19,8 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
-public class SignedBlobSidecarOld extends Container2<SignedBlobSidecarOld, BlobSidecarOld, SszSignature> {
+public class SignedBlobSidecarOld
+    extends Container2<SignedBlobSidecarOld, BlobSidecarOld, SszSignature> {
 
   SignedBlobSidecarOld(final SignedBlobSidecarSchemaOld type, final TreeNode backingNode) {
     super(type, backingNode);

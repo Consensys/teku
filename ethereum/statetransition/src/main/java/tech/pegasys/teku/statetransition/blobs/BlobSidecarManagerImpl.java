@@ -71,7 +71,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
   public SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
-          final SignedBlobSidecarOld signedBlobSidecar, final Optional<UInt64> arrivalTimestamp) {
+      final SignedBlobSidecarOld signedBlobSidecar, final Optional<UInt64> arrivalTimestamp) {
 
     final Optional<InternalValidationResult> maybeInvalid =
         Optional.ofNullable(

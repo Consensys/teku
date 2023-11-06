@@ -101,7 +101,9 @@ public class BlockContainerSignerDeneb implements BlockContainerSigner {
   }
 
   private SafeFuture<SignedBlobSidecarOld> signBlobSidecar(
-          final BlobSidecarOld unsignedBlobSidecar, final Validator validator, final ForkInfo forkInfo) {
+      final BlobSidecarOld unsignedBlobSidecar,
+      final Validator validator,
+      final ForkInfo forkInfo) {
     return validator
         .getSigner()
         .signBlobSidecar(unsignedBlobSidecar, forkInfo)

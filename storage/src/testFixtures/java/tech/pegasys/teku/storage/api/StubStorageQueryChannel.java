@@ -139,7 +139,8 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
-  public SafeFuture<Optional<BlobSidecarOld>> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+  public SafeFuture<Optional<BlobSidecarOld>> getBlobSidecar(
+      final SlotAndBlockRootAndBlobIndex key) {
     return SafeFuture.completedFuture(Optional.empty());
   }
 

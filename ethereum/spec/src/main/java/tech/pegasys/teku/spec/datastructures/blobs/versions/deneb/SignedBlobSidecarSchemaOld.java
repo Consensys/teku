@@ -34,7 +34,8 @@ public class SignedBlobSidecarSchemaOld
     return new SignedBlobSidecarSchemaOld(blobSidecarSchema);
   }
 
-  public SignedBlobSidecarOld create(final BlobSidecarOld blobSidecar, final BLSSignature signature) {
+  public SignedBlobSidecarOld create(
+      final BlobSidecarOld blobSidecar, final BLSSignature signature) {
     return new SignedBlobSidecarOld(this, blobSidecar, signature);
   }
 

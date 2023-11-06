@@ -200,11 +200,13 @@ public class GetBlobSidecarsIntegrationTest extends AbstractDataBackedRestAPIInt
     final DeserializableTypeDefinition<List<BlobSidecarOld>> jsonTypeDefinition =
         SharedApiTypes.withDataWrapper("blobSidecars", listOf(blobSidecarTypeDefinition));
 
-    final List<BlobSidecarOld> result = JsonUtil.parse(response.body().string(), jsonTypeDefinition);
+    final List<BlobSidecarOld> result =
+        JsonUtil.parse(response.body().string(), jsonTypeDefinition);
     return result;
   }
 
-  private List<BlobSidecarOld> parseBlobSidecarsFromSsz(final Response response) throws IOException {
+  private List<BlobSidecarOld> parseBlobSidecarsFromSsz(final Response response)
+      throws IOException {
     final BlobSidecarSchemaOld blobSidecarSchema =
         SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions()).getBlobSidecarSchema();
     SszListSchema<BlobSidecarOld, ? extends SszList<BlobSidecarOld>> blobSidecarSszListSchema =

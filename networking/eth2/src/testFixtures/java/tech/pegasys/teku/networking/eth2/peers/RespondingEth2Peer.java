@@ -213,7 +213,9 @@ public class RespondingEth2Peer implements Eth2Peer {
 
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRange(
-      final UInt64 startSlot, final UInt64 count, final RpcResponseListener<BlobSidecarOld> listener) {
+      final UInt64 startSlot,
+      final UInt64 count,
+      final RpcResponseListener<BlobSidecarOld> listener) {
     final long lastSlotExclusive = startSlot.longValue() + count.longValue();
 
     final PendingRequestHandler<Void, BlobSidecarOld> handler =
@@ -244,7 +246,8 @@ public class RespondingEth2Peer implements Eth2Peer {
 
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRoot(
-      final List<BlobIdentifier> blobIdentifiers, final RpcResponseListener<BlobSidecarOld> listener) {
+      final List<BlobIdentifier> blobIdentifiers,
+      final RpcResponseListener<BlobSidecarOld> listener) {
     final PendingRequestHandler<Void, BlobSidecarOld> handler =
         PendingRequestHandler.createForBatchBlobSidecarRequest(
             listener,
@@ -331,7 +334,7 @@ public class RespondingEth2Peer implements Eth2Peer {
 
   @Override
   public Optional<RequestApproval> approveBlobSidecarsRequest(
-          final ResponseCallback<BlobSidecarOld> callback, final long blobSidecarsCount) {
+      final ResponseCallback<BlobSidecarOld> callback, final long blobSidecarsCount) {
     return Optional.of(
         new RequestApproval.RequestApprovalBuilder().timeSeconds(ZERO).objectsCount(0).build());
   }

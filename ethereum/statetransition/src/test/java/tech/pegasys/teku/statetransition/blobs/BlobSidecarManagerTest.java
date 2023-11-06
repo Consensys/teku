@@ -78,7 +78,8 @@ public class BlobSidecarManagerTest {
   private final ReceivedBlobSidecarListener receivedBlobSidecarListener =
       mock(ReceivedBlobSidecarListener.class);
 
-  private final SignedBlobSidecarOld signedBlobSidecar = dataStructureUtil.randomSignedBlobSidecar();
+  private final SignedBlobSidecarOld signedBlobSidecar =
+      dataStructureUtil.randomSignedBlobSidecar();
   private final BlobSidecarOld blobSidecar = signedBlobSidecar.getBlobSidecar();
 
   @BeforeEach

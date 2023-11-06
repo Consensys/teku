@@ -159,7 +159,9 @@ public class BlobSidecarGossipManager implements GossipManager {
     private final OperationProcessor<SignedBlobSidecarOld> delegate;
 
     private TopicSubnetIdAwareOperationProcessor(
-        final Spec spec, final int subnetId, final OperationProcessor<SignedBlobSidecarOld> delegate) {
+        final Spec spec,
+        final int subnetId,
+        final OperationProcessor<SignedBlobSidecarOld> delegate) {
       this.spec = spec;
       this.subnetId = subnetId;
       this.delegate = delegate;
@@ -167,7 +169,7 @@ public class BlobSidecarGossipManager implements GossipManager {
 
     @Override
     public SafeFuture<InternalValidationResult> process(
-            final SignedBlobSidecarOld blobSidecar, final Optional<UInt64> arrivalTimestamp) {
+        final SignedBlobSidecarOld blobSidecar, final Optional<UInt64> arrivalTimestamp) {
       final int blobSidecarSubnet = spec.computeSubnetForBlobSidecar(blobSidecar).intValue();
       if (blobSidecarSubnet != subnetId) {
         return SafeFuture.completedFuture(

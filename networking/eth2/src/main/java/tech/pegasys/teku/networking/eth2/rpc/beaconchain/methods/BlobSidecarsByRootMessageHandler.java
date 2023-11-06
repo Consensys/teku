@@ -199,7 +199,8 @@ public class BlobSidecarsByRootMessageHandler
             });
   }
 
-  private SafeFuture<Optional<BlobSidecarOld>> retrieveBlobSidecar(final BlobIdentifier identifier) {
+  private SafeFuture<Optional<BlobSidecarOld>> retrieveBlobSidecar(
+      final BlobIdentifier identifier) {
     return combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(
         identifier.getBlockRoot(), identifier.getIndex());
   }

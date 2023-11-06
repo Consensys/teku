@@ -83,7 +83,8 @@ public class GetAllBlobSidecarsAtSlotIntegrationTest
 
     assertThat(nonCanonicalBlobSidecarResponse.code()).isEqualTo(SC_OK);
 
-    final List<BlobSidecarOld> nonCanonicalResult = parseBlobSidecars(nonCanonicalBlobSidecarResponse);
+    final List<BlobSidecarOld> nonCanonicalResult =
+        parseBlobSidecars(nonCanonicalBlobSidecarResponse);
     assertThat(nonCanonicalResult).isEqualTo(nonCanonicalBlobSidecars);
 
     final Response canonicalBlobSidecarResponse = get(canonicalBlock.getSlot());
@@ -172,11 +173,13 @@ public class GetAllBlobSidecarsAtSlotIntegrationTest
     final DeserializableTypeDefinition<List<BlobSidecarOld>> jsonTypeDefinition =
         SharedApiTypes.withDataWrapper("blobSidecars", listOf(blobSidecarTypeDefinition));
 
-    final List<BlobSidecarOld> result = JsonUtil.parse(response.body().string(), jsonTypeDefinition);
+    final List<BlobSidecarOld> result =
+        JsonUtil.parse(response.body().string(), jsonTypeDefinition);
     return result;
   }
 
-  private List<BlobSidecarOld> parseBlobSidecarsFromSsz(final Response response) throws IOException {
+  private List<BlobSidecarOld> parseBlobSidecarsFromSsz(final Response response)
+      throws IOException {
     final BlobSidecarSchemaOld blobSidecarSchema =
         SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions()).getBlobSidecarSchema();
     SszListSchema<BlobSidecarOld, ? extends SszList<BlobSidecarOld>> blobSidecarSszListSchema =

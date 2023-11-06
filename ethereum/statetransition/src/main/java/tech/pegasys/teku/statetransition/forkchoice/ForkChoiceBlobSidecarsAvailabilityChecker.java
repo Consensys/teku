@@ -118,7 +118,8 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
   }
 
   @Override
-  public BlobSidecarsAndValidationResult validateImmediately(final List<BlobSidecarOld> blobSidecars) {
+  public BlobSidecarsAndValidationResult validateImmediately(
+      final List<BlobSidecarOld> blobSidecars) {
 
     final List<KZGCommitment> kzgCommitmentsFromBlock = kzgCommitmentsFromBlockSupplier.get();
 

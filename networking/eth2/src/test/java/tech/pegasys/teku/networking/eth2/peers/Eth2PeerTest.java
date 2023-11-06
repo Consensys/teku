@@ -167,8 +167,8 @@ class Eth2PeerTest {
   @SuppressWarnings({"unchecked", "FutureReturnValueIgnored"})
   public void shouldModifyRequestSpanningTheDenebForkTransition() {
 
-    final Eth2RpcMethod<BlobSidecarsByRangeRequestMessage, BlobSidecarOld> blobSidecarsByRangeMethod =
-        mock(Eth2RpcMethod.class);
+    final Eth2RpcMethod<BlobSidecarsByRangeRequestMessage, BlobSidecarOld>
+        blobSidecarsByRangeMethod = mock(Eth2RpcMethod.class);
 
     final RpcStreamController<RpcRequestHandler> rpcStreamController =
         mock(RpcStreamController.class);
@@ -197,8 +197,8 @@ class Eth2PeerTest {
   @SuppressWarnings({"unchecked", "FutureReturnValueIgnored"})
   public void shouldSetCountToZeroWhenRequestIsPreDeneb() {
 
-    final Eth2RpcMethod<BlobSidecarsByRangeRequestMessage, BlobSidecarOld> blobSidecarsByRangeMethod =
-        mock(Eth2RpcMethod.class);
+    final Eth2RpcMethod<BlobSidecarsByRangeRequestMessage, BlobSidecarOld>
+        blobSidecarsByRangeMethod = mock(Eth2RpcMethod.class);
 
     final RpcStreamController<RpcRequestHandler> rpcStreamController =
         mock(RpcStreamController.class);

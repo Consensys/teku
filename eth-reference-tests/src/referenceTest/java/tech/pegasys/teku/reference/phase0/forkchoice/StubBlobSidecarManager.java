@@ -55,7 +55,7 @@ class StubBlobSidecarManager implements BlobSidecarManager {
 
   @Override
   public SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
-          final SignedBlobSidecarOld signedBlobSidecar, final Optional<UInt64> arrivalTimestamp) {
+      final SignedBlobSidecarOld signedBlobSidecar, final Optional<UInt64> arrivalTimestamp) {
     return SafeFuture.failedFuture(
         new UnsupportedOperationException("Not available in fork choice reference tests"));
   }

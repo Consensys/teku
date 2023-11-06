@@ -113,7 +113,8 @@ public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegra
 
     final UInt64 slotCount = targetSlot.minus(startSlot).increment();
     // call and check
-    final List<BlobSidecarOld> blobSidecars = requestBlobSidecarsByRange(peer, startSlot, slotCount);
+    final List<BlobSidecarOld> blobSidecars =
+        requestBlobSidecarsByRange(peer, startSlot, slotCount);
     assertThat(blobSidecars).containsExactlyInAnyOrderElementsOf(expectedCanonicalBlobSidecars);
     assertThat(blobSidecars).doesNotContainAnyElementsOf(nonCanonicalBlobSidecars);
   }

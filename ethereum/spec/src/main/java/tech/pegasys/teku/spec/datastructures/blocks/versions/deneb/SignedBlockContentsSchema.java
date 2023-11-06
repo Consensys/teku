@@ -55,7 +55,8 @@ public class SignedBlockContentsSchema
   }
 
   public SignedBlockContents create(
-      final SignedBeaconBlock signedBeaconBlock, final List<SignedBlobSidecarOld> signedBlobSidecars) {
+      final SignedBeaconBlock signedBeaconBlock,
+      final List<SignedBlobSidecarOld> signedBlobSidecars) {
     return new SignedBlockContents(this, signedBeaconBlock, signedBlobSidecars);
   }
 

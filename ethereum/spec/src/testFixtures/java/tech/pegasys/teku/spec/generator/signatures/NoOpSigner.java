@@ -50,7 +50,7 @@ public abstract class NoOpSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signBlobSidecar(
-          final BlobSidecarOld blobSidecar, final ForkInfo forkInfo) {
+      final BlobSidecarOld blobSidecar, final ForkInfo forkInfo) {
     return new SafeFuture<>();
   }
 

@@ -198,7 +198,7 @@ public class CombinedChainDataClient {
   }
 
   private List<BlobSidecarOld> filterBlobSidecars(
-          final List<BlobSidecarOld> blobSidecars, final List<UInt64> indices) {
+      final List<BlobSidecarOld> blobSidecars, final List<UInt64> indices) {
     if (indices.isEmpty()) {
       return blobSidecars;
     }

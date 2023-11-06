@@ -2649,7 +2649,8 @@ public class DatabaseTest {
     assertThat(blobSidecarsDb).isEqualTo(blobSidecars);
   }
 
-  private void assertNonCanonicalBlobSidecars(final Map<UInt64, List<BlobSidecarOld>> blobSidecars) {
+  private void assertNonCanonicalBlobSidecars(
+      final Map<UInt64, List<BlobSidecarOld>> blobSidecars) {
     final List<UInt64> slots = blobSidecars.keySet().stream().sorted().collect(toList());
     if (slots.isEmpty()) {
       return;
