@@ -28,7 +28,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 public class LocalSlashingProtector implements SlashingProtector {
 
   private final Map<BLSPublicKey, ValidatorSigningRecord> signingRecords = new HashMap<>();
-
+  private final Map<BLSPublicKey, Path> slashingProtectionPath = new HashMap<>();
   private final SyncDataAccessor dataAccessor;
   private final Path slashingProtectionBaseDir;
 
@@ -106,7 +106,10 @@ public class LocalSlashingProtector implements SlashingProtector {
   }
 
   private Path validatorRecordPath(final BLSPublicKey validator) {
-    return slashingProtectionBaseDir.resolve(
-        validator.toBytesCompressed().toUnprefixedHexString() + ".yml");
+    return slashingProtectionPath.computeIfAbsent(
+        validator,
+        __ ->
+            slashingProtectionBaseDir.resolve(
+                validator.toBytesCompressed().toUnprefixedHexString() + ".yml"));
   }
 }
