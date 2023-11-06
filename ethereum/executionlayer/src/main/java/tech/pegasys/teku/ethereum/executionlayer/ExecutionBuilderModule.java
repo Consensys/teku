@@ -305,7 +305,7 @@ public class ExecutionBuilderModule {
     if (maybeProcessedSlot.isEmpty()) {
       LOG.warn(
           "Blinded block seems to not be built via either builder or local EL. Trying to unblind it via builder endpoint anyway.");
-      return getPayloadFromBuilder(signedBlindedBlockContainer);
+      return getPayloadFromBuilder(signedBlindedBlockContainer.getSignedBlock());
     }
 
     final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture =
