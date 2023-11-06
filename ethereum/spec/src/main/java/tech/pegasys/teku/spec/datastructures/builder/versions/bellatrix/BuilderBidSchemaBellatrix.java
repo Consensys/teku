@@ -14,8 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix;
 
 import java.util.function.Consumer;
-import org.apache.tuweni.units.bigints.UInt256;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
@@ -41,14 +39,6 @@ public class BuilderBidSchemaBellatrix
             "header", SszSchema.as(ExecutionPayloadHeader.class, executionPayloadHeaderSchema)),
         namedSchema("value", SszPrimitiveSchemas.UINT256_SCHEMA),
         namedSchema("pubkey", SszPublicKeySchema.INSTANCE));
-  }
-
-  public BuilderBidBellatrix create(
-      final ExecutionPayloadHeader executionPayloadHeader,
-      final UInt256 value,
-      final BLSPublicKey publicKey) {
-    return new BuilderBidBellatrix(
-        this, executionPayloadHeader, SszUInt256.of(value), new SszPublicKey(publicKey));
   }
 
   @Override

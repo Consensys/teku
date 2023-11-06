@@ -17,13 +17,20 @@ import java.util.Optional;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 public interface BuilderBid extends SszContainer {
 
   ExecutionPayloadHeader getHeader();
 
-  Optional<BlindedBlobsBundle> getOptionalBlindedBlobsBundle();
+  // TODO: make sure removed after moving to sidecar inclusion proof
+  default Optional<BlindedBlobsBundle> getOptionalBlindedBlobsBundle() {
+    return Optional.empty();
+  }
+
+  Optional<SszList<SszKZGCommitment>> getOptionalBlobKzgCommitments();
 
   UInt256 getValue();
 

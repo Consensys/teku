@@ -378,7 +378,7 @@ public class ExecutionBuilderModule {
             () ->
                 new RuntimeException(
                     "Unable to get payload from builder: builder endpoint not available"))
-        .getPayload(signedBlindedBlockContainer)
+        .getPayload(signedBlindedBlockContainer.getSignedBlock())
         .thenApply(ResponseUnwrapper::unwrapBuilderResponseOrThrow)
         .thenPeek(
             builderPayload -> {
