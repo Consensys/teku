@@ -305,9 +305,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     prepareEngineGetPayloadResponseWithBlobs(executionPayloadContext, executionPayloadValue, slot);
 
     final HeaderWithFallbackData expectedResult =
-        HeaderWithFallbackData.create(
-            builderBid.getHeader(),
-            Optional.of(builderBid.getOptionalBlindedBlobsBundle().orElseThrow()));
+        HeaderWithFallbackData.create(builderBid.getHeader(), Optional.empty());
 
     final ExecutionPayloadResult executionPayloadResult =
         blockProductionManager.initiateBlockAndBlobsProduction(
