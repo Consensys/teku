@@ -39,8 +39,8 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchemaOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -64,13 +64,13 @@ public class GetAllBlobSidecarsAtSlotIntegrationTest
     final ChainBuilder fork = chainBuilder.fork();
     final SignedBlockAndState nonCanonicalBlock = fork.generateNextBlock(chainUpdater.blockOptions);
 
-    final List<BlobSidecar> nonCanonicalBlobSidecars =
+    final List<BlobSidecarOld> nonCanonicalBlobSidecars =
         fork.getBlobSidecars(nonCanonicalBlock.getRoot());
     chainUpdater.saveBlock(nonCanonicalBlock, nonCanonicalBlobSidecars);
 
     final SignedBlockAndState canonicalBlock =
         chainBuilder.generateNextBlock(1, chainUpdater.blockOptions);
-    final List<BlobSidecar> canonicalBlobSidecars =
+    final List<BlobSidecarOld> canonicalBlobSidecars =
         chainBuilder.getBlobSidecars(canonicalBlock.getRoot());
     chainUpdater.saveBlock(canonicalBlock, canonicalBlobSidecars);
     chainUpdater.updateBestBlock(canonicalBlock);
@@ -83,14 +83,14 @@ public class GetAllBlobSidecarsAtSlotIntegrationTest
 
     assertThat(nonCanonicalBlobSidecarResponse.code()).isEqualTo(SC_OK);
 
-    final List<BlobSidecar> nonCanonicalResult = parseBlobSidecars(nonCanonicalBlobSidecarResponse);
+    final List<BlobSidecarOld> nonCanonicalResult = parseBlobSidecars(nonCanonicalBlobSidecarResponse);
     assertThat(nonCanonicalResult).isEqualTo(nonCanonicalBlobSidecars);
 
     final Response canonicalBlobSidecarResponse = get(canonicalBlock.getSlot());
 
     assertThat(canonicalBlobSidecarResponse.code()).isEqualTo(SC_OK);
 
-    final List<BlobSidecar> canonicalResult = parseBlobSidecars(canonicalBlobSidecarResponse);
+    final List<BlobSidecarOld> canonicalResult = parseBlobSidecars(canonicalBlobSidecarResponse);
     assertThat(canonicalResult).isEqualTo(canonicalBlobSidecars);
   }
 
@@ -105,13 +105,13 @@ public class GetAllBlobSidecarsAtSlotIntegrationTest
     final ChainBuilder fork = chainBuilder.fork();
     final SignedBlockAndState nonCanonicalBlock = fork.generateNextBlock(chainUpdater.blockOptions);
 
-    final List<BlobSidecar> nonCanonicalBlobSidecars =
+    final List<BlobSidecarOld> nonCanonicalBlobSidecars =
         fork.getBlobSidecars(nonCanonicalBlock.getRoot());
     chainUpdater.saveBlock(nonCanonicalBlock, nonCanonicalBlobSidecars);
 
     final SignedBlockAndState canonicalBlock =
         chainBuilder.generateNextBlock(1, chainUpdater.blockOptions);
-    final List<BlobSidecar> canonicalBlobSidecars =
+    final List<BlobSidecarOld> canonicalBlobSidecars =
         chainBuilder.getBlobSidecars(canonicalBlock.getRoot());
     chainUpdater.saveBlock(canonicalBlock, canonicalBlobSidecars);
     chainUpdater.updateBestBlock(canonicalBlock);
@@ -124,7 +124,7 @@ public class GetAllBlobSidecarsAtSlotIntegrationTest
             OCTET_STREAM);
     assertThat(nonCanonicalBlobSidecarResponse.code()).isEqualTo(SC_OK);
 
-    final List<BlobSidecar> nonCanonicalResult =
+    final List<BlobSidecarOld> nonCanonicalResult =
         parseBlobSidecarsFromSsz(nonCanonicalBlobSidecarResponse);
     assertThat(nonCanonicalResult).isEqualTo(nonCanonicalBlobSidecars);
 
@@ -132,7 +132,7 @@ public class GetAllBlobSidecarsAtSlotIntegrationTest
 
     assertThat(canonicalBlobSidecarResponse.code()).isEqualTo(SC_OK);
 
-    final List<BlobSidecar> canonicalResult = parseBlobSidecars(canonicalBlobSidecarResponse);
+    final List<BlobSidecarOld> canonicalResult = parseBlobSidecars(canonicalBlobSidecarResponse);
     assertThat(canonicalResult).isEqualTo(canonicalBlobSidecars);
   }
 
@@ -164,25 +164,25 @@ public class GetAllBlobSidecarsAtSlotIntegrationTest
     return getResponse(GetAllBlobSidecarsAtSlot.ROUTE.replace("{slot}", slot.toString()));
   }
 
-  private List<BlobSidecar> parseBlobSidecars(final Response response) throws IOException {
-    final DeserializableTypeDefinition<BlobSidecar> blobSidecarTypeDefinition =
+  private List<BlobSidecarOld> parseBlobSidecars(final Response response) throws IOException {
+    final DeserializableTypeDefinition<BlobSidecarOld> blobSidecarTypeDefinition =
         SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions())
             .getBlobSidecarSchema()
             .getJsonTypeDefinition();
-    final DeserializableTypeDefinition<List<BlobSidecar>> jsonTypeDefinition =
+    final DeserializableTypeDefinition<List<BlobSidecarOld>> jsonTypeDefinition =
         SharedApiTypes.withDataWrapper("blobSidecars", listOf(blobSidecarTypeDefinition));
 
-    final List<BlobSidecar> result = JsonUtil.parse(response.body().string(), jsonTypeDefinition);
+    final List<BlobSidecarOld> result = JsonUtil.parse(response.body().string(), jsonTypeDefinition);
     return result;
   }
 
-  private List<BlobSidecar> parseBlobSidecarsFromSsz(final Response response) throws IOException {
-    final BlobSidecarSchema blobSidecarSchema =
+  private List<BlobSidecarOld> parseBlobSidecarsFromSsz(final Response response) throws IOException {
+    final BlobSidecarSchemaOld blobSidecarSchema =
         SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions()).getBlobSidecarSchema();
-    SszListSchema<BlobSidecar, ? extends SszList<BlobSidecar>> blobSidecarSszListSchema =
+    SszListSchema<BlobSidecarOld, ? extends SszList<BlobSidecarOld>> blobSidecarSszListSchema =
         SszListSchema.create(
             blobSidecarSchema, SpecConfigDeneb.required(specConfig).getMaxBlobsPerBlock());
-    final List<BlobSidecar> result =
+    final List<BlobSidecarOld> result =
         blobSidecarSszListSchema.sszDeserialize(Bytes.of(response.body().bytes())).asList();
 
     return result;

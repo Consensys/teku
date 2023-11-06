@@ -19,12 +19,12 @@ import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 
 public class BlobSidecarsAndValidationResult {
 
   private final BlobSidecarsValidationResult validationResult;
-  private final List<BlobSidecar> blobSidecars;
+  private final List<BlobSidecarOld> blobSidecars;
   private final Optional<Throwable> cause;
 
   public static final BlobSidecarsAndValidationResult NOT_AVAILABLE =
@@ -38,19 +38,19 @@ public class BlobSidecarsAndValidationResult {
   public static final SafeFuture<BlobSidecarsAndValidationResult> NOT_REQUIRED_RESULT_FUTURE =
       SafeFuture.completedFuture(NOT_REQUIRED);
 
-  public static BlobSidecarsAndValidationResult validResult(final List<BlobSidecar> blobSidecars) {
+  public static BlobSidecarsAndValidationResult validResult(final List<BlobSidecarOld> blobSidecars) {
     return new BlobSidecarsAndValidationResult(
         BlobSidecarsValidationResult.VALID, blobSidecars, Optional.empty());
   }
 
   public static BlobSidecarsAndValidationResult invalidResult(
-      final List<BlobSidecar> blobSidecars) {
+      final List<BlobSidecarOld> blobSidecars) {
     return new BlobSidecarsAndValidationResult(
         BlobSidecarsValidationResult.INVALID, blobSidecars, Optional.empty());
   }
 
   public static BlobSidecarsAndValidationResult invalidResult(
-      final List<BlobSidecar> blobSidecars, final Throwable cause) {
+          final List<BlobSidecarOld> blobSidecars, final Throwable cause) {
     return new BlobSidecarsAndValidationResult(
         BlobSidecarsValidationResult.INVALID, blobSidecars, Optional.of(cause));
   }
@@ -62,7 +62,7 @@ public class BlobSidecarsAndValidationResult {
 
   private BlobSidecarsAndValidationResult(
       final BlobSidecarsValidationResult validationResult,
-      final List<BlobSidecar> blobSidecars,
+      final List<BlobSidecarOld> blobSidecars,
       final Optional<Throwable> cause) {
     this.validationResult = validationResult;
     this.blobSidecars = blobSidecars;
@@ -73,7 +73,7 @@ public class BlobSidecarsAndValidationResult {
     return validationResult;
   }
 
-  public List<BlobSidecar> getBlobSidecars() {
+  public List<BlobSidecarOld> getBlobSidecars() {
     return blobSidecars;
   }
 

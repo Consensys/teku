@@ -53,9 +53,9 @@ import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -388,7 +388,7 @@ public class Spec {
         .sszDeserialize(serializedBlobs);
   }
 
-  public BlobSidecar deserializeBlobSidecar(final Bytes serializedBlobSidecar, final UInt64 slot) {
+  public BlobSidecarOld deserializeBlobSidecar(final Bytes serializedBlobSidecar, final UInt64 slot) {
     return atSlot(slot)
         .getSchemaDefinitions()
         .toVersionDeneb()
@@ -441,7 +441,7 @@ public class Spec {
     return atBlock(block).miscHelpers().computeSigningRoot(block, domain);
   }
 
-  public Bytes computeSigningRoot(BlobSidecar blobSidecar, Bytes32 domain) {
+  public Bytes computeSigningRoot(BlobSidecarOld blobSidecar, Bytes32 domain) {
     return atSlot(blobSidecar.getSlot()).miscHelpers().computeSigningRoot(blobSidecar, domain);
   }
 
@@ -755,7 +755,7 @@ public class Spec {
             });
   }
 
-  public SafeFuture<List<SignedBlobSidecar>> unblindSignedBlindedBlobSidecars(
+  public SafeFuture<List<SignedBlobSidecarOld>> unblindSignedBlindedBlobSidecars(
       final UInt64 slot,
       final List<SignedBlindedBlobSidecar> blindedBlobSidecars,
       final Consumer<SignedBlobSidecarsUnblinder> blobSidecarsUnblinderConsumer) {
@@ -969,7 +969,7 @@ public class Spec {
     return getSpecConfigDeneb(slot).map(SpecConfigDeneb::getMaxBlobsPerBlock);
   }
 
-  public UInt64 computeSubnetForBlobSidecar(final SignedBlobSidecar signedBlobSidecar) {
+  public UInt64 computeSubnetForBlobSidecar(final SignedBlobSidecarOld signedBlobSidecar) {
     final SpecConfig config = atSlot(signedBlobSidecar.getSlot()).getConfig();
     final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
     return signedBlobSidecar

@@ -20,26 +20,26 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockFields;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
-public class SignedBlobSidecarSchema
-    extends ContainerSchema2<SignedBlobSidecar, BlobSidecar, SszSignature> {
+public class SignedBlobSidecarSchemaOld
+    extends ContainerSchema2<SignedBlobSidecarOld, BlobSidecarOld, SszSignature> {
 
-  SignedBlobSidecarSchema(final BlobSidecarSchema blobSidecarSchema) {
+  SignedBlobSidecarSchemaOld(final BlobSidecarSchemaOld blobSidecarSchema) {
     super(
         "SignedBlobSidecar",
         namedSchema("message", blobSidecarSchema),
         namedSchema(SignedBeaconBlockFields.SIGNATURE, SszSignatureSchema.INSTANCE));
   }
 
-  public static SignedBlobSidecarSchema create(final BlobSidecarSchema blobSidecarSchema) {
-    return new SignedBlobSidecarSchema(blobSidecarSchema);
+  public static SignedBlobSidecarSchemaOld create(final BlobSidecarSchemaOld blobSidecarSchema) {
+    return new SignedBlobSidecarSchemaOld(blobSidecarSchema);
   }
 
-  public SignedBlobSidecar create(final BlobSidecar blobSidecar, final BLSSignature signature) {
-    return new SignedBlobSidecar(this, blobSidecar, signature);
+  public SignedBlobSidecarOld create(final BlobSidecarOld blobSidecar, final BLSSignature signature) {
+    return new SignedBlobSidecarOld(this, blobSidecar, signature);
   }
 
   @Override
-  public SignedBlobSidecar createFromBackingNode(final TreeNode node) {
-    return new SignedBlobSidecar(this, node);
+  public SignedBlobSidecarOld createFromBackingNode(final TreeNode node) {
+    return new SignedBlobSidecarOld(this, node);
   }
 }

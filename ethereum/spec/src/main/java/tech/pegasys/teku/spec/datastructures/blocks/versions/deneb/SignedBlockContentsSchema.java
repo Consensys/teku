@@ -20,14 +20,14 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarSchemaOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
 
 public class SignedBlockContentsSchema
-    extends ContainerSchema2<SignedBlockContents, SignedBeaconBlock, SszList<SignedBlobSidecar>>
+    extends ContainerSchema2<SignedBlockContents, SignedBeaconBlock, SszList<SignedBlobSidecarOld>>
     implements SignedBlockContainerSchema<SignedBlockContents> {
 
   static final SszFieldName FIELD_SIGNED_BLOB_SIDECARS = () -> "signed_blob_sidecars";
@@ -35,7 +35,7 @@ public class SignedBlockContentsSchema
   SignedBlockContentsSchema(
       final String containerName,
       final SpecConfigDeneb specConfig,
-      final SignedBlobSidecarSchema signedBlobSidecarSchema,
+      final SignedBlobSidecarSchemaOld signedBlobSidecarSchema,
       final SignedBeaconBlockSchema signedBeaconBlockSchema) {
     super(
         containerName,
@@ -47,7 +47,7 @@ public class SignedBlockContentsSchema
 
   public static SignedBlockContentsSchema create(
       final SpecConfigDeneb specConfig,
-      final SignedBlobSidecarSchema signedBlobSidecarSchema,
+      final SignedBlobSidecarSchemaOld signedBlobSidecarSchema,
       final SignedBeaconBlockSchema signedBeaconBlockSchema,
       final String containerName) {
     return new SignedBlockContentsSchema(
@@ -55,7 +55,7 @@ public class SignedBlockContentsSchema
   }
 
   public SignedBlockContents create(
-      final SignedBeaconBlock signedBeaconBlock, final List<SignedBlobSidecar> signedBlobSidecars) {
+      final SignedBeaconBlock signedBeaconBlock, final List<SignedBlobSidecarOld> signedBlobSidecars) {
     return new SignedBlockContents(this, signedBeaconBlock, signedBlobSidecars);
   }
 
@@ -69,8 +69,8 @@ public class SignedBlockContentsSchema
   }
 
   @SuppressWarnings("unchecked")
-  public SszListSchema<SignedBlobSidecar, ?> getSignedBlobSidecarsSchema() {
-    return (SszListSchema<SignedBlobSidecar, ?>)
+  public SszListSchema<SignedBlobSidecarOld, ?> getSignedBlobSidecarsSchema() {
+    return (SszListSchema<SignedBlobSidecarOld, ?>)
         getChildSchema(getFieldIndex(FIELD_SIGNED_BLOB_SIDECARS));
   }
 }

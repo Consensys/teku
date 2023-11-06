@@ -18,12 +18,12 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 
 public class SignedBlockContents
-    extends Container2<SignedBlockContents, SignedBeaconBlock, SszList<SignedBlobSidecar>>
+    extends Container2<SignedBlockContents, SignedBeaconBlock, SszList<SignedBlobSidecarOld>>
     implements SignedBlockContainer {
 
   SignedBlockContents(final SignedBlockContentsSchema type, final TreeNode backingNode) {
@@ -33,7 +33,7 @@ public class SignedBlockContents
   public SignedBlockContents(
       final SignedBlockContentsSchema schema,
       final SignedBeaconBlock signedBeaconBlock,
-      final List<SignedBlobSidecar> signedBlobSidecars) {
+      final List<SignedBlobSidecarOld> signedBlobSidecars) {
     super(
         schema,
         signedBeaconBlock,
@@ -46,7 +46,7 @@ public class SignedBlockContents
   }
 
   @Override
-  public Optional<List<SignedBlobSidecar>> getSignedBlobSidecars() {
+  public Optional<List<SignedBlobSidecarOld>> getSignedBlobSidecars() {
     return Optional.of(getField1().asList());
   }
 }

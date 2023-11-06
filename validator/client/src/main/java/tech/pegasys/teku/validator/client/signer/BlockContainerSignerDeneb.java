@@ -18,9 +18,9 @@ import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -61,7 +61,7 @@ public class BlockContainerSignerDeneb implements BlockContainerSigner {
         .orElseGet(
             // Unblinded flow
             () -> {
-              final List<BlobSidecar> blobSidecars =
+              final List<BlobSidecarOld> blobSidecars =
                   unsignedBlockContainer.getBlobSidecars().orElse(Collections.emptyList());
               return signBlock(unsignedBlock, validator, forkInfo)
                   .thenCombine(
@@ -71,7 +71,7 @@ public class BlockContainerSignerDeneb implements BlockContainerSigner {
   }
 
   private SignedBlockContainer createSignedBlockContents(
-      final SignedBeaconBlock signedBlock, final List<SignedBlobSidecar> signedBlobSidecars) {
+      final SignedBeaconBlock signedBlock, final List<SignedBlobSidecarOld> signedBlobSidecars) {
     return schemaDefinitions.getSignedBlockContentsSchema().create(signedBlock, signedBlobSidecars);
   }
 
@@ -91,8 +91,8 @@ public class BlockContainerSignerDeneb implements BlockContainerSigner {
         .thenApply(signature -> SignedBeaconBlock.create(spec, unsignedBlock, signature));
   }
 
-  private SafeFuture<List<SignedBlobSidecar>> signBlobSidecars(
-      final List<BlobSidecar> unsignedBlobSidecars,
+  private SafeFuture<List<SignedBlobSidecarOld>> signBlobSidecars(
+      final List<BlobSidecarOld> unsignedBlobSidecars,
       final Validator validator,
       final ForkInfo forkInfo) {
     return SafeFuture.collectAll(
@@ -100,8 +100,8 @@ public class BlockContainerSignerDeneb implements BlockContainerSigner {
             .map(unsignedBlobSidecar -> signBlobSidecar(unsignedBlobSidecar, validator, forkInfo)));
   }
 
-  private SafeFuture<SignedBlobSidecar> signBlobSidecar(
-      final BlobSidecar unsignedBlobSidecar, final Validator validator, final ForkInfo forkInfo) {
+  private SafeFuture<SignedBlobSidecarOld> signBlobSidecar(
+          final BlobSidecarOld unsignedBlobSidecar, final Validator validator, final ForkInfo forkInfo) {
     return validator
         .getSigner()
         .signBlobSidecar(unsignedBlobSidecar, forkInfo)

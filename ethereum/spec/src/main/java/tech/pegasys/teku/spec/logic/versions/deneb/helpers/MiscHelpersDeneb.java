@@ -28,7 +28,7 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
@@ -62,7 +62,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
    * @return true if blob sidecar is valid
    */
   @Override
-  public boolean verifyBlobKzgProof(final KZG kzg, final BlobSidecar blobSidecar) {
+  public boolean verifyBlobKzgProof(final KZG kzg, final BlobSidecarOld blobSidecar) {
     return kzg.verifyBlobKzgProof(
         blobSidecar.getBlob().getBytes(),
         blobSidecar.getKZGCommitment(),
@@ -79,7 +79,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
    * @return true if all blob sidecars are valid
    */
   @Override
-  public boolean verifyBlobKzgProofBatch(final KZG kzg, final List<BlobSidecar> blobSidecars) {
+  public boolean verifyBlobKzgProofBatch(final KZG kzg, final List<BlobSidecarOld> blobSidecars) {
     final List<Bytes> blobs = new ArrayList<>();
     final List<KZGCommitment> kzgCommitments = new ArrayList<>();
     final List<KZGProof> kzgProofs = new ArrayList<>();
@@ -104,7 +104,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
    */
   @Override
   public void validateBlobSidecarsBatchAgainstBlock(
-      final List<BlobSidecar> blobSidecars,
+      final List<BlobSidecarOld> blobSidecars,
       final BeaconBlock block,
       final List<KZGCommitment> kzgCommitmentsFromBlock) {
 
@@ -165,7 +165,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
    */
   @Override
   public void verifyBlobSidecarCompleteness(
-      final List<BlobSidecar> completeVerifiedBlobSidecars,
+      final List<BlobSidecarOld> completeVerifiedBlobSidecars,
       final List<KZGCommitment> kzgCommitmentsFromBlock)
       throws IllegalArgumentException {
     checkArgument(
@@ -175,7 +175,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
     IntStream.range(0, completeVerifiedBlobSidecars.size())
         .forEach(
             index -> {
-              final BlobSidecar blobSidecar = completeVerifiedBlobSidecars.get(index);
+              final BlobSidecarOld blobSidecar = completeVerifiedBlobSidecars.get(index);
               final UInt64 blobIndex = blobSidecar.getIndex();
 
               checkArgument(

@@ -24,8 +24,8 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
@@ -43,7 +43,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   private final BlobSidecarGossipValidator validator;
   private final KZG kzg;
   private final BlobSidecarPool blobSidecarPool;
-  private final FutureItems<SignedBlobSidecar> futureBlobSidecars;
+  private final FutureItems<SignedBlobSidecarOld> futureBlobSidecars;
   private final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots;
 
   private final Subscribers<ReceivedBlobSidecarListener> receivedBlobSidecarSubscribers =
@@ -56,7 +56,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
       final BlobSidecarPool blobSidecarPool,
       final BlobSidecarGossipValidator validator,
       final KZG kzg,
-      final FutureItems<SignedBlobSidecar> futureBlobSidecars,
+      final FutureItems<SignedBlobSidecarOld> futureBlobSidecars,
       final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots) {
     this.spec = spec;
     this.asyncRunner = asyncRunner;
@@ -71,7 +71,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   @Override
   @SuppressWarnings("FutureReturnValueIgnored")
   public SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
-      final SignedBlobSidecar signedBlobSidecar, final Optional<UInt64> arrivalTimestamp) {
+          final SignedBlobSidecarOld signedBlobSidecar, final Optional<UInt64> arrivalTimestamp) {
 
     final Optional<InternalValidationResult> maybeInvalid =
         Optional.ofNullable(
@@ -97,7 +97,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
               futureBlobSidecars.add(signedBlobSidecar);
               break;
             case ACCEPT:
-              final BlobSidecar blobSidecar = signedBlobSidecar.getBlobSidecar();
+              final BlobSidecarOld blobSidecar = signedBlobSidecar.getBlobSidecar();
               prepareForBlockImport(blobSidecar);
               break;
           }
@@ -107,7 +107,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   }
 
   @Override
-  public void prepareForBlockImport(final BlobSidecar blobSidecar) {
+  public void prepareForBlockImport(final BlobSidecarOld blobSidecar) {
     blobSidecarPool.onNewBlobSidecar(blobSidecar);
     receivedBlobSidecarSubscribers.forEach(s -> s.onBlobSidecarReceived(blobSidecar));
   }
@@ -139,7 +139,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
 
   @Override
   public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
-      final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
+      final SignedBeaconBlock block, final List<BlobSidecarOld> blobSidecars) {
     // Block is pre-Deneb, blobs are not supported yet
     if (block.getMessage().getBody().toVersionDeneb().isEmpty()) {
       return BlobSidecarsAndValidationResult.NOT_REQUIRED;

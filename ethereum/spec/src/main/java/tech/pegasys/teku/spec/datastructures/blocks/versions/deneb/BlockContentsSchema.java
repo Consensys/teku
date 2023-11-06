@@ -20,14 +20,14 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchemaOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
 
 public class BlockContentsSchema
-    extends ContainerSchema2<BlockContents, BeaconBlock, SszList<BlobSidecar>>
+    extends ContainerSchema2<BlockContents, BeaconBlock, SszList<BlobSidecarOld>>
     implements BlockContainerSchema<BlockContents> {
 
   static final SszFieldName FIELD_BLOB_SIDECARS = () -> "blob_sidecars";
@@ -36,7 +36,7 @@ public class BlockContentsSchema
       final String containerName,
       final SpecConfigDeneb specConfig,
       final BeaconBlockSchema beaconBlockSchema,
-      final BlobSidecarSchema blobSidecarSchema) {
+      final BlobSidecarSchemaOld blobSidecarSchema) {
     super(
         containerName,
         namedSchema("block", beaconBlockSchema),
@@ -48,12 +48,12 @@ public class BlockContentsSchema
   public static BlockContentsSchema create(
       final SpecConfigDeneb specConfig,
       final BeaconBlockSchema beaconBlockSchema,
-      final BlobSidecarSchema blobSidecarSchema,
+      final BlobSidecarSchemaOld blobSidecarSchema,
       final String containerName) {
     return new BlockContentsSchema(containerName, specConfig, beaconBlockSchema, blobSidecarSchema);
   }
 
-  public BlockContents create(final BeaconBlock beaconBlock, final List<BlobSidecar> blobSidecars) {
+  public BlockContents create(final BeaconBlock beaconBlock, final List<BlobSidecarOld> blobSidecars) {
     return new BlockContents(this, beaconBlock, blobSidecars);
   }
 
@@ -63,7 +63,7 @@ public class BlockContentsSchema
   }
 
   @SuppressWarnings("unchecked")
-  public SszListSchema<BlobSidecar, ?> getBlobSidecarsSchema() {
-    return (SszListSchema<BlobSidecar, ?>) getChildSchema(getFieldIndex(FIELD_BLOB_SIDECARS));
+  public SszListSchema<BlobSidecarOld, ?> getBlobSidecarsSchema() {
+    return (SszListSchema<BlobSidecarOld, ?>) getChildSchema(getFieldIndex(FIELD_BLOB_SIDECARS));
   }
 }

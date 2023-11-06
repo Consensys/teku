@@ -19,24 +19,24 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
-public class SignedBlobSidecar extends Container2<SignedBlobSidecar, BlobSidecar, SszSignature> {
+public class SignedBlobSidecarOld extends Container2<SignedBlobSidecarOld, BlobSidecarOld, SszSignature> {
 
-  SignedBlobSidecar(final SignedBlobSidecarSchema type, final TreeNode backingNode) {
+  SignedBlobSidecarOld(final SignedBlobSidecarSchemaOld type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public SignedBlobSidecar(
-      final SignedBlobSidecarSchema schema,
-      final BlobSidecar blobSidecar,
+  public SignedBlobSidecarOld(
+      final SignedBlobSidecarSchemaOld schema,
+      final BlobSidecarOld blobSidecar,
       final BLSSignature signature) {
     super(schema, blobSidecar, new SszSignature(signature));
   }
 
-  public BlobSidecar getMessage() {
+  public BlobSidecarOld getMessage() {
     return getField0();
   }
 
-  public BlobSidecar getBlobSidecar() {
+  public BlobSidecarOld getBlobSidecar() {
     return getField0();
   }
 

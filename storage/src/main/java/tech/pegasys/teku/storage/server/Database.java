@@ -26,7 +26,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -49,7 +49,7 @@ public interface Database extends AutoCloseable {
 
   void storeFinalizedBlocks(
       Collection<SignedBeaconBlock> blocks,
-      Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlot,
+      Map<SlotAndBlockRoot, List<BlobSidecarOld>> blobSidecarsBySlot,
       Optional<UInt64> maybeEarliestBlobSidecarSlot);
 
   void storeFinalizedState(BeaconState state, Bytes32 blockRoot);
@@ -58,13 +58,13 @@ public interface Database extends AutoCloseable {
 
   void updateWeakSubjectivityState(WeakSubjectivityUpdate weakSubjectivityUpdate);
 
-  void storeBlobSidecar(BlobSidecar blobSidecar);
+  void storeBlobSidecar(BlobSidecarOld blobSidecar);
 
-  void storeNonCanonicalBlobSidecar(BlobSidecar blobSidecar);
+  void storeNonCanonicalBlobSidecar(BlobSidecarOld blobSidecar);
 
-  Optional<BlobSidecar> getBlobSidecar(SlotAndBlockRootAndBlobIndex key);
+  Optional<BlobSidecarOld> getBlobSidecar(SlotAndBlockRootAndBlobIndex key);
 
-  Optional<BlobSidecar> getNonCanonicalBlobSidecar(SlotAndBlockRootAndBlobIndex key);
+  Optional<BlobSidecarOld> getNonCanonicalBlobSidecar(SlotAndBlockRootAndBlobIndex key);
 
   void removeBlobSidecars(SlotAndBlockRoot slotAndBlockRoot);
 
@@ -102,7 +102,7 @@ public interface Database extends AutoCloseable {
   }
 
   @MustBeClosed
-  Stream<BlobSidecar> streamBlobSidecars(SlotAndBlockRoot slotAndBlockRoot);
+  Stream<BlobSidecarOld> streamBlobSidecars(SlotAndBlockRoot slotAndBlockRoot);
 
   List<SlotAndBlockRootAndBlobIndex> getBlobSidecarKeys(SlotAndBlockRoot slotAndBlockRoot);
 

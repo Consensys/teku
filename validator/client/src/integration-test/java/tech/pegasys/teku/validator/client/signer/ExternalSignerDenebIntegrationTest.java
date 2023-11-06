@@ -29,7 +29,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 
 public class ExternalSignerDenebIntegrationTest extends AbstractExternalSignerIntegrationTest {
 
@@ -40,7 +40,7 @@ public class ExternalSignerDenebIntegrationTest extends AbstractExternalSignerIn
 
   @Test
   void shouldSignBlobSidecar() throws Exception {
-    final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
+    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecar();
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(

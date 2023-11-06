@@ -35,8 +35,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
@@ -62,7 +62,7 @@ public class BlobSidecarManagerTest {
   private final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots = new HashMap<>();
 
   @SuppressWarnings("unchecked")
-  private final FutureItems<SignedBlobSidecar> futureBlobSidecars = mock(FutureItems.class);
+  private final FutureItems<SignedBlobSidecarOld> futureBlobSidecars = mock(FutureItems.class);
 
   private final BlobSidecarManagerImpl blobSidecarManager =
       new BlobSidecarManagerImpl(
@@ -78,8 +78,8 @@ public class BlobSidecarManagerTest {
   private final ReceivedBlobSidecarListener receivedBlobSidecarListener =
       mock(ReceivedBlobSidecarListener.class);
 
-  private final SignedBlobSidecar signedBlobSidecar = dataStructureUtil.randomSignedBlobSidecar();
-  private final BlobSidecar blobSidecar = signedBlobSidecar.getBlobSidecar();
+  private final SignedBlobSidecarOld signedBlobSidecar = dataStructureUtil.randomSignedBlobSidecar();
+  private final BlobSidecarOld blobSidecar = signedBlobSidecar.getBlobSidecar();
 
   @BeforeEach
   void setUp() {
@@ -184,7 +184,7 @@ public class BlobSidecarManagerTest {
 
   @Test
   void onSlot_shouldInteractWithPoolAndFutureBlobs() {
-    final List<SignedBlobSidecar> futureBlobSidecarsList =
+    final List<SignedBlobSidecarOld> futureBlobSidecarsList =
         List.of(dataStructureUtil.randomSignedBlobSidecar());
 
     when(futureBlobSidecars.prune(UInt64.ONE)).thenReturn(futureBlobSidecarsList);

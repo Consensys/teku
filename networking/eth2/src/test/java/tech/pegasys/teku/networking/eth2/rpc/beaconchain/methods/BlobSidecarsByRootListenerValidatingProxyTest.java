@@ -31,7 +31,7 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -43,7 +43,7 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
   private final KZG kzg = mock(KZG.class);
 
   @SuppressWarnings("unchecked")
-  private final RpcResponseListener<BlobSidecar> listener = mock(RpcResponseListener.class);
+  private final RpcResponseListener<BlobSidecarOld> listener = mock(RpcResponseListener.class);
 
   @BeforeEach
   void setUp() {
@@ -68,15 +68,15 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
     listenerWrapper =
         new BlobSidecarsByRootListenerValidatingProxy(peer, spec, listener, kzg, blobIdentifiers);
 
-    final BlobSidecar blobSidecar10 =
+    final BlobSidecarOld blobSidecar10 =
         dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
-    final BlobSidecar blobSidecar11 =
+    final BlobSidecarOld blobSidecar11 =
         dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ONE);
-    final BlobSidecar blobSidecar2 =
+    final BlobSidecarOld blobSidecar2 =
         dataStructureUtil.randomBlobSidecar(UInt64.valueOf(2), blockRoot2, blockRoot1, UInt64.ZERO);
-    final BlobSidecar blobSidecar3 =
+    final BlobSidecarOld blobSidecar3 =
         dataStructureUtil.randomBlobSidecar(UInt64.valueOf(3), blockRoot3, blockRoot2, UInt64.ZERO);
-    final BlobSidecar blobSidecar4 =
+    final BlobSidecarOld blobSidecar4 =
         dataStructureUtil.randomBlobSidecar(UInt64.valueOf(4), blockRoot4, blockRoot3, UInt64.ZERO);
 
     assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar10).join());
@@ -97,11 +97,11 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
     listenerWrapper =
         new BlobSidecarsByRootListenerValidatingProxy(peer, spec, listener, kzg, blobIdentifiers);
 
-    final BlobSidecar blobSidecar10 =
+    final BlobSidecarOld blobSidecar10 =
         dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
-    final BlobSidecar blobSidecar11 =
+    final BlobSidecarOld blobSidecar11 =
         dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ONE);
-    final BlobSidecar blobSidecar2 =
+    final BlobSidecarOld blobSidecar2 =
         dataStructureUtil.randomBlobSidecar(UInt64.valueOf(2), blockRoot2, blockRoot1, UInt64.ZERO);
 
     assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar10).join());
@@ -126,7 +126,7 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
         new BlobSidecarsByRootListenerValidatingProxy(
             peer, spec, listener, kzg, List.of(blobIdentifier));
 
-    final BlobSidecar blobSidecar1 =
+    final BlobSidecarOld blobSidecar1 =
         dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
 
     final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar1);

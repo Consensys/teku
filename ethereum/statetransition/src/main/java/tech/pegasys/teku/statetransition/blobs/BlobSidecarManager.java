@@ -17,8 +17,8 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
@@ -30,12 +30,12 @@ public interface BlobSidecarManager {
 
         @Override
         public SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
-            final SignedBlobSidecar signedBlobSidecar, final Optional<UInt64> arrivalTimestamp) {
+                final SignedBlobSidecarOld signedBlobSidecar, final Optional<UInt64> arrivalTimestamp) {
           return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
         }
 
         @Override
-        public void prepareForBlockImport(final BlobSidecar blobSidecar) {}
+        public void prepareForBlockImport(final BlobSidecarOld blobSidecar) {}
 
         @Override
         public void subscribeToReceivedBlobSidecar(
@@ -54,15 +54,15 @@ public interface BlobSidecarManager {
 
         @Override
         public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
-            final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
+            final SignedBeaconBlock block, final List<BlobSidecarOld> blobSidecars) {
           return BlobSidecarsAndValidationResult.NOT_REQUIRED;
         }
       };
 
   SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
-      SignedBlobSidecar signedBlobSidecar, Optional<UInt64> arrivalTimestamp);
+          SignedBlobSidecarOld signedBlobSidecar, Optional<UInt64> arrivalTimestamp);
 
-  void prepareForBlockImport(BlobSidecar blobSidecar);
+  void prepareForBlockImport(BlobSidecarOld blobSidecar);
 
   void subscribeToReceivedBlobSidecar(ReceivedBlobSidecarListener receivedBlobSidecarListener);
 
@@ -71,9 +71,9 @@ public interface BlobSidecarManager {
   BlobSidecarsAvailabilityChecker createAvailabilityChecker(SignedBeaconBlock block);
 
   BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
-      SignedBeaconBlock block, List<BlobSidecar> blobSidecars);
+      SignedBeaconBlock block, List<BlobSidecarOld> blobSidecars);
 
   interface ReceivedBlobSidecarListener {
-    void onBlobSidecarReceived(BlobSidecar blobSidecar);
+    void onBlobSidecarReceived(BlobSidecarOld blobSidecar);
   }
 }

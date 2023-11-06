@@ -24,8 +24,8 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class SignedBlobSidecarsUnblinderDeneb implements SignedBlobSidecarsUnblinder {
 
-  private final BlobSidecarSchema blobSidecarSchema;
-  private final SignedBlobSidecarSchema signedBlobSidecarSchema;
+  private final BlobSidecarSchemaOld blobSidecarSchema;
+  private final SignedBlobSidecarSchemaOld signedBlobSidecarSchema;
   private final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars;
 
   private volatile SafeFuture<BlobsBundle> blobsBundleFuture;
@@ -44,7 +44,7 @@ public class SignedBlobSidecarsUnblinderDeneb implements SignedBlobSidecarsUnbli
   }
 
   @Override
-  public SafeFuture<List<SignedBlobSidecar>> unblind() {
+  public SafeFuture<List<SignedBlobSidecarOld>> unblind() {
     return blobsBundleFuture.thenApply(
         blobsBundle ->
             signedBlindedBlobSidecars.stream()
@@ -54,11 +54,11 @@ public class SignedBlobSidecarsUnblinderDeneb implements SignedBlobSidecarsUnbli
                 .toList());
   }
 
-  private SignedBlobSidecar unblindSignedBlindedBlobSidecar(
+  private SignedBlobSidecarOld unblindSignedBlindedBlobSidecar(
       final SignedBlindedBlobSidecar signedBlindedBlobSidecar, final BlobsBundle blobsBundle) {
     final BlindedBlobSidecar blindedBlobSidecar = signedBlindedBlobSidecar.getBlindedBlobSidecar();
     final Blob blob = findBlobByIndex(blobsBundle, blindedBlobSidecar);
-    final BlobSidecar unblindedBlobSidecar =
+    final BlobSidecarOld unblindedBlobSidecar =
         blobSidecarSchema.create(
             blindedBlobSidecar.getBlockRoot(),
             blindedBlobSidecar.getIndex(),
