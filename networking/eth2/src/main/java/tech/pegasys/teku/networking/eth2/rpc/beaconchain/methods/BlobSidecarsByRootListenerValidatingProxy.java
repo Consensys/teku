@@ -19,18 +19,18 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 
 public class BlobSidecarsByRootListenerValidatingProxy extends BlobSidecarsByRootValidator
-    implements RpcResponseListener<BlobSidecar> {
+    implements RpcResponseListener<BlobSidecarOld> {
 
-  private final RpcResponseListener<BlobSidecar> listener;
+  private final RpcResponseListener<BlobSidecarOld> listener;
 
   public BlobSidecarsByRootListenerValidatingProxy(
       final Peer peer,
       final Spec spec,
-      final RpcResponseListener<BlobSidecar> listener,
+      final RpcResponseListener<BlobSidecarOld> listener,
       final KZG kzg,
       final List<BlobIdentifier> expectedBlobIdentifiers) {
     super(peer, spec, kzg, expectedBlobIdentifiers);
@@ -38,7 +38,7 @@ public class BlobSidecarsByRootListenerValidatingProxy extends BlobSidecarsByRoo
   }
 
   @Override
-  public SafeFuture<?> onResponse(final BlobSidecar blobSidecar) {
+  public SafeFuture<?> onResponse(final BlobSidecarOld blobSidecar) {
     return SafeFuture.of(
         () -> {
           validate(blobSidecar);

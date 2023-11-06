@@ -23,7 +23,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -139,12 +139,13 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
-  public SafeFuture<Optional<BlobSidecar>> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+  public SafeFuture<Optional<BlobSidecarOld>> getBlobSidecar(
+      final SlotAndBlockRootAndBlobIndex key) {
     return SafeFuture.completedFuture(Optional.empty());
   }
 
   @Override
-  public SafeFuture<Optional<BlobSidecar>> getNonCanonicalBlobSidecar(
+  public SafeFuture<Optional<BlobSidecarOld>> getNonCanonicalBlobSidecar(
       final SlotAndBlockRootAndBlobIndex key) {
     return SafeFuture.completedFuture(Optional.empty());
   }
@@ -172,7 +173,7 @@ public class StubStorageQueryChannel implements StorageQueryChannel {
   }
 
   @Override
-  public SafeFuture<List<BlobSidecar>> getBlobSidecarsBySlotAndBlockRoot(
+  public SafeFuture<List<BlobSidecarOld>> getBlobSidecarsBySlotAndBlockRoot(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return SafeFuture.completedFuture(Collections.emptyList());
   }

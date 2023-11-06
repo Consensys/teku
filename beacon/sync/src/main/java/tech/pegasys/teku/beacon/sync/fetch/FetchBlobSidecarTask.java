@@ -20,10 +20,10 @@ import tech.pegasys.teku.beacon.sync.fetch.FetchResult.Status;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 
-public class FetchBlobSidecarTask extends AbstractFetchTask<BlobIdentifier, BlobSidecar> {
+public class FetchBlobSidecarTask extends AbstractFetchTask<BlobIdentifier, BlobSidecarOld> {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -49,7 +49,7 @@ public class FetchBlobSidecarTask extends AbstractFetchTask<BlobIdentifier, Blob
   }
 
   @Override
-  SafeFuture<FetchResult<BlobSidecar>> fetch(final Eth2Peer peer) {
+  SafeFuture<FetchResult<BlobSidecarOld>> fetch(final Eth2Peer peer) {
     return peer.requestBlobSidecarByRoot(blobIdentifier)
         .thenApply(
             maybeBlobSidecar ->

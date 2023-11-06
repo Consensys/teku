@@ -41,7 +41,7 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -539,7 +539,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     addParentStateRoots(spec, blockSlotState, transaction);
 
-    final Optional<List<BlobSidecar>> blobSidecars;
+    final Optional<List<BlobSidecarOld>> blobSidecars;
     if (blobSidecarsAndValidationResult.isNotRequired()) {
       // Outside availability window or pre-Deneb
       blobSidecars = Optional.empty();

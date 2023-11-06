@@ -22,7 +22,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -110,7 +110,7 @@ public interface ReadOnlyStore {
    */
   Optional<SignedBeaconBlock> getBlockIfAvailable(final Bytes32 blockRoot);
 
-  Optional<List<BlobSidecar>> getBlobSidecarsIfAvailable(SlotAndBlockRoot slotAndBlockRoot);
+  Optional<List<BlobSidecarOld>> getBlobSidecarsIfAvailable(SlotAndBlockRoot slotAndBlockRoot);
 
   default SafeFuture<Optional<BeaconBlock>> retrieveBlock(Bytes32 blockRoot) {
     return retrieveSignedBlock(blockRoot).thenApply(res -> res.map(SignedBeaconBlock::getMessage));

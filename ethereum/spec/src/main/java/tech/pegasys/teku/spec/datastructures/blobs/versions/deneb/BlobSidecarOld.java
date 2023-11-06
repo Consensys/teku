@@ -26,9 +26,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
-public class BlobSidecar
+public class BlobSidecarOld
     extends Container8<
-        BlobSidecar,
+        BlobSidecarOld,
         SszBytes32,
         SszUInt64,
         SszUInt64,
@@ -38,12 +38,12 @@ public class BlobSidecar
         SszKZGCommitment,
         SszKZGProof> {
 
-  BlobSidecar(final BlobSidecarSchema blobSidecarSchema, final TreeNode backingTreeNode) {
+  BlobSidecarOld(final BlobSidecarSchemaOld blobSidecarSchema, final TreeNode backingTreeNode) {
     super(blobSidecarSchema, backingTreeNode);
   }
 
-  public BlobSidecar(
-      BlobSidecarSchema schema,
+  public BlobSidecarOld(
+      BlobSidecarSchemaOld schema,
       Bytes32 blockRoot,
       UInt64 index,
       UInt64 slot,

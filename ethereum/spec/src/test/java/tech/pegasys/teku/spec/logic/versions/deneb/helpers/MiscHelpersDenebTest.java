@@ -26,7 +26,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -58,7 +58,7 @@ class MiscHelpersDenebTest {
   @Test
   void validateBlobSidecarsAgainstBlock_shouldNotThrowOnValidBlobSidecar() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
-    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
+    final List<BlobSidecarOld> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
 
     // make sure we are testing something
     assertThat(blobSidecars).isNotEmpty();
@@ -90,7 +90,7 @@ class MiscHelpersDenebTest {
         Math.toIntExact(dataStructureUtil.randomPositiveLong(kzgCommitments.size()));
 
     // let's create blobs with only one altered with the given alteration
-    final List<BlobSidecar> blobSidecars =
+    final List<BlobSidecarOld> blobSidecars =
         dataStructureUtil.randomBlobSidecarsForBlock(
             block,
             (index, randomBlobSidecarBuilder) -> {
@@ -154,7 +154,7 @@ class MiscHelpersDenebTest {
 
   @Test
   void verifyBlobSidecarCompleteness_shouldThrowWhenBlobSidecarIndexIsWrong() {
-    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecars(1);
+    final List<BlobSidecarOld> blobSidecars = dataStructureUtil.randomBlobSidecars(1);
     assertThatThrownBy(
             () ->
                 miscHelpersDeneb.verifyBlobSidecarCompleteness(

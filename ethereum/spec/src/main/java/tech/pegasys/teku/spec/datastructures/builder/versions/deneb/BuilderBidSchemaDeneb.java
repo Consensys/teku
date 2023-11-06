@@ -14,51 +14,47 @@
 package tech.pegasys.teku.spec.datastructures.builder.versions.deneb;
 
 import java.util.function.Consumer;
-import org.apache.tuweni.units.bigints.UInt256;
-import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema4;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
-import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundleSchema;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidBuilder;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitmentSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKeySchema;
 
 public class BuilderBidSchemaDeneb
     extends ContainerSchema4<
-        BuilderBidDenebImpl, ExecutionPayloadHeader, BlindedBlobsBundle, SszUInt256, SszPublicKey>
+        BuilderBidDenebImpl,
+        ExecutionPayloadHeader,
+        SszList<SszKZGCommitment>,
+        SszUInt256,
+        SszPublicKey>
     implements BuilderBidSchema<BuilderBidDenebImpl> {
 
   public BuilderBidSchemaDeneb(
-      final ExecutionPayloadHeaderSchema<?> executionPayloadHeaderSchema,
-      final BlindedBlobsBundleSchema blindedBlobsBundleSchema) {
+      final String containerName,
+      final SpecConfigDeneb specConfig,
+      final ExecutionPayloadHeaderSchema<?> executionPayloadHeaderSchema) {
     super(
-        "BuilderBidDeneb",
+        containerName,
         namedSchema(
             "header", SszSchema.as(ExecutionPayloadHeader.class, executionPayloadHeaderSchema)),
-        namedSchema("blinded_blobs_bundle", blindedBlobsBundleSchema),
+        namedSchema(
+            "blob_kzg_commitments",
+            SszListSchema.create(
+                SszKZGCommitmentSchema.INSTANCE, specConfig.getMaxBlobCommitmentsPerBlock())),
         namedSchema("value", SszPrimitiveSchemas.UINT256_SCHEMA),
         namedSchema("pubkey", SszPublicKeySchema.INSTANCE));
-  }
-
-  public BuilderBidDeneb create(
-      final ExecutionPayloadHeader executionPayloadHeader,
-      final BlindedBlobsBundle blindedBlobsBundle,
-      final UInt256 value,
-      final BLSPublicKey publicKey) {
-    return new BuilderBidDenebImpl(
-        this,
-        executionPayloadHeader,
-        blindedBlobsBundle,
-        SszUInt256.of(value),
-        new SszPublicKey(publicKey));
   }
 
   @Override

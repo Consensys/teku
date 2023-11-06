@@ -14,15 +14,16 @@
 package tech.pegasys.teku.spec.datastructures.builder.versions.deneb;
 
 import java.util.Optional;
-import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 public interface BuilderBidDeneb extends BuilderBid {
 
-  BlindedBlobsBundle getBlindedBlobsBundle();
+  SszList<SszKZGCommitment> getBlobKzgCommitments();
 
   @Override
-  default Optional<BlindedBlobsBundle> getOptionalBlindedBlobsBundle() {
-    return Optional.of(getBlindedBlobsBundle());
+  default Optional<SszList<SszKZGCommitment>> getOptionalBlobKzgCommitments() {
+    return Optional.of(getBlobKzgCommitments());
   }
 }
