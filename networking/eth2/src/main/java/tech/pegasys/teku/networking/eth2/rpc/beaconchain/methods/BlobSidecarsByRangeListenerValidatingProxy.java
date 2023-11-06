@@ -50,7 +50,7 @@ public class BlobSidecarsByRangeListenerValidatingProxy extends AbstractBlobSide
     this.blobSidecarResponseListener = blobSidecarResponseListener;
     this.maxBlobsPerBlock = maxBlobsPerBlock;
     this.startSlot = startSlot;
-    this.endSlot = startSlot.plus(count);
+    this.endSlot = startSlot.plus(count).minusMinZero(1);
   }
 
   @Override
