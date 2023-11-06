@@ -395,7 +395,7 @@ public class Spec {
         .toVersionDeneb()
         .orElseThrow(
             () -> new RuntimeException("Deneb milestone is required to deserialize blob sidecar"))
-        .getBlobSidecarSchema()
+        .getBlobSidecarOldSchema()
         .sszDeserialize(serializedBlobSidecar);
   }
 

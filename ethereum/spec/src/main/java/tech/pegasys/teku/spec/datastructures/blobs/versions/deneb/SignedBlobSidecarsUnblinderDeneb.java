@@ -33,8 +33,8 @@ public class SignedBlobSidecarsUnblinderDeneb implements SignedBlobSidecarsUnbli
   public SignedBlobSidecarsUnblinderDeneb(
       final SchemaDefinitionsDeneb schemaDefinitions,
       final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars) {
-    this.blobSidecarSchema = schemaDefinitions.getBlobSidecarSchema();
-    this.signedBlobSidecarSchema = schemaDefinitions.getSignedBlobSidecarSchema();
+    this.blobSidecarSchema = schemaDefinitions.getBlobSidecarOldSchema();
+    this.signedBlobSidecarSchema = schemaDefinitions.getSignedBlobSidecarOldSchema();
     this.signedBlindedBlobSidecars = signedBlindedBlobSidecars;
   }
 

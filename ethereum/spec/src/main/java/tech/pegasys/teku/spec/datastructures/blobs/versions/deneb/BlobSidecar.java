@@ -13,92 +13,91 @@
 
 package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
 
+import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container8;
+import tech.pegasys.teku.infrastructure.ssz.SszVector;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container6;
+import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
-@Deprecated
-public class BlobSidecarOld
-    extends Container8<
-        BlobSidecarOld,
-        SszBytes32,
-        SszUInt64,
-        SszUInt64,
-        SszBytes32,
+public class BlobSidecar
+    extends Container6<
+        BlobSidecar,
         SszUInt64,
         Blob,
         SszKZGCommitment,
-        SszKZGProof> {
+        SszKZGProof,
+        SignedBeaconBlockHeader,
+        SszVector<SszBytes32>> {
 
-  BlobSidecarOld(final BlobSidecarSchemaOld blobSidecarSchema, final TreeNode backingTreeNode) {
+  BlobSidecar(final BlobSidecarSchema blobSidecarSchema, final TreeNode backingTreeNode) {
     super(blobSidecarSchema, backingTreeNode);
   }
 
-  public BlobSidecarOld(
-      BlobSidecarSchemaOld schema,
-      Bytes32 blockRoot,
+  public BlobSidecar(
+      BlobSidecarSchema schema,
       UInt64 index,
-      UInt64 slot,
-      Bytes32 blockParentRoot,
-      UInt64 proposerIndex,
       Blob blob,
       KZGCommitment kzgCommitment,
-      KZGProof kzgProof) {
+      KZGProof kzgProof,
+      SignedBeaconBlockHeader signedBeaconBlockHeader,
+      List<Bytes32> kzgCommitmentInclusionProof) {
     super(
         schema,
-        SszBytes32.of(blockRoot),
         SszUInt64.of(index),
-        SszUInt64.of(slot),
-        SszBytes32.of(blockParentRoot),
-        SszUInt64.of(proposerIndex),
         schema.getBlobSchema().create(blob.getBytes()),
         new SszKZGCommitment(kzgCommitment),
-        new SszKZGProof(kzgProof));
+        new SszKZGProof(kzgProof),
+        signedBeaconBlockHeader,
+        schema
+            .getKzgCommitmentInclusionProofSchema()
+            .createFromElements(kzgCommitmentInclusionProof.stream().map(SszBytes32::of).toList()));
+  }
+
+  public UInt64 getIndex() {
+    return getField0().get();
+  }
+
+  public Blob getBlob() {
+    return getField1();
+  }
+
+  public KZGCommitment getKZGCommitment() {
+    return getField2().getKZGCommitment();
+  }
+
+  public KZGProof getKZGProof() {
+    return getField3().getKZGProof();
+  }
+
+  public SignedBeaconBlockHeader getSignedBeaconBlockHeader() {
+    return getField4();
+  }
+
+  public List<Bytes32> getKzgCommitmentInclusionProof() {
+    return getField5().stream().map(AbstractSszPrimitive::get).toList();
+  }
+
+  public UInt64 getSlot() {
+    return getSignedBeaconBlockHeader().getMessage().getSlot();
+  }
+
+  public Bytes32 getBlockRoot() {
+    return getSignedBeaconBlockHeader().getMessage().getRoot();
   }
 
   public SlotAndBlockRoot getSlotAndBlockRoot() {
     return new SlotAndBlockRoot(getSlot(), getBlockRoot());
-  }
-
-  public Bytes32 getBlockRoot() {
-    return getField0().get();
-  }
-
-  public UInt64 getIndex() {
-    return getField1().get();
-  }
-
-  public UInt64 getSlot() {
-    return getField2().get();
-  }
-
-  public Bytes32 getBlockParentRoot() {
-    return getField3().get();
-  }
-
-  public UInt64 getProposerIndex() {
-    return getField4().get();
-  }
-
-  public Blob getBlob() {
-    return getField5();
-  }
-
-  public KZGCommitment getKZGCommitment() {
-    return getField6().getKZGCommitment();
-  }
-
-  public KZGProof getKZGProof() {
-    return getField7().getKZGProof();
   }
 
   public String toLogString() {

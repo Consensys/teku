@@ -89,7 +89,7 @@ class RecentBlobSidecarsFetchServiceTest {
     assertThat(importedBlobSidecars).isEmpty();
 
     final SafeFuture<FetchResult<BlobSidecarOld>> future = taskFutures.get(0);
-    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecar(blobIdentifier);
+    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecarOld(blobIdentifier);
     future.complete(FetchResult.createSuccessful(blobSidecar));
 
     assertThat(importedBlobSidecars).containsExactly(blobSidecar);
@@ -107,7 +107,7 @@ class RecentBlobSidecarsFetchServiceTest {
     assertThat(importedBlobSidecars).isEmpty();
 
     final SafeFuture<FetchResult<BlobSidecarOld>> future = taskFutures.get(0);
-    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecar(blobIdentifier);
+    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecarOld(blobIdentifier);
     future.complete(FetchResult.createSuccessful(blobSidecar));
 
     assertThat(importedBlobSidecars).containsExactly(blobSidecar);
@@ -222,7 +222,7 @@ class RecentBlobSidecarsFetchServiceTest {
 
     // Complete first task
     final SafeFuture<FetchResult<BlobSidecarOld>> future = taskFutures.get(0);
-    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecar();
+    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecarOld();
     future.complete(FetchResult.createSuccessful(blobSidecar));
 
     // After first task completes, remaining pending count should become active

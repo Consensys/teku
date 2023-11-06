@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitmentSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProofSchema;
 
+@Deprecated
 public class BlobSidecarSchemaOld
     extends ContainerSchema8<
         BlobSidecarOld,

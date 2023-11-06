@@ -31,6 +31,7 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
   private final int maxRequestBlobSidecars;
   private final int minEpochsForBlobSidecarsRequests;
   private final int blobSidecarSubnetCount;
+  private final int kzgCommitmentInclusionProofDepth;
   private final Optional<Integer> maybeEpochsStoreBlobs;
 
   public SpecConfigDenebImpl(
@@ -45,6 +46,7 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
       final int maxRequestBlobSidecars,
       final int minEpochsForBlobSidecarsRequests,
       final int blobSidecarSubnetCount,
+      final int kzgCommitmentInclusionProofDepth,
       final Optional<Integer> maybeEpochsStoreBlobs) {
     super(specConfig);
     this.denebForkVersion = denebForkVersion;
@@ -57,6 +59,7 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
     this.maxRequestBlobSidecars = maxRequestBlobSidecars;
     this.minEpochsForBlobSidecarsRequests = minEpochsForBlobSidecarsRequests;
     this.blobSidecarSubnetCount = blobSidecarSubnetCount;
+    this.kzgCommitmentInclusionProofDepth = kzgCommitmentInclusionProofDepth;
     this.maybeEpochsStoreBlobs = maybeEpochsStoreBlobs;
   }
 
@@ -111,6 +114,11 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
   }
 
   @Override
+  public int getKzgCommitmentInclusionProofDepth() {
+    return kzgCommitmentInclusionProofDepth;
+  }
+
+  @Override
   public int getEpochsStoreBlobs() {
     return maybeEpochsStoreBlobs
         .filter(epochsStoreBlobsInput -> epochsStoreBlobsInput > minEpochsForBlobSidecarsRequests)
@@ -141,7 +149,8 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
         && maxRequestBlocksDeneb == that.maxRequestBlocksDeneb
         && maxRequestBlobSidecars == that.maxRequestBlobSidecars
         && minEpochsForBlobSidecarsRequests == that.minEpochsForBlobSidecarsRequests
-        && blobSidecarSubnetCount == that.blobSidecarSubnetCount;
+        && blobSidecarSubnetCount == that.blobSidecarSubnetCount
+        && kzgCommitmentInclusionProofDepth == that.kzgCommitmentInclusionProofDepth;
   }
 
   @Override
@@ -157,6 +166,7 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
         maxRequestBlobSidecars,
         minEpochsForBlobSidecarsRequests,
         blobSidecarSubnetCount,
+        kzgCommitmentInclusionProofDepth,
         maybeEpochsStoreBlobs);
   }
 }

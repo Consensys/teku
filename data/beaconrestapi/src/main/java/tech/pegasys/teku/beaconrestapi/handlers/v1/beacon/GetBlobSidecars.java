@@ -90,7 +90,7 @@ public class GetBlobSidecars extends RestApiEndpoint {
       final SchemaDefinitionCache schemaCache) {
     final DeserializableTypeDefinition<BlobSidecarOld> blobSidecarType =
         SchemaDefinitionsDeneb.required(schemaCache.getSchemaDefinition(SpecMilestone.DENEB))
-            .getBlobSidecarSchema()
+            .getBlobSidecarOldSchema()
             .getJsonTypeDefinition();
     return SerializableTypeDefinition.<List<BlobSidecarOld>>object()
         .name("GetBlobSidecarsResponse")

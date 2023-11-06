@@ -124,7 +124,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
               final UInt64 index = i.getArgument(1);
               return SafeFuture.completedFuture(
                   Optional.of(
-                      dataStructureUtil.randomBlobSidecar(denebFirstSlot, blockRoot, index)));
+                      dataStructureUtil.randomBlobSidecarOld(denebFirstSlot, blockRoot, index)));
             });
     when(callback.respond(any())).thenReturn(SafeFuture.COMPLETE);
 

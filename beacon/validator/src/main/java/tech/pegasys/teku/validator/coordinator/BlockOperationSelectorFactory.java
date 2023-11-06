@@ -374,7 +374,7 @@ public class BlockOperationSelectorFactory {
     return block -> {
       final BlobSidecarSchemaOld blobSidecarSchema =
           SchemaDefinitionsDeneb.required(spec.atSlot(block.getSlot()).getSchemaDefinitions())
-              .getBlobSidecarSchema();
+              .getBlobSidecarOldSchema();
       return getCachedBlobsBundle(block.getSlot())
           .thenApply(
               blobsBundle ->

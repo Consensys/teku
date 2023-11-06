@@ -40,7 +40,7 @@ public class ExternalSignerDenebIntegrationTest extends AbstractExternalSignerIn
 
   @Test
   void shouldSignBlobSidecar() throws Exception {
-    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecar();
+    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecarOld();
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(

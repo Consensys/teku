@@ -33,8 +33,8 @@ public class SignedBlobSidecarTest {
   final SchemaDefinitions schemaDefinitions =
       dataStructureUtil.getSpec().getGenesisSchemaDefinitions();
   private final SignedBlobSidecarSchemaOld signedBlobSidecarSchema =
-      schemaDefinitions.toVersionDeneb().orElseThrow().getSignedBlobSidecarSchema();
-  private final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecar();
+      schemaDefinitions.toVersionDeneb().orElseThrow().getSignedBlobSidecarOldSchema();
+  private final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecarOld();
 
   private final BLSSignature signature = dataStructureUtil.randomSignature();
 

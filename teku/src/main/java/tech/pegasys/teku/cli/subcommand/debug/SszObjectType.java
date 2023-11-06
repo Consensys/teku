@@ -20,7 +20,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader.BeaconBlockHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data.Eth1DataSchema;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader.SignedBeaconBlockHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData.AttestationDataSchema;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit.DepositSchema;

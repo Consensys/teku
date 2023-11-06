@@ -77,7 +77,7 @@ public class DeletableSignerTest {
   void signBlobSidecar_shouldSignWhenActive() {
     final BeaconBlock block = dataStructureUtilDeneb.randomBeaconBlock(6);
     final BlobSidecarOld blobSidecar =
-        dataStructureUtilDeneb.randomBlobSidecar(block.getRoot(), UInt64.valueOf(2));
+        dataStructureUtilDeneb.randomBlobSidecarOld(block.getRoot(), UInt64.valueOf(2));
     when(delegate.signBlobSidecar(blobSidecar, forkInfo)).thenReturn(signatureFuture);
     assertThatSafeFuture(signer.signBlobSidecar(blobSidecar, forkInfo))
         .isCompletedWithValue(signature);
@@ -87,7 +87,7 @@ public class DeletableSignerTest {
   void signBlobSidecar_shouldNotSignWhenDisabled() {
     final BeaconBlock block = dataStructureUtilDeneb.randomBeaconBlock(6);
     final BlobSidecarOld blobSidecar =
-        dataStructureUtilDeneb.randomBlobSidecar(block.getRoot(), UInt64.valueOf(2));
+        dataStructureUtilDeneb.randomBlobSidecarOld(block.getRoot(), UInt64.valueOf(2));
     signer.delete();
     assertThatSafeFuture(signer.signBlobSidecar(blobSidecar, forkInfo))
         .isCompletedExceptionallyWith(SignerNotActiveException.class);

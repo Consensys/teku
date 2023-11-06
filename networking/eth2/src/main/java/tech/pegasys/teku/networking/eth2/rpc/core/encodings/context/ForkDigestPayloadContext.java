@@ -46,7 +46,7 @@ public interface ForkDigestPayloadContext<TPayload extends SszData> {
         @Override
         public SszSchema<BlobSidecarOld> getSchemaFromSchemaDefinitions(
             final SchemaDefinitions schemaDefinitions) {
-          return schemaDefinitions.toVersionDeneb().orElseThrow().getBlobSidecarSchema();
+          return schemaDefinitions.toVersionDeneb().orElseThrow().getBlobSidecarOldSchema();
         }
       };
 

@@ -204,20 +204,20 @@ public class DatabaseTest {
     assertThat(database.getEarliestBlobSidecarSlot()).contains(ZERO);
 
     final BlobSidecarOld blobSidecar1 =
-        dataStructureUtil.randomBlobSidecar(
+        dataStructureUtil.randomBlobSidecarOld(
             UInt64.valueOf(1), dataStructureUtil.randomBytes32(), UInt64.valueOf(0));
     final BlobSidecarOld blobSidecar2 =
-        dataStructureUtil.randomBlobSidecar(UInt64.valueOf(2), Bytes32.ZERO, UInt64.valueOf(0));
+        dataStructureUtil.randomBlobSidecarOld(UInt64.valueOf(2), Bytes32.ZERO, UInt64.valueOf(0));
     final BlobSidecarOld blobSidecar2bis =
-        dataStructureUtil.randomBlobSidecar(
+        dataStructureUtil.randomBlobSidecarOld(
             UInt64.valueOf(2), Bytes32.fromHexString("0x01"), UInt64.valueOf(1));
     final BlobSidecarOld blobSidecar3 =
-        dataStructureUtil.randomBlobSidecar(
+        dataStructureUtil.randomBlobSidecarOld(
             UInt64.valueOf(3), dataStructureUtil.randomBytes32(), UInt64.valueOf(0));
     final BlobSidecarOld blobSidecar5 =
-        dataStructureUtil.randomBlobSidecar(
+        dataStructureUtil.randomBlobSidecarOld(
             UInt64.valueOf(5), dataStructureUtil.randomBytes32(), UInt64.valueOf(0));
-    final BlobSidecarOld blobSidecarNotAdded = dataStructureUtil.randomBlobSidecar();
+    final BlobSidecarOld blobSidecarNotAdded = dataStructureUtil.randomBlobSidecarOld();
 
     // add blobs out of order
     database.storeBlobSidecar(blobSidecar2);
@@ -345,20 +345,20 @@ public class DatabaseTest {
     initialize(context);
 
     final BlobSidecarOld blobSidecar1 =
-        dataStructureUtil.randomBlobSidecar(
+        dataStructureUtil.randomBlobSidecarOld(
             UInt64.valueOf(1), dataStructureUtil.randomBytes32(), UInt64.valueOf(0));
     final BlobSidecarOld blobSidecar2 =
-        dataStructureUtil.randomBlobSidecar(UInt64.valueOf(2), Bytes32.ZERO, UInt64.valueOf(0));
+        dataStructureUtil.randomBlobSidecarOld(UInt64.valueOf(2), Bytes32.ZERO, UInt64.valueOf(0));
     final BlobSidecarOld blobSidecar2bis =
-        dataStructureUtil.randomBlobSidecar(
+        dataStructureUtil.randomBlobSidecarOld(
             UInt64.valueOf(2), Bytes32.fromHexString("0x01"), UInt64.valueOf(1));
     final BlobSidecarOld blobSidecar3 =
-        dataStructureUtil.randomBlobSidecar(
+        dataStructureUtil.randomBlobSidecarOld(
             UInt64.valueOf(3), dataStructureUtil.randomBytes32(), UInt64.valueOf(0));
     final BlobSidecarOld blobSidecar5 =
-        dataStructureUtil.randomBlobSidecar(
+        dataStructureUtil.randomBlobSidecarOld(
             UInt64.valueOf(5), dataStructureUtil.randomBytes32(), UInt64.valueOf(0));
-    final BlobSidecarOld blobSidecarNotAdded = dataStructureUtil.randomBlobSidecar();
+    final BlobSidecarOld blobSidecarNotAdded = dataStructureUtil.randomBlobSidecarOld();
 
     // add non-canonical blobs out of order
     database.storeNonCanonicalBlobSidecar(blobSidecar2);
@@ -1324,11 +1324,11 @@ public class DatabaseTest {
     final ChainBuilder secondFork = primaryChain.fork();
 
     final BlobSidecarOld blobSidecarPrimary2Slot2Index0 =
-        dataStructureUtil.randomBlobSidecar(
+        dataStructureUtil.randomBlobSidecarOld(
             UInt64.valueOf(2), primaryChain.getBlockAtSlot(2).getRoot(), UInt64.valueOf(0));
     database.storeBlobSidecar(blobSidecarPrimary2Slot2Index0);
     final BlobSidecarOld blobSidecarPrimary2Slot2Index1 =
-        dataStructureUtil.randomBlobSidecar(
+        dataStructureUtil.randomBlobSidecarOld(
             UInt64.valueOf(2), primaryChain.getBlockAtSlot(2).getRoot(), UInt64.valueOf(1));
     database.storeBlobSidecar(blobSidecarPrimary2Slot2Index1);
 
