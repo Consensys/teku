@@ -16,12 +16,13 @@ package tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix;
 import java.util.Optional;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 
 public class BuilderBidBellatrix
@@ -46,7 +47,7 @@ public class BuilderBidBellatrix
   }
 
   @Override
-  public Optional<BlindedBlobsBundle> getOptionalBlindedBlobsBundle() {
+  public Optional<SszList<SszKZGCommitment>> getOptionalBlobKzgCommitments() {
     return Optional.empty();
   }
 

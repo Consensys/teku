@@ -53,7 +53,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
@@ -99,7 +99,7 @@ class RestBuilderClientTest {
   private RestBuilderClient restBuilderClient;
 
   private String signedValidatorRegistrationsRequest;
-  private String signedBlindedBlockContainerRequest;
+  private String signedBlindedBeaconBlockRequest;
 
   private String signedBuilderBidResponse;
   private String unblindedBuilderPayloadResponse;
@@ -118,8 +118,8 @@ class RestBuilderClientTest {
 
     signedValidatorRegistrationsRequest = readResource("builder/signedValidatorRegistrations.json");
     final String milestoneFolder = "builder/" + milestone.toString().toLowerCase(Locale.ROOT);
-    signedBlindedBlockContainerRequest =
-        readResource(milestoneFolder + "/signedBlindedBlockContainer.json");
+    signedBlindedBeaconBlockRequest =
+        readResource(milestoneFolder + "/signedBlindedBeaconBlock.json");
     signedBuilderBidResponse = readResource(milestoneFolder + "/signedBuilderBid.json");
     unblindedBuilderPayloadResponse =
         readResource(milestoneFolder + "/unblindedBuilderPayload.json");
@@ -378,10 +378,9 @@ class RestBuilderClientTest {
     mockWebServer.enqueue(
         new MockResponse().setResponseCode(200).setBody(unblindedBuilderPayloadResponse));
 
-    final SignedBlindedBlockContainer signedBlindedBlockContainer =
-        createSignedBlindedBlockContainer();
+    final SignedBeaconBlock signedBlindedBeaconBlock = createSignedBlindedBeaconBlock();
 
-    assertThat(restBuilderClient.getPayload(signedBlindedBlockContainer))
+    assertThat(restBuilderClient.getPayload(signedBlindedBeaconBlock))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -390,7 +389,7 @@ class RestBuilderClientTest {
               verifyBuilderPayloadResponse(builderPayload);
             });
 
-    verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBlockContainerRequest);
+    verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBeaconBlockRequest);
   }
 
   @TestTemplate
@@ -400,10 +399,9 @@ class RestBuilderClientTest {
         "{\"code\":400,\"message\":\"Invalid block: missing signature\"}";
     mockWebServer.enqueue(new MockResponse().setResponseCode(400).setBody(missingSignatureError));
 
-    final SignedBlindedBlockContainer signedBlindedBlockContainer =
-        createSignedBlindedBlockContainer();
+    final SignedBeaconBlock signedBlindedBeaconBlock = createSignedBlindedBeaconBlock();
 
-    assertThat(restBuilderClient.getPayload(signedBlindedBlockContainer))
+    assertThat(restBuilderClient.getPayload(signedBlindedBeaconBlock))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -411,12 +409,12 @@ class RestBuilderClientTest {
               assertThat(response.getErrorMessage()).isEqualTo(missingSignatureError);
             });
 
-    verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBlockContainerRequest);
+    verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBeaconBlockRequest);
 
     mockWebServer.enqueue(
         new MockResponse().setResponseCode(500).setBody(INTERNAL_SERVER_ERROR_MESSAGE));
 
-    assertThat(restBuilderClient.getPayload(signedBlindedBlockContainer))
+    assertThat(restBuilderClient.getPayload(signedBlindedBeaconBlock))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -424,7 +422,7 @@ class RestBuilderClientTest {
               assertThat(response.getErrorMessage()).isEqualTo(INTERNAL_SERVER_ERROR_MESSAGE);
             });
 
-    verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBlockContainerRequest);
+    verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBeaconBlockRequest);
   }
 
   @TestTemplate
@@ -437,10 +435,9 @@ class RestBuilderClientTest {
     mockWebServer.enqueue(
         new MockResponse().setResponseCode(200).setBody(unblindedBuilderPayloadResponse));
 
-    final SignedBlindedBlockContainer signedBlindedBlockContainer =
-        createSignedBlindedBlockContainer();
+    final SignedBeaconBlock signedBlindedBeaconBlock = createSignedBlindedBeaconBlock();
 
-    assertThat(restBuilderClient.getPayload(signedBlindedBlockContainer))
+    assertThat(restBuilderClient.getPayload(signedBlindedBeaconBlock))
         .succeedsWithin(WAIT_FOR_CALL_COMPLETION)
         .satisfies(
             response -> {
@@ -449,7 +446,7 @@ class RestBuilderClientTest {
               verifyBuilderPayloadResponse(builderPayload);
             });
 
-    verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBlockContainerRequest);
+    verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBeaconBlockRequest);
   }
 
   private void verifyGetRequest(final String apiPath) {
@@ -517,13 +514,11 @@ class RestBuilderClientTest {
     }
   }
 
-  private SignedBlindedBlockContainer createSignedBlindedBlockContainer() {
+  private SignedBeaconBlock createSignedBlindedBeaconBlock() {
     try {
       return JsonUtil.parse(
-              signedBlindedBlockContainerRequest,
-              schemaDefinitions.getSignedBlindedBlockContainerSchema().getJsonTypeDefinition())
-          .toBlinded()
-          .orElseThrow();
+          signedBlindedBeaconBlockRequest,
+          schemaDefinitions.getSignedBlindedBeaconBlockSchema().getJsonTypeDefinition());
     } catch (final JsonProcessingException ex) {
       throw new UncheckedIOException(ex);
     }

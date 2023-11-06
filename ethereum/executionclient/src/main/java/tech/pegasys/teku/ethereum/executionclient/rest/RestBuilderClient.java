@@ -37,8 +37,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
@@ -142,16 +141,16 @@ public class RestBuilderClient implements BuilderClient {
 
   @Override
   public SafeFuture<Response<BuilderPayload>> getPayload(
-      final SignedBlindedBlockContainer signedBlindedBlockContainer) {
+      final SignedBeaconBlock signedBlindedBeaconBlock) {
 
-    final UInt64 blockSlot = signedBlindedBlockContainer.getSlot();
+    final UInt64 blockSlot = signedBlindedBeaconBlock.getSlot();
     final SpecMilestone milestone = schemaDefinitionCache.milestoneAtSlot(blockSlot);
 
     final SchemaDefinitionsBellatrix schemaDefinitionsBellatrix =
         getSchemaDefinitionsBellatrix(milestone);
 
-    final DeserializableTypeDefinition<SignedBlockContainer> requestTypeDefinition =
-        schemaDefinitionsBellatrix.getSignedBlindedBlockContainerSchema().getJsonTypeDefinition();
+    final DeserializableTypeDefinition<SignedBeaconBlock> requestTypeDefinition =
+        schemaDefinitionsBellatrix.getSignedBlindedBeaconBlockSchema().getJsonTypeDefinition();
 
     final DeserializableTypeDefinition<? extends BuilderApiResponse<? extends BuilderPayload>>
         responseTypeDefinition =
@@ -162,7 +161,7 @@ public class RestBuilderClient implements BuilderClient {
     return restClient
         .postAsync(
             BuilderApiMethod.GET_PAYLOAD.getPath(),
-            signedBlindedBlockContainer,
+            signedBlindedBeaconBlock,
             requestTypeDefinition,
             responseTypeDefinition)
         .thenApply(
