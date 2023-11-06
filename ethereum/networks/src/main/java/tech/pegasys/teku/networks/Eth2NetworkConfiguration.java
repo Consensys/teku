@@ -37,6 +37,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
@@ -62,7 +63,8 @@ public class Eth2NetworkConfiguration {
 
   public static final int DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE = DEFAULT_MAX_QUEUE_SIZE;
 
-  public static final String INITIAL_STATE_URL_PATH = "eth/v2/debug/beacon/states/finalized";
+  public static final String FINALIZED_STATE_URL_PATH = "eth/v2/debug/beacon/states/finalized";
+  public static final String GENESIS_STATE_URL_PATH = "eth/v2/debug/beacon/states/genesis";
   // 26 thousand years should be enough
   public static final Integer MAX_EPOCHS_STORE_BLOBS = Integer.MAX_VALUE;
 
@@ -72,8 +74,8 @@ public class Eth2NetworkConfiguration {
   private final Spec spec;
   private final String constants;
   private final Optional<String> initialState;
-  private final boolean usingCustomInitialState;
   private final Optional<String> genesisState;
+  private final StateBoostrapConfig stateBoostrapConfig;
   private final int startupTargetPeerCount;
   private final int startupTimeoutSeconds;
   private final List<String> discoveryBootnodes;
@@ -84,7 +86,6 @@ public class Eth2NetworkConfiguration {
   private final Eth1Address eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
   private final Optional<String> trustedSetup;
-
   private final boolean forkChoiceUpdateHeadOnBlockImportEnabled;
   private final boolean forkChoiceProposerBoostUniquenessEnabled;
   private final Optional<Bytes32> terminalBlockHashOverride;
@@ -92,7 +93,6 @@ public class Eth2NetworkConfiguration {
   private final Optional<UInt64> terminalBlockHashEpochOverride;
   private final Optional<Eth2Network> eth2Network;
   private final Optional<Integer> epochsStoreBlobs;
-
   private final int asyncP2pMaxThreads;
   private final int asyncBeaconChainMaxThreads;
   private final int asyncBeaconChainMaxQueue;
@@ -102,8 +102,8 @@ public class Eth2NetworkConfiguration {
       final Spec spec,
       final String constants,
       final Optional<String> initialState,
-      final boolean usingCustomInitialState,
       final Optional<String> genesisState,
+      final StateBoostrapConfig stateBoostrapConfig,
       final int startupTargetPeerCount,
       final int startupTimeoutSeconds,
       final List<String> discoveryBootnodes,
@@ -128,8 +128,8 @@ public class Eth2NetworkConfiguration {
     this.spec = spec;
     this.constants = constants;
     this.initialState = initialState;
-    this.usingCustomInitialState = usingCustomInitialState;
     this.genesisState = genesisState;
+    this.stateBoostrapConfig = stateBoostrapConfig;
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeoutSeconds = startupTimeoutSeconds;
     this.discoveryBootnodes = discoveryBootnodes;
@@ -185,12 +185,12 @@ public class Eth2NetworkConfiguration {
     return initialState;
   }
 
-  public boolean isUsingCustomInitialState() {
-    return usingCustomInitialState;
-  }
-
   public Optional<String> getGenesisState() {
     return genesisState;
+  }
+
+  public StateBoostrapConfig getNetworkBoostrapConfig() {
+    return stateBoostrapConfig;
   }
 
   public Integer getStartupTargetPeerCount() {
@@ -280,7 +280,7 @@ public class Eth2NetworkConfiguration {
     private static final String EPOCHS_STORE_BLOBS_MAX_KEYWORD = "MAX";
     private String constants;
     private Optional<String> initialState = Optional.empty();
-    private boolean usingCustomInitialState = false;
+    private final StateBoostrapConfig stateBoostrapConfig = new StateBoostrapConfig();
     private Optional<String> genesisState = Optional.empty();
     private int startupTargetPeerCount = DEFAULT_STARTUP_TARGET_PEER_COUNT;
     private int startupTimeoutSeconds = DEFAULT_STARTUP_TIMEOUT_SECONDS;
@@ -360,8 +360,8 @@ public class Eth2NetworkConfiguration {
           spec,
           constants,
           initialState,
-          usingCustomInitialState,
           genesisState,
+          stateBoostrapConfig,
           startupTargetPeerCount,
           startupTimeoutSeconds,
           discoveryBootnodes,
@@ -415,15 +415,24 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
+    public Builder checkpointSyncUrl(final String checkpointSyncUrl) {
+      this.genesisState =
+          Optional.of(UrlSanitizer.appendPath(checkpointSyncUrl, GENESIS_STATE_URL_PATH));
+      this.initialState =
+          Optional.of(UrlSanitizer.appendPath(checkpointSyncUrl, FINALIZED_STATE_URL_PATH));
+      this.stateBoostrapConfig.setUsingCheckpointSync(true);
+      return this;
+    }
+
     public Builder customInitialState(final String initialState) {
       this.initialState = Optional.of(initialState);
-      this.usingCustomInitialState = true;
+      this.stateBoostrapConfig.setUsingCustomInitialState(true);
       return this;
     }
 
     public Builder defaultInitialState(final String initialState) {
       this.initialState = Optional.of(initialState);
-      this.usingCustomInitialState = false;
+      this.stateBoostrapConfig.setUsingCustomInitialState(false);
       return this;
     }
 
@@ -436,6 +445,7 @@ public class Eth2NetworkConfiguration {
 
     public Builder customGenesisState(final String genesisState) {
       this.genesisState = Optional.of(genesisState);
+      this.stateBoostrapConfig.setUsingCustomGenesisState(true);
       return this;
     }
 

@@ -59,6 +59,15 @@ public class Eth2NetworkOptions {
   private String genesisState;
 
   @Option(
+      names = {"--checkpoint-sync-url"},
+      hidden = true,
+      paramLabel = "<STRING>",
+      description =
+          "The Beacon API endpoint of another synced beacon node that will be used to bootstrap this node's state.",
+      arity = "1")
+  private String checkpointSyncUrl;
+
+  @Option(
       names = {"--eth1-deposit-contract-address"},
       paramLabel = "<ADDRESS>",
       description =
@@ -265,6 +274,9 @@ public class Eth2NetworkOptions {
     }
     if (eth1DepositContractAddress != null) {
       builder.eth1DepositContractAddress(eth1DepositContractAddress);
+    }
+    if (StringUtils.isNotBlank(checkpointSyncUrl)) {
+      builder.checkpointSyncUrl(checkpointSyncUrl);
     }
     if (StringUtils.isNotBlank(initialState)) {
       builder.customInitialState(initialState);
