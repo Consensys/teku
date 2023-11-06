@@ -27,7 +27,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
@@ -60,7 +60,7 @@ public class BatchImporter {
   public SafeFuture<BatchImportResult> importBatch(final Batch batch) {
     // Copy the data from batch as we're going to use them from off the event thread.
     final List<SignedBeaconBlock> blocks = new ArrayList<>(batch.getBlocks());
-    final Map<Bytes32, List<BlobSidecar>> blobSidecarsByBlockRoot =
+    final Map<Bytes32, List<BlobSidecarOld>> blobSidecarsByBlockRoot =
         Map.copyOf(batch.getBlobSidecarsByBlockRoot());
 
     final Optional<SyncSource> source = batch.getSource();
@@ -103,13 +103,13 @@ public class BatchImporter {
 
   private SafeFuture<BlockImportResult> importBlockAndBlobSidecars(
       final SignedBeaconBlock block,
-      final Map<Bytes32, List<BlobSidecar>> blobSidecarsByBlockRoot,
+      final Map<Bytes32, List<BlobSidecarOld>> blobSidecarsByBlockRoot,
       final SyncSource source) {
     final Bytes32 blockRoot = block.getRoot();
     if (!blobSidecarsByBlockRoot.containsKey(blockRoot)) {
       return importBlock(block, source);
     }
-    final List<BlobSidecar> blobSidecars = blobSidecarsByBlockRoot.get(blockRoot);
+    final List<BlobSidecarOld> blobSidecars = blobSidecarsByBlockRoot.get(blockRoot);
     LOG.debug(
         "Sending {} blob sidecars to the pool for block with root {}",
         blobSidecars.size(),

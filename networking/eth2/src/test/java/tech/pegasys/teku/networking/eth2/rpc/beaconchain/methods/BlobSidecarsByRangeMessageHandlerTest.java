@@ -52,7 +52,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
@@ -99,7 +99,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
       spec.forMilestone(SpecMilestone.DENEB).miscHelpers().toVersionDeneb().orElseThrow();
 
   @SuppressWarnings("unchecked")
-  private final ResponseCallback<BlobSidecar> listener = mock(ResponseCallback.class);
+  private final ResponseCallback<BlobSidecarOld> listener = mock(ResponseCallback.class);
 
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
@@ -261,7 +261,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock);
 
-    final List<BlobSidecar> expectedSent = setUpBlobSidecarsData(startSlot, request.getMaxSlot());
+    final List<BlobSidecarOld> expectedSent =
+        setUpBlobSidecarsData(startSlot, request.getMaxSlot());
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
@@ -273,11 +274,12 @@ public class BlobSidecarsByRangeMessageHandlerTest {
         .adjustBlobSidecarsRequest(
             eq(allowedObjectsRequest.get()), eq(Long.valueOf(expectedSent.size())));
 
-    final ArgumentCaptor<BlobSidecar> argumentCaptor = ArgumentCaptor.forClass(BlobSidecar.class);
+    final ArgumentCaptor<BlobSidecarOld> argumentCaptor =
+        ArgumentCaptor.forClass(BlobSidecarOld.class);
 
     verify(listener, times(expectedSent.size())).respond(argumentCaptor.capture());
 
-    final List<BlobSidecar> actualSent = argumentCaptor.getAllValues();
+    final List<BlobSidecarOld> actualSent = argumentCaptor.getAllValues();
 
     verify(listener).completeSuccessfully();
 
@@ -294,7 +296,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock);
 
-    final List<BlobSidecar> allAvailableBlobs =
+    final List<BlobSidecarOld> allAvailableBlobs =
         setUpBlobSidecarsData(startSlot, request.getMaxSlot());
 
     // we simulate that the canonical non-finalized chain only contains blobs from last
@@ -302,7 +304,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     final SlotAndBlockRoot canonicalSlotAndBlockRoot =
         allAvailableBlobs.get(allAvailableBlobs.size() - 1).getSlotAndBlockRoot();
 
-    final List<BlobSidecar> expectedSent =
+    final List<BlobSidecarOld> expectedSent =
         allAvailableBlobs.stream()
             .filter(
                 blobSidecar ->
@@ -331,11 +333,12 @@ public class BlobSidecarsByRangeMessageHandlerTest {
         .adjustBlobSidecarsRequest(
             eq(allowedObjectsRequest.get()), eq(Long.valueOf(expectedSent.size())));
 
-    final ArgumentCaptor<BlobSidecar> argumentCaptor = ArgumentCaptor.forClass(BlobSidecar.class);
+    final ArgumentCaptor<BlobSidecarOld> argumentCaptor =
+        ArgumentCaptor.forClass(BlobSidecarOld.class);
 
     verify(listener, times(expectedSent.size())).respond(argumentCaptor.capture());
 
-    final List<BlobSidecar> actualSent = argumentCaptor.getAllValues();
+    final List<BlobSidecarOld> actualSent = argumentCaptor.getAllValues();
 
     verify(listener).completeSuccessfully();
 
@@ -357,11 +360,12 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     // no adjustment
     verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
 
-    final ArgumentCaptor<BlobSidecar> argumentCaptor = ArgumentCaptor.forClass(BlobSidecar.class);
+    final ArgumentCaptor<BlobSidecarOld> argumentCaptor =
+        ArgumentCaptor.forClass(BlobSidecarOld.class);
 
     verify(listener, never()).respond(argumentCaptor.capture());
 
-    final List<BlobSidecar> actualSent = argumentCaptor.getAllValues();
+    final List<BlobSidecarOld> actualSent = argumentCaptor.getAllValues();
 
     verify(listener).completeSuccessfully();
 
@@ -385,11 +389,12 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     // no adjustment
     verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
 
-    final ArgumentCaptor<BlobSidecar> argumentCaptor = ArgumentCaptor.forClass(BlobSidecar.class);
+    final ArgumentCaptor<BlobSidecarOld> argumentCaptor =
+        ArgumentCaptor.forClass(BlobSidecarOld.class);
 
     verify(listener, never()).respond(argumentCaptor.capture());
 
-    final List<BlobSidecar> actualSent = argumentCaptor.getAllValues();
+    final List<BlobSidecarOld> actualSent = argumentCaptor.getAllValues();
 
     verify(listener).completeSuccessfully();
 
@@ -402,7 +407,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
             spec.getSlotStartTime(currentEpoch.times(spec.getSlotsPerEpoch(ZERO)), genesisTime));
   }
 
-  private List<BlobSidecar> setUpBlobSidecarsData(final UInt64 startSlot, final UInt64 maxSlot) {
+  private List<BlobSidecarOld> setUpBlobSidecarsData(final UInt64 startSlot, final UInt64 maxSlot) {
     final List<SlotAndBlockRootAndBlobIndex> keys = setupKeyList(startSlot, maxSlot);
     when(combinedChainDataClient.getBlobSidecarKeys(eq(startSlot), eq(maxSlot), any()))
         .thenAnswer(
@@ -432,8 +437,8 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     return keys;
   }
 
-  private BlobSidecar setUpBlobSidecarDataForKey(final SlotAndBlockRootAndBlobIndex key) {
-    final BlobSidecar blobSidecar =
+  private BlobSidecarOld setUpBlobSidecarDataForKey(final SlotAndBlockRootAndBlobIndex key) {
+    final BlobSidecarOld blobSidecar =
         dataStructureUtil
             .createRandomBlobSidecarBuilder()
             .blockRoot(key.getBlockRoot())

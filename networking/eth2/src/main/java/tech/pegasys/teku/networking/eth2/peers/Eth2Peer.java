@@ -30,7 +30,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.methods.Eth2RpcMethod;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.RpcRequest;
@@ -91,13 +91,13 @@ public interface Eth2Peer extends Peer, SyncSource {
       throws RpcException;
 
   SafeFuture<Void> requestBlobSidecarsByRoot(
-      List<BlobIdentifier> blobIdentifiers, RpcResponseListener<BlobSidecar> listener);
+      List<BlobIdentifier> blobIdentifiers, RpcResponseListener<BlobSidecarOld> listener);
 
   SafeFuture<Optional<SignedBeaconBlock>> requestBlockBySlot(UInt64 slot);
 
   SafeFuture<Optional<SignedBeaconBlock>> requestBlockByRoot(Bytes32 blockRoot);
 
-  SafeFuture<Optional<BlobSidecar>> requestBlobSidecarByRoot(BlobIdentifier blobIdentifier);
+  SafeFuture<Optional<BlobSidecarOld>> requestBlobSidecarByRoot(BlobIdentifier blobIdentifier);
 
   SafeFuture<MetadataMessage> requestMetadata();
 
@@ -110,7 +110,7 @@ public interface Eth2Peer extends Peer, SyncSource {
   void adjustBlocksRequest(RequestApproval blocksRequest, long returnedBlocksCount);
 
   Optional<RequestApproval> approveBlobSidecarsRequest(
-      ResponseCallback<BlobSidecar> callback, long blobSidecarsCount);
+      ResponseCallback<BlobSidecarOld> callback, long blobSidecarsCount);
 
   void adjustBlobSidecarsRequest(
       RequestApproval blobSidecarsRequest, long returnedBlobSidecarsCount);

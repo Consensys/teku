@@ -305,9 +305,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     prepareEngineGetPayloadResponseWithBlobs(executionPayloadContext, executionPayloadValue, slot);
 
     final HeaderWithFallbackData expectedResult =
-        HeaderWithFallbackData.create(
-            builderBid.getHeader(),
-            Optional.of(builderBid.getOptionalBlindedBlobsBundle().orElseThrow()));
+        HeaderWithFallbackData.create(builderBid.getHeader(), Optional.empty());
 
     final ExecutionPayloadResult executionPayloadResult =
         blockProductionManager.initiateBlockAndBlobsProduction(
@@ -336,7 +334,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
         .isCompletedWithValue(payloadAndBlobsBundle);
 
     // we expect both builder and local engine have been called
-    verify(builderClient).getPayload(signedBlindedBlockContents);
+    verify(builderClient).getPayload(signedBlindedBlockContents.getSignedBlock());
     verifyNoMoreInteractions(executionClientHandler);
     verifySourceCounter(Source.BUILDER, FallbackReason.NONE);
   }
@@ -381,7 +379,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
         dataStructureUtil.randomSignedBlindedBlockContents(slot);
     assertThatThrownBy(
         () -> blockProductionManager.getUnblindedPayload(signedBlindedBlockContents));
-    verify(builderClient).getPayload(signedBlindedBlockContents);
+    verify(builderClient).getPayload(signedBlindedBlockContents.getSignedBlock());
   }
 
   private void setupDeneb() {
@@ -482,7 +480,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
   private ExecutionPayload prepareBuilderGetPayloadResponse(
       final SignedBlindedBlockContainer signedBlindedBlockContainer) {
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
-    when(builderClient.getPayload(signedBlindedBlockContainer))
+    when(builderClient.getPayload(signedBlindedBlockContainer.getSignedBlock()))
         .thenReturn(SafeFuture.completedFuture(new Response<>(payload)));
     return payload;
   }
@@ -491,7 +489,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
       final SignedBlindedBlockContainer signedBlindedBlockContainer) {
     final ExecutionPayloadAndBlobsBundle payloadAndBlobsBundle =
         dataStructureUtil.randomExecutionPayloadAndBlobsBundle();
-    when(builderClient.getPayload(signedBlindedBlockContainer))
+    when(builderClient.getPayload(signedBlindedBlockContainer.getSignedBlock()))
         .thenReturn(SafeFuture.completedFuture(new Response<>(payloadAndBlobsBundle)));
     return payloadAndBlobsBundle;
   }

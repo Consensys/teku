@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -52,7 +52,7 @@ public class BlobSidecarGossipValidatorTest {
   private Bytes32 blockRoot;
   private Bytes32 blockParentRoot;
 
-  private SignedBlobSidecar signedBlobSidecar;
+  private SignedBlobSidecarOld signedBlobSidecar;
 
   @BeforeEach
   void setUp(final SpecContext specContext) {

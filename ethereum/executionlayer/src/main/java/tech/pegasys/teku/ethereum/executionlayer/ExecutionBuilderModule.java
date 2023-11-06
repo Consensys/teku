@@ -33,6 +33,7 @@ import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
@@ -304,7 +305,7 @@ public class ExecutionBuilderModule {
     if (maybeProcessedSlot.isEmpty()) {
       LOG.warn(
           "Blinded block seems to not be built via either builder or local EL. Trying to unblind it via builder endpoint anyway.");
-      return getPayloadFromBuilder(signedBlindedBlockContainer);
+      return getPayloadFromBuilder(signedBlindedBlockContainer.getSignedBlock());
     }
 
     final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture =
@@ -369,16 +370,15 @@ public class ExecutionBuilderModule {
   }
 
   private SafeFuture<BuilderPayload> getPayloadFromBuilder(
-      final SignedBlindedBlockContainer signedBlindedBlockContainer) {
-    LOG.trace(
-        "calling builderGetPayload(signedBlindedBlockContainer={})", signedBlindedBlockContainer);
+      final SignedBeaconBlock signedBlindedBeaconBlock) {
+    LOG.trace("calling builderGetPayload(signedBlindedBeaconBlock={})", signedBlindedBeaconBlock);
 
     return builderClient
         .orElseThrow(
             () ->
                 new RuntimeException(
                     "Unable to get payload from builder: builder endpoint not available"))
-        .getPayload(signedBlindedBlockContainer)
+        .getPayload(signedBlindedBeaconBlock)
         .thenApply(ResponseUnwrapper::unwrapBuilderResponseOrThrow)
         .thenPeek(
             builderPayload -> {
@@ -390,8 +390,8 @@ public class ExecutionBuilderModule {
               executionLayerManager.recordExecutionPayloadFallbackSource(
                   Source.BUILDER, FallbackReason.NONE);
               LOG.trace(
-                  "builderGetPayload(signedBlindedBlockContainer={}) -> {}",
-                  signedBlindedBlockContainer,
+                  "builderGetPayload(signedBlindedBeaconBlock={}) -> {}",
+                  signedBlindedBeaconBlock,
                   builderPayload);
             });
   }
@@ -405,7 +405,7 @@ public class ExecutionBuilderModule {
     return headerWithFallbackDataFuture.thenCompose(
         headerWithFallbackData -> {
           if (headerWithFallbackData.getFallbackDataOptional().isEmpty()) {
-            return getPayloadFromBuilder(signedBlindedBlockContainer);
+            return getPayloadFromBuilder(signedBlindedBlockContainer.getSignedBlock());
           } else {
             final FallbackData fallbackData =
                 headerWithFallbackData.getFallbackDataOptional().get();

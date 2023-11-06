@@ -24,6 +24,8 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_PARTIAL_C
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNSUPPORTED_MEDIA_TYPE;
 
+import java.util.List;
+
 public class RestApiConstants {
 
   public static final String SLOT = "slot";
@@ -55,6 +57,21 @@ public class RestApiConstants {
   public static final String TAG_REWARDS = "Rewards";
   public static final String TAG_DEBUG = "Debug";
   public static final String TAG_TEKU = "Teku";
+
+  // Preferred tags order in Swagger UI
+  public static final List<String> PREFERRED_DISPLAY_TAGS_ORDER =
+      List.of(
+          TAG_BEACON,
+          TAG_VALIDATOR_REQUIRED,
+          TAG_VALIDATOR,
+          TAG_BUILDER,
+          TAG_REWARDS,
+          TAG_EVENTS,
+          TAG_CONFIG,
+          TAG_NODE,
+          TAG_TEKU,
+          TAG_DEBUG,
+          TAG_EXPERIMENTAL);
 
   // Use "" + instead of Integer.toString so they are constants and can be used in annotations
   public static final String RES_OK = "" + SC_OK;

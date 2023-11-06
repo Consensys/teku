@@ -58,7 +58,7 @@ import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
@@ -179,14 +179,14 @@ public class ChainDataProvider {
     return fromBlock(blockIdParam, Function.identity());
   }
 
-  public SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecars(
+  public SafeFuture<Optional<List<BlobSidecarOld>>> getBlobSidecars(
       final String blockIdParam, final List<UInt64> indices) {
     return blobSidecarSelectorFactory
         .createSelectorForBlockId(blockIdParam)
         .getBlobSidecars(indices);
   }
 
-  public SafeFuture<Optional<List<BlobSidecar>>> getAllBlobSidecarsAtSlot(
+  public SafeFuture<Optional<List<BlobSidecarOld>>> getAllBlobSidecarsAtSlot(
       final UInt64 slot, final List<UInt64> indices) {
     return blobSidecarSelectorFactory.slotSelectorForAll(slot).getBlobSidecars(indices);
   }

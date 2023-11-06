@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -42,7 +42,7 @@ public interface MutableStore extends ReadOnlyStore {
       SignedBeaconBlock block,
       BeaconState state,
       BlockCheckpoints checkpoints,
-      Optional<List<BlobSidecar>> blobSidecars,
+      Optional<List<BlobSidecarOld>> blobSidecars,
       Optional<UInt64> earliestBlobSidecarSlot);
 
   default void putBlockAndState(
@@ -57,7 +57,7 @@ public interface MutableStore extends ReadOnlyStore {
 
   default void putBlockAndState(
       final SignedBlockAndState blockAndState,
-      final List<BlobSidecar> blobSidecars,
+      final List<BlobSidecarOld> blobSidecars,
       final BlockCheckpoints checkpoints) {
     putBlockAndState(
         blockAndState.getBlock(),

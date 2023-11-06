@@ -23,7 +23,7 @@ import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
@@ -65,7 +65,7 @@ public class ThrottlingBuilderClient implements BuilderClient {
 
   @Override
   public SafeFuture<Response<BuilderPayload>> getPayload(
-      final SignedBlindedBlockContainer signedBlindedBlockContainer) {
-    return taskQueue.queueTask(() -> delegate.getPayload(signedBlindedBlockContainer));
+      final SignedBeaconBlock signedBlindedBeaconBlock) {
+    return taskQueue.queueTask(() -> delegate.getPayload(signedBlindedBeaconBlock));
   }
 }

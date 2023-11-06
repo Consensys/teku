@@ -89,12 +89,12 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSid
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchemaOld;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecarSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarSchemaOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -617,7 +617,7 @@ public final class DataStructureUtil {
                   .publicKey(builderPublicKey);
               schemaDefinitions
                   .toVersionDeneb()
-                  .ifPresent(__ -> builder.blindedBlobsBundle(randomBlindedBlobsBundle()));
+                  .ifPresent(__ -> builder.blobKzgCommitments(randomSszKzgCommitmentList()));
             });
   }
 
@@ -634,7 +634,7 @@ public final class DataStructureUtil {
                   .publicKey(randomPublicKey());
               schemaDefinitions
                   .toVersionDeneb()
-                  .ifPresent(__ -> builder.blindedBlobsBundle(randomBlindedBlobsBundle()));
+                  .ifPresent(__ -> builder.blobKzgCommitments(randomSszKzgCommitmentList()));
             });
   }
 
@@ -2134,19 +2134,19 @@ public final class DataStructureUtil {
     return randomBlob().getBytes();
   }
 
-  public List<BlobSidecar> randomBlobSidecarsForBlock(final SignedBeaconBlock block) {
+  public List<BlobSidecarOld> randomBlobSidecarsForBlock(final SignedBeaconBlock block) {
     return randomBlobSidecarsForBlock(block, (__, builder) -> builder);
   }
 
-  public List<BlobSidecar> randomBlobSidecarsForBlock(
+  public List<BlobSidecarOld> randomBlobSidecarsForBlock(
       final SignedBeaconBlock block,
       final BiFunction<Integer, RandomBlobSidecarBuilder, RandomBlobSidecarBuilder> modifier) {
     return randomSignedBlobSidecarsForBlock(block, modifier).stream()
-        .map(SignedBlobSidecar::getBlobSidecar)
+        .map(SignedBlobSidecarOld::getBlobSidecar)
         .collect(toList());
   }
 
-  public List<SignedBlobSidecar> randomSignedBlobSidecarsForBlock(
+  public List<SignedBlobSidecarOld> randomSignedBlobSidecarsForBlock(
       final SignedBeaconBlock block,
       final BiFunction<Integer, RandomBlobSidecarBuilder, RandomBlobSidecarBuilder> modifier) {
     final SszList<SszKZGCommitment> blobKzgCommitments =
@@ -2170,31 +2170,31 @@ public final class DataStructureUtil {
         .collect(toList());
   }
 
-  public BlobSidecar randomBlobSidecar() {
+  public BlobSidecarOld randomBlobSidecar() {
     return new RandomBlobSidecarBuilder().build();
   }
 
-  public BlobSidecar randomBlobSidecar(final BlobIdentifier blobIdentifier) {
+  public BlobSidecarOld randomBlobSidecar(final BlobIdentifier blobIdentifier) {
     return new RandomBlobSidecarBuilder()
         .index(blobIdentifier.getIndex())
         .blockRoot(blobIdentifier.getBlockRoot())
         .build();
   }
 
-  public List<BlobSidecar> randomBlobSidecars(int count) {
-    List<BlobSidecar> blobSidecars = new ArrayList<>();
+  public List<BlobSidecarOld> randomBlobSidecars(int count) {
+    List<BlobSidecarOld> blobSidecars = new ArrayList<>();
     for (int i = 0; i < count; i++) {
       blobSidecars.add(new RandomBlobSidecarBuilder().build());
     }
     return blobSidecars;
   }
 
-  public BlobSidecar randomBlobSidecar(
+  public BlobSidecarOld randomBlobSidecar(
       final UInt64 slot, final Bytes32 blockRoot, final UInt64 index) {
     return new RandomBlobSidecarBuilder().slot(slot).index(index).blockRoot(blockRoot).build();
   }
 
-  public BlobSidecar randomBlobSidecar(
+  public BlobSidecarOld randomBlobSidecar(
       final UInt64 slot,
       final Bytes32 blockRoot,
       final Bytes32 parentBlockRoot,
@@ -2207,7 +2207,7 @@ public final class DataStructureUtil {
         .build();
   }
 
-  public BlobSidecar randomBlobSidecar(final Bytes32 blockRoot, final UInt64 index) {
+  public BlobSidecarOld randomBlobSidecar(final Bytes32 blockRoot, final UInt64 index) {
     return new RandomBlobSidecarBuilder().index(index).blockRoot(blockRoot).build();
   }
 
@@ -2279,7 +2279,7 @@ public final class DataStructureUtil {
             .collect(toList()));
   }
 
-  public SignedBlobSidecar randomSignedBlobSidecar() {
+  public SignedBlobSidecarOld randomSignedBlobSidecar() {
     return new RandomBlobSidecarBuilder().buildSigned();
   }
 
@@ -2299,8 +2299,8 @@ public final class DataStructureUtil {
     return blindedBlobSidecars;
   }
 
-  public List<SignedBlobSidecar> randomSignedBlobSidecars(final int count) {
-    final List<SignedBlobSidecar> signedBlobSidecars = new ArrayList<>();
+  public List<SignedBlobSidecarOld> randomSignedBlobSidecars(final int count) {
+    final List<SignedBlobSidecarOld> signedBlobSidecars = new ArrayList<>();
     for (int i = 0; i < count; i++) {
       signedBlobSidecars.add(new RandomBlobSidecarBuilder().buildSigned());
     }
@@ -2335,7 +2335,7 @@ public final class DataStructureUtil {
   }
 
   public SignedBlockContents randomSignedBlockContents(final UInt64 slot) {
-    final List<SignedBlobSidecar> signedBlobSidecars =
+    final List<SignedBlobSidecarOld> signedBlobSidecars =
         randomSignedBlobSidecars(randomNumberOfBlobsPerBlock());
     final SignedBeaconBlock signedBeaconBlock = randomSignedBeaconBlock(slot);
     return getDenebSchemaDefinitions(slot)
@@ -2348,7 +2348,7 @@ public final class DataStructureUtil {
   }
 
   public BlockContents randomBlockContents(final UInt64 slot) {
-    final List<BlobSidecar> blobSidecarList = randomBlobSidecars(randomNumberOfBlobsPerBlock());
+    final List<BlobSidecarOld> blobSidecarList = randomBlobSidecars(randomNumberOfBlobsPerBlock());
     final BeaconBlock beaconBlock = randomBeaconBlock(slot);
     return getDenebSchemaDefinitions(slot)
         .getBlockContentsSchema()
@@ -2391,7 +2391,7 @@ public final class DataStructureUtil {
         .create(signedBlindedBeaconBlock, signedBlindedBlobSidecars);
   }
 
-  public SignedBlobSidecar randomSignedBlobSidecar(final UInt64 index) {
+  public SignedBlobSidecarOld randomSignedBlobSidecar(final UInt64 index) {
     return new RandomBlobSidecarBuilder().index(index).buildSigned();
   }
 
@@ -2480,8 +2480,8 @@ public final class DataStructureUtil {
       return this;
     }
 
-    public BlobSidecar build() {
-      final BlobSidecarSchema blobSidecarSchema =
+    public BlobSidecarOld build() {
+      final BlobSidecarSchemaOld blobSidecarSchema =
           getDenebSchemaDefinitions(slot.orElse(randomUInt64())).getBlobSidecarSchema();
 
       return blobSidecarSchema.create(
@@ -2495,16 +2495,16 @@ public final class DataStructureUtil {
           kzgProof.orElse(randomBytes48()));
     }
 
-    public SignedBlobSidecar buildSigned(final Optional<BLSSignature> blsSignature) {
-      BlobSidecar blobSidecar = build();
-      final SignedBlobSidecarSchema blobSidecarSchema =
+    public SignedBlobSidecarOld buildSigned(final Optional<BLSSignature> blsSignature) {
+      BlobSidecarOld blobSidecar = build();
+      final SignedBlobSidecarSchemaOld blobSidecarSchema =
           getDenebSchemaDefinitions(slot.orElse(randomUInt64())).getSignedBlobSidecarSchema();
 
       return blobSidecarSchema.create(blobSidecar, blsSignature.orElse(randomSignature()));
     }
 
     public BlindedBlobSidecar buildBlinded() {
-      BlobSidecar blobSidecar = build();
+      BlobSidecarOld blobSidecar = build();
       final BlindedBlobSidecarSchema blindedBlobSidecarSchema =
           getDenebSchemaDefinitions(slot.orElse(randomUInt64())).getBlindedBlobSidecarSchema();
 
@@ -2521,7 +2521,7 @@ public final class DataStructureUtil {
           blindedBlobSidecar, blsSignature.orElse(randomSignature()));
     }
 
-    public SignedBlobSidecar buildSigned() {
+    public SignedBlobSidecarOld buildSigned() {
       return buildSigned(Optional.empty());
     }
 

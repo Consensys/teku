@@ -32,7 +32,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -163,7 +163,7 @@ public class GossipForkManager {
     publishMessage(block.getSlot(), block, "block", GossipForkSubscriptions::publishBlock);
   }
 
-  public synchronized void publishBlobSidecar(final SignedBlobSidecar blobSidecar) {
+  public synchronized void publishBlobSidecar(final SignedBlobSidecarOld blobSidecar) {
     publishMessage(
         blobSidecar.getBlobSidecar().getSlot(),
         blobSidecar,

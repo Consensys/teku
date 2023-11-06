@@ -32,8 +32,8 @@ import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.Domain;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 
@@ -78,8 +78,9 @@ public class BlobSidecarGossipValidator {
     this.receivedValidBlobSidecarInfoSet = receivedValidBlobSidecarInfoSet;
   }
 
-  public SafeFuture<InternalValidationResult> validate(final SignedBlobSidecar signedBlobSidecar) {
-    final BlobSidecar blobSidecar = signedBlobSidecar.getBlobSidecar();
+  public SafeFuture<InternalValidationResult> validate(
+      final SignedBlobSidecarOld signedBlobSidecar) {
+    final BlobSidecarOld blobSidecar = signedBlobSidecar.getBlobSidecar();
 
     /*
     [REJECT] The sidecar is for the correct subnet -- i.e. compute_subnet_for_blob_sidecar(sidecar.index) == subnet_id.
@@ -209,7 +210,7 @@ public class BlobSidecarGossipValidator {
   }
 
   private boolean verifyBlobSidecarSignature(
-      final BeaconState state, final SignedBlobSidecar signedBlobSidecar) {
+      final BeaconState state, final SignedBlobSidecarOld signedBlobSidecar) {
 
     final Bytes32 domain =
         spec.getDomain(
@@ -226,7 +227,7 @@ public class BlobSidecarGossipValidator {
         state);
   }
 
-  private boolean isFirstWithValidSignatureForIndexAndBlockRoot(final BlobSidecar blobSidecar) {
+  private boolean isFirstWithValidSignatureForIndexAndBlockRoot(final BlobSidecarOld blobSidecar) {
     return !receivedValidBlobSidecarInfoSet.contains(
         new IndexAndBlockRoot(blobSidecar.getIndex(), blobSidecar.getBlockRoot()));
   }

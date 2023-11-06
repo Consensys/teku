@@ -47,8 +47,8 @@ import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchemaOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -92,9 +92,9 @@ public class ChainBuilder {
   private final AttestationGenerator attestationGenerator;
   private final AttesterSlashingGenerator attesterSlashingGenerator;
   private final NavigableMap<UInt64, SignedBlockAndState> blocks = new TreeMap<>();
-  private final NavigableMap<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = new TreeMap<>();
+  private final NavigableMap<SlotAndBlockRoot, List<BlobSidecarOld>> blobSidecars = new TreeMap<>();
   private final Map<Bytes32, SignedBlockAndState> blocksByHash = new HashMap<>();
-  private final Map<Bytes32, List<BlobSidecar>> blobSidecarsByHash = new HashMap<>();
+  private final Map<Bytes32, List<BlobSidecarOld>> blobSidecarsByHash = new HashMap<>();
   private Optional<UInt64> earliestBlobSidecarSlot;
   private final BlockProposalTestUtil blockProposalTestUtil;
   private final BlobsUtil blobsUtil;
@@ -103,7 +103,7 @@ public class ChainBuilder {
       final Spec spec,
       final List<BLSKeyPair> validatorKeys,
       final Map<UInt64, SignedBlockAndState> existingBlocks,
-      final Map<SlotAndBlockRoot, List<BlobSidecar>> existingBlobSidecars,
+      final Map<SlotAndBlockRoot, List<BlobSidecarOld>> existingBlobSidecars,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     this.spec = spec;
     this.validatorKeys = validatorKeys;
@@ -142,11 +142,11 @@ public class ChainBuilder {
     return Optional.ofNullable(blocksByHash.get(blockRoot));
   }
 
-  public List<BlobSidecar> getBlobSidecars(final Bytes32 blockRoot) {
+  public List<BlobSidecarOld> getBlobSidecars(final Bytes32 blockRoot) {
     return Optional.ofNullable(blobSidecarsByHash.get(blockRoot)).orElse(Collections.emptyList());
   }
 
-  public Optional<BlobSidecar> getBlobSidecar(final BlobIdentifier blobIdentifier) {
+  public Optional<BlobSidecarOld> getBlobSidecar(final BlobIdentifier blobIdentifier) {
     return getBlobSidecars(blobIdentifier.getBlockRoot()).stream()
         .filter(blobSidecar -> blobSidecar.getIndex().equals(blobIdentifier.getIndex()))
         .findFirst();
@@ -204,12 +204,12 @@ public class ChainBuilder {
         .filter(b -> b.getBlock().getSlot().isLessThanOrEqualTo(toSlot));
   }
 
-  public Stream<Map.Entry<SlotAndBlockRoot, List<BlobSidecar>>> streamBlobSidecars(
+  public Stream<Map.Entry<SlotAndBlockRoot, List<BlobSidecarOld>>> streamBlobSidecars(
       final long fromSlot, final long toSlot) {
     return streamBlobSidecars(UInt64.valueOf(fromSlot), UInt64.valueOf(toSlot));
   }
 
-  public Stream<Map.Entry<SlotAndBlockRoot, List<BlobSidecar>>> streamBlobSidecars(
+  public Stream<Map.Entry<SlotAndBlockRoot, List<BlobSidecarOld>>> streamBlobSidecars(
       final UInt64 fromSlot, final UInt64 toSlot) {
     return blobSidecars.entrySet().stream()
         .filter(slot -> slot.getKey().getSlot().isGreaterThanOrEqualTo(fromSlot))
@@ -218,7 +218,7 @@ public class ChainBuilder {
         .sorted(Map.Entry.comparingByKey());
   }
 
-  public Stream<BlobSidecar> streamBlobSidecars() {
+  public Stream<BlobSidecarOld> streamBlobSidecars() {
     return blobSidecars.values().stream().flatMap(Collection::stream);
   }
 
@@ -536,7 +536,7 @@ public class ChainBuilder {
   }
 
   private void trackBlobSidecars(
-      final SlotAndBlockRoot slotAndBlockRoot, final List<BlobSidecar> blobSidecars) {
+      final SlotAndBlockRoot slotAndBlockRoot, final List<BlobSidecarOld> blobSidecars) {
     if (blobSidecars.isEmpty()) {
       return;
     }
@@ -627,7 +627,7 @@ public class ChainBuilder {
             .getBlobSidecars()
             .map(
                 blobSidecars ->
-                    blobSidecars.stream().map(BlobSidecar::getBlob).collect(Collectors.toList()))
+                    blobSidecars.stream().map(BlobSidecarOld::getBlob).collect(Collectors.toList()))
             .or(options::getBlobs)
             .orElse(Collections.emptyList());
     final List<KZGCommitment> kzgCommitments = blobsUtil.blobsToKzgCommitments(blobs);
@@ -660,18 +660,18 @@ public class ChainBuilder {
                 options.getKzgCommitments(),
                 options.getSkipStateTransition()));
 
-    final BlobSidecarSchema blobSidecarSchema =
+    final BlobSidecarSchemaOld blobSidecarSchema =
         SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
             .getBlobSidecarSchema();
 
     if (options.isStoreBlobSidecarsEnabled()) {
-      final List<BlobSidecar> blobSidecars =
+      final List<BlobSidecarOld> blobSidecars =
           IntStream.range(0, blobs.size())
               .mapToObj(
                   index -> {
                     final Blob blob = blobs.get(index);
                     final KZGCommitment kzgCommitment = kzgCommitments.get(index);
-                    return new BlobSidecar(
+                    return new BlobSidecarOld(
                         blobSidecarSchema,
                         nextBlockAndState.getRoot(),
                         UInt64.valueOf(index),
@@ -732,18 +732,18 @@ public class ChainBuilder {
                 randomBlobs,
                 options.getSkipStateTransition()));
 
-    final BlobSidecarSchema blobSidecarSchema =
+    final BlobSidecarSchemaOld blobSidecarSchema =
         SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
             .getBlobSidecarSchema();
 
     if (options.isStoreBlobSidecarsEnabled()) {
-      final List<BlobSidecar> blobSidecars =
+      final List<BlobSidecarOld> blobSidecars =
           IntStream.range(0, randomBlobs.size())
               .mapToObj(
                   index -> {
                     final Blob blob = randomBlobs.get(index);
                     final KZGCommitment kzgCommitment = kzgCommitments.get(index);
-                    return new BlobSidecar(
+                    return new BlobSidecarOld(
                         blobSidecarSchema,
                         nextBlockAndState.getRoot(),
                         UInt64.valueOf(index),
@@ -886,7 +886,7 @@ public class ChainBuilder {
     private Optional<SszList<SszKZGCommitment>> kzgCommitments = Optional.empty();
     private Optional<List<Blob>> blobs = Optional.empty();
     private Optional<KZGProof> kzgProof = Optional.empty();
-    private Optional<List<BlobSidecar>> blobSidecars = Optional.empty();
+    private Optional<List<BlobSidecarOld>> blobSidecars = Optional.empty();
     private boolean generateRandomBlobs = false;
     private Optional<Integer> generateRandomBlobsCount = Optional.empty();
     private boolean storeBlobSidecars = true;
@@ -945,7 +945,7 @@ public class ChainBuilder {
       return this;
     }
 
-    public BlockOptions setBlobSidecars(final List<BlobSidecar> blobSidecars) {
+    public BlockOptions setBlobSidecars(final List<BlobSidecarOld> blobSidecars) {
       this.blobSidecars = Optional.of(blobSidecars);
       return this;
     }
@@ -1027,7 +1027,7 @@ public class ChainBuilder {
       return blobs;
     }
 
-    public Optional<List<BlobSidecar>> getBlobSidecars() {
+    public Optional<List<BlobSidecarOld>> getBlobSidecars() {
       return blobSidecars;
     }
 
