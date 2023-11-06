@@ -16,7 +16,7 @@ package tech.pegasys.teku.storage.store;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.dataproviders.generators.StateAtSlotTask.AsyncStateProvider.fromAnchor;
 import static tech.pegasys.teku.dataproviders.lookup.BlockProvider.fromDynamicMap;
-import static tech.pegasys.teku.dataproviders.lookup.BlockProvider.fromMap;
+import static tech.pegasys.teku.dataproviders.lookup.BlockProvider.fromMapWithLock;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -113,6 +113,7 @@ class Store extends CacheableStore {
   private UInt64 highestVotedValidatorIndex;
 
   private Store(
+      final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final Spec spec,
       final int hotStatePersistenceFrequencyInEpochs,
@@ -178,7 +179,7 @@ class Store extends CacheableStore {
                         .getSignedBeaconBlock()
                         .map((b) -> Map.of(b.getRoot(), b))
                         .orElseGet(Collections::emptyMap)),
-            fromMap(this.blocks),
+            fromMapWithLock(this.blocks, asyncRunner, readLock),
             blockProvider);
     this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
   }
@@ -233,6 +234,7 @@ class Store extends CacheableStore {
                 finalizedAnchor));
 
     return new Store(
+        asyncRunner,
         metricsSystem,
         spec,
         config.getHotStatePersistenceFrequencyInEpochs(),
@@ -338,6 +340,7 @@ class Store extends CacheableStore {
   }
 
   @Override
+  @VisibleForTesting
   public void clearCaches() {
     states.clear();
     checkpointStates.clear();
@@ -498,12 +501,6 @@ class Store extends CacheableStore {
     if (!containsBlock(blockRoot)) {
       return EmptyStoreResults.EMPTY_SIGNED_BLOCK_FUTURE;
     }
-    final Optional<SignedBeaconBlock> inMemoryBlock = getBlockIfAvailable(blockRoot);
-    if (inMemoryBlock.isPresent()) {
-      return SafeFuture.completedFuture(inMemoryBlock);
-    }
-
-    // Retrieve block
     return blockProvider.getBlock(blockRoot);
   }
 
