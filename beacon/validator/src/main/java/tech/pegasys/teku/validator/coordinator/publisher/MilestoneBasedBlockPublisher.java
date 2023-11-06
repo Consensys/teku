@@ -16,7 +16,6 @@ package tech.pegasys.teku.validator.coordinator.publisher;
 import com.google.common.base.Suppliers;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
@@ -80,7 +79,7 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBlockContainer maybeBlindedBlockContainer,
-      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+      final BroadcastValidationLevel broadcastValidationLevel) {
     final SpecMilestone blockMilestone =
         spec.atSlot(maybeBlindedBlockContainer.getSlot()).getMilestone();
     return registeredPublishers

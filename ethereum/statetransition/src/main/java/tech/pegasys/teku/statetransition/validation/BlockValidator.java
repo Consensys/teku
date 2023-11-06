@@ -35,6 +35,11 @@ public class BlockValidator {
       final BroadcastValidationLevel broadcastValidationLevel,
       final SafeFuture<BlockImportResult> consensusValidationResult) {
 
+    // validateBroadcast should not be called at all but let's cover the case for safety
+    if (broadcastValidationLevel == BroadcastValidationLevel.NOT_REQUIRED) {
+      return SafeFuture.completedFuture(BroadcastValidationResult.SUCCESS);
+    }
+
     // GOSSIP only validation
     SafeFuture<BroadcastValidationResult> validationPipeline =
         blockGossipValidator

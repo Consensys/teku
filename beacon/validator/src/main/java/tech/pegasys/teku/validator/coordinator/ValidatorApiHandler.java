@@ -608,7 +608,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBlockContainer maybeBlindedBlockContainer,
-      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+      final BroadcastValidationLevel broadcastValidationLevel) {
     return blockPublisher
         .sendSignedBlock(maybeBlindedBlockContainer, broadcastValidationLevel)
         .exceptionally(ex -> SendSignedBlockResult.rejected(ex.getMessage()));

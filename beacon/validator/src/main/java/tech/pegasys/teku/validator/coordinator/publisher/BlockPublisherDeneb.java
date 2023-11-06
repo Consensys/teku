@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.coordinator.publisher;
 
-import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
@@ -50,7 +49,7 @@ public class BlockPublisherDeneb extends AbstractBlockPublisher {
   @Override
   protected SafeFuture<BlockImportAndBroadcastValidationResults> importBlock(
       final SignedBlockContainer blockContainer,
-      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+      final BroadcastValidationLevel broadcastValidationLevel) {
     final SignedBeaconBlock block = blockContainer.getSignedBlock();
 
     blockContainer

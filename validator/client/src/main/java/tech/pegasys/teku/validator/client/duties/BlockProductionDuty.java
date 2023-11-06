@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -131,7 +132,7 @@ public class BlockProductionDuty implements Duty {
 
   private SafeFuture<DutyResult> sendBlock(final SignedBlockContainer signedBlockContainer) {
     return validatorApiChannel
-        .sendSignedBlock(signedBlockContainer, Optional.empty())
+        .sendSignedBlock(signedBlockContainer, BroadcastValidationLevel.NOT_REQUIRED)
         .thenApply(
             result -> {
               if (result.isPublished()) {

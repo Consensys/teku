@@ -95,7 +95,7 @@ public class BlockValidatorTest {
   @ParameterizedTest
   @EnumSource(
       value = BroadcastValidationLevel.class,
-      names = {"CONSENSUS", "CONSENSUS_EQUIVOCATION"})
+      names = {"CONSENSUS", "CONSENSUS_AND_EQUIVOCATION"})
   public void shouldReturnConsensusFailureImmediatelyWhenConsensusValidationIsNotSuccessful(
       final BroadcastValidationLevel broadcastValidation) {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
@@ -117,7 +117,7 @@ public class BlockValidatorTest {
   @ParameterizedTest
   @EnumSource(
       value = BroadcastValidationLevel.class,
-      names = {"CONSENSUS", "CONSENSUS_EQUIVOCATION"})
+      names = {"CONSENSUS", "CONSENSUS_AND_EQUIVOCATION"})
   public void shouldReturnConsensusFailureImmediatelyWhenConsensusCompleteExceptionally(
       final BroadcastValidationLevel broadcastValidation) {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
@@ -148,7 +148,9 @@ public class BlockValidatorTest {
 
     assertThat(
             blockValidator.validateBroadcast(
-                block, BroadcastValidationLevel.CONSENSUS_EQUIVOCATION, consensusValidationResult))
+                block,
+                BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION,
+                consensusValidationResult))
         .isCompletedWithValueMatching(result -> result.equals(BroadcastValidationResult.SUCCESS));
     verify(blockGossipValidator).validate(eq(block), eq(true));
     verify(blockGossipValidator).blockIsFirstBlockWithValidSignatureForSlot(eq(block));
@@ -169,7 +171,9 @@ public class BlockValidatorTest {
 
     assertThat(
             blockValidator.validateBroadcast(
-                block, BroadcastValidationLevel.CONSENSUS_EQUIVOCATION, consensusValidationResult))
+                block,
+                BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION,
+                consensusValidationResult))
         .isCompletedWithValueMatching(
             result -> result.equals(BroadcastValidationResult.FINAL_EQUIVOCATION_FAILURE));
     verify(blockGossipValidator).validate(eq(block), eq(true));

@@ -24,7 +24,7 @@ import tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastVali
 public interface BlockImportChannel extends ChannelInterface {
 
   SafeFuture<BlockImportAndBroadcastValidationResults> importBlock(
-      SignedBeaconBlock block, Optional<BroadcastValidationLevel> broadcastValidationLevel);
+      SignedBeaconBlock block, BroadcastValidationLevel broadcastValidationLevel);
 
   record BlockImportAndBroadcastValidationResults(
       SafeFuture<BlockImportResult> blockImportResult,

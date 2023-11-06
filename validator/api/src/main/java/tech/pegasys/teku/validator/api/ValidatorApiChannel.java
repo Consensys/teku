@@ -143,7 +143,7 @@ public interface ValidatorApiChannel extends ChannelInterface {
         @Override
         public SafeFuture<SendSignedBlockResult> sendSignedBlock(
             SignedBlockContainer blockContainer,
-            Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+            BroadcastValidationLevel broadcastValidationLevel) {
           return SafeFuture.completedFuture(SendSignedBlockResult.rejected("NO OP Implementation"));
         }
 
@@ -222,8 +222,7 @@ public interface ValidatorApiChannel extends ChannelInterface {
       List<SignedAggregateAndProof> aggregateAndProofs);
 
   SafeFuture<SendSignedBlockResult> sendSignedBlock(
-      SignedBlockContainer blockContainer,
-      Optional<BroadcastValidationLevel> broadcastValidationLevel);
+      SignedBlockContainer blockContainer, BroadcastValidationLevel broadcastValidationLevel);
 
   SafeFuture<List<SubmitDataError>> sendSyncCommitteeMessages(
       List<SyncCommitteeMessage> syncCommitteeMessages);

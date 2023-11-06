@@ -204,7 +204,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBlockContainer blockContainer,
-      Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+      BroadcastValidationLevel broadcastValidationLevel) {
     return countDataRequest(
         delegate.sendSignedBlock(blockContainer, broadcastValidationLevel),
         BeaconNodeRequestLabels.PUBLISH_BLOCK_METHOD);

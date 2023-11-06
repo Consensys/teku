@@ -68,6 +68,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.AttesterDuties;
@@ -593,7 +594,8 @@ class FailoverValidatorApiHandlerTest {
         DATA_STRUCTURE_UTIL.randomSignedBlindedBeaconBlock(UInt64.ONE);
 
     final ValidatorApiChannelRequest<SendSignedBlockResult> publishingRequest =
-        apiChannel -> apiChannel.sendSignedBlock(blindedSignedBlock, Optional.empty());
+        apiChannel ->
+            apiChannel.sendSignedBlock(blindedSignedBlock, BroadcastValidationLevel.NOT_REQUIRED);
 
     setupSuccesses(
         publishingRequest,
@@ -604,10 +606,13 @@ class FailoverValidatorApiHandlerTest {
 
     SafeFutureAssert.assertThatSafeFuture(publishingRequest.run(failoverApiHandler)).isCompleted();
 
-    verify(failoverApiChannel1).sendSignedBlock(blindedSignedBlock, Optional.empty());
+    verify(failoverApiChannel1)
+        .sendSignedBlock(blindedSignedBlock, BroadcastValidationLevel.NOT_REQUIRED);
 
-    verify(primaryApiChannel, never()).sendSignedBlock(blindedSignedBlock, Optional.empty());
-    verify(failoverApiChannel2, never()).sendSignedBlock(blindedSignedBlock, Optional.empty());
+    verify(primaryApiChannel, never())
+        .sendSignedBlock(blindedSignedBlock, BroadcastValidationLevel.NOT_REQUIRED);
+    verify(failoverApiChannel2, never())
+        .sendSignedBlock(blindedSignedBlock, BroadcastValidationLevel.NOT_REQUIRED);
   }
 
   private <T> void setupSuccesses(
@@ -758,8 +763,12 @@ class FailoverValidatorApiHandlerTest {
             List.of(submitDataError)),
         getArguments(
             "sendSignedBlock",
-            apiChannel -> apiChannel.sendSignedBlock(signedBeaconBlock, Optional.empty()),
-            apiChannel -> verify(apiChannel).sendSignedBlock(signedBeaconBlock, Optional.empty()),
+            apiChannel ->
+                apiChannel.sendSignedBlock(
+                    signedBeaconBlock, BroadcastValidationLevel.NOT_REQUIRED),
+            apiChannel ->
+                verify(apiChannel)
+                    .sendSignedBlock(signedBeaconBlock, BroadcastValidationLevel.NOT_REQUIRED),
             BeaconNodeRequestLabels.PUBLISH_BLOCK_METHOD,
             mock(SendSignedBlockResult.class)),
         getArguments(

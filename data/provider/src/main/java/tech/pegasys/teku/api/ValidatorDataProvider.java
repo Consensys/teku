@@ -308,7 +308,7 @@ public class ValidatorDataProvider {
 
   public SafeFuture<ValidatorBlockResult> submitSignedBlock(
       final SignedBeaconBlock signedBeaconBlock,
-      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+      final BroadcastValidationLevel broadcastValidationLevel) {
     return submitSignedBlock(
             signedBeaconBlock.asInternalSignedBeaconBlock(spec), broadcastValidationLevel)
         .thenApply(ValidatorDataProvider::generateSubmitSignedBlockResponse);
@@ -316,13 +316,13 @@ public class ValidatorDataProvider {
 
   public SafeFuture<SendSignedBlockResult> submitSignedBlock(
       final SignedBlockContainer signedBlockContainer,
-      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+      final BroadcastValidationLevel broadcastValidationLevel) {
     return validatorApiChannel.sendSignedBlock(signedBlockContainer, broadcastValidationLevel);
   }
 
   public SafeFuture<SendSignedBlockResult> submitSignedBlindedBlock(
       final SignedBlindedBlockContainer signedBlindedBlockContainer,
-      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+      final BroadcastValidationLevel broadcastValidationLevel) {
     return validatorApiChannel.sendSignedBlock(
         signedBlindedBlockContainer, broadcastValidationLevel);
   }

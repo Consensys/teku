@@ -91,6 +91,7 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -782,27 +783,27 @@ class ValidatorApiHandlerTest {
   @Test
   public void sendSignedBlock_shouldConvertSuccessfulResult() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
-    when(blockImportChannel.importBlock(block, Optional.empty()))
+    when(blockImportChannel.importBlock(block, BroadcastValidationLevel.NOT_REQUIRED))
         .thenReturn(prepareBlockImportResult(BlockImportResult.successful(block)));
     final SafeFuture<SendSignedBlockResult> result =
-        validatorApiHandler.sendSignedBlock(block, Optional.empty());
+        validatorApiHandler.sendSignedBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
 
     verify(blockGossipChannel).publishBlock(block);
-    verify(blockImportChannel).importBlock(block, Optional.empty());
+    verify(blockImportChannel).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
     assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
   }
 
   @Test
   public void sendSignedBlock_shouldConvertFailedResult() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
-    when(blockImportChannel.importBlock(block, Optional.empty()))
+    when(blockImportChannel.importBlock(block, BroadcastValidationLevel.NOT_REQUIRED))
         .thenReturn(prepareBlockImportResult(BlockImportResult.FAILED_INVALID_ANCESTRY));
 
     final SafeFuture<SendSignedBlockResult> result =
-        validatorApiHandler.sendSignedBlock(block, Optional.empty());
+        validatorApiHandler.sendSignedBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
 
     verify(blockGossipChannel).publishBlock(block);
-    verify(blockImportChannel).importBlock(block, Optional.empty());
+    verify(blockImportChannel).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
     assertThat(result)
         .isCompletedWithValue(
             SendSignedBlockResult.notImported(DOES_NOT_DESCEND_FROM_LATEST_FINALIZED.name()));
@@ -811,13 +812,13 @@ class ValidatorApiHandlerTest {
   @Test
   public void sendSignedBlock_shouldConvertKnownBlockResult() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
-    when(blockImportChannel.importBlock(block, Optional.empty()))
+    when(blockImportChannel.importBlock(block, BroadcastValidationLevel.NOT_REQUIRED))
         .thenReturn(prepareBlockImportResult(BlockImportResult.knownBlock(block, false)));
     final SafeFuture<SendSignedBlockResult> result =
-        validatorApiHandler.sendSignedBlock(block, Optional.empty());
+        validatorApiHandler.sendSignedBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
 
     verify(blockGossipChannel).publishBlock(block);
-    verify(blockImportChannel).importBlock(block, Optional.empty());
+    verify(blockImportChannel).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
     assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
   }
 
@@ -830,15 +831,15 @@ class ValidatorApiHandlerTest {
     final List<SignedBlobSidecar> blobSidecars =
         blockContents.getSignedBlobSidecars().orElseThrow();
 
-    when(blockImportChannel.importBlock(block, Optional.empty()))
+    when(blockImportChannel.importBlock(block, BroadcastValidationLevel.NOT_REQUIRED))
         .thenReturn(prepareBlockImportResult(BlockImportResult.successful(block)));
     final SafeFuture<SendSignedBlockResult> result =
-        validatorApiHandler.sendSignedBlock(blockContents, Optional.empty());
+        validatorApiHandler.sendSignedBlock(blockContents, BroadcastValidationLevel.NOT_REQUIRED);
 
     verify(blobSidecarGossipChannel).publishBlobSidecars(blobSidecars);
     verify(blobSidecarPool).onCompletedBlockAndSignedBlobSidecars(block, blobSidecars);
     verify(blockGossipChannel).publishBlock(block);
-    verify(blockImportChannel).importBlock(block, Optional.empty());
+    verify(blockImportChannel).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
     assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
   }
 
@@ -851,15 +852,15 @@ class ValidatorApiHandlerTest {
     final List<SignedBlobSidecar> blobSidecars =
         blockContents.getSignedBlobSidecars().orElseThrow();
 
-    when(blockImportChannel.importBlock(block, Optional.empty()))
+    when(blockImportChannel.importBlock(block, BroadcastValidationLevel.NOT_REQUIRED))
         .thenReturn(prepareBlockImportResult(BlockImportResult.FAILED_INVALID_ANCESTRY));
     final SafeFuture<SendSignedBlockResult> result =
-        validatorApiHandler.sendSignedBlock(blockContents, Optional.empty());
+        validatorApiHandler.sendSignedBlock(blockContents, BroadcastValidationLevel.NOT_REQUIRED);
 
     verify(blobSidecarGossipChannel).publishBlobSidecars(blobSidecars);
     verify(blobSidecarPool).onCompletedBlockAndSignedBlobSidecars(block, blobSidecars);
     verify(blockGossipChannel).publishBlock(block);
-    verify(blockImportChannel).importBlock(block, Optional.empty());
+    verify(blockImportChannel).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
     assertThat(result)
         .isCompletedWithValue(
             SendSignedBlockResult.notImported(DOES_NOT_DESCEND_FROM_LATEST_FINALIZED.name()));
@@ -874,15 +875,15 @@ class ValidatorApiHandlerTest {
     final List<SignedBlobSidecar> blobSidecars =
         blockContents.getSignedBlobSidecars().orElseThrow();
 
-    when(blockImportChannel.importBlock(block, Optional.empty()))
+    when(blockImportChannel.importBlock(block, BroadcastValidationLevel.NOT_REQUIRED))
         .thenReturn(prepareBlockImportResult(BlockImportResult.knownBlock(block, false)));
     final SafeFuture<SendSignedBlockResult> result =
-        validatorApiHandler.sendSignedBlock(blockContents, Optional.empty());
+        validatorApiHandler.sendSignedBlock(blockContents, BroadcastValidationLevel.NOT_REQUIRED);
 
     verify(blobSidecarGossipChannel).publishBlobSidecars(blobSidecars);
     verify(blobSidecarPool).onCompletedBlockAndSignedBlobSidecars(block, blobSidecars);
     verify(blockGossipChannel).publishBlock(block);
-    verify(blockImportChannel).importBlock(block, Optional.empty());
+    verify(blockImportChannel).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
     assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
   }
 
@@ -891,16 +892,16 @@ class ValidatorApiHandlerTest {
     setupDeneb();
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
 
-    when(blockImportChannel.importBlock(block, Optional.empty()))
+    when(blockImportChannel.importBlock(block, BroadcastValidationLevel.NOT_REQUIRED))
         .thenReturn(prepareBlockImportResult(BlockImportResult.successful(block)));
     final SafeFuture<SendSignedBlockResult> result =
-        validatorApiHandler.sendSignedBlock(block, Optional.empty());
+        validatorApiHandler.sendSignedBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
     safeJoin(result);
 
     verifyNoInteractions(blobSidecarPool);
     verifyNoInteractions(blobSidecarGossipChannel);
     verify(blockGossipChannel).publishBlock(block);
-    verify(blockImportChannel).importBlock(block, Optional.empty());
+    verify(blockImportChannel).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
     assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
   }
 

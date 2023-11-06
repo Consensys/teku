@@ -51,6 +51,7 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -200,7 +201,7 @@ public class SyncingNodeManager {
         RecentBlocksFetchService.create(
             asyncRunner, pendingBlocks, BlobSidecarPool.NOOP, syncService, fetchBlockTaskFactory);
     recentBlocksFetcher.subscribeBlockFetched(
-        block -> blockManager.importBlock(block, Optional.empty()));
+        block -> blockManager.importBlock(block, BroadcastValidationLevel.NOT_REQUIRED));
     blockManager.subscribeToReceivedBlocks(
         (block, executionOptimistic) ->
             recentBlocksFetcher.cancelRecentBlockRequest(block.getRoot()));

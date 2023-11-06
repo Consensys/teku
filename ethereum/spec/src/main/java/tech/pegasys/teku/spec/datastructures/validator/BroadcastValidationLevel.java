@@ -14,7 +14,8 @@
 package tech.pegasys.teku.spec.datastructures.validator;
 
 public enum BroadcastValidationLevel {
+  NOT_REQUIRED,
   GOSSIP,
   CONSENSUS,
-  CONSENSUS_EQUIVOCATION
+  CONSENSUS_AND_EQUIVOCATION
 }

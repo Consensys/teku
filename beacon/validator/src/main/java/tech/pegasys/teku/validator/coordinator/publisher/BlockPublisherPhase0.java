@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.coordinator.publisher;
 
-import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
@@ -40,7 +39,7 @@ public class BlockPublisherPhase0 extends AbstractBlockPublisher {
   @Override
   protected SafeFuture<BlockImportAndBroadcastValidationResults> importBlock(
       final SignedBlockContainer blockContainer,
-      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+      final BroadcastValidationLevel broadcastValidationLevel) {
     return blockImportChannel.importBlock(
         blockContainer.getSignedBlock(), broadcastValidationLevel);
   }

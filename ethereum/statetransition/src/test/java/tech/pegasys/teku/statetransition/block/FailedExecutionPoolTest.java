@@ -34,6 +34,7 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
@@ -66,7 +67,7 @@ class FailedExecutionPoolTest {
     timeProvider.advanceTimeBy(FailedExecutionPool.SHORT_DELAY);
     asyncRunner.executeDueActions();
 
-    verify(blockManager).importBlock(block, Optional.empty());
+    verify(blockManager).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
   }
 
   @Test
@@ -77,11 +78,11 @@ class FailedExecutionPoolTest {
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
-    verify(blockManager).importBlock(block, Optional.empty());
+    verify(blockManager).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
-    verify(blockManager, times(2)).importBlock(block, Optional.empty());
+    verify(blockManager, times(2)).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
   }
 
   @Test
@@ -92,7 +93,7 @@ class FailedExecutionPoolTest {
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
-    verify(blockManager).importBlock(block, Optional.empty());
+    verify(blockManager).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
 
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
   }
@@ -106,7 +107,7 @@ class FailedExecutionPoolTest {
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
-    verify(blockManager).importBlock(block, Optional.empty());
+    verify(blockManager).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
 
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
   }
@@ -119,7 +120,7 @@ class FailedExecutionPoolTest {
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
     asyncRunner.executeQueuedActions();
-    verify(blockManager).importBlock(block, Optional.empty());
+    verify(blockManager).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
 
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
   }
@@ -133,7 +134,7 @@ class FailedExecutionPoolTest {
 
     withImportResult(BlockImportResult.optimisticallySuccessful(block));
     asyncRunner.executeQueuedActions();
-    verify(blockManager).importBlock(block, Optional.empty());
+    verify(blockManager).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
 
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
   }
@@ -146,17 +147,17 @@ class FailedExecutionPoolTest {
 
     timeProvider.advanceTimeBy(FailedExecutionPool.SHORT_DELAY);
     asyncRunner.executeDueActions();
-    verify(blockManager, times(1)).importBlock(block, Optional.empty());
+    verify(blockManager, times(1)).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
 
     // Not retried after the delay
     timeProvider.advanceTimeBy(FailedExecutionPool.SHORT_DELAY);
     asyncRunner.executeDueActions();
-    verify(blockManager, times(1)).importBlock(block, Optional.empty());
+    verify(blockManager, times(1)).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
 
     // But retries after double the time
     timeProvider.advanceTimeBy(FailedExecutionPool.SHORT_DELAY);
     asyncRunner.executeDueActions();
-    verify(blockManager, times(2)).importBlock(block, Optional.empty());
+    verify(blockManager, times(2)).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
   }
 
   @Test
@@ -168,19 +169,19 @@ class FailedExecutionPoolTest {
 
     timeProvider.advanceTimeBy(FailedExecutionPool.SHORT_DELAY);
     asyncRunner.executeDueActions();
-    verify(blockManager, times(1)).importBlock(block, Optional.empty());
+    verify(blockManager, times(1)).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
 
     // Succeeds when retried the second time
     withImportResult(BlockImportResult.successful(block));
     timeProvider.advanceTimeBy(FailedExecutionPool.SHORT_DELAY.multipliedBy(2));
     asyncRunner.executeDueActions();
-    verify(blockManager, times(2)).importBlock(block, Optional.empty());
+    verify(blockManager, times(2)).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
 
     // New block fails and should be retried with a short timeout again
     failurePool.addFailedBlock(block2);
     timeProvider.advanceTimeBy(FailedExecutionPool.SHORT_DELAY);
     asyncRunner.executeDueActions();
-    verify(blockManager).importBlock(block2, Optional.empty());
+    verify(blockManager).importBlock(block2, BroadcastValidationLevel.NOT_REQUIRED);
   }
 
   @Test
@@ -204,9 +205,9 @@ class FailedExecutionPoolTest {
     failurePool.addFailedBlock(block2);
 
     asyncRunner.executeQueuedActions();
-    verify(blockManager).importBlock(block, Optional.empty());
+    verify(blockManager).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
     // Should immediately try to execute next pending block
-    verify(blockManager).importBlock(block2, Optional.empty());
+    verify(blockManager).importBlock(block2, BroadcastValidationLevel.NOT_REQUIRED);
   }
 
   @Test
@@ -218,14 +219,14 @@ class FailedExecutionPoolTest {
     for (int i = 0; i < 5; i++) {
       timeProvider.advanceTimeBy(expectedDelay);
       asyncRunner.executeDueActions();
-      verify(blockManager, times(i + 1)).importBlock(block, Optional.empty());
+      verify(blockManager, times(i + 1)).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
       expectedDelay = expectedDelay.multipliedBy(2);
     }
 
     // Should not increase delay beyond maximum
     timeProvider.advanceTimeBy(FailedExecutionPool.MAX_RETRY_DELAY);
     asyncRunner.executeDueActions();
-    verify(blockManager, times(6)).importBlock(block, Optional.empty());
+    verify(blockManager, times(6)).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
   }
 
   @Test
@@ -237,14 +238,14 @@ class FailedExecutionPoolTest {
     for (int i = 0; i < 5; i++) {
       timeProvider.advanceTimeBy(expectedDelay);
       asyncRunner.executeDueActions();
-      verify(blockManager, times(i + 1)).importBlock(block, Optional.empty());
+      verify(blockManager, times(i + 1)).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
       expectedDelay = expectedDelay.multipliedBy(2);
     }
 
     // Should not increase delay beyond maximum
     timeProvider.advanceTimeBy(FailedExecutionPool.MAX_RETRY_DELAY);
     asyncRunner.executeDueActions();
-    verify(blockManager, times(6)).importBlock(block, Optional.empty());
+    verify(blockManager, times(6)).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
   }
 
   @Test
@@ -256,14 +257,14 @@ class FailedExecutionPoolTest {
     for (int i = 0; i < 5; i++) {
       timeProvider.advanceTimeBy(expectedDelay);
       asyncRunner.executeDueActions();
-      verify(blockManager, times(i + 1)).importBlock(block, Optional.empty());
+      verify(blockManager, times(i + 1)).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
       expectedDelay = expectedDelay.multipliedBy(2);
     }
 
     // Should not increase delay beyond maximum
     timeProvider.advanceTimeBy(FailedExecutionPool.MAX_RETRY_DELAY);
     asyncRunner.executeDueActions();
-    verify(blockManager, times(6)).importBlock(block, Optional.empty());
+    verify(blockManager, times(6)).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
   }
 
   @Test
@@ -275,10 +276,10 @@ class FailedExecutionPoolTest {
     failurePool.addFailedBlock(block2);
 
     asyncRunner.executeQueuedActions();
-    verify(blockManager).importBlock(block, Optional.empty());
+    verify(blockManager).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
 
     asyncRunner.executeQueuedActions();
-    verify(blockManager, times(2)).importBlock(block, Optional.empty());
+    verify(blockManager, times(2)).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
   }
 
   @Test
@@ -290,10 +291,10 @@ class FailedExecutionPoolTest {
     failurePool.addFailedBlock(block2);
 
     asyncRunner.executeQueuedActions();
-    verify(blockManager).importBlock(block, Optional.empty());
+    verify(blockManager).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
 
     asyncRunner.executeQueuedActions();
-    verify(blockManager).importBlock(block2, Optional.empty());
+    verify(blockManager).importBlock(block2, BroadcastValidationLevel.NOT_REQUIRED);
   }
 
   @Test
@@ -305,18 +306,18 @@ class FailedExecutionPoolTest {
     failurePool.addFailedBlock(block2);
 
     asyncRunner.executeQueuedActions();
-    verify(blockManager).importBlock(block, Optional.empty());
+    verify(blockManager).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
 
     asyncRunner.executeQueuedActions();
-    verify(blockManager).importBlock(block2, Optional.empty());
+    verify(blockManager).importBlock(block2, BroadcastValidationLevel.NOT_REQUIRED);
   }
 
   @Test
   void shouldStopRetryingBlockWhenImportThrowsExceptionInsteadOfReturningFailedFuture() {
     final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(2);
-    when(blockManager.importBlock(block, Optional.empty()))
+    when(blockManager.importBlock(block, BroadcastValidationLevel.NOT_REQUIRED))
         .thenThrow(new RuntimeException("Whoops"));
-    when(blockManager.importBlock(block2, Optional.empty()))
+    when(blockManager.importBlock(block2, BroadcastValidationLevel.NOT_REQUIRED))
         .thenReturn(
             SafeFuture.completedFuture(
                 new BlockImportAndBroadcastValidationResults(
@@ -327,8 +328,8 @@ class FailedExecutionPoolTest {
     failurePool.addFailedBlock(block2);
 
     asyncRunner.executeQueuedActions();
-    verify(blockManager).importBlock(block, Optional.empty());
-    verify(blockManager).importBlock(block2, Optional.empty());
+    verify(blockManager).importBlock(block, BroadcastValidationLevel.NOT_REQUIRED);
+    verify(blockManager).importBlock(block2, BroadcastValidationLevel.NOT_REQUIRED);
 
     verifyNoMoreInteractions(blockManager);
     assertThat(asyncRunner.hasDelayedActions()).isFalse();

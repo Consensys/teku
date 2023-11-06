@@ -183,7 +183,7 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
       final SignedBlockContainer blockContainer,
-      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+      final BroadcastValidationLevel broadcastValidationLevel) {
     return blockHandlerChannel
         .orElse(dutiesProviderChannel)
         .sendSignedBlock(blockContainer, broadcastValidationLevel);

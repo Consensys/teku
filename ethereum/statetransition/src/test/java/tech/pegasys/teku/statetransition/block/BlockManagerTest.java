@@ -452,7 +452,7 @@ public class BlockManagerTest {
     // Gossip all blocks except the first
     blocks
         .subList(1, blockCount)
-        .forEach(block -> blockManager.importBlock(block, Optional.empty()));
+        .forEach(block -> blockManager.importBlock(block, BroadcastValidationLevel.NOT_REQUIRED));
     assertThat(pendingBlocks.size()).isEqualTo(blockCount - 1);
 
     // Import next block, causing remaining blocks to be imported
@@ -563,7 +563,7 @@ public class BlockManagerTest {
     // Gossip all blocks except the first
     blocks
         .subList(1, blockCount)
-        .forEach(block -> blockManager.importBlock(block, Optional.empty()));
+        .forEach(block -> blockManager.importBlock(block, BroadcastValidationLevel.NOT_REQUIRED));
     assertThat(pendingBlocks.size()).isEqualTo(blockCount - 1);
 
     // Import next block, causing next block to be queued for import
@@ -713,7 +713,7 @@ public class BlockManagerTest {
 
     when(blockValidator.validateBroadcast(
             eq(invalidBlock),
-            eq(BroadcastValidationLevel.CONSENSUS_EQUIVOCATION),
+            eq(BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION),
             // expecting consensus import state transition failure
             argThat(
                 importResult ->
@@ -723,7 +723,7 @@ public class BlockManagerTest {
         .thenReturn(SafeFuture.completedFuture(CONSENSUS_FAILURE));
 
     assertThatBlockImportAndBroadcastValidationResults(
-            invalidBlock, BroadcastValidationLevel.CONSENSUS_EQUIVOCATION)
+            invalidBlock, BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION)
         .isCompletedWithValueMatching(
             blockImportAndBroadcastValidationResults -> {
               assertThatSafeFuture(blockImportAndBroadcastValidationResults.blockImportResult())
@@ -1201,12 +1201,11 @@ public class BlockManagerTest {
   }
 
   private SafeFutureAssert<BlockImportResult> assertThatBlockImport(final SignedBeaconBlock block) {
-    return assertThatBlockImport(block, Optional.empty());
+    return assertThatBlockImport(block, BroadcastValidationLevel.NOT_REQUIRED);
   }
 
   private SafeFutureAssert<BlockImportResult> assertThatBlockImport(
-      final SignedBeaconBlock block,
-      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+      final SignedBeaconBlock block, final BroadcastValidationLevel broadcastValidationLevel) {
     return assertThatSafeFuture(
         blockManager
             .importBlock(block, broadcastValidationLevel)
@@ -1216,17 +1215,15 @@ public class BlockManagerTest {
   private SafeFutureAssert<BlockImportAndBroadcastValidationResults>
       assertThatBlockImportAndBroadcastValidationResults(
           final SignedBeaconBlock block, final BroadcastValidationLevel broadcastValidationLevel) {
-    return assertThatSafeFuture(
-        blockManager.importBlock(block, Optional.of(broadcastValidationLevel)));
+    return assertThatSafeFuture(blockManager.importBlock(block, broadcastValidationLevel));
   }
 
   private void safeJoinBlockImport(final SignedBeaconBlock block) {
-    safeJoinBlockImport(block, Optional.empty());
+    safeJoinBlockImport(block, BroadcastValidationLevel.NOT_REQUIRED);
   }
 
   private void safeJoinBlockImport(
-      final SignedBeaconBlock block,
-      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+      final SignedBeaconBlock block, final BroadcastValidationLevel broadcastValidationLevel) {
     safeJoin(
         blockManager
             .importBlock(block, broadcastValidationLevel)

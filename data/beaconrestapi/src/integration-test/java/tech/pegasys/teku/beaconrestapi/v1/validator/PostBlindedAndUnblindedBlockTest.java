@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
@@ -80,7 +81,7 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
           spec.atSlot(UInt64.ONE).getSchemaDefinitions().getSignedBeaconBlockSchema();
     }
 
-    when(validatorApiChannel.sendSignedBlock(request, Optional.empty()))
+    when(validatorApiChannel.sendSignedBlock(request, BroadcastValidationLevel.NOT_REQUIRED))
         .thenReturn(SafeFuture.completedFuture(SendSignedBlockResult.success(request.getRoot())));
 
     Optional<String> milestone = Optional.empty();
@@ -129,7 +130,7 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
           spec.atSlot(UInt64.ONE).getSchemaDefinitions().getSignedBlockContainerSchema();
     }
 
-    when(validatorApiChannel.sendSignedBlock(request, Optional.empty()))
+    when(validatorApiChannel.sendSignedBlock(request, BroadcastValidationLevel.NOT_REQUIRED))
         .thenReturn(SafeFuture.completedFuture(SendSignedBlockResult.success(request.getRoot())));
 
     Optional<String> milestone = Optional.empty();
