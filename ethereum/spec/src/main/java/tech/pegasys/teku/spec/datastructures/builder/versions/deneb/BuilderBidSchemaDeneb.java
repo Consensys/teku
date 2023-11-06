@@ -42,10 +42,11 @@ public class BuilderBidSchemaDeneb
     implements BuilderBidSchema<BuilderBidDenebImpl> {
 
   public BuilderBidSchemaDeneb(
+      final String containerName,
       final SpecConfigDeneb specConfig,
       final ExecutionPayloadHeaderSchema<?> executionPayloadHeaderSchema) {
     super(
-        "BuilderBidDeneb",
+        containerName,
         namedSchema(
             "header", SszSchema.as(ExecutionPayloadHeader.class, executionPayloadHeaderSchema)),
         namedSchema(

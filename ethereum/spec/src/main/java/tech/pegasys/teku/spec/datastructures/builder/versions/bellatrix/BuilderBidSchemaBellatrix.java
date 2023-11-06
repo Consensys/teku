@@ -32,9 +32,10 @@ public class BuilderBidSchemaBellatrix
     implements BuilderBidSchema<BuilderBidBellatrix> {
 
   public BuilderBidSchemaBellatrix(
+      final String containerName,
       final ExecutionPayloadHeaderSchema<?> executionPayloadHeaderSchema) {
     super(
-        "BuilderBidBellatrix",
+        containerName,
         namedSchema(
             "header", SszSchema.as(ExecutionPayloadHeader.class, executionPayloadHeaderSchema)),
         namedSchema("value", SszPrimitiveSchemas.UINT256_SCHEMA),
