@@ -71,7 +71,7 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.ImportedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -818,7 +818,7 @@ public class BlockManagerTest {
         localChain
             .chainBuilder()
             .generateBlockAtSlot(currentSlot, BlockOptions.create().setGenerateRandomBlobs(true));
-    final List<BlobSidecar> blobSidecars1 =
+    final List<BlobSidecarOld> blobSidecars1 =
         localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
     assertThatNothingStoredForSlotRoot(signedBlockAndState1.getSlotAndBlockRoot());
     assertThat(blobSidecars1).isNotEmpty();
@@ -841,7 +841,7 @@ public class BlockManagerTest {
             .chainBuilder()
             .generateBlockAtSlot(
                 incrementSlot(), BlockOptions.create().setGenerateRandomBlobs(true));
-    final List<BlobSidecar> blobSidecars2 =
+    final List<BlobSidecarOld> blobSidecars2 =
         localChain.chainBuilder().getBlobSidecars(signedBlockAndState2.getRoot());
     assertThat(signedBlockAndState2.getSlot()).isEqualTo(signedBlockAndState1.getSlot().plus(1));
     assertThat(blobSidecars2).isNotEmpty();
@@ -864,7 +864,7 @@ public class BlockManagerTest {
             .chainBuilder()
             .generateBlockAtSlot(
                 incrementSlot(), BlockOptions.create().setBlobSidecars(Collections.emptyList()));
-    final List<BlobSidecar> blobSidecars3 =
+    final List<BlobSidecarOld> blobSidecars3 =
         localChain.chainBuilder().getBlobSidecars(signedBlockAndState3.getRoot());
     assertThat(signedBlockAndState3.getSlot()).isEqualTo(signedBlockAndState2.getSlot().plus(1));
     assertThat(blobSidecars3).isEmpty();
@@ -891,7 +891,7 @@ public class BlockManagerTest {
         localChain
             .chainBuilder()
             .generateBlockAtSlot(currentSlot, BlockOptions.create().setGenerateRandomBlobs(true));
-    final List<BlobSidecar> blobSidecars1 =
+    final List<BlobSidecarOld> blobSidecars1 =
         localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
     assertThat(blobSidecars1).isNotEmpty();
 
@@ -920,7 +920,7 @@ public class BlockManagerTest {
         localChain
             .chainBuilder()
             .generateBlockAtSlot(currentSlot, BlockOptions.create().setGenerateRandomBlobs(true));
-    final List<BlobSidecar> blobSidecars1 =
+    final List<BlobSidecarOld> blobSidecars1 =
         localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
     assertThat(blobSidecars1).isNotEmpty();
 
@@ -947,7 +947,7 @@ public class BlockManagerTest {
         localChain
             .chainBuilder()
             .generateBlockAtSlot(currentSlot, BlockOptions.create().setGenerateRandomBlobs(true));
-    final List<BlobSidecar> blobSidecars1 =
+    final List<BlobSidecarOld> blobSidecars1 =
         localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
     assertThatNothingStoredForSlotRoot(signedBlockAndState1.getSlotAndBlockRoot());
     assertThat(blobSidecars1).isNotEmpty();
@@ -984,7 +984,7 @@ public class BlockManagerTest {
             .generateBlockAtSlot(
                 currentSlot.increment(), BlockOptions.create().setGenerateRandomBlobs(true));
 
-    final List<BlobSidecar> blobSidecars1 =
+    final List<BlobSidecarOld> blobSidecars1 =
         localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
     assertThatNothingStoredForSlotRoot(signedBlockAndState1.getSlotAndBlockRoot());
     assertThat(blobSidecars1).isNotEmpty();
@@ -1024,7 +1024,7 @@ public class BlockManagerTest {
         localChain
             .chainBuilder()
             .generateBlockAtSlot(currentSlot, BlockOptions.create().setGenerateRandomBlobs(true));
-    final List<BlobSidecar> blobSidecars1 =
+    final List<BlobSidecarOld> blobSidecars1 =
         localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
     assertThatNothingStoredForSlotRoot(signedBlockAndState1.getSlotAndBlockRoot());
     assertThat(blobSidecars1).isNotEmpty();
@@ -1054,7 +1054,7 @@ public class BlockManagerTest {
             .chainBuilder()
             .generateBlockAtSlot(
                 incrementSlot(), BlockOptions.create().setGenerateRandomBlobs(true));
-    final List<BlobSidecar> blobSidecars1 =
+    final List<BlobSidecarOld> blobSidecars1 =
         localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
     assertThatNothingStoredForSlotRoot(signedBlockAndState1.getSlotAndBlockRoot());
     assertThat(blobSidecars1).isEmpty();
@@ -1076,7 +1076,7 @@ public class BlockManagerTest {
   }
 
   private BlobSidecarsAvailabilityChecker createAvailabilityCheckerWithValidBlobSidecars(
-      final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
+      final SignedBeaconBlock block, final List<BlobSidecarOld> blobSidecars) {
     reset(blobSidecarManager);
     final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
         mock(BlobSidecarsAvailabilityChecker.class);
@@ -1113,7 +1113,7 @@ public class BlockManagerTest {
   }
 
   private BlobSidecarsAvailabilityChecker createAvailabilityCheckerWithInvalidBlobSidecars(
-      final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
+      final SignedBeaconBlock block, final List<BlobSidecarOld> blobSidecars) {
     reset(blobSidecarManager);
     final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
         mock(BlobSidecarsAvailabilityChecker.class);
@@ -1128,7 +1128,7 @@ public class BlockManagerTest {
   }
 
   private void assertThatStored(
-      final BeaconBlock beaconBlock, final List<BlobSidecar> blobSidecars) {
+      final BeaconBlock beaconBlock, final List<BlobSidecarOld> blobSidecars) {
     assertThat(localRecentChainData.retrieveBlockByRoot(beaconBlock.getRoot()))
         .isCompletedWithValue(Optional.of(beaconBlock));
     assertThat(localRecentChainData.getBlobSidecars(beaconBlock.getSlotAndBlockRoot()))

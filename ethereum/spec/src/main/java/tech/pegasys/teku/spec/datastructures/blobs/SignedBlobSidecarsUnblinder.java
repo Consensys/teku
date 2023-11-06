@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.datastructures.blobs;
 import java.util.List;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundle;
 
 /**
@@ -35,5 +35,5 @@ public interface SignedBlobSidecarsUnblinder {
 
   void setBlobsBundleSupplier(Supplier<SafeFuture<BlobsBundle>> blobsBundleSupplier);
 
-  SafeFuture<List<SignedBlobSidecar>> unblind();
+  SafeFuture<List<SignedBlobSidecarOld>> unblind();
 }

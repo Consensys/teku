@@ -20,7 +20,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 
 public class AbstractBlobSidecarsValidator {
 
@@ -36,14 +36,14 @@ public class AbstractBlobSidecarsValidator {
     this.kzg = kzg;
   }
 
-  protected void verifyKzg(final BlobSidecar blobSidecar) {
+  protected void verifyKzg(final BlobSidecarOld blobSidecar) {
     if (!verifyBlobKzgProof(blobSidecar)) {
       throw new BlobSidecarsResponseInvalidResponseException(
           peer, BLOB_SIDECAR_KZG_VERIFICATION_FAILED);
     }
   }
 
-  private boolean verifyBlobKzgProof(final BlobSidecar blobSidecar) {
+  private boolean verifyBlobKzgProof(final BlobSidecarOld blobSidecar) {
     try {
       return spec.atSlot(blobSidecar.getSlot()).miscHelpers().verifyBlobKzgProof(kzg, blobSidecar);
     } catch (final Exception ex) {

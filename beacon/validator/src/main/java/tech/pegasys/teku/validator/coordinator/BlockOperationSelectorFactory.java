@@ -31,8 +31,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecarSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchemaOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
@@ -370,9 +370,9 @@ public class BlockOperationSelectorFactory {
             });
   }
 
-  public Function<BeaconBlock, SafeFuture<List<BlobSidecar>>> createBlobSidecarsSelector() {
+  public Function<BeaconBlock, SafeFuture<List<BlobSidecarOld>>> createBlobSidecarsSelector() {
     return block -> {
-      final BlobSidecarSchema blobSidecarSchema =
+      final BlobSidecarSchemaOld blobSidecarSchema =
           SchemaDefinitionsDeneb.required(spec.atSlot(block.getSlot()).getSchemaDefinitions())
               .getBlobSidecarSchema();
       return getCachedBlobsBundle(block.getSlot())

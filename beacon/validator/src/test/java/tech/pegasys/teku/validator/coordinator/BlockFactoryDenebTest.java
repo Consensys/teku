@@ -26,9 +26,9 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -65,7 +65,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
             blobSidecars ->
                 assertThat(blobSidecars)
                     .hasSize(3)
-                    .map(BlobSidecar::getBlob)
+                    .map(BlobSidecarOld::getBlob)
                     .hasSameElementsAs(blobsBundle.getBlobs()));
   }
 
@@ -144,7 +144,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
         .hasValueSatisfying(
             blobSidecars ->
                 assertThat(blobSidecars)
-                    .map(SignedBlobSidecar::getBlobSidecar)
+                    .map(SignedBlobSidecarOld::getBlobSidecar)
                     .map(
                         blobSidecar ->
                             schemaDefinitions.getBlindedBlobSidecarSchema().create(blobSidecar))

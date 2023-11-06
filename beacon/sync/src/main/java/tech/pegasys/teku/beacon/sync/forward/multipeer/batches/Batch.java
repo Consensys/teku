@@ -20,7 +20,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.beacon.sync.forward.multipeer.chains.TargetChain;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 /** A section of a particular target chain that can be downloaded in parallel. */
@@ -37,7 +37,7 @@ public interface Batch {
 
   List<SignedBeaconBlock> getBlocks();
 
-  Map<Bytes32, List<BlobSidecar>> getBlobSidecarsByBlockRoot();
+  Map<Bytes32, List<BlobSidecarOld>> getBlobSidecarsByBlockRoot();
 
   Optional<SyncSource> getSource();
 
