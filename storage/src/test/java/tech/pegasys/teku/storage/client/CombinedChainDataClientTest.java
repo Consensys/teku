@@ -30,7 +30,7 @@ import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -59,7 +59,7 @@ class CombinedChainDataClientTest {
   final List<SignedBeaconBlock> nonCanonicalBlocks = new ArrayList<>();
   final SignedBeaconBlock firstBlock = dataStructureUtil.randomSignedBeaconBlock(1);
   final SignedBeaconBlock secondBlock = dataStructureUtil.randomSignedBeaconBlock(1);
-  final BlobSidecar sidecar = dataStructureUtil.randomBlobSidecar();
+  final BlobSidecarOld sidecar = dataStructureUtil.randomBlobSidecar();
 
   @BeforeEach
   void setUp() {
@@ -155,11 +155,11 @@ class CombinedChainDataClientTest {
         new SlotAndBlockRootAndBlobIndex(sidecar.getSlot(), blockRoot, sidecar.getIndex());
     setupGetBlobSidecar(correctKey, sidecar);
 
-    final Optional<BlobSidecar> correctResult =
+    final Optional<BlobSidecarOld> correctResult =
         SafeFutureAssert.safeJoin(client.getBlobSidecarByKey(correctKey));
     assertThat(correctResult).hasValue(sidecar);
 
-    final Optional<BlobSidecar> incorrectResult =
+    final Optional<BlobSidecarOld> incorrectResult =
         SafeFutureAssert.safeJoin(client.getBlobSidecarByKey(incorrectKey));
     assertThat(incorrectResult).isEmpty();
   }
@@ -172,20 +172,20 @@ class CombinedChainDataClientTest {
     setupGetBlobSidecar(key, sidecar);
     setupGetSlotForBlockRoot(sidecar.getBlockRoot(), sidecar.getSlot());
 
-    final Optional<BlobSidecar> result =
+    final Optional<BlobSidecarOld> result =
         SafeFutureAssert.safeJoin(
             client.getBlobSidecarByBlockRootAndIndex(sidecar.getBlockRoot(), sidecar.getIndex()));
     assertThat(result).hasValue(sidecar);
 
     final Bytes32 blockRoot = setupGetBlockByBlockRoot(sidecar.getSlot().plus(1));
-    final Optional<BlobSidecar> incorrectResult =
+    final Optional<BlobSidecarOld> incorrectResult =
         SafeFutureAssert.safeJoin(
             client.getBlobSidecarByBlockRootAndIndex(blockRoot, sidecar.getIndex()));
     assertThat(incorrectResult).isEmpty();
   }
 
   private void setupGetBlobSidecar(
-      final SlotAndBlockRootAndBlobIndex key, final BlobSidecar result) {
+      final SlotAndBlockRootAndBlobIndex key, final BlobSidecarOld result) {
     when(historicalChainData.getBlobSidecar(any()))
         .thenAnswer(
             args -> {

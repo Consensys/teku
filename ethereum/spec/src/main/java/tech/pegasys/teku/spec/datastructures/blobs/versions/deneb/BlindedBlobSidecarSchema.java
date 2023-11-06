@@ -98,7 +98,7 @@ public class BlindedBlobSidecarSchema
         kzgProof);
   }
 
-  public BlindedBlobSidecar create(final BlobSidecar blobSidecar) {
+  public BlindedBlobSidecar create(final BlobSidecarOld blobSidecar) {
     return new BlindedBlobSidecar(
         this,
         blobSidecar.getBlockRoot(),

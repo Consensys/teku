@@ -44,7 +44,7 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
@@ -80,7 +80,7 @@ public class BlobSidecarPoolImplTest {
   private final List<Bytes32> requiredBlockRootDroppedEvents = new ArrayList<>();
   private final List<BlobIdentifier> requiredBlobSidecarEvents = new ArrayList<>();
   private final List<BlobIdentifier> requiredBlobSidecarDroppedEvents = new ArrayList<>();
-  private final List<BlobSidecar> newBlobSidecarEvents = new ArrayList<>();
+  private final List<BlobSidecarOld> newBlobSidecarEvents = new ArrayList<>();
 
   private Optional<Function<SlotAndBlockRoot, BlockBlobSidecarsTracker>> mockedTrackersFactory =
       Optional.empty();
@@ -124,7 +124,7 @@ public class BlobSidecarPoolImplTest {
 
   @Test
   public void onNewBlobSidecar_addTrackerWithBlobSidecarIgnoringDuplicates() {
-    final BlobSidecar blobSidecar =
+    final BlobSidecarOld blobSidecar =
         dataStructureUtil.createRandomBlobSidecarBuilder().slot(currentSlot).build();
 
     blobSidecarPool.onNewBlobSidecar(blobSidecar);
@@ -143,7 +143,7 @@ public class BlobSidecarPoolImplTest {
 
   @Test
   public void onNewBlobSidecar_shouldIgnoreDuplicates() {
-    final BlobSidecar blobSidecar =
+    final BlobSidecarOld blobSidecar =
         dataStructureUtil.createRandomBlobSidecarBuilder().slot(currentSlot).build();
 
     blobSidecarPool.onNewBlobSidecar(blobSidecar);
@@ -182,7 +182,7 @@ public class BlobSidecarPoolImplTest {
   @Test
   public void onNewBlobSidecar_shouldIgnoreBlobsForAlreadyImportedBlocks() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
-    final BlobSidecar blobSidecar =
+    final BlobSidecarOld blobSidecar =
         dataStructureUtil
             .createRandomBlobSidecarBuilder()
             .slot(currentSlot)
@@ -207,7 +207,7 @@ public class BlobSidecarPoolImplTest {
   @Test
   public void onNewBlobSidecarOnNewBlock_addTrackerWithBothBlockAndBlobSidecar() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
-    final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecarsForBlock(block).get(0);
+    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecarsForBlock(block).get(0);
 
     blobSidecarPool.onNewBlobSidecar(blobSidecar);
     blobSidecarPool.onNewBlock(block);
@@ -228,7 +228,7 @@ public class BlobSidecarPoolImplTest {
   public void twoOnNewBlobSidecar_addTrackerWithBothBlobSidecars() {
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
 
-    final BlobSidecar blobSidecar0 =
+    final BlobSidecarOld blobSidecar0 =
         dataStructureUtil
             .createRandomBlobSidecarBuilder()
             .slot(currentSlot)
@@ -236,7 +236,7 @@ public class BlobSidecarPoolImplTest {
             .index(UInt64.ZERO)
             .build();
 
-    final BlobSidecar blobSidecar1 =
+    final BlobSidecarOld blobSidecar1 =
         dataStructureUtil
             .createRandomBlobSidecarBuilder()
             .slot(currentSlot)
@@ -244,7 +244,7 @@ public class BlobSidecarPoolImplTest {
             .index(UInt64.ONE)
             .build();
 
-    final BlobSidecar blobSidecar1bis =
+    final BlobSidecarOld blobSidecar1bis =
         dataStructureUtil
             .createRandomBlobSidecarBuilder()
             .slot(currentSlot)
@@ -299,7 +299,7 @@ public class BlobSidecarPoolImplTest {
 
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(slot);
 
-    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
+    final List<BlobSidecarOld> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
 
     blobSidecarPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
 
@@ -329,7 +329,7 @@ public class BlobSidecarPoolImplTest {
 
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
 
-    final List<BlobSidecar> blobSidecars = List.of();
+    final List<BlobSidecarOld> blobSidecars = List.of();
 
     blobSidecarPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
 
@@ -392,7 +392,7 @@ public class BlobSidecarPoolImplTest {
   @Test
   public void shouldApplyIgnoreForBlobSidecar() {
     final UInt64 slot = currentSlot.plus(futureTolerance).plus(UInt64.ONE);
-    final BlobSidecar blobSidecar =
+    final BlobSidecarOld blobSidecar =
         dataStructureUtil.createRandomBlobSidecarBuilder().slot(slot).build();
 
     blobSidecarPool.onNewBlobSidecar(blobSidecar);
@@ -499,7 +499,7 @@ public class BlobSidecarPoolImplTest {
   void shouldFetchMissingBlockAndBlobSidecars() {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(currentSlot, dataStructureUtil.randomBytes32());
-    final BlobSidecar blobSidecar =
+    final BlobSidecarOld blobSidecar =
         dataStructureUtil
             .createRandomBlobSidecarBuilder()
             .blockRoot(slotAndBlockRoot.getBlockRoot())
@@ -539,7 +539,7 @@ public class BlobSidecarPoolImplTest {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
 
     final SlotAndBlockRoot slotAndBlockRoot = new SlotAndBlockRoot(currentSlot, block.getRoot());
-    final BlobSidecar blobSidecar =
+    final BlobSidecarOld blobSidecar =
         dataStructureUtil
             .createRandomBlobSidecarBuilder()
             .blockRoot(slotAndBlockRoot.getBlockRoot())
@@ -577,7 +577,7 @@ public class BlobSidecarPoolImplTest {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
 
     final SlotAndBlockRoot slotAndBlockRoot = new SlotAndBlockRoot(currentSlot, block.getRoot());
-    final BlobSidecar blobSidecar =
+    final BlobSidecarOld blobSidecar =
         dataStructureUtil
             .createRandomBlobSidecarBuilder()
             .blockRoot(slotAndBlockRoot.getBlockRoot())
@@ -623,7 +623,7 @@ public class BlobSidecarPoolImplTest {
   @Test
   public void shouldFetchContentWhenBlobSidecarIsNotForCurrentSlot() {
     final UInt64 slot = currentSlot.minus(UInt64.ONE);
-    final BlobSidecar blobSidecar =
+    final BlobSidecarOld blobSidecar =
         dataStructureUtil.createRandomBlobSidecarBuilder().slot(slot).build();
 
     blobSidecarPool.onNewBlobSidecar(blobSidecar);
@@ -669,7 +669,7 @@ public class BlobSidecarPoolImplTest {
   void shouldDropPossiblyFetchedBlock() {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(currentSlot, dataStructureUtil.randomBytes32());
-    final BlobSidecar blobSidecar =
+    final BlobSidecarOld blobSidecar =
         dataStructureUtil
             .createRandomBlobSidecarBuilder()
             .blockRoot(slotAndBlockRoot.getBlockRoot())
@@ -704,7 +704,7 @@ public class BlobSidecarPoolImplTest {
   void shouldNotDropPossiblyFetchedBlockIfFetchHasNotOccurred() {
     final SlotAndBlockRoot slotAndBlockRoot =
         new SlotAndBlockRoot(currentSlot, dataStructureUtil.randomBytes32());
-    final BlobSidecar blobSidecar =
+    final BlobSidecarOld blobSidecar =
         dataStructureUtil
             .createRandomBlobSidecarBuilder()
             .blockRoot(slotAndBlockRoot.getBlockRoot())
@@ -876,7 +876,7 @@ public class BlobSidecarPoolImplTest {
     return new Checkpoint(epoch, root);
   }
 
-  private static BlobIdentifier blobIdentifierFromBlobSidecar(final BlobSidecar blobSidecar) {
+  private static BlobIdentifier blobIdentifierFromBlobSidecar(final BlobSidecarOld blobSidecar) {
     return new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
   }
 

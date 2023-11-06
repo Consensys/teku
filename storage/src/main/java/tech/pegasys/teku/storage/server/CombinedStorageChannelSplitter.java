@@ -23,7 +23,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -71,7 +71,7 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   @Override
   public SafeFuture<Void> onFinalizedBlocks(
       final Collection<SignedBeaconBlock> finalizedBlocks,
-      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlot,
+      final Map<SlotAndBlockRoot, List<BlobSidecarOld>> blobSidecarsBySlot,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     return updateDelegate.onFinalizedBlocks(
         finalizedBlocks, blobSidecarsBySlot, maybeEarliestBlobSidecarSlot);
@@ -161,7 +161,7 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   }
 
   @Override
-  public SafeFuture<List<BlobSidecar>> getBlobSidecarsBySlotAndBlockRoot(
+  public SafeFuture<List<BlobSidecarOld>> getBlobSidecarsBySlotAndBlockRoot(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return asyncRunner.runAsync(
         () -> queryDelegate.getBlobSidecarsBySlotAndBlockRoot(slotAndBlockRoot));
@@ -219,12 +219,13 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   }
 
   @Override
-  public SafeFuture<Optional<BlobSidecar>> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+  public SafeFuture<Optional<BlobSidecarOld>> getBlobSidecar(
+      final SlotAndBlockRootAndBlobIndex key) {
     return asyncRunner.runAsync(() -> queryDelegate.getBlobSidecar(key));
   }
 
   @Override
-  public SafeFuture<Optional<BlobSidecar>> getNonCanonicalBlobSidecar(
+  public SafeFuture<Optional<BlobSidecarOld>> getNonCanonicalBlobSidecar(
       final SlotAndBlockRootAndBlobIndex key) {
     return asyncRunner.runAsync(() -> queryDelegate.getNonCanonicalBlobSidecar(key));
   }

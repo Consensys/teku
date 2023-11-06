@@ -29,7 +29,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 class ThrottlingSyncSourceTest {
@@ -45,7 +45,7 @@ class ThrottlingSyncSourceTest {
       mock(RpcResponseListener.class);
 
   @SuppressWarnings("unchecked")
-  private final RpcResponseListener<BlobSidecar> blobSidecarsListener =
+  private final RpcResponseListener<BlobSidecarOld> blobSidecarsListener =
       mock(RpcResponseListener.class);
 
   private final ThrottlingSyncSource source =

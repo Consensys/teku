@@ -53,9 +53,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -189,9 +189,9 @@ class BlockProductionDutyTest {
     // can create BlockContents only post-Deneb
     final BlockContents unsignedBlockContents = dataStructureUtil.randomBlockContents(denebSlot);
     final BeaconBlock unsignedBlock = unsignedBlockContents.getBlock();
-    final List<BlobSidecar> unsignedBlobSidecars =
+    final List<BlobSidecarOld> unsignedBlobSidecars =
         unsignedBlockContents.getBlobSidecars().orElseThrow();
-    final Map<BlobSidecar, BLSSignature> blobSidecarsSignatures =
+    final Map<BlobSidecarOld, BLSSignature> blobSidecarsSignatures =
         unsignedBlobSidecars.stream()
             .collect(
                 Collectors.toMap(Function.identity(), __ -> dataStructureUtil.randomSignature()));
@@ -204,7 +204,7 @@ class BlockProductionDutyTest {
         .thenAnswer(
             invocation ->
                 completedFuture(
-                    blobSidecarsSignatures.get((BlobSidecar) invocation.getArgument(0))));
+                    blobSidecarsSignatures.get((BlobSidecarOld) invocation.getArgument(0))));
     when(validatorApiChannel.createUnsignedBlock(
             denebSlot, randaoReveal, Optional.of(graffiti), false))
         .thenReturn(completedFuture(Optional.of(unsignedBlockContents)));
@@ -236,7 +236,7 @@ class BlockProductionDutyTest {
 
     assertThat(signedBlockContents.getSignedBlobSidecars().isPresent()).isTrue();
 
-    final List<SignedBlobSidecar> signedBlobSidecars =
+    final List<SignedBlobSidecarOld> signedBlobSidecars =
         signedBlockContents.getSignedBlobSidecars().get();
 
     assertThat(signedBlobSidecars).isNotEmpty();
@@ -244,8 +244,8 @@ class BlockProductionDutyTest {
     IntStream.range(0, signedBlobSidecars.size())
         .forEach(
             index -> {
-              final SignedBlobSidecar signedBlobSidecar = signedBlobSidecars.get(index);
-              final BlobSidecar unsignedBlobSidecar = unsignedBlobSidecars.get(index);
+              final SignedBlobSidecarOld signedBlobSidecar = signedBlobSidecars.get(index);
+              final BlobSidecarOld unsignedBlobSidecar = unsignedBlobSidecars.get(index);
               assertThat(signedBlobSidecar.getMessage()).isEqualTo(unsignedBlobSidecar);
               assertThat(signedBlobSidecar.getSignature())
                   .isEqualTo(blobSidecarsSignatures.get(unsignedBlobSidecar));
@@ -518,9 +518,9 @@ class BlockProductionDutyTest {
     // can create BlockContents only post-Deneb
     final BlockContents unsignedBlockContents = dataStructureUtil.randomBlockContents(denebSlot);
     final BeaconBlock unsignedBlock = unsignedBlockContents.getBlock();
-    final List<BlobSidecar> unsignedBlobSidecars =
+    final List<BlobSidecarOld> unsignedBlobSidecars =
         unsignedBlockContents.getBlobSidecars().orElseThrow();
-    final Map<BlobSidecar, BLSSignature> blobSidecarsSignatures =
+    final Map<BlobSidecarOld, BLSSignature> blobSidecarsSignatures =
         unsignedBlobSidecars.stream()
             .collect(
                 Collectors.toMap(Function.identity(), __ -> dataStructureUtil.randomSignature()));
@@ -533,7 +533,7 @@ class BlockProductionDutyTest {
         .thenAnswer(
             invocation ->
                 completedFuture(
-                    blobSidecarsSignatures.get((BlobSidecar) invocation.getArgument(0))));
+                    blobSidecarsSignatures.get((BlobSidecarOld) invocation.getArgument(0))));
     when(validatorApiChannel.createUnsignedBlock(denebSlot, randaoReveal, Optional.of(graffiti)))
         .thenReturn(completedFuture(Optional.of(unsignedBlockContents)));
     when(validatorApiChannel.sendSignedBlock(any()))
@@ -566,7 +566,7 @@ class BlockProductionDutyTest {
 
     assertThat(signedBlockContents.getSignedBlobSidecars().isPresent()).isTrue();
 
-    final List<SignedBlobSidecar> signedBlobSidecars =
+    final List<SignedBlobSidecarOld> signedBlobSidecars =
         signedBlockContents.getSignedBlobSidecars().get();
 
     assertThat(signedBlobSidecars).isNotEmpty();
@@ -574,8 +574,8 @@ class BlockProductionDutyTest {
     IntStream.range(0, signedBlobSidecars.size())
         .forEach(
             index -> {
-              final SignedBlobSidecar signedBlobSidecar = signedBlobSidecars.get(index);
-              final BlobSidecar unsignedBlobSidecar = unsignedBlobSidecars.get(index);
+              final SignedBlobSidecarOld signedBlobSidecar = signedBlobSidecars.get(index);
+              final BlobSidecarOld unsignedBlobSidecar = unsignedBlobSidecars.get(index);
               assertThat(signedBlobSidecar.getMessage()).isEqualTo(unsignedBlobSidecar);
               assertThat(signedBlobSidecar.getSignature())
                   .isEqualTo(blobSidecarsSignatures.get(unsignedBlobSidecar));

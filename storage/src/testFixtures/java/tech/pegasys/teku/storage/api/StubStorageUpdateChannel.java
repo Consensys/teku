@@ -21,7 +21,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -37,7 +37,7 @@ public class StubStorageUpdateChannel implements StorageUpdateChannel {
   @Override
   public SafeFuture<Void> onFinalizedBlocks(
       final Collection<SignedBeaconBlock> finalizedBlocks,
-      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlot,
+      final Map<SlotAndBlockRoot, List<BlobSidecarOld>> blobSidecarsBySlot,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     return SafeFuture.COMPLETE;
   }

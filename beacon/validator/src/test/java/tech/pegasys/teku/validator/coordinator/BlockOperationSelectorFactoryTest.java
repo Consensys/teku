@@ -38,8 +38,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -502,7 +502,7 @@ class BlockOperationSelectorFactoryTest {
         dataStructureUtil.randomPayloadExecutionContext(false),
         blobsBundle);
 
-    final List<BlobSidecar> blobSidecars =
+    final List<BlobSidecarOld> blobSidecars =
         safeJoin(factory.createBlobSidecarsSelector().apply(block));
 
     assertThat(blobSidecars)
@@ -827,7 +827,7 @@ class BlockOperationSelectorFactoryTest {
     }
 
     @Override
-    public SafeFuture<List<SignedBlobSidecar>> unblind() {
+    public SafeFuture<List<SignedBlobSidecarOld>> unblind() {
       return null;
     }
   }

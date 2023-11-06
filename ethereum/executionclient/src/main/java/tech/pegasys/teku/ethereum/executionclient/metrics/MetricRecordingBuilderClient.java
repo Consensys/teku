@@ -27,7 +27,7 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
@@ -81,7 +81,7 @@ public class MetricRecordingBuilderClient extends MetricRecordingAbstractClient
 
   @Override
   public SafeFuture<Response<BuilderPayload>> getPayload(
-      final SignedBlindedBlockContainer signedBlindedBlockContainer) {
-    return countRequest(() -> delegate.getPayload(signedBlindedBlockContainer), GET_PAYLOAD_METHOD);
+      final SignedBeaconBlock signedBlindedBeaconBlock) {
+    return countRequest(() -> delegate.getPayload(signedBlindedBeaconBlock), GET_PAYLOAD_METHOD);
   }
 }

@@ -75,7 +75,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -826,7 +826,7 @@ class ValidatorApiHandlerTest {
     final SignedBlockContents blockContents =
         dataStructureUtil.randomSignedBlockContents(UInt64.valueOf(5));
     final SignedBeaconBlock block = blockContents.getSignedBlock();
-    final List<SignedBlobSidecar> blobSidecars =
+    final List<SignedBlobSidecarOld> blobSidecars =
         blockContents.getSignedBlobSidecars().orElseThrow();
 
     when(blockImportChannel.importBlock(block))
@@ -847,7 +847,7 @@ class ValidatorApiHandlerTest {
     final SignedBlockContents blockContents =
         dataStructureUtil.randomSignedBlockContents(UInt64.valueOf(5));
     final SignedBeaconBlock block = blockContents.getSignedBlock();
-    final List<SignedBlobSidecar> blobSidecars =
+    final List<SignedBlobSidecarOld> blobSidecars =
         blockContents.getSignedBlobSidecars().orElseThrow();
 
     when(blockImportChannel.importBlock(block))
@@ -870,7 +870,7 @@ class ValidatorApiHandlerTest {
     final SignedBlockContents blockContents =
         dataStructureUtil.randomSignedBlockContents(UInt64.valueOf(5));
     final SignedBeaconBlock block = blockContents.getSignedBlock();
-    final List<SignedBlobSidecar> blobSidecars =
+    final List<SignedBlobSidecarOld> blobSidecars =
         blockContents.getSignedBlobSidecars().orElseThrow();
 
     when(blockImportChannel.importBlock(block))

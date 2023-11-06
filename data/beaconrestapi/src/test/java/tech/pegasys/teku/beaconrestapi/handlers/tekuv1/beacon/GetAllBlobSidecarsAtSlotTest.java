@@ -37,7 +37,7 @@ import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetAllBlobSidecarsAtSlotTest extends AbstractMigratedBeaconHandlerTest {
@@ -57,7 +57,7 @@ public class GetAllBlobSidecarsAtSlotTest extends AbstractMigratedBeaconHandlerT
 
   @Test
   void shouldReturnAllBlobSidecarsAtSlot() throws JsonProcessingException {
-    final List<BlobSidecar> nonCanonicalBlobSidecars = dataStructureUtil.randomBlobSidecars(4);
+    final List<BlobSidecarOld> nonCanonicalBlobSidecars = dataStructureUtil.randomBlobSidecars(4);
     when(chainDataProvider.getAllBlobSidecarsAtSlot(eq(UInt64.ONE), eq(indices)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(nonCanonicalBlobSidecars)));
 
@@ -84,7 +84,7 @@ public class GetAllBlobSidecarsAtSlotTest extends AbstractMigratedBeaconHandlerT
 
   @Test
   void metadata_shouldHandle200() throws IOException {
-    final List<BlobSidecar> nonCanonicalBlobSidecars = dataStructureUtil.randomBlobSidecars(4);
+    final List<BlobSidecarOld> nonCanonicalBlobSidecars = dataStructureUtil.randomBlobSidecars(4);
 
     final String data = getResponseStringFromMetadata(handler, SC_OK, nonCanonicalBlobSidecars);
     final String expected =

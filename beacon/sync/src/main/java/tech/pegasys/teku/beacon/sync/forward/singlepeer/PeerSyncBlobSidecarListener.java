@@ -21,11 +21,11 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 
-public class PeerSyncBlobSidecarListener implements RpcResponseListener<BlobSidecar> {
+public class PeerSyncBlobSidecarListener implements RpcResponseListener<BlobSidecarOld> {
 
-  private final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot = new HashMap<>();
+  private final Map<UInt64, List<BlobSidecarOld>> blobSidecarsBySlot = new HashMap<>();
 
   private final UInt64 startSlot;
   private final UInt64 endSlot;
@@ -36,7 +36,7 @@ public class PeerSyncBlobSidecarListener implements RpcResponseListener<BlobSide
   }
 
   @Override
-  public SafeFuture<?> onResponse(final BlobSidecar blobSidecar) {
+  public SafeFuture<?> onResponse(final BlobSidecarOld blobSidecar) {
     final UInt64 sidecarSlot = blobSidecar.getSlot();
     if (sidecarSlot.isLessThan(startSlot) || sidecarSlot.isGreaterThan(endSlot)) {
       final String exceptionMessage =
@@ -45,13 +45,13 @@ public class PeerSyncBlobSidecarListener implements RpcResponseListener<BlobSide
               sidecarSlot, startSlot, endSlot);
       return SafeFuture.failedFuture(new IllegalArgumentException(exceptionMessage));
     }
-    final List<BlobSidecar> blobSidecars =
+    final List<BlobSidecarOld> blobSidecars =
         blobSidecarsBySlot.computeIfAbsent(sidecarSlot, __ -> new ArrayList<>());
     blobSidecars.add(blobSidecar);
     return SafeFuture.COMPLETE;
   }
 
-  public Optional<List<BlobSidecar>> getReceivedBlobSidecars(final UInt64 slot) {
+  public Optional<List<BlobSidecarOld>> getReceivedBlobSidecars(final UInt64 slot) {
     return Optional.ofNullable(blobSidecarsBySlot.get(slot));
   }
 
