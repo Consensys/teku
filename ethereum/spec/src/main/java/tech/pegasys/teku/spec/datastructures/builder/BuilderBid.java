@@ -25,7 +25,7 @@ public interface BuilderBid extends SszContainer {
 
   ExecutionPayloadHeader getHeader();
 
-  // TODO: make sure removed after moving to sidecar inclusion proof
+  @Deprecated
   default Optional<BlindedBlobsBundle> getOptionalBlindedBlobsBundle() {
     return Optional.empty();
   }
