@@ -62,8 +62,7 @@ public class Eth2NetworkOptions {
       names = {"--checkpoint-sync-url"},
       hidden = true,
       paramLabel = "<STRING>",
-      description =
-          "The Beacon API endpoint of another synced beacon node that will be used to bootstrap this node's state.",
+      description = "The Checkpointz server that will be used to bootstrap this node.",
       arity = "1")
   private String checkpointSyncUrl;
 
