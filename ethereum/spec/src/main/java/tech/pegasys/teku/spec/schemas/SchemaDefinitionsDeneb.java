@@ -122,7 +122,7 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     this.blindedBlobsBundleSchema =
         new BlindedBlobsBundleSchema("BlindedBlobsBundleDeneb", specConfig);
     this.builderBidSchemaDeneb =
-        new BuilderBidSchemaDeneb(executionPayloadHeaderSchemaDeneb, blindedBlobsBundleSchema);
+        new BuilderBidSchemaDeneb("BuilderBidDeneb", specConfig, executionPayloadHeaderSchemaDeneb);
     this.signedBuilderBidSchemaDeneb =
         new SignedBuilderBidSchema("SignedBuilderBidDeneb", builderBidSchemaDeneb);
 

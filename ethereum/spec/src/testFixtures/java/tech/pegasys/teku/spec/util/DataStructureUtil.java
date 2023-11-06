@@ -617,7 +617,7 @@ public final class DataStructureUtil {
                   .publicKey(builderPublicKey);
               schemaDefinitions
                   .toVersionDeneb()
-                  .ifPresent(__ -> builder.blindedBlobsBundle(randomBlindedBlobsBundle()));
+                  .ifPresent(__ -> builder.blobKzgCommitments(randomSszKzgCommitmentList()));
             });
   }
 
@@ -634,7 +634,7 @@ public final class DataStructureUtil {
                   .publicKey(randomPublicKey());
               schemaDefinitions
                   .toVersionDeneb()
-                  .ifPresent(__ -> builder.blindedBlobsBundle(randomBlindedBlobsBundle()));
+                  .ifPresent(__ -> builder.blobKzgCommitments(randomSszKzgCommitmentList()));
             });
   }
 
