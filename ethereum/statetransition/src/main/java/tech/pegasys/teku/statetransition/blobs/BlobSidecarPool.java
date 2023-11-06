@@ -20,8 +20,8 @@ import java.util.Set;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 
@@ -33,14 +33,14 @@ public interface BlobSidecarPool extends SlotEventsChannel {
         public void onSlot(final UInt64 slot) {}
 
         @Override
-        public void onNewBlobSidecar(final BlobSidecar blobSidecar) {}
+        public void onNewBlobSidecar(final BlobSidecarOld blobSidecar) {}
 
         @Override
         public void onNewBlock(final SignedBeaconBlock block) {}
 
         @Override
         public void onCompletedBlockAndBlobSidecars(
-            final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {}
+            final SignedBeaconBlock block, final List<BlobSidecarOld> blobSidecars) {}
 
         @Override
         public void removeAllForBlock(final Bytes32 blockRoot) {}
@@ -92,17 +92,17 @@ public interface BlobSidecarPool extends SlotEventsChannel {
         public void subscribeNewBlobSidecar(NewBlobSidecarSubscriber newBlobSidecarSubscriber) {}
       };
 
-  void onNewBlobSidecar(BlobSidecar blobSidecar);
+  void onNewBlobSidecar(BlobSidecarOld blobSidecar);
 
   void onNewBlock(SignedBeaconBlock block);
 
   default void onCompletedBlockAndSignedBlobSidecars(
-      SignedBeaconBlock block, List<SignedBlobSidecar> signedBlobSidecars) {
+      SignedBeaconBlock block, List<SignedBlobSidecarOld> signedBlobSidecars) {
     onCompletedBlockAndBlobSidecars(
-        block, signedBlobSidecars.stream().map(SignedBlobSidecar::getBlobSidecar).toList());
+        block, signedBlobSidecars.stream().map(SignedBlobSidecarOld::getBlobSidecar).toList());
   }
 
-  void onCompletedBlockAndBlobSidecars(SignedBeaconBlock block, List<BlobSidecar> blobSidecars);
+  void onCompletedBlockAndBlobSidecars(SignedBeaconBlock block, List<BlobSidecarOld> blobSidecars);
 
   void removeAllForBlock(Bytes32 blockRoot);
 
@@ -145,6 +145,6 @@ public interface BlobSidecarPool extends SlotEventsChannel {
   }
 
   interface NewBlobSidecarSubscriber {
-    void onNewBlobSidecar(BlobSidecar blobSidecar);
+    void onNewBlobSidecar(BlobSidecarOld blobSidecar);
   }
 }

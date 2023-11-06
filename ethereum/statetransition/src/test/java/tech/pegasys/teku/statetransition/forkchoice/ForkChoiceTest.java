@@ -64,7 +64,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -183,7 +183,7 @@ class ForkChoiceTest {
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       when(blobSidecarManager.createAvailabilityChecker(any()))
           .thenReturn(blobSidecarsAvailabilityChecker);
-      final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecars(2);
+      final List<BlobSidecarOld> blobSidecars = dataStructureUtil.randomBlobSidecars(2);
       when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
           .thenReturn(
               SafeFuture.completedFuture(

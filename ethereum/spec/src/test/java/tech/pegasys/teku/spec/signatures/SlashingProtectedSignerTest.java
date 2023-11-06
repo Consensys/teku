@@ -26,7 +26,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
@@ -78,7 +78,7 @@ class SlashingProtectedSignerTest {
   @Test
   void signBlobSidecar_shouldAlwaysSign() {
     final BeaconBlock block = dataStructureUtilDeneb.randomBeaconBlock(6);
-    final BlobSidecar blobSidecar =
+    final BlobSidecarOld blobSidecar =
         dataStructureUtilDeneb.randomBlobSidecar(block.getRoot(), UInt64.valueOf(2));
     when(delegate.signBlobSidecar(blobSidecar, forkInfo)).thenReturn(signatureFuture);
     assertThatSafeFuture(signer.signBlobSidecar(blobSidecar, forkInfo))

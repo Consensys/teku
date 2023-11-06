@@ -15,15 +15,15 @@ package tech.pegasys.teku.networking.eth2.gossip;
 
 import java.util.List;
 import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 
 public interface BlobSidecarGossipChannel extends VoidReturningChannelInterface {
 
   BlobSidecarGossipChannel NOOP = blobSidecar -> {};
 
-  default void publishBlobSidecars(final List<SignedBlobSidecar> blobSidecars) {
+  default void publishBlobSidecars(final List<SignedBlobSidecarOld> blobSidecars) {
     blobSidecars.forEach(this::publishBlobSidecar);
   }
 
-  void publishBlobSidecar(SignedBlobSidecar blobSidecar);
+  void publishBlobSidecar(SignedBlobSidecarOld blobSidecar);
 }

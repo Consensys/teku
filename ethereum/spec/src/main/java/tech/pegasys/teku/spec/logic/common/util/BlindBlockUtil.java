@@ -19,7 +19,7 @@ import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockBlinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
@@ -36,7 +36,7 @@ public abstract class BlindBlockUtil {
     return beaconBlockUnblinder.unblind();
   }
 
-  public SafeFuture<List<SignedBlobSidecar>> unblindSignedBlobSidecars(
+  public SafeFuture<List<SignedBlobSidecarOld>> unblindSignedBlobSidecars(
       final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars,
       final Consumer<SignedBlobSidecarsUnblinder> blobSidecarsUnblinderConsumer) {
     final SignedBlobSidecarsUnblinder blobSidecarsUnblinder =

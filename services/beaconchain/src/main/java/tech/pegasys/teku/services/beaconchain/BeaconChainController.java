@@ -89,7 +89,7 @@ import tech.pegasys.teku.services.timer.TimerService;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
@@ -492,8 +492,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initBlobSidecarManager() {
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
-      final FutureItems<SignedBlobSidecar> futureBlobSidecars =
-          FutureItems.create(SignedBlobSidecar::getSlot, futureItemsMetric, "blob_sidecars");
+      final FutureItems<SignedBlobSidecarOld> futureBlobSidecars =
+          FutureItems.create(SignedBlobSidecarOld::getSlot, futureItemsMetric, "blob_sidecars");
 
       final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots =
           LimitedMap.createSynchronized(500);

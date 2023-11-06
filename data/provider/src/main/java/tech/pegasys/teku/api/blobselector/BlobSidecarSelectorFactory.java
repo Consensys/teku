@@ -22,7 +22,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.AbstractSelectorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
@@ -99,7 +99,7 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
                     blobSidecars.isEmpty() ? Optional.empty() : Optional.of(blobSidecars));
   }
 
-  private SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecarsForBlock(
+  private SafeFuture<Optional<List<BlobSidecarOld>>> getBlobSidecarsForBlock(
       final Optional<SignedBeaconBlock> maybeBlock, final List<UInt64> indices) {
     if (maybeBlock.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
@@ -116,12 +116,12 @@ public class BlobSidecarSelectorFactory extends AbstractSelectorFactory<BlobSide
     return getBlobSidecars(block.getSlotAndBlockRoot(), indices);
   }
 
-  private SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecars(
+  private SafeFuture<Optional<List<BlobSidecarOld>>> getBlobSidecars(
       final SlotAndBlockRoot slotAndBlockRoot, final List<UInt64> indices) {
     return client.getBlobSidecars(slotAndBlockRoot, indices).thenApply(Optional::of);
   }
 
-  private SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecars(
+  private SafeFuture<Optional<List<BlobSidecarOld>>> getBlobSidecars(
       final UInt64 slot, final List<UInt64> indices) {
     return client.getBlobSidecars(slot, indices).thenApply(Optional::of);
   }

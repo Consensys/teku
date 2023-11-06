@@ -25,14 +25,16 @@ public class SignedBlobSidecarPropertyTest {
 
   @Property
   void roundTrip(
-      @ForAll(supplier = SignedBlobSidecarSupplier.class) final SignedBlobSidecar signedBlobSidecar)
+      @ForAll(supplier = SignedBlobSidecarSupplier.class)
+          final SignedBlobSidecarOld signedBlobSidecar)
       throws JsonProcessingException {
     assertRoundTrip(signedBlobSidecar);
   }
 
   @Property
   void deserializeMutated(
-      @ForAll(supplier = SignedBlobSidecarSupplier.class) final SignedBlobSidecar signedBlobSidecar,
+      @ForAll(supplier = SignedBlobSidecarSupplier.class)
+          final SignedBlobSidecarOld signedBlobSidecar,
       @ForAll final int seed) {
     assertDeserializeMutatedThrowsExpected(signedBlobSidecar, seed);
   }

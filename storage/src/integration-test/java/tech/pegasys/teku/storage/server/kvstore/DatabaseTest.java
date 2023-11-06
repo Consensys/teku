@@ -63,7 +63,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -203,21 +203,21 @@ public class DatabaseTest {
     // no blobs, earliest slot 0, because of genesis Deneb
     assertThat(database.getEarliestBlobSidecarSlot()).contains(ZERO);
 
-    final BlobSidecar blobSidecar1 =
+    final BlobSidecarOld blobSidecar1 =
         dataStructureUtil.randomBlobSidecar(
             UInt64.valueOf(1), dataStructureUtil.randomBytes32(), UInt64.valueOf(0));
-    final BlobSidecar blobSidecar2 =
+    final BlobSidecarOld blobSidecar2 =
         dataStructureUtil.randomBlobSidecar(UInt64.valueOf(2), Bytes32.ZERO, UInt64.valueOf(0));
-    final BlobSidecar blobSidecar2bis =
+    final BlobSidecarOld blobSidecar2bis =
         dataStructureUtil.randomBlobSidecar(
             UInt64.valueOf(2), Bytes32.fromHexString("0x01"), UInt64.valueOf(1));
-    final BlobSidecar blobSidecar3 =
+    final BlobSidecarOld blobSidecar3 =
         dataStructureUtil.randomBlobSidecar(
             UInt64.valueOf(3), dataStructureUtil.randomBytes32(), UInt64.valueOf(0));
-    final BlobSidecar blobSidecar5 =
+    final BlobSidecarOld blobSidecar5 =
         dataStructureUtil.randomBlobSidecar(
             UInt64.valueOf(5), dataStructureUtil.randomBytes32(), UInt64.valueOf(0));
-    final BlobSidecar blobSidecarNotAdded = dataStructureUtil.randomBlobSidecar();
+    final BlobSidecarOld blobSidecarNotAdded = dataStructureUtil.randomBlobSidecar();
 
     // add blobs out of order
     database.storeBlobSidecar(blobSidecar2);
@@ -344,21 +344,21 @@ public class DatabaseTest {
   public void verifyNonCanonicalBlobsLifecycle(final DatabaseContext context) throws IOException {
     initialize(context);
 
-    final BlobSidecar blobSidecar1 =
+    final BlobSidecarOld blobSidecar1 =
         dataStructureUtil.randomBlobSidecar(
             UInt64.valueOf(1), dataStructureUtil.randomBytes32(), UInt64.valueOf(0));
-    final BlobSidecar blobSidecar2 =
+    final BlobSidecarOld blobSidecar2 =
         dataStructureUtil.randomBlobSidecar(UInt64.valueOf(2), Bytes32.ZERO, UInt64.valueOf(0));
-    final BlobSidecar blobSidecar2bis =
+    final BlobSidecarOld blobSidecar2bis =
         dataStructureUtil.randomBlobSidecar(
             UInt64.valueOf(2), Bytes32.fromHexString("0x01"), UInt64.valueOf(1));
-    final BlobSidecar blobSidecar3 =
+    final BlobSidecarOld blobSidecar3 =
         dataStructureUtil.randomBlobSidecar(
             UInt64.valueOf(3), dataStructureUtil.randomBytes32(), UInt64.valueOf(0));
-    final BlobSidecar blobSidecar5 =
+    final BlobSidecarOld blobSidecar5 =
         dataStructureUtil.randomBlobSidecar(
             UInt64.valueOf(5), dataStructureUtil.randomBytes32(), UInt64.valueOf(0));
-    final BlobSidecar blobSidecarNotAdded = dataStructureUtil.randomBlobSidecar();
+    final BlobSidecarOld blobSidecarNotAdded = dataStructureUtil.randomBlobSidecar();
 
     // add non-canonical blobs out of order
     database.storeNonCanonicalBlobSidecar(blobSidecar2);
@@ -1323,11 +1323,11 @@ public class DatabaseTest {
     primaryChain.generateBlockAtSlot(5, randomBlobsOptions);
     final ChainBuilder secondFork = primaryChain.fork();
 
-    final BlobSidecar blobSidecarPrimary2Slot2Index0 =
+    final BlobSidecarOld blobSidecarPrimary2Slot2Index0 =
         dataStructureUtil.randomBlobSidecar(
             UInt64.valueOf(2), primaryChain.getBlockAtSlot(2).getRoot(), UInt64.valueOf(0));
     database.storeBlobSidecar(blobSidecarPrimary2Slot2Index0);
-    final BlobSidecar blobSidecarPrimary2Slot2Index1 =
+    final BlobSidecarOld blobSidecarPrimary2Slot2Index1 =
         dataStructureUtil.randomBlobSidecar(
             UInt64.valueOf(2), primaryChain.getBlockAtSlot(2).getRoot(), UInt64.valueOf(1));
     database.storeBlobSidecar(blobSidecarPrimary2Slot2Index1);
@@ -1353,7 +1353,7 @@ public class DatabaseTest {
                 secondFork.streamBlocksAndStates())
             .collect(Collectors.toSet());
 
-    final List<BlobSidecar> allBlocksSidecars =
+    final List<BlobSidecarOld> allBlocksSidecars =
         Streams.concat(
                 primaryChain.streamBlobSidecars(),
                 forkChain.streamBlobSidecars(),
@@ -1398,7 +1398,7 @@ public class DatabaseTest {
         .forEach(
             key -> {
               // retrieve expected blobSidecar from allBlocksSidecars
-              final BlobSidecar blobSidecar =
+              final BlobSidecarOld blobSidecar =
                   allBlocksSidecars.stream()
                       .filter(sidecar -> blobSidecarToKey(sidecar).equals(key))
                       .findFirst()
@@ -2477,7 +2477,7 @@ public class DatabaseTest {
   }
 
   private void addBlocksAndBlobSidecars(
-      final List<SignedBlockAndState> blocks, final List<BlobSidecar> blobSidecars) {
+      final List<SignedBlockAndState> blocks, final List<BlobSidecarOld> blobSidecars) {
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     for (SignedBlockAndState block : blocks) {
       transaction.putBlockAndState(
@@ -2495,7 +2495,7 @@ public class DatabaseTest {
   }
 
   private void add(
-      final Collection<SignedBlockAndState> blocks, final List<BlobSidecar> blobSidecars) {
+      final Collection<SignedBlockAndState> blocks, final List<BlobSidecarOld> blobSidecars) {
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     add(transaction, blocks, blobSidecars);
     commit(transaction);
@@ -2504,7 +2504,7 @@ public class DatabaseTest {
   private void add(
       final StoreTransaction transaction,
       final Collection<SignedBlockAndState> blocksAndStates,
-      final List<BlobSidecar> blobSidecars) {
+      final List<BlobSidecarOld> blobSidecars) {
     blocksAndStates.stream()
         .sorted(Comparator.comparing(SignedBlockAndState::getSlot))
         .forEach(
@@ -2627,20 +2627,20 @@ public class DatabaseTest {
     }
   }
 
-  private void assertBlobSidecars(final Map<UInt64, List<BlobSidecar>> blobSidecars) {
+  private void assertBlobSidecars(final Map<UInt64, List<BlobSidecarOld>> blobSidecars) {
     final List<UInt64> slots = blobSidecars.keySet().stream().sorted().collect(toList());
     if (slots.isEmpty()) {
       return;
     }
 
-    final Map<UInt64, List<BlobSidecar>> blobSidecarsDb = new HashMap<>();
+    final Map<UInt64, List<BlobSidecarOld>> blobSidecarsDb = new HashMap<>();
     try (final Stream<SlotAndBlockRootAndBlobIndex> blobSidecarsStream =
         database.streamBlobSidecarKeys(slots.get(0), slots.get(slots.size() - 1))) {
 
       for (final Iterator<SlotAndBlockRootAndBlobIndex> iterator = blobSidecarsStream.iterator();
           iterator.hasNext(); ) {
         final SlotAndBlockRootAndBlobIndex key = iterator.next();
-        final List<BlobSidecar> currentSlotBlobs =
+        final List<BlobSidecarOld> currentSlotBlobs =
             blobSidecarsDb.computeIfAbsent(key.getSlot(), __ -> new ArrayList<>());
         currentSlotBlobs.add(database.getBlobSidecar(key).orElseThrow());
       }
@@ -2649,20 +2649,21 @@ public class DatabaseTest {
     assertThat(blobSidecarsDb).isEqualTo(blobSidecars);
   }
 
-  private void assertNonCanonicalBlobSidecars(final Map<UInt64, List<BlobSidecar>> blobSidecars) {
+  private void assertNonCanonicalBlobSidecars(
+      final Map<UInt64, List<BlobSidecarOld>> blobSidecars) {
     final List<UInt64> slots = blobSidecars.keySet().stream().sorted().collect(toList());
     if (slots.isEmpty()) {
       return;
     }
 
-    final Map<UInt64, List<BlobSidecar>> blobSidecarsDb = new HashMap<>();
+    final Map<UInt64, List<BlobSidecarOld>> blobSidecarsDb = new HashMap<>();
     try (final Stream<SlotAndBlockRootAndBlobIndex> blobSidecarsStream =
         database.streamNonCanonicalBlobSidecarKeys(slots.get(0), slots.get(slots.size() - 1))) {
 
       for (final Iterator<SlotAndBlockRootAndBlobIndex> iterator = blobSidecarsStream.iterator();
           iterator.hasNext(); ) {
         final SlotAndBlockRootAndBlobIndex key = iterator.next();
-        final List<BlobSidecar> currentSlotBlobs =
+        final List<BlobSidecarOld> currentSlotBlobs =
             blobSidecarsDb.computeIfAbsent(key.getSlot(), __ -> new ArrayList<>());
         currentSlotBlobs.add(database.getNonCanonicalBlobSidecar(key).orElseThrow());
       }
@@ -2689,7 +2690,7 @@ public class DatabaseTest {
     }
   }
 
-  private static SlotAndBlockRootAndBlobIndex blobSidecarToKey(final BlobSidecar blobSidecar) {
+  private static SlotAndBlockRootAndBlobIndex blobSidecarToKey(final BlobSidecarOld blobSidecar) {
     return new SlotAndBlockRootAndBlobIndex(
         blobSidecar.getSlot(), blobSidecar.getBlockRoot(), blobSidecar.getIndex());
   }

@@ -50,7 +50,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
@@ -307,7 +307,7 @@ public class KvStoreDatabase implements Database {
 
   protected void storeFinalizedBlocksToDao(
       final Collection<SignedBeaconBlock> blocks,
-      final Map<SlotAndBlockRoot, List<BlobSidecar>> finalizedBlobSidecarsBySlot,
+      final Map<SlotAndBlockRoot, List<BlobSidecarOld>> finalizedBlobSidecarsBySlot,
       final Optional<UInt64> maybeEarliestBlobSidecar) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       blocks.forEach(
@@ -537,7 +537,7 @@ public class KvStoreDatabase implements Database {
   @Override
   public void storeFinalizedBlocks(
       final Collection<SignedBeaconBlock> blocks,
-      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlot,
+      final Map<SlotAndBlockRoot, List<BlobSidecarOld>> blobSidecarsBySlot,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     if (blocks.isEmpty()) {
       return;
@@ -780,7 +780,7 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void storeBlobSidecar(final BlobSidecar blobSidecar) {
+  public void storeBlobSidecar(final BlobSidecarOld blobSidecar) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       updater.addBlobSidecar(blobSidecar);
       updater.commit();
@@ -788,7 +788,7 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public void storeNonCanonicalBlobSidecar(final BlobSidecar blobSidecar) {
+  public void storeNonCanonicalBlobSidecar(final BlobSidecarOld blobSidecar) {
     try (final FinalizedUpdater updater = finalizedUpdater()) {
       updater.addNonCanonicalBlobSidecar(blobSidecar);
       updater.commit();
@@ -796,13 +796,14 @@ public class KvStoreDatabase implements Database {
   }
 
   @Override
-  public Optional<BlobSidecar> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+  public Optional<BlobSidecarOld> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
     final Optional<Bytes> maybePayload = dao.getBlobSidecar(key);
     return maybePayload.map(payload -> spec.deserializeBlobSidecar(payload, key.getSlot()));
   }
 
   @Override
-  public Optional<BlobSidecar> getNonCanonicalBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+  public Optional<BlobSidecarOld> getNonCanonicalBlobSidecar(
+      final SlotAndBlockRootAndBlobIndex key) {
     final Optional<Bytes> maybePayload = dao.getNonCanonicalBlobSidecar(key);
     return maybePayload.map(payload -> spec.deserializeBlobSidecar(payload, key.getSlot()));
   }
@@ -886,7 +887,7 @@ public class KvStoreDatabase implements Database {
 
   @MustBeClosed
   @Override
-  public Stream<BlobSidecar> streamBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
+  public Stream<BlobSidecarOld> streamBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
     return dao.streamBlobSidecars(slotAndBlockRoot)
         .map(payload -> spec.deserializeBlobSidecar(payload, slotAndBlockRoot.getSlot()));
   }
@@ -1019,7 +1020,8 @@ public class KvStoreDatabase implements Database {
   }
 
   private void updateBlobSidecarData(
-      final Optional<UInt64> getEarliestBlobSidecarSlot, final Stream<BlobSidecar> blobSidecars) {
+      final Optional<UInt64> getEarliestBlobSidecarSlot,
+      final Stream<BlobSidecarOld> blobSidecars) {
     LOG.trace("Applying blob sidecar updates");
 
     try (final FinalizedUpdater updater = finalizedUpdater()) {
