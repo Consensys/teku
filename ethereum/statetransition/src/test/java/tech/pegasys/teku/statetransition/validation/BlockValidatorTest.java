@@ -81,6 +81,15 @@ public class BlockValidatorTest {
       final InternalValidationResult internalValidationResult) {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
 
+    if (broadcastValidation == BroadcastValidationLevel.NOT_REQUIRED) {
+      assertThat(
+              blockValidator.validateBroadcast(
+                  block, broadcastValidation, consensusValidationResult))
+          .isCompletedWithValueMatching(result -> result.equals(BroadcastValidationResult.SUCCESS));
+      verifyNoMoreInteractions(blockGossipValidator);
+      return;
+    }
+
     when(blockGossipValidator.validate(eq(block), eq(true)))
         .thenReturn(SafeFuture.completedFuture(internalValidationResult));
 
