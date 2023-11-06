@@ -19,13 +19,14 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 public class BlocksByRangeResponseInvalidResponseException extends InvalidResponseException {
 
   public BlocksByRangeResponseInvalidResponseException(
-      Peer peer, InvalidResponseType invalidResponseType) {
+      final Peer peer, final InvalidResponseType invalidResponseType) {
     super(
         String.format(
             "Received invalid response from peer %s: %s", peer, invalidResponseType.describe()));
   }
 
-  public BlocksByRangeResponseInvalidResponseException(InvalidResponseType invalidResponseType) {
+  public BlocksByRangeResponseInvalidResponseException(
+      final InvalidResponseType invalidResponseType) {
     super("Received invalid response: " + invalidResponseType.describe());
   }
 

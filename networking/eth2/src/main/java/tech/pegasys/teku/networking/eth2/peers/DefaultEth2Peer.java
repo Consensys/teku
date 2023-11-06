@@ -22,7 +22,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
@@ -35,9 +34,9 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.BeaconChainMethods;
-import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarByRootValidator;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRangeListenerValidatingProxy;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRootListenerValidatingProxy;
+import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsByRootValidator;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeListenerWrapper;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.MetadataMessagesFactory;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.StatusMessageFactory;
@@ -280,21 +279,23 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
     return rpcMethods
         .blobSidecarsByRoot()
         .map(
-            method ->
-                requestOptionalItem(
-                        method,
-                        new BlobSidecarsByRootRequestMessage(
-                            blobSidecarsByRootRequestMessageSchema.get(),
-                            Collections.singletonList(blobIdentifier)))
-                    .thenPeek(
-                        maybeBlobSidecar ->
-                            maybeBlobSidecar.ifPresent(
-                                blobSidecar -> {
-                                  final BlobSidecarByRootValidator blobSidecarByRootValidator =
-                                      new BlobSidecarByRootValidator(
-                                          this, spec, kzg, Set.of(blobIdentifier));
-                                  blobSidecarByRootValidator.validateBlobSidecar(blobSidecar);
-                                })))
+            method -> {
+              final List<BlobIdentifier> blobIdentifiers =
+                  Collections.singletonList(blobIdentifier);
+              return requestOptionalItem(
+                      method,
+                      new BlobSidecarsByRootRequestMessage(
+                          blobSidecarsByRootRequestMessageSchema.get(), blobIdentifiers))
+                  .thenPeek(
+                      maybeBlobSidecar ->
+                          maybeBlobSidecar.ifPresent(
+                              blobSidecar -> {
+                                final BlobSidecarsByRootValidator validator =
+                                    new BlobSidecarsByRootValidator(
+                                        this, spec, kzg, blobIdentifiers);
+                                validator.validate(blobSidecar);
+                              }));
+            })
         .orElse(failWithUnsupportedMethodException("BlobSidecarsByRoot"));
   }
 
