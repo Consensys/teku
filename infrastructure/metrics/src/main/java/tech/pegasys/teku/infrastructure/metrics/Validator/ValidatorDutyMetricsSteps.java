@@ -14,8 +14,12 @@
 package tech.pegasys.teku.infrastructure.metrics.Validator;
 
 public enum ValidatorDutyMetricsSteps {
+  // Total time to perform the entire duty
   TOTAL("total"),
+  // total time to perform the create component of the duty, from the time you call the
+  // validatorApiChannel, until you get the result
   CREATE_TOTAL("create_total"),
+  // time taken excluding the queued time, to perform the create component of the duty
   CREATE("create"),
   SIGN("sign"),
   SEND("send");
