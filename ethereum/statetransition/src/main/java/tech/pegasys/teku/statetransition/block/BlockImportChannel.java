@@ -17,15 +17,16 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastValidationLevel;
+import tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastValidationResult;
 
 public interface BlockImportChannel extends ChannelInterface {
 
-  SafeFuture<BlockImportResult> importBlock(
-      SignedBeaconBlock block, Optional<BroadcastValidationLevel> broadcastValidationLevel);
+  SafeFuture<BlockImportAndBroadcastValidationResults> importBlock(
+      SignedBeaconBlock block, BroadcastValidationLevel broadcastValidationLevel);
 
-  default SafeFuture<BlockImportResult> importBlock(final SignedBeaconBlock block) {
-    return importBlock(block, Optional.empty());
-  }
+  record BlockImportAndBroadcastValidationResults(
+      SafeFuture<BlockImportResult> blockImportResult,
+      Optional<SafeFuture<BroadcastValidationResult>> broadcastValidationResult) {}
 }

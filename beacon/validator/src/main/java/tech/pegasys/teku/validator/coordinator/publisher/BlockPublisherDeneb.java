@@ -18,9 +18,10 @@ import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
@@ -46,22 +47,22 @@ public class BlockPublisherDeneb extends AbstractBlockPublisher {
   }
 
   @Override
-  protected SafeFuture<BlockImportResult> gossipAndImportUnblindedSignedBlock(
-      final SignedBlockContainer blockContainer) {
-    gossipAndImportBlobSidecars(blockContainer);
+  protected SafeFuture<BlockImportAndBroadcastValidationResults> importBlock(
+      final SignedBlockContainer blockContainer,
+      final BroadcastValidationLevel broadcastValidationLevel) {
     final SignedBeaconBlock block = blockContainer.getSignedBlock();
-    blockGossipChannel.publishBlock(block);
-    return blockImportChannel.importBlock(block);
-  }
 
-  private void gossipAndImportBlobSidecars(final SignedBlockContainer blockContainer) {
     blockContainer
         .getSignedBlobSidecars()
         .ifPresent(
-            signedBlobSidecars -> {
-              blobSidecarGossipChannel.publishBlobSidecars(signedBlobSidecars);
-              blobSidecarPool.onCompletedBlockAndSignedBlobSidecars(
-                  blockContainer.getSignedBlock(), signedBlobSidecars);
-            });
+            signedBlobSidecars ->
+                blobSidecarPool.onCompletedBlockAndSignedBlobSidecars(block, signedBlobSidecars));
+    return blockImportChannel.importBlock(block, broadcastValidationLevel);
+  }
+
+  @Override
+  void publishBlock(final SignedBlockContainer blockContainer) {
+    blockContainer.getSignedBlobSidecars().ifPresent(blobSidecarGossipChannel::publishBlobSidecars);
+    blockGossipChannel.publishBlock(blockContainer.getSignedBlock());
   }
 }
