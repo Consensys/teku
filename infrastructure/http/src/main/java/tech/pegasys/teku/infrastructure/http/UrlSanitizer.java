@@ -15,6 +15,7 @@ package tech.pegasys.teku.infrastructure.http;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import org.apache.commons.lang3.StringUtils;
 
 public class UrlSanitizer {
   public static String sanitizePotentialUrl(final String possibleUrl) {
@@ -33,6 +34,22 @@ public class UrlSanitizer {
       // Not actually a URI so no need to sanitize
       return possibleUrl;
     }
+  }
+
+  public static String appendPath(final String url, final String path) {
+    if (StringUtils.isEmpty(url)) {
+      throw new IllegalArgumentException("Base URL cannot be null/empty");
+    }
+
+    final String sanitizedPath = path == null ? "" : path;
+    final URI uri;
+    try {
+      uri = new URI(url);
+    } catch (URISyntaxException e) {
+      throw new IllegalArgumentException("Invalid URI " + url, e);
+    }
+
+    return uri.resolve(sanitizedPath).toASCIIString();
   }
 
   public static boolean urlContainsNonEmptyPath(final String url) {
