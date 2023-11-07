@@ -56,16 +56,6 @@ public class ValidatorClientOptions {
       ValidatorConfig.DEFAULT_FAILOVERS_PUBLISH_SIGNED_DUTIES_ENABLED;
 
   @Option(
-      names = {"--Xblock-v3-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description = "Enable the Block V3 API for block production",
-      hidden = true,
-      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
-      arity = "0..1",
-      fallbackValue = "true")
-  private boolean blockV3Enabled = ValidatorConfig.DEFAULT_BLOCK_V3_ENABLED;
-
-  @Option(
       names = {"--beacon-node-ssz-blocks-enabled"},
       paramLabel = "<BOOLEAN>",
       description = "Use SSZ encoding for API block requests",
@@ -84,7 +74,6 @@ public class ValidatorClientOptions {
                 .validatorClientUseSszBlocksEnabled(validatorClientSszBlocksEnabled)
                 .failoversSendSubnetSubscriptionsEnabled(failoversSendSubnetSubscriptionsEnabled)
                 .failoversPublishSignedDutiesEnabled(failoversPublishSignedDutiesEnabled)
-                .blockV3enabled(blockV3Enabled)
                 .sentryNodeConfigurationFile(exclusiveParams.sentryConfigFile));
   }
 

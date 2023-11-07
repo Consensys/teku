@@ -156,18 +156,29 @@ public class ValidatorDataProvider {
   }
 
   private SafeFuture<UInt256> retrieveExecutionPayloadValue(final UInt64 slot) {
-    final ExecutionPayloadResult payloadResult =
-        executionLayerBlockProductionManager
-            .getCachedPayloadResult(slot)
-            .orElseThrow(
-                () -> new IllegalStateException("ExecutionPayloadResult is not available"));
-    return payloadResult
-        .getExecutionPayloadValueFuture()
-        .orElseThrow(() -> new IllegalStateException("Execution Payload Value is not available"));
+    final Optional<ExecutionPayloadResult> cachedPayloadResult =
+        executionLayerBlockProductionManager.getCachedPayloadResult(slot);
+    if (cachedPayloadResult.isEmpty()) {
+      LOG.warn(
+          "Unable to get cached payload result for slot {}. Setting execution payload value to 0",
+          slot.intValue());
+      return SafeFuture.completedFuture(UInt256.ZERO);
+    }
+    final Optional<SafeFuture<UInt256>> executionPayloadValueFuture =
+        cachedPayloadResult.get().getExecutionPayloadValueFuture();
+    if (executionPayloadValueFuture.isEmpty()) {
+      LOG.warn(
+          "No execution payload value available for slot {}. Setting value to 0", slot.intValue());
+      return SafeFuture.completedFuture(UInt256.ZERO);
+    }
+    return executionPayloadValueFuture.get();
   }
 
   private SafeFuture<UInt256> retrieveConsensusBlockRewards(final BlockContainer blockContainer) {
-    final String rewardCalculationError = "Unable to calculate block rewards. Setting value to 0";
+    final String rewardCalculationError =
+        String.format(
+            "Unable to calculate block rewards for slot %d. Setting value to 0",
+            blockContainer.getSlot().intValue());
     return combinedChainDataClient
         .getStateAtSlotExact(blockContainer.getBlock().getSlot().decrement())
         .thenApply(

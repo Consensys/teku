@@ -120,6 +120,16 @@ public class ValidatorOptions {
       arity = "1")
   private int executorThreads = DEFAULT_VALIDATOR_EXECUTOR_THREADS;
 
+  @Option(
+      names = {"--Xblock-v3-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable the Block V3 API for block production",
+      hidden = true,
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean blockV3Enabled = ValidatorConfig.DEFAULT_BLOCK_V3_ENABLED;
+
   public void configure(TekuConfiguration.Builder builder) {
     builder.validator(
         config ->
@@ -134,7 +144,8 @@ public class ValidatorOptions {
                 .generateEarlyAttestations(generateEarlyAttestations)
                 .executorMaxQueueSize(executorMaxQueueSize)
                 .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled)
-                .executorThreads(executorThreads));
+                .executorThreads(executorThreads)
+                .blockV3enabled(blockV3Enabled));
     validatorProposerOptions.configure(builder);
     validatorKeysOptions.configure(builder);
   }

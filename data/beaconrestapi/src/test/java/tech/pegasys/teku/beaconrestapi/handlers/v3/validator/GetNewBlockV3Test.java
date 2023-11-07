@@ -34,6 +34,7 @@ import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,6 +43,7 @@ import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.api.RewardCalculator;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
+import tech.pegasys.teku.api.migrated.BlockRewardData;
 import tech.pegasys.teku.api.schema.Version;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -52,6 +54,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
+import tech.pegasys.teku.spec.constants.EthConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
@@ -70,6 +73,8 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
   private SpecMilestone specMilestone;
   private final UInt256 executionPayloadValue = UInt256.valueOf(12345);
   private final UInt256 consensusBlockValue = UInt256.valueOf(6789);
+  private final UInt256 consensusBlockValueWei =
+      EthConstants.GWEI_TO_WEI.multiply(consensusBlockValue);
   protected final BLSSignature signature = BLSTestUtil.randomSignature(1234);
 
   @BeforeEach
@@ -206,12 +211,135 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
   }
 
   @TestTemplate
-  void shouldSetConsensusBlockRewardToZeroWhenUnableToCalculateIt() throws Exception {
+  void shouldSetExecutionPayloadValueToZeroWhenNoCachedPayloadResult()
+      throws JsonProcessingException {
     final BlockContainer blockContainer;
     if (specMilestone.isGreaterThanOrEqualTo(DENEB)) {
-      blockContainer = dataStructureUtil.randomBlockContents();
+      blockContainer = dataStructureUtil.randomBlockContents(ONE);
     } else {
-      blockContainer = dataStructureUtil.randomBeaconBlock();
+      blockContainer = dataStructureUtil.randomBeaconBlock(ONE);
+    }
+    final ValidatorApiChannel validatorApiChannelMock = mock(ValidatorApiChannel.class);
+    when(validatorApiChannelMock.createUnsignedBlock(any(), any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainer)));
+    final CombinedChainDataClient combinedChainDataClientMock = mock(CombinedChainDataClient.class);
+    when(combinedChainDataClientMock.getCurrentSlot()).thenReturn(ZERO);
+    final BeaconState beaconStateMock = mock(BeaconState.class);
+    when(combinedChainDataClientMock.getStateAtSlotExact(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconStateMock)));
+    final ExecutionLayerBlockProductionManager executionLayerBlockProductionManagerMock =
+        mock(ExecutionLayerBlockProductionManager.class);
+    when(executionLayerBlockProductionManagerMock.getCachedPayloadResult(any()))
+        .thenReturn(Optional.empty());
+    final RewardCalculator rewardCalculatorMock = mock(RewardCalculator.class);
+    final BlockRewardData blockRewardDataMock = mock(BlockRewardData.class);
+    when(blockRewardDataMock.getTotal()).thenReturn(consensusBlockValue.toLong());
+    when(rewardCalculatorMock.getBlockRewardData(any(), any())).thenReturn(blockRewardDataMock);
+
+    validatorDataProvider =
+        new ValidatorDataProvider(
+            spec,
+            validatorApiChannelMock,
+            combinedChainDataClientMock,
+            executionLayerBlockProductionManagerMock,
+            rewardCalculatorMock);
+
+    try (final LogCaptor logCaptor = LogCaptor.forClass(ValidatorDataProvider.class)) {
+      setHandler(new GetNewBlockV3(validatorDataProvider, schemaDefinitionCache));
+      request.setPathParameter(SLOT, "1");
+      request.setQueryParameter(RANDAO_REVEAL, signature.toBytesCompressed().toHexString());
+
+      handler.handleRequest(request);
+      assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+
+      final BlockContainerAndMetaData<BlockContainer> blockContainerAndMetaData =
+          new BlockContainerAndMetaData<>(
+              blockContainer,
+              spec.getGenesisSpec().getMilestone(),
+              UInt256.ZERO,
+              consensusBlockValueWei);
+
+      assertThat(request.getResponseBody()).isEqualTo(blockContainerAndMetaData);
+      assertThat(request.getHeader(HEADER_CONSENSUS_BLOCK_VALUE))
+          .isEqualTo(consensusBlockValueWei.toDecimalString());
+      assertThat(request.getHeader(HEADER_EXECUTION_PAYLOAD_VALUE))
+          .isEqualTo(UInt256.ZERO.toDecimalString());
+      assertThat(logCaptor.getWarnLogs())
+          .containsExactly(
+              "Unable to get cached payload result for slot 1. Setting execution payload value to 0");
+      assertThat(logCaptor.getThrowable(0)).isEmpty();
+    }
+  }
+
+  @TestTemplate
+  void shouldSetExecutionPayloadValueToZeroWhenNoExecutionPayloadValue()
+      throws JsonProcessingException {
+    final BlockContainer blockContainer;
+    if (specMilestone.isGreaterThanOrEqualTo(DENEB)) {
+      blockContainer = dataStructureUtil.randomBlockContents(ONE);
+    } else {
+      blockContainer = dataStructureUtil.randomBeaconBlock(ONE);
+    }
+    final ValidatorApiChannel validatorApiChannelMock = mock(ValidatorApiChannel.class);
+    when(validatorApiChannelMock.createUnsignedBlock(any(), any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainer)));
+    final CombinedChainDataClient combinedChainDataClientMock = mock(CombinedChainDataClient.class);
+    when(combinedChainDataClientMock.getCurrentSlot()).thenReturn(ZERO);
+    final BeaconState beaconStateMock = mock(BeaconState.class);
+    when(combinedChainDataClientMock.getStateAtSlotExact(any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconStateMock)));
+    final ExecutionLayerBlockProductionManager executionLayerBlockProductionManagerMock =
+        mock(ExecutionLayerBlockProductionManager.class);
+    final ExecutionPayloadResult executionPayloadResultMock = mock(ExecutionPayloadResult.class);
+    when(executionPayloadResultMock.getExecutionPayloadValueFuture()).thenReturn(Optional.empty());
+    when(executionLayerBlockProductionManagerMock.getCachedPayloadResult(any()))
+        .thenReturn(Optional.of(executionPayloadResultMock));
+    final RewardCalculator rewardCalculatorMock = mock(RewardCalculator.class);
+    final BlockRewardData blockRewardDataMock = mock(BlockRewardData.class);
+    when(blockRewardDataMock.getTotal()).thenReturn(consensusBlockValue.toLong());
+    when(rewardCalculatorMock.getBlockRewardData(any(), any())).thenReturn(blockRewardDataMock);
+
+    validatorDataProvider =
+        new ValidatorDataProvider(
+            spec,
+            validatorApiChannelMock,
+            combinedChainDataClientMock,
+            executionLayerBlockProductionManagerMock,
+            rewardCalculatorMock);
+
+    try (final LogCaptor logCaptor = LogCaptor.forClass(ValidatorDataProvider.class)) {
+      setHandler(new GetNewBlockV3(validatorDataProvider, schemaDefinitionCache));
+      request.setPathParameter(SLOT, "1");
+      request.setQueryParameter(RANDAO_REVEAL, signature.toBytesCompressed().toHexString());
+
+      handler.handleRequest(request);
+      assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+
+      final BlockContainerAndMetaData<BlockContainer> blockContainerAndMetaData =
+          new BlockContainerAndMetaData<>(
+              blockContainer,
+              spec.getGenesisSpec().getMilestone(),
+              UInt256.ZERO,
+              consensusBlockValueWei);
+
+      assertThat(request.getResponseBody()).isEqualTo(blockContainerAndMetaData);
+      assertThat(request.getHeader(HEADER_CONSENSUS_BLOCK_VALUE))
+          .isEqualTo(consensusBlockValueWei.toDecimalString());
+      assertThat(request.getHeader(HEADER_EXECUTION_PAYLOAD_VALUE))
+          .isEqualTo(UInt256.ZERO.toDecimalString());
+      assertThat(logCaptor.getWarnLogs())
+          .containsExactly("No execution payload value available for slot 1. Setting value to 0");
+      assertThat(logCaptor.getThrowable(0)).isEmpty();
+    }
+  }
+
+  @TestTemplate
+  void shouldSetConsensusBlockRewardToZeroWhenUnableToCalculateIt() throws JsonProcessingException {
+    final BlockContainer blockContainer;
+    if (specMilestone.isGreaterThanOrEqualTo(DENEB)) {
+      blockContainer = dataStructureUtil.randomBlockContents(ONE);
+    } else {
+      blockContainer = dataStructureUtil.randomBeaconBlock(ONE);
     }
     final ValidatorApiChannel validatorApiChannelMock = mock(ValidatorApiChannel.class);
     when(validatorApiChannelMock.createUnsignedBlock(any(), any(), any()))
@@ -256,7 +384,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
       assertThat(request.getHeader(HEADER_CONSENSUS_BLOCK_VALUE))
           .isEqualTo(UInt256.ZERO.toDecimalString());
       assertThat(logCaptor.getWarnLogs())
-          .containsExactly("Unable to calculate block rewards. Setting value to 0");
+          .containsExactly("Unable to calculate block rewards for slot 1. Setting value to 0");
       assertThat(logCaptor.getThrowable(0)).isEmpty();
     }
   }
@@ -309,7 +437,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
       assertThat(request.getHeader(HEADER_CONSENSUS_BLOCK_VALUE))
           .isEqualTo(UInt256.ZERO.toDecimalString());
       assertThat(logCaptor.getWarnLogs())
-          .containsExactly("Unable to calculate block rewards. Setting value to 0");
+          .containsExactly("Unable to calculate block rewards for slot 1. Setting value to 0");
       assertThat(logCaptor.getThrowable(0)).isPresent();
       assertThat(logCaptor.getThrowable(0).get().getCause())
           .isInstanceOf(BadRequestException.class);
