@@ -22,6 +22,8 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
+import tech.pegasys.teku.infrastructure.metrics.Validator.DutyType;
+import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
@@ -34,10 +36,8 @@ import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.duties.Duty;
 import tech.pegasys.teku.validator.client.duties.DutyResult;
-import tech.pegasys.teku.validator.client.duties.DutyType;
 import tech.pegasys.teku.validator.client.duties.ProductionResult;
 import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics;
-import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics.Step;
 
 public class AggregationDuty implements Duty {
   private static final Logger LOG = LogManager.getLogger();
@@ -137,7 +137,7 @@ public class AggregationDuty implements Duty {
         validatorDutyMetrics.record(
             () -> validatorApiChannel.createAggregate(slot, attestationData.hashTreeRoot()),
             this,
-            Step.CREATE);
+            ValidatorDutyMetricsSteps.CREATE);
 
     return createAggregationFuture.thenCompose(
         maybeAggregate -> {
@@ -148,7 +148,9 @@ public class AggregationDuty implements Duty {
           }
           final Attestation aggregate = maybeAggregate.get();
           return validatorDutyMetrics.record(
-              () -> createSignedAggregateAndProof(aggregator, aggregate), this, Step.SIGN);
+              () -> createSignedAggregateAndProof(aggregator, aggregate),
+              this,
+              ValidatorDutyMetricsSteps.SIGN);
         });
   }
 

@@ -14,7 +14,7 @@
 package tech.pegasys.teku.services.beaconchain;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
-import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.INITIAL_STATE_URL_PATH;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.FINALIZED_STATE_URL_PATH;
 
 import java.io.IOException;
 import java.util.Objects;
@@ -53,9 +53,7 @@ public class WeakSubjectivityInitializer {
           } catch (final IOException | SszDeserializeException ex) {
             if (!UrlSanitizer.urlContainsNonEmptyPath(stateResource)) {
               final String stateResourceWithPath =
-                  stateResource.endsWith("/")
-                      ? stateResource + INITIAL_STATE_URL_PATH
-                      : stateResource + "/" + INITIAL_STATE_URL_PATH;
+                  UrlSanitizer.appendPath(stateResource, FINALIZED_STATE_URL_PATH);
               final String sanitizedResourceWithPath =
                   UrlSanitizer.sanitizePotentialUrl(stateResourceWithPath);
               LOG.info(

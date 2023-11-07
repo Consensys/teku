@@ -29,6 +29,8 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
+import static tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps.CREATE_TOTAL;
+import static tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps.SIGN;
 
 import java.util.Collections;
 import java.util.List;
@@ -56,7 +58,6 @@ import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
-import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics.Step;
 import tech.pegasys.teku.validator.client.duties.attestations.AttestationProductionDuty;
 import tech.pegasys.teku.validator.client.duties.attestations.BatchAttestationSendingStrategy;
 
@@ -117,7 +118,7 @@ class AttestationProductionDutyTest {
     verifyNoMoreInteractions(validatorLogger);
 
     verify(validatorDutyMetrics)
-        .record(any(), any(AttestationProductionDuty.class), eq(Step.CREATE));
+        .record(any(), any(AttestationProductionDuty.class), eq(CREATE_TOTAL));
   }
 
   @Test
@@ -165,8 +166,8 @@ class AttestationProductionDutyTest {
     verifyNoMoreInteractions(validatorLogger);
 
     verify(validatorDutyMetrics, times(2))
-        .record(any(), any(AttestationProductionDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics).record(any(), any(AttestationProductionDuty.class), eq(Step.SIGN));
+        .record(any(), any(AttestationProductionDuty.class), eq(CREATE_TOTAL));
+    verify(validatorDutyMetrics).record(any(), any(AttestationProductionDuty.class), eq(SIGN));
   }
 
   @Test
@@ -213,8 +214,8 @@ class AttestationProductionDutyTest {
     verifyNoMoreInteractions(validatorLogger);
 
     verify(validatorDutyMetrics, times(2))
-        .record(any(), any(AttestationProductionDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics).record(any(), any(AttestationProductionDuty.class), eq(Step.SIGN));
+        .record(any(), any(AttestationProductionDuty.class), eq(CREATE_TOTAL));
+    verify(validatorDutyMetrics).record(any(), any(AttestationProductionDuty.class), eq(SIGN));
   }
 
   @Test
@@ -256,9 +257,9 @@ class AttestationProductionDutyTest {
     verifyNoMoreInteractions(validatorLogger);
 
     verify(validatorDutyMetrics)
-        .record(any(), any(AttestationProductionDuty.class), eq(Step.CREATE));
+        .record(any(), any(AttestationProductionDuty.class), eq(CREATE_TOTAL));
     verify(validatorDutyMetrics, times(2))
-        .record(any(), any(AttestationProductionDuty.class), eq(Step.SIGN));
+        .record(any(), any(AttestationProductionDuty.class), eq(SIGN));
   }
 
   @Test
@@ -284,8 +285,8 @@ class AttestationProductionDutyTest {
     verifyNoMoreInteractions(validatorLogger);
 
     verify(validatorDutyMetrics)
-        .record(any(), any(AttestationProductionDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics).record(any(), any(AttestationProductionDuty.class), eq(Step.SIGN));
+        .record(any(), any(AttestationProductionDuty.class), eq(CREATE_TOTAL));
+    verify(validatorDutyMetrics).record(any(), any(AttestationProductionDuty.class), eq(SIGN));
   }
 
   @Test
@@ -322,8 +323,8 @@ class AttestationProductionDutyTest {
     verifyNoMoreInteractions(validatorLogger);
 
     verify(validatorDutyMetrics)
-        .record(any(), any(AttestationProductionDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics).record(any(), any(AttestationProductionDuty.class), eq(Step.SIGN));
+        .record(any(), any(AttestationProductionDuty.class), eq(CREATE_TOTAL));
+    verify(validatorDutyMetrics).record(any(), any(AttestationProductionDuty.class), eq(SIGN));
   }
 
   @SuppressWarnings("unchecked")
@@ -377,9 +378,9 @@ class AttestationProductionDutyTest {
     verifyNoMoreInteractions(validatorLogger);
 
     verify(validatorDutyMetrics)
-        .record(any(), any(AttestationProductionDuty.class), eq(Step.CREATE));
+        .record(any(), any(AttestationProductionDuty.class), eq(CREATE_TOTAL));
     verify(validatorDutyMetrics, times(3))
-        .record(any(), any(AttestationProductionDuty.class), eq(Step.SIGN));
+        .record(any(), any(AttestationProductionDuty.class), eq(SIGN));
   }
 
   @SuppressWarnings("unchecked")
@@ -443,9 +444,9 @@ class AttestationProductionDutyTest {
     verifyNoMoreInteractions(validatorLogger);
 
     verify(validatorDutyMetrics, times(2))
-        .record(any(), any(AttestationProductionDuty.class), eq(Step.CREATE));
+        .record(any(), any(AttestationProductionDuty.class), eq(CREATE_TOTAL));
     verify(validatorDutyMetrics, times(3))
-        .record(any(), any(AttestationProductionDuty.class), eq(Step.SIGN));
+        .record(any(), any(AttestationProductionDuty.class), eq(SIGN));
   }
 
   public Validator createValidator() {

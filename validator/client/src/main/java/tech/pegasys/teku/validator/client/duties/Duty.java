@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client.duties;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.Validator.DutyType;
 
 public interface Duty {
   DutyType getType();

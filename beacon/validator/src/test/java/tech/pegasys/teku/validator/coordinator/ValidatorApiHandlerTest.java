@@ -61,6 +61,8 @@ import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -164,6 +166,8 @@ class ValidatorApiHandlerTest {
     this.epochStartSlot = spec.computeStartSlotAtEpoch(EPOCH);
     this.previousEpochStartSlot = spec.computeStartSlotAtEpoch(PREVIOUS_EPOCH);
     this.dataStructureUtil = new DataStructureUtil(spec);
+    when(dutyMetrics.getValidatorDutyMetric())
+        .thenReturn(ValidatorDutyMetricUtils.createValidatorDutyMetric(new StubMetricsSystem()));
     this.validatorApiHandler =
         new ValidatorApiHandler(
             chainDataProvider,
