@@ -122,7 +122,7 @@ public class BlockManagerTest {
   private final FutureItems<SignedBeaconBlock> futureBlocks =
       FutureItems.create(SignedBeaconBlock::getSlot, mock(SettableLabelledGauge.class), "blocks");
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots =
-      LimitedMap.createSynchronized(500);
+      LimitedMap.createSynchronizedLRU(500);
 
   private StorageSystem localChain;
   private RecentChainData localRecentChainData = mock(RecentChainData.class);

@@ -17,7 +17,7 @@ package tech.pegasys.teku.infrastructure.collections;
 final class NonSynchronizedLimitedMap<K, V> extends AbstractLimitedMap<K, V> {
 
   public NonSynchronizedLimitedMap(final int maxSize) {
-    super(createLimitedMap(maxSize), maxSize);
+    super(createLimitedMap(maxSize, true), maxSize);
   }
 
   @Override
