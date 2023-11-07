@@ -19,9 +19,9 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitmentSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProofSchema;
 
@@ -30,17 +30,19 @@ public class BlobsBundleSchema
         BlobsBundle, SszList<SszKZGCommitment>, SszList<SszKZGProof>, SszList<Blob>> {
 
   public BlobsBundleSchema(
-      final String containerName, final BlobSchema blobSchema, final SpecConfigDeneb specConfig) {
+      final String containerName,
+      final BlobSchema blobSchema,
+      final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema,
+      final SpecConfigDeneb specConfig) {
     super(
         containerName,
-        namedSchema(
-            "commitments",
-            SszListSchema.create(
-                SszKZGCommitmentSchema.INSTANCE, specConfig.getMaxBlobsPerBlock())),
+        namedSchema("commitments", blobKzgCommitmentsSchema),
         namedSchema(
             "proofs",
-            SszListSchema.create(SszKZGProofSchema.INSTANCE, specConfig.getMaxBlobsPerBlock())),
-        namedSchema("blobs", SszListSchema.create(blobSchema, specConfig.getMaxBlobsPerBlock())));
+            SszListSchema.create(
+                SszKZGProofSchema.INSTANCE, specConfig.getMaxBlobCommitmentsPerBlock())),
+        namedSchema(
+            "blobs", SszListSchema.create(blobSchema, specConfig.getMaxBlobCommitmentsPerBlock())));
   }
 
   @SuppressWarnings("unchecked")

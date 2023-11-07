@@ -169,7 +169,8 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
             signedBlindedBlobSidecarSchema,
             signedBlindedBeaconBlockSchema,
             "SignedBlindedBlockContentsDeneb");
-    this.blobsBundleSchema = new BlobsBundleSchema("BlobsBundleDeneb", blobSchema, specConfig);
+    this.blobsBundleSchema =
+        new BlobsBundleSchema("BlobsBundleDeneb", blobSchema, blobKzgCommitmentsSchema, specConfig);
     this.executionPayloadAndBlobsBundleSchema =
         new ExecutionPayloadAndBlobsBundleSchema(executionPayloadSchemaDeneb, blobsBundleSchema);
     this.blobSidecarsByRootRequestMessageSchema =

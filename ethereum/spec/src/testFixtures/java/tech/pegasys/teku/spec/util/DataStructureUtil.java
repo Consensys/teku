@@ -2595,8 +2595,7 @@ public final class DataStructureUtil {
   }
 
   public SszList<SszKZGCommitment> randomSszKzgCommitmentList() {
-    final int count = randomInt(spec.getMaxBlobCommitmentsPerBlock().orElseThrow()) + 1;
-    return randomSszKzgCommitmentList(count);
+    return randomSszKzgCommitmentList(randomNumberOfBlobCommitmentsPerBlock());
   }
 
   public SszList<SszKZGCommitment> randomSszKzgCommitmentList(final int count) {
