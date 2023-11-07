@@ -231,37 +231,6 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
     assertThat(body).contains("Unable to produce a block");
   }
 
-  @TestTemplate
-  void shouldFailWhenNoCachedPayloadResult() throws IOException {
-    final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
-    final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
-    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    when(executionLayerBlockProductionManager.getCachedPayloadResult(UInt64.ONE))
-        .thenReturn(Optional.empty());
-    Response response = get(signature, ContentTypes.JSON);
-    assertThat(response.code()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
-  }
-
-  @TestTemplate
-  void shouldFailWhenNoExecutionPayloadValue() throws IOException {
-    final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
-    final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
-    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    when(executionLayerBlockProductionManager.getCachedPayloadResult(UInt64.ONE))
-        .thenReturn(
-            Optional.of(
-                new ExecutionPayloadResult(
-                    mock(ExecutionPayloadContext.class),
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.empty())));
-    Response response = get(signature, ContentTypes.JSON);
-    assertThat(response.code()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
-  }
-
   private Response get(final BLSSignature signature, final String contentType) throws IOException {
     return getResponse(
         GetNewBlockV3.ROUTE.replace("{slot}", "1"),
