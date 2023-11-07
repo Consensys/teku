@@ -21,6 +21,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.Validator.DutyType;
+import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
@@ -31,7 +33,6 @@ import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
-import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics.Step;
 import tech.pegasys.teku.validator.client.signer.BlockContainerSigner;
 
 public class BlockProductionDuty implements Duty {
@@ -85,15 +86,18 @@ public class BlockProductionDuty implements Duty {
         .thenCompose(
             signature ->
                 validatorDutyMetrics.record(
-                    () -> createUnsignedBlock(signature), this, Step.CREATE))
+                    () -> createUnsignedBlock(signature), this, ValidatorDutyMetricsSteps.CREATE))
         .thenCompose(this::validateBlock)
         .thenCompose(
             blockContainer ->
                 validatorDutyMetrics.record(
-                    () -> signBlockContainer(forkInfo, blockContainer), this, Step.SIGN))
+                    () -> signBlockContainer(forkInfo, blockContainer),
+                    this,
+                    ValidatorDutyMetricsSteps.SIGN))
         .thenCompose(
             signedBlockContainer ->
-                validatorDutyMetrics.record(() -> sendBlock(signedBlockContainer), this, Step.SEND))
+                validatorDutyMetrics.record(
+                    () -> sendBlock(signedBlockContainer), this, ValidatorDutyMetricsSteps.SEND))
         .exceptionally(error -> DutyResult.forError(validator.getPublicKey(), error));
   }
 

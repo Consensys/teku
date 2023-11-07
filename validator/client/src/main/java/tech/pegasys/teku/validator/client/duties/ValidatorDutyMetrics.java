@@ -13,12 +13,16 @@
 
 package tech.pegasys.teku.validator.client.duties;
 
+import static tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils.startTimer;
+import static tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps.TOTAL;
+
 import java.util.function.Supplier;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import org.hyperledger.besu.plugin.services.metrics.OperationTimer;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils;
+import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps;
 
 public class ValidatorDutyMetrics {
   private final LabelledMetric<OperationTimer> dutyMetric;
@@ -28,53 +32,28 @@ public class ValidatorDutyMetrics {
   }
 
   public static ValidatorDutyMetrics create(final MetricsSystem metricsSystem) {
-    final LabelledMetric<OperationTimer> dutyMetric =
-        metricsSystem.createLabelledTimer(
-            TekuMetricCategory.VALIDATOR,
-            "duty_timer",
-            "Timer recording the time taken to perform a duty",
-            "type",
-            "step");
-    return new ValidatorDutyMetrics(dutyMetric);
+    return new ValidatorDutyMetrics(
+        ValidatorDutyMetricUtils.createValidatorDutyMetric(metricsSystem));
   }
 
   public SafeFuture<DutyResult> performDutyWithMetrics(final Duty duty) {
     try (final OperationTimer.TimingContext context =
-        startTimer(getDutyType(duty), Step.TOTAL.name)) {
+        startTimer(dutyMetric, getDutyType(duty), TOTAL.getName())) {
       return duty.performDuty().alwaysRun(context::stopTimer);
     }
   }
 
   public <T> SafeFuture<T> record(
-      final Supplier<SafeFuture<T>> dutyStepFutureSupplier, final Duty duty, final Step step) {
-    try (final OperationTimer.TimingContext context = startTimer(getDutyType(duty), step.name)) {
+      final Supplier<SafeFuture<T>> dutyStepFutureSupplier,
+      final Duty duty,
+      final ValidatorDutyMetricsSteps step) {
+    try (final OperationTimer.TimingContext context =
+        startTimer(dutyMetric, getDutyType(duty), step.getName())) {
       return dutyStepFutureSupplier.get().alwaysRun(context::stopTimer);
     }
   }
 
-  private OperationTimer.TimingContext startTimer(final String dutyType, final String step) {
-    final OperationTimer timer = dutyMetric.labels(dutyType, step);
-    return timer.startTimer();
-  }
-
   private static String getDutyType(final Duty duty) {
-    return duty.getType().getType();
-  }
-
-  public enum Step {
-    TOTAL("total"),
-    CREATE("create"),
-    SIGN("sign"),
-    SEND("send");
-
-    private final String name;
-
-    Step(final String name) {
-      this.name = name;
-    }
-
-    public String getName() {
-      return name;
-    }
+    return duty.getType().getName();
   }
 }

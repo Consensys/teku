@@ -11,20 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.duties;
+package tech.pegasys.teku.infrastructure.metrics.Validator;
 
 public enum DutyType {
   ATTESTATION_AGGREGATION("attestation_aggregation"),
   ATTESTATION_PRODUCTION("attestation_production"),
   BLOCK_PRODUCTION("block_production");
 
-  private final String type;
+  private final String name;
 
   DutyType(final String type) {
-    this.type = type;
+    this.name = type;
   }
 
-  public String getType() {
-    return type;
+  public String getName() {
+    return name;
   }
 }
