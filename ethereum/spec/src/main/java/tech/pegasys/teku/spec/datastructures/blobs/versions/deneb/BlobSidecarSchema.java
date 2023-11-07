@@ -17,14 +17,13 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
-import tech.pegasys.teku.infrastructure.ssz.SszVector;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema6;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszVectorSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
@@ -44,7 +43,7 @@ public class BlobSidecarSchema
         SszKZGCommitment,
         SszKZGProof,
         SignedBeaconBlockHeader,
-        SszVector<SszBytes32>> {
+        SszBytes32Vector> {
 
   static final SszFieldName FIELD_BLOB = () -> "blob";
   static final SszFieldName FIELD_SIGNED_BLOCK_HEADER = () -> "signed_block_header";
@@ -64,8 +63,7 @@ public class BlobSidecarSchema
         namedSchema(FIELD_SIGNED_BLOCK_HEADER, signedBeaconBlockHeaderSchema),
         namedSchema(
             FIELD_KZG_COMMITMENT_INCLUSION_PROOF,
-            SszVectorSchema.create(
-                SszPrimitiveSchemas.BYTES32_SCHEMA, kzgCommitmentInclusionProofDepth)));
+            SszBytes32VectorSchema.create(kzgCommitmentInclusionProofDepth)));
   }
 
   @SuppressWarnings("unchecked")
@@ -81,9 +79,8 @@ public class BlobSidecarSchema
     return (SignedBeaconBlockHeaderSchema) getFieldSchema4();
   }
 
-  @SuppressWarnings("unchecked")
-  public SszVectorSchema<SszBytes32, ?> getKzgCommitmentInclusionProofSchema() {
-    return (SszVectorSchema<SszBytes32, ?>)
+  public SszBytes32VectorSchema<?> getKzgCommitmentInclusionProofSchema() {
+    return (SszBytes32VectorSchema<?>)
         getChildSchema(getFieldIndex(FIELD_KZG_COMMITMENT_INCLUSION_PROOF));
   }
 

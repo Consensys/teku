@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
-import tech.pegasys.teku.infrastructure.ssz.SszVector;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container6;
 import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
@@ -38,7 +38,7 @@ public class BlobSidecar
         SszKZGCommitment,
         SszKZGProof,
         SignedBeaconBlockHeader,
-        SszVector<SszBytes32>> {
+        SszBytes32Vector> {
 
   BlobSidecar(final BlobSidecarSchema blobSidecarSchema, final TreeNode backingTreeNode) {
     super(blobSidecarSchema, backingTreeNode);
