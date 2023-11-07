@@ -384,7 +384,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
       assertThat(request.getHeader(HEADER_CONSENSUS_BLOCK_VALUE))
           .isEqualTo(UInt256.ZERO.toDecimalString());
       assertThat(logCaptor.getWarnLogs())
-          .containsExactly("Unable to calculate block rewards for slot %d. Setting value to 1");
+          .containsExactly("Unable to calculate block rewards for slot 1. Setting value to 0");
       assertThat(logCaptor.getThrowable(0)).isEmpty();
     }
   }
