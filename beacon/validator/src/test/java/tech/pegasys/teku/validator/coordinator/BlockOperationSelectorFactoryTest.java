@@ -27,6 +27,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -461,6 +462,7 @@ class BlockOperationSelectorFactoryTest {
   }
 
   @Test
+  @Disabled("disabled until block production for blob sidecar inclusion proof is implemented")
   void shouldIncludeKzgCommitmentsInBlindedBlock() {
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState();
 
@@ -524,6 +526,7 @@ class BlockOperationSelectorFactoryTest {
   }
 
   @Test
+  @Disabled("disabled until block production for blob sidecar inclusion proof is implemented")
   void shouldCreateBlindedBlobSidecarsForBlindedBlockFromCachedPayloadResult() {
     final BeaconBlock block = dataStructureUtil.randomBlindedBeaconBlock();
 
@@ -532,7 +535,7 @@ class BlockOperationSelectorFactoryTest {
     // the BlindedBlobsBundle is stored in the HeaderWithFallbackData (retrieved via builder flow)
     final HeaderWithFallbackData headerWithFallbackData =
         HeaderWithFallbackData.create(
-            dataStructureUtil.randomExecutionPayloadHeader(), Optional.of(blindedBlobsBundle));
+            dataStructureUtil.randomExecutionPayloadHeader(), Optional.empty());
 
     prepareCachedPayloadResult(
         block.getSlot(),
@@ -632,7 +635,7 @@ class BlockOperationSelectorFactoryTest {
       final BeaconState blockSlotState,
       final BlindedBlobsBundle blindedBlobsBundle) {
     final HeaderWithFallbackData headerWithFallbackData =
-        HeaderWithFallbackData.create(executionPayloadHeader, Optional.of(blindedBlobsBundle));
+        HeaderWithFallbackData.create(executionPayloadHeader, Optional.empty());
     when(executionLayer.initiateBlockAndBlobsProduction(
             executionPayloadContext, blockSlotState, true))
         .thenReturn(

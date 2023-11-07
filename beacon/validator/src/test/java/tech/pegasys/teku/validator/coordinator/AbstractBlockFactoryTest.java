@@ -405,7 +405,7 @@ public abstract class AbstractBlockFactoryTest {
                       Optional.of(
                           SafeFuture.completedFuture(
                               HeaderWithFallbackData.create(
-                                  executionPayloadHeader, blindedBlobsBundle))),
+                                  executionPayloadHeader, Optional.empty()))),
                       Optional.empty());
               cachedExecutionPayloadResult = executionPayloadResult;
               return executionPayloadResult;

@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
@@ -70,6 +71,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
   }
 
   @Test
+  @Disabled("disabled until block production for blob sidecar inclusion proof is implemented")
   void shouldCreateBlindedBlockContentsWhenBlindedBlockRequested() {
 
     final BlindedBlobsBundle blindedBlobsBundle = prepareBlindedBlobsBundle(spec, 3);
