@@ -2269,8 +2269,9 @@ public final class DataStructureUtil {
   private BlobsBundle randomBlobsBundle(final Optional<Integer> count, final UInt64 slot) {
     final BlobSchema blobSchema = getDenebSchemaDefinitions(slot).getBlobSchema();
     final List<KZGCommitment> commitments =
-        (count.isPresent() ? randomBlobKzgCommitments(count.get()) : randomBlobKzgCommitments())
-            .stream().map(SszKZGCommitment::getKZGCommitment).collect(toList());
+        count.map(this::randomBlobKzgCommitments).orElse(randomBlobKzgCommitments()).stream()
+            .map(SszKZGCommitment::getKZGCommitment)
+            .toList();
     final List<KZGProof> proofs =
         IntStream.range(0, commitments.size()).mapToObj(__ -> randomKZGProof()).collect(toList());
     return new BlobsBundle(
