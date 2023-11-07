@@ -13,8 +13,10 @@
 
 package tech.pegasys.teku.infrastructure.http;
 
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import org.apache.commons.lang3.StringUtils;
 
 public class UrlSanitizer {
@@ -42,14 +44,14 @@ public class UrlSanitizer {
     }
 
     final String sanitizedPath = path == null ? "" : path;
-    final URI uri;
+    final URL urlWithPath;
     try {
-      uri = new URI(url);
-    } catch (URISyntaxException e) {
-      throw new IllegalArgumentException("Invalid URI " + url, e);
+      urlWithPath = new URL(new URL(url), sanitizedPath);
+    } catch (MalformedURLException e) {
+      throw new IllegalArgumentException("Invalid URL " + url, e);
     }
 
-    return uri.resolve(sanitizedPath).toASCIIString();
+    return urlWithPath.toString();
   }
 
   public static boolean urlContainsNonEmptyPath(final String url) {
