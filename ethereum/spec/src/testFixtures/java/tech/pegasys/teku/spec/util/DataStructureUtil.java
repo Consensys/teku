@@ -88,6 +88,7 @@ import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
@@ -111,7 +112,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContents;
@@ -2595,29 +2595,24 @@ public final class DataStructureUtil {
   }
 
   public SszList<SszKZGCommitment> randomSszKzgCommitmentList() {
-    final int count = randomInt(spec.getMaxBlobsPerBlock().orElseThrow()) + 1;
+    final int count = randomInt(spec.getMaxBlobCommitmentsPerBlock().orElseThrow()) + 1;
     return randomSszKzgCommitmentList(count);
   }
 
   public SszList<SszKZGCommitment> randomSszKzgCommitmentList(final int count) {
-    final SszListSchema<SszKZGCommitment, ?> kzgCommitmentsSchema =
-        BeaconBlockBodySchemaDeneb.required(
-                spec.forMilestone(SpecMilestone.DENEB)
-                    .getSchemaDefinitions()
-                    .getBeaconBlockBodySchema())
+    final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
+        SchemaDefinitionsDeneb.required(
+                spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
             .getBlobKzgCommitmentsSchema();
 
-    return randomSszList(kzgCommitmentsSchema, count, this::randomSszKZGCommitment);
+    return randomSszList(blobKzgCommitmentsSchema, count, this::randomSszKZGCommitment);
   }
 
   public SszList<SszKZGCommitment> emptySszKzgCommitmentList() {
     return SchemaDefinitionsDeneb.required(
             spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
-        .getBeaconBlockBodySchema()
-        .toVersionDeneb()
-        .orElseThrow()
         .getBlobKzgCommitmentsSchema()
-        .createFromElements(List.of());
+        .of();
   }
 
   public RewardAndPenaltyDeltas randomRewardAndPenaltyDeltas(final int validatorCount) {

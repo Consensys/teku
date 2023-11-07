@@ -474,10 +474,11 @@ class BlockOperationSelectorFactoryTest {
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
 
-    final BlindedBlobsBundle blindedBlobsBundle = dataStructureUtil.randomBlindedBlobsBundle();
+    final SszList<SszKZGCommitment> blobKzgCommitments =
+        dataStructureUtil.randomSszKzgCommitmentList();
 
     prepareBlindedBlockAndBlobsProduction(
-        randomExecutionPayloadHeader, executionPayloadContext, blockSlotState, blindedBlobsBundle);
+        randomExecutionPayloadHeader, executionPayloadContext, blockSlotState, blobKzgCommitments);
 
     final CapturingBeaconBlockBodyBuilder bodyBuilder =
         new CapturingBeaconBlockBodyBuilder(true, true);
@@ -487,8 +488,7 @@ class BlockOperationSelectorFactoryTest {
             parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
         .accept(bodyBuilder);
 
-    assertThat(bodyBuilder.blobKzgCommitments)
-        .hasSameElementsAs(blindedBlobsBundle.getCommitments());
+    assertThat(bodyBuilder.blobKzgCommitments).hasSameElementsAs(blobKzgCommitments);
   }
 
   @Test
@@ -633,9 +633,9 @@ class BlockOperationSelectorFactoryTest {
       final ExecutionPayloadHeader executionPayloadHeader,
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState blockSlotState,
-      final BlindedBlobsBundle blindedBlobsBundle) {
+      final SszList<SszKZGCommitment> blobKzgCommitments) {
     final HeaderWithFallbackData headerWithFallbackData =
-        HeaderWithFallbackData.create(executionPayloadHeader, Optional.empty());
+        HeaderWithFallbackData.create(executionPayloadHeader, Optional.of(blobKzgCommitments));
     when(executionLayer.initiateBlockAndBlobsProduction(
             executionPayloadContext, blockSlotState, true))
         .thenReturn(
