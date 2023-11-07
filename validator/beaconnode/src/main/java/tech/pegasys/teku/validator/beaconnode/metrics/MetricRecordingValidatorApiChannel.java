@@ -13,6 +13,10 @@
 
 package tech.pegasys.teku.validator.beaconnode.metrics;
 
+import static tech.pegasys.teku.infrastructure.metrics.Validator.DutyType.ATTESTATION_PRODUCTION;
+import static tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils.startTimer;
+import static tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps.SEND;
+
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.util.Collection;
 import java.util.List;
@@ -23,12 +27,14 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import org.hyperledger.besu.plugin.services.metrics.OperationTimer;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
@@ -58,6 +64,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
   private final ValidatorApiChannel delegate;
   private final LabelledMetric<Counter> beaconNodeRequestsCounter;
+  private final LabelledMetric<OperationTimer> dutyTimer;
 
   public MetricRecordingValidatorApiChannel(
       final MetricsSystem metricsSystem, final ValidatorApiChannel delegate) {
@@ -69,6 +76,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
             "Counter recording the number of requests sent to the beacon node",
             "method",
             "outcome");
+    dutyTimer = ValidatorDutyMetricUtils.createValidatorDutyMetric(metricsSystem);
   }
 
   @Override
@@ -187,9 +195,12 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   @Override
   public SafeFuture<List<SubmitDataError>> sendSignedAttestations(
       final List<Attestation> attestations) {
-    return countSendRequest(
-        delegate.sendSignedAttestations(attestations),
-        BeaconNodeRequestLabels.PUBLISH_ATTESTATION_METHOD);
+    try (final OperationTimer.TimingContext context =
+        startTimer(dutyTimer, ATTESTATION_PRODUCTION.getName(), SEND.getName())) {
+      SafeFuture<List<SubmitDataError>> request = delegate.sendSignedAttestations(attestations);
+      request.always(context::stopTimer);
+      return countSendRequest(request, BeaconNodeRequestLabels.PUBLISH_ATTESTATION_METHOD);
+    }
   }
 
   @Override
