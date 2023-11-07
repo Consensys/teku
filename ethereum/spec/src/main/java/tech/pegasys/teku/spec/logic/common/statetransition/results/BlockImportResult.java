@@ -34,14 +34,6 @@ public interface BlockImportResult {
   BlockImportResult FAILED_DESCENDANT_OF_INVALID_BLOCK =
       new FailedBlockImportResult(FailureReason.DESCENDANT_OF_INVALID_BLOCK, Optional.empty());
 
-  BlockImportResult FAILED_BROADCAST_GOSSIP_VALIDATION =
-      new FailedBlockImportResult(
-          FailureReason.FAILED_BROADCAST_GOSSIP_VALIDATION, Optional.empty());
-
-  BlockImportResult FAILED_BROADCAST_EQUIVOCATION_VALIDATION =
-      new FailedBlockImportResult(
-          FailureReason.FAILED_BROADCAST_EQUIVOCATION_VALIDATION, Optional.empty());
-
   static BlockImportResult failedDataAvailabilityCheckInvalid(final Optional<Throwable> cause) {
     return new FailedBlockImportResult(FailureReason.FAILED_DATA_AVAILABILITY_CHECK_INVALID, cause);
   }

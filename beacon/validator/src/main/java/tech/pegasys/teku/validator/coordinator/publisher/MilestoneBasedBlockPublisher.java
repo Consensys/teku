@@ -23,6 +23,7 @@ import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
@@ -77,9 +78,12 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
 
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
-      final SignedBlockContainer maybeBlindedBlockContainer) {
+      final SignedBlockContainer maybeBlindedBlockContainer,
+      final BroadcastValidationLevel broadcastValidationLevel) {
     final SpecMilestone blockMilestone =
         spec.atSlot(maybeBlindedBlockContainer.getSlot()).getMilestone();
-    return registeredPublishers.get(blockMilestone).sendSignedBlock(maybeBlindedBlockContainer);
+    return registeredPublishers
+        .get(blockMilestone)
+        .sendSignedBlock(maybeBlindedBlockContainer, broadcastValidationLevel);
   }
 }

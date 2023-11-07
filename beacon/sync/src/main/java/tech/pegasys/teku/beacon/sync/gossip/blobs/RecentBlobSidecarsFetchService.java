@@ -24,12 +24,12 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 
 public class RecentBlobSidecarsFetchService
-    extends AbstractFetchService<BlobIdentifier, FetchBlobSidecarTask, BlobSidecar>
+    extends AbstractFetchService<BlobIdentifier, FetchBlobSidecarTask, BlobSidecarOld>
     implements RecentBlobSidecarsFetcher {
 
   private static final Logger LOG = LogManager.getLogger();
@@ -127,7 +127,7 @@ public class RecentBlobSidecarsFetchService
   }
 
   @Override
-  public void processFetchedResult(final FetchBlobSidecarTask task, final BlobSidecar result) {
+  public void processFetchedResult(final FetchBlobSidecarTask task, final BlobSidecarOld result) {
     LOG.trace("Successfully fetched blob sidecar: {}", result);
     blobSidecarSubscribers.forEach(s -> s.onBlobSidecar(result));
     // After retrieved blob sidecar has been processed, stop tracking it

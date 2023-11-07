@@ -38,7 +38,7 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
 import tech.pegasys.teku.spec.datastructures.state.SigningData;
@@ -344,23 +344,23 @@ public class MiscHelpers {
     return false;
   }
 
-  public boolean verifyBlobKzgProof(final KZG kzg, final BlobSidecar blobSidecar) {
+  public boolean verifyBlobKzgProof(final KZG kzg, final BlobSidecarOld blobSidecar) {
     return false;
   }
 
-  public boolean verifyBlobKzgProofBatch(final KZG kzg, final List<BlobSidecar> blobSidecars) {
+  public boolean verifyBlobKzgProofBatch(final KZG kzg, final List<BlobSidecarOld> blobSidecars) {
     return false;
   }
 
   public void validateBlobSidecarsBatchAgainstBlock(
-      final List<BlobSidecar> blobSidecars,
+      final List<BlobSidecarOld> blobSidecars,
       final BeaconBlock block,
       final List<KZGCommitment> kzgCommitmentsFromBlock) {
     throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
   }
 
   public void verifyBlobSidecarCompleteness(
-      final List<BlobSidecar> verifiedBlobSidecars,
+      final List<BlobSidecarOld> verifiedBlobSidecars,
       final List<KZGCommitment> kzgCommitmentsFromBlock)
       throws IllegalArgumentException {
     throw new UnsupportedOperationException("No Blob Sidecars before Deneb");

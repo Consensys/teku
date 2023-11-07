@@ -22,7 +22,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -236,7 +236,7 @@ public class ChainUpdater {
 
   public SignedBlockAndState advanceChain(final UInt64 slot) {
     final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(slot, blockOptions);
-    final List<BlobSidecar> blobSidecars = chainBuilder.getBlobSidecars(block.getRoot());
+    final List<BlobSidecarOld> blobSidecars = chainBuilder.getBlobSidecars(block.getRoot());
     if (blobSidecars.isEmpty()) {
       saveBlock(block);
     } else {
@@ -276,13 +276,13 @@ public class ChainUpdater {
     saveBlockTime(block);
   }
 
-  public void saveBlock(final SignedBlockAndState block, final List<BlobSidecar> blobSidecars) {
+  public void saveBlock(final SignedBlockAndState block, final List<BlobSidecarOld> blobSidecars) {
     saveBlock(block, blobSidecars, block.getSlot());
   }
 
   public void saveBlock(
       final SignedBlockAndState block,
-      final List<BlobSidecar> blobSidecars,
+      final List<BlobSidecarOld> blobSidecars,
       final UInt64 earliestBlobSidecarSlot) {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.putBlockAndState(

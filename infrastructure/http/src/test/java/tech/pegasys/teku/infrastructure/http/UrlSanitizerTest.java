@@ -14,8 +14,13 @@
 package tech.pegasys.teku.infrastructure.http;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class UrlSanitizerTest {
   @Test
@@ -68,5 +73,32 @@ class UrlSanitizerTest {
   void shouldNotDetectPathInStringThatIsNonUrl() {
     final String input = "\\not-a-url/path";
     assertThat(UrlSanitizer.urlContainsNonEmptyPath(input)).isFalse();
+  }
+
+  @Test
+  public void AppendPathShouldFailWithNullUrl() {
+    assertThatThrownBy(() -> UrlSanitizer.appendPath(null, "foo"))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  public void AppendPathShouldFailWithEmptyUrl() {
+    assertThatThrownBy(() -> UrlSanitizer.appendPath("", "foo"))
+        .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @ParameterizedTest
+  @MethodSource("appendDataParams")
+  public void shouldCreateCorrectUriWithPath(
+      final String url, final String path, final String expected) {
+    assertThat(UrlSanitizer.appendPath(url, path)).isEqualTo(expected);
+  }
+
+  private static Stream<Arguments> appendDataParams() {
+    return Stream.of(
+        Arguments.of("http://foo.com", "hello", "http://foo.com/hello"),
+        Arguments.of("http://foo.com/", "hello", "http://foo.com/hello"),
+        Arguments.of("http://foo.com", null, "http://foo.com"),
+        Arguments.of("http://foo.com", "", "http://foo.com"));
   }
 }

@@ -15,17 +15,19 @@ package tech.pegasys.teku.spec.datastructures.builder.versions.deneb;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
-import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidBuilder;
 import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.BuilderBidBuilderBellatrix;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 
 public class BuilderBidBuilderDeneb extends BuilderBidBuilderBellatrix {
 
   private BuilderBidSchemaDeneb schema;
-  protected BlindedBlobsBundle blindedBlobsBundle;
+
+  protected SszList<SszKZGCommitment> blobKzgCommitments;
 
   public BuilderBidBuilderDeneb schema(final BuilderBidSchemaDeneb schema) {
     this.schema = schema;
@@ -33,20 +35,20 @@ public class BuilderBidBuilderDeneb extends BuilderBidBuilderBellatrix {
   }
 
   @Override
-  public BuilderBidBuilder blindedBlobsBundle(final BlindedBlobsBundle blindedBlobsBundle) {
-    this.blindedBlobsBundle = blindedBlobsBundle;
+  public BuilderBidBuilder blobKzgCommitments(final SszList<SszKZGCommitment> blobKzgCommitments) {
+    this.blobKzgCommitments = blobKzgCommitments;
     return this;
   }
 
   @Override
   public BuilderBid build() {
     return new BuilderBidDenebImpl(
-        schema, header, blindedBlobsBundle, SszUInt256.of(value), new SszPublicKey(publicKey));
+        schema, header, blobKzgCommitments, SszUInt256.of(value), new SszPublicKey(publicKey));
   }
 
   @Override
   protected void validate() {
     super.validate();
-    checkNotNull(blindedBlobsBundle, "blindedBlobsBundle must be specified");
+    checkNotNull(blobKzgCommitments, "blobKzgCommitments must be specified");
   }
 }

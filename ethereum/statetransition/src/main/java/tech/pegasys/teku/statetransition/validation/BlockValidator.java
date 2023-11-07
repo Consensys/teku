@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.validation;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 
 public class BlockValidator {
@@ -33,6 +34,11 @@ public class BlockValidator {
       final SignedBeaconBlock block,
       final BroadcastValidationLevel broadcastValidationLevel,
       final SafeFuture<BlockImportResult> consensusValidationResult) {
+
+    // validateBroadcast should not be called at all but let's cover the case for safety
+    if (broadcastValidationLevel == BroadcastValidationLevel.NOT_REQUIRED) {
+      return SafeFuture.completedFuture(BroadcastValidationResult.SUCCESS);
+    }
 
     // GOSSIP only validation
     SafeFuture<BroadcastValidationResult> validationPipeline =
@@ -86,12 +92,6 @@ public class BlockValidator {
 
           return BroadcastValidationResult.FINAL_EQUIVOCATION_FAILURE;
         });
-  }
-
-  public enum BroadcastValidationLevel {
-    GOSSIP,
-    CONSENSUS,
-    CONSENSUS_EQUIVOCATION
   }
 
   public enum BroadcastValidationResult {

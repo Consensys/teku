@@ -82,6 +82,7 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptio
 import tech.pegasys.teku.networking.eth2.mock.NoOpEth2P2PNetwork;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
+import tech.pegasys.teku.networks.StateBoostrapConfig;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerBlockManagerFactory;
@@ -89,7 +90,7 @@ import tech.pegasys.teku.services.timer.TimerService;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
@@ -102,6 +103,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -118,6 +120,7 @@ import tech.pegasys.teku.statetransition.blobs.BlobSidecarManagerImpl;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.blobs.DataUnavailableBlockPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.statetransition.block.BlockImportMetrics;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
@@ -325,7 +328,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     recentBlocksFetcher.subscribeBlockFetched(
         (block) ->
             blockManager
-                .importBlock(block)
+                .importBlock(block, BroadcastValidationLevel.NOT_REQUIRED)
+                .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult)
                 .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
     blockManager.subscribeToReceivedBlocks(
         (block, __) -> recentBlocksFetcher.cancelRecentBlockRequest(block.getRoot()));
@@ -407,7 +411,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
               this.recentChainData = client;
               if (recentChainData.isPreGenesis()) {
                 setupInitialState(client);
-              } else if (beaconConfig.eth2NetworkConfig().isUsingCustomInitialState()) {
+              } else if (beaconConfig
+                  .eth2NetworkConfig()
+                  .getNetworkBoostrapConfig()
+                  .isUsingCustomInitialState()) {
                 STATUS_LOG.warnInitialStateIgnored();
               }
               return SafeFuture.completedFuture(client);
@@ -492,8 +499,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initBlobSidecarManager() {
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
-      final FutureItems<SignedBlobSidecar> futureBlobSidecars =
-          FutureItems.create(SignedBlobSidecar::getSlot, futureItemsMetric, "blob_sidecars");
+      final FutureItems<SignedBlobSidecarOld> futureBlobSidecars =
+          FutureItems.create(SignedBlobSidecarOld::getSlot, futureItemsMetric, "blob_sidecars");
 
       final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots =
           LimitedMap.createSynchronized(500);
@@ -1259,18 +1266,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
   }
 
   protected void setupInitialState(final RecentChainData client) {
-    Optional<AnchorPoint> initialAnchor = Optional.empty();
-    try {
-      initialAnchor = attemptToLoadAnchorPoint(beaconConfig.eth2NetworkConfig().getInitialState());
-    } catch (InvalidConfigurationException e) {
-      if (beaconConfig.eth2NetworkConfig().isUsingCustomInitialState()) {
-        throw e;
-      }
-      STATUS_LOG.warnFailedToLoadInitialState(e.getMessage());
-    }
-    if (initialAnchor.isEmpty()) {
-      initialAnchor = attemptToLoadAnchorPoint(beaconConfig.eth2NetworkConfig().getGenesisState());
-    }
+    final Eth2NetworkConfiguration networkConfiguration = beaconConfig.eth2NetworkConfig();
+
+    final Optional<AnchorPoint> initialAnchor =
+        tryLoadingAnchorPointFromInitialState(networkConfiguration)
+            .or(() -> attemptToLoadAnchorPoint(networkConfiguration.getGenesisState()));
+
     // Validate
     initialAnchor.ifPresent(
         anchor -> {
@@ -1294,6 +1295,25 @@ public class BeaconChainController extends Service implements BeaconChainControl
           "ETH1 is disabled but initial state is unknown. Enable ETH1 or specify an initial state"
               + ".");
     }
+  }
+
+  private Optional<AnchorPoint> tryLoadingAnchorPointFromInitialState(
+      final Eth2NetworkConfiguration networkConfiguration) {
+    Optional<AnchorPoint> initialAnchor = Optional.empty();
+
+    try {
+      initialAnchor = attemptToLoadAnchorPoint(networkConfiguration.getInitialState());
+    } catch (final InvalidConfigurationException e) {
+      final StateBoostrapConfig stateBoostrapConfig =
+          networkConfiguration.getNetworkBoostrapConfig();
+      if (stateBoostrapConfig.isUsingCustomInitialState()
+          && !stateBoostrapConfig.isUsingCheckpointSync()) {
+        throw e;
+      }
+      STATUS_LOG.warnFailedToLoadInitialState(e.getMessage());
+    }
+
+    return initialAnchor;
   }
 
   protected Optional<AnchorPoint> attemptToLoadAnchorPoint(final Optional<String> initialState) {

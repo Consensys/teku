@@ -26,8 +26,8 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -55,13 +55,13 @@ class StubBlobSidecarManager implements BlobSidecarManager {
 
   @Override
   public SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
-      final SignedBlobSidecar signedBlobSidecar, final Optional<UInt64> arrivalTimestamp) {
+      final SignedBlobSidecarOld signedBlobSidecar, final Optional<UInt64> arrivalTimestamp) {
     return SafeFuture.failedFuture(
         new UnsupportedOperationException("Not available in fork choice reference tests"));
   }
 
   @Override
-  public void prepareForBlockImport(final BlobSidecar blobSidecar) {
+  public void prepareForBlockImport(final BlobSidecarOld blobSidecar) {
     // NOOP
   }
 
@@ -101,7 +101,7 @@ class StubBlobSidecarManager implements BlobSidecarManager {
 
       @Override
       public BlobSidecarsAndValidationResult validateImmediately(
-          final List<BlobSidecar> blobSidecars) {
+          final List<BlobSidecarOld> blobSidecars) {
         throw new UnsupportedOperationException("Not available in fork choice reference tests");
       }
 
@@ -128,7 +128,7 @@ class StubBlobSidecarManager implements BlobSidecarManager {
 
   @Override
   public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
-      final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
+      final SignedBeaconBlock block, final List<BlobSidecarOld> blobSidecars) {
     throw new UnsupportedOperationException("Not available in fork choice reference tests");
   }
 

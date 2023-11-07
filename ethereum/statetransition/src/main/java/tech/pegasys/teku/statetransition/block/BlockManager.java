@@ -29,12 +29,13 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.datastructures.blocks.ImportedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
-import tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastValidationLevel;
+import tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastValidationResult;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -106,14 +107,15 @@ public class BlockManager extends Service
   }
 
   @Override
-  public SafeFuture<BlockImportResult> importBlock(
-      final SignedBeaconBlock block,
-      final Optional<BroadcastValidationLevel> broadcastValidationLevel) {
+  public SafeFuture<BlockImportAndBroadcastValidationResults> importBlock(
+      final SignedBeaconBlock block, final BroadcastValidationLevel broadcastValidationLevel) {
     LOG.trace("Preparing to import block: {}", block::toLogString);
 
     // NO broadcast validation, import the old way
-    if (broadcastValidationLevel.isEmpty()) {
-      return doImportBlock(block, Optional.empty(), Optional.empty());
+    if (broadcastValidationLevel == BroadcastValidationLevel.NOT_REQUIRED) {
+      return SafeFuture.completedFuture(
+          new BlockImportAndBroadcastValidationResults(
+              doImportBlock(block, Optional.empty(), Optional.empty()), Optional.empty()));
     }
 
     final SafeFuture<BlockImportResult> consensusValidationListener = new SafeFuture<>();
@@ -125,25 +127,13 @@ public class BlockManager extends Service
     final SafeFuture<BlockImportResult> consensusValidationResultOrImportFailure =
         consensusValidationListener.or(importResult);
 
-    final SafeFuture<BlockImportResult> finalImportResult =
-        blockValidator
-            .validateBroadcast(
-                block, broadcastValidationLevel.get(), consensusValidationResultOrImportFailure)
-            .thenCompose(
-                broadcastValidationResult ->
-                    switch (broadcastValidationResult) {
-                      case SUCCESS -> SafeFuture.completedFuture(
-                          BlockImportResult.successful(block));
-                      case CONSENSUS_FAILURE -> importResult;
-                      case GOSSIP_FAILURE -> SafeFuture.completedFuture(
-                          BlockImportResult.FAILED_BROADCAST_GOSSIP_VALIDATION);
-                      case FINAL_EQUIVOCATION_FAILURE -> SafeFuture.completedFuture(
-                          BlockImportResult.FAILED_BROADCAST_EQUIVOCATION_VALIDATION);
-                    });
+    final SafeFuture<BroadcastValidationResult> broadcastValidationResult =
+        blockValidator.validateBroadcast(
+            block, broadcastValidationLevel, consensusValidationResultOrImportFailure);
 
-    importResult.finish(err -> LOG.error("Failed to import block.", err));
-
-    return finalImportResult;
+    return SafeFuture.completedFuture(
+        new BlockImportAndBroadcastValidationResults(
+            importResult, Optional.of(broadcastValidationResult)));
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")

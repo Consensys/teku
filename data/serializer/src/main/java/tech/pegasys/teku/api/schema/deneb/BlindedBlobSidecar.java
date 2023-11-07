@@ -20,7 +20,7 @@ import tech.pegasys.teku.api.schema.KZGProof;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecarSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 
 public record BlindedBlobSidecar(
     @JsonProperty("block_root") Bytes32 blockRoot,
@@ -45,7 +45,7 @@ public record BlindedBlobSidecar(
         new KZGProof(sidecar.getKZGProof()));
   }
 
-  public static BlindedBlobSidecar fromInternalBlobSidecar(final BlobSidecar sidecar) {
+  public static BlindedBlobSidecar fromInternalBlobSidecar(final BlobSidecarOld sidecar) {
     return new BlindedBlobSidecar(
         sidecar.getBlockRoot(),
         sidecar.getIndex(),

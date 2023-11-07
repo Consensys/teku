@@ -30,6 +30,8 @@ import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.beacon.sync.events.SyncStateTracker;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
@@ -91,6 +93,8 @@ public class ValidatorApiHandlerIntegrationTest {
       mock(SyncCommitteeContributionPool.class);
   private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
       mock(SyncCommitteeSubscriptionManager.class);
+
+  private final DutyMetrics dutyMetrics = mock(DutyMetrics.class);
   private final ValidatorApiHandler handler =
       new ValidatorApiHandler(
           chainDataProvider,
@@ -106,7 +110,7 @@ public class ValidatorApiHandlerIntegrationTest {
           attestationManager,
           attestationTopicSubscriber,
           activeValidatorTracker,
-          mock(DutyMetrics.class),
+          dutyMetrics,
           performanceTracker,
           spec,
           forkChoiceTrigger,
@@ -119,6 +123,8 @@ public class ValidatorApiHandlerIntegrationTest {
   public void setup() {
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(forkChoiceTrigger.prepareForAttestationProduction(any())).thenReturn(SafeFuture.COMPLETE);
+    when(dutyMetrics.getValidatorDutyMetric())
+        .thenReturn(ValidatorDutyMetricUtils.createValidatorDutyMetric(new StubMetricsSystem()));
   }
 
   @Test

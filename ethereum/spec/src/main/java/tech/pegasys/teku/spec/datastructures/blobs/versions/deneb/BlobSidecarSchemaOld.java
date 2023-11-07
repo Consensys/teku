@@ -31,9 +31,9 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitmentSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProofSchema;
 
-public class BlobSidecarSchema
+public class BlobSidecarSchemaOld
     extends ContainerSchema8<
-        BlobSidecar,
+        BlobSidecarOld,
         SszBytes32,
         SszUInt64,
         SszUInt64,
@@ -45,7 +45,7 @@ public class BlobSidecarSchema
 
   static final SszFieldName FIELD_BLOB = () -> "blob";
 
-  BlobSidecarSchema(final BlobSchema blobSchema) {
+  BlobSidecarSchemaOld(final BlobSchema blobSchema) {
     super(
         "BlobSidecar",
         namedSchema("block_root", SszPrimitiveSchemas.BYTES32_SCHEMA),
@@ -67,7 +67,7 @@ public class BlobSidecarSchema
     return (BlobSchema) getBlobSszSchema();
   }
 
-  public BlobSidecar create(
+  public BlobSidecarOld create(
       final Bytes32 blockRoot,
       final UInt64 index,
       final UInt64 slot,
@@ -87,7 +87,7 @@ public class BlobSidecarSchema
         KZGProof.fromBytesCompressed(kzgProof));
   }
 
-  public BlobSidecar create(
+  public BlobSidecarOld create(
       final Bytes32 blockRoot,
       final UInt64 index,
       final UInt64 slot,
@@ -96,7 +96,7 @@ public class BlobSidecarSchema
       final Blob blob,
       final KZGCommitment kzgCommitment,
       final KZGProof kzgProof) {
-    return new BlobSidecar(
+    return new BlobSidecarOld(
         this,
         blockRoot,
         index,
@@ -108,12 +108,12 @@ public class BlobSidecarSchema
         kzgProof);
   }
 
-  public static BlobSidecarSchema create(final BlobSchema blobSchema) {
-    return new BlobSidecarSchema(blobSchema);
+  public static BlobSidecarSchemaOld create(final BlobSchema blobSchema) {
+    return new BlobSidecarSchemaOld(blobSchema);
   }
 
   @Override
-  public BlobSidecar createFromBackingNode(TreeNode node) {
-    return new BlobSidecar(this, node);
+  public BlobSidecarOld createFromBackingNode(TreeNode node) {
+    return new BlobSidecarOld(this, node);
   }
 }

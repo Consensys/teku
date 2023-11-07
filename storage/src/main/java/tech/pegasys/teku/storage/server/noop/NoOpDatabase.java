@@ -29,7 +29,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -58,7 +58,7 @@ public class NoOpDatabase implements Database {
   @Override
   public void storeFinalizedBlocks(
       final Collection<SignedBeaconBlock> blocks,
-      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlot,
+      final Map<SlotAndBlockRoot, List<BlobSidecarOld>> blobSidecarsBySlot,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot) {}
 
   @Override
@@ -276,18 +276,19 @@ public class NoOpDatabase implements Database {
   public void deleteHotBlocks(final Set<Bytes32> blockRootsToDelete) {}
 
   @Override
-  public void storeBlobSidecar(final BlobSidecar blobSidecar) {}
+  public void storeBlobSidecar(final BlobSidecarOld blobSidecar) {}
 
   @Override
-  public void storeNonCanonicalBlobSidecar(final BlobSidecar blobSidecar) {}
+  public void storeNonCanonicalBlobSidecar(final BlobSidecarOld blobSidecar) {}
 
   @Override
-  public Optional<BlobSidecar> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+  public Optional<BlobSidecarOld> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
     return Optional.empty();
   }
 
   @Override
-  public Optional<BlobSidecar> getNonCanonicalBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
+  public Optional<BlobSidecarOld> getNonCanonicalBlobSidecar(
+      final SlotAndBlockRootAndBlobIndex key) {
     return Optional.empty();
   }
 
@@ -307,7 +308,7 @@ public class NoOpDatabase implements Database {
   }
 
   @Override
-  public Stream<BlobSidecar> streamBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
+  public Stream<BlobSidecarOld> streamBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
     return Stream.empty();
   }
 

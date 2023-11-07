@@ -26,7 +26,7 @@ import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class ThrottlingSyncSource implements SyncSource {
@@ -72,7 +72,9 @@ public class ThrottlingSyncSource implements SyncSource {
 
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRange(
-      final UInt64 startSlot, final UInt64 count, final RpcResponseListener<BlobSidecar> listener) {
+      final UInt64 startSlot,
+      final UInt64 count,
+      final RpcResponseListener<BlobSidecarOld> listener) {
     if (blobSidecarsRateTracker.approveObjectsRequest(count.longValue()).isPresent()) {
       LOG.debug("Sending request for {} blob sidecars", count);
       return delegate.requestBlobSidecarsByRange(startSlot, count, listener);

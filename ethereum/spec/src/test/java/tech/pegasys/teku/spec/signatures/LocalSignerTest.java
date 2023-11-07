@@ -26,7 +26,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
@@ -92,7 +92,7 @@ class LocalSignerTest {
   public void shouldSignBlobSidecar() {
     final UInt64 slot = UInt64.valueOf(10);
     final BeaconBlock block = dataStructureUtilDeneb.randomBlindedBeaconBlock(slot);
-    final BlobSidecar blobSidecar =
+    final BlobSidecarOld blobSidecar =
         dataStructureUtilDeneb
             .createRandomBlobSidecarBuilder()
             .forBlock(block)

@@ -20,7 +20,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
@@ -49,7 +49,8 @@ public class SigningRootUtil {
     return spec.computeSigningRoot(block, getDomainForSignBlock(block.getSlot(), forkInfo));
   }
 
-  public Bytes signingRootForBlobSidecar(final BlobSidecar blobSidecar, final ForkInfo forkInfo) {
+  public Bytes signingRootForBlobSidecar(
+      final BlobSidecarOld blobSidecar, final ForkInfo forkInfo) {
     final Bytes32 domain =
         spec.getDomain(
             Domain.DOMAIN_BLOB_SIDECAR,
