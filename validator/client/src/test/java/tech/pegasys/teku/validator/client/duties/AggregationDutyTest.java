@@ -40,6 +40,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -56,7 +57,6 @@ import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
-import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics.Step;
 import tech.pegasys.teku.validator.client.duties.attestations.AggregationDuty;
 import tech.pegasys.teku.validator.client.duties.attestations.BatchAttestationSendingStrategy;
 
@@ -137,8 +137,10 @@ class AggregationDutyTest {
                 signedAggregateAndProofSchema.create(
                     expectedAggregateAndProof, aggregateSignature)));
 
-    verify(validatorDutyMetrics).record(any(), any(AggregationDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics).record(any(), any(AggregationDuty.class), eq(Step.SIGN));
+    verify(validatorDutyMetrics)
+        .record(any(), any(AggregationDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(AggregationDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
   }
 
   @SuppressWarnings("unchecked")
@@ -200,8 +202,9 @@ class AggregationDutyTest {
 
     // Metrics were recorded for the aggregation for each committee
     verify(validatorDutyMetrics, times(2))
-        .record(any(), any(AggregationDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics, times(2)).record(any(), any(AggregationDuty.class), eq(Step.SIGN));
+        .record(any(), any(AggregationDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
+    verify(validatorDutyMetrics, times(2))
+        .record(any(), any(AggregationDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
   }
 
   @Test
@@ -253,8 +256,10 @@ class AggregationDutyTest {
     verifyNoMoreInteractions(validatorLogger);
 
     // Only one aggregation was created, so we only capture the time for a single operation
-    verify(validatorDutyMetrics).record(any(), any(AggregationDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics).record(any(), any(AggregationDuty.class), eq(Step.SIGN));
+    verify(validatorDutyMetrics)
+        .record(any(), any(AggregationDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(AggregationDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
   }
 
   @Test
@@ -308,7 +313,8 @@ class AggregationDutyTest {
     verifyNoMoreInteractions(validatorLogger);
 
     // Even when we fail creating the aggregation, we capture the time taken
-    verify(validatorDutyMetrics).record(any(), any(AggregationDuty.class), eq(Step.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(AggregationDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
     // Because it failed creating the aggregation, we won't have a sign step time
     verifyNoMoreInteractions(validatorDutyMetrics);
   }
@@ -333,7 +339,8 @@ class AggregationDutyTest {
     verifyNoMoreInteractions(validatorLogger);
 
     // Even when we fail creating the aggregation, we capture the time taken
-    verify(validatorDutyMetrics).record(any(), any(AggregationDuty.class), eq(Step.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(AggregationDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
     // Because it failed creating the aggregation, we won't have a sign step time
     verifyNoMoreInteractions(validatorDutyMetrics);
   }

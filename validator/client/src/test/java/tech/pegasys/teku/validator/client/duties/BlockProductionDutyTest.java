@@ -48,6 +48,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -72,7 +73,6 @@ import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
-import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics.Step;
 import tech.pegasys.teku.validator.client.signer.BlockContainerSigner;
 import tech.pegasys.teku.validator.client.signer.MilestoneBasedBlockContainerSigner;
 
@@ -163,9 +163,12 @@ class BlockProductionDutyTest {
             ArgumentMatchers.argThat(Optional::isPresent));
     verifyNoMoreInteractions(validatorLogger);
 
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SIGN));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SEND));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SEND));
   }
 
   @Test
@@ -249,9 +252,12 @@ class BlockProductionDutyTest {
                   .isEqualTo(blobSidecarsSignatures.get(unsignedBlobSidecar));
             });
 
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SIGN));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SEND));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SEND));
   }
 
   @Test
@@ -343,9 +349,12 @@ class BlockProductionDutyTest {
                   .isEqualTo(blindedBlobSidecarsSignatures.get(unsignedBlindedBlobSidecar));
             });
 
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SIGN));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SEND));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SEND));
   }
 
   @Test
@@ -386,7 +395,8 @@ class BlockProductionDutyTest {
 
     assertDutyFails(error);
 
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
     verifyNoMoreInteractions(validatorDutyMetrics);
   }
 
@@ -409,7 +419,8 @@ class BlockProductionDutyTest {
             any(IllegalStateException.class));
     verifyNoMoreInteractions(validatorLogger);
 
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
     verifyNoMoreInteractions(validatorDutyMetrics);
   }
 
@@ -427,8 +438,10 @@ class BlockProductionDutyTest {
 
     assertDutyFails(error);
 
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SIGN));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
     verifyNoMoreInteractions(validatorDutyMetrics);
   }
 
@@ -480,9 +493,12 @@ class BlockProductionDutyTest {
             ArgumentMatchers.argThat(Optional::isPresent));
     verifyNoMoreInteractions(validatorLogger);
 
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SIGN));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SEND));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SEND));
   }
 
   @Test
@@ -569,9 +585,12 @@ class BlockProductionDutyTest {
                   .isEqualTo(blobSidecarsSignatures.get(unsignedBlobSidecar));
             });
 
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SIGN));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SEND));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SEND));
   }
 
   public void assertDutyFails(final RuntimeException error) {

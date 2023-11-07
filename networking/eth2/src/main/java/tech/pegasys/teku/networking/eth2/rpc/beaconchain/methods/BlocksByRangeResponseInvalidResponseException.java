@@ -32,7 +32,6 @@ public class BlocksByRangeResponseInvalidResponseException extends InvalidRespon
 
   public enum InvalidResponseType {
     BLOCK_SLOT_NOT_IN_RANGE("Block slot not in range"),
-    BLOCK_SLOT_DOES_NOT_MATCH_STEP("Block slot does not match step"),
     BLOCK_SLOT_NOT_GREATER_THAN_PREVIOUS_BLOCK_SLOT(
         "Block slot not greater than previous block slot"),
     BLOCK_PARENT_ROOT_DOES_NOT_MATCH("Block parent root does not match previous block root");
