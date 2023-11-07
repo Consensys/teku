@@ -16,7 +16,9 @@ package tech.pegasys.teku.spec.datastructures.execution;
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 /**
  * if we serve unblind production, external optional is empty
@@ -30,16 +32,16 @@ import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
 public class HeaderWithFallbackData {
 
   private final ExecutionPayloadHeader executionPayloadHeader;
-  private final Optional<BlindedBlobsBundle> blindedBlobsBundle;
-  private final Optional<FallbackData> fallbackDataOptional;
+  private final Optional<SszList<SszKZGCommitment>> blobKzgCommitments;
+  private final Optional<FallbackData> fallbackData;
 
   private HeaderWithFallbackData(
       final ExecutionPayloadHeader executionPayloadHeader,
-      final Optional<BlindedBlobsBundle> blindedBlobsBundle,
-      final Optional<FallbackData> fallbackDataOptional) {
+      final Optional<SszList<SszKZGCommitment>> blobKzgCommitments,
+      final Optional<FallbackData> fallbackData) {
     this.executionPayloadHeader = executionPayloadHeader;
-    this.blindedBlobsBundle = blindedBlobsBundle;
-    this.fallbackDataOptional = fallbackDataOptional;
+    this.blobKzgCommitments = blobKzgCommitments;
+    this.fallbackData = fallbackData;
   }
 
   public static HeaderWithFallbackData create(
@@ -54,28 +56,33 @@ public class HeaderWithFallbackData {
 
   public static HeaderWithFallbackData create(
       final ExecutionPayloadHeader executionPayloadHeader,
-      final Optional<BlindedBlobsBundle> blindedBlobsBundle,
+      final Optional<SszList<SszKZGCommitment>> blobKzgCommitments,
       final FallbackData fallbackData) {
     return new HeaderWithFallbackData(
-        executionPayloadHeader, blindedBlobsBundle, Optional.of(fallbackData));
+        executionPayloadHeader, blobKzgCommitments, Optional.of(fallbackData));
   }
 
   public static HeaderWithFallbackData create(
       final ExecutionPayloadHeader executionPayloadHeader,
-      final Optional<BlindedBlobsBundle> blindedBlobsBundle) {
-    return new HeaderWithFallbackData(executionPayloadHeader, blindedBlobsBundle, Optional.empty());
+      final Optional<SszList<SszKZGCommitment>> blobKzgCommitments) {
+    return new HeaderWithFallbackData(executionPayloadHeader, blobKzgCommitments, Optional.empty());
   }
 
   public ExecutionPayloadHeader getExecutionPayloadHeader() {
     return executionPayloadHeader;
   }
 
+  @Deprecated
   public Optional<BlindedBlobsBundle> getBlindedBlobsBundle() {
-    return blindedBlobsBundle;
+    return Optional.empty();
   }
 
-  public Optional<FallbackData> getFallbackDataOptional() {
-    return fallbackDataOptional;
+  public Optional<SszList<SszKZGCommitment>> getBlobKzgCommitments() {
+    return blobKzgCommitments;
+  }
+
+  public Optional<FallbackData> getFallbackData() {
+    return fallbackData;
   }
 
   @Override
@@ -88,21 +95,21 @@ public class HeaderWithFallbackData {
     }
     final HeaderWithFallbackData that = (HeaderWithFallbackData) o;
     return Objects.equals(executionPayloadHeader, that.executionPayloadHeader)
-        && Objects.equals(blindedBlobsBundle, that.blindedBlobsBundle)
-        && Objects.equals(fallbackDataOptional, that.fallbackDataOptional);
+        && Objects.equals(blobKzgCommitments, that.blobKzgCommitments)
+        && Objects.equals(fallbackData, that.fallbackData);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(executionPayloadHeader, blindedBlobsBundle, fallbackDataOptional);
+    return Objects.hash(executionPayloadHeader, blobKzgCommitments, fallbackData);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("executionPayloadHeader", executionPayloadHeader)
-        .add("blindedBlobsBundle", blindedBlobsBundle)
-        .add("fallbackDataOptional", fallbackDataOptional)
+        .add("blobKzgCommitments", blobKzgCommitments)
+        .add("fallbackDataOptional", fallbackData)
         .toString();
   }
 }

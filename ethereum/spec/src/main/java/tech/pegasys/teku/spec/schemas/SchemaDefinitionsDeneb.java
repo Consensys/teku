@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchemaOld;
@@ -67,6 +68,8 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   private final ExecutionPayloadSchemaDeneb executionPayloadSchemaDeneb;
   private final ExecutionPayloadHeaderSchemaDeneb executionPayloadHeaderSchemaDeneb;
 
+  private final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema;
+
   private final BeaconBlockBodySchemaDeneb<?> beaconBlockBodySchema;
   private final BlindedBeaconBlockBodySchemaDeneb<?> blindedBeaconBlockBodySchema;
 
@@ -103,17 +106,20 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     this.beaconStateSchema = BeaconStateSchemaDeneb.create(specConfig);
     this.executionPayloadHeaderSchemaDeneb =
         beaconStateSchema.getLastExecutionPayloadHeaderSchema();
+    this.blobKzgCommitmentsSchema = new BlobKzgCommitmentsSchema(specConfig);
     this.beaconBlockBodySchema =
         BeaconBlockBodySchemaDenebImpl.create(
             specConfig,
             getAttesterSlashingSchema(),
             signedBlsToExecutionChangeSchema,
+            blobKzgCommitmentsSchema,
             "BeaconBlockBodyDeneb");
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaDenebImpl.create(
             specConfig,
             getAttesterSlashingSchema(),
             signedBlsToExecutionChangeSchema,
+            blobKzgCommitmentsSchema,
             "BlindedBlockBodyDeneb");
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockDeneb");
     this.blindedBeaconBlockSchema =
@@ -125,7 +131,8 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     this.blindedBlobsBundleSchema =
         new BlindedBlobsBundleSchema("BlindedBlobsBundleDeneb", specConfig);
     this.builderBidSchemaDeneb =
-        new BuilderBidSchemaDeneb("BuilderBidDeneb", specConfig, executionPayloadHeaderSchemaDeneb);
+        new BuilderBidSchemaDeneb(
+            "BuilderBidDeneb", executionPayloadHeaderSchemaDeneb, blobKzgCommitmentsSchema);
     this.signedBuilderBidSchemaDeneb =
         new SignedBuilderBidSchema("SignedBuilderBidDeneb", builderBidSchemaDeneb);
 
@@ -261,6 +268,10 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
 
   public BlobSchema getBlobSchema() {
     return blobSchema;
+  }
+
+  public BlobKzgCommitmentsSchema getBlobKzgCommitmentsSchema() {
+    return blobKzgCommitmentsSchema;
   }
 
   public SszListSchema<Blob, ? extends SszList<Blob>> getBlobsInBlockSchema() {

@@ -36,13 +36,13 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContents;
-import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundle;
@@ -57,6 +57,7 @@ import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -251,8 +252,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
     final ExecutionPayloadHeader header =
         schemaDefinitions.getExecutionPayloadHeaderSchema().createFromExecutionPayload(payload);
 
-    final BlindedBlobsBundle blindedBlobsBundle =
-        schemaDefinitions.getBlindedBlobsBundleSchema().createFromExecutionBlobsBundle(blobsBundle);
+    final SszList<SszKZGCommitment> blobKzgCommitments =
+        schemaDefinitions.getBlobKzgCommitmentsSchema().createFromBlobsBundle(blobsBundle);
 
     final ExecutionPayloadResult executionPayloadResult =
         blockProductionManager.initiateBlockAndBlobsProduction(
@@ -269,7 +270,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     final HeaderWithFallbackData expectedResult =
         HeaderWithFallbackData.create(
             header,
-            Optional.of(blindedBlobsBundle),
+            Optional.of(blobKzgCommitments),
             new FallbackData(
                 payload, Optional.of(blobsBundle), FallbackReason.BUILDER_NOT_AVAILABLE));
     final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture =
@@ -305,7 +306,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
     prepareEngineGetPayloadResponseWithBlobs(executionPayloadContext, executionPayloadValue, slot);
 
     final HeaderWithFallbackData expectedResult =
-        HeaderWithFallbackData.create(builderBid.getHeader(), Optional.empty());
+        HeaderWithFallbackData.create(
+            builderBid.getHeader(), builderBid.getOptionalBlobKzgCommitments());
 
     final ExecutionPayloadResult executionPayloadResult =
         blockProductionManager.initiateBlockAndBlobsProduction(
@@ -419,8 +421,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
       final UInt64 slot,
       final ExecutionPayloadContext executionPayloadContext,
       final HeaderWithFallbackData headerWithFallbackData) {
-    final FallbackData fallbackData =
-        headerWithFallbackData.getFallbackDataOptional().orElseThrow();
+    final FallbackData fallbackData = headerWithFallbackData.getFallbackData().orElseThrow();
     final FallbackReason fallbackReason = fallbackData.getReason();
     if (fallbackReason == FallbackReason.BUILDER_HEADER_NOT_AVAILABLE
         || fallbackReason == FallbackReason.BUILDER_ERROR
