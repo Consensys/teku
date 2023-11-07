@@ -20,6 +20,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.NOT_REQUIRED;
 
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +30,6 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
@@ -63,12 +63,12 @@ public class DataUnavailableBlockPoolTest {
     when(blobSidecarPool.getBlockBlobSidecarsTracker(block2))
         .thenReturn(Optional.of(block2Tracker));
 
-    when(blockManager.importBlock(block1, BroadcastValidationLevel.NOT_REQUIRED))
+    when(blockManager.importBlock(block1, NOT_REQUIRED))
         .thenReturn(
             SafeFuture.completedFuture(
                 new BlockImportAndBroadcastValidationResults(
                     block1ImportResult, Optional.empty())));
-    when(blockManager.importBlock(block2, BroadcastValidationLevel.NOT_REQUIRED))
+    when(blockManager.importBlock(block2, NOT_REQUIRED))
         .thenReturn(
             SafeFuture.completedFuture(
                 new BlockImportAndBroadcastValidationResults(
@@ -95,16 +95,16 @@ public class DataUnavailableBlockPoolTest {
     dataUnavailableBlockPool.addDataUnavailableBlock(block1);
     dataUnavailableBlockPool.addDataUnavailableBlock(block2);
 
-    verify(blockManager).importBlock(block1, BroadcastValidationLevel.NOT_REQUIRED);
+    verify(blockManager).importBlock(block1, NOT_REQUIRED);
 
     // should wait block1 to finish import
-    verify(blockManager, never()).importBlock(block2, BroadcastValidationLevel.NOT_REQUIRED);
+    verify(blockManager, never()).importBlock(block2, NOT_REQUIRED);
 
     // block import finishes
     block1ImportResult.complete(BlockImportResult.successful(block1));
 
     // import immediately the second
-    verify(blockManager).importBlock(block2, BroadcastValidationLevel.NOT_REQUIRED);
+    verify(blockManager).importBlock(block2, NOT_REQUIRED);
     block2ImportResult.complete(BlockImportResult.successful(block2));
 
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
@@ -119,8 +119,8 @@ public class DataUnavailableBlockPoolTest {
     dataUnavailableBlockPool.addDataUnavailableBlock(block1);
     dataUnavailableBlockPool.addDataUnavailableBlock(block2);
 
-    verify(blockManager, never()).importBlock(block1, BroadcastValidationLevel.NOT_REQUIRED);
-    verify(blockManager, never()).importBlock(block2, BroadcastValidationLevel.NOT_REQUIRED);
+    verify(blockManager, never()).importBlock(block1, NOT_REQUIRED);
+    verify(blockManager, never()).importBlock(block2, NOT_REQUIRED);
 
     // there is a queued task because we added block1 first.
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
@@ -129,8 +129,8 @@ public class DataUnavailableBlockPoolTest {
     asyncRunner.executeQueuedActions();
 
     // block2 is selected for import
-    verify(blockManager, never()).importBlock(block1, BroadcastValidationLevel.NOT_REQUIRED);
-    verify(blockManager).importBlock(block2, BroadcastValidationLevel.NOT_REQUIRED);
+    verify(blockManager, never()).importBlock(block1, NOT_REQUIRED);
+    verify(blockManager).importBlock(block2, NOT_REQUIRED);
 
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
 
@@ -139,14 +139,14 @@ public class DataUnavailableBlockPoolTest {
 
     // we still have a queued task, because we have block1 still incomplete
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
-    verify(blockManager, never()).importBlock(block1, BroadcastValidationLevel.NOT_REQUIRED);
+    verify(blockManager, never()).importBlock(block1, NOT_REQUIRED);
 
     // lets complete block1 and run the delayed task
     when(block1Tracker.isCompleted()).thenReturn(true);
     asyncRunner.executeQueuedActions();
 
     // block1 is imported
-    verify(blockManager).importBlock(block1, BroadcastValidationLevel.NOT_REQUIRED);
+    verify(blockManager).importBlock(block1, NOT_REQUIRED);
     block1ImportResult.complete(BlockImportResult.successful(block1));
 
     // no other delayed task
@@ -163,8 +163,8 @@ public class DataUnavailableBlockPoolTest {
     dataUnavailableBlockPool.addDataUnavailableBlock(block1);
     dataUnavailableBlockPool.addDataUnavailableBlock(block2);
 
-    verify(blockManager, never()).importBlock(block1, BroadcastValidationLevel.NOT_REQUIRED);
-    verify(blockManager, never()).importBlock(block2, BroadcastValidationLevel.NOT_REQUIRED);
+    verify(blockManager, never()).importBlock(block1, NOT_REQUIRED);
+    verify(blockManager, never()).importBlock(block2, NOT_REQUIRED);
 
     assertThat(asyncRunner.hasDelayedActions()).isTrue();
 

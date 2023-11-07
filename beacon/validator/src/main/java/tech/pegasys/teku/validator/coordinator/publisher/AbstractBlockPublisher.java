@@ -116,11 +116,17 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
                             LOG.debug("Block (and blob sidecars) publishing initiated");
                           } else {
                             LOG.warn(
-                                "Block (and blob sidecars) publishing skipped due to broadcast validation result {}",
-                                broadcastValidationResult);
+                                "Block (and blob sidecars) publishing skipped due to broadcast validation result {} for slot {}",
+                                broadcastValidationResult,
+                                blockContainer.getSlot());
                           }
                         }))
-        .finish(err -> LOG.error("Block (and blob sidecars) publishing failed", err));
+        .finish(
+            err ->
+                LOG.error(
+                    "Block (and blob sidecars) publishing failed for slot {}",
+                    blockContainer.getSlot(),
+                    err));
 
     return importResultWithBroadcastValidationResult.thenCompose(
         BlockImportAndBroadcastValidationResults::blockImportResult);
