@@ -100,27 +100,23 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
     // publishing the block
 
     final SafeFuture<BlockImportAndBroadcastValidationResults>
-        importResultWithBroadcastValidationResult =
+        blockImportAndBroadcastValidationResults =
             importBlock(blockContainer, broadcastValidationLevel);
 
-    importResultWithBroadcastValidationResult
-        .thenCompose(
-            blockImportAndBroadcastValidationResults ->
-                blockImportAndBroadcastValidationResults
-                    .broadcastValidationResult()
-                    .orElseThrow()
-                    .thenAccept(
-                        broadcastValidationResult -> {
-                          if (broadcastValidationResult == BroadcastValidationResult.SUCCESS) {
-                            publishBlock(blockContainer);
-                            LOG.debug("Block (and blob sidecars) publishing initiated");
-                          } else {
-                            LOG.warn(
-                                "Block (and blob sidecars) publishing skipped due to broadcast validation result {} for slot {}",
-                                broadcastValidationResult,
-                                blockContainer.getSlot());
-                          }
-                        }))
+    blockImportAndBroadcastValidationResults
+        .thenCompose(results -> results.broadcastValidationResult().orElseThrow())
+        .thenAccept(
+            broadcastValidationResult -> {
+              if (broadcastValidationResult == BroadcastValidationResult.SUCCESS) {
+                publishBlock(blockContainer);
+                LOG.debug("Block (and blob sidecars) publishing initiated");
+              } else {
+                LOG.warn(
+                    "Block (and blob sidecars) publishing skipped due to broadcast validation result {} for slot {}",
+                    broadcastValidationResult,
+                    blockContainer.getSlot());
+              }
+            })
         .finish(
             err ->
                 LOG.error(
@@ -128,7 +124,7 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
                     blockContainer.getSlot(),
                     err));
 
-    return importResultWithBroadcastValidationResult.thenCompose(
+    return blockImportAndBroadcastValidationResults.thenCompose(
         BlockImportAndBroadcastValidationResults::blockImportResult);
   }
 
