@@ -619,7 +619,7 @@ public final class DataStructureUtil {
                   .publicKey(builderPublicKey);
               schemaDefinitions
                   .toVersionDeneb()
-                  .ifPresent(__ -> builder.blobKzgCommitments(randomSszKzgCommitmentList()));
+                  .ifPresent(__ -> builder.blobKzgCommitments(randomBlobKzgCommitments()));
             });
   }
 
@@ -636,7 +636,7 @@ public final class DataStructureUtil {
                   .publicKey(randomPublicKey());
               schemaDefinitions
                   .toVersionDeneb()
-                  .ifPresent(__ -> builder.blobKzgCommitments(randomSszKzgCommitmentList()));
+                  .ifPresent(__ -> builder.blobKzgCommitments(randomBlobKzgCommitments()));
             });
   }
 
@@ -1222,8 +1222,7 @@ public final class DataStructureUtil {
                 builder.blsToExecutionChanges(randomSignedBlsToExecutionChangesList());
               }
               if (builder.supportsKzgCommitments()) {
-                builder.blobKzgCommitments(
-                    SafeFuture.completedFuture(randomSszKzgCommitmentList()));
+                builder.blobKzgCommitments(SafeFuture.completedFuture(randomBlobKzgCommitments()));
               }
             })
         .join();
@@ -1264,8 +1263,7 @@ public final class DataStructureUtil {
                 builder.blsToExecutionChanges(randomSignedBlsToExecutionChangesList());
               }
               if (builder.supportsKzgCommitments()) {
-                builder.blobKzgCommitments(
-                    SafeFuture.completedFuture(randomSszKzgCommitmentList()));
+                builder.blobKzgCommitments(SafeFuture.completedFuture(randomBlobKzgCommitments()));
               }
             })
         .join();
@@ -1304,8 +1302,7 @@ public final class DataStructureUtil {
                 builder.blsToExecutionChanges(randomSignedBlsToExecutionChangesList());
               }
               if (builder.supportsKzgCommitments()) {
-                builder.blobKzgCommitments(
-                    SafeFuture.completedFuture(randomSszKzgCommitmentList()));
+                builder.blobKzgCommitments(SafeFuture.completedFuture(randomBlobKzgCommitments()));
               }
             })
         .join();
@@ -1355,8 +1352,7 @@ public final class DataStructureUtil {
                 builder.blsToExecutionChanges(randomSignedBlsToExecutionChangesList());
               }
               if (builder.supportsKzgCommitments()) {
-                builder.blobKzgCommitments(
-                    SafeFuture.completedFuture(randomSszKzgCommitmentList()));
+                builder.blobKzgCommitments(SafeFuture.completedFuture(randomBlobKzgCommitments()));
               }
             })
         .join();
@@ -1389,8 +1385,7 @@ public final class DataStructureUtil {
                     .syncAggregate(this.randomSyncAggregateIfRequiredBySchema(schema))
                     .executionPayload(SafeFuture.completedFuture(randomExecutionPayload()))
                     .blsToExecutionChanges(this.randomSignedBlsToExecutionChangesList())
-                    .blobKzgCommitments(
-                        SafeFuture.completedFuture(this.emptySszKzgCommitmentList())))
+                    .blobKzgCommitments(SafeFuture.completedFuture(this.emptyBlobKzgCommitments())))
         .join();
   }
 
@@ -1422,7 +1417,7 @@ public final class DataStructureUtil {
                     .executionPayload(SafeFuture.completedFuture(randomExecutionPayload()))
                     .blsToExecutionChanges(this.randomSignedBlsToExecutionChangesList())
                     .blobKzgCommitments(
-                        SafeFuture.completedFuture(randomSszKzgCommitmentList(count))))
+                        SafeFuture.completedFuture(randomBlobKzgCommitments(count))))
         .join();
   }
 
@@ -1460,8 +1455,7 @@ public final class DataStructureUtil {
                 builder.blsToExecutionChanges(randomSignedBlsToExecutionChangesList());
               }
               if (builder.supportsKzgCommitments()) {
-                builder.blobKzgCommitments(
-                    SafeFuture.completedFuture(randomSszKzgCommitmentList()));
+                builder.blobKzgCommitments(SafeFuture.completedFuture(randomBlobKzgCommitments()));
               }
             })
         .join();
@@ -2275,7 +2269,7 @@ public final class DataStructureUtil {
   private BlobsBundle randomBlobsBundle(final Optional<Integer> count, final UInt64 slot) {
     final BlobSchema blobSchema = getDenebSchemaDefinitions(slot).getBlobSchema();
     final List<KZGCommitment> commitments =
-        (count.isPresent() ? randomSszKzgCommitmentList(count.get()) : randomSszKzgCommitmentList())
+        (count.isPresent() ? randomBlobKzgCommitments(count.get()) : randomBlobKzgCommitments())
             .stream().map(SszKZGCommitment::getKZGCommitment).collect(toList());
     final List<KZGProof> proofs =
         IntStream.range(0, commitments.size()).mapToObj(__ -> randomKZGProof()).collect(toList());
@@ -2538,6 +2532,8 @@ public final class DataStructureUtil {
     }
   }
 
+  public SszList<SszKZGCommitment> randomBlobKzgCommitments() {
+    return randomBlobKzgCommitments(randomNumberOfBlobCommitmentsPerBlock());
   public class RandomBlobSidecarBuilder {
     private Optional<UInt64> index = Optional.empty();
     private Optional<Bytes> blob = Optional.empty();
@@ -2594,11 +2590,11 @@ public final class DataStructureUtil {
     }
   }
 
-  public SszList<SszKZGCommitment> randomSszKzgCommitmentList() {
-    return randomSszKzgCommitmentList(randomNumberOfBlobCommitmentsPerBlock());
-  }
+    public SszList<SszKZGCommitment> randomBlobKzgCommitments() {
+      return randomBlobKzgCommitments(randomNumberOfBlobCommitmentsPerBlock());
 
-  public SszList<SszKZGCommitment> randomSszKzgCommitmentList(final int count) {
+
+      public SszList<SszKZGCommitment> randomBlobKzgCommitments(final int count) {
     final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
         SchemaDefinitionsDeneb.required(
                 spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
@@ -2607,7 +2603,7 @@ public final class DataStructureUtil {
     return randomSszList(blobKzgCommitmentsSchema, count, this::randomSszKZGCommitment);
   }
 
-  public SszList<SszKZGCommitment> emptySszKzgCommitmentList() {
+  public SszList<SszKZGCommitment> emptyBlobKzgCommitments() {
     return SchemaDefinitionsDeneb.required(
             spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
         .getBlobKzgCommitmentsSchema()

@@ -475,7 +475,7 @@ class BlockOperationSelectorFactoryTest {
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
 
     final SszList<SszKZGCommitment> blobKzgCommitments =
-        dataStructureUtil.randomSszKzgCommitmentList();
+        dataStructureUtil.randomBlobKzgCommitments();
 
     prepareBlindedBlockAndBlobsProduction(
         randomExecutionPayloadHeader, executionPayloadContext, blockSlotState, blobKzgCommitments);
