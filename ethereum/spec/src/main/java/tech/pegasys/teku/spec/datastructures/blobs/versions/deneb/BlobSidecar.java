@@ -45,13 +45,13 @@ public class BlobSidecar
   }
 
   public BlobSidecar(
-      BlobSidecarSchema schema,
-      UInt64 index,
-      Blob blob,
-      KZGCommitment kzgCommitment,
-      KZGProof kzgProof,
-      SignedBeaconBlockHeader signedBeaconBlockHeader,
-      List<Bytes32> kzgCommitmentInclusionProof) {
+      final BlobSidecarSchema schema,
+      final UInt64 index,
+      final Blob blob,
+      final KZGCommitment kzgCommitment,
+      final KZGProof kzgProof,
+      final SignedBeaconBlockHeader signedBeaconBlockHeader,
+      final List<Bytes32> kzgCommitmentInclusionProof) {
     super(
         schema,
         SszUInt64.of(index),
