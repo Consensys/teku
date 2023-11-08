@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.metrics;
 
 import java.util.Optional;
+import java.util.Set;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;
 
 public enum TekuMetricCategory implements MetricCategory {
@@ -28,7 +29,8 @@ public enum TekuMetricCategory implements MetricCategory {
   STORAGE_FINALIZED_DB("storage_finalized"),
   REMOTE_VALIDATOR("remote_validator"),
   VALIDATOR("validator"),
-  VALIDATOR_PERFORMANCE("validator_performance");
+  VALIDATOR_PERFORMANCE("validator_performance"),
+  VALIDATOR_DUTY("validator_duty");
 
   private final String name;
 
@@ -44,5 +46,21 @@ public enum TekuMetricCategory implements MetricCategory {
   @Override
   public Optional<String> getApplicationPrefix() {
     return Optional.empty();
+  }
+
+  public static Set<TekuMetricCategory> defaultCategories() {
+    return Set.of(
+        BEACON,
+        DISCOVERY,
+        EVENTBUS,
+        EXECUTOR,
+        LIBP2P,
+        NETWORK,
+        STORAGE,
+        STORAGE_HOT_DB,
+        STORAGE_FINALIZED_DB,
+        REMOTE_VALIDATOR,
+        VALIDATOR,
+        VALIDATOR_PERFORMANCE);
   }
 }
