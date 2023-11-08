@@ -619,21 +619,6 @@ class BlockOperationSelectorFactoryTest {
                     Optional.empty())));
   }
 
-  private void prepareCachedPayloadResult(
-      final UInt64 slot,
-      final ExecutionPayloadContext executionPayloadContext,
-      final HeaderWithFallbackData headerWithFallbackData) {
-    when(executionLayer.getCachedPayloadResult(slot))
-        .thenReturn(
-            Optional.of(
-                new ExecutionPayloadResult(
-                    executionPayloadContext,
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.of(SafeFuture.completedFuture(headerWithFallbackData)),
-                    Optional.empty())));
-  }
-
   private static class CapturingBeaconBlockBodyBuilder implements BeaconBlockBodyBuilder {
 
     private final boolean blinded;
