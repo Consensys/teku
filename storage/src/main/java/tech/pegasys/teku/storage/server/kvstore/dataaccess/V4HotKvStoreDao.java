@@ -75,6 +75,10 @@ public class V4HotKvStoreDao {
     return db.get(schema.getColumnHotBlocksByRoot(), root);
   }
 
+  public Optional<Bytes> getHotBlockRaw(final Bytes32 root) {
+    return db.getRaw(schema.getColumnHotBlocksByRoot(), root);
+  }
+
   public Optional<BlockCheckpoints> getHotBlockCheckpointEpochs(final Bytes32 root) {
     return db.get(schema.getColumnHotBlockCheckpointEpochsByRoot(), root);
   }

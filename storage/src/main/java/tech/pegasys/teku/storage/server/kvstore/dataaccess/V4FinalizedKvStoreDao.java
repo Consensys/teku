@@ -296,6 +296,18 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
+    public void addFinalizedBlockRaw(
+        final UInt64 slot, final Bytes32 blockRoot, final Bytes blockBytes) {
+      transaction.put(schema.getColumnSlotsByFinalizedRoot(), blockRoot, slot);
+      final KvStoreColumn<UInt64, SignedBeaconBlock> columnFinalizedBlocksBySlot =
+          schema.getColumnFinalizedBlocksBySlot();
+      transaction.putRaw(
+          columnFinalizedBlocksBySlot,
+          Bytes.wrap(columnFinalizedBlocksBySlot.getKeySerializer().serialize(slot)),
+          blockBytes);
+    }
+
+    @Override
     public void addNonCanonicalBlock(final SignedBeaconBlock block) {
       transaction.put(schema.getColumnNonCanonicalBlocksByRoot(), block.getRoot(), block);
     }
