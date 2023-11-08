@@ -15,14 +15,17 @@ package tech.pegasys.teku.spec.datastructures.blocks;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
+import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class BeaconBlockInvariantsTest {
@@ -79,6 +82,13 @@ class BeaconBlockInvariantsTest {
         .isEqualTo(slot);
   }
 
+  @ParameterizedTest
+  @MethodSource("blocksFromMilestones")
+  void shouldExtractSlotFromAllMilestones(final SignedBeaconBlock block) {
+    assertThat(BeaconBlockInvariants.extractSignedBlockContainerSlot(block.sszSerialize()))
+        .isEqualTo(block.getSlot());
+  }
+
   static List<Arguments> slotNumbers() {
     return List.of(
         Arguments.of(UInt64.ZERO),
@@ -86,5 +96,14 @@ class BeaconBlockInvariantsTest {
         Arguments.of(UInt64.MAX_VALUE),
         Arguments.of(UInt64.valueOf(1234582)),
         Arguments.of(UInt64.valueOf(42)));
+  }
+
+  static List<Arguments> blocksFromMilestones() {
+    return Arrays.stream(SpecMilestone.values())
+        .map(milestone -> TestSpecFactory.create(milestone, Eth2Network.MINIMAL))
+        .map(DataStructureUtil::new)
+        .map(DataStructureUtil::randomSignedBeaconBlock)
+        .map(Arguments::of)
+        .toList();
   }
 }

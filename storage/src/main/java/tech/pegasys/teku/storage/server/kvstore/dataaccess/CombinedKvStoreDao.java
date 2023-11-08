@@ -96,7 +96,7 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
-  public Optional<Bytes> getHotBlockAsSsz(Bytes32 root) {
+  public Optional<Bytes> getHotBlockAsSsz(final Bytes32 root) {
     return db.getRaw(schema.getColumnHotBlocksByRoot(), root);
   }
 

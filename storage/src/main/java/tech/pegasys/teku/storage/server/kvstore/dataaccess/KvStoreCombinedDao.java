@@ -224,7 +224,7 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
     void addFinalizedBlock(final SignedBeaconBlock block);
 
-    void addFinalizedBlockRaw(final UInt64 slot, final Bytes32 blockRoot, final Bytes blockBytes);
+    void addFinalizedBlockRaw(UInt64 slot, Bytes32 blockRoot, Bytes blockBytes);
 
     void addNonCanonicalBlock(final SignedBeaconBlock block);
 
