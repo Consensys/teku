@@ -43,7 +43,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockC
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
-import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
@@ -93,7 +92,6 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   private final BlindedBlockContentsSchema blindedBlockContentsSchema;
   private final SignedBlindedBlockContentsSchema signedBlindedBlockContentsSchema;
   private final BlobsBundleSchema blobsBundleSchema;
-  private final BlindedBlobsBundleSchema blindedBlobsBundleSchema;
   private final ExecutionPayloadAndBlobsBundleSchema executionPayloadAndBlobsBundleSchema;
   private final BlobSidecarsByRootRequestMessageSchema blobSidecarsByRootRequestMessageSchema;
 
@@ -128,8 +126,6 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
         new SignedBeaconBlockSchema(beaconBlockSchema, "SignedBeaconBlockDeneb");
     this.signedBlindedBeaconBlockSchema =
         new SignedBeaconBlockSchema(blindedBeaconBlockSchema, "SignedBlindedBlockDeneb");
-    this.blindedBlobsBundleSchema =
-        new BlindedBlobsBundleSchema("BlindedBlobsBundleDeneb", specConfig);
     this.builderBidSchemaDeneb =
         new BuilderBidSchemaDeneb(
             "BuilderBidDeneb", executionPayloadHeaderSchemaDeneb, blobKzgCommitmentsSchema);
@@ -317,10 +313,6 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
 
   public BlobsBundleSchema getBlobsBundleSchema() {
     return blobsBundleSchema;
-  }
-
-  public BlindedBlobsBundleSchema getBlindedBlobsBundleSchema() {
-    return blindedBlobsBundleSchema;
   }
 
   public ExecutionPayloadAndBlobsBundleSchema getExecutionPayloadAndBlobsBundleSchema() {

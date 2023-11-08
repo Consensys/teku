@@ -19,14 +19,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
@@ -38,8 +36,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockC
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
-import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -71,10 +69,9 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
   }
 
   @Test
-  @Disabled("disabled until block production for blob sidecar inclusion proof is implemented")
   void shouldCreateBlindedBlockContentsWhenBlindedBlockRequested() {
 
-    final BlindedBlobsBundle blindedBlobsBundle = prepareBlindedBlobsBundle(spec, 3);
+    final SszList<SszKZGCommitment> blobKzgCommitments = prepareBlobKzgCommitments(spec, 3);
 
     final BlockContainer blockContainer =
         assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), true);
@@ -82,17 +79,9 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     assertThat(blockContainer).isInstanceOf(BlindedBlockContents.class);
     final BlindedBlockContainer blindedBlockContainer = blockContainer.toBlinded().orElseThrow();
     assertThat(blindedBlockContainer.getBlock().getBody().getOptionalBlobKzgCommitments())
-        .hasValueSatisfying(blobKzgCommitments -> assertThat(blobKzgCommitments).hasSize(3));
+        .hasValue(blobKzgCommitments);
     assertThat(blindedBlockContainer.getBlindedBlobSidecars())
-        .hasValueSatisfying(
-            blindedBlobSidecars ->
-                assertThat(blindedBlobSidecars)
-                    .hasSize(3)
-                    .map(BlindedBlobSidecar::getBlobRoot)
-                    .hasSameElementsAs(
-                        blindedBlobsBundle.getBlobRoots().stream()
-                            .map(SszBytes32::get)
-                            .collect(Collectors.toList())));
+        .hasValueSatisfying(blindedBlobSidecars -> assertThat(blindedBlobSidecars).isEmpty());
   }
 
   @Test
@@ -110,12 +99,10 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
   void unblindSignedBlock_shouldUnblindBlockContents() {
 
     final BlobsBundle blobsBundle = prepareBlobsBundle(spec, 3);
-    // let the unblinder return consistent BlindedBlobsBundle
-    blindedBlobsBundle =
+    // let the unblinder verify the kzg commitments
+    blobKzgCommitments =
         Optional.of(
-            schemaDefinitions
-                .getBlindedBlobsBundleSchema()
-                .createFromExecutionBlobsBundle(blobsBundle));
+            schemaDefinitions.getBlobKzgCommitmentsSchema().createFromBlobsBundle(blobsBundle));
 
     final List<SignedBlindedBlobSidecar> blindedBlobSidecars =
         dataStructureUtil.randomSignedBlindedBlobSidecars(blobsBundle);

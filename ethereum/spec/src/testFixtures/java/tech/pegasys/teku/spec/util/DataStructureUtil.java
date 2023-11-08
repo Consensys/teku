@@ -116,8 +116,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockC
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
-import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
-import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundle;
@@ -2240,22 +2238,6 @@ public final class DataStructureUtil {
         randomSszList(schema.getCommitmentsSchema(), this::randomSszKZGCommitment, numberOfBlobs),
         randomSszList(schema.getProofsSchema(), this::randomSszKZGProof, numberOfBlobs),
         randomSszList(schema.getBlobsSchema(), this::randomBlob, numberOfBlobs));
-  }
-
-  public BlindedBlobsBundle randomBlindedBlobsBundle(final int count) {
-    final UInt64 slot = randomSlot();
-    final SchemaDefinitionsDeneb schemaDefinitions = getDenebSchemaDefinitions(slot);
-    final BlindedBlobsBundleSchema schema = schemaDefinitions.getBlindedBlobsBundleSchema();
-
-    return new BlindedBlobsBundle(
-        schema,
-        randomSszList(schema.getCommitmentsSchema(), this::randomSszKZGCommitment, count),
-        randomSszList(schema.getProofsSchema(), this::randomSszKZGProof, count),
-        randomSszList(schema.getBlobRootsSchema(), count, this::randomSszBytes32));
-  }
-
-  public BlindedBlobsBundle randomBlindedBlobsBundle() {
-    return randomBlindedBlobsBundle(randomNumberOfBlobsPerBlock());
   }
 
   public BlobsBundle randomBlobsBundle() {

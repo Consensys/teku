@@ -27,7 +27,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -38,7 +37,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -50,7 +48,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -462,7 +459,6 @@ class BlockOperationSelectorFactoryTest {
   }
 
   @Test
-  @Disabled("disabled until block production for blob sidecar inclusion proof is implemented")
   void shouldIncludeKzgCommitmentsInBlindedBlock() {
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState();
 
@@ -526,47 +522,7 @@ class BlockOperationSelectorFactoryTest {
   }
 
   @Test
-  @Disabled("disabled until block production for blob sidecar inclusion proof is implemented")
-  void shouldCreateBlindedBlobSidecarsForBlindedBlockFromCachedPayloadResult() {
-    final BeaconBlock block = dataStructureUtil.randomBlindedBeaconBlock();
-
-    final BlindedBlobsBundle blindedBlobsBundle = dataStructureUtil.randomBlindedBlobsBundle();
-
-    // the BlindedBlobsBundle is stored in the HeaderWithFallbackData (retrieved via builder flow)
-    final HeaderWithFallbackData headerWithFallbackData =
-        HeaderWithFallbackData.create(
-            dataStructureUtil.randomExecutionPayloadHeader(), Optional.empty());
-
-    prepareCachedPayloadResult(
-        block.getSlot(),
-        dataStructureUtil.randomPayloadExecutionContext(false),
-        headerWithFallbackData);
-
-    final List<BlindedBlobSidecar> blindedBlobSidecars =
-        safeJoin(factory.createBlindedBlobSidecarsSelector().apply(block));
-
-    assertThat(blindedBlobSidecars)
-        .hasSize(blindedBlobsBundle.getNumberOfBlobs())
-        .first()
-        .satisfies(
-            // assert on one of the blinded sidecars
-            blindedBlobSidecar -> {
-              assertThat(blindedBlobSidecar.getBlockRoot()).isEqualTo(block.getRoot());
-              assertThat(blindedBlobSidecar.getBlockParentRoot()).isEqualTo(block.getParentRoot());
-              assertThat(blindedBlobSidecar.getIndex()).isEqualTo(UInt64.ZERO);
-              assertThat(blindedBlobSidecar.getSlot()).isEqualTo(block.getSlot());
-              assertThat(blindedBlobSidecar.getProposerIndex()).isEqualTo(block.getProposerIndex());
-              assertThat(blindedBlobSidecar.getBlobRoot())
-                  .isEqualTo(blindedBlobsBundle.getBlobRoots().get(0).get());
-              assertThat(blindedBlobSidecar.getKZGCommitment())
-                  .isEqualTo(blindedBlobsBundle.getCommitments().get(0).getKZGCommitment());
-              assertThat(blindedBlobSidecar.getKZGProof())
-                  .isEqualTo(blindedBlobsBundle.getProofs().get(0).getKZGProof());
-            });
-  }
-
-  @Test
-  void shouldSetBlindedBlobsBundle_whenAcceptingTheBlobSidecarsUnblinderSelector() {
+  void shouldSetBlobsBundle_whenAcceptingTheBlobSidecarsUnblinderSelector() {
     final ExecutionPayloadAndBlobsBundle executionPayloadAndBlobsBundle =
         dataStructureUtil.randomExecutionPayloadAndBlobsBundle();
     final UInt64 slot = dataStructureUtil.randomUInt64();

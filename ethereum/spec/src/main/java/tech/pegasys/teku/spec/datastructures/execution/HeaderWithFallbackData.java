@@ -17,7 +17,6 @@ import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 /**
@@ -72,11 +71,6 @@ public class HeaderWithFallbackData {
     return executionPayloadHeader;
   }
 
-  @Deprecated
-  public Optional<BlindedBlobsBundle> getBlindedBlobsBundle() {
-    return Optional.empty();
-  }
-
   public Optional<SszList<SszKZGCommitment>> getBlobKzgCommitments() {
     return blobKzgCommitments;
   }
@@ -109,7 +103,7 @@ public class HeaderWithFallbackData {
     return MoreObjects.toStringHelper(this)
         .add("executionPayloadHeader", executionPayloadHeader)
         .add("blobKzgCommitments", blobKzgCommitments)
-        .add("fallbackDataOptional", fallbackData)
+        .add("fallbackData", fallbackData)
         .toString();
   }
 }
