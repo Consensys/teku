@@ -17,14 +17,16 @@ import java.util.Collections;
 
 /** Helper that creates a thread-safe map with a maximum capacity. */
 final class SynchronizedLimitedMap<K, V> extends AbstractLimitedMap<K, V> {
+  final boolean accessOrder;
 
-  public SynchronizedLimitedMap(final int maxSize) {
-    super(Collections.synchronizedMap(createLimitedMap(maxSize)), maxSize);
+  public SynchronizedLimitedMap(final int maxSize, final boolean accessOrder) {
+    super(Collections.synchronizedMap(createLimitedMap(maxSize, accessOrder)), maxSize);
+    this.accessOrder = accessOrder;
   }
 
   @Override
   public LimitedMap<K, V> copy() {
-    SynchronizedLimitedMap<K, V> map = new SynchronizedLimitedMap<>(getMaxSize());
+    SynchronizedLimitedMap<K, V> map = new SynchronizedLimitedMap<>(getMaxSize(), accessOrder);
     synchronized (delegate) {
       map.putAll(delegate);
     }

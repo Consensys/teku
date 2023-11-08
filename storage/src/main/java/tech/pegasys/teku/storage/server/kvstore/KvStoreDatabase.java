@@ -42,16 +42,15 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockInvariants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
@@ -1135,9 +1134,6 @@ public class KvStoreDatabase implements Database {
       Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
       final Map<Bytes32, BeaconState> finalizedStates) {
-    final BlockProvider blockProvider =
-        BlockProvider.withKnownBlocks(
-            roots -> SafeFuture.completedFuture(getHotBlocks(roots)), finalizedBlocks);
 
     final Optional<Checkpoint> initialCheckpoint = dao.getAnchor();
     final Optional<Bytes32> initialBlockRoot = initialCheckpoint.map(Checkpoint::getRoot);
@@ -1163,12 +1159,8 @@ public class KvStoreDatabase implements Database {
         while (i < finalizedRoots.size() && (i - start) < TX_BATCH_SIZE) {
           final Bytes32 blockRoot = finalizedRoots.get(i);
 
-          final Optional<SignedBeaconBlock> maybeBlock = blockProvider.getBlock(blockRoot).join();
-          maybeBlock.ifPresent(block -> addFinalizedBlock(block, updater));
-          // If block is missing and doesn't match the initial anchor, throw
-          if (maybeBlock.isEmpty() && initialBlockRoot.filter(r -> r.equals(blockRoot)).isEmpty()) {
-            throw new IllegalStateException("Missing finalized block");
-          }
+          final Optional<UInt64> maybeBlockSlot =
+              addFinalizedBlock(blockRoot, finalizedBlocks, updater, initialBlockRoot);
 
           Optional.ofNullable(finalizedStates.get(blockRoot))
               .or(() -> getHotState(blockRoot))
@@ -1179,9 +1171,8 @@ public class KvStoreDatabase implements Database {
                   });
 
           lastSlot =
-              maybeBlock
-                  .map(SignedBeaconBlock::getSlot)
-                  .orElseGet(() -> initialCheckpoint.orElseThrow().getEpochStartSlot(spec));
+              maybeBlockSlot.orElseGet(
+                  () -> initialCheckpoint.orElseThrow().getEpochStartSlot(spec));
           i++;
         }
         updater.commit();
@@ -1196,9 +1187,6 @@ public class KvStoreDatabase implements Database {
       Map<Bytes32, Bytes32> finalizedChildToParentMap,
       final Map<Bytes32, SignedBeaconBlock> finalizedBlocks) {
     final Optional<Bytes32> initialBlockRoot = dao.getAnchor().map(Checkpoint::getRoot);
-    final BlockProvider blockProvider =
-        BlockProvider.withKnownBlocks(
-            roots -> SafeFuture.completedFuture(getHotBlocks(roots)), finalizedBlocks);
 
     final List<Bytes32> finalizedRoots = new ArrayList<>(finalizedChildToParentMap.keySet());
     int i = 0;
@@ -1207,13 +1195,9 @@ public class KvStoreDatabase implements Database {
         final int start = i;
         while (i < finalizedRoots.size() && (i - start) < TX_BATCH_SIZE) {
           final Bytes32 root = finalizedRoots.get(i);
-          final Optional<SignedBeaconBlock> maybeBlock = blockProvider.getBlock(root).join();
-          maybeBlock.ifPresent(block -> addFinalizedBlock(block, updater));
 
-          // If block is missing and doesn't match the initial anchor, throw
-          if (maybeBlock.isEmpty() && initialBlockRoot.filter(r -> r.equals(root)).isEmpty()) {
-            throw new IllegalStateException("Missing finalized block");
-          }
+          addFinalizedBlock(root, finalizedBlocks, updater, initialBlockRoot);
+
           i++;
         }
         updater.commit();
@@ -1222,6 +1206,32 @@ public class KvStoreDatabase implements Database {
         }
       }
     }
+  }
+
+  private Optional<UInt64> addFinalizedBlock(
+      final Bytes32 blockRoot,
+      final Map<Bytes32, SignedBeaconBlock> finalizedBlocks,
+      final FinalizedUpdater updater,
+      final Optional<Bytes32> initialBlockRoot) {
+    final SignedBeaconBlock block = finalizedBlocks.get(blockRoot);
+    if (block != null) {
+      addFinalizedBlock(block, updater);
+      return Optional.of(block.getSlot());
+    }
+
+    final Optional<Bytes> rawBlock = dao.getHotBlockAsSsz(blockRoot);
+    if (rawBlock.isPresent()) {
+      final UInt64 slot = BeaconBlockInvariants.extractSignedBlockContainerSlot(rawBlock.get());
+      updater.addFinalizedBlockRaw(slot, blockRoot, rawBlock.get());
+      return Optional.of(slot);
+    }
+
+    // If block is missing and doesn't match the initial anchor, throw
+    if (initialBlockRoot.filter(r -> r.equals(blockRoot)).isEmpty()) {
+      throw new IllegalStateException("Missing finalized block");
+    }
+
+    return Optional.empty();
   }
 
   private BeaconBlockSummary getLatestFinalizedBlockOrSummary() {

@@ -23,8 +23,8 @@ import java.util.function.Function;
 
 abstract class AbstractLimitedMap<K, V> implements LimitedMap<K, V> {
 
-  protected static <K, V> Map<K, V> createLimitedMap(final int maxSize) {
-    return new LinkedHashMap<>(16, 0.75f, true) {
+  protected static <K, V> Map<K, V> createLimitedMap(final int maxSize, final boolean accessOrder) {
+    return new LinkedHashMap<>(16, 0.75f, accessOrder) {
       @Override
       protected boolean removeEldestEntry(final Map.Entry<K, V> eldest) {
         return this.size() > maxSize;

@@ -136,7 +136,7 @@ public class SyncingNodeManager {
         poolFactory.createPendingPoolForBlocks(spec);
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot, mock(SettableLabelledGauge.class), "blocks");
-    final Map<Bytes32, BlockImportResult> invalidBlockRoots = LimitedMap.createSynchronized(500);
+    final Map<Bytes32, BlockImportResult> invalidBlockRoots = LimitedMap.createSynchronizedLRU(500);
 
     final BlockImporter blockImporter =
         new BlockImporter(

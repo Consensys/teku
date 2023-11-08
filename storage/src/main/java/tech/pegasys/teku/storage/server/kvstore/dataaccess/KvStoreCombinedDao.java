@@ -52,6 +52,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
   Optional<SignedBeaconBlock> getHotBlock(Bytes32 root);
 
+  Optional<Bytes> getHotBlockAsSsz(Bytes32 root);
+
   @MustBeClosed
   Stream<SignedBeaconBlock> streamHotBlocks();
 
@@ -221,6 +223,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
   interface FinalizedUpdater extends AutoCloseable {
 
     void addFinalizedBlock(final SignedBeaconBlock block);
+
+    void addFinalizedBlockRaw(UInt64 slot, Bytes32 blockRoot, Bytes blockBytes);
 
     void addNonCanonicalBlock(final SignedBeaconBlock block);
 
