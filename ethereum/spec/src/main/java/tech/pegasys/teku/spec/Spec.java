@@ -962,10 +962,6 @@ public class Spec {
     return getSpecConfigDeneb().map(SpecConfigDeneb::getMaxBlobsPerBlock);
   }
 
-  public Optional<Integer> getMaxBlobCommitmentsPerBlock() {
-    return getSpecConfigDeneb().map(SpecConfigDeneb::getMaxBlobCommitmentsPerBlock);
-  }
-
   public Optional<Integer> getMaxBlobsPerBlock(final UInt64 slot) {
     return getSpecConfigDeneb(slot).map(SpecConfigDeneb::getMaxBlobsPerBlock);
   }

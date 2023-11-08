@@ -88,6 +88,7 @@ import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
@@ -111,13 +112,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
-import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
-import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundle;
@@ -619,7 +617,7 @@ public final class DataStructureUtil {
                   .publicKey(builderPublicKey);
               schemaDefinitions
                   .toVersionDeneb()
-                  .ifPresent(__ -> builder.blobKzgCommitments(randomSszKzgCommitmentList()));
+                  .ifPresent(__ -> builder.blobKzgCommitments(randomBlobKzgCommitments()));
             });
   }
 
@@ -636,7 +634,7 @@ public final class DataStructureUtil {
                   .publicKey(randomPublicKey());
               schemaDefinitions
                   .toVersionDeneb()
-                  .ifPresent(__ -> builder.blobKzgCommitments(randomSszKzgCommitmentList()));
+                  .ifPresent(__ -> builder.blobKzgCommitments(randomBlobKzgCommitments()));
             });
   }
 
@@ -1222,8 +1220,7 @@ public final class DataStructureUtil {
                 builder.blsToExecutionChanges(randomSignedBlsToExecutionChangesList());
               }
               if (builder.supportsKzgCommitments()) {
-                builder.blobKzgCommitments(
-                    SafeFuture.completedFuture(randomSszKzgCommitmentList()));
+                builder.blobKzgCommitments(SafeFuture.completedFuture(randomBlobKzgCommitments()));
               }
             })
         .join();
@@ -1264,8 +1261,7 @@ public final class DataStructureUtil {
                 builder.blsToExecutionChanges(randomSignedBlsToExecutionChangesList());
               }
               if (builder.supportsKzgCommitments()) {
-                builder.blobKzgCommitments(
-                    SafeFuture.completedFuture(randomSszKzgCommitmentList()));
+                builder.blobKzgCommitments(SafeFuture.completedFuture(randomBlobKzgCommitments()));
               }
             })
         .join();
@@ -1304,8 +1300,7 @@ public final class DataStructureUtil {
                 builder.blsToExecutionChanges(randomSignedBlsToExecutionChangesList());
               }
               if (builder.supportsKzgCommitments()) {
-                builder.blobKzgCommitments(
-                    SafeFuture.completedFuture(randomSszKzgCommitmentList()));
+                builder.blobKzgCommitments(SafeFuture.completedFuture(randomBlobKzgCommitments()));
               }
             })
         .join();
@@ -1355,8 +1350,7 @@ public final class DataStructureUtil {
                 builder.blsToExecutionChanges(randomSignedBlsToExecutionChangesList());
               }
               if (builder.supportsKzgCommitments()) {
-                builder.blobKzgCommitments(
-                    SafeFuture.completedFuture(randomSszKzgCommitmentList()));
+                builder.blobKzgCommitments(SafeFuture.completedFuture(randomBlobKzgCommitments()));
               }
             })
         .join();
@@ -1389,8 +1383,7 @@ public final class DataStructureUtil {
                     .syncAggregate(this.randomSyncAggregateIfRequiredBySchema(schema))
                     .executionPayload(SafeFuture.completedFuture(randomExecutionPayload()))
                     .blsToExecutionChanges(this.randomSignedBlsToExecutionChangesList())
-                    .blobKzgCommitments(
-                        SafeFuture.completedFuture(this.emptySszKzgCommitmentList())))
+                    .blobKzgCommitments(SafeFuture.completedFuture(this.emptyBlobKzgCommitments())))
         .join();
   }
 
@@ -1422,7 +1415,7 @@ public final class DataStructureUtil {
                     .executionPayload(SafeFuture.completedFuture(randomExecutionPayload()))
                     .blsToExecutionChanges(this.randomSignedBlsToExecutionChangesList())
                     .blobKzgCommitments(
-                        SafeFuture.completedFuture(randomSszKzgCommitmentList(count))))
+                        SafeFuture.completedFuture(randomBlobKzgCommitments(count))))
         .join();
   }
 
@@ -1460,8 +1453,7 @@ public final class DataStructureUtil {
                 builder.blsToExecutionChanges(randomSignedBlsToExecutionChangesList());
               }
               if (builder.supportsKzgCommitments()) {
-                builder.blobKzgCommitments(
-                    SafeFuture.completedFuture(randomSszKzgCommitmentList()));
+                builder.blobKzgCommitments(SafeFuture.completedFuture(randomBlobKzgCommitments()));
               }
             })
         .join();
@@ -2248,22 +2240,6 @@ public final class DataStructureUtil {
         randomSszList(schema.getBlobsSchema(), this::randomBlob, numberOfBlobs));
   }
 
-  public BlindedBlobsBundle randomBlindedBlobsBundle(final int count) {
-    final UInt64 slot = randomSlot();
-    final SchemaDefinitionsDeneb schemaDefinitions = getDenebSchemaDefinitions(slot);
-    final BlindedBlobsBundleSchema schema = schemaDefinitions.getBlindedBlobsBundleSchema();
-
-    return new BlindedBlobsBundle(
-        schema,
-        randomSszList(schema.getCommitmentsSchema(), this::randomSszKZGCommitment, count),
-        randomSszList(schema.getProofsSchema(), this::randomSszKZGProof, count),
-        randomSszList(schema.getBlobRootsSchema(), count, this::randomSszBytes32));
-  }
-
-  public BlindedBlobsBundle randomBlindedBlobsBundle() {
-    return randomBlindedBlobsBundle(randomNumberOfBlobCommitmentsPerBlock());
-  }
-
   public BlobsBundle randomBlobsBundle() {
     return randomBlobsBundle(Optional.empty(), randomSlot());
   }
@@ -2275,8 +2251,9 @@ public final class DataStructureUtil {
   private BlobsBundle randomBlobsBundle(final Optional<Integer> count, final UInt64 slot) {
     final BlobSchema blobSchema = getDenebSchemaDefinitions(slot).getBlobSchema();
     final List<KZGCommitment> commitments =
-        (count.isPresent() ? randomSszKzgCommitmentList(count.get()) : randomSszKzgCommitmentList())
-            .stream().map(SszKZGCommitment::getKZGCommitment).collect(toList());
+        count.map(this::randomBlobKzgCommitments).orElse(randomBlobKzgCommitments()).stream()
+            .map(SszKZGCommitment::getKZGCommitment)
+            .toList();
     final List<KZGProof> proofs =
         IntStream.range(0, commitments.size()).mapToObj(__ -> randomKZGProof()).collect(toList());
     return new BlobsBundle(
@@ -2572,6 +2549,12 @@ public final class DataStructureUtil {
       return this;
     }
 
+    public RandomBlobSidecarBuilder kzgCommitmentInclusionProof(
+        final List<Bytes32> kzgCommitmentInclusionProof) {
+      this.kzgCommitmentInclusionProof = Optional.of(kzgCommitmentInclusionProof);
+      return this;
+    }
+
     public BlobSidecar build() {
       final BlobSidecarSchema blobSidecarSchema =
           getDenebSchemaDefinitions(
@@ -2594,30 +2577,25 @@ public final class DataStructureUtil {
     }
   }
 
-  public SszList<SszKZGCommitment> randomSszKzgCommitmentList() {
-    final int count = randomInt(spec.getMaxBlobsPerBlock().orElseThrow()) + 1;
-    return randomSszKzgCommitmentList(count);
+  public SszList<SszKZGCommitment> randomBlobKzgCommitments() {
+    // use MAX_BLOBS_PER_BLOCK as a limit
+    return randomBlobKzgCommitments(randomNumberOfBlobsPerBlock());
   }
 
-  public SszList<SszKZGCommitment> randomSszKzgCommitmentList(final int count) {
-    final SszListSchema<SszKZGCommitment, ?> kzgCommitmentsSchema =
-        BeaconBlockBodySchemaDeneb.required(
-                spec.forMilestone(SpecMilestone.DENEB)
-                    .getSchemaDefinitions()
-                    .getBeaconBlockBodySchema())
+  public SszList<SszKZGCommitment> randomBlobKzgCommitments(final int count) {
+    final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
+        SchemaDefinitionsDeneb.required(
+                spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
             .getBlobKzgCommitmentsSchema();
 
-    return randomSszList(kzgCommitmentsSchema, count, this::randomSszKZGCommitment);
+    return randomSszList(blobKzgCommitmentsSchema, count, this::randomSszKZGCommitment);
   }
 
-  public SszList<SszKZGCommitment> emptySszKzgCommitmentList() {
+  public SszList<SszKZGCommitment> emptyBlobKzgCommitments() {
     return SchemaDefinitionsDeneb.required(
             spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
-        .getBeaconBlockBodySchema()
-        .toVersionDeneb()
-        .orElseThrow()
         .getBlobKzgCommitmentsSchema()
-        .createFromElements(List.of());
+        .of();
   }
 
   public RewardAndPenaltyDeltas randomRewardAndPenaltyDeltas(final int validatorCount) {
@@ -2636,11 +2614,6 @@ public final class DataStructureUtil {
   private int randomNumberOfBlobsPerBlock() {
     // minimum 1 blob
     return randomInt(1, spec.getMaxBlobsPerBlock().orElseThrow() + 1);
-  }
-
-  private int randomNumberOfBlobCommitmentsPerBlock() {
-    // minimum 1 commitment
-    return randomInt(1, spec.getMaxBlobCommitmentsPerBlock().orElseThrow() + 1);
   }
 
   private int randomInt(final int origin, final int bound) {
