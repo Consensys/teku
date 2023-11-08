@@ -503,7 +503,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
           FutureItems.create(SignedBlobSidecarOld::getSlot, futureItemsMetric, "blob_sidecars");
 
       final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots =
-          LimitedMap.createSynchronized(500);
+          LimitedMap.createSynchronizedLRU(500);
 
       final BlobSidecarGossipValidator blobSidecarValidator =
           BlobSidecarGossipValidator.create(spec, invalidBlockRoots, gossipValidationHelper);
@@ -544,7 +544,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     LOG.debug("BeaconChainController.initBlockPoolsAndCaches()");
     pendingBlocks = poolFactory.createPendingPoolForBlocks(spec);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, pendingBlocks);
-    invalidBlockRoots = LimitedMap.createSynchronized(500);
+    invalidBlockRoots = LimitedMap.createSynchronizedLRU(500);
   }
 
   protected void initBlobSidecarPool() {
