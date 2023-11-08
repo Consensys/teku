@@ -103,6 +103,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
@@ -119,6 +120,7 @@ import tech.pegasys.teku.statetransition.blobs.BlobSidecarManagerImpl;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.blobs.DataUnavailableBlockPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.statetransition.block.BlockImportMetrics;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
@@ -326,7 +328,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     recentBlocksFetcher.subscribeBlockFetched(
         (block) ->
             blockManager
-                .importBlock(block)
+                .importBlock(block, BroadcastValidationLevel.NOT_REQUIRED)
+                .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult)
                 .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
     blockManager.subscribeToReceivedBlocks(
         (block, __) -> recentBlocksFetcher.cancelRecentBlockRequest(block.getRoot()));

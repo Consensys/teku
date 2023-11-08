@@ -65,6 +65,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlinded
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
@@ -147,12 +148,12 @@ class BlockProductionDutyTest {
     when(signer.signBlock(unsignedBlock, fork)).thenReturn(completedFuture(blockSignature));
     final SignedBeaconBlock signedBlock =
         dataStructureUtil.signedBlock(unsignedBlock, blockSignature);
-    when(validatorApiChannel.sendSignedBlock(signedBlock))
+    when(validatorApiChannel.sendSignedBlock(signedBlock, BroadcastValidationLevel.NOT_REQUIRED))
         .thenReturn(completedFuture(SendSignedBlockResult.success(signedBlock.getRoot())));
 
     performAndReportDuty();
 
-    verify(validatorApiChannel).sendSignedBlock(signedBlock);
+    verify(validatorApiChannel).sendSignedBlock(signedBlock, BroadcastValidationLevel.NOT_REQUIRED);
     verify(validatorLogger)
         .dutyCompleted(
             eq(TYPE),
@@ -208,7 +209,7 @@ class BlockProductionDutyTest {
     when(validatorApiChannel.createUnsignedBlock(
             denebSlot, randaoReveal, Optional.of(graffiti), false))
         .thenReturn(completedFuture(Optional.of(unsignedBlockContents)));
-    when(validatorApiChannel.sendSignedBlock(any()))
+    when(validatorApiChannel.sendSignedBlock(any(), any()))
         .thenReturn(completedFuture(SendSignedBlockResult.success(unsignedBlock.getRoot())));
 
     performAndReportDuty(denebSlot);
@@ -216,7 +217,7 @@ class BlockProductionDutyTest {
     final ArgumentCaptor<SignedBlockContents> signedBlockContentsArgumentCaptor =
         ArgumentCaptor.forClass(SignedBlockContents.class);
 
-    verify(validatorApiChannel).sendSignedBlock(signedBlockContentsArgumentCaptor.capture());
+    verify(validatorApiChannel).sendSignedBlock(signedBlockContentsArgumentCaptor.capture(), any());
     verify(validatorLogger)
         .dutyCompleted(
             eq(TYPE),
@@ -299,7 +300,7 @@ class BlockProductionDutyTest {
     when(validatorApiChannel.createUnsignedBlock(
             denebSlot, randaoReveal, Optional.of(graffiti), true))
         .thenReturn(completedFuture(Optional.of(unsignedBlindedBlockContents)));
-    when(validatorApiChannel.sendSignedBlock(any()))
+    when(validatorApiChannel.sendSignedBlock(any(), any()))
         .thenReturn(completedFuture(SendSignedBlockResult.success(unsignedBlindedBlock.getRoot())));
 
     performAndReportDuty(denebSlot);
@@ -307,7 +308,8 @@ class BlockProductionDutyTest {
     final ArgumentCaptor<SignedBlindedBlockContents> signedBlindedBlockContentsArgumentCaptor =
         ArgumentCaptor.forClass(SignedBlindedBlockContents.class);
 
-    verify(validatorApiChannel).sendSignedBlock(signedBlindedBlockContentsArgumentCaptor.capture());
+    verify(validatorApiChannel)
+        .sendSignedBlock(signedBlindedBlockContentsArgumentCaptor.capture(), any());
     verify(validatorLogger)
         .dutyCompleted(
             eq(TYPE),
@@ -474,14 +476,14 @@ class BlockProductionDutyTest {
     when(signer.signBlock(unsignedBlock, fork)).thenReturn(completedFuture(blockSignature));
     final SignedBeaconBlock signedBlock =
         dataStructureUtil.signedBlock(unsignedBlock, blockSignature);
-    when(validatorApiChannel.sendSignedBlock(signedBlock))
+    when(validatorApiChannel.sendSignedBlock(signedBlock, BroadcastValidationLevel.NOT_REQUIRED))
         .thenReturn(completedFuture(SendSignedBlockResult.success(signedBlock.getRoot())));
 
     performAndReportDuty();
     verify(validatorApiChannel)
         .createUnsignedBlock(CAPELLA_SLOT, randaoReveal, Optional.of(graffiti));
 
-    verify(validatorApiChannel).sendSignedBlock(signedBlock);
+    verify(validatorApiChannel).sendSignedBlock(signedBlock, BroadcastValidationLevel.NOT_REQUIRED);
     verify(validatorLogger)
         .dutyCompleted(
             eq(TYPE),
@@ -536,7 +538,7 @@ class BlockProductionDutyTest {
                     blobSidecarsSignatures.get((BlobSidecarOld) invocation.getArgument(0))));
     when(validatorApiChannel.createUnsignedBlock(denebSlot, randaoReveal, Optional.of(graffiti)))
         .thenReturn(completedFuture(Optional.of(unsignedBlockContents)));
-    when(validatorApiChannel.sendSignedBlock(any()))
+    when(validatorApiChannel.sendSignedBlock(any(), any()))
         .thenReturn(completedFuture(SendSignedBlockResult.success(unsignedBlock.getRoot())));
 
     performAndReportDuty(denebSlot);
@@ -546,7 +548,9 @@ class BlockProductionDutyTest {
     final ArgumentCaptor<SignedBlockContents> signedBlockContentsArgumentCaptor =
         ArgumentCaptor.forClass(SignedBlockContents.class);
 
-    verify(validatorApiChannel).sendSignedBlock(signedBlockContentsArgumentCaptor.capture());
+    verify(validatorApiChannel)
+        .sendSignedBlock(
+            signedBlockContentsArgumentCaptor.capture(), eq(BroadcastValidationLevel.NOT_REQUIRED));
     verify(validatorLogger)
         .dutyCompleted(
             eq(TYPE),

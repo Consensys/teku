@@ -34,6 +34,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
@@ -316,9 +317,11 @@ class SentryValidatorApiChannelTest {
   @Test
   void sendSignedBlockShouldUseBlockHandlerChannelWhenAvailable() {
     final SignedBeaconBlock signedBeaconBlock = mock(SignedBeaconBlock.class);
-    sentryValidatorApiChannel.sendSignedBlock(signedBeaconBlock);
+    sentryValidatorApiChannel.sendSignedBlock(
+        signedBeaconBlock, BroadcastValidationLevel.NOT_REQUIRED);
 
-    verify(blockHandlerChannel).sendSignedBlock(eq(signedBeaconBlock));
+    verify(blockHandlerChannel)
+        .sendSignedBlock(eq(signedBeaconBlock), eq(BroadcastValidationLevel.NOT_REQUIRED));
     verifyNoInteractions(dutiesProviderChannel);
     verifyNoInteractions(attestationPublisherChannel);
   }
@@ -330,9 +333,11 @@ class SentryValidatorApiChannelTest {
         new SentryValidatorApiChannel(
             dutiesProviderChannel, Optional.empty(), Optional.of(attestationPublisherChannel));
 
-    sentryValidatorApiChannel.sendSignedBlock(signedBeaconBlock);
+    sentryValidatorApiChannel.sendSignedBlock(
+        signedBeaconBlock, BroadcastValidationLevel.NOT_REQUIRED);
 
-    verify(dutiesProviderChannel).sendSignedBlock(eq(signedBeaconBlock));
+    verify(dutiesProviderChannel)
+        .sendSignedBlock(eq(signedBeaconBlock), eq(BroadcastValidationLevel.NOT_REQUIRED));
     verifyNoInteractions(blockHandlerChannel);
     verifyNoInteractions(attestationPublisherChannel);
   }

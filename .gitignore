@@ -20,6 +20,7 @@ db.version
 .prefs
 .project
 .recommenders/
+.run
 .settings
 .springBeans
 .vertx

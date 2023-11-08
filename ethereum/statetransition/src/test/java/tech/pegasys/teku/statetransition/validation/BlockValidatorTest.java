@@ -31,9 +31,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastValidationLevel;
 import tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastValidationResult;
 
 public class BlockValidatorTest {
@@ -81,6 +81,15 @@ public class BlockValidatorTest {
       final InternalValidationResult internalValidationResult) {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
 
+    if (broadcastValidation == BroadcastValidationLevel.NOT_REQUIRED) {
+      assertThat(
+              blockValidator.validateBroadcast(
+                  block, broadcastValidation, consensusValidationResult))
+          .isCompletedWithValueMatching(result -> result.equals(BroadcastValidationResult.SUCCESS));
+      verifyNoMoreInteractions(blockGossipValidator);
+      return;
+    }
+
     when(blockGossipValidator.validate(eq(block), eq(true)))
         .thenReturn(SafeFuture.completedFuture(internalValidationResult));
 
@@ -95,7 +104,7 @@ public class BlockValidatorTest {
   @ParameterizedTest
   @EnumSource(
       value = BroadcastValidationLevel.class,
-      names = {"CONSENSUS", "CONSENSUS_EQUIVOCATION"})
+      names = {"CONSENSUS", "CONSENSUS_AND_EQUIVOCATION"})
   public void shouldReturnConsensusFailureImmediatelyWhenConsensusValidationIsNotSuccessful(
       final BroadcastValidationLevel broadcastValidation) {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
@@ -117,7 +126,7 @@ public class BlockValidatorTest {
   @ParameterizedTest
   @EnumSource(
       value = BroadcastValidationLevel.class,
-      names = {"CONSENSUS", "CONSENSUS_EQUIVOCATION"})
+      names = {"CONSENSUS", "CONSENSUS_AND_EQUIVOCATION"})
   public void shouldReturnConsensusFailureImmediatelyWhenConsensusCompleteExceptionally(
       final BroadcastValidationLevel broadcastValidation) {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
@@ -148,7 +157,9 @@ public class BlockValidatorTest {
 
     assertThat(
             blockValidator.validateBroadcast(
-                block, BroadcastValidationLevel.CONSENSUS_EQUIVOCATION, consensusValidationResult))
+                block,
+                BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION,
+                consensusValidationResult))
         .isCompletedWithValueMatching(result -> result.equals(BroadcastValidationResult.SUCCESS));
     verify(blockGossipValidator).validate(eq(block), eq(true));
     verify(blockGossipValidator).blockIsFirstBlockWithValidSignatureForSlot(eq(block));
@@ -169,7 +180,9 @@ public class BlockValidatorTest {
 
     assertThat(
             blockValidator.validateBroadcast(
-                block, BroadcastValidationLevel.CONSENSUS_EQUIVOCATION, consensusValidationResult))
+                block,
+                BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION,
+                consensusValidationResult))
         .isCompletedWithValueMatching(
             result -> result.equals(BroadcastValidationResult.FINAL_EQUIVOCATION_FAILURE));
     verify(blockGossipValidator).validate(eq(block), eq(true));
