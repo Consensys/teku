@@ -85,7 +85,7 @@ public class MilestoneDependentTypesUtil {
         getSlot(json, "message", "slot")
             // SignedBlockContents
             .or(() -> getSlot(json, "signed_block", "message", "slot"))
-            // SignedBlindedBlockContents
+            // SignedBlindedBlockContentsOld
             .or(() -> getSlot(json, "signed_blinded_block", "message", "slot"));
     final SpecMilestone milestone =
         schemaDefinitionCache.milestoneAtSlot(

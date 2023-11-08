@@ -14,12 +14,12 @@
 package tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb;
 
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContentsOld;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class SignedBlindedBlockContentsSupplier
-    extends DataStructureUtilSupplier<SignedBlindedBlockContents> {
+    extends DataStructureUtilSupplier<SignedBlindedBlockContentsOld> {
 
   public SignedBlindedBlockContentsSupplier() {
     super(DataStructureUtil::randomSignedBlindedBlockContents, SpecMilestone.DENEB);

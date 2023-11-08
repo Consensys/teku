@@ -53,7 +53,7 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.constants.EthConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContentsOld;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
@@ -181,7 +181,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
   @TestTemplate
   void shouldGetBlindedBlockContentPostDenebAsJson() throws IOException {
     assumeThat(specMilestone).isEqualTo(DENEB);
-    final BlindedBlockContents blindedBlockContents =
+    final BlindedBlockContentsOld blindedBlockContents =
         dataStructureUtil.randomBlindedBlockContents(ONE);
     final BLSSignature signature = blindedBlockContents.getBlock().getBody().getRandaoReveal();
     when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
@@ -195,15 +195,15 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
   @TestTemplate
   void shouldGetBlindedBlockContentPostDenebAsSsz() throws IOException {
     assumeThat(specMilestone).isEqualTo(DENEB);
-    final BlindedBlockContents blindedBlockContents =
+    final BlindedBlockContentsOld blindedBlockContents =
         dataStructureUtil.randomBlindedBlockContents(ONE);
     final BLSSignature signature = blindedBlockContents.getBlock().getBody().getRandaoReveal();
     when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blindedBlockContents)));
     Response response = get(signature, ContentTypes.OCTET_STREAM);
     assertResponseWithHeaders(response, true);
-    final BlindedBlockContents result =
-        (BlindedBlockContents)
+    final BlindedBlockContentsOld result =
+        (BlindedBlockContentsOld)
             spec.getGenesisSchemaDefinitions()
                 .getBlindedBlockContainerSchema()
                 .sszDeserialize(Bytes.of(response.body().bytes()));

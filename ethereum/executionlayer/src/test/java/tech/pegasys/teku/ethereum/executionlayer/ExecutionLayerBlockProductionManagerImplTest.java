@@ -42,7 +42,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContentsOld;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundle;
@@ -325,7 +325,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     verifyBuilderCalled(slot, executionPayloadContext);
     verifyEngineCalled(executionPayloadContext, slot);
 
-    final SignedBlindedBlockContents signedBlindedBlockContents =
+    final SignedBlindedBlockContentsOld signedBlindedBlockContents =
         dataStructureUtil.randomSignedBlindedBlockContents(slot);
 
     final ExecutionPayloadAndBlobsBundle payloadAndBlobsBundle =
@@ -377,7 +377,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
         .contains(executionPayloadResult);
 
     // we will hit builder client by this call
-    final SignedBlindedBlockContents signedBlindedBlockContents =
+    final SignedBlindedBlockContentsOld signedBlindedBlockContents =
         dataStructureUtil.randomSignedBlindedBlockContents(slot);
     assertThatThrownBy(
         () -> blockProductionManager.getUnblindedPayload(signedBlindedBlockContents));

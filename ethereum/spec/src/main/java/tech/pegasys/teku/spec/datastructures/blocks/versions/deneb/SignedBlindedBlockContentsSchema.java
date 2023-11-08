@@ -28,8 +28,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
 
 public class SignedBlindedBlockContentsSchema
     extends ContainerSchema2<
-        SignedBlindedBlockContents, SignedBeaconBlock, SszList<SignedBlindedBlobSidecar>>
-    implements SignedBlockContainerSchema<SignedBlindedBlockContents> {
+        SignedBlindedBlockContentsOld, SignedBeaconBlock, SszList<SignedBlindedBlobSidecar>>
+    implements SignedBlockContainerSchema<SignedBlindedBlockContentsOld> {
 
   static final SszFieldName FIELD_BLOB_SIDECARS = () -> "signed_blinded_blob_sidecars";
 
@@ -56,15 +56,15 @@ public class SignedBlindedBlockContentsSchema
         containerName, specConfig, signedBeaconBlockSchema, signedBlindedBlobSidecarSchema);
   }
 
-  public SignedBlindedBlockContents create(
+  public SignedBlindedBlockContentsOld create(
       final SignedBeaconBlock signedBeaconBlock,
       final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars) {
-    return new SignedBlindedBlockContents(this, signedBeaconBlock, signedBlindedBlobSidecars);
+    return new SignedBlindedBlockContentsOld(this, signedBeaconBlock, signedBlindedBlobSidecars);
   }
 
   @Override
-  public SignedBlindedBlockContents createFromBackingNode(final TreeNode node) {
-    return new SignedBlindedBlockContents(this, node);
+  public SignedBlindedBlockContentsOld createFromBackingNode(final TreeNode node) {
+    return new SignedBlindedBlockContentsOld(this, node);
   }
 
   @SuppressWarnings("unchecked")

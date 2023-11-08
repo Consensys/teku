@@ -59,9 +59,9 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSide
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContentsOld;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContentsOld;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
@@ -276,8 +276,8 @@ class BlockProductionDutyTest {
 
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
-    // can create BlindedBlockContents only post-Deneb fork
-    final BlindedBlockContents unsignedBlindedBlockContents =
+    // can create BlindedBlockContentsOld only post-Deneb fork
+    final BlindedBlockContentsOld unsignedBlindedBlockContents =
         dataStructureUtil.randomBlindedBlockContents(denebSlot);
     final BeaconBlock unsignedBlindedBlock = unsignedBlindedBlockContents.getBlock();
     final List<BlindedBlobSidecar> unsignedBlindedBlobSidecars =
@@ -305,8 +305,8 @@ class BlockProductionDutyTest {
 
     performAndReportDuty(denebSlot);
 
-    final ArgumentCaptor<SignedBlindedBlockContents> signedBlindedBlockContentsArgumentCaptor =
-        ArgumentCaptor.forClass(SignedBlindedBlockContents.class);
+    final ArgumentCaptor<SignedBlindedBlockContentsOld> signedBlindedBlockContentsArgumentCaptor =
+        ArgumentCaptor.forClass(SignedBlindedBlockContentsOld.class);
 
     verify(validatorApiChannel)
         .sendSignedBlock(signedBlindedBlockContentsArgumentCaptor.capture(), any());
@@ -319,7 +319,7 @@ class BlockProductionDutyTest {
             ArgumentMatchers.argThat(Optional::isPresent));
     verifyNoMoreInteractions(validatorLogger);
 
-    final SignedBlindedBlockContents signedBlindedBlockContents =
+    final SignedBlindedBlockContentsOld signedBlindedBlockContents =
         signedBlindedBlockContentsArgumentCaptor.getValue();
 
     assertThat(signedBlindedBlockContents.isBlinded()).isTrue();

@@ -22,15 +22,16 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSid
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlindedBlockContainer;
 
-public class BlindedBlockContents
-    extends Container2<BlindedBlockContents, BeaconBlock, SszList<BlindedBlobSidecar>>
+@Deprecated
+public class BlindedBlockContentsOld
+    extends Container2<BlindedBlockContentsOld, BeaconBlock, SszList<BlindedBlobSidecar>>
     implements BlindedBlockContainer {
 
-  BlindedBlockContents(final BlindedBlockContentsSchema type, final TreeNode backingNode) {
+  BlindedBlockContentsOld(final BlindedBlockContentsSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public BlindedBlockContents(
+  public BlindedBlockContentsOld(
       final BlindedBlockContentsSchema schema,
       final BeaconBlock beaconBlock,
       final List<BlindedBlobSidecar> blindedBlobSidecars) {

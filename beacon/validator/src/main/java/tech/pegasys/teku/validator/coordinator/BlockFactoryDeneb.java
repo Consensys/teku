@@ -32,7 +32,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContentsOld;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -127,7 +127,7 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
     return schemaDefinitionsDeneb.getBlockContentsSchema().create(block, blobSidecars);
   }
 
-  private BlindedBlockContents createBlindedBlockContents(
+  private BlindedBlockContentsOld createBlindedBlockContents(
       final BeaconBlock block, final List<BlindedBlobSidecar> blindedBlobSidecars) {
     return schemaDefinitionsDeneb
         .getBlindedBlockContentsSchema()

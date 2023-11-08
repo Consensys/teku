@@ -27,8 +27,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
 
 public class BlindedBlockContentsSchema
-    extends ContainerSchema2<BlindedBlockContents, BeaconBlock, SszList<BlindedBlobSidecar>>
-    implements BlockContainerSchema<BlindedBlockContents> {
+    extends ContainerSchema2<BlindedBlockContentsOld, BeaconBlock, SszList<BlindedBlobSidecar>>
+    implements BlockContainerSchema<BlindedBlockContentsOld> {
 
   static final SszFieldName FIELD_BLINDED_BLOB_SIDECARS = () -> "blinded_blob_sidecars";
 
@@ -54,14 +54,14 @@ public class BlindedBlockContentsSchema
         containerName, specConfig, beaconBlockSchema, blindedBlobSidecarSchema);
   }
 
-  public BlindedBlockContents create(
+  public BlindedBlockContentsOld create(
       final BeaconBlock beaconBlock, final List<BlindedBlobSidecar> blindedBlobSidecars) {
-    return new BlindedBlockContents(this, beaconBlock, blindedBlobSidecars);
+    return new BlindedBlockContentsOld(this, beaconBlock, blindedBlobSidecars);
   }
 
   @Override
-  public BlindedBlockContents createFromBackingNode(final TreeNode node) {
-    return new BlindedBlockContents(this, node);
+  public BlindedBlockContentsOld createFromBackingNode(final TreeNode node) {
+    return new BlindedBlockContentsOld(this, node);
   }
 
   @SuppressWarnings("unchecked")

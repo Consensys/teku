@@ -33,9 +33,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContentsOld;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContentsOld;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -78,7 +78,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     final BlockContainer blockContainer =
         assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), true);
 
-    assertThat(blockContainer).isInstanceOf(BlindedBlockContents.class);
+    assertThat(blockContainer).isInstanceOf(BlindedBlockContentsOld.class);
     final BlindedBlockContainer blindedBlockContainer = blockContainer.toBlinded().orElseThrow();
     assertThat(blindedBlockContainer.getBlock().getBody().getOptionalBlobKzgCommitments())
         .hasValue(blobKzgCommitments);
@@ -112,7 +112,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     final SignedBeaconBlock unblindedBeaconBlock = dataStructureUtil.randomSignedBeaconBlock();
     final SignedBeaconBlock blindedBlock = assertBlockBlinded(unblindedBeaconBlock, spec);
 
-    final SignedBlindedBlockContents blindedBlockContents =
+    final SignedBlindedBlockContentsOld blindedBlockContents =
         schemaDefinitions
             .getSignedBlindedBlockContentsSchema()
             .create(blindedBlock, blindedBlobSidecars);

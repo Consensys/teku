@@ -23,7 +23,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContents;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContentsOld;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -74,7 +74,7 @@ class BeaconBlockInvariantsTest {
   @ParameterizedTest
   @MethodSource("slotNumbers")
   void shouldExtractSlotFromSignedBlindedBlockContents(final UInt64 slot) {
-    final SignedBlindedBlockContents blindedBlockContents =
+    final SignedBlindedBlockContentsOld blindedBlockContents =
         dataStructureUtil.randomSignedBlindedBlockContents(slot);
     assertThat(
             BeaconBlockInvariants.extractSignedBlockContainerSlot(

@@ -26,7 +26,7 @@ public class BlindedBlockContentsPropertyTest {
   @Property
   void roundTrip(
       @ForAll(supplier = BlindedBlockContentsSupplier.class)
-          final BlindedBlockContents blindedBlockContents)
+          final BlindedBlockContentsOld blindedBlockContents)
       throws JsonProcessingException {
     assertRoundTrip(blindedBlockContents);
   }
@@ -34,7 +34,7 @@ public class BlindedBlockContentsPropertyTest {
   @Property
   void deserializeMutated(
       @ForAll(supplier = BlindedBlockContentsSupplier.class)
-          final BlindedBlockContents blindedBlockContents,
+          final BlindedBlockContentsOld blindedBlockContents,
       @ForAll final int seed) {
     assertDeserializeMutatedThrowsExpected(blindedBlockContents, seed);
   }

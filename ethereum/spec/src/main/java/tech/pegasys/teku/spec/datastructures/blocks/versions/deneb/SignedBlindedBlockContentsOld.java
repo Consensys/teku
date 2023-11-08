@@ -22,17 +22,18 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedB
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 
-public class SignedBlindedBlockContents
+@Deprecated
+public class SignedBlindedBlockContentsOld
     extends Container2<
-        SignedBlindedBlockContents, SignedBeaconBlock, SszList<SignedBlindedBlobSidecar>>
+        SignedBlindedBlockContentsOld, SignedBeaconBlock, SszList<SignedBlindedBlobSidecar>>
     implements SignedBlindedBlockContainer {
 
-  SignedBlindedBlockContents(
+  SignedBlindedBlockContentsOld(
       final SignedBlindedBlockContentsSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }
 
-  public SignedBlindedBlockContents(
+  public SignedBlindedBlockContentsOld(
       final SignedBlindedBlockContentsSchema schema,
       final SignedBeaconBlock signedBeaconBlock,
       final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars) {
