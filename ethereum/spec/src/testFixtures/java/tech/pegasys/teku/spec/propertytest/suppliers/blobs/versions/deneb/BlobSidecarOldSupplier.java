@@ -14,13 +14,13 @@
 package tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb;
 
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
-public class SignedBlobSidecarSupplier extends DataStructureUtilSupplier<SignedBlobSidecarOld> {
+public class BlobSidecarOldSupplier extends DataStructureUtilSupplier<BlobSidecarOld> {
 
-  public SignedBlobSidecarSupplier() {
-    super(DataStructureUtil::randomSignedBlobSidecar, SpecMilestone.DENEB);
+  public BlobSidecarOldSupplier() {
+    super(DataStructureUtil::randomBlobSidecarOld, SpecMilestone.DENEB);
   }
 }

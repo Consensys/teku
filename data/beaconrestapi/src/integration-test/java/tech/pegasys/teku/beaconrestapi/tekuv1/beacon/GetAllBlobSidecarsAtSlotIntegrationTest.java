@@ -168,7 +168,7 @@ public class GetAllBlobSidecarsAtSlotIntegrationTest
   private List<BlobSidecarOld> parseBlobSidecars(final Response response) throws IOException {
     final DeserializableTypeDefinition<BlobSidecarOld> blobSidecarTypeDefinition =
         SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions())
-            .getBlobSidecarSchema()
+            .getBlobSidecarOldSchema()
             .getJsonTypeDefinition();
     final DeserializableTypeDefinition<List<BlobSidecarOld>> jsonTypeDefinition =
         SharedApiTypes.withDataWrapper("blobSidecars", listOf(blobSidecarTypeDefinition));
@@ -181,7 +181,8 @@ public class GetAllBlobSidecarsAtSlotIntegrationTest
   private List<BlobSidecarOld> parseBlobSidecarsFromSsz(final Response response)
       throws IOException {
     final BlobSidecarSchemaOld blobSidecarSchema =
-        SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions()).getBlobSidecarSchema();
+        SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions())
+            .getBlobSidecarOldSchema();
     SszListSchema<BlobSidecarOld, ? extends SszList<BlobSidecarOld>> blobSidecarSszListSchema =
         SszListSchema.create(
             blobSidecarSchema, SpecConfigDeneb.required(specConfig).getMaxBlobsPerBlock());

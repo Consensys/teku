@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.propertytest.suppliers.SpecSupplier;
-import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSidecarSupplier;
+import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSidecarOldSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.BeaconBlockSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.KZGCommitmentSupplier;
 
@@ -52,7 +52,7 @@ public class MiscHelpersDenebPropertyTest {
   @AddLifecycleHook(KzgResolver.class)
   @Property(tries = 100)
   void fuzzVerifyBlobKzgProof(
-      final KZG kzg, @ForAll(supplier = BlobSidecarSupplier.class) BlobSidecarOld blobSidecar) {
+      final KZG kzg, @ForAll(supplier = BlobSidecarOldSupplier.class) BlobSidecarOld blobSidecar) {
     try {
       miscHelpers.verifyBlobKzgProof(kzg, blobSidecar);
     } catch (Exception e) {
@@ -64,7 +64,8 @@ public class MiscHelpersDenebPropertyTest {
   @Property(tries = 100)
   void fuzzVerifyBlobKzgProofBatch(
       final KZG kzg,
-      @ForAll final List<@From(supplier = BlobSidecarSupplier.class) BlobSidecarOld> blobSidecars) {
+      @ForAll
+          final List<@From(supplier = BlobSidecarOldSupplier.class) BlobSidecarOld> blobSidecars) {
     try {
       miscHelpers.verifyBlobKzgProofBatch(kzg, blobSidecars);
     } catch (Exception e) {
@@ -74,7 +75,8 @@ public class MiscHelpersDenebPropertyTest {
 
   @Property(tries = 100)
   void fuzzValidateBlobSidecarsBatchAgainstBlock(
-      @ForAll final List<@From(supplier = BlobSidecarSupplier.class) BlobSidecarOld> blobSidecars,
+      @ForAll
+          final List<@From(supplier = BlobSidecarOldSupplier.class) BlobSidecarOld> blobSidecars,
       @ForAll(supplier = BeaconBlockSupplier.class) final BeaconBlock block,
       @ForAll
           final List<@From(supplier = KZGCommitmentSupplier.class) KZGCommitment> kzgCommitments) {
@@ -87,7 +89,8 @@ public class MiscHelpersDenebPropertyTest {
 
   @Property(tries = 100)
   void fuzzVerifyBlobSidecarCompleteness(
-      @ForAll final List<@From(supplier = BlobSidecarSupplier.class) BlobSidecarOld> blobSidecars,
+      @ForAll
+          final List<@From(supplier = BlobSidecarOldSupplier.class) BlobSidecarOld> blobSidecars,
       @ForAll
           final List<@From(supplier = KZGCommitmentSupplier.class) KZGCommitment> kzgCommitments) {
     try {

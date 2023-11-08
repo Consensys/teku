@@ -28,7 +28,7 @@ public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
 
   @Test
   public void run_successful() {
-    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecar();
+    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecarOld();
     final BlobIdentifier blobIdentifier =
         new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
     final FetchBlobSidecarTask task = new FetchBlobSidecarTask(eth2P2PNetwork, blobIdentifier);
@@ -48,7 +48,7 @@ public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
 
   @Test
   public void run_noPeers() {
-    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecar();
+    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecarOld();
     final BlobIdentifier blobIdentifier =
         new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
     final FetchBlobSidecarTask task = new FetchBlobSidecarTask(eth2P2PNetwork, blobIdentifier);
@@ -63,7 +63,7 @@ public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
 
   @Test
   public void run_failAndRetryWithNoNewPeers() {
-    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecar();
+    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecarOld();
     final BlobIdentifier blobIdentifier =
         new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
     final FetchBlobSidecarTask task = new FetchBlobSidecarTask(eth2P2PNetwork, blobIdentifier);
@@ -92,7 +92,7 @@ public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
 
   @Test
   public void run_failAndRetryWithNewPeer() {
-    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecar();
+    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecarOld();
     final BlobIdentifier blobIdentifier =
         new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
     final FetchBlobSidecarTask task = new FetchBlobSidecarTask(eth2P2PNetwork, blobIdentifier);
@@ -126,7 +126,7 @@ public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
 
   @Test
   public void run_withMultiplesPeersAvailable() {
-    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecar();
+    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecarOld();
     final BlobIdentifier blobIdentifier =
         new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
     final FetchBlobSidecarTask task = new FetchBlobSidecarTask(eth2P2PNetwork, blobIdentifier);
@@ -153,7 +153,7 @@ public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
   @Test
   public void run_withPreferredPeer() {
     final Eth2Peer preferredPeer = createNewPeer(1);
-    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecar();
+    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecarOld();
     final BlobIdentifier blobIdentifier =
         new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
     when(preferredPeer.requestBlobSidecarByRoot(blobIdentifier))
@@ -176,7 +176,7 @@ public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
   @Test
   public void run_withRandomPeerWhenFetchingWithPreferredPeerFails() {
     final Eth2Peer preferredPeer = createNewPeer(1);
-    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecar();
+    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecarOld();
     final BlobIdentifier blobIdentifier =
         new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
     when(preferredPeer.requestBlobSidecarByRoot(blobIdentifier))
@@ -210,7 +210,7 @@ public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
 
   @Test
   public void cancel() {
-    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecar();
+    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecarOld();
     final BlobIdentifier blobIdentifier =
         new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
     final FetchBlobSidecarTask task = new FetchBlobSidecarTask(eth2P2PNetwork, blobIdentifier);

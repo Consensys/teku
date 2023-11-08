@@ -69,15 +69,18 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
         new BlobSidecarsByRootListenerValidatingProxy(peer, spec, listener, kzg, blobIdentifiers);
 
     final BlobSidecarOld blobSidecar10 =
-        dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
+        dataStructureUtil.randomBlobSidecarOld(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
     final BlobSidecarOld blobSidecar11 =
-        dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ONE);
+        dataStructureUtil.randomBlobSidecarOld(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ONE);
     final BlobSidecarOld blobSidecar2 =
-        dataStructureUtil.randomBlobSidecar(UInt64.valueOf(2), blockRoot2, blockRoot1, UInt64.ZERO);
+        dataStructureUtil.randomBlobSidecarOld(
+            UInt64.valueOf(2), blockRoot2, blockRoot1, UInt64.ZERO);
     final BlobSidecarOld blobSidecar3 =
-        dataStructureUtil.randomBlobSidecar(UInt64.valueOf(3), blockRoot3, blockRoot2, UInt64.ZERO);
+        dataStructureUtil.randomBlobSidecarOld(
+            UInt64.valueOf(3), blockRoot3, blockRoot2, UInt64.ZERO);
     final BlobSidecarOld blobSidecar4 =
-        dataStructureUtil.randomBlobSidecar(UInt64.valueOf(4), blockRoot4, blockRoot3, UInt64.ZERO);
+        dataStructureUtil.randomBlobSidecarOld(
+            UInt64.valueOf(4), blockRoot4, blockRoot3, UInt64.ZERO);
 
     assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar10).join());
     assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar11).join());
@@ -98,11 +101,12 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
         new BlobSidecarsByRootListenerValidatingProxy(peer, spec, listener, kzg, blobIdentifiers);
 
     final BlobSidecarOld blobSidecar10 =
-        dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
+        dataStructureUtil.randomBlobSidecarOld(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
     final BlobSidecarOld blobSidecar11 =
-        dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ONE);
+        dataStructureUtil.randomBlobSidecarOld(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ONE);
     final BlobSidecarOld blobSidecar2 =
-        dataStructureUtil.randomBlobSidecar(UInt64.valueOf(2), blockRoot2, blockRoot1, UInt64.ZERO);
+        dataStructureUtil.randomBlobSidecarOld(
+            UInt64.valueOf(2), blockRoot2, blockRoot1, UInt64.ZERO);
 
     assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar10).join());
     assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar11).join());
@@ -127,7 +131,7 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
             peer, spec, listener, kzg, List.of(blobIdentifier));
 
     final BlobSidecarOld blobSidecar1 =
-        dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
+        dataStructureUtil.randomBlobSidecarOld(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
 
     final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar1);
     assertThat(result).isCompletedExceptionally();

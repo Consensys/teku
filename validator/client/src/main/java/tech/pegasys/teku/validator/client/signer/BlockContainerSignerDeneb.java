@@ -110,7 +110,7 @@ public class BlockContainerSignerDeneb implements BlockContainerSigner {
         .thenApply(
             signature ->
                 schemaDefinitions
-                    .getSignedBlobSidecarSchema()
+                    .getSignedBlobSidecarOldSchema()
                     .create(unsignedBlobSidecar, signature));
   }
 

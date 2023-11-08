@@ -49,7 +49,7 @@ public class BlobSidecarsByRootValidatorTest {
     final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
     final BlobIdentifier blobIdentifier1 = new BlobIdentifier(blockRoot1, UInt64.ZERO);
     final BlobSidecarOld blobSidecar1 =
-        dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
+        dataStructureUtil.randomBlobSidecarOld(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
 
     validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier1));
     assertDoesNotThrow(() -> validator.validate(blobSidecar1));
@@ -61,7 +61,7 @@ public class BlobSidecarsByRootValidatorTest {
     final BlobIdentifier blobIdentifier2 =
         new BlobIdentifier(dataStructureUtil.randomBytes32(), UInt64.ZERO);
     final BlobSidecarOld blobSidecar1 =
-        dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
+        dataStructureUtil.randomBlobSidecarOld(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
 
     validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier2));
     assertThatThrownBy(() -> validator.validate(blobSidecar1))
@@ -78,7 +78,7 @@ public class BlobSidecarsByRootValidatorTest {
     final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
     final BlobIdentifier blobIdentifier1 = new BlobIdentifier(blockRoot1, UInt64.ZERO);
     final BlobSidecarOld blobSidecar1 =
-        dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
+        dataStructureUtil.randomBlobSidecarOld(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
 
     validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier1));
     assertThatThrownBy(() -> validator.validate(blobSidecar1))

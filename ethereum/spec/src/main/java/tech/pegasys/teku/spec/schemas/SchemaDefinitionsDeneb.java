@@ -22,12 +22,14 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchemaOld;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarSchemaOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
@@ -78,8 +80,9 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
 
   private final BlobSchema blobSchema;
   private final SszListSchema<Blob, ? extends SszList<Blob>> blobsInBlockSchema;
-  private final BlobSidecarSchemaOld blobSidecarSchema;
-  private final SignedBlobSidecarSchemaOld signedBlobSidecarSchema;
+  private final BlobSidecarSchema blobSidecarSchema;
+  private final BlobSidecarSchemaOld blobSidecarOldSchema;
+  private final SignedBlobSidecarSchemaOld signedBlobSidecarOldSchema;
   private final BlindedBlobSidecarSchema blindedBlobSidecarSchema;
   private final SignedBlindedBlobSidecarSchema signedBlindedBlobSidecarSchema;
   private final BlockContentsSchema blockContentsSchema;
@@ -128,18 +131,23 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
 
     this.blobSchema = new BlobSchema(specConfig);
     this.blobsInBlockSchema = SszListSchema.create(blobSchema, specConfig.getMaxBlobsPerBlock());
-    this.blobSidecarSchema = BlobSidecarSchemaOld.create(blobSchema);
-    this.signedBlobSidecarSchema = SignedBlobSidecarSchemaOld.create(blobSidecarSchema);
+    this.blobSidecarSchema =
+        BlobSidecarSchema.create(
+            SignedBeaconBlockHeader.SSZ_SCHEMA,
+            blobSchema,
+            specConfig.getKzgCommitmentInclusionProofDepth());
+    this.blobSidecarOldSchema = BlobSidecarSchemaOld.create(blobSchema);
+    this.signedBlobSidecarOldSchema = SignedBlobSidecarSchemaOld.create(blobSidecarOldSchema);
     this.blindedBlobSidecarSchema = BlindedBlobSidecarSchema.create();
     this.signedBlindedBlobSidecarSchema =
         SignedBlindedBlobSidecarSchema.create(blindedBlobSidecarSchema);
     this.blockContentsSchema =
         BlockContentsSchema.create(
-            specConfig, beaconBlockSchema, blobSidecarSchema, "BlockContentsDeneb");
+            specConfig, beaconBlockSchema, blobSidecarOldSchema, "BlockContentsDeneb");
     this.signedBlockContentsSchema =
         SignedBlockContentsSchema.create(
             specConfig,
-            signedBlobSidecarSchema,
+            signedBlobSidecarOldSchema,
             signedBeaconBlockSchema,
             "SignedBlockContentsDeneb");
     this.blindedBlockContentsSchema =
@@ -259,12 +267,16 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
     return blobsInBlockSchema;
   }
 
-  public BlobSidecarSchemaOld getBlobSidecarSchema() {
+  public BlobSidecarSchema getBlobSidecarSchema() {
     return blobSidecarSchema;
   }
 
-  public SignedBlobSidecarSchemaOld getSignedBlobSidecarSchema() {
-    return signedBlobSidecarSchema;
+  public BlobSidecarSchemaOld getBlobSidecarOldSchema() {
+    return blobSidecarOldSchema;
+  }
+
+  public SignedBlobSidecarSchemaOld getSignedBlobSidecarOldSchema() {
+    return signedBlobSidecarOldSchema;
   }
 
   public BlindedBlobSidecarSchema getBlindedBlobSidecarSchema() {

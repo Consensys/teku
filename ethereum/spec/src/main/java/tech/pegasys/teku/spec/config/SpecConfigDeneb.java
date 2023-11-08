@@ -54,6 +54,8 @@ public interface SpecConfigDeneb extends SpecConfigCapella, NetworkingSpecConfig
 
   int getMaxBlobsPerBlock();
 
+  int getKzgCommitmentInclusionProofDepth();
+
   int getEpochsStoreBlobs();
 
   @Override

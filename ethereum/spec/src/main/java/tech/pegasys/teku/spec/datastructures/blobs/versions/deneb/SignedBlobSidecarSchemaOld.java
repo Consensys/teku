@@ -20,6 +20,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockFields;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
+@Deprecated
 public class SignedBlobSidecarSchemaOld
     extends ContainerSchema2<SignedBlobSidecarOld, BlobSidecarOld, SszSignature> {
 
