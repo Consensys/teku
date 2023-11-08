@@ -375,6 +375,7 @@ licenseReport {
       'io.netty:netty-tcnative-classes',
       'org.jetbrains.kotlinx:kotlinx-coroutines-bom',
       'org.jetbrains.kotlinx:kotlinx-coroutines-core',
+      'org.jetbrains.kotlin:kotlin-stdlib-common',
   ]
   allowedLicensesFile = new File("${rootDir}/gradle/license-report-config/allowed-licenses.json")
   filters = [new LicenseBundleNormalizer()]
