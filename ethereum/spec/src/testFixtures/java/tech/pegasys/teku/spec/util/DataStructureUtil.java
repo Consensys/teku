@@ -2533,8 +2533,6 @@ public final class DataStructureUtil {
     }
   }
 
-  public SszList<SszKZGCommitment> randomBlobKzgCommitments() {
-    return randomBlobKzgCommitments(randomNumberOfBlobCommitmentsPerBlock());
   public class RandomBlobSidecarBuilder {
     private Optional<UInt64> index = Optional.empty();
     private Optional<Bytes> blob = Optional.empty();
@@ -2569,6 +2567,12 @@ public final class DataStructureUtil {
       return this;
     }
 
+    public RandomBlobSidecarBuilder kzgCommitmentInclusionProof(
+        final List<Bytes32> kzgCommitmentInclusionProof) {
+      this.kzgCommitmentInclusionProof = Optional.of(kzgCommitmentInclusionProof);
+      return this;
+    }
+
     public BlobSidecar build() {
       final BlobSidecarSchema blobSidecarSchema =
           getDenebSchemaDefinitions(
@@ -2591,13 +2595,12 @@ public final class DataStructureUtil {
     }
   }
 
-    public SszList<SszKZGCommitment> randomBlobKzgCommitments() {
-      // use MAX_BLOBS_PER_BLOCK as a limit
+  public SszList<SszKZGCommitment> randomBlobKzgCommitments() {
+    // use MAX_BLOBS_PER_BLOCK as a limit
+    return randomBlobKzgCommitments(randomNumberOfBlobsPerBlock());
+  }
 
-      return randomBlobKzgCommitments(randomNumberOfBlobsPerBlock());
-}
-
-      public SszList<SszKZGCommitment> randomBlobKzgCommitments(final int count) {
+  public SszList<SszKZGCommitment> randomBlobKzgCommitments(final int count) {
     final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
         SchemaDefinitionsDeneb.required(
                 spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
