@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
@@ -69,6 +70,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
   }
 
   @Test
+  @Disabled("enable when block production flow for blob sidecar inclusion proof is implemented")
   void shouldCreateBlindedBlockContentsWhenBlindedBlockRequested() {
 
     final SszList<SszKZGCommitment> blobKzgCommitments = prepareBlobKzgCommitments(spec, 3);
@@ -81,7 +83,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     assertThat(blindedBlockContainer.getBlock().getBody().getOptionalBlobKzgCommitments())
         .hasValue(blobKzgCommitments);
     assertThat(blindedBlockContainer.getBlindedBlobSidecars())
-        .hasValueSatisfying(blindedBlobSidecars -> assertThat(blindedBlobSidecars).isEmpty());
+        .hasValueSatisfying(blindedBlobSidecars -> assertThat(blindedBlobSidecars).hasSize(3));
   }
 
   @Test
