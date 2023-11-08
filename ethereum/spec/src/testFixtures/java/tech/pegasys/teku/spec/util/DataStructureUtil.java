@@ -2255,7 +2255,7 @@ public final class DataStructureUtil {
   }
 
   public BlindedBlobsBundle randomBlindedBlobsBundle() {
-    return randomBlindedBlobsBundle(randomNumberOfBlobCommitmentsPerBlock());
+    return randomBlindedBlobsBundle(randomNumberOfBlobsPerBlock());
   }
 
   public BlobsBundle randomBlobsBundle() {
@@ -2592,7 +2592,7 @@ public final class DataStructureUtil {
   }
 
     public SszList<SszKZGCommitment> randomBlobKzgCommitments() {
-      return randomBlobKzgCommitments(randomNumberOfBlobCommitmentsPerBlock());
+      return randomBlobKzgCommitments(randomNumberOfBlobsPerBlock());
 
 
       public SszList<SszKZGCommitment> randomBlobKzgCommitments(final int count) {
@@ -2627,11 +2627,6 @@ public final class DataStructureUtil {
   private int randomNumberOfBlobsPerBlock() {
     // minimum 1 blob
     return randomInt(1, spec.getMaxBlobsPerBlock().orElseThrow() + 1);
-  }
-
-  private int randomNumberOfBlobCommitmentsPerBlock() {
-    // minimum 1 commitment
-    return randomInt(1, spec.getMaxBlobCommitmentsPerBlock().orElseThrow() + 1);
   }
 
   private int randomInt(final int origin, final int bound) {
