@@ -2592,8 +2592,10 @@ public final class DataStructureUtil {
   }
 
     public SszList<SszKZGCommitment> randomBlobKzgCommitments() {
-      return randomBlobKzgCommitments(randomNumberOfBlobsPerBlock());
+      // use MAX_BLOBS_PER_BLOCK as a limit
 
+      return randomBlobKzgCommitments(randomNumberOfBlobsPerBlock());
+}
 
       public SszList<SszKZGCommitment> randomBlobKzgCommitments(final int count) {
     final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
