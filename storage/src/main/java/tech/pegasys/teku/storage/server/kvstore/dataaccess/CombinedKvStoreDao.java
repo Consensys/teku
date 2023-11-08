@@ -96,6 +96,11 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
   }
 
   @Override
+  public Optional<Bytes> getHotBlockAsSsz(final Bytes32 root) {
+    return db.getRaw(schema.getColumnHotBlocksByRoot(), root);
+  }
+
+  @Override
   public Optional<BlockCheckpoints> getHotBlockCheckpointEpochs(final Bytes32 root) {
     return db.get(schema.getColumnHotBlockCheckpointEpochsByRoot(), root);
   }
@@ -664,6 +669,18 @@ public class CombinedKvStoreDao<S extends SchemaCombined>
     public void addFinalizedBlock(final SignedBeaconBlock block) {
       transaction.put(schema.getColumnSlotsByFinalizedRoot(), block.getRoot(), block.getSlot());
       transaction.put(schema.getColumnFinalizedBlocksBySlot(), block.getSlot(), block);
+    }
+
+    @Override
+    public void addFinalizedBlockRaw(
+        final UInt64 slot, final Bytes32 blockRoot, final Bytes blockBytes) {
+      transaction.put(schema.getColumnSlotsByFinalizedRoot(), blockRoot, slot);
+      final KvStoreColumn<UInt64, SignedBeaconBlock> columnFinalizedBlocksBySlot =
+          schema.getColumnFinalizedBlocksBySlot();
+      transaction.putRaw(
+          columnFinalizedBlocksBySlot,
+          Bytes.wrap(columnFinalizedBlocksBySlot.getKeySerializer().serialize(slot)),
+          blockBytes);
     }
 
     @Override
