@@ -19,9 +19,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
+import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
+import tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastValidationResult;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
@@ -48,11 +51,14 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
 
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
-      final SignedBlockContainer maybeBlindedBlockContainer) {
+      final SignedBlockContainer maybeBlindedBlockContainer,
+      final BroadcastValidationLevel broadcastValidationLevel) {
     return blockFactory
         .unblindSignedBlockIfBlinded(maybeBlindedBlockContainer)
         .thenPeek(performanceTracker::saveProducedBlock)
-        .thenCompose(this::gossipAndImportUnblindedSignedBlock)
+        .thenCompose(
+            signedBlockContainer ->
+                gossipAndImportUnblindedSignedBlock(signedBlockContainer, broadcastValidationLevel))
         .thenApply(
             result -> {
               if (result.isSuccessful()) {
@@ -79,6 +85,52 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
             });
   }
 
-  abstract SafeFuture<BlockImportResult> gossipAndImportUnblindedSignedBlock(
-      final SignedBlockContainer blockContainer);
+  private SafeFuture<BlockImportResult> gossipAndImportUnblindedSignedBlock(
+      final SignedBlockContainer blockContainer,
+      final BroadcastValidationLevel broadcastValidationLevel) {
+
+    if (broadcastValidationLevel == BroadcastValidationLevel.NOT_REQUIRED) {
+      // when broadcast validation is disabled, we can publish the block immediately and then import
+      publishBlock(blockContainer);
+      return importBlock(blockContainer, broadcastValidationLevel)
+          .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult);
+    }
+
+    // when broadcast validation is enabled, we need to wait for the validation to complete before
+    // publishing the block
+
+    final SafeFuture<BlockImportAndBroadcastValidationResults>
+        blockImportAndBroadcastValidationResults =
+            importBlock(blockContainer, broadcastValidationLevel);
+
+    blockImportAndBroadcastValidationResults
+        .thenCompose(results -> results.broadcastValidationResult().orElseThrow())
+        .thenAccept(
+            broadcastValidationResult -> {
+              if (broadcastValidationResult == BroadcastValidationResult.SUCCESS) {
+                publishBlock(blockContainer);
+                LOG.debug("Block (and blob sidecars) publishing initiated");
+              } else {
+                LOG.warn(
+                    "Block (and blob sidecars) publishing skipped due to broadcast validation result {} for slot {}",
+                    broadcastValidationResult,
+                    blockContainer.getSlot());
+              }
+            })
+        .finish(
+            err ->
+                LOG.error(
+                    "Block (and blob sidecars) publishing failed for slot {}",
+                    blockContainer.getSlot(),
+                    err));
+
+    return blockImportAndBroadcastValidationResults.thenCompose(
+        BlockImportAndBroadcastValidationResults::blockImportResult);
+  }
+
+  abstract SafeFuture<BlockImportAndBroadcastValidationResults> importBlock(
+      final SignedBlockContainer blockContainer,
+      final BroadcastValidationLevel broadcastValidationLevel);
+
+  abstract void publishBlock(final SignedBlockContainer blockContainer);
 }

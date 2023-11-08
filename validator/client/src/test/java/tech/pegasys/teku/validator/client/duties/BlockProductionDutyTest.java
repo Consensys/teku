@@ -48,6 +48,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -64,6 +65,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlinded
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
@@ -71,7 +73,6 @@ import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
-import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics.Step;
 import tech.pegasys.teku.validator.client.signer.BlockContainerSigner;
 import tech.pegasys.teku.validator.client.signer.MilestoneBasedBlockContainerSigner;
 
@@ -147,12 +148,12 @@ class BlockProductionDutyTest {
     when(signer.signBlock(unsignedBlock, fork)).thenReturn(completedFuture(blockSignature));
     final SignedBeaconBlock signedBlock =
         dataStructureUtil.signedBlock(unsignedBlock, blockSignature);
-    when(validatorApiChannel.sendSignedBlock(signedBlock))
+    when(validatorApiChannel.sendSignedBlock(signedBlock, BroadcastValidationLevel.NOT_REQUIRED))
         .thenReturn(completedFuture(SendSignedBlockResult.success(signedBlock.getRoot())));
 
     performAndReportDuty();
 
-    verify(validatorApiChannel).sendSignedBlock(signedBlock);
+    verify(validatorApiChannel).sendSignedBlock(signedBlock, BroadcastValidationLevel.NOT_REQUIRED);
     verify(validatorLogger)
         .dutyCompleted(
             eq(TYPE),
@@ -162,9 +163,12 @@ class BlockProductionDutyTest {
             ArgumentMatchers.argThat(Optional::isPresent));
     verifyNoMoreInteractions(validatorLogger);
 
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SIGN));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SEND));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SEND));
   }
 
   @Test
@@ -205,7 +209,7 @@ class BlockProductionDutyTest {
     when(validatorApiChannel.createUnsignedBlock(
             denebSlot, randaoReveal, Optional.of(graffiti), false))
         .thenReturn(completedFuture(Optional.of(unsignedBlockContents)));
-    when(validatorApiChannel.sendSignedBlock(any()))
+    when(validatorApiChannel.sendSignedBlock(any(), any()))
         .thenReturn(completedFuture(SendSignedBlockResult.success(unsignedBlock.getRoot())));
 
     performAndReportDuty(denebSlot);
@@ -213,7 +217,7 @@ class BlockProductionDutyTest {
     final ArgumentCaptor<SignedBlockContents> signedBlockContentsArgumentCaptor =
         ArgumentCaptor.forClass(SignedBlockContents.class);
 
-    verify(validatorApiChannel).sendSignedBlock(signedBlockContentsArgumentCaptor.capture());
+    verify(validatorApiChannel).sendSignedBlock(signedBlockContentsArgumentCaptor.capture(), any());
     verify(validatorLogger)
         .dutyCompleted(
             eq(TYPE),
@@ -248,9 +252,12 @@ class BlockProductionDutyTest {
                   .isEqualTo(blobSidecarsSignatures.get(unsignedBlobSidecar));
             });
 
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SIGN));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SEND));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SEND));
   }
 
   @Test
@@ -293,7 +300,7 @@ class BlockProductionDutyTest {
     when(validatorApiChannel.createUnsignedBlock(
             denebSlot, randaoReveal, Optional.of(graffiti), true))
         .thenReturn(completedFuture(Optional.of(unsignedBlindedBlockContents)));
-    when(validatorApiChannel.sendSignedBlock(any()))
+    when(validatorApiChannel.sendSignedBlock(any(), any()))
         .thenReturn(completedFuture(SendSignedBlockResult.success(unsignedBlindedBlock.getRoot())));
 
     performAndReportDuty(denebSlot);
@@ -301,7 +308,8 @@ class BlockProductionDutyTest {
     final ArgumentCaptor<SignedBlindedBlockContents> signedBlindedBlockContentsArgumentCaptor =
         ArgumentCaptor.forClass(SignedBlindedBlockContents.class);
 
-    verify(validatorApiChannel).sendSignedBlock(signedBlindedBlockContentsArgumentCaptor.capture());
+    verify(validatorApiChannel)
+        .sendSignedBlock(signedBlindedBlockContentsArgumentCaptor.capture(), any());
     verify(validatorLogger)
         .dutyCompleted(
             eq(TYPE),
@@ -341,9 +349,12 @@ class BlockProductionDutyTest {
                   .isEqualTo(blindedBlobSidecarsSignatures.get(unsignedBlindedBlobSidecar));
             });
 
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SIGN));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SEND));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SEND));
   }
 
   @Test
@@ -384,7 +395,8 @@ class BlockProductionDutyTest {
 
     assertDutyFails(error);
 
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
     verifyNoMoreInteractions(validatorDutyMetrics);
   }
 
@@ -407,7 +419,8 @@ class BlockProductionDutyTest {
             any(IllegalStateException.class));
     verifyNoMoreInteractions(validatorLogger);
 
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
     verifyNoMoreInteractions(validatorDutyMetrics);
   }
 
@@ -425,8 +438,10 @@ class BlockProductionDutyTest {
 
     assertDutyFails(error);
 
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SIGN));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
     verifyNoMoreInteractions(validatorDutyMetrics);
   }
 
@@ -461,14 +476,14 @@ class BlockProductionDutyTest {
     when(signer.signBlock(unsignedBlock, fork)).thenReturn(completedFuture(blockSignature));
     final SignedBeaconBlock signedBlock =
         dataStructureUtil.signedBlock(unsignedBlock, blockSignature);
-    when(validatorApiChannel.sendSignedBlock(signedBlock))
+    when(validatorApiChannel.sendSignedBlock(signedBlock, BroadcastValidationLevel.NOT_REQUIRED))
         .thenReturn(completedFuture(SendSignedBlockResult.success(signedBlock.getRoot())));
 
     performAndReportDuty();
     verify(validatorApiChannel)
         .createUnsignedBlock(CAPELLA_SLOT, randaoReveal, Optional.of(graffiti));
 
-    verify(validatorApiChannel).sendSignedBlock(signedBlock);
+    verify(validatorApiChannel).sendSignedBlock(signedBlock, BroadcastValidationLevel.NOT_REQUIRED);
     verify(validatorLogger)
         .dutyCompleted(
             eq(TYPE),
@@ -478,9 +493,12 @@ class BlockProductionDutyTest {
             ArgumentMatchers.argThat(Optional::isPresent));
     verifyNoMoreInteractions(validatorLogger);
 
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SIGN));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SEND));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SEND));
   }
 
   @Test
@@ -520,7 +538,7 @@ class BlockProductionDutyTest {
                     blobSidecarsSignatures.get((BlobSidecarOld) invocation.getArgument(0))));
     when(validatorApiChannel.createUnsignedBlock(denebSlot, randaoReveal, Optional.of(graffiti)))
         .thenReturn(completedFuture(Optional.of(unsignedBlockContents)));
-    when(validatorApiChannel.sendSignedBlock(any()))
+    when(validatorApiChannel.sendSignedBlock(any(), any()))
         .thenReturn(completedFuture(SendSignedBlockResult.success(unsignedBlock.getRoot())));
 
     performAndReportDuty(denebSlot);
@@ -530,7 +548,9 @@ class BlockProductionDutyTest {
     final ArgumentCaptor<SignedBlockContents> signedBlockContentsArgumentCaptor =
         ArgumentCaptor.forClass(SignedBlockContents.class);
 
-    verify(validatorApiChannel).sendSignedBlock(signedBlockContentsArgumentCaptor.capture());
+    verify(validatorApiChannel)
+        .sendSignedBlock(
+            signedBlockContentsArgumentCaptor.capture(), eq(BroadcastValidationLevel.NOT_REQUIRED));
     verify(validatorLogger)
         .dutyCompleted(
             eq(TYPE),
@@ -565,9 +585,12 @@ class BlockProductionDutyTest {
                   .isEqualTo(blobSidecarsSignatures.get(unsignedBlobSidecar));
             });
 
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SIGN));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SEND));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SEND));
   }
 
   public void assertDutyFails(final RuntimeException error) {

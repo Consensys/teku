@@ -62,6 +62,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
@@ -281,7 +282,13 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
 
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
-      final SignedBlockContainer blockContainer) {
+      final SignedBlockContainer blockContainer,
+      final BroadcastValidationLevel broadcastValidationLevel) {
+    // we are not going to use V2 to send blocks. If V1 will be deprecated we won't specify a
+    // validation level in any case
+    if (broadcastValidationLevel != BroadcastValidationLevel.NOT_REQUIRED) {
+      LOG.warn("broadcastValidationLevel has been requested but will be ignored.");
+    }
     return sendRequest(() -> typeDefClient.sendSignedBlock(blockContainer));
   }
 

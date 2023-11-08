@@ -232,7 +232,12 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration config = getTekuConfigurationFromArguments("--network", network);
     assertThat(config.eth2NetworkConfiguration().getInitialState())
         .isEqualTo(networkConfig.getInitialState());
-    assertThat(config.eth2NetworkConfiguration().isUsingCustomInitialState()).isFalse();
+    assertThat(
+            config
+                .eth2NetworkConfiguration()
+                .getNetworkBoostrapConfig()
+                .isUsingCustomInitialState())
+        .isFalse();
   }
 
   @Test
@@ -246,7 +251,12 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration config =
         getTekuConfigurationFromArguments("--initial-state", state, "--network", network);
     assertThat(config.eth2NetworkConfiguration().getInitialState()).contains(state);
-    assertThat(config.eth2NetworkConfiguration().isUsingCustomInitialState()).isTrue();
+    assertThat(
+            config
+                .eth2NetworkConfiguration()
+                .getNetworkBoostrapConfig()
+                .isUsingCustomInitialState())
+        .isTrue();
     assertThat(
             createConfigBuilder()
                 .eth2NetworkConfig(
@@ -264,6 +274,11 @@ public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     final Optional<String> defaultState = config.eth2NetworkConfiguration().getInitialState();
     assertThat(config.eth2NetworkConfiguration().getInitialState()).isEqualTo(defaultState);
-    assertThat(config.eth2NetworkConfiguration().isUsingCustomInitialState()).isFalse();
+    assertThat(
+            config
+                .eth2NetworkConfiguration()
+                .getNetworkBoostrapConfig()
+                .isUsingCustomInitialState())
+        .isFalse();
   }
 }

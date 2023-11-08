@@ -125,9 +125,10 @@ public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandle
 
   private void setupValidatorDataProviderSubmit(final SafeFuture<SendSignedBlockResult> future) {
     if (isBlinded()) {
-      when(validatorDataProvider.submitSignedBlindedBlock(any())).thenReturn(future);
+      when(validatorDataProvider.submitSignedBlindedBlock(any(), any())).thenReturn(future);
     } else {
-      when(validatorDataProvider.submitSignedBlock((SignedBeaconBlock) any())).thenReturn(future);
+      when(validatorDataProvider.submitSignedBlock((SignedBeaconBlock) any(), any()))
+          .thenReturn(future);
     }
   }
 
