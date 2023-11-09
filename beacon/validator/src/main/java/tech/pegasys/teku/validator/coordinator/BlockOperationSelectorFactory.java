@@ -28,7 +28,6 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchemaOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -379,12 +378,6 @@ public class BlockOperationSelectorFactory {
                                   blobsBundle.getProofs().get(index)))
                       .toList());
     };
-  }
-
-  @Deprecated
-  public Function<BeaconBlock, SafeFuture<List<BlindedBlobSidecar>>>
-      createBlindedBlobSidecarsSelector() {
-    return block -> SafeFuture.completedFuture(List.of());
   }
 
   private SafeFuture<BlobsBundle> getBlobsBundle(

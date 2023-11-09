@@ -24,7 +24,6 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @TestSpecContext(milestone = {SpecMilestone.BELLATRIX, SpecMilestone.CAPELLA, SpecMilestone.DENEB})
@@ -56,17 +55,9 @@ class BlindBlockUtilTest {
     assertThat(signedBlindedBeaconBlock.getMessage().getBody().getOptionalExecutionPayloadHeader())
         .isNotEmpty();
 
-    final SignedBlindedBlockContainer signedBlindedBlockContainer;
-    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
-      signedBlindedBlockContainer =
-          dataStructureUtil.randomSignedBlindedBlockContents(signedBlindedBeaconBlock);
-    } else {
-      signedBlindedBlockContainer = signedBlindedBeaconBlock;
-    }
-
     final SafeFuture<SignedBeaconBlock> signedBeaconBlockSafeFuture =
         blindBlockUtil.unblindSignedBeaconBlock(
-            signedBlindedBlockContainer,
+            signedBlindedBeaconBlock,
             unblinder ->
                 unblinder.setExecutionPayloadSupplier(
                     () ->

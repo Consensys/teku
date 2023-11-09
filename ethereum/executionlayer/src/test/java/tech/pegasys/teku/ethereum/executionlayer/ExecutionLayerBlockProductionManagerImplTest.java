@@ -42,7 +42,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundle;
@@ -284,7 +283,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
     final SafeFuture<BuilderPayload> unblindedPayload =
         blockProductionManager.getUnblindedPayload(
-            dataStructureUtil.randomSignedBlindedBlockContents(slot));
+            dataStructureUtil.randomSignedBlindedBeaconBlock(slot));
     assertThat(unblindedPayload.get()).isEqualTo(localPayload);
 
     verifyNoMoreInteractions(builderClient);
@@ -325,18 +324,18 @@ class ExecutionLayerBlockProductionManagerImplTest {
     verifyBuilderCalled(slot, executionPayloadContext);
     verifyEngineCalled(executionPayloadContext, slot);
 
-    final SignedBlindedBlockContents signedBlindedBlockContents =
-        dataStructureUtil.randomSignedBlindedBlockContents(slot);
+    final SignedBeaconBlock signedBlindedBeaconBlock =
+        dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
 
     final ExecutionPayloadAndBlobsBundle payloadAndBlobsBundle =
-        prepareBuilderGetPayloadResponseWithBlobs(signedBlindedBlockContents);
+        prepareBuilderGetPayloadResponseWithBlobs(signedBlindedBeaconBlock);
 
     // we expect result from the builder
-    assertThat(blockProductionManager.getUnblindedPayload(signedBlindedBlockContents))
+    assertThat(blockProductionManager.getUnblindedPayload(signedBlindedBeaconBlock))
         .isCompletedWithValue(payloadAndBlobsBundle);
 
     // we expect both builder and local engine have been called
-    verify(builderClient).getPayload(signedBlindedBlockContents.getSignedBlock());
+    verify(builderClient).getPayload(signedBlindedBeaconBlock);
     verifyNoMoreInteractions(executionClientHandler);
     verifySourceCounter(Source.BUILDER, FallbackReason.NONE);
   }
@@ -377,11 +376,10 @@ class ExecutionLayerBlockProductionManagerImplTest {
         .contains(executionPayloadResult);
 
     // we will hit builder client by this call
-    final SignedBlindedBlockContents signedBlindedBlockContents =
-        dataStructureUtil.randomSignedBlindedBlockContents(slot);
-    assertThatThrownBy(
-        () -> blockProductionManager.getUnblindedPayload(signedBlindedBlockContents));
-    verify(builderClient).getPayload(signedBlindedBlockContents.getSignedBlock());
+    final SignedBeaconBlock signedBlindedBeaconBlock =
+        dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
+    assertThatThrownBy(() -> blockProductionManager.getUnblindedPayload(signedBlindedBeaconBlock));
+    verify(builderClient).getPayload(signedBlindedBeaconBlock);
   }
 
   private void setupDeneb() {

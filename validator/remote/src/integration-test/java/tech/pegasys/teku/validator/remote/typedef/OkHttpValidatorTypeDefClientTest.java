@@ -15,8 +15,6 @@ package tech.pegasys.teku.validator.remote.typedef;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -110,12 +108,8 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   void publishesBlindedBlockSszEncoded() throws InterruptedException {
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
-    final SignedBlockContainer signedBlockContainer;
-    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
-      signedBlockContainer = dataStructureUtil.randomSignedBlindedBlockContents();
-    } else {
-      signedBlockContainer = dataStructureUtil.randomSignedBlindedBeaconBlock();
-    }
+    final SignedBlockContainer signedBlockContainer =
+        dataStructureUtil.randomSignedBlindedBeaconBlock();
 
     final SendSignedBlockResult result =
         okHttpValidatorTypeDefClientWithPreferredSsz.sendSignedBlock(signedBlockContainer);
@@ -131,12 +125,8 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   void publishesBlindedBlockJsonEncoded() throws InterruptedException, JsonProcessingException {
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
-    final SignedBlockContainer signedBlockContainer;
-    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
-      signedBlockContainer = dataStructureUtil.randomSignedBlindedBlockContents();
-    } else {
-      signedBlockContainer = dataStructureUtil.randomSignedBlindedBeaconBlock();
-    }
+    final SignedBlockContainer signedBlockContainer =
+        dataStructureUtil.randomSignedBlindedBeaconBlock();
 
     final SendSignedBlockResult result =
         okHttpValidatorTypeDefClient.sendSignedBlock(signedBlockContainer);
@@ -303,12 +293,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
       throws JsonProcessingException, InterruptedException {
     mockWebServer.enqueue(new MockResponse().setResponseCode(404));
 
-    final BlockContainer blockContainer;
-    if (specMilestone.isGreaterThanOrEqualTo(DENEB)) {
-      blockContainer = dataStructureUtil.randomBlindedBlockContents(ONE);
-    } else {
-      blockContainer = dataStructureUtil.randomBlindedBeaconBlock(ONE);
-    }
+    final BlockContainer blockContainer = dataStructureUtil.randomBlindedBeaconBlock();
 
     mockWebServer.enqueue(
         new MockResponse()

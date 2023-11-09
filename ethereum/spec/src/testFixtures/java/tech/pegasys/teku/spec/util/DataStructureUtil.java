@@ -112,9 +112,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySch
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundleSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
@@ -1807,20 +1805,13 @@ public final class DataStructureUtil {
           ? extends AbstractBeaconStateBuilder<?, ?, ?>>
       stateBuilder(
           final SpecMilestone milestone, final int validatorCount, final int numItemsInSszLists) {
-    switch (milestone) {
-      case PHASE0:
-        return stateBuilderPhase0(validatorCount, numItemsInSszLists);
-      case ALTAIR:
-        return stateBuilderAltair(validatorCount, numItemsInSszLists);
-      case BELLATRIX:
-        return stateBuilderBellatrix(validatorCount, numItemsInSszLists);
-      case CAPELLA:
-        return stateBuilderCapella(validatorCount, numItemsInSszLists);
-      case DENEB:
-        return stateBuilderDeneb(validatorCount, numItemsInSszLists);
-      default:
-        throw new IllegalArgumentException("Unsupported milestone: " + milestone);
-    }
+    return switch (milestone) {
+      case PHASE0 -> stateBuilderPhase0(validatorCount, numItemsInSszLists);
+      case ALTAIR -> stateBuilderAltair(validatorCount, numItemsInSszLists);
+      case BELLATRIX -> stateBuilderBellatrix(validatorCount, numItemsInSszLists);
+      case CAPELLA -> stateBuilderCapella(validatorCount, numItemsInSszLists);
+      case DENEB -> stateBuilderDeneb(validatorCount, numItemsInSszLists);
+    };
   }
 
   public BeaconStateBuilderPhase0 stateBuilderPhase0() {
@@ -2338,42 +2329,6 @@ public final class DataStructureUtil {
     return getDenebSchemaDefinitions(slot)
         .getBlockContentsSchema()
         .create(beaconBlock, blobSidecarList);
-  }
-
-  public BlindedBlockContents randomBlindedBlockContents() {
-    return randomBlindedBlockContents(randomSlot());
-  }
-
-  public BlindedBlockContents randomBlindedBlockContents(final UInt64 slot) {
-    final List<BlindedBlobSidecar> blindedBlobSidecars =
-        randomBlindedBlobSidecars(randomNumberOfBlobsPerBlock());
-    final BeaconBlock blindedBeaconBlock = randomBlindedBeaconBlock(slot);
-    return getDenebSchemaDefinitions(slot)
-        .getBlindedBlockContentsSchema()
-        .create(blindedBeaconBlock, blindedBlobSidecars);
-  }
-
-  public SignedBlindedBlockContents randomSignedBlindedBlockContents() {
-    return randomSignedBlindedBlockContents(randomSlot());
-  }
-
-  public SignedBlindedBlockContents randomSignedBlindedBlockContents(
-      final SignedBeaconBlock signedBlindedBeaconBlock) {
-    final UInt64 slot = signedBlindedBeaconBlock.getSlot();
-    return getDenebSchemaDefinitions(slot)
-        .getSignedBlindedBlockContentsSchema()
-        .create(
-            signedBlindedBeaconBlock,
-            randomSignedBlindedBlobSidecars(randomNumberOfBlobsPerBlock()));
-  }
-
-  public SignedBlindedBlockContents randomSignedBlindedBlockContents(final UInt64 slot) {
-    final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars =
-        randomSignedBlindedBlobSidecars(randomNumberOfBlobsPerBlock());
-    final SignedBeaconBlock signedBlindedBeaconBlock = randomSignedBlindedBeaconBlock(slot);
-    return getDenebSchemaDefinitions(slot)
-        .getSignedBlindedBlockContentsSchema()
-        .create(signedBlindedBeaconBlock, signedBlindedBlobSidecars);
   }
 
   public SignedBlobSidecarOld randomSignedBlobSidecar(final UInt64 index) {

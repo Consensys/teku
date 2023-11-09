@@ -15,7 +15,7 @@
       }, {
         "$ref" : "#/components/schemas/BlindedBlockCapella"
       }, {
-        "$ref" : "#/components/schemas/BlindedBlockContentsDeneb"
+        "$ref" : "#/components/schemas/BlindedBlockDeneb"
       } ]
     },
     "version" : {
