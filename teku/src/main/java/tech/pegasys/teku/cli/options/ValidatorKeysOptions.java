@@ -133,8 +133,8 @@ public class ValidatorKeysOptions {
                     convertToPath(validatorExternalSignerTruststorePasswordFile)));
   }
 
-  private List<String> parseValidatorExternalKeys(final boolean allowNoLoadedKeysEnabled) {
-    if (allowNoLoadedKeysEnabled) {
+  private List<String> parseValidatorExternalKeys(final boolean allowNoLoadedKeys) {
+    if (allowNoLoadedKeys) {
       return validatorExternalSignerPublicKeys.stream().filter(StringUtils::isNotBlank).toList();
     }
     return validatorExternalSignerPublicKeys;
