@@ -38,9 +38,9 @@
       }, {
         "$ref" : "#/components/schemas/BlindedBlockCapella"
       }, {
-        "$ref" : "#/components/schemas/BlindedBlockDeneb"
-      }, {
         "$ref" : "#/components/schemas/BlockContentsDeneb"
+      }, {
+        "$ref" : "#/components/schemas/BlindedBlockDeneb"
       } ]
     }
   }
