@@ -14,12 +14,10 @@
 package tech.pegasys.teku.infrastructure.ssz.tree;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.ArrayDeque;
+import com.google.common.collect.Lists;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Queue;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 
 public class MerkleUtil {
@@ -70,45 +68,14 @@ public class MerkleUtil {
       throw new IllegalArgumentException("Invalid node index: " + nodeIndex);
     }
 
-    // Breadth-first search maintaining the node index (relative to root) and path to the node.
-    Queue<Pair<Long, List<Long>>> queue = new ArrayDeque<>();
-    queue.add(
-        Pair.of(
-            GIndexUtil.SELF_G_INDEX,
-            new ArrayList<>(Collections.singleton(GIndexUtil.SELF_G_INDEX))));
-    int depth = 0;
+    final List<Long> path = new ArrayList<>();
+    final int depth = Long.SIZE - Long.numberOfLeadingZeros(nodeIndex);
+    long currentIndex = nodeIndex;
 
-    // Begin with root and terminate upon finding the specified node.
-    while (!queue.isEmpty() && depth < GIndexUtil.MAX_DEPTH) {
-      Pair<Long, List<Long>> indexAndPath = queue.remove();
-
-      long currentIndex = indexAndPath.getLeft();
-      List<Long> currentPath = indexAndPath.getRight();
-
-      if (currentIndex == nodeIndex) {
-        // Found the correct node.
-        return currentPath;
-      }
-
-      // Traverse left and right children.
-      long leftIndex = GIndexUtil.gIdxLeftGIndex(currentIndex);
-
-      List<Long> leftPath = new ArrayList<>(currentPath);
-      leftPath.add(leftIndex);
-
-      queue.add(Pair.of(leftIndex, leftPath));
-
-      long rightIndex = GIndexUtil.gIdxRightGIndex(currentIndex);
-
-      List<Long> rightPath = new ArrayList<>(currentPath);
-      rightPath.add(rightIndex);
-
-      queue.add(Pair.of(rightIndex, rightPath));
-
-      // Ensures termination for large values of `nodeIndex`.
-      depth++;
+    for (int i = 0; i < depth; ++i) {
+      path.add(currentIndex);
+      currentIndex = currentIndex >> 1;
     }
-
-    throw new IllegalArgumentException("Path to node not found for node index: " + nodeIndex);
+    return Lists.reverse(path);
   }
 }

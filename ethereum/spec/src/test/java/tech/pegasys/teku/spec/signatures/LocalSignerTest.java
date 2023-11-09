@@ -94,7 +94,7 @@ class LocalSignerTest {
     final BeaconBlock block = dataStructureUtilDeneb.randomBlindedBeaconBlock(slot);
     final BlobSidecarOld blobSidecar =
         dataStructureUtilDeneb
-            .createRandomBlobSidecarBuilder()
+            .createRandomBlobSidecarBuilderOld()
             .forBlock(block)
             .index(UInt64.valueOf(2))
             .build();
@@ -120,7 +120,7 @@ class LocalSignerTest {
     final BeaconBlock block = dataStructureUtilDeneb.randomBlindedBeaconBlock(slot);
     final BlindedBlobSidecar blindedBlobSidecar =
         dataStructureUtilDeneb
-            .createRandomBlobSidecarBuilder()
+            .createRandomBlobSidecarBuilderOld()
             .forBlock(block)
             .index(UInt64.valueOf(2))
             .buildBlinded();

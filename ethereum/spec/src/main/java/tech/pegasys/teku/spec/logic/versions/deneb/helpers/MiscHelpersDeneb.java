@@ -23,20 +23,27 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.versions.capella.helpers.MiscHelpersCapella;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class MiscHelpersDeneb extends MiscHelpersCapella {
+  private final Predicates predicates;
+  private final BeaconBlockBodySchemaDeneb<?> beaconBlockBodySchema;
 
   public static MiscHelpersDeneb required(final MiscHelpers miscHelpers) {
     return miscHelpers
@@ -48,8 +55,14 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
                         + miscHelpers.getClass().getSimpleName()));
   }
 
-  public MiscHelpersDeneb(final SpecConfigDeneb specConfig) {
+  public MiscHelpersDeneb(
+      final SpecConfigDeneb specConfig,
+      final Predicates predicates,
+      final SchemaDefinitionsDeneb schemaDefinitions) {
     super(specConfig);
+    this.predicates = predicates;
+    this.beaconBlockBodySchema =
+        (BeaconBlockBodySchemaDeneb<?>) schemaDefinitions.getBeaconBlockBodySchema();
   }
 
   /**
@@ -63,6 +76,23 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
    */
   @Override
   public boolean verifyBlobKzgProof(final KZG kzg, final BlobSidecarOld blobSidecar) {
+    return kzg.verifyBlobKzgProof(
+        blobSidecar.getBlob().getBytes(),
+        blobSidecar.getKZGCommitment(),
+        blobSidecar.getKZGProof());
+  }
+
+  /**
+   * Performs <a
+   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/polynomial-commitments.md#verify_blob_kzg_proof">verify_blob_kzg_proof</a>
+   * on the given blob sidecar
+   *
+   * @param kzg the kzg implementation which will be used for verification
+   * @param blobSidecar blob sidecar to verify
+   * @return true if blob sidecar is valid
+   */
+  @Override
+  public boolean verifyBlobKzgProof(final KZG kzg, final BlobSidecar blobSidecar) {
     return kzg.verifyBlobKzgProof(
         blobSidecar.getBlob().getBytes(),
         blobSidecar.getKZGCommitment(),
@@ -214,5 +244,25 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
         .map(BeaconBlockBodyDeneb::getBlobKzgCommitments)
         .map(SszList::size)
         .orElse(0);
+  }
+
+  public int getBlobSidecarKzgCommitmentGeneralizedIndex(final UInt64 blobSidecarIndex) {
+    final long blobKzgCommitmentsGeneralizedIndex =
+        beaconBlockBodySchema.getBlobKzgCommitmentsGeneralizedIndex();
+    final long commitmentGeneralizedIndex =
+        beaconBlockBodySchema
+            .getBlobKzgCommitmentsSchema()
+            .getChildGeneralizedIndex(blobSidecarIndex.longValue());
+    return (int)
+        GIndexUtil.gIdxCompose(blobKzgCommitmentsGeneralizedIndex, commitmentGeneralizedIndex);
+  }
+
+  public boolean verifyBlobSidecarMerkleProof(final BlobSidecar blobSidecar) {
+    return predicates.isValidMerkleBranch(
+        blobSidecar.getSszKZGCommitment().hashTreeRoot(),
+        blobSidecar.getKzgCommitmentInclusionProof(),
+        SpecConfigDeneb.required(specConfig).getKzgCommitmentInclusionProofDepth(),
+        getBlobSidecarKzgCommitmentGeneralizedIndex(blobSidecar.getIndex()),
+        blobSidecar.getBlockBodyRoot());
   }
 }

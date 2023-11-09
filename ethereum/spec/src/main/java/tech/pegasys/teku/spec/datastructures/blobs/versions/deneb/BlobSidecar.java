@@ -18,7 +18,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container6;
-import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -72,6 +71,10 @@ public class BlobSidecar
     return getField1();
   }
 
+  public SszKZGCommitment getSszKZGCommitment() {
+    return getField2();
+  }
+
   public KZGCommitment getKZGCommitment() {
     return getField2().getKZGCommitment();
   }
@@ -84,26 +87,26 @@ public class BlobSidecar
     return getField4();
   }
 
-  public List<Bytes32> getKzgCommitmentInclusionProof() {
-    return getField5().stream().map(AbstractSszPrimitive::get).toList();
+  public SszBytes32Vector getKzgCommitmentInclusionProof() {
+    return getField5();
   }
 
   public UInt64 getSlot() {
     return getSignedBeaconBlockHeader().getMessage().getSlot();
   }
 
-  public Bytes32 getBlockRoot() {
-    return getSignedBeaconBlockHeader().getMessage().getRoot();
+  public Bytes32 getBlockBodyRoot() {
+    return getSignedBeaconBlockHeader().getMessage().getBodyRoot();
   }
 
   public SlotAndBlockRoot getSlotAndBlockRoot() {
-    return new SlotAndBlockRoot(getSlot(), getBlockRoot());
+    return new SlotAndBlockRoot(getSlot(), getBlockBodyRoot());
   }
 
   public String toLogString() {
     return LogFormatter.formatBlobSidecar(
         getSlot(),
-        getBlockRoot(),
+        getBlockBodyRoot(),
         getIndex(),
         getBlob().toBriefString(),
         getKZGCommitment().toHexString(),

@@ -145,7 +145,7 @@ public abstract class AbstractSyncTest {
     final Map<UInt64, List<BlobSidecarOld>> blobSidecarsBySlot = new HashMap<>();
     for (final UInt64 slot : slots) {
       final BlobSidecarOld blobSidecar =
-          dataStructureUtil.createRandomBlobSidecarBuilder().slot(slot).build();
+          dataStructureUtil.createRandomBlobSidecarBuilderOld().slot(slot).build();
       blobSidecarsBySlot.computeIfAbsent(slot, __ -> new ArrayList<>()).add(blobSidecar);
       responseListener.onResponse(blobSidecar).propagateExceptionTo(request);
     }

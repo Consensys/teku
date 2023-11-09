@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.logic.versions.deneb.helpers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 import java.util.List;
 import java.util.Objects;
@@ -28,10 +29,12 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.propertytest.suppliers.SpecSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSidecarOldSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.BeaconBlockSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.KZGCommitmentSupplier;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class MiscHelpersDenebPropertyTest {
 
@@ -41,7 +44,10 @@ public class MiscHelpersDenebPropertyTest {
           .getGenesisSpecConfig()
           .toVersionDeneb()
           .orElseThrow();
-  private final MiscHelpersDeneb miscHelpers = new MiscHelpersDeneb(specConfig);
+  private final Predicates predicates = mock(Predicates.class);
+  private final SchemaDefinitionsDeneb schemaDefinitionsDeneb = mock(SchemaDefinitionsDeneb.class);
+  private final MiscHelpersDeneb miscHelpers =
+      new MiscHelpersDeneb(specConfig, predicates, schemaDefinitionsDeneb);
 
   @Property(tries = 100)
   void fuzzKzgCommitmentToVersionedHash(

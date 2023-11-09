@@ -98,16 +98,6 @@ public class MerkleUtilTest {
   }
 
   @Test
-  void testPathNotFound() {
-    assertThatThrownBy(
-            () -> {
-              MerkleUtil.getPathToNode(Long.MAX_VALUE);
-            })
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("Path to node not found");
-  }
-
-  @Test
   void testPathFromRootToRoot() {
     List<Long> path = MerkleUtil.getPathToNode(GIndexUtil.SELF_G_INDEX);
     assertThat(path).isEqualTo(Collections.singletonList(GIndexUtil.SELF_G_INDEX));

@@ -2153,7 +2153,7 @@ public final class DataStructureUtil {
         .mapToObj(
             index -> {
               final RandomBlobSidecarOldBuilder builder =
-                  createRandomBlobSidecarBuilder()
+                  createRandomBlobSidecarBuilderOld()
                       .slot(block.getSlot())
                       .blockRoot(block.getRoot())
                       .blockParentRoot(block.getParentRoot())
@@ -2380,8 +2380,12 @@ public final class DataStructureUtil {
     return new RandomBlobSidecarOldBuilder().index(index).buildSigned();
   }
 
-  public RandomBlobSidecarOldBuilder createRandomBlobSidecarBuilder() {
+  public RandomBlobSidecarOldBuilder createRandomBlobSidecarBuilderOld() {
     return new RandomBlobSidecarOldBuilder();
+  }
+
+  public RandomBlobSidecarBuilder createRandomBlobSidecarBuilder() {
+    return new RandomBlobSidecarBuilder();
   }
 
   public SszList<ProposerSlashing> randomProposerSlashings(
@@ -2407,6 +2411,7 @@ public final class DataStructureUtil {
         count);
   }
 
+  @Deprecated
   public class RandomBlobSidecarOldBuilder {
     private Optional<Bytes32> blockRoot = Optional.empty();
     private Optional<UInt64> index = Optional.empty();
@@ -2560,7 +2565,7 @@ public final class DataStructureUtil {
           getDenebSchemaDefinitions(
                   signedBeaconBlockHeader
                       .map(header -> header.getMessage().getSlot())
-                      .orElse(randomUInt64()))
+                      .orElse(randomSlot()))
               .getBlobSidecarSchema();
 
       return blobSidecarSchema.create(
@@ -2569,12 +2574,16 @@ public final class DataStructureUtil {
           kzgCommitment.orElse(randomBytes48()),
           kzgProof.orElse(randomBytes48()),
           signedBeaconBlockHeader.orElse(randomSignedBeaconBlockHeader()),
-          kzgCommitmentInclusionProof.orElse(
-              IntStream.range(
-                      0, blobSidecarSchema.getKzgCommitmentInclusionProofSchema().getLength())
-                  .mapToObj(__ -> randomBytes32())
-                  .toList()));
+          kzgCommitmentInclusionProof.orElse(randomKzgCommitmentInclusionProof()));
     }
+  }
+
+  public List<Bytes32> randomKzgCommitmentInclusionProof() {
+    final BlobSidecarSchema blobSidecarSchema =
+        getDenebSchemaDefinitions(randomSlot()).getBlobSidecarSchema();
+    return IntStream.range(0, blobSidecarSchema.getKzgCommitmentInclusionProofSchema().getLength())
+        .mapToObj(__ -> randomBytes32())
+        .toList();
   }
 
   public SszList<SszKZGCommitment> randomBlobKzgCommitments() {
