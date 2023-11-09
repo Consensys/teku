@@ -20,11 +20,10 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
-import tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastValidationResult;
+import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
@@ -59,41 +58,64 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
         .thenCompose(
             signedBlockContainer ->
                 gossipAndImportUnblindedSignedBlock(signedBlockContainer, broadcastValidationLevel))
-        .thenApply(
-            result -> {
-              if (result.isSuccessful()) {
-                LOG.trace(
-                    "Successfully imported proposed block: {}",
-                    maybeBlindedBlockContainer.getSignedBlock().toLogString());
-                dutyMetrics.onBlockPublished(maybeBlindedBlockContainer.getSlot());
-                return SendSignedBlockResult.success(maybeBlindedBlockContainer.getRoot());
-              } else if (result.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
-                LOG.debug(
-                    "Delayed processing proposed block {} because it is from the future",
-                    maybeBlindedBlockContainer.getSignedBlock().toLogString());
-                dutyMetrics.onBlockPublished(maybeBlindedBlockContainer.getSlot());
-                return SendSignedBlockResult.notImported(result.getFailureReason().name());
-              } else {
-                VALIDATOR_LOGGER.proposedBlockImportFailed(
-                    result.getFailureReason().toString(),
-                    maybeBlindedBlockContainer.getSlot(),
-                    maybeBlindedBlockContainer.getRoot(),
-                    result.getFailureCause());
+        .thenCompose(result -> calculateResult(maybeBlindedBlockContainer, result));
+  }
 
-                return SendSignedBlockResult.notImported(result.getFailureReason().name());
+  private SafeFuture<SendSignedBlockResult> calculateResult(
+      final SignedBlockContainer maybeBlindedBlockContainer,
+      final BlockImportAndBroadcastValidationResults blockImportAndBroadcastValidationResults) {
+
+    return blockImportAndBroadcastValidationResults
+        .broadcastValidationResult()
+        .thenCompose(
+            broadcastValidationResult -> {
+              if (broadcastValidationResult.isFailure()) {
+                return SafeFuture.completedFuture(
+                    SendSignedBlockResult.rejected(
+                        "Broadcast validation failed: " + broadcastValidationResult.name()));
               }
+
+              return blockImportAndBroadcastValidationResults
+                  .blockImportResult()
+                  .thenApply(
+                      importResult -> {
+                        if (importResult.isSuccessful()) {
+                          LOG.trace(
+                              "Successfully imported proposed block: {}",
+                              maybeBlindedBlockContainer.getSignedBlock().toLogString());
+                          dutyMetrics.onBlockPublished(maybeBlindedBlockContainer.getSlot());
+                          return SendSignedBlockResult.success(
+                              maybeBlindedBlockContainer.getRoot());
+                        } else if (importResult.getFailureReason()
+                            == FailureReason.BLOCK_IS_FROM_FUTURE) {
+                          LOG.debug(
+                              "Delayed processing proposed block {} because it is from the future",
+                              maybeBlindedBlockContainer.getSignedBlock().toLogString());
+                          dutyMetrics.onBlockPublished(maybeBlindedBlockContainer.getSlot());
+                          return SendSignedBlockResult.notImported(
+                              importResult.getFailureReason().name());
+                        } else {
+                          VALIDATOR_LOGGER.proposedBlockImportFailed(
+                              importResult.getFailureReason().toString(),
+                              maybeBlindedBlockContainer.getSlot(),
+                              maybeBlindedBlockContainer.getRoot(),
+                              importResult.getFailureCause());
+
+                          return SendSignedBlockResult.notImported(
+                              importResult.getFailureReason().name());
+                        }
+                      });
             });
   }
 
-  private SafeFuture<BlockImportResult> gossipAndImportUnblindedSignedBlock(
+  private SafeFuture<BlockImportAndBroadcastValidationResults> gossipAndImportUnblindedSignedBlock(
       final SignedBlockContainer blockContainer,
       final BroadcastValidationLevel broadcastValidationLevel) {
 
     if (broadcastValidationLevel == BroadcastValidationLevel.NOT_REQUIRED) {
       // when broadcast validation is disabled, we can publish the block immediately and then import
       publishBlock(blockContainer);
-      return importBlock(blockContainer, broadcastValidationLevel)
-          .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult);
+      return importBlock(blockContainer, broadcastValidationLevel);
     }
 
     // when broadcast validation is enabled, we need to wait for the validation to complete before
@@ -104,7 +126,7 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
             importBlock(blockContainer, broadcastValidationLevel);
 
     blockImportAndBroadcastValidationResults
-        .thenCompose(results -> results.broadcastValidationResult().orElseThrow())
+        .thenCompose(BlockImportAndBroadcastValidationResults::broadcastValidationResult)
         .thenAccept(
             broadcastValidationResult -> {
               if (broadcastValidationResult == BroadcastValidationResult.SUCCESS) {
@@ -124,8 +146,7 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
                     blockContainer.getSlot(),
                     err));
 
-    return blockImportAndBroadcastValidationResults.thenCompose(
-        BlockImportAndBroadcastValidationResults::blockImportResult);
+    return blockImportAndBroadcastValidationResults;
   }
 
   abstract SafeFuture<BlockImportAndBroadcastValidationResults> importBlock(

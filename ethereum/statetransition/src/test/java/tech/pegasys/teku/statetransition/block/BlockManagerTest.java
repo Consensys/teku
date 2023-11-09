@@ -15,7 +15,6 @@ package tech.pegasys.teku.statetransition.block;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
@@ -45,8 +44,8 @@ import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PRE
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PROCESSED_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TRANSACTION_COMMITTED_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TRANSACTION_PREPARED_EVENT_LABEL;
-import static tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastValidationResult.CONSENSUS_FAILURE;
-import static tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastValidationResult.SUCCESS;
+import static tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult.CONSENSUS_FAILURE;
+import static tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult.SUCCESS;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -98,6 +97,7 @@ import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
+import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.ChainHead;
@@ -357,7 +357,7 @@ public class BlockManagerTest {
         localChain.chainBuilder().generateBlockAtSlot(nextNextSlot).getBlock();
 
     final SafeFuture<BlockImportResult> blockImportResult = new SafeFuture<>();
-    when(blockImporter.importBlock(nextNextBlock, Optional.empty(), Optional.empty()))
+    when(blockImporter.importBlock(nextNextBlock, Optional.empty(), BlockBroadcastValidator.NOOP))
         .thenReturn(blockImportResult)
         .thenReturn(new SafeFuture<>());
 
@@ -365,7 +365,8 @@ public class BlockManagerTest {
     incrementSlot();
     assertThatBlockImport(nextNextBlock).isNotCompleted();
     ignoreFuture(
-        verify(blockImporter).importBlock(nextNextBlock, Optional.empty(), Optional.empty()));
+        verify(blockImporter)
+            .importBlock(nextNextBlock, Optional.empty(), BlockBroadcastValidator.NOOP));
 
     // Before nextNextBlock imports, it's parent becomes available
     when(localRecentChainData.containsBlock(nextNextBlock.getParentRoot())).thenReturn(true);
@@ -374,7 +375,7 @@ public class BlockManagerTest {
     blockImportResult.complete(BlockImportResult.FAILED_UNKNOWN_PARENT);
     ignoreFuture(
         verify(blockImporter, times(2))
-            .importBlock(nextNextBlock, Optional.empty(), Optional.empty()));
+            .importBlock(nextNextBlock, Optional.empty(), BlockBroadcastValidator.NOOP));
 
     assertThat(pendingBlocks.contains(nextNextBlock)).isFalse();
   }
@@ -652,17 +653,14 @@ public class BlockManagerTest {
   }
 
   @Test
-  void onImportBlock_shouldImportWithBroadcastValidationCompletedWileStillImporting() {
+  void onImportBlock_shouldImportWithBroadcastValidationCompletedWhileStillImporting() {
     final UInt64 nextSlot = GENESIS_SLOT.plus(UInt64.ONE);
     final SignedBeaconBlock nextBlock =
         localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
     incrementSlot();
 
-    when(blockValidator.validateBroadcast(
-            eq(nextBlock),
-            eq(GOSSIP),
-            argThat(importResult -> safeJoin(importResult).isSuccessful())))
-        .thenReturn(SafeFuture.completedFuture(SUCCESS));
+    when(blockValidator.initiateBroadcastValidation(eq(nextBlock), eq(GOSSIP)))
+        .thenReturn(BlockBroadcastValidator.NOOP);
 
     // let's delay EL so importResult SafeFuture doesn't complete
     final SafeFuture<PayloadStatus> payloadStatusSafeFuture = new SafeFuture<>();
@@ -677,9 +675,7 @@ public class BlockManagerTest {
               assertThatSafeFuture(blockImportAndBroadcastValidationResults.blockImportResult())
                   .isNotCompleted();
               assertThatSafeFuture(
-                      blockImportAndBroadcastValidationResults
-                          .broadcastValidationResult()
-                          .orElseThrow())
+                      blockImportAndBroadcastValidationResults.broadcastValidationResult())
                   .isCompletedWithValue(SUCCESS);
               return true;
             });
@@ -708,15 +704,11 @@ public class BlockManagerTest {
             .generateBlockAtSlot(incrementSlot(), BlockOptions.create().setWrongProposer(true))
             .getBlock();
 
-    when(blockValidator.validateBroadcast(
-            eq(invalidBlock),
-            eq(BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION),
-            // expecting consensus import state transition failure
-            argThat(
-                importResult ->
-                    safeJoin(importResult)
-                        .getFailureReason()
-                        .equals(FailureReason.FAILED_STATE_TRANSITION))))
+    final BlockBroadcastValidator blockBroadcastValidator = mock(BlockBroadcastValidator.class);
+    when(blockValidator.initiateBroadcastValidation(eq(invalidBlock), eq(GOSSIP)))
+        .thenReturn(blockBroadcastValidator);
+
+    when(blockBroadcastValidator.getResult())
         .thenReturn(SafeFuture.completedFuture(CONSENSUS_FAILURE));
 
     assertThatBlockImportAndBroadcastValidationResults(
@@ -728,9 +720,7 @@ public class BlockManagerTest {
                       result ->
                           result.getFailureReason().equals(FailureReason.FAILED_STATE_TRANSITION));
               assertThatSafeFuture(
-                      blockImportAndBroadcastValidationResults
-                          .broadcastValidationResult()
-                          .orElseThrow())
+                      blockImportAndBroadcastValidationResults.broadcastValidationResult())
                   .isCompletedWithValue(CONSENSUS_FAILURE);
               return true;
             });
@@ -1157,7 +1147,7 @@ public class BlockManagerTest {
     assertThat(blockManager.validateAndImportBlock(block, Optional.empty()))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
     verify(blockValidator, never()).validateGossip(eq(block));
-    verify(blockValidator, never()).validateBroadcast(any(), any(), any());
+    verify(blockValidator, never()).initiateBroadcastValidation(any(), any());
   }
 
   private void assertImportBlockSuccessfully(final SignedBeaconBlock block) {

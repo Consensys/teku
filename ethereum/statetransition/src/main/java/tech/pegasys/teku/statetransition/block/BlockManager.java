@@ -34,8 +34,8 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
-import tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastValidationResult;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -111,29 +111,19 @@ public class BlockManager extends Service
       final SignedBeaconBlock block, final BroadcastValidationLevel broadcastValidationLevel) {
     LOG.trace("Preparing to import block: {}", block::toLogString);
 
-    // NO broadcast validation, import the old way
-    if (broadcastValidationLevel == BroadcastValidationLevel.NOT_REQUIRED) {
-      return SafeFuture.completedFuture(
-          new BlockImportAndBroadcastValidationResults(
-              doImportBlock(block, Optional.empty(), Optional.empty()), Optional.empty()));
-    }
+    final BlockBroadcastValidator blockBroadcastValidator =
+        blockValidator.initiateBroadcastValidation(block, broadcastValidationLevel);
 
-    final SafeFuture<BlockImportResult> consensusValidationListener = new SafeFuture<>();
     final SafeFuture<BlockImportResult> importResult =
-        doImportBlock(block, Optional.empty(), Optional.of(consensusValidationListener));
+        doImportBlock(block, Optional.empty(), blockBroadcastValidator);
 
-    // we want a future that completes as soon as the consensus validation is done, or intercept any
-    // early import results\exceptions happening before the consensus validation is completed
-    final SafeFuture<BlockImportResult> consensusValidationResultOrImportFailure =
-        consensusValidationListener.or(importResult);
-
-    final SafeFuture<BroadcastValidationResult> broadcastValidationResult =
-        blockValidator.validateBroadcast(
-            block, broadcastValidationLevel, consensusValidationResultOrImportFailure);
+    // we want to intercept any early import exceptions happening before the consensus validation is
+    // completed
+    blockBroadcastValidator.attachToBlockImport(importResult);
 
     return SafeFuture.completedFuture(
         new BlockImportAndBroadcastValidationResults(
-            importResult, Optional.of(broadcastValidationResult)));
+            importResult, blockBroadcastValidator.getResult()));
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
@@ -163,7 +153,7 @@ public class BlockManager extends Service
         result -> {
           if (result.code().equals(ValidationResultCode.ACCEPT)
               || result.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
-            doImportBlock(block, blockImportPerformance, Optional.empty())
+            doImportBlock(block, blockImportPerformance, BlockBroadcastValidator.NOOP)
                 .finish(err -> LOG.error("Failed to process received block.", err));
           }
         });
@@ -214,18 +204,19 @@ public class BlockManager extends Service
   }
 
   private void importBlockIgnoringResult(final SignedBeaconBlock block) {
-    doImportBlock(block, Optional.empty(), Optional.empty()).ifExceptionGetsHereRaiseABug();
+    doImportBlock(block, Optional.empty(), BlockBroadcastValidator.NOOP)
+        .ifExceptionGetsHereRaiseABug();
   }
 
   private SafeFuture<BlockImportResult> doImportBlock(
       final SignedBeaconBlock block,
       final Optional<BlockImportPerformance> blockImportPerformance,
-      final Optional<SafeFuture<BlockImportResult>> consensusValidationListener) {
+      final BlockBroadcastValidator blockBroadcastValidator) {
     return handleInvalidBlock(block)
         .or(() -> handleKnownBlock(block))
         .orElseGet(
             () ->
-                handleBlockImport(block, blockImportPerformance, consensusValidationListener)
+                handleBlockImport(block, blockImportPerformance, blockBroadcastValidator)
                     .thenPeek(
                         result -> lateBlockImportCheck(blockImportPerformance, block, result)))
         .thenPeek(
@@ -272,13 +263,13 @@ public class BlockManager extends Service
   private SafeFuture<BlockImportResult> handleBlockImport(
       final SignedBeaconBlock block,
       final Optional<BlockImportPerformance> blockImportPerformance,
-      final Optional<SafeFuture<BlockImportResult>> consensusValidationListener) {
+      final BlockBroadcastValidator blockBroadcastValidator) {
 
     onBlockValidated(block);
     blobSidecarPool.onNewBlock(block);
 
     return blockImporter
-        .importBlock(block, blockImportPerformance, consensusValidationListener)
+        .importBlock(block, blockImportPerformance, blockBroadcastValidator)
         .thenPeek(
             result -> {
               if (result.isSuccessful()) {

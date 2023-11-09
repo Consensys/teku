@@ -50,6 +50,7 @@ import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -204,7 +205,7 @@ public class BeaconChainUtil {
             .onBlock(
                 block,
                 Optional.empty(),
-                Optional.empty(),
+                BlockBroadcastValidator.NOOP,
                 new ExecutionLayerChannelStub(spec, false, Optional.empty()))
             .join();
     if (!importResult.isSuccessful()) {

@@ -34,7 +34,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastValidationResult;
 
 public class BlockValidatorTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
@@ -69,7 +68,8 @@ public class BlockValidatorTest {
     assertThat(
             blockValidator.validateBroadcast(
                 block, BroadcastValidationLevel.GOSSIP, consensusValidationResult))
-        .isCompletedWithValueMatching(result -> result.equals(BroadcastValidationResult.SUCCESS));
+        .isCompletedWithValueMatching(
+            result -> result.equals(BlockBroadcastValidator.BroadcastValidationResult.SUCCESS));
     verify(blockGossipValidator).validate(eq(block), eq(true));
     verifyNoMoreInteractions(blockGossipValidator);
   }
@@ -85,7 +85,8 @@ public class BlockValidatorTest {
       assertThat(
               blockValidator.validateBroadcast(
                   block, broadcastValidation, consensusValidationResult))
-          .isCompletedWithValueMatching(result -> result.equals(BroadcastValidationResult.SUCCESS));
+          .isCompletedWithValueMatching(
+              result -> result.equals(BlockBroadcastValidator.BroadcastValidationResult.SUCCESS));
       verifyNoMoreInteractions(blockGossipValidator);
       return;
     }
@@ -96,7 +97,8 @@ public class BlockValidatorTest {
     assertThat(
             blockValidator.validateBroadcast(block, broadcastValidation, consensusValidationResult))
         .isCompletedWithValueMatching(
-            result -> result.equals(BroadcastValidationResult.GOSSIP_FAILURE));
+            result ->
+                result.equals(BlockBroadcastValidator.BroadcastValidationResult.GOSSIP_FAILURE));
     verify(blockGossipValidator).validate(eq(block), eq(true));
     verifyNoMoreInteractions(blockGossipValidator);
   }
@@ -118,7 +120,8 @@ public class BlockValidatorTest {
     assertThat(
             blockValidator.validateBroadcast(block, broadcastValidation, consensusValidationResult))
         .isCompletedWithValueMatching(
-            result -> result.equals(BroadcastValidationResult.CONSENSUS_FAILURE));
+            result ->
+                result.equals(BlockBroadcastValidator.BroadcastValidationResult.CONSENSUS_FAILURE));
     verify(blockGossipValidator).validate(eq(block), eq(true));
     verifyNoMoreInteractions(blockGossipValidator);
   }
@@ -160,7 +163,8 @@ public class BlockValidatorTest {
                 block,
                 BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION,
                 consensusValidationResult))
-        .isCompletedWithValueMatching(result -> result.equals(BroadcastValidationResult.SUCCESS));
+        .isCompletedWithValueMatching(
+            result -> result.equals(BlockBroadcastValidator.BroadcastValidationResult.SUCCESS));
     verify(blockGossipValidator).validate(eq(block), eq(true));
     verify(blockGossipValidator).blockIsFirstBlockWithValidSignatureForSlot(eq(block));
     verifyNoMoreInteractions(blockGossipValidator);
@@ -184,7 +188,9 @@ public class BlockValidatorTest {
                 BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION,
                 consensusValidationResult))
         .isCompletedWithValueMatching(
-            result -> result.equals(BroadcastValidationResult.FINAL_EQUIVOCATION_FAILURE));
+            result ->
+                result.equals(
+                    BlockBroadcastValidator.BroadcastValidationResult.FINAL_EQUIVOCATION_FAILURE));
     verify(blockGossipValidator).validate(eq(block), eq(true));
     verify(blockGossipValidator).blockIsFirstBlockWithValidSignatureForSlot(eq(block));
     verifyNoMoreInteractions(blockGossipValidator);

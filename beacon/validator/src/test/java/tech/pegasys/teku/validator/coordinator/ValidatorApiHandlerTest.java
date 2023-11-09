@@ -1242,6 +1242,6 @@ class ValidatorApiHandlerTest {
       final BlockImportResult blockImportResult) {
     return SafeFuture.completedFuture(
         new BlockImportAndBroadcastValidationResults(
-            SafeFuture.completedFuture(blockImportResult), Optional.empty()));
+            SafeFuture.completedFuture(blockImportResult)));
   }
 }

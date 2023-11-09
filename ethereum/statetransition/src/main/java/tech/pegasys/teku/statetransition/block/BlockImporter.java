@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
@@ -81,14 +82,14 @@ public class BlockImporter {
 
   @CheckReturnValue
   public SafeFuture<BlockImportResult> importBlock(final SignedBeaconBlock block) {
-    return importBlock(block, Optional.empty(), Optional.empty());
+    return importBlock(block, Optional.empty(), BlockBroadcastValidator.NOOP);
   }
 
   @CheckReturnValue
   public SafeFuture<BlockImportResult> importBlock(
       final SignedBeaconBlock block,
       final Optional<BlockImportPerformance> blockImportPerformance,
-      final Optional<SafeFuture<BlockImportResult>> consensusValidationListener) {
+      final BlockBroadcastValidator blockBroadcastValidator) {
 
     final Optional<Boolean> knownOptimistic = recentChainData.isBlockOptimistic(block.getRoot());
     if (knownOptimistic.isPresent()) {
@@ -107,7 +108,7 @@ public class BlockImporter {
         .thenCompose(
             __ ->
                 forkChoice.onBlock(
-                    block, blockImportPerformance, consensusValidationListener, executionLayer))
+                    block, blockImportPerformance, blockBroadcastValidator, executionLayer))
         .thenApply(
             result -> {
               if (!result.isSuccessful()) {

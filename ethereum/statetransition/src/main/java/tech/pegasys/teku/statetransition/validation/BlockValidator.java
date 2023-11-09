@@ -16,7 +16,6 @@ package tech.pegasys.teku.statetransition.validation;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 
 public class BlockValidator {
 
@@ -30,74 +29,8 @@ public class BlockValidator {
     return blockGossipValidator.validate(block, false);
   }
 
-  public SafeFuture<BroadcastValidationResult> validateBroadcast(
-      final SignedBeaconBlock block,
-      final BroadcastValidationLevel broadcastValidationLevel,
-      final SafeFuture<BlockImportResult> consensusValidationResult) {
-
-    // validateBroadcast should not be called at all but let's cover the case for safety
-    if (broadcastValidationLevel == BroadcastValidationLevel.NOT_REQUIRED) {
-      return SafeFuture.completedFuture(BroadcastValidationResult.SUCCESS);
-    }
-
-    // GOSSIP only validation
-    SafeFuture<BroadcastValidationResult> validationPipeline =
-        blockGossipValidator
-            .validate(block, true)
-            .thenApply(
-                gossipValidationResult -> {
-                  if (gossipValidationResult.isAccept()) {
-                    return BroadcastValidationResult.SUCCESS;
-                  }
-                  return BroadcastValidationResult.GOSSIP_FAILURE;
-                });
-
-    if (broadcastValidationLevel == BroadcastValidationLevel.GOSSIP) {
-      return validationPipeline;
-    }
-
-    // GOSSIP and CONSENSUS validation
-    validationPipeline =
-        validationPipeline.thenCompose(
-            broadcastValidationResult -> {
-              if (broadcastValidationResult != BroadcastValidationResult.SUCCESS) {
-                // forward gossip validation failure
-                return SafeFuture.completedFuture(broadcastValidationResult);
-              }
-              return consensusValidationResult.thenApply(
-                  consensusValidation -> {
-                    if (consensusValidation.isSuccessful()) {
-                      return BroadcastValidationResult.SUCCESS;
-                    }
-                    return BroadcastValidationResult.CONSENSUS_FAILURE;
-                  });
-            });
-
-    if (broadcastValidationLevel == BroadcastValidationLevel.CONSENSUS) {
-      return validationPipeline;
-    }
-
-    // GOSSIP, CONSENSUS and additional EQUIVOCATION validation
-    return validationPipeline.thenApply(
-        broadcastValidationResult -> {
-          if (broadcastValidationResult != BroadcastValidationResult.SUCCESS) {
-            // forward gossip or consensus validation failure
-            return broadcastValidationResult;
-          }
-
-          // perform final equivocation validation
-          if (blockGossipValidator.blockIsFirstBlockWithValidSignatureForSlot(block)) {
-            return BroadcastValidationResult.SUCCESS;
-          }
-
-          return BroadcastValidationResult.FINAL_EQUIVOCATION_FAILURE;
-        });
-  }
-
-  public enum BroadcastValidationResult {
-    SUCCESS,
-    GOSSIP_FAILURE,
-    CONSENSUS_FAILURE,
-    FINAL_EQUIVOCATION_FAILURE
+  public BlockBroadcastValidator initiateBroadcastValidation(
+      final SignedBeaconBlock block, final BroadcastValidationLevel validationLevel) {
+    return BlockBroadcastValidator.create(block, blockGossipValidator, validationLevel);
   }
 }

@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.SocketTimeoutException;
 import java.time.Duration;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -321,8 +320,7 @@ class FailedExecutionPoolTest {
         .thenReturn(
             SafeFuture.completedFuture(
                 new BlockImportAndBroadcastValidationResults(
-                    SafeFuture.completedFuture(BlockImportResult.successful(block2)),
-                    Optional.empty())));
+                    SafeFuture.completedFuture(BlockImportResult.successful(block2)))));
 
     failurePool.addFailedBlock(block);
     failurePool.addFailedBlock(block2);
@@ -339,8 +337,7 @@ class FailedExecutionPoolTest {
     when(blockManager.importBlock(any(), any()))
         .thenReturn(
             SafeFuture.completedFuture(
-                new BlockImportAndBroadcastValidationResults(
-                    SafeFuture.completedFuture(result), Optional.empty())));
+                new BlockImportAndBroadcastValidationResults(SafeFuture.completedFuture(result))));
   }
 
   private static InterruptedIOException timeoutException() {

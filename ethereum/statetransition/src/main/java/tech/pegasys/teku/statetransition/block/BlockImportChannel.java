@@ -13,13 +13,14 @@
 
 package tech.pegasys.teku.statetransition.block;
 
-import java.util.Optional;
+import com.google.common.annotations.VisibleForTesting;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastValidationResult;
+import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
+import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult;
 
 public interface BlockImportChannel extends ChannelInterface {
 
@@ -28,5 +29,16 @@ public interface BlockImportChannel extends ChannelInterface {
 
   record BlockImportAndBroadcastValidationResults(
       SafeFuture<BlockImportResult> blockImportResult,
-      Optional<SafeFuture<BroadcastValidationResult>> broadcastValidationResult) {}
+      SafeFuture<BroadcastValidationResult> broadcastValidationResult) {
+
+    /** only used in tests */
+    @VisibleForTesting
+    public BlockImportAndBroadcastValidationResults(
+        final SafeFuture<BlockImportResult> blockImportResult) {
+      this(
+          blockImportResult,
+          SafeFuture.completedFuture(
+              BlockBroadcastValidator.BroadcastValidationResult.NOT_REQUIRED));
+    }
+  }
 }
