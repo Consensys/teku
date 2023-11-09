@@ -134,10 +134,10 @@ public class ValidatorKeysOptions {
   }
 
   private List<String> parseValidatorExternalKeys(final boolean allowNoLoadedKeys) {
-    if (allowNoLoadedKeys) {
-      return validatorExternalSignerPublicKeys.stream().filter(StringUtils::isNotBlank).toList();
+    if (!allowNoLoadedKeys && validatorExternalSignerPublicKeys.isEmpty()) {
+      throw new InvalidConfigurationException("No validator external signer keys are loaded");
     }
-    return validatorExternalSignerPublicKeys;
+    return validatorExternalSignerPublicKeys.stream().filter(StringUtils::isNotBlank).toList();
   }
 
   private URL parseValidatorExternalSignerUrl() {
