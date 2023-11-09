@@ -18,5 +18,6 @@ the [releases page](https://github.com/Consensys/teku/releases).
  - Updated the default number of threads for batch signature verification based on CPUs available to help larger instances that may have more processing power available.
  - Added `/eth/v3/validator/blocks/{slot}` experimental beacon API for block production
  - Added [`--checkpoint-sync-url`](https://docs.teku.consensys.net/reference/cli#checkpoint-sync-url) CLI option.
+ - Added `--allow-no-loaded-keys` CLI option allowing the VC to run with no loaded keys.
 
 ### Bug Fixes
