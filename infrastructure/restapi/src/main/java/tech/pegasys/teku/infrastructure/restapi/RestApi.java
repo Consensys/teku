@@ -53,11 +53,7 @@ public class RestApi extends Service {
     try {
       passwordPath.ifPresent(this::checkAccessFile);
       app.start();
-      final String serverHost = app.jettyServer().getServerHost();
-      LOG.info(
-          "Listening on http://{}:{}/",
-          serverHost != null ? serverHost : "localhost",
-          app.jettyServer().getServerPort());
+      LOG.info("Listening on {}", app.jettyServer().server().getURI());
     } catch (final RuntimeException e) {
       if (Throwables.getRootCause(e) instanceof BindException) {
         throw new InvalidConfigurationException(
