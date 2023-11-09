@@ -37,7 +37,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -49,7 +48,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -472,10 +470,11 @@ class BlockOperationSelectorFactoryTest {
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
 
-    final BlindedBlobsBundle blindedBlobsBundle = dataStructureUtil.randomBlindedBlobsBundle();
+    final SszList<SszKZGCommitment> blobKzgCommitments =
+        dataStructureUtil.randomBlobKzgCommitments();
 
     prepareBlindedBlockAndBlobsProduction(
-        randomExecutionPayloadHeader, executionPayloadContext, blockSlotState, blindedBlobsBundle);
+        randomExecutionPayloadHeader, executionPayloadContext, blockSlotState, blobKzgCommitments);
 
     final CapturingBeaconBlockBodyBuilder bodyBuilder =
         new CapturingBeaconBlockBodyBuilder(true, true);
@@ -485,8 +484,7 @@ class BlockOperationSelectorFactoryTest {
             parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
         .accept(bodyBuilder);
 
-    assertThat(bodyBuilder.blobKzgCommitments)
-        .hasSameElementsAs(blindedBlobsBundle.getCommitments());
+    assertThat(bodyBuilder.blobKzgCommitments).hasSameElementsAs(blobKzgCommitments);
   }
 
   @Test
@@ -524,46 +522,7 @@ class BlockOperationSelectorFactoryTest {
   }
 
   @Test
-  void shouldCreateBlindedBlobSidecarsForBlindedBlockFromCachedPayloadResult() {
-    final BeaconBlock block = dataStructureUtil.randomBlindedBeaconBlock();
-
-    final BlindedBlobsBundle blindedBlobsBundle = dataStructureUtil.randomBlindedBlobsBundle();
-
-    // the BlindedBlobsBundle is stored in the HeaderWithFallbackData (retrieved via builder flow)
-    final HeaderWithFallbackData headerWithFallbackData =
-        HeaderWithFallbackData.create(
-            dataStructureUtil.randomExecutionPayloadHeader(), Optional.of(blindedBlobsBundle));
-
-    prepareCachedPayloadResult(
-        block.getSlot(),
-        dataStructureUtil.randomPayloadExecutionContext(false),
-        headerWithFallbackData);
-
-    final List<BlindedBlobSidecar> blindedBlobSidecars =
-        safeJoin(factory.createBlindedBlobSidecarsSelector().apply(block));
-
-    assertThat(blindedBlobSidecars)
-        .hasSize(blindedBlobsBundle.getNumberOfBlobs())
-        .first()
-        .satisfies(
-            // assert on one of the blinded sidecars
-            blindedBlobSidecar -> {
-              assertThat(blindedBlobSidecar.getBlockRoot()).isEqualTo(block.getRoot());
-              assertThat(blindedBlobSidecar.getBlockParentRoot()).isEqualTo(block.getParentRoot());
-              assertThat(blindedBlobSidecar.getIndex()).isEqualTo(UInt64.ZERO);
-              assertThat(blindedBlobSidecar.getSlot()).isEqualTo(block.getSlot());
-              assertThat(blindedBlobSidecar.getProposerIndex()).isEqualTo(block.getProposerIndex());
-              assertThat(blindedBlobSidecar.getBlobRoot())
-                  .isEqualTo(blindedBlobsBundle.getBlobRoots().get(0).get());
-              assertThat(blindedBlobSidecar.getKZGCommitment())
-                  .isEqualTo(blindedBlobsBundle.getCommitments().get(0).getKZGCommitment());
-              assertThat(blindedBlobSidecar.getKZGProof())
-                  .isEqualTo(blindedBlobsBundle.getProofs().get(0).getKZGProof());
-            });
-  }
-
-  @Test
-  void shouldSetBlindedBlobsBundle_whenAcceptingTheBlobSidecarsUnblinderSelector() {
+  void shouldSetBlobsBundle_whenAcceptingTheBlobSidecarsUnblinderSelector() {
     final ExecutionPayloadAndBlobsBundle executionPayloadAndBlobsBundle =
         dataStructureUtil.randomExecutionPayloadAndBlobsBundle();
     final UInt64 slot = dataStructureUtil.randomUInt64();
@@ -630,9 +589,9 @@ class BlockOperationSelectorFactoryTest {
       final ExecutionPayloadHeader executionPayloadHeader,
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState blockSlotState,
-      final BlindedBlobsBundle blindedBlobsBundle) {
+      final SszList<SszKZGCommitment> blobKzgCommitments) {
     final HeaderWithFallbackData headerWithFallbackData =
-        HeaderWithFallbackData.create(executionPayloadHeader, Optional.of(blindedBlobsBundle));
+        HeaderWithFallbackData.create(executionPayloadHeader, Optional.of(blobKzgCommitments));
     when(executionLayer.initiateBlockAndBlobsProduction(
             executionPayloadContext, blockSlotState, true))
         .thenReturn(
@@ -657,21 +616,6 @@ class BlockOperationSelectorFactoryTest {
                     Optional.of(SafeFuture.completedFuture(executionPayload)),
                     Optional.of(SafeFuture.completedFuture(Optional.of(blobsBundle))),
                     Optional.empty(),
-                    Optional.empty())));
-  }
-
-  private void prepareCachedPayloadResult(
-      final UInt64 slot,
-      final ExecutionPayloadContext executionPayloadContext,
-      final HeaderWithFallbackData headerWithFallbackData) {
-    when(executionLayer.getCachedPayloadResult(slot))
-        .thenReturn(
-            Optional.of(
-                new ExecutionPayloadResult(
-                    executionPayloadContext,
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.of(SafeFuture.completedFuture(headerWithFallbackData)),
                     Optional.empty())));
   }
 

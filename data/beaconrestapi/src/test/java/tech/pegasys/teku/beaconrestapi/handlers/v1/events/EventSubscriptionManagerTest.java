@@ -95,7 +95,7 @@ public class EventSubscriptionManagerTest {
   private final SyncState sampleSyncState = SyncState.IN_SYNC;
   private final SignedBeaconBlock sampleBlock =
       SignedBeaconBlock.create(data.randomSignedBeaconBlock(0));
-  private final BlobSidecarOld sampleBlobSidecar = data.randomBlobSidecar();
+  private final BlobSidecarOld sampleBlobSidecar = data.randomBlobSidecarOld();
   private final Attestation sampleAttestation = data.randomAttestation(0);
   private final SignedVoluntaryExit sampleVoluntaryExit = data.randomSignedVoluntaryExit();
   private final SignedBlsToExecutionChange sampleBlsToExecutionChange =

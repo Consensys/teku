@@ -47,7 +47,6 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
-import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
@@ -60,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.BlobsUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -94,7 +94,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   // block, payload and blobs tracking
   private Optional<ExecutionPayload> lastBuilderPayloadToBeUnblinded = Optional.empty();
   private Optional<tech.pegasys.teku.spec.datastructures.builder.BlobsBundle>
-      lastBuilderBlobsBundleToBeUnblinded = Optional.empty();
+      lastBuilderBlobsBundle = Optional.empty();
   private Optional<PowBlock> lastValidBlock = Optional.empty();
 
   public ExecutionLayerChannelStub(
@@ -345,23 +345,23 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                   SchemaDefinitionsBellatrix.required(schemaDefinitions)
                       .getExecutionPayloadHeaderSchema()
                       .createFromExecutionPayload(executionPayload);
-              final Optional<BlindedBlobsBundle> blindedBlobsBundle =
+              final Optional<SszList<SszKZGCommitment>> blobKzgCommitments =
                   getPayloadResponse
                       .getBlobsBundle()
                       .map(
                           blobsBundle -> {
                             final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
                                 SchemaDefinitionsDeneb.required(schemaDefinitions);
-                            lastBuilderBlobsBundleToBeUnblinded =
+                            lastBuilderBlobsBundle =
                                 Optional.of(
                                     schemaDefinitionsDeneb
                                         .getBlobsBundleSchema()
                                         .createFromExecutionBlobsBundle(blobsBundle));
                             return schemaDefinitionsDeneb
-                                .getBlindedBlobsBundleSchema()
-                                .createFromExecutionBlobsBundle(blobsBundle);
+                                .getBlobKzgCommitmentsSchema()
+                                .createFromBlobsBundle(blobsBundle);
                           });
-              return HeaderWithFallbackData.create(payloadHeader, blindedBlobsBundle);
+              return HeaderWithFallbackData.create(payloadHeader, blobKzgCommitments);
             });
   }
 
@@ -408,7 +408,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         lastBuilderPayloadToBeUnblinded.get().getBlockHash());
 
     final BuilderPayload builderPayload =
-        lastBuilderBlobsBundleToBeUnblinded
+        lastBuilderBlobsBundle
             // post Deneb
             .map(
                 blobsBundle -> {

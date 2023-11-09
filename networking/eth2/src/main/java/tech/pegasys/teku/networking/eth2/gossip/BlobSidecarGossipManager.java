@@ -58,7 +58,7 @@ public class BlobSidecarGossipManager implements GossipManager {
     final SpecVersion forkSpecVersion = spec.atEpoch(forkInfo.getFork().getEpoch());
     final SignedBlobSidecarSchemaOld gossipType =
         SchemaDefinitionsDeneb.required(forkSpecVersion.getSchemaDefinitions())
-            .getSignedBlobSidecarSchema();
+            .getSignedBlobSidecarOldSchema();
     final Int2ObjectMap<Eth2TopicHandler<SignedBlobSidecarOld>> subnetIdToTopicHandler =
         new Int2ObjectOpenHashMap<>();
     final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(forkSpecVersion.getConfig());

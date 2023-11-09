@@ -51,13 +51,13 @@ class BeaconBlockBodyDenebTest extends AbstractBeaconBlockBodyTest<BeaconBlockBo
           syncAggregate = dataStructureUtil.randomSyncAggregate();
           executionPayload = dataStructureUtil.randomExecutionPayload();
           blsToExecutionChanges = dataStructureUtil.randomSignedBlsToExecutionChangesList();
-          blobKzgCommitments = dataStructureUtil.randomSszKzgCommitmentList();
+          blobKzgCommitments = dataStructureUtil.randomBlobKzgCommitments();
         });
   }
 
   @Test
   void equalsReturnsFalseWhenBlobKzgCommitmentsIsDifferent() {
-    blobKzgCommitments = dataStructureUtil.randomSszKzgCommitmentList();
+    blobKzgCommitments = dataStructureUtil.randomBlobKzgCommitments();
     BeaconBlockBodyAltair testBeaconBlockBody = safeJoin(createBlockBody());
 
     assertNotEquals(defaultBlockBody, testBeaconBlockBody);

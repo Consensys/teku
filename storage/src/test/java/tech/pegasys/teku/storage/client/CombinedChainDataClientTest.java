@@ -59,7 +59,7 @@ class CombinedChainDataClientTest {
   final List<SignedBeaconBlock> nonCanonicalBlocks = new ArrayList<>();
   final SignedBeaconBlock firstBlock = dataStructureUtil.randomSignedBeaconBlock(1);
   final SignedBeaconBlock secondBlock = dataStructureUtil.randomSignedBeaconBlock(1);
-  final BlobSidecarOld sidecar = dataStructureUtil.randomBlobSidecar();
+  final BlobSidecarOld sidecar = dataStructureUtil.randomBlobSidecarOld();
 
   @BeforeEach
   void setUp() {

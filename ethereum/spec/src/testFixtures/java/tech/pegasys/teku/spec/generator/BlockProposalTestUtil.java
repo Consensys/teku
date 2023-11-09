@@ -129,7 +129,7 @@ public class BlockProposalTestUtil {
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(
                     SafeFuture.completedFuture(
-                        kzgCommitments.orElseGet(dataStructureUtil::emptySszKzgCommitmentList)));
+                        kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments)));
               }
             },
             false)
@@ -205,7 +205,7 @@ public class BlockProposalTestUtil {
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(
                     SafeFuture.completedFuture(
-                        kzgCommitments.orElseGet(dataStructureUtil::emptySszKzgCommitmentList)));
+                        kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments)));
               }
             })
         .thenApply(
@@ -354,7 +354,7 @@ public class BlockProposalTestUtil {
       final boolean skipStateTransition)
       throws EpochProcessingException, SlotProcessingException {
     final UInt64 newEpoch = spec.computeEpochAtSlot(newSlot);
-    List<KZGCommitment> generatedBlobsKzgCommitments = blobsUtil.blobsToKzgCommitments(blobs);
+    final List<KZGCommitment> generatedBlobKzgCommitments = blobsUtil.blobsToKzgCommitments(blobs);
 
     final SszListSchema<SszKZGCommitment, ?> blobKZGCommitmentsSchema =
         ((BeaconBlockBodySchemaDeneb<?>)
@@ -362,7 +362,7 @@ public class BlockProposalTestUtil {
             .getBlobKzgCommitmentsSchema();
 
     final SszList<SszKZGCommitment> kzgCommitments =
-        generatedBlobsKzgCommitments.stream()
+        generatedBlobKzgCommitments.stream()
             .map(SszKZGCommitment::new)
             .collect(blobKZGCommitmentsSchema.collector());
 

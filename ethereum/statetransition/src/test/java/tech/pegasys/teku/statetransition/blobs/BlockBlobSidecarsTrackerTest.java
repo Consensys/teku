@@ -240,7 +240,7 @@ public class BlockBlobSidecarsTrackerTest {
   void add_shouldThrowWhenAddingInconsistentBlobSidecar() {
     BlockBlobSidecarsTracker blockBlobSidecarsTracker =
         new BlockBlobSidecarsTracker(dataStructureUtil.randomSlotAndBlockRoot(), maxBlobsPerBlock);
-    assertThatThrownBy(() -> blockBlobSidecarsTracker.add(dataStructureUtil.randomBlobSidecar()))
+    assertThatThrownBy(() -> blockBlobSidecarsTracker.add(dataStructureUtil.randomBlobSidecarOld()))
         .isInstanceOf(IllegalArgumentException.class);
   }
 

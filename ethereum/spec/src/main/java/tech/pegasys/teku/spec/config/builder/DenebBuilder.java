@@ -36,11 +36,12 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
   private Integer fieldElementsPerBlob;
   private Integer maxBlobCommitmentsPerBlock;
   private Integer maxBlobsPerBlock;
+  private Integer kzgCommitmentInclusionProofDepth;
   private Integer maxRequestBlocksDeneb;
   private Integer maxRequestBlobSidecars;
   private Integer minEpochsForBlobSidecarsRequests;
-  private Optional<Integer> epochsStoreBlobs = Optional.empty();
   private Integer blobSidecarSubnetCount;
+  private Optional<Integer> epochsStoreBlobs = Optional.empty();
 
   DenebBuilder() {}
 
@@ -54,6 +55,7 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
         fieldElementsPerBlob,
         maxBlobCommitmentsPerBlock,
         maxBlobsPerBlock,
+        kzgCommitmentInclusionProofDepth,
         maxRequestBlocksDeneb,
         maxRequestBlobSidecars,
         minEpochsForBlobSidecarsRequests,
@@ -92,6 +94,12 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
 
   public DenebBuilder maxBlobsPerBlock(final Integer maxBlobsPerBlock) {
     this.maxBlobsPerBlock = maxBlobsPerBlock;
+    return this;
+  }
+
+  public DenebBuilder kzgCommitmentInclusionProofDepth(
+      final Integer kzgCommitmentInclusionProofDepth) {
+    this.kzgCommitmentInclusionProofDepth = kzgCommitmentInclusionProofDepth;
     return this;
   }
 
@@ -146,6 +154,7 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
     constants.put("fieldElementsPerBlob", fieldElementsPerBlob);
     constants.put("maxBlobCommitmentsPerBlock", maxBlobCommitmentsPerBlock);
     constants.put("maxBlobsPerBlock", maxBlobsPerBlock);
+    constants.put("kzgCommitmentInclusionProofDepth", kzgCommitmentInclusionProofDepth);
     constants.put("maxRequestBlocksDeneb", maxRequestBlocksDeneb);
     constants.put("maxRequestBlobSidecars", maxRequestBlobSidecars);
     constants.put("minEpochsForBlobSidecarsRequests", minEpochsForBlobSidecarsRequests);

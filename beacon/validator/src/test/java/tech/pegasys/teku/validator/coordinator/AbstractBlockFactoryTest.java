@@ -49,7 +49,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Be
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
-import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -104,8 +103,9 @@ public abstract class AbstractBlockFactoryTest {
   protected ExecutionPayload executionPayload = null;
   protected Optional<BlobsBundle> blobsBundle = Optional.empty();
 
+  // builder context
   protected ExecutionPayloadHeader executionPayloadHeader = null;
-  protected Optional<BlindedBlobsBundle> blindedBlobsBundle = Optional.empty();
+  protected Optional<SszList<SszKZGCommitment>> blobKzgCommitments = Optional.empty();
 
   protected ExecutionPayloadResult cachedExecutionPayloadResult = null;
 
@@ -343,11 +343,12 @@ public abstract class AbstractBlockFactoryTest {
     return blobsBundle;
   }
 
-  protected BlindedBlobsBundle prepareBlindedBlobsBundle(final Spec spec, final int count) {
+  protected SszList<SszKZGCommitment> prepareBlobKzgCommitments(final Spec spec, final int count) {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final BlindedBlobsBundle blindedBlobsBundle = dataStructureUtil.randomBlindedBlobsBundle(count);
-    this.blindedBlobsBundle = Optional.of(blindedBlobsBundle);
-    return blindedBlobsBundle;
+    final SszList<SszKZGCommitment> blobKzgCommitments =
+        dataStructureUtil.randomBlobKzgCommitments(count);
+    this.blobKzgCommitments = Optional.of(blobKzgCommitments);
+    return blobKzgCommitments;
   }
 
   private void setupExecutionLayerBlockAndBlobsProduction() {
@@ -405,7 +406,7 @@ public abstract class AbstractBlockFactoryTest {
                       Optional.of(
                           SafeFuture.completedFuture(
                               HeaderWithFallbackData.create(
-                                  executionPayloadHeader, blindedBlobsBundle))),
+                                  executionPayloadHeader, blobKzgCommitments))),
                       Optional.empty());
               cachedExecutionPayloadResult = executionPayloadResult;
               return executionPayloadResult;
@@ -435,14 +436,11 @@ public abstract class AbstractBlockFactoryTest {
                 blobsBundle.getCommitments().stream()
                     .map(SszKZGCommitment::new)
                     .collect(Collectors.toList()))
-        .or(
-            () ->
-                blindedBlobsBundle.map(
-                    blindedBlobsBundle -> blindedBlobsBundle.getCommitments().asList()))
+        .or(() -> blobKzgCommitments.map(SszList::asList))
         .orElseThrow(
             () ->
                 new IllegalStateException(
-                    "Neither BlobsBundle or BlindedBlobsBundle were prepared"));
+                    "Neither BlobsBundle or BlobKzgCommitments were prepared"));
   }
 
   private BuilderPayload getBuilderPayload(final Spec spec) {

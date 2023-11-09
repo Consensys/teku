@@ -25,11 +25,6 @@ public interface BuilderBid extends SszContainer {
 
   ExecutionPayloadHeader getHeader();
 
-  @Deprecated
-  default Optional<BlindedBlobsBundle> getOptionalBlindedBlobsBundle() {
-    return Optional.empty();
-  }
-
   Optional<SszList<SszKZGCommitment>> getOptionalBlobKzgCommitments();
 
   UInt256 getValue();

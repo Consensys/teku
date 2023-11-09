@@ -395,7 +395,7 @@ public class Spec {
         .toVersionDeneb()
         .orElseThrow(
             () -> new RuntimeException("Deneb milestone is required to deserialize blob sidecar"))
-        .getBlobSidecarSchema()
+        .getBlobSidecarOldSchema()
         .sszDeserialize(serializedBlobSidecar);
   }
 
@@ -960,10 +960,6 @@ public class Spec {
 
   public Optional<Integer> getMaxBlobsPerBlock() {
     return getSpecConfigDeneb().map(SpecConfigDeneb::getMaxBlobsPerBlock);
-  }
-
-  public Optional<Integer> getMaxBlobCommitmentsPerBlock() {
-    return getSpecConfigDeneb().map(SpecConfigDeneb::getMaxBlobCommitmentsPerBlock);
   }
 
   public Optional<Integer> getMaxBlobsPerBlock(final UInt64 slot) {

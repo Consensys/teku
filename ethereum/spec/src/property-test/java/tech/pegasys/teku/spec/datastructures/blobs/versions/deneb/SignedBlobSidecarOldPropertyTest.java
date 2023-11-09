@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.builder;
+package tech.pegasys.teku.spec.datastructures.blobs.versions.deneb;
 
 import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assertDeserializeMutatedThrowsExpected;
 import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assertRoundTrip;
@@ -19,22 +19,23 @@ import static tech.pegasys.teku.spec.propertytest.util.PropertyTestHelper.assert
 import com.fasterxml.jackson.core.JsonProcessingException;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.spec.propertytest.suppliers.builder.BlindedBlobsBundleSupplier;
+import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.SignedBlobSidecarOldSupplier;
 
-public class BlindedBlobsBundlePropertyTest {
+public class SignedBlobSidecarOldPropertyTest {
+
   @Property
   void roundTrip(
-      @ForAll(supplier = BlindedBlobsBundleSupplier.class)
-          final BlindedBlobsBundle blindedBlobsBundle)
+      @ForAll(supplier = SignedBlobSidecarOldSupplier.class)
+          final SignedBlobSidecarOld signedBlobSidecar)
       throws JsonProcessingException {
-    assertRoundTrip(blindedBlobsBundle);
+    assertRoundTrip(signedBlobSidecar);
   }
 
   @Property
   void deserializeMutated(
-      @ForAll(supplier = BlindedBlobsBundleSupplier.class)
-          final BlindedBlobsBundle blindedBlobsBundle,
+      @ForAll(supplier = SignedBlobSidecarOldSupplier.class)
+          final SignedBlobSidecarOld signedBlobSidecar,
       @ForAll final int seed) {
-    assertDeserializeMutatedThrowsExpected(blindedBlobsBundle, seed);
+    assertDeserializeMutatedThrowsExpected(signedBlobSidecar, seed);
   }
 }
