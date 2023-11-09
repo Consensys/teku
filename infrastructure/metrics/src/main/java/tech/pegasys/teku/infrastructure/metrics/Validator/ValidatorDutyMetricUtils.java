@@ -22,8 +22,8 @@ public class ValidatorDutyMetricUtils {
   public static LabelledMetric<OperationTimer> createValidatorDutyMetric(
       final MetricsSystem metricsSystem) {
     return metricsSystem.createLabelledTimer(
-        TekuMetricCategory.VALIDATOR,
-        "duty_timer",
+        TekuMetricCategory.VALIDATOR_DUTY,
+        "timer",
         "Timer recording the time taken to perform a duty",
         "type",
         "step");
