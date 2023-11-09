@@ -21,8 +21,8 @@ import org.junit.jupiter.api.Test;
 public class LimitedMapTest {
 
   @Test
-  public void create_evictLeastRecentlyAccessed() {
-    final Map<Integer, Integer> map = LimitedMap.createSynchronized(2);
+  public void createSynchronizedLRU_evictLeastRecentlyAccessed() {
+    final Map<Integer, Integer> map = LimitedMap.createSynchronizedLRU(2);
     map.put(1, 1);
     assertThat(map.size()).isEqualTo(1);
     map.put(2, 2);
@@ -36,5 +36,23 @@ public class LimitedMapTest {
     // Element 2 should have been evicted
     assertThat(map.containsKey(3)).isTrue();
     assertThat(map.containsKey(1)).isTrue();
+  }
+
+  @Test
+  public void createSynchronizedNatural_evictNaturalOrder() {
+    final Map<Integer, Integer> map = LimitedMap.createSynchronizedNatural(2);
+    map.put(1, 1);
+    assertThat(map.size()).isEqualTo(1);
+    map.put(2, 2);
+    assertThat(map.size()).isEqualTo(2);
+
+    // Access element 1 then add a new element that will put us over the limit
+    map.get(1);
+
+    map.put(3, 3);
+    assertThat(map.size()).isEqualTo(2);
+    // Element 2 should have been evicted
+    assertThat(map.containsKey(3)).isTrue();
+    assertThat(map.containsKey(2)).isTrue();
   }
 }

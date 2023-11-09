@@ -36,7 +36,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
-import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
@@ -51,6 +50,7 @@ import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
@@ -249,11 +249,11 @@ public class ExecutionBuilderModule {
     final ExecutionPayloadHeader executionPayloadHeader =
         builderBidValidator.validateAndGetPayloadHeader(
             spec, signedBuilderBid, validatorRegistration, state, localExecutionPayload);
-    final Optional<BlindedBlobsBundle> blindedBlobsBundle =
-        signedBuilderBid.getMessage().getOptionalBlindedBlobsBundle();
+    final Optional<SszList<SszKZGCommitment>> blobKzgCommitments =
+        signedBuilderBid.getMessage().getOptionalBlobKzgCommitments();
     payloadValueResult.complete(signedBuilderBid.getMessage().getValue());
     return SafeFuture.completedFuture(
-        HeaderWithFallbackData.create(executionPayloadHeader, blindedBlobsBundle));
+        HeaderWithFallbackData.create(executionPayloadHeader, blobKzgCommitments));
   }
 
   public SafeFuture<Void> builderRegisterValidators(
@@ -351,21 +351,18 @@ public class ExecutionBuilderModule {
                   .orElseThrow()
                   .getExecutionPayloadHeaderSchema()
                   .createFromExecutionPayload(executionPayload);
-          final Optional<BlindedBlobsBundle> blindedBlobsBundle =
+          final Optional<SszList<SszKZGCommitment>> blobKzgCommitments =
               getPayloadResponse
                   .getBlobsBundle()
                   .map(
-                      executionBlobsBundle -> {
-                        final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
-                            SchemaDefinitionsDeneb.required(schemaDefinitions);
-                        return schemaDefinitionsDeneb
-                            .getBlindedBlobsBundleSchema()
-                            .createFromExecutionBlobsBundle(executionBlobsBundle);
-                      });
+                      blobsBundle ->
+                          SchemaDefinitionsDeneb.required(schemaDefinitions)
+                              .getBlobKzgCommitmentsSchema()
+                              .createFromBlobsBundle(blobsBundle));
           final FallbackData fallbackData =
               new FallbackData(executionPayload, getPayloadResponse.getBlobsBundle(), reason);
           return HeaderWithFallbackData.create(
-              executionPayloadHeader, blindedBlobsBundle, fallbackData);
+              executionPayloadHeader, blobKzgCommitments, fallbackData);
         });
   }
 
@@ -404,11 +401,10 @@ public class ExecutionBuilderModule {
     // the blobs bundle compatibility is done by SignedBlobSidecarsUnblinder
     return headerWithFallbackDataFuture.thenCompose(
         headerWithFallbackData -> {
-          if (headerWithFallbackData.getFallbackDataOptional().isEmpty()) {
+          if (headerWithFallbackData.getFallbackData().isEmpty()) {
             return getPayloadFromBuilder(signedBlindedBlockContainer.getSignedBlock());
           } else {
-            final FallbackData fallbackData =
-                headerWithFallbackData.getFallbackDataOptional().get();
+            final FallbackData fallbackData = headerWithFallbackData.getFallbackData().get();
             logFallbackToLocalExecutionPayloadAndBlobsBundle(fallbackData);
             executionLayerManager.recordExecutionPayloadFallbackSource(
                 Source.BUILDER_LOCAL_EL_FALLBACK, fallbackData.getReason());
@@ -505,8 +501,8 @@ public class ExecutionBuilderModule {
     final ExecutionPayloadHeader payloadHeader = builderBid.getHeader();
     final String blobsLog =
         builderBid
-            .getOptionalBlindedBlobsBundle()
-            .map(blindedBlobsBundle -> ", Blobs count = " + blindedBlobsBundle.getNumberOfBlobs())
+            .getOptionalBlobKzgCommitments()
+            .map(blobKzgCommitments -> ", Blobs count = " + blobKzgCommitments.size())
             .orElse("");
     LOG.info(
         "Received Builder Bid (Block Number = {}, Block Hash = {}, MEV Reward (ETH) = {}, Gas Limit = {}, Gas Used = {}{})",

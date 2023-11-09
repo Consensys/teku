@@ -17,18 +17,16 @@ import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema4;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
-import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidBuilder;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitmentSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKeySchema;
 
@@ -43,16 +41,13 @@ public class BuilderBidSchemaDeneb
 
   public BuilderBidSchemaDeneb(
       final String containerName,
-      final SpecConfigDeneb specConfig,
-      final ExecutionPayloadHeaderSchema<?> executionPayloadHeaderSchema) {
+      final ExecutionPayloadHeaderSchema<?> executionPayloadHeaderSchema,
+      final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema) {
     super(
         containerName,
         namedSchema(
             "header", SszSchema.as(ExecutionPayloadHeader.class, executionPayloadHeaderSchema)),
-        namedSchema(
-            "blob_kzg_commitments",
-            SszListSchema.create(
-                SszKZGCommitmentSchema.INSTANCE, specConfig.getMaxBlobCommitmentsPerBlock())),
+        namedSchema("blob_kzg_commitments", blobKzgCommitmentsSchema),
         namedSchema("value", SszPrimitiveSchemas.UINT256_SCHEMA),
         namedSchema("pubkey", SszPublicKeySchema.INSTANCE));
   }

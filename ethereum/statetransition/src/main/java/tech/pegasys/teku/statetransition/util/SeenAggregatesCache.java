@@ -25,7 +25,7 @@ public class SeenAggregatesCache<KeyT> {
   private final Map<KeyT, Set<SszBitSet>> seenAggregationBitsByDataRoot;
 
   public SeenAggregatesCache(final int rootCacheSize) {
-    this.seenAggregationBitsByDataRoot = LimitedMap.createSynchronized(rootCacheSize);
+    this.seenAggregationBitsByDataRoot = LimitedMap.createSynchronizedLRU(rootCacheSize);
   }
 
   public boolean add(final KeyT root, final SszBitSet aggregationBits) {

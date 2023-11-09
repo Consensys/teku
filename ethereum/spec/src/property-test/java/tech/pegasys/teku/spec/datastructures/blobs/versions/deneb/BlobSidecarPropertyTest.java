@@ -24,14 +24,14 @@ import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSi
 public class BlobSidecarPropertyTest {
 
   @Property
-  void roundTrip(@ForAll(supplier = BlobSidecarSupplier.class) final BlobSidecarOld blobSidecar)
+  void roundTrip(@ForAll(supplier = BlobSidecarSupplier.class) final BlobSidecar blobSidecar)
       throws JsonProcessingException {
     assertRoundTrip(blobSidecar);
   }
 
   @Property
   void deserializeMutated(
-      @ForAll(supplier = BlobSidecarSupplier.class) final BlobSidecarOld blobSidecar,
+      @ForAll(supplier = BlobSidecarSupplier.class) final BlobSidecar blobSidecar,
       @ForAll final int seed) {
     assertDeserializeMutatedThrowsExpected(blobSidecar, seed);
   }

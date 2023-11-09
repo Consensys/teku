@@ -94,6 +94,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   }
 
   @Override
+  public Optional<Bytes> getHotBlockAsSsz(final Bytes32 root) {
+    return hotDao.getHotBlockRaw(root);
+  }
+
+  @Override
   public Optional<BlockCheckpoints> getHotBlockCheckpointEpochs(final Bytes32 root) {
     return hotDao.getHotBlockCheckpointEpochs(root);
   }
@@ -515,6 +520,12 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void addFinalizedBlock(final SignedBeaconBlock block) {
       finalizedUpdater.addFinalizedBlock(block);
+    }
+
+    @Override
+    public void addFinalizedBlockRaw(
+        final UInt64 slot, final Bytes32 blockRoot, final Bytes blockBytes) {
+      finalizedUpdater.addFinalizedBlockRaw(slot, blockRoot, blockBytes);
     }
 
     @Override

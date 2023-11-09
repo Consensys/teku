@@ -662,7 +662,7 @@ public class ChainBuilder {
 
     final BlobSidecarSchemaOld blobSidecarSchema =
         SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
-            .getBlobSidecarSchema();
+            .getBlobSidecarOldSchema();
 
     if (options.isStoreBlobSidecarsEnabled()) {
       final List<BlobSidecarOld> blobSidecars =
@@ -734,7 +734,7 @@ public class ChainBuilder {
 
     final BlobSidecarSchemaOld blobSidecarSchema =
         SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
-            .getBlobSidecarSchema();
+            .getBlobSidecarOldSchema();
 
     if (options.isStoreBlobSidecarsEnabled()) {
       final List<BlobSidecarOld> blobSidecars =

@@ -87,7 +87,7 @@ public class MappedOperationPool<T extends MessageWithValidatorId> implements Op
       final int operationPoolSize) {
 
     this.slotToSszListSchemaSupplier = slotToSszListSchemaSupplier;
-    this.operations = LimitedMap.createSynchronized(operationPoolSize);
+    this.operations = LimitedMap.createSynchronizedLRU(operationPoolSize);
     this.operationValidator = operationValidator;
     this.metricType = metricType;
     metricsSystem.createIntegerGauge(

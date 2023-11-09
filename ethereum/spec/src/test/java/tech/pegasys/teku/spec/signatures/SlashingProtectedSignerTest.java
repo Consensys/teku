@@ -79,7 +79,7 @@ class SlashingProtectedSignerTest {
   void signBlobSidecar_shouldAlwaysSign() {
     final BeaconBlock block = dataStructureUtilDeneb.randomBeaconBlock(6);
     final BlobSidecarOld blobSidecar =
-        dataStructureUtilDeneb.randomBlobSidecar(block.getRoot(), UInt64.valueOf(2));
+        dataStructureUtilDeneb.randomBlobSidecarOld(block.getRoot(), UInt64.valueOf(2));
     when(delegate.signBlobSidecar(blobSidecar, forkInfo)).thenReturn(signatureFuture);
     assertThatSafeFuture(signer.signBlobSidecar(blobSidecar, forkInfo))
         .isCompletedWithValue(signature);

@@ -204,7 +204,7 @@ class Store extends CacheableStore {
 
     // Create limited collections for non-final data
     final Map<Bytes32, SignedBeaconBlock> blocks =
-        LimitedMap.createSynchronized(config.getBlockCacheSize());
+        LimitedMap.createSynchronizedNatural(config.getBlockCacheSize());
     final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStateTaskQueue =
         CachingTaskQueue.create(
             asyncRunner,
@@ -216,10 +216,10 @@ class Store extends CacheableStore {
             asyncRunner, metricsSystem, "memory_states", config.getStateCacheSize());
     final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates =
         config.getEpochStateCacheSize() > 0
-            ? Optional.of(LimitedMap.createSynchronized(config.getEpochStateCacheSize()))
+            ? Optional.of(LimitedMap.createSynchronizedLRU(config.getEpochStateCacheSize()))
             : Optional.empty();
     final Map<SlotAndBlockRoot, List<BlobSidecarOld>> blobSidecars =
-        LimitedMap.createSynchronized(config.getBlockCacheSize());
+        LimitedMap.createSynchronizedNatural(config.getBlockCacheSize());
 
     final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(time, genesisTime));
     final ForkChoiceStrategy forkChoiceStrategy =

@@ -179,11 +179,12 @@ public class SszTestExecutor<T extends SszData> implements TestExecutor {
           .put(
               "ssz_static/BlobSidecar",
               new SszTestExecutor<>(
-                  schemas -> SchemaDefinitionsDeneb.required(schemas).getBlobSidecarSchema()))
+                  schemas -> SchemaDefinitionsDeneb.required(schemas).getBlobSidecarOldSchema()))
           .put(
               "ssz_static/SignedBlobSidecar",
               new SszTestExecutor<>(
-                  schemas -> SchemaDefinitionsDeneb.required(schemas).getSignedBlobSidecarSchema()))
+                  schemas ->
+                      SchemaDefinitionsDeneb.required(schemas).getSignedBlobSidecarOldSchema()))
           .put(
               "ssz_static/BlobIdentifier",
               new SszTestExecutor<>(schemas -> BlobIdentifier.SSZ_SCHEMA))
