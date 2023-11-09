@@ -30,7 +30,7 @@ public class MetricsConfig {
   public static final ImmutableSet<MetricCategory> DEFAULT_METRICS_CATEGORIES =
       ImmutableSet.<MetricCategory>builder()
           .addAll(EnumSet.allOf(StandardMetricCategory.class))
-          .addAll(EnumSet.allOf(TekuMetricCategory.class))
+          .addAll(TekuMetricCategory.defaultCategories())
           .build();
   public static final int DEFAULT_METRICS_PORT = 8008;
   public static final String DEFAULT_METRICS_INTERFACE = "127.0.0.1";
