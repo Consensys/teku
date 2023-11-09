@@ -16,7 +16,6 @@ package tech.pegasys.teku.test.acceptance;
 import com.google.common.io.Resources;
 import java.net.URL;
 import java.util.Map;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -39,7 +38,6 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
 
   @Test
-  @Disabled("Switch to shanghaiBlock Besu genesis when it's available and enable")
   void shouldUpgradeToCapella() throws Exception {
     final UInt64 currentTime = timeProvider.getTimeInSeconds();
     final int genesisTime = currentTime.plus(30).intValue(); // magic node startup time
