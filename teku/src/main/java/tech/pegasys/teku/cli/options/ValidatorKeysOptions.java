@@ -104,12 +104,23 @@ public class ValidatorKeysOptions {
   private int validatorExternalSignerConcurrentRequestLimit =
       ValidatorConfig.DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT;
 
+  @CommandLine.Option(
+      names = {"--allow-no-loaded-keys-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Allow the VC to run with no loaded keys",
+      hidden = true,
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean allowNoLoadedKeysEnabled = ValidatorConfig.DEFAULT_ALLOW_NO_LOADED_KEYS_ENABLED;
+
   public void configure(TekuConfiguration.Builder builder) {
     builder.validator(
         config ->
             config
                 .validatorKeys(validatorKeys)
-                .validatorExternalSignerPublicKeySources(parseValidatorExternalKeys())
+                .validatorExternalSignerPublicKeySources(
+                    parseValidatorExternalKeys(allowNoLoadedKeysEnabled))
                 .validatorExternalSignerUrl(parseValidatorExternalSignerUrl())
                 .validatorExternalSignerConcurrentRequestLimit(
                     validatorExternalSignerConcurrentRequestLimit)
@@ -122,8 +133,11 @@ public class ValidatorKeysOptions {
                     convertToPath(validatorExternalSignerTruststorePasswordFile)));
   }
 
-  private List<String> parseValidatorExternalKeys() {
-    return validatorExternalSignerPublicKeys.stream().filter(StringUtils::isNotBlank).toList();
+  private List<String> parseValidatorExternalKeys(final boolean allowNoLoadedKeysEnabled) {
+    if (allowNoLoadedKeysEnabled) {
+      return validatorExternalSignerPublicKeys.stream().filter(StringUtils::isNotBlank).toList();
+    }
+    return validatorExternalSignerPublicKeys;
   }
 
   private URL parseValidatorExternalSignerUrl() {
