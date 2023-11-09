@@ -47,7 +47,7 @@ class ValidatorDutyMetricsTest {
     final LabelledMetric<OperationTimer> dutyMetric = mock(LabelledMetric.class);
     final MetricsSystem metricsSystem = mock(MetricsSystem.class);
     when(metricsSystem.createLabelledTimer(
-            eq(TekuMetricCategory.VALIDATOR), eq("duty_timer"), any(), eq("type"), eq("step")))
+            eq(TekuMetricCategory.VALIDATOR_DUTY), eq("timer"), any(), eq("type"), eq("step")))
         .thenReturn(dutyMetric);
 
     operationTimer = mock(OperationTimer.class);
