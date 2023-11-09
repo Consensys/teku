@@ -27,7 +27,8 @@ public class MerkleUtil {
    * https://github.com/ethereum/consensus-specs/blob/dev/ssz/merkle-proofs.md#merkle-multiproofs
    * for more info on merkle proofs.
    */
-  public static List<Bytes32> constructMerkleProof(TreeNode root, long leafGeneralizedIndex) {
+  public static List<Bytes32> constructMerkleProof(
+      final TreeNode root, final long leafGeneralizedIndex) {
     if (leafGeneralizedIndex <= 1) {
       // Nothing to prove or invalid index.
       return Collections.emptyList();
@@ -63,7 +64,7 @@ public class MerkleUtil {
    * `nodeIndex`)
    */
   @VisibleForTesting
-  static List<Long> getPathToNode(long nodeIndex) {
+  static List<Long> getPathToNode(final long nodeIndex) {
     if (nodeIndex < 1) {
       throw new IllegalArgumentException("Invalid node index: " + nodeIndex);
     }
