@@ -29,14 +29,12 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 @TestSpecContext(milestone = {SpecMilestone.BELLATRIX, SpecMilestone.CAPELLA, SpecMilestone.DENEB})
 class BlindBlockUtilTest {
 
-  private SpecMilestone specMilestone;
   private DataStructureUtil dataStructureUtil;
   private BlindBlockUtil blindBlockUtil;
 
   @BeforeEach
   void setUp(final SpecContext specContext) {
     final Spec spec = specContext.getSpec();
-    specMilestone = specContext.getSpecMilestone();
     dataStructureUtil = specContext.getDataStructureUtil();
     final SpecVersion specVersion = spec.forMilestone(specContext.getSpecMilestone());
     blindBlockUtil = specVersion.getBlindBlockUtil().orElseThrow();
