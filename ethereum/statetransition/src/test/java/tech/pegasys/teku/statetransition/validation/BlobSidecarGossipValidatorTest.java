@@ -215,7 +215,7 @@ public class BlobSidecarGossipValidatorTest {
   }
 
   @TestTemplate
-  void shouldRejectWhenInclusionProofFailsValidation(final SpecContext specContext) {
+  void shouldRejectWhenInclusionProofFailsValidation() {
     when(miscHelpersDeneb.verifyBlobSidecarMerkleProof(any())).thenReturn(false);
 
     SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar))

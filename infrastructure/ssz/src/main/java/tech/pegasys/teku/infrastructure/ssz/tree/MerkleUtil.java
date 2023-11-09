@@ -69,10 +69,10 @@ public class MerkleUtil {
     }
 
     final List<Long> path = new ArrayList<>();
-    final int depth = Long.SIZE - Long.numberOfLeadingZeros(nodeIndex);
+    final int depth = GIndexUtil.gIdxGetDepth(nodeIndex);
     long currentIndex = nodeIndex;
 
-    for (int i = 0; i < depth; ++i) {
+    for (int i = 0; i <= depth; ++i) {
       path.add(currentIndex);
       currentIndex = currentIndex >> 1;
     }
