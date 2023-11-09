@@ -105,14 +105,14 @@ public class ValidatorKeysOptions {
       ValidatorConfig.DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT;
 
   @CommandLine.Option(
-      names = {"--allow-no-loaded-keys-enabled"},
+      names = {"--allow-no-loaded-keys"},
       paramLabel = "<BOOLEAN>",
       description = "Allow the VC to run with no loaded keys",
       hidden = true,
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "0..1",
       fallbackValue = "true")
-  private boolean allowNoLoadedKeysEnabled = ValidatorConfig.DEFAULT_ALLOW_NO_LOADED_KEYS_ENABLED;
+  private boolean allowNoLoadedKeys = ValidatorConfig.DEFAULT_ALLOW_NO_LOADED_KEYS;
 
   public void configure(TekuConfiguration.Builder builder) {
     builder.validator(
@@ -120,7 +120,7 @@ public class ValidatorKeysOptions {
             config
                 .validatorKeys(validatorKeys)
                 .validatorExternalSignerPublicKeySources(
-                    parseValidatorExternalKeys(allowNoLoadedKeysEnabled))
+                    parseValidatorExternalKeys(allowNoLoadedKeys))
                 .validatorExternalSignerUrl(parseValidatorExternalSignerUrl())
                 .validatorExternalSignerConcurrentRequestLimit(
                     validatorExternalSignerConcurrentRequestLimit)
