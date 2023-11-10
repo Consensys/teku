@@ -102,6 +102,9 @@ public class BlockBroadcastValidatorTest {
 
     prepareBlockBroadcastValidator(broadcastValidation);
 
+    // consensus validation success should not affect the result
+    blockBroadcastValidator.onConsensusValidationSucceeded();
+
     assertThat(blockBroadcastValidator.getResult())
         .isCompletedWithValueMatching(result -> result.equals(GOSSIP_FAILURE));
     verify(blockGossipValidator).validate(eq(block), eq(true));
