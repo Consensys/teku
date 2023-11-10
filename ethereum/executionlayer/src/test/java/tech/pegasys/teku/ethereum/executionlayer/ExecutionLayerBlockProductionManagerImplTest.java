@@ -41,7 +41,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundle;
@@ -477,7 +477,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
   }
 
   private ExecutionPayload prepareBuilderGetPayloadResponse(
-      final SignedBlindedBlockContainer signedBlindedBlockContainer) {
+      final SignedBlockContainer signedBlindedBlockContainer) {
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
     when(builderClient.getPayload(signedBlindedBlockContainer.getSignedBlock()))
         .thenReturn(SafeFuture.completedFuture(new Response<>(payload)));
@@ -485,7 +485,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
   }
 
   private ExecutionPayloadAndBlobsBundle prepareBuilderGetPayloadResponseWithBlobs(
-      final SignedBlindedBlockContainer signedBlindedBlockContainer) {
+      final SignedBlockContainer signedBlindedBlockContainer) {
     final ExecutionPayloadAndBlobsBundle payloadAndBlobsBundle =
         dataStructureUtil.randomExecutionPayloadAndBlobsBundle();
     when(builderClient.getPayload(signedBlindedBlockContainer.getSignedBlock()))
