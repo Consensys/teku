@@ -121,7 +121,7 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
     final SignedBlockContainer request;
 
     if (isBlindedBlock) {
-      request = dataStructureUtil.randomSignedBlindedBlockContents(UInt64.ONE);
+      request = dataStructureUtil.randomSignedBlindedBeaconBlock(UInt64.ONE);
       signedBlockContainerSchema =
           spec.atSlot(UInt64.ONE).getSchemaDefinitions().getSignedBlindedBlockContainerSchema();
     } else {

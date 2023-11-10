@@ -960,9 +960,7 @@ class ExecutionLayerManagerImplTest {
             .orElse(fallbackData.getExecutionPayload());
 
     final SignedBlockContainer signedBlindedBlockContainer =
-        fallbackData.getBlobsBundle().isPresent()
-            ? dataStructureUtil.randomSignedBlindedBlockContents(slot)
-            : dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
+        dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
 
     // we expect result from the cached payload
     assertThat(
