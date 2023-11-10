@@ -161,6 +161,9 @@ public class BlockBroadcastValidatorTest {
 
     blockBroadcastValidator.onConsensusValidationSucceeded();
 
+    // any subsequent failures won't affect the result
+    blockImportResult.completeExceptionally(new RuntimeException("error"));
+
     assertThat(blockBroadcastValidator.getResult())
         .isCompletedWithValueMatching(result -> result.equals(SUCCESS));
     verify(blockGossipValidator).validate(eq(block), eq(true));

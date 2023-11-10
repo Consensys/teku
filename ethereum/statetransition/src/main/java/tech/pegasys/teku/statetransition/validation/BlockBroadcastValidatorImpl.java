@@ -57,6 +57,9 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
         // to be published even in case block import fails before gossip validation completes
         return;
       case CONSENSUS, CONSENSUS_AND_EQUIVOCATION:
+        // Any successful block import will be considered as a consensus validation success, but
+        // more importantly we propagate exceptions to the consensus validation, thus we capture any
+        // early block import failures
         blockImportResult
             .thenApply(BlockImportResult::isSuccessful)
             .propagateTo(consensusValidationSuccessResult);
