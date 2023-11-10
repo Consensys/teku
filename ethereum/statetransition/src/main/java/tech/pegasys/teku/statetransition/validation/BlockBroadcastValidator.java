@@ -55,7 +55,6 @@ public interface BlockBroadcastValidator {
   SafeFuture<BroadcastValidationResult> getResult();
 
   enum BroadcastValidationResult {
-    NOT_REQUIRED,
     SUCCESS,
     GOSSIP_FAILURE,
     CONSENSUS_FAILURE,
@@ -63,7 +62,7 @@ public interface BlockBroadcastValidator {
 
     // is success
     public boolean isFailure() {
-      return this != SUCCESS && this != NOT_REQUIRED;
+      return this != SUCCESS;
     }
   }
 }

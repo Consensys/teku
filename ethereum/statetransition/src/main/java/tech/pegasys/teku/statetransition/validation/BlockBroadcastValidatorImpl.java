@@ -50,9 +50,17 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
 
   @Override
   public void attachToBlockImport(final SafeFuture<BlockImportResult> blockImportResult) {
-    blockImportResult
-        .thenApply(BlockImportResult::isSuccessful)
-        .propagateTo(consensusValidationSuccessResult);
+    switch (broadcastValidationLevel) {
+      case NOT_REQUIRED, GOSSIP:
+        // GOSSIP validation isn't dependent on block import result,
+        // so not propagating exceptions to consensusValidationSuccessResult allow blocks\blobs
+        // to be published even in case block import fails before gossip validation completes
+        return;
+      case CONSENSUS, CONSENSUS_AND_EQUIVOCATION:
+        blockImportResult
+            .thenApply(BlockImportResult::isSuccessful)
+            .propagateTo(consensusValidationSuccessResult);
+    }
   }
 
   @Override
