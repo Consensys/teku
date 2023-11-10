@@ -318,6 +318,9 @@ class ForkChoiceTest {
     importBlock(blockAndState);
     reset(blockBroadcastValidator);
 
+    when(blockBroadcastValidator.getResult())
+        .thenReturn(SafeFuture.completedFuture(BroadcastValidationResult.SUCCESS));
+
     // let's prepare a mocked EL with lazy newPayload
     executionLayer = mock(ExecutionLayerChannelStub.class);
     final SafeFuture<PayloadStatus> payloadStatusSafeFuture = new SafeFuture<>();
