@@ -13,6 +13,13 @@
 
 package tech.pegasys.teku.statetransition.validation;
 
+import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.GOSSIP;
+import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.NOT_REQUIRED;
+import static tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult.CONSENSUS_FAILURE;
+import static tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult.FINAL_EQUIVOCATION_FAILURE;
+import static tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult.GOSSIP_FAILURE;
+import static tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult.SUCCESS;
+
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
@@ -73,8 +80,8 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
 
   private void buildValidationPipeline(final SignedBeaconBlock block) {
     // validateBroadcast should not be called at all but let's cover the case for safety
-    if (broadcastValidationLevel == BroadcastValidationLevel.NOT_REQUIRED) {
-      broadcastValidationResult.complete(BroadcastValidationResult.SUCCESS);
+    if (broadcastValidationLevel == NOT_REQUIRED) {
+      broadcastValidationResult.complete(SUCCESS);
     }
 
     // GOSSIP only validation
@@ -84,12 +91,12 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
             .thenApply(
                 gossipValidationResult -> {
                   if (gossipValidationResult.isAccept()) {
-                    return BroadcastValidationResult.SUCCESS;
+                    return SUCCESS;
                   }
-                  return BroadcastValidationResult.GOSSIP_FAILURE;
+                  return GOSSIP_FAILURE;
                 });
 
-    if (broadcastValidationLevel == BroadcastValidationLevel.GOSSIP) {
+    if (broadcastValidationLevel == GOSSIP) {
       validationPipeline.propagateTo(broadcastValidationResult);
       return;
     }
@@ -98,16 +105,16 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
     validationPipeline =
         validationPipeline.thenCompose(
             broadcastValidationResult -> {
-              if (broadcastValidationResult != BroadcastValidationResult.SUCCESS) {
+              if (broadcastValidationResult != SUCCESS) {
                 // forward gossip validation failure
                 return SafeFuture.completedFuture(broadcastValidationResult);
               }
               return consensusValidationSuccessResult.thenApply(
                   consensusValidationSuccess -> {
                     if (consensusValidationSuccess) {
-                      return BroadcastValidationResult.SUCCESS;
+                      return SUCCESS;
                     }
-                    return BroadcastValidationResult.CONSENSUS_FAILURE;
+                    return CONSENSUS_FAILURE;
                   });
             });
 
@@ -120,17 +127,17 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
     validationPipeline
         .thenApply(
             broadcastValidationResult -> {
-              if (broadcastValidationResult != BroadcastValidationResult.SUCCESS) {
+              if (broadcastValidationResult != SUCCESS) {
                 // forward gossip or consensus validation failure
                 return broadcastValidationResult;
               }
 
               // perform final equivocation validation
               if (blockGossipValidator.blockIsFirstBlockWithValidSignatureForSlot(block)) {
-                return BroadcastValidationResult.SUCCESS;
+                return SUCCESS;
               }
 
-              return BroadcastValidationResult.FINAL_EQUIVOCATION_FAILURE;
+              return FINAL_EQUIVOCATION_FAILURE;
             })
         .propagateTo(broadcastValidationResult);
   }

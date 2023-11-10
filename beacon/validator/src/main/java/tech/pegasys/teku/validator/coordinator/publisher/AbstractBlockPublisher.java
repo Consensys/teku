@@ -86,24 +86,23 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
                           dutyMetrics.onBlockPublished(maybeBlindedBlockContainer.getSlot());
                           return SendSignedBlockResult.success(
                               maybeBlindedBlockContainer.getRoot());
-                        } else if (importResult.getFailureReason()
-                            == FailureReason.BLOCK_IS_FROM_FUTURE) {
+                        }
+                        if (importResult.getFailureReason() == FailureReason.BLOCK_IS_FROM_FUTURE) {
                           LOG.debug(
                               "Delayed processing proposed block {} because it is from the future",
                               maybeBlindedBlockContainer.getSignedBlock().toLogString());
                           dutyMetrics.onBlockPublished(maybeBlindedBlockContainer.getSlot());
                           return SendSignedBlockResult.notImported(
                               importResult.getFailureReason().name());
-                        } else {
-                          VALIDATOR_LOGGER.proposedBlockImportFailed(
-                              importResult.getFailureReason().toString(),
-                              maybeBlindedBlockContainer.getSlot(),
-                              maybeBlindedBlockContainer.getRoot(),
-                              importResult.getFailureCause());
-
-                          return SendSignedBlockResult.notImported(
-                              importResult.getFailureReason().name());
                         }
+                        VALIDATOR_LOGGER.proposedBlockImportFailed(
+                            importResult.getFailureReason().toString(),
+                            maybeBlindedBlockContainer.getSlot(),
+                            maybeBlindedBlockContainer.getRoot(),
+                            importResult.getFailureCause());
+
+                        return SendSignedBlockResult.notImported(
+                            importResult.getFailureReason().name());
                       });
             });
   }
