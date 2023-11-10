@@ -51,7 +51,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
@@ -266,8 +265,8 @@ class BlockProductionDutyTest {
 
     performAndReportDuty(denebSlot);
 
-    final ArgumentCaptor<SignedBlindedBlockContainer> signedBlindedBlockContainerArgumentCaptor =
-        ArgumentCaptor.forClass(SignedBlindedBlockContainer.class);
+    final ArgumentCaptor<SignedBlockContainer> signedBlindedBlockContainerArgumentCaptor =
+        ArgumentCaptor.forClass(SignedBlockContainer.class);
 
     verify(validatorApiChannel)
         .sendSignedBlock(signedBlindedBlockContainerArgumentCaptor.capture(), any());
@@ -280,7 +279,7 @@ class BlockProductionDutyTest {
             ArgumentMatchers.argThat(Optional::isPresent));
     verifyNoMoreInteractions(validatorLogger);
 
-    final SignedBlindedBlockContainer signedBlindedBlockContainer =
+    final SignedBlockContainer signedBlindedBlockContainer =
         signedBlindedBlockContainerArgumentCaptor.getValue();
 
     assertThat(signedBlindedBlockContainer).isInstanceOf(SignedBeaconBlock.class);

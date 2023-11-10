@@ -33,7 +33,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
@@ -73,7 +73,7 @@ public class PostBlindedBlock extends RestApiEndpoint {
       return;
     }
 
-    final SignedBlindedBlockContainer requestBody = request.getRequestBody();
+    final SignedBlockContainer requestBody = request.getRequestBody();
 
     request.respondAsync(
         validatorDataProvider

@@ -17,6 +17,7 @@ import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImp
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessageOrSimpleName;
 import static tech.pegasys.teku.infrastructure.logging.Converter.weiToEth;
 
+import com.google.common.base.Preconditions;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
@@ -34,7 +35,6 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
@@ -290,12 +290,10 @@ public class ExecutionBuilderModule {
       final SignedBlockContainer signedBlockContainer,
       final Function<UInt64, Optional<ExecutionPayloadResult>> getPayloadResultFunction) {
 
-    final SignedBlindedBlockContainer signedBlindedBlockContainer =
-        signedBlockContainer
-            .toBlinded()
-            .orElseThrow(() -> new IllegalArgumentException("SignedBlockContainer must be blind"));
+    Preconditions.checkArgument(
+        signedBlockContainer.isBlinded(), "SignedBlockContainer must be blind");
 
-    final UInt64 slot = signedBlindedBlockContainer.getSlot();
+    final UInt64 slot = signedBlockContainer.getSlot();
 
     final Optional<SafeFuture<HeaderWithFallbackData>> maybeProcessedSlot =
         getPayloadResultFunction
@@ -305,14 +303,13 @@ public class ExecutionBuilderModule {
     if (maybeProcessedSlot.isEmpty()) {
       LOG.warn(
           "Blinded block seems to not be built via either builder or local EL. Trying to unblind it via builder endpoint anyway.");
-      return getPayloadFromBuilder(signedBlindedBlockContainer.getSignedBlock());
+      return getPayloadFromBuilder(signedBlockContainer.getSignedBlock());
     }
 
     final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture =
         maybeProcessedSlot.get();
 
-    return getPayloadFromBuilderOrFallbackData(
-        signedBlindedBlockContainer, headerWithFallbackDataFuture);
+    return getPayloadFromBuilderOrFallbackData(signedBlockContainer, headerWithFallbackDataFuture);
   }
 
   private boolean isTransitionNotFinalized(final ExecutionPayloadContext executionPayloadContext) {
@@ -394,11 +391,12 @@ public class ExecutionBuilderModule {
   }
 
   private SafeFuture<BuilderPayload> getPayloadFromBuilderOrFallbackData(
-      final SignedBlindedBlockContainer signedBlindedBlockContainer,
+      final SignedBlockContainer signedBlindedBlockContainer,
       final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture) {
     // note: we don't do any particular consistency check here.
     // the header/payload compatibility check is done by SignedBeaconBlockUnblinder
-    // the blobs bundle compatibility is done by SignedBlobSidecarsUnblinder
+    // TODO: clarify where is blobs bundle compatibility check done
+    // the blobs bundle compatibility is done by ...
     return headerWithFallbackDataFuture.thenCompose(
         headerWithFallbackData -> {
           if (headerWithFallbackData.getFallbackData().isEmpty()) {

@@ -20,8 +20,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 /**
  * Classes implementing this interface MUST:
  *
- * <p>- provide via {@link #getSignedBlindedBlockContainer()} the {@link
- * SignedBlindedBlockContainer} on which we are about to apply the unblinding process
+ * <p>- provide via {@link #getSignedBlindedBeaconBlock()} the blinded {@link SignedBeaconBlock} on
+ * which we are about to apply the unblinding process
  *
  * <p>- expect {@link #setExecutionPayloadSupplier( Supplier)} to be called, which provides a future
  * retrieving an ExecutionPayload consistent with the ExecutionPayloadHeader included in the Blinded
@@ -36,7 +36,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 public interface SignedBeaconBlockUnblinder {
   void setExecutionPayloadSupplier(Supplier<SafeFuture<ExecutionPayload>> executionPayloadSupplier);
 
-  SignedBlindedBlockContainer getSignedBlindedBlockContainer();
+  SignedBeaconBlock getSignedBlindedBeaconBlock();
 
   SafeFuture<SignedBeaconBlock> unblind();
 }

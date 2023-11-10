@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.coordinator;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -96,14 +97,13 @@ public class BlockFactoryPhase0 implements BlockFactory {
 
   @Override
   public SafeFuture<SignedBlockContainer> unblindSignedBlockIfBlinded(
-      final SignedBlockContainer maybeBlindedBlockContainer) {
-    return maybeBlindedBlockContainer
-        .toBlinded()
-        .map(
-            blindedBlockContainer ->
-                spec.unblindSignedBeaconBlock(
-                        blindedBlockContainer, operationSelector.createBlockUnblinderSelector())
-                    .thenApply(signedBeaconBlock -> (SignedBlockContainer) signedBeaconBlock))
-        .orElseGet(() -> SafeFuture.completedFuture(maybeBlindedBlockContainer));
+      SignedBlockContainer maybeBlindedBlockContainer) {
+    if (maybeBlindedBlockContainer.isBlinded()) {
+      return spec.unblindSignedBeaconBlock(
+              maybeBlindedBlockContainer.getSignedBlock(),
+              operationSelector.createBlockUnblinderSelector())
+          .thenApply(Function.identity());
+    }
+    return SafeFuture.completedFuture(maybeBlindedBlockContainer);
   }
 }
