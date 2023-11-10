@@ -323,7 +323,17 @@ public class BlockManager extends Service
                     LOG.warn("Unable to import block {} due to invalid data", block.toLogString());
                     blobSidecarPool.removeAllForBlock(block.getRoot());
                     break;
-                  default:
+                  case FAILED_BROADCAST_VALIDATION:
+                    LOG.warn(
+                        "Unable to import block {} due to failed broadcast validation",
+                        block.toLogString());
+                    break;
+                    // let's avoid default: so we don't forget to explicitly handle new cases
+                  case DOES_NOT_DESCEND_FROM_LATEST_FINALIZED,
+                      FAILED_STATE_TRANSITION,
+                      FAILED_WEAK_SUBJECTIVITY_CHECKS,
+                      DESCENDANT_OF_INVALID_BLOCK,
+                      INTERNAL_ERROR:
                     LOG.trace(
                         "Unable to import block for reason {}: {}",
                         result.getFailureReason(),
