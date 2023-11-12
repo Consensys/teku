@@ -64,4 +64,4 @@ downloader() {
 
 downloader "${DEPOSIT_NETWORK}" "${DEPOSIT_SSH}"
 
-echo -e "\nAll done for ${DEPOSIT_NETWORK}!"
+echo -e "\nAll done for ${DEPOSIT_NETWORK}. When done for all networks, verify snapshots with DepositSnapshotsBundleTest and submit PR manually."
