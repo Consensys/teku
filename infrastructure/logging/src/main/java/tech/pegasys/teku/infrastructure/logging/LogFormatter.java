@@ -30,7 +30,8 @@ public class LogFormatter {
     return String.format("%s (%s)", formatHashRoot(root), slot);
   }
 
-  public static String formatBlobSidecar(
+  @Deprecated
+  public static String formatBlobSidecarOld(
       final UInt64 slot,
       final Bytes32 blockRoot,
       final UInt64 index,
@@ -40,5 +41,24 @@ public class LogFormatter {
     return String.format(
         "block %s (%s), index %s, blob %s, commitment %s, proof %s",
         formatAbbreviatedHashRoot(blockRoot), slot, index, blob, kzgCommitment, kzgProof);
+  }
+
+  public static String formatBlobSidecar(
+      final UInt64 slot,
+      final Bytes32 blockBodyRoot,
+      final Bytes32 stateRoot,
+      final UInt64 index,
+      final String blob,
+      final String kzgCommitment,
+      final String kzgProof) {
+    return String.format(
+        "Slot %s (block body root %s, state root %s), index %s, blob %s, commitment %s, proof %s",
+        slot,
+        formatAbbreviatedHashRoot(blockBodyRoot),
+        formatAbbreviatedHashRoot(stateRoot),
+        index,
+        blob,
+        kzgCommitment,
+        kzgProof);
   }
 }

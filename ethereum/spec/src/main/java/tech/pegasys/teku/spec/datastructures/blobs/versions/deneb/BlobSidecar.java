@@ -25,7 +25,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
@@ -99,14 +98,11 @@ public class BlobSidecar
     return getSignedBeaconBlockHeader().getMessage().getBodyRoot();
   }
 
-  public SlotAndBlockRoot getSlotAndBlockRoot() {
-    return new SlotAndBlockRoot(getSlot(), getBlockBodyRoot());
-  }
-
   public String toLogString() {
     return LogFormatter.formatBlobSidecar(
         getSlot(),
-        getBlockBodyRoot(),
+        getSignedBeaconBlockHeader().getMessage().getBodyRoot(),
+        getSignedBeaconBlockHeader().getMessage().getStateRoot(),
         getIndex(),
         getBlob().toBriefString(),
         getKZGCommitment().toHexString(),
