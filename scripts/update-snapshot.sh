@@ -24,7 +24,7 @@ require_env "DEPOSIT_SSH"
 if [[ "$all_env_set" = false ]]; then
   echo "Not all required environment variables are set. Following environment variables should be set:"
   echo "DEPOSIT_SSH: ssh host for server with Teku like '8.8.8.8'"
-  echo "DEPOSIT_NETWORK: network name, one of gnosis, goerli, lukso, mainnet, sepolia"
+  echo "DEPOSIT_NETWORK: network name"
   exit 1
 fi
 
