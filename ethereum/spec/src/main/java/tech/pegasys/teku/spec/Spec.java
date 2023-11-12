@@ -51,7 +51,6 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
@@ -444,12 +443,6 @@ public class Spec {
 
   public Bytes computeSigningRoot(BlobSidecarOld blobSidecar, Bytes32 domain) {
     return atSlot(blobSidecar.getSlot()).miscHelpers().computeSigningRoot(blobSidecar, domain);
-  }
-
-  public Bytes computeSigningRoot(BlindedBlobSidecar blindedBlobSidecar, Bytes32 domain) {
-    return atSlot(blindedBlobSidecar.getSlot())
-        .miscHelpers()
-        .computeSigningRoot(blindedBlobSidecar, domain);
   }
 
   public Bytes computeSigningRoot(BeaconBlockHeader blockHeader, Bytes32 domain) {

@@ -72,7 +72,7 @@ public class PostBlock extends RestApiEndpoint {
         .summary("Publish a signed block")
         .description(
             "Submit a signed beacon block to the beacon node to be broadcast and imported."
-                + " After Deneb, this additionally instructs the beacon node to broadcast and import all given signed blobs."
+                + " After Deneb, this additionally instructs the beacon node to broadcast and import all given blobs."
                 + " The beacon node performs the required validation.")
         .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
         .requestBodyType(

@@ -34,15 +34,12 @@ public interface BlockContainer extends SszData, SszContainer {
     return getBlock().getSlot();
   }
 
+  @Deprecated
   default Optional<List<BlobSidecarOld>> getBlobSidecars() {
     return Optional.empty();
   }
 
-  default Optional<BlindedBlockContainer> toBlinded() {
-    return Optional.empty();
-  }
-
   default boolean isBlinded() {
-    return toBlinded().isPresent();
+    return getBlock().isBlinded();
   }
 }
