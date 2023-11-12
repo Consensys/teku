@@ -2,7 +2,7 @@
 set -euo pipefail
 
 LOCAL_REST_API_BINDING_PORT=15051
-valid_networks=("gnosis" "goerli" "lukso" "mainnet" "sepolia")
+valid_networks=("gnosis" "goerli" "lukso" "mainnet" "sepolia" "holesky")
 OUT=${1:?Must specify destination directory for snapshots}
 
 echo $'\nChecking that required environment variables are set:'
