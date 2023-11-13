@@ -34,6 +34,8 @@ public interface BeaconBlockBodySchemaDeneb<T extends BeaconBlockBodyDeneb>
 
   SszListSchema<SszKZGCommitment, ?> getBlobKzgCommitmentsSchema();
 
+  long getBlobKzgCommitmentsGeneralizedIndex();
+
   @Override
   default Optional<BeaconBlockBodySchemaDeneb<?>> toVersionDeneb() {
     return Optional.of(this);

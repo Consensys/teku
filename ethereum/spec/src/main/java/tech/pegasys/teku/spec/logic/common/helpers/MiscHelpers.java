@@ -38,6 +38,7 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.ForkData;
@@ -344,7 +345,12 @@ public class MiscHelpers {
     return false;
   }
 
+  @Deprecated
   public boolean verifyBlobKzgProof(final KZG kzg, final BlobSidecarOld blobSidecar) {
+    return false;
+  }
+
+  public boolean verifyBlobKzgProof(final KZG kzg, final BlobSidecar blobSidecar) {
     return false;
   }
 

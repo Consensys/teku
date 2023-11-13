@@ -440,7 +440,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   private BlobSidecarOld setUpBlobSidecarDataForKey(final SlotAndBlockRootAndBlobIndex key) {
     final BlobSidecarOld blobSidecar =
         dataStructureUtil
-            .createRandomBlobSidecarBuilder()
+            .createRandomBlobSidecarBuilderOld()
             .blockRoot(key.getBlockRoot())
             .slot(key.getSlot())
             .index(key.getBlobIndex())

@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidati
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceBlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.util.FutureItems;
-import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
+import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidatorOld;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -40,7 +40,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   private final Spec spec;
   private final AsyncRunner asyncRunner;
   private final RecentChainData recentChainData;
-  private final BlobSidecarGossipValidator validator;
+  private final BlobSidecarGossipValidatorOld validator;
   private final KZG kzg;
   private final BlobSidecarPool blobSidecarPool;
   private final FutureItems<SignedBlobSidecarOld> futureBlobSidecars;
@@ -54,7 +54,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
       final BlobSidecarPool blobSidecarPool,
-      final BlobSidecarGossipValidator validator,
+      final BlobSidecarGossipValidatorOld validator,
       final KZG kzg,
       final FutureItems<SignedBlobSidecarOld> futureBlobSidecars,
       final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots) {
