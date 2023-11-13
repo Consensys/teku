@@ -69,6 +69,7 @@ import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
 import tech.pegasys.teku.statetransition.validation.AttestationStateSelector;
+import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.protoarray.DeferredVotes;
@@ -199,7 +200,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   public SafeFuture<BlockImportResult> onBlock(
       final SignedBeaconBlock block,
       final Optional<BlockImportPerformance> blockImportPerformance,
-      final Optional<SafeFuture<BlockImportResult>> consensusValidationListener,
+      final BlockBroadcastValidator blockBroadcastValidator,
       final ExecutionLayerChannel executionLayer) {
     return recentChainData
         .retrieveStateAtSlot(new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
@@ -210,7 +211,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                     block,
                     blockSlotState,
                     blockImportPerformance,
-                    consensusValidationListener,
+                    blockBroadcastValidator,
                     executionLayer));
   }
 
@@ -388,7 +389,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final SignedBeaconBlock block,
       final Optional<BeaconState> blockSlotState,
       final Optional<BlockImportPerformance> blockImportPerformance,
-      final Optional<SafeFuture<BlockImportResult>> consensusValidationListener,
+      final BlockBroadcastValidator blockBroadcastValidator,
       final ExecutionLayerChannel executionLayer) {
     if (blockSlotState.isEmpty()) {
       return SafeFuture.completedFuture(BlockImportResult.FAILED_UNKNOWN_PARENT);
@@ -436,36 +437,47 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
     blockImportPerformance.ifPresent(BlockImportPerformance::postStateCreated);
 
-    final SafeFuture<BlobSidecarsAndValidationResult> blobSidecarsAvailabilityResult =
+    final SafeFuture<BlobSidecarsAndValidationResult> blobSidecarsAvailabilityFuture =
         blobSidecarsAvailabilityChecker
             .getAvailabilityCheckResult()
             .thenPeek(
-                result ->
-                    consensusValidationListener.ifPresent(
-                        voidSafeFuture -> {
-                          // consensus validation is completed when DA check is completed
-                          if (result.isSuccess()) {
-                            voidSafeFuture.complete(BlockImportResult.successful(block));
-                          }
-                        }));
+                result -> {
+                  // consensus validation is completed when DA check is completed
+                  if (result.isSuccess()) {
+                    blockBroadcastValidator.onConsensusValidationSucceeded();
+                  }
+                });
 
-    return payloadExecutor
-        .getExecutionResult()
-        .thenPeek(
-            __ -> blockImportPerformance.ifPresent(BlockImportPerformance::executionResultReceived))
-        .thenCombineAsync(
-            blobSidecarsAvailabilityResult,
-            (payloadResult, blobSidecarsAndValidationResult) ->
-                importBlockAndState(
-                    block,
-                    blockSlotState.get(),
-                    blockImportPerformance,
-                    forkChoiceUtil,
-                    indexedAttestationCache,
-                    postState,
-                    payloadResult,
-                    blobSidecarsAndValidationResult),
-            forkChoiceExecutor);
+    final SafeFuture<PayloadValidationResult> payloadValidationFuture =
+        payloadExecutor
+            .getExecutionResult()
+            .thenPeek(
+                __ ->
+                    blockImportPerformance.ifPresent(
+                        BlockImportPerformance::executionResultReceived));
+
+    return blockBroadcastValidator
+        .getResult()
+        .thenCompose(
+            broadcastValidationResult -> {
+              if (broadcastValidationResult.isFailure()) {
+                return SafeFuture.completedFuture(BlockImportResult.FAILED_BROADCAST_VALIDATION);
+              }
+
+              return payloadValidationFuture.thenCombineAsync(
+                  blobSidecarsAvailabilityFuture,
+                  (payloadResult, blobSidecarsAndValidationResult) ->
+                      importBlockAndState(
+                          block,
+                          blockSlotState.get(),
+                          blockImportPerformance,
+                          forkChoiceUtil,
+                          indexedAttestationCache,
+                          postState,
+                          payloadResult,
+                          blobSidecarsAndValidationResult),
+                  forkChoiceExecutor);
+            });
   }
 
   private BlockImportResult importBlockAndState(

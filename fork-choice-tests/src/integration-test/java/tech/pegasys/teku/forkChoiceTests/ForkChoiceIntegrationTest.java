@@ -56,6 +56,7 @@ import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
@@ -287,7 +288,7 @@ public class ForkChoiceIntegrationTest {
         fc.onBlock(
                 block,
                 Optional.empty(),
-                Optional.empty(),
+                BlockBroadcastValidator.NOOP,
                 new ExecutionLayerChannelStub(SPEC, false, Optional.empty()))
             .join();
     return blockImportResult.isSuccessful();

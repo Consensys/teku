@@ -71,6 +71,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
+import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
@@ -341,7 +342,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         block.getSlot(),
         block.getParentRoot());
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(block, Optional.empty(), Optional.empty(), executionLayer);
+        forkChoice.onBlock(block, Optional.empty(), BlockBroadcastValidator.NOOP, executionLayer);
     assertThat(result).isCompleted();
     final BlockImportResult importResult = safeJoin(result);
     assertThat(importResult)
