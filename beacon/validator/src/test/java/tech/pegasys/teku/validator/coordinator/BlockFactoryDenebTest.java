@@ -24,7 +24,6 @@ import org.mockito.Mockito;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -55,13 +54,6 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     assertThat(blockContainer.getBlock().getBody().getOptionalBlobKzgCommitments())
         .hasValueSatisfying(blobKzgCommitments -> assertThat(blobKzgCommitments).hasSize(3));
     // TODO Add test for blobs and kzg proofs once added
-    assertThat(blockContainer.getBlobSidecars())
-        .hasValueSatisfying(
-            blobSidecars ->
-                assertThat(blobSidecars)
-                    .hasSize(3)
-                    .map(BlobSidecarOld::getBlob)
-                    .hasSameElementsAs(blobsBundle.getBlobs()));
   }
 
   @Test
