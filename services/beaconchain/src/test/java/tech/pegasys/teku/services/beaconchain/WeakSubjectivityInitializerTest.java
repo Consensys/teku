@@ -226,7 +226,7 @@ public class WeakSubjectivityInitializerTest {
     final UInt64 currentSlot = spec.computeStartSlotAtEpoch(currentEpoch);
 
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final UInt64 anchorEpoch = currentEpoch.minus(1);
+    final UInt64 anchorEpoch = currentEpoch.min(2);
     final AnchorPoint anchor =
         dataStructureUtil.randomAnchorPoint(anchorEpoch, spec.fork(currentEpoch));
 
