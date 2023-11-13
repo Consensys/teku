@@ -51,8 +51,8 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -940,13 +940,10 @@ public class Spec {
     return getSpecConfigDeneb(slot).map(SpecConfigDeneb::getMaxBlobsPerBlock);
   }
 
-  public UInt64 computeSubnetForBlobSidecar(final SignedBlobSidecarOld signedBlobSidecar) {
-    final SpecConfig config = atSlot(signedBlobSidecar.getSlot()).getConfig();
+  public UInt64 computeSubnetForBlobSidecar(final BlobSidecar blobSidecar) {
+    final SpecConfig config = atSlot(blobSidecar.getSlot()).getConfig();
     final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
-    return signedBlobSidecar
-        .getBlobSidecar()
-        .getIndex()
-        .mod(specConfigDeneb.getBlobSidecarSubnetCount());
+    return blobSidecar.getIndex().mod(specConfigDeneb.getBlobSidecarSubnetCount());
   }
 
   public Optional<UInt64> computeFirstSlotWithBlobSupport() {
