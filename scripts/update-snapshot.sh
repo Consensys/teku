@@ -2,8 +2,7 @@
 set -euo pipefail
 
 LOCAL_REST_API_BINDING_PORT=15051
-SNAPSHOT_DOWNLOAD_SCRIPT="./scripts/fetch-deposit-snapshot.sh"
-
+valid_networks=("gnosis" "goerli" "lukso" "mainnet" "sepolia" "holesky")
 OUT=${1:?Must specify destination directory for snapshots}
 
 echo $'\nChecking that required environment variables are set:'
@@ -19,18 +18,23 @@ require_env() {
   fi
 }
 
-require_env "GOERLI_SSH"
-require_env "MAINNET_SSH"
-require_env "SEPOLIA_SSH"
-require_env "GNOSIS_SSH"
+require_env "DEPOSIT_NETWORK"
+require_env "DEPOSIT_SSH"
 
 if [[ "$all_env_set" = false ]]; then
   echo "Not all required environment variables are set. Following environment variables should be set:"
-  echo "GOERLI_SSH: ssh user-host for Goerli server with Teku like 'user@8.8.8.8'"
-  echo "MAINNET_SSH: ssh user-host for Mainnet server with Teku like 'user@8.8.8.8'"
-  echo "SEPOLIA_SSH: ssh user-host for Sepolia server with Teku like 'user@8.8.8.8'"
-  echo "GNOSIS_SSH: ssh user-host for Gnosis server with Teku like 'user@8.8.8.8'"
-  exit 89
+  echo "DEPOSIT_SSH: ssh host for server with Teku like '8.8.8.8'"
+  echo "DEPOSIT_NETWORK: network name"
+  exit 1
+fi
+
+network=$DEPOSIT_NETWORK
+if [[ " ${valid_networks[@]} " =~ " ${network} " ]]; then
+  echo "DEPOSIT_NETWORK is set to a valid network: $network"
+else
+  echo "DEPOSIT_NETWORK is not set to a valid network. Exiting."
+  echo "Supported networks are: ${valid_networks[@]}"
+  exit 1
 fi
 
 echo $'\nChecking that required software available:'
@@ -58,9 +62,6 @@ downloader() {
   curl -s --show-error --fail -H 'Accept: application/octet-stream' http://localhost:"${LOCAL_REST_API_BINDING_PORT}"/eth/v1/beacon/deposit_snapshot -o "${OUT}/${1}.ssz" >&2
 }
 
-downloader "goerli" "${GOERLI_SSH}"
-downloader "sepolia" "${SEPOLIA_SSH}"
-downloader "gnosis" "${GNOSIS_SSH}"
-downloader "mainnet" "${MAINNET_SSH}"
+downloader "${DEPOSIT_NETWORK}" "${DEPOSIT_SSH}"
 
-echo $'\nAll done! Run verification tests and commit changes manually'
+echo -e "\nAll done for ${DEPOSIT_NETWORK}. When done for all networks, verify snapshots with DepositSnapshotsBundleTest and submit PR manually."

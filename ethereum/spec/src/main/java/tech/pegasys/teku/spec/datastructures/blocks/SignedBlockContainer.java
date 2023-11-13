@@ -39,15 +39,12 @@ public interface SignedBlockContainer extends SszData, SszContainer {
     return getSignedBlock().getRoot();
   }
 
+  @Deprecated
   default Optional<List<SignedBlobSidecarOld>> getSignedBlobSidecars() {
     return Optional.empty();
   }
 
-  default Optional<SignedBlindedBlockContainer> toBlinded() {
-    return Optional.empty();
-  }
-
   default boolean isBlinded() {
-    return toBlinded().isPresent();
+    return getSignedBlock().isBlinded();
   }
 }

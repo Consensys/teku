@@ -31,7 +31,6 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
-import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -57,7 +56,6 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.constants.EthConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
@@ -90,7 +88,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
 
   @TestTemplate
   void shouldHandleBlindedBeaconBlocks() throws Exception {
-    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX).isLessThanOrEqualTo(CAPELLA);
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX);
     final BeaconBlock blindedBeaconBlock = dataStructureUtil.randomBlindedBeaconBlock(ONE);
     final BlockContainerAndMetaData<BlockContainer> blockContainerAndMetaData =
         new BlockContainerAndMetaData<>(
@@ -165,34 +163,6 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
     assertThat(request.getHeader(HEADER_CONSENSUS_VERSION))
         .isEqualTo(Version.fromMilestone(blockContainerAndMetaData.specMilestone()).name());
     assertThat(request.getHeader(HEADER_EXECUTION_PAYLOAD_BLINDED)).isEqualTo("false");
-    assertThat(request.getHeader(HEADER_EXECUTION_PAYLOAD_VALUE))
-        .isEqualTo(executionPayloadValue.toDecimalString());
-    assertThat(request.getHeader(HEADER_CONSENSUS_BLOCK_VALUE))
-        .isEqualTo(consensusBlockValue.toDecimalString());
-  }
-
-  @TestTemplate
-  void shouldHandleBlindedBlockContentsPostDeneb() throws Exception {
-    assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
-    final BlindedBlockContents blindedBlockContents =
-        dataStructureUtil.randomBlindedBlockContents(ONE);
-    final BlockContainerAndMetaData<BlockContainer> blockContainerAndMetaData =
-        new BlockContainerAndMetaData<>(
-            blindedBlockContents,
-            spec.getGenesisSpec().getMilestone(),
-            executionPayloadValue,
-            consensusBlockValue);
-    doReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)))
-        .when(validatorDataProvider)
-        .produceBlock(ONE, signature, Optional.empty());
-
-    handler.handleRequest(request);
-
-    assertThat(request.getResponseCode()).isEqualTo(HttpStatusCodes.SC_OK);
-    assertThat(request.getResponseBody()).isEqualTo(blockContainerAndMetaData);
-    assertThat(request.getHeader(HEADER_CONSENSUS_VERSION))
-        .isEqualTo(Version.fromMilestone(blockContainerAndMetaData.specMilestone()).name());
-    assertThat(request.getHeader(HEADER_EXECUTION_PAYLOAD_BLINDED)).isEqualTo("true");
     assertThat(request.getHeader(HEADER_EXECUTION_PAYLOAD_VALUE))
         .isEqualTo(executionPayloadValue.toDecimalString());
     assertThat(request.getHeader(HEADER_CONSENSUS_BLOCK_VALUE))
