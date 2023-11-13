@@ -47,7 +47,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.constants.EthConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
@@ -332,7 +331,7 @@ public class ValidatorDataProvider {
   }
 
   public SafeFuture<SendSignedBlockResult> submitSignedBlindedBlock(
-      final SignedBlindedBlockContainer signedBlindedBlockContainer,
+      final SignedBlockContainer signedBlindedBlockContainer,
       final BroadcastValidationLevel broadcastValidationLevel) {
     return validatorApiChannel.sendSignedBlock(
         signedBlindedBlockContainer, broadcastValidationLevel);

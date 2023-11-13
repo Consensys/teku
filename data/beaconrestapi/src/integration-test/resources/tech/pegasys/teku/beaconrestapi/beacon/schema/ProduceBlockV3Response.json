@@ -40,7 +40,7 @@
       }, {
         "$ref" : "#/components/schemas/BlockContentsDeneb"
       }, {
-        "$ref" : "#/components/schemas/BlindedBlockContentsDeneb"
+        "$ref" : "#/components/schemas/BlindedBlockDeneb"
       } ]
     }
   }

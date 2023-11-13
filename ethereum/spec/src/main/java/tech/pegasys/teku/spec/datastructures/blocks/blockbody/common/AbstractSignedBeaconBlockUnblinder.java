@@ -13,24 +13,23 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.common;
 
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public abstract class AbstractSignedBeaconBlockUnblinder implements SignedBeaconBlockUnblinder {
 
-  protected final SignedBlindedBlockContainer signedBlindedBlockContainer;
+  protected final SignedBeaconBlock signedBlindedBeaconBlock;
   protected final SchemaDefinitions schemaDefinitions;
 
   public AbstractSignedBeaconBlockUnblinder(
-      final SchemaDefinitions schemaDefinitions,
-      final SignedBlindedBlockContainer signedBlindedBlockContainer) {
+      final SchemaDefinitions schemaDefinitions, final SignedBeaconBlock signedBlindedBeaconBlock) {
     this.schemaDefinitions = schemaDefinitions;
-    this.signedBlindedBlockContainer = signedBlindedBlockContainer;
+    this.signedBlindedBeaconBlock = signedBlindedBeaconBlock;
   }
 
   @Override
-  public SignedBlindedBlockContainer getSignedBlindedBlockContainer() {
-    return signedBlindedBlockContainer;
+  public SignedBeaconBlock getSignedBlindedBeaconBlock() {
+    return signedBlindedBeaconBlock;
   }
 }
