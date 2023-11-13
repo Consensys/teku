@@ -65,6 +65,10 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
       final SignedBlockContainer maybeBlindedBlockContainer,
       final BlockImportAndBroadcastValidationResults blockImportAndBroadcastValidationResults) {
 
+    // broadcast validation can fail earlier than block import.
+    // The assumption is that in that block import will fail but not as fast
+    // (there might be the state transition in progress)
+    // Thus, to let the API return as soon as possible, let's check broadcast validation first.
     return blockImportAndBroadcastValidationResults
         .broadcastValidationResult()
         .thenCompose(
