@@ -45,8 +45,6 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
   @Test
   void shouldCreateBlockContents() {
 
-    final BlobsBundle blobsBundle = prepareBlobsBundle(spec, 3);
-
     final BlockContainer blockContainer =
         assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), false);
 
