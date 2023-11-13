@@ -30,7 +30,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -49,7 +49,7 @@ public class BlockBlobSidecarsTracker {
   private final AtomicReference<Optional<BeaconBlock>> block =
       new AtomicReference<>(Optional.empty());
 
-  private final NavigableMap<UInt64, BlobSidecarOld> blobSidecars = new ConcurrentSkipListMap<>();
+  private final NavigableMap<UInt64, BlobSidecar> blobSidecars = new ConcurrentSkipListMap<>();
   private final SafeFuture<Void> blobSidecarsComplete = new SafeFuture<>();
 
   private volatile boolean fetchTriggered = false;
@@ -78,7 +78,7 @@ public class BlockBlobSidecarsTracker {
     }
   }
 
-  public SortedMap<UInt64, BlobSidecarOld> getBlobSidecars() {
+  public SortedMap<UInt64, BlobSidecar> getBlobSidecars() {
     return Collections.unmodifiableSortedMap(blobSidecars);
   }
 
@@ -125,7 +125,7 @@ public class BlockBlobSidecarsTracker {
         .map(blobIndex -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), blobIndex));
   }
 
-  public boolean add(final BlobSidecarOld blobSidecar) {
+  public boolean add(final BlobSidecar blobSidecar) {
     checkArgument(
         blobSidecar.getBlockRoot().equals(slotAndBlockRoot.getBlockRoot()),
         "Wrong blobSidecar block root");
@@ -200,7 +200,7 @@ public class BlockBlobSidecarsTracker {
         .ifPresent(count -> blobSidecars.tailMap(UInt64.valueOf(count), true).clear());
   }
 
-  private boolean isExcessiveBlobSidecar(final BlobSidecarOld blobSidecar) {
+  private boolean isExcessiveBlobSidecar(final BlobSidecar blobSidecar) {
     return getBlockKzgCommitmentsCount()
         .map(count -> blobSidecar.getIndex().isGreaterThanOrEqualTo(count))
         .orElse(false);

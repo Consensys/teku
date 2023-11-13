@@ -109,7 +109,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
    * @return true if all blob sidecars are valid
    */
   @Override
-  public boolean verifyBlobKzgProofBatch(final KZG kzg, final List<BlobSidecarOld> blobSidecars) {
+  public boolean verifyBlobKzgProofBatch(final KZG kzg, final List<BlobSidecar> blobSidecars) {
     final List<Bytes> blobs = new ArrayList<>();
     final List<KZGCommitment> kzgCommitments = new ArrayList<>();
     final List<KZGProof> kzgProofs = new ArrayList<>();
@@ -125,18 +125,15 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   }
 
   /**
-   * Validates blob sidecars against block by matching all fields they have in common
+   * Validates blob sidecars against block by matching block root, which is enough after gossip
+   * BlobSidecar validation
    *
    * @param blobSidecars blob sidecars to validate
    * @param block block to validate blob sidecar against
-   * @param kzgCommitmentsFromBlock kzg commitments from block. They could be extracted from block
-   *     but since we already have them we can avoid extracting them again.
    */
   @Override
   public void validateBlobSidecarsBatchAgainstBlock(
-      final List<BlobSidecarOld> blobSidecars,
-      final BeaconBlock block,
-      final List<KZGCommitment> kzgCommitmentsFromBlock) {
+      final List<BlobSidecar> blobSidecars, final BeaconBlock block) {
 
     final String slotAndBlockRoot = block.getSlotAndBlockRoot().toLogString();
 
@@ -146,41 +143,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
 
           checkArgument(
               blobSidecar.getBlockRoot().equals(block.getRoot()),
-              "Block and blob sidecar slot mismatch for %s, blob index %s",
-              slotAndBlockRoot,
-              blobIndex);
-
-          checkArgument(
-              blobSidecar.getSlot().equals(block.getSlot()),
-              "Block and blob sidecar slot mismatch for %s, blob index %s",
-              slotAndBlockRoot,
-              blobIndex);
-
-          checkArgument(
-              blobSidecar.getProposerIndex().equals(block.getProposerIndex()),
-              "Block and blob sidecar proposer index mismatch for %s, blob index %s",
-              slotAndBlockRoot,
-              blobIndex);
-          checkArgument(
-              blobSidecar.getBlockParentRoot().equals(block.getParentRoot()),
-              "Block and blob sidecar parent block mismatch for %s, blob index %s",
-              slotAndBlockRoot,
-              blobIndex);
-
-          final KZGCommitment kzgCommitmentFromBlock;
-
-          try {
-            kzgCommitmentFromBlock = kzgCommitmentsFromBlock.get(blobIndex.intValue());
-          } catch (IndexOutOfBoundsException e) {
-            throw new IllegalArgumentException(
-                String.format(
-                    "Blob sidecar index out of bound with respect to block %s, blob index %s",
-                    slotAndBlockRoot, blobIndex));
-          }
-
-          checkArgument(
-              blobSidecar.getKZGCommitment().equals(kzgCommitmentFromBlock),
-              "Block and blob sidecar kzg commitments mismatch for %s, blob index %s",
+              "Block and blob sidecar root mismatch for %s, blob index %s",
               slotAndBlockRoot,
               blobIndex);
         });
@@ -195,7 +158,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
    */
   @Override
   public void verifyBlobSidecarCompleteness(
-      final List<BlobSidecarOld> completeVerifiedBlobSidecars,
+      final List<BlobSidecar> completeVerifiedBlobSidecars,
       final List<KZGCommitment> kzgCommitmentsFromBlock)
       throws IllegalArgumentException {
     checkArgument(
@@ -205,7 +168,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
     IntStream.range(0, completeVerifiedBlobSidecars.size())
         .forEach(
             index -> {
-              final BlobSidecarOld blobSidecar = completeVerifiedBlobSidecars.get(index);
+              final BlobSidecar blobSidecar = completeVerifiedBlobSidecars.get(index);
               final UInt64 blobIndex = blobSidecar.getIndex();
 
               checkArgument(

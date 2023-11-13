@@ -236,7 +236,7 @@ public class ChainUpdater {
 
   public SignedBlockAndState advanceChain(final UInt64 slot) {
     final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(slot, blockOptions);
-    final List<BlobSidecarOld> blobSidecars = chainBuilder.getBlobSidecars(block.getRoot());
+    final List<BlobSidecarOld> blobSidecars = chainBuilder.getBlobSidecarsOld(block.getRoot());
     if (blobSidecars.isEmpty()) {
       saveBlock(block);
     } else {

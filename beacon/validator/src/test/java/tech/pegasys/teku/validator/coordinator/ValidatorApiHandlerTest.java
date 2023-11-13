@@ -842,7 +842,9 @@ class ValidatorApiHandlerTest {
 
     // TODO: fix assertion for blob sidecars
     verify(blobSidecarGossipChannel).publishBlobSidecars(List.of());
-    verify(blobSidecarPool).onCompletedBlockAndSignedBlobSidecars(block, blobSidecars);
+    verify(blobSidecarPool)
+        .onCompletedBlockAndBlobSidecarsOld(
+            block, blobSidecars.stream().map(SignedBlobSidecarOld::getBlobSidecar).toList());
     verify(blockGossipChannel).publishBlock(block);
     verify(blockImportChannel).importBlock(block, NOT_REQUIRED);
     assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
@@ -864,7 +866,9 @@ class ValidatorApiHandlerTest {
 
     // TODO: fix assertion for blob sidecars
     verify(blobSidecarGossipChannel).publishBlobSidecars(List.of());
-    verify(blobSidecarPool).onCompletedBlockAndSignedBlobSidecars(block, blobSidecars);
+    verify(blobSidecarPool)
+        .onCompletedBlockAndBlobSidecarsOld(
+            block, blobSidecars.stream().map(SignedBlobSidecarOld::getBlobSidecar).toList());
     verify(blockGossipChannel).publishBlock(block);
     verify(blockImportChannel).importBlock(block, NOT_REQUIRED);
     assertThat(result)
@@ -888,7 +892,9 @@ class ValidatorApiHandlerTest {
 
     // TODO: fix assertion for blob sidecars
     verify(blobSidecarGossipChannel).publishBlobSidecars(List.of());
-    verify(blobSidecarPool).onCompletedBlockAndSignedBlobSidecars(block, blobSidecars);
+    verify(blobSidecarPool)
+        .onCompletedBlockAndBlobSidecarsOld(
+            block, blobSidecars.stream().map(SignedBlobSidecarOld::getBlobSidecar).toList());
     verify(blockGossipChannel).publishBlock(block);
     verify(blockImportChannel).importBlock(block, NOT_REQUIRED);
     assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));

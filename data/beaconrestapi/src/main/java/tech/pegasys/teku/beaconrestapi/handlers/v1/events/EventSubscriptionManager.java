@@ -40,12 +40,15 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchemaOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -188,8 +191,12 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     notifySubscribersOfEvent(EventType.block, blockEvent);
   }
 
-  protected void onNewBlobSidecar(final BlobSidecarOld blobSidecar) {
-    final BlobSidecarEvent blobSidecarEvent = BlobSidecarEvent.create(spec, blobSidecar);
+  protected void onNewBlobSidecar(final BlobSidecar blobSidecar) {
+    final BlobSidecarSchemaOld blobSidecarSchema =
+        SchemaDefinitionsDeneb.required(spec.atSlot(blobSidecar.getSlot()).getSchemaDefinitions())
+            .getBlobSidecarOldSchema();
+    final BlobSidecarOld blobSidecarOld = blobSidecarSchema.create(blobSidecar);
+    final BlobSidecarEvent blobSidecarEvent = BlobSidecarEvent.create(spec, blobSidecarOld);
     notifySubscribersOfEvent(EventType.blob_sidecar, blobSidecarEvent);
   }
 

@@ -17,6 +17,7 @@ import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
@@ -57,7 +58,11 @@ public class BlockPublisherDeneb extends AbstractBlockPublisher {
         .getSignedBlobSidecars()
         .ifPresent(
             signedBlobSidecars ->
-                blobSidecarPool.onCompletedBlockAndSignedBlobSidecars(block, signedBlobSidecars));
+                blobSidecarPool.onCompletedBlockAndBlobSidecarsOld(
+                    block,
+                    signedBlobSidecars.stream()
+                        .map(SignedBlobSidecarOld::getBlobSidecar)
+                        .toList()));
     return blockImportChannel.importBlock(block, broadcastValidationLevel);
   }
 

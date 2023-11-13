@@ -2115,11 +2115,13 @@ public final class DataStructureUtil {
     return randomBlob().getBytes();
   }
 
-  public List<BlobSidecarOld> randomBlobSidecarsForBlock(final SignedBeaconBlock block) {
-    return randomBlobSidecarsForBlock(block, (__, builder) -> builder);
+  @Deprecated
+  public List<BlobSidecarOld> randomBlobSidecarsForBlockOld(final SignedBeaconBlock block) {
+    return randomBlobSidecarsForBlockOld(block, (__, builder) -> builder);
   }
 
-  public List<BlobSidecarOld> randomBlobSidecarsForBlock(
+  @Deprecated
+  public List<BlobSidecarOld> randomBlobSidecarsForBlockOld(
       final SignedBeaconBlock block,
       final BiFunction<Integer, RandomBlobSidecarOldBuilder, RandomBlobSidecarOldBuilder>
           modifier) {
@@ -2128,6 +2130,7 @@ public final class DataStructureUtil {
         .collect(toList());
   }
 
+  @Deprecated
   public List<SignedBlobSidecarOld> randomSignedBlobSidecarsForBlock(
       final SignedBeaconBlock block,
       final BiFunction<Integer, RandomBlobSidecarOldBuilder, RandomBlobSidecarOldBuilder>
@@ -2153,6 +2156,31 @@ public final class DataStructureUtil {
         .collect(toList());
   }
 
+  public List<BlobSidecar> randomBlobSidecarsForBlock(final SignedBeaconBlock block) {
+    return randomBlobSidecarsForBlock(block, (__, builder) -> builder);
+  }
+
+  public List<BlobSidecar> randomBlobSidecarsForBlock(
+      final SignedBeaconBlock block,
+      final BiFunction<Integer, RandomBlobSidecarBuilder, RandomBlobSidecarBuilder> modifier) {
+    final SszList<SszKZGCommitment> blobKzgCommitments =
+        BeaconBlockBodyDeneb.required(block.getBeaconBlock().orElseThrow().getBody())
+            .getBlobKzgCommitments();
+
+    return IntStream.range(0, blobKzgCommitments.size())
+        .mapToObj(
+            index -> {
+              final RandomBlobSidecarBuilder builder =
+                  createRandomBlobSidecarBuilder()
+                      .signedBeaconBlockHeader(block.asHeader())
+                      .kzgCommitment(blobKzgCommitments.get(index).getBytes())
+                      .index(UInt64.valueOf(index));
+
+              return modifier.apply(index, builder).build();
+            })
+        .collect(toList());
+  }
+
   public BlobSidecar randomBlobSidecar() {
     return new RandomBlobSidecarBuilder().build();
   }
@@ -2168,10 +2196,18 @@ public final class DataStructureUtil {
         .build();
   }
 
-  public List<BlobSidecarOld> randomBlobSidecars(int count) {
+  public List<BlobSidecarOld> randomBlobSidecarsOld(int count) {
     List<BlobSidecarOld> blobSidecars = new ArrayList<>();
     for (int i = 0; i < count; i++) {
       blobSidecars.add(new RandomBlobSidecarOldBuilder().build());
+    }
+    return blobSidecars;
+  }
+
+  public List<BlobSidecar> randomBlobSidecars(int count) {
+    List<BlobSidecar> blobSidecars = new ArrayList<>();
+    for (int i = 0; i < count; i++) {
+      blobSidecars.add(new RandomBlobSidecarBuilder().build());
     }
     return blobSidecars;
   }
@@ -2281,7 +2317,8 @@ public final class DataStructureUtil {
   }
 
   public BlockContents randomBlockContents(final UInt64 slot) {
-    final List<BlobSidecarOld> blobSidecarList = randomBlobSidecars(randomNumberOfBlobsPerBlock());
+    final List<BlobSidecarOld> blobSidecarList =
+        randomBlobSidecarsOld(randomNumberOfBlobsPerBlock());
     final BeaconBlock beaconBlock = randomBeaconBlock(slot);
     return getDenebSchemaDefinitions(slot)
         .getBlockContentsSchema()
