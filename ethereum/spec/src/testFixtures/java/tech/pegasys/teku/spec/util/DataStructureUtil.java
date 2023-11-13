@@ -2288,10 +2288,6 @@ public final class DataStructureUtil {
         .create(beaconBlock, blobSidecarList);
   }
 
-  public SignedBlobSidecarOld randomSignedBlobSidecar(final UInt64 index) {
-    return new RandomBlobSidecarOldBuilder().index(index).buildSigned();
-  }
-
   public RandomBlobSidecarOldBuilder createRandomBlobSidecarBuilderOld() {
     return new RandomBlobSidecarOldBuilder();
   }

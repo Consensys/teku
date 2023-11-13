@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -31,6 +32,12 @@ public interface BlobSidecarManager {
         @Override
         public SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
             final SignedBlobSidecarOld signedBlobSidecar, final Optional<UInt64> arrivalTimestamp) {
+          return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
+        }
+
+        @Override
+        public SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
+            final BlobSidecar blobSidecar, final Optional<UInt64> arrivalTimestamp) {
           return SafeFuture.completedFuture(InternalValidationResult.ACCEPT);
         }
 
@@ -59,8 +66,12 @@ public interface BlobSidecarManager {
         }
       };
 
+  @Deprecated
   SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
       SignedBlobSidecarOld signedBlobSidecar, Optional<UInt64> arrivalTimestamp);
+
+  SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
+      BlobSidecar blobSidecar, Optional<UInt64> arrivalTimestamp);
 
   void prepareForBlockImport(BlobSidecarOld blobSidecar);
 

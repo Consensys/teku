@@ -44,7 +44,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -60,7 +60,7 @@ public class BlobSidecarGossipManagerTest {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @SuppressWarnings("unchecked")
-  private final OperationProcessor<SignedBlobSidecarOld> processor = mock(OperationProcessor.class);
+  private final OperationProcessor<BlobSidecar> processor = mock(OperationProcessor.class);
 
   private final GossipNetwork gossipNetwork = mock(GossipNetwork.class);
   private final GossipEncoding gossipEncoding = GossipEncoding.SSZ_SNAPPY;
@@ -109,7 +109,8 @@ public class BlobSidecarGossipManagerTest {
 
   @Test
   public void testGossipingBlobSidecarPublishesToCorrectSubnet() {
-    final SignedBlobSidecarOld blobSidecar = dataStructureUtil.randomSignedBlobSidecar(UInt64.ONE);
+    final BlobSidecar blobSidecar =
+        dataStructureUtil.createRandomBlobSidecarBuilder().index(UInt64.ONE).build();
     final Bytes serialized = gossipEncoding.encode(blobSidecar);
 
     blobSidecarGossipManager.publishBlobSidecar(blobSidecar);
@@ -126,8 +127,8 @@ public class BlobSidecarGossipManagerTest {
 
   @Test
   public void testGossipingBlobSidecarWithLargeIndexGossipToCorrectSubnet() {
-    final SignedBlobSidecarOld blobSidecar =
-        dataStructureUtil.randomSignedBlobSidecar(UInt64.valueOf(10));
+    final BlobSidecar blobSidecar =
+        dataStructureUtil.createRandomBlobSidecarBuilder().index(UInt64.valueOf(10)).build();
     final Bytes serialized = gossipEncoding.encode(blobSidecar);
 
     blobSidecarGossipManager.publishBlobSidecar(blobSidecar);
@@ -159,11 +160,13 @@ public class BlobSidecarGossipManagerTest {
   @Test
   public void testAcceptingSidecarGossipIfOnTheCorrectTopic() {
     // topic handler for blob sidecars with subnet_id 1
-    final Eth2TopicHandler<SignedBlobSidecarOld> topicHandler =
-        blobSidecarGossipManager.getTopicHandler(1);
+    final Eth2TopicHandler<BlobSidecar> topicHandler = blobSidecarGossipManager.getTopicHandler(1);
 
     // processing blob sidecar with subnet_id 1 should be accepted
-    final SignedBlobSidecarOld blobSidecar = dataStructureUtil.randomSignedBlobSidecar(UInt64.ONE);
+    final BlobSidecar blobSidecar =
+        dataStructureUtil.createRandomBlobSidecarBuilder().index(UInt64.ONE).build();
+
+    System.out.println(blobSidecar);
     final InternalValidationResult validationResult =
         SafeFutureAssert.safeJoin(
             topicHandler.getProcessor().process(blobSidecar, Optional.empty()));
@@ -174,12 +177,11 @@ public class BlobSidecarGossipManagerTest {
   @Test
   public void testRejectingSidecarGossipIfNotOnTheCorrectTopic() {
     // topic handler for blob sidecars with subnet_id 1
-    final Eth2TopicHandler<SignedBlobSidecarOld> topicHandler =
-        blobSidecarGossipManager.getTopicHandler(1);
+    final Eth2TopicHandler<BlobSidecar> topicHandler = blobSidecarGossipManager.getTopicHandler(1);
 
     // processing blob sidecar with subnet_id 2 should be rejected
-    final SignedBlobSidecarOld blobSidecar =
-        dataStructureUtil.randomSignedBlobSidecar(UInt64.valueOf(2));
+    final BlobSidecar blobSidecar =
+        dataStructureUtil.createRandomBlobSidecarBuilder().index(UInt64.valueOf(2)).build();
     final InternalValidationResult validationResult =
         SafeFutureAssert.safeJoin(
             topicHandler.getProcessor().process(blobSidecar, Optional.empty()));

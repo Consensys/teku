@@ -83,7 +83,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -132,7 +132,7 @@ public class Eth2P2PNetworkFactory {
     protected RecentChainData recentChainData;
     protected StorageQueryChannel historicalChainData = new StubStorageQueryChannel();
     protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
-    protected OperationProcessor<SignedBlobSidecarOld> gossipedBlobSidecarProcessor;
+    protected OperationProcessor<BlobSidecar> gossipedBlobSidecarProcessor;
     protected OperationProcessor<ValidatableAttestation> gossipedAttestationProcessor;
     protected OperationProcessor<ValidatableAttestation> gossipedAggregateProcessor;
     protected OperationProcessor<AttesterSlashing> attesterSlashingProcessor;
@@ -589,7 +589,7 @@ public class Eth2P2PNetworkFactory {
     }
 
     public Eth2P2PNetworkBuilder gossipedBlobSidecarProcessor(
-        final OperationProcessor<SignedBlobSidecarOld> gossipedBlobSidecarProcessor) {
+        final OperationProcessor<BlobSidecar> gossipedBlobSidecarProcessor) {
       checkNotNull(gossipedBlobSidecarProcessor);
       this.gossipedBlobSidecarProcessor = gossipedBlobSidecarProcessor;
       return this;
