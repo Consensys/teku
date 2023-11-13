@@ -115,7 +115,6 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
         .thenApply(SignedBlockContainer::getSignedBlock);
   }
 
-  @Deprecated
   // TODO: add blobs and proofs
   private SignedBlockContents createUnblindedSignedBlockContents(
       final SignedBeaconBlock signedBlock) {
