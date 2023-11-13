@@ -36,13 +36,12 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContents;
-import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundle;
@@ -57,6 +56,7 @@ import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -251,8 +251,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
     final ExecutionPayloadHeader header =
         schemaDefinitions.getExecutionPayloadHeaderSchema().createFromExecutionPayload(payload);
 
-    final BlindedBlobsBundle blindedBlobsBundle =
-        schemaDefinitions.getBlindedBlobsBundleSchema().createFromExecutionBlobsBundle(blobsBundle);
+    final SszList<SszKZGCommitment> blobKzgCommitments =
+        schemaDefinitions.getBlobKzgCommitmentsSchema().createFromBlobsBundle(blobsBundle);
 
     final ExecutionPayloadResult executionPayloadResult =
         blockProductionManager.initiateBlockAndBlobsProduction(
@@ -269,7 +269,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
     final HeaderWithFallbackData expectedResult =
         HeaderWithFallbackData.create(
             header,
-            Optional.of(blindedBlobsBundle),
+            Optional.of(blobKzgCommitments),
             new FallbackData(
                 payload, Optional.of(blobsBundle), FallbackReason.BUILDER_NOT_AVAILABLE));
     final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture =
@@ -283,7 +283,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
     final SafeFuture<BuilderPayload> unblindedPayload =
         blockProductionManager.getUnblindedPayload(
-            dataStructureUtil.randomSignedBlindedBlockContents(slot));
+            dataStructureUtil.randomSignedBlindedBeaconBlock(slot));
     assertThat(unblindedPayload.get()).isEqualTo(localPayload);
 
     verifyNoMoreInteractions(builderClient);
@@ -306,8 +306,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
     final HeaderWithFallbackData expectedResult =
         HeaderWithFallbackData.create(
-            builderBid.getHeader(),
-            Optional.of(builderBid.getOptionalBlindedBlobsBundle().orElseThrow()));
+            builderBid.getHeader(), builderBid.getOptionalBlobKzgCommitments());
 
     final ExecutionPayloadResult executionPayloadResult =
         blockProductionManager.initiateBlockAndBlobsProduction(
@@ -325,18 +324,18 @@ class ExecutionLayerBlockProductionManagerImplTest {
     verifyBuilderCalled(slot, executionPayloadContext);
     verifyEngineCalled(executionPayloadContext, slot);
 
-    final SignedBlindedBlockContents signedBlindedBlockContents =
-        dataStructureUtil.randomSignedBlindedBlockContents(slot);
+    final SignedBeaconBlock signedBlindedBeaconBlock =
+        dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
 
     final ExecutionPayloadAndBlobsBundle payloadAndBlobsBundle =
-        prepareBuilderGetPayloadResponseWithBlobs(signedBlindedBlockContents);
+        prepareBuilderGetPayloadResponseWithBlobs(signedBlindedBeaconBlock);
 
     // we expect result from the builder
-    assertThat(blockProductionManager.getUnblindedPayload(signedBlindedBlockContents))
+    assertThat(blockProductionManager.getUnblindedPayload(signedBlindedBeaconBlock))
         .isCompletedWithValue(payloadAndBlobsBundle);
 
     // we expect both builder and local engine have been called
-    verify(builderClient).getPayload(signedBlindedBlockContents);
+    verify(builderClient).getPayload(signedBlindedBeaconBlock);
     verifyNoMoreInteractions(executionClientHandler);
     verifySourceCounter(Source.BUILDER, FallbackReason.NONE);
   }
@@ -377,11 +376,10 @@ class ExecutionLayerBlockProductionManagerImplTest {
         .contains(executionPayloadResult);
 
     // we will hit builder client by this call
-    final SignedBlindedBlockContents signedBlindedBlockContents =
-        dataStructureUtil.randomSignedBlindedBlockContents(slot);
-    assertThatThrownBy(
-        () -> blockProductionManager.getUnblindedPayload(signedBlindedBlockContents));
-    verify(builderClient).getPayload(signedBlindedBlockContents);
+    final SignedBeaconBlock signedBlindedBeaconBlock =
+        dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
+    assertThatThrownBy(() -> blockProductionManager.getUnblindedPayload(signedBlindedBeaconBlock));
+    verify(builderClient).getPayload(signedBlindedBeaconBlock);
   }
 
   private void setupDeneb() {
@@ -421,8 +419,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
       final UInt64 slot,
       final ExecutionPayloadContext executionPayloadContext,
       final HeaderWithFallbackData headerWithFallbackData) {
-    final FallbackData fallbackData =
-        headerWithFallbackData.getFallbackDataOptional().orElseThrow();
+    final FallbackData fallbackData = headerWithFallbackData.getFallbackData().orElseThrow();
     final FallbackReason fallbackReason = fallbackData.getReason();
     if (fallbackReason == FallbackReason.BUILDER_HEADER_NOT_AVAILABLE
         || fallbackReason == FallbackReason.BUILDER_ERROR
@@ -482,7 +479,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
   private ExecutionPayload prepareBuilderGetPayloadResponse(
       final SignedBlindedBlockContainer signedBlindedBlockContainer) {
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
-    when(builderClient.getPayload(signedBlindedBlockContainer))
+    when(builderClient.getPayload(signedBlindedBlockContainer.getSignedBlock()))
         .thenReturn(SafeFuture.completedFuture(new Response<>(payload)));
     return payload;
   }
@@ -491,7 +488,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
       final SignedBlindedBlockContainer signedBlindedBlockContainer) {
     final ExecutionPayloadAndBlobsBundle payloadAndBlobsBundle =
         dataStructureUtil.randomExecutionPayloadAndBlobsBundle();
-    when(builderClient.getPayload(signedBlindedBlockContainer))
+    when(builderClient.getPayload(signedBlindedBlockContainer.getSignedBlock()))
         .thenReturn(SafeFuture.completedFuture(new Response<>(payloadAndBlobsBundle)));
     return payloadAndBlobsBundle;
   }

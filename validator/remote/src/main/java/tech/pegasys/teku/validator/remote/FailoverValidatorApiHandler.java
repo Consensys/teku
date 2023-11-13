@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeContribution;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
@@ -68,7 +69,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       "remote_beacon_nodes_requests_total";
 
   private final Map<UInt64, ValidatorApiChannel> blindedBlockCreatorCache =
-      LimitedMap.createSynchronized(2);
+      LimitedMap.createSynchronizedLRU(2);
 
   private final BeaconNodeReadinessManager beaconNodeReadinessManager;
   private final RemoteValidatorApiChannel primaryDelegate;
@@ -252,17 +253,18 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
-      final SignedBlockContainer blockContainer) {
+      final SignedBlockContainer blockContainer,
+      final BroadcastValidationLevel broadcastValidationLevel) {
     final UInt64 slot = blockContainer.getSlot();
     if (blockContainer.isBlinded() && blindedBlockCreatorCache.containsKey(slot)) {
       final ValidatorApiChannel blockCreatorApiChannel = blindedBlockCreatorCache.remove(slot);
       LOG.info(
           "Block for slot {} was blinded and will only be sent to the beacon node which created it.",
           slot);
-      return blockCreatorApiChannel.sendSignedBlock(blockContainer);
+      return blockCreatorApiChannel.sendSignedBlock(blockContainer, broadcastValidationLevel);
     }
     return relayRequest(
-        apiChannel -> apiChannel.sendSignedBlock(blockContainer),
+        apiChannel -> apiChannel.sendSignedBlock(blockContainer, broadcastValidationLevel),
         BeaconNodeRequestLabels.PUBLISH_BLOCK_METHOD,
         failoversPublishSignedDuties);
   }

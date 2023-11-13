@@ -11,16 +11,20 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb;
+package tech.pegasys.teku.infrastructure.metrics.Validator;
 
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
-import tech.pegasys.teku.spec.propertytest.suppliers.DataStructureUtilSupplier;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
+public enum DutyType {
+  ATTESTATION_AGGREGATION("attestation_aggregation"),
+  ATTESTATION_PRODUCTION("attestation_production"),
+  BLOCK_PRODUCTION("block_production");
 
-public class SignedBlobSidecarSupplier extends DataStructureUtilSupplier<SignedBlobSidecar> {
+  private final String name;
 
-  public SignedBlobSidecarSupplier() {
-    super(DataStructureUtil::randomSignedBlobSidecar, SpecMilestone.DENEB);
+  DutyType(final String type) {
+    this.name = type;
+  }
+
+  public String getName() {
+    return name;
   }
 }

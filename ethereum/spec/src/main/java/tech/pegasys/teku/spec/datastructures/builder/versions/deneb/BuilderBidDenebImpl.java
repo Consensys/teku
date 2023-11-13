@@ -15,16 +15,21 @@ package tech.pegasys.teku.spec.datastructures.builder.versions.deneb;
 
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container4;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.datastructures.builder.BlindedBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 
 public class BuilderBidDenebImpl
     extends Container4<
-        BuilderBidDenebImpl, ExecutionPayloadHeader, BlindedBlobsBundle, SszUInt256, SszPublicKey>
+        BuilderBidDenebImpl,
+        ExecutionPayloadHeader,
+        SszList<SszKZGCommitment>,
+        SszUInt256,
+        SszPublicKey>
     implements BuilderBidDeneb {
 
   BuilderBidDenebImpl(final BuilderBidSchemaDeneb schema, final TreeNode backingNode) {
@@ -34,10 +39,10 @@ public class BuilderBidDenebImpl
   public BuilderBidDenebImpl(
       final BuilderBidSchemaDeneb schema,
       final ExecutionPayloadHeader header,
-      final BlindedBlobsBundle blindedBlobsBundle,
+      final SszList<SszKZGCommitment> blobKzgCommitments,
       final SszUInt256 value,
       final SszPublicKey publicKey) {
-    super(schema, header, blindedBlobsBundle, value, publicKey);
+    super(schema, header, blobKzgCommitments, value, publicKey);
   }
 
   @Override
@@ -46,7 +51,7 @@ public class BuilderBidDenebImpl
   }
 
   @Override
-  public BlindedBlobsBundle getBlindedBlobsBundle() {
+  public SszList<SszKZGCommitment> getBlobKzgCommitments() {
     return getField1();
   }
 

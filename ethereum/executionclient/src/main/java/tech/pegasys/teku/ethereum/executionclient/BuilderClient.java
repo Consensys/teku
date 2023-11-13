@@ -20,7 +20,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
@@ -35,6 +35,5 @@ public interface BuilderClient {
   SafeFuture<Response<Optional<SignedBuilderBid>>> getHeader(
       UInt64 slot, BLSPublicKey pubKey, Bytes32 parentHash);
 
-  SafeFuture<Response<BuilderPayload>> getPayload(
-      SignedBlindedBlockContainer signedBlindedBlockContainer);
+  SafeFuture<Response<BuilderPayload>> getPayload(SignedBeaconBlock signedBlindedBeaconBlock);
 }

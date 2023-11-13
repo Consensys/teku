@@ -29,7 +29,7 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -296,6 +296,18 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
+    public void addFinalizedBlockRaw(
+        final UInt64 slot, final Bytes32 blockRoot, final Bytes blockBytes) {
+      transaction.put(schema.getColumnSlotsByFinalizedRoot(), blockRoot, slot);
+      final KvStoreColumn<UInt64, SignedBeaconBlock> columnFinalizedBlocksBySlot =
+          schema.getColumnFinalizedBlocksBySlot();
+      transaction.putRaw(
+          columnFinalizedBlocksBySlot,
+          Bytes.wrap(columnFinalizedBlocksBySlot.getKeySerializer().serialize(slot)),
+          blockBytes);
+    }
+
+    @Override
     public void addNonCanonicalBlock(final SignedBeaconBlock block) {
       transaction.put(schema.getColumnNonCanonicalBlocksByRoot(), block.getRoot(), block);
     }
@@ -345,7 +357,7 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
-    public void addBlobSidecar(final BlobSidecar blobSidecar) {
+    public void addBlobSidecar(final BlobSidecarOld blobSidecar) {
       transaction.put(
           schema.getColumnBlobSidecarBySlotRootBlobIndex(),
           new SlotAndBlockRootAndBlobIndex(
@@ -354,7 +366,7 @@ public class V4FinalizedKvStoreDao {
     }
 
     @Override
-    public void addNonCanonicalBlobSidecar(final BlobSidecar blobSidecar) {
+    public void addNonCanonicalBlobSidecar(final BlobSidecarOld blobSidecar) {
       transaction.put(
           schema.getColumnNonCanonicalBlobSidecarBySlotRootBlobIndex(),
           new SlotAndBlockRootAndBlobIndex(

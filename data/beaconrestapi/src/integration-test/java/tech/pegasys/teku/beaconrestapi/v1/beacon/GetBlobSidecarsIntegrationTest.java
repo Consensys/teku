@@ -39,8 +39,8 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchemaOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -62,20 +62,20 @@ public class GetBlobSidecarsIntegrationTest extends AbstractDataBackedRestAPIInt
     final UInt64 targetSlot = UInt64.valueOf(3);
     final SignedBlockAndState lastBlock = chainUpdater.advanceChainUntil(targetSlot);
     chainUpdater.updateBestBlock(lastBlock);
-    final List<BlobSidecar> expected =
+    final List<BlobSidecarOld> expected =
         recentChainData.getBlobSidecars(lastBlock.getSlotAndBlockRoot()).get();
 
     final Response responseAll = get("head");
     assertThat(responseAll.code()).isEqualTo(SC_OK);
 
-    final List<BlobSidecar> actualAll = parseBlobSidecars(responseAll);
+    final List<BlobSidecarOld> actualAll = parseBlobSidecars(responseAll);
     assertThat(actualAll).hasSize(expected.size());
     assertThat(actualAll).isEqualTo(expected);
 
     final Response responseFiltered = get("head", List.of(UInt64.ZERO, UInt64.valueOf(2)));
     assertThat(responseFiltered.code()).isEqualTo(SC_OK);
 
-    final List<BlobSidecar> actualFiltered = parseBlobSidecars(responseFiltered);
+    final List<BlobSidecarOld> actualFiltered = parseBlobSidecars(responseFiltered);
     assertThat(actualFiltered).hasSize(2);
     assertThat(actualFiltered).isEqualTo(List.of(expected.get(0), expected.get(2)));
   }
@@ -89,12 +89,12 @@ public class GetBlobSidecarsIntegrationTest extends AbstractDataBackedRestAPIInt
 
     final Response responseAll = get("head");
     assertThat(responseAll.code()).isEqualTo(SC_OK);
-    final List<BlobSidecar> actualAll = parseBlobSidecars(responseAll);
+    final List<BlobSidecarOld> actualAll = parseBlobSidecars(responseAll);
     assertThat(actualAll).isEmpty();
 
     final Response responseFiltered = get("head", List.of(UInt64.ZERO, UInt64.valueOf(2)));
     assertThat(responseFiltered.code()).isEqualTo(SC_OK);
-    final List<BlobSidecar> actualFiltered = parseBlobSidecars(responseFiltered);
+    final List<BlobSidecarOld> actualFiltered = parseBlobSidecars(responseFiltered);
     assertThat(actualFiltered).isEmpty();
   }
 
@@ -115,13 +115,13 @@ public class GetBlobSidecarsIntegrationTest extends AbstractDataBackedRestAPIInt
     final UInt64 targetSlot = UInt64.valueOf(3);
     final SignedBlockAndState lastBlock = chainUpdater.advanceChainUntil(targetSlot);
     chainUpdater.updateBestBlock(lastBlock);
-    final List<BlobSidecar> expected =
+    final List<BlobSidecarOld> expected =
         recentChainData.getBlobSidecars(lastBlock.getSlotAndBlockRoot()).get();
 
     final Response response = get("head", OCTET_STREAM);
     assertThat(response.code()).isEqualTo(SC_OK);
 
-    final List<BlobSidecar> result = parseBlobSidecarsFromSsz(response);
+    final List<BlobSidecarOld> result = parseBlobSidecarsFromSsz(response);
     assertThat(result).isEqualTo(expected);
   }
 
@@ -135,7 +135,7 @@ public class GetBlobSidecarsIntegrationTest extends AbstractDataBackedRestAPIInt
     final Response response = get("head", OCTET_STREAM);
     assertThat(response.code()).isEqualTo(SC_OK);
 
-    final List<BlobSidecar> result = parseBlobSidecarsFromSsz(response);
+    final List<BlobSidecarOld> result = parseBlobSidecarsFromSsz(response);
     assertThat(result).isEmpty();
   }
 
@@ -149,7 +149,7 @@ public class GetBlobSidecarsIntegrationTest extends AbstractDataBackedRestAPIInt
     final ChainBuilder fork = chainBuilder.fork();
     final SignedBlockAndState nonCanonicalBlock = fork.generateNextBlock(chainUpdater.blockOptions);
 
-    final List<BlobSidecar> nonCanonicalBlobSidecars =
+    final List<BlobSidecarOld> nonCanonicalBlobSidecars =
         fork.getBlobSidecars(nonCanonicalBlock.getRoot());
     chainUpdater.saveBlock(nonCanonicalBlock, nonCanonicalBlobSidecars);
 
@@ -165,7 +165,7 @@ public class GetBlobSidecarsIntegrationTest extends AbstractDataBackedRestAPIInt
 
     assertThat(byRootResponse.code()).isEqualTo(SC_OK);
 
-    final List<BlobSidecar> byRootBlobSidecars = parseBlobSidecars(byRootResponse);
+    final List<BlobSidecarOld> byRootBlobSidecars = parseBlobSidecars(byRootResponse);
     assertThat(byRootBlobSidecars).isEqualTo(nonCanonicalBlobSidecars);
 
     final Response bySlotResponse =
@@ -192,25 +192,28 @@ public class GetBlobSidecarsIntegrationTest extends AbstractDataBackedRestAPIInt
             indices.stream().map(UInt64::toString).collect(Collectors.joining(","))));
   }
 
-  private List<BlobSidecar> parseBlobSidecars(final Response response) throws IOException {
-    final DeserializableTypeDefinition<BlobSidecar> blobSidecarTypeDefinition =
+  private List<BlobSidecarOld> parseBlobSidecars(final Response response) throws IOException {
+    final DeserializableTypeDefinition<BlobSidecarOld> blobSidecarTypeDefinition =
         SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions())
-            .getBlobSidecarSchema()
+            .getBlobSidecarOldSchema()
             .getJsonTypeDefinition();
-    final DeserializableTypeDefinition<List<BlobSidecar>> jsonTypeDefinition =
+    final DeserializableTypeDefinition<List<BlobSidecarOld>> jsonTypeDefinition =
         SharedApiTypes.withDataWrapper("blobSidecars", listOf(blobSidecarTypeDefinition));
 
-    final List<BlobSidecar> result = JsonUtil.parse(response.body().string(), jsonTypeDefinition);
+    final List<BlobSidecarOld> result =
+        JsonUtil.parse(response.body().string(), jsonTypeDefinition);
     return result;
   }
 
-  private List<BlobSidecar> parseBlobSidecarsFromSsz(final Response response) throws IOException {
-    final BlobSidecarSchema blobSidecarSchema =
-        SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions()).getBlobSidecarSchema();
-    SszListSchema<BlobSidecar, ? extends SszList<BlobSidecar>> blobSidecarSszListSchema =
+  private List<BlobSidecarOld> parseBlobSidecarsFromSsz(final Response response)
+      throws IOException {
+    final BlobSidecarSchemaOld blobSidecarSchema =
+        SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions())
+            .getBlobSidecarOldSchema();
+    SszListSchema<BlobSidecarOld, ? extends SszList<BlobSidecarOld>> blobSidecarSszListSchema =
         SszListSchema.create(
             blobSidecarSchema, SpecConfigDeneb.required(specConfig).getMaxBlobsPerBlock());
-    final List<BlobSidecar> result =
+    final List<BlobSidecarOld> result =
         blobSidecarSszListSchema.sszDeserialize(Bytes.of(response.body().bytes())).asList();
 
     return result;

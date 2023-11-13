@@ -69,7 +69,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
@@ -77,6 +76,7 @@ import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.AttesterDuties;
@@ -412,26 +412,6 @@ class RemoteValidatorApiHandlerTest {
   }
 
   @Test
-  public void createUnsignedBlock_WhenFound_ReturnsBlindedBlockContents() {
-    final Spec denebSpec = TestSpecFactory.createMinimalDeneb();
-    final DataStructureUtil denebDataStructureUtil = new DataStructureUtil(denebSpec);
-    final BeaconBlock beaconBlock = denebDataStructureUtil.randomBeaconBlock(UInt64.ONE);
-    final BlindedBlockContents blindedBlockContents =
-        denebDataStructureUtil.randomBlindedBlockContents(UInt64.ONE);
-    final BLSSignature blsSignature = denebDataStructureUtil.randomSignature();
-    final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
-
-    when(typeDefClient.createUnsignedBlock(
-            eq(beaconBlock.getSlot()), eq(blsSignature), eq(graffiti), eq(true)))
-        .thenReturn(Optional.of(blindedBlockContents));
-
-    SafeFuture<Optional<BlockContainer>> future =
-        apiHandler.createUnsignedBlock(UInt64.ONE, blsSignature, graffiti, true);
-
-    assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(blindedBlockContents);
-  }
-
-  @Test
   public void createUnsignedBlock_WhenFound_ReturnsBlockContents() {
     final Spec denebSpec = TestSpecFactory.createMinimalDeneb();
     final DataStructureUtil denebDataStructureUtil = new DataStructureUtil(denebSpec);
@@ -464,7 +444,8 @@ class RemoteValidatorApiHandlerTest {
     ArgumentCaptor<SignedBeaconBlock> argumentCaptor =
         ArgumentCaptor.forClass(SignedBeaconBlock.class);
 
-    final SafeFuture<SendSignedBlockResult> result = apiHandler.sendSignedBlock(signedBeaconBlock);
+    final SafeFuture<SendSignedBlockResult> result =
+        apiHandler.sendSignedBlock(signedBeaconBlock, BroadcastValidationLevel.NOT_REQUIRED);
     asyncRunner.executeQueuedActions();
 
     verify(typeDefClient).sendSignedBlock(argumentCaptor.capture());

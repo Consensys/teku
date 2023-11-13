@@ -15,6 +15,8 @@ package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.FINALIZED_STATE_URL_PATH;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.GENESIS_STATE_URL_PATH;
 
 import java.math.BigInteger;
 import java.util.Optional;
@@ -26,6 +28,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 
@@ -229,5 +232,20 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
                 .build())
         .usingRecursiveComparison()
         .isEqualTo(config);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"http://foo:9000", "http://foo:9000/"})
+  public void checkpointSyncUrlOptionShouldSetInitialAndGenesisStateOptions(
+      final String beaconApiEndpoint) {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--checkpoint-sync-url", beaconApiEndpoint);
+
+    final Eth2NetworkConfiguration networkConfiguration = config.eth2NetworkConfiguration();
+
+    assertThat(networkConfiguration.getGenesisState())
+        .hasValue("http://foo:9000/" + GENESIS_STATE_URL_PATH);
+    assertThat(networkConfiguration.getInitialState())
+        .hasValue("http://foo:9000/" + FINALIZED_STATE_URL_PATH);
   }
 }

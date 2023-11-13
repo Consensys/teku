@@ -23,16 +23,14 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
@@ -60,17 +58,13 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
       final boolean blinded) {
     return super.createUnsignedBlock(
             blockSlotState, newSlot, randaoReveal, optionalGraffiti, blinded)
-        .thenApply(BlockContainer::getBlock)
         .thenCompose(
-            block -> {
-              if (block.isBlinded()) {
-                return operationSelector
-                    .createBlindedBlobSidecarsSelector()
-                    .apply(block)
-                    .thenApply(
-                        blindedBlobSidecars ->
-                            createBlindedBlockContents(block, blindedBlobSidecars));
+            blockContainer -> {
+              if (blockContainer.isBlinded()) {
+                return SafeFuture.completedFuture(blockContainer);
               }
+              // TODO: add blobs and proofs
+              final BeaconBlock block = blockContainer.getBlock();
               return operationSelector
                   .createBlobSidecarsSelector()
                   .apply(block)
@@ -85,17 +79,13 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti) {
     return super.createUnsignedBlock(blockSlotState, newSlot, randaoReveal, optionalGraffiti)
-        .thenApply(BlockContainer::getBlock)
         .thenCompose(
-            block -> {
-              if (block.isBlinded()) {
-                return operationSelector
-                    .createBlindedBlobSidecarsSelector()
-                    .apply(block)
-                    .thenApply(
-                        blindedBlobSidecars ->
-                            createBlindedBlockContents(block, blindedBlobSidecars));
+            blockContainer -> {
+              if (blockContainer.isBlinded()) {
+                return SafeFuture.completedFuture(blockContainer);
               }
+              // TODO: add blobs and proofs
+              final BeaconBlock block = blockContainer.getBlock();
               return operationSelector
                   .createBlobSidecarsSelector()
                   .apply(block)
@@ -123,15 +113,8 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
   }
 
   private BlockContents createBlockContents(
-      final BeaconBlock block, final List<BlobSidecar> blobSidecars) {
+      final BeaconBlock block, final List<BlobSidecarOld> blobSidecars) {
     return schemaDefinitionsDeneb.getBlockContentsSchema().create(block, blobSidecars);
-  }
-
-  private BlindedBlockContents createBlindedBlockContents(
-      final BeaconBlock block, final List<BlindedBlobSidecar> blindedBlobSidecars) {
-    return schemaDefinitionsDeneb
-        .getBlindedBlockContentsSchema()
-        .create(block, blindedBlobSidecars);
   }
 
   /** use {@link BlockFactoryPhase0} unblinding of the {@link SignedBeaconBlock} */
@@ -141,7 +124,7 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
         .thenApply(SignedBlockContainer::getSignedBlock);
   }
 
-  private SafeFuture<List<SignedBlobSidecar>> unblindBlobSidecars(
+  private SafeFuture<List<SignedBlobSidecarOld>> unblindBlobSidecars(
       final SignedBlockContainer blindedBlockContainer) {
     final UInt64 slot = blindedBlockContainer.getSlot();
     final List<SignedBlindedBlobSidecar> blindedBlobSidecars =
@@ -154,7 +137,7 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
   }
 
   private SignedBlockContents createUnblindedSignedBlockContents(
-      final SignedBeaconBlock signedBlock, final List<SignedBlobSidecar> signedBlobSidecars) {
+      final SignedBeaconBlock signedBlock, final List<SignedBlobSidecarOld> signedBlobSidecars) {
     return schemaDefinitionsDeneb
         .getSignedBlockContentsSchema()
         .create(signedBlock, signedBlobSidecars);

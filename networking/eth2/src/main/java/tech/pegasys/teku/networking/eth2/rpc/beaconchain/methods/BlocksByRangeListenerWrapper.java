@@ -14,7 +14,6 @@
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException.InvalidResponseType.BLOCK_PARENT_ROOT_DOES_NOT_MATCH;
-import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException.InvalidResponseType.BLOCK_SLOT_DOES_NOT_MATCH_STEP;
 import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException.InvalidResponseType.BLOCK_SLOT_NOT_GREATER_THAN_PREVIOUS_BLOCK_SLOT;
 import static tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException.InvalidResponseType.BLOCK_SLOT_NOT_IN_RANGE;
 
@@ -32,7 +31,6 @@ public class BlocksByRangeListenerWrapper implements RpcResponseListener<SignedB
   private final RpcResponseListener<SignedBeaconBlock> blockResponseListener;
   private final UInt64 startSlot;
   private final UInt64 endSlot;
-  private final UInt64 step;
 
   private Optional<Bytes32> maybeRootOfLastBlock = Optional.empty();
   private Optional<UInt64> maybeSlotOfLastBlock = Optional.empty();
@@ -45,8 +43,7 @@ public class BlocksByRangeListenerWrapper implements RpcResponseListener<SignedB
     this.peer = peer;
     this.blockResponseListener = blockResponseListener;
     this.startSlot = startSlot;
-    this.step = UInt64.ONE;
-    this.endSlot = startSlot.plus(step.times(count)).minusMinZero(1);
+    this.endSlot = startSlot.plus(count).minusMinZero(1);
   }
 
   @Override
@@ -56,11 +53,6 @@ public class BlocksByRangeListenerWrapper implements RpcResponseListener<SignedB
           UInt64 blockSlot = response.getSlot();
           if (!blockSlotIsInRange(blockSlot)) {
             throw new BlocksByRangeResponseInvalidResponseException(peer, BLOCK_SLOT_NOT_IN_RANGE);
-          }
-
-          if (!blockSlotMatchesTheStep(blockSlot)) {
-            throw new BlocksByRangeResponseInvalidResponseException(
-                peer, BLOCK_SLOT_DOES_NOT_MATCH_STEP);
           }
 
           if (!blockSlotGreaterThanPreviousBlockSlot(blockSlot)) {
@@ -80,11 +72,7 @@ public class BlocksByRangeListenerWrapper implements RpcResponseListener<SignedB
   }
 
   private boolean blockSlotIsInRange(UInt64 blockSlot) {
-    return blockSlot.compareTo(startSlot) >= 0 && blockSlot.compareTo(endSlot) <= 0;
-  }
-
-  private boolean blockSlotMatchesTheStep(UInt64 blockSlot) {
-    return blockSlot.minus(startSlot).mod(step).equals(UInt64.ZERO);
+    return blockSlot.isGreaterThanOrEqualTo(startSlot) && blockSlot.isLessThanOrEqualTo(endSlot);
   }
 
   private boolean blockSlotGreaterThanPreviousBlockSlot(UInt64 blockSlot) {
@@ -98,10 +86,6 @@ public class BlocksByRangeListenerWrapper implements RpcResponseListener<SignedB
 
   private boolean blockParentRootMatches(Bytes32 blockParentRoot) {
     if (maybeRootOfLastBlock.isEmpty()) {
-      return true;
-    }
-
-    if (!step.equals(UInt64.ONE)) {
       return true;
     }
 

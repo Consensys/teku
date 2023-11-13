@@ -28,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.metrics.Validator.DutyType;
 
 class ValidatorDutyMetricsTest {
 
@@ -46,12 +47,12 @@ class ValidatorDutyMetricsTest {
     final LabelledMetric<OperationTimer> dutyMetric = mock(LabelledMetric.class);
     final MetricsSystem metricsSystem = mock(MetricsSystem.class);
     when(metricsSystem.createLabelledTimer(
-            eq(TekuMetricCategory.VALIDATOR), eq("duty_timer"), any(), eq("type"), eq("step")))
+            eq(TekuMetricCategory.VALIDATOR_DUTY), eq("timer"), any(), eq("type"), eq("step")))
         .thenReturn(dutyMetric);
 
     operationTimer = mock(OperationTimer.class);
     timingContext = mock(OperationTimer.TimingContext.class);
-    when(dutyMetric.labels(eq(DutyType.ATTESTATION_PRODUCTION.getType()), eq("total")))
+    when(dutyMetric.labels(eq(DutyType.ATTESTATION_PRODUCTION.getName()), eq("total")))
         .thenReturn(operationTimer);
     doReturn(timingContext).when(operationTimer).startTimer();
 

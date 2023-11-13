@@ -18,10 +18,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import tech.pegasys.teku.infrastructure.metrics.MetricsCountersByIntervals;
+import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -40,8 +43,16 @@ class DutyMetricsTest {
       mock(MetricsCountersByIntervals.class);
   private final MetricsCountersByIntervals blockTimings = mock(MetricsCountersByIntervals.class);
 
+  private final MetricsSystem metricsSystem = new StubMetricsSystem();
+
   private DutyMetrics createMetrics(Spec spec) {
-    return new DutyMetrics(timeProvider, recentChainData, attestationTimings, blockTimings, spec);
+    return new DutyMetrics(
+        timeProvider,
+        recentChainData,
+        attestationTimings,
+        blockTimings,
+        ValidatorDutyMetricUtils.createValidatorDutyMetric(metricsSystem),
+        spec);
   }
 
   @BeforeEach

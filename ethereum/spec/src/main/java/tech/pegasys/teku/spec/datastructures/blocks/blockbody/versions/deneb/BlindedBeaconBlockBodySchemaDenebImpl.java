@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
@@ -42,7 +43,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitmentSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
@@ -97,6 +97,7 @@ public class BlindedBeaconBlockBodySchemaDenebImpl
       final SpecConfigDeneb specConfig,
       final AttesterSlashingSchema attesterSlashingSchema,
       final SignedBlsToExecutionChangeSchema signedBlsToExecutionChangeSchema,
+      final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema,
       final String containerName) {
     return new BlindedBeaconBlockBodySchemaDenebImpl(
         containerName,
@@ -131,10 +132,7 @@ public class BlindedBeaconBlockBodySchemaDenebImpl
             BlockBodyFields.BLS_TO_EXECUTION_CHANGES,
             SszListSchema.create(
                 signedBlsToExecutionChangeSchema, specConfig.getMaxBlsToExecutionChanges())),
-        namedSchema(
-            BlockBodyFields.BLOB_KZG_COMMITMENTS,
-            SszListSchema.create(
-                SszKZGCommitmentSchema.INSTANCE, specConfig.getMaxBlobCommitmentsPerBlock())));
+        namedSchema(BlockBodyFields.BLOB_KZG_COMMITMENTS, blobKzgCommitmentsSchema));
   }
 
   @Override

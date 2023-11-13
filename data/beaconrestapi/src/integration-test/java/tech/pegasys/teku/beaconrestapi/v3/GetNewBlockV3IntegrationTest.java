@@ -28,7 +28,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXEC
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_VALUE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
-import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 
 import com.google.common.io.Resources;
@@ -53,7 +52,6 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.constants.EthConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
@@ -121,7 +119,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
 
   @TestTemplate
   void shouldGetBlindedBeaconBlockAsJson() throws IOException {
-    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX).isLessThanOrEqualTo(CAPELLA);
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX);
     final BeaconBlock blindedBeaconBlock = dataStructureUtil.randomBlindedBeaconBlock(ONE);
     final BLSSignature signature = blindedBeaconBlock.getBlock().getBody().getRandaoReveal();
     when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
@@ -134,7 +132,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
 
   @TestTemplate
   void shouldGetBlindedBeaconBlockAsSsz() throws IOException {
-    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX).isLessThanOrEqualTo(CAPELLA);
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX);
     final BeaconBlock blindedBeaconBlock = dataStructureUtil.randomBlindedBeaconBlock(ONE);
     final BLSSignature signature = blindedBeaconBlock.getBlock().getBody().getRandaoReveal();
     when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
@@ -179,38 +177,6 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
   }
 
   @TestTemplate
-  void shouldGetBlindedBlockContentPostDenebAsJson() throws IOException {
-    assumeThat(specMilestone).isEqualTo(DENEB);
-    final BlindedBlockContents blindedBlockContents =
-        dataStructureUtil.randomBlindedBlockContents(ONE);
-    final BLSSignature signature = blindedBlockContents.getBlock().getBody().getRandaoReveal();
-    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(blindedBlockContents)));
-    Response response = get(signature, ContentTypes.JSON);
-    assertResponseWithHeaders(response, true);
-    final String body = response.body().string();
-    assertThat(body).isEqualTo(getExpectedBlockAsJson(specMilestone, true, true));
-  }
-
-  @TestTemplate
-  void shouldGetBlindedBlockContentPostDenebAsSsz() throws IOException {
-    assumeThat(specMilestone).isEqualTo(DENEB);
-    final BlindedBlockContents blindedBlockContents =
-        dataStructureUtil.randomBlindedBlockContents(ONE);
-    final BLSSignature signature = blindedBlockContents.getBlock().getBody().getRandaoReveal();
-    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(blindedBlockContents)));
-    Response response = get(signature, ContentTypes.OCTET_STREAM);
-    assertResponseWithHeaders(response, true);
-    final BlindedBlockContents result =
-        (BlindedBlockContents)
-            spec.getGenesisSchemaDefinitions()
-                .getBlindedBlockContainerSchema()
-                .sszDeserialize(Bytes.of(response.body().bytes()));
-    assertThat(result).isEqualTo(blindedBlockContents);
-  }
-
-  @TestTemplate
   void shouldFailWhenNoBlockProduced() throws IOException {
     final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
     final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
@@ -229,37 +195,6 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
     assertThat(response.code()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
     final String body = response.body().string();
     assertThat(body).contains("Unable to produce a block");
-  }
-
-  @TestTemplate
-  void shouldFailWhenNoCachedPayloadResult() throws IOException {
-    final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
-    final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
-    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    when(executionLayerBlockProductionManager.getCachedPayloadResult(UInt64.ONE))
-        .thenReturn(Optional.empty());
-    Response response = get(signature, ContentTypes.JSON);
-    assertThat(response.code()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
-  }
-
-  @TestTemplate
-  void shouldFailWhenNoExecutionPayloadValue() throws IOException {
-    final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
-    final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
-    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    when(executionLayerBlockProductionManager.getCachedPayloadResult(UInt64.ONE))
-        .thenReturn(
-            Optional.of(
-                new ExecutionPayloadResult(
-                    mock(ExecutionPayloadContext.class),
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.empty())));
-    Response response = get(signature, ContentTypes.JSON);
-    assertThat(response.code()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
   }
 
   private Response get(final BLSSignature signature, final String contentType) throws IOException {

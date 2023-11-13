@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client.duties.attestations;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps.CREATE_TOTAL;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -24,6 +25,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.metrics.Validator.DutyType;
+import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -36,10 +39,8 @@ import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.duties.Duty;
 import tech.pegasys.teku.validator.client.duties.DutyResult;
-import tech.pegasys.teku.validator.client.duties.DutyType;
 import tech.pegasys.teku.validator.client.duties.ProductionResult;
 import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics;
-import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics.Step;
 
 public class AttestationProductionDuty implements Duty {
   private static final Logger LOG = LogManager.getLogger();
@@ -129,7 +130,7 @@ public class AttestationProductionDuty implements Duty {
         validatorDutyMetrics.record(
             () -> validatorApiChannel.createAttestationData(slot, committeeIndex),
             this,
-            ValidatorDutyMetrics.Step.CREATE);
+            CREATE_TOTAL);
     unsignedAttestationFuture.propagateTo(committee.getAttestationDataFuture());
 
     return committee.getValidators().stream()
@@ -157,7 +158,7 @@ public class AttestationProductionDuty implements Duty {
                               () ->
                                   signAttestationForValidator(forkInfo, attestationData, validator),
                               this,
-                              Step.SIGN);
+                              ValidatorDutyMetricsSteps.SIGN);
                         })
                     .orElseGet(
                         () ->

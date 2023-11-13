@@ -28,12 +28,8 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -48,22 +44,21 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
@@ -71,7 +66,6 @@ import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.ForkProvider;
 import tech.pegasys.teku.validator.client.Validator;
-import tech.pegasys.teku.validator.client.duties.ValidatorDutyMetrics.Step;
 import tech.pegasys.teku.validator.client.signer.BlockContainerSigner;
 import tech.pegasys.teku.validator.client.signer.MilestoneBasedBlockContainerSigner;
 
@@ -147,12 +141,12 @@ class BlockProductionDutyTest {
     when(signer.signBlock(unsignedBlock, fork)).thenReturn(completedFuture(blockSignature));
     final SignedBeaconBlock signedBlock =
         dataStructureUtil.signedBlock(unsignedBlock, blockSignature);
-    when(validatorApiChannel.sendSignedBlock(signedBlock))
+    when(validatorApiChannel.sendSignedBlock(signedBlock, BroadcastValidationLevel.NOT_REQUIRED))
         .thenReturn(completedFuture(SendSignedBlockResult.success(signedBlock.getRoot())));
 
     performAndReportDuty();
 
-    verify(validatorApiChannel).sendSignedBlock(signedBlock);
+    verify(validatorApiChannel).sendSignedBlock(signedBlock, BroadcastValidationLevel.NOT_REQUIRED);
     verify(validatorLogger)
         .dutyCompleted(
             eq(TYPE),
@@ -162,9 +156,12 @@ class BlockProductionDutyTest {
             ArgumentMatchers.argThat(Optional::isPresent));
     verifyNoMoreInteractions(validatorLogger);
 
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SIGN));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SEND));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SEND));
   }
 
   @Test
@@ -186,34 +183,23 @@ class BlockProductionDutyTest {
     // can create BlockContents only post-Deneb
     final BlockContents unsignedBlockContents = dataStructureUtil.randomBlockContents(denebSlot);
     final BeaconBlock unsignedBlock = unsignedBlockContents.getBlock();
-    final List<BlobSidecar> unsignedBlobSidecars =
-        unsignedBlockContents.getBlobSidecars().orElseThrow();
-    final Map<BlobSidecar, BLSSignature> blobSidecarsSignatures =
-        unsignedBlobSidecars.stream()
-            .collect(
-                Collectors.toMap(Function.identity(), __ -> dataStructureUtil.randomSignature()));
-
     when(signer.createRandaoReveal(spec.computeEpochAtSlot(denebSlot), fork))
         .thenReturn(completedFuture(randaoReveal));
     when(signer.signBlock(unsignedBlockContents.getBlock(), fork))
         .thenReturn(completedFuture(blockSignature));
-    when(signer.signBlobSidecar(any(), eq(fork)))
-        .thenAnswer(
-            invocation ->
-                completedFuture(
-                    blobSidecarsSignatures.get((BlobSidecar) invocation.getArgument(0))));
     when(validatorApiChannel.createUnsignedBlock(
             denebSlot, randaoReveal, Optional.of(graffiti), false))
         .thenReturn(completedFuture(Optional.of(unsignedBlockContents)));
-    when(validatorApiChannel.sendSignedBlock(any()))
+    when(validatorApiChannel.sendSignedBlock(any(), any()))
         .thenReturn(completedFuture(SendSignedBlockResult.success(unsignedBlock.getRoot())));
 
     performAndReportDuty(denebSlot);
 
-    final ArgumentCaptor<SignedBlockContents> signedBlockContentsArgumentCaptor =
-        ArgumentCaptor.forClass(SignedBlockContents.class);
+    final ArgumentCaptor<SignedBlockContainer> signedBlockContainerArgumentCaptor =
+        ArgumentCaptor.forClass(SignedBlockContainer.class);
 
-    verify(validatorApiChannel).sendSignedBlock(signedBlockContentsArgumentCaptor.capture());
+    verify(validatorApiChannel)
+        .sendSignedBlock(signedBlockContainerArgumentCaptor.capture(), any());
     verify(validatorLogger)
         .dutyCompleted(
             eq(TYPE),
@@ -223,7 +209,11 @@ class BlockProductionDutyTest {
             ArgumentMatchers.argThat(Optional::isPresent));
     verifyNoMoreInteractions(validatorLogger);
 
-    final SignedBlockContents signedBlockContents = signedBlockContentsArgumentCaptor.getValue();
+    final SignedBlockContainer signedBlockContainer = signedBlockContainerArgumentCaptor.getValue();
+
+    assertThat(signedBlockContainer).isInstanceOf(SignedBlockContents.class);
+
+    final SignedBlockContents signedBlockContents = (SignedBlockContents) signedBlockContainer;
 
     assertThat(signedBlockContents.isBlinded()).isFalse();
 
@@ -233,28 +223,21 @@ class BlockProductionDutyTest {
 
     assertThat(signedBlockContents.getSignedBlobSidecars().isPresent()).isTrue();
 
-    final List<SignedBlobSidecar> signedBlobSidecars =
+    final List<SignedBlobSidecarOld> signedBlobSidecars =
         signedBlockContents.getSignedBlobSidecars().get();
 
-    assertThat(signedBlobSidecars).isNotEmpty();
+    assertThat(signedBlobSidecars).isEmpty();
 
-    IntStream.range(0, signedBlobSidecars.size())
-        .forEach(
-            index -> {
-              final SignedBlobSidecar signedBlobSidecar = signedBlobSidecars.get(index);
-              final BlobSidecar unsignedBlobSidecar = unsignedBlobSidecars.get(index);
-              assertThat(signedBlobSidecar.getMessage()).isEqualTo(unsignedBlobSidecar);
-              assertThat(signedBlobSidecar.getSignature())
-                  .isEqualTo(blobSidecarsSignatures.get(unsignedBlobSidecar));
-            });
-
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SIGN));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SEND));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SEND));
   }
 
   @Test
-  public void forDeneb_shouldCreateAndPublishBlindedBlockContents() {
+  public void forDeneb_shouldCreateAndPublishBlindedBlock() {
     duty =
         new BlockProductionDuty(
             validator,
@@ -269,39 +252,25 @@ class BlockProductionDutyTest {
 
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
-    // can create BlindedBlockContents only post-Deneb fork
-    final BlindedBlockContents unsignedBlindedBlockContents =
-        dataStructureUtil.randomBlindedBlockContents(denebSlot);
-    final BeaconBlock unsignedBlindedBlock = unsignedBlindedBlockContents.getBlock();
-    final List<BlindedBlobSidecar> unsignedBlindedBlobSidecars =
-        unsignedBlindedBlockContents.getBlindedBlobSidecars().orElseThrow();
-    final Map<BlindedBlobSidecar, BLSSignature> blindedBlobSidecarsSignatures =
-        unsignedBlindedBlobSidecars.stream()
-            .collect(
-                Collectors.toMap(Function.identity(), __ -> dataStructureUtil.randomSignature()));
+    final BeaconBlock unsignedBlindedBlock = dataStructureUtil.randomBlindedBeaconBlock(denebSlot);
 
     when(signer.createRandaoReveal(spec.computeEpochAtSlot(denebSlot), fork))
         .thenReturn(completedFuture(randaoReveal));
     when(signer.signBlock(unsignedBlindedBlock.getBlock(), fork))
         .thenReturn(completedFuture(blockSignature));
-    when(signer.signBlindedBlobSidecar(any(), eq(fork)))
-        .thenAnswer(
-            invocation ->
-                completedFuture(
-                    blindedBlobSidecarsSignatures.get(
-                        (BlindedBlobSidecar) invocation.getArgument(0))));
     when(validatorApiChannel.createUnsignedBlock(
             denebSlot, randaoReveal, Optional.of(graffiti), true))
-        .thenReturn(completedFuture(Optional.of(unsignedBlindedBlockContents)));
-    when(validatorApiChannel.sendSignedBlock(any()))
+        .thenReturn(completedFuture(Optional.of(unsignedBlindedBlock)));
+    when(validatorApiChannel.sendSignedBlock(any(), any()))
         .thenReturn(completedFuture(SendSignedBlockResult.success(unsignedBlindedBlock.getRoot())));
 
     performAndReportDuty(denebSlot);
 
-    final ArgumentCaptor<SignedBlindedBlockContents> signedBlindedBlockContentsArgumentCaptor =
-        ArgumentCaptor.forClass(SignedBlindedBlockContents.class);
+    final ArgumentCaptor<SignedBlindedBlockContainer> signedBlindedBlockContainerArgumentCaptor =
+        ArgumentCaptor.forClass(SignedBlindedBlockContainer.class);
 
-    verify(validatorApiChannel).sendSignedBlock(signedBlindedBlockContentsArgumentCaptor.capture());
+    verify(validatorApiChannel)
+        .sendSignedBlock(signedBlindedBlockContainerArgumentCaptor.capture(), any());
     verify(validatorLogger)
         .dutyCompleted(
             eq(TYPE),
@@ -311,39 +280,23 @@ class BlockProductionDutyTest {
             ArgumentMatchers.argThat(Optional::isPresent));
     verifyNoMoreInteractions(validatorLogger);
 
-    final SignedBlindedBlockContents signedBlindedBlockContents =
-        signedBlindedBlockContentsArgumentCaptor.getValue();
+    final SignedBlindedBlockContainer signedBlindedBlockContainer =
+        signedBlindedBlockContainerArgumentCaptor.getValue();
 
-    assertThat(signedBlindedBlockContents.isBlinded()).isTrue();
+    assertThat(signedBlindedBlockContainer).isInstanceOf(SignedBeaconBlock.class);
 
-    final SignedBeaconBlock signedBlock = signedBlindedBlockContents.getSignedBlock();
+    final SignedBeaconBlock signedBlock = signedBlindedBlockContainer.getSignedBlock();
+
     assertThat(signedBlock.getMessage()).isEqualTo(unsignedBlindedBlock);
     assertThat(signedBlock.isBlinded()).isTrue();
     assertThat(signedBlock.getSignature()).isEqualTo(blockSignature);
 
-    assertThat(signedBlindedBlockContents.getSignedBlindedBlobSidecars().isPresent()).isTrue();
-
-    final List<SignedBlindedBlobSidecar> signedBlindedBlobSidecars =
-        signedBlindedBlockContents.getSignedBlindedBlobSidecars().get();
-
-    assertThat(signedBlindedBlobSidecars).isNotEmpty();
-
-    IntStream.range(0, signedBlindedBlobSidecars.size())
-        .forEach(
-            index -> {
-              final SignedBlindedBlobSidecar signedBlindedBlobSidecar =
-                  signedBlindedBlobSidecars.get(index);
-              final BlindedBlobSidecar unsignedBlindedBlobSidecar =
-                  unsignedBlindedBlobSidecars.get(index);
-              assertThat(signedBlindedBlobSidecar.getBlindedBlobSidecar())
-                  .isEqualTo(unsignedBlindedBlobSidecar);
-              assertThat(signedBlindedBlobSidecar.getSignature())
-                  .isEqualTo(blindedBlobSidecarsSignatures.get(unsignedBlindedBlobSidecar));
-            });
-
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SIGN));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SEND));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SEND));
   }
 
   @Test
@@ -384,7 +337,8 @@ class BlockProductionDutyTest {
 
     assertDutyFails(error);
 
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
     verifyNoMoreInteractions(validatorDutyMetrics);
   }
 
@@ -407,7 +361,8 @@ class BlockProductionDutyTest {
             any(IllegalStateException.class));
     verifyNoMoreInteractions(validatorLogger);
 
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
     verifyNoMoreInteractions(validatorDutyMetrics);
   }
 
@@ -425,8 +380,10 @@ class BlockProductionDutyTest {
 
     assertDutyFails(error);
 
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SIGN));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
     verifyNoMoreInteractions(validatorDutyMetrics);
   }
 
@@ -461,14 +418,14 @@ class BlockProductionDutyTest {
     when(signer.signBlock(unsignedBlock, fork)).thenReturn(completedFuture(blockSignature));
     final SignedBeaconBlock signedBlock =
         dataStructureUtil.signedBlock(unsignedBlock, blockSignature);
-    when(validatorApiChannel.sendSignedBlock(signedBlock))
+    when(validatorApiChannel.sendSignedBlock(signedBlock, BroadcastValidationLevel.NOT_REQUIRED))
         .thenReturn(completedFuture(SendSignedBlockResult.success(signedBlock.getRoot())));
 
     performAndReportDuty();
     verify(validatorApiChannel)
         .createUnsignedBlock(CAPELLA_SLOT, randaoReveal, Optional.of(graffiti));
 
-    verify(validatorApiChannel).sendSignedBlock(signedBlock);
+    verify(validatorApiChannel).sendSignedBlock(signedBlock, BroadcastValidationLevel.NOT_REQUIRED);
     verify(validatorLogger)
         .dutyCompleted(
             eq(TYPE),
@@ -478,9 +435,12 @@ class BlockProductionDutyTest {
             ArgumentMatchers.argThat(Optional::isPresent));
     verifyNoMoreInteractions(validatorLogger);
 
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SIGN));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SEND));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SEND));
   }
 
   @Test
@@ -502,25 +462,14 @@ class BlockProductionDutyTest {
     // can create BlockContents only post-Deneb
     final BlockContents unsignedBlockContents = dataStructureUtil.randomBlockContents(denebSlot);
     final BeaconBlock unsignedBlock = unsignedBlockContents.getBlock();
-    final List<BlobSidecar> unsignedBlobSidecars =
-        unsignedBlockContents.getBlobSidecars().orElseThrow();
-    final Map<BlobSidecar, BLSSignature> blobSidecarsSignatures =
-        unsignedBlobSidecars.stream()
-            .collect(
-                Collectors.toMap(Function.identity(), __ -> dataStructureUtil.randomSignature()));
 
     when(signer.createRandaoReveal(spec.computeEpochAtSlot(denebSlot), fork))
         .thenReturn(completedFuture(randaoReveal));
     when(signer.signBlock(unsignedBlockContents.getBlock(), fork))
         .thenReturn(completedFuture(blockSignature));
-    when(signer.signBlobSidecar(any(), eq(fork)))
-        .thenAnswer(
-            invocation ->
-                completedFuture(
-                    blobSidecarsSignatures.get((BlobSidecar) invocation.getArgument(0))));
     when(validatorApiChannel.createUnsignedBlock(denebSlot, randaoReveal, Optional.of(graffiti)))
         .thenReturn(completedFuture(Optional.of(unsignedBlockContents)));
-    when(validatorApiChannel.sendSignedBlock(any()))
+    when(validatorApiChannel.sendSignedBlock(any(), any()))
         .thenReturn(completedFuture(SendSignedBlockResult.success(unsignedBlock.getRoot())));
 
     performAndReportDuty(denebSlot);
@@ -530,7 +479,9 @@ class BlockProductionDutyTest {
     final ArgumentCaptor<SignedBlockContents> signedBlockContentsArgumentCaptor =
         ArgumentCaptor.forClass(SignedBlockContents.class);
 
-    verify(validatorApiChannel).sendSignedBlock(signedBlockContentsArgumentCaptor.capture());
+    verify(validatorApiChannel)
+        .sendSignedBlock(
+            signedBlockContentsArgumentCaptor.capture(), eq(BroadcastValidationLevel.NOT_REQUIRED));
     verify(validatorLogger)
         .dutyCompleted(
             eq(TYPE),
@@ -550,24 +501,17 @@ class BlockProductionDutyTest {
 
     assertThat(signedBlockContents.getSignedBlobSidecars().isPresent()).isTrue();
 
-    final List<SignedBlobSidecar> signedBlobSidecars =
+    final List<SignedBlobSidecarOld> signedBlobSidecars =
         signedBlockContents.getSignedBlobSidecars().get();
 
-    assertThat(signedBlobSidecars).isNotEmpty();
+    assertThat(signedBlobSidecars).isEmpty();
 
-    IntStream.range(0, signedBlobSidecars.size())
-        .forEach(
-            index -> {
-              final SignedBlobSidecar signedBlobSidecar = signedBlobSidecars.get(index);
-              final BlobSidecar unsignedBlobSidecar = unsignedBlobSidecars.get(index);
-              assertThat(signedBlobSidecar.getMessage()).isEqualTo(unsignedBlobSidecar);
-              assertThat(signedBlobSidecar.getSignature())
-                  .isEqualTo(blobSidecarsSignatures.get(unsignedBlobSidecar));
-            });
-
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.CREATE));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SIGN));
-    verify(validatorDutyMetrics).record(any(), any(BlockProductionDuty.class), eq(Step.SEND));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SEND));
   }
 
   public void assertDutyFails(final RuntimeException error) {

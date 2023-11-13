@@ -26,7 +26,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -51,6 +51,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
   CombinedUpdater combinedUpdater();
 
   Optional<SignedBeaconBlock> getHotBlock(Bytes32 root);
+
+  Optional<Bytes> getHotBlockAsSsz(Bytes32 root);
 
   @MustBeClosed
   Stream<SignedBeaconBlock> streamHotBlocks();
@@ -222,6 +224,8 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
     void addFinalizedBlock(final SignedBeaconBlock block);
 
+    void addFinalizedBlockRaw(UInt64 slot, Bytes32 blockRoot, Bytes blockBytes);
+
     void addNonCanonicalBlock(final SignedBeaconBlock block);
 
     void deleteFinalizedBlock(final UInt64 slot, final Bytes32 blockRoot);
@@ -238,9 +242,9 @@ public interface KvStoreCombinedDao extends AutoCloseable {
 
     void addNonCanonicalRootAtSlot(final UInt64 slot, final Set<Bytes32> blockRoots);
 
-    void addBlobSidecar(BlobSidecar blobSidecar);
+    void addBlobSidecar(BlobSidecarOld blobSidecar);
 
-    void addNonCanonicalBlobSidecar(BlobSidecar blobSidecar);
+    void addNonCanonicalBlobSidecar(BlobSidecarOld blobSidecar);
 
     void addNonCanonicalBlobSidecarRaw(Bytes blobSidecarBytes, SlotAndBlockRootAndBlobIndex key);
 

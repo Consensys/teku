@@ -44,7 +44,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -95,7 +95,7 @@ public class EventSubscriptionManagerTest {
   private final SyncState sampleSyncState = SyncState.IN_SYNC;
   private final SignedBeaconBlock sampleBlock =
       SignedBeaconBlock.create(data.randomSignedBeaconBlock(0));
-  private final BlobSidecar sampleBlobSidecar = data.randomBlobSidecar();
+  private final BlobSidecarOld sampleBlobSidecar = data.randomBlobSidecarOld();
   private final Attestation sampleAttestation = data.randomAttestation(0);
   private final SignedVoluntaryExit sampleVoluntaryExit = data.randomSignedVoluntaryExit();
   private final SignedBlsToExecutionChange sampleBlsToExecutionChange =

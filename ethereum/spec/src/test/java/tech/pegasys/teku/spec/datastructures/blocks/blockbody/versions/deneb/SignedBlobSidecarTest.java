@@ -20,9 +20,9 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarSchema;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarSchemaOld;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -32,17 +32,17 @@ public class SignedBlobSidecarTest {
       new DataStructureUtil(TestSpecFactory.createMinimal(SpecMilestone.DENEB));
   final SchemaDefinitions schemaDefinitions =
       dataStructureUtil.getSpec().getGenesisSchemaDefinitions();
-  private final SignedBlobSidecarSchema signedBlobSidecarSchema =
-      schemaDefinitions.toVersionDeneb().orElseThrow().getSignedBlobSidecarSchema();
-  private final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
+  private final SignedBlobSidecarSchemaOld signedBlobSidecarSchema =
+      schemaDefinitions.toVersionDeneb().orElseThrow().getSignedBlobSidecarOldSchema();
+  private final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecarOld();
 
   private final BLSSignature signature = dataStructureUtil.randomSignature();
 
   @Test
   public void objectEquality() {
-    final SignedBlobSidecar signedBlobSidecar1 =
+    final SignedBlobSidecarOld signedBlobSidecar1 =
         signedBlobSidecarSchema.create(blobSidecar, signature);
-    final SignedBlobSidecar signedBlobSidecar2 =
+    final SignedBlobSidecarOld signedBlobSidecar2 =
         signedBlobSidecarSchema.create(blobSidecar, signature);
 
     assertThat(signedBlobSidecar1).isEqualTo(signedBlobSidecar2);
@@ -50,7 +50,7 @@ public class SignedBlobSidecarTest {
 
   @Test
   public void objectAccessorMethods() {
-    final SignedBlobSidecar signedBlobSidecar =
+    final SignedBlobSidecarOld signedBlobSidecar =
         signedBlobSidecarSchema.create(blobSidecar, signature);
 
     assertThat(signedBlobSidecar.getBlobSidecar()).isEqualTo(blobSidecar);
@@ -59,11 +59,11 @@ public class SignedBlobSidecarTest {
 
   @Test
   public void roundTripSSZ() {
-    final SignedBlobSidecar signedBlobSidecar =
+    final SignedBlobSidecarOld signedBlobSidecar =
         signedBlobSidecarSchema.create(blobSidecar, signature);
 
     final Bytes sszSignedBlobSidecarBytes = signedBlobSidecar.sszSerialize();
-    final SignedBlobSidecar deserializedObject =
+    final SignedBlobSidecarOld deserializedObject =
         signedBlobSidecarSchema.sszDeserialize(sszSignedBlobSidecarBytes);
 
     assertThat(signedBlobSidecar).isEqualTo(deserializedObject);

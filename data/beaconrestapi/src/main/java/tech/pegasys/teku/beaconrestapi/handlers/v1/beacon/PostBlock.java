@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
@@ -71,7 +72,7 @@ public class PostBlock extends RestApiEndpoint {
         .summary("Publish a signed block")
         .description(
             "Submit a signed beacon block to the beacon node to be broadcast and imported."
-                + " After Deneb, this additionally instructs the beacon node to broadcast and import all given signed blobs."
+                + " After Deneb, this additionally instructs the beacon node to broadcast and import all given blobs."
                 + " The beacon node performs the required validation.")
         .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
         .requestBodyType(
@@ -110,7 +111,7 @@ public class PostBlock extends RestApiEndpoint {
 
     request.respondAsync(
         validatorDataProvider
-            .submitSignedBlock(requestBody)
+            .submitSignedBlock(requestBody, BroadcastValidationLevel.NOT_REQUIRED)
             .thenApply(
                 result -> {
                   if (result.getRejectionReason().isEmpty()) {

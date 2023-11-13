@@ -37,7 +37,7 @@ import tech.pegasys.teku.infrastructure.restapi.openapi.response.OctetStreamResp
 import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContentTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
@@ -75,7 +75,7 @@ public class GetBlobSidecars extends RestApiEndpoint {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final List<UInt64> indices = request.getQueryParameterList(BLOB_INDICES_PARAMETER);
-    final SafeFuture<Optional<List<BlobSidecar>>> future =
+    final SafeFuture<Optional<List<BlobSidecarOld>>> future =
         chainDataProvider.getBlobSidecars(request.getPathParameter(PARAMETER_BLOCK_ID), indices);
 
     request.respondAsync(
@@ -86,20 +86,20 @@ public class GetBlobSidecars extends RestApiEndpoint {
                     .orElse(AsyncApiResponse.respondNotFound())));
   }
 
-  private static SerializableTypeDefinition<List<BlobSidecar>> getResponseType(
+  private static SerializableTypeDefinition<List<BlobSidecarOld>> getResponseType(
       final SchemaDefinitionCache schemaCache) {
-    final DeserializableTypeDefinition<BlobSidecar> blobSidecarType =
+    final DeserializableTypeDefinition<BlobSidecarOld> blobSidecarType =
         SchemaDefinitionsDeneb.required(schemaCache.getSchemaDefinition(SpecMilestone.DENEB))
-            .getBlobSidecarSchema()
+            .getBlobSidecarOldSchema()
             .getJsonTypeDefinition();
-    return SerializableTypeDefinition.<List<BlobSidecar>>object()
+    return SerializableTypeDefinition.<List<BlobSidecarOld>>object()
         .name("GetBlobSidecarsResponse")
         .withField("data", listOf(blobSidecarType), Function.identity())
         .build();
   }
 
-  private static ResponseContentTypeDefinition<List<BlobSidecar>> getSszResponseType() {
-    final OctetStreamResponseContentTypeDefinition.OctetStreamSerializer<List<BlobSidecar>>
+  private static ResponseContentTypeDefinition<List<BlobSidecarOld>> getSszResponseType() {
+    final OctetStreamResponseContentTypeDefinition.OctetStreamSerializer<List<BlobSidecarOld>>
         serializer = (data, out) -> data.forEach(blobSidecar -> blobSidecar.sszSerialize(out));
 
     return new OctetStreamResponseContentTypeDefinition<>(serializer, __ -> Collections.emptyMap());

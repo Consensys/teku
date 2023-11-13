@@ -84,9 +84,7 @@ public class MilestoneDependentTypesUtil {
         // SignedBeaconBlock
         getSlot(json, "message", "slot")
             // SignedBlockContents
-            .or(() -> getSlot(json, "signed_block", "message", "slot"))
-            // SignedBlindedBlockContents
-            .or(() -> getSlot(json, "signed_blinded_block", "message", "slot"));
+            .or(() -> getSlot(json, "signed_block", "message", "slot"));
     final SpecMilestone milestone =
         schemaDefinitionCache.milestoneAtSlot(
             slot.orElseThrow(() -> new BadRequestException("Could not locate slot in JSON data")));

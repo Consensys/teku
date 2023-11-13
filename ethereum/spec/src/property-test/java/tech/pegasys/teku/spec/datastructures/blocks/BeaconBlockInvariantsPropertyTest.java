@@ -17,13 +17,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.propertytest.suppliers.blocks.BeaconBlockSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blocks.SignedBeaconBlockSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.bellatrix.BlindedBeaconBlockSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.bellatrix.SignedBlindedBeaconBlockSupplier;
-import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.SignedBlindedBlockContentsSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.SignedBlockContentsSupplier;
 
 public class BeaconBlockInvariantsPropertyTest {
@@ -69,15 +67,5 @@ public class BeaconBlockInvariantsPropertyTest {
             BeaconBlockInvariants.extractSignedBlockContainerSlot(
                 signedBlockContents.sszSerialize()))
         .isEqualTo(signedBlockContents.getSlot());
-  }
-
-  @Property
-  void extractSlotFromSignedBlindedBlockContents(
-      @ForAll(supplier = SignedBlindedBlockContentsSupplier.class)
-          final SignedBlindedBlockContents signedBlindedBlockContents) {
-    assertThat(
-            BeaconBlockInvariants.extractSignedBlockContainerSlot(
-                signedBlindedBlockContents.sszSerialize()))
-        .isEqualTo(signedBlindedBlockContents.getSlot());
   }
 }

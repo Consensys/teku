@@ -99,7 +99,7 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
     this.signedBlindedBeaconBlockSchema =
         new SignedBeaconBlockSchema(blindedBeaconBlockSchema, "SignedBlindedBlockCapella");
     this.builderBidSchemaCapella =
-        new BuilderBidSchemaBellatrix(executionPayloadHeaderSchemaCapella);
+        new BuilderBidSchemaBellatrix("BuilderBidCapella", executionPayloadHeaderSchemaCapella);
     this.signedBuilderBidSchemaCapella =
         new SignedBuilderBidSchema("SignedBuilderBidCapella", builderBidSchemaCapella);
     this.historicalSummarySchema = new HistoricalSummary.HistoricalSummarySchema();

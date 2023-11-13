@@ -52,7 +52,7 @@ import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -101,7 +101,7 @@ class Store extends CacheableStore {
   private final CachingTaskQueue<Bytes32, StateAndBlockSummary> states;
   private final Map<Bytes32, SignedBeaconBlock> blocks;
   private final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates;
-  private final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars;
+  private final Map<SlotAndBlockRoot, List<BlobSidecarOld>> blobSidecars;
   private UInt64 timeMillis;
   private UInt64 genesisTime;
   private AnchorPoint finalizedAnchor;
@@ -133,7 +133,7 @@ class Store extends CacheableStore {
       final Map<Bytes32, SignedBeaconBlock> blocks,
       final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStates,
       final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates,
-      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars) {
+      final Map<SlotAndBlockRoot, List<BlobSidecarOld>> blobSidecars) {
     checkArgument(
         time.isGreaterThanOrEqualTo(genesisTime),
         "Time must be greater than or equal to genesisTime");
@@ -204,7 +204,7 @@ class Store extends CacheableStore {
 
     // Create limited collections for non-final data
     final Map<Bytes32, SignedBeaconBlock> blocks =
-        LimitedMap.createSynchronized(config.getBlockCacheSize());
+        LimitedMap.createSynchronizedNatural(config.getBlockCacheSize());
     final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStateTaskQueue =
         CachingTaskQueue.create(
             asyncRunner,
@@ -216,10 +216,10 @@ class Store extends CacheableStore {
             asyncRunner, metricsSystem, "memory_states", config.getStateCacheSize());
     final Optional<Map<Bytes32, StateAndBlockSummary>> maybeEpochStates =
         config.getEpochStateCacheSize() > 0
-            ? Optional.of(LimitedMap.createSynchronized(config.getEpochStateCacheSize()))
+            ? Optional.of(LimitedMap.createSynchronizedLRU(config.getEpochStateCacheSize()))
             : Optional.empty();
-    final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars =
-        LimitedMap.createSynchronized(config.getBlockCacheSize());
+    final Map<SlotAndBlockRoot, List<BlobSidecarOld>> blobSidecars =
+        LimitedMap.createSynchronizedNatural(config.getBlockCacheSize());
 
     final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(time, genesisTime));
     final ForkChoiceStrategy forkChoiceStrategy =
@@ -571,7 +571,7 @@ class Store extends CacheableStore {
   }
 
   @Override
-  public Optional<List<BlobSidecar>> getBlobSidecarsIfAvailable(
+  public Optional<List<BlobSidecarOld>> getBlobSidecarsIfAvailable(
       final SlotAndBlockRoot slotAndBlockRoot) {
     readLock.lock();
     try {
@@ -624,7 +624,7 @@ class Store extends CacheableStore {
 
   /** Non-synchronized, no lock, unsafe if Store is not locked externally */
   @Override
-  void cacheBlobSidecars(final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsMap) {
+  void cacheBlobSidecars(final Map<SlotAndBlockRoot, List<BlobSidecarOld>> blobSidecarsMap) {
     blobSidecarsMap.entrySet().stream()
         .sorted(Map.Entry.comparingByKey())
         .forEach(entry -> blobSidecars.put(entry.getKey(), entry.getValue()));

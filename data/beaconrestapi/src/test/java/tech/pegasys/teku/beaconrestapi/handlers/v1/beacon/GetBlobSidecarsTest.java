@@ -32,7 +32,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
@@ -52,7 +52,7 @@ class GetBlobSidecarsTest extends AbstractMigratedBeaconHandlerWithChainDataProv
       throws JsonProcessingException, ExecutionException, InterruptedException {
     final ObjectAndMetaData<SignedBeaconBlock> blockAndMetaData =
         chainDataProvider.getBlock("head").get().orElseThrow();
-    final List<BlobSidecar> blobSidecars =
+    final List<BlobSidecarOld> blobSidecars =
         combinedChainDataClient
             .getBlobSidecars(
                 blockAndMetaData.getData().getSlotAndBlockRoot(), Collections.emptyList())
@@ -81,7 +81,7 @@ class GetBlobSidecarsTest extends AbstractMigratedBeaconHandlerWithChainDataProv
 
   @Test
   void metadata_shouldHandle200() throws IOException {
-    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecars(3);
+    final List<BlobSidecarOld> blobSidecars = dataStructureUtil.randomBlobSidecars(3);
 
     final String data = getResponseStringFromMetadata(handler, SC_OK, blobSidecars);
     final String expected =

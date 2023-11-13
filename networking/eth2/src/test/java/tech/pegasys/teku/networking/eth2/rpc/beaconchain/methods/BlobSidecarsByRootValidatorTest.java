@@ -28,7 +28,7 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -48,8 +48,8 @@ public class BlobSidecarsByRootValidatorTest {
   void blobSidecarIsCorrect() {
     final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
     final BlobIdentifier blobIdentifier1 = new BlobIdentifier(blockRoot1, UInt64.ZERO);
-    final BlobSidecar blobSidecar1 =
-        dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
+    final BlobSidecarOld blobSidecar1 =
+        dataStructureUtil.randomBlobSidecarOld(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
 
     validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier1));
     assertDoesNotThrow(() -> validator.validate(blobSidecar1));
@@ -60,8 +60,8 @@ public class BlobSidecarsByRootValidatorTest {
     final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
     final BlobIdentifier blobIdentifier2 =
         new BlobIdentifier(dataStructureUtil.randomBytes32(), UInt64.ZERO);
-    final BlobSidecar blobSidecar1 =
-        dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
+    final BlobSidecarOld blobSidecar1 =
+        dataStructureUtil.randomBlobSidecarOld(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
 
     validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier2));
     assertThatThrownBy(() -> validator.validate(blobSidecar1))
@@ -77,8 +77,8 @@ public class BlobSidecarsByRootValidatorTest {
     when(kzg.verifyBlobKzgProof(any(), any(), any())).thenReturn(false);
     final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
     final BlobIdentifier blobIdentifier1 = new BlobIdentifier(blockRoot1, UInt64.ZERO);
-    final BlobSidecar blobSidecar1 =
-        dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
+    final BlobSidecarOld blobSidecar1 =
+        dataStructureUtil.randomBlobSidecarOld(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
 
     validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier1));
     assertThatThrownBy(() -> validator.validate(blobSidecar1))

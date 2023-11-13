@@ -25,8 +25,6 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
@@ -38,9 +36,6 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 class SlashingProtectedSignerTest {
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createMinimalAltair());
-
-  private final DataStructureUtil dataStructureUtilDeneb =
-      new DataStructureUtil(TestSpecFactory.createMinimalDeneb());
 
   private final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
   private final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
@@ -73,24 +68,6 @@ class SlashingProtectedSignerTest {
 
     assertThatSafeFuture(signer.signBlock(block, forkInfo))
         .isCompletedExceptionallyWith(SlashableConditionException.class);
-  }
-
-  @Test
-  void signBlobSidecar_shouldAlwaysSign() {
-    final BeaconBlock block = dataStructureUtilDeneb.randomBeaconBlock(6);
-    final BlobSidecar blobSidecar =
-        dataStructureUtilDeneb.randomBlobSidecar(block.getRoot(), UInt64.valueOf(2));
-    when(delegate.signBlobSidecar(blobSidecar, forkInfo)).thenReturn(signatureFuture);
-    assertThatSafeFuture(signer.signBlobSidecar(blobSidecar, forkInfo))
-        .isCompletedWithValue(signature);
-  }
-
-  @Test
-  void signBlindedBlobSidecar_shouldAlwaysSign() {
-    final BlindedBlobSidecar blindedBlobSidecar = dataStructureUtilDeneb.randomBlindedBlobSidecar();
-    when(delegate.signBlindedBlobSidecar(blindedBlobSidecar, forkInfo)).thenReturn(signatureFuture);
-    assertThatSafeFuture(signer.signBlindedBlobSidecar(blindedBlobSidecar, forkInfo))
-        .isCompletedWithValue(signature);
   }
 
   @Test

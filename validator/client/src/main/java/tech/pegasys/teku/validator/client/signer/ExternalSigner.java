@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.validator.client.signer;
 
-import static tech.pegasys.teku.api.schema.deneb.BlindedBlobSidecar.fromInternalBlindedBlobSidecar;
-import static tech.pegasys.teku.api.schema.deneb.BlindedBlobSidecar.fromInternalBlobSidecar;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_PRECONDITION_FAILED;
 
@@ -48,8 +46,6 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
@@ -127,30 +123,6 @@ public class ExternalSigner implements Signer {
         blockRequestProvider.getSignType(),
         blockRequestProvider.getBlockMetadata(Map.of(FORK_INFO, forkInfo(forkInfo))),
         slashableBlockMessage(block.getSlot()));
-  }
-
-  @Override
-  public SafeFuture<BLSSignature> signBlobSidecar(
-      final BlobSidecar blobSidecar, final ForkInfo forkInfo) {
-    return sign(
-        signingRootUtil.signingRootForBlobSidecar(blobSidecar, forkInfo),
-        SignType.BLOB_SIDECAR, // both blobSidecar and blindedBlobSidecar uses same SignType
-        Map.of(FORK_INFO, forkInfo(forkInfo), "blob_sidecar", fromInternalBlobSidecar(blobSidecar)),
-        slashableGenericMessage("blob sidecar"));
-  }
-
-  @Override
-  public SafeFuture<BLSSignature> signBlindedBlobSidecar(
-      final BlindedBlobSidecar blindedBlobSidecar, final ForkInfo forkInfo) {
-    return sign(
-        signingRootUtil.signingRootForBlindedBlobSidecar(blindedBlobSidecar, forkInfo),
-        SignType.BLOB_SIDECAR, // both blobSidecar and blindedBlobSidecar uses same SignType
-        Map.of(
-            FORK_INFO,
-            forkInfo(forkInfo),
-            "blob_sidecar",
-            fromInternalBlindedBlobSidecar(blindedBlobSidecar)),
-        slashableGenericMessage("blinded blob sidecar"));
   }
 
   @Override

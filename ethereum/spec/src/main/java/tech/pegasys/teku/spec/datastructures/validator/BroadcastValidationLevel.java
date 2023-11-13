@@ -11,15 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks;
+package tech.pegasys.teku.spec.datastructures.validator;
 
-import java.util.List;
-import java.util.Optional;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
-
-public interface BlindedBlockContainer extends BlockContainer {
-
-  default Optional<List<BlindedBlobSidecar>> getBlindedBlobSidecars() {
-    return Optional.empty();
-  }
+public enum BroadcastValidationLevel {
+  NOT_REQUIRED,
+  GOSSIP,
+  CONSENSUS,
+  CONSENSUS_AND_EQUIVOCATION
 }

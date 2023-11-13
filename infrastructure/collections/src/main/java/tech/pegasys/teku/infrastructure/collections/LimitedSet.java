@@ -34,7 +34,7 @@ public final class LimitedSet {
    * @return A set that will evict elements when the max size is exceeded.
    */
   public static <T> Set<T> createSynchronized(final int maxSize) {
-    return Collections.newSetFromMap(LimitedMap.createSynchronized(maxSize));
+    return Collections.newSetFromMap(LimitedMap.createSynchronizedLRU(maxSize));
   }
 
   /**

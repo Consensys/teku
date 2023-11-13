@@ -76,6 +76,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -333,10 +334,10 @@ public class ValidatorDataProviderTest {
     final SafeFuture<SendSignedBlockResult> successImportResult =
         completedFuture(SendSignedBlockResult.success(internalSignedBeaconBlock.getRoot()));
 
-    when(validatorApiChannel.sendSignedBlock(any())).thenReturn(successImportResult);
+    when(validatorApiChannel.sendSignedBlock(any(), any())).thenReturn(successImportResult);
 
     final SafeFuture<ValidatorBlockResult> validatorBlockResultSafeFuture =
-        provider.submitSignedBlock(signedBeaconBlock);
+        provider.submitSignedBlock(signedBeaconBlock, BroadcastValidationLevel.NOT_REQUIRED);
 
     assertThat(validatorBlockResultSafeFuture.get().getResponseCode()).isEqualTo(200);
   }
@@ -358,10 +359,11 @@ public class ValidatorDataProviderTest {
               final SafeFuture<SendSignedBlockResult> failImportResult =
                   completedFuture(SendSignedBlockResult.notImported(failureReason.name()));
 
-              when(validatorApiChannel.sendSignedBlock(any())).thenReturn(failImportResult);
+              when(validatorApiChannel.sendSignedBlock(any(), any())).thenReturn(failImportResult);
 
               final SafeFuture<ValidatorBlockResult> validatorBlockResultSafeFuture =
-                  provider.submitSignedBlock(signedBeaconBlock);
+                  provider.submitSignedBlock(
+                      signedBeaconBlock, BroadcastValidationLevel.NOT_REQUIRED);
 
               try {
                 assertThat(validatorBlockResultSafeFuture.get().getResponseCode()).isEqualTo(202);
@@ -385,10 +387,10 @@ public class ValidatorDataProviderTest {
     final SafeFuture<SendSignedBlockResult> failImportResult =
         completedFuture(SendSignedBlockResult.rejected(FailureReason.INTERNAL_ERROR.name()));
 
-    when(validatorApiChannel.sendSignedBlock(any())).thenReturn(failImportResult);
+    when(validatorApiChannel.sendSignedBlock(any(), any())).thenReturn(failImportResult);
 
     final SafeFuture<ValidatorBlockResult> validatorBlockResultSafeFuture =
-        provider.submitSignedBlock(signedBeaconBlock);
+        provider.submitSignedBlock(signedBeaconBlock, BroadcastValidationLevel.NOT_REQUIRED);
 
     assertThat(validatorBlockResultSafeFuture.get().getResponseCode()).isEqualTo(500);
   }

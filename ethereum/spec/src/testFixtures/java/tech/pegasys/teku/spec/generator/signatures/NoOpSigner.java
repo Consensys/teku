@@ -19,8 +19,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
@@ -45,18 +43,6 @@ public abstract class NoOpSigner implements Signer {
 
   @Override
   public SafeFuture<BLSSignature> signBlock(final BeaconBlock block, final ForkInfo forkInfo) {
-    return new SafeFuture<>();
-  }
-
-  @Override
-  public SafeFuture<BLSSignature> signBlobSidecar(
-      final BlobSidecar blobSidecar, final ForkInfo forkInfo) {
-    return new SafeFuture<>();
-  }
-
-  @Override
-  public SafeFuture<BLSSignature> signBlindedBlobSidecar(
-      final BlindedBlobSidecar blindedBlobSidecar, final ForkInfo forkInfo) {
     return new SafeFuture<>();
   }
 

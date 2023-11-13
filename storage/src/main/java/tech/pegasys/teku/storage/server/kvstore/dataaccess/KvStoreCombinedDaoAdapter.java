@@ -28,7 +28,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -91,6 +91,11 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
   @Override
   public Optional<SignedBeaconBlock> getHotBlock(final Bytes32 root) {
     return hotDao.getHotBlock(root);
+  }
+
+  @Override
+  public Optional<Bytes> getHotBlockAsSsz(final Bytes32 root) {
+    return hotDao.getHotBlockRaw(root);
   }
 
   @Override
@@ -441,12 +446,12 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     }
 
     @Override
-    public void addBlobSidecar(final BlobSidecar blobSidecar) {
+    public void addBlobSidecar(final BlobSidecarOld blobSidecar) {
       finalizedUpdater.addBlobSidecar(blobSidecar);
     }
 
     @Override
-    public void addNonCanonicalBlobSidecar(final BlobSidecar blobSidecar) {
+    public void addNonCanonicalBlobSidecar(final BlobSidecarOld blobSidecar) {
       finalizedUpdater.addNonCanonicalBlobSidecar(blobSidecar);
     }
 
@@ -515,6 +520,12 @@ public class KvStoreCombinedDaoAdapter implements KvStoreCombinedDao, V4Migratab
     @Override
     public void addFinalizedBlock(final SignedBeaconBlock block) {
       finalizedUpdater.addFinalizedBlock(block);
+    }
+
+    @Override
+    public void addFinalizedBlockRaw(
+        final UInt64 slot, final Bytes32 blockRoot, final Bytes blockBytes) {
+      finalizedUpdater.addFinalizedBlockRaw(slot, blockRoot, blockBytes);
     }
 
     @Override
