@@ -108,7 +108,7 @@ public class BlobSidecar
   }
 
   public String toLogString() {
-    return LogFormatter.formatBlobSidecar(
+    return LogFormatter.formatBlobSidecarOld(
         getSlot(),
         getBlockRoot(),
         getIndex(),

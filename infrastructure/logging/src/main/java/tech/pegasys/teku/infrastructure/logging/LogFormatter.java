@@ -30,7 +30,7 @@ public class LogFormatter {
     return String.format("%s (%s)", formatHashRoot(root), slot);
   }
 
-  public static String formatBlobSidecar(
+  public static String formatBlobSidecarOld(
       final UInt64 slot,
       final Bytes32 blockRoot,
       final UInt64 index,

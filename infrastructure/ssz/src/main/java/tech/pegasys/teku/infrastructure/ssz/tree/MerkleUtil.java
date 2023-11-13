@@ -75,7 +75,7 @@ public class MerkleUtil {
 
     for (int i = 0; i <= depth; ++i) {
       path.add(currentIndex);
-      currentIndex = currentIndex >> 1;
+      currentIndex = GIndexUtil.gIdxGetParent(currentIndex);
     }
     return Lists.reverse(path);
   }
