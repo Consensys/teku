@@ -15,8 +15,6 @@ package tech.pegasys.teku.validator.remote.typedef;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
-import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,7 +34,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
@@ -110,36 +108,26 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   void publishesBlindedBlockSszEncoded() throws InterruptedException {
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
-    final SignedBlockContainer signedBlockContainer;
-    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
-      signedBlockContainer = dataStructureUtil.randomSignedBlindedBlockContents();
-    } else {
-      signedBlockContainer = dataStructureUtil.randomSignedBlindedBeaconBlock();
-    }
+    final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBlindedBeaconBlock();
 
     final SendSignedBlockResult result =
-        okHttpValidatorTypeDefClientWithPreferredSsz.sendSignedBlock(signedBlockContainer);
+        okHttpValidatorTypeDefClientWithPreferredSsz.sendSignedBlock(signedBeaconBlock);
 
     assertThat(result.isPublished()).isTrue();
 
     final RecordedRequest recordedRequest = mockWebServer.takeRequest();
     assertThat(recordedRequest.getBody().readByteArray())
-        .isEqualTo(signedBlockContainer.sszSerialize().toArrayUnsafe());
+        .isEqualTo(signedBeaconBlock.sszSerialize().toArrayUnsafe());
   }
 
   @TestTemplate
   void publishesBlindedBlockJsonEncoded() throws InterruptedException, JsonProcessingException {
     mockWebServer.enqueue(new MockResponse().setResponseCode(200));
 
-    final SignedBlockContainer signedBlockContainer;
-    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
-      signedBlockContainer = dataStructureUtil.randomSignedBlindedBlockContents();
-    } else {
-      signedBlockContainer = dataStructureUtil.randomSignedBlindedBeaconBlock();
-    }
+    final SignedBeaconBlock signedBeaconBlock = dataStructureUtil.randomSignedBlindedBeaconBlock();
 
     final SendSignedBlockResult result =
-        okHttpValidatorTypeDefClient.sendSignedBlock(signedBlockContainer);
+        okHttpValidatorTypeDefClient.sendSignedBlock(signedBeaconBlock);
 
     assertThat(result.isPublished()).isTrue();
 
@@ -147,7 +135,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     final String expectedRequest =
         JsonUtil.serialize(
-            signedBlockContainer,
+            signedBeaconBlock,
             spec.atSlot(UInt64.ONE)
                 .getSchemaDefinitions()
                 .getSignedBlindedBlockContainerSchema()
@@ -303,12 +291,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
       throws JsonProcessingException, InterruptedException {
     mockWebServer.enqueue(new MockResponse().setResponseCode(404));
 
-    final BlockContainer blockContainer;
-    if (specMilestone.isGreaterThanOrEqualTo(DENEB)) {
-      blockContainer = dataStructureUtil.randomBlindedBlockContents(ONE);
-    } else {
-      blockContainer = dataStructureUtil.randomBlindedBeaconBlock(ONE);
-    }
+    final BlockContainer blockContainer = dataStructureUtil.randomBlindedBeaconBlock();
 
     mockWebServer.enqueue(
         new MockResponse()

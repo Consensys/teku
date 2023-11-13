@@ -33,7 +33,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -68,18 +67,17 @@ public abstract class AbstractGetNewBlockTest extends AbstractMigratedBeaconHand
   }
 
   @Test
-  void shouldReturnBlindedBlockContentsPostDeneb() throws Exception {
+  void shouldReturnBlindedBeaconBlockPostDeneb() throws Exception {
     spec = TestSpecFactory.createMinimalDeneb();
     dataStructureUtil = new DataStructureUtil(spec);
-    final BlindedBlockContents blindedBlockContents =
-        dataStructureUtil.randomBlindedBlockContents(ONE);
-    doReturn(SafeFuture.completedFuture(Optional.of(blindedBlockContents)))
+    final BeaconBlock blindedBeaconBLock = dataStructureUtil.randomBlindedBeaconBlock(ONE);
+    doReturn(SafeFuture.completedFuture(Optional.of(blindedBeaconBLock)))
         .when(validatorDataProvider)
         .getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty(), isBlindedBlocks());
 
     handler.handleRequest(request);
 
-    assertThat(request.getResponseBody()).isEqualTo(blindedBlockContents);
+    assertThat(request.getResponseBody()).isEqualTo(blindedBeaconBLock);
   }
 
   @Test

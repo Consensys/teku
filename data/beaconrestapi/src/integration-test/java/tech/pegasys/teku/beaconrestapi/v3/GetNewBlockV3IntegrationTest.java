@@ -28,7 +28,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXEC
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_VALUE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
-import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 
 import com.google.common.io.Resources;
@@ -53,7 +52,6 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.constants.EthConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
@@ -121,7 +119,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
 
   @TestTemplate
   void shouldGetBlindedBeaconBlockAsJson() throws IOException {
-    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX).isLessThanOrEqualTo(CAPELLA);
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX);
     final BeaconBlock blindedBeaconBlock = dataStructureUtil.randomBlindedBeaconBlock(ONE);
     final BLSSignature signature = blindedBeaconBlock.getBlock().getBody().getRandaoReveal();
     when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
@@ -134,7 +132,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
 
   @TestTemplate
   void shouldGetBlindedBeaconBlockAsSsz() throws IOException {
-    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX).isLessThanOrEqualTo(CAPELLA);
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX);
     final BeaconBlock blindedBeaconBlock = dataStructureUtil.randomBlindedBeaconBlock(ONE);
     final BLSSignature signature = blindedBeaconBlock.getBlock().getBody().getRandaoReveal();
     when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
@@ -176,38 +174,6 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
                 .getBlockContainerSchema()
                 .sszDeserialize(Bytes.of(response.body().bytes()));
     assertThat(result).isEqualTo(blockContents);
-  }
-
-  @TestTemplate
-  void shouldGetBlindedBlockContentPostDenebAsJson() throws IOException {
-    assumeThat(specMilestone).isEqualTo(DENEB);
-    final BlindedBlockContents blindedBlockContents =
-        dataStructureUtil.randomBlindedBlockContents(ONE);
-    final BLSSignature signature = blindedBlockContents.getBlock().getBody().getRandaoReveal();
-    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(blindedBlockContents)));
-    Response response = get(signature, ContentTypes.JSON);
-    assertResponseWithHeaders(response, true);
-    final String body = response.body().string();
-    assertThat(body).isEqualTo(getExpectedBlockAsJson(specMilestone, true, true));
-  }
-
-  @TestTemplate
-  void shouldGetBlindedBlockContentPostDenebAsSsz() throws IOException {
-    assumeThat(specMilestone).isEqualTo(DENEB);
-    final BlindedBlockContents blindedBlockContents =
-        dataStructureUtil.randomBlindedBlockContents(ONE);
-    final BLSSignature signature = blindedBlockContents.getBlock().getBody().getRandaoReveal();
-    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(blindedBlockContents)));
-    Response response = get(signature, ContentTypes.OCTET_STREAM);
-    assertResponseWithHeaders(response, true);
-    final BlindedBlockContents result =
-        (BlindedBlockContents)
-            spec.getGenesisSchemaDefinitions()
-                .getBlindedBlockContainerSchema()
-                .sszDeserialize(Bytes.of(response.body().bytes()));
-    assertThat(result).isEqualTo(blindedBlockContents);
   }
 
   @TestTemplate
