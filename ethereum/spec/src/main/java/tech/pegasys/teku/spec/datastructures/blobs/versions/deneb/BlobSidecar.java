@@ -99,14 +99,18 @@ public class BlobSidecar
     return getSignedBeaconBlockHeader().getMessage().getBodyRoot();
   }
 
+  public Bytes32 getBlockRoot() {
+    return getSignedBeaconBlockHeader().getMessage().hashTreeRoot();
+  }
+
   public SlotAndBlockRoot getSlotAndBlockRoot() {
-    return new SlotAndBlockRoot(getSlot(), getBlockBodyRoot());
+    return new SlotAndBlockRoot(getSlot(), getBlockRoot());
   }
 
   public String toLogString() {
     return LogFormatter.formatBlobSidecar(
         getSlot(),
-        getBlockBodyRoot(),
+        getBlockRoot(),
         getIndex(),
         getBlob().toBriefString(),
         getKZGCommitment().toHexString(),
