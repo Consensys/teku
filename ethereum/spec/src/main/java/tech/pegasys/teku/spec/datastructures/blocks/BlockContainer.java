@@ -18,6 +18,8 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 
@@ -36,6 +38,14 @@ public interface BlockContainer extends SszData, SszContainer {
 
   @Deprecated
   default Optional<List<BlobSidecarOld>> getBlobSidecars() {
+    return Optional.empty();
+  }
+
+  default Optional<List<KZGProof>> getKzgProofs() {
+    return Optional.empty();
+  }
+
+  default Optional<List<Blob>> getBlobs() {
     return Optional.empty();
   }
 

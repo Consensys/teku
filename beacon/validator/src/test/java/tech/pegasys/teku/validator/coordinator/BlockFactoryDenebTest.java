@@ -54,6 +54,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     assertThat(blockContainer).isInstanceOf(BlockContents.class);
     assertThat(blockContainer.getBlock().getBody().getOptionalBlobKzgCommitments())
         .hasValueSatisfying(blobKzgCommitments -> assertThat(blobKzgCommitments).hasSize(3));
+    // TODO Add test for blobs and kzg proofs once added
     assertThat(blockContainer.getBlobSidecars())
         .hasValueSatisfying(
             blobSidecars ->

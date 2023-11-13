@@ -19,6 +19,8 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 
@@ -41,6 +43,14 @@ public interface SignedBlockContainer extends SszData, SszContainer {
 
   @Deprecated
   default Optional<List<SignedBlobSidecarOld>> getSignedBlobSidecars() {
+    return Optional.empty();
+  }
+
+  default Optional<List<KZGProof>> getKzgProofs() {
+    return Optional.empty();
+  }
+
+  default Optional<List<Blob>> getBlobs() {
     return Optional.empty();
   }
 

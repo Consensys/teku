@@ -16,13 +16,16 @@ package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container3;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
-public class BlockContents extends Container2<BlockContents, BeaconBlock, SszList<BlobSidecarOld>>
+public class BlockContents
+    extends Container3<BlockContents, BeaconBlock, SszList<SszKZGProof>, SszList<Blob>>
     implements BlockContainer {
 
   BlockContents(final BlockContentsSchema type, final TreeNode backingNode) {
@@ -32,8 +35,15 @@ public class BlockContents extends Container2<BlockContents, BeaconBlock, SszLis
   public BlockContents(
       final BlockContentsSchema schema,
       final BeaconBlock beaconBlock,
-      final List<BlobSidecarOld> blobSidecars) {
-    super(schema, beaconBlock, schema.getBlobSidecarsSchema().createFromElements(blobSidecars));
+      final List<KZGProof> kzgProofs,
+      final List<Blob> blobs) {
+    super(
+        schema,
+        beaconBlock,
+        schema
+            .getKzgProofsSchema()
+            .createFromElements(kzgProofs.stream().map(SszKZGProof::new).toList()),
+        schema.getBlobsSchema().createFromElements(blobs));
   }
 
   @Override
@@ -42,7 +52,12 @@ public class BlockContents extends Container2<BlockContents, BeaconBlock, SszLis
   }
 
   @Override
-  public Optional<List<BlobSidecarOld>> getBlobSidecars() {
-    return Optional.of(getField1().asList());
+  public Optional<List<KZGProof>> getKzgProofs() {
+    return Optional.of(getField1().asList().stream().map(SszKZGProof::getKZGProof).toList());
+  }
+
+  @Override
+  public Optional<List<Blob>> getBlobs() {
+    return Optional.of(getField2().asList());
   }
 }

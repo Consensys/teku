@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -20,9 +21,10 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -64,7 +66,10 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
               return operationSelector
                   .createBlobSidecarsSelector()
                   .apply(block)
-                  .thenApply(blobSidecars -> createBlockContents(block, blobSidecars));
+                  .thenApply(
+                      blobSidecars ->
+                          createBlockContents(
+                              block, Collections.emptyList(), Collections.emptyList()));
             });
   }
 
@@ -85,7 +90,10 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
               return operationSelector
                   .createBlobSidecarsSelector()
                   .apply(block)
-                  .thenApply(blobSidecars -> createBlockContents(block, blobSidecars));
+                  .thenApply(
+                      blobSidecars ->
+                          createBlockContents(
+                              block, Collections.emptyList(), Collections.emptyList()));
             });
   }
 
@@ -104,8 +112,8 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
   }
 
   private BlockContents createBlockContents(
-      final BeaconBlock block, final List<BlobSidecarOld> blobSidecars) {
-    return schemaDefinitionsDeneb.getBlockContentsSchema().create(block, blobSidecars);
+      final BeaconBlock block, final List<Blob> blobs, final List<KZGProof> kzgProofs) {
+    return schemaDefinitionsDeneb.getBlockContentsSchema().create(block, kzgProofs, blobs);
   }
 
   /** use {@link BlockFactoryPhase0} unblinding of the {@link SignedBeaconBlock} */
@@ -118,6 +126,8 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
   // TODO: add blobs and proofs
   private SignedBlockContents createUnblindedSignedBlockContents(
       final SignedBeaconBlock signedBlock) {
-    return schemaDefinitionsDeneb.getSignedBlockContentsSchema().create(signedBlock, List.of());
+    return schemaDefinitionsDeneb
+        .getSignedBlockContentsSchema()
+        .create(signedBlock, Collections.emptyList(), Collections.emptyList());
   }
 }
