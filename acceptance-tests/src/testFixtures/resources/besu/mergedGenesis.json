@@ -12,6 +12,7 @@
     "berlinBlock": 0,
     "londonBlock": 0,
     "parisBlock": 0,
+    "shanghaiTime":10,
     "terminalTotalDifficulty": 0,
     "contractSizeLimit": 2147483647,
     "ethash": {
