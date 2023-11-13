@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.deneb.helpers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG;
 
 import java.util.List;
@@ -22,15 +23,23 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import tech.pegasys.teku.infrastructure.ssz.tree.MerkleUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class MiscHelpersDenebTest {
@@ -42,8 +51,14 @@ class MiscHelpersDenebTest {
               "0x391610cf24e7c540192b80ddcfea77b0d3912d94e922682f3b286eee041e6f76"));
 
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
+  private final Predicates predicates = new Predicates(spec.getGenesisSpecConfig());
+  private final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
+      SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions());
   private final MiscHelpersDeneb miscHelpersDeneb =
-      new MiscHelpersDeneb(spec.getGenesisSpecConfig().toVersionDeneb().orElseThrow());
+      new MiscHelpersDeneb(
+          spec.getGenesisSpecConfig().toVersionDeneb().orElseThrow(),
+          predicates,
+          schemaDefinitionsDeneb);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   @Test
@@ -169,5 +184,83 @@ class MiscHelpersDenebTest {
     BLOB_SIDECAR_INDEX,
     BLOB_SIDECAR_PARENT_ROOT,
     BLOB_SIDECAR_KZG_COMMITMENT,
+  }
+
+  @Test
+  void verifyBlobSidecarMerkleProofShouldValidate() {
+    final int numberOfCommitments = 4;
+    final BeaconBlockBodyDeneb beaconBlockBody =
+        BeaconBlockBodyDeneb.required(
+            dataStructureUtil.randomBeaconBlockBodyWithCommitments(numberOfCommitments));
+    assumeThat(beaconBlockBody.getBlobKzgCommitments().size()).isEqualTo(numberOfCommitments);
+    final BeaconBlock beaconBlock =
+        new BeaconBlock(
+            schemaDefinitionsDeneb.getBeaconBlockSchema(),
+            dataStructureUtil.randomSlot(),
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomBytes32(),
+            beaconBlockBody);
+    final BeaconBlockHeader blockHeader = BeaconBlockHeader.fromBlock(beaconBlock);
+
+    // Let's check all blobSidecars
+    for (int i = 0; i < numberOfCommitments; ++i) {
+      final UInt64 blobSidecarIndex = UInt64.valueOf(i);
+      final List<Bytes32> merkleProof =
+          MerkleUtil.constructMerkleProof(
+              beaconBlockBody.getBackingNode(),
+              miscHelpersDeneb.getBlobSidecarKzgCommitmentGeneralizedIndex(blobSidecarIndex));
+      assertThat(merkleProof.size())
+          .isEqualTo(
+              SpecConfigDeneb.required(spec.getGenesisSpecConfig())
+                  .getKzgCommitmentInclusionProofDepth());
+
+      final BlobSidecar blobSidecar =
+          dataStructureUtil
+              .createRandomBlobSidecarBuilder()
+              .signedBeaconBlockHeader(
+                  new SignedBeaconBlockHeader(blockHeader, dataStructureUtil.randomSignature()))
+              .index(blobSidecarIndex)
+              .kzgCommitment(
+                  beaconBlockBody
+                      .getBlobKzgCommitments()
+                      .get(blobSidecarIndex.intValue())
+                      .getBytes())
+              .kzgCommitmentInclusionProof(merkleProof)
+              .build();
+      assertThat(miscHelpersDeneb.verifyBlobSidecarMerkleProof(blobSidecar)).isTrue();
+
+      // And the same blobSidecar but with wrong merkle proof
+      for (int j = 0; j < numberOfCommitments; ++j) {
+        if (j == i) {
+          continue;
+        }
+
+        final UInt64 wrongIndex = UInt64.valueOf(j);
+        final List<Bytes32> merkleProofWrong =
+            MerkleUtil.constructMerkleProof(
+                beaconBlockBody.getBackingNode(),
+                miscHelpersDeneb.getBlobSidecarKzgCommitmentGeneralizedIndex(wrongIndex));
+        assertThat(merkleProofWrong.size())
+            .isEqualTo(
+                SpecConfigDeneb.required(spec.getGenesisSpecConfig())
+                    .getKzgCommitmentInclusionProofDepth());
+
+        final BlobSidecar blobSidecarWrong =
+            dataStructureUtil
+                .createRandomBlobSidecarBuilder()
+                .signedBeaconBlockHeader(
+                    new SignedBeaconBlockHeader(blockHeader, dataStructureUtil.randomSignature()))
+                .index(blobSidecarIndex)
+                .kzgCommitment(
+                    beaconBlockBody
+                        .getBlobKzgCommitments()
+                        .get(blobSidecarIndex.intValue())
+                        .getBytes())
+                .kzgCommitmentInclusionProof(merkleProofWrong)
+                .build();
+        assertThat(miscHelpersDeneb.verifyBlobSidecarMerkleProof(blobSidecarWrong)).isFalse();
+      }
+    }
   }
 }

@@ -331,7 +331,7 @@ public class BlockBlobSidecarsTrackerTest {
         new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
     final BlobSidecarOld toAdd =
         dataStructureUtil
-            .createRandomBlobSidecarBuilder()
+            .createRandomBlobSidecarBuilderOld()
             .blockRoot(slotAndBlockRoot.getBlockRoot())
             .slot(slotAndBlockRoot.getSlot())
             .index(UInt64.valueOf(100))
@@ -390,7 +390,7 @@ public class BlockBlobSidecarsTrackerTest {
 
   private BlobSidecarOld createBlobSidecar(final UInt64 index) {
     return dataStructureUtil
-        .createRandomBlobSidecarBuilder()
+        .createRandomBlobSidecarBuilderOld()
         .blockRoot(slotAndBlockRoot.getBlockRoot())
         .slot(slotAndBlockRoot.getSlot())
         .index(index)

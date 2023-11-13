@@ -93,7 +93,8 @@ public class SpecLogicDeneb extends AbstractSpecLogic {
       final SpecConfigDeneb config, final SchemaDefinitionsDeneb schemaDefinitions) {
     // Helpers
     final Predicates predicates = new Predicates(config);
-    final MiscHelpersDeneb miscHelpers = new MiscHelpersDeneb(config);
+    final MiscHelpersDeneb miscHelpers =
+        new MiscHelpersDeneb(config, predicates, schemaDefinitions);
     final BeaconStateAccessorsDeneb beaconStateAccessors =
         new BeaconStateAccessorsDeneb(config, predicates, miscHelpers);
     final BeaconStateMutatorsBellatrix beaconStateMutators =

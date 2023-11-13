@@ -148,7 +148,7 @@ import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
-import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
+import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidatorOld;
 import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
@@ -505,8 +505,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
       final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots =
           LimitedMap.createSynchronizedLRU(500);
 
-      final BlobSidecarGossipValidator blobSidecarValidator =
-          BlobSidecarGossipValidator.create(spec, invalidBlockRoots, gossipValidationHelper);
+      final BlobSidecarGossipValidatorOld blobSidecarValidator =
+          BlobSidecarGossipValidatorOld.create(spec, invalidBlockRoots, gossipValidationHelper);
       final BlobSidecarManagerImpl blobSidecarManagerImpl =
           new BlobSidecarManagerImpl(
               spec,

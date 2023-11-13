@@ -212,6 +212,11 @@ public class BeaconBlockBodySchemaDenebImpl
   }
 
   @Override
+  public long getBlobKzgCommitmentsGeneralizedIndex() {
+    return getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.BLOB_KZG_COMMITMENTS));
+  }
+
+  @Override
   public LongList getBlindedNodeGeneralizedIndices() {
     return GIndexUtil.gIdxComposeAll(
         getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD)),

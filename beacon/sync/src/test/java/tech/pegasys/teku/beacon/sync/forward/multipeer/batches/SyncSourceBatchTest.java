@@ -244,7 +244,7 @@ public class SyncSourceBatchTest {
         new ArrayList<>(dataStructureUtil.randomBlobSidecarsForBlock(block));
     // receiving more sidecars than expected
     blobSidecars.add(
-        dataStructureUtil.createRandomBlobSidecarBuilder().blockRoot(block.getRoot()).build());
+        dataStructureUtil.createRandomBlobSidecarBuilderOld().blockRoot(block.getRoot()).build());
 
     receiveBlocks(batch, block);
     receiveBlobSidecars(batch, blobSidecars);
@@ -271,7 +271,7 @@ public class SyncSourceBatchTest {
             .mapToObj(
                 index ->
                     dataStructureUtil
-                        .createRandomBlobSidecarBuilder()
+                        .createRandomBlobSidecarBuilderOld()
                         .blockRoot(block.getRoot())
                         .index(UInt64.valueOf(index))
                         .build())
