@@ -36,15 +36,15 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
       final BroadcastValidationLevel broadcastValidationLevel) {
     this.blockGossipValidator = blockGossipValidator;
     this.broadcastValidationLevel = broadcastValidationLevel;
-    consensusValidationSuccessResult = new SafeFuture<>();
-    broadcastValidationResult = new SafeFuture<>();
+    this.consensusValidationSuccessResult = new SafeFuture<>();
+    this.broadcastValidationResult = new SafeFuture<>();
   }
 
   public static BlockBroadcastValidatorImpl create(
       final SignedBeaconBlock block,
       final BlockGossipValidator blockGossipValidator,
       final BroadcastValidationLevel broadcastValidationLevel) {
-    BlockBroadcastValidatorImpl blockBroadcastValidator =
+    final BlockBroadcastValidatorImpl blockBroadcastValidator =
         new BlockBroadcastValidatorImpl(blockGossipValidator, broadcastValidationLevel);
     blockBroadcastValidator.buildValidationPipeline(block);
     return blockBroadcastValidator;
@@ -82,6 +82,8 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
     // validateBroadcast should not be called at all but let's cover the case for safety
     if (broadcastValidationLevel == NOT_REQUIRED) {
       broadcastValidationResult.complete(SUCCESS);
+      consensusValidationSuccessResult.cancel(true);
+      return;
     }
 
     // GOSSIP only validation
@@ -98,6 +100,7 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
 
     if (broadcastValidationLevel == GOSSIP) {
       validationPipeline.propagateTo(broadcastValidationResult);
+      consensusValidationSuccessResult.cancel(true);
       return;
     }
 
