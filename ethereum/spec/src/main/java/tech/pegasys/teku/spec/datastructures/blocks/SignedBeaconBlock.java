@@ -32,7 +32,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock, SszSignature>
-    implements BeaconBlockSummary, SignedBlockContainer, SignedBlindedBlockContainer {
+    implements BeaconBlockSummary, SignedBlockContainer {
 
   SignedBeaconBlock(SignedBeaconBlockSchema type, TreeNode backingNode) {
     super(type, backingNode);
@@ -185,11 +185,6 @@ public class SignedBeaconBlock extends Container2<SignedBeaconBlock, BeaconBlock
   @Override
   public SignedBeaconBlock getSignedBlock() {
     return this;
-  }
-
-  @Override
-  public Optional<SignedBlindedBlockContainer> toBlinded() {
-    return isBlinded() ? Optional.of(this) : Optional.empty();
   }
 
   @Override

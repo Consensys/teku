@@ -50,10 +50,8 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
@@ -64,7 +62,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -731,38 +728,22 @@ public class Spec {
   // Blind Block Utils
 
   public SafeFuture<SignedBeaconBlock> unblindSignedBeaconBlock(
-      final SignedBlindedBlockContainer signedBlindedBlockContainer,
+      final SignedBeaconBlock signedBlindedBeaconBlock,
       final Consumer<SignedBeaconBlockUnblinder> beaconBlockUnblinderConsumer) {
-    return atSlot(signedBlindedBlockContainer.getSlot())
+    return atSlot(signedBlindedBeaconBlock.getSlot())
         .getBlindBlockUtil()
         .map(
             converter ->
                 converter.unblindSignedBeaconBlock(
-                    signedBlindedBlockContainer, beaconBlockUnblinderConsumer))
+                    signedBlindedBeaconBlock, beaconBlockUnblinderConsumer))
         .orElseGet(
             () -> {
               // this shouldn't happen: BlockFactory should skip unblinding when is not needed
               checkState(
-                  !signedBlindedBlockContainer.isBlinded(),
+                  !signedBlindedBeaconBlock.isBlinded(),
                   "Unblinder not available for the current spec but the given block was blinded");
-              return SafeFuture.completedFuture(signedBlindedBlockContainer.getSignedBlock());
+              return SafeFuture.completedFuture(signedBlindedBeaconBlock);
             });
-  }
-
-  public SafeFuture<List<SignedBlobSidecarOld>> unblindSignedBlindedBlobSidecars(
-      final UInt64 slot,
-      final List<SignedBlindedBlobSidecar> blindedBlobSidecars,
-      final Consumer<SignedBlobSidecarsUnblinder> blobSidecarsUnblinderConsumer) {
-    return atSlot(slot)
-        .getBlindBlockUtil()
-        .map(
-            converter ->
-                converter.unblindSignedBlobSidecars(
-                    blindedBlobSidecars, blobSidecarsUnblinderConsumer))
-        .orElseThrow(
-            () ->
-                new IllegalStateException(
-                    "Unblinder was not available but blob sidecars were blinded"));
   }
 
   public SignedBeaconBlock blindSignedBeaconBlock(

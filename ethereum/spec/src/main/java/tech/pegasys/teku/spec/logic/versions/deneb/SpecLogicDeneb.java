@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessors
 import tech.pegasys.teku.spec.logic.versions.altair.statetransition.epoch.ValidatorStatusFactoryAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutatorsBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
+import tech.pegasys.teku.spec.logic.versions.bellatrix.util.BlindBlockUtilBellatrix;
 import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.OperationValidatorCapella;
 import tech.pegasys.teku.spec.logic.versions.capella.statetransition.epoch.EpochProcessorCapella;
@@ -41,7 +42,6 @@ import tech.pegasys.teku.spec.logic.versions.deneb.helpers.BeaconStateAccessorsD
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.operations.validation.AttestationDataValidatorDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.AttestationUtilDeneb;
-import tech.pegasys.teku.spec.logic.versions.deneb.util.BlindBlockUtilDeneb;
 import tech.pegasys.teku.spec.logic.versions.deneb.util.ForkChoiceUtilDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
@@ -159,7 +159,7 @@ public class SpecLogicDeneb extends AbstractSpecLogic {
     final BlockProposalUtil blockProposalUtil =
         new BlockProposalUtil(schemaDefinitions, blockProcessor);
 
-    final BlindBlockUtilDeneb blindBlockUtil = new BlindBlockUtilDeneb(schemaDefinitions);
+    final BlindBlockUtilBellatrix blindBlockUtil = new BlindBlockUtilBellatrix(schemaDefinitions);
 
     // State upgrade
     final DenebStateUpgrade stateUpgrade =

@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -24,12 +23,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
@@ -94,7 +90,7 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
   }
 
   /**
-   * Unblinding blob sidecars after the block in order to use the cached value from the {@link
+   * Adding blobs and proofs after the block in order to use the cached value from the {@link
    * ExecutionLayerChannel#builderGetPayload( SignedBlockContainer, Function)} call
    */
   @Override
@@ -102,12 +98,7 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
       final SignedBlockContainer maybeBlindedBlockContainer) {
     if (maybeBlindedBlockContainer.isBlinded()) {
       return unblindBlock(maybeBlindedBlockContainer)
-          .thenCompose(
-              signedBlock ->
-                  unblindBlobSidecars(maybeBlindedBlockContainer)
-                      .thenApply(
-                          signedBlobSidecars ->
-                              createUnblindedSignedBlockContents(signedBlock, signedBlobSidecars)));
+          .thenApply(this::createUnblindedSignedBlockContents);
     }
     return SafeFuture.completedFuture(maybeBlindedBlockContainer);
   }
@@ -124,22 +115,9 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
         .thenApply(SignedBlockContainer::getSignedBlock);
   }
 
-  private SafeFuture<List<SignedBlobSidecarOld>> unblindBlobSidecars(
-      final SignedBlockContainer blindedBlockContainer) {
-    final UInt64 slot = blindedBlockContainer.getSlot();
-    final List<SignedBlindedBlobSidecar> blindedBlobSidecars =
-        blindedBlockContainer
-            .toBlinded()
-            .flatMap(SignedBlindedBlockContainer::getSignedBlindedBlobSidecars)
-            .orElse(Collections.emptyList());
-    return spec.unblindSignedBlindedBlobSidecars(
-        slot, blindedBlobSidecars, operationSelector.createBlobSidecarsUnblinderSelector(slot));
-  }
-
+  // TODO: add blobs and proofs
   private SignedBlockContents createUnblindedSignedBlockContents(
-      final SignedBeaconBlock signedBlock, final List<SignedBlobSidecarOld> signedBlobSidecars) {
-    return schemaDefinitionsDeneb
-        .getSignedBlockContentsSchema()
-        .create(signedBlock, signedBlobSidecars);
+      final SignedBeaconBlock signedBlock) {
+    return schemaDefinitionsDeneb.getSignedBlockContentsSchema().create(signedBlock, List.of());
   }
 }

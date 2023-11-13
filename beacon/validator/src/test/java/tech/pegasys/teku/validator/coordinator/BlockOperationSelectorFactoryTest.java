@@ -36,19 +36,15 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
-import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
@@ -521,24 +517,6 @@ class BlockOperationSelectorFactoryTest {
             });
   }
 
-  @Test
-  void shouldSetBlobsBundle_whenAcceptingTheBlobSidecarsUnblinderSelector() {
-    final ExecutionPayloadAndBlobsBundle executionPayloadAndBlobsBundle =
-        dataStructureUtil.randomExecutionPayloadAndBlobsBundle();
-    final UInt64 slot = dataStructureUtil.randomUInt64();
-
-    when(executionLayer.getCachedUnblindedPayload(slot))
-        .thenReturn(Optional.of(executionPayloadAndBlobsBundle));
-
-    final CapturingBlobSidecarsUnblinder blobSidecarsUnblinder =
-        new CapturingBlobSidecarsUnblinder();
-
-    factory.createBlobSidecarsUnblinderSelector(slot).accept(blobSidecarsUnblinder);
-
-    assertThat(blobSidecarsUnblinder.blobsBundle)
-        .isCompletedWithValue(executionPayloadAndBlobsBundle.getBlobsBundle());
-  }
-
   private void prepareBlockProductionWithPayload(
       final ExecutionPayload executionPayload,
       final ExecutionPayloadContext executionPayloadContext,
@@ -759,31 +737,14 @@ class BlockOperationSelectorFactoryTest {
     }
   }
 
-  private static class CapturingBlobSidecarsUnblinder implements SignedBlobSidecarsUnblinder {
-
-    protected SafeFuture<tech.pegasys.teku.spec.datastructures.builder.BlobsBundle> blobsBundle;
-
-    @Override
-    public void setBlobsBundleSupplier(
-        final Supplier<SafeFuture<tech.pegasys.teku.spec.datastructures.builder.BlobsBundle>>
-            blobsBundleSupplier) {
-      this.blobsBundle = blobsBundleSupplier.get();
-    }
-
-    @Override
-    public SafeFuture<List<SignedBlobSidecarOld>> unblind() {
-      return null;
-    }
-  }
-
   private static class CapturingBeaconBlockUnblinder extends AbstractSignedBeaconBlockUnblinder {
 
     protected SafeFuture<ExecutionPayload> executionPayload;
 
     public CapturingBeaconBlockUnblinder(
         final SchemaDefinitions schemaDefinitions,
-        final SignedBlindedBlockContainer signedBlindedBlockContainer) {
-      super(schemaDefinitions, signedBlindedBlockContainer);
+        final SignedBeaconBlock signedBlindedBeaconBlock) {
+      super(schemaDefinitions, signedBlindedBeaconBlock);
     }
 
     @Override
