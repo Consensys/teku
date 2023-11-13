@@ -380,6 +380,22 @@ public class ForkScheduleTest {
     assertThat(forkSchedule.getSpecMilestoneAtForkVersion(UNKNOWN_FORK_VERSION)).isEmpty();
   }
 
+  @Test
+  public void getGenesisFork_altairOnly() {
+    final ForkSchedule forkSchedule = buildForkSchedule(ALTAIR_CONFIG);
+
+    assertThat(forkSchedule.getGenesisFork())
+        .isEqualTo(new Fork(ALTAIR_FORK_VERSION, ALTAIR_FORK_VERSION, UInt64.ZERO));
+  }
+
+  @Test
+  public void getGenesisFork_withTransition() {
+    final ForkSchedule forkSchedule = buildForkSchedule(TRANSITION_CONFIG);
+
+    assertThat(forkSchedule.getGenesisFork())
+        .isEqualTo(new Fork(PHASE_0_FORK_VERSION, PHASE_0_FORK_VERSION, UInt64.ZERO));
+  }
+
   private ForkSchedule buildForkSchedule(final SpecConfig specConfig) {
     final ForkSchedule.Builder builder = ForkSchedule.builder();
     builder.addNextMilestone(SpecVersion.createPhase0(specConfig));
