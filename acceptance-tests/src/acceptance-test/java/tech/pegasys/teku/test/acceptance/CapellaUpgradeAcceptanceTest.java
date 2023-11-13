@@ -49,7 +49,7 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
             config ->
                 config
                     .withMergeSupport(true)
-                    .withGenesisFile("besu/mergedGenesis.json")
+                    .withGenesisFile("besu/shanghaiGenesis.json")
                     .withP2pEnabled(true)
                     .withJwtTokenAuthorization(JWT_FILE),
             Map.of("shanghaiTime", String.valueOf(shanghaiTime)));
@@ -61,7 +61,7 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
             config ->
                 config
                     .withMergeSupport(true)
-                    .withGenesisFile("besu/mergedGenesis.json")
+                    .withGenesisFile("besu/shanghaiGenesis.json")
                     .withP2pEnabled(true)
                     .withJwtTokenAuthorization(JWT_FILE),
             Map.of("shanghaiTime", String.valueOf(shanghaiTime)));
