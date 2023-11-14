@@ -57,6 +57,7 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 
+import java.util.Locale;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators.StatusParameter;
@@ -70,6 +71,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 
 public class BeaconRestApiTypes {
   private static final StringValueTypeDefinition<StatusParameter> STATUS_VALUE =
@@ -236,6 +238,10 @@ public class BeaconRestApiTypes {
   public enum BroadcastValidationParameter {
     gossip,
     consensus,
-    consensus_and_equivocation
+    consensus_and_equivocation;
+
+    public BroadcastValidationLevel toInternal() {
+      return BroadcastValidationLevel.valueOf(name().toUpperCase(Locale.ROOT));
+    }
   }
 }

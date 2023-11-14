@@ -25,7 +25,6 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDAT
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.Locale;
 import java.util.Optional;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
@@ -81,10 +80,7 @@ public class PostBlindedBlockV2 extends RestApiEndpoint {
 
     final BroadcastValidationLevel broadcastValidationLevel =
         maybeBroadcastValidation
-            .map(
-                broadcastValidation ->
-                    BroadcastValidationLevel.valueOf(
-                        broadcastValidation.toString().toUpperCase(Locale.ROOT)))
+            .map(BroadcastValidationParameter::toInternal)
             .orElse(BroadcastValidationLevel.GOSSIP);
 
     final SignedBlockContainer requestBody = request.getRequestBody();
