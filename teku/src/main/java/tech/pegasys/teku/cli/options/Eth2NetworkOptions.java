@@ -50,6 +50,16 @@ public class Eth2NetworkOptions {
   private String initialState;
 
   @Option(
+      names = {"--ignore-weak-subjectivity-period-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Foo.",
+      arity = "0..1",
+      fallbackValue = "true",
+      defaultValue = "false",
+      showDefaultValue = Visibility.ALWAYS)
+  private boolean ignoreWeakSubjectivityPeriodEnabled;
+
+  @Option(
       names = {"--genesis-state"},
       hidden = true,
       paramLabel = "<STRING>",
@@ -311,6 +321,7 @@ public class Eth2NetworkOptions {
       builder.eth1DepositContractDeployBlock(eth1DepositContractDeployBlockOverride);
     }
     builder
+        .ignoreWeakSubjectivityPeriodEnabled(ignoreWeakSubjectivityPeriodEnabled)
         .safeSlotsToImportOptimistically(safeSlotsToImportOptimistically)
         .asyncP2pMaxThreads(asyncP2pMaxThreads)
         .asyncP2pMaxQueue(asyncP2pMaxQueue)
