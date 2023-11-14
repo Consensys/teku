@@ -59,6 +59,7 @@ public class PostBlockV2Test extends PostBlockTest {
     final SignedBeaconBlock block = getRandomSignedBeaconBlock();
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     request.setRequestBody(block);
+    request.setOptionalQueryParameter("broadcast_validation", "consensus");
 
     setupValidatorDataProviderSubmit(
         SafeFuture.completedFuture(SendSignedBlockResult.success(block.getRoot())));

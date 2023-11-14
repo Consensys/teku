@@ -42,7 +42,6 @@ public class PostBlindedBlockV2Test extends PostBlindedBlockTest {
     final SignedBeaconBlock block = getRandomSignedBeaconBlock();
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     request.setRequestBody(block);
-    request.setOptionalQueryParameter("broadcast_validation", "gossasdip");
 
     setupValidatorDataProviderSubmit(
         SafeFuture.completedFuture(SendSignedBlockResult.success(block.getRoot())));
