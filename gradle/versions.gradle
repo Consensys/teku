@@ -131,12 +131,12 @@ dependencyManagement {
 
     dependency 'io.prometheus:simpleclient:0.9.0'
 
-    dependencySet(group: 'org.hyperledger.besu.internal', version: '23.10.0') {
+    dependencySet(group: 'org.hyperledger.besu.internal', version: '23.10.1') {
       entry('metrics-core')
       entry('core')
       entry('config')
     }
-    dependencySet(group: 'org.hyperledger.besu', version: '23.10.0') {
+    dependencySet(group: 'org.hyperledger.besu', version: '23.10.1') {
       entry('besu-datatypes')
       entry('evm')
       entry('plugin-api')
