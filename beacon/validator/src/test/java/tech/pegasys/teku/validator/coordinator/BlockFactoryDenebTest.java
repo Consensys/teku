@@ -109,6 +109,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     assertThat(unblindedBlockContainer).isInstanceOf(SignedBlockContents.class);
     assertThat(unblindedBlockContainer.isBlinded()).isFalse();
     assertThat(unblindedBlockContainer.getSignedBlock()).isEqualTo(unblindedBeaconBlock);
+    // TODO: add assertions for blobs and proofs
   }
 
   @Override
