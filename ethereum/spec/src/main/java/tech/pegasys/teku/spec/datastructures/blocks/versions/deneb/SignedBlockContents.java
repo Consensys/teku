@@ -52,12 +52,12 @@ public class SignedBlockContents
   }
 
   @Override
-  public Optional<List<KZGProof>> getKzgProofs() {
-    return Optional.of(getField1().asList().stream().map(SszKZGProof::getKZGProof).toList());
+  public Optional<SszList<SszKZGProof>> getKzgProofs() {
+    return Optional.of(getField1());
   }
 
   @Override
-  public Optional<List<Blob>> getBlobs() {
-    return Optional.of(getField2().asList());
+  public Optional<SszList<Blob>> getBlobs() {
+    return Optional.of(getField2());
   }
 }
