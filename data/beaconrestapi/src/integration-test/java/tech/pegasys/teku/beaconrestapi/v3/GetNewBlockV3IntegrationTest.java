@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.v3;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -30,7 +29,8 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 
-import com.google.common.io.Resources;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Map;
@@ -46,12 +46,15 @@ import tech.pegasys.teku.beaconrestapi.handlers.v3.validator.GetNewBlockV3;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
 import tech.pegasys.teku.spec.constants.EthConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
@@ -65,8 +68,8 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
   private final UInt256 executionPayloadValue = UInt256.valueOf(12345);
   private final UInt256 consensusBlockValue = UInt256.valueOf(123);
 
-  private final String consensusBlockValueWei =
-      EthConstants.GWEI_TO_WEI.multiply(consensusBlockValue).toDecimalString();
+  private final UInt256 consensusBlockValueWei =
+      EthConstants.GWEI_TO_WEI.multiply(consensusBlockValue);
 
   @BeforeEach
   void setup(final TestSpecInvocationContextProvider.SpecContext specContext) {
@@ -97,8 +100,14 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
         .thenReturn(SafeFuture.completedFuture(Optional.of(beaconBlock)));
     Response response = get(signature, ContentTypes.JSON);
     assertResponseWithHeaders(response, false);
-    final String body = response.body().string();
-    assertThat(body).isEqualTo(getExpectedBlockAsJson(specMilestone, false, false));
+    final String responseBody = response.body().string();
+    checkResponseBody(
+        responseBody,
+        specMilestone.name().toLowerCase(Locale.ROOT),
+        false,
+        executionPayloadValue,
+        consensusBlockValueWei,
+        beaconBlock);
   }
 
   @TestTemplate
@@ -126,8 +135,14 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
         .thenReturn(SafeFuture.completedFuture(Optional.of(blindedBeaconBlock)));
     Response response = get(signature, ContentTypes.JSON);
     assertResponseWithHeaders(response, true);
-    final String body = response.body().string();
-    assertThat(body).isEqualTo(getExpectedBlockAsJson(specMilestone, true, false));
+    final String responseBody = response.body().string();
+    checkResponseBody(
+        responseBody,
+        specMilestone.name().toLowerCase(Locale.ROOT),
+        true,
+        executionPayloadValue,
+        consensusBlockValueWei,
+        blindedBeaconBlock);
   }
 
   @TestTemplate
@@ -155,8 +170,14 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockContents)));
     Response response = get(signature, ContentTypes.JSON);
     assertResponseWithHeaders(response, false);
-    final String body = response.body().string();
-    assertThat(body).isEqualTo(getExpectedBlockAsJson(specMilestone, false, true));
+    final String responseBody = response.body().string();
+    checkResponseBody(
+        responseBody,
+        specMilestone.name().toLowerCase(Locale.ROOT),
+        false,
+        executionPayloadValue,
+        consensusBlockValueWei,
+        blockContents);
   }
 
   @TestTemplate
@@ -204,19 +225,6 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
         contentType);
   }
 
-  private String getExpectedBlockAsJson(
-      final SpecMilestone specMilestone, final boolean blinded, final boolean blockContents)
-      throws IOException {
-    final String fileName =
-        String.format(
-            "new%s%s%s.json",
-            blinded ? "Blinded" : "",
-            blockContents ? "BlockContents" : "Block",
-            specMilestone.name());
-    return Resources.toString(
-        Resources.getResource(GetNewBlockV3IntegrationTest.class, fileName), UTF_8);
-  }
-
   private void assertResponseWithHeaders(Response response, boolean blinded) {
     assertThat(response.code()).isEqualTo(SC_OK);
     assertThat(response.header(HEADER_CONSENSUS_VERSION))
@@ -225,6 +233,35 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
         .isEqualTo(Boolean.toString(blinded));
     assertThat(response.header(HEADER_EXECUTION_PAYLOAD_VALUE))
         .isEqualTo(executionPayloadValue.toDecimalString());
-    assertThat(response.header(HEADER_CONSENSUS_BLOCK_VALUE)).isEqualTo(consensusBlockValueWei);
+    assertThat(response.header(HEADER_CONSENSUS_BLOCK_VALUE))
+        .isEqualTo(consensusBlockValueWei.toDecimalString());
+  }
+
+  private void checkResponseBody(
+      final String responseBody,
+      final String expectedVersion,
+      final boolean expectedExecutionPayloadBlinded,
+      final UInt256 expectedExecutionPayloadValue,
+      final UInt256 expectedConsensusBlockValue,
+      final BlockContainer expectedBlockContainer)
+      throws JsonProcessingException {
+    final JsonNode node = jsonProvider.getObjectMapper().readTree(responseBody);
+    final String version = node.get("version").asText();
+    assertThat(version).isEqualTo(expectedVersion);
+    final boolean executionPayloadBlinded = node.get("execution_payload_blinded").asBoolean();
+    assertThat(executionPayloadBlinded).isEqualTo(expectedExecutionPayloadBlinded);
+    final UInt256 executionPayloadValue =
+        UInt256.valueOf(node.get("execution_payload_value").asLong());
+    assertThat(executionPayloadValue).isEqualTo(expectedExecutionPayloadValue);
+    final UInt256 consensusBlockValue = UInt256.valueOf(node.get("consensus_block_value").asLong());
+    assertThat(consensusBlockValue).isEqualTo(expectedConsensusBlockValue);
+    final String data = node.get("data").toString();
+    final BlockContainerSchema<BlockContainer> blockContainerSchema =
+        expectedBlockContainer.isBlinded()
+            ? spec.atSlot(ONE).getSchemaDefinitions().getBlindedBlockContainerSchema()
+            : spec.atSlot(ONE).getSchemaDefinitions().getBlockContainerSchema();
+    final String blockContainer =
+        JsonUtil.serialize(expectedBlockContainer, blockContainerSchema.getJsonTypeDefinition());
+    assertThat(data).isEqualTo(blockContainer);
   }
 }

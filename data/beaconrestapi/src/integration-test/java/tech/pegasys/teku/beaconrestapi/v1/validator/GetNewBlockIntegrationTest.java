@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.beaconrestapi.v1.validator;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -23,7 +22,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTEN
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 
-import com.google.common.io.Resources;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
@@ -41,9 +40,11 @@ import tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.validator.coordinator.MissingDepositsException;
@@ -77,10 +78,13 @@ public class GetNewBlockIntegrationTest extends AbstractDataBackedRestAPIIntegra
     Response response = get(route, signature, ContentTypes.JSON);
     assertThat(response.code()).isEqualTo(SC_OK);
     final String body = response.body().string();
-    assertThat(body)
-        .isEqualTo(
-            Resources.toString(
-                Resources.getResource(GetNewBlockIntegrationTest.class, "newBlock.json"), UTF_8));
+    final JsonNode node = jsonProvider.getObjectMapper().readTree(body);
+    final BeaconBlockSchema beaconBlockSchema =
+        isBlindedBlock
+            ? spec.atSlot(UInt64.ONE).getSchemaDefinitions().getBlindedBeaconBlockSchema()
+            : spec.atSlot(UInt64.ONE).getSchemaDefinitions().getBeaconBlockSchema();
+    assertThat(node.get("data").toString())
+        .isEqualTo(JsonUtil.serialize(randomBlock, beaconBlockSchema.getJsonTypeDefinition()));
   }
 
   @ParameterizedTest(name = "blinded_{1}")
