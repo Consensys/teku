@@ -95,7 +95,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           //  Must be re-enabled once implementation #6595 is done
           .put(
               "fork_choice/should_override_forkchoice_update",
-              new ForkChoiceTestExecutor("should_override_forkchoice_update__false"))
+              IGNORE_TESTS)
           .put("fork_choice/get_proposer_head", new ForkChoiceTestExecutor("basic_is_parent_root"))
           .build();
 
