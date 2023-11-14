@@ -24,7 +24,6 @@ import org.mockito.Mockito;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -46,7 +45,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
   @Test
   void shouldCreateBlockContents() {
 
-    final BlobsBundle blobsBundle = prepareBlobsBundle(spec, 3);
+    prepareBlobsBundle(spec, 3);
 
     final BlockContainer blockContainer =
         assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), false);
@@ -54,13 +53,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     assertThat(blockContainer).isInstanceOf(BlockContents.class);
     assertThat(blockContainer.getBlock().getBody().getOptionalBlobKzgCommitments())
         .hasValueSatisfying(blobKzgCommitments -> assertThat(blobKzgCommitments).hasSize(3));
-    assertThat(blockContainer.getBlobSidecars())
-        .hasValueSatisfying(
-            blobSidecars ->
-                assertThat(blobSidecars)
-                    .hasSize(3)
-                    .map(BlobSidecarOld::getBlob)
-                    .hasSameElementsAs(blobsBundle.getBlobs()));
+    // TODO Add test for blobs and kzg proofs once added
   }
 
   @Test
@@ -116,8 +109,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     assertThat(unblindedBlockContainer).isInstanceOf(SignedBlockContents.class);
     assertThat(unblindedBlockContainer.isBlinded()).isFalse();
     assertThat(unblindedBlockContainer.getSignedBlock()).isEqualTo(unblindedBeaconBlock);
-    assertThat(unblindedBlockContainer.getSignedBlobSidecars())
-        .hasValueSatisfying(blobSidecars -> assertThat(blobSidecars).isEmpty());
+    // TODO: add assertions for blobs and proofs
   }
 
   @Override

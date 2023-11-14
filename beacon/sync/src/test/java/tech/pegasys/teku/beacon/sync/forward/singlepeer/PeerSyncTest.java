@@ -558,7 +558,7 @@ public class PeerSyncTest extends AbstractSyncTest {
         Assertions.fail("Blob sidecars for slot %s is missing", slot);
       }
       verify(blobSidecarPool)
-          .onCompletedBlockAndBlobSidecars(any(), eq(blobSidecarsBySlot.get(slot)));
+          .onCompletedBlockAndBlobSidecarsOld(any(), eq(blobSidecarsBySlot.get(slot)));
     }
   }
 

@@ -55,6 +55,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.MutableBeaconStateDeneb;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProofSchema;
 
 public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
 
@@ -80,6 +81,7 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   private final SszListSchema<Blob, ? extends SszList<Blob>> blobsInBlockSchema;
   private final BlobSidecarSchema blobSidecarSchema;
   private final BlobSidecarSchemaOld blobSidecarOldSchema;
+  private final SszKZGProofSchema sszKZGProofSchema;
   private final SignedBlobSidecarSchemaOld signedBlobSidecarOldSchema;
   private final BlockContentsSchema blockContentsSchema;
   private final SignedBlockContentsSchema signedBlockContentsSchema;
@@ -132,15 +134,17 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
             blobSchema,
             specConfig.getKzgCommitmentInclusionProofDepth());
     this.blobSidecarOldSchema = BlobSidecarSchemaOld.create(blobSchema);
+    this.sszKZGProofSchema = SszKZGProofSchema.INSTANCE;
     this.signedBlobSidecarOldSchema = SignedBlobSidecarSchemaOld.create(blobSidecarOldSchema);
     this.blockContentsSchema =
         BlockContentsSchema.create(
-            specConfig, beaconBlockSchema, blobSidecarOldSchema, "BlockContentsDeneb");
+            specConfig, beaconBlockSchema, sszKZGProofSchema, blobSchema, "BlockContentsDeneb");
     this.signedBlockContentsSchema =
         SignedBlockContentsSchema.create(
             specConfig,
-            signedBlobSidecarOldSchema,
             signedBeaconBlockSchema,
+            sszKZGProofSchema,
+            blobSchema,
             "SignedBlockContentsDeneb");
     this.blobsBundleSchema =
         new BlobsBundleSchema("BlobsBundleDeneb", blobSchema, blobKzgCommitmentsSchema, specConfig);

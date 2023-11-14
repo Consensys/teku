@@ -24,7 +24,6 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -328,7 +327,6 @@ public class SszBitlistTest implements SszPrimitiveListTestBase {
     }
   }
 
-  @Disabled("the Tuweni Bytes issue: https://github.com/apache/incubator-tuweni/issues/186")
   @Test
   public void tuweniBytesIssue() {
     Bytes slicedBytes = Bytes.wrap(Bytes.wrap(new byte[32]), Bytes.wrap(new byte[6])).slice(0, 37);
