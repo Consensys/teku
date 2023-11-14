@@ -52,12 +52,11 @@ public class Eth2NetworkOptions {
   @Option(
       names = {"--ignore-weak-subjectivity-period-enabled"},
       paramLabel = "<BOOLEAN>",
-      description = "Foo.",
+      description = "Allows syncing outside of the weak subjectivity period.",
       arity = "0..1",
       fallbackValue = "true",
-      defaultValue = "false",
       showDefaultValue = Visibility.ALWAYS)
-  private boolean ignoreWeakSubjectivityPeriodEnabled;
+  private boolean ignoreWeakSubjectivityPeriodEnabled = false;
 
   @Option(
       names = {"--genesis-state"},

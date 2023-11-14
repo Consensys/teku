@@ -240,8 +240,7 @@ public class WeakSubjectivityInitializerTest {
   }
 
   @Test
-  public void
-      validateInitialAnchor_withinWeakSubjectivityPeriod_WhenConfigIsPresent_ShouldSucceed() {
+  public void validateInitialAnchor_withSubjectivityCheck_withinSubjectivityPeriod_shouldSucceed() {
     final UInt64 currentEpoch = UInt64.valueOf(10);
     final UInt64 currentSlot = spec.computeStartSlotAtEpoch(currentEpoch);
 
@@ -258,7 +257,7 @@ public class WeakSubjectivityInitializerTest {
   }
 
   @Test
-  public void validateInitialAnchor_outOfWeakSubjectivityPeriod_WhenConfigIsPresent_ShouldFail() {
+  public void validateInitialAnchor_withSubjectivityCheck_outOfWeakSubjectivityPeriod_ShouldFail() {
     final UInt64 currentEpoch = UInt64.valueOf(10);
     final UInt64 currentSlot = spec.computeStartSlotAtEpoch(currentEpoch);
 
@@ -280,7 +279,7 @@ public class WeakSubjectivityInitializerTest {
 
   @Test
   public void
-      validateInitialAnchor_outOfWeakSubjectivityPeriod_WhenConfigIsNotPresent_ShouldSucceed() {
+      validateInitialAnchor_withoutSubjectivityCheck_outOfWeakSubjectivityPeriod_shouldSucceed() {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
     // Huge distance between anchor epoch and current epoch - is definitely outside weak
