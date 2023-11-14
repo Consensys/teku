@@ -18,9 +18,12 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
 /**
  * Interface used to represent both {@link SignedBeaconBlock} and {@link SignedBlockContents} and
@@ -41,6 +44,14 @@ public interface SignedBlockContainer extends SszData, SszContainer {
 
   @Deprecated
   default Optional<List<SignedBlobSidecarOld>> getSignedBlobSidecars() {
+    return Optional.empty();
+  }
+
+  default Optional<SszList<SszKZGProof>> getKzgProofs() {
+    return Optional.empty();
+  }
+
+  default Optional<SszList<Blob>> getBlobs() {
     return Optional.empty();
   }
 

@@ -43,7 +43,7 @@ public class OptimisticSyncSafeSlotsAcceptanceTest extends AcceptanceTestBase {
             config ->
                 config
                     .withMiningEnabled(true)
-                    .withMergeSupport(true)
+                    .withMergeSupport()
                     .withP2pEnabled(true)
                     .withGenesisFile("besu/preMergeGenesis.json")
                     .withJwtTokenAuthorization(JWT_FILE));
@@ -52,7 +52,7 @@ public class OptimisticSyncSafeSlotsAcceptanceTest extends AcceptanceTestBase {
         createBesuNode(
             config ->
                 config
-                    .withMergeSupport(true)
+                    .withMergeSupport()
                     .withP2pEnabled(true)
                     .withGenesisFile("besu/preMergeGenesis.json")
                     .withJwtTokenAuthorization(JWT_FILE));

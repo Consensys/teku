@@ -1,16 +1,28 @@
- {
-   "title" : "SignedBlockContentsDeneb",
-   "type" : "object",
-   "required" : [ "signed_block", "signed_blob_sidecars" ],
-   "properties" : {
-     "signed_block" : {
-       "$ref" : "#/components/schemas/SignedBeaconBlockDeneb"
-     },
-     "signed_blob_sidecars" : {
-       "type" : "array",
-       "items" : {
-         "$ref" : "#/components/schemas/SignedBlobSidecar"
-       }
-     }
-   }
- }
+{
+  "title" : "SignedBlockContentsDeneb",
+  "type" : "object",
+  "required" : [ "signed_block", "kzg_proofs", "blobs" ],
+  "properties" : {
+    "signed_block" : {
+      "$ref" : "#/components/schemas/SignedBeaconBlockDeneb"
+    },
+    "kzg_proofs" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string",
+        "pattern" : "^0x[a-fA-F0-9]{2,}$",
+        "description" : "Bytes48 hexadecimal",
+        "format" : "bytes"
+      }
+    },
+    "blobs" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string",
+        "pattern" : "^0x[a-fA-F0-9]{2,}$",
+        "description" : "SSZ hexadecimal",
+        "format" : "bytes"
+      }
+    }
+  }
+}
