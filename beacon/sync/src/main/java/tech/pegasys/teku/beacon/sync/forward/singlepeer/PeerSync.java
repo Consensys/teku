@@ -343,7 +343,7 @@ public class PeerSync {
     // Add blob sidecars to the pool in order for them to be available when the block is being
     // imported
     maybeBlobSidecars.ifPresent(
-        blobSidecars -> blobSidecarPool.onCompletedBlockAndBlobSidecars(block, blobSidecars));
+        blobSidecars -> blobSidecarPool.onCompletedBlockAndBlobSidecarsOld(block, blobSidecars));
 
     return blockImporter
         .importBlock(block)

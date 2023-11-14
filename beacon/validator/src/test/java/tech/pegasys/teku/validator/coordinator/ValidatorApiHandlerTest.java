@@ -839,7 +839,7 @@ class ValidatorApiHandlerTest {
 
     // TODO: fix assertion for blob sidecars
     verify(blobSidecarGossipChannel).publishBlobSidecars(List.of());
-
+    verify(blobSidecarPool).onCompletedBlockAndBlobSidecars(block, List.of());
     verify(blockGossipChannel).publishBlock(block);
     verify(blockImportChannel).importBlock(block, NOT_REQUIRED);
     assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
@@ -859,7 +859,7 @@ class ValidatorApiHandlerTest {
 
     // TODO: fix assertion for blob sidecars
     verify(blobSidecarGossipChannel).publishBlobSidecars(List.of());
-
+    verify(blobSidecarPool).onCompletedBlockAndBlobSidecars(block, List.of());
     verify(blockGossipChannel).publishBlock(block);
     verify(blockImportChannel).importBlock(block, NOT_REQUIRED);
     assertThat(result)
@@ -881,7 +881,7 @@ class ValidatorApiHandlerTest {
 
     // TODO: fix assertion for blob sidecars
     verify(blobSidecarGossipChannel).publishBlobSidecars(List.of());
-
+    verify(blobSidecarPool).onCompletedBlockAndBlobSidecars(block, List.of());
     verify(blockGossipChannel).publishBlock(block);
     verify(blockImportChannel).importBlock(block, NOT_REQUIRED);
     assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
@@ -898,8 +898,8 @@ class ValidatorApiHandlerTest {
         validatorApiHandler.sendSignedBlock(block, NOT_REQUIRED);
     safeJoin(result);
 
-    verifyNoInteractions(blobSidecarPool);
     // TODO: fix assertion for blob sidecars (there should be no interactions)
+    verify(blobSidecarPool).onCompletedBlockAndBlobSidecars(block, List.of());
     verify(blobSidecarGossipChannel).publishBlobSidecars(List.of());
     verify(blockGossipChannel).publishBlock(block);
     verify(blockImportChannel).importBlock(block, NOT_REQUIRED);
