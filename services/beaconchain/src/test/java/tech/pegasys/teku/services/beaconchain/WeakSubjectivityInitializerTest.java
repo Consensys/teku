@@ -254,7 +254,7 @@ public class WeakSubjectivityInitializerTest {
     doReturn(true).when(wsCalculator).isWithinWeakSubjectivityPeriod(any(), eq(currentSlot));
 
     // Should not throw
-    initializer.validateInitialAnchor(anchor, currentSlot, spec, Optional.empty());
+    initializer.validateInitialAnchor(anchor, currentSlot, spec, Optional.of(wsCalculator));
   }
 
   @Test
