@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -104,6 +105,12 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
         });
 
     return validationResult;
+  }
+
+  @Override
+  public SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
+      final BlobSidecar blobSidecar, final Optional<UInt64> arrivalTimestamp) {
+    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   @Override

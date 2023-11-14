@@ -41,7 +41,7 @@ public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
             config ->
                 config
                     .withMiningEnabled(true)
-                    .withMergeSupport(true)
+                    .withMergeSupport()
                     .withGenesisFile("besu/preMergeGenesis.json")
                     .withJwtTokenAuthorization(JWT_FILE));
     eth1Node.start();
