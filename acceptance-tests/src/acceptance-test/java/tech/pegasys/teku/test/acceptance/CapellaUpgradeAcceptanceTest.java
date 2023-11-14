@@ -50,7 +50,7 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
             BesuDockerVersion.STABLE,
             config ->
                 config
-                    .withMergeSupport(true)
+                    .withMergeSupport()
                     .withGenesisFile("besu/mergedGenesis.json")
                     .withP2pEnabled(true)
                     .withJwtTokenAuthorization(JWT_FILE),
@@ -62,7 +62,7 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
             BesuDockerVersion.STABLE,
             config ->
                 config
-                    .withMergeSupport(true)
+                    .withMergeSupport()
                     .withGenesisFile("besu/mergedGenesis.json")
                     .withP2pEnabled(true)
                     .withJwtTokenAuthorization(JWT_FILE),

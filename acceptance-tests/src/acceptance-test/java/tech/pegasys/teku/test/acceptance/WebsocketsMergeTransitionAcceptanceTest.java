@@ -40,7 +40,7 @@ public class WebsocketsMergeTransitionAcceptanceTest extends AcceptanceTestBase 
             config ->
                 config
                     .withMiningEnabled(true)
-                    .withMergeSupport(true)
+                    .withMergeSupport()
                     .withGenesisFile("besu/preMergeGenesis.json")
                     .withJwtTokenAuthorization(jwtFile));
     eth1Node.start();

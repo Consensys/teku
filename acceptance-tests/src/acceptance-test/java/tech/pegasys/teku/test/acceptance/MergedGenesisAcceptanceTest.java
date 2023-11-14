@@ -41,7 +41,7 @@ public class MergedGenesisAcceptanceTest extends AcceptanceTestBase {
         createBesuNode(
             config ->
                 config
-                    .withMergeSupport(true)
+                    .withMergeSupport()
                     .withGenesisFile("besu/mergedGenesis.json")
                     .withJwtTokenAuthorization(JWT_FILE));
     eth1Node.start();
