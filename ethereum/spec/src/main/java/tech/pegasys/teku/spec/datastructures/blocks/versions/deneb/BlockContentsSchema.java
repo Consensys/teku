@@ -15,47 +15,56 @@ package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
 
 import java.util.List;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema2;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchemaOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProofSchema;
 
 public class BlockContentsSchema
-    extends ContainerSchema2<BlockContents, BeaconBlock, SszList<BlobSidecarOld>>
+    extends ContainerSchema3<BlockContents, BeaconBlock, SszList<SszKZGProof>, SszList<Blob>>
     implements BlockContainerSchema<BlockContents> {
 
-  static final SszFieldName FIELD_BLOB_SIDECARS = () -> "blob_sidecars";
+  static final SszFieldName FIELD_KZG_PROOFS = () -> "kzg_proofs";
+  static final SszFieldName FIELD_BLOBS = () -> "blobs";
 
   BlockContentsSchema(
       final String containerName,
       final SpecConfigDeneb specConfig,
       final BeaconBlockSchema beaconBlockSchema,
-      final BlobSidecarSchemaOld blobSidecarSchema) {
+      final SszKZGProofSchema sszKZGProofSchema,
+      final BlobSchema blobSchema) {
     super(
         containerName,
         namedSchema("block", beaconBlockSchema),
         namedSchema(
-            FIELD_BLOB_SIDECARS,
-            SszListSchema.create(blobSidecarSchema, specConfig.getMaxBlobsPerBlock())));
+            FIELD_KZG_PROOFS,
+            SszListSchema.create(sszKZGProofSchema, specConfig.getMaxBlobsPerBlock())),
+        namedSchema(
+            FIELD_BLOBS, SszListSchema.create(blobSchema, specConfig.getMaxBlobsPerBlock())));
   }
 
   public static BlockContentsSchema create(
       final SpecConfigDeneb specConfig,
       final BeaconBlockSchema beaconBlockSchema,
-      final BlobSidecarSchemaOld blobSidecarSchema,
+      final SszKZGProofSchema sszKZGProofSchema,
+      final BlobSchema blobSchema,
       final String containerName) {
-    return new BlockContentsSchema(containerName, specConfig, beaconBlockSchema, blobSidecarSchema);
+    return new BlockContentsSchema(
+        containerName, specConfig, beaconBlockSchema, sszKZGProofSchema, blobSchema);
   }
 
   public BlockContents create(
-      final BeaconBlock beaconBlock, final List<BlobSidecarOld> blobSidecars) {
-    return new BlockContents(this, beaconBlock, blobSidecars);
+      final BeaconBlock beaconBlock, final List<KZGProof> kzgProofs, final List<Blob> blobs) {
+    return new BlockContents(this, beaconBlock, kzgProofs, blobs);
   }
 
   @Override
@@ -64,7 +73,12 @@ public class BlockContentsSchema
   }
 
   @SuppressWarnings("unchecked")
-  public SszListSchema<BlobSidecarOld, ?> getBlobSidecarsSchema() {
-    return (SszListSchema<BlobSidecarOld, ?>) getChildSchema(getFieldIndex(FIELD_BLOB_SIDECARS));
+  public SszListSchema<SszKZGProof, ?> getKzgProofsSchema() {
+    return (SszListSchema<SszKZGProof, ?>) getChildSchema(getFieldIndex(FIELD_KZG_PROOFS));
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszListSchema<Blob, ?> getBlobsSchema() {
+    return (SszListSchema<Blob, ?>) getChildSchema(getFieldIndex(FIELD_BLOBS));
   }
 }

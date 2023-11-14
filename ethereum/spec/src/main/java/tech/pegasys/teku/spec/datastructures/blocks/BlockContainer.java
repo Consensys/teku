@@ -17,9 +17,12 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
 /**
  * Interface used to represent both {@link BeaconBlock} and {@link BlockContents} and their blinded
@@ -36,6 +39,14 @@ public interface BlockContainer extends SszData, SszContainer {
 
   @Deprecated
   default Optional<List<BlobSidecarOld>> getBlobSidecars() {
+    return Optional.empty();
+  }
+
+  default Optional<SszList<SszKZGProof>> getKzgProofs() {
+    return Optional.empty();
+  }
+
+  default Optional<SszList<Blob>> getBlobs() {
     return Optional.empty();
   }
 
