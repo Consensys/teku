@@ -127,8 +127,7 @@ public class BlobSidecarPoolImplTest {
     final BlobSidecar blobSidecar =
         dataStructureUtil
             .createRandomBlobSidecarBuilder()
-            .signedBeaconBlockHeader(
-                dataStructureUtil.randomSignedBeaconBlockHeader(currentSlot, UInt64.ZERO))
+            .signedBeaconBlockHeader(dataStructureUtil.randomSignedBeaconBlockHeader(currentSlot))
             .build();
 
     blobSidecarPool.onNewBlobSidecar(blobSidecar);
@@ -150,8 +149,7 @@ public class BlobSidecarPoolImplTest {
     final BlobSidecar blobSidecar =
         dataStructureUtil
             .createRandomBlobSidecarBuilder()
-            .signedBeaconBlockHeader(
-                dataStructureUtil.randomSignedBeaconBlockHeader(currentSlot, UInt64.ZERO))
+            .signedBeaconBlockHeader(dataStructureUtil.randomSignedBeaconBlockHeader(currentSlot))
             .build();
 
     blobSidecarPool.onNewBlobSidecar(blobSidecar);
@@ -399,8 +397,7 @@ public class BlobSidecarPoolImplTest {
     final BlobSidecar blobSidecar =
         dataStructureUtil
             .createRandomBlobSidecarBuilder()
-            .signedBeaconBlockHeader(
-                dataStructureUtil.randomSignedBeaconBlockHeader(slot, UInt64.ZERO))
+            .signedBeaconBlockHeader(dataStructureUtil.randomSignedBeaconBlockHeader(slot))
             .build();
 
     blobSidecarPool.onNewBlobSidecar(blobSidecar);
@@ -630,8 +627,7 @@ public class BlobSidecarPoolImplTest {
     final BlobSidecar blobSidecar =
         dataStructureUtil
             .createRandomBlobSidecarBuilder()
-            .signedBeaconBlockHeader(
-                dataStructureUtil.randomSignedBeaconBlockHeader(slot, UInt64.ZERO))
+            .signedBeaconBlockHeader(dataStructureUtil.randomSignedBeaconBlockHeader(slot))
             .build();
 
     blobSidecarPool.onNewBlobSidecar(blobSidecar);

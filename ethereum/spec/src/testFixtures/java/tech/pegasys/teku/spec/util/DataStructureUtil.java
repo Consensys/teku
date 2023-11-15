@@ -1160,6 +1160,10 @@ public final class DataStructureUtil {
     return randomSignedBeaconBlockHeader(randomUInt64(), randomUInt64());
   }
 
+  public SignedBeaconBlockHeader randomSignedBeaconBlockHeader(final UInt64 slot) {
+    return randomSignedBeaconBlockHeader(slot, randomValidatorIndex());
+  }
+
   public SignedBeaconBlockHeader randomSignedBeaconBlockHeader(
       final UInt64 slot, final UInt64 proposerIndex) {
     return new SignedBeaconBlockHeader(
@@ -2157,12 +2161,14 @@ public final class DataStructureUtil {
   }
 
   public List<BlobSidecar> randomBlobSidecarsForBlock(final SignedBeaconBlock block) {
-    return randomBlobSidecarsForBlock(block, (__, builder) -> builder);
+    return randomBlobSidecarsForBlock(
+        block, (blobSidecarIndex, blobSidecarBuilder) -> blobSidecarBuilder);
   }
 
   public List<BlobSidecar> randomBlobSidecarsForBlock(
       final SignedBeaconBlock block,
-      final BiFunction<Integer, RandomBlobSidecarBuilder, RandomBlobSidecarBuilder> modifier) {
+      final BiFunction<Integer, RandomBlobSidecarBuilder, RandomBlobSidecarBuilder>
+          blobSidecarBuilderModifier) {
     final SszList<SszKZGCommitment> blobKzgCommitments =
         BeaconBlockBodyDeneb.required(block.getBeaconBlock().orElseThrow().getBody())
             .getBlobKzgCommitments();
@@ -2176,9 +2182,9 @@ public final class DataStructureUtil {
                       .kzgCommitment(blobKzgCommitments.get(index).getBytes())
                       .index(UInt64.valueOf(index));
 
-              return modifier.apply(index, builder).build();
+              return blobSidecarBuilderModifier.apply(index, builder).build();
             })
-        .collect(toList());
+        .toList();
   }
 
   public BlobSidecar randomBlobSidecar() {
@@ -2196,7 +2202,7 @@ public final class DataStructureUtil {
         .build();
   }
 
-  public List<BlobSidecarOld> randomBlobSidecarsOld(int count) {
+  public List<BlobSidecarOld> randomBlobSidecarsOld(final int count) {
     List<BlobSidecarOld> blobSidecars = new ArrayList<>();
     for (int i = 0; i < count; i++) {
       blobSidecars.add(new RandomBlobSidecarOldBuilder().build());
@@ -2213,7 +2219,7 @@ public final class DataStructureUtil {
     return blobs;
   }
 
-  public List<BlobSidecar> randomBlobSidecars(int count) {
+  public List<BlobSidecar> randomBlobSidecars(final int count) {
     List<BlobSidecar> blobSidecars = new ArrayList<>();
     for (int i = 0; i < count; i++) {
       blobSidecars.add(new RandomBlobSidecarBuilder().build());
