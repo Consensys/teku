@@ -216,7 +216,7 @@ public class EventSubscriptionManagerTest {
     manager.registerClient(client1);
 
     triggerBlobSidecarEvent();
-    checkEvent("blob_sidecar", BlobSidecarEvent.create(spec, data.randomBlobSidecarOld()));
+    checkEvent("blob_sidecar", BlobSidecarEvent.create(spec, data.randomBlobSidecar()));
   }
 
   @Test
