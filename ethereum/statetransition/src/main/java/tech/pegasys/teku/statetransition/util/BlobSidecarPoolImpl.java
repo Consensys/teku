@@ -168,6 +168,9 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     if (block.getMessage().getBody().toVersionDeneb().isEmpty()) {
       return;
     }
+    if (recentChainData.containsBlock(block.getRoot())) {
+      return;
+    }
     if (shouldIgnoreItemAtSlot(block.getSlot())) {
       return;
     }
@@ -195,6 +198,9 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   @Override
   public synchronized void onCompletedBlockAndBlobSidecars(
       final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
+    if (recentChainData.containsBlock(block.getRoot())) {
+      return;
+    }
     final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
 
     final BlockBlobSidecarsTracker blobSidecarsTracker =
@@ -247,7 +253,13 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   public void onSlot(final UInt64 slot) {
     super.onSlot(slot);
 
-    LOG.trace("Trackers: {}", blockBlobSidecarsTrackers);
+    LOG.trace(
+        "Trackers: {}",
+        () -> {
+          synchronized (this) {
+            return blockBlobSidecarsTrackers.toString();
+          }
+        });
   }
 
   @VisibleForTesting

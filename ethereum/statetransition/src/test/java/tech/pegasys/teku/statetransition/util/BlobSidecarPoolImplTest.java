@@ -186,7 +186,8 @@ public class BlobSidecarPoolImplTest {
   }
 
   @Test
-  public void onNewBlobSidecar_shouldIgnoreBlobsForAlreadyImportedBlocks() {
+  public void
+      onNewBlobSidecar_onNewBlock_onCompletedBlockAndBlobSidecars_shouldIgnoreAlreadyImportedBlocks() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
     final BlobSidecar blobSidecar =
         dataStructureUtil
@@ -197,6 +198,8 @@ public class BlobSidecarPoolImplTest {
     when(recentChainData.containsBlock(blobSidecar.getBlockRoot())).thenReturn(true);
 
     blobSidecarPool.onNewBlobSidecar(blobSidecar);
+    blobSidecarPool.onNewBlock(block);
+    blobSidecarPool.onCompletedBlockAndBlobSidecars(block, List.of(blobSidecar));
 
     assertThat(blobSidecarPool.containsBlock(block.getRoot())).isFalse();
     assertThat(requiredBlockRootEvents).isEmpty();
