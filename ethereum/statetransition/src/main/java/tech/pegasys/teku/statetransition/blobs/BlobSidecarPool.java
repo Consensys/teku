@@ -33,7 +33,7 @@ public interface BlobSidecarPool extends SlotEventsChannel {
         public void onSlot(final UInt64 slot) {}
 
         @Override
-        public void onNewBlobSidecar(final BlobSidecarOld blobSidecar) {}
+        public void onNewBlobSidecar(final BlobSidecar blobSidecar) {}
 
         @Override
         public void onNewBlock(final SignedBeaconBlock block) {}
@@ -96,7 +96,7 @@ public interface BlobSidecarPool extends SlotEventsChannel {
         public void subscribeNewBlobSidecar(NewBlobSidecarSubscriber newBlobSidecarSubscriber) {}
       };
 
-  void onNewBlobSidecar(BlobSidecarOld blobSidecar);
+  void onNewBlobSidecar(BlobSidecar blobSidecar);
 
   void onNewBlock(SignedBeaconBlock block);
 
@@ -147,6 +147,6 @@ public interface BlobSidecarPool extends SlotEventsChannel {
   }
 
   interface NewBlobSidecarSubscriber {
-    void onNewBlobSidecar(BlobSidecarOld blobSidecar);
+    void onNewBlobSidecar(BlobSidecar blobSidecar);
   }
 }

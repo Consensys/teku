@@ -107,8 +107,10 @@ class BatchImporterTest {
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(1);
     final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(2);
 
-    final List<BlobSidecarOld> blobSidecars1 = dataStructureUtil.randomBlobSidecarsForBlock(block1);
-    final List<BlobSidecarOld> blobSidecars2 = dataStructureUtil.randomBlobSidecarsForBlock(block2);
+    final List<BlobSidecarOld> blobSidecars1 =
+        dataStructureUtil.randomBlobSidecarsForBlockOld(block1);
+    final List<BlobSidecarOld> blobSidecars2 =
+        dataStructureUtil.randomBlobSidecarsForBlockOld(block2);
 
     final SafeFuture<BlockImportResult> importResult1 = new SafeFuture<>();
     final SafeFuture<BlockImportResult> importResult2 = new SafeFuture<>();

@@ -109,6 +109,19 @@ public class BlobSidecarSchemaOld
         kzgProof);
   }
 
+  public BlobSidecarOld create(final BlobSidecar blobSidecar) {
+    return new BlobSidecarOld(
+        this,
+        blobSidecar.getBlockRoot(),
+        blobSidecar.getIndex(),
+        blobSidecar.getSlot(),
+        blobSidecar.getSignedBeaconBlockHeader().getMessage().getParentRoot(),
+        blobSidecar.getSignedBeaconBlockHeader().getMessage().getProposerIndex(),
+        blobSidecar.getBlob(),
+        blobSidecar.getKZGCommitment(),
+        blobSidecar.getKZGProof());
+  }
+
   public static BlobSidecarSchemaOld create(final BlobSchema blobSchema) {
     return new BlobSidecarSchemaOld(blobSchema);
   }

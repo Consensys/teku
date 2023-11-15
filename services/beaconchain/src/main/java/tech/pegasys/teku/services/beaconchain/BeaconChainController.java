@@ -90,7 +90,7 @@ import tech.pegasys.teku.services.timer.TimerService;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
@@ -107,6 +107,7 @@ import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.LocalOperationAcceptedFilter;
 import tech.pegasys.teku.statetransition.MappedOperationPool;
@@ -148,7 +149,7 @@ import tech.pegasys.teku.statetransition.util.PoolFactory;
 import tech.pegasys.teku.statetransition.validation.AggregateAttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttestationValidator;
 import tech.pegasys.teku.statetransition.validation.AttesterSlashingValidator;
-import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidatorOld;
+import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockGossipValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.GossipValidationHelper;
@@ -500,14 +501,16 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initBlobSidecarManager() {
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
-      final FutureItems<SignedBlobSidecarOld> futureBlobSidecars =
-          FutureItems.create(SignedBlobSidecarOld::getSlot, futureItemsMetric, "blob_sidecars");
+      final FutureItems<BlobSidecar> futureBlobSidecars =
+          FutureItems.create(BlobSidecar::getSlot, futureItemsMetric, "blob_sidecars");
 
       final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots =
           LimitedMap.createSynchronizedLRU(500);
-
-      final BlobSidecarGossipValidatorOld blobSidecarValidator =
-          BlobSidecarGossipValidatorOld.create(spec, invalidBlockRoots, gossipValidationHelper);
+      final MiscHelpersDeneb miscHelpers =
+          MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers());
+      final BlobSidecarGossipValidator blobSidecarValidator =
+          BlobSidecarGossipValidator.create(
+              spec, invalidBlockRoots, gossipValidationHelper, miscHelpers, kzg);
       final BlobSidecarManagerImpl blobSidecarManagerImpl =
           new BlobSidecarManagerImpl(
               spec,

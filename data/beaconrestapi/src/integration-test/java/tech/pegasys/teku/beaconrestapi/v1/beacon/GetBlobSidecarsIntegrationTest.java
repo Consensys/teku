@@ -150,12 +150,13 @@ public class GetBlobSidecarsIntegrationTest extends AbstractDataBackedRestAPIInt
     final SignedBlockAndState nonCanonicalBlock = fork.generateNextBlock(chainUpdater.blockOptions);
 
     final List<BlobSidecarOld> nonCanonicalBlobSidecars =
-        fork.getBlobSidecars(nonCanonicalBlock.getRoot());
+        fork.getBlobSidecarsOld(nonCanonicalBlock.getRoot());
     chainUpdater.saveBlock(nonCanonicalBlock, nonCanonicalBlobSidecars);
 
     final SignedBlockAndState canonicalBlock =
         chainBuilder.generateNextBlock(1, chainUpdater.blockOptions);
-    chainUpdater.saveBlock(canonicalBlock, chainBuilder.getBlobSidecars(canonicalBlock.getRoot()));
+    chainUpdater.saveBlock(
+        canonicalBlock, chainBuilder.getBlobSidecarsOld(canonicalBlock.getRoot()));
     chainUpdater.updateBestBlock(canonicalBlock);
 
     final Response byRootResponse =

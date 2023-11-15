@@ -18,11 +18,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 import tech.pegasys.teku.infrastructure.ssz.tree.MerkleUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
@@ -30,7 +29,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -73,7 +71,7 @@ class MiscHelpersDenebTest {
   @Test
   void validateBlobSidecarsAgainstBlock_shouldNotThrowOnValidBlobSidecar() {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
-    final List<BlobSidecarOld> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
+    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
 
     // make sure we are testing something
     assertThat(blobSidecars).isNotEmpty();
@@ -86,10 +84,8 @@ class MiscHelpersDenebTest {
             .toList());
   }
 
-  @ParameterizedTest
-  @EnumSource(value = BlobSidecarsAlteration.class)
-  void validateBlobSidecarsAgainstBlock_shouldThrowOnBlobSidecarNotMatching(
-      final BlobSidecarsAlteration blobSidecarsAlteration) {
+  @Test
+  void validateBlobSidecarsAgainstBlock_shouldThrowOnNotMatchingBlockRoot() {
 
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
 
@@ -105,7 +101,7 @@ class MiscHelpersDenebTest {
         Math.toIntExact(dataStructureUtil.randomPositiveLong(kzgCommitments.size()));
 
     // let's create blobs with only one altered with the given alteration
-    final List<BlobSidecarOld> blobSidecars =
+    final List<BlobSidecar> blobSidecars =
         dataStructureUtil.randomBlobSidecarsForBlock(
             block,
             (index, randomBlobSidecarBuilder) -> {
@@ -113,45 +109,56 @@ class MiscHelpersDenebTest {
                 return randomBlobSidecarBuilder;
               }
 
-              return switch (blobSidecarsAlteration) {
-                case BLOB_SIDECAR_PROPOSER_INDEX -> randomBlobSidecarBuilder.proposerIndex(
-                    block.getProposerIndex().plus(1));
-                case BLOB_SIDECAR_INDEX -> randomBlobSidecarBuilder.index(
-                    UInt64.valueOf(kzgCommitments.size())); // out of bounds
-                case BLOB_SIDECAR_PARENT_ROOT -> randomBlobSidecarBuilder.blockParentRoot(
-                    block.getParentRoot().not());
-                case BLOB_SIDECAR_KZG_COMMITMENT -> randomBlobSidecarBuilder.kzgCommitment(
-                    BeaconBlockBodyDeneb.required(block.getMessage().getBody())
-                        .getBlobKzgCommitments()
-                        .get(index)
-                        .getBytes()
-                        .not());
-              };
+              return randomBlobSidecarBuilder.signedBeaconBlockHeader(
+                  dataStructureUtil.randomSignedBeaconBlockHeader(
+                      block.getSlot(), block.getProposerIndex()));
             });
 
     assertThatThrownBy(
             () ->
                 miscHelpersDeneb.validateBlobSidecarsBatchAgainstBlock(
-                    blobSidecars,
-                    block.getMessage(),
-                    BeaconBlockBodyDeneb.required(block.getMessage().getBody())
-                        .getBlobKzgCommitments()
-                        .stream()
-                        .map(SszKZGCommitment::getKZGCommitment)
-                        .toList()))
+                    blobSidecars, block.getMessage(), kzgCommitments))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageStartingWith(
-            switch (blobSidecarsAlteration) {
-              case BLOB_SIDECAR_PROPOSER_INDEX -> "Block and blob sidecar proposer index mismatch";
-              case BLOB_SIDECAR_INDEX -> "Blob sidecar index out of bound with respect to block";
-              case BLOB_SIDECAR_PARENT_ROOT -> "Block and blob sidecar parent block mismatch";
-              case BLOB_SIDECAR_KZG_COMMITMENT -> "Block and blob sidecar kzg commitments mismatch";
-            })
-        .hasMessageEndingWith(
-            "blob index %s",
-            blobSidecarsAlteration == BlobSidecarsAlteration.BLOB_SIDECAR_INDEX
-                ? kzgCommitments.size() // out of bounds altered index
-                : indexToBeAltered);
+        .hasMessageStartingWith("Block and blob sidecar root mismatch for")
+        .hasMessageEndingWith("blob index %s", indexToBeAltered);
+  }
+
+  @Test
+  void validateBlobSidecarsAgainstBlock_shouldThrowOnNotMatchingKzgCommitments() {
+
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
+
+    final List<KZGCommitment> kzgCommitments =
+        BeaconBlockBodyDeneb.required(block.getMessage().getBody()).getBlobKzgCommitments().stream()
+            .map(SszKZGCommitment::getKZGCommitment)
+            .toList();
+
+    // make sure we are testing something
+    assertThat(kzgCommitments).isNotEmpty();
+
+    final int indexToBeAltered =
+        Math.toIntExact(dataStructureUtil.randomPositiveLong(kzgCommitments.size()));
+    final List<KZGCommitment> alteredKzgCommitments = new ArrayList<>(kzgCommitments);
+    alteredKzgCommitments.remove(indexToBeAltered);
+    alteredKzgCommitments.add(indexToBeAltered, dataStructureUtil.randomKZGCommitment());
+
+    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
+
+    assertThatThrownBy(
+            () ->
+                miscHelpersDeneb.validateBlobSidecarsBatchAgainstBlock(
+                    blobSidecars, block.getMessage(), List.of()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageStartingWith("Blob sidecar index out of bound with respect to block")
+        .hasMessageEndingWith("blob index %s", 0);
+
+    assertThatThrownBy(
+            () ->
+                miscHelpersDeneb.validateBlobSidecarsBatchAgainstBlock(
+                    blobSidecars, block.getMessage(), alteredKzgCommitments))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageStartingWith("Block and blob sidecar kzg commitments mismatch for")
+        .hasMessageEndingWith("blob index %s", indexToBeAltered);
   }
 
   @Test
@@ -169,7 +176,7 @@ class MiscHelpersDenebTest {
 
   @Test
   void verifyBlobSidecarCompleteness_shouldThrowWhenBlobSidecarIndexIsWrong() {
-    final List<BlobSidecarOld> blobSidecars = dataStructureUtil.randomBlobSidecars(1);
+    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecars(1);
     assertThatThrownBy(
             () ->
                 miscHelpersDeneb.verifyBlobSidecarCompleteness(
@@ -177,13 +184,6 @@ class MiscHelpersDenebTest {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(
             "Blob sidecar index mismatch, expected 0, got %s", blobSidecars.get(0).getIndex());
-  }
-
-  private enum BlobSidecarsAlteration {
-    BLOB_SIDECAR_PROPOSER_INDEX,
-    BLOB_SIDECAR_INDEX,
-    BLOB_SIDECAR_PARENT_ROOT,
-    BLOB_SIDECAR_KZG_COMMITMENT,
   }
 
   @Test

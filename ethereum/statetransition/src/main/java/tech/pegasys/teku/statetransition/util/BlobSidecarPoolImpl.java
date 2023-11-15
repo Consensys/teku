@@ -139,7 +139,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   }
 
   @Override
-  public synchronized void onNewBlobSidecar(final BlobSidecarOld blobSidecar) {
+  public synchronized void onNewBlobSidecar(final BlobSidecar blobSidecar) {
     if (recentChainData.containsBlock(blobSidecar.getBlockRoot())) {
       return;
     }
@@ -187,8 +187,14 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   }
 
   @Override
-  public synchronized void onCompletedBlockAndBlobSidecarsOld(
-      final SignedBeaconBlock block, final List<BlobSidecarOld> blobSidecars) {
+  public void onCompletedBlockAndBlobSidecarsOld(
+      SignedBeaconBlock block, List<BlobSidecarOld> blobSidecars) {
+    onCompletedBlockAndBlobSidecars(block, List.of());
+  }
+
+  @Override
+  public synchronized void onCompletedBlockAndBlobSidecars(
+      final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
     final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
 
     final BlockBlobSidecarsTracker blobSidecarsTracker =
@@ -215,12 +221,6 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     if (orderedBlobSidecarsTrackers.add(slotAndBlockRoot)) {
       sizeGauge.set(orderedBlobSidecarsTrackers.size(), GAUGE_BLOB_SIDECARS_TRACKERS_LABEL);
     }
-  }
-
-  @Override
-  public void onCompletedBlockAndBlobSidecars(
-      final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
-    throw new UnsupportedOperationException("Not yet implemented");
   }
 
   @Override

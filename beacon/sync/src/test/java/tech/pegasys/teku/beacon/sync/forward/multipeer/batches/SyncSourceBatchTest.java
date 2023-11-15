@@ -146,7 +146,8 @@ public class SyncSourceBatchTest {
 
     // only receiving last block (70 + 50 - 1)
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(119);
-    final List<BlobSidecarOld> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
+    final List<BlobSidecarOld> blobSidecars =
+        dataStructureUtil.randomBlobSidecarsForBlockOld(block);
 
     receiveBlocks(batch, block);
     receiveBlobSidecars(batch, blobSidecars);
@@ -241,7 +242,7 @@ public class SyncSourceBatchTest {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(19);
 
     final List<BlobSidecarOld> blobSidecars =
-        new ArrayList<>(dataStructureUtil.randomBlobSidecarsForBlock(block));
+        new ArrayList<>(dataStructureUtil.randomBlobSidecarsForBlockOld(block));
     // receiving more sidecars than expected
     blobSidecars.add(
         dataStructureUtil.createRandomBlobSidecarBuilderOld().blockRoot(block.getRoot()).build());
@@ -294,11 +295,12 @@ public class SyncSourceBatchTest {
 
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(19);
 
-    final List<BlobSidecarOld> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
+    final List<BlobSidecarOld> blobSidecars =
+        dataStructureUtil.randomBlobSidecarsForBlockOld(block);
     final List<BlobSidecarOld> unexpectedBlobSidecars = new ArrayList<>(blobSidecars);
     // receiving sidecars with unknown roots
     unexpectedBlobSidecars.addAll(
-        dataStructureUtil.randomBlobSidecarsForBlock(
+        dataStructureUtil.randomBlobSidecarsForBlockOld(
             dataStructureUtil.randomSignedBeaconBlock(18)));
 
     receiveBlocks(batch, block);
