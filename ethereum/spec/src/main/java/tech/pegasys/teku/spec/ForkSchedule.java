@@ -38,14 +38,17 @@ public class ForkSchedule {
   private final Map<Bytes4, SpecMilestone> forkVersionToMilestone;
   private final Map<SpecMilestone, Fork> milestoneToFork;
   private final NavigableMap<SpecMilestone, Fork> fullMilestoneToForkMap;
+  private final Fork genesisFork;
 
   private ForkSchedule(
+      final Fork genesisFork,
       final NavigableMap<UInt64, SpecMilestone> epochToMilestone,
       final NavigableMap<UInt64, SpecMilestone> slotToMilestone,
       final NavigableMap<UInt64, SpecMilestone> genesisOffsetToMilestone,
       final Map<Bytes4, SpecMilestone> forkVersionToMilestone,
       final Map<SpecMilestone, Fork> milestoneToFork,
       final NavigableMap<SpecMilestone, Fork> fullMilestoneToForkMap) {
+    this.genesisFork = genesisFork;
     this.epochToMilestone = epochToMilestone;
     this.slotToMilestone = slotToMilestone;
     this.genesisOffsetToMilestone = genesisOffsetToMilestone;
@@ -92,6 +95,10 @@ public class ForkSchedule {
     return milestoneToFork.get(getSpecMilestoneAtEpoch(epoch));
   }
 
+  public Fork getGenesisFork() {
+    return genesisFork;
+  }
+
   public Optional<Fork> getNextFork(final UInt64 epoch) {
     return Optional.ofNullable(epochToMilestone.ceilingEntry(epoch.plus(1)))
         .map(Map.Entry::getValue)
@@ -111,7 +118,7 @@ public class ForkSchedule {
    *     both will be listed in this result.
    */
   public List<Fork> getFullForkList() {
-    return fullMilestoneToForkMap.entrySet().stream().map(Map.Entry::getValue).toList();
+    return fullMilestoneToForkMap.values().stream().toList();
   }
 
   public void reportActivatingMilestones(final UInt64 epoch) {
@@ -172,12 +179,14 @@ public class ForkSchedule {
     private Optional<Bytes4> prevForkVersion = Optional.empty();
     private Optional<SpecMilestone> prevMilestone = Optional.empty();
     private UInt64 prevMilestoneForkEpoch = UInt64.ZERO;
+    private Fork genesisFork;
 
     private Builder() {}
 
     public ForkSchedule build() {
       checkState(!epochToMilestone.isEmpty(), "Must configure at least one milestone");
       return new ForkSchedule(
+          genesisFork,
           epochToMilestone,
           slotToMilestone,
           genesisOffsetToMilestone,
@@ -207,14 +216,17 @@ public class ForkSchedule {
       final Bytes4 forkVersion = maybeForkVersion.get();
       final UInt64 forkSlot = spec.miscHelpers().computeStartSlotAtEpoch(forkEpoch);
       final UInt64 genesisOffset = spec.getForkChoiceUtil().getSlotStartTime(forkSlot, UInt64.ZERO);
-      final Bytes4 prevForkVersionOrSame =
-          prevForkVersion.isPresent() && !forkEpoch.isZero() ? prevForkVersion.get() : forkVersion;
-      final Fork fork = new Fork(prevForkVersionOrSame, forkVersion, forkEpoch);
+      final Fork fork = new Fork(prevForkVersion.orElse(forkVersion), forkVersion, forkEpoch);
 
       // Validate against prev fork
       if (epochToMilestone.isEmpty() && !forkSlot.equals(UInt64.ZERO)) {
         throw new IllegalArgumentException("Must provide genesis milestone first.");
       }
+
+      if (forkSlot.equals(UInt64.ZERO)) {
+        genesisFork = fork;
+      }
+
       if (forkEpoch.isLessThan(prevMilestoneForkEpoch)) {
         final String msg =
             String.format(
@@ -232,6 +244,10 @@ public class ForkSchedule {
         milestoneToFork.remove(prevMilestone.orElseThrow());
         forkVersionToMilestone.remove(prevForkVersion.orElseThrow());
         // Remaining mappings are naturally overwritten
+
+        if (forkSlot.equals(UInt64.ZERO)) {
+          genesisFork = new Fork(forkVersion, forkVersion, forkEpoch);
+        }
       }
 
       // Track milestone
