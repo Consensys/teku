@@ -57,7 +57,7 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators.StatusParameter;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;

@@ -1,0 +1,19 @@
+{
+  "title" : "PostStateValidatorsRequestBody",
+  "type" : "object",
+  "required" : [ "ids", "statuses" ],
+  "properties" : {
+    "ids" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string"
+      }
+    },
+    "statuses" : {
+      "type" : "array",
+      "items" : {
+        "type" : "string"
+      }
+    }
+  }
+}

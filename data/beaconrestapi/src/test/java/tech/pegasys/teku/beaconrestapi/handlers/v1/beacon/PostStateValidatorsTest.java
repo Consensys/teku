@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -21,11 +21,15 @@ import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.active_ex
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.active_ongoing;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.active_slashed;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.exited_slashed;
-import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.exited_unslashed;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.pending_initialized;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.pending_queued;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.withdrawal_done;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.withdrawal_possible;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter.active;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter.exited;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter.exited_unslashed;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter.pending;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter.withdrawal;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
@@ -56,24 +60,26 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
-public class GetStateValidatorsTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
+class PostStateValidatorsTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
 
   @BeforeEach
   void setup() {
     initialise(SpecMilestone.ALTAIR);
     genesis();
 
-    setHandler(new GetStateValidators(chainDataProvider));
+    setHandler(new PostStateValidators(chainDataProvider));
   }
 
   @Test
   public void shouldGetValidatorFromState() throws Exception {
+    final PostStateValidators.RequestBody requestBody =
+        new PostStateValidators.RequestBody(List.of("1", "2", "3", "4"), List.of());
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
             .metadata(handler.getMetadata())
             .pathParameter("state_id", "head")
-            .listQueryParameter("id", List.of("1", "2", "3,4"))
             .build();
+    request.setRequestBody(requestBody);
 
     final ObjectAndMetaData<List<StateValidatorData>> expectedResponse =
         chainDataProvider
@@ -89,14 +95,19 @@ public class GetStateValidatorsTest extends AbstractMigratedBeaconHandlerWithCha
 
   @Test
   public void shouldGetValidatorFromStateWithList() throws Exception {
+    final PostStateValidators.RequestBody requestBody =
+        new PostStateValidators.RequestBody(
+            List.of("1", "2"),
+            List.of(
+                StatusParameter.active_ongoing,
+                StatusParameter.active_exiting,
+                StatusParameter.withdrawal_done));
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
             .metadata(handler.getMetadata())
             .pathParameter("state_id", "head")
-            .listQueryParameter("id", List.of("1", "2"))
-            .listQueryParameter(
-                "status", List.of("active_ongoing", "active_exiting, withdrawal_done"))
             .build();
+    request.setRequestBody(requestBody);
 
     final ObjectAndMetaData<List<StateValidatorData>> expectedResponse =
         chainDataProvider
@@ -114,14 +125,17 @@ public class GetStateValidatorsTest extends AbstractMigratedBeaconHandlerWithCha
   @ParameterizedTest(name = "{0}")
   @MethodSource("provideStatusParameters")
   public void shouldGetValidatorsByStatusParameter(
-      final List<String> statusParameters, final Set<ValidatorStatus> expectedValidatorStatuses)
+      final List<StatusParameter> statusParameters,
+      final Set<ValidatorStatus> expectedValidatorStatuses)
       throws Exception {
+    final PostStateValidators.RequestBody requestBody =
+        new PostStateValidators.RequestBody(List.of(), statusParameters);
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
             .metadata(handler.getMetadata())
             .pathParameter("state_id", "head")
-            .listQueryParameter("status", statusParameters)
             .build();
+    request.setRequestBody(requestBody);
 
     final ObjectAndMetaData<List<StateValidatorData>> expectedResponse =
         chainDataProvider
@@ -137,12 +151,14 @@ public class GetStateValidatorsTest extends AbstractMigratedBeaconHandlerWithCha
 
   @Test
   public void shouldGetBadRequestForInvalidState() {
+    final PostStateValidators.RequestBody requestBody =
+        new PostStateValidators.RequestBody(List.of("1"), List.of());
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
             .metadata(handler.getMetadata())
             .pathParameter("state_id", "invalid")
-            .listQueryParameter("id", List.of("1"))
             .build();
+    request.setRequestBody(requestBody);
 
     assertThatThrownBy(() -> handler.handleRequest(request))
         .isInstanceOf(BadRequestException.class)
@@ -201,9 +217,9 @@ public class GetStateValidatorsTest extends AbstractMigratedBeaconHandlerWithCha
 
   private static Stream<Arguments> provideStatusParameters() {
     return Stream.of(
-        Arguments.of(List.of("active"), Set.of(active_ongoing, active_exiting, active_slashed)),
-        Arguments.of(List.of("pending"), Set.of(pending_initialized, pending_queued)),
-        Arguments.of(List.of("exited"), Set.of(exited_slashed, exited_unslashed)),
-        Arguments.of(List.of("withdrawal"), Set.of(withdrawal_done, withdrawal_possible)));
+        Arguments.of(List.of(active), Set.of(active_ongoing, active_exiting, active_slashed)),
+        Arguments.of(List.of(pending), Set.of(pending_initialized, pending_queued)),
+        Arguments.of(List.of(exited), Set.of(exited_slashed, exited_unslashed)),
+        Arguments.of(List.of(withdrawal), Set.of(withdrawal_done, withdrawal_possible)));
   }
 }
