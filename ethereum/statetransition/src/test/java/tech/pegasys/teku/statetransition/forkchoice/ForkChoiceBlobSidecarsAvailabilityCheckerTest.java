@@ -553,7 +553,10 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
         .when(miscHelpers)
         .validateBlobSidecarsBatchAgainstBlock(
             eq(blobSidecars),
-            argThat(block -> block.equals(this.block.getBeaconBlock().orElseThrow())));
+            argThat(block -> block.equals(this.block.getBeaconBlock().orElseThrow())),
+            assertArg(
+                kzgCommitmentsArg ->
+                    assertThat(kzgCommitmentsArg).isEqualTo(kzgCommitmentsComplete)));
   }
 
   private void throwWhenVerifyingBlobSidecarCompleteness(
@@ -572,7 +575,10 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     verify(miscHelpers, times(1))
         .validateBlobSidecarsBatchAgainstBlock(
             eq(blobSidecars),
-            argThat(block -> block.equals(this.block.getBeaconBlock().orElseThrow())));
+            argThat(block -> block.equals(this.block.getBeaconBlock().orElseThrow())),
+            assertArg(
+                kzgCommitmentsArg ->
+                    assertThat(kzgCommitmentsArg).isEqualTo(kzgCommitmentsComplete)));
 
     verify(miscHelpers, times(1)).verifyBlobKzgProofBatch(kzg, blobSidecars);
 

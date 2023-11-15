@@ -125,15 +125,19 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
   }
 
   /**
-   * Validates blob sidecars against block by matching block root, which is enough after gossip
-   * BlobSidecar validation
+   * Validates blob sidecars against block. We need to check block root and kzg commitment, it's
+   * enough to guarantee BlobSidecars belong to block
    *
    * @param blobSidecars blob sidecars to validate
    * @param block block to validate blob sidecar against
+   * @param kzgCommitmentsFromBlock kzg commitments from block. They could be extracted from block
+   *     but since we already have them we can avoid extracting them again.
    */
   @Override
   public void validateBlobSidecarsBatchAgainstBlock(
-      final List<BlobSidecar> blobSidecars, final BeaconBlock block) {
+      final List<BlobSidecar> blobSidecars,
+      final BeaconBlock block,
+      final List<KZGCommitment> kzgCommitmentsFromBlock) {
 
     final String slotAndBlockRoot = block.getSlotAndBlockRoot().toLogString();
 
@@ -144,6 +148,23 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
           checkArgument(
               blobSidecar.getBlockRoot().equals(block.getRoot()),
               "Block and blob sidecar root mismatch for %s, blob index %s",
+              slotAndBlockRoot,
+              blobIndex);
+
+          final KZGCommitment kzgCommitmentFromBlock;
+
+          try {
+            kzgCommitmentFromBlock = kzgCommitmentsFromBlock.get(blobIndex.intValue());
+          } catch (IndexOutOfBoundsException e) {
+            throw new IllegalArgumentException(
+                String.format(
+                    "Blob sidecar index out of bound with respect to block %s, blob index %s",
+                    slotAndBlockRoot, blobIndex));
+          }
+
+          checkArgument(
+              blobSidecar.getKZGCommitment().equals(kzgCommitmentFromBlock),
+              "Block and blob sidecar kzg commitments mismatch for %s, blob index %s",
               slotAndBlockRoot,
               blobIndex);
         });

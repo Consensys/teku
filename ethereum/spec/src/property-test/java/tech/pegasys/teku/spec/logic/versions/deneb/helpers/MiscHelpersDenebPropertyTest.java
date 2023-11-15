@@ -81,9 +81,11 @@ public class MiscHelpersDenebPropertyTest {
   @Property(tries = 100)
   void fuzzValidateBlobSidecarsBatchAgainstBlock(
       @ForAll final List<@From(supplier = BlobSidecarSupplier.class) BlobSidecar> blobSidecars,
-      @ForAll(supplier = BeaconBlockSupplier.class) final BeaconBlock block) {
+      @ForAll(supplier = BeaconBlockSupplier.class) final BeaconBlock block,
+      @ForAll
+          final List<@From(supplier = KZGCommitmentSupplier.class) KZGCommitment> kzgCommitments) {
     try {
-      miscHelpers.validateBlobSidecarsBatchAgainstBlock(blobSidecars, block);
+      miscHelpers.validateBlobSidecarsBatchAgainstBlock(blobSidecars, block, kzgCommitments);
     } catch (Exception e) {
       assertThat(e).isInstanceOf(IllegalArgumentException.class);
     }

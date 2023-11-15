@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSION_KZG;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -75,11 +76,16 @@ class MiscHelpersDenebTest {
     // make sure we are testing something
     assertThat(blobSidecars).isNotEmpty();
 
-    miscHelpersDeneb.validateBlobSidecarsBatchAgainstBlock(blobSidecars, block.getMessage());
+    miscHelpersDeneb.validateBlobSidecarsBatchAgainstBlock(
+        blobSidecars,
+        block.getMessage(),
+        BeaconBlockBodyDeneb.required(block.getMessage().getBody()).getBlobKzgCommitments().stream()
+            .map(SszKZGCommitment::getKZGCommitment)
+            .toList());
   }
 
   @Test
-  void validateBlobSidecarsAgainstBlock_shouldThrowOnBlobSidecarNotMatching() {
+  void validateBlobSidecarsAgainstBlock_shouldThrowOnNotMatchingBlockRoot() {
 
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
 
@@ -111,9 +117,47 @@ class MiscHelpersDenebTest {
     assertThatThrownBy(
             () ->
                 miscHelpersDeneb.validateBlobSidecarsBatchAgainstBlock(
-                    blobSidecars, block.getMessage()))
+                    blobSidecars, block.getMessage(), kzgCommitments))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageStartingWith("Block and blob sidecar root mismatch for")
+        .hasMessageEndingWith("blob index %s", indexToBeAltered);
+  }
+
+  @Test
+  void validateBlobSidecarsAgainstBlock_shouldThrowOnNotMatchingKzgCommitments() {
+
+    final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock();
+
+    final List<KZGCommitment> kzgCommitments =
+        BeaconBlockBodyDeneb.required(block.getMessage().getBody()).getBlobKzgCommitments().stream()
+            .map(SszKZGCommitment::getKZGCommitment)
+            .toList();
+
+    // make sure we are testing something
+    assertThat(kzgCommitments).isNotEmpty();
+
+    final int indexToBeAltered =
+        Math.toIntExact(dataStructureUtil.randomPositiveLong(kzgCommitments.size()));
+    final List<KZGCommitment> alteredKzgCommitments = new ArrayList<>(kzgCommitments);
+    alteredKzgCommitments.remove(indexToBeAltered);
+    alteredKzgCommitments.add(indexToBeAltered, dataStructureUtil.randomKZGCommitment());
+
+    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
+
+    assertThatThrownBy(
+            () ->
+                miscHelpersDeneb.validateBlobSidecarsBatchAgainstBlock(
+                    blobSidecars, block.getMessage(), List.of()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageStartingWith("Blob sidecar index out of bound with respect to block")
+        .hasMessageEndingWith("blob index %s", 0);
+
+    assertThatThrownBy(
+            () ->
+                miscHelpersDeneb.validateBlobSidecarsBatchAgainstBlock(
+                    blobSidecars, block.getMessage(), alteredKzgCommitments))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageStartingWith("Block and blob sidecar kzg commitments mismatch for")
         .hasMessageEndingWith("blob index %s", indexToBeAltered);
   }
 

@@ -359,7 +359,9 @@ public class MiscHelpers {
   }
 
   public void validateBlobSidecarsBatchAgainstBlock(
-      final List<BlobSidecar> blobSidecars, final BeaconBlock block) {
+      final List<BlobSidecar> blobSidecars,
+      final BeaconBlock block,
+      final List<KZGCommitment> kzgCommitmentsFromBlock) {
     throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
   }
 

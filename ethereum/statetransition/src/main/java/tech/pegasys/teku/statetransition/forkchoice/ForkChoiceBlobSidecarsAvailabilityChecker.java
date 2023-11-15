@@ -149,7 +149,8 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
     final MiscHelpers miscHelpers = spec.atSlot(slotAndBlockRoot.getSlot()).miscHelpers();
 
     try {
-      miscHelpers.validateBlobSidecarsBatchAgainstBlock(blobSidecars, block);
+      miscHelpers.validateBlobSidecarsBatchAgainstBlock(
+          blobSidecars, block, kzgCommitmentsFromBlockSupplier.get());
 
       if (!miscHelpers.verifyBlobKzgProofBatch(kzg, blobSidecars)) {
         return BlobSidecarsAndValidationResult.invalidResult(blobSidecars);
