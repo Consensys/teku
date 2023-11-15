@@ -44,7 +44,7 @@ import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 public class GetStateValidators extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/validators";
 
-  private static final SerializableTypeDefinition<ObjectAndMetaData<List<StateValidatorData>>>
+  static final SerializableTypeDefinition<ObjectAndMetaData<List<StateValidatorData>>>
       RESPONSE_TYPE =
           SerializableTypeDefinition.<ObjectAndMetaData<List<StateValidatorData>>>object()
               .name("GetStateValidatorsResponse")
