@@ -88,10 +88,8 @@ public class BlobSidecarsByRangeListenerValidatingProxy extends AbstractBlobSide
         lastBlobSidecarSummary -> {
           // we have a previous blobSidecar, let's check current against it
 
-          final UInt64 lastBlobSidecarNextSlot = lastBlobSidecarSummary.slot.increment();
-
           if (blobSidecarSummary.inTheSameBlock(lastBlobSidecarSummary)) {
-            if (!blobSidecarSummary.index.equals(lastBlobSidecarNextSlot)) {
+            if (!blobSidecarSummary.index.equals(lastBlobSidecarSummary.index.increment())) {
               throw new BlobSidecarsResponseInvalidResponseException(
                   peer, BLOB_SIDECAR_UNEXPECTED_INDEX);
             }
@@ -103,7 +101,7 @@ public class BlobSidecarsByRangeListenerValidatingProxy extends AbstractBlobSide
                   peer, BLOB_SIDECAR_UNEXPECTED_INDEX);
             }
 
-            if (blobSidecarSummary.slot.isGreaterThan(lastBlobSidecarNextSlot)) {
+            if (blobSidecarSummary.slot.isGreaterThan(lastBlobSidecarSummary.slot.increment())) {
               // a slot has been skipped, we can't check the parent
               return;
             }
