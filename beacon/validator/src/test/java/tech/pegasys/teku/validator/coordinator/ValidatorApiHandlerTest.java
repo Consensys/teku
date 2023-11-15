@@ -76,7 +76,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -832,8 +831,6 @@ class ValidatorApiHandlerTest {
     final SignedBlockContents blockContents =
         dataStructureUtil.randomSignedBlockContents(UInt64.valueOf(5));
     final SignedBeaconBlock block = blockContents.getSignedBlock();
-    final List<SignedBlobSidecarOld> blobSidecars =
-        blockContents.getSignedBlobSidecars().orElseThrow();
 
     when(blockImportChannel.importBlock(block, NOT_REQUIRED))
         .thenReturn(prepareBlockImportResult(BlockImportResult.successful(block)));
@@ -842,9 +839,7 @@ class ValidatorApiHandlerTest {
 
     // TODO: fix assertion for blob sidecars
     verify(blobSidecarGossipChannel).publishBlobSidecars(List.of());
-    verify(blobSidecarPool)
-        .onCompletedBlockAndBlobSidecarsOld(
-            block, blobSidecars.stream().map(SignedBlobSidecarOld::getBlobSidecar).toList());
+    verify(blobSidecarPool).onCompletedBlockAndBlobSidecars(block, List.of());
     verify(blockGossipChannel).publishBlock(block);
     verify(blockImportChannel).importBlock(block, NOT_REQUIRED);
     assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
@@ -856,8 +851,6 @@ class ValidatorApiHandlerTest {
     final SignedBlockContents blockContents =
         dataStructureUtil.randomSignedBlockContents(UInt64.valueOf(5));
     final SignedBeaconBlock block = blockContents.getSignedBlock();
-    final List<SignedBlobSidecarOld> blobSidecars =
-        blockContents.getSignedBlobSidecars().orElseThrow();
 
     when(blockImportChannel.importBlock(block, NOT_REQUIRED))
         .thenReturn(prepareBlockImportResult(BlockImportResult.FAILED_INVALID_ANCESTRY));
@@ -866,9 +859,7 @@ class ValidatorApiHandlerTest {
 
     // TODO: fix assertion for blob sidecars
     verify(blobSidecarGossipChannel).publishBlobSidecars(List.of());
-    verify(blobSidecarPool)
-        .onCompletedBlockAndBlobSidecarsOld(
-            block, blobSidecars.stream().map(SignedBlobSidecarOld::getBlobSidecar).toList());
+    verify(blobSidecarPool).onCompletedBlockAndBlobSidecars(block, List.of());
     verify(blockGossipChannel).publishBlock(block);
     verify(blockImportChannel).importBlock(block, NOT_REQUIRED);
     assertThat(result)
@@ -882,8 +873,6 @@ class ValidatorApiHandlerTest {
     final SignedBlockContents blockContents =
         dataStructureUtil.randomSignedBlockContents(UInt64.valueOf(5));
     final SignedBeaconBlock block = blockContents.getSignedBlock();
-    final List<SignedBlobSidecarOld> blobSidecars =
-        blockContents.getSignedBlobSidecars().orElseThrow();
 
     when(blockImportChannel.importBlock(block, NOT_REQUIRED))
         .thenReturn(prepareBlockImportResult(BlockImportResult.knownBlock(block, false)));
@@ -892,9 +881,7 @@ class ValidatorApiHandlerTest {
 
     // TODO: fix assertion for blob sidecars
     verify(blobSidecarGossipChannel).publishBlobSidecars(List.of());
-    verify(blobSidecarPool)
-        .onCompletedBlockAndBlobSidecarsOld(
-            block, blobSidecars.stream().map(SignedBlobSidecarOld::getBlobSidecar).toList());
+    verify(blobSidecarPool).onCompletedBlockAndBlobSidecars(block, List.of());
     verify(blockGossipChannel).publishBlock(block);
     verify(blockImportChannel).importBlock(block, NOT_REQUIRED);
     assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
@@ -911,8 +898,8 @@ class ValidatorApiHandlerTest {
         validatorApiHandler.sendSignedBlock(block, NOT_REQUIRED);
     safeJoin(result);
 
-    verifyNoInteractions(blobSidecarPool);
     // TODO: fix assertion for blob sidecars (there should be no interactions)
+    verify(blobSidecarPool).onCompletedBlockAndBlobSidecars(block, List.of());
     verify(blobSidecarGossipChannel).publishBlobSidecars(List.of());
     verify(blockGossipChannel).publishBlock(block);
     verify(blockImportChannel).importBlock(block, NOT_REQUIRED);

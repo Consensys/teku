@@ -50,6 +50,15 @@ public class Eth2NetworkOptions {
   private String initialState;
 
   @Option(
+      names = {"--ignore-weak-subjectivity-period-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Allows syncing outside of the weak subjectivity period.",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS)
+  private boolean ignoreWeakSubjectivityPeriodEnabled = false;
+
+  @Option(
       names = {"--genesis-state"},
       hidden = true,
       paramLabel = "<STRING>",
@@ -311,6 +320,7 @@ public class Eth2NetworkOptions {
       builder.eth1DepositContractDeployBlock(eth1DepositContractDeployBlockOverride);
     }
     builder
+        .ignoreWeakSubjectivityPeriodEnabled(ignoreWeakSubjectivityPeriodEnabled)
         .safeSlotsToImportOptimistically(safeSlotsToImportOptimistically)
         .asyncP2pMaxThreads(asyncP2pMaxThreads)
         .asyncP2pMaxQueue(asyncP2pMaxQueue)

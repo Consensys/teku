@@ -305,7 +305,7 @@ public class BlobSidecarPoolImplTest {
 
     final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
 
-    blobSidecarPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
+    blobSidecarPool.onCompletedBlockAndBlobSidecarsOld(block, blobSidecars);
 
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
 
@@ -335,7 +335,7 @@ public class BlobSidecarPoolImplTest {
 
     final List<BlobSidecar> blobSidecars = List.of();
 
-    blobSidecarPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
+    blobSidecarPool.onCompletedBlockAndBlobSidecarsOld(block, blobSidecars);
 
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
 

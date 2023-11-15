@@ -193,6 +193,7 @@ import tech.pegasys.teku.validator.coordinator.performance.NoOpPerformanceTracke
 import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.SyncCommitteePerformanceTracker;
 import tech.pegasys.teku.validator.coordinator.performance.ValidatorPerformanceMetrics;
+import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityCalculator;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 
 /**
@@ -1275,11 +1276,26 @@ public class BeaconChainController extends Service implements BeaconChainControl
         tryLoadingAnchorPointFromInitialState(networkConfiguration)
             .or(() -> attemptToLoadAnchorPoint(networkConfiguration.getGenesisState()));
 
+    /*
+     If flag to allow sync outside of weak subjectivity period has been set, we pass an instance of
+     WeakSubjectivityPeriodCalculator to the WeakSubjectivityInitializer. Otherwise, we pass an Optional.empty().
+    */
+    final Optional<WeakSubjectivityCalculator> maybeWsCalculator;
+    if (beaconConfig
+        .eth2NetworkConfig()
+        .getNetworkBoostrapConfig()
+        .isAllowSyncOutsideWeakSubjectivityPeriod()) {
+      maybeWsCalculator = Optional.empty();
+    } else {
+      maybeWsCalculator =
+          Optional.of(WeakSubjectivityCalculator.create(beaconConfig.weakSubjectivity()));
+    }
+
     // Validate
     initialAnchor.ifPresent(
         anchor -> {
           final UInt64 currentSlot = getCurrentSlot(anchor.getState().getGenesisTime());
-          wsInitializer.validateInitialAnchor(anchor, currentSlot, spec);
+          wsInitializer.validateInitialAnchor(anchor, currentSlot, spec, maybeWsCalculator);
         });
 
     if (initialAnchor.isPresent()) {

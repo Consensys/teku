@@ -2204,6 +2204,15 @@ public final class DataStructureUtil {
     return blobSidecars;
   }
 
+  public List<Blob> randomBlobs(int count, UInt64 slot) {
+    final List<Blob> blobs = new ArrayList<>();
+    final BlobSchema blobSchema = getDenebSchemaDefinitions(slot).getBlobSchema();
+    for (int i = 0; i < count; i++) {
+      blobs.add(new Blob(blobSchema, randomBytes(blobSchema.getLength())));
+    }
+    return blobs;
+  }
+
   public List<BlobSidecar> randomBlobSidecars(int count) {
     List<BlobSidecar> blobSidecars = new ArrayList<>();
     for (int i = 0; i < count; i++) {
@@ -2304,12 +2313,13 @@ public final class DataStructureUtil {
   }
 
   public SignedBlockContents randomSignedBlockContents(final UInt64 slot) {
-    final List<SignedBlobSidecarOld> signedBlobSidecars =
-        randomSignedBlobSidecars(randomNumberOfBlobsPerBlock());
     final SignedBeaconBlock signedBeaconBlock = randomSignedBeaconBlock(slot);
+    final int randomNumberOfBlobs = randomNumberOfBlobsPerBlock();
+    final List<Blob> blobs = randomBlobs(randomNumberOfBlobs, slot);
+    final List<KZGProof> kzgProofs = randomKZGProofs(randomNumberOfBlobs);
     return getDenebSchemaDefinitions(slot)
         .getSignedBlockContentsSchema()
-        .create(signedBeaconBlock, signedBlobSidecars);
+        .create(signedBeaconBlock, kzgProofs, blobs);
   }
 
   public BlockContents randomBlockContents() {
@@ -2317,12 +2327,13 @@ public final class DataStructureUtil {
   }
 
   public BlockContents randomBlockContents(final UInt64 slot) {
-    final List<BlobSidecarOld> blobSidecarList =
-        randomBlobSidecarsOld(randomNumberOfBlobsPerBlock());
     final BeaconBlock beaconBlock = randomBeaconBlock(slot);
+    final int randomNumberOfBlobs = randomNumberOfBlobsPerBlock();
+    final List<Blob> blobs = randomBlobs(randomNumberOfBlobs, slot);
+    final List<KZGProof> kzgProofs = randomKZGProofs(randomNumberOfBlobs);
     return getDenebSchemaDefinitions(slot)
         .getBlockContentsSchema()
-        .create(beaconBlock, blobSidecarList);
+        .create(beaconBlock, kzgProofs, blobs);
   }
 
   public RandomBlobSidecarOldBuilder createRandomBlobSidecarBuilderOld() {

@@ -39,12 +39,12 @@ public interface BlobSidecarPool extends SlotEventsChannel {
         public void onNewBlock(final SignedBeaconBlock block) {}
 
         @Override
-        public void onCompletedBlockAndBlobSidecars(
-            final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {}
-
-        @Override
         public void onCompletedBlockAndBlobSidecarsOld(
             final SignedBeaconBlock block, final List<BlobSidecarOld> blobSidecars) {}
+
+        @Override
+        public void onCompletedBlockAndBlobSidecars(
+            final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {}
 
         @Override
         public void removeAllForBlock(final Bytes32 blockRoot) {}
