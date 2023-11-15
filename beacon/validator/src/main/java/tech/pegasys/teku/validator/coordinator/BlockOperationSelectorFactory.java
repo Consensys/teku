@@ -31,8 +31,8 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchemaOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
@@ -302,10 +302,9 @@ public class BlockOperationSelectorFactory {
 
   public Consumer<SignedBeaconBlockUnblinder> createBlockUnblinderSelector() {
     return bodyUnblinder -> {
-      final SignedBlockContainer signedBlindedBlockContainer =
-          bodyUnblinder.getSignedBlindedBeaconBlock();
+      final SignedBeaconBlock signedBlindedBlock = bodyUnblinder.getSignedBlindedBeaconBlock();
 
-      final BeaconBlock block = signedBlindedBlockContainer.getSignedBlock().getMessage();
+      final BeaconBlock block = signedBlindedBlock.getMessage();
 
       if (block
           .getBody()
@@ -324,7 +323,7 @@ public class BlockOperationSelectorFactory {
         bodyUnblinder.setExecutionPayloadSupplier(
             () ->
                 executionLayerBlockProductionManager
-                    .getUnblindedPayload(signedBlindedBlockContainer)
+                    .getUnblindedPayload(signedBlindedBlock)
                     .thenApply(BuilderPayload::getExecutionPayload));
       }
     };

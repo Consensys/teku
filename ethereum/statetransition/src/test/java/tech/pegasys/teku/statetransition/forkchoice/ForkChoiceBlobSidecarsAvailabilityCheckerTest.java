@@ -491,7 +491,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
       final Optional<SignedBeaconBlock> providedBlock,
       final Duration timeout) {
     block = providedBlock.orElse(dataStructureUtil.randomSignedBeaconBlockWithCommitments(4));
-    blobSidecarsComplete = dataStructureUtil.randomBlobSidecarsForBlock(block);
+    blobSidecarsComplete = dataStructureUtil.randomBlobSidecarsForBlockOld(block);
     kzgCommitmentsComplete =
         block
             .getBeaconBlock()
@@ -602,7 +602,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
 
   private void prepareBlockAndBlobSidecarsOutsideAvailabilityWindow() {
     block = dataStructureUtil.randomSignedBeaconBlock();
-    blobSidecarsComplete = dataStructureUtil.randomBlobSidecarsForBlock(block);
+    blobSidecarsComplete = dataStructureUtil.randomBlobSidecarsForBlockOld(block);
 
     final ImmutableSortedMap.Builder<UInt64, BlobSidecar> mapBuilder =
         ImmutableSortedMap.naturalOrder();

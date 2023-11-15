@@ -20,12 +20,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -50,19 +53,21 @@ public class AbstractBlockPublisherTest {
           new BlockPublisherTest(
               blockFactory, blockImportChannel, performanceTracker, dutyMetrics));
 
-  final SignedBlockContainer signedBlockContents = dataStructureUtil.randomSignedBlockContents();
+  final SignedBlockContents signedBlockContents = dataStructureUtil.randomSignedBlockContents();
+  final SignedBeaconBlock signedBlock = signedBlockContents.getSignedBlock();
 
   @BeforeEach
   public void setUp() {
-    when(blockFactory.unblindSignedBlockIfBlinded(signedBlockContents))
-        .thenReturn(SafeFuture.completedFuture(signedBlockContents));
+    when(blockFactory.unblindSignedBlockIfBlinded(signedBlock))
+        .thenReturn(SafeFuture.completedFuture(signedBlock));
   }
 
   @Test
   public void
       sendSignedBlock_shouldPublishImmediatelyAndImportWhenBroadcastValidationIsNotRequired() {
 
-    when(blockPublisher.importBlock(signedBlockContents, BroadcastValidationLevel.NOT_REQUIRED))
+    when(blockPublisher.importBlockAndBlobSidecars(
+            signedBlock, List.of(), BroadcastValidationLevel.NOT_REQUIRED))
         .thenReturn(
             SafeFuture.completedFuture(
                 new BlockImportAndBroadcastValidationResults(
@@ -74,15 +79,16 @@ public class AbstractBlockPublisherTest {
                 signedBlockContents, BroadcastValidationLevel.NOT_REQUIRED))
         .isCompletedWithValue(SendSignedBlockResult.success(signedBlockContents.getRoot()));
 
-    verify(blockPublisher).publishBlock(signedBlockContents);
-    verify(blockPublisher).importBlock(signedBlockContents, BroadcastValidationLevel.NOT_REQUIRED);
+    verify(blockPublisher).publishBlockAndBlobSidecars(signedBlock, List.of());
+    verify(blockPublisher)
+        .importBlockAndBlobSidecars(signedBlock, List.of(), BroadcastValidationLevel.NOT_REQUIRED);
   }
 
   @Test
   public void sendSignedBlock_shouldWaitToPublishWhenBroadcastValidationIsSpecified() {
     final SafeFuture<BroadcastValidationResult> validationResult = new SafeFuture<>();
-    when(blockPublisher.importBlock(
-            signedBlockContents, BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION))
+    when(blockPublisher.importBlockAndBlobSidecars(
+            signedBlock, List.of(), BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION))
         .thenReturn(
             SafeFuture.completedFuture(
                 new BlockImportAndBroadcastValidationResults(
@@ -97,13 +103,14 @@ public class AbstractBlockPublisherTest {
     assertThatSafeFuture(sendSignedBlockResult).isNotCompleted();
 
     verify(blockPublisher)
-        .importBlock(signedBlockContents, BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION);
+        .importBlockAndBlobSidecars(
+            signedBlock, List.of(), BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION);
 
-    verify(blockPublisher, never()).publishBlock(signedBlockContents);
+    verify(blockPublisher, never()).publishBlockAndBlobSidecars(signedBlock, List.of());
 
     validationResult.complete(BroadcastValidationResult.SUCCESS);
 
-    verify(blockPublisher).publishBlock(signedBlockContents);
+    verify(blockPublisher).publishBlockAndBlobSidecars(signedBlock, List.of());
     assertThatSafeFuture(sendSignedBlockResult)
         .isCompletedWithValue(SendSignedBlockResult.success(signedBlockContents.getRoot()));
   }
@@ -111,8 +118,8 @@ public class AbstractBlockPublisherTest {
   @Test
   public void sendSignedBlock_shouldNotPublishWhenBroadcastValidationFails() {
     final SafeFuture<BroadcastValidationResult> validationResult = new SafeFuture<>();
-    when(blockPublisher.importBlock(
-            signedBlockContents, BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION))
+    when(blockPublisher.importBlockAndBlobSidecars(
+            signedBlock, List.of(), BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION))
         .thenReturn(
             SafeFuture.completedFuture(
                 new BlockImportAndBroadcastValidationResults(
@@ -127,13 +134,14 @@ public class AbstractBlockPublisherTest {
     assertThatSafeFuture(sendSignedBlockResult).isNotCompleted();
 
     verify(blockPublisher)
-        .importBlock(signedBlockContents, BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION);
+        .importBlockAndBlobSidecars(
+            signedBlock, List.of(), BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION);
 
-    verify(blockPublisher, never()).publishBlock(signedBlockContents);
+    verify(blockPublisher, never()).publishBlockAndBlobSidecars(signedBlock, List.of());
 
     validationResult.complete(BroadcastValidationResult.CONSENSUS_FAILURE);
 
-    verify(blockPublisher, never()).publishBlock(signedBlockContents);
+    verify(blockPublisher, never()).publishBlockAndBlobSidecars(signedBlock, List.of());
     assertThatSafeFuture(sendSignedBlockResult)
         .isCompletedWithValue(
             SendSignedBlockResult.rejected(
@@ -151,13 +159,15 @@ public class AbstractBlockPublisherTest {
     }
 
     @Override
-    SafeFuture<BlockImportAndBroadcastValidationResults> importBlock(
-        final SignedBlockContainer blockContainer,
+    SafeFuture<BlockImportAndBroadcastValidationResults> importBlockAndBlobSidecars(
+        final SignedBeaconBlock block,
+        final List<BlobSidecar> blobSidecars,
         final BroadcastValidationLevel broadcastValidationLevel) {
       return null;
     }
 
     @Override
-    void publishBlock(final SignedBlockContainer blockContainer) {}
+    void publishBlockAndBlobSidecars(
+        final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {}
   }
 }
