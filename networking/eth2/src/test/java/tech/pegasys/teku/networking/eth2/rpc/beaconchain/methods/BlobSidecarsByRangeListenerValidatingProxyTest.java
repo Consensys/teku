@@ -297,11 +297,11 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
     final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
     final Bytes32 blockRoot3 = dataStructureUtil.randomBytes32();
     final BlobSidecarOld blobSidecar1 =
-        dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
+        dataStructureUtil.randomBlobSidecarOld(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
     final BlobSidecarOld blobSidecar2 =
-        dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ONE);
+        dataStructureUtil.randomBlobSidecarOld(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ONE);
     final BlobSidecarOld blobSidecar3 =
-        dataStructureUtil.randomBlobSidecar(
+        dataStructureUtil.randomBlobSidecarOld(
             UInt64.valueOf(3), blockRoot3, Bytes32.ZERO, UInt64.ZERO);
 
     safeJoin(listenerWrapper.onResponse(blobSidecar1));
