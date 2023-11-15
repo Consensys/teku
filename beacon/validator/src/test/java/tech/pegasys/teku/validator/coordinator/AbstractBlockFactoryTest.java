@@ -407,19 +407,6 @@ public abstract class AbstractBlockFactoryTest {
         .thenAnswer(__ -> Optional.of(cachedExecutionPayloadResult));
   }
 
-  private void setupCachedBlobsBundle(final UInt64 slot) {
-    // only BlobsBundle is required
-    final ExecutionPayloadResult executionPayloadResult =
-        new ExecutionPayloadResult(
-            null,
-            Optional.empty(),
-            Optional.of(SafeFuture.completedFuture(blobsBundle)),
-            Optional.empty(),
-            Optional.empty());
-    when(executionLayer.getCachedPayloadResult(slot))
-        .thenReturn(Optional.of(executionPayloadResult));
-  }
-
   private List<SszKZGCommitment> getCommitmentsFromBlobsBundle() {
     return blobsBundle
         .map(
