@@ -71,6 +71,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
+import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
@@ -90,6 +91,10 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           .put("fork_choice/on_merge_block", new ForkChoiceTestExecutor())
           .put("fork_choice/withholding", new ForkChoiceTestExecutor())
           .put("sync/optimistic", new ForkChoiceTestExecutor())
+          // TODO: following tests are related to late block reorgs.
+          //  Must be re-enabled once implementation #6595 is done
+          .put("fork_choice/should_override_forkchoice_update", IGNORE_TESTS)
+          .put("fork_choice/get_proposer_head", new ForkChoiceTestExecutor("basic_is_parent_root"))
           .build();
 
   private final List<?> testsToSkip;
@@ -341,7 +346,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         block.getSlot(),
         block.getParentRoot());
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(block, Optional.empty(), Optional.empty(), executionLayer);
+        forkChoice.onBlock(block, Optional.empty(), BlockBroadcastValidator.NOOP, executionLayer);
     assertThat(result).isCompleted();
     final BlockImportResult importResult = safeJoin(result);
     assertThat(importResult)
@@ -455,6 +460,29 @@ public class ForkChoiceTestExecutor implements TestExecutor {
                   .describedAs("proposer_boost_root")
                   .contains(expectedBoostedRoot);
             }
+          }
+
+          case "get_proposer_head" -> {
+            final Bytes32 expectedProposerHead = getBytes32(checks, checkType);
+            final Optional<Bytes32> boostedRoot = recentChainData.getBestBlockRoot();
+            if (expectedProposerHead.isZero()) {
+              assertThat(boostedRoot).describedAs("get_proposer_head").isEmpty();
+            } else {
+              assertThat(boostedRoot)
+                  .describedAs("get_proposer_head")
+                  .contains(expectedProposerHead);
+            }
+          }
+
+          case "should_override_forkchoice_update" -> {
+            final Map<String, Boolean> shouldOverrideForkChoiceUpdateCheck = get(checks, checkType);
+            final boolean expectedResult = shouldOverrideForkChoiceUpdateCheck.get("result");
+            final boolean expectedValidatorIsConnected =
+                shouldOverrideForkChoiceUpdateCheck.get("validator_is_connected");
+            // only currently handle result == true
+            assertThat(expectedResult).isTrue();
+            // only currently handle validatorIsConnected == true
+            assertThat(expectedValidatorIsConnected).isTrue();
           }
 
           default -> throw new UnsupportedOperationException(

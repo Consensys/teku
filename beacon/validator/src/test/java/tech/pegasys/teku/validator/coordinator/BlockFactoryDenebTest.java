@@ -15,9 +15,7 @@ package tech.pegasys.teku.validator.coordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -26,16 +24,11 @@ import org.mockito.Mockito;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
-import tech.pegasys.teku.spec.datastructures.blocks.BlindedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlindedBlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -52,7 +45,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
   @Test
   void shouldCreateBlockContents() {
 
-    final BlobsBundle blobsBundle = prepareBlobsBundle(spec, 3);
+    prepareBlobsBundle(spec, 3);
 
     final BlockContainer blockContainer =
         assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), false);
@@ -60,30 +53,21 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     assertThat(blockContainer).isInstanceOf(BlockContents.class);
     assertThat(blockContainer.getBlock().getBody().getOptionalBlobKzgCommitments())
         .hasValueSatisfying(blobKzgCommitments -> assertThat(blobKzgCommitments).hasSize(3));
-    assertThat(blockContainer.getBlobSidecars())
-        .hasValueSatisfying(
-            blobSidecars ->
-                assertThat(blobSidecars)
-                    .hasSize(3)
-                    .map(BlobSidecarOld::getBlob)
-                    .hasSameElementsAs(blobsBundle.getBlobs()));
+    // TODO Add test for blobs and kzg proofs once added
   }
 
   @Test
-  @Disabled("enable when block production flow for blob sidecar inclusion proof is implemented")
-  void shouldCreateBlindedBlockContentsWhenBlindedBlockRequested() {
+  void shouldCreateBlindedBeaconBlockWhenBlindedBlockRequested() {
 
     final SszList<SszKZGCommitment> blobKzgCommitments = prepareBlobKzgCommitments(spec, 3);
 
     final BlockContainer blockContainer =
         assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), true);
 
-    assertThat(blockContainer).isInstanceOf(BlindedBlockContents.class);
-    final BlindedBlockContainer blindedBlockContainer = blockContainer.toBlinded().orElseThrow();
-    assertThat(blindedBlockContainer.getBlock().getBody().getOptionalBlobKzgCommitments())
+    assertThat(blockContainer).isInstanceOf(BeaconBlock.class);
+    final BeaconBlock blindedBeaconBlock = (BeaconBlock) blockContainer;
+    assertThat(blindedBeaconBlock.getBlock().getBody().getOptionalBlobKzgCommitments())
         .hasValue(blobKzgCommitments);
-    assertThat(blindedBlockContainer.getBlindedBlobSidecars())
-        .hasValueSatisfying(blindedBlobSidecars -> assertThat(blindedBlobSidecars).hasSize(3));
   }
 
   @Test
@@ -98,7 +82,9 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
   }
 
   @Test
-  void unblindSignedBlock_shouldUnblindBlockContents() {
+  @Disabled(
+      "enable when block production flow for blob sidecar inclusion proof spec is implemented")
+  void unblindSignedBlock_shouldUnblindBeaconBlock() {
 
     final BlobsBundle blobsBundle = prepareBlobsBundle(spec, 3);
     // let the unblinder verify the kzg commitments
@@ -106,43 +92,24 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
         Optional.of(
             schemaDefinitions.getBlobKzgCommitmentsSchema().createFromBlobsBundle(blobsBundle));
 
-    final List<SignedBlindedBlobSidecar> blindedBlobSidecars =
-        dataStructureUtil.randomSignedBlindedBlobSidecars(blobsBundle);
-
     final SignedBeaconBlock unblindedBeaconBlock = dataStructureUtil.randomSignedBeaconBlock();
     final SignedBeaconBlock blindedBlock = assertBlockBlinded(unblindedBeaconBlock, spec);
 
-    final SignedBlindedBlockContents blindedBlockContents =
-        schemaDefinitions
-            .getSignedBlindedBlockContentsSchema()
-            .create(blindedBlock, blindedBlobSidecars);
     // let the unblinder return a consistent execution payload
     executionPayload =
         unblindedBeaconBlock.getMessage().getBody().getOptionalExecutionPayload().orElseThrow();
 
-    final SignedBlockContainer unblindedBlockContents =
-        assertBlockUnblinded(blindedBlockContents, spec);
+    final SignedBlockContainer unblindedBlockContainer = assertBlockUnblinded(blindedBlock, spec);
 
     // make sure getCachedUnblindedPayload is second in order of method calling
     final InOrder inOrder = Mockito.inOrder(executionLayer);
-    inOrder.verify(executionLayer).getUnblindedPayload(blindedBlockContents);
-    inOrder.verify(executionLayer).getCachedUnblindedPayload(blindedBlockContents.getSlot());
+    inOrder.verify(executionLayer).getUnblindedPayload(unblindedBlockContainer);
+    inOrder.verify(executionLayer).getCachedUnblindedPayload(unblindedBlockContainer.getSlot());
 
-    assertThat(unblindedBlockContents).isInstanceOf(SignedBlockContents.class);
-    assertThat(unblindedBlockContents.isBlinded()).isFalse();
-    assertThat(unblindedBlockContents.getSignedBlock()).isEqualTo(unblindedBeaconBlock);
-    assertThat(unblindedBlockContents.getSignedBlobSidecars())
-        .hasValueSatisfying(
-            blobSidecars ->
-                assertThat(blobSidecars)
-                    .map(SignedBlobSidecarOld::getBlobSidecar)
-                    .map(
-                        blobSidecar ->
-                            schemaDefinitions.getBlindedBlobSidecarSchema().create(blobSidecar))
-                    .hasSameElementsAs(
-                        blindedBlobSidecars.stream()
-                            .map(SignedBlindedBlobSidecar::getBlindedBlobSidecar)
-                            .collect(Collectors.toList())));
+    assertThat(unblindedBlockContainer).isInstanceOf(SignedBlockContents.class);
+    assertThat(unblindedBlockContainer.isBlinded()).isFalse();
+    assertThat(unblindedBlockContainer.getSignedBlock()).isEqualTo(unblindedBeaconBlock);
+    // TODO: add assertions for blobs and proofs
   }
 
   @Override

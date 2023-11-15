@@ -125,7 +125,7 @@ public class BlobSidecarPoolImplTest {
   @Test
   public void onNewBlobSidecar_addTrackerWithBlobSidecarIgnoringDuplicates() {
     final BlobSidecarOld blobSidecar =
-        dataStructureUtil.createRandomBlobSidecarBuilder().slot(currentSlot).build();
+        dataStructureUtil.createRandomBlobSidecarBuilderOld().slot(currentSlot).build();
 
     blobSidecarPool.onNewBlobSidecar(blobSidecar);
 
@@ -144,7 +144,7 @@ public class BlobSidecarPoolImplTest {
   @Test
   public void onNewBlobSidecar_shouldIgnoreDuplicates() {
     final BlobSidecarOld blobSidecar =
-        dataStructureUtil.createRandomBlobSidecarBuilder().slot(currentSlot).build();
+        dataStructureUtil.createRandomBlobSidecarBuilderOld().slot(currentSlot).build();
 
     blobSidecarPool.onNewBlobSidecar(blobSidecar);
     blobSidecarPool.onNewBlobSidecar(blobSidecar);
@@ -184,7 +184,7 @@ public class BlobSidecarPoolImplTest {
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
     final BlobSidecarOld blobSidecar =
         dataStructureUtil
-            .createRandomBlobSidecarBuilder()
+            .createRandomBlobSidecarBuilderOld()
             .slot(currentSlot)
             .blockRoot(block.getRoot())
             .build();
@@ -230,7 +230,7 @@ public class BlobSidecarPoolImplTest {
 
     final BlobSidecarOld blobSidecar0 =
         dataStructureUtil
-            .createRandomBlobSidecarBuilder()
+            .createRandomBlobSidecarBuilderOld()
             .slot(currentSlot)
             .blockRoot(blockRoot)
             .index(UInt64.ZERO)
@@ -238,7 +238,7 @@ public class BlobSidecarPoolImplTest {
 
     final BlobSidecarOld blobSidecar1 =
         dataStructureUtil
-            .createRandomBlobSidecarBuilder()
+            .createRandomBlobSidecarBuilderOld()
             .slot(currentSlot)
             .blockRoot(blockRoot)
             .index(UInt64.ONE)
@@ -246,7 +246,7 @@ public class BlobSidecarPoolImplTest {
 
     final BlobSidecarOld blobSidecar1bis =
         dataStructureUtil
-            .createRandomBlobSidecarBuilder()
+            .createRandomBlobSidecarBuilderOld()
             .slot(currentSlot)
             .blockRoot(blockRoot)
             .index(UInt64.ONE)
@@ -301,7 +301,7 @@ public class BlobSidecarPoolImplTest {
 
     final List<BlobSidecarOld> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
 
-    blobSidecarPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
+    blobSidecarPool.onCompletedBlockAndBlobSidecarsOld(block, blobSidecars);
 
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
 
@@ -331,7 +331,7 @@ public class BlobSidecarPoolImplTest {
 
     final List<BlobSidecarOld> blobSidecars = List.of();
 
-    blobSidecarPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
+    blobSidecarPool.onCompletedBlockAndBlobSidecarsOld(block, blobSidecars);
 
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
 
@@ -393,7 +393,7 @@ public class BlobSidecarPoolImplTest {
   public void shouldApplyIgnoreForBlobSidecar() {
     final UInt64 slot = currentSlot.plus(futureTolerance).plus(UInt64.ONE);
     final BlobSidecarOld blobSidecar =
-        dataStructureUtil.createRandomBlobSidecarBuilder().slot(slot).build();
+        dataStructureUtil.createRandomBlobSidecarBuilderOld().slot(slot).build();
 
     blobSidecarPool.onNewBlobSidecar(blobSidecar);
 
@@ -501,7 +501,7 @@ public class BlobSidecarPoolImplTest {
         new SlotAndBlockRoot(currentSlot, dataStructureUtil.randomBytes32());
     final BlobSidecarOld blobSidecar =
         dataStructureUtil
-            .createRandomBlobSidecarBuilder()
+            .createRandomBlobSidecarBuilderOld()
             .blockRoot(slotAndBlockRoot.getBlockRoot())
             .index(UInt64.valueOf(2))
             .slot(currentSlot)
@@ -541,7 +541,7 @@ public class BlobSidecarPoolImplTest {
     final SlotAndBlockRoot slotAndBlockRoot = new SlotAndBlockRoot(currentSlot, block.getRoot());
     final BlobSidecarOld blobSidecar =
         dataStructureUtil
-            .createRandomBlobSidecarBuilder()
+            .createRandomBlobSidecarBuilderOld()
             .blockRoot(slotAndBlockRoot.getBlockRoot())
             .index(UInt64.valueOf(2))
             .slot(currentSlot)
@@ -579,7 +579,7 @@ public class BlobSidecarPoolImplTest {
     final SlotAndBlockRoot slotAndBlockRoot = new SlotAndBlockRoot(currentSlot, block.getRoot());
     final BlobSidecarOld blobSidecar =
         dataStructureUtil
-            .createRandomBlobSidecarBuilder()
+            .createRandomBlobSidecarBuilderOld()
             .blockRoot(slotAndBlockRoot.getBlockRoot())
             .index(UInt64.valueOf(2))
             .slot(currentSlot)
@@ -624,7 +624,7 @@ public class BlobSidecarPoolImplTest {
   public void shouldFetchContentWhenBlobSidecarIsNotForCurrentSlot() {
     final UInt64 slot = currentSlot.minus(UInt64.ONE);
     final BlobSidecarOld blobSidecar =
-        dataStructureUtil.createRandomBlobSidecarBuilder().slot(slot).build();
+        dataStructureUtil.createRandomBlobSidecarBuilderOld().slot(slot).build();
 
     blobSidecarPool.onNewBlobSidecar(blobSidecar);
 
@@ -671,7 +671,7 @@ public class BlobSidecarPoolImplTest {
         new SlotAndBlockRoot(currentSlot, dataStructureUtil.randomBytes32());
     final BlobSidecarOld blobSidecar =
         dataStructureUtil
-            .createRandomBlobSidecarBuilder()
+            .createRandomBlobSidecarBuilderOld()
             .blockRoot(slotAndBlockRoot.getBlockRoot())
             .slot(currentSlot)
             .build();
@@ -706,7 +706,7 @@ public class BlobSidecarPoolImplTest {
         new SlotAndBlockRoot(currentSlot, dataStructureUtil.randomBytes32());
     final BlobSidecarOld blobSidecar =
         dataStructureUtil
-            .createRandomBlobSidecarBuilder()
+            .createRandomBlobSidecarBuilderOld()
             .blockRoot(slotAndBlockRoot.getBlockRoot())
             .slot(currentSlot)
             .build();

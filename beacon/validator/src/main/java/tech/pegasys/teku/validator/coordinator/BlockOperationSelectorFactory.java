@@ -27,8 +27,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchemaOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -305,7 +303,7 @@ public class BlockOperationSelectorFactory {
   public Consumer<SignedBeaconBlockUnblinder> createBlockUnblinderSelector() {
     return bodyUnblinder -> {
       final SignedBlockContainer signedBlindedBlockContainer =
-          bodyUnblinder.getSignedBlindedBlockContainer();
+          bodyUnblinder.getSignedBlindedBeaconBlock();
 
       final BeaconBlock block = signedBlindedBlockContainer.getSignedBlock().getMessage();
 
@@ -332,31 +330,7 @@ public class BlockOperationSelectorFactory {
     };
   }
 
-  @Deprecated
-  public Consumer<SignedBlobSidecarsUnblinder> createBlobSidecarsUnblinderSelector(
-      final UInt64 slot) {
-    return blobSidecarsUnblinder ->
-        blobSidecarsUnblinder.setBlobsBundleSupplier(
-            () -> {
-              final BuilderPayload cachedBuilderPayload =
-                  executionLayerBlockProductionManager
-                      .getCachedUnblindedPayload(slot)
-                      .orElseThrow(
-                          () ->
-                              new IllegalStateException(
-                                  "BuilderPayload hasn't been cached for slot " + slot));
-              final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
-                  cachedBuilderPayload
-                      .getOptionalBlobsBundle()
-                      .orElseThrow(
-                          () ->
-                              new IllegalStateException(
-                                  "BlobsBundle is not available in BuilderPayload: "
-                                      + cachedBuilderPayload));
-              return SafeFuture.completedFuture(blobsBundle);
-            });
-  }
-
+  // TODO: create blob sidecars with inclusion proofs
   public Function<BeaconBlock, SafeFuture<List<BlobSidecarOld>>> createBlobSidecarsSelector() {
     return block -> {
       final BlobSidecarSchemaOld blobSidecarSchema =
@@ -379,12 +353,6 @@ public class BlockOperationSelectorFactory {
                                   blobsBundle.getProofs().get(index)))
                       .toList());
     };
-  }
-
-  @Deprecated
-  public Function<BeaconBlock, SafeFuture<List<BlindedBlobSidecar>>>
-      createBlindedBlobSidecarsSelector() {
-    return block -> SafeFuture.completedFuture(List.of());
   }
 
   private SafeFuture<BlobsBundle> getBlobsBundle(

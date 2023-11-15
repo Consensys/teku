@@ -66,13 +66,11 @@ public class DataUnavailableBlockPoolTest {
     when(blockManager.importBlock(block1, NOT_REQUIRED))
         .thenReturn(
             SafeFuture.completedFuture(
-                new BlockImportAndBroadcastValidationResults(
-                    block1ImportResult, Optional.empty())));
+                new BlockImportAndBroadcastValidationResults(block1ImportResult)));
     when(blockManager.importBlock(block2, NOT_REQUIRED))
         .thenReturn(
             SafeFuture.completedFuture(
-                new BlockImportAndBroadcastValidationResults(
-                    block2ImportResult, Optional.empty())));
+                new BlockImportAndBroadcastValidationResults(block2ImportResult)));
   }
 
   @Test

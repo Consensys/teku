@@ -31,8 +31,8 @@ import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarSchemaOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -43,7 +43,7 @@ public class BlobSidecarGossipManager implements GossipManager {
   private final Spec spec;
   private final GossipNetwork gossipNetwork;
   private final GossipEncoding gossipEncoding;
-  private final Int2ObjectMap<Eth2TopicHandler<SignedBlobSidecarOld>> subnetIdToTopicHandler;
+  private final Int2ObjectMap<Eth2TopicHandler<BlobSidecar>> subnetIdToTopicHandler;
 
   private final Int2ObjectMap<TopicChannel> subnetIdToChannel = new Int2ObjectOpenHashMap<>();
 
@@ -54,18 +54,18 @@ public class BlobSidecarGossipManager implements GossipManager {
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final OperationProcessor<SignedBlobSidecarOld> processor) {
+      final OperationProcessor<BlobSidecar> processor) {
     final SpecVersion forkSpecVersion = spec.atEpoch(forkInfo.getFork().getEpoch());
-    final SignedBlobSidecarSchemaOld gossipType =
+    final BlobSidecarSchema gossipType =
         SchemaDefinitionsDeneb.required(forkSpecVersion.getSchemaDefinitions())
-            .getSignedBlobSidecarOldSchema();
-    final Int2ObjectMap<Eth2TopicHandler<SignedBlobSidecarOld>> subnetIdToTopicHandler =
+            .getBlobSidecarSchema();
+    final Int2ObjectMap<Eth2TopicHandler<BlobSidecar>> subnetIdToTopicHandler =
         new Int2ObjectOpenHashMap<>();
     final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(forkSpecVersion.getConfig());
     IntStream.range(0, specConfigDeneb.getBlobSidecarSubnetCount())
         .forEach(
             subnetId -> {
-              final Eth2TopicHandler<SignedBlobSidecarOld> topicHandler =
+              final Eth2TopicHandler<BlobSidecar> topicHandler =
                   createBlobSidecarTopicHandler(
                       subnetId,
                       recentChainData,
@@ -85,21 +85,21 @@ public class BlobSidecarGossipManager implements GossipManager {
       final Spec spec,
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
-      final Int2ObjectMap<Eth2TopicHandler<SignedBlobSidecarOld>> subnetIdToTopicHandler) {
+      final Int2ObjectMap<Eth2TopicHandler<BlobSidecar>> subnetIdToTopicHandler) {
     this.spec = spec;
     this.gossipNetwork = gossipNetwork;
     this.gossipEncoding = gossipEncoding;
     this.subnetIdToTopicHandler = subnetIdToTopicHandler;
   }
 
-  public void publishBlobSidecar(final SignedBlobSidecarOld message) {
+  public void publishBlobSidecar(final BlobSidecar message) {
     final int subnetId = spec.computeSubnetForBlobSidecar(message).intValue();
     Optional.ofNullable(subnetIdToChannel.get(subnetId))
         .ifPresent(channel -> channel.gossip(gossipEncoding.encode(message)));
   }
 
   @VisibleForTesting
-  Eth2TopicHandler<SignedBlobSidecarOld> getTopicHandler(final int subnetId) {
+  Eth2TopicHandler<BlobSidecar> getTopicHandler(final int subnetId) {
     return subnetIdToTopicHandler.get(subnetId);
   }
 
@@ -109,7 +109,7 @@ public class BlobSidecarGossipManager implements GossipManager {
         .int2ObjectEntrySet()
         .forEach(
             entry -> {
-              final Eth2TopicHandler<SignedBlobSidecarOld> topicHandler = entry.getValue();
+              final Eth2TopicHandler<BlobSidecar> topicHandler = entry.getValue();
               final TopicChannel channel =
                   gossipNetwork.subscribe(topicHandler.getTopic(), topicHandler);
               subnetIdToChannel.put(entry.getIntKey(), channel);
@@ -127,15 +127,15 @@ public class BlobSidecarGossipManager implements GossipManager {
     return true;
   }
 
-  private static Eth2TopicHandler<SignedBlobSidecarOld> createBlobSidecarTopicHandler(
+  private static Eth2TopicHandler<BlobSidecar> createBlobSidecarTopicHandler(
       final int subnetId,
       final RecentChainData recentChainData,
       final Spec spec,
       final AsyncRunner asyncRunner,
-      final OperationProcessor<SignedBlobSidecarOld> processor,
+      final OperationProcessor<BlobSidecar> processor,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final SignedBlobSidecarSchemaOld gossipType) {
+      final BlobSidecarSchema gossipType) {
     return new Eth2TopicHandler<>(
         recentChainData,
         asyncRunner,
@@ -146,30 +146,18 @@ public class BlobSidecarGossipManager implements GossipManager {
         new OperationMilestoneValidator<>(
             spec,
             forkInfo.getFork(),
-            blobSidecar -> spec.computeEpochAtSlot(blobSidecar.getBlobSidecar().getSlot())),
+            blobSidecar -> spec.computeEpochAtSlot(blobSidecar.getSlot())),
         gossipType,
         spec.getNetworkingConfig());
   }
 
-  private static class TopicSubnetIdAwareOperationProcessor
-      implements OperationProcessor<SignedBlobSidecarOld> {
-
-    private final Spec spec;
-    private final int subnetId;
-    private final OperationProcessor<SignedBlobSidecarOld> delegate;
-
-    private TopicSubnetIdAwareOperationProcessor(
-        final Spec spec,
-        final int subnetId,
-        final OperationProcessor<SignedBlobSidecarOld> delegate) {
-      this.spec = spec;
-      this.subnetId = subnetId;
-      this.delegate = delegate;
-    }
+  private record TopicSubnetIdAwareOperationProcessor(
+      Spec spec, int subnetId, OperationProcessor<BlobSidecar> delegate)
+      implements OperationProcessor<BlobSidecar> {
 
     @Override
     public SafeFuture<InternalValidationResult> process(
-        final SignedBlobSidecarOld blobSidecar, final Optional<UInt64> arrivalTimestamp) {
+        final BlobSidecar blobSidecar, final Optional<UInt64> arrivalTimestamp) {
       final int blobSidecarSubnet = spec.computeSubnetForBlobSidecar(blobSidecar).intValue();
       if (blobSidecarSubnet != subnetId) {
         return SafeFuture.completedFuture(

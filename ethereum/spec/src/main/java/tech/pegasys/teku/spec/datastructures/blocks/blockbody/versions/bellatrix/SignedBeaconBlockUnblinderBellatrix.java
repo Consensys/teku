@@ -19,7 +19,6 @@ import static com.google.common.base.Preconditions.checkState;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -29,8 +28,8 @@ public class SignedBeaconBlockUnblinderBellatrix extends AbstractSignedBeaconBlo
 
   public SignedBeaconBlockUnblinderBellatrix(
       final SchemaDefinitionsBellatrix schemaDefinitions,
-      final SignedBlindedBlockContainer signedBlindedBlockContainer) {
-    super(schemaDefinitions, signedBlindedBlockContainer);
+      final SignedBeaconBlock signedBlindedBeaconBlock) {
+    super(schemaDefinitions, signedBlindedBeaconBlock);
   }
 
   @Override
@@ -41,8 +40,6 @@ public class SignedBeaconBlockUnblinderBellatrix extends AbstractSignedBeaconBlo
 
   @Override
   public SafeFuture<SignedBeaconBlock> unblind() {
-
-    final SignedBeaconBlock signedBlindedBeaconBlock = signedBlindedBlockContainer.getSignedBlock();
 
     if (!signedBlindedBeaconBlock.isBlinded()) {
       return SafeFuture.completedFuture(signedBlindedBeaconBlock);

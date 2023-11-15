@@ -13,14 +13,15 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
-import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
 /**
  * Interface used to represent both {@link SignedBeaconBlock} and {@link SignedBlockContents} and
@@ -39,15 +40,15 @@ public interface SignedBlockContainer extends SszData, SszContainer {
     return getSignedBlock().getRoot();
   }
 
-  default Optional<List<SignedBlobSidecarOld>> getSignedBlobSidecars() {
+  default Optional<SszList<SszKZGProof>> getKzgProofs() {
     return Optional.empty();
   }
 
-  default Optional<SignedBlindedBlockContainer> toBlinded() {
+  default Optional<SszList<Blob>> getBlobs() {
     return Optional.empty();
   }
 
   default boolean isBlinded() {
-    return toBlinded().isPresent();
+    return getSignedBlock().isBlinded();
   }
 }

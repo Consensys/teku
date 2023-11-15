@@ -33,7 +33,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
@@ -73,7 +73,7 @@ public class PostBlindedBlock extends RestApiEndpoint {
       return;
     }
 
-    final SignedBlindedBlockContainer requestBody = request.getRequestBody();
+    final SignedBlockContainer requestBody = request.getRequestBody();
 
     request.respondAsync(
         validatorDataProvider
@@ -101,9 +101,7 @@ public class PostBlindedBlock extends RestApiEndpoint {
         .operationId("publishBlindedBlock")
         .summary("Publish a signed blinded block")
         .description(
-            "Submit a signed blinded beacon block to the beacon node to be broadcast and imported."
-                + " After Deneb, this additionally instructs the beacon node to broadcast and import all given signed blinded blobs."
-                + " The beacon node performs the required validation.")
+            "Submit a signed blinded beacon block to the beacon node to be broadcast and imported. The beacon node performs the required validation.")
         .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
         .requestBodyType(
             getSchemaDefinitionForAllSupportedMilestones(

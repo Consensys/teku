@@ -19,8 +19,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
@@ -37,11 +35,6 @@ public interface Signer {
   SafeFuture<BLSSignature> createRandaoReveal(UInt64 epoch, ForkInfo forkInfo);
 
   SafeFuture<BLSSignature> signBlock(BeaconBlock block, ForkInfo forkInfo);
-
-  SafeFuture<BLSSignature> signBlobSidecar(BlobSidecarOld blobSidecar, ForkInfo forkInfo);
-
-  SafeFuture<BLSSignature> signBlindedBlobSidecar(
-      BlindedBlobSidecar blindedBlobSidecar, ForkInfo forkInfo);
 
   SafeFuture<BLSSignature> signAttestationData(AttestationData attestationData, ForkInfo forkInfo);
 

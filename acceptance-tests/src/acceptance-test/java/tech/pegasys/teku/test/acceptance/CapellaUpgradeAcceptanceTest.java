@@ -44,17 +44,19 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
     final UInt64 currentTime = timeProvider.getTimeInSeconds();
     final int genesisTime = currentTime.plus(30).intValue(); // magic node startup time
     final int shanghaiTime = genesisTime + 4 * 2; // 4 slots, 2 seconds each
+    final Map<String, String> genesisOverrides =
+        Map.of("shanghaiTime", String.valueOf(shanghaiTime));
 
     BesuNode primaryEL =
         createBesuNode(
             BesuDockerVersion.STABLE,
             config ->
                 config
-                    .withMergeSupport(true)
+                    .withMergeSupport()
                     .withGenesisFile("besu/mergedGenesis.json")
                     .withP2pEnabled(true)
                     .withJwtTokenAuthorization(JWT_FILE),
-            Map.of("shanghaiTime", String.valueOf(shanghaiTime)));
+            genesisOverrides);
     primaryEL.start();
 
     BesuNode secondaryEL =
@@ -62,11 +64,11 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
             BesuDockerVersion.STABLE,
             config ->
                 config
-                    .withMergeSupport(true)
+                    .withMergeSupport()
                     .withGenesisFile("besu/mergedGenesis.json")
                     .withP2pEnabled(true)
                     .withJwtTokenAuthorization(JWT_FILE),
-            Map.of("shanghaiTime", String.valueOf(shanghaiTime)));
+            genesisOverrides);
     secondaryEL.start();
     secondaryEL.addPeer(primaryEL);
 

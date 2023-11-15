@@ -26,6 +26,7 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -56,6 +57,13 @@ class StubBlobSidecarManager implements BlobSidecarManager {
   @Override
   public SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
       final SignedBlobSidecarOld signedBlobSidecar, final Optional<UInt64> arrivalTimestamp) {
+    return SafeFuture.failedFuture(
+        new UnsupportedOperationException("Not available in fork choice reference tests"));
+  }
+
+  @Override
+  public SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
+      final BlobSidecar blobSidecar, final Optional<UInt64> arrivalTimestamp) {
     return SafeFuture.failedFuture(
         new UnsupportedOperationException("Not available in fork choice reference tests"));
   }

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.coordinator.publisher;
 
+import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
@@ -51,18 +52,15 @@ public class BlockPublisherDeneb extends AbstractBlockPublisher {
       final SignedBlockContainer blockContainer,
       final BroadcastValidationLevel broadcastValidationLevel) {
     final SignedBeaconBlock block = blockContainer.getSignedBlock();
-
-    blockContainer
-        .getSignedBlobSidecars()
-        .ifPresent(
-            signedBlobSidecars ->
-                blobSidecarPool.onCompletedBlockAndSignedBlobSidecars(block, signedBlobSidecars));
+    // TODO: import blob sidecars with inclusion proof
+    blobSidecarPool.onCompletedBlockAndBlobSidecars(block, List.of());
     return blockImportChannel.importBlock(block, broadcastValidationLevel);
   }
 
   @Override
   void publishBlock(final SignedBlockContainer blockContainer) {
-    blockContainer.getSignedBlobSidecars().ifPresent(blobSidecarGossipChannel::publishBlobSidecars);
+    // TODO: publish blob sidecars with inclusion proof
+    blobSidecarGossipChannel.publishBlobSidecars(List.of());
     blockGossipChannel.publishBlock(blockContainer.getSignedBlock());
   }
 }
