@@ -84,33 +84,46 @@ public class BlobSidecarsByRangeListenerValidatingProxy extends AbstractBlobSide
   }
 
   private void verifyBlobSidecarIsAfterLast(final BlobSidecarSummary blobSidecarSummary) {
-    if (maybeLastBlobSidecarSummary.isEmpty()) {
-      if (!blobSidecarSummary.index().equals(UInt64.ZERO)) {
-        throw new BlobSidecarsResponseInvalidResponseException(peer, BLOB_SIDECAR_UNEXPECTED_INDEX);
-      }
-      return;
-    }
+    maybeLastBlobSidecarSummary.ifPresentOrElse(
+        lastBlobSidecarSummary -> {
+          // we have a previous blobSidecar, let's check current against it
 
-    if (blobSidecarSummary.inTheSameBlock(maybeLastBlobSidecarSummary.get())) {
-      if (!blobSidecarSummary.index().equals(maybeLastBlobSidecarSummary.get().index().plus(1))) {
-        throw new BlobSidecarsResponseInvalidResponseException(peer, BLOB_SIDECAR_UNEXPECTED_INDEX);
-      }
-    } else {
+          if (blobSidecarSummary.inTheSameBlock(lastBlobSidecarSummary)) {
+            if (!blobSidecarSummary.index().equals(lastBlobSidecarSummary.index().plus(1))) {
+              throw new BlobSidecarsResponseInvalidResponseException(
+                  peer, BLOB_SIDECAR_UNEXPECTED_INDEX);
+            }
+          } else {
+            // not in the same block
 
-      if (!blobSidecarSummary.index().equals(UInt64.ZERO)) {
-        throw new BlobSidecarsResponseInvalidResponseException(peer, BLOB_SIDECAR_UNEXPECTED_INDEX);
-      }
+            if (!blobSidecarSummary.index().equals(UInt64.ZERO)) {
+              throw new BlobSidecarsResponseInvalidResponseException(
+                  peer, BLOB_SIDECAR_UNEXPECTED_INDEX);
+            }
 
-      if (!blobSidecarSummary
-          .blockParentRoot()
-          .equals(maybeLastBlobSidecarSummary.get().blockRoot())) {
-        throw new BlobSidecarsResponseInvalidResponseException(peer, BLOB_SIDECAR_UNKNOWN_PARENT);
-      }
+            if (blobSidecarSummary.slot.isGreaterThan(lastBlobSidecarSummary.slot.increment())) {
+              // a slot has been skipped, we can't check the parent
+              return;
+            }
 
-      if (!blobSidecarSummary.slot().isGreaterThan(maybeLastBlobSidecarSummary.get().slot())) {
-        throw new BlobSidecarsResponseInvalidResponseException(peer, BLOB_SIDECAR_UNEXPECTED_SLOT);
-      }
-    }
+            if (blobSidecarSummary.slot.isLessThanOrEqualTo(lastBlobSidecarSummary.slot)) {
+              throw new BlobSidecarsResponseInvalidResponseException(
+                  peer, BLOB_SIDECAR_UNEXPECTED_SLOT);
+            }
+
+            if (!blobSidecarSummary.blockParentRoot().equals(lastBlobSidecarSummary.blockRoot())) {
+              throw new BlobSidecarsResponseInvalidResponseException(
+                  peer, BLOB_SIDECAR_UNKNOWN_PARENT);
+            }
+          }
+        },
+        () -> {
+          // first blobSidecar
+          if (!blobSidecarSummary.index().equals(UInt64.ZERO)) {
+            throw new BlobSidecarsResponseInvalidResponseException(
+                peer, BLOB_SIDECAR_UNEXPECTED_INDEX);
+          }
+        });
   }
 
   record BlobSidecarSummary(Bytes32 blockRoot, UInt64 index, UInt64 slot, Bytes32 blockParentRoot) {

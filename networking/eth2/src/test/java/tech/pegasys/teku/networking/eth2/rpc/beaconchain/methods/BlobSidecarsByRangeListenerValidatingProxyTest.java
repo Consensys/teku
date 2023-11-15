@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -159,10 +160,10 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
         dataStructureUtil.randomBlobSidecarOld(
             UInt64.valueOf(9), blockRoot5, blockRoot4, UInt64.ZERO);
 
-    listenerWrapper.onResponse(blobSidecar1).join();
-    listenerWrapper.onResponse(blobSidecar2).join();
-    listenerWrapper.onResponse(blobSidecar3).join();
-    listenerWrapper.onResponse(blobSidecar4).join();
+    safeJoin(listenerWrapper.onResponse(blobSidecar1));
+    safeJoin(listenerWrapper.onResponse(blobSidecar2));
+    safeJoin(listenerWrapper.onResponse(blobSidecar3));
+    safeJoin(listenerWrapper.onResponse(blobSidecar4));
 
     final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar5);
     assertThat(result).isCompletedExceptionally();
@@ -191,7 +192,7 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
         dataStructureUtil.randomBlobSidecarOld(
             UInt64.valueOf(2), blockRoot2, dataStructureUtil.randomBytes32(), UInt64.ZERO);
 
-    listenerWrapper.onResponse(blobSidecar1).join();
+    safeJoin(listenerWrapper.onResponse(blobSidecar1));
 
     final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar2);
     assertThat(result).isCompletedExceptionally();
@@ -234,12 +235,12 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
         dataStructureUtil.randomBlobSidecarOld(
             UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.valueOf(6));
 
-    listenerWrapper.onResponse(blobSidecar1).join();
-    listenerWrapper.onResponse(blobSidecar2).join();
-    listenerWrapper.onResponse(blobSidecar3).join();
-    listenerWrapper.onResponse(blobSidecar4).join();
-    listenerWrapper.onResponse(blobSidecar5).join();
-    listenerWrapper.onResponse(blobSidecar6).join();
+    safeJoin(listenerWrapper.onResponse(blobSidecar1));
+    safeJoin(listenerWrapper.onResponse(blobSidecar2));
+    safeJoin(listenerWrapper.onResponse(blobSidecar3));
+    safeJoin(listenerWrapper.onResponse(blobSidecar4));
+    safeJoin(listenerWrapper.onResponse(blobSidecar5));
+    safeJoin(listenerWrapper.onResponse(blobSidecar6));
 
     final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar7);
     assertThat(result).isCompletedExceptionally();
@@ -270,8 +271,8 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
         dataStructureUtil.randomBlobSidecarOld(
             UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.valueOf(3));
 
-    listenerWrapper.onResponse(blobSidecar1).join();
-    listenerWrapper.onResponse(blobSidecar2).join();
+    safeJoin(listenerWrapper.onResponse(blobSidecar1));
+    safeJoin(listenerWrapper.onResponse(blobSidecar2));
 
     final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar3);
     assertThat(result).isCompletedExceptionally();
@@ -282,6 +283,30 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
             BlobSidecarsResponseInvalidResponseException.InvalidResponseType
                 .BLOB_SIDECAR_UNEXPECTED_INDEX
                 .describe());
+  }
+
+  @Test
+  void isFirstBlobSidecarAfterAnEmptyBlobsBlock() {
+    final UInt64 startSlot = UInt64.valueOf(1);
+    final UInt64 count = UInt64.valueOf(4);
+
+    listenerWrapper =
+        new BlobSidecarsByRangeListenerValidatingProxy(
+            spec, peer, listener, maxBlobsPerBlock, kzg, startSlot, count);
+
+    final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
+    final Bytes32 blockRoot3 = dataStructureUtil.randomBytes32();
+    final BlobSidecarOld blobSidecar1 =
+        dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
+    final BlobSidecarOld blobSidecar2 =
+        dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ONE);
+    final BlobSidecarOld blobSidecar3 =
+        dataStructureUtil.randomBlobSidecar(
+            UInt64.valueOf(3), blockRoot3, Bytes32.ZERO, UInt64.ZERO);
+
+    safeJoin(listenerWrapper.onResponse(blobSidecar1));
+    safeJoin(listenerWrapper.onResponse(blobSidecar2));
+    safeJoin(listenerWrapper.onResponse(blobSidecar3));
   }
 
   @Test
@@ -354,8 +379,8 @@ public class BlobSidecarsByRangeListenerValidatingProxyTest {
         dataStructureUtil.randomBlobSidecarOld(
             UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.valueOf(3));
 
-    listenerWrapper.onResponse(blobSidecar1).join();
-    listenerWrapper.onResponse(blobSidecar2).join();
+    safeJoin(listenerWrapper.onResponse(blobSidecar1));
+    safeJoin(listenerWrapper.onResponse(blobSidecar2));
 
     final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar4);
     assertThat(result).isCompletedExceptionally();
