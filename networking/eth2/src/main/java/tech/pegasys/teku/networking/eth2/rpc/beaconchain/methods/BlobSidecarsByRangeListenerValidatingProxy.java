@@ -88,20 +88,22 @@ public class BlobSidecarsByRangeListenerValidatingProxy extends AbstractBlobSide
         lastBlobSidecarSummary -> {
           // we have a previous blobSidecar, let's check current against it
 
+          final UInt64 lastBlobSidecarNextSlot = lastBlobSidecarSummary.slot.increment();
+
           if (blobSidecarSummary.inTheSameBlock(lastBlobSidecarSummary)) {
-            if (!blobSidecarSummary.index().equals(lastBlobSidecarSummary.index().plus(1))) {
+            if (!blobSidecarSummary.index.equals(lastBlobSidecarNextSlot)) {
               throw new BlobSidecarsResponseInvalidResponseException(
                   peer, BLOB_SIDECAR_UNEXPECTED_INDEX);
             }
           } else {
             // not in the same block
 
-            if (!blobSidecarSummary.index().equals(UInt64.ZERO)) {
+            if (!blobSidecarSummary.index.isZero()) {
               throw new BlobSidecarsResponseInvalidResponseException(
                   peer, BLOB_SIDECAR_UNEXPECTED_INDEX);
             }
 
-            if (blobSidecarSummary.slot.isGreaterThan(lastBlobSidecarSummary.slot.increment())) {
+            if (blobSidecarSummary.slot.isGreaterThan(lastBlobSidecarNextSlot)) {
               // a slot has been skipped, we can't check the parent
               return;
             }
@@ -111,7 +113,7 @@ public class BlobSidecarsByRangeListenerValidatingProxy extends AbstractBlobSide
                   peer, BLOB_SIDECAR_UNEXPECTED_SLOT);
             }
 
-            if (!blobSidecarSummary.blockParentRoot().equals(lastBlobSidecarSummary.blockRoot())) {
+            if (!blobSidecarSummary.blockParentRoot.equals(lastBlobSidecarSummary.blockRoot)) {
               throw new BlobSidecarsResponseInvalidResponseException(
                   peer, BLOB_SIDECAR_UNKNOWN_PARENT);
             }
@@ -119,7 +121,7 @@ public class BlobSidecarsByRangeListenerValidatingProxy extends AbstractBlobSide
         },
         () -> {
           // first blobSidecar
-          if (!blobSidecarSummary.index().equals(UInt64.ZERO)) {
+          if (!blobSidecarSummary.index.isZero()) {
             throw new BlobSidecarsResponseInvalidResponseException(
                 peer, BLOB_SIDECAR_UNEXPECTED_INDEX);
           }
