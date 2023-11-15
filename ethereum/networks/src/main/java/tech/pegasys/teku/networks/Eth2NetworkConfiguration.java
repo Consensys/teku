@@ -284,9 +284,7 @@ public class Eth2NetworkConfiguration {
     private Optional<String> genesisState = Optional.empty();
     private int startupTargetPeerCount = DEFAULT_STARTUP_TARGET_PEER_COUNT;
     private int startupTimeoutSeconds = DEFAULT_STARTUP_TIMEOUT_SECONDS;
-
     private int asyncP2pMaxThreads = DEFAULT_ASYNC_P2P_MAX_THREADS;
-
     private int asyncP2pMaxQueue = DEFAULT_ASYNC_P2P_MAX_QUEUE;
     private int asyncBeaconChainMaxThreads = DEFAULT_ASYNC_BEACON_CHAIN_MAX_THREADS;
     private int asyncBeaconChainMaxQueue = DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE;
@@ -445,6 +443,13 @@ public class Eth2NetworkConfiguration {
 
     public Builder customGenesisState(final String genesisState) {
       this.genesisState = Optional.of(genesisState);
+      return this;
+    }
+
+    public Builder ignoreWeakSubjectivityPeriodEnabled(
+        boolean ignoreWeakSubjectivityPeriodEnabled) {
+      this.stateBoostrapConfig.setAllowSyncOutsideWeakSubjectivityPeriod(
+          ignoreWeakSubjectivityPeriodEnabled);
       return this;
     }
 

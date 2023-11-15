@@ -31,12 +31,14 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.ChainDataLoader;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
+import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityCalculator;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class WeakSubjectivityInitializer {
@@ -138,7 +140,10 @@ public class WeakSubjectivityInitializer {
   }
 
   public void validateInitialAnchor(
-      final AnchorPoint initialAnchor, final UInt64 currentSlot, final Spec spec) {
+      final AnchorPoint initialAnchor,
+      final UInt64 currentSlot,
+      final Spec spec,
+      final Optional<WeakSubjectivityCalculator> maybeWsCalculator) {
     final Fork expectedFork = spec.getForkSchedule().getFork(initialAnchor.getEpoch());
     final Fork loadedFork = initialAnchor.getState().getFork();
     if (!isSameForkInfo(expectedFork, loadedFork)) {
@@ -147,6 +152,20 @@ public class WeakSubjectivityInitializer {
               "The fork from the initial-state (%s) does not match the configured fork schedule (%s).\nPlease check that network in configuration matches the loaded state.",
               loadedFork, expectedFork));
     }
+
+    maybeWsCalculator.ifPresent(
+        weakSubjectivityCalculator -> {
+          final CheckpointState checkpointState =
+              CheckpointState.create(
+                  spec,
+                  initialAnchor.getCheckpoint(),
+                  initialAnchor.getBlockSummary(),
+                  initialAnchor.getState());
+          if (!weakSubjectivityCalculator.isWithinWeakSubjectivityPeriod(
+              checkpointState, currentSlot)) {
+            throw new IllegalStateException("Cannot sync outside of weak subjectivity period.");
+          }
+        });
 
     if (initialAnchor.isGenesis()) {
       // Skip extra validations for genesis state

@@ -16,6 +16,7 @@ package tech.pegasys.teku.networks;
 public class StateBoostrapConfig {
   private boolean isUsingCustomInitialState;
   private boolean isUsingCheckpointSync;
+  private boolean allowSyncOutsideWeakSubjectivityPeriod;
 
   StateBoostrapConfig() {}
 
@@ -27,11 +28,20 @@ public class StateBoostrapConfig {
     isUsingCheckpointSync = usingCheckpointSync;
   }
 
+  public void setAllowSyncOutsideWeakSubjectivityPeriod(
+      final boolean allowSyncOutsideWeakSubjectivityPeriod) {
+    this.allowSyncOutsideWeakSubjectivityPeriod = allowSyncOutsideWeakSubjectivityPeriod;
+  }
+
   public boolean isUsingCustomInitialState() {
     return isUsingCustomInitialState;
   }
 
   public boolean isUsingCheckpointSync() {
     return isUsingCheckpointSync;
+  }
+
+  public boolean isAllowSyncOutsideWeakSubjectivityPeriod() {
+    return allowSyncOutsideWeakSubjectivityPeriod;
   }
 }

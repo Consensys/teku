@@ -94,7 +94,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           // TODO: following tests are related to late block reorgs.
           //  Must be re-enabled once implementation #6595 is done
           .put("fork_choice/should_override_forkchoice_update", IGNORE_TESTS)
-          .put("fork_choice/get_proposer_head", IGNORE_TESTS)
+          .put("fork_choice/get_proposer_head", new ForkChoiceTestExecutor("basic_is_parent_root"))
           .build();
 
   private final List<?> testsToSkip;
@@ -460,6 +460,29 @@ public class ForkChoiceTestExecutor implements TestExecutor {
                   .describedAs("proposer_boost_root")
                   .contains(expectedBoostedRoot);
             }
+          }
+
+          case "get_proposer_head" -> {
+            final Bytes32 expectedProposerHead = getBytes32(checks, checkType);
+            final Optional<Bytes32> boostedRoot = recentChainData.getBestBlockRoot();
+            if (expectedProposerHead.isZero()) {
+              assertThat(boostedRoot).describedAs("get_proposer_head").isEmpty();
+            } else {
+              assertThat(boostedRoot)
+                  .describedAs("get_proposer_head")
+                  .contains(expectedProposerHead);
+            }
+          }
+
+          case "should_override_forkchoice_update" -> {
+            final Map<String, Boolean> shouldOverrideForkChoiceUpdateCheck = get(checks, checkType);
+            final boolean expectedResult = shouldOverrideForkChoiceUpdateCheck.get("result");
+            final boolean expectedValidatorIsConnected =
+                shouldOverrideForkChoiceUpdateCheck.get("validator_is_connected");
+            // only currently handle result == true
+            assertThat(expectedResult).isTrue();
+            // only currently handle validatorIsConnected == true
+            assertThat(expectedValidatorIsConnected).isTrue();
           }
 
           default -> throw new UnsupportedOperationException(
