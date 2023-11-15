@@ -257,7 +257,7 @@ public class WeakSubjectivityValidator {
     return suppressWSPeriodErrorsUntilEpoch;
   }
 
-  private boolean isWithinWSPeriod(CheckpointState checkpointState, UInt64 currentSlot) {
+  public boolean isWithinWSPeriod(CheckpointState checkpointState, UInt64 currentSlot) {
     return calculator.isWithinWeakSubjectivityPeriod(checkpointState, currentSlot);
   }
 

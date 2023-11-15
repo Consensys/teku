@@ -52,12 +52,8 @@ public class BlockPublisherDeneb extends AbstractBlockPublisher {
       final SignedBlockContainer blockContainer,
       final BroadcastValidationLevel broadcastValidationLevel) {
     final SignedBeaconBlock block = blockContainer.getSignedBlock();
-
-    blockContainer
-        .getSignedBlobSidecars()
-        .ifPresent(
-            signedBlobSidecars ->
-                blobSidecarPool.onCompletedBlockAndSignedBlobSidecars(block, signedBlobSidecars));
+    // TODO: import blob sidecars with inclusion proof
+    blobSidecarPool.onCompletedBlockAndBlobSidecars(block, List.of());
     return blockImportChannel.importBlock(block, broadcastValidationLevel);
   }
 

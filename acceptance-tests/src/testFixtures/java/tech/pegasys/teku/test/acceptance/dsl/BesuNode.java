@@ -230,7 +230,6 @@ public class BesuNode extends Node {
       configMap.put("host-allowlist", new String[] {"*"});
       configMap.put("discovery-enabled", false);
       configMap.put("genesis-file", "/genesis.json");
-      configMap.put("tx-pool-limit-by-account-percentage", "1");
     }
 
     public BesuNode.Config withMiningEnabled(final boolean enabled) {
@@ -244,7 +243,7 @@ public class BesuNode extends Node {
       return this;
     }
 
-    public BesuNode.Config withMergeSupport(final boolean enableMergeSupport) {
+    public BesuNode.Config withMergeSupport() {
       configMap.put("rpc-http-api", MERGE_RPC_MODULES);
       configMap.put("rpc-ws-api", MERGE_RPC_MODULES);
       configMap.put("engine-rpc-port", Integer.toString(ENGINE_JSON_RPC_PORT));

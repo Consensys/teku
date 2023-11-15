@@ -106,6 +106,7 @@ public class TekuConfigurationTest {
         TekuConfiguration.builder()
             .data(b -> b.dataBasePath(tempDir))
             .executionLayer(b -> b.engineEndpoint("unsafe-test-stub"))
+            .eth2NetworkConfig(b -> b.ignoreWeakSubjectivityPeriodEnabled(true))
             .beaconChainControllerFactory(customControllerFactory)
             .build();
 

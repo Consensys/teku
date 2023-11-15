@@ -27,7 +27,6 @@ import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.tuweni.bytes.Bytes;
@@ -48,7 +47,6 @@ import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSt
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
@@ -220,12 +218,7 @@ class BlockProductionDutyTest {
     assertThat(signedBlock.getMessage()).isEqualTo(unsignedBlock);
     assertThat(signedBlock.getSignature()).isEqualTo(blockSignature);
 
-    assertThat(signedBlockContents.getSignedBlobSidecars().isPresent()).isTrue();
-
-    final List<SignedBlobSidecarOld> signedBlobSidecars =
-        signedBlockContents.getSignedBlobSidecars().get();
-
-    assertThat(signedBlobSidecars).isEmpty();
+    // TODO Add test for blobs and kzg proofs once added
 
     verify(validatorDutyMetrics)
         .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
@@ -498,12 +491,7 @@ class BlockProductionDutyTest {
     assertThat(signedBlock.getMessage()).isEqualTo(unsignedBlock);
     assertThat(signedBlock.getSignature()).isEqualTo(blockSignature);
 
-    assertThat(signedBlockContents.getSignedBlobSidecars().isPresent()).isTrue();
-
-    final List<SignedBlobSidecarOld> signedBlobSidecars =
-        signedBlockContents.getSignedBlobSidecars().get();
-
-    assertThat(signedBlobSidecars).isEmpty();
+    // TODO Add test for blobs and kzg proofs once added
 
     verify(validatorDutyMetrics)
         .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));

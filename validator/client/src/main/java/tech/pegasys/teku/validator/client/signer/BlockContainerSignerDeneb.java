@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.validator.client.signer;
 
-import java.util.List;
+import java.util.Collections;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -52,7 +52,7 @@ public class BlockContainerSignerDeneb implements BlockContainerSigner {
               // TODO: add proofs and blobs
               return schemaDefinitions
                   .getSignedBlockContentsSchema()
-                  .create(signedBlock, List.of());
+                  .create(signedBlock, Collections.emptyList(), Collections.emptyList());
             });
   }
 
