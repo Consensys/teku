@@ -24,7 +24,7 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 
 public class BlobSidecarEvent extends Event<BlobSidecarData> {
@@ -50,7 +50,7 @@ public class BlobSidecarEvent extends Event<BlobSidecarData> {
         new BlobSidecarData(blockRoot, index, slot, kzgCommitment, versionedHash));
   }
 
-  public static BlobSidecarEvent create(final Spec spec, final BlobSidecarOld blobSidecar) {
+  public static BlobSidecarEvent create(final Spec spec, final BlobSidecar blobSidecar) {
     return new BlobSidecarEvent(
         blobSidecar.getBlockRoot(),
         blobSidecar.getIndex(),

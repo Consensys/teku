@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.validator.coordinator.publisher;
 
+import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
@@ -37,15 +39,16 @@ public class BlockPublisherPhase0 extends AbstractBlockPublisher {
   }
 
   @Override
-  protected SafeFuture<BlockImportAndBroadcastValidationResults> importBlock(
-      final SignedBlockContainer blockContainer,
+  SafeFuture<BlockImportAndBroadcastValidationResults> importBlockAndBlobSidecars(
+      final SignedBeaconBlock block,
+      final List<BlobSidecar> blobSidecars,
       final BroadcastValidationLevel broadcastValidationLevel) {
-    return blockImportChannel.importBlock(
-        blockContainer.getSignedBlock(), broadcastValidationLevel);
+    return blockImportChannel.importBlock(block, broadcastValidationLevel);
   }
 
   @Override
-  void publishBlock(final SignedBlockContainer blockContainer) {
-    blockGossipChannel.publishBlock(blockContainer.getSignedBlock());
+  void publishBlockAndBlobSidecars(
+      final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
+    blockGossipChannel.publishBlock(block);
   }
 }

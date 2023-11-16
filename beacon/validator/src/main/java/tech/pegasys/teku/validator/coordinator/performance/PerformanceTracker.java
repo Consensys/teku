@@ -16,7 +16,7 @@ package tech.pegasys.teku.validator.coordinator.performance;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 
@@ -26,7 +26,7 @@ public interface PerformanceTracker extends SlotEventsChannel {
 
   void saveProducedAttestation(Attestation attestation);
 
-  void saveProducedBlock(SignedBlockContainer blockContainer);
+  void saveProducedBlock(SignedBeaconBlock block);
 
   void reportBlockProductionAttempt(UInt64 epoch);
 
