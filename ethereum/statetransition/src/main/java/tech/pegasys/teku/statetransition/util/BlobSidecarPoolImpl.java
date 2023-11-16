@@ -36,6 +36,7 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -138,7 +139,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   }
 
   @Override
-  public synchronized void onNewBlobSidecar(final BlobSidecarOld blobSidecar) {
+  public synchronized void onNewBlobSidecar(final BlobSidecar blobSidecar) {
     if (recentChainData.containsBlock(blobSidecar.getBlockRoot())) {
       return;
     }
@@ -167,6 +168,9 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     if (block.getMessage().getBody().toVersionDeneb().isEmpty()) {
       return;
     }
+    if (recentChainData.containsBlock(block.getRoot())) {
+      return;
+    }
     if (shouldIgnoreItemAtSlot(block.getSlot())) {
       return;
     }
@@ -186,8 +190,17 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   }
 
   @Override
+  public void onCompletedBlockAndBlobSidecarsOld(
+      SignedBeaconBlock block, List<BlobSidecarOld> blobSidecars) {
+    onCompletedBlockAndBlobSidecars(block, List.of());
+  }
+
+  @Override
   public synchronized void onCompletedBlockAndBlobSidecars(
-      final SignedBeaconBlock block, final List<BlobSidecarOld> blobSidecars) {
+      final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
+    if (recentChainData.containsBlock(block.getRoot())) {
+      return;
+    }
     final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
 
     final BlockBlobSidecarsTracker blobSidecarsTracker =
@@ -240,7 +253,13 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   public void onSlot(final UInt64 slot) {
     super.onSlot(slot);
 
-    LOG.trace("Trackers: {}", blockBlobSidecarsTrackers);
+    LOG.trace(
+        "Trackers: {}",
+        () -> {
+          synchronized (this) {
+            return blockBlobSidecarsTrackers.toString();
+          }
+        });
   }
 
   @VisibleForTesting

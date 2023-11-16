@@ -304,7 +304,7 @@ public class Spec {
   }
 
   public GenesisGenerator createGenesisGenerator() {
-    return new GenesisGenerator(getGenesisSpec(), forkSchedule.getFork(SpecConfig.GENESIS_EPOCH));
+    return new GenesisGenerator(getGenesisSpec(), forkSchedule.getGenesisFork());
   }
 
   // Serialization

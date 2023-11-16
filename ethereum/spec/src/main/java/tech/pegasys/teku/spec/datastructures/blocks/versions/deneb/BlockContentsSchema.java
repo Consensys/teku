@@ -40,14 +40,13 @@ public class BlockContentsSchema
       final String containerName,
       final SpecConfigDeneb specConfig,
       final BeaconBlockSchema beaconBlockSchema,
-      final SszKZGProofSchema sszKZGProofSchema,
       final BlobSchema blobSchema) {
     super(
         containerName,
         namedSchema("block", beaconBlockSchema),
         namedSchema(
             FIELD_KZG_PROOFS,
-            SszListSchema.create(sszKZGProofSchema, specConfig.getMaxBlobsPerBlock())),
+            SszListSchema.create(SszKZGProofSchema.INSTANCE, specConfig.getMaxBlobsPerBlock())),
         namedSchema(
             FIELD_BLOBS, SszListSchema.create(blobSchema, specConfig.getMaxBlobsPerBlock())));
   }
@@ -55,11 +54,9 @@ public class BlockContentsSchema
   public static BlockContentsSchema create(
       final SpecConfigDeneb specConfig,
       final BeaconBlockSchema beaconBlockSchema,
-      final SszKZGProofSchema sszKZGProofSchema,
       final BlobSchema blobSchema,
       final String containerName) {
-    return new BlockContentsSchema(
-        containerName, specConfig, beaconBlockSchema, sszKZGProofSchema, blobSchema);
+    return new BlockContentsSchema(containerName, specConfig, beaconBlockSchema, blobSchema);
   }
 
   public BlockContents create(

@@ -40,7 +40,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -188,7 +188,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     notifySubscribersOfEvent(EventType.block, blockEvent);
   }
 
-  protected void onNewBlobSidecar(final BlobSidecarOld blobSidecar) {
+  protected void onNewBlobSidecar(final BlobSidecar blobSidecar) {
     final BlobSidecarEvent blobSidecarEvent = BlobSidecarEvent.create(spec, blobSidecar);
     notifySubscribersOfEvent(EventType.blob_sidecar, blobSidecarEvent);
   }

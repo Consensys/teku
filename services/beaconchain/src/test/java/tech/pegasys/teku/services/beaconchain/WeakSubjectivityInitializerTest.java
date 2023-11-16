@@ -16,6 +16,8 @@ package tech.pegasys.teku.services.beaconchain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -36,6 +38,7 @@ import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.WeakSubjectivityState;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
+import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityCalculator;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class WeakSubjectivityInitializerTest {
@@ -175,7 +178,7 @@ public class WeakSubjectivityInitializerTest {
         dataStructureUtil.randomAnchorPoint(UInt64.ZERO, spec.fork(UInt64.ZERO));
 
     // Should not throw
-    initializer.validateInitialAnchor(anchor, UInt64.ZERO, spec);
+    initializer.validateInitialAnchor(anchor, UInt64.ZERO, spec, Optional.empty());
   }
 
   @Test
@@ -185,7 +188,7 @@ public class WeakSubjectivityInitializerTest {
         dataStructureUtil.randomAnchorPoint(UInt64.ZERO, spec.fork(UInt64.ZERO));
 
     // Should not throw
-    initializer.validateInitialAnchor(anchor, UInt64.valueOf(10), spec);
+    initializer.validateInitialAnchor(anchor, UInt64.valueOf(10), spec, Optional.empty());
   }
 
   @Test
@@ -197,7 +200,8 @@ public class WeakSubjectivityInitializerTest {
     final AnchorPoint anchor =
         dataStructureUtil.randomAnchorPoint(currentEpoch.plus(1), spec.fork(currentEpoch));
 
-    assertThatThrownBy(() -> initializer.validateInitialAnchor(anchor, currentSlot, spec))
+    assertThatThrownBy(
+            () -> initializer.validateInitialAnchor(anchor, currentSlot, spec, Optional.empty()))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining(
             "The provided initial state appears to be from a future slot ("
@@ -214,7 +218,8 @@ public class WeakSubjectivityInitializerTest {
     final AnchorPoint anchor =
         dataStructureUtil.randomAnchorPoint(currentEpoch.minus(1), spec.fork(currentEpoch));
 
-    assertThatThrownBy(() -> initializer.validateInitialAnchor(anchor, currentSlot, spec))
+    assertThatThrownBy(
+            () -> initializer.validateInitialAnchor(anchor, currentSlot, spec, Optional.empty()))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining(
             "The provided initial state is too recent. Please check that the initial state corresponds to a finalized checkpoint.");
@@ -226,11 +231,67 @@ public class WeakSubjectivityInitializerTest {
     final UInt64 currentSlot = spec.computeStartSlotAtEpoch(currentEpoch);
 
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final UInt64 anchorEpoch = currentEpoch.min(2);
+    final UInt64 anchorEpoch = currentEpoch.minus(2);
     final AnchorPoint anchor =
         dataStructureUtil.randomAnchorPoint(anchorEpoch, spec.fork(currentEpoch));
 
     // Should not throw
-    initializer.validateInitialAnchor(anchor, currentSlot, spec);
+    initializer.validateInitialAnchor(anchor, currentSlot, spec, Optional.empty());
+  }
+
+  @Test
+  public void validateInitialAnchor_withSubjectivityCheck_withinSubjectivityPeriod_shouldSucceed() {
+    final UInt64 currentEpoch = UInt64.valueOf(10);
+    final UInt64 currentSlot = spec.computeStartSlotAtEpoch(currentEpoch);
+
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final UInt64 anchorEpoch = currentEpoch.minus(2);
+    final AnchorPoint anchor =
+        dataStructureUtil.randomAnchorPoint(anchorEpoch, spec.fork(currentEpoch));
+
+    final WeakSubjectivityCalculator wsCalculator = mock(WeakSubjectivityCalculator.class);
+    doReturn(true).when(wsCalculator).isWithinWeakSubjectivityPeriod(any(), eq(currentSlot));
+
+    // Should not throw
+    initializer.validateInitialAnchor(anchor, currentSlot, spec, Optional.of(wsCalculator));
+  }
+
+  @Test
+  public void validateInitialAnchor_withSubjectivityCheck_outOfWeakSubjectivityPeriod_ShouldFail() {
+    final UInt64 currentEpoch = UInt64.valueOf(10);
+    final UInt64 currentSlot = spec.computeStartSlotAtEpoch(currentEpoch);
+
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+    final UInt64 anchorEpoch = currentEpoch.minus(2);
+    final AnchorPoint anchor =
+        dataStructureUtil.randomAnchorPoint(anchorEpoch, spec.fork(currentEpoch));
+
+    final WeakSubjectivityCalculator wsCalculator = mock(WeakSubjectivityCalculator.class);
+    doReturn(false).when(wsCalculator).isWithinWeakSubjectivityPeriod(any(), eq(currentSlot));
+
+    assertThatThrownBy(
+            () ->
+                initializer.validateInitialAnchor(
+                    anchor, currentSlot, spec, Optional.of(wsCalculator)))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("Cannot sync outside of weak subjectivity period.");
+  }
+
+  @Test
+  public void
+      validateInitialAnchor_withoutSubjectivityCheck_outOfWeakSubjectivityPeriod_shouldSucceed() {
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+
+    // Huge distance between anchor epoch and current epoch - is definitely outside weak
+    // subjectivity period
+    final UInt64 anchorEpoch = UInt64.ZERO;
+    final UInt64 currentEpoch = UInt64.valueOf(1_000_000L);
+
+    final AnchorPoint anchor =
+        dataStructureUtil.randomAnchorPoint(anchorEpoch, spec.fork(anchorEpoch));
+
+    // Should not throw because weak subjectivity calculator is empty so rule is not enforced
+    initializer.validateInitialAnchor(
+        anchor, spec.computeStartSlotAtEpoch(currentEpoch), spec, Optional.empty());
   }
 }
