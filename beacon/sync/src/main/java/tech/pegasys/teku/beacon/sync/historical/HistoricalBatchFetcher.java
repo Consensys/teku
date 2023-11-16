@@ -404,7 +404,7 @@ public class HistoricalBatchFetcher {
             block.getSlotAndBlockRoot(), Collections.emptyList());
     LOG.trace("Validating {} blob sidecars for block {}", blobSidecars.size(), block.getRoot());
     final BlobSidecarsAndValidationResult validationResult =
-        blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, blobSidecars);
+        blobSidecarManager.createAvailabilityCheckerAndValidateImmediatelyOld(block, blobSidecars);
 
     if (validationResult.isFailure()) {
       final String causeMessage =

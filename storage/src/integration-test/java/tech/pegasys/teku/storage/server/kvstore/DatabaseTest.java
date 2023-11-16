@@ -531,7 +531,7 @@ public class DatabaseTest {
     // Add base blocks
     addBlocksAndBlobSidecars(
         chainBuilder.streamBlocksAndStates().collect(toList()),
-        chainBuilder.streamBlobSidecars().collect(toList()));
+        chainBuilder.streamBlobSidecarsOld().collect(toList()));
 
     // Set target slot at which to create duplicate blocks
     // and generate block options to make each block unique
@@ -553,9 +553,9 @@ public class DatabaseTest {
     assertThat(block10Roots.size()).isEqualTo(3);
 
     // Add blocks at same height sequentially
-    add(List.of(blockA), forkA.getBlobSidecars(blockA.getRoot()));
-    add(List.of(blockB), forkB.getBlobSidecars(blockB.getRoot()));
-    add(List.of(blockC), chainBuilder.getBlobSidecars(blockC.getRoot()));
+    add(List.of(blockA), forkA.getBlobSidecarsOld(blockA.getRoot()));
+    add(List.of(blockB), forkB.getBlobSidecarsOld(blockB.getRoot()));
+    add(List.of(blockC), chainBuilder.getBlobSidecarsOld(blockC.getRoot()));
 
     // Verify all blocks are available
     assertThat(store.retrieveBlock(blockA.getRoot()))
@@ -579,7 +579,7 @@ public class DatabaseTest {
 
     // Finalize subsequent block to prune blocks a, b, and c
     final SignedBlockAndState finalBlock = chainBuilder.generateBlockAtSlot(11, randomBlobsOptions);
-    add(List.of(finalBlock), chainBuilder.getBlobSidecars(finalBlock.getRoot()));
+    add(List.of(finalBlock), chainBuilder.getBlobSidecarsOld(finalBlock.getRoot()));
 
     final UInt64 finalEpoch = chainBuilder.getLatestEpoch().plus(ONE);
     final SignedBlockAndState finalizedBlock =
@@ -1355,9 +1355,9 @@ public class DatabaseTest {
 
     final List<BlobSidecarOld> allBlocksSidecars =
         Streams.concat(
-                primaryChain.streamBlobSidecars(),
-                forkChain.streamBlobSidecars(),
-                secondFork.streamBlobSidecars())
+                primaryChain.streamBlobSidecarsOld(),
+                forkChain.streamBlobSidecarsOld(),
+                secondFork.streamBlobSidecarsOld())
             .collect(Collectors.toList());
 
     // Finalize at block 7, making the fork blocks unavailable

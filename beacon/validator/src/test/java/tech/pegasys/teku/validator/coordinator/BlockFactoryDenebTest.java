@@ -14,33 +14,24 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 
-import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.mockito.InOrder;
-import org.mockito.Mockito;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
-import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
 
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final SchemaDefinitionsDeneb schemaDefinitions =
-      SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions());
 
   @Test
   void shouldCreateBlockContents() {
@@ -53,7 +44,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     assertThat(blockContainer).isInstanceOf(BlockContents.class);
     assertThat(blockContainer.getBlock().getBody().getOptionalBlobKzgCommitments())
         .hasValueSatisfying(blobKzgCommitments -> assertThat(blobKzgCommitments).hasSize(3));
-    // TODO Add test for blobs and kzg proofs once added
+    // TODO Add assertions for blobs and proofs
   }
 
   @Test
@@ -71,45 +62,31 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
   }
 
   @Test
-  void unblindSignedBlock_shouldPassthroughUnblindedBlockContents() {
+  void unblindSignedBlock_shouldPassthroughUnblindedBlock() {
 
-    final SignedBlockContents signedBlockContents = dataStructureUtil.randomSignedBlockContents();
+    final SignedBeaconBlock signedBlock = dataStructureUtil.randomSignedBeaconBlock();
 
-    final SignedBlockContainer unblindedSignedBlockContainer =
-        assertBlockUnblinded(signedBlockContents, spec);
+    final SignedBeaconBlock unblindedSignedBlock = assertBlockUnblinded(signedBlock, spec);
 
-    assertThat(unblindedSignedBlockContainer).isEqualTo(signedBlockContents);
+    assertThat(unblindedSignedBlock).isEqualTo(signedBlock);
   }
 
   @Test
-  @Disabled(
-      "enable when block production flow for blob sidecar inclusion proof spec is implemented")
   void unblindSignedBlock_shouldUnblindBeaconBlock() {
 
-    final BlobsBundle blobsBundle = prepareBlobsBundle(spec, 3);
-    // let the unblinder verify the kzg commitments
-    blobKzgCommitments =
-        Optional.of(
-            schemaDefinitions.getBlobKzgCommitmentsSchema().createFromBlobsBundle(blobsBundle));
-
-    final SignedBeaconBlock unblindedBeaconBlock = dataStructureUtil.randomSignedBeaconBlock();
-    final SignedBeaconBlock blindedBlock = assertBlockBlinded(unblindedBeaconBlock, spec);
+    final SignedBeaconBlock expectedUnblindedBlock = dataStructureUtil.randomSignedBeaconBlock();
+    final SignedBeaconBlock blindedBlock = assertBlockBlinded(expectedUnblindedBlock, spec);
 
     // let the unblinder return a consistent execution payload
     executionPayload =
-        unblindedBeaconBlock.getMessage().getBody().getOptionalExecutionPayload().orElseThrow();
+        expectedUnblindedBlock.getMessage().getBody().getOptionalExecutionPayload().orElseThrow();
 
-    final SignedBlockContainer unblindedBlockContainer = assertBlockUnblinded(blindedBlock, spec);
+    final SignedBeaconBlock unblindedBlock = assertBlockUnblinded(blindedBlock, spec);
 
-    // make sure getCachedUnblindedPayload is second in order of method calling
-    final InOrder inOrder = Mockito.inOrder(executionLayer);
-    inOrder.verify(executionLayer).getUnblindedPayload(unblindedBlockContainer);
-    inOrder.verify(executionLayer).getCachedUnblindedPayload(unblindedBlockContainer.getSlot());
+    verify(executionLayer).getUnblindedPayload(unblindedBlock);
 
-    assertThat(unblindedBlockContainer).isInstanceOf(SignedBlockContents.class);
-    assertThat(unblindedBlockContainer.isBlinded()).isFalse();
-    assertThat(unblindedBlockContainer.getSignedBlock()).isEqualTo(unblindedBeaconBlock);
-    // TODO: add assertions for blobs and proofs
+    assertThat(unblindedBlock.isBlinded()).isFalse();
+    assertThat(unblindedBlock).isEqualTo(expectedUnblindedBlock);
   }
 
   @Override

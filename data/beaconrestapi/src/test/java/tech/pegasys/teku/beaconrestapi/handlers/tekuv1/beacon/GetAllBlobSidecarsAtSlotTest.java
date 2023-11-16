@@ -57,7 +57,8 @@ public class GetAllBlobSidecarsAtSlotTest extends AbstractMigratedBeaconHandlerT
 
   @Test
   void shouldReturnAllBlobSidecarsAtSlot() throws JsonProcessingException {
-    final List<BlobSidecarOld> nonCanonicalBlobSidecars = dataStructureUtil.randomBlobSidecars(4);
+    final List<BlobSidecarOld> nonCanonicalBlobSidecars =
+        dataStructureUtil.randomBlobSidecarsOld(4);
     when(chainDataProvider.getAllBlobSidecarsAtSlot(eq(UInt64.ONE), eq(indices)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(nonCanonicalBlobSidecars)));
 
@@ -84,7 +85,8 @@ public class GetAllBlobSidecarsAtSlotTest extends AbstractMigratedBeaconHandlerT
 
   @Test
   void metadata_shouldHandle200() throws IOException {
-    final List<BlobSidecarOld> nonCanonicalBlobSidecars = dataStructureUtil.randomBlobSidecars(4);
+    final List<BlobSidecarOld> nonCanonicalBlobSidecars =
+        dataStructureUtil.randomBlobSidecarsOld(4);
 
     final String data = getResponseStringFromMetadata(handler, SC_OK, nonCanonicalBlobSidecars);
     final String expected =

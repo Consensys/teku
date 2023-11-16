@@ -11,15 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
+package tech.pegasys.teku.beaconrestapi.handlers.v2.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BROADCAST_VALIDATION;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllSupportedMilestones;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.slotBasedSelector;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
@@ -29,6 +30,7 @@ import java.util.Optional;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.BroadcastValidationParameter;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
@@ -39,46 +41,99 @@ import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
-public class PostBlock extends RestApiEndpoint {
-  public static final String ROUTE = "/eth/v1/beacon/blocks";
+public class PostBlindedBlockV2 extends RestApiEndpoint {
+  public static final String ROUTE = "/eth/v2/beacon/blinded_blocks";
 
   private final ValidatorDataProvider validatorDataProvider;
   private final SyncDataProvider syncDataProvider;
 
-  public PostBlock(
+  public PostBlindedBlockV2(
       final DataProvider dataProvider,
       final Spec spec,
       final SchemaDefinitionCache schemaDefinitionCache) {
-    super(createMetadata(spec, schemaDefinitionCache));
-    this.validatorDataProvider = dataProvider.getValidatorDataProvider();
-    this.syncDataProvider = dataProvider.getSyncDataProvider();
+    this(
+        dataProvider.getValidatorDataProvider(),
+        dataProvider.getSyncDataProvider(),
+        spec,
+        schemaDefinitionCache);
   }
 
-  PostBlock(
+  PostBlindedBlockV2(
       final ValidatorDataProvider validatorDataProvider,
       final SyncDataProvider syncDataProvider,
       final Spec spec,
       final SchemaDefinitionCache schemaDefinitionCache) {
-    super(createMetadata(spec, schemaDefinitionCache));
+    super(getEndpointMetaData(spec, schemaDefinitionCache));
     this.validatorDataProvider = validatorDataProvider;
     this.syncDataProvider = syncDataProvider;
   }
 
-  private static EndpointMetadata createMetadata(
+  @Override
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
+    if (syncDataProvider.isSyncing()) {
+      request.respondError(SC_SERVICE_UNAVAILABLE, "Beacon node is currently syncing.");
+      return;
+    }
+
+    final Optional<BroadcastValidationParameter> maybeBroadcastValidation =
+        request.getOptionalQueryParameter(PARAMETER_BROADCAST_VALIDATION);
+
+    // Default to gossip validation as per spec
+    final BroadcastValidationLevel broadcastValidationLevel =
+        maybeBroadcastValidation
+            .map(BroadcastValidationParameter::toInternal)
+            .orElse(BroadcastValidationLevel.GOSSIP);
+
+    final SignedBlockContainer requestBody = request.getRequestBody();
+
+    request.respondAsync(
+        validatorDataProvider
+            .submitSignedBlindedBlock(requestBody, broadcastValidationLevel)
+            .thenApply(
+                result -> {
+                  if (result.isSuccessful()) {
+                    return AsyncApiResponse.respondWithCode(SC_OK);
+                  }
+
+                  if (result.isRejectedDueToBroadcastValidationFailure()) {
+                    return AsyncApiResponse.respondWithError(
+                        SC_BAD_REQUEST, result.getRejectionReason().orElse(""));
+                  }
+
+                  if (result.isNotImportedDueToInternalError()) {
+                    return AsyncApiResponse.respondWithError(
+                        SC_INTERNAL_SERVER_ERROR,
+                        "An internal error occurred, check the server logs for more details.");
+                  }
+
+                  return AsyncApiResponse.respondWithCode(SC_ACCEPTED);
+                }));
+  }
+
+  private static EndpointMetadata getEndpointMetaData(
       final Spec spec, final SchemaDefinitionCache schemaDefinitionCache) {
     return EndpointMetadata.post(ROUTE)
-        .operationId("publishBlock")
-        .summary("Publish a signed block")
+        .operationId("publishBlindedBlockV2")
+        .summary("Publish a signed blinded block")
         .description(
-            "Submit a signed beacon block to the beacon node to be broadcast and imported."
-                + " After Deneb, this additionally instructs the beacon node to broadcast and import all given blobs."
-                + " The beacon node performs the required validation.")
+            """
+            Instructs the beacon node to use the components of the `SignedBlindedBeaconBlock` to construct and publish a \
+            `SignedBeaconBlock` by swapping out the `transactions_root` for the corresponding full list of `transactions`. \
+            The beacon node should broadcast a newly constructed `SignedBeaconBlock` to the beacon network, \
+            to be included in the beacon chain. The beacon node is not required to validate the signed \
+            `BeaconBlock`, and a successful response (20X) only indicates that the broadcast has been \
+            successful. The beacon node is expected to integrate the new block into its state, and \
+            therefore validate the block internally, however blocks which fail the validation are still \
+            broadcast but a different status code is returned (202). Pre-Bellatrix, this endpoint will accept \
+            a `SignedBeaconBlock`. The broadcast behaviour may be adjusted via the `broadcast_validation` \
+            query parameter.""")
         .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
+        .queryParam(PARAMETER_BROADCAST_VALIDATION)
         .requestBodyType(
             getSchemaDefinitionForAllSupportedMilestones(
                 schemaDefinitionCache,
-                "SignedBeaconBlock",
-                SchemaDefinitions::getSignedBlockContainerSchema,
+                "SignedBlindedBeaconBlock",
+                SchemaDefinitions::getSignedBlindedBlockContainerSchema,
                 (blockContainer, milestone) ->
                     schemaDefinitionCache
                         .milestoneAtSlot(blockContainer.getSlot())
@@ -87,8 +142,8 @@ public class PostBlock extends RestApiEndpoint {
                 slotBasedSelector(
                     context.getBody(),
                     schemaDefinitionCache,
-                    SchemaDefinitions::getSignedBlockContainerSchema),
-            spec::deserializeSignedBlockContainer)
+                    SchemaDefinitions::getSignedBlindedBlockContainerSchema),
+            spec::deserializeSignedBlindedBlockContainer)
         .response(SC_OK, "Block has been successfully broadcast, validated and imported.")
         .response(
             SC_ACCEPTED,
@@ -97,32 +152,5 @@ public class PostBlock extends RestApiEndpoint {
         .response(
             SC_SERVICE_UNAVAILABLE, "Beacon node is currently syncing.", HTTP_ERROR_RESPONSE_TYPE)
         .build();
-  }
-
-  @Override
-  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
-    if (syncDataProvider.isSyncing()) {
-      request.respondError(SC_SERVICE_UNAVAILABLE, SERVICE_UNAVAILABLE);
-      return;
-    }
-
-    final SignedBlockContainer requestBody = request.getRequestBody();
-
-    request.respondAsync(
-        validatorDataProvider
-            .submitSignedBlock(requestBody, BroadcastValidationLevel.NOT_REQUIRED)
-            .thenApply(
-                result -> {
-                  if (result.isSuccessful()) {
-                    return AsyncApiResponse.respondWithCode(SC_OK);
-                  }
-                  if (result.isNotImportedDueToInternalError()) {
-                    return AsyncApiResponse.respondWithError(
-                        SC_INTERNAL_SERVER_ERROR,
-                        "An internal error occurred, check the server logs for more details.");
-                  } else {
-                    return AsyncApiResponse.respondWithCode(SC_ACCEPTED);
-                  }
-                }));
   }
 }

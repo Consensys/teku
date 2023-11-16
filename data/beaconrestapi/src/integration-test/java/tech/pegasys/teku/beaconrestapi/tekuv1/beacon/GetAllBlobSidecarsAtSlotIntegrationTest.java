@@ -65,13 +65,13 @@ public class GetAllBlobSidecarsAtSlotIntegrationTest
     final SignedBlockAndState nonCanonicalBlock = fork.generateNextBlock(chainUpdater.blockOptions);
 
     final List<BlobSidecarOld> nonCanonicalBlobSidecars =
-        fork.getBlobSidecars(nonCanonicalBlock.getRoot());
+        fork.getBlobSidecarsOld(nonCanonicalBlock.getRoot());
     chainUpdater.saveBlock(nonCanonicalBlock, nonCanonicalBlobSidecars);
 
     final SignedBlockAndState canonicalBlock =
         chainBuilder.generateNextBlock(1, chainUpdater.blockOptions);
     final List<BlobSidecarOld> canonicalBlobSidecars =
-        chainBuilder.getBlobSidecars(canonicalBlock.getRoot());
+        chainBuilder.getBlobSidecarsOld(canonicalBlock.getRoot());
     chainUpdater.saveBlock(canonicalBlock, canonicalBlobSidecars);
     chainUpdater.updateBestBlock(canonicalBlock);
     chainUpdater.finalizeEpoch(targetSlot.plus(1));
@@ -107,13 +107,13 @@ public class GetAllBlobSidecarsAtSlotIntegrationTest
     final SignedBlockAndState nonCanonicalBlock = fork.generateNextBlock(chainUpdater.blockOptions);
 
     final List<BlobSidecarOld> nonCanonicalBlobSidecars =
-        fork.getBlobSidecars(nonCanonicalBlock.getRoot());
+        fork.getBlobSidecarsOld(nonCanonicalBlock.getRoot());
     chainUpdater.saveBlock(nonCanonicalBlock, nonCanonicalBlobSidecars);
 
     final SignedBlockAndState canonicalBlock =
         chainBuilder.generateNextBlock(1, chainUpdater.blockOptions);
     final List<BlobSidecarOld> canonicalBlobSidecars =
-        chainBuilder.getBlobSidecars(canonicalBlock.getRoot());
+        chainBuilder.getBlobSidecarsOld(canonicalBlock.getRoot());
     chainUpdater.saveBlock(canonicalBlock, canonicalBlobSidecars);
     chainUpdater.updateBestBlock(canonicalBlock);
     chainUpdater.finalizeEpoch(targetSlot.plus(1));

@@ -799,7 +799,7 @@ class RecentChainDataTest {
     final SignedBlockAndState block =
         chainBuilder.generateBlockAtSlot(
             UInt64.valueOf(1), BlockOptions.create().setGenerateRandomBlobs(true));
-    final List<BlobSidecarOld> blobSidecars = chainBuilder.getBlobSidecars(block.getRoot());
+    final List<BlobSidecarOld> blobSidecars = chainBuilder.getBlobSidecarsOld(block.getRoot());
     assertThat(blobSidecars).isNotEmpty();
     storageSystem.chainUpdater().saveBlock(block, blobSidecars);
 
@@ -813,7 +813,7 @@ class RecentChainDataTest {
     initPostGenesis();
 
     final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(UInt64.valueOf(1));
-    final List<BlobSidecarOld> blobSidecars = chainBuilder.getBlobSidecars(block.getRoot());
+    final List<BlobSidecarOld> blobSidecars = chainBuilder.getBlobSidecarsOld(block.getRoot());
     storageSystem.chainUpdater().saveBlock(block, blobSidecars);
     assertThat(blobSidecars).isEmpty();
 
@@ -829,7 +829,7 @@ class RecentChainDataTest {
     final SignedBlockAndState block1 =
         chainBuilder.generateBlockAtSlot(
             UInt64.valueOf(1), BlockOptions.create().setGenerateRandomBlobs(true));
-    final List<BlobSidecarOld> blobSidecars1 = chainBuilder.getBlobSidecars(block1.getRoot());
+    final List<BlobSidecarOld> blobSidecars1 = chainBuilder.getBlobSidecarsOld(block1.getRoot());
     storageSystem.chainUpdater().saveBlock(block1, blobSidecars1, UInt64.valueOf(1));
     // 0 from genesis
     assertThat(recentChainData.retrieveEarliestBlobSidecarSlot())

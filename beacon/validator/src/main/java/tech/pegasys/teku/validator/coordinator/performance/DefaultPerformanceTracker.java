@@ -47,7 +47,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
@@ -416,11 +415,11 @@ public class DefaultPerformanceTracker implements PerformanceTracker {
   }
 
   @Override
-  public void saveProducedBlock(final SignedBlockContainer blockContainer) {
-    final UInt64 epoch = spec.computeEpochAtSlot(blockContainer.getSlot());
+  public void saveProducedBlock(final SignedBeaconBlock block) {
+    final UInt64 epoch = spec.computeEpochAtSlot(block.getSlot());
     final Set<SlotAndBlockRoot> blocksInEpoch =
         producedBlocksByEpoch.computeIfAbsent(epoch, __ -> concurrentSet());
-    blocksInEpoch.add(blockContainer.getSignedBlock().getSlotAndBlockRoot());
+    blocksInEpoch.add(block.getSlotAndBlockRoot());
   }
 
   @Override
