@@ -25,7 +25,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class MilestoneBasedBlockFactory implements BlockFactory {
@@ -83,12 +83,10 @@ public class MilestoneBasedBlockFactory implements BlockFactory {
   }
 
   @Override
-  public SafeFuture<SignedBlockContainer> unblindSignedBlockIfBlinded(
-      final SignedBlockContainer maybeBlindedBlockContainer) {
-    final SpecMilestone milestone = getMilestone(maybeBlindedBlockContainer.getSlot());
-    return registeredFactories
-        .get(milestone)
-        .unblindSignedBlockIfBlinded(maybeBlindedBlockContainer);
+  public SafeFuture<SignedBeaconBlock> unblindSignedBlockIfBlinded(
+      final SignedBeaconBlock maybeBlindedBlock) {
+    final SpecMilestone milestone = getMilestone(maybeBlindedBlock.getSlot());
+    return registeredFactories.get(milestone).unblindSignedBlockIfBlinded(maybeBlindedBlock);
   }
 
   private SpecMilestone getMilestone(final UInt64 slot) {

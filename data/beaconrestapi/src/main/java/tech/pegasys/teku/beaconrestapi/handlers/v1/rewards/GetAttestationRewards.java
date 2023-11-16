@@ -26,6 +26,7 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
+import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.migrated.AttestationRewardsData;
 import tech.pegasys.teku.api.migrated.GetAttestationRewardsResponse;
@@ -113,12 +114,14 @@ public class GetAttestationRewards extends RestApiEndpoint {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final UInt64 epoch = request.getPathParameter(EPOCH_PARAMETER);
-    // Validator identifier might be the validator's public key or index
-    final List<String> validatorsIds = request.getRequestBody();
+    // Validator identifier might be the validator's public key or index. If empty we query all
+    // validators.
+    final Optional<List<String>> maybeList = request.getOptionalRequestBody();
+    final List<String> validatorIds = maybeList.orElse(List.of());
 
     request.respondAsync(
         chainDataProvider
-            .calculateAttestationRewardsAtEpoch(epoch, validatorsIds)
+            .calculateAttestationRewardsAtEpoch(epoch, validatorIds)
             .thenApply(
                 result ->
                     result

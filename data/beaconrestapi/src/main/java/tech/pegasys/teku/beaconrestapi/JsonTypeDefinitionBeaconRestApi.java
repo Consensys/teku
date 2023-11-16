@@ -99,6 +99,8 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncCommitteeSu
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostValidatorLiveness;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock;
+import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.PostBlindedBlockV2;
+import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.PostBlockV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetChainHeadsV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetState;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock;
@@ -226,6 +228,8 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new GetBlockHeader(dataProvider))
             .endpoint(new PostBlock(dataProvider, spec, schemaCache))
             .endpoint(new PostBlindedBlock(dataProvider, spec, schemaCache))
+            .endpoint(new PostBlockV2(dataProvider, spec, schemaCache))
+            .endpoint(new PostBlindedBlockV2(dataProvider, spec, schemaCache))
             .endpoint(new GetBlock(dataProvider, schemaCache))
             .endpoint(new GetBlindedBlock(dataProvider, schemaCache))
             .endpoint(new GetFinalizedCheckpointState(dataProvider, spec))

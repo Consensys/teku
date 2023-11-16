@@ -531,7 +531,7 @@ public class DatabaseTest {
     // Add base blocks
     addBlocksAndBlobSidecars(
         chainBuilder.streamBlocksAndStates().collect(toList()),
-        chainBuilder.streamBlobSidecars().collect(toList()));
+        chainBuilder.streamBlobSidecarsOld().collect(toList()));
 
     // Set target slot at which to create duplicate blocks
     // and generate block options to make each block unique
@@ -1355,9 +1355,9 @@ public class DatabaseTest {
 
     final List<BlobSidecarOld> allBlocksSidecars =
         Streams.concat(
-                primaryChain.streamBlobSidecars(),
-                forkChain.streamBlobSidecars(),
-                secondFork.streamBlobSidecars())
+                primaryChain.streamBlobSidecarsOld(),
+                forkChain.streamBlobSidecarsOld(),
+                secondFork.streamBlobSidecarsOld())
             .collect(Collectors.toList());
 
     // Finalize at block 7, making the fork blocks unavailable

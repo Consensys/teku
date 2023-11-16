@@ -16,7 +16,6 @@ package tech.pegasys.teku.validator.coordinator;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -27,12 +26,8 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class BlockFactoryDeneb extends BlockFactoryPhase0 {
@@ -97,37 +92,8 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
             });
   }
 
-  /**
-   * Adding blobs and proofs after the block in order to use the cached value from the {@link
-   * ExecutionLayerChannel#builderGetPayload( SignedBlockContainer, Function)} call
-   */
-  @Override
-  public SafeFuture<SignedBlockContainer> unblindSignedBlockIfBlinded(
-      final SignedBlockContainer maybeBlindedBlockContainer) {
-    if (maybeBlindedBlockContainer.isBlinded()) {
-      return unblindBlock(maybeBlindedBlockContainer)
-          .thenApply(this::createUnblindedSignedBlockContents);
-    }
-    return SafeFuture.completedFuture(maybeBlindedBlockContainer);
-  }
-
   private BlockContents createBlockContents(
       final BeaconBlock block, final List<Blob> blobs, final List<KZGProof> kzgProofs) {
     return schemaDefinitionsDeneb.getBlockContentsSchema().create(block, kzgProofs, blobs);
-  }
-
-  /** use {@link BlockFactoryPhase0} unblinding of the {@link SignedBeaconBlock} */
-  private SafeFuture<SignedBeaconBlock> unblindBlock(
-      final SignedBlockContainer blindedBlockContainer) {
-    return super.unblindSignedBlockIfBlinded(blindedBlockContainer)
-        .thenApply(SignedBlockContainer::getSignedBlock);
-  }
-
-  // TODO: add blobs and proofs
-  private SignedBlockContents createUnblindedSignedBlockContents(
-      final SignedBeaconBlock signedBlock) {
-    return schemaDefinitionsDeneb
-        .getSignedBlockContentsSchema()
-        .create(signedBlock, Collections.emptyList(), Collections.emptyList());
   }
 }

@@ -17,8 +17,8 @@ import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
@@ -48,19 +48,19 @@ public class BlockPublisherDeneb extends AbstractBlockPublisher {
   }
 
   @Override
-  protected SafeFuture<BlockImportAndBroadcastValidationResults> importBlock(
-      final SignedBlockContainer blockContainer,
+  SafeFuture<BlockImportAndBroadcastValidationResults> importBlockAndBlobSidecars(
+      final SignedBeaconBlock block,
+      final List<BlobSidecar> blobSidecars,
       final BroadcastValidationLevel broadcastValidationLevel) {
-    final SignedBeaconBlock block = blockContainer.getSignedBlock();
-    // TODO: import blob sidecars with inclusion proof
-    blobSidecarPool.onCompletedBlockAndBlobSidecars(block, List.of());
+    // provide blobs for the block before importing it
+    blobSidecarPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
     return blockImportChannel.importBlock(block, broadcastValidationLevel);
   }
 
   @Override
-  void publishBlock(final SignedBlockContainer blockContainer) {
-    // TODO: publish blob sidecars with inclusion proof
-    blobSidecarGossipChannel.publishBlobSidecars(List.of());
-    blockGossipChannel.publishBlock(blockContainer.getSignedBlock());
+  void publishBlockAndBlobSidecars(
+      final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
+    blockGossipChannel.publishBlock(block);
+    blobSidecarGossipChannel.publishBlobSidecars(blobSidecars);
   }
 }

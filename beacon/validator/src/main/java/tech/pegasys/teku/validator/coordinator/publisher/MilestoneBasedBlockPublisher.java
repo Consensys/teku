@@ -78,12 +78,11 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
 
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
-      final SignedBlockContainer maybeBlindedBlockContainer,
+      final SignedBlockContainer blockContainer,
       final BroadcastValidationLevel broadcastValidationLevel) {
-    final SpecMilestone blockMilestone =
-        spec.atSlot(maybeBlindedBlockContainer.getSlot()).getMilestone();
+    final SpecMilestone blockMilestone = spec.atSlot(blockContainer.getSlot()).getMilestone();
     return registeredPublishers
         .get(blockMilestone)
-        .sendSignedBlock(maybeBlindedBlockContainer, broadcastValidationLevel);
+        .sendSignedBlock(blockContainer, broadcastValidationLevel);
   }
 }
