@@ -26,10 +26,6 @@ import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.pending_i
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.pending_queued;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.withdrawal_done;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.withdrawal_possible;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter.ACTIVE;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter.EXITED;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter.PENDING;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter.WITHDRAWAL;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
@@ -43,6 +39,7 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.assertj.core.api.AssertionsForClassTypes;
@@ -72,8 +69,8 @@ class PostStateValidatorsTest extends AbstractMigratedBeaconHandlerWithChainData
 
   @Test
   public void shouldGetValidatorFromState() throws Exception {
-    final PostStateValidators.RequestBody requestBody =
-        new PostStateValidators.RequestBody(List.of("1", "2", "3", "4"), List.of());
+    final PostStateValidators.RequestBody requestBody = new PostStateValidators.RequestBody();
+    requestBody.setIds(Optional.of(List.of("1", "2", "3", "4")));
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
             .metadata(handler.getMetadata())
@@ -125,11 +122,10 @@ class PostStateValidatorsTest extends AbstractMigratedBeaconHandlerWithChainData
   @ParameterizedTest(name = "{0}")
   @MethodSource("provideStatusParameters")
   public void shouldGetValidatorsByStatusParameter(
-      final List<StatusParameter> statusParameters,
-      final Set<ValidatorStatus> expectedValidatorStatuses)
+      final List<String> statusParameters, final Set<ValidatorStatus> expectedValidatorStatuses)
       throws Exception {
-    final PostStateValidators.RequestBody requestBody =
-        new PostStateValidators.RequestBody(List.of(), statusParameters);
+    final PostStateValidators.RequestBody requestBody = new PostStateValidators.RequestBody();
+    requestBody.setStatuses(Optional.of(statusParameters));
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
             .metadata(handler.getMetadata())
@@ -151,8 +147,8 @@ class PostStateValidatorsTest extends AbstractMigratedBeaconHandlerWithChainData
 
   @Test
   public void shouldGetBadRequestForInvalidState() {
-    final PostStateValidators.RequestBody requestBody =
-        new PostStateValidators.RequestBody(List.of("1"), List.of());
+    final PostStateValidators.RequestBody requestBody = new PostStateValidators.RequestBody();
+    requestBody.setIds(Optional.of(List.of("1")));
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
             .metadata(handler.getMetadata())
@@ -218,9 +214,9 @@ class PostStateValidatorsTest extends AbstractMigratedBeaconHandlerWithChainData
 
   private static Stream<Arguments> provideStatusParameters() {
     return Stream.of(
-        Arguments.of(List.of(ACTIVE), Set.of(active_ongoing, active_exiting, active_slashed)),
-        Arguments.of(List.of(PENDING), Set.of(pending_initialized, pending_queued)),
-        Arguments.of(List.of(EXITED), Set.of(exited_slashed, exited_unslashed)),
-        Arguments.of(List.of(WITHDRAWAL), Set.of(withdrawal_done, withdrawal_possible)));
+        Arguments.of(List.of("active"), Set.of(active_ongoing, active_exiting, active_slashed)),
+        Arguments.of(List.of("pending"), Set.of(pending_initialized, pending_queued)),
+        Arguments.of(List.of("exited"), Set.of(exited_slashed, exited_unslashed)),
+        Arguments.of(List.of("withdrawal"), Set.of(withdrawal_done, withdrawal_possible)));
   }
 }

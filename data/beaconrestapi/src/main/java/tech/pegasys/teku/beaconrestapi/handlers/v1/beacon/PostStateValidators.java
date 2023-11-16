@@ -128,7 +128,7 @@ public class PostStateValidators extends RestApiEndpoint {
     }
 
     public void setStatuses(final Optional<List<String>> statuses) {
-      statuses.ifPresent(s -> this.statuses = s.stream().map(StatusParameter::valueOf).toList());
+      statuses.ifPresent(s -> this.statuses = s.stream().map(StatusParameter::parse).toList());
     }
   }
 }
