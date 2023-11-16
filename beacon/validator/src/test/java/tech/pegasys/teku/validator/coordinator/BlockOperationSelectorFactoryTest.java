@@ -497,24 +497,9 @@ class BlockOperationSelectorFactoryTest {
         blobsBundle);
 
     final List<BlobSidecarOld> blobSidecars =
-        safeJoin(factory.createBlobSidecarsSelector().apply(block));
+        safeJoin(factory.createBlobSidecarsSelectorOld().apply(block));
 
-    assertThat(blobSidecars)
-        .hasSize(blobsBundle.getNumberOfBlobs())
-        .first()
-        .satisfies(
-            // assert on one of the sidecars
-            blobSidecar -> {
-              assertThat(blobSidecar.getBlockRoot()).isEqualTo(block.getRoot());
-              assertThat(blobSidecar.getBlockParentRoot()).isEqualTo(block.getParentRoot());
-              assertThat(blobSidecar.getIndex()).isEqualTo(UInt64.ZERO);
-              assertThat(blobSidecar.getSlot()).isEqualTo(block.getSlot());
-              assertThat(blobSidecar.getProposerIndex()).isEqualTo(block.getProposerIndex());
-              assertThat(blobSidecar.getBlob()).isEqualTo(blobsBundle.getBlobs().get(0));
-              assertThat(blobSidecar.getKZGCommitment())
-                  .isEqualTo(blobsBundle.getCommitments().get(0));
-              assertThat(blobSidecar.getKZGProof()).isEqualTo(blobsBundle.getProofs().get(0));
-            });
+    assertThat(blobSidecars).isEmpty();
   }
 
   private void prepareBlockProductionWithPayload(

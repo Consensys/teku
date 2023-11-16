@@ -21,20 +21,26 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
+import tech.pegasys.teku.infrastructure.ssz.tree.MerkleUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.versions.capella.helpers.MiscHelpersCapella;
@@ -44,6 +50,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 public class MiscHelpersDeneb extends MiscHelpersCapella {
   private final Predicates predicates;
   private final BeaconBlockBodySchemaDeneb<?> beaconBlockBodySchema;
+  private final BlobSidecarSchema blobSidecarSchema;
 
   public static MiscHelpersDeneb required(final MiscHelpers miscHelpers) {
     return miscHelpers
@@ -63,6 +70,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
     this.predicates = predicates;
     this.beaconBlockBodySchema =
         (BeaconBlockBodySchemaDeneb<?>) schemaDefinitions.getBeaconBlockBodySchema();
+    this.blobSidecarSchema = schemaDefinitions.getBlobSidecarSchema();
   }
 
   /**
@@ -239,6 +247,20 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
             .getChildGeneralizedIndex(blobSidecarIndex.longValue());
     return (int)
         GIndexUtil.gIdxCompose(blobKzgCommitmentsGeneralizedIndex, commitmentGeneralizedIndex);
+  }
+
+  public BlobSidecar computeBlobSidecar(
+      final SignedBeaconBlock signedBeaconBlock,
+      final UInt64 index,
+      final Blob blob,
+      final SszKZGCommitment commitment,
+      final SszKZGProof proof) {
+    final List<Bytes32> kzgCommitmentInclusionProof =
+        MerkleUtil.constructMerkleProof(
+            signedBeaconBlock.getMessage().getBody().getBackingNode(),
+            getBlobSidecarKzgCommitmentGeneralizedIndex(index));
+    return blobSidecarSchema.create(
+        index, blob, commitment, proof, signedBeaconBlock.asHeader(), kzgCommitmentInclusionProof);
   }
 
   public boolean verifyBlobSidecarMerkleProof(final BlobSidecar blobSidecar) {

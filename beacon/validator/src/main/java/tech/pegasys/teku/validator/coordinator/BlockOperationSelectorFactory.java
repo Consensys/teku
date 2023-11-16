@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -27,13 +28,16 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchemaOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -48,7 +52,9 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -289,7 +295,7 @@ public class BlockOperationSelectorFactory {
               if (bodyBuilder.isBlinded()) {
                 return getBlobKzgCommitments(executionPayloadResult);
               } else {
-                return getBlobsBundle(executionPayloadResult)
+                return getExecutionBlobsBundle(executionPayloadResult)
                     .thenApply(
                         blobsBundle ->
                             schemaDefinitionsDeneb
@@ -329,38 +335,68 @@ public class BlockOperationSelectorFactory {
     };
   }
 
-  // TODO: create blob sidecars with inclusion proofs
-  public Function<BeaconBlock, SafeFuture<List<BlobSidecarOld>>> createBlobSidecarsSelector() {
-    return block -> {
-      final BlobSidecarSchemaOld blobSidecarSchema =
-          SchemaDefinitionsDeneb.required(spec.atSlot(block.getSlot()).getSchemaDefinitions())
-              .getBlobSidecarOldSchema();
-      return getCachedBlobsBundle(block.getSlot())
-          .thenApply(
-              blobsBundle ->
-                  IntStream.range(0, blobsBundle.getNumberOfBlobs())
-                      .mapToObj(
-                          index ->
-                              blobSidecarSchema.create(
-                                  block.getRoot(),
-                                  UInt64.valueOf(index),
-                                  block.getSlot(),
-                                  block.getParentRoot(),
-                                  block.getProposerIndex(),
-                                  blobsBundle.getBlobs().get(index),
-                                  blobsBundle.getCommitments().get(index),
-                                  blobsBundle.getProofs().get(index)))
-                      .toList());
+  @Deprecated
+  public Function<BeaconBlock, SafeFuture<List<BlobSidecarOld>>> createBlobSidecarsSelectorOld() {
+    return block -> SafeFuture.completedFuture(Collections.emptyList());
+  }
+
+  public Function<SignedBlockContainer, List<BlobSidecar>> createBlobSidecarsSelector() {
+    return blockContainer -> {
+      final UInt64 slot = blockContainer.getSlot();
+      final MiscHelpersDeneb miscHelpersDeneb =
+          MiscHelpersDeneb.required(spec.atSlot(slot).miscHelpers());
+
+      final SszList<Blob> blobs;
+      final SszList<SszKZGCommitment> commitments;
+      final SszList<SszKZGProof> proofs;
+
+      if (blockContainer.isBlinded()) {
+        // need to use the already available builder blobs bundle for the blinded flow, because the
+        // blobs and the proofs wouldn't be part of the BlockContainer
+        final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
+            getCachedBuilderBlobsBundle(slot);
+        blobs = blobsBundle.getBlobs();
+        commitments = blobsBundle.getCommitments();
+        proofs = blobsBundle.getProofs();
+      } else {
+        blobs =
+            blockContainer
+                .getBlobs()
+                .orElseThrow(
+                    () ->
+                        new IllegalStateException("Blobs are not available in " + blockContainer));
+        commitments =
+            BeaconBlockBodyDeneb.required(blockContainer.getSignedBlock().getMessage().getBody())
+                .getBlobKzgCommitments();
+        proofs =
+            blockContainer
+                .getKzgProofs()
+                .orElseThrow(
+                    () ->
+                        new IllegalStateException("Proofs are not available in " + blockContainer));
+      }
+
+      return IntStream.range(0, blobs.size())
+          .mapToObj(
+              index ->
+                  miscHelpersDeneb.computeBlobSidecar(
+                      blockContainer.getSignedBlock(),
+                      UInt64.valueOf(index),
+                      blobs.get(index),
+                      commitments.get(index),
+                      proofs.get(index)))
+          .toList();
     };
   }
 
-  private SafeFuture<BlobsBundle> getBlobsBundle(
+  private SafeFuture<BlobsBundle> getExecutionBlobsBundle(
       final ExecutionPayloadResult executionPayloadResult) {
     return executionPayloadResult
         .getBlobsBundleFuture()
-        .orElseThrow(this::blobsBundleIsNotAvailableException)
+        .orElseThrow(this::executionBlobsBundleIsNotAvailableException)
         .thenApply(
-            blobsBundle -> blobsBundle.orElseThrow(this::blobsBundleIsNotAvailableException));
+            blobsBundle ->
+                blobsBundle.orElseThrow(this::executionBlobsBundleIsNotAvailableException));
   }
 
   private SafeFuture<SszList<SszKZGCommitment>> getBlobKzgCommitments(
@@ -376,18 +412,19 @@ public class BlockOperationSelectorFactory {
                         () -> new IllegalStateException("BlobKzgCommitments are not available")));
   }
 
-  private SafeFuture<BlobsBundle> getCachedBlobsBundle(final UInt64 slot) {
-    final ExecutionPayloadResult executionPayloadResult = getCachedPayloadResult(slot);
-    return getBlobsBundle(executionPayloadResult);
-  }
-
-  private ExecutionPayloadResult getCachedPayloadResult(final UInt64 slot) {
+  private tech.pegasys.teku.spec.datastructures.builder.BlobsBundle getCachedBuilderBlobsBundle(
+      final UInt64 slot) {
     return executionLayerBlockProductionManager
-        .getCachedPayloadResult(slot)
-        .orElseThrow(() -> new IllegalStateException("ExecutionPayloadResult is not available"));
+        .getCachedUnblindedPayload(slot)
+        .orElseThrow(
+            () -> new IllegalStateException("BuilderPayload hasn't been cached for slot " + slot))
+        .getOptionalBlobsBundle()
+        .orElseThrow(
+            () ->
+                new IllegalStateException("builder BlobsBundle is not available for slot " + slot));
   }
 
-  private IllegalStateException blobsBundleIsNotAvailableException() {
-    return new IllegalStateException("BlobsBundle is not available");
+  private IllegalStateException executionBlobsBundleIsNotAvailableException() {
+    return new IllegalStateException("execution BlobsBundle is not available");
   }
 }

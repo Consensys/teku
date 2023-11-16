@@ -16,15 +16,19 @@ package tech.pegasys.teku.validator.coordinator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 
+import java.util.List;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
+import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -87,6 +91,51 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
 
     assertThat(unblindedBlock.isBlinded()).isFalse();
     assertThat(unblindedBlock).isEqualTo(expectedUnblindedBlock);
+  }
+
+  @Test
+  void shouldCreateValidBlobSidecarsForBlockContents() {
+    final Spec spec = TestSpecFactory.createMinimalDeneb();
+    final BlobsBundle blobsBundle = prepareBlobsBundle(spec, 3);
+
+    final List<BlobSidecar> blobSidecars = assertBlobSidecarsCreated(false, spec);
+
+    IntStream.range(0, blobSidecars.size())
+        .forEach(
+            index -> {
+              final BlobSidecar blobSidecar = blobSidecars.get(index);
+              // check sidecar is created using the prepared BlobsBundle
+              assertThat(blobSidecar.getKZGProof()).isEqualTo(blobsBundle.getProofs().get(index));
+              assertThat(blobSidecar.getBlob()).isEqualTo(blobsBundle.getBlobs().get(index));
+              assertThat(blobSidecar.getKZGCommitment())
+                  .isEqualTo(blobsBundle.getCommitments().get(index));
+            });
+  }
+
+  @Test
+  void shouldCreateValidBlobSidecarsForBlindedBlock() {
+    final Spec spec = TestSpecFactory.createMinimalDeneb();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+
+    // random payload required to construct a valid BuilderPayload
+    executionPayload = dataStructureUtil.randomExecutionPayload();
+
+    final int blobsCount = 3;
+    final BlobsBundle blobsBundle = prepareBlobsBundle(spec, blobsCount);
+
+    final List<BlobSidecar> blobSidecars = assertBlobSidecarsCreated(true, spec);
+
+    IntStream.range(0, blobSidecars.size())
+        .forEach(
+            index -> {
+              final BlobSidecar blobSidecar = blobSidecars.get(index);
+              // check sidecar is created using the cached BuilderPayload and block commitments
+              // (based on the execution blobs bundle)
+              assertThat(blobSidecar.getKZGProof()).isEqualTo(blobsBundle.getProofs().get(index));
+              assertThat(blobSidecar.getBlob()).isEqualTo(blobsBundle.getBlobs().get(index));
+              assertThat(blobSidecar.getKZGCommitment())
+                  .isEqualTo(blobsBundle.getCommitments().get(index));
+            });
   }
 
   @Override

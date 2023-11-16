@@ -38,10 +38,12 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
@@ -291,6 +293,50 @@ public abstract class AbstractBlockFactoryTest {
     return spec.blindSignedBeaconBlock(unblindedSignedBeaconBlock);
   }
 
+  protected List<BlobSidecar> assertBlobSidecarsCreated(final boolean blinded, final Spec spec) {
+    final BlockFactory blockFactory = createBlockFactory(spec);
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+
+    final SignedBlockContainer signedBlockContainer;
+
+    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
+      final SszList<SszKZGCommitment> commitments =
+          blobKzgCommitments.orElseGet(dataStructureUtil::randomBlobKzgCommitments);
+      if (blinded) {
+        // simulate caching of the builder payload
+        when(executionLayer.getCachedUnblindedPayload(any()))
+            .thenReturn(Optional.of(getBuilderPayload(spec)));
+        signedBlockContainer =
+            dataStructureUtil.randomSignedBlindedBeaconBlockWithCommitments(commitments);
+      } else {
+        signedBlockContainer =
+            dataStructureUtil.randomSignedBlockContents(
+                blobsBundle.orElseGet(dataStructureUtil::randomBlobsBundle));
+      }
+    } else {
+      if (blinded) {
+        signedBlockContainer = dataStructureUtil.randomSignedBlindedBeaconBlock();
+      } else {
+        signedBlockContainer = dataStructureUtil.randomSignedBeaconBlock();
+      }
+    }
+
+    final List<BlobSidecar> blobSidecars = blockFactory.createBlobSidecars(signedBlockContainer);
+
+    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
+      blobKzgCommitments
+          .map(SszList::size)
+          .ifPresentOrElse(
+              numberOfCommitments -> assertThat(blobSidecars).hasSize(numberOfCommitments),
+              () -> assertThat(blobSidecars).isNotEmpty());
+
+    } else {
+      assertThat(blobSidecars).isEmpty();
+    }
+
+    return blobSidecars;
+  }
+
   protected void prepareDefaultPayload(final Spec spec) {
     executionPayload =
         SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
@@ -340,6 +386,23 @@ public abstract class AbstractBlockFactoryTest {
         dataStructureUtil.randomBlobKzgCommitments(count);
     this.blobKzgCommitments = Optional.of(blobKzgCommitments);
     return blobKzgCommitments;
+  }
+
+  protected BuilderPayload getBuilderPayload(final Spec spec) {
+    // pre Deneb
+    if (blobsBundle.isEmpty()) {
+      return executionPayload;
+    }
+    // post Deneb
+    final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
+        SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions());
+    final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle builderBlobsBundle =
+        schemaDefinitionsDeneb
+            .getBlobsBundleSchema()
+            .createFromExecutionBlobsBundle(blobsBundle.orElseThrow());
+    return schemaDefinitionsDeneb
+        .getExecutionPayloadAndBlobsBundleSchema()
+        .create(executionPayload, builderBlobsBundle);
   }
 
   private void setupExecutionLayerBlockAndBlobsProduction() {
@@ -419,22 +482,5 @@ public abstract class AbstractBlockFactoryTest {
             () ->
                 new IllegalStateException(
                     "Neither BlobsBundle or BlobKzgCommitments were prepared"));
-  }
-
-  private BuilderPayload getBuilderPayload(final Spec spec) {
-    // pre Deneb
-    if (blobsBundle.isEmpty()) {
-      return executionPayload;
-    }
-    // post Deneb
-    final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
-        SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions());
-    final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle builderBlobsBundle =
-        schemaDefinitionsDeneb
-            .getBlobsBundleSchema()
-            .createFromExecutionBlobsBundle(blobsBundle.orElseThrow());
-    return schemaDefinitionsDeneb
-        .getExecutionPayloadAndBlobsBundleSchema()
-        .create(executionPayload, builderBlobsBundle);
   }
 }

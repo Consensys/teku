@@ -28,6 +28,7 @@ import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -35,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -184,6 +186,30 @@ class MiscHelpersDenebTest {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessage(
             "Blob sidecar index mismatch, expected 0, got %s", blobSidecars.get(0).getIndex());
+  }
+
+  @Test
+  void shouldComputeValidBlobSidecar() {
+    final SignedBeaconBlock signedBeaconBlock =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(1);
+    final Blob blob = dataStructureUtil.randomBlob();
+    final SszKZGCommitment commitment =
+        BeaconBlockBodyDeneb.required(signedBeaconBlock.getMessage().getBody())
+            .getBlobKzgCommitments()
+            .get(0);
+    final SszKZGProof proof = dataStructureUtil.randomSszKZGProof();
+
+    final BlobSidecar blobSidecar =
+        miscHelpersDeneb.computeBlobSidecar(
+            signedBeaconBlock, UInt64.ZERO, blob, commitment, proof);
+
+    assertThat(blobSidecar.getIndex()).isEqualTo(UInt64.ZERO);
+    assertThat(blobSidecar.getBlob()).isEqualTo(blob);
+    assertThat(blobSidecar.getSszKZGProof()).isEqualTo(proof);
+    assertThat(blobSidecar.getSszKZGCommitment()).isEqualTo(commitment);
+    assertThat(blobSidecar.getSignedBeaconBlockHeader()).isEqualTo(signedBeaconBlock.asHeader());
+    // verify the merkle proof
+    assertThat(miscHelpersDeneb.verifyBlobSidecarMerkleProof(blobSidecar)).isTrue();
   }
 
   @Test

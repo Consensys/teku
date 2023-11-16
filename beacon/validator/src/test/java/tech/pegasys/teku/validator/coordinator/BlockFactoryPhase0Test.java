@@ -163,6 +163,16 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
     assertBlockUnblinded(originalBlindedSignedBlock, spec);
   }
 
+  @Test
+  void shouldCreateEmptyBlobSidecarsForBlock() {
+    assertBlobSidecarsCreated(false, TestSpecFactory.createMinimalPhase0());
+  }
+
+  @Test
+  void shouldCreateEmptyBlobSidecarsForBlindedBlock() {
+    assertBlobSidecarsCreated(true, TestSpecFactory.createMinimalPhase0());
+  }
+
   @Override
   public BlockFactory createBlockFactory(final Spec spec) {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);

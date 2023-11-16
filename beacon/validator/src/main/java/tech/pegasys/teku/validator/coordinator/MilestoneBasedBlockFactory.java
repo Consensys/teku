@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.coordinator;
 
 import com.google.common.base.Suppliers;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -24,8 +25,10 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class MilestoneBasedBlockFactory implements BlockFactory {
@@ -87,6 +90,12 @@ public class MilestoneBasedBlockFactory implements BlockFactory {
       final SignedBeaconBlock maybeBlindedBlock) {
     final SpecMilestone milestone = getMilestone(maybeBlindedBlock.getSlot());
     return registeredFactories.get(milestone).unblindSignedBlockIfBlinded(maybeBlindedBlock);
+  }
+
+  @Override
+  public List<BlobSidecar> createBlobSidecars(final SignedBlockContainer blockContainer) {
+    final SpecMilestone milestone = getMilestone(blockContainer.getSlot());
+    return registeredFactories.get(milestone).createBlobSidecars(blockContainer);
   }
 
   private SpecMilestone getMilestone(final UInt64 slot) {

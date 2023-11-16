@@ -24,8 +24,10 @@ import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -56,10 +58,10 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
               if (blockContainer.isBlinded()) {
                 return SafeFuture.completedFuture(blockContainer);
               }
-              // TODO: add blobs and proofs
+              // TODO: add blobs and proofs from the execution BlobsBundle
               final BeaconBlock block = blockContainer.getBlock();
               return operationSelector
-                  .createBlobSidecarsSelector()
+                  .createBlobSidecarsSelectorOld()
                   .apply(block)
                   .thenApply(
                       blobSidecars ->
@@ -80,16 +82,21 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
               if (blockContainer.isBlinded()) {
                 return SafeFuture.completedFuture(blockContainer);
               }
-              // TODO: add blobs and proofs
+              // TODO: add blobs and proofs from the execution BlobsBundle
               final BeaconBlock block = blockContainer.getBlock();
               return operationSelector
-                  .createBlobSidecarsSelector()
+                  .createBlobSidecarsSelectorOld()
                   .apply(block)
                   .thenApply(
                       blobSidecars ->
                           createBlockContents(
                               block, Collections.emptyList(), Collections.emptyList()));
             });
+  }
+
+  @Override
+  public List<BlobSidecar> createBlobSidecars(final SignedBlockContainer blockContainer) {
+    return operationSelector.createBlobSidecarsSelector().apply(blockContainer);
   }
 
   private BlockContents createBlockContents(
