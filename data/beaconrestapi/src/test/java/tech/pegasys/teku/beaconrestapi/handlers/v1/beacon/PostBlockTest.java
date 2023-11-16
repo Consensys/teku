@@ -25,7 +25,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 
-class PostBlockTest extends AbstractPostBlockTest {
+public class PostBlockTest extends AbstractPostBlockTest {
 
   @Override
   public RestApiEndpoint getHandler() {

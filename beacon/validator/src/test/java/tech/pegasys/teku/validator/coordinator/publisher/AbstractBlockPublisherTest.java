@@ -145,9 +145,7 @@ public class AbstractBlockPublisherTest {
     verify(blockPublisher, never()).publishBlockAndBlobSidecars(signedBlock, List.of());
     assertThatSafeFuture(sendSignedBlockResult)
         .isCompletedWithValue(
-            SendSignedBlockResult.rejected(
-                "Broadcast validation failed: "
-                    + BroadcastValidationResult.CONSENSUS_FAILURE.name()));
+            SendSignedBlockResult.rejected("FAILED_BROADCAST_VALIDATION: CONSENSUS_FAILURE"));
   }
 
   private static class BlockPublisherTest extends AbstractBlockPublisher {
