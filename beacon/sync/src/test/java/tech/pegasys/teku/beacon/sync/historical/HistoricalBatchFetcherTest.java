@@ -121,7 +121,7 @@ public class HistoricalBatchFetcherTest {
     firstBlockInBatch = blockBatch.get(0);
     blobSidecarsBatch =
         chainBuilder
-            .streamBlobSidecarsOld(10, 20)
+            .streamBlobSidecars(10, 20)
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
     final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
