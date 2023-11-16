@@ -19,7 +19,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public interface BlockFactory {
@@ -38,6 +38,5 @@ public interface BlockFactory {
       BLSSignature randaoReveal,
       Optional<Bytes32> optionalGraffiti);
 
-  SafeFuture<SignedBlockContainer> unblindSignedBlockIfBlinded(
-      SignedBlockContainer maybeBlindedBlockContainer);
+  SafeFuture<SignedBeaconBlock> unblindSignedBlockIfBlinded(SignedBeaconBlock maybeBlindedBlock);
 }

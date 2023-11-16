@@ -15,9 +15,12 @@ package tech.pegasys.teku.validator.coordinator.publisher;
 
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 
+import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
@@ -50,16 +53,70 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
 
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
-      final SignedBlockContainer maybeBlindedBlockContainer,
+      final SignedBlockContainer blockContainer,
       final BroadcastValidationLevel broadcastValidationLevel) {
     return blockFactory
-        .unblindSignedBlockIfBlinded(maybeBlindedBlockContainer)
+        .unblindSignedBlockIfBlinded(blockContainer.getSignedBlock())
         .thenPeek(performanceTracker::saveProducedBlock)
         .thenCompose(
-            signedBlockContainer ->
-                gossipAndImportUnblindedSignedBlock(signedBlockContainer, broadcastValidationLevel))
-        .thenCompose(result -> calculateResult(maybeBlindedBlockContainer, result));
+            signedBlock ->
+                // TODO: produce blob sidecars for Deneb (using BlockFactory)
+                gossipAndImportUnblindedSignedBlockAndBlobSidecars(
+                    signedBlock, List.of(), broadcastValidationLevel))
+        .thenCompose(result -> calculateResult(blockContainer, result));
   }
+
+  private SafeFuture<BlockImportAndBroadcastValidationResults>
+      gossipAndImportUnblindedSignedBlockAndBlobSidecars(
+          final SignedBeaconBlock block,
+          final List<BlobSidecar> blobSidecars,
+          final BroadcastValidationLevel broadcastValidationLevel) {
+
+    if (broadcastValidationLevel == BroadcastValidationLevel.NOT_REQUIRED) {
+      // when broadcast validation is disabled, we can publish the block (and blob sidecars)
+      // immediately and then import
+      publishBlockAndBlobSidecars(block, blobSidecars);
+      return importBlockAndBlobSidecars(block, blobSidecars, broadcastValidationLevel);
+    }
+
+    // when broadcast validation is enabled, we need to wait for the validation to complete before
+    // publishing the block (and blob sidecars)
+
+    final SafeFuture<BlockImportAndBroadcastValidationResults>
+        blockImportAndBroadcastValidationResults =
+            importBlockAndBlobSidecars(block, blobSidecars, broadcastValidationLevel);
+
+    blockImportAndBroadcastValidationResults
+        .thenCompose(BlockImportAndBroadcastValidationResults::broadcastValidationResult)
+        .thenAccept(
+            broadcastValidationResult -> {
+              if (broadcastValidationResult == BroadcastValidationResult.SUCCESS) {
+                publishBlockAndBlobSidecars(block, blobSidecars);
+                LOG.debug("Block (and blob sidecars) publishing initiated");
+              } else {
+                LOG.warn(
+                    "Block (and blob sidecars) publishing skipped due to broadcast validation result {} for slot {}",
+                    broadcastValidationResult,
+                    block.getSlot());
+              }
+            })
+        .finish(
+            err ->
+                LOG.error(
+                    "Block (and blob sidecars) publishing failed for slot {}",
+                    block.getSlot(),
+                    err));
+
+    return blockImportAndBroadcastValidationResults;
+  }
+
+  abstract SafeFuture<BlockImportAndBroadcastValidationResults> importBlockAndBlobSidecars(
+      SignedBeaconBlock block,
+      List<BlobSidecar> blobSidecars,
+      BroadcastValidationLevel broadcastValidationLevel);
+
+  abstract void publishBlockAndBlobSidecars(
+      SignedBeaconBlock block, List<BlobSidecar> blobSidecars);
 
   private SafeFuture<SendSignedBlockResult> calculateResult(
       final SignedBlockContainer maybeBlindedBlockContainer,
@@ -110,51 +167,4 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
                       });
             });
   }
-
-  private SafeFuture<BlockImportAndBroadcastValidationResults> gossipAndImportUnblindedSignedBlock(
-      final SignedBlockContainer blockContainer,
-      final BroadcastValidationLevel broadcastValidationLevel) {
-
-    if (broadcastValidationLevel == BroadcastValidationLevel.NOT_REQUIRED) {
-      // when broadcast validation is disabled, we can publish the block immediately and then import
-      publishBlock(blockContainer);
-      return importBlock(blockContainer, broadcastValidationLevel);
-    }
-
-    // when broadcast validation is enabled, we need to wait for the validation to complete before
-    // publishing the block
-
-    final SafeFuture<BlockImportAndBroadcastValidationResults>
-        blockImportAndBroadcastValidationResults =
-            importBlock(blockContainer, broadcastValidationLevel);
-
-    blockImportAndBroadcastValidationResults
-        .thenCompose(BlockImportAndBroadcastValidationResults::broadcastValidationResult)
-        .thenAccept(
-            broadcastValidationResult -> {
-              if (broadcastValidationResult == BroadcastValidationResult.SUCCESS) {
-                publishBlock(blockContainer);
-                LOG.debug("Block (and blob sidecars) publishing initiated");
-              } else {
-                LOG.warn(
-                    "Block (and blob sidecars) publishing skipped due to broadcast validation result {} for slot {}",
-                    broadcastValidationResult,
-                    blockContainer.getSlot());
-              }
-            })
-        .finish(
-            err ->
-                LOG.error(
-                    "Block (and blob sidecars) publishing failed for slot {}",
-                    blockContainer.getSlot(),
-                    err));
-
-    return blockImportAndBroadcastValidationResults;
-  }
-
-  abstract SafeFuture<BlockImportAndBroadcastValidationResults> importBlock(
-      final SignedBlockContainer blockContainer,
-      final BroadcastValidationLevel broadcastValidationLevel);
-
-  abstract void publishBlock(final SignedBlockContainer blockContainer);
 }
