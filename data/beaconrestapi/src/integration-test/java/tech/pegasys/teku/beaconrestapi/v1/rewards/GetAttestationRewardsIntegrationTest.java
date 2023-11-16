@@ -55,10 +55,21 @@ public class GetAttestationRewardsIntegrationTest extends AbstractDataBackedRest
   }
 
   @Test
-  public void shouldReturnAllValidatorsWhenNoValidatorIdIsProvided() throws Exception {
+  public void shouldReturnAllValidatorsWhenValidatorIdListIsEmpty() throws Exception {
     final SszList<Validator> validators =
         recentChainData.getBestState().orElseThrow().get().getValidators();
     Response response = sendGetAttestationRewardsRequest(validRewardsEpoch, List.of());
+    assertThat(response.code()).isEqualTo(SC_OK);
+
+    final JsonNode jsonNode = JsonTestUtil.parseAsJsonNode(response.body().string());
+    assertThat(jsonNode.get("data").get("total_rewards").size()).isEqualTo(validators.size());
+  }
+
+  @Test
+  public void shouldReturnAllValidatorsWhenRequestBodyIsEmpty() throws Exception {
+    final SszList<Validator> validators =
+        recentChainData.getBestState().orElseThrow().get().getValidators();
+    Response response = sendGetAttestationRewardsRequest(validRewardsEpoch, null);
     assertThat(response.code()).isEqualTo(SC_OK);
 
     final JsonNode jsonNode = JsonTestUtil.parseAsJsonNode(response.body().string());
@@ -83,9 +94,10 @@ public class GetAttestationRewardsIntegrationTest extends AbstractDataBackedRest
   private Response sendGetAttestationRewardsRequest(
       final long epoch, final List<String> validatorIds) {
     try {
+      final String requestBody =
+          validatorIds != null ? jsonProvider.objectToJSON(validatorIds) : "";
       return post(
-          GetAttestationRewards.ROUTE.replace("{epoch}", String.valueOf(epoch)),
-          jsonProvider.objectToJSON(validatorIds));
+          GetAttestationRewards.ROUTE.replace("{epoch}", String.valueOf(epoch)), requestBody);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
