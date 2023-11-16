@@ -78,7 +78,7 @@ public class PostBlock extends RestApiEndpoint {
         .requestBodyType(
             getSchemaDefinitionForAllSupportedMilestones(
                 schemaDefinitionCache,
-                "SignedBlock",
+                "SignedBeaconBlock",
                 SchemaDefinitions::getSignedBlockContainerSchema,
                 (blockContainer, milestone) ->
                     schemaDefinitionCache

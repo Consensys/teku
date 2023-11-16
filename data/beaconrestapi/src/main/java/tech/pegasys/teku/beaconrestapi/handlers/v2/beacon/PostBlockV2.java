@@ -88,7 +88,7 @@ public class PostBlockV2 extends RestApiEndpoint {
         .requestBodyType(
             getSchemaDefinitionForAllSupportedMilestones(
                 schemaDefinitionCache,
-                "SignedBlock",
+                "SignedBeaconBlock",
                 SchemaDefinitions::getSignedBlockContainerSchema,
                 (blockContainer, milestone) ->
                     schemaDefinitionCache
@@ -120,6 +120,7 @@ public class PostBlockV2 extends RestApiEndpoint {
     final Optional<BroadcastValidationParameter> maybeBroadcastValidation =
         request.getOptionalQueryParameter(PARAMETER_BROADCAST_VALIDATION);
 
+    // Default to gossip validation as per spec
     final BroadcastValidationLevel broadcastValidationLevel =
         maybeBroadcastValidation
             .map(BroadcastValidationParameter::toInternal)

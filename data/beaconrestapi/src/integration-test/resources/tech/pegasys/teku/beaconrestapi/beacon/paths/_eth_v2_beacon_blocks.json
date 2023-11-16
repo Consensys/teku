@@ -24,7 +24,7 @@
         },
         "application/json" : {
           "schema" : {
-            "title" : "SignedBlock",
+            "title" : "SignedBeaconBlock",
             "type" : "object",
             "oneOf" : [ {
               "$ref" : "#/components/schemas/SignedBeaconBlockPhase0"

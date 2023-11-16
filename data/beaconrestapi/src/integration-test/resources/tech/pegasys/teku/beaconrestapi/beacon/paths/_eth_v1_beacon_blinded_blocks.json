@@ -1,6 +1,6 @@
 {
   "post" : {
-    "tags" : [ "Validator", "Validator Required Api"],
+    "tags" : [ "Beacon", "Validator Required Api" ],
     "operationId" : "publishBlindedBlock",
     "summary" : "Publish a signed blinded block",
     "description" : "Submit a signed blinded beacon block to the beacon node to be broadcast and imported. The beacon node performs the required validation.",
@@ -32,10 +32,6 @@
       }
     },
     "responses" : {
-      "200" : {
-        "description" : "Block has been successfully broadcast, validated and imported.",
-        "content" : { }
-      },
       "415" : {
         "description" : "Unsupported media-type supplied",
         "content" : {
@@ -45,6 +41,10 @@
             }
           }
         }
+      },
+      "200" : {
+        "description" : "Block has been successfully broadcast, validated and imported.",
+        "content" : { }
       },
       "202" : {
         "description" : "Block has been successfully broadcast, but failed validation and has not been imported.",

@@ -20,7 +20,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
@@ -78,6 +78,7 @@ public class PostBlindedBlockV2 extends RestApiEndpoint {
     final Optional<BroadcastValidationParameter> maybeBroadcastValidation =
         request.getOptionalQueryParameter(PARAMETER_BROADCAST_VALIDATION);
 
+    // Default to gossip validation as per spec
     final BroadcastValidationLevel broadcastValidationLevel =
         maybeBroadcastValidation
             .map(BroadcastValidationParameter::toInternal)
@@ -122,12 +123,12 @@ public class PostBlindedBlockV2 extends RestApiEndpoint {
             broadcast but a different status code is returned (202). Pre-Bellatrix, this endpoint will accept \
             a `SignedBeaconBlock`. The broadcast behaviour may be adjusted via the `broadcast_validation` \
             query parameter.""")
-        .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
+        .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
         .queryParam(PARAMETER_BROADCAST_VALIDATION)
         .requestBodyType(
             getSchemaDefinitionForAllSupportedMilestones(
                 schemaDefinitionCache,
-                "SignedBlindedBlock",
+                "SignedBlindedBeaconBlock",
                 SchemaDefinitions::getSignedBlindedBlockContainerSchema,
                 (blockContainer, milestone) ->
                     schemaDefinitionCache
