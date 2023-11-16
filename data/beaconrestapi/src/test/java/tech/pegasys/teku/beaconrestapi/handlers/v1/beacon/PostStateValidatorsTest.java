@@ -21,13 +21,13 @@ import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.active_ex
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.active_ongoing;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.active_slashed;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.exited_slashed;
+import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.exited_unslashed;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.pending_initialized;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.pending_queued;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.withdrawal_done;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.withdrawal_possible;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter.active;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter.exited;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter.exited_unslashed;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter.pending;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter.withdrawal;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
