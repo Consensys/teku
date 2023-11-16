@@ -46,12 +46,12 @@ public class PostStateValidators extends RestApiEndpoint {
           .withOptionalField(
               "ids",
               DeserializableTypeDefinition.listOf(STRING_TYPE),
-              RequestBody::getIds,
+              RequestBody::getMaybeIds,
               RequestBody::setIds)
           .withOptionalField(
               "statuses",
               DeserializableTypeDefinition.listOf(STRING_TYPE),
-              RequestBody::getStringStatuses,
+              RequestBody::getMaybeStringStatuses,
               RequestBody::setStatuses)
           .build();
 
@@ -79,10 +79,10 @@ public class PostStateValidators extends RestApiEndpoint {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    final RequestBody requestBody = request.getRequestBody();
-
-    final List<String> validators = requestBody.getIds().orElse(List.of());
-    final List<StatusParameter> statusParameters = requestBody.getStatuses();
+    final Optional<RequestBody> requestBody = request.getOptionalRequestBody();
+    final List<String> validators = requestBody.map(RequestBody::getIds).orElse(List.of());
+    final List<StatusParameter> statusParameters =
+        requestBody.map(RequestBody::getStatuses).orElse(List.of());
 
     final Set<ValidatorStatus> statusFilter = getApplicableValidatorStatuses(statusParameters);
 
@@ -109,7 +109,11 @@ public class PostStateValidators extends RestApiEndpoint {
       this.statuses = statuses;
     }
 
-    public Optional<List<String>> getIds() {
+    public List<String> getIds() {
+      return ids;
+    }
+
+    public Optional<List<String>> getMaybeIds() {
       return ids.isEmpty() ? Optional.empty() : Optional.of(ids);
     }
 
@@ -121,7 +125,7 @@ public class PostStateValidators extends RestApiEndpoint {
       return statuses;
     }
 
-    public Optional<List<String>> getStringStatuses() {
+    public Optional<List<String>> getMaybeStringStatuses() {
       return statuses.isEmpty()
           ? Optional.empty()
           : Optional.of(statuses.stream().map(Enum::name).collect(Collectors.toList()));
