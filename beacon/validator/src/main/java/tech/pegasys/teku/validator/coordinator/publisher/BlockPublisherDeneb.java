@@ -52,6 +52,7 @@ public class BlockPublisherDeneb extends AbstractBlockPublisher {
       final SignedBeaconBlock block,
       final List<BlobSidecar> blobSidecars,
       final BroadcastValidationLevel broadcastValidationLevel) {
+    // provide blobs for the block before importing it
     blobSidecarPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
     return blockImportChannel.importBlock(block, broadcastValidationLevel);
   }

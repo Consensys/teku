@@ -18,7 +18,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
-/** Used to publish blocks (and blob sidecars) */
+/** Used to publish blocks (unblinded and blinded) and blob sidecars */
 public interface BlockPublisher {
   SafeFuture<SendSignedBlockResult> sendSignedBlock(
       SignedBlockContainer blockContainer, BroadcastValidationLevel broadcastValidationLevel);

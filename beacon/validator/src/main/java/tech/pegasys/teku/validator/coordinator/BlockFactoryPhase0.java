@@ -96,7 +96,7 @@ public class BlockFactoryPhase0 implements BlockFactory {
 
   @Override
   public SafeFuture<SignedBeaconBlock> unblindSignedBlockIfBlinded(
-      SignedBeaconBlock maybeBlindedBlock) {
+      final SignedBeaconBlock maybeBlindedBlock) {
     if (maybeBlindedBlock.isBlinded()) {
       return spec.unblindSignedBeaconBlock(
           maybeBlindedBlock.getSignedBlock(), operationSelector.createBlockUnblinderSelector());
