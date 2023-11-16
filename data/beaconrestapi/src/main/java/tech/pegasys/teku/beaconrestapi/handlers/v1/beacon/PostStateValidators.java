@@ -43,12 +43,12 @@ public class PostStateValidators extends RestApiEndpoint {
       DeserializableTypeDefinition.object(RequestBody.class)
           .name("PostStateValidatorsRequestBody")
           .initializer(RequestBody::new)
-          .withField(
+          .withOptionalField(
               "ids",
               DeserializableTypeDefinition.listOf(STRING_TYPE),
               RequestBody::getIds,
               RequestBody::setIds)
-          .withField(
+          .withOptionalField(
               "statuses",
               DeserializableTypeDefinition.listOf(STRING_TYPE),
               RequestBody::getStringStatuses,
@@ -81,7 +81,7 @@ public class PostStateValidators extends RestApiEndpoint {
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final RequestBody requestBody = request.getRequestBody();
 
-    final List<String> validators = requestBody.getIds();
+    final List<String> validators = requestBody.getIds().orElse(List.of());
     final List<StatusParameter> statusParameters = requestBody.getStatuses();
 
     final Set<ValidatorStatus> statusFilter = getApplicableValidatorStatuses(statusParameters);
@@ -109,24 +109,26 @@ public class PostStateValidators extends RestApiEndpoint {
       this.statuses = statuses;
     }
 
-    public List<String> getIds() {
-      return ids;
+    public Optional<List<String>> getIds() {
+      return ids.isEmpty() ? Optional.empty() : Optional.of(ids);
     }
 
-    public void setIds(final List<String> ids) {
-      this.ids = ids;
+    public void setIds(final Optional<List<String>> ids) {
+      ids.ifPresent(i -> this.ids = i);
     }
 
     public List<StatusParameter> getStatuses() {
       return statuses;
     }
 
-    public List<String> getStringStatuses() {
-      return statuses.stream().map(Enum::name).collect(Collectors.toList());
+    public Optional<List<String>> getStringStatuses() {
+      return statuses.isEmpty()
+          ? Optional.empty()
+          : Optional.of(statuses.stream().map(Enum::name).collect(Collectors.toList()));
     }
 
-    public void setStatuses(final List<String> statuses) {
-      this.statuses = statuses.stream().map(StatusParameter::valueOf).toList();
+    public void setStatuses(final Optional<List<String>> statuses) {
+      statuses.ifPresent(s -> this.statuses = s.stream().map(StatusParameter::valueOf).toList());
     }
   }
 }
