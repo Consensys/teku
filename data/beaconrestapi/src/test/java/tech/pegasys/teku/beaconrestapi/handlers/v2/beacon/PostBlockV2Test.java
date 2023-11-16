@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import org.junit.jupiter.api.Test;
@@ -27,6 +28,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
 public class PostBlockV2Test extends PostBlockTest {
@@ -82,5 +84,21 @@ public class PostBlockV2Test extends PostBlockTest {
 
     assertThatThrownBy(() -> handler.handleRequest(request))
         .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void shouldReturnWhenValidationFails() throws Exception {
+    final SignedBeaconBlock block = getRandomSignedBeaconBlock();
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+    request.setRequestBody(block);
+
+    setupValidatorDataProviderSubmit(
+        SafeFuture.completedFuture(
+            SendSignedBlockResult.rejected(
+                FailureReason.FAILED_BROADCAST_VALIDATION.name() + ": whatever")));
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_BAD_REQUEST);
   }
 }

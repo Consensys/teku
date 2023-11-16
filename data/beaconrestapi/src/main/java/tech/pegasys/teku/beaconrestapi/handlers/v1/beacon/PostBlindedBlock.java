@@ -35,7 +35,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
@@ -79,13 +78,11 @@ public class PostBlindedBlock extends RestApiEndpoint {
         validatorDataProvider
             .submitSignedBlindedBlock(requestBody, BroadcastValidationLevel.NOT_REQUIRED)
             .thenApply(
-                blockResult -> {
-                  if (blockResult.getRejectionReason().isEmpty()) {
+                result -> {
+                  if (result.isSuccessful()) {
                     return AsyncApiResponse.respondWithCode(SC_OK);
-                  } else if (blockResult
-                      .getRejectionReason()
-                      .get()
-                      .equals(BlockImportResult.FailureReason.INTERNAL_ERROR.name())) {
+                  }
+                  if (result.isNotImportedDueToInternalError()) {
                     return AsyncApiResponse.respondWithError(
                         SC_INTERNAL_SERVER_ERROR,
                         "An internal error occurred, check the server logs for more details.");

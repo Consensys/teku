@@ -52,6 +52,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
 
   static final String GAUGE_BLOB_SIDECARS_LABEL = "blob_sidecars";
   static final String GAUGE_BLOB_SIDECARS_TRACKERS_LABEL = "blob_sidecars_trackers";
+  static final String GAUGE_TRIGGERED_FETCHES = "triggered_fetches";
 
   static final UInt64 MAX_WAIT_RELATIVE_TO_ATT_DUE_MILLIS = UInt64.valueOf(1500);
   static final UInt64 MIN_WAIT_MILLIS = UInt64.valueOf(500);
@@ -83,6 +84,8 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
 
   private int totalBlobSidecars;
 
+  private long fetchCount = 0;
+
   BlobSidecarPoolImpl(
       final SettableLabelledGauge sizeGauge,
       final Spec spec,
@@ -104,6 +107,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     // Init the label so it appears in metrics immediately
     sizeGauge.set(0, GAUGE_BLOB_SIDECARS_LABEL);
     sizeGauge.set(0, GAUGE_BLOB_SIDECARS_TRACKERS_LABEL);
+    sizeGauge.set(0, GAUGE_TRIGGERED_FETCHES);
   }
 
   @VisibleForTesting
@@ -129,6 +133,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     // Init the label so it appears in metrics immediately
     sizeGauge.set(0, GAUGE_BLOB_SIDECARS_LABEL);
     sizeGauge.set(0, GAUGE_BLOB_SIDECARS_TRACKERS_LABEL);
+    sizeGauge.set(0, GAUGE_TRIGGERED_FETCHES);
   }
 
   private static BlockBlobSidecarsTracker createTracker(
@@ -450,6 +455,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     }
 
     blockBlobSidecarsTracker.setFetchTriggered();
+    sizeGauge.set(++fetchCount, GAUGE_TRIGGERED_FETCHES);
 
     if (blockBlobSidecarsTracker.getBlock().isEmpty()) {
       requiredBlockRootSubscribers.deliver(

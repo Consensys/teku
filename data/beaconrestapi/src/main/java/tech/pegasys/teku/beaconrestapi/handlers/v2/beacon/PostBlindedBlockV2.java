@@ -17,6 +17,7 @@ import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BROAD
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllSupportedMilestones;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.slotBasedSelector;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
@@ -37,7 +38,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
@@ -90,19 +90,23 @@ public class PostBlindedBlockV2 extends RestApiEndpoint {
         validatorDataProvider
             .submitSignedBlindedBlock(requestBody, broadcastValidationLevel)
             .thenApply(
-                blockResult -> {
-                  if (blockResult.getRejectionReason().isEmpty()) {
+                result -> {
+                  if (result.isSuccessful()) {
                     return AsyncApiResponse.respondWithCode(SC_OK);
-                  } else if (blockResult
-                      .getRejectionReason()
-                      .get()
-                      .equals(BlockImportResult.FailureReason.INTERNAL_ERROR.name())) {
+                  }
+
+                  if (result.isRejectedDueToBroadcastValidationFailure()) {
+                    return AsyncApiResponse.respondWithError(
+                        SC_BAD_REQUEST, result.getRejectionReason().orElse(""));
+                  }
+
+                  if (result.isNotImportedDueToInternalError()) {
                     return AsyncApiResponse.respondWithError(
                         SC_INTERNAL_SERVER_ERROR,
                         "An internal error occurred, check the server logs for more details.");
-                  } else {
-                    return AsyncApiResponse.respondWithCode(SC_ACCEPTED);
                   }
+
+                  return AsyncApiResponse.respondWithCode(SC_ACCEPTED);
                 }));
   }
 

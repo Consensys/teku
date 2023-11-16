@@ -36,7 +36,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
-import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
@@ -114,14 +113,13 @@ public class PostBlock extends RestApiEndpoint {
             .submitSignedBlock(requestBody, BroadcastValidationLevel.NOT_REQUIRED)
             .thenApply(
                 result -> {
-                  if (result.getRejectionReason().isEmpty()) {
+                  if (result.isSuccessful()) {
                     return AsyncApiResponse.respondWithCode(SC_OK);
-                  } else if (result
-                      .getRejectionReason()
-                      .get()
-                      .equals(FailureReason.INTERNAL_ERROR.name())) {
+                  }
+                  if (result.isNotImportedDueToInternalError()) {
                     return AsyncApiResponse.respondWithError(
-                        SC_INTERNAL_SERVER_ERROR, result.getRejectionReason().get());
+                        SC_INTERNAL_SERVER_ERROR,
+                        "An internal error occurred, check the server logs for more details.");
                   } else {
                     return AsyncApiResponse.respondWithCode(SC_ACCEPTED);
                   }
