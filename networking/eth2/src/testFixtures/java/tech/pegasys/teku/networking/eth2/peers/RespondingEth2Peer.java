@@ -221,7 +221,7 @@ public class RespondingEth2Peer implements Eth2Peer {
             listener,
             () ->
                 chain
-                    .streamBlobSidecarsOld(startSlot.longValue(), lastSlotExclusive + 1)
+                    .streamBlobSidecars(startSlot.longValue(), lastSlotExclusive + 1)
                     .flatMap(entry -> entry.getValue().stream())
                     .collect(Collectors.toList()));
     return createPendingBlobSidecarRequest(handler);
@@ -448,7 +448,7 @@ public class RespondingEth2Peer implements Eth2Peer {
 
   private Optional<BlobSidecar> findBlobSidecarByBlobIdentifier(
       final BlobIdentifier blobIdentifier) {
-    return findObjectByKey(blobIdentifier, ChainBuilder::getBlobSidecarOld);
+    return findObjectByKey(blobIdentifier, ChainBuilder::getBlobSidecar);
   }
 
   public static class PendingRequest<ResponseT, HandlerT> {
