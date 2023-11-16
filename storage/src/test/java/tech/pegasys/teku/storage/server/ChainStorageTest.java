@@ -175,7 +175,7 @@ public class ChainStorageTest {
 
     final Map<SlotAndBlockRoot, List<BlobSidecarOld>> missingHistoricalBlobSidecars =
         chainBuilder
-            .streamBlobSidecars(0, firstMissingBlockSlot)
+            .streamBlobSidecarsOld(0, firstMissingBlockSlot)
             .flatMap(entry -> entry.getValue().stream())
             .collect(Collectors.groupingBy(BlobSidecarOld::getSlotAndBlockRoot));
 
@@ -213,12 +213,12 @@ public class ChainStorageTest {
       for (int i = batches.size() - 1; i >= 0; i--) {
         final List<SignedBeaconBlock> batch = batches.get(i);
         chainStorage
-            .onFinalizedBlocks(batch, finalizedBlobSidecars, maybeEarliestBlobSidecarSlot)
+            .onFinalizedBlocksOld(batch, finalizedBlobSidecars, maybeEarliestBlobSidecarSlot)
             .ifExceptionGetsHereRaiseABug();
       }
     } else {
       chainStorage
-          .onFinalizedBlocks(
+          .onFinalizedBlocksOld(
               missingHistoricalBlocks, finalizedBlobSidecars, maybeEarliestBlobSidecarSlot)
           .ifExceptionGetsHereRaiseABug();
     }
@@ -297,7 +297,7 @@ public class ChainStorageTest {
 
     final Map<SlotAndBlockRoot, List<BlobSidecarOld>> missingHistoricalBlobSidecars =
         chainBuilder
-            .streamBlobSidecars(0, firstMissingBlockSlot)
+            .streamBlobSidecarsOld(0, firstMissingBlockSlot)
             .flatMap(entry -> entry.getValue().stream())
             .collect(Collectors.groupingBy(BlobSidecarOld::getSlotAndBlockRoot));
 
@@ -325,7 +325,8 @@ public class ChainStorageTest {
       final List<SignedBeaconBlock> batch = batches.get(i);
       // earliestBlobSidecarSlot: 2, 1, 0. Correct only in the last batch
       chainStorage
-          .onFinalizedBlocks(batch, missingHistoricalBlobSidecars, Optional.of(UInt64.valueOf(i)))
+          .onFinalizedBlocksOld(
+              batch, missingHistoricalBlobSidecars, Optional.of(UInt64.valueOf(i)))
           .ifExceptionGetsHereRaiseABug();
     }
 
@@ -370,7 +371,7 @@ public class ChainStorageTest {
             .map(SignedBlockAndState::getBlock)
             .collect(Collectors.toList());
     final SafeFuture<Void> result =
-        chainStorage.onFinalizedBlocks(invalidBlocks, Map.of(), Optional.empty());
+        chainStorage.onFinalizedBlocksOld(invalidBlocks, Map.of(), Optional.empty());
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get)
         .hasCauseInstanceOf(IllegalArgumentException.class)
@@ -410,7 +411,7 @@ public class ChainStorageTest {
     blocks.remove(blocks.size() / 2);
 
     final SafeFuture<Void> result =
-        chainStorage.onFinalizedBlocks(blocks, Map.of(), Optional.empty());
+        chainStorage.onFinalizedBlocksOld(blocks, Map.of(), Optional.empty());
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get)
         .hasCauseInstanceOf(IllegalArgumentException.class)
@@ -450,7 +451,7 @@ public class ChainStorageTest {
     blocks.remove(blocks.size() - 1);
 
     final SafeFuture<Void> result =
-        chainStorage.onFinalizedBlocks(blocks, Map.of(), Optional.empty());
+        chainStorage.onFinalizedBlocksOld(blocks, Map.of(), Optional.empty());
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get)
         .hasCauseInstanceOf(IllegalArgumentException.class)

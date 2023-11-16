@@ -40,7 +40,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
@@ -62,8 +62,8 @@ class RecentBlobSidecarsFetchServiceTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   private final List<FetchBlobSidecarTask> tasks = new ArrayList<>();
-  private final List<SafeFuture<FetchResult<BlobSidecarOld>>> taskFutures = new ArrayList<>();
-  private final List<BlobSidecarOld> importedBlobSidecars = new ArrayList<>();
+  private final List<SafeFuture<FetchResult<BlobSidecar>>> taskFutures = new ArrayList<>();
+  private final List<BlobSidecar> importedBlobSidecars = new ArrayList<>();
 
   private RecentBlobSidecarsFetchService recentBlobSidecarsFetcher;
 
@@ -81,15 +81,15 @@ class RecentBlobSidecarsFetchServiceTest {
 
   @Test
   public void fetchSingleBlobSidecarSuccessfully() {
-    final BlobIdentifier blobIdentifier = dataStructureUtil.randomBlobIdentifier();
+    final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
 
-    recentBlobSidecarsFetcher.requestRecentBlobSidecar(blobIdentifier);
+    recentBlobSidecarsFetcher.requestRecentBlobSidecar(
+        new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex()));
 
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlobSidecars).isEmpty();
 
-    final SafeFuture<FetchResult<BlobSidecarOld>> future = taskFutures.get(0);
-    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecarOld(blobIdentifier);
+    final SafeFuture<FetchResult<BlobSidecar>> future = taskFutures.get(0);
     future.complete(FetchResult.createSuccessful(blobSidecar));
 
     assertThat(importedBlobSidecars).containsExactly(blobSidecar);
@@ -98,7 +98,9 @@ class RecentBlobSidecarsFetchServiceTest {
 
   @Test
   public void handleDuplicateRequiredBlobSidecars() {
-    final BlobIdentifier blobIdentifier = dataStructureUtil.randomBlobIdentifier();
+    final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
+    final BlobIdentifier blobIdentifier =
+        new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
 
     recentBlobSidecarsFetcher.requestRecentBlobSidecar(blobIdentifier);
     recentBlobSidecarsFetcher.requestRecentBlobSidecar(blobIdentifier);
@@ -106,8 +108,7 @@ class RecentBlobSidecarsFetchServiceTest {
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlobSidecars).isEmpty();
 
-    final SafeFuture<FetchResult<BlobSidecarOld>> future = taskFutures.get(0);
-    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecarOld(blobIdentifier);
+    final SafeFuture<FetchResult<BlobSidecar>> future = taskFutures.get(0);
     future.complete(FetchResult.createSuccessful(blobSidecar));
 
     assertThat(importedBlobSidecars).containsExactly(blobSidecar);
@@ -147,7 +148,7 @@ class RecentBlobSidecarsFetchServiceTest {
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlobSidecars).isEmpty();
 
-    final SafeFuture<FetchResult<BlobSidecarOld>> future = taskFutures.get(0);
+    final SafeFuture<FetchResult<BlobSidecar>> future = taskFutures.get(0);
     future.complete(FetchResult.createFailed(Status.FETCH_FAILED));
 
     // Task should be queued for a retry via the scheduled executor
@@ -169,7 +170,7 @@ class RecentBlobSidecarsFetchServiceTest {
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlobSidecars).isEmpty();
 
-    final SafeFuture<FetchResult<BlobSidecarOld>> future = taskFutures.get(0);
+    final SafeFuture<FetchResult<BlobSidecar>> future = taskFutures.get(0);
     future.complete(FetchResult.createFailed(Status.FETCH_FAILED));
 
     // Task should be queued for a retry via the scheduled executor
@@ -196,7 +197,7 @@ class RecentBlobSidecarsFetchServiceTest {
     assertTaskCounts(1, 1, 0);
     assertThat(importedBlobSidecars).isEmpty();
 
-    final SafeFuture<FetchResult<BlobSidecarOld>> future = taskFutures.get(0);
+    final SafeFuture<FetchResult<BlobSidecar>> future = taskFutures.get(0);
     future.complete(FetchResult.createFailed(Status.NO_AVAILABLE_PEERS));
 
     // Task should be queued for a retry via the scheduled executor
@@ -221,8 +222,8 @@ class RecentBlobSidecarsFetchServiceTest {
     assertTaskCounts(taskCount, taskCount - 1, 1);
 
     // Complete first task
-    final SafeFuture<FetchResult<BlobSidecarOld>> future = taskFutures.get(0);
-    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecarOld();
+    final SafeFuture<FetchResult<BlobSidecar>> future = taskFutures.get(0);
+    final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
     future.complete(FetchResult.createSuccessful(blobSidecar));
 
     // After first task completes, remaining pending count should become active
@@ -263,7 +264,7 @@ class RecentBlobSidecarsFetchServiceTest {
 
     lenient().when(task.getKey()).thenReturn(blobIdentifier);
     lenient().when(task.getNumberOfRetries()).thenReturn(0);
-    final SafeFuture<FetchResult<BlobSidecarOld>> future = new SafeFuture<>();
+    final SafeFuture<FetchResult<BlobSidecar>> future = new SafeFuture<>();
     lenient().when(task.run()).thenReturn(future);
     taskFutures.add(future);
     tasks.add(task);

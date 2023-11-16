@@ -21,14 +21,14 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.fetch.FetchResult.Status;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 
 public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
 
   @Test
   public void run_successful() {
-    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecarOld();
+    final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
     final BlobIdentifier blobIdentifier =
         new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
     final FetchBlobSidecarTask task = new FetchBlobSidecarTask(eth2P2PNetwork, blobIdentifier);
@@ -38,9 +38,9 @@ public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
     when(peer.requestBlobSidecarByRoot(blobIdentifier))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blobSidecar)));
 
-    final SafeFuture<FetchResult<BlobSidecarOld>> result = task.run();
+    final SafeFuture<FetchResult<BlobSidecar>> result = task.run();
     assertThat(result).isDone();
-    final FetchResult<BlobSidecarOld> fetchResult = result.getNow(null);
+    final FetchResult<BlobSidecar> fetchResult = result.getNow(null);
     assertThat(fetchResult.getPeer()).hasValue(peer);
     assertThat(fetchResult.isSuccessful()).isTrue();
     assertThat(fetchResult.getResult()).hasValue(blobSidecar);
@@ -48,14 +48,14 @@ public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
 
   @Test
   public void run_noPeers() {
-    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecarOld();
+    final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
     final BlobIdentifier blobIdentifier =
         new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
     final FetchBlobSidecarTask task = new FetchBlobSidecarTask(eth2P2PNetwork, blobIdentifier);
 
-    final SafeFuture<FetchResult<BlobSidecarOld>> result = task.run();
+    final SafeFuture<FetchResult<BlobSidecar>> result = task.run();
     assertThat(result).isDone();
-    final FetchResult<BlobSidecarOld> fetchResult = result.getNow(null);
+    final FetchResult<BlobSidecar> fetchResult = result.getNow(null);
     assertThat(fetchResult.getPeer()).isEmpty();
     assertThat(fetchResult.isSuccessful()).isFalse();
     assertThat(fetchResult.getStatus()).isEqualTo(Status.NO_AVAILABLE_PEERS);
@@ -63,7 +63,7 @@ public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
 
   @Test
   public void run_failAndRetryWithNoNewPeers() {
-    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecarOld();
+    final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
     final BlobIdentifier blobIdentifier =
         new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
     final FetchBlobSidecarTask task = new FetchBlobSidecarTask(eth2P2PNetwork, blobIdentifier);
@@ -72,18 +72,18 @@ public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
     when(peer.requestBlobSidecarByRoot(blobIdentifier))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("whoops")));
 
-    final SafeFuture<FetchResult<BlobSidecarOld>> result = task.run();
+    final SafeFuture<FetchResult<BlobSidecar>> result = task.run();
     assertThat(result).isDone();
-    final FetchResult<BlobSidecarOld> fetchResult = result.getNow(null);
+    final FetchResult<BlobSidecar> fetchResult = result.getNow(null);
     assertThat(fetchResult.getPeer()).hasValue(peer);
     assertThat(fetchResult.isSuccessful()).isFalse();
     assertThat(fetchResult.getStatus()).isEqualTo(Status.FETCH_FAILED);
     assertThat(task.getNumberOfRetries()).isEqualTo(0);
 
     // Retry
-    final SafeFuture<FetchResult<BlobSidecarOld>> result2 = task.run();
+    final SafeFuture<FetchResult<BlobSidecar>> result2 = task.run();
     assertThat(result).isDone();
-    final FetchResult<BlobSidecarOld> fetchResult2 = result2.getNow(null);
+    final FetchResult<BlobSidecar> fetchResult2 = result2.getNow(null);
     assertThat(fetchResult2.getPeer()).isEmpty();
     assertThat(fetchResult2.isSuccessful()).isFalse();
     assertThat(fetchResult2.getStatus()).isEqualTo(Status.NO_AVAILABLE_PEERS);
@@ -92,7 +92,7 @@ public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
 
   @Test
   public void run_failAndRetryWithNewPeer() {
-    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecarOld();
+    final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
     final BlobIdentifier blobIdentifier =
         new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
     final FetchBlobSidecarTask task = new FetchBlobSidecarTask(eth2P2PNetwork, blobIdentifier);
@@ -101,9 +101,9 @@ public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
     when(peer.requestBlobSidecarByRoot(blobIdentifier))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("whoops")));
 
-    final SafeFuture<FetchResult<BlobSidecarOld>> result = task.run();
+    final SafeFuture<FetchResult<BlobSidecar>> result = task.run();
     assertThat(result).isDone();
-    final FetchResult<BlobSidecarOld> fetchResult = result.getNow(null);
+    final FetchResult<BlobSidecar> fetchResult = result.getNow(null);
     assertThat(fetchResult.getPeer()).hasValue(peer);
     assertThat(fetchResult.isSuccessful()).isFalse();
     assertThat(fetchResult.getStatus()).isEqualTo(Status.FETCH_FAILED);
@@ -115,9 +115,9 @@ public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
         .thenReturn(SafeFuture.completedFuture(Optional.of(blobSidecar)));
 
     // Retry
-    final SafeFuture<FetchResult<BlobSidecarOld>> result2 = task.run();
+    final SafeFuture<FetchResult<BlobSidecar>> result2 = task.run();
     assertThat(result).isDone();
-    final FetchResult<BlobSidecarOld> fetchResult2 = result2.getNow(null);
+    final FetchResult<BlobSidecar> fetchResult2 = result2.getNow(null);
     assertThat(fetchResult2.getPeer()).hasValue(peer2);
     assertThat(fetchResult2.isSuccessful()).isTrue();
     assertThat(fetchResult2.getResult()).hasValue(blobSidecar);
@@ -126,7 +126,7 @@ public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
 
   @Test
   public void run_withMultiplesPeersAvailable() {
-    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecarOld();
+    final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
     final BlobIdentifier blobIdentifier =
         new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
     final FetchBlobSidecarTask task = new FetchBlobSidecarTask(eth2P2PNetwork, blobIdentifier);
@@ -142,9 +142,9 @@ public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
     when(peer2.getOutstandingRequests()).thenReturn(0);
 
     // We should choose the peer that is less busy, which successfully returns the blob sidecar
-    final SafeFuture<FetchResult<BlobSidecarOld>> result = task.run();
+    final SafeFuture<FetchResult<BlobSidecar>> result = task.run();
     assertThat(result).isDone();
-    final FetchResult<BlobSidecarOld> fetchResult = result.getNow(null);
+    final FetchResult<BlobSidecar> fetchResult = result.getNow(null);
     assertThat(fetchResult.getPeer()).hasValue(peer2);
     assertThat(fetchResult.isSuccessful()).isTrue();
     assertThat(fetchResult.getResult()).hasValue(blobSidecar);
@@ -153,7 +153,7 @@ public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
   @Test
   public void run_withPreferredPeer() {
     final Eth2Peer preferredPeer = createNewPeer(1);
-    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecarOld();
+    final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
     final BlobIdentifier blobIdentifier =
         new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
     when(preferredPeer.requestBlobSidecarByRoot(blobIdentifier))
@@ -165,9 +165,9 @@ public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
     // Add a peer
     registerNewPeer(2);
 
-    final SafeFuture<FetchResult<BlobSidecarOld>> result = task.run();
+    final SafeFuture<FetchResult<BlobSidecar>> result = task.run();
     assertThat(result).isDone();
-    final FetchResult<BlobSidecarOld> fetchResult = result.getNow(null);
+    final FetchResult<BlobSidecar> fetchResult = result.getNow(null);
     assertThat(fetchResult.getPeer()).hasValue(preferredPeer);
     assertThat(fetchResult.isSuccessful()).isTrue();
     assertThat(fetchResult.getResult()).hasValue(blobSidecar);
@@ -176,7 +176,7 @@ public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
   @Test
   public void run_withRandomPeerWhenFetchingWithPreferredPeerFails() {
     final Eth2Peer preferredPeer = createNewPeer(1);
-    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecarOld();
+    final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
     final BlobIdentifier blobIdentifier =
         new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
     when(preferredPeer.requestBlobSidecarByRoot(blobIdentifier))
@@ -185,9 +185,9 @@ public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
     final FetchBlobSidecarTask task =
         new FetchBlobSidecarTask(eth2P2PNetwork, Optional.of(preferredPeer), blobIdentifier);
 
-    final SafeFuture<FetchResult<BlobSidecarOld>> result = task.run();
+    final SafeFuture<FetchResult<BlobSidecar>> result = task.run();
     assertThat(result).isDone();
-    final FetchResult<BlobSidecarOld> fetchResult = result.getNow(null);
+    final FetchResult<BlobSidecar> fetchResult = result.getNow(null);
     assertThat(fetchResult.getPeer()).hasValue(preferredPeer);
     assertThat(fetchResult.isSuccessful()).isFalse();
     assertThat(fetchResult.getStatus()).isEqualTo(Status.FETCH_FAILED);
@@ -199,9 +199,9 @@ public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
         .thenReturn(SafeFuture.completedFuture(Optional.of(blobSidecar)));
 
     // Retry
-    final SafeFuture<FetchResult<BlobSidecarOld>> result2 = task.run();
+    final SafeFuture<FetchResult<BlobSidecar>> result2 = task.run();
     assertThat(result).isDone();
-    final FetchResult<BlobSidecarOld> fetchResult2 = result2.getNow(null);
+    final FetchResult<BlobSidecar> fetchResult2 = result2.getNow(null);
     assertThat(fetchResult2.getPeer()).hasValue(peer);
     assertThat(fetchResult2.isSuccessful()).isTrue();
     assertThat(fetchResult2.getResult()).hasValue(blobSidecar);
@@ -210,7 +210,7 @@ public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
 
   @Test
   public void cancel() {
-    final BlobSidecarOld blobSidecar = dataStructureUtil.randomBlobSidecarOld();
+    final BlobSidecar blobSidecar = dataStructureUtil.randomBlobSidecar();
     final BlobIdentifier blobIdentifier =
         new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
     final FetchBlobSidecarTask task = new FetchBlobSidecarTask(eth2P2PNetwork, blobIdentifier);
@@ -220,9 +220,9 @@ public class FetchBlobSidecarTaskTest extends AbstractFetchTaskTest {
         .thenReturn(SafeFuture.completedFuture(Optional.of(blobSidecar)));
 
     task.cancel();
-    final SafeFuture<FetchResult<BlobSidecarOld>> result = task.run();
+    final SafeFuture<FetchResult<BlobSidecar>> result = task.run();
     assertThat(result).isDone();
-    final FetchResult<BlobSidecarOld> fetchResult = result.getNow(null);
+    final FetchResult<BlobSidecar> fetchResult = result.getNow(null);
     assertThat(fetchResult.getPeer()).isEmpty();
     assertThat(fetchResult.isSuccessful()).isFalse();
     assertThat(fetchResult.getStatus()).isEqualTo(Status.CANCELLED);

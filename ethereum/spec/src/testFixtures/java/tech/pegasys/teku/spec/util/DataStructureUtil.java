@@ -2195,10 +2195,15 @@ public final class DataStructureUtil {
     return new RandomBlobSidecarOldBuilder().build();
   }
 
-  public BlobSidecarOld randomBlobSidecarOld(final BlobIdentifier blobIdentifier) {
-    return new RandomBlobSidecarOldBuilder()
-        .index(blobIdentifier.getIndex())
-        .blockRoot(blobIdentifier.getBlockRoot())
+  public BlobSidecar randomBlobSidecar(final long index) {
+    return new RandomBlobSidecarBuilder().index(UInt64.valueOf(index)).build();
+  }
+
+  public BlobSidecar randomBlobSidecarForBlock(
+      final SignedBeaconBlock signedBeaconBlock, final long index) {
+    return new RandomBlobSidecarBuilder()
+        .signedBeaconBlockHeader(signedBeaconBlock.asHeader())
+        .index(UInt64.valueOf(index))
         .build();
   }
 

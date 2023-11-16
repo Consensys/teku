@@ -156,11 +156,11 @@ class CombinedChainDataClientTest {
     setupGetBlobSidecar(correctKey, sidecar);
 
     final Optional<BlobSidecarOld> correctResult =
-        SafeFutureAssert.safeJoin(client.getBlobSidecarByKey(correctKey));
+        SafeFutureAssert.safeJoin(client.getBlobSidecarByKeyOld(correctKey));
     assertThat(correctResult).hasValue(sidecar);
 
     final Optional<BlobSidecarOld> incorrectResult =
-        SafeFutureAssert.safeJoin(client.getBlobSidecarByKey(incorrectKey));
+        SafeFutureAssert.safeJoin(client.getBlobSidecarByKeyOld(incorrectKey));
     assertThat(incorrectResult).isEmpty();
   }
 
@@ -174,13 +174,14 @@ class CombinedChainDataClientTest {
 
     final Optional<BlobSidecarOld> result =
         SafeFutureAssert.safeJoin(
-            client.getBlobSidecarByBlockRootAndIndex(sidecar.getBlockRoot(), sidecar.getIndex()));
+            client.getBlobSidecarByBlockRootAndIndexOld(
+                sidecar.getBlockRoot(), sidecar.getIndex()));
     assertThat(result).hasValue(sidecar);
 
     final Bytes32 blockRoot = setupGetBlockByBlockRoot(sidecar.getSlot().plus(1));
     final Optional<BlobSidecarOld> incorrectResult =
         SafeFutureAssert.safeJoin(
-            client.getBlobSidecarByBlockRootAndIndex(blockRoot, sidecar.getIndex()));
+            client.getBlobSidecarByBlockRootAndIndexOld(blockRoot, sidecar.getIndex()));
     assertThat(incorrectResult).isEmpty();
   }
 

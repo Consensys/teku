@@ -42,7 +42,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.ResourceUnavailab
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -53,7 +53,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
  * v1</a>
  */
 public class BlobSidecarsByRangeMessageHandler
-    extends PeerRequiredLocalMessageHandler<BlobSidecarsByRangeRequestMessage, BlobSidecarOld> {
+    extends PeerRequiredLocalMessageHandler<BlobSidecarsByRangeRequestMessage, BlobSidecar> {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -89,7 +89,7 @@ public class BlobSidecarsByRangeMessageHandler
       final String protocolId,
       final Eth2Peer peer,
       final BlobSidecarsByRangeRequestMessage message,
-      final ResponseCallback<BlobSidecarOld> callback) {
+      final ResponseCallback<BlobSidecar> callback) {
     final UInt64 startSlot = message.getStartSlot();
     final UInt64 endSlot = message.getMaxSlot();
 
@@ -207,7 +207,7 @@ public class BlobSidecarsByRangeMessageHandler
   }
 
   private void handleProcessingRequestError(
-      final Throwable error, final ResponseCallback<BlobSidecarOld> callback) {
+      final Throwable error, final ResponseCallback<BlobSidecar> callback) {
     final Throwable rootCause = Throwables.getRootCause(error);
     if (rootCause instanceof RpcException) {
       LOG.trace("Rejecting blob sidecars by range request", error);
@@ -227,7 +227,7 @@ public class BlobSidecarsByRangeMessageHandler
   class RequestState {
 
     private final AtomicInteger sentBlobSidecars = new AtomicInteger(0);
-    private final ResponseCallback<BlobSidecarOld> callback;
+    private final ResponseCallback<BlobSidecar> callback;
     private final UInt64 maxRequestBlobSidecars;
     private final UInt64 startSlot;
     private final UInt64 endSlot;
@@ -240,7 +240,7 @@ public class BlobSidecarsByRangeMessageHandler
         Optional.empty();
 
     RequestState(
-        final ResponseCallback<BlobSidecarOld> callback,
+        final ResponseCallback<BlobSidecar> callback,
         final UInt64 maxRequestBlobSidecars,
         final UInt64 startSlot,
         final UInt64 endSlot,
@@ -254,11 +254,11 @@ public class BlobSidecarsByRangeMessageHandler
       this.canonicalHotRoots = canonicalHotRoots;
     }
 
-    SafeFuture<Void> sendBlobSidecar(final BlobSidecarOld blobSidecar) {
+    SafeFuture<Void> sendBlobSidecar(final BlobSidecar blobSidecar) {
       return callback.respond(blobSidecar).thenRun(sentBlobSidecars::incrementAndGet);
     }
 
-    SafeFuture<Optional<BlobSidecarOld>> loadNextBlobSidecar() {
+    SafeFuture<Optional<BlobSidecar>> loadNextBlobSidecar() {
       if (blobSidecarKeysIterator.isEmpty()) {
         return combinedChainDataClient
             .getBlobSidecarKeys(startSlot, endSlot, maxRequestBlobSidecars)
@@ -272,7 +272,7 @@ public class BlobSidecarsByRangeMessageHandler
       }
     }
 
-    private SafeFuture<Optional<BlobSidecarOld>> getNextBlobSidecar(
+    private SafeFuture<Optional<BlobSidecar>> getNextBlobSidecar(
         final Iterator<SlotAndBlockRootAndBlobIndex> blobSidecarKeysIterator) {
       if (blobSidecarKeysIterator.hasNext()) {
         final SlotAndBlockRootAndBlobIndex slotAndBlockRootAndBlobIndex =
