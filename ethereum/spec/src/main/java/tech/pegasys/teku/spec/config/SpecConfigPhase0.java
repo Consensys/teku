@@ -116,6 +116,10 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final int attestationSubnetCount;
   private final int attestationSubnetExtraBits;
   private final int attestationSubnetPrefixBits;
+  private final int reorgMaxEpochsSinceFinalization;
+
+  private final int reorgHeadWeightThreshold;
+  private final int reorgParentWeightThreshold;
 
   public SpecConfigPhase0(
       final Map<String, Object> rawConfig,
@@ -182,7 +186,10 @@ public class SpecConfigPhase0 implements SpecConfig {
       final int subnetsPerNode,
       final int attestationSubnetCount,
       final int attestationSubnetExtraBits,
-      final int attestationSubnetPrefixBits) {
+      final int attestationSubnetPrefixBits,
+      final int reorgMaxEpochsSinceFinalization,
+      final int reorgHeadWeightThreshold,
+      final int reorgParentWeightThreshold) {
     this.rawConfig = rawConfig;
     this.eth1FollowDistance = eth1FollowDistance;
     this.maxCommitteesPerSlot = maxCommitteesPerSlot;
@@ -249,6 +256,9 @@ public class SpecConfigPhase0 implements SpecConfig {
     this.attestationSubnetCount = attestationSubnetCount;
     this.attestationSubnetExtraBits = attestationSubnetExtraBits;
     this.attestationSubnetPrefixBits = attestationSubnetPrefixBits;
+    this.reorgMaxEpochsSinceFinalization = reorgMaxEpochsSinceFinalization;
+    this.reorgHeadWeightThreshold = reorgHeadWeightThreshold;
+    this.reorgParentWeightThreshold = reorgParentWeightThreshold;
   }
 
   @Override
@@ -504,6 +514,21 @@ public class SpecConfigPhase0 implements SpecConfig {
   @Override
   public int getSafeSlotsToUpdateJustified() {
     return safeSlotsToUpdateJustified;
+  }
+
+  @Override
+  public int getReorgMaxEpochsSinceFinalization() {
+    return reorgMaxEpochsSinceFinalization;
+  }
+
+  @Override
+  public int getReorgHeadWeightThreshold() {
+    return reorgHeadWeightThreshold;
+  }
+
+  @Override
+  public int getReorgParentWeightThreshold() {
+    return reorgParentWeightThreshold;
   }
 
   @Override

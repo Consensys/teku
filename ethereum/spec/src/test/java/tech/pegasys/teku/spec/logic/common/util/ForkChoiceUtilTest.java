@@ -21,13 +21,18 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -305,6 +310,52 @@ class ForkChoiceUtilTest {
         mockStore(blockSlot + getSafeSyncDistance() - 1, blockToImport.getRoot());
 
     assertThat(forkChoiceUtil.canOptimisticallyImport(store, blockToImport)).isFalse();
+  }
+
+  @ParameterizedTest
+  @MethodSource("isShufflingStableConditions")
+  void isShufflingStable(final int slot, final boolean expectedResult) {
+    assertThat(forkChoiceUtil.isShufflingStable(UInt64.valueOf(slot))).isEqualTo(expectedResult);
+  }
+
+  public static Stream<Arguments> isShufflingStableConditions() {
+    // slot , expectedResult
+    ArrayList<Arguments> args = new ArrayList<>();
+    for (int i = 80; i < 100; i++) {
+      // every start of epoch, shuffling is considered not stable
+      args.add(Arguments.of(i, i % 8 != 0));
+    }
+
+    return args.stream();
+  }
+
+  @ParameterizedTest
+  @MethodSource("isFinalizationOkConditions")
+  void isFinalizationOk(final int epoch, final int testSlot, final boolean isFinalizationOk) {
+    final UInt64 finalizedEpoch = UInt64.valueOf(epoch);
+    final UInt64 slot = UInt64.valueOf(testSlot);
+
+    final ReadOnlyStore myStore = mock(ReadOnlyStore.class);
+    final Checkpoint myCheckpoint = mock(Checkpoint.class);
+    when(myStore.getFinalizedCheckpoint()).thenReturn(myCheckpoint);
+    when(myCheckpoint.getEpoch()).thenReturn(finalizedEpoch);
+    assertThat(forkChoiceUtil.isFinalizationOk(myStore, slot)).isEqualTo(isFinalizationOk);
+  }
+
+  // slots per epoch in this suite is 8
+  // reorgMaxEpochsSinceFinalization is 2
+  private static Stream<Arguments> isFinalizationOkConditions() {
+    // epoch 10 starts at slot (8 x 10) 80
+    // epoch 13 starts at slot (8 x 13) 104
+    // epoch , slot , true/false
+    ArrayList<Arguments> args = new ArrayList<>();
+    args.add(Arguments.of(10, 0, true));
+    args.add(Arguments.of(10, 80, true));
+    args.add(Arguments.of(10, 96, true));
+    args.add(Arguments.of(10, 103, true));
+    args.add(Arguments.of(10, 104, false));
+
+    return args.stream();
   }
 
   @Test

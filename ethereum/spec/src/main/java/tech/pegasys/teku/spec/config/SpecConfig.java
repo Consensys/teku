@@ -160,6 +160,12 @@ public interface SpecConfig extends NetworkingSpecConfig {
   // Misc
   int getSafeSlotsToUpdateJustified();
 
+  int getReorgMaxEpochsSinceFinalization();
+
+  int getReorgHeadWeightThreshold();
+
+  int getReorgParentWeightThreshold();
+
   // Casters
   default Optional<SpecConfigAltair> toVersionAltair() {
     return Optional.empty();

@@ -43,6 +43,12 @@ HYSTERESIS_UPWARD_MULTIPLIER: 5
 # ---------------------------------------------------------------
 # 2**3 (= 8)
 SAFE_SLOTS_TO_UPDATE_JUSTIFIED: 8
+# 20%
+REORG_HEAD_WEIGHT_THRESHOLD: 20
+# 160%
+REORG_PARENT_WEIGHT_THRESHOLD: 160
+# `2` epochs
+REORG_MAX_EPOCHS_SINCE_FINALIZATION: 2
 # Validator
 # ---------------------------------------------------------------
 # 2**10 (= 1024) ~1.4 hour
