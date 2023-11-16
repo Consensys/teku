@@ -89,7 +89,7 @@ public class PostBlindedBlockV2Test extends PostBlindedBlockTest {
   }
 
   @Test
-  void shouldReturnBadRequestWhenValidationFails() throws Exception {
+  void shouldReturnBadRequestWhenBroadcastValidationFails() throws Exception {
     final SignedBeaconBlock block = getRandomSignedBeaconBlock();
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     request.setRequestBody(block);
