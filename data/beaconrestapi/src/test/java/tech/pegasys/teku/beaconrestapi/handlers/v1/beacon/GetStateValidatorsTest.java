@@ -196,7 +196,8 @@ public class GetStateValidatorsTest extends AbstractMigratedBeaconHandlerWithCha
             validatorStatus ->
                 Arrays.stream(StatusParameter.values())
                     .anyMatch(
-                        statusParameter -> statusParameter.name().equals(validatorStatus.name())));
+                        statusParameter ->
+                            statusParameter.getValue().equals(validatorStatus.name())));
   }
 
   private static Stream<Arguments> provideStatusParameters() {

@@ -15,25 +15,39 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 
-@SuppressWarnings("JavaCase")
 public enum StatusParameter {
-  pending_initialized,
-  pending_queued,
-  active_ongoing,
-  active_exiting,
-  active_slashed,
-  exited_unslashed,
-  exited_slashed,
-  withdrawal_possible,
-  withdrawal_done,
-  active,
-  pending,
-  exited,
-  withdrawal;
+  PENDING_INITIALIZED("pending_initialized"),
+  PENDING_QUEUED("pending_queued"),
+  ACTIVE_ONGOING("active_ongoing"),
+  ACTIVE_EXITING("active_exiting"),
+  ACTIVE_SLASHED("active_slashed"),
+  EXITED_UNSLASHED("exited_unslashed"),
+  EXITED_SLASHED("exited_slashed"),
+  WITHDRAWAL_POSSIBLE("withdrawal_possible"),
+  WITHDRAWAL_DONE("withdrawal_done"),
+  ACTIVE("active"),
+  PENDING("pending"),
+  EXITED("exited"),
+  WITHDRAWAL("withdrawal");
+
+  private final String value;
+
+  StatusParameter(final String value) {
+    this.value = value;
+  }
+
+  public String getValue() {
+    return value;
+  }
+
+  public static StatusParameter parse(final String value) {
+    return StatusParameter.valueOf(value.toUpperCase(Locale.ROOT));
+  }
 
   public static Set<ValidatorStatus> getApplicableValidatorStatuses(
       final List<StatusParameter> statusParameters) {
@@ -42,7 +56,8 @@ public enum StatusParameter {
             statusParameter ->
                 Arrays.stream(ValidatorStatus.values())
                     .filter(
-                        validatorStatus -> validatorStatus.name().contains(statusParameter.name())))
+                        validatorStatus ->
+                            validatorStatus.name().contains(statusParameter.getValue())))
         .collect(Collectors.toSet());
   }
 }

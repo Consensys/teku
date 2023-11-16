@@ -26,10 +26,10 @@ import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.pending_i
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.pending_queued;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.withdrawal_done;
 import static tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus.withdrawal_possible;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter.active;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter.exited;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter.pending;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter.withdrawal;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter.ACTIVE;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter.EXITED;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter.PENDING;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter.WITHDRAWAL;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
@@ -99,9 +99,9 @@ class PostStateValidatorsTest extends AbstractMigratedBeaconHandlerWithChainData
         new PostStateValidators.RequestBody(
             List.of("1", "2"),
             List.of(
-                StatusParameter.active_ongoing,
-                StatusParameter.active_exiting,
-                StatusParameter.withdrawal_done));
+                StatusParameter.ACTIVE_ONGOING,
+                StatusParameter.ACTIVE_EXITING,
+                StatusParameter.WITHDRAWAL_DONE));
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
             .metadata(handler.getMetadata())
@@ -212,14 +212,15 @@ class PostStateValidatorsTest extends AbstractMigratedBeaconHandlerWithChainData
             validatorStatus ->
                 Arrays.stream(StatusParameter.values())
                     .anyMatch(
-                        statusParameter -> statusParameter.name().equals(validatorStatus.name())));
+                        statusParameter ->
+                            statusParameter.getValue().equals(validatorStatus.name())));
   }
 
   private static Stream<Arguments> provideStatusParameters() {
     return Stream.of(
-        Arguments.of(List.of(active), Set.of(active_ongoing, active_exiting, active_slashed)),
-        Arguments.of(List.of(pending), Set.of(pending_initialized, pending_queued)),
-        Arguments.of(List.of(exited), Set.of(exited_slashed, exited_unslashed)),
-        Arguments.of(List.of(withdrawal), Set.of(withdrawal_done, withdrawal_possible)));
+        Arguments.of(List.of(ACTIVE), Set.of(active_ongoing, active_exiting, active_slashed)),
+        Arguments.of(List.of(PENDING), Set.of(pending_initialized, pending_queued)),
+        Arguments.of(List.of(EXITED), Set.of(exited_slashed, exited_unslashed)),
+        Arguments.of(List.of(WITHDRAWAL), Set.of(withdrawal_done, withdrawal_possible)));
   }
 }

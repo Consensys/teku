@@ -72,8 +72,8 @@ import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 public class BeaconRestApiTypes {
   private static final StringValueTypeDefinition<StatusParameter> STATUS_VALUE =
       DeserializableTypeDefinition.string(StatusParameter.class)
-          .formatter(StatusParameter::toString)
-          .parser(StatusParameter::valueOf)
+          .formatter(StatusParameter::getValue)
+          .parser(StatusParameter::parse)
           .example("active_ongoing")
           .description("ValidatorStatus string")
           .format("string")
