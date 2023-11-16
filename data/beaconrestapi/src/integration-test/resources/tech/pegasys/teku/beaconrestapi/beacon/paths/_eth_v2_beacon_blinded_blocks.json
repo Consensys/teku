@@ -1,9 +1,19 @@
 {
   "post" : {
     "tags" : [ "Beacon", "Validator Required Api" ],
-    "operationId" : "publishBlindedBlock",
+    "operationId" : "publishBlindedBlockV2",
     "summary" : "Publish a signed blinded block",
-    "description" : "Submit a signed blinded beacon block to the beacon node to be broadcast and imported. The beacon node performs the required validation.",
+    "description" : "Instructs the beacon node to use the components of the `SignedBlindedBeaconBlock` to construct and publish a `SignedBeaconBlock` by swapping out the `transactions_root` for the corresponding full list of `transactions`. The beacon node should broadcast a newly constructed `SignedBeaconBlock` to the beacon network, to be included in the beacon chain. The beacon node is not required to validate the signed `BeaconBlock`, and a successful response (20X) only indicates that the broadcast has been successful. The beacon node is expected to integrate the new block into its state, and therefore validate the block internally, however blocks which fail the validation are still broadcast but a different status code is returned (202). Pre-Bellatrix, this endpoint will accept a `SignedBeaconBlock`. The broadcast behaviour may be adjusted via the `broadcast_validation` query parameter.",
+    "parameters" : [ {
+      "name" : "broadcast_validation",
+      "in" : "query",
+      "schema" : {
+        "type" : "string",
+        "description" : "Level of validation that must be applied to a block before it is broadcast. Possible values:\n- **`gossip`** (default): lightweight gossip checks only\n- **`consensus`**: full consensus checks, including validation of all signatures and   blocks fields _except_ for the execution payload transactions.\n- **`consensus_and_equivocation`**: the same as `consensus`, with an extra equivocation   check immediately before the block is broadcast. If the block is found to be an\n  equivocation it fails validation.\nIf the block fails the requested level of a validation a 400 status MUST be returned immediately and the block MUST NOT be broadcast to the network.\nIf validation succeeds, the block must still be fully verified before it is incorporated into the state and a 20x status is returned to the caller.",
+        "example" : "consensus_and_equivocation",
+        "format" : "string"
+      }
+    } ],
     "requestBody" : {
       "content" : {
         "application/octet-stream" : {
@@ -14,7 +24,7 @@
         },
         "application/json" : {
           "schema" : {
-            "title" : "SignedBlindedBlock",
+            "title" : "SignedBlindedBeaconBlock",
             "type" : "object",
             "oneOf" : [ {
               "$ref" : "#/components/schemas/SignedBeaconBlockPhase0"

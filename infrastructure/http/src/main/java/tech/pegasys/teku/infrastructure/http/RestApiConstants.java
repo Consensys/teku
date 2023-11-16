@@ -121,6 +121,22 @@ public class RestApiConstants {
           + "&lt;slot&gt;, "
           + "&lt;hex encoded stateRoot with 0x prefix&gt;.";
 
+  public static final String PARAM_BROADCAST_VALIDATION = "broadcast_validation";
+  public static final String PARAM_BROADCAST_VALIDATION_DESCRIPTION =
+      """
+      Level of validation that must be applied to a block before it is broadcast. \
+      Possible values:
+      - **`gossip`** (default): lightweight gossip checks only
+      - **`consensus`**: full consensus checks, including validation of all signatures and \
+        blocks fields _except_ for the execution payload transactions.
+      - **`consensus_and_equivocation`**: the same as `consensus`, with an extra equivocation \
+        check immediately before the block is broadcast. If the block is found to be an
+        equivocation it fails validation.
+      If the block fails the requested level of a validation a 400 status MUST be returned \
+      immediately and the block MUST NOT be broadcast to the network.
+      If validation succeeds, the block must still be fully verified before it is \
+      incorporated into the state and a 20x status is returned to the caller.""";
+
   public static final String PARAM_ID = "id";
   public static final String PARAM_VALIDATOR_ID = "validator_id";
   public static final String PARAM_VALIDATOR_DESCRIPTION =

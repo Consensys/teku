@@ -123,7 +123,7 @@ public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandle
     assertThat(request.getResponseBody()).isNull();
   }
 
-  private void setupValidatorDataProviderSubmit(final SafeFuture<SendSignedBlockResult> future) {
+  protected void setupValidatorDataProviderSubmit(final SafeFuture<SendSignedBlockResult> future) {
     if (isBlinded()) {
       when(validatorDataProvider.submitSignedBlindedBlock(any(), any())).thenReturn(future);
     } else {
@@ -132,7 +132,7 @@ public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandle
     }
   }
 
-  private SignedBeaconBlock getRandomSignedBeaconBlock() {
+  protected SignedBeaconBlock getRandomSignedBeaconBlock() {
     if (isBlinded()) {
       return dataStructureUtil.randomSignedBlindedBeaconBlock(3);
     } else {
