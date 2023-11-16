@@ -52,7 +52,7 @@ public class BlobSidecarSelectorFactoryTest {
   private final DataStructureUtil data = new DataStructureUtil(spec);
   private final List<UInt64> indices = List.of(UInt64.ZERO, UInt64.ONE);
   private final SignedBeaconBlock block = data.randomSignedBeaconBlock();
-  private final List<BlobSidecarOld> blobSidecars = data.randomBlobSidecars(3);
+  private final List<BlobSidecarOld> blobSidecars = data.randomBlobSidecarsOld(3);
 
   private final BlobSidecarSelectorFactory blobSidecarSelectorFactory =
       new BlobSidecarSelectorFactory(client);

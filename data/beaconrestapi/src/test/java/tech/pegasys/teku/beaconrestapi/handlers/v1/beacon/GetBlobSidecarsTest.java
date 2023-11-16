@@ -81,7 +81,7 @@ class GetBlobSidecarsTest extends AbstractMigratedBeaconHandlerWithChainDataProv
 
   @Test
   void metadata_shouldHandle200() throws IOException {
-    final List<BlobSidecarOld> blobSidecars = dataStructureUtil.randomBlobSidecars(3);
+    final List<BlobSidecarOld> blobSidecars = dataStructureUtil.randomBlobSidecarsOld(3);
 
     final String data = getResponseStringFromMetadata(handler, SC_OK, blobSidecars);
     final String expected =

@@ -47,6 +47,7 @@ import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchemaOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -142,12 +143,18 @@ public class ChainBuilder {
     return Optional.ofNullable(blocksByHash.get(blockRoot));
   }
 
-  public List<BlobSidecarOld> getBlobSidecars(final Bytes32 blockRoot) {
+  @Deprecated
+  public List<BlobSidecarOld> getBlobSidecarsOld(final Bytes32 blockRoot) {
     return Optional.ofNullable(blobSidecarsByHash.get(blockRoot)).orElse(Collections.emptyList());
   }
 
+  // TODO
+  public List<BlobSidecar> getBlobSidecars(final Bytes32 blockRoot) {
+    throw new RuntimeException("TODO");
+  }
+
   public Optional<BlobSidecarOld> getBlobSidecar(final BlobIdentifier blobIdentifier) {
-    return getBlobSidecars(blobIdentifier.getBlockRoot()).stream()
+    return getBlobSidecarsOld(blobIdentifier.getBlockRoot()).stream()
         .filter(blobSidecar -> blobSidecar.getIndex().equals(blobIdentifier.getIndex()))
         .findFirst();
   }

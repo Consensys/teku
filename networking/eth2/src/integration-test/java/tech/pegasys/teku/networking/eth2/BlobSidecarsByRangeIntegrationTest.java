@@ -67,7 +67,7 @@ public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegra
     finalizedBlocksAndStates.forEach(
         blockAndState -> {
           final List<BlobSidecarOld> blobSidecars =
-              peerStorage.chainBuilder().getBlobSidecars(blockAndState.getRoot());
+              peerStorage.chainBuilder().getBlobSidecarsOld(blockAndState.getRoot());
           peerStorage.chainUpdater().saveBlock(blockAndState, blobSidecars);
           peerStorage.chainUpdater().updateBestBlock(blockAndState);
         });
@@ -93,7 +93,7 @@ public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegra
     nonCanonicalBlocksAndStates.forEach(
         signedBlockAndState -> {
           final List<BlobSidecarOld> blobSidecars =
-              fork.getBlobSidecars(signedBlockAndState.getRoot());
+              fork.getBlobSidecarsOld(signedBlockAndState.getRoot());
           nonCanonicalBlobSidecars.addAll(blobSidecars);
           peerStorage.chainUpdater().saveBlock(signedBlockAndState, blobSidecars);
         });

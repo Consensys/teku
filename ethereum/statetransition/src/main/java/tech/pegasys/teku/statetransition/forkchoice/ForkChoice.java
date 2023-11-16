@@ -41,7 +41,9 @@ import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.cache.CapturingIndexedAttestationCache;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchemaOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -65,6 +67,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.logic.common.util.ForkChoiceUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.statetransition.attestation.DeferredAttestations;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.block.BlockImportPerformance;
@@ -551,7 +554,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final StoreTransaction transaction = recentChainData.startStoreTransaction();
     addParentStateRoots(spec, blockSlotState, transaction);
 
-    final Optional<List<BlobSidecarOld>> blobSidecars;
+    final Optional<List<BlobSidecar>> blobSidecars;
     if (blobSidecarsAndValidationResult.isNotRequired()) {
       // Outside availability window or pre-Deneb
       blobSidecars = Optional.empty();
@@ -566,12 +569,26 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final Optional<UInt64> earliestBlobSidecarsSlot =
         computeEarliestBlobSidecarsSlot(
             recentChainData.getStore(), blobSidecarsAndValidationResult, block.getMessage());
+
+    // TODO: continue with new BlobSidecar from here
+    final Optional<List<BlobSidecarOld>> blobSidecarsOld;
+    if (blobSidecars.isPresent()) {
+      final BlobSidecarSchemaOld blobSidecarSchema =
+          SchemaDefinitionsDeneb.required(spec.atSlot(block.getSlot()).getSchemaDefinitions())
+              .getBlobSidecarOldSchema();
+      blobSidecarsOld =
+          blobSidecars.map(
+              blobSidecarList -> blobSidecarList.stream().map(blobSidecarSchema::create).toList());
+    } else {
+      blobSidecarsOld = Optional.empty();
+    }
+
     forkChoiceUtil.applyBlockToStore(
         transaction,
         block,
         postState,
         payloadResult.hasNotValidatedStatus(),
-        blobSidecars,
+        blobSidecarsOld,
         earliestBlobSidecarsSlot);
 
     if (shouldApplyProposerBoost(block, transaction)) {

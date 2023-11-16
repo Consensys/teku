@@ -354,19 +354,19 @@ public class MiscHelpers {
     return false;
   }
 
-  public boolean verifyBlobKzgProofBatch(final KZG kzg, final List<BlobSidecarOld> blobSidecars) {
+  public boolean verifyBlobKzgProofBatch(final KZG kzg, final List<BlobSidecar> blobSidecars) {
     return false;
   }
 
   public void validateBlobSidecarsBatchAgainstBlock(
-      final List<BlobSidecarOld> blobSidecars,
+      final List<BlobSidecar> blobSidecars,
       final BeaconBlock block,
       final List<KZGCommitment> kzgCommitmentsFromBlock) {
     throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
   }
 
   public void verifyBlobSidecarCompleteness(
-      final List<BlobSidecarOld> verifiedBlobSidecars,
+      final List<BlobSidecar> verifiedBlobSidecars,
       final List<KZGCommitment> kzgCommitmentsFromBlock)
       throws IllegalArgumentException {
     throw new UnsupportedOperationException("No Blob Sidecars before Deneb");
