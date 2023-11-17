@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
@@ -39,8 +39,8 @@ import tech.pegasys.teku.spec.propertytest.suppliers.SpecSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSidecarIndexSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSidecarSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSupplier;
-import tech.pegasys.teku.spec.propertytest.suppliers.blocks.SignedBeaconBlockSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.BeaconBlockSupplier;
+import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.SignedBlockContentsSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.KZGCommitmentSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.SszKZGCommitmentSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.SszKZGProofSupplier;
@@ -114,12 +114,14 @@ public class MiscHelpersDenebPropertyTest {
 
   @Property(tries = 100)
   void fuzzComputeBlobSidecar(
-      @ForAll(supplier = SignedBeaconBlockSupplier.class) final SignedBeaconBlock signedBlock,
+      @ForAll(supplier = SignedBlockContentsSupplier.class)
+          final SignedBlockContents signedBlockContents,
       @ForAll(supplier = BlobSidecarIndexSupplier.class) final UInt64 index,
       @ForAll(supplier = BlobSupplier.class) final Blob blob,
       @ForAll(supplier = SszKZGCommitmentSupplier.class) final SszKZGCommitment commitment,
       @ForAll(supplier = SszKZGProofSupplier.class) final SszKZGProof proof) {
-    miscHelpers.computeBlobSidecar(signedBlock, index, blob, commitment, proof);
+    miscHelpers.computeBlobSidecar(
+        signedBlockContents.getSignedBlock(), index, blob, commitment, proof);
   }
 
   @Property(tries = 100)

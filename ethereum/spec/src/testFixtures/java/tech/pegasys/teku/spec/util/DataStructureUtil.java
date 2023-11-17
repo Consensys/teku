@@ -2574,11 +2574,10 @@ public final class DataStructureUtil {
   }
 
   public List<Bytes32> randomKzgCommitmentInclusionProof() {
-    final BlobSidecarSchema blobSidecarSchema =
-        getDenebSchemaDefinitions(randomSlot()).getBlobSidecarSchema();
-    return IntStream.range(0, blobSidecarSchema.getKzgCommitmentInclusionProofSchema().getLength())
-        .mapToObj(__ -> randomBytes32())
-        .toList();
+    final int depth =
+        SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
+            .getKzgCommitmentInclusionProofDepth();
+    return IntStream.range(0, depth).mapToObj(__ -> randomBytes32()).toList();
   }
 
   public SszList<SszKZGCommitment> randomBlobKzgCommitments() {
