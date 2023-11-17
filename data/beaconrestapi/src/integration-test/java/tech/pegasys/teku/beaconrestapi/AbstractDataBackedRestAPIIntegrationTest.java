@@ -395,34 +395,48 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected Response post(
       final String route, final String postData, final Map<String, String> postParams)
       throws IOException {
-    return post(route + prepareQueryParams(postParams), postData);
+    return post(route + prepareQueryParams(postParams), postData, Optional.empty());
+  }
+
+  protected Response post(
+      final String route,
+      final String postData,
+      final Map<String, String> postParams,
+      final Optional<String> milestone)
+      throws IOException {
+    return post(route + prepareQueryParams(postParams), postData, milestone);
   }
 
   protected Response post(final String route, final String postData) throws IOException {
+    return post(route, postData, Optional.empty());
+  }
+
+  protected Response post(
+      final String route, final String postData, final Optional<String> milestone)
+      throws IOException {
     final RequestBody body = RequestBody.create(postData, JSON);
-    final Request request = new Request.Builder().url(getUrl() + route).post(body).build();
-    return client.newCall(request).execute();
+    final Request.Builder requestBuilder = new Request.Builder().url(getUrl() + route).post(body);
+    milestone.ifPresent(m -> requestBuilder.header(HEADER_CONSENSUS_VERSION, m));
+    return client.newCall(requestBuilder.build()).execute();
   }
 
   protected Response postSsz(
       final String route,
       final byte[] postData,
       final Map<String, String> postParams,
-      final Optional<String> milestone)
+      final Optional<String> milestoneHeader)
       throws IOException {
-    return postSsz(route + prepareQueryParams(postParams), postData, milestone);
+    return postSsz(route + prepareQueryParams(postParams), postData, milestoneHeader);
   }
 
   protected Response postSsz(
-      final String route, final byte[] postData, final Optional<String> milestone)
+      final String route, final byte[] postData, final Optional<String> milestoneHeader)
       throws IOException {
     final RequestBody body = RequestBody.create(postData, SSZ);
 
     final Request.Builder requestBuilder = new Request.Builder().url(getUrl() + route).post(body);
-    milestone.ifPresent(m -> requestBuilder.header(HEADER_CONSENSUS_VERSION, m));
-
-    final Request request = requestBuilder.build();
-    return client.newCall(request).execute();
+    milestoneHeader.ifPresent(m -> requestBuilder.header(HEADER_CONSENSUS_VERSION, m));
+    return client.newCall(requestBuilder.build()).execute();
   }
 
   protected String mapToJson(Map<String, Object> postParams) throws JsonProcessingException {

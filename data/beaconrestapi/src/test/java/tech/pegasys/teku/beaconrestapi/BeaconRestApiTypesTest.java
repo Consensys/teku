@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.beaconrestapi;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.BroadcastValidationParameter;
@@ -23,6 +25,6 @@ public class BeaconRestApiTypesTest {
   @EnumSource(BroadcastValidationParameter.class)
   void broadcastValidationParameter_anInternalVersionMustExist(
       final BroadcastValidationParameter parameter) {
-    parameter.toInternal();
+    assertDoesNotThrow(parameter::toInternal);
   }
 }

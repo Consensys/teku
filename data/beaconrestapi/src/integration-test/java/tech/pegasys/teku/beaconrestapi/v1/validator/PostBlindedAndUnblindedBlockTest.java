@@ -15,6 +15,8 @@ package tech.pegasys.teku.beaconrestapi.v1.validator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.beaconrestapi.v1.validator.PostBlindedAndUnblindedBlockTest.Version.V1;
+import static tech.pegasys.teku.beaconrestapi.v1.validator.PostBlindedAndUnblindedBlockTest.Version.V2;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import java.io.IOException;
@@ -58,16 +60,17 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
                 Stream.of(
                     // route, useSsz, useVersionHeader
                     Arguments.of(route, false, false),
-                    // Methods using Eth-Consensus-Version header (only for SSZ)
+                    // Methods using Eth-Consensus-Version header (only for SSZ, we could add it for
+                    // json too when we start using it)
                     Arguments.of(route, true, false),
                     Arguments.of(route, true, true)))
         .map(
             args -> {
               final String route = (String) args.get()[0];
               final boolean isBlindedBlock = route.contains("blinded");
-              final String version = route.contains("/v2/") ? "V2" : "V1";
-              boolean useSsz = (boolean) args.get()[1];
-              boolean useVersionHeader = (boolean) args.get()[2];
+              final Version version = route.contains("/v2/") ? V2 : V1;
+              final boolean useSsz = (boolean) args.get()[1];
+              final boolean useVersionHeader = (boolean) args.get()[2];
               return Arguments.of(version, isBlindedBlock, route, useSsz, useVersionHeader);
             });
   }
@@ -75,7 +78,7 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
   @ParameterizedTest(name = "version:{0}_blinded:{1}_ssz:{3}_versionHeader:{4}")
   @MethodSource("postBlockCases")
   void shouldReturnOk(
-      final String version,
+      final Version version,
       final boolean isBlindedBlock,
       final String route,
       final boolean useSsz,
@@ -109,7 +112,7 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
   @ParameterizedTest(name = "version:{0}_blinded:{1}_ssz:{3}_versionHeader:{4}")
   @MethodSource("postBlockCases")
   void shouldReturnOkPostDeneb(
-      final String version,
+      final Version version,
       final boolean isBlindedBlock,
       final String route,
       final boolean useSsz,
@@ -139,8 +142,8 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
         route, request, signedBlockContainerSchema, useVersionHeader, useSsz, version);
   }
 
-  private void prepareResponse(final SignedBeaconBlock request, final String version) {
-    if (version.equals("V2")) {
+  private void prepareResponse(final SignedBeaconBlock request, final Version version) {
+    if (version == V2) {
       when(validatorApiChannel.sendSignedBlock(
               request, BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION))
           .thenReturn(SafeFuture.completedFuture(SendSignedBlockResult.success(request.getRoot())));
@@ -150,8 +153,8 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
     }
   }
 
-  private void prepareResponse(final SignedBlockContainer request, final String version) {
-    if (version.equals("V2")) {
+  private void prepareResponse(final SignedBlockContainer request, final Version version) {
+    if (version == V2) {
       when(validatorApiChannel.sendSignedBlock(
               request, BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION))
           .thenReturn(SafeFuture.completedFuture(SendSignedBlockResult.success(request.getRoot())));
@@ -167,26 +170,28 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
       final SszSchema<T> signedBlockContainerSchema,
       final boolean useVersionHeader,
       final boolean useSsz,
-      final String version)
+      final Version version)
       throws IOException {
     Map<String, String> params = new HashMap<>();
 
-    if (version.equals("V2")) {
+    if (version == V2) {
       params.put("broadcast_validation", "consensus_and_equivocation");
     }
 
-    Optional<String> milestone = Optional.empty();
-    if (useSsz) {
-      if (useVersionHeader) {
-        milestone = Optional.of("deneb");
-      }
+    // Hardcode deneb
+    // when we are in bellatrix, in spec.deserializeSigned(blinded)BlockContainer, milestone lookup
+    // will fail and will fall back to slot based selection.
+    // Having all possible combinations would be super slow.
+    final Optional<String> milestoneHeader =
+        useVersionHeader ? Optional.of("deneb") : Optional.empty();
 
+    if (useSsz) {
       try (final Response response =
           postSsz(
               route,
               signedBlockContainerSchema.sszSerialize(request).toArrayUnsafe(),
               params,
-              milestone)) {
+              milestoneHeader)) {
         assertThat(response.code()).isEqualTo(SC_OK);
       }
     } else {
@@ -194,9 +199,15 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
           post(
               route,
               JsonUtil.serialize(request, signedBlockContainerSchema.getJsonTypeDefinition()),
-              params)) {
+              params,
+              milestoneHeader)) {
         assertThat(response.code()).isEqualTo(SC_OK);
       }
     }
+  }
+
+  enum Version {
+    V1,
+    V2
   }
 }
