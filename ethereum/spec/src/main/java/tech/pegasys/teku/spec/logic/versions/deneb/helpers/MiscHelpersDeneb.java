@@ -37,7 +37,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
@@ -232,8 +231,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
     return signedBeaconBlock
         .getMessage()
         .getBody()
-        .toVersionDeneb()
-        .map(BeaconBlockBodyDeneb::getBlobKzgCommitments)
+        .getOptionalBlobKzgCommitments()
         .map(SszList::size)
         .orElse(0);
   }

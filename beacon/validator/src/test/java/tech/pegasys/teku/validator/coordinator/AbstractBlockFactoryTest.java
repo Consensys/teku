@@ -70,6 +70,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManage
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -332,7 +333,10 @@ public abstract class AbstractBlockFactoryTest {
     final List<BlobSidecar> blobSidecars = blockFactory.createBlobSidecars(signedBlockContainer);
 
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
-      assertThat(blobSidecars).isNotEmpty();
+      final int expectedBlobs =
+          MiscHelpersDeneb.required(spec.atSlot(signedBlockContainer.getSlot()).miscHelpers())
+              .getBlobKzgCommitmentsCount(signedBlockContainer.getSignedBlock());
+      assertThat(blobSidecars).hasSize(expectedBlobs);
     } else {
       assertThat(blobSidecars).isEmpty();
     }
