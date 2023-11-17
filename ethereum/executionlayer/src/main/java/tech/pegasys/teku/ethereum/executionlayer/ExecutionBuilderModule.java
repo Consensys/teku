@@ -388,7 +388,7 @@ public class ExecutionBuilderModule {
   }
 
   private SafeFuture<BuilderPayload> getPayloadFromBuilderOrFallbackData(
-      final SignedBeaconBlock signedBeaconBlock,
+      final SignedBeaconBlock signedBlindedBeaconBlock,
       final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture) {
     // note: we don't do any particular consistency check here.
     // the header/payload compatibility check is done by SignedBeaconBlockUnblinder
@@ -397,7 +397,7 @@ public class ExecutionBuilderModule {
     return headerWithFallbackDataFuture.thenCompose(
         headerWithFallbackData -> {
           if (headerWithFallbackData.getFallbackData().isEmpty()) {
-            return getPayloadFromBuilder(signedBeaconBlock);
+            return getPayloadFromBuilder(signedBlindedBeaconBlock);
           } else {
             final FallbackData fallbackData = headerWithFallbackData.getFallbackData().get();
             logFallbackToLocalExecutionPayloadAndBlobsBundle(fallbackData);
@@ -410,7 +410,8 @@ public class ExecutionBuilderModule {
                         executionBlobsBundle -> {
                           final SchemaDefinitionsDeneb schemaDefinitions =
                               SchemaDefinitionsDeneb.required(
-                                  spec.atSlot(signedBeaconBlock.getSlot()).getSchemaDefinitions());
+                                  spec.atSlot(signedBlindedBeaconBlock.getSlot())
+                                      .getSchemaDefinitions());
                           final BlobsBundle blobsBundle =
                               schemaDefinitions
                                   .getBlobsBundleSchema()
