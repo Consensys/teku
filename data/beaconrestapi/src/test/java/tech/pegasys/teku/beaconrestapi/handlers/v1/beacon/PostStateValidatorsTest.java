@@ -162,6 +162,23 @@ class PostStateValidatorsTest extends AbstractMigratedBeaconHandlerWithChainData
   }
 
   @Test
+  public void shouldGetValidatorFromStateWithEmptyRequestBody() throws Exception {
+    final StubRestApiRequest request =
+        StubRestApiRequest.builder()
+            .metadata(handler.getMetadata())
+            .pathParameter("state_id", "invalid")
+            .build();
+
+    final ObjectAndMetaData<List<StateValidatorData>> expectedResponse =
+        chainDataProvider.getStateValidators("head", List.of(), Set.of()).get().orElseThrow();
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(expectedResponse);
+  }
+
+  @Test
   void metadata_shouldHandle400() throws JsonProcessingException {
     verifyMetadataErrorResponse(handler, SC_BAD_REQUEST);
   }
