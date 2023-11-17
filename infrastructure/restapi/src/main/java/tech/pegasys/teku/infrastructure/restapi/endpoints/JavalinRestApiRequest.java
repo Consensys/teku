@@ -24,7 +24,9 @@ import io.javalin.http.Header;
 import io.javalin.http.sse.SseClient;
 import io.javalin.http.sse.SseHandler;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PushbackInputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -46,6 +48,23 @@ public class JavalinRestApiRequest implements RestApiRequest {
   @SuppressWarnings({"TypeParameterUnusedInFormals"})
   public <T> T getRequestBody() throws JsonProcessingException {
     return metadata.getRequestBody(context.bodyInputStream(), context.headerMap());
+  }
+
+  @Override
+  public <T> Optional<T> getOptionalRequestBody() throws JsonProcessingException {
+    // We use a PushbackInputStream because the underlying input stream does not support reset()
+    try (final PushbackInputStream pushbackInputStream =
+        new PushbackInputStream(context.bodyInputStream())) {
+      final int firstByte = pushbackInputStream.read();
+      if (firstByte == -1) {
+        return Optional.empty();
+      } else {
+        pushbackInputStream.unread(firstByte);
+        return Optional.of(metadata.getRequestBody(pushbackInputStream, context.headerMap()));
+      }
+    } catch (final IOException e) {
+      throw new RuntimeException("Error reading request body", e);
+    }
   }
 
   public JavalinRestApiRequest(final Context context, final EndpointMetadata metadata) {

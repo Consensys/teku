@@ -282,6 +282,21 @@ public class DelegatingSpecConfig implements SpecConfig {
   }
 
   @Override
+  public int getReorgMaxEpochsSinceFinalization() {
+    return specConfig.getReorgMaxEpochsSinceFinalization();
+  }
+
+  @Override
+  public int getReorgHeadWeightThreshold() {
+    return specConfig.getReorgHeadWeightThreshold();
+  }
+
+  @Override
+  public int getReorgParentWeightThreshold() {
+    return specConfig.getReorgParentWeightThreshold();
+  }
+
+  @Override
   public long getDepositChainId() {
     return specConfig.getDepositChainId();
   }
