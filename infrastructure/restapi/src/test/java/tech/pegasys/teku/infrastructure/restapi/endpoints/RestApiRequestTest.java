@@ -17,6 +17,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_ACCEPT;
@@ -27,10 +30,16 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT8_TYPE;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.javalin.http.Context;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
+import org.apache.commons.io.IOUtils;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -65,6 +74,7 @@ public class RestApiRequestTest {
           .queryParam(BYTE_PARAM)
           .queryParam(INT_PARAM)
           .queryParam(STR_PARAM)
+          .requestBodyType(STRING_TYPE)
           .build();
 
   private final Context context = mock(Context.class);
@@ -213,5 +223,51 @@ public class RestApiRequestTest {
     final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
 
     assertThat(request.getQueryParameterList(INT_PARAM)).isEqualTo(List.of());
+  }
+
+  @Test
+  public void whenRequestBodyIsAbsent_GetOptionalRequestBodyShouldReturnEmpty()
+      throws JsonProcessingException {
+    when(context.bodyInputStream()).thenReturn(IOUtils.toInputStream("", StandardCharsets.UTF_8));
+
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
+    final Optional<Object> requestBody = request.getOptionalRequestBody();
+
+    assertThat(requestBody).isEmpty();
+  }
+
+  @Test
+  public void whenRequestBodyIsPresent_GetOptionalRequestBodyShouldReturnExpectedBody()
+      throws JsonProcessingException {
+    when(context.bodyInputStream())
+        .thenReturn(IOUtils.toInputStream("\"hello\"", StandardCharsets.UTF_8));
+
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
+    final Optional<String> requestBody = request.getOptionalRequestBody();
+
+    assertThat(requestBody).hasValue("hello");
+  }
+
+  @Test
+  public void shouldNeverResetInputStreamWhileCheckingIfItHasContent() throws Exception {
+    final InputStream inputStream = spy(IOUtils.toInputStream("", StandardCharsets.UTF_8));
+    when(context.bodyInputStream()).thenReturn(inputStream);
+
+    new JavalinRestApiRequest(context, METADATA).getOptionalRequestBody();
+
+    verify(inputStream, never()).reset();
+  }
+
+  @Test
+  public void whenUnderlyingInputStreamThrowsIOException_ShouldThrowRuntimeWithCause()
+      throws Exception {
+    final InputStream inputStream = spy(IOUtils.toInputStream("", StandardCharsets.UTF_8));
+    when(inputStream.read()).thenThrow(new IOException("Error"));
+    when(context.bodyInputStream()).thenReturn(inputStream);
+
+    assertThatThrownBy(() -> new JavalinRestApiRequest(context, METADATA).getOptionalRequestBody())
+        .isInstanceOf(RuntimeException.class)
+        .hasCauseInstanceOf(IOException.class)
+        .hasMessageContaining("Error reading request body");
   }
 }

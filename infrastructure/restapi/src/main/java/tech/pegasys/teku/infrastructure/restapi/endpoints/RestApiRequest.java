@@ -24,6 +24,8 @@ public interface RestApiRequest {
   @SuppressWarnings({"TypeParameterUnusedInFormals"})
   <T> T getRequestBody() throws JsonProcessingException;
 
+  <T> Optional<T> getOptionalRequestBody() throws JsonProcessingException;
+
   void respondOk(Object response) throws JsonProcessingException;
 
   void respondAsync(SafeFuture<AsyncApiResponse> futureResponse);

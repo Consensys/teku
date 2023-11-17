@@ -167,6 +167,27 @@ public class ForkChoiceUtil {
     return roots;
   }
 
+  /**
+   * is_shuffling_stable
+   *
+   * <p>Refer to fork-choice specification.
+   *
+   * @param slot
+   * @return
+   */
+  public boolean isShufflingStable(final UInt64 slot) {
+    return !slot.mod(specConfig.getSlotsPerEpoch()).isZero();
+  }
+
+  public boolean isFinalizationOk(final ReadOnlyStore store, final UInt64 slot) {
+    final UInt64 epochsSinceFinalization =
+        miscHelpers
+            .computeEpochAtSlot(slot)
+            .minusMinZero(store.getFinalizedCheckpoint().getEpoch());
+    return epochsSinceFinalization.isLessThanOrEqualTo(
+        specConfig.getReorgMaxEpochsSinceFinalization());
+  }
+
   private void maybeAddRoot(
       final UInt64 startSlot,
       final UInt64 step,

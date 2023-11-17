@@ -89,6 +89,11 @@ public class StubRestApiRequest implements RestApiRequest {
   }
 
   @Override
+  public <T> Optional<T> getOptionalRequestBody() throws JsonProcessingException {
+    return Optional.ofNullable(getRequestBody());
+  }
+
+  @Override
   public void respondOk(final Object response) throws JsonProcessingException {
     assertThat(this.responseCode).isEqualTo(CODE_NOT_SET);
     assertThat(this.responseObject).isNull();

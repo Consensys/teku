@@ -175,7 +175,7 @@ public class ChainStorageTest {
 
     final Map<SlotAndBlockRoot, List<BlobSidecarOld>> missingHistoricalBlobSidecars =
         chainBuilder
-            .streamBlobSidecars(0, firstMissingBlockSlot)
+            .streamBlobSidecarsOld(0, firstMissingBlockSlot)
             .flatMap(entry -> entry.getValue().stream())
             .collect(Collectors.groupingBy(BlobSidecarOld::getSlotAndBlockRoot));
 
@@ -297,7 +297,7 @@ public class ChainStorageTest {
 
     final Map<SlotAndBlockRoot, List<BlobSidecarOld>> missingHistoricalBlobSidecars =
         chainBuilder
-            .streamBlobSidecars(0, firstMissingBlockSlot)
+            .streamBlobSidecarsOld(0, firstMissingBlockSlot)
             .flatMap(entry -> entry.getValue().stream())
             .collect(Collectors.groupingBy(BlobSidecarOld::getSlotAndBlockRoot));
 
