@@ -15,9 +15,13 @@ package tech.pegasys.teku.beaconrestapi.v1.validator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.beaconrestapi.v1.validator.PostBlindedAndUnblindedBlockTest.Version.V1;
+import static tech.pegasys.teku.beaconrestapi.v1.validator.PostBlindedAndUnblindedBlockTest.Version.V2;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import okhttp3.Response;
@@ -28,8 +32,12 @@ import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlindedBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock;
+import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.PostBlindedBlockV2;
+import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.PostBlockV2;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -46,23 +54,37 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
 
   public static Stream<Arguments> postBlockCases() {
     return Stream.of(
-        Arguments.of(PostBlock.ROUTE, false, false, false),
-        Arguments.of(PostBlock.ROUTE, false, true, false),
-        Arguments.of(PostBlindedBlock.ROUTE, true, false, false),
-        Arguments.of(PostBlindedBlock.ROUTE, true, true, false),
-        // Methods using Eth-Consensus-Version header (only for SSZ)
-        Arguments.of(PostBlock.ROUTE, false, true, true),
-        Arguments.of(PostBlindedBlock.ROUTE, true, true, true));
+            PostBlock.ROUTE, PostBlindedBlock.ROUTE, PostBlockV2.ROUTE, PostBlindedBlockV2.ROUTE)
+        .flatMap(
+            route ->
+                Stream.of(
+                    // route, useSsz, useVersionHeader
+                    Arguments.of(route, false, false),
+                    // Methods using Eth-Consensus-Version header (only for SSZ, we could add it for
+                    // json too when we start using it)
+                    Arguments.of(route, true, false),
+                    Arguments.of(route, true, true)))
+        .map(
+            args -> {
+              final String route = (String) args.get()[0];
+              final boolean isBlindedBlock = route.contains("blinded");
+              final Version version = route.contains("/v2/") ? V2 : V1;
+              final boolean useSsz = (boolean) args.get()[1];
+              final boolean useVersionHeader = (boolean) args.get()[2];
+              return Arguments.of(version, isBlindedBlock, route, useSsz, useVersionHeader);
+            });
   }
 
-  @ParameterizedTest(name = "blinded:{1}_ssz:{2}_version:{3}")
+  @ParameterizedTest(name = "version:{0}_blinded:{1}_ssz:{3}_versionHeader:{4}")
   @MethodSource("postBlockCases")
   void shouldReturnOk(
-      final String route,
+      final Version version,
       final boolean isBlindedBlock,
+      final String route,
       final boolean useSsz,
       final boolean useVersionHeader)
       throws IOException {
+
     startRestAPIAtGenesis(SpecMilestone.BELLATRIX);
     dataStructureUtil = new DataStructureUtil(spec);
 
@@ -81,34 +103,18 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
           spec.atSlot(UInt64.ONE).getSchemaDefinitions().getSignedBeaconBlockSchema();
     }
 
-    when(validatorApiChannel.sendSignedBlock(request, BroadcastValidationLevel.NOT_REQUIRED))
-        .thenReturn(SafeFuture.completedFuture(SendSignedBlockResult.success(request.getRoot())));
+    prepareResponse(request, version);
 
-    Optional<String> milestone = Optional.empty();
-    if (useSsz) {
-      if (useVersionHeader) {
-        milestone = Optional.of("bellatrix");
-      }
-      try (final Response response =
-          postSsz(
-              route, signedBeaconBlockSchema.sszSerialize(request).toArrayUnsafe(), milestone)) {
-        assertThat(response.code()).isEqualTo(SC_OK);
-      }
-    } else {
-      try (final Response response =
-          post(
-              route,
-              JsonUtil.serialize(request, signedBeaconBlockSchema.getJsonTypeDefinition()))) {
-        assertThat(response.code()).isEqualTo(SC_OK);
-      }
-    }
+    postRequestAndAssert(
+        route, request, signedBeaconBlockSchema, useVersionHeader, useSsz, version);
   }
 
-  @ParameterizedTest(name = "blinded:{1}_ssz:{2}_version:{3}")
+  @ParameterizedTest(name = "version:{0}_blinded:{1}_ssz:{3}_versionHeader:{4}")
   @MethodSource("postBlockCases")
   void shouldReturnOkPostDeneb(
-      final String route,
+      final Version version,
       final boolean isBlindedBlock,
+      final String route,
       final boolean useSsz,
       final boolean useVersionHeader)
       throws IOException {
@@ -130,27 +136,78 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
           spec.atSlot(UInt64.ONE).getSchemaDefinitions().getSignedBlockContainerSchema();
     }
 
-    when(validatorApiChannel.sendSignedBlock(request, BroadcastValidationLevel.NOT_REQUIRED))
-        .thenReturn(SafeFuture.completedFuture(SendSignedBlockResult.success(request.getRoot())));
+    prepareResponse(request, version);
 
-    Optional<String> milestone = Optional.empty();
+    postRequestAndAssert(
+        route, request, signedBlockContainerSchema, useVersionHeader, useSsz, version);
+  }
+
+  private void prepareResponse(final SignedBeaconBlock request, final Version version) {
+    if (version == V2) {
+      when(validatorApiChannel.sendSignedBlock(
+              request, BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION))
+          .thenReturn(SafeFuture.completedFuture(SendSignedBlockResult.success(request.getRoot())));
+    } else {
+      when(validatorApiChannel.sendSignedBlock(request, BroadcastValidationLevel.NOT_REQUIRED))
+          .thenReturn(SafeFuture.completedFuture(SendSignedBlockResult.success(request.getRoot())));
+    }
+  }
+
+  private void prepareResponse(final SignedBlockContainer request, final Version version) {
+    if (version == V2) {
+      when(validatorApiChannel.sendSignedBlock(
+              request, BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION))
+          .thenReturn(SafeFuture.completedFuture(SendSignedBlockResult.success(request.getRoot())));
+    } else {
+      when(validatorApiChannel.sendSignedBlock(request, BroadcastValidationLevel.NOT_REQUIRED))
+          .thenReturn(SafeFuture.completedFuture(SendSignedBlockResult.success(request.getRoot())));
+    }
+  }
+
+  private <T extends SszData> void postRequestAndAssert(
+      final String route,
+      final T request,
+      final SszSchema<T> signedBlockContainerSchema,
+      final boolean useVersionHeader,
+      final boolean useSsz,
+      final Version version)
+      throws IOException {
+    Map<String, String> params = new HashMap<>();
+
+    if (version == V2) {
+      params.put("broadcast_validation", "consensus_and_equivocation");
+    }
+
+    // Hardcode deneb
+    // when we are in bellatrix, in spec.deserializeSigned(blinded)BlockContainer, milestone lookup
+    // will fail and will fall back to slot based selection.
+    // Having all possible combinations would be super slow.
+    final Optional<String> milestoneHeader =
+        useVersionHeader ? Optional.of("deneb") : Optional.empty();
+
     if (useSsz) {
-      if (useVersionHeader) {
-        milestone = Optional.of("deneb");
-      }
-
       try (final Response response =
           postSsz(
-              route, signedBlockContainerSchema.sszSerialize(request).toArrayUnsafe(), milestone)) {
+              route,
+              signedBlockContainerSchema.sszSerialize(request).toArrayUnsafe(),
+              params,
+              milestoneHeader)) {
         assertThat(response.code()).isEqualTo(SC_OK);
       }
     } else {
       try (final Response response =
           post(
               route,
-              JsonUtil.serialize(request, signedBlockContainerSchema.getJsonTypeDefinition()))) {
+              JsonUtil.serialize(request, signedBlockContainerSchema.getJsonTypeDefinition()),
+              params,
+              milestoneHeader)) {
         assertThat(response.code()).isEqualTo(SC_OK);
       }
     }
+  }
+
+  enum Version {
+    V1,
+    V2
   }
 }
