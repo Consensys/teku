@@ -62,7 +62,7 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
         .thenCompose(
             signedBlock -> {
               // creating blob sidecars after unblinding the block to ensure in the blinded flow we
-              // already have cached the builder payload
+              // will have the cached builder payload
               final List<BlobSidecar> blobSidecars =
                   blockFactory.createBlobSidecars(blockContainer);
               return gossipAndImportUnblindedSignedBlockAndBlobSidecars(

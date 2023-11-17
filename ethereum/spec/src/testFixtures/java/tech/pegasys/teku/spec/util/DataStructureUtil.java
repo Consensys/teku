@@ -2561,7 +2561,7 @@ public final class DataStructureUtil {
               .getBlobSidecarSchema();
 
       return blobSidecarSchema.create(
-          index.orElse(randomUInt64()),
+          index.orElse(randomBlobSidecarIndex()),
           blob.orElse(randomBytes(blobSidecarSchema.getBlobSchema().getLength())),
           kzgCommitment.orElse(randomBytes48()),
           kzgProof.orElse(randomBytes48()),
@@ -2610,6 +2610,10 @@ public final class DataStructureUtil {
     }
 
     return rewardAndPenaltyDeltas;
+  }
+
+  private UInt64 randomBlobSidecarIndex() {
+    return randomUInt64(spec.getMaxBlobsPerBlock().orElseThrow());
   }
 
   private int randomNumberOfBlobsPerBlock() {
