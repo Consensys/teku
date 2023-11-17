@@ -37,8 +37,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 public class PostStateValidators extends RestApiEndpoint {
-  public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/validators";
-
   private static final DeserializableTypeDefinition<RequestBody> REQUEST_TYPE =
       DeserializableTypeDefinition.object(RequestBody.class)
           .name("PostStateValidatorsRequestBody")
@@ -63,7 +61,7 @@ public class PostStateValidators extends RestApiEndpoint {
 
   PostStateValidators(final ChainDataProvider provider) {
     super(
-        EndpointMetadata.post(ROUTE)
+        EndpointMetadata.post(GetStateValidators.ROUTE)
             .operationId("postStateValidators")
             .summary("Get validators from state")
             .description(
