@@ -68,36 +68,11 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
     listenerWrapper =
         new BlobSidecarsByRootListenerValidatingProxy(peer, spec, listener, kzg, blobIdentifiers);
 
-    final BlobSidecar blobSidecar10 =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .index(UInt64.ZERO)
-            .signedBeaconBlockHeader(block1.asHeader())
-            .build();
-    final BlobSidecar blobSidecar11 =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .index(UInt64.ONE)
-            .signedBeaconBlockHeader(block1.asHeader())
-            .build();
-    final BlobSidecar blobSidecar2 =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .index(UInt64.ZERO)
-            .signedBeaconBlockHeader(block2.asHeader())
-            .build();
-    final BlobSidecar blobSidecar3 =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .index(UInt64.ZERO)
-            .signedBeaconBlockHeader(block3.asHeader())
-            .build();
-    final BlobSidecar blobSidecar4 =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .index(UInt64.ZERO)
-            .signedBeaconBlockHeader(block4.asHeader())
-            .build();
+    final BlobSidecar blobSidecar10 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
+    final BlobSidecar blobSidecar11 = dataStructureUtil.randomBlobSidecarForBlock(block1, 1);
+    final BlobSidecar blobSidecar2 = dataStructureUtil.randomBlobSidecarForBlock(block2, 0);
+    final BlobSidecar blobSidecar3 = dataStructureUtil.randomBlobSidecarForBlock(block3, 0);
+    final BlobSidecar blobSidecar4 = dataStructureUtil.randomBlobSidecarForBlock(block4, 0);
 
     assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar10).join());
     assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar11).join());
@@ -117,24 +92,9 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
     listenerWrapper =
         new BlobSidecarsByRootListenerValidatingProxy(peer, spec, listener, kzg, blobIdentifiers);
 
-    final BlobSidecar blobSidecar10 =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .index(UInt64.ZERO)
-            .signedBeaconBlockHeader(block1.asHeader())
-            .build();
-    final BlobSidecar blobSidecar11 =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .index(UInt64.ONE)
-            .signedBeaconBlockHeader(block1.asHeader())
-            .build();
-    final BlobSidecar blobSidecar2 =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .index(UInt64.ZERO)
-            .signedBeaconBlockHeader(block2.asHeader())
-            .build();
+    final BlobSidecar blobSidecar10 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
+    final BlobSidecar blobSidecar11 = dataStructureUtil.randomBlobSidecarForBlock(block1, 1);
+    final BlobSidecar blobSidecar2 = dataStructureUtil.randomBlobSidecarForBlock(block2, 0);
 
     assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar10).join());
     assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar11).join());
@@ -158,12 +118,7 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
         new BlobSidecarsByRootListenerValidatingProxy(
             peer, spec, listener, kzg, List.of(blobIdentifier));
 
-    final BlobSidecar blobSidecar1 =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .index(UInt64.ZERO)
-            .signedBeaconBlockHeader(block1.asHeader())
-            .build();
+    final BlobSidecar blobSidecar1 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
 
     final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar1);
     assertThat(result).isCompletedExceptionally();

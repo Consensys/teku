@@ -48,12 +48,7 @@ public class BlobSidecarsByRootValidatorTest {
   void blobSidecarIsCorrect() {
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
     final BlobIdentifier blobIdentifier1 = new BlobIdentifier(block1.getRoot(), UInt64.ZERO);
-    final BlobSidecar blobSidecar1 =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .index(UInt64.ZERO)
-            .signedBeaconBlockHeader(block1.asHeader())
-            .build();
+    final BlobSidecar blobSidecar1 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
 
     validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier1));
     assertDoesNotThrow(() -> validator.validate(blobSidecar1));
@@ -64,12 +59,7 @@ public class BlobSidecarsByRootValidatorTest {
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
     final BlobIdentifier blobIdentifier2 =
         new BlobIdentifier(dataStructureUtil.randomBytes32(), UInt64.ZERO);
-    final BlobSidecar blobSidecar1 =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .index(UInt64.ZERO)
-            .signedBeaconBlockHeader(block1.asHeader())
-            .build();
+    final BlobSidecar blobSidecar1 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
 
     validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier2));
     assertThatThrownBy(() -> validator.validate(blobSidecar1))
@@ -85,12 +75,7 @@ public class BlobSidecarsByRootValidatorTest {
     when(kzg.verifyBlobKzgProof(any(), any(), any())).thenReturn(false);
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
     final BlobIdentifier blobIdentifier1 = new BlobIdentifier(block1.getRoot(), UInt64.ZERO);
-    final BlobSidecar blobSidecar1 =
-        dataStructureUtil
-            .createRandomBlobSidecarBuilder()
-            .index(UInt64.ZERO)
-            .signedBeaconBlockHeader(block1.asHeader())
-            .build();
+    final BlobSidecar blobSidecar1 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
 
     validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier1));
     assertThatThrownBy(() -> validator.validate(blobSidecar1))

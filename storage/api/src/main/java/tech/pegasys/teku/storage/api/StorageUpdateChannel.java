@@ -33,6 +33,7 @@ public interface StorageUpdateChannel extends ChannelInterface {
 
   SafeFuture<UpdateResult> onStorageUpdate(StorageUpdate event);
 
+  @Deprecated
   SafeFuture<Void> onFinalizedBlocksOld(
       Collection<SignedBeaconBlock> finalizedBlocks,
       Map<SlotAndBlockRoot, List<BlobSidecarOld>> blobSidecarsBySlot,

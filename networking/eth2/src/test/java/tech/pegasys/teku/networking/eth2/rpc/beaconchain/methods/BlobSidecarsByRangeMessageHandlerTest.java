@@ -405,28 +405,28 @@ public class BlobSidecarsByRangeMessageHandlerTest {
   }
 
   private List<BlobSidecar> setUpBlobSidecarsData(final UInt64 startSlot, final UInt64 maxSlot) {
-    final List<Pair<SignedBeaconBlockHeader, SlotAndBlockRootAndBlobIndex>> keyAndHeaders =
+    final List<Pair<SignedBeaconBlockHeader, SlotAndBlockRootAndBlobIndex>> headerAndKeys =
         setupKeyAndHeaderList(startSlot, maxSlot);
     when(combinedChainDataClient.getBlobSidecarKeys(eq(startSlot), eq(maxSlot), any()))
         .thenAnswer(
             args ->
                 SafeFuture.completedFuture(
-                    keyAndHeaders
+                    headerAndKeys
                         .subList(
                             0,
                             Math.min(
-                                keyAndHeaders.size(), ((UInt64) args.getArgument(2)).intValue()))
+                                headerAndKeys.size(), ((UInt64) args.getArgument(2)).intValue()))
                         .stream()
                         .map(Pair::getValue)
                         .toList()));
-    return keyAndHeaders.stream()
+    return headerAndKeys.stream()
         .map(this::setUpBlobSidecarDataForKey)
         .collect(Collectors.toList());
   }
 
   private List<Pair<SignedBeaconBlockHeader, SlotAndBlockRootAndBlobIndex>> setupKeyAndHeaderList(
       final UInt64 startSlot, final UInt64 maxSlot) {
-    final List<Pair<SignedBeaconBlockHeader, SlotAndBlockRootAndBlobIndex>> keyAndHeaders =
+    final List<Pair<SignedBeaconBlockHeader, SlotAndBlockRootAndBlobIndex>> headerAndKeys =
         new ArrayList<>();
     UInt64.rangeClosed(startSlot, maxSlot)
         .forEach(
@@ -439,12 +439,12 @@ public class BlobSidecarsByRangeMessageHandlerTest {
                           .minusMinZero(1))
                   .forEach(
                       index ->
-                          keyAndHeaders.add(
+                          headerAndKeys.add(
                               Pair.of(
                                   block.asHeader(),
                                   new SlotAndBlockRootAndBlobIndex(slot, block.getRoot(), index))));
             });
-    return keyAndHeaders;
+    return headerAndKeys;
   }
 
   private BlobSidecar setUpBlobSidecarDataForKey(

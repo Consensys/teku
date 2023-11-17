@@ -139,12 +139,6 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   }
 
   @Override
-  public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediatelyOld(
-      final SignedBeaconBlock block, final List<BlobSidecarOld> blobSidecars) {
-    throw new RuntimeException("Deprecated");
-  }
-
-  @Override
   public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
       final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
     // Block is pre-Deneb, blobs are not supported yet

@@ -137,11 +137,5 @@ class StubBlobSidecarManager implements BlobSidecarManager {
     throw new UnsupportedOperationException("Not available in fork choice reference tests");
   }
 
-  @Override
-  public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediatelyOld(
-      final SignedBeaconBlock block, final List<BlobSidecarOld> blobSidecars) {
-    throw new UnsupportedOperationException("Not available in fork choice reference tests");
-  }
-
   private record BlobsAndProofs(List<Blob> blobs, List<KZGProof> proofs) {}
 }
