@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,6 +37,8 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -45,6 +48,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
@@ -60,13 +65,16 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.BlsToExecutionChangesValidator.BlsToExecutionChangeInvalidReason;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.AttesterSlashingValidator.AttesterSlashingInvalidReason;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.ProposerSlashingValidator.ProposerSlashingInvalidReason;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.VoluntaryExitValidator.ExitInvalidReason;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.SimpleOperationPool;
@@ -502,6 +510,93 @@ class BlockOperationSelectorFactoryTest {
     assertThat(blobSidecars).isEmpty();
   }
 
+  @Test
+  void shouldCreateBlobSidecarsForBlockContents() {
+    final SignedBlockContents signedBlockContents = dataStructureUtil.randomSignedBlockContents();
+
+    final MiscHelpersDeneb miscHelpersDeneb =
+        MiscHelpersDeneb.required(spec.atSlot(signedBlockContents.getSlot()).miscHelpers());
+
+    final List<BlobSidecar> blobSidecars =
+        factory.createBlobSidecarsSelector().apply(signedBlockContents);
+
+    final SszList<Blob> expectedBlobs = signedBlockContents.getBlobs().orElseThrow();
+    final SszList<SszKZGProof> expectedProofs = signedBlockContents.getKzgProofs().orElseThrow();
+    final SszList<SszKZGCommitment> expectedCommitments =
+        signedBlockContents
+            .getSignedBlock()
+            .getMessage()
+            .getBody()
+            .getOptionalBlobKzgCommitments()
+            .orElseThrow();
+
+    assertThat(blobSidecars).hasSize(expectedBlobs.size());
+
+    IntStream.range(0, blobSidecars.size())
+        .forEach(
+            index -> {
+              final BlobSidecar blobSidecar = blobSidecars.get(index);
+              assertThat(blobSidecar.getIndex()).isEqualTo(UInt64.valueOf(index));
+              assertThat(blobSidecar.getSignedBeaconBlockHeader())
+                  .isEqualTo(signedBlockContents.getSignedBlock().asHeader());
+              assertThat(blobSidecar.getBlob()).isEqualTo(expectedBlobs.get(index));
+              assertThat(blobSidecar.getSszKZGProof()).isEqualTo(expectedProofs.get(index));
+              assertThat(blobSidecar.getSszKZGCommitment())
+                  .isEqualTo(expectedCommitments.get(index));
+              // verify the merkle proof
+              assertThat(miscHelpersDeneb.verifyBlobSidecarMerkleProof(blobSidecar)).isTrue();
+            });
+  }
+
+  @Test
+  void shouldCreateBlobSidecarsForBlindedBlock() {
+    final SignedBeaconBlock signedBlindedBeaconBlock =
+        dataStructureUtil.randomSignedBlindedBeaconBlock();
+
+    final MiscHelpersDeneb miscHelpersDeneb =
+        MiscHelpersDeneb.required(spec.atSlot(signedBlindedBeaconBlock.getSlot()).miscHelpers());
+
+    final int commitmentsCount =
+        miscHelpersDeneb.getBlobKzgCommitmentsCount(signedBlindedBeaconBlock);
+
+    final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
+        dataStructureUtil.randomBuilderBlobsBundle(commitmentsCount);
+
+    prepareCachedBuilderPayload(
+        signedBlindedBeaconBlock.getSlot(),
+        dataStructureUtil.randomExecutionPayload(),
+        blobsBundle);
+
+    final List<BlobSidecar> blobSidecars =
+        factory.createBlobSidecarsSelector().apply(signedBlindedBeaconBlock);
+
+    final SszList<Blob> expectedBlobs = blobsBundle.getBlobs();
+    final SszList<SszKZGProof> expectedProofs = blobsBundle.getProofs();
+    final SszList<SszKZGCommitment> expectedCommitments =
+        signedBlindedBeaconBlock
+            .getMessage()
+            .getBody()
+            .getOptionalBlobKzgCommitments()
+            .orElseThrow();
+
+    assertThat(blobSidecars).hasSize(expectedBlobs.size());
+
+    IntStream.range(0, blobSidecars.size())
+        .forEach(
+            index -> {
+              final BlobSidecar blobSidecar = blobSidecars.get(index);
+              assertThat(blobSidecar.getIndex()).isEqualTo(UInt64.valueOf(index));
+              assertThat(blobSidecar.getSignedBeaconBlockHeader())
+                  .isEqualTo(signedBlindedBeaconBlock.asHeader());
+              assertThat(blobSidecar.getBlob()).isEqualTo(expectedBlobs.get(index));
+              assertThat(blobSidecar.getSszKZGProof()).isEqualTo(expectedProofs.get(index));
+              assertThat(blobSidecar.getSszKZGCommitment())
+                  .isEqualTo(expectedCommitments.get(index));
+              // verify the merkle proof
+              assertThat(miscHelpersDeneb.verifyBlobSidecarMerkleProof(blobSidecar)).isTrue();
+            });
+  }
+
   private void prepareBlockProductionWithPayload(
       final ExecutionPayload executionPayload,
       final ExecutionPayloadContext executionPayloadContext,
@@ -580,6 +675,17 @@ class BlockOperationSelectorFactoryTest {
                     Optional.of(SafeFuture.completedFuture(Optional.of(blobsBundle))),
                     Optional.empty(),
                     Optional.empty())));
+  }
+
+  private void prepareCachedBuilderPayload(
+      final UInt64 slot,
+      final ExecutionPayload executionPayload,
+      final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle) {
+    BuilderPayload builderPayload =
+        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
+            .getExecutionPayloadAndBlobsBundleSchema()
+            .create(executionPayload, blobsBundle);
+    when(executionLayer.getCachedUnblindedPayload(slot)).thenReturn(Optional.of(builderPayload));
   }
 
   private static class CapturingBeaconBlockBodyBuilder implements BeaconBlockBodyBuilder {

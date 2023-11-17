@@ -37,7 +37,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -293,7 +292,7 @@ public class BlockOperationSelectorFactory {
         executionPayloadResultFuture.thenCompose(
             executionPayloadResult -> {
               if (bodyBuilder.isBlinded()) {
-                return getBlobKzgCommitments(executionPayloadResult);
+                return getBuilderBlobKzgCommitments(executionPayloadResult);
               } else {
                 return getExecutionBlobsBundle(executionPayloadResult)
                     .thenApply(
@@ -346,17 +345,26 @@ public class BlockOperationSelectorFactory {
       final MiscHelpersDeneb miscHelpersDeneb =
           MiscHelpersDeneb.required(spec.atSlot(slot).miscHelpers());
 
+      final SszList<SszKZGCommitment> commitments =
+          blockContainer
+              .getSignedBlock()
+              .getMessage()
+              .getBody()
+              .getOptionalBlobKzgCommitments()
+              .orElseThrow(
+                  () ->
+                      new IllegalStateException(
+                          "BlobKzgCommitments are not available in " + blockContainer));
+
       final SszList<Blob> blobs;
-      final SszList<SszKZGCommitment> commitments;
       final SszList<SszKZGProof> proofs;
 
       if (blockContainer.isBlinded()) {
-        // need to use the already available builder blobs bundle for the blinded flow, because the
+        // need to use the builder BlobsBundle for the blinded flow, because the
         // blobs and the proofs wouldn't be part of the BlockContainer
         final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
             getCachedBuilderBlobsBundle(slot);
         blobs = blobsBundle.getBlobs();
-        commitments = blobsBundle.getCommitments();
         proofs = blobsBundle.getProofs();
       } else {
         blobs =
@@ -365,9 +373,6 @@ public class BlockOperationSelectorFactory {
                 .orElseThrow(
                     () ->
                         new IllegalStateException("Blobs are not available in " + blockContainer));
-        commitments =
-            BeaconBlockBodyDeneb.required(blockContainer.getSignedBlock().getMessage().getBody())
-                .getBlobKzgCommitments();
         proofs =
             blockContainer
                 .getKzgProofs()
@@ -399,17 +404,23 @@ public class BlockOperationSelectorFactory {
                 blobsBundle.orElseThrow(this::executionBlobsBundleIsNotAvailableException));
   }
 
-  private SafeFuture<SszList<SszKZGCommitment>> getBlobKzgCommitments(
+  private IllegalStateException executionBlobsBundleIsNotAvailableException() {
+    return new IllegalStateException("execution BlobsBundle is not available");
+  }
+
+  private SafeFuture<SszList<SszKZGCommitment>> getBuilderBlobKzgCommitments(
       final ExecutionPayloadResult executionPayloadResult) {
     return executionPayloadResult
         .getHeaderWithFallbackDataFuture()
-        .orElseThrow(() -> new IllegalStateException("HeaderWithFallbackData is not available"))
+        .orElseThrow()
         .thenApply(
             headerWithFallbackData ->
                 headerWithFallbackData
                     .getBlobKzgCommitments()
                     .orElseThrow(
-                        () -> new IllegalStateException("BlobKzgCommitments are not available")));
+                        () ->
+                            new IllegalStateException(
+                                "builder BlobKzgCommitments are not available")));
   }
 
   private tech.pegasys.teku.spec.datastructures.builder.BlobsBundle getCachedBuilderBlobsBundle(
@@ -422,9 +433,5 @@ public class BlockOperationSelectorFactory {
         .orElseThrow(
             () ->
                 new IllegalStateException("builder BlobsBundle is not available for slot " + slot));
-  }
-
-  private IllegalStateException executionBlobsBundleIsNotAvailableException() {
-    return new IllegalStateException("execution BlobsBundle is not available");
   }
 }

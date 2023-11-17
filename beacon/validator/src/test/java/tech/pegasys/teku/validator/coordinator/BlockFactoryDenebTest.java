@@ -54,7 +54,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
   @Test
   void shouldCreateBlindedBeaconBlockWhenBlindedBlockRequested() {
 
-    final SszList<SszKZGCommitment> blobKzgCommitments = prepareBlobKzgCommitments(spec, 3);
+    final SszList<SszKZGCommitment> blobKzgCommitments = prepareBuilderBlobKzgCommitments(spec, 3);
 
     final BlockContainer blockContainer =
         assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), true);
@@ -98,7 +98,17 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     final Spec spec = TestSpecFactory.createMinimalDeneb();
     final BlobsBundle blobsBundle = prepareBlobsBundle(spec, 3);
 
-    final List<BlobSidecar> blobSidecars = assertBlobSidecarsCreated(false, spec);
+    final BlockAndBlobs blockAndBlobs = assertBlobSidecarsCreated(false, spec);
+
+    final List<BlobSidecar> blobSidecars = blockAndBlobs.blobSidecars();
+    final SszList<SszKZGCommitment> expectedCommitments =
+        blockAndBlobs
+            .block()
+            .getSignedBlock()
+            .getMessage()
+            .getBody()
+            .getOptionalBlobKzgCommitments()
+            .orElseThrow();
 
     IntStream.range(0, blobSidecars.size())
         .forEach(
@@ -107,8 +117,8 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
               // check sidecar is created using the prepared BlobsBundle
               assertThat(blobSidecar.getKZGProof()).isEqualTo(blobsBundle.getProofs().get(index));
               assertThat(blobSidecar.getBlob()).isEqualTo(blobsBundle.getBlobs().get(index));
-              assertThat(blobSidecar.getKZGCommitment())
-                  .isEqualTo(blobsBundle.getCommitments().get(index));
+              assertThat(blobSidecar.getSszKZGCommitment())
+                  .isEqualTo(expectedCommitments.get(index));
             });
   }
 
@@ -121,20 +131,31 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     executionPayload = dataStructureUtil.randomExecutionPayload();
 
     final int blobsCount = 3;
-    final BlobsBundle blobsBundle = prepareBlobsBundle(spec, blobsCount);
+    final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
+        prepareBuilderPayload(spec, blobsCount).getOptionalBlobsBundle().orElseThrow();
 
-    final List<BlobSidecar> blobSidecars = assertBlobSidecarsCreated(true, spec);
+    final BlockAndBlobs blockAndBlobs = assertBlobSidecarsCreated(true, spec);
+
+    final List<BlobSidecar> blobSidecars = blockAndBlobs.blobSidecars();
+    final SszList<SszKZGCommitment> expectedCommitments =
+        blockAndBlobs
+            .block()
+            .getSignedBlock()
+            .getMessage()
+            .getBody()
+            .getOptionalBlobKzgCommitments()
+            .orElseThrow();
 
     IntStream.range(0, blobSidecars.size())
         .forEach(
             index -> {
               final BlobSidecar blobSidecar = blobSidecars.get(index);
-              // check sidecar is created using the cached BuilderPayload and block commitments
-              // (based on the execution blobs bundle)
-              assertThat(blobSidecar.getKZGProof()).isEqualTo(blobsBundle.getProofs().get(index));
+              // check sidecar is created using the cached BuilderPayload
+              assertThat(blobSidecar.getSszKZGProof())
+                  .isEqualTo(blobsBundle.getProofs().get(index));
               assertThat(blobSidecar.getBlob()).isEqualTo(blobsBundle.getBlobs().get(index));
-              assertThat(blobSidecar.getKZGCommitment())
-                  .isEqualTo(blobsBundle.getCommitments().get(index));
+              assertThat(blobSidecar.getSszKZGCommitment())
+                  .isEqualTo(expectedCommitments.get(index));
             });
   }
 

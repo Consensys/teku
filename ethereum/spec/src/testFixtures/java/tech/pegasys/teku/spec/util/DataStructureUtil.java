@@ -2326,18 +2326,21 @@ public final class DataStructureUtil {
     return IntStream.range(0, count).mapToObj(__ -> randomBlobIdentifier()).collect(toList());
   }
 
-  public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle() {
+  public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle(
+      final int count) {
     final UInt64 slot = randomSlot();
     final SchemaDefinitionsDeneb schemaDefinitions = getDenebSchemaDefinitions(slot);
     final BlobsBundleSchema schema = schemaDefinitions.getBlobsBundleSchema();
 
-    final int numberOfBlobs = randomNumberOfBlobsPerBlock();
-
     return new tech.pegasys.teku.spec.datastructures.builder.BlobsBundle(
         schema,
-        randomSszList(schema.getCommitmentsSchema(), this::randomSszKZGCommitment, numberOfBlobs),
-        randomSszList(schema.getProofsSchema(), this::randomSszKZGProof, numberOfBlobs),
-        randomSszList(schema.getBlobsSchema(), this::randomBlob, numberOfBlobs));
+        randomSszList(schema.getCommitmentsSchema(), this::randomSszKZGCommitment, count),
+        randomSszList(schema.getProofsSchema(), this::randomSszKZGProof, count),
+        randomSszList(schema.getBlobsSchema(), this::randomBlob, count));
+  }
+
+  public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle() {
+    return randomBuilderBlobsBundle(randomNumberOfBlobsPerBlock());
   }
 
   public BlobsBundle randomBlobsBundle() {
@@ -2612,7 +2615,7 @@ public final class DataStructureUtil {
     return rewardAndPenaltyDeltas;
   }
 
-  private UInt64 randomBlobSidecarIndex() {
+  public UInt64 randomBlobSidecarIndex() {
     return randomUInt64(spec.getMaxBlobsPerBlock().orElseThrow());
   }
 
