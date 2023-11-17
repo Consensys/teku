@@ -253,11 +253,9 @@ public abstract class AbstractBlockFactoryTest {
       final SignedBeaconBlock blindedBlock, final Spec spec) {
     final BlockFactory blockFactory = createBlockFactory(spec);
 
-    // no need to configure blobs for just testing block unblinding
-    BuilderPayload builderPayload = prepareBuilderPayload(spec, 0);
-
+    // no need to prepare blobs bundle when only testing block unblinding
     when(executionLayer.getUnblindedPayload(blindedBlock))
-        .thenReturn(SafeFuture.completedFuture(builderPayload));
+        .thenReturn(SafeFuture.completedFuture(executionPayload));
 
     final SignedBeaconBlock unblindedBlock =
         blockFactory.unblindSignedBlockIfBlinded(blindedBlock).join();
@@ -398,9 +396,8 @@ public abstract class AbstractBlockFactoryTest {
 
   protected BuilderPayload prepareBuilderPayload(final Spec spec, final int blobsCount) {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final ExecutionPayload executionPayload =
-        Optional.ofNullable(this.executionPayload)
-            .orElseGet(dataStructureUtil::randomExecutionPayload);
+    final ExecutionPayload builderExecutionPayload =
+        Optional.ofNullable(executionPayload).orElseGet(dataStructureUtil::randomExecutionPayload);
     final BuilderPayload builderPayload;
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
@@ -408,9 +405,10 @@ public abstract class AbstractBlockFactoryTest {
       builderPayload =
           schemaDefinitionsDeneb
               .getExecutionPayloadAndBlobsBundleSchema()
-              .create(executionPayload, dataStructureUtil.randomBuilderBlobsBundle(blobsCount));
+              .create(
+                  builderExecutionPayload, dataStructureUtil.randomBuilderBlobsBundle(blobsCount));
     } else {
-      builderPayload = executionPayload;
+      builderPayload = builderExecutionPayload;
     }
     this.builderPayload = Optional.of(builderPayload);
 
