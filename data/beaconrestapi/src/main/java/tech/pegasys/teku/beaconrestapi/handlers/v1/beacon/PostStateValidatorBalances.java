@@ -13,14 +13,10 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ID_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
@@ -29,45 +25,30 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.migrated.StateValidatorBalanceData;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
-public class GetStateValidatorBalances extends RestApiEndpoint {
-  public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/validator_balances";
-
-  static final SerializableTypeDefinition<ObjectAndMetaData<List<StateValidatorBalanceData>>>
-      RESPONSE_TYPE =
-          SerializableTypeDefinition.<ObjectAndMetaData<List<StateValidatorBalanceData>>>object()
-              .name("GetStateValidatorBalancesResponse")
-              .withField(
-                  EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
-              .withField(FINALIZED, BOOLEAN_TYPE, ObjectAndMetaData::isFinalized)
-              .withField(
-                  "data",
-                  listOf(StateValidatorBalanceData.getJsonTypeDefinition()),
-                  ObjectAndMetaData::getData)
-              .build();
-
+public class PostStateValidatorBalances extends RestApiEndpoint {
   private final ChainDataProvider chainDataProvider;
 
-  public GetStateValidatorBalances(final DataProvider dataProvider) {
+  public PostStateValidatorBalances(final DataProvider dataProvider) {
     this(dataProvider.getChainDataProvider());
   }
 
-  GetStateValidatorBalances(final ChainDataProvider chainDataProvider) {
+  PostStateValidatorBalances(final ChainDataProvider chainDataProvider) {
     super(
-        EndpointMetadata.get(ROUTE)
-            .operationId("getStateValidatorBalances")
+        EndpointMetadata.post(GetStateValidatorBalances.ROUTE)
+            .operationId("postStateValidatorBalances")
             .summary("Get validator balances from state")
             .description("Returns filterable list of validator balances.")
             .tags(TAG_BEACON)
             .pathParam(PARAMETER_STATE_ID)
-            .queryListParam(ID_PARAMETER)
-            .response(SC_OK, "Request successful", RESPONSE_TYPE)
+            .requestBodyType(DeserializableTypeDefinition.listOf(STRING_TYPE))
+            .response(SC_OK, "Request successful", GetStateValidatorBalances.RESPONSE_TYPE)
             .withNotFoundResponse()
             .build());
     this.chainDataProvider = chainDataProvider;
@@ -75,11 +56,11 @@ public class GetStateValidatorBalances extends RestApiEndpoint {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    final List<String> validators = request.getQueryParameterList(ID_PARAMETER);
+    final Optional<List<String>> validators = request.getOptionalRequestBody();
 
     final SafeFuture<Optional<ObjectAndMetaData<List<StateValidatorBalanceData>>>> future =
         chainDataProvider.getStateValidatorBalances(
-            request.getPathParameter(PARAMETER_STATE_ID), validators);
+            request.getPathParameter(PARAMETER_STATE_ID), validators.orElse(List.of()));
 
     request.respondAsync(
         future.thenApply(
