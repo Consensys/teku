@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.ssz.tree.MerkleUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
@@ -233,9 +232,7 @@ class MiscHelpersDenebTest {
     for (int i = 0; i < numberOfCommitments; ++i) {
       final UInt64 blobSidecarIndex = UInt64.valueOf(i);
       final List<Bytes32> merkleProof =
-          MerkleUtil.constructMerkleProof(
-              beaconBlockBody.getBackingNode(),
-              miscHelpersDeneb.getBlobSidecarKzgCommitmentGeneralizedIndex(blobSidecarIndex));
+          miscHelpersDeneb.computeKzgCommitmentInclusionProof(blobSidecarIndex, beaconBlockBody);
       assertThat(merkleProof.size())
           .isEqualTo(
               SpecConfigDeneb.required(spec.getGenesisSpecConfig())
@@ -264,9 +261,7 @@ class MiscHelpersDenebTest {
 
         final UInt64 wrongIndex = UInt64.valueOf(j);
         final List<Bytes32> merkleProofWrong =
-            MerkleUtil.constructMerkleProof(
-                beaconBlockBody.getBackingNode(),
-                miscHelpersDeneb.getBlobSidecarKzgCommitmentGeneralizedIndex(wrongIndex));
+            miscHelpersDeneb.computeKzgCommitmentInclusionProof(wrongIndex, beaconBlockBody);
         assertThat(merkleProofWrong.size())
             .isEqualTo(
                 SpecConfigDeneb.required(spec.getGenesisSpecConfig())

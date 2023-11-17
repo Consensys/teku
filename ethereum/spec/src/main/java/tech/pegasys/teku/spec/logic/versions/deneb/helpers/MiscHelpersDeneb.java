@@ -37,6 +37,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
@@ -236,15 +237,11 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
         .orElse(0);
   }
 
-  public int getBlobSidecarKzgCommitmentGeneralizedIndex(final UInt64 blobSidecarIndex) {
-    final long blobKzgCommitmentsGeneralizedIndex =
-        beaconBlockBodySchema.getBlobKzgCommitmentsGeneralizedIndex();
-    final long commitmentGeneralizedIndex =
-        beaconBlockBodySchema
-            .getBlobKzgCommitmentsSchema()
-            .getChildGeneralizedIndex(blobSidecarIndex.longValue());
-    return (int)
-        GIndexUtil.gIdxCompose(blobKzgCommitmentsGeneralizedIndex, commitmentGeneralizedIndex);
+  public List<Bytes32> computeKzgCommitmentInclusionProof(
+      final UInt64 blobSidecarIndex, final BeaconBlockBody beaconBlockBody) {
+    return MerkleUtil.constructMerkleProof(
+        beaconBlockBody.getBackingNode(),
+        getBlobSidecarKzgCommitmentGeneralizedIndex(blobSidecarIndex));
   }
 
   public BlobSidecar computeBlobSidecar(
@@ -254,9 +251,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
       final SszKZGCommitment commitment,
       final SszKZGProof proof) {
     final List<Bytes32> kzgCommitmentInclusionProof =
-        MerkleUtil.constructMerkleProof(
-            signedBeaconBlock.getMessage().getBody().getBackingNode(),
-            getBlobSidecarKzgCommitmentGeneralizedIndex(index));
+        computeKzgCommitmentInclusionProof(index, signedBeaconBlock.getMessage().getBody());
     return blobSidecarSchema.create(
         index, blob, commitment, proof, signedBeaconBlock.asHeader(), kzgCommitmentInclusionProof);
   }
@@ -268,5 +263,16 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
         SpecConfigDeneb.required(specConfig).getKzgCommitmentInclusionProofDepth(),
         getBlobSidecarKzgCommitmentGeneralizedIndex(blobSidecar.getIndex()),
         blobSidecar.getBlockBodyRoot());
+  }
+
+  private int getBlobSidecarKzgCommitmentGeneralizedIndex(final UInt64 blobSidecarIndex) {
+    final long blobKzgCommitmentsGeneralizedIndex =
+        beaconBlockBodySchema.getBlobKzgCommitmentsGeneralizedIndex();
+    final long commitmentGeneralizedIndex =
+        beaconBlockBodySchema
+            .getBlobKzgCommitmentsSchema()
+            .getChildGeneralizedIndex(blobSidecarIndex.longValue());
+    return (int)
+        GIndexUtil.gIdxCompose(blobKzgCommitmentsGeneralizedIndex, commitmentGeneralizedIndex);
   }
 }
