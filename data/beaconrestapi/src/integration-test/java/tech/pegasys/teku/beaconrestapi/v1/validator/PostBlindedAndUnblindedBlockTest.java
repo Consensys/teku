@@ -58,20 +58,26 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
         .flatMap(
             route ->
                 Stream.of(
-                    // route, useSsz, useVersionHeader
-                    Arguments.of(route, false, false),
+                    // route, useSsz, versionHeader
+                    Arguments.of(route, false, Optional.empty()),
                     // Methods using Eth-Consensus-Version header (only for SSZ, we could add it for
                     // json too when we start using it)
-                    Arguments.of(route, true, false),
-                    Arguments.of(route, true, true)))
+                    Arguments.of(route, true, Optional.empty()),
+
+                    // deneb header on bellatrix will fall back to ssz slot based selector, because
+                    // deneb is not configured.
+                    // It is irrelevant for json, because we currently always use the slot based
+                    // selector.
+                    Arguments.of(route, true, Optional.of("deneb"))))
         .map(
             args -> {
               final String route = (String) args.get()[0];
               final boolean isBlindedBlock = route.contains("blinded");
               final Version version = route.contains("/v2/") ? V2 : V1;
               final boolean useSsz = (boolean) args.get()[1];
-              final boolean useVersionHeader = (boolean) args.get()[2];
-              return Arguments.of(version, isBlindedBlock, route, useSsz, useVersionHeader);
+              @SuppressWarnings("unchecked")
+              final Optional<String> versionHeader = (Optional<String>) args.get()[2];
+              return Arguments.of(version, isBlindedBlock, route, useSsz, versionHeader);
             });
   }
 
@@ -82,7 +88,7 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
       final boolean isBlindedBlock,
       final String route,
       final boolean useSsz,
-      final boolean useVersionHeader)
+      final Optional<String> versionHeader)
       throws IOException {
 
     startRestAPIAtGenesis(SpecMilestone.BELLATRIX);
@@ -105,8 +111,7 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
 
     prepareResponse(request, version);
 
-    postRequestAndAssert(
-        route, request, signedBeaconBlockSchema, useVersionHeader, useSsz, version);
+    postRequestAndAssert(route, request, signedBeaconBlockSchema, versionHeader, useSsz, version);
   }
 
   @ParameterizedTest(name = "version:{0}_blinded:{1}_ssz:{3}_versionHeader:{4}")
@@ -116,7 +121,7 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
       final boolean isBlindedBlock,
       final String route,
       final boolean useSsz,
-      final boolean useVersionHeader)
+      final Optional<String> versionHeader)
       throws IOException {
     startRestAPIAtGenesis(SpecMilestone.DENEB);
     dataStructureUtil = new DataStructureUtil(spec);
@@ -139,7 +144,7 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
     prepareResponse(request, version);
 
     postRequestAndAssert(
-        route, request, signedBlockContainerSchema, useVersionHeader, useSsz, version);
+        route, request, signedBlockContainerSchema, versionHeader, useSsz, version);
   }
 
   private void prepareResponse(final SignedBeaconBlock request, final Version version) {
@@ -168,7 +173,7 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
       final String route,
       final T request,
       final SszSchema<T> signedBlockContainerSchema,
-      final boolean useVersionHeader,
+      final Optional<String> versionHeader,
       final boolean useSsz,
       final Version version)
       throws IOException {
@@ -178,20 +183,13 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
       params.put("broadcast_validation", "consensus_and_equivocation");
     }
 
-    // Hardcode deneb
-    // when we are in bellatrix, in spec.deserializeSigned(blinded)BlockContainer, milestone lookup
-    // will fail and will fall back to slot based selection.
-    // Having all possible combinations would be super slow.
-    final Optional<String> milestoneHeader =
-        useVersionHeader ? Optional.of("deneb") : Optional.empty();
-
     if (useSsz) {
       try (final Response response =
           postSsz(
               route,
               signedBlockContainerSchema.sszSerialize(request).toArrayUnsafe(),
               params,
-              milestoneHeader)) {
+              versionHeader)) {
         assertThat(response.code()).isEqualTo(SC_OK);
       }
     } else {
@@ -200,7 +198,7 @@ public class PostBlindedAndUnblindedBlockTest extends AbstractDataBackedRestAPII
               route,
               JsonUtil.serialize(request, signedBlockContainerSchema.getJsonTypeDefinition()),
               params,
-              milestoneHeader)) {
+              versionHeader)) {
         assertThat(response.code()).isEqualTo(SC_OK);
       }
     }
