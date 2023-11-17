@@ -319,11 +319,19 @@ class ForkChoiceUtilTest {
   }
 
   public static Stream<Arguments> isShufflingStableConditions() {
+    // 8 slots per epoch for test conditions
+    final int epochStart = 10240 * 8;
+    final int nextEpochStart = 10241 * 8;
     // slot , expectedResult
-    ArrayList<Arguments> args = new ArrayList<>();
-    for (int i = 80; i < 100; i++) {
-      // every start of epoch, shuffling is considered not stable
-      args.add(Arguments.of(i, i % 8 != 0));
+    final ArrayList<Arguments> args = new ArrayList<>();
+
+    // shuffling is not stable at any epoch boundary
+    args.add(Arguments.of(0, false));
+    args.add(Arguments.of(epochStart, false));
+    args.add(Arguments.of(nextEpochStart, false));
+    for (int i = epochStart + 1; i < nextEpochStart; i++) {
+      // all non epoch boundary slots are considered stable
+      args.add(Arguments.of(i, true));
     }
 
     return args.stream();

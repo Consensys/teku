@@ -117,7 +117,6 @@ public class SpecConfigPhase0 implements SpecConfig {
   private final int attestationSubnetExtraBits;
   private final int attestationSubnetPrefixBits;
   private final int reorgMaxEpochsSinceFinalization;
-
   private final int reorgHeadWeightThreshold;
   private final int reorgParentWeightThreshold;
 
