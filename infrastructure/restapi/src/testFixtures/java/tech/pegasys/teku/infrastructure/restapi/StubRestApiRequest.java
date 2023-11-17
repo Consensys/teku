@@ -89,9 +89,8 @@ public class StubRestApiRequest implements RestApiRequest {
   }
 
   @Override
-  @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
   public <T> Optional<T> getOptionalRequestBody() throws JsonProcessingException {
-    return Optional.of((T) requestBody);
+    return Optional.ofNullable(getRequestBody());
   }
 
   @Override
