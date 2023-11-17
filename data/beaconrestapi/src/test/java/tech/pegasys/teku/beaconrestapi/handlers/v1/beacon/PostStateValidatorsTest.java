@@ -166,7 +166,7 @@ class PostStateValidatorsTest extends AbstractMigratedBeaconHandlerWithChainData
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
             .metadata(handler.getMetadata())
-            .pathParameter("state_id", "invalid")
+            .pathParameter("state_id", "head")
             .build();
 
     final ObjectAndMetaData<List<StateValidatorData>> expectedResponse =
