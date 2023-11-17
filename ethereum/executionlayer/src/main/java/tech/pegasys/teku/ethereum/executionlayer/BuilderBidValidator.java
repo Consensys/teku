@@ -15,19 +15,19 @@ package tech.pegasys.teku.ethereum.executionlayer;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 @FunctionalInterface
 public interface BuilderBidValidator {
   BuilderBidValidator NOOP =
       (spec, signedBuilderBid, signedValidatorRegistration, state, localExecutionPayload) ->
-          signedBuilderBid.getMessage().getHeader();
+          signedBuilderBid.getMessage();
 
-  ExecutionPayloadHeader validateAndGetPayloadHeader(
+  BuilderBid validateAndGetBuilderBid(
       final Spec spec,
       final SignedBuilderBid signedBuilderBid,
       final SignedValidatorRegistration signedValidatorRegistration,

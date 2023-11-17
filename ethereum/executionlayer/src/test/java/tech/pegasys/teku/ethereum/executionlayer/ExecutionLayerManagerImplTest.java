@@ -42,7 +42,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
@@ -959,13 +958,13 @@ class ExecutionLayerManagerImplTest {
                 })
             .orElse(fallbackData.getExecutionPayload());
 
-    final SignedBlockContainer signedBlindedBlockContainer =
+    final SignedBeaconBlock signedBlindedBeaconBlock =
         dataStructureUtil.randomSignedBlindedBeaconBlock(slot);
 
     // we expect result from the cached payload
     assertThat(
             executionLayerManager.builderGetPayload(
-                signedBlindedBlockContainer,
+                signedBlindedBeaconBlock,
                 (aSlot) ->
                     Optional.of(
                         new ExecutionPayloadResult(

@@ -35,7 +35,6 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
@@ -246,14 +245,13 @@ public class ExecutionBuilderModule {
       final SignedValidatorRegistration validatorRegistration,
       final Optional<ExecutionPayload> localExecutionPayload,
       final SafeFuture<UInt256> payloadValueResult) {
-    final ExecutionPayloadHeader executionPayloadHeader =
-        builderBidValidator.validateAndGetPayloadHeader(
+    final BuilderBid builderBid =
+        builderBidValidator.validateAndGetBuilderBid(
             spec, signedBuilderBid, validatorRegistration, state, localExecutionPayload);
-    final Optional<SszList<SszKZGCommitment>> blobKzgCommitments =
-        signedBuilderBid.getMessage().getOptionalBlobKzgCommitments();
     payloadValueResult.complete(signedBuilderBid.getMessage().getValue());
     return SafeFuture.completedFuture(
-        HeaderWithFallbackData.create(executionPayloadHeader, blobKzgCommitments));
+        HeaderWithFallbackData.create(
+            builderBid.getHeader(), builderBid.getOptionalBlobKzgCommitments()));
   }
 
   public SafeFuture<Void> builderRegisterValidators(
@@ -287,13 +285,12 @@ public class ExecutionBuilderModule {
   }
 
   public SafeFuture<BuilderPayload> builderGetPayload(
-      final SignedBlockContainer signedBlockContainer,
+      final SignedBeaconBlock signedBeaconBlock,
       final Function<UInt64, Optional<ExecutionPayloadResult>> getPayloadResultFunction) {
 
-    Preconditions.checkArgument(
-        signedBlockContainer.isBlinded(), "SignedBlockContainer must be blind");
+    Preconditions.checkArgument(signedBeaconBlock.isBlinded(), "SignedBeaconBlock must be blind");
 
-    final UInt64 slot = signedBlockContainer.getSlot();
+    final UInt64 slot = signedBeaconBlock.getSlot();
 
     final Optional<SafeFuture<HeaderWithFallbackData>> maybeProcessedSlot =
         getPayloadResultFunction
@@ -303,13 +300,13 @@ public class ExecutionBuilderModule {
     if (maybeProcessedSlot.isEmpty()) {
       LOG.warn(
           "Blinded block seems to not be built via either builder or local EL. Trying to unblind it via builder endpoint anyway.");
-      return getPayloadFromBuilder(signedBlockContainer.getSignedBlock());
+      return getPayloadFromBuilder(signedBeaconBlock);
     }
 
     final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture =
         maybeProcessedSlot.get();
 
-    return getPayloadFromBuilderOrFallbackData(signedBlockContainer, headerWithFallbackDataFuture);
+    return getPayloadFromBuilderOrFallbackData(signedBeaconBlock, headerWithFallbackDataFuture);
   }
 
   private boolean isTransitionNotFinalized(final ExecutionPayloadContext executionPayloadContext) {
@@ -391,7 +388,7 @@ public class ExecutionBuilderModule {
   }
 
   private SafeFuture<BuilderPayload> getPayloadFromBuilderOrFallbackData(
-      final SignedBlockContainer signedBlindedBlockContainer,
+      final SignedBeaconBlock signedBeaconBlock,
       final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture) {
     // note: we don't do any particular consistency check here.
     // the header/payload compatibility check is done by SignedBeaconBlockUnblinder
@@ -400,7 +397,7 @@ public class ExecutionBuilderModule {
     return headerWithFallbackDataFuture.thenCompose(
         headerWithFallbackData -> {
           if (headerWithFallbackData.getFallbackData().isEmpty()) {
-            return getPayloadFromBuilder(signedBlindedBlockContainer.getSignedBlock());
+            return getPayloadFromBuilder(signedBeaconBlock);
           } else {
             final FallbackData fallbackData = headerWithFallbackData.getFallbackData().get();
             logFallbackToLocalExecutionPayloadAndBlobsBundle(fallbackData);
@@ -413,8 +410,7 @@ public class ExecutionBuilderModule {
                         executionBlobsBundle -> {
                           final SchemaDefinitionsDeneb schemaDefinitions =
                               SchemaDefinitionsDeneb.required(
-                                  spec.atSlot(signedBlindedBlockContainer.getSlot())
-                                      .getSchemaDefinitions());
+                                  spec.atSlot(signedBeaconBlock.getSlot()).getSchemaDefinitions());
                           final BlobsBundle blobsBundle =
                               schemaDefinitions
                                   .getBlobsBundleSchema()

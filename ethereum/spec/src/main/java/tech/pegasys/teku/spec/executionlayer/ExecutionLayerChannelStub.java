@@ -46,7 +46,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
@@ -367,9 +367,9 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
   @Override
   public SafeFuture<BuilderPayload> builderGetPayload(
-      final SignedBlockContainer signedBlockContainer,
+      final SignedBeaconBlock signedBeaconBlock,
       final Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction) {
-    final UInt64 slot = signedBlockContainer.getSlot();
+    final UInt64 slot = signedBeaconBlock.getSlot();
     final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
     final Optional<SchemaDefinitionsBellatrix> schemaDefinitionsBellatrix =
         schemaDefinitions.toVersionBellatrix();
@@ -379,7 +379,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         "proposeBlindedBlock not supported for non-Bellatrix milestones");
 
     checkState(
-        signedBlockContainer.isBlinded(),
+        signedBeaconBlock.isBlinded(),
         "proposeBlindedBlock requires a signed blinded beacon block");
 
     checkState(
@@ -387,13 +387,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         "proposeBlindedBlock requires a previous call to getPayloadHeader");
 
     final ExecutionPayloadHeader executionPayloadHeader =
-        signedBlockContainer
-            .getSignedBlock()
-            .getBeaconBlock()
-            .orElseThrow()
-            .getBody()
-            .getOptionalExecutionPayloadHeader()
-            .orElseThrow();
+        signedBeaconBlock.getMessage().getBody().getOptionalExecutionPayloadHeader().orElseThrow();
 
     checkState(
         executionPayloadHeader
@@ -404,7 +398,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     LOG.info(
         "proposeBlindedBlock: slot: {} block: {} -> unblinded executionPayload blockHash: {}",
         slot,
-        signedBlockContainer.getRoot(),
+        signedBeaconBlock.getRoot(),
         lastBuilderPayloadToBeUnblinded.get().getBlockHash());
 
     final BuilderPayload builderPayload =
@@ -413,8 +407,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
             .map(
                 blobsBundle -> {
                   checkState(
-                      signedBlockContainer
-                              .getSignedBlock()
+                      signedBeaconBlock
                               .getMessage()
                               .getBody()
                               .getOptionalBlobKzgCommitments()
