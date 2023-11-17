@@ -113,18 +113,14 @@ public class MiscHelpersDenebPropertyTest {
   }
 
   @Property(tries = 100)
-  void fuzzComputeBlobSidecar(
+  void fuzzComputeBlobSidecarAndVerifyMerkleProof(
       @ForAll(supplier = SignedBeaconBlockSupplier.class) final SignedBeaconBlock signedBeaconBlock,
       @ForAll(supplier = BlobSidecarIndexSupplier.class) final UInt64 index,
       @ForAll(supplier = BlobSupplier.class) final Blob blob,
       @ForAll(supplier = SszKZGCommitmentSupplier.class) final SszKZGCommitment commitment,
       @ForAll(supplier = SszKZGProofSupplier.class) final SszKZGProof proof) {
-    miscHelpers.computeBlobSidecar(signedBeaconBlock, index, blob, commitment, proof);
-  }
-
-  @Property(tries = 100)
-  void fuzzVerifyBlobSidecarMerkleProof(
-      @ForAll(supplier = BlobSidecarSupplier.class) final BlobSidecar blobSidecar) {
+    final BlobSidecar blobSidecar =
+        miscHelpers.computeBlobSidecar(signedBeaconBlock, index, blob, commitment, proof);
     miscHelpers.verifyBlobSidecarMerkleProof(blobSidecar);
   }
 }
