@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSI
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
@@ -237,6 +238,17 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
         .orElse(0);
   }
 
+  public int getBlobSidecarKzgCommitmentGeneralizedIndex(final UInt64 blobSidecarIndex) {
+    final long blobKzgCommitmentsGeneralizedIndex =
+        beaconBlockBodySchema.getBlobKzgCommitmentsGeneralizedIndex();
+    final long commitmentGeneralizedIndex =
+        beaconBlockBodySchema
+            .getBlobKzgCommitmentsSchema()
+            .getChildGeneralizedIndex(blobSidecarIndex.longValue());
+    return (int)
+        GIndexUtil.gIdxCompose(blobKzgCommitmentsGeneralizedIndex, commitmentGeneralizedIndex);
+  }
+
   public List<Bytes32> computeKzgCommitmentInclusionProof(
       final UInt64 blobSidecarIndex, final BeaconBlockBody beaconBlockBody) {
     return MerkleUtil.constructMerkleProof(
@@ -244,14 +256,25 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
         getBlobSidecarKzgCommitmentGeneralizedIndex(blobSidecarIndex));
   }
 
-  public BlobSidecar computeBlobSidecar(
+  public BlobSidecar constructBlobSidecar(
       final SignedBeaconBlock signedBeaconBlock,
       final UInt64 index,
       final Blob blob,
-      final SszKZGCommitment commitment,
       final SszKZGProof proof) {
+    final BeaconBlockBody beaconBlockBody = signedBeaconBlock.getMessage().getBody();
+    final SszKZGCommitment commitment;
+    try {
+      commitment =
+          beaconBlockBody.getOptionalBlobKzgCommitments().orElseThrow().get(index.intValue());
+    } catch (final IndexOutOfBoundsException | NoSuchElementException ex) {
+      final int commitmentsCount = getBlobKzgCommitmentsCount(signedBeaconBlock);
+      throw new IllegalArgumentException(
+          String.format(
+              "Can't create blob sidecar with index %s because there are %d commitment(s) in block",
+              index, commitmentsCount));
+    }
     final List<Bytes32> kzgCommitmentInclusionProof =
-        computeKzgCommitmentInclusionProof(index, signedBeaconBlock.getMessage().getBody());
+        computeKzgCommitmentInclusionProof(index, beaconBlockBody);
     return blobSidecarSchema.create(
         index, blob, commitment, proof, signedBeaconBlock.asHeader(), kzgCommitmentInclusionProof);
   }
@@ -263,16 +286,5 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
         SpecConfigDeneb.required(specConfig).getKzgCommitmentInclusionProofDepth(),
         getBlobSidecarKzgCommitmentGeneralizedIndex(blobSidecar.getIndex()),
         blobSidecar.getBlockBodyRoot());
-  }
-
-  private int getBlobSidecarKzgCommitmentGeneralizedIndex(final UInt64 blobSidecarIndex) {
-    final long blobKzgCommitmentsGeneralizedIndex =
-        beaconBlockBodySchema.getBlobKzgCommitmentsGeneralizedIndex();
-    final long commitmentGeneralizedIndex =
-        beaconBlockBodySchema
-            .getBlobKzgCommitmentsSchema()
-            .getChildGeneralizedIndex(blobSidecarIndex.longValue());
-    return (int)
-        GIndexUtil.gIdxCompose(blobKzgCommitmentsGeneralizedIndex, commitmentGeneralizedIndex);
   }
 }

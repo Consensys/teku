@@ -492,6 +492,7 @@ class BlockOperationSelectorFactoryTest {
   }
 
   @Test
+  // TODO: replace this test with the needed selector to produce BlockContents
   void shouldCreateBlobSidecarsForBlockFromCachedPayloadResult() {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock();
 
@@ -565,7 +566,7 @@ class BlockOperationSelectorFactoryTest {
     prepareCachedBuilderPayload(
         signedBlindedBeaconBlock.getSlot(),
         dataStructureUtil.randomExecutionPayload(),
-        blobsBundle);
+        Optional.of(blobsBundle));
 
     final List<BlobSidecar> blobSidecars =
         factory.createBlobSidecarsSelector().apply(signedBlindedBeaconBlock);
@@ -680,11 +681,16 @@ class BlockOperationSelectorFactoryTest {
   private void prepareCachedBuilderPayload(
       final UInt64 slot,
       final ExecutionPayload executionPayload,
-      final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle) {
-    BuilderPayload builderPayload =
-        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
-            .getExecutionPayloadAndBlobsBundleSchema()
-            .create(executionPayload, blobsBundle);
+      final Optional<tech.pegasys.teku.spec.datastructures.builder.BlobsBundle> blobsBundle) {
+    final BuilderPayload builderPayload =
+        blobsBundle
+            .map(
+                bundle ->
+                    (BuilderPayload)
+                        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
+                            .getExecutionPayloadAndBlobsBundleSchema()
+                            .create(executionPayload, bundle))
+            .orElse(executionPayload);
     when(executionLayer.getCachedUnblindedPayload(slot)).thenReturn(Optional.of(builderPayload));
   }
 

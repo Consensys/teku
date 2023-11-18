@@ -1209,7 +1209,7 @@ public final class DataStructureUtil {
 
   public BeaconBlockBody randomBlindedBeaconBlockBodyWithCommitments(
       final UInt64 slot, final SszList<SszKZGCommitment> commitments) {
-    BeaconBlockBodySchema<?> schema =
+    final BeaconBlockBodySchema<?> schema =
         spec.atSlot(slot).getSchemaDefinitions().getBlindedBeaconBlockBodySchema();
 
     return schema

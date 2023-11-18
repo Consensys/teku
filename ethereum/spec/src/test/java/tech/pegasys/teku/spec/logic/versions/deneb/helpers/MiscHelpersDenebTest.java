@@ -188,27 +188,42 @@ class MiscHelpersDenebTest {
   }
 
   @Test
-  void shouldComputeValidBlobSidecar() {
+  void shouldConstructValidBlobSidecar() {
     final SignedBeaconBlock signedBeaconBlock =
         dataStructureUtil.randomSignedBeaconBlockWithCommitments(1);
     final Blob blob = dataStructureUtil.randomBlob();
-    final SszKZGCommitment commitment =
+    final SszKZGCommitment expectedCommitment =
         BeaconBlockBodyDeneb.required(signedBeaconBlock.getMessage().getBody())
             .getBlobKzgCommitments()
             .get(0);
     final SszKZGProof proof = dataStructureUtil.randomSszKZGProof();
 
     final BlobSidecar blobSidecar =
-        miscHelpersDeneb.computeBlobSidecar(
-            signedBeaconBlock, UInt64.ZERO, blob, commitment, proof);
+        miscHelpersDeneb.constructBlobSidecar(signedBeaconBlock, UInt64.ZERO, blob, proof);
 
     assertThat(blobSidecar.getIndex()).isEqualTo(UInt64.ZERO);
     assertThat(blobSidecar.getBlob()).isEqualTo(blob);
     assertThat(blobSidecar.getSszKZGProof()).isEqualTo(proof);
-    assertThat(blobSidecar.getSszKZGCommitment()).isEqualTo(commitment);
+    assertThat(blobSidecar.getSszKZGCommitment()).isEqualTo(expectedCommitment);
     assertThat(blobSidecar.getSignedBeaconBlockHeader()).isEqualTo(signedBeaconBlock.asHeader());
     // verify the merkle proof
     assertThat(miscHelpersDeneb.verifyBlobSidecarMerkleProof(blobSidecar)).isTrue();
+  }
+
+  @Test
+  void shouldThrowWhenConstructingBlobSidecarWithInvalidIndex() {
+    final SignedBeaconBlock signedBeaconBlock =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(1);
+    final Blob blob = dataStructureUtil.randomBlob();
+    final SszKZGProof proof = dataStructureUtil.randomSszKZGProof();
+
+    assertThatThrownBy(
+            () ->
+                miscHelpersDeneb.constructBlobSidecar(
+                    signedBeaconBlock, UInt64.valueOf(1), blob, proof))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(
+            "Can't create blob sidecar with index 1 because there are 1 commitment(s) in block");
   }
 
   @Test

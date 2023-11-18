@@ -98,17 +98,19 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     final Spec spec = TestSpecFactory.createMinimalDeneb();
     final BlobsBundle blobsBundle = prepareBlobsBundle(spec, 3);
 
-    final BlockAndBlobs blockAndBlobs = assertBlobSidecarsCreated(false, spec);
+    final BlockAndBlobSidecars blockAndBlobSidecars = createBlobSidecars(false, spec);
 
-    final List<BlobSidecar> blobSidecars = blockAndBlobs.blobSidecars();
+    final List<BlobSidecar> blobSidecars = blockAndBlobSidecars.blobSidecars();
     final SszList<SszKZGCommitment> expectedCommitments =
-        blockAndBlobs
+        blockAndBlobSidecars
             .block()
             .getSignedBlock()
             .getMessage()
             .getBody()
             .getOptionalBlobKzgCommitments()
             .orElseThrow();
+
+    assertThat(blobSidecars).hasSize(expectedCommitments.size());
 
     IntStream.range(0, blobSidecars.size())
         .forEach(
@@ -134,17 +136,19 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
         prepareBuilderPayload(spec, blobsCount).getOptionalBlobsBundle().orElseThrow();
 
-    final BlockAndBlobs blockAndBlobs = assertBlobSidecarsCreated(true, spec);
+    final BlockAndBlobSidecars blockAndBlobSidecars = createBlobSidecars(true, spec);
 
-    final List<BlobSidecar> blobSidecars = blockAndBlobs.blobSidecars();
+    final List<BlobSidecar> blobSidecars = blockAndBlobSidecars.blobSidecars();
     final SszList<SszKZGCommitment> expectedCommitments =
-        blockAndBlobs
+        blockAndBlobSidecars
             .block()
             .getSignedBlock()
             .getMessage()
             .getBody()
             .getOptionalBlobKzgCommitments()
             .orElseThrow();
+
+    assertThat(blobSidecars).hasSize(expectedCommitments.size());
 
     IntStream.range(0, blobSidecars.size())
         .forEach(

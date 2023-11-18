@@ -165,12 +165,18 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
 
   @Test
   void shouldCreateEmptyBlobSidecarsForBlock() {
-    assertBlobSidecarsCreated(false, TestSpecFactory.createMinimalPhase0());
+    final BlockAndBlobSidecars blockAndBlobSidecars =
+        createBlobSidecars(false, TestSpecFactory.createMinimalPhase0());
+
+    assertThat(blockAndBlobSidecars.blobSidecars()).isEmpty();
   }
 
   @Test
   void shouldCreateEmptyBlobSidecarsForBlindedBlock() {
-    assertBlobSidecarsCreated(true, TestSpecFactory.createMinimalPhase0());
+    final BlockAndBlobSidecars blockAndBlobSidecars =
+        createBlobSidecars(true, TestSpecFactory.createMinimalPhase0());
+
+    assertThat(blockAndBlobSidecars.blobSidecars()).isEmpty();
   }
 
   @Override

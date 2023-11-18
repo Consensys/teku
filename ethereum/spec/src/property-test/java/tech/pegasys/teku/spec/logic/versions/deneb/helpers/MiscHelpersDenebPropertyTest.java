@@ -32,7 +32,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.propertytest.suppliers.SpecSupplier;
@@ -42,7 +41,6 @@ import tech.pegasys.teku.spec.propertytest.suppliers.blobs.versions.deneb.BlobSu
 import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.BeaconBlockSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.blocks.versions.deneb.SignedBeaconBlockSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.KZGCommitmentSupplier;
-import tech.pegasys.teku.spec.propertytest.suppliers.type.SszKZGCommitmentSupplier;
 import tech.pegasys.teku.spec.propertytest.suppliers.type.SszKZGProofSupplier;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
@@ -113,14 +111,17 @@ public class MiscHelpersDenebPropertyTest {
   }
 
   @Property(tries = 100)
-  void fuzzComputeBlobSidecarAndVerifyMerkleProof(
+  void fuzzConstructBlobSidecarAndVerifyMerkleProof(
       @ForAll(supplier = SignedBeaconBlockSupplier.class) final SignedBeaconBlock signedBeaconBlock,
       @ForAll(supplier = BlobSidecarIndexSupplier.class) final UInt64 index,
       @ForAll(supplier = BlobSupplier.class) final Blob blob,
-      @ForAll(supplier = SszKZGCommitmentSupplier.class) final SszKZGCommitment commitment,
       @ForAll(supplier = SszKZGProofSupplier.class) final SszKZGProof proof) {
-    final BlobSidecar blobSidecar =
-        miscHelpers.computeBlobSidecar(signedBeaconBlock, index, blob, commitment, proof);
-    miscHelpers.verifyBlobSidecarMerkleProof(blobSidecar);
+    try {
+      final BlobSidecar blobSidecar =
+          miscHelpers.constructBlobSidecar(signedBeaconBlock, index, blob, proof);
+      miscHelpers.verifyBlobSidecarMerkleProof(blobSidecar);
+    } catch (Exception e) {
+      assertThat(e).isInstanceOf(IllegalArgumentException.class);
+    }
   }
 }

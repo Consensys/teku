@@ -345,17 +345,6 @@ public class BlockOperationSelectorFactory {
       final MiscHelpersDeneb miscHelpersDeneb =
           MiscHelpersDeneb.required(spec.atSlot(slot).miscHelpers());
 
-      final SszList<SszKZGCommitment> commitments =
-          blockContainer
-              .getSignedBlock()
-              .getMessage()
-              .getBody()
-              .getOptionalBlobKzgCommitments()
-              .orElseThrow(
-                  () ->
-                      new IllegalStateException(
-                          "BlobKzgCommitments are not available in " + blockContainer));
-
       final SszList<Blob> blobs;
       final SszList<SszKZGProof> proofs;
 
@@ -384,11 +373,10 @@ public class BlockOperationSelectorFactory {
       return IntStream.range(0, blobs.size())
           .mapToObj(
               index ->
-                  miscHelpersDeneb.computeBlobSidecar(
+                  miscHelpersDeneb.constructBlobSidecar(
                       blockContainer.getSignedBlock(),
                       UInt64.valueOf(index),
                       blobs.get(index),
-                      commitments.get(index),
                       proofs.get(index)))
           .toList();
     };

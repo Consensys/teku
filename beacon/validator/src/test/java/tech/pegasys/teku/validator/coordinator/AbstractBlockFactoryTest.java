@@ -70,7 +70,6 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManage
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
-import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -299,7 +298,7 @@ public abstract class AbstractBlockFactoryTest {
     return spec.blindSignedBeaconBlock(unblindedSignedBeaconBlock);
   }
 
-  protected BlockAndBlobs assertBlobSidecarsCreated(final boolean blinded, final Spec spec) {
+  protected BlockAndBlobSidecars createBlobSidecars(final boolean blinded, final Spec spec) {
     final BlockFactory blockFactory = createBlockFactory(spec);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
@@ -330,16 +329,7 @@ public abstract class AbstractBlockFactoryTest {
 
     final List<BlobSidecar> blobSidecars = blockFactory.createBlobSidecars(signedBlockContainer);
 
-    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
-      final int expectedBlobs =
-          MiscHelpersDeneb.required(spec.atSlot(signedBlockContainer.getSlot()).miscHelpers())
-              .getBlobKzgCommitmentsCount(signedBlockContainer.getSignedBlock());
-      assertThat(blobSidecars).hasSize(expectedBlobs);
-    } else {
-      assertThat(blobSidecars).isEmpty();
-    }
-
-    return new BlockAndBlobs(signedBlockContainer, blobSidecars);
+    return new BlockAndBlobSidecars(signedBlockContainer, blobSidecars);
   }
 
   protected void prepareDefaultPayload(final Spec spec) {
@@ -501,5 +491,6 @@ public abstract class AbstractBlockFactoryTest {
         .orElseThrow(() -> new IllegalStateException("BuilderPayload was not prepared"));
   }
 
-  protected record BlockAndBlobs(SignedBlockContainer block, List<BlobSidecar> blobSidecars) {}
+  protected record BlockAndBlobSidecars(
+      SignedBlockContainer block, List<BlobSidecar> blobSidecars) {}
 }
