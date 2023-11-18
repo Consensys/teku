@@ -23,7 +23,6 @@ import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
@@ -35,30 +34,34 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProce
 public class BuilderBidValidatorImpl implements BuilderBidValidator {
 
   private static final Logger LOG = LogManager.getLogger();
+
+  private final Spec spec;
   private final EventLogger eventLogger;
 
-  public BuilderBidValidatorImpl(final EventLogger eventLogger) {
+  public BuilderBidValidatorImpl(final Spec spec, final EventLogger eventLogger) {
+    this.spec = spec;
     this.eventLogger = eventLogger;
   }
 
   @Override
-  public BuilderBid validateAndGetBuilderBid(
-      final Spec spec,
+  public void validateBuilderBid(
       final SignedBuilderBid signedBuilderBid,
       final SignedValidatorRegistration signedValidatorRegistration,
       final BeaconState state,
       final Optional<ExecutionPayload> localExecutionPayload) {
 
-    final BuilderBid builderBid = signedBuilderBid.getMessage();
     // validating Bid Signature
     final Bytes signingRoot =
-        spec.computeBuilderApplicationSigningRoot(state.getSlot(), builderBid);
+        spec.computeBuilderApplicationSigningRoot(state.getSlot(), signedBuilderBid.getMessage());
 
-    if (!BLS.verify(builderBid.getPublicKey(), signingRoot, signedBuilderBid.getSignature())) {
+    if (!BLS.verify(
+        signedBuilderBid.getMessage().getPublicKey(),
+        signingRoot,
+        signedBuilderBid.getSignature())) {
       throw new BuilderBidValidationException("Invalid Bid Signature");
     }
 
-    final ExecutionPayloadHeader executionPayloadHeader = builderBid.getHeader();
+    final ExecutionPayloadHeader executionPayloadHeader = signedBuilderBid.getMessage().getHeader();
 
     // validating payload wrt consensus
     try {
@@ -119,21 +122,19 @@ public class BuilderBidValidatorImpl implements BuilderBidValidator {
     final UInt64 proposedGasLimit = executionPayloadHeader.getGasLimit();
 
     if (parentGasLimit.equals(preferredGasLimit) && proposedGasLimit.equals(parentGasLimit)) {
-      return builderBid;
+      return;
     }
 
     if (preferredGasLimit.isGreaterThan(parentGasLimit)
         && proposedGasLimit.isGreaterThan(parentGasLimit)) {
-      return builderBid;
+      return;
     }
 
     if (preferredGasLimit.isLessThan(parentGasLimit)
         && proposedGasLimit.isLessThan(parentGasLimit)) {
-      return builderBid;
+      return;
     }
 
     eventLogger.builderBidNotHonouringGasLimit(parentGasLimit, proposedGasLimit, preferredGasLimit);
-
-    return builderBid;
   }
 }

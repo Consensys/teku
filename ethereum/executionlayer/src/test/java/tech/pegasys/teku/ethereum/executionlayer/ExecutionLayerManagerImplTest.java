@@ -1056,7 +1056,7 @@ class ExecutionLayerManagerImplTest {
         spec,
         stubMetricsSystem,
         builderValidatorEnabled
-            ? new BuilderBidValidatorImpl(eventLogger)
+            ? new BuilderBidValidatorImpl(spec, eventLogger)
             : BuilderBidValidator.NOOP,
         builderCircuitBreaker,
         builderBidCompareFactor,

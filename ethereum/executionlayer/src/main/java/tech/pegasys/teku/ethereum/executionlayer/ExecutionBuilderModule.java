@@ -245,10 +245,10 @@ public class ExecutionBuilderModule {
       final SignedValidatorRegistration validatorRegistration,
       final Optional<ExecutionPayload> localExecutionPayload,
       final SafeFuture<UInt256> payloadValueResult) {
-    final BuilderBid builderBid =
-        builderBidValidator.validateAndGetBuilderBid(
-            spec, signedBuilderBid, validatorRegistration, state, localExecutionPayload);
-    payloadValueResult.complete(signedBuilderBid.getMessage().getValue());
+    builderBidValidator.validateBuilderBid(
+        signedBuilderBid, validatorRegistration, state, localExecutionPayload);
+    final BuilderBid builderBid = signedBuilderBid.getMessage();
+    payloadValueResult.complete(builderBid.getValue());
     return SafeFuture.completedFuture(
         HeaderWithFallbackData.create(
             builderBid.getHeader(), builderBid.getOptionalBlobKzgCommitments()));
