@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.client.signer;
 
-import java.util.Collections;
 import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszCollection;
@@ -49,21 +48,37 @@ public class BlockContainerSignerDeneb implements BlockContainerSigner {
     return signBlock(unsignedBlock, validator, forkInfo)
         .thenApply(
             signedBlock -> {
-              final List<KZGProof> kzpProofs =
-                  unsignedBlockContainer
-                      .getKzgProofs()
-                      .map(
-                          sszKzgProofs ->
-                              sszKzgProofs.asList().stream().map(SszKZGProof::getKZGProof).toList())
-                      .orElse(Collections.emptyList());
-              final List<Blob> blobs =
-                  unsignedBlockContainer
-                      .getBlobs()
-                      .map(SszCollection::asList)
-                      .orElse(Collections.emptyList());
-              return schemaDefinitions
-                  .getSignedBlockContentsSchema()
-                  .create(signedBlock, kzpProofs, blobs);
+              if (signedBlock.isBlinded()) {
+                return signedBlock;
+              } else {
+                final List<KZGProof> kzpProofs =
+                    unsignedBlockContainer
+                        .getKzgProofs()
+                        .map(
+                            sszKzgProofs ->
+                                sszKzgProofs.asList().stream()
+                                    .map(SszKZGProof::getKZGProof)
+                                    .toList())
+                        .orElseThrow(
+                            () ->
+                                new IllegalStateException(
+                                    String.format(
+                                        "Unable to get KZG Proofs when signing Deneb block at slot %d",
+                                        unsignedBlockContainer.getSlot().longValue())));
+                final List<Blob> blobs =
+                    unsignedBlockContainer
+                        .getBlobs()
+                        .map(SszCollection::asList)
+                        .orElseThrow(
+                            () ->
+                                new IllegalStateException(
+                                    String.format(
+                                        "Unable to get blobs when signing Deneb block at slot %d",
+                                        unsignedBlockContainer.getSlot().longValue())));
+                return schemaDefinitions
+                    .getSignedBlockContentsSchema()
+                    .create(signedBlock, kzpProofs, blobs);
+              }
             });
   }
 
