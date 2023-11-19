@@ -56,7 +56,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -801,7 +800,6 @@ public class BlockManagerTest {
   }
 
   @Test
-  @Disabled("TODO for new BlobSidecar")
   void onDeneb_shouldStoreBlobSidecarsAlongWithBlock() {
     // If we start genesis with Deneb, 0 will be earliestBlobSidecarSlot, so started on epoch 1
     setupWithSpec(TestSpecFactory.createMinimalWithDenebForkEpoch(UInt64.valueOf(1)));
@@ -878,7 +876,6 @@ public class BlockManagerTest {
   }
 
   @Test
-  @Disabled("TODO for new BlobSidecar")
   void onDeneb_shouldStoreEarliestBlobSidecarSlotCorrectlyWhenItsDenebGenesis() {
     currentSlot = currentSlot.plus(10);
     localChain.chainUpdater().setCurrentSlot(currentSlot);
@@ -905,7 +902,6 @@ public class BlockManagerTest {
   }
 
   @Test
-  @Disabled("TODO for new BlobSidecar")
   void onDeneb_shouldStoreEarliestBlobSidecarSlotCorrectlyWhenThereIsGap() {
     setupWithSpec(TestSpecFactory.createMinimalWithDenebForkEpoch(UInt64.valueOf(1)));
     final UInt64 slotsPerEpoch = UInt64.valueOf(spec.slotsPerEpoch(UInt64.ZERO));
@@ -934,7 +930,6 @@ public class BlockManagerTest {
   }
 
   @Test
-  @Disabled("TODO for new BlobSidecar")
   void onDeneb_shouldStoreBlockWhenBlobSidecarsNotRequired() {
     // If we start genesis with Deneb, 0 will be earliestBlobSidecarSlot, so started on epoch 1
     setupWithSpec(TestSpecFactory.createMinimalWithDenebForkEpoch(UInt64.valueOf(1)));
@@ -966,7 +961,6 @@ public class BlockManagerTest {
   }
 
   @Test
-  @Disabled("TODO for new BlobSidecar")
   void onDeneb_shouldNotStoreBlockWhenBlobSidecarsIsInvalid() {
     // If we start genesis with Deneb, 0 will be earliestBlobSidecarSlot, so started on epoch 1
     setupWithSpec(TestSpecFactory.createMinimalWithDenebForkEpoch(UInt64.valueOf(1)));
@@ -1013,7 +1007,6 @@ public class BlockManagerTest {
   }
 
   @Test
-  @Disabled("TODO for new BlobSidecar")
   void onDeneb_shouldNotStoreBlockWhenBlobSidecarsIsNotAvailable() {
     // If we start genesis with Deneb, 0 will be earliestBlobSidecarSlot, so started on epoch 1
     setupWithSpec(TestSpecFactory.createMinimalWithDenebForkEpoch(UInt64.valueOf(1)));
@@ -1048,7 +1041,6 @@ public class BlockManagerTest {
   }
 
   @Test
-  @Disabled("TODO for new BlobSidecar")
   void preDeneb_shouldNotWorryAboutBlobSidecars() {
     setupWithSpec(TestSpecFactory.createMinimalCapella());
     final SignedBlockAndState signedBlockAndState1 =

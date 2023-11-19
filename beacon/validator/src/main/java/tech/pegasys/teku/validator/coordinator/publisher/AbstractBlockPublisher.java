@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.coordinator.publisher;
 
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
+import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason.FAILED_BROADCAST_VALIDATION;
 
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
@@ -133,7 +134,9 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
               if (broadcastValidationResult.isFailure()) {
                 return SafeFuture.completedFuture(
                     SendSignedBlockResult.rejected(
-                        "Broadcast validation failed: " + broadcastValidationResult.name()));
+                        FAILED_BROADCAST_VALIDATION.name()
+                            + ": "
+                            + broadcastValidationResult.name()));
               }
 
               return blockImportAndBroadcastValidationResults

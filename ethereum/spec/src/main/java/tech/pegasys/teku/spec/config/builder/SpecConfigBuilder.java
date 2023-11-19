@@ -123,6 +123,13 @@ public class SpecConfigBuilder {
   private Integer attestationSubnetExtraBits;
   private Integer attestationSubnetPrefixBits;
 
+  // added after Phase0, so add default values, or will be compatability issue
+  private Integer reorgMaxEpochsSinceFinalization = 2;
+
+  private Integer reorgHeadWeightThreshold = 20;
+
+  private Integer reorgParentWeightThreshold = 160;
+
   private final BuilderChain<SpecConfig, SpecConfigDeneb> builderChain =
       BuilderChain.create(new AltairBuilder())
           .appendBuilder(new BellatrixBuilder())
@@ -203,7 +210,10 @@ public class SpecConfigBuilder {
             subnetsPerNode,
             attestationSubnetCount,
             attestationSubnetExtraBits,
-            attestationSubnetPrefixBits);
+            attestationSubnetPrefixBits,
+            reorgMaxEpochsSinceFinalization,
+            reorgHeadWeightThreshold,
+            reorgParentWeightThreshold);
 
     return builderChain.build(config);
   }
@@ -274,6 +284,9 @@ public class SpecConfigBuilder {
     constants.put("attestationSubnetCount", attestationSubnetCount);
     constants.put("attestationSubnetExtraBits", attestationSubnetExtraBits);
     constants.put("attestationSubnetPrefixBits", attestationSubnetPrefixBits);
+    constants.put("reorgMaxEpochsSinceFinalization", reorgMaxEpochsSinceFinalization);
+    constants.put("reorgHeadWeightThreshold", reorgHeadWeightThreshold);
+    constants.put("reorgParentWeightThreshold", reorgParentWeightThreshold);
     return constants;
   }
 
@@ -674,6 +687,22 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder attestationSubnetPrefixBits(final Integer attestationSubnetPrefixBits) {
     this.attestationSubnetPrefixBits = attestationSubnetPrefixBits;
+    return this;
+  }
+
+  public SpecConfigBuilder reorgMaxEpochsSinceFinalization(
+      final Integer reorgMaxEpochsSinceFinalization) {
+    this.reorgMaxEpochsSinceFinalization = reorgMaxEpochsSinceFinalization;
+    return this;
+  }
+
+  public SpecConfigBuilder reorgHeadWeightThreshold(final Integer reorgHeadWeightThreshold) {
+    this.reorgHeadWeightThreshold = reorgHeadWeightThreshold;
+    return this;
+  }
+
+  public SpecConfigBuilder reorgParentWeightThreshold(final Integer reorgParentWeightThreshold) {
+    this.reorgParentWeightThreshold = reorgParentWeightThreshold;
     return this;
   }
 

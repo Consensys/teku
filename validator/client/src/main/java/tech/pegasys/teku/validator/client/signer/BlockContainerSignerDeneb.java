@@ -61,7 +61,7 @@ public class BlockContainerSignerDeneb implements BlockContainerSigner {
                                     .toList())
                         .orElseThrow(
                             () ->
-                                new IllegalStateException(
+                                new RuntimeException(
                                     String.format(
                                         "Unable to get KZG Proofs when signing Deneb block at slot %d",
                                         unsignedBlockContainer.getSlot().longValue())));
@@ -71,7 +71,7 @@ public class BlockContainerSignerDeneb implements BlockContainerSigner {
                         .map(SszCollection::asList)
                         .orElseThrow(
                             () ->
-                                new IllegalStateException(
+                                new RuntimeException(
                                     String.format(
                                         "Unable to get blobs when signing Deneb block at slot %d",
                                         unsignedBlockContainer.getSlot().longValue())));
