@@ -384,38 +384,59 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected Response getResponse(
       final String route, Map<String, String> getParams, final String contentType)
       throws IOException {
-    final String params =
-        getParams.entrySet().stream()
-            .map(e -> e.getKey() + "=" + e.getValue())
-            .collect(Collectors.joining("&"));
-    return getResponse(route + "?" + params, contentType);
+    return getResponse(route + prepareQueryParams(getParams), contentType);
   }
 
-  protected Response getResponse(final String route, Map<String, String> getParams)
+  protected Response getResponse(final String route, final Map<String, String> getParams)
       throws IOException {
-    final String params =
-        getParams.entrySet().stream()
-            .map(e -> e.getKey() + "=" + e.getValue())
-            .collect(Collectors.joining("&"));
-    return getResponse(route + "?" + params);
+    return getResponse(route + prepareQueryParams(getParams));
+  }
+
+  protected Response post(
+      final String route, final String postData, final Map<String, String> postParams)
+      throws IOException {
+    return post(route + prepareQueryParams(postParams), postData, Optional.empty());
+  }
+
+  protected Response post(
+      final String route,
+      final String postData,
+      final Map<String, String> postParams,
+      final Optional<String> milestone)
+      throws IOException {
+    return post(route + prepareQueryParams(postParams), postData, milestone);
   }
 
   protected Response post(final String route, final String postData) throws IOException {
+    return post(route, postData, Optional.empty());
+  }
+
+  protected Response post(
+      final String route, final String postData, final Optional<String> milestone)
+      throws IOException {
     final RequestBody body = RequestBody.create(postData, JSON);
-    final Request request = new Request.Builder().url(getUrl() + route).post(body).build();
-    return client.newCall(request).execute();
+    final Request.Builder requestBuilder = new Request.Builder().url(getUrl() + route).post(body);
+    milestone.ifPresent(m -> requestBuilder.header(HEADER_CONSENSUS_VERSION, m));
+    return client.newCall(requestBuilder.build()).execute();
   }
 
   protected Response postSsz(
-      final String route, final byte[] postData, final Optional<String> milestone)
+      final String route,
+      final byte[] postData,
+      final Map<String, String> postParams,
+      final Optional<String> milestoneHeader)
+      throws IOException {
+    return postSsz(route + prepareQueryParams(postParams), postData, milestoneHeader);
+  }
+
+  protected Response postSsz(
+      final String route, final byte[] postData, final Optional<String> milestoneHeader)
       throws IOException {
     final RequestBody body = RequestBody.create(postData, SSZ);
 
     final Request.Builder requestBuilder = new Request.Builder().url(getUrl() + route).post(body);
-    milestone.ifPresent(m -> requestBuilder.header(HEADER_CONSENSUS_VERSION, m));
-
-    final Request request = requestBuilder.build();
-    return client.newCall(request).execute();
+    milestoneHeader.ifPresent(m -> requestBuilder.header(HEADER_CONSENSUS_VERSION, m));
+    return client.newCall(requestBuilder.build()).execute();
   }
 
   protected String mapToJson(Map<String, Object> postParams) throws JsonProcessingException {
@@ -424,6 +445,17 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
 
   private String getUrl() {
     return "http://localhost:" + beaconRestApi.getListenPort();
+  }
+
+  private String prepareQueryParams(final Map<String, String> params) {
+    if (params.isEmpty()) {
+      return "";
+    }
+
+    return "?"
+        + params.entrySet().stream()
+            .map(e -> e.getKey() + "=" + e.getValue())
+            .collect(Collectors.joining("&"));
   }
 
   @AfterEach
