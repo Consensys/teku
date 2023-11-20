@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -30,7 +29,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -334,9 +332,8 @@ public class BlockOperationSelectorFactory {
     };
   }
 
-  @Deprecated
-  public Function<BeaconBlock, SafeFuture<List<BlobSidecarOld>>> createBlobSidecarsSelectorOld() {
-    return block -> SafeFuture.completedFuture(Collections.emptyList());
+  public Function<BeaconBlock, SafeFuture<BlobsBundle>> createBlobsBundleSelector() {
+    return block -> getCachedExecutionBlobsBundle(block.getSlot());
   }
 
   public Function<SignedBlockContainer, List<BlobSidecar>> createBlobSidecarsSelector() {
@@ -392,8 +389,26 @@ public class BlockOperationSelectorFactory {
                 blobsBundle.orElseThrow(this::executionBlobsBundleIsNotAvailableException));
   }
 
+  private SafeFuture<BlobsBundle> getCachedExecutionBlobsBundle(final UInt64 slot) {
+    return executionLayerBlockProductionManager
+        .getCachedPayloadResult(slot)
+        .orElseThrow(
+            () ->
+                new IllegalStateException(
+                    "ExecutionPayloadResult hasn't been cached for slot " + slot))
+        .getBlobsBundleFuture()
+        .orElseThrow(() -> executionBlobsBundleIsNotAvailableException(slot))
+        .thenApply(
+            blobsBundle ->
+                blobsBundle.orElseThrow(() -> executionBlobsBundleIsNotAvailableException(slot)));
+  }
+
   private IllegalStateException executionBlobsBundleIsNotAvailableException() {
     return new IllegalStateException("execution BlobsBundle is not available");
+  }
+
+  private IllegalStateException executionBlobsBundleIsNotAvailableException(final UInt64 slot) {
+    return new IllegalStateException("execution BlobsBundle is not available for slot " + slot);
   }
 
   private SafeFuture<SszList<SszKZGCommitment>> getBuilderBlobKzgCommitments(

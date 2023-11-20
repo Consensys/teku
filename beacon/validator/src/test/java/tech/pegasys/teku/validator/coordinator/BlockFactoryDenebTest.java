@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.infrastructure.ssz.SszCollection;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -32,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
@@ -42,7 +44,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
   @Test
   void shouldCreateBlockContents() {
 
-    prepareBlobsBundle(spec, 3);
+    final BlobsBundle blobsBundle = prepareBlobsBundle(spec, 3);
 
     final BlockContainer blockContainer =
         assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), false);
@@ -50,7 +52,12 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     assertThat(blockContainer).isInstanceOf(BlockContents.class);
     assertThat(blockContainer.getBlock().getBody().getOptionalBlobKzgCommitments())
         .hasValueSatisfying(blobKzgCommitments -> assertThat(blobKzgCommitments).hasSize(3));
-    // TODO Add assertions for blobs and proofs
+    assertThat(blockContainer.getBlobs())
+        .map(SszCollection::asList)
+        .hasValue(blobsBundle.getBlobs());
+    assertThat(blockContainer.getKzgProofs())
+        .map(proofs -> proofs.stream().map(SszKZGProof::getKZGProof).toList())
+        .hasValue(blobsBundle.getProofs());
   }
 
   @Test
