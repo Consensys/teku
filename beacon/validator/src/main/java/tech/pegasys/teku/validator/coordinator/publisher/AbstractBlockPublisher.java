@@ -60,10 +60,14 @@ public abstract class AbstractBlockPublisher implements BlockPublisher {
         .unblindSignedBlockIfBlinded(blockContainer.getSignedBlock())
         .thenPeek(performanceTracker::saveProducedBlock)
         .thenCompose(
-            signedBlock ->
-                // TODO: produce blob sidecars for Deneb (using BlockFactory)
-                gossipAndImportUnblindedSignedBlockAndBlobSidecars(
-                    signedBlock, List.of(), broadcastValidationLevel))
+            signedBlock -> {
+              // creating blob sidecars after unblinding the block to ensure in the blinded flow we
+              // will have the cached builder payload
+              final List<BlobSidecar> blobSidecars =
+                  blockFactory.createBlobSidecars(blockContainer);
+              return gossipAndImportUnblindedSignedBlockAndBlobSidecars(
+                  signedBlock, blobSidecars, broadcastValidationLevel);
+            })
         .thenCompose(result -> calculateResult(blockContainer, result));
   }
 

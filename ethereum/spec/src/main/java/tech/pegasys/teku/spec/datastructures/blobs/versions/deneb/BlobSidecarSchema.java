@@ -86,6 +86,23 @@ public class BlobSidecarSchema
 
   public BlobSidecar create(
       final UInt64 index,
+      final Blob blob,
+      final SszKZGCommitment sszKzgCommitment,
+      final SszKZGProof sszKzgProof,
+      final SignedBeaconBlockHeader signedBeaconBlockHeader,
+      final List<Bytes32> kzgCommitmentInclusionProof) {
+    return new BlobSidecar(
+        this,
+        index,
+        blob,
+        sszKzgCommitment,
+        sszKzgProof,
+        signedBeaconBlockHeader,
+        kzgCommitmentInclusionProof);
+  }
+
+  public BlobSidecar create(
+      final UInt64 index,
       final Bytes blob,
       final Bytes48 kzgCommitment,
       final Bytes48 kzgProof,
