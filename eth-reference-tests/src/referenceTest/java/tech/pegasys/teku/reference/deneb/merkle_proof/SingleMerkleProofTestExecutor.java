@@ -93,7 +93,7 @@ public class SingleMerkleProofTestExecutor implements TestExecutor {
         assertThat(
                 predicates.isValidMerkleBranch(
                     Bytes32.fromHexString(data.leaf),
-                    createKzgCommitmentMerkleProofBranchFromData(testDefinition, data.branch, data),
+                    createKzgCommitmentMerkleProofBranchFromData(testDefinition, data.branch),
                     getKzgCommitmentInclusionProofDepth(testDefinition),
                     data.leafIndex,
                     beaconBlockBody.hashTreeRoot()))
@@ -105,7 +105,7 @@ public class SingleMerkleProofTestExecutor implements TestExecutor {
   }
 
   private SszBytes32Vector createKzgCommitmentMerkleProofBranchFromData(
-      final TestDefinition testDefinition, final List<String> branch, final Data data) {
+      final TestDefinition testDefinition, final List<String> branch) {
     final SszBytes32VectorSchema<?> kzgCommitmentInclusionProofSchema =
         testDefinition
             .getSpec()
