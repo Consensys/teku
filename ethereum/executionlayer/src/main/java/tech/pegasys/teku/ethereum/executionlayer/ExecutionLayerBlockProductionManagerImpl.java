@@ -20,7 +20,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -123,13 +123,11 @@ public class ExecutionLayerBlockProductionManagerImpl
   }
 
   @Override
-  public SafeFuture<BuilderPayload> getUnblindedPayload(
-      final SignedBlockContainer signedBlockContainer) {
+  public SafeFuture<BuilderPayload> getUnblindedPayload(final SignedBeaconBlock signedBeaconBlock) {
     return executionLayerChannel
-        .builderGetPayload(signedBlockContainer, this::getCachedPayloadResult)
+        .builderGetPayload(signedBeaconBlock, this::getCachedPayloadResult)
         .thenPeek(
-            builderPayload ->
-                builderResultCache.put(signedBlockContainer.getSlot(), builderPayload));
+            builderPayload -> builderResultCache.put(signedBeaconBlock.getSlot(), builderPayload));
   }
 
   @Override

@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.executionlayer;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
@@ -54,7 +54,7 @@ public interface ExecutionLayerBlockProductionManager {
 
         @Override
         public SafeFuture<BuilderPayload> getUnblindedPayload(
-            final SignedBlockContainer signedBlockContainer) {
+            final SignedBeaconBlock signedBeaconBlock) {
           return SafeFuture.completedFuture(null);
         }
 
@@ -89,11 +89,11 @@ public interface ExecutionLayerBlockProductionManager {
 
   Optional<ExecutionPayloadResult> getCachedPayloadResult(UInt64 slot);
 
-  SafeFuture<BuilderPayload> getUnblindedPayload(SignedBlockContainer signedBlockContainer);
+  SafeFuture<BuilderPayload> getUnblindedPayload(SignedBeaconBlock signedBeaconBlock);
 
   /**
-   * Requires {@link #getUnblindedPayload( SignedBlockContainer)} to have been called first in order
-   * for a value to be present
+   * Requires {@link #getUnblindedPayload(SignedBeaconBlock)} to have been called first in order for
+   * a value to be present
    */
   @SuppressWarnings("unused")
   Optional<BuilderPayload> getCachedUnblindedPayload(UInt64 slot);
