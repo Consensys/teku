@@ -23,7 +23,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.migrated.StateValidatorData;
@@ -126,7 +125,7 @@ public class PostStateValidators extends RestApiEndpoint {
     public Optional<List<String>> getMaybeStringStatuses() {
       return statuses.isEmpty()
           ? Optional.empty()
-          : Optional.of(statuses.stream().map(Enum::name).collect(Collectors.toList()));
+          : Optional.of(statuses.stream().map(Enum::name).toList());
     }
 
     public void setStatuses(final Optional<List<String>> statuses) {
