@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import com.google.common.base.Preconditions;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -339,6 +341,8 @@ public class BlockOperationSelectorFactory {
   public Function<SignedBlockContainer, List<BlobSidecar>> createBlobSidecarsSelector() {
     return blockContainer -> {
       final UInt64 slot = blockContainer.getSlot();
+      final SignedBeaconBlock block = blockContainer.getSignedBlock();
+
       final MiscHelpersDeneb miscHelpersDeneb =
           MiscHelpersDeneb.required(spec.atSlot(slot).miscHelpers());
 
@@ -352,6 +356,17 @@ public class BlockOperationSelectorFactory {
             getCachedBuilderBlobsBundle(slot);
         blobs = blobsBundle.getBlobs();
         proofs = blobsBundle.getProofs();
+        // consistency check because the BlobsBundle comes from an external source (a builder)
+        final int blockCommitmentsCount = miscHelpersDeneb.getBlobKzgCommitmentsCount(block);
+        Preconditions.checkState(
+            blockCommitmentsCount == blobs.size() && blobs.size() == proofs.size(),
+            "There is an inconsistency in the number of commitments (%s) in block (%s) for slot %s "
+                + "and the number of provided blobs (%s) and proofs (%s) in the builder BlobsBundle",
+            blockCommitmentsCount,
+            block.getRoot(),
+            slot,
+            blobs.size(),
+            proofs.size());
       } else {
         blobs =
             blockContainer
@@ -371,10 +386,7 @@ public class BlockOperationSelectorFactory {
           .mapToObj(
               index ->
                   miscHelpersDeneb.constructBlobSidecar(
-                      blockContainer.getSignedBlock(),
-                      UInt64.valueOf(index),
-                      blobs.get(index),
-                      proofs.get(index)))
+                      block, UInt64.valueOf(index), blobs.get(index), proofs.get(index)))
           .toList();
     };
   }

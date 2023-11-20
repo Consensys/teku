@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -544,6 +545,27 @@ class BlockOperationSelectorFactoryTest {
               // verify the merkle proof
               assertThat(miscHelpersDeneb.verifyBlobSidecarMerkleProof(blobSidecar)).isTrue();
             });
+  }
+
+  @Test
+  void shouldFailCreatingBlobSidecarsIfBuilderBlobsBundleIsNotConsistent() {
+    final SszList<SszKZGCommitment> commitments = dataStructureUtil.randomBlobKzgCommitments(3);
+    final SignedBeaconBlock signedBlindedBeaconBlock =
+        dataStructureUtil.randomSignedBlindedBeaconBlockWithCommitments(commitments);
+
+    final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
+        dataStructureUtil.randomBuilderBlobsBundle(2);
+
+    prepareCachedBuilderPayload(
+        signedBlindedBeaconBlock.getSlot(),
+        dataStructureUtil.randomExecutionPayload(),
+        Optional.of(blobsBundle));
+
+    assertThatThrownBy(() -> factory.createBlobSidecarsSelector().apply(signedBlindedBeaconBlock))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageMatching(
+            "There is an inconsistency in the number of commitments \\(3\\) in block \\(\\w+\\) for slot \\d+ "
+                + "and the number of provided blobs \\(2\\) and proofs \\(2\\) in the builder BlobsBundle");
   }
 
   @Test

@@ -2226,10 +2226,6 @@ public final class DataStructureUtil {
     return new RandomBlobSidecarOldBuilder().build();
   }
 
-  public BlobSidecar randomBlobSidecar(final long index) {
-    return new RandomBlobSidecarBuilder().index(UInt64.valueOf(index)).build();
-  }
-
   public BlobSidecar randomBlobSidecarForBlock(
       final SignedBeaconBlock signedBeaconBlock, final long index) {
     return new RandomBlobSidecarBuilder()
