@@ -75,7 +75,7 @@ public class GetAllBlobSidecarsAtSlot extends RestApiEndpoint {
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     final List<UInt64> indices = request.getQueryParameterList(BLOB_INDICES_PARAMETER);
     final SafeFuture<Optional<List<BlobSidecarOld>>> future =
-        chainDataProvider.getAllBlobSidecarsAtSlot(
+        chainDataProvider.getAllBlobSidecarsAtSlotOld(
             request.getPathParameter(SLOT_PARAMETER), indices);
 
     request.respondAsync(

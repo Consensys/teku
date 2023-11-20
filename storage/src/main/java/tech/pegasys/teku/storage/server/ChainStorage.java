@@ -28,7 +28,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -117,25 +116,14 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Void> onFinalizedBlocksOld(
-      final Collection<SignedBeaconBlock> finalizedBlocks,
-      final Map<SlotAndBlockRoot, List<BlobSidecarOld>> blobSidecarsBySlot,
-      final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
-    return SafeFuture.fromRunnable(
-        () ->
-            database.storeFinalizedBlocks(
-                finalizedBlocks, blobSidecarsBySlot, maybeEarliestBlobSidecarSlot));
-  }
-
-  // TODO: save blobSidecars
-  @Override
   public SafeFuture<Void> onFinalizedBlocks(
       final Collection<SignedBeaconBlock> finalizedBlocks,
       final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlot,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     return SafeFuture.fromRunnable(
         () ->
-            database.storeFinalizedBlocks(finalizedBlocks, Map.of(), maybeEarliestBlobSidecarSlot));
+            database.storeFinalizedBlocks(
+                finalizedBlocks, blobSidecarsBySlot, maybeEarliestBlobSidecarSlot));
   }
 
   @Override
@@ -228,11 +216,11 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<List<BlobSidecarOld>> getBlobSidecarsBySlotAndBlockRoot(
+  public SafeFuture<List<BlobSidecar>> getBlobSidecarsBySlotAndBlockRoot(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return SafeFuture.of(
         () -> {
-          try (final Stream<BlobSidecarOld> blobSidecarStream =
+          try (final Stream<BlobSidecar> blobSidecarStream =
               database.streamBlobSidecars(slotAndBlockRoot)) {
             return blobSidecarStream.toList();
           }
@@ -319,13 +307,12 @@ public class ChainStorage
   }
 
   @Override
-  public SafeFuture<Optional<BlobSidecarOld>> getBlobSidecar(
-      final SlotAndBlockRootAndBlobIndex key) {
+  public SafeFuture<Optional<BlobSidecar>> getBlobSidecar(final SlotAndBlockRootAndBlobIndex key) {
     return SafeFuture.of(() -> database.getBlobSidecar(key));
   }
 
   @Override
-  public SafeFuture<Optional<BlobSidecarOld>> getNonCanonicalBlobSidecar(
+  public SafeFuture<Optional<BlobSidecar>> getNonCanonicalBlobSidecar(
       final SlotAndBlockRootAndBlobIndex key) {
     return SafeFuture.of(() -> database.getNonCanonicalBlobSidecar(key));
   }

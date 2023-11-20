@@ -250,7 +250,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     verify(peer, times(1))
         .adjustBlobSidecarsRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(0)));
 
-    verify(combinedChainDataClient, never()).getBlobSidecarByKeyOld(any());
+    verify(combinedChainDataClient, never()).getBlobSidecarByKey(any());
 
     verify(listener, never()).respond(any());
 

@@ -22,7 +22,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -67,7 +67,7 @@ public interface StorageQueryChannel extends ChannelInterface {
    */
   SafeFuture<Map<Bytes32, SignedBeaconBlock>> getHotBlocksByRoot(Set<Bytes32> blockRoots);
 
-  SafeFuture<List<BlobSidecarOld>> getBlobSidecarsBySlotAndBlockRoot(
+  SafeFuture<List<BlobSidecar>> getBlobSidecarsBySlotAndBlockRoot(
       SlotAndBlockRoot slotAndBlockRoot);
 
   SafeFuture<Optional<SlotAndBlockRoot>> getSlotAndBlockRootByStateRoot(Bytes32 stateRoot);
@@ -93,9 +93,9 @@ public interface StorageQueryChannel extends ChannelInterface {
    */
   SafeFuture<Optional<UInt64>> getEarliestAvailableBlobSidecarSlot();
 
-  SafeFuture<Optional<BlobSidecarOld>> getBlobSidecar(SlotAndBlockRootAndBlobIndex key);
+  SafeFuture<Optional<BlobSidecar>> getBlobSidecar(SlotAndBlockRootAndBlobIndex key);
 
-  SafeFuture<Optional<BlobSidecarOld>> getNonCanonicalBlobSidecar(SlotAndBlockRootAndBlobIndex key);
+  SafeFuture<Optional<BlobSidecar>> getNonCanonicalBlobSidecar(SlotAndBlockRootAndBlobIndex key);
 
   /** This method could return non-canonical blob sidecar keys if the slot is not finalized */
   SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(UInt64 slot);

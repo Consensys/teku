@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntPredicate;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -58,6 +59,7 @@ import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -74,6 +76,7 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatuses;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -179,16 +182,59 @@ public class ChainDataProvider {
     return fromBlock(blockIdParam, Function.identity());
   }
 
-  public SafeFuture<Optional<List<BlobSidecarOld>>> getBlobSidecars(
+  public SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecars(
       final String blockIdParam, final List<UInt64> indices) {
     return blobSidecarSelectorFactory
         .createSelectorForBlockId(blockIdParam)
         .getBlobSidecars(indices);
   }
 
-  public SafeFuture<Optional<List<BlobSidecarOld>>> getAllBlobSidecarsAtSlot(
+  @Deprecated
+  private final Supplier<Function<BlobSidecar, BlobSidecarOld>> blobSidecarRepacker =
+      new Supplier<>() {
+        @Override
+        public Function<BlobSidecar, BlobSidecarOld> get() {
+          return blobSidecar ->
+              SchemaDefinitionsDeneb.required(
+                      spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
+                  .getBlobSidecarOldSchema()
+                  .create(blobSidecar);
+        }
+      };
+
+  @Deprecated
+  public SafeFuture<Optional<List<BlobSidecarOld>>> getBlobSidecarsOld(
+      final String blockIdParam, final List<UInt64> indices) {
+    return blobSidecarSelectorFactory
+        .createSelectorForBlockId(blockIdParam)
+        .getBlobSidecars(indices)
+        .thenApply(
+            maybeBlobSidecars ->
+                maybeBlobSidecars.map(
+                    blobSidecars ->
+                        blobSidecars.stream()
+                            .map(blobSidecar -> blobSidecarRepacker.get().apply(blobSidecar))
+                            .toList()));
+  }
+
+  public SafeFuture<Optional<List<BlobSidecar>>> getAllBlobSidecarsAtSlot(
       final UInt64 slot, final List<UInt64> indices) {
     return blobSidecarSelectorFactory.slotSelectorForAll(slot).getBlobSidecars(indices);
+  }
+
+  @Deprecated
+  public SafeFuture<Optional<List<BlobSidecarOld>>> getAllBlobSidecarsAtSlotOld(
+      final UInt64 slot, final List<UInt64> indices) {
+    return blobSidecarSelectorFactory
+        .slotSelectorForAll(slot)
+        .getBlobSidecars(indices)
+        .thenApply(
+            maybeBlobSidecars ->
+                maybeBlobSidecars.map(
+                    blobSidecars ->
+                        blobSidecars.stream()
+                            .map(blobSidecar -> blobSidecarRepacker.get().apply(blobSidecar))
+                            .toList()));
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> getBlockRoot(final String blockIdParam) {
