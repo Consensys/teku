@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -39,6 +39,7 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.assertj.core.api.AssertionsForClassTypes;
@@ -56,24 +57,26 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
-public class GetStateValidatorsTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
+class PostStateValidatorsTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
 
   @BeforeEach
   void setup() {
     initialise(SpecMilestone.ALTAIR);
     genesis();
 
-    setHandler(new GetStateValidators(chainDataProvider));
+    setHandler(new PostStateValidators(chainDataProvider));
   }
 
   @Test
   public void shouldGetValidatorFromState() throws Exception {
+    final PostStateValidators.RequestBody requestBody = new PostStateValidators.RequestBody();
+    requestBody.setIds(Optional.of(List.of("1", "2", "3", "4")));
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
             .metadata(handler.getMetadata())
             .pathParameter("state_id", "head")
-            .listQueryParameter("id", List.of("1", "2", "3,4"))
             .build();
+    request.setRequestBody(requestBody);
 
     final ObjectAndMetaData<List<StateValidatorData>> expectedResponse =
         chainDataProvider
@@ -89,14 +92,19 @@ public class GetStateValidatorsTest extends AbstractMigratedBeaconHandlerWithCha
 
   @Test
   public void shouldGetValidatorFromStateWithList() throws Exception {
+    final PostStateValidators.RequestBody requestBody =
+        new PostStateValidators.RequestBody(
+            List.of("1", "2"),
+            List.of(
+                StatusParameter.ACTIVE_ONGOING,
+                StatusParameter.ACTIVE_EXITING,
+                StatusParameter.WITHDRAWAL_DONE));
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
             .metadata(handler.getMetadata())
             .pathParameter("state_id", "head")
-            .listQueryParameter("id", List.of("1", "2"))
-            .listQueryParameter(
-                "status", List.of("active_ongoing", "active_exiting, withdrawal_done"))
             .build();
+    request.setRequestBody(requestBody);
 
     final ObjectAndMetaData<List<StateValidatorData>> expectedResponse =
         chainDataProvider
@@ -116,12 +124,14 @@ public class GetStateValidatorsTest extends AbstractMigratedBeaconHandlerWithCha
   public void shouldGetValidatorsByStatusParameter(
       final List<String> statusParameters, final Set<ValidatorStatus> expectedValidatorStatuses)
       throws Exception {
+    final PostStateValidators.RequestBody requestBody = new PostStateValidators.RequestBody();
+    requestBody.setStatuses(Optional.of(statusParameters));
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
             .metadata(handler.getMetadata())
             .pathParameter("state_id", "head")
-            .listQueryParameter("status", statusParameters)
             .build();
+    request.setRequestBody(requestBody);
 
     final ObjectAndMetaData<List<StateValidatorData>> expectedResponse =
         chainDataProvider
@@ -137,16 +147,35 @@ public class GetStateValidatorsTest extends AbstractMigratedBeaconHandlerWithCha
 
   @Test
   public void shouldGetBadRequestForInvalidState() {
+    final PostStateValidators.RequestBody requestBody = new PostStateValidators.RequestBody();
+    requestBody.setIds(Optional.of(List.of("1")));
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
             .metadata(handler.getMetadata())
             .pathParameter("state_id", "invalid")
-            .listQueryParameter("id", List.of("1"))
             .build();
+    request.setRequestBody(requestBody);
 
     assertThatThrownBy(() -> handler.handleRequest(request))
         .isInstanceOf(BadRequestException.class)
         .hasMessageContaining("Invalid state ID: invalid");
+  }
+
+  @Test
+  public void shouldGetValidatorFromStateWithEmptyRequestBody() throws Exception {
+    final StubRestApiRequest request =
+        StubRestApiRequest.builder()
+            .metadata(handler.getMetadata())
+            .pathParameter("state_id", "head")
+            .build();
+
+    final ObjectAndMetaData<List<StateValidatorData>> expectedResponse =
+        chainDataProvider.getStateValidators("head", List.of(), Set.of()).get().orElseThrow();
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_OK);
+    assertThat(request.getResponseBody()).isEqualTo(expectedResponse);
   }
 
   @Test
