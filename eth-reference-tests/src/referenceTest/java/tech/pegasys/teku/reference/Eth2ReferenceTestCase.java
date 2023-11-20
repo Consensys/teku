@@ -90,10 +90,6 @@ public abstract class Eth2ReferenceTestCase {
   }
 
   private TestExecutor getExecutorFor(final TestDefinition testDefinition) {
-    // TODO: re-enable Deneb tests once migration to inclusion proof #7654 is complete
-    if (testDefinition.getFork().equals(TestFork.DENEB)) {
-      return TestExecutor.IGNORE_TESTS;
-    }
     // Look for fork-specific tests first
     TestExecutor testExecutor =
         switch (testDefinition.getFork()) {
