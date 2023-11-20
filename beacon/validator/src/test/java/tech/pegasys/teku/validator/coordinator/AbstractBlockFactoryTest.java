@@ -298,7 +298,8 @@ public abstract class AbstractBlockFactoryTest {
     return spec.blindSignedBeaconBlock(unblindedSignedBeaconBlock);
   }
 
-  protected BlockAndBlobSidecars createBlobSidecars(final boolean blinded, final Spec spec) {
+  protected BlockAndBlobSidecars createBlockAndBlobSidecars(
+      final boolean blinded, final Spec spec) {
     final BlockFactory blockFactory = createBlockFactory(spec);
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 

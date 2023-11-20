@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.coordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import java.util.List;
 import java.util.stream.IntStream;
@@ -27,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -96,11 +98,15 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
   @Test
   void shouldCreateValidBlobSidecarsForBlockContents() {
     final Spec spec = TestSpecFactory.createMinimalDeneb();
-    final BlobsBundle blobsBundle = prepareBlobsBundle(spec, 3);
+    final int blobsCount = 3;
+    final BlobsBundle blobsBundle = prepareBlobsBundle(spec, blobsCount);
 
-    final BlockAndBlobSidecars blockAndBlobSidecars = createBlobSidecars(false, spec);
+    final BlockAndBlobSidecars blockAndBlobSidecars = createBlockAndBlobSidecars(false, spec);
 
     final List<BlobSidecar> blobSidecars = blockAndBlobSidecars.blobSidecars();
+
+    verifyNoInteractions(executionLayer);
+
     final SszList<SszKZGCommitment> expectedCommitments =
         blockAndBlobSidecars
             .block()
@@ -110,7 +116,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
             .getOptionalBlobKzgCommitments()
             .orElseThrow();
 
-    assertThat(blobSidecars).hasSize(expectedCommitments.size());
+    assertThat(blobSidecars).hasSize(blobsCount).hasSameSizeAs(expectedCommitments);
 
     IntStream.range(0, blobSidecars.size())
         .forEach(
@@ -136,19 +142,17 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
         prepareBuilderPayload(spec, blobsCount).getOptionalBlobsBundle().orElseThrow();
 
-    final BlockAndBlobSidecars blockAndBlobSidecars = createBlobSidecars(true, spec);
+    final BlockAndBlobSidecars blockAndBlobSidecars = createBlockAndBlobSidecars(true, spec);
 
+    final SignedBlockContainer block = blockAndBlobSidecars.block();
     final List<BlobSidecar> blobSidecars = blockAndBlobSidecars.blobSidecars();
-    final SszList<SszKZGCommitment> expectedCommitments =
-        blockAndBlobSidecars
-            .block()
-            .getSignedBlock()
-            .getMessage()
-            .getBody()
-            .getOptionalBlobKzgCommitments()
-            .orElseThrow();
 
-    assertThat(blobSidecars).hasSize(expectedCommitments.size());
+    verify(executionLayer).getCachedUnblindedPayload(block.getSlot());
+
+    final SszList<SszKZGCommitment> expectedCommitments =
+        block.getSignedBlock().getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
+
+    assertThat(blobSidecars).hasSize(blobsCount).hasSameSizeAs(expectedCommitments);
 
     IntStream.range(0, blobSidecars.size())
         .forEach(
