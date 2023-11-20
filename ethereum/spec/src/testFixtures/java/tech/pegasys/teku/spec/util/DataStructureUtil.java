@@ -1458,7 +1458,7 @@ public final class DataStructureUtil {
 
   public BeaconBlockBody randomBeaconBlockBodyWithCommitments(
       final SszList<SszKZGCommitment> commitments) {
-    BeaconBlockBodySchema<?> schema =
+    final BeaconBlockBodySchema<?> schema =
         spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
     return schema
         .createBlockBody(
@@ -1489,7 +1489,7 @@ public final class DataStructureUtil {
   }
 
   public BeaconBlockBody randomFullBeaconBlockBody() {
-    BeaconBlockBodySchema<?> schema =
+    final BeaconBlockBodySchema<?> schema =
         spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
     return schema
         .createBlockBody(
