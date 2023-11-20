@@ -68,17 +68,17 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
     listenerWrapper =
         new BlobSidecarsByRootListenerValidatingProxy(peer, spec, listener, kzg, blobIdentifiers);
 
-    final BlobSidecar blobSidecar10 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
-    final BlobSidecar blobSidecar11 = dataStructureUtil.randomBlobSidecarForBlock(block1, 1);
-    final BlobSidecar blobSidecar2 = dataStructureUtil.randomBlobSidecarForBlock(block2, 0);
-    final BlobSidecar blobSidecar3 = dataStructureUtil.randomBlobSidecarForBlock(block3, 0);
-    final BlobSidecar blobSidecar4 = dataStructureUtil.randomBlobSidecarForBlock(block4, 0);
+    final BlobSidecar blobSidecar1_0 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
+    final BlobSidecar blobSidecar1_1 = dataStructureUtil.randomBlobSidecarForBlock(block1, 1);
+    final BlobSidecar blobSidecar2_0 = dataStructureUtil.randomBlobSidecarForBlock(block2, 0);
+    final BlobSidecar blobSidecar3_0 = dataStructureUtil.randomBlobSidecarForBlock(block3, 0);
+    final BlobSidecar blobSidecar4_0 = dataStructureUtil.randomBlobSidecarForBlock(block4, 0);
 
-    assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar10).join());
-    assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar11).join());
-    assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar2).join());
-    assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar3).join());
-    assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar4).join());
+    assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar1_0).join());
+    assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar1_1).join());
+    assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar2_0).join());
+    assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar3_0).join());
+    assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar4_0).join());
   }
 
   @Test
@@ -92,13 +92,13 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
     listenerWrapper =
         new BlobSidecarsByRootListenerValidatingProxy(peer, spec, listener, kzg, blobIdentifiers);
 
-    final BlobSidecar blobSidecar10 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
-    final BlobSidecar blobSidecar11 = dataStructureUtil.randomBlobSidecarForBlock(block1, 1);
-    final BlobSidecar blobSidecar2 = dataStructureUtil.randomBlobSidecarForBlock(block2, 0);
+    final BlobSidecar blobSidecar1_0 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
+    final BlobSidecar blobSidecar1_1 = dataStructureUtil.randomBlobSidecarForBlock(block1, 1);
+    final BlobSidecar blobSidecar2_0 = dataStructureUtil.randomBlobSidecarForBlock(block2, 0);
 
-    assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar10).join());
-    assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar11).join());
-    final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar2);
+    assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar1_0).join());
+    assertDoesNotThrow(() -> listenerWrapper.onResponse(blobSidecar1_1).join());
+    final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar2_0);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get)
         .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);
@@ -118,9 +118,9 @@ public class BlobSidecarsByRootListenerValidatingProxyTest {
         new BlobSidecarsByRootListenerValidatingProxy(
             peer, spec, listener, kzg, List.of(blobIdentifier));
 
-    final BlobSidecar blobSidecar1 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
+    final BlobSidecar blobSidecar1_0 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
 
-    final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar1);
+    final SafeFuture<?> result = listenerWrapper.onResponse(blobSidecar1_0);
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get)
         .hasCauseExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class);

@@ -47,22 +47,22 @@ public class BlobSidecarsByRootValidatorTest {
   @Test
   void blobSidecarIsCorrect() {
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
-    final BlobIdentifier blobIdentifier1 = new BlobIdentifier(block1.getRoot(), UInt64.ZERO);
-    final BlobSidecar blobSidecar1 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
+    final BlobIdentifier blobIdentifier1_0 = new BlobIdentifier(block1.getRoot(), UInt64.ZERO);
+    final BlobSidecar blobSidecar1_0 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
 
-    validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier1));
-    assertDoesNotThrow(() -> validator.validate(blobSidecar1));
+    validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier1_0));
+    assertDoesNotThrow(() -> validator.validate(blobSidecar1_0));
   }
 
   @Test
   void blobSidecarIdentifierNotRequested() {
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
-    final BlobIdentifier blobIdentifier2 =
+    final BlobIdentifier blobIdentifier2_0 =
         new BlobIdentifier(dataStructureUtil.randomBytes32(), UInt64.ZERO);
-    final BlobSidecar blobSidecar1 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
+    final BlobSidecar blobSidecar1_0 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
 
-    validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier2));
-    assertThatThrownBy(() -> validator.validate(blobSidecar1))
+    validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier2_0));
+    assertThatThrownBy(() -> validator.validate(blobSidecar1_0))
         .isExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class)
         .hasMessageContaining(
             BlobSidecarsResponseInvalidResponseException.InvalidResponseType
@@ -74,11 +74,11 @@ public class BlobSidecarsByRootValidatorTest {
   void blobSidecarFailsKzgVerification() {
     when(kzg.verifyBlobKzgProof(any(), any(), any())).thenReturn(false);
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
-    final BlobIdentifier blobIdentifier1 = new BlobIdentifier(block1.getRoot(), UInt64.ZERO);
-    final BlobSidecar blobSidecar1 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
+    final BlobIdentifier blobIdentifier1_0 = new BlobIdentifier(block1.getRoot(), UInt64.ZERO);
+    final BlobSidecar blobSidecar1_0 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
 
-    validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier1));
-    assertThatThrownBy(() -> validator.validate(blobSidecar1))
+    validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier1_0));
+    assertThatThrownBy(() -> validator.validate(blobSidecar1_0))
         .isExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class)
         .hasMessageContaining(
             BlobSidecarsResponseInvalidResponseException.InvalidResponseType

@@ -315,7 +315,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
                             .getSlotAndBlockRoot()
                             .equals(canonicalSlotAndBlockRoot) // include non canonical
                 )
-            .collect(Collectors.toUnmodifiableList());
+            .toList();
 
     // let return only canonical slot and block root as canonical
     when(combinedChainDataClient.getAncestorRoots(eq(startSlot), eq(ONE), any()))

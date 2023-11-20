@@ -29,7 +29,6 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVAL
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -213,9 +212,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
     verify(callback).completeSuccessfully();
 
     final List<Bytes32> respondedBlobSidecarBlockRoots =
-        blobSidecarCaptor.getAllValues().stream()
-            .map(BlobSidecar::getBlockRoot)
-            .collect(Collectors.toUnmodifiableList());
+        blobSidecarCaptor.getAllValues().stream().map(BlobSidecar::getBlockRoot).toList();
     final List<Bytes32> blobIdentifiersBlockRoots =
         List.of(
             blobIdentifiers.get(0).getBlockRoot(),
