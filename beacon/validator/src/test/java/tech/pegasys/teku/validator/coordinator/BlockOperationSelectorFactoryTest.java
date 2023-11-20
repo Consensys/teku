@@ -39,7 +39,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -492,23 +491,21 @@ class BlockOperationSelectorFactoryTest {
   }
 
   @Test
-  // TODO: replace this test with the needed selector to produce BlockContents
-  void shouldCreateBlobSidecarsForBlockFromCachedPayloadResult() {
+  void shouldGetBlobsBundleForBlock() {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock();
 
-    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle(3);
+    final BlobsBundle expectedBlobsBundle = dataStructureUtil.randomBlobsBundle();
 
     // the BlobsBundle is stored in the ExecutionPayloadResult
     prepareCachedPayloadResult(
         block.getSlot(),
         dataStructureUtil.randomExecutionPayload(),
         dataStructureUtil.randomPayloadExecutionContext(false),
-        blobsBundle);
+        expectedBlobsBundle);
 
-    final List<BlobSidecarOld> blobSidecars =
-        safeJoin(factory.createBlobSidecarsSelectorOld().apply(block));
+    final BlobsBundle blobsBundle = safeJoin(factory.createBlobsBundleSelector().apply(block));
 
-    assertThat(blobSidecars).isEmpty();
+    assertThat(blobsBundle).isEqualTo(expectedBlobsBundle);
   }
 
   @Test
