@@ -115,7 +115,8 @@ public class BuilderBidValidatorImpl implements BuilderBidValidator {
           validatorRegistration.getPublicKey());
     }
 
-    // checking payload gas limit
+    // checking payload gas limit against the validator gas limit preference (if there is an
+    // inconsistency, there would be a log warning only instead of an exception)
     final UInt64 parentGasLimit =
         state.toVersionBellatrix().orElseThrow().getLatestExecutionPayloadHeader().getGasLimit();
     final UInt64 preferredGasLimit = validatorRegistration.getGasLimit();
