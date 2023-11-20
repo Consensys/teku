@@ -1,0 +1,125 @@
+/*
+ * Copyright Consensys Software Inc., 2023
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.reference.deneb.merkle_proof;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static tech.pegasys.teku.ethtests.finder.MerkleProofTestFinder.PROOF_DATA_FILE;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.IOException;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethtests.finder.TestDefinition;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorSchema;
+import tech.pegasys.teku.reference.TestDataUtils;
+import tech.pegasys.teku.reference.TestExecutor;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
+
+public class SingleMerkleProofTestExecutor implements TestExecutor {
+  private static final Pattern TEST_NAME_PATTERN = Pattern.compile("(.+)/(.+)");
+  private static final String OBJECT_SSZ_FILE = "object.ssz_snappy";
+
+  @Override
+  public void runTest(final TestDefinition testDefinition) throws Throwable {
+
+    final Matcher matcher = TEST_NAME_PATTERN.matcher(testDefinition.getTestName());
+    if (!matcher.find()) {
+      throw new RuntimeException(
+          "Can't extract object and proof type from " + testDefinition.getTestName());
+    }
+
+    final String objectType = matcher.group(1);
+    final String proofType = matcher.group(2);
+
+    final Data data = loadDataFile(testDefinition, Data.class);
+
+    switch (objectType) {
+      case "BeaconBlockBody":
+        runBeaconBlockBodyTest(testDefinition, proofType, data);
+        break;
+      default:
+        throw new RuntimeException("Unknown object type " + objectType);
+    }
+  }
+
+  protected <T> T loadDataFile(final TestDefinition testDefinition, final Class<T> type)
+      throws IOException {
+    String dataFile =
+        testDefinition.getTestName().endsWith(".yaml")
+            ? testDefinition.getTestName()
+            : PROOF_DATA_FILE;
+    return TestDataUtils.loadYaml(testDefinition, dataFile, type);
+  }
+
+  private static class Data {
+    @JsonProperty(value = "leaf", required = true)
+    private String leaf;
+
+    @JsonProperty(value = "leaf_index", required = true)
+    private int leafIndex;
+
+    @JsonProperty(value = "branch", required = true)
+    private List<String> branch;
+  }
+
+  void runBeaconBlockBodyTest(
+      final TestDefinition testDefinition, final String proofType, final Data data) {
+    final Predicates predicates = new Predicates(testDefinition.getSpec().getGenesisSpecConfig());
+    final BeaconBlockBody beaconBlockBody =
+        TestDataUtils.loadSsz(
+            testDefinition,
+            OBJECT_SSZ_FILE,
+            testDefinition.getSpec().getGenesisSchemaDefinitions().getBeaconBlockBodySchema());
+
+    switch (proofType) {
+      case "blob_kzg_commitment_merkle_proof":
+        assertThat(
+                predicates.isValidMerkleBranch(
+                    Bytes32.fromHexString(data.leaf),
+                    createKzgCommitmentMerkleProofBranchFromData(testDefinition, data.branch, data),
+                    getKzgCommitmentInclusionProofDepth(testDefinition),
+                    data.leafIndex,
+                    beaconBlockBody.hashTreeRoot()))
+            .isTrue();
+        break;
+      default:
+        throw new RuntimeException("Unknown proof type " + proofType);
+    }
+  }
+
+  private SszBytes32Vector createKzgCommitmentMerkleProofBranchFromData(
+      final TestDefinition testDefinition, final List<String> branch, final Data data) {
+    final SszBytes32VectorSchema<?> kzgCommitmentInclusionProofSchema =
+        testDefinition
+            .getSpec()
+            .getGenesisSchemaDefinitions()
+            .toVersionDeneb()
+            .orElseThrow()
+            .getBlobSidecarSchema()
+            .getKzgCommitmentInclusionProofSchema();
+    return kzgCommitmentInclusionProofSchema.createFromElements(
+        branch.stream().map(Bytes32::fromHexString).map(SszBytes32::of).toList());
+  }
+
+  private int getKzgCommitmentInclusionProofDepth(final TestDefinition testDefinition) {
+    return SpecConfigDeneb.required(testDefinition.getSpec().getGenesisSpecConfig())
+        .getKzgCommitmentInclusionProofDepth();
+  }
+}
