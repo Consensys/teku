@@ -19,18 +19,23 @@ import static tech.pegasys.teku.ethtests.finder.MerkleProofTestFinder.PROOF_DATA
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethtests.finder.TestDefinition;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBytes32VectorSchema;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.reference.TestDataUtils;
 import tech.pegasys.teku.reference.TestExecutor;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 
 public class SingleMerkleProofTestExecutor implements TestExecutor {
   private static final Pattern TEST_NAME_PATTERN = Pattern.compile("(.+)/(.+)");
@@ -90,14 +95,41 @@ public class SingleMerkleProofTestExecutor implements TestExecutor {
 
     switch (proofType) {
       case "blob_kzg_commitment_merkle_proof":
+        final Bytes32 kzgCommitmentHash = Bytes32.fromHexString(data.leaf);
+
+        // Forward check
         assertThat(
                 predicates.isValidMerkleBranch(
-                    Bytes32.fromHexString(data.leaf),
+                    kzgCommitmentHash,
                     createKzgCommitmentMerkleProofBranchFromData(testDefinition, data.branch),
                     getKzgCommitmentInclusionProofDepth(testDefinition),
                     data.leafIndex,
                     beaconBlockBody.hashTreeRoot()))
             .isTrue();
+
+        // Find which commitment is in puzzle by hash root
+        final SszList<SszKZGCommitment> sszKZGCommitments =
+            beaconBlockBody.getOptionalBlobKzgCommitments().orElseThrow();
+        Optional<Integer> kzgCommitmentIndex = Optional.empty();
+        for (int i = 0; i < sszKZGCommitments.size(); ++i) {
+          if (sszKZGCommitments.get(i).hashTreeRoot().equals(kzgCommitmentHash)) {
+            kzgCommitmentIndex = Optional.of(i);
+            break;
+          }
+        }
+        assertThat(kzgCommitmentIndex).isPresent();
+
+        // Verify 2 MiscHelpersDeneb helpers
+        final MiscHelpersDeneb miscHelpersDeneb =
+            MiscHelpersDeneb.required(testDefinition.getSpec().getGenesisSpec().miscHelpers());
+        assertThat(
+                miscHelpersDeneb.getBlobSidecarKzgCommitmentGeneralizedIndex(
+                    UInt64.valueOf(kzgCommitmentIndex.get())))
+            .isEqualTo(data.leafIndex);
+        assertThat(
+                miscHelpersDeneb.computeKzgCommitmentInclusionProof(
+                    UInt64.valueOf(data.leafIndex), beaconBlockBody))
+            .isEqualTo(data.branch.stream().map(Bytes32::fromHexString).toList());
         break;
       default:
         throw new RuntimeException("Unknown proof type " + proofType);
