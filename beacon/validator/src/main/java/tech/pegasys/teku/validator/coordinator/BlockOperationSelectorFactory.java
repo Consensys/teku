@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import com.google.common.base.Preconditions;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
