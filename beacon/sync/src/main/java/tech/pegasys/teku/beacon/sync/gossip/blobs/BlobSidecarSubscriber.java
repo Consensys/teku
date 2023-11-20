@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.beacon.sync.gossip.blobs;
 
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 
 public interface BlobSidecarSubscriber {
 
-  void onBlobSidecar(BlobSidecarOld blobSidecar);
+  void onBlobSidecar(BlobSidecar blobSidecar);
 }

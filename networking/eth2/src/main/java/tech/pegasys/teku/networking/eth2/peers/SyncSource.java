@@ -18,7 +18,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 /**
@@ -30,7 +30,7 @@ public interface SyncSource {
       UInt64 startSlot, UInt64 count, RpcResponseListener<SignedBeaconBlock> listener);
 
   SafeFuture<Void> requestBlobSidecarsByRange(
-      UInt64 startSlot, UInt64 count, RpcResponseListener<BlobSidecarOld> listener);
+      UInt64 startSlot, UInt64 count, RpcResponseListener<BlobSidecar> listener);
 
   void adjustReputation(final ReputationAdjustment adjustment);
 

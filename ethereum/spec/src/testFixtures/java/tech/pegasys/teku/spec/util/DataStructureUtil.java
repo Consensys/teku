@@ -2190,37 +2190,6 @@ public final class DataStructureUtil {
     return randomBlob().getBytes();
   }
 
-  @Deprecated
-  public List<BlobSidecarOld> randomBlobSidecarsForBlockOld(final SignedBeaconBlock block) {
-    return randomBlobSidecarsForBlockOld(block, (__, builder) -> builder);
-  }
-
-  @Deprecated
-  public List<BlobSidecarOld> randomBlobSidecarsForBlockOld(
-      final SignedBeaconBlock block,
-      final BiFunction<Integer, RandomBlobSidecarOldBuilder, RandomBlobSidecarOldBuilder>
-          modifier) {
-    final SszList<SszKZGCommitment> blobKzgCommitments =
-        BeaconBlockBodyDeneb.required(block.getBeaconBlock().orElseThrow().getBody())
-            .getBlobKzgCommitments();
-
-    return IntStream.range(0, blobKzgCommitments.size())
-        .mapToObj(
-            index -> {
-              final RandomBlobSidecarOldBuilder builder =
-                  createRandomBlobSidecarBuilderOld()
-                      .slot(block.getSlot())
-                      .blockRoot(block.getRoot())
-                      .blockParentRoot(block.getParentRoot())
-                      .proposerIndex(block.getMessage().getProposerIndex())
-                      .kzgCommitment(blobKzgCommitments.get(index).getBytes())
-                      .index(UInt64.valueOf(index));
-
-              return modifier.apply(index, builder).build();
-            })
-        .collect(toList());
-  }
-
   public List<BlobSidecar> randomBlobSidecarsForBlock(final SignedBeaconBlock block) {
     return randomBlobSidecarsForBlock(
         block, (blobSidecarIndex, blobSidecarBuilder) -> blobSidecarBuilder);
@@ -2257,11 +2226,15 @@ public final class DataStructureUtil {
     return new RandomBlobSidecarOldBuilder().build();
   }
 
-  @Deprecated
-  public BlobSidecarOld randomBlobSidecarOld(final BlobIdentifier blobIdentifier) {
-    return new RandomBlobSidecarOldBuilder()
-        .index(blobIdentifier.getIndex())
-        .blockRoot(blobIdentifier.getBlockRoot())
+  public BlobSidecar randomBlobSidecar(final long index) {
+    return new RandomBlobSidecarBuilder().index(UInt64.valueOf(index)).build();
+  }
+
+  public BlobSidecar randomBlobSidecarForBlock(
+      final SignedBeaconBlock signedBeaconBlock, final long index) {
+    return new RandomBlobSidecarBuilder()
+        .signedBeaconBlockHeader(signedBeaconBlock.asHeader())
+        .index(UInt64.valueOf(index))
         .build();
   }
 
@@ -2295,20 +2268,6 @@ public final class DataStructureUtil {
   public BlobSidecarOld randomBlobSidecarOld(
       final UInt64 slot, final Bytes32 blockRoot, final UInt64 index) {
     return new RandomBlobSidecarOldBuilder().slot(slot).index(index).blockRoot(blockRoot).build();
-  }
-
-  @Deprecated
-  public BlobSidecarOld randomBlobSidecarOld(
-      final UInt64 slot,
-      final Bytes32 blockRoot,
-      final Bytes32 parentBlockRoot,
-      final UInt64 index) {
-    return new RandomBlobSidecarOldBuilder()
-        .slot(slot)
-        .index(index)
-        .blockRoot(blockRoot)
-        .blockParentRoot(parentBlockRoot)
-        .build();
   }
 
   public BlobIdentifier randomBlobIdentifier() {
@@ -2406,11 +2365,6 @@ public final class DataStructureUtil {
     return getDenebSchemaDefinitions(slot)
         .getBlockContentsSchema()
         .create(beaconBlock, kzgProofs, blobs);
-  }
-
-  @Deprecated
-  public RandomBlobSidecarOldBuilder createRandomBlobSidecarBuilderOld() {
-    return new RandomBlobSidecarOldBuilder();
   }
 
   public RandomBlobSidecarBuilder createRandomBlobSidecarBuilder() {

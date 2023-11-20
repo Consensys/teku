@@ -56,12 +56,6 @@ public interface BlobSidecarManager {
         }
 
         @Override
-        public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediatelyOld(
-            final SignedBeaconBlock block, final List<BlobSidecarOld> blobSidecars) {
-          return BlobSidecarsAndValidationResult.NOT_REQUIRED;
-        }
-
-        @Override
         public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
             final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
           return BlobSidecarsAndValidationResult.NOT_REQUIRED;
@@ -81,10 +75,6 @@ public interface BlobSidecarManager {
   boolean isAvailabilityRequiredAtSlot(UInt64 slot);
 
   BlobSidecarsAvailabilityChecker createAvailabilityChecker(SignedBeaconBlock block);
-
-  @Deprecated
-  BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediatelyOld(
-      SignedBeaconBlock block, List<BlobSidecarOld> blobSidecars);
 
   BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediately(
       SignedBeaconBlock block, List<BlobSidecar> blobSidecars);

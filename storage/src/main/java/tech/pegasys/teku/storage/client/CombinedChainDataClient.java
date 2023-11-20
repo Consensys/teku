@@ -30,6 +30,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
@@ -569,11 +570,12 @@ public class CombinedChainDataClient {
     return historicalChainData.getEarliestAvailableBlobSidecarSlot();
   }
 
-  public SafeFuture<Optional<BlobSidecarOld>> getBlobSidecarByBlockRootAndIndex(
+  @Deprecated
+  public SafeFuture<Optional<BlobSidecarOld>> getBlobSidecarByBlockRootAndIndexOld(
       final Bytes32 blockRoot, final UInt64 index) {
     final Optional<UInt64> hotSlotForBlockRoot = recentChainData.getSlotForBlockRoot(blockRoot);
     if (hotSlotForBlockRoot.isPresent()) {
-      return getBlobSidecarByKey(
+      return getBlobSidecarByKeyOld(
           new SlotAndBlockRootAndBlobIndex(hotSlotForBlockRoot.get(), blockRoot, index));
     }
     return historicalChainData
@@ -581,7 +583,7 @@ public class CombinedChainDataClient {
         .thenCompose(
             blockOptional -> {
               if (blockOptional.isPresent()) {
-                return getBlobSidecarByKey(
+                return getBlobSidecarByKeyOld(
                     new SlotAndBlockRootAndBlobIndex(
                         blockOptional.get().getSlot(), blockRoot, index));
               } else {
@@ -590,7 +592,14 @@ public class CombinedChainDataClient {
             });
   }
 
-  public SafeFuture<Optional<BlobSidecarOld>> getBlobSidecarByKey(
+  // TODO: Implement
+  public SafeFuture<Optional<BlobSidecar>> getBlobSidecarByBlockRootAndIndex(
+      final Bytes32 blockRoot, final UInt64 index) {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
+
+  @Deprecated
+  public SafeFuture<Optional<BlobSidecarOld>> getBlobSidecarByKeyOld(
       final SlotAndBlockRootAndBlobIndex key) {
     final Optional<List<BlobSidecarOld>> maybeBlobSidecars =
         recentChainData.getBlobSidecars(key.getSlotAndBlockRoot());
@@ -601,6 +610,12 @@ public class CombinedChainDataClient {
           : SafeFuture.completedFuture(Optional.empty());
     }
     return historicalChainData.getBlobSidecar(key);
+  }
+
+  // TODO: implement
+  public SafeFuture<Optional<BlobSidecar>> getBlobSidecarByKey(
+      final SlotAndBlockRootAndBlobIndex key) {
+    return SafeFuture.completedFuture(Optional.empty());
   }
 
   public SafeFuture<List<SlotAndBlockRootAndBlobIndex>> getBlobSidecarKeys(
