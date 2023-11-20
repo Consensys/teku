@@ -110,25 +110,24 @@ public class SingleMerkleProofTestExecutor implements TestExecutor {
         // Find which commitment is in puzzle by hash root
         final SszList<SszKZGCommitment> sszKZGCommitments =
             beaconBlockBody.getOptionalBlobKzgCommitments().orElseThrow();
-        Optional<Integer> kzgCommitmentIndex = Optional.empty();
+        Optional<Integer> kzgCommitmentIndexFound = Optional.empty();
         for (int i = 0; i < sszKZGCommitments.size(); ++i) {
           if (sszKZGCommitments.get(i).hashTreeRoot().equals(kzgCommitmentHash)) {
-            kzgCommitmentIndex = Optional.of(i);
+            kzgCommitmentIndexFound = Optional.of(i);
             break;
           }
         }
-        assertThat(kzgCommitmentIndex).isPresent();
+        assertThat(kzgCommitmentIndexFound).isPresent();
+        final UInt64 kzgCommitmentIndex = UInt64.valueOf(kzgCommitmentIndexFound.get());
 
         // Verify 2 MiscHelpersDeneb helpers
         final MiscHelpersDeneb miscHelpersDeneb =
             MiscHelpersDeneb.required(testDefinition.getSpec().getGenesisSpec().miscHelpers());
-        assertThat(
-                miscHelpersDeneb.getBlobSidecarKzgCommitmentGeneralizedIndex(
-                    UInt64.valueOf(kzgCommitmentIndex.get())))
+        assertThat(miscHelpersDeneb.getBlobSidecarKzgCommitmentGeneralizedIndex(kzgCommitmentIndex))
             .isEqualTo(data.leafIndex);
         assertThat(
                 miscHelpersDeneb.computeKzgCommitmentInclusionProof(
-                    UInt64.valueOf(data.leafIndex), beaconBlockBody))
+                    kzgCommitmentIndex, beaconBlockBody))
             .isEqualTo(data.branch.stream().map(Bytes32::fromHexString).toList());
         break;
       default:
