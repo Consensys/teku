@@ -87,6 +87,11 @@ public interface ExecutionLayerBlockProductionManager {
   ExecutionPayloadResult initiateBlockAndBlobsProduction(
       ExecutionPayloadContext context, BeaconState blockSlotState, boolean isBlind);
 
+  /**
+   * Required {@link #initiateBlockProduction(ExecutionPayloadContext, BeaconState, boolean)} or
+   * {@link #initiateBlockAndBlobsProduction(ExecutionPayloadContext, BeaconState, boolean)} to have
+   * been called first in order for a value to be present
+   */
   Optional<ExecutionPayloadResult> getCachedPayloadResult(UInt64 slot);
 
   SafeFuture<BuilderPayload> getUnblindedPayload(SignedBeaconBlock signedBeaconBlock);
@@ -95,6 +100,5 @@ public interface ExecutionLayerBlockProductionManager {
    * Requires {@link #getUnblindedPayload(SignedBeaconBlock)} to have been called first in order for
    * a value to be present
    */
-  @SuppressWarnings("unused")
   Optional<BuilderPayload> getCachedUnblindedPayload(UInt64 slot);
 }
