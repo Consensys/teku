@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
+@SuppressWarnings("JavaCase")
 public class BlobSidecarsByRootValidatorTest {
   private final Spec spec = TestSpecFactory.createMainnetDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);

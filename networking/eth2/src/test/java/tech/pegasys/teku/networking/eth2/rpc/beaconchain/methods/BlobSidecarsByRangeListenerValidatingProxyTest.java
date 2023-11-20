@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
+@SuppressWarnings("JavaCase")
 public class BlobSidecarsByRangeListenerValidatingProxyTest {
   private final Spec spec = TestSpecFactory.createMainnetDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
