@@ -13,17 +13,11 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ID_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
-import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.STATUS_PARAMETER;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidator.STATE_VALIDATOR_DATA_TYPE;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter.getApplicableValidatorStatuses;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
@@ -34,44 +28,47 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.migrated.StateValidatorData;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
-public class GetStateValidators extends RestApiEndpoint {
-  public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/validators";
-
-  static final SerializableTypeDefinition<ObjectAndMetaData<List<StateValidatorData>>>
-      RESPONSE_TYPE =
-          SerializableTypeDefinition.<ObjectAndMetaData<List<StateValidatorData>>>object()
-              .name("GetStateValidatorsResponse")
-              .withField(
-                  EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
-              .withField(FINALIZED, BOOLEAN_TYPE, ObjectAndMetaData::isFinalized)
-              .withField("data", listOf(STATE_VALIDATOR_DATA_TYPE), ObjectAndMetaData::getData)
-              .build();
+public class PostStateValidators extends RestApiEndpoint {
+  private static final DeserializableTypeDefinition<RequestBody> REQUEST_TYPE =
+      DeserializableTypeDefinition.object(RequestBody.class)
+          .name("PostStateValidatorsRequestBody")
+          .initializer(RequestBody::new)
+          .withOptionalField(
+              "ids",
+              DeserializableTypeDefinition.listOf(STRING_TYPE),
+              RequestBody::getMaybeIds,
+              RequestBody::setIds)
+          .withOptionalField(
+              "statuses",
+              DeserializableTypeDefinition.listOf(STRING_TYPE),
+              RequestBody::getMaybeStringStatuses,
+              RequestBody::setStatuses)
+          .build();
 
   private final ChainDataProvider chainDataProvider;
 
-  public GetStateValidators(final DataProvider dataProvider) {
+  public PostStateValidators(final DataProvider dataProvider) {
     this(dataProvider.getChainDataProvider());
   }
 
-  GetStateValidators(final ChainDataProvider provider) {
+  PostStateValidators(final ChainDataProvider provider) {
     super(
-        EndpointMetadata.get(ROUTE)
-            .operationId("getStateValidators")
+        EndpointMetadata.post(GetStateValidators.ROUTE)
+            .operationId("postStateValidators")
             .summary("Get validators from state")
             .description(
                 "Returns filterable list of validators with their balance, status and index.")
             .pathParam(PARAMETER_STATE_ID)
-            .queryListParam(ID_PARAMETER)
-            .queryListParam(STATUS_PARAMETER)
+            .requestBodyType(REQUEST_TYPE)
             .tags(TAG_BEACON)
-            .response(SC_OK, "Request successful", RESPONSE_TYPE)
+            .response(SC_OK, "Request successful", GetStateValidators.RESPONSE_TYPE)
             .withNotFoundResponse()
             .build());
     this.chainDataProvider = provider;
@@ -79,8 +76,10 @@ public class GetStateValidators extends RestApiEndpoint {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    final List<String> validators = request.getQueryParameterList(ID_PARAMETER);
-    final List<StatusParameter> statusParameters = request.getQueryParameterList(STATUS_PARAMETER);
+    final Optional<RequestBody> requestBody = request.getOptionalRequestBody();
+    final List<String> validators = requestBody.map(RequestBody::getIds).orElse(List.of());
+    final List<StatusParameter> statusParameters =
+        requestBody.map(RequestBody::getStatuses).orElse(List.of());
 
     final Set<ValidatorStatus> statusFilter = getApplicableValidatorStatuses(statusParameters);
 
@@ -94,5 +93,43 @@ public class GetStateValidators extends RestApiEndpoint {
                 maybeData
                     .map(AsyncApiResponse::respondOk)
                     .orElseGet(AsyncApiResponse::respondNotFound)));
+  }
+
+  static class RequestBody {
+    private List<String> ids = List.of();
+    private List<StatusParameter> statuses = List.of();
+
+    RequestBody() {}
+
+    public RequestBody(final List<String> ids, final List<StatusParameter> statuses) {
+      this.ids = ids;
+      this.statuses = statuses;
+    }
+
+    public List<String> getIds() {
+      return ids;
+    }
+
+    public Optional<List<String>> getMaybeIds() {
+      return ids.isEmpty() ? Optional.empty() : Optional.of(ids);
+    }
+
+    public void setIds(final Optional<List<String>> ids) {
+      ids.ifPresent(i -> this.ids = i);
+    }
+
+    public List<StatusParameter> getStatuses() {
+      return statuses;
+    }
+
+    public Optional<List<String>> getMaybeStringStatuses() {
+      return statuses.isEmpty()
+          ? Optional.empty()
+          : Optional.of(statuses.stream().map(Enum::name).toList());
+    }
+
+    public void setStatuses(final Optional<List<String>> statuses) {
+      statuses.ifPresent(s -> this.statuses = s.stream().map(StatusParameter::parse).toList());
+    }
   }
 }
