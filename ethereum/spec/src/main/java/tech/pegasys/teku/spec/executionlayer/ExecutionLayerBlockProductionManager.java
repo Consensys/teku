@@ -90,7 +90,7 @@ public interface ExecutionLayerBlockProductionManager {
   /**
    * Required {@link #initiateBlockProduction(ExecutionPayloadContext, BeaconState, boolean)} or
    * {@link #initiateBlockAndBlobsProduction(ExecutionPayloadContext, BeaconState, boolean)} to have
-   * been first in order for a value to be present
+   * been called first in order for a value to be present
    */
   Optional<ExecutionPayloadResult> getCachedPayloadResult(UInt64 slot);
 
