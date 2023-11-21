@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 import java.nio.file.Path;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.storage.server.Database;
@@ -59,6 +60,7 @@ public class FileBackedStorageSystemBuilder {
         createRestartSupplier(),
         storageMode,
         storeConfig,
+        new SystemTimeProvider(),
         spec,
         ChainBuilder.create(spec));
   }
