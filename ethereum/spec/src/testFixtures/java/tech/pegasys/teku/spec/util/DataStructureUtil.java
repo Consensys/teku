@@ -2311,9 +2311,15 @@ public final class DataStructureUtil {
 
   public SignedBlockContents randomSignedBlockContents(final UInt64 slot) {
     final SignedBeaconBlock signedBeaconBlock = randomSignedBeaconBlock(slot);
-    final int randomNumberOfBlobs = randomNumberOfBlobsPerBlock();
-    final List<Blob> blobs = randomBlobs(randomNumberOfBlobs, slot);
-    final List<KZGProof> kzgProofs = randomKZGProofs(randomNumberOfBlobs);
+    final int numberOfBlobs =
+        signedBeaconBlock
+            .getMessage()
+            .getBody()
+            .getOptionalBlobKzgCommitments()
+            .orElseThrow()
+            .size();
+    final List<Blob> blobs = randomBlobs(numberOfBlobs, slot);
+    final List<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
     return getDenebSchemaDefinitions(slot)
         .getSignedBlockContentsSchema()
         .create(signedBeaconBlock, kzgProofs, blobs);
@@ -2338,9 +2344,10 @@ public final class DataStructureUtil {
 
   public BlockContents randomBlockContents(final UInt64 slot) {
     final BeaconBlock beaconBlock = randomBeaconBlock(slot);
-    final int randomNumberOfBlobs = randomNumberOfBlobsPerBlock();
-    final List<Blob> blobs = randomBlobs(randomNumberOfBlobs, slot);
-    final List<KZGProof> kzgProofs = randomKZGProofs(randomNumberOfBlobs);
+    final int numberOfBlobs =
+        beaconBlock.getBody().getOptionalBlobKzgCommitments().orElseThrow().size();
+    final List<Blob> blobs = randomBlobs(numberOfBlobs, slot);
+    final List<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
     return getDenebSchemaDefinitions(slot)
         .getBlockContentsSchema()
         .create(beaconBlock, kzgProofs, blobs);
