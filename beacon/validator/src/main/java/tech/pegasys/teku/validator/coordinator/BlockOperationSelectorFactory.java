@@ -356,16 +356,18 @@ public class BlockOperationSelectorFactory {
         blobs = blobsBundle.getBlobs();
         proofs = blobsBundle.getProofs();
         // consistency check because the BlobsBundle comes from an external source (a builder)
-        final int blockCommitmentsCount = miscHelpersDeneb.getBlobKzgCommitmentsCount(block);
+        final SszList<SszKZGCommitment> blockCommitments =
+            block
+                .getMessage()
+                .getBody()
+                .getOptionalBlobKzgCommitments()
+                .orElseThrow(
+                    () -> new IllegalStateException("Commitments are not available in " + block));
         Preconditions.checkState(
-            blockCommitmentsCount == blobs.size() && blobs.size() == proofs.size(),
-            "There is an inconsistency in the number of commitments (%s) in block (%s) for slot %s "
-                + "and the number of provided blobs (%s) and proofs (%s) in the builder BlobsBundle",
-            blockCommitmentsCount,
-            block.getRoot(),
-            slot,
-            blobs.size(),
-            proofs.size());
+            blobsBundle.getCommitments().hashTreeRoot().equals(blockCommitments.hashTreeRoot()),
+            "Commitments in the builder BlobsBundle %s don't match the commitments in the block %s",
+            blobsBundle.getCommitments(),
+            blockCommitments);
       } else {
         blobs =
             blockContainer

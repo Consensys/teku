@@ -554,7 +554,7 @@ class BlockOperationSelectorFactoryTest {
         dataStructureUtil.randomSignedBlindedBeaconBlockWithCommitments(commitments);
 
     final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
-        dataStructureUtil.randomBuilderBlobsBundle(2);
+        dataStructureUtil.randomBuilderBlobsBundle(3);
 
     prepareCachedBuilderPayload(
         signedBlindedBeaconBlock.getSlot(),
@@ -564,8 +564,7 @@ class BlockOperationSelectorFactoryTest {
     assertThatThrownBy(() -> factory.createBlobSidecarsSelector().apply(signedBlindedBeaconBlock))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageMatching(
-            "There is an inconsistency in the number of commitments \\(3\\) in block \\(\\w+\\) for slot \\d+ "
-                + "and the number of provided blobs \\(2\\) and proofs \\(2\\) in the builder BlobsBundle");
+            "Commitments in the builder BlobsBundle .+ don't match the commitments in the block .+");
   }
 
   @Test
