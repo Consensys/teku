@@ -50,12 +50,14 @@ public class BlockTimelinessTracker {
       final SignedBeaconBlock block, final UInt64 arrivalTimeMillis) {
     final UInt64 genesisTime = recentChainData.getGenesisTime();
     final UInt64 computedSlot = spec.getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTime);
+    final Bytes32 root = block.getRoot();
     if (computedSlot.isGreaterThan(block.getMessage().getSlot())) {
       LOG.debug(
-          "Block {}:{} is before computed slot {}, and won't be checked for timeliness",
-          block.getRoot(),
+          "Block {}:{} is before computed slot {}, timeliness set to false.",
+          root,
           block.getSlot(),
           computedSlot);
+      blockTimeliness.put(root, false);
       return;
     }
     recentChainData
@@ -75,13 +77,13 @@ public class BlockTimelinessTracker {
                       && timelinessLimit.isGreaterThan(millisIntoSlot);
               LOG.debug(
                   "Block {}:{} arrived at {} ms into slot {}, timeliness limit is {} ms. result: {}",
-                  block.getRoot(),
+                  root,
                   block.getSlot(),
                   millisIntoSlot,
                   computedSlot,
                   timelinessLimit,
                   isTimely);
-              blockTimeliness.put(block.getRoot(), isTimely);
+              blockTimeliness.put(root, isTimely);
             });
   }
 
