@@ -353,14 +353,14 @@ public class BlockOperationSelectorFactory {
         // blobs and the proofs wouldn't be part of the BlockContainer
         final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
             getCachedBuilderBlobsBundle(slot);
-        blobs = blobsBundle.getBlobs();
-        proofs = blobsBundle.getProofs();
         // consistency check because the BlobsBundle comes from an external source (a builder)
         final SszList<SszKZGCommitment> blockCommitments =
             block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
         Preconditions.checkState(
             blobsBundle.getCommitments().hashTreeRoot().equals(blockCommitments.hashTreeRoot()),
             "Commitments in the builder BlobsBundle don't match the commitments in the block");
+        blobs = blobsBundle.getBlobs();
+        proofs = blobsBundle.getProofs();
       } else {
         blobs = blockContainer.getBlobs().orElseThrow();
         proofs = blockContainer.getKzgProofs().orElseThrow();
