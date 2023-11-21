@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.coordinator;
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -36,6 +37,7 @@ import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -100,6 +102,7 @@ public abstract class AbstractBlockFactoryTest {
       mock(SyncCommitteeContributionPool.class);
   protected final DepositProvider depositProvider = mock(DepositProvider.class);
   protected final Eth1DataCache eth1DataCache = mock(Eth1DataCache.class);
+  protected final KZG kzg = mock(KZG.class);
 
   // execution context
   protected ExecutionPayload executionPayload = null;
@@ -324,6 +327,7 @@ public abstract class AbstractBlockFactoryTest {
       }
     }
 
+    when(kzg.verifyBlobKzgProofBatch(anyList(), anyList(), anyList())).thenReturn(true);
     // simulate caching of the builder payload
     when(executionLayer.getCachedUnblindedPayload(signedBlockContainer.getSlot()))
         .thenReturn(builderPayload);

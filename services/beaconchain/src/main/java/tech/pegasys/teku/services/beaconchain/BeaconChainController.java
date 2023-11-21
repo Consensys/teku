@@ -837,7 +837,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             eth1DataCache,
             VersionProvider.getDefaultGraffiti(),
             forkChoiceNotifier,
-            executionLayerBlockProductionManager);
+            executionLayerBlockProductionManager,
+            kzg);
     final BlockFactory blockFactory = new MilestoneBasedBlockFactory(spec, operationSelector);
     SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
         beaconConfig.p2pConfig().isSubscribeAllSubnetsEnabled()
