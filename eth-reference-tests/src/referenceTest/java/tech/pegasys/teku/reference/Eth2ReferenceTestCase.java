@@ -23,6 +23,7 @@ import tech.pegasys.teku.reference.altair.rewards.RewardsTestExecutorAltair;
 import tech.pegasys.teku.reference.altair.rewards.RewardsTestExecutorBellatrix;
 import tech.pegasys.teku.reference.common.epoch_processing.EpochProcessingTestExecutor;
 import tech.pegasys.teku.reference.common.operations.OperationsTestExecutor;
+import tech.pegasys.teku.reference.deneb.merkle_proof.MerkleProofTests;
 import tech.pegasys.teku.reference.phase0.bls.BlsTests;
 import tech.pegasys.teku.reference.phase0.forkchoice.ForkChoiceTestExecutor;
 import tech.pegasys.teku.reference.phase0.genesis.GenesisTests;
@@ -83,6 +84,7 @@ public abstract class Eth2ReferenceTestCase {
           .putAll(TransitionTestExecutor.TRANSITION_TEST_TYPES)
           .putAll(ForkUpgradeTestExecutor.FORK_UPGRADE_TEST_TYPES)
           .putAll(RewardsTestExecutorBellatrix.REWARDS_TEST_TYPES)
+          .putAll(MerkleProofTests.MERKLE_PROOF_TEST_TYPES)
           .build();
 
   protected void runReferenceTest(final TestDefinition testDefinition) throws Throwable {
@@ -90,10 +92,6 @@ public abstract class Eth2ReferenceTestCase {
   }
 
   private TestExecutor getExecutorFor(final TestDefinition testDefinition) {
-    // TODO: re-enable Deneb tests once migration to inclusion proof #7654 is complete
-    if (testDefinition.getFork().equals(TestFork.DENEB)) {
-      return TestExecutor.IGNORE_TESTS;
-    }
     // Look for fork-specific tests first
     TestExecutor testExecutor =
         switch (testDefinition.getFork()) {

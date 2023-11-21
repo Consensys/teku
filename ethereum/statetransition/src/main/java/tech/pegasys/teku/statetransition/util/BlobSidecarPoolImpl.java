@@ -37,7 +37,6 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
@@ -187,12 +186,6 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   public synchronized Optional<BlockBlobSidecarsTracker> getBlockBlobSidecarsTracker(
       final SignedBeaconBlock block) {
     return Optional.ofNullable(blockBlobSidecarsTrackers.get(block.getRoot()));
-  }
-
-  @Override
-  public void onCompletedBlockAndBlobSidecarsOld(
-      SignedBeaconBlock block, List<BlobSidecarOld> blobSidecars) {
-    onCompletedBlockAndBlobSidecars(block, List.of());
   }
 
   @Override

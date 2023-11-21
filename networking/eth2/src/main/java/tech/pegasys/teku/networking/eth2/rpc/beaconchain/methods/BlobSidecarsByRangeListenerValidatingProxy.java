@@ -26,12 +26,12 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 
 public class BlobSidecarsByRangeListenerValidatingProxy extends AbstractBlobSidecarsValidator
-    implements RpcResponseListener<BlobSidecarOld> {
+    implements RpcResponseListener<BlobSidecar> {
 
-  private final RpcResponseListener<BlobSidecarOld> blobSidecarResponseListener;
+  private final RpcResponseListener<BlobSidecar> blobSidecarResponseListener;
   private final Integer maxBlobsPerBlock;
   private final UInt64 startSlot;
   private final UInt64 endSlot;
@@ -41,7 +41,7 @@ public class BlobSidecarsByRangeListenerValidatingProxy extends AbstractBlobSide
   public BlobSidecarsByRangeListenerValidatingProxy(
       final Spec spec,
       final Peer peer,
-      final RpcResponseListener<BlobSidecarOld> blobSidecarResponseListener,
+      final RpcResponseListener<BlobSidecar> blobSidecarResponseListener,
       final Integer maxBlobsPerBlock,
       final KZG kzg,
       final UInt64 startSlot,
@@ -54,7 +54,7 @@ public class BlobSidecarsByRangeListenerValidatingProxy extends AbstractBlobSide
   }
 
   @Override
-  public SafeFuture<?> onResponse(final BlobSidecarOld blobSidecar) {
+  public SafeFuture<?> onResponse(final BlobSidecar blobSidecar) {
     return SafeFuture.of(
         () -> {
           final UInt64 blobSidecarSlot = blobSidecar.getSlot();
@@ -84,55 +84,49 @@ public class BlobSidecarsByRangeListenerValidatingProxy extends AbstractBlobSide
   }
 
   private void verifyBlobSidecarIsAfterLast(final BlobSidecarSummary blobSidecarSummary) {
-    maybeLastBlobSidecarSummary.ifPresentOrElse(
-        lastBlobSidecarSummary -> {
-          // we have a previous blobSidecar, let's check current against it
+    // It's first blobSidecar in response
+    if (maybeLastBlobSidecarSummary.isEmpty()) {
+      if (!blobSidecarSummary.index.isZero()) {
+        throw new BlobSidecarsResponseInvalidResponseException(peer, BLOB_SIDECAR_UNEXPECTED_INDEX);
+      }
+      return;
+    }
 
-          if (blobSidecarSummary.inTheSameBlock(lastBlobSidecarSummary)) {
-            if (!blobSidecarSummary.index.equals(lastBlobSidecarSummary.index.increment())) {
-              throw new BlobSidecarsResponseInvalidResponseException(
-                  peer, BLOB_SIDECAR_UNEXPECTED_INDEX);
-            }
-          } else {
-            // not in the same block
+    // We have a previous blobSidecar, new could be from the same block
+    final BlobSidecarSummary lastBlobSidecarSummary = maybeLastBlobSidecarSummary.orElseThrow();
+    if (blobSidecarSummary.inTheSameBlock(lastBlobSidecarSummary)) {
+      if (!blobSidecarSummary.index.equals(lastBlobSidecarSummary.index.increment())) {
+        throw new BlobSidecarsResponseInvalidResponseException(peer, BLOB_SIDECAR_UNEXPECTED_INDEX);
+      }
+      return;
+    }
 
-            if (!blobSidecarSummary.index.isZero()) {
-              throw new BlobSidecarsResponseInvalidResponseException(
-                  peer, BLOB_SIDECAR_UNEXPECTED_INDEX);
-            }
+    // New blobSidecar is not from the same block
+    if (!blobSidecarSummary.index.isZero()) {
+      throw new BlobSidecarsResponseInvalidResponseException(peer, BLOB_SIDECAR_UNEXPECTED_INDEX);
+    }
 
-            if (blobSidecarSummary.slot.isGreaterThan(lastBlobSidecarSummary.slot.increment())) {
-              // a slot has been skipped, we can't check the parent
-              return;
-            }
+    if (blobSidecarSummary.slot.isGreaterThan(lastBlobSidecarSummary.slot.increment())) {
+      // a slot has been skipped, we can't check the parent
+      return;
+    }
 
-            if (blobSidecarSummary.slot.isLessThanOrEqualTo(lastBlobSidecarSummary.slot)) {
-              throw new BlobSidecarsResponseInvalidResponseException(
-                  peer, BLOB_SIDECAR_UNEXPECTED_SLOT);
-            }
+    if (blobSidecarSummary.slot.isLessThanOrEqualTo(lastBlobSidecarSummary.slot)) {
+      throw new BlobSidecarsResponseInvalidResponseException(peer, BLOB_SIDECAR_UNEXPECTED_SLOT);
+    }
 
-            if (!blobSidecarSummary.blockParentRoot.equals(lastBlobSidecarSummary.blockRoot)) {
-              throw new BlobSidecarsResponseInvalidResponseException(
-                  peer, BLOB_SIDECAR_UNKNOWN_PARENT);
-            }
-          }
-        },
-        () -> {
-          // first blobSidecar
-          if (!blobSidecarSummary.index.isZero()) {
-            throw new BlobSidecarsResponseInvalidResponseException(
-                peer, BLOB_SIDECAR_UNEXPECTED_INDEX);
-          }
-        });
+    if (!blobSidecarSummary.blockParentRoot.equals(lastBlobSidecarSummary.blockRoot)) {
+      throw new BlobSidecarsResponseInvalidResponseException(peer, BLOB_SIDECAR_UNKNOWN_PARENT);
+    }
   }
 
   record BlobSidecarSummary(Bytes32 blockRoot, UInt64 index, UInt64 slot, Bytes32 blockParentRoot) {
-    public static BlobSidecarSummary create(final BlobSidecarOld blobSidecar) {
+    public static BlobSidecarSummary create(final BlobSidecar blobSidecar) {
       return new BlobSidecarSummary(
           blobSidecar.getBlockRoot(),
           blobSidecar.getIndex(),
           blobSidecar.getSlot(),
-          blobSidecar.getBlockParentRoot());
+          blobSidecar.getSignedBeaconBlockHeader().getMessage().getParentRoot());
     }
 
     public boolean inTheSameBlock(final BlobSidecarSummary blobSidecarSummary) {

@@ -35,7 +35,7 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeRe
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
@@ -194,7 +194,7 @@ public class PeerSync {
                       requestContext.count,
                       block -> {
                         // at this point, blob sidecars (if any) have been received
-                        final Optional<List<BlobSidecarOld>> blobSidecars =
+                        final Optional<List<BlobSidecar>> blobSidecars =
                             blobSidecarListener.getReceivedBlobSidecars(block.getSlot());
                         return importBlock(block, blobSidecars);
                       });
@@ -336,14 +336,14 @@ public class PeerSync {
   }
 
   private SafeFuture<Void> importBlock(
-      final SignedBeaconBlock block, final Optional<List<BlobSidecarOld>> maybeBlobSidecars) {
+      final SignedBeaconBlock block, final Optional<List<BlobSidecar>> maybeBlobSidecars) {
     if (stopped.get()) {
       throw new CancellationException("Peer sync was cancelled");
     }
     // Add blob sidecars to the pool in order for them to be available when the block is being
     // imported
     maybeBlobSidecars.ifPresent(
-        blobSidecars -> blobSidecarPool.onCompletedBlockAndBlobSidecarsOld(block, blobSidecars));
+        blobSidecars -> blobSidecarPool.onCompletedBlockAndBlobSidecars(block, blobSidecars));
 
     return blockImporter
         .importBlock(block)

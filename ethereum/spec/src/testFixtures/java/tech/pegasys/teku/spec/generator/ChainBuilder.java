@@ -40,7 +40,6 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SyncAsyncRunner;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.tree.MerkleUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
@@ -781,16 +780,15 @@ public class ChainBuilder {
           IntStream.range(0, blobs.size())
               .mapToObj(
                   index -> {
+                    final UInt64 blobSidecarIndex = UInt64.valueOf(index);
                     final Blob blob = blobs.get(index);
                     final KZGCommitment kzgCommitment = kzgCommitments.get(index);
                     final List<Bytes32> merkleProof =
-                        MerkleUtil.constructMerkleProof(
-                            nextBlockAndState.getBlock().getMessage().getBody().getBackingNode(),
-                            miscHelpersDeneb.getBlobSidecarKzgCommitmentGeneralizedIndex(
-                                UInt64.valueOf(index)));
+                        miscHelpersDeneb.computeKzgCommitmentInclusionProof(
+                            blobSidecarIndex, nextBlockAndState.getBlock().getMessage().getBody());
                     return new BlobSidecar(
                         blobSidecarSchema,
-                        UInt64.valueOf(index),
+                        blobSidecarIndex,
                         blob,
                         kzgCommitment,
                         blobsUtil.computeKzgProof(blob, kzgCommitment),

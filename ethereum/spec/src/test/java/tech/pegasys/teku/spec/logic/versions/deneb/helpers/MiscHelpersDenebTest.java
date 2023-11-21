@@ -22,12 +22,12 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.ssz.tree.MerkleUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -187,6 +188,45 @@ class MiscHelpersDenebTest {
   }
 
   @Test
+  void shouldConstructValidBlobSidecar() {
+    final SignedBeaconBlock signedBeaconBlock =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(1);
+    final Blob blob = dataStructureUtil.randomBlob();
+    final SszKZGCommitment expectedCommitment =
+        BeaconBlockBodyDeneb.required(signedBeaconBlock.getMessage().getBody())
+            .getBlobKzgCommitments()
+            .get(0);
+    final SszKZGProof proof = dataStructureUtil.randomSszKZGProof();
+
+    final BlobSidecar blobSidecar =
+        miscHelpersDeneb.constructBlobSidecar(signedBeaconBlock, UInt64.ZERO, blob, proof);
+
+    assertThat(blobSidecar.getIndex()).isEqualTo(UInt64.ZERO);
+    assertThat(blobSidecar.getBlob()).isEqualTo(blob);
+    assertThat(blobSidecar.getSszKZGProof()).isEqualTo(proof);
+    assertThat(blobSidecar.getSszKZGCommitment()).isEqualTo(expectedCommitment);
+    assertThat(blobSidecar.getSignedBeaconBlockHeader()).isEqualTo(signedBeaconBlock.asHeader());
+    // verify the merkle proof
+    assertThat(miscHelpersDeneb.verifyBlobSidecarMerkleProof(blobSidecar)).isTrue();
+  }
+
+  @Test
+  void shouldThrowWhenConstructingBlobSidecarWithInvalidIndex() {
+    final SignedBeaconBlock signedBeaconBlock =
+        dataStructureUtil.randomSignedBeaconBlockWithCommitments(1);
+    final Blob blob = dataStructureUtil.randomBlob();
+    final SszKZGProof proof = dataStructureUtil.randomSszKZGProof();
+
+    assertThatThrownBy(
+            () ->
+                miscHelpersDeneb.constructBlobSidecar(
+                    signedBeaconBlock, UInt64.valueOf(1), blob, proof))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessage(
+            "Can't create blob sidecar with index 1 because there are 1 commitment(s) in block");
+  }
+
+  @Test
   void verifyBlobSidecarMerkleProofShouldValidate() {
     final int numberOfCommitments = 4;
     final BeaconBlockBodyDeneb beaconBlockBody =
@@ -207,9 +247,7 @@ class MiscHelpersDenebTest {
     for (int i = 0; i < numberOfCommitments; ++i) {
       final UInt64 blobSidecarIndex = UInt64.valueOf(i);
       final List<Bytes32> merkleProof =
-          MerkleUtil.constructMerkleProof(
-              beaconBlockBody.getBackingNode(),
-              miscHelpersDeneb.getBlobSidecarKzgCommitmentGeneralizedIndex(blobSidecarIndex));
+          miscHelpersDeneb.computeKzgCommitmentInclusionProof(blobSidecarIndex, beaconBlockBody);
       assertThat(merkleProof.size())
           .isEqualTo(
               SpecConfigDeneb.required(spec.getGenesisSpecConfig())
@@ -238,9 +276,7 @@ class MiscHelpersDenebTest {
 
         final UInt64 wrongIndex = UInt64.valueOf(j);
         final List<Bytes32> merkleProofWrong =
-            MerkleUtil.constructMerkleProof(
-                beaconBlockBody.getBackingNode(),
-                miscHelpersDeneb.getBlobSidecarKzgCommitmentGeneralizedIndex(wrongIndex));
+            miscHelpersDeneb.computeKzgCommitmentInclusionProof(wrongIndex, beaconBlockBody);
         assertThat(merkleProofWrong.size())
             .isEqualTo(
                 SpecConfigDeneb.required(spec.getGenesisSpecConfig())

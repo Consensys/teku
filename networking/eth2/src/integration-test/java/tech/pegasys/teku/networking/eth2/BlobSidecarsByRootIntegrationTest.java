@@ -30,8 +30,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchemaOld;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class BlobSidecarsByRootIntegrationTest extends AbstractRpcMethodIntegrationTest {
 
@@ -94,20 +97,30 @@ public class BlobSidecarsByRootIntegrationTest extends AbstractRpcMethodIntegrat
   private List<BlobSidecarOld> requestBlobSidecarsByRoot(
       final Eth2Peer peer, final List<BlobIdentifier> blobIdentifiers)
       throws InterruptedException, ExecutionException, TimeoutException {
-    final List<BlobSidecarOld> blobSidecars = new ArrayList<>();
+    final List<BlobSidecar> blobSidecars = new ArrayList<>();
     waitFor(
         peer.requestBlobSidecarsByRoot(
             blobIdentifiers, RpcResponseListener.from(blobSidecars::add)));
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
-    return blobSidecars;
+    // TODO: remove repack
+    final BlobSidecarSchemaOld blobSidecarSchema =
+        SchemaDefinitionsDeneb.required(
+                TestSpecFactory.createMinimalDeneb().getGenesisSchemaDefinitions())
+            .getBlobSidecarOldSchema();
+    return blobSidecars.stream().map(blobSidecarSchema::create).toList();
   }
 
   private Optional<BlobSidecarOld> requestBlobSidecarByRoot(
       final Eth2Peer peer, final BlobIdentifier blobIdentifier)
       throws ExecutionException, InterruptedException, TimeoutException {
-    final Optional<BlobSidecarOld> blobSidecar =
+    final Optional<BlobSidecar> blobSidecar =
         waitFor(peer.requestBlobSidecarByRoot(blobIdentifier));
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
-    return blobSidecar;
+    // TODO: remove repack
+    final BlobSidecarSchemaOld blobSidecarSchema =
+        SchemaDefinitionsDeneb.required(
+                TestSpecFactory.createMinimalDeneb().getGenesisSchemaDefinitions())
+            .getBlobSidecarOldSchema();
+    return blobSidecar.map(blobSidecarSchema::create);
   }
 }

@@ -11,11 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.beacon.sync.gossip.blobs;
+package tech.pegasys.teku.reference.deneb.merkle_proof;
 
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import com.google.common.collect.ImmutableMap;
+import tech.pegasys.teku.reference.TestExecutor;
 
-public interface BlobSidecarSubscriber {
-
-  void onBlobSidecar(BlobSidecar blobSidecar);
+public class MerkleProofTests {
+  public static final ImmutableMap<String, TestExecutor> MERKLE_PROOF_TEST_TYPES =
+      ImmutableMap.<String, TestExecutor>builder()
+          .put("merkle_proof/single_merkle_proof", new SingleMerkleProofTestExecutor())
+          .build();
 }

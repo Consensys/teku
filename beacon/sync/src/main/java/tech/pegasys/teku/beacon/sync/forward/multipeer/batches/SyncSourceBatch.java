@@ -40,7 +40,7 @@ import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeResponseInvalidResponseException;
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
@@ -65,7 +65,7 @@ public class SyncSourceBatch implements Batch {
   private boolean awaitingBlocks = false;
 
   private final List<SignedBeaconBlock> blocks = new ArrayList<>();
-  private final Map<Bytes32, List<BlobSidecarOld>> blobSidecarsByBlockRoot = new HashMap<>();
+  private final Map<Bytes32, List<BlobSidecar>> blobSidecarsByBlockRoot = new HashMap<>();
 
   SyncSourceBatch(
       final EventThread eventThread,
@@ -117,7 +117,7 @@ public class SyncSourceBatch implements Batch {
   }
 
   @Override
-  public Map<Bytes32, List<BlobSidecarOld>> getBlobSidecarsByBlockRoot() {
+  public Map<Bytes32, List<BlobSidecar>> getBlobSidecarsByBlockRoot() {
     return blobSidecarsByBlockRoot;
   }
 
@@ -318,7 +318,7 @@ public class SyncSourceBatch implements Batch {
     blocks.addAll(newBlocks);
 
     if (maybeBlobSidecarRequestHandler.isPresent()) {
-      final Map<Bytes32, List<BlobSidecarOld>> newBlobSidecarsByBlockRoot =
+      final Map<Bytes32, List<BlobSidecar>> newBlobSidecarsByBlockRoot =
           maybeBlobSidecarRequestHandler.get().complete();
       if (!validateNewBlobSidecars(newBlocks, newBlobSidecarsByBlockRoot)) {
         markAsInvalid();
@@ -373,11 +373,11 @@ public class SyncSourceBatch implements Batch {
 
   private boolean validateNewBlobSidecars(
       final List<SignedBeaconBlock> newBlocks,
-      final Map<Bytes32, List<BlobSidecarOld>> newBlobSidecarsByBlockRoot) {
+      final Map<Bytes32, List<BlobSidecar>> newBlobSidecarsByBlockRoot) {
     final Set<Bytes32> blockRootsWithKzgCommitments = new HashSet<>(newBlocks.size());
     for (final SignedBeaconBlock block : newBlocks) {
       final Bytes32 blockRoot = block.getRoot();
-      final List<BlobSidecarOld> blobSidecars =
+      final List<BlobSidecar> blobSidecars =
           newBlobSidecarsByBlockRoot.getOrDefault(blockRoot, List.of());
       final int numberOfKzgCommitments =
           block
@@ -399,7 +399,7 @@ public class SyncSourceBatch implements Batch {
         return false;
       }
       final UInt64 blockSlot = block.getSlot();
-      for (final BlobSidecarOld blobSidecar : blobSidecars) {
+      for (final BlobSidecar blobSidecar : blobSidecars) {
         if (!blobSidecar.getSlot().equals(blockSlot)) {
           LOG.debug(
               "Marking batch invalid because blob sidecar for root {} was received with slot {} which is different than the block slot {}",
@@ -446,19 +446,19 @@ public class SyncSourceBatch implements Batch {
     }
   }
 
-  private static class BlobSidecarRequestHandler implements RpcResponseListener<BlobSidecarOld> {
-    private final Map<Bytes32, List<BlobSidecarOld>> blobSidecarsByBlockRoot = new HashMap<>();
+  private static class BlobSidecarRequestHandler implements RpcResponseListener<BlobSidecar> {
+    private final Map<Bytes32, List<BlobSidecar>> blobSidecarsByBlockRoot = new HashMap<>();
 
     @Override
-    public SafeFuture<?> onResponse(final BlobSidecarOld blobSidecar) {
-      final List<BlobSidecarOld> blobSidecars =
+    public SafeFuture<?> onResponse(final BlobSidecar blobSidecar) {
+      final List<BlobSidecar> blobSidecars =
           blobSidecarsByBlockRoot.computeIfAbsent(
               blobSidecar.getBlockRoot(), __ -> new ArrayList<>());
       blobSidecars.add(blobSidecar);
       return SafeFuture.COMPLETE;
     }
 
-    public Map<Bytes32, List<BlobSidecarOld>> complete() {
+    public Map<Bytes32, List<BlobSidecar>> complete() {
       return blobSidecarsByBlockRoot;
     }
   }
