@@ -151,7 +151,8 @@ public class WeakSubjectivityInitializer {
             initialAnchor.getBlockSummary(),
             initialAnchor.getState());
     if (!weakSubjectivityCalculator.isWithinWeakSubjectivityPeriod(checkpointState, currentSlot)) {
-      throw new IllegalStateException("Cannot sync outside of weak subjectivity period.");
+      throw new IllegalStateException(
+          "Cannot sync outside of weak subjectivity period. Consider re-syncing your node using --checkpoint-sync-url or use --ignore-weak-subjectivity-period-enabled to ignore this check.");
     }
     ;
   }

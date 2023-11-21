@@ -274,7 +274,7 @@ public class WeakSubjectivityInitializerTest {
                 initializer.validateInitialAnchor(
                     anchor, currentSlot, spec, Optional.of(wsCalculator)))
         .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("Cannot sync outside of weak subjectivity period.");
+        .hasMessageContaining("Cannot sync outside of weak subjectivity period");
   }
 
   @Test

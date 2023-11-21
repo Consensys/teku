@@ -409,6 +409,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     spec))
         .thenCompose(
             client -> {
+              if (isAllowSyncOutsideWeakSubjectivityPeriod()) {
+                LOG.info(
+                    "Ignoring weak subjectivity period check (--ignore-weak-subjectivity-period-enabled). Syncing "
+                        + "from outside of the weak subjectivity period is considered UNSAFE.");
+              }
+
               // Setup chain storage
               this.recentChainData = client;
               if (recentChainData.isPreGenesis()) {
