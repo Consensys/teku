@@ -345,7 +345,6 @@ public class BlockOperationSelectorFactory {
     return blockContainer -> {
       final UInt64 slot = blockContainer.getSlot();
       final SignedBeaconBlock block = blockContainer.getSignedBlock();
-      final Bytes32 blockRoot = block.getRoot();
 
       final MiscHelpersDeneb miscHelpersDeneb =
           MiscHelpersDeneb.required(spec.atSlot(slot).miscHelpers());
@@ -384,7 +383,7 @@ public class BlockOperationSelectorFactory {
         throw new IllegalStateException(
             String.format(
                 "The constructed blob sidecars for block %s and slot %s didn't pass the KZG verification checks",
-                blockRoot, slot));
+                block.getRoot(), slot));
       }
 
       return blobSidecars;
