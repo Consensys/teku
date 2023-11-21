@@ -2226,10 +2226,6 @@ public final class DataStructureUtil {
     return new RandomBlobSidecarOldBuilder().build();
   }
 
-  public BlobSidecar randomBlobSidecar(final long index) {
-    return new RandomBlobSidecarBuilder().index(UInt64.valueOf(index)).build();
-  }
-
   public BlobSidecar randomBlobSidecarForBlock(
       final SignedBeaconBlock signedBeaconBlock, final long index) {
     return new RandomBlobSidecarBuilder()
@@ -2287,15 +2283,20 @@ public final class DataStructureUtil {
 
   public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle(
       final int count) {
+    return randomBuilderBlobsBundle(randomBlobKzgCommitments(count));
+  }
+
+  public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle(
+      final SszList<SszKZGCommitment> commitments) {
     final UInt64 slot = randomSlot();
     final SchemaDefinitionsDeneb schemaDefinitions = getDenebSchemaDefinitions(slot);
     final BlobsBundleSchema schema = schemaDefinitions.getBlobsBundleSchema();
 
     return new tech.pegasys.teku.spec.datastructures.builder.BlobsBundle(
         schema,
-        randomSszList(schema.getCommitmentsSchema(), this::randomSszKZGCommitment, count),
-        randomSszList(schema.getProofsSchema(), this::randomSszKZGProof, count),
-        randomSszList(schema.getBlobsSchema(), this::randomBlob, count));
+        commitments,
+        randomSszList(schema.getProofsSchema(), this::randomSszKZGProof, commitments.size()),
+        randomSszList(schema.getBlobsSchema(), this::randomBlob, commitments.size()));
   }
 
   public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle() {

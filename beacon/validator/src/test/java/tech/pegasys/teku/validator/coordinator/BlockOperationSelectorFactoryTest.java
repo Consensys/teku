@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -547,18 +548,36 @@ class BlockOperationSelectorFactoryTest {
   }
 
   @Test
-  void shouldCreateBlobSidecarsForBlindedBlock() {
+  void shouldFailCreatingBlobSidecarsIfBuilderBlobsBundleIsNotConsistent() {
+    final SszList<SszKZGCommitment> commitments = dataStructureUtil.randomBlobKzgCommitments(3);
     final SignedBeaconBlock signedBlindedBeaconBlock =
-        dataStructureUtil.randomSignedBlindedBeaconBlock();
+        dataStructureUtil.randomSignedBlindedBeaconBlockWithCommitments(commitments);
+
+    final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
+        dataStructureUtil.randomBuilderBlobsBundle(3);
+
+    prepareCachedBuilderPayload(
+        signedBlindedBeaconBlock.getSlot(),
+        dataStructureUtil.randomExecutionPayload(),
+        Optional.of(blobsBundle));
+
+    assertThatThrownBy(() -> factory.createBlobSidecarsSelector().apply(signedBlindedBeaconBlock))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage(
+            "Commitments in the builder BlobsBundle don't match the commitments in the block");
+  }
+
+  @Test
+  void shouldCreateBlobSidecarsForBlindedBlock() {
+    final SszList<SszKZGCommitment> commitments = dataStructureUtil.randomBlobKzgCommitments(3);
+    final SignedBeaconBlock signedBlindedBeaconBlock =
+        dataStructureUtil.randomSignedBlindedBeaconBlockWithCommitments(commitments);
 
     final MiscHelpersDeneb miscHelpersDeneb =
         MiscHelpersDeneb.required(spec.atSlot(signedBlindedBeaconBlock.getSlot()).miscHelpers());
 
-    final int commitmentsCount =
-        miscHelpersDeneb.getBlobKzgCommitmentsCount(signedBlindedBeaconBlock);
-
     final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
-        dataStructureUtil.randomBuilderBlobsBundle(commitmentsCount);
+        dataStructureUtil.randomBuilderBlobsBundle(commitments);
 
     prepareCachedBuilderPayload(
         signedBlindedBeaconBlock.getSlot(),

@@ -34,7 +34,6 @@ import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -72,23 +71,6 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
     this.beaconBlockBodySchema =
         (BeaconBlockBodySchemaDeneb<?>) schemaDefinitions.getBeaconBlockBodySchema();
     this.blobSidecarSchema = schemaDefinitions.getBlobSidecarSchema();
-  }
-
-  /**
-   * Performs <a
-   * href="https://github.com/ethereum/consensus-specs/blob/dev/specs/deneb/polynomial-commitments.md#verify_blob_kzg_proof">verify_blob_kzg_proof</a>
-   * on the given blob sidecar
-   *
-   * @param kzg the kzg implementation which will be used for verification
-   * @param blobSidecar blob sidecar to verify
-   * @return true if blob sidecar is valid
-   */
-  @Override
-  public boolean verifyBlobKzgProof(final KZG kzg, final BlobSidecarOld blobSidecar) {
-    return kzg.verifyBlobKzgProof(
-        blobSidecar.getBlob().getBytes(),
-        blobSidecar.getKZGCommitment(),
-        blobSidecar.getKZGProof());
   }
 
   /**
