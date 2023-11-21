@@ -57,13 +57,13 @@ class PostStateValidatorBalancesTest
             .build();
     request.setRequestBody(List.of("1", "2"));
 
-    final Optional<ObjectAndMetaData<List<StateValidatorBalanceData>>> stateValidatorBalancesData =
+    final Optional<ObjectAndMetaData<List<StateValidatorBalanceData>>> expectedData =
         chainDataProvider.getStateValidatorBalances("head", List.of("1", "2")).get();
 
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseBody()).isEqualTo(stateValidatorBalancesData.orElseThrow());
+    assertThat(request.getResponseBody()).isEqualTo(expectedData.orElseThrow());
   }
 
   @Test
@@ -74,13 +74,13 @@ class PostStateValidatorBalancesTest
             .pathParameter("state_id", "head")
             .build();
 
-    final Optional<ObjectAndMetaData<List<StateValidatorBalanceData>>> stateValidatorBalancesData =
+    final Optional<ObjectAndMetaData<List<StateValidatorBalanceData>>> expectedData =
         chainDataProvider.getStateValidatorBalances("head", List.of()).get();
 
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseBody()).isEqualTo(stateValidatorBalancesData.orElseThrow());
+    assertThat(request.getResponseBody()).isEqualTo(expectedData.orElseThrow());
   }
 
   @Test
