@@ -66,7 +66,7 @@ class PostStateValidatorBalancesTest
   }
 
   @Test
-  public void shouldGetAllValidatorBalancesFromState() throws Exception {
+  public void shouldGetAllValidatorBalancesFromStateWithNoRequestBody() throws Exception {
     StubRestApiRequest request =
         StubRestApiRequest.builder()
             .metadata(handler.getMetadata())
