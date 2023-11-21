@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.ConfigProvider;
@@ -210,13 +209,12 @@ public class EventSubscriptionManagerTest {
   }
 
   @Test
-  @Disabled("TODO for new BlobSidecar")
   void shouldPropagateBlobSidecar() throws IOException {
     when(req.getQueryString()).thenReturn("&topics=blob_sidecar");
     manager.registerClient(client1);
 
     triggerBlobSidecarEvent();
-    checkEvent("blob_sidecar", BlobSidecarEvent.create(spec, data.randomBlobSidecar()));
+    checkEvent("blob_sidecar", BlobSidecarEvent.create(spec, sampleBlobSidecar));
   }
 
   @Test
