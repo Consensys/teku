@@ -34,7 +34,7 @@ public class BlockTimelinessTracker {
   private final RecentChainData recentChainData;
 
   // implements is_timely from Consensus Spec
-  BlockTimelinessTracker(
+  public BlockTimelinessTracker(
       final Spec spec, final RecentChainData recentChainData, final TimeProvider timeProvider) {
     this.spec = spec;
     final int epochsForTimeliness =
