@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 import okhttp3.Response;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetAllBlobSidecarsAtSlot;
@@ -41,13 +40,11 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchemaOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
-@Disabled("Fix for new BlobSidecars")
 public class GetAllBlobSidecarsAtSlotIntegrationTest
     extends AbstractDataBackedRestAPIIntegrationTest {
 
@@ -86,15 +83,14 @@ public class GetAllBlobSidecarsAtSlotIntegrationTest
 
     assertThat(nonCanonicalBlobSidecarResponse.code()).isEqualTo(SC_OK);
 
-    final List<BlobSidecarOld> nonCanonicalResult =
-        parseBlobSidecars(nonCanonicalBlobSidecarResponse);
+    final List<BlobSidecar> nonCanonicalResult = parseBlobSidecars(nonCanonicalBlobSidecarResponse);
     assertThat(nonCanonicalResult).isEqualTo(nonCanonicalBlobSidecars);
 
     final Response canonicalBlobSidecarResponse = get(canonicalBlock.getSlot());
 
     assertThat(canonicalBlobSidecarResponse.code()).isEqualTo(SC_OK);
 
-    final List<BlobSidecarOld> canonicalResult = parseBlobSidecars(canonicalBlobSidecarResponse);
+    final List<BlobSidecar> canonicalResult = parseBlobSidecars(canonicalBlobSidecarResponse);
     assertThat(canonicalResult).isEqualTo(canonicalBlobSidecars);
   }
 
@@ -128,7 +124,7 @@ public class GetAllBlobSidecarsAtSlotIntegrationTest
             OCTET_STREAM);
     assertThat(nonCanonicalBlobSidecarResponse.code()).isEqualTo(SC_OK);
 
-    final List<BlobSidecarOld> nonCanonicalResult =
+    final List<BlobSidecar> nonCanonicalResult =
         parseBlobSidecarsFromSsz(nonCanonicalBlobSidecarResponse);
     assertThat(nonCanonicalResult).isEqualTo(nonCanonicalBlobSidecars);
 
@@ -136,7 +132,7 @@ public class GetAllBlobSidecarsAtSlotIntegrationTest
 
     assertThat(canonicalBlobSidecarResponse.code()).isEqualTo(SC_OK);
 
-    final List<BlobSidecarOld> canonicalResult = parseBlobSidecars(canonicalBlobSidecarResponse);
+    final List<BlobSidecar> canonicalResult = parseBlobSidecars(canonicalBlobSidecarResponse);
     assertThat(canonicalResult).isEqualTo(canonicalBlobSidecars);
   }
 
@@ -168,30 +164,22 @@ public class GetAllBlobSidecarsAtSlotIntegrationTest
     return getResponse(GetAllBlobSidecarsAtSlot.ROUTE.replace("{slot}", slot.toString()));
   }
 
-  private List<BlobSidecarOld> parseBlobSidecars(final Response response) throws IOException {
-    final DeserializableTypeDefinition<BlobSidecarOld> blobSidecarTypeDefinition =
+  private List<BlobSidecar> parseBlobSidecars(final Response response) throws IOException {
+    final DeserializableTypeDefinition<BlobSidecar> blobSidecarTypeDefinition =
         SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions())
-            .getBlobSidecarOldSchema()
+            .getBlobSidecarSchema()
             .getJsonTypeDefinition();
-    final DeserializableTypeDefinition<List<BlobSidecarOld>> jsonTypeDefinition =
+    final DeserializableTypeDefinition<List<BlobSidecar>> jsonTypeDefinition =
         SharedApiTypes.withDataWrapper("blobSidecars", listOf(blobSidecarTypeDefinition));
-
-    final List<BlobSidecarOld> result =
-        JsonUtil.parse(response.body().string(), jsonTypeDefinition);
-    return result;
+    return JsonUtil.parse(response.body().string(), jsonTypeDefinition);
   }
 
-  private List<BlobSidecarOld> parseBlobSidecarsFromSsz(final Response response)
-      throws IOException {
-    final BlobSidecarSchemaOld blobSidecarSchema =
-        SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions())
-            .getBlobSidecarOldSchema();
-    SszListSchema<BlobSidecarOld, ? extends SszList<BlobSidecarOld>> blobSidecarSszListSchema =
+  private List<BlobSidecar> parseBlobSidecarsFromSsz(final Response response) throws IOException {
+    final BlobSidecarSchema blobSidecarSchema =
+        SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions()).getBlobSidecarSchema();
+    SszListSchema<BlobSidecar, ? extends SszList<BlobSidecar>> blobSidecarSszListSchema =
         SszListSchema.create(
             blobSidecarSchema, SpecConfigDeneb.required(specConfig).getMaxBlobsPerBlock());
-    final List<BlobSidecarOld> result =
-        blobSidecarSszListSchema.sszDeserialize(Bytes.of(response.body().bytes())).asList();
-
-    return result;
+    return blobSidecarSszListSchema.sszDeserialize(Bytes.of(response.body().bytes())).asList();
   }
 }

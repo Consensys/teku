@@ -28,17 +28,13 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 class GetBlobSidecarsTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
 
@@ -51,28 +47,16 @@ class GetBlobSidecarsTest extends AbstractMigratedBeaconHandlerWithChainDataProv
     request.setPathParameter("block_id", "head");
   }
 
-  @Deprecated
-  private final Supplier<Function<BlobSidecar, BlobSidecarOld>> blobSidecarRepacker =
-      () ->
-          blobSidecar ->
-              SchemaDefinitionsDeneb.required(
-                      spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
-                  .getBlobSidecarOldSchema()
-                  .create(blobSidecar);
-
   @Test
   void shouldReturnBlobSidecars()
       throws JsonProcessingException, ExecutionException, InterruptedException {
     final ObjectAndMetaData<SignedBeaconBlock> blockAndMetaData =
         chainDataProvider.getBlock("head").get().orElseThrow();
-    final List<BlobSidecarOld> blobSidecars =
+    final List<BlobSidecar> blobSidecars =
         combinedChainDataClient
             .getBlobSidecars(
                 blockAndMetaData.getData().getSlotAndBlockRoot(), Collections.emptyList())
-            .get()
-            .stream()
-            .map(blobSidecar -> blobSidecarRepacker.get().apply(blobSidecar))
-            .toList();
+            .get();
 
     handler.handleRequest(request);
 
@@ -97,7 +81,7 @@ class GetBlobSidecarsTest extends AbstractMigratedBeaconHandlerWithChainDataProv
 
   @Test
   void metadata_shouldHandle200() throws IOException {
-    final List<BlobSidecarOld> blobSidecars = dataStructureUtil.randomBlobSidecarsOld(3);
+    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecars(3);
 
     final String data = getResponseStringFromMetadata(handler, SC_OK, blobSidecars);
     final String expected =
