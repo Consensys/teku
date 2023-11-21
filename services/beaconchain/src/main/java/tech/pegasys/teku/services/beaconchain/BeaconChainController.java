@@ -413,13 +413,16 @@ public class BeaconChainController extends Service implements BeaconChainControl
               this.recentChainData = client;
               if (recentChainData.isPreGenesis()) {
                 setupInitialState(client);
-              } else if (beaconConfig
-                  .eth2NetworkConfig()
-                  .getNetworkBoostrapConfig()
-                  .isUsingCustomInitialState()) {
-                STATUS_LOG.warnInitialStateIgnored();
+                return SafeFuture.completedFuture(client);
+              } else {
+                if (isUsingCustomInitialState()) {
+                  STATUS_LOG.warnInitialStateIgnored();
+                }
+                if (!isAllowSyncOutsideWeakSubjectivityPeriod()) {
+                  validateWeakSubjectivityPeriod(client);
+                }
+                return SafeFuture.completedFuture(client);
               }
-              return SafeFuture.completedFuture(client);
             })
         // Init other services
         .thenRun(this::initAll)
@@ -429,6 +432,26 @@ public class BeaconChainController extends Service implements BeaconChainControl
               recentChainData.subscribeBestBlockInitialized(this::startServices);
             })
         .thenCompose(__ -> timerService.start());
+  }
+
+  private boolean isUsingCustomInitialState() {
+    return beaconConfig.eth2NetworkConfig().getNetworkBoostrapConfig().isUsingCustomInitialState();
+  }
+
+  private boolean isAllowSyncOutsideWeakSubjectivityPeriod() {
+    return beaconConfig
+        .eth2NetworkConfig()
+        .getNetworkBoostrapConfig()
+        .isAllowSyncOutsideWeakSubjectivityPeriod();
+  }
+
+  private void validateWeakSubjectivityPeriod(final RecentChainData client) {
+    final AnchorPoint latestFinalizedAnchor = client.getStore().getLatestFinalized();
+    final UInt64 currentSlot = getCurrentSlot(client.getGenesisTime());
+    final WeakSubjectivityCalculator wsCalculator =
+        WeakSubjectivityCalculator.create(beaconConfig.weakSubjectivity());
+    wsInitializer.validateAnchorIsWithinWeakSubjectivityPeriod(
+        latestFinalizedAnchor, currentSlot, spec, wsCalculator);
   }
 
   public void initAll() {
@@ -1281,10 +1304,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
      WeakSubjectivityPeriodCalculator to the WeakSubjectivityInitializer. Otherwise, we pass an Optional.empty().
     */
     final Optional<WeakSubjectivityCalculator> maybeWsCalculator;
-    if (beaconConfig
-        .eth2NetworkConfig()
-        .getNetworkBoostrapConfig()
-        .isAllowSyncOutsideWeakSubjectivityPeriod()) {
+    if (isAllowSyncOutsideWeakSubjectivityPeriod()) {
       maybeWsCalculator = Optional.empty();
     } else {
       maybeWsCalculator =

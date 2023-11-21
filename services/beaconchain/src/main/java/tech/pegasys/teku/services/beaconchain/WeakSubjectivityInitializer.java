@@ -139,6 +139,23 @@ public class WeakSubjectivityInitializer {
             });
   }
 
+  public void validateAnchorIsWithinWeakSubjectivityPeriod(
+      final AnchorPoint initialAnchor,
+      final UInt64 currentSlot,
+      final Spec spec,
+      final WeakSubjectivityCalculator weakSubjectivityCalculator) {
+    final CheckpointState checkpointState =
+        CheckpointState.create(
+            spec,
+            initialAnchor.getCheckpoint(),
+            initialAnchor.getBlockSummary(),
+            initialAnchor.getState());
+    if (!weakSubjectivityCalculator.isWithinWeakSubjectivityPeriod(checkpointState, currentSlot)) {
+      throw new IllegalStateException("Cannot sync outside of weak subjectivity period.");
+    }
+    ;
+  }
+
   public void validateInitialAnchor(
       final AnchorPoint initialAnchor,
       final UInt64 currentSlot,
@@ -154,18 +171,9 @@ public class WeakSubjectivityInitializer {
     }
 
     maybeWsCalculator.ifPresent(
-        weakSubjectivityCalculator -> {
-          final CheckpointState checkpointState =
-              CheckpointState.create(
-                  spec,
-                  initialAnchor.getCheckpoint(),
-                  initialAnchor.getBlockSummary(),
-                  initialAnchor.getState());
-          if (!weakSubjectivityCalculator.isWithinWeakSubjectivityPeriod(
-              checkpointState, currentSlot)) {
-            throw new IllegalStateException("Cannot sync outside of weak subjectivity period.");
-          }
-        });
+        wsCalculator ->
+            validateAnchorIsWithinWeakSubjectivityPeriod(
+                initialAnchor, currentSlot, spec, wsCalculator));
 
     if (initialAnchor.isGenesis()) {
       // Skip extra validations for genesis state
