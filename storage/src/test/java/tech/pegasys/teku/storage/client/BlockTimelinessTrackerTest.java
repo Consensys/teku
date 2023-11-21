@@ -55,7 +55,7 @@ class BlockTimelinessTrackerTest {
   }
 
   @Test
-  public void blockTimeliness_shouldReportTimelinessIfSet() {
+  void blockTimeliness_shouldReportTimelinessIfSet() {
     final UInt64 computedTime = computeTime(slot, 500);
 
     tracker.setBlockTimelinessFromArrivalTime(signedBlockAndState.getBlock(), computedTime);
@@ -63,7 +63,7 @@ class BlockTimelinessTrackerTest {
   }
 
   @Test
-  public void blockTimeliness_shouldReportFalseIfLate() {
+  void blockTimeliness_shouldReportFalseIfLate() {
     final UInt64 computedTime = computeTime(slot, 2100);
 
     tracker.setBlockTimelinessFromArrivalTime(signedBlockAndState.getBlock(), computedTime);
@@ -71,7 +71,7 @@ class BlockTimelinessTrackerTest {
   }
 
   @Test
-  public void blockTimeliness_shouldReportFalseIfAtLimit() {
+  void blockTimeliness_shouldReportFalseIfAtLimit() {
     final UInt64 computedTime = computeTime(slot, 2000);
 
     tracker.setBlockTimelinessFromArrivalTime(signedBlockAndState.getBlock(), computedTime);
@@ -79,7 +79,7 @@ class BlockTimelinessTrackerTest {
   }
 
   @Test
-  public void blockTimeliness_ifBlockFromFuture() {
+  void blockTimeliness_ifBlockFromFuture() {
     final UInt64 computedTime = computeTime(slot, 2100);
 
     tracker.setBlockTimelinessFromArrivalTime(
@@ -88,7 +88,7 @@ class BlockTimelinessTrackerTest {
   }
 
   @Test
-  public void blockTimeliness_shouldReportEmptyIfNotSet() {
+  void blockTimeliness_shouldReportEmptyIfNotSet() {
     assertThat(tracker.isBlockTimely(blockRoot)).isEmpty();
   }
 
