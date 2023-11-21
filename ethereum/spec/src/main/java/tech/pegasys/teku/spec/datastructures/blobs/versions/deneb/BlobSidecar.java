@@ -122,7 +122,7 @@ public class BlobSidecar
   }
 
   public Bytes32 getBlockRoot() {
-    return getSignedBeaconBlockHeader().getMessage().hashTreeRoot();
+    return getSignedBeaconBlockHeader().getMessage().getRoot();
   }
 
   public SlotAndBlockRoot getSlotAndBlockRoot() {
