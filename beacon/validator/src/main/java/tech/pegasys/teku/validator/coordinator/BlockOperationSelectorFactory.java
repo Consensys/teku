@@ -349,8 +349,6 @@ public class BlockOperationSelectorFactory {
       final MiscHelpersDeneb miscHelpersDeneb =
           MiscHelpersDeneb.required(spec.atSlot(slot).miscHelpers());
 
-      final SszList<SszKZGCommitment> blockCommitments =
-          block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
       final SszList<Blob> blobs;
       final SszList<SszKZGProof> proofs;
 
@@ -362,6 +360,8 @@ public class BlockOperationSelectorFactory {
         blobs = blobsBundle.getBlobs();
         proofs = blobsBundle.getProofs();
         // consistency check because the BlobsBundle comes from an external source (a builder)
+        final SszList<SszKZGCommitment> blockCommitments =
+            block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
         Preconditions.checkState(
             blobsBundle.getCommitments().hashTreeRoot().equals(blockCommitments.hashTreeRoot()),
             "Commitments in the builder BlobsBundle don't match the commitments in the block");
@@ -371,7 +371,7 @@ public class BlockOperationSelectorFactory {
       }
 
       final List<BlobSidecar> blobSidecars =
-          IntStream.range(0, blockCommitments.size())
+          IntStream.range(0, blobs.size())
               .mapToObj(
                   index ->
                       miscHelpersDeneb.constructBlobSidecar(
