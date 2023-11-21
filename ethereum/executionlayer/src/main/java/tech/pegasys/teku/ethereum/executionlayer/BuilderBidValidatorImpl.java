@@ -34,15 +34,17 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.BlockProce
 public class BuilderBidValidatorImpl implements BuilderBidValidator {
 
   private static final Logger LOG = LogManager.getLogger();
+
+  private final Spec spec;
   private final EventLogger eventLogger;
 
-  public BuilderBidValidatorImpl(final EventLogger eventLogger) {
+  public BuilderBidValidatorImpl(final Spec spec, final EventLogger eventLogger) {
+    this.spec = spec;
     this.eventLogger = eventLogger;
   }
 
   @Override
-  public ExecutionPayloadHeader validateAndGetPayloadHeader(
-      final Spec spec,
+  public void validateBuilderBid(
       final SignedBuilderBid signedBuilderBid,
       final SignedValidatorRegistration signedValidatorRegistration,
       final BeaconState state,
@@ -113,28 +115,27 @@ public class BuilderBidValidatorImpl implements BuilderBidValidator {
           validatorRegistration.getPublicKey());
     }
 
-    // checking payload gas limit
+    // checking payload gas limit against the validator gas limit preference (if there is an
+    // inconsistency, there would be a log warning only instead of an exception)
     final UInt64 parentGasLimit =
         state.toVersionBellatrix().orElseThrow().getLatestExecutionPayloadHeader().getGasLimit();
     final UInt64 preferredGasLimit = validatorRegistration.getGasLimit();
     final UInt64 proposedGasLimit = executionPayloadHeader.getGasLimit();
 
     if (parentGasLimit.equals(preferredGasLimit) && proposedGasLimit.equals(parentGasLimit)) {
-      return executionPayloadHeader;
+      return;
     }
 
     if (preferredGasLimit.isGreaterThan(parentGasLimit)
         && proposedGasLimit.isGreaterThan(parentGasLimit)) {
-      return executionPayloadHeader;
+      return;
     }
 
     if (preferredGasLimit.isLessThan(parentGasLimit)
         && proposedGasLimit.isLessThan(parentGasLimit)) {
-      return executionPayloadHeader;
+      return;
     }
 
     eventLogger.builderBidNotHonouringGasLimit(parentGasLimit, proposedGasLimit, preferredGasLimit);
-
-    return executionPayloadHeader;
   }
 }

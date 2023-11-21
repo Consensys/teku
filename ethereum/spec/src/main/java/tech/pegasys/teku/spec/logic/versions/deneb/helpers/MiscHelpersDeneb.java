@@ -18,23 +18,30 @@ import static tech.pegasys.teku.spec.config.SpecConfigDeneb.VERSIONED_HASH_VERSI
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
+import tech.pegasys.teku.infrastructure.ssz.tree.MerkleUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.versions.capella.helpers.MiscHelpersCapella;
@@ -44,6 +51,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 public class MiscHelpersDeneb extends MiscHelpersCapella {
   private final Predicates predicates;
   private final BeaconBlockBodySchemaDeneb<?> beaconBlockBodySchema;
+  private final BlobSidecarSchema blobSidecarSchema;
 
   public static MiscHelpersDeneb required(final MiscHelpers miscHelpers) {
     return miscHelpers
@@ -63,6 +71,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
     this.predicates = predicates;
     this.beaconBlockBodySchema =
         (BeaconBlockBodySchemaDeneb<?>) schemaDefinitions.getBeaconBlockBodySchema();
+    this.blobSidecarSchema = schemaDefinitions.getBlobSidecarSchema();
   }
 
   /**
@@ -224,8 +233,7 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
     return signedBeaconBlock
         .getMessage()
         .getBody()
-        .toVersionDeneb()
-        .map(BeaconBlockBodyDeneb::getBlobKzgCommitments)
+        .getOptionalBlobKzgCommitments()
         .map(SszList::size)
         .orElse(0);
   }
@@ -239,6 +247,36 @@ public class MiscHelpersDeneb extends MiscHelpersCapella {
             .getChildGeneralizedIndex(blobSidecarIndex.longValue());
     return (int)
         GIndexUtil.gIdxCompose(blobKzgCommitmentsGeneralizedIndex, commitmentGeneralizedIndex);
+  }
+
+  public List<Bytes32> computeKzgCommitmentInclusionProof(
+      final UInt64 blobSidecarIndex, final BeaconBlockBody beaconBlockBody) {
+    return MerkleUtil.constructMerkleProof(
+        beaconBlockBody.getBackingNode(),
+        getBlobSidecarKzgCommitmentGeneralizedIndex(blobSidecarIndex));
+  }
+
+  public BlobSidecar constructBlobSidecar(
+      final SignedBeaconBlock signedBeaconBlock,
+      final UInt64 index,
+      final Blob blob,
+      final SszKZGProof proof) {
+    final BeaconBlockBody beaconBlockBody = signedBeaconBlock.getMessage().getBody();
+    final SszKZGCommitment commitment;
+    try {
+      commitment =
+          beaconBlockBody.getOptionalBlobKzgCommitments().orElseThrow().get(index.intValue());
+    } catch (final IndexOutOfBoundsException | NoSuchElementException ex) {
+      final int commitmentsCount = getBlobKzgCommitmentsCount(signedBeaconBlock);
+      throw new IllegalArgumentException(
+          String.format(
+              "Can't create blob sidecar with index %s because there are %d commitment(s) in block",
+              index, commitmentsCount));
+    }
+    final List<Bytes32> kzgCommitmentInclusionProof =
+        computeKzgCommitmentInclusionProof(index, beaconBlockBody);
+    return blobSidecarSchema.create(
+        index, blob, commitment, proof, signedBeaconBlock.asHeader(), kzgCommitmentInclusionProof);
   }
 
   public boolean verifyBlobSidecarMerkleProof(final BlobSidecar blobSidecar) {

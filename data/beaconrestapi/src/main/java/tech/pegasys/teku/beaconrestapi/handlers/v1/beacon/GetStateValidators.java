@@ -17,6 +17,7 @@ import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ID_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.STATUS_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidator.STATE_VALIDATOR_DATA_TYPE;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter.getApplicableValidatorStatuses;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
@@ -25,11 +26,9 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE
 import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.migrated.StateValidatorData;
@@ -45,7 +44,7 @@ import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 public class GetStateValidators extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/validators";
 
-  private static final SerializableTypeDefinition<ObjectAndMetaData<List<StateValidatorData>>>
+  static final SerializableTypeDefinition<ObjectAndMetaData<List<StateValidatorData>>>
       RESPONSE_TYPE =
           SerializableTypeDefinition.<ObjectAndMetaData<List<StateValidatorData>>>object()
               .name("GetStateValidatorsResponse")
@@ -95,33 +94,5 @@ public class GetStateValidators extends RestApiEndpoint {
                 maybeData
                     .map(AsyncApiResponse::respondOk)
                     .orElseGet(AsyncApiResponse::respondNotFound)));
-  }
-
-  private Set<ValidatorStatus> getApplicableValidatorStatuses(
-      final List<StatusParameter> statusParameters) {
-    return statusParameters.stream()
-        .flatMap(
-            statusParameter ->
-                Arrays.stream(ValidatorStatus.values())
-                    .filter(
-                        validatorStatus -> validatorStatus.name().contains(statusParameter.name())))
-        .collect(Collectors.toSet());
-  }
-
-  @SuppressWarnings("JavaCase")
-  public enum StatusParameter {
-    pending_initialized,
-    pending_queued,
-    active_ongoing,
-    active_exiting,
-    active_slashed,
-    exited_unslashed,
-    exited_slashed,
-    withdrawal_possible,
-    withdrawal_done,
-    active,
-    pending,
-    exited,
-    withdrawal;
   }
 }

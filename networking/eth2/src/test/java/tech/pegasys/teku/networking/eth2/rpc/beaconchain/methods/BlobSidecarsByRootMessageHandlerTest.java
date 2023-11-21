@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -28,7 +29,6 @@ import static tech.pegasys.teku.networking.eth2.rpc.core.RpcResponseStatus.INVAL
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,7 +48,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
@@ -78,14 +79,14 @@ public class BlobSidecarsByRootMessageHandlerTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
-  private final ArgumentCaptor<BlobSidecarOld> blobSidecarCaptor =
-      ArgumentCaptor.forClass(BlobSidecarOld.class);
+  private final ArgumentCaptor<BlobSidecar> blobSidecarCaptor =
+      ArgumentCaptor.forClass(BlobSidecar.class);
 
   private final ArgumentCaptor<RpcException> rpcExceptionCaptor =
       ArgumentCaptor.forClass(RpcException.class);
 
   @SuppressWarnings("unchecked")
-  private final ResponseCallback<BlobSidecarOld> callback = mock(ResponseCallback.class);
+  private final ResponseCallback<BlobSidecar> callback = mock(ResponseCallback.class);
 
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
@@ -108,6 +109,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
     when(peer.approveRequest()).thenReturn(true);
     when(peer.approveBlobSidecarsRequest(eq(callback), anyLong()))
         .thenReturn(allowedObjectsRequest);
+    reset(combinedChainDataClient);
     when(combinedChainDataClient.getBlockByBlockRoot(any()))
         .thenReturn(
             SafeFuture.completedFuture(
@@ -116,16 +118,6 @@ public class BlobSidecarsByRootMessageHandlerTest {
     when(combinedChainDataClient.getFinalizedBlock())
         .thenReturn(Optional.of(dataStructureUtil.randomSignedBeaconBlock(denebFirstSlot)));
     when(combinedChainDataClient.getStore()).thenReturn(store);
-    // mock the blob sidecars storage
-    when(combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(any(), any()))
-        .thenAnswer(
-            i -> {
-              final Bytes32 blockRoot = i.getArgument(0);
-              final UInt64 index = i.getArgument(1);
-              return SafeFuture.completedFuture(
-                  Optional.of(
-                      dataStructureUtil.randomBlobSidecarOld(denebFirstSlot, blockRoot, index)));
-            });
     when(callback.respond(any())).thenReturn(SafeFuture.COMPLETE);
 
     // mock store
@@ -192,7 +184,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
 
   @Test
   public void shouldSendAvailableOnlyResources() {
-    final List<BlobIdentifier> blobIdentifiers = dataStructureUtil.randomBlobIdentifiers(4);
+    final List<BlobIdentifier> blobIdentifiers = prepareBlobIdentifiers(4);
 
     // the second block root can't be found in the database
     final Bytes32 secondBlockRoot = blobIdentifiers.get(1).getBlockRoot();
@@ -220,9 +212,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
     verify(callback).completeSuccessfully();
 
     final List<Bytes32> respondedBlobSidecarBlockRoots =
-        blobSidecarCaptor.getAllValues().stream()
-            .map(BlobSidecarOld::getBlockRoot)
-            .collect(Collectors.toUnmodifiableList());
+        blobSidecarCaptor.getAllValues().stream().map(BlobSidecar::getBlockRoot).toList();
     final List<Bytes32> blobIdentifiersBlockRoots =
         List.of(
             blobIdentifiers.get(0).getBlockRoot(),
@@ -236,7 +226,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
   @Test
   public void
       shouldSendResourceUnavailableIfBlockRootReferencesBlockEarlierThanTheMinimumRequestEpoch() {
-    final List<BlobIdentifier> blobIdentifiers = dataStructureUtil.randomBlobIdentifiers(3);
+    final List<BlobIdentifier> blobIdentifiers = prepareBlobIdentifiers(3);
 
     // let blobSidecar being not there so block lookup fallback kicks in
     when(combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(
@@ -277,11 +267,11 @@ public class BlobSidecarsByRootMessageHandlerTest {
   @Test
   public void
       shouldSendResourceUnavailableIfBlobSidecarBlockRootReferencesBlockEarlierThanTheMinimumRequestEpoch() {
-    final List<BlobIdentifier> blobIdentifiers = dataStructureUtil.randomBlobIdentifiers(3);
+    final List<BlobIdentifier> blobIdentifiers = prepareBlobIdentifiers(3);
 
     // let first blobSidecar slot will be earlier than the minimum_request_epoch (for this test it
     // is denebForkEpoch)
-    final BlobSidecarOld blobSidecar = mock(BlobSidecarOld.class);
+    final BlobSidecar blobSidecar = mock(BlobSidecar.class);
     when(blobSidecar.getSlot()).thenReturn(UInt64.ONE);
     when(combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(
             blobIdentifiers.get(0).getBlockRoot(), blobIdentifiers.get(0).getIndex()))
@@ -313,7 +303,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
 
   @Test
   public void shouldSendToPeerRequestedBlobSidecars() {
-    final List<BlobIdentifier> blobIdentifiers = dataStructureUtil.randomBlobIdentifiers(5);
+    final List<BlobIdentifier> blobIdentifiers = prepareBlobIdentifiers(5);
 
     handler.onIncomingMessage(
         protocolId,
@@ -323,7 +313,7 @@ public class BlobSidecarsByRootMessageHandlerTest {
 
     verify(callback, times(5)).respond(blobSidecarCaptor.capture());
 
-    final List<BlobSidecarOld> sentBlobSidecars = blobSidecarCaptor.getAllValues();
+    final List<BlobSidecar> sentBlobSidecars = blobSidecarCaptor.getAllValues();
 
     // Requesting 5 blob sidecars
     verify(peer, times(1)).approveBlobSidecarsRequest(any(), eq(Long.valueOf(5)));
@@ -335,11 +325,36 @@ public class BlobSidecarsByRootMessageHandlerTest {
         .forEach(
             index -> {
               final BlobIdentifier identifier = blobIdentifiers.get(index);
-              final BlobSidecarOld blobSidecar = sentBlobSidecars.get(index);
+              final BlobSidecar blobSidecar = sentBlobSidecars.get(index);
               assertThat(blobSidecar.getBlockRoot()).isEqualTo(identifier.getBlockRoot());
               assertThat(blobSidecar.getIndex()).isEqualTo(identifier.getIndex());
             });
 
     verify(callback).completeSuccessfully();
+  }
+
+  private List<BlobIdentifier> prepareBlobIdentifiers(final int count) {
+    final List<SignedBeaconBlock> blocks =
+        IntStream.range(0, count)
+            .mapToObj(__ -> dataStructureUtil.randomSignedBeaconBlock())
+            .toList();
+    final int maxBlobsPerBlock =
+        SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
+            .getMaxBlobsPerBlock();
+    final List<BlobSidecar> blobSidecars =
+        blocks.stream()
+            .map(
+                block ->
+                    dataStructureUtil.randomBlobSidecarForBlock(
+                        block, dataStructureUtil.randomUInt64(maxBlobsPerBlock).longValue()))
+            .toList();
+    blobSidecars.forEach(
+        blobSidecar ->
+            when(combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(
+                    blobSidecar.getBlockRoot(), blobSidecar.getIndex()))
+                .thenReturn(SafeFuture.completedFuture(Optional.of(blobSidecar))));
+    return blobSidecars.stream()
+        .map(blobsidecar -> new BlobIdentifier(blobsidecar.getBlockRoot(), blobsidecar.getIndex()))
+        .toList();
   }
 }

@@ -23,6 +23,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -69,9 +70,18 @@ public class CombinedStorageChannelSplitter implements CombinedStorageChannel {
   }
 
   @Override
-  public SafeFuture<Void> onFinalizedBlocks(
+  public SafeFuture<Void> onFinalizedBlocksOld(
       final Collection<SignedBeaconBlock> finalizedBlocks,
       final Map<SlotAndBlockRoot, List<BlobSidecarOld>> blobSidecarsBySlot,
+      final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
+    return updateDelegate.onFinalizedBlocksOld(
+        finalizedBlocks, blobSidecarsBySlot, maybeEarliestBlobSidecarSlot);
+  }
+
+  @Override
+  public SafeFuture<Void> onFinalizedBlocks(
+      final Collection<SignedBeaconBlock> finalizedBlocks,
+      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlot,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     return updateDelegate.onFinalizedBlocks(
         finalizedBlocks, blobSidecarsBySlot, maybeEarliestBlobSidecarSlot);

@@ -527,7 +527,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
         spec,
         stubMetricsSystem,
         builderValidatorEnabled
-            ? new BuilderBidValidatorImpl(eventLogger)
+            ? new BuilderBidValidatorImpl(spec, eventLogger)
             : BuilderBidValidator.NOOP,
         builderCircuitBreaker,
         Optional.of(100),

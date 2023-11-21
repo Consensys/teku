@@ -20,7 +20,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -28,10 +27,12 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
+@SuppressWarnings("JavaCase")
 public class BlobSidecarsByRootValidatorTest {
   private final Spec spec = TestSpecFactory.createMainnetDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
@@ -46,25 +47,23 @@ public class BlobSidecarsByRootValidatorTest {
 
   @Test
   void blobSidecarIsCorrect() {
-    final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
-    final BlobIdentifier blobIdentifier1 = new BlobIdentifier(blockRoot1, UInt64.ZERO);
-    final BlobSidecarOld blobSidecar1 =
-        dataStructureUtil.randomBlobSidecarOld(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
+    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
+    final BlobIdentifier blobIdentifier1_0 = new BlobIdentifier(block1.getRoot(), UInt64.ZERO);
+    final BlobSidecar blobSidecar1_0 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
 
-    validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier1));
-    assertDoesNotThrow(() -> validator.validate(blobSidecar1));
+    validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier1_0));
+    assertDoesNotThrow(() -> validator.validate(blobSidecar1_0));
   }
 
   @Test
   void blobSidecarIdentifierNotRequested() {
-    final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
-    final BlobIdentifier blobIdentifier2 =
+    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
+    final BlobIdentifier blobIdentifier2_0 =
         new BlobIdentifier(dataStructureUtil.randomBytes32(), UInt64.ZERO);
-    final BlobSidecarOld blobSidecar1 =
-        dataStructureUtil.randomBlobSidecarOld(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
+    final BlobSidecar blobSidecar1_0 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
 
-    validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier2));
-    assertThatThrownBy(() -> validator.validate(blobSidecar1))
+    validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier2_0));
+    assertThatThrownBy(() -> validator.validate(blobSidecar1_0))
         .isExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class)
         .hasMessageContaining(
             BlobSidecarsResponseInvalidResponseException.InvalidResponseType
@@ -75,13 +74,12 @@ public class BlobSidecarsByRootValidatorTest {
   @Test
   void blobSidecarFailsKzgVerification() {
     when(kzg.verifyBlobKzgProof(any(), any(), any())).thenReturn(false);
-    final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
-    final BlobIdentifier blobIdentifier1 = new BlobIdentifier(blockRoot1, UInt64.ZERO);
-    final BlobSidecarOld blobSidecar1 =
-        dataStructureUtil.randomBlobSidecarOld(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
+    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
+    final BlobIdentifier blobIdentifier1_0 = new BlobIdentifier(block1.getRoot(), UInt64.ZERO);
+    final BlobSidecar blobSidecar1_0 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
 
-    validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier1));
-    assertThatThrownBy(() -> validator.validate(blobSidecar1))
+    validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier1_0));
+    assertThatThrownBy(() -> validator.validate(blobSidecar1_0))
         .isExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class)
         .hasMessageContaining(
             BlobSidecarsResponseInvalidResponseException.InvalidResponseType

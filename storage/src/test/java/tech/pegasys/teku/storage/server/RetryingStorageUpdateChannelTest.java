@@ -69,16 +69,16 @@ class RetryingStorageUpdateChannelTest {
   void onFinalizedBlocks_shouldRetryUntilSuccess() {
     final List<SignedBeaconBlock> blocks = Collections.emptyList();
     final Map<SlotAndBlockRoot, List<BlobSidecarOld>> blobSidecarsBySlot = Map.of();
-    when(delegate.onFinalizedBlocks(blocks, blobSidecarsBySlot, Optional.empty()))
+    when(delegate.onFinalizedBlocksOld(blocks, blobSidecarsBySlot, Optional.empty()))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("Failed 1")))
         .thenReturn(SafeFuture.failedFuture(new RuntimeException("Failed 2")))
         .thenReturn(SafeFuture.completedFuture(null));
 
     final SafeFuture<Void> result =
-        retryingChannel.onFinalizedBlocks(blocks, blobSidecarsBySlot, Optional.empty());
+        retryingChannel.onFinalizedBlocksOld(blocks, blobSidecarsBySlot, Optional.empty());
 
     assertThat(result).isCompleted();
-    verify(delegate, times(3)).onFinalizedBlocks(blocks, blobSidecarsBySlot, Optional.empty());
+    verify(delegate, times(3)).onFinalizedBlocksOld(blocks, blobSidecarsBySlot, Optional.empty());
   }
 
   @Test
@@ -162,8 +162,9 @@ class RetryingStorageUpdateChannelTest {
         .isInstanceOf(FatalServiceFailureException.class);
 
     assertThatSafeFuture(
-            retryingChannel.onFinalizedBlocks(Collections.emptyList(), Map.of(), Optional.empty()))
+            retryingChannel.onFinalizedBlocksOld(
+                Collections.emptyList(), Map.of(), Optional.empty()))
         .isCompletedExceptionallyWith(ShuttingDownException.class);
-    verify(delegate, never()).onFinalizedBlocks(any(), any(), any());
+    verify(delegate, never()).onFinalizedBlocksOld(any(), any(), any());
   }
 }

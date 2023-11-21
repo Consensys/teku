@@ -51,7 +51,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
@@ -239,8 +239,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRoot(
-      final List<BlobIdentifier> blobIdentifiers,
-      final RpcResponseListener<BlobSidecarOld> listener) {
+      final List<BlobIdentifier> blobIdentifiers, final RpcResponseListener<BlobSidecar> listener) {
     return rpcMethods
         .blobSidecarsByRoot()
         .map(
@@ -275,7 +274,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
   }
 
   @Override
-  public SafeFuture<Optional<BlobSidecarOld>> requestBlobSidecarByRoot(
+  public SafeFuture<Optional<BlobSidecar>> requestBlobSidecarByRoot(
       final BlobIdentifier blobIdentifier) {
     return rpcMethods
         .blobSidecarsByRoot()
@@ -315,9 +314,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRange(
-      final UInt64 startSlot,
-      final UInt64 count,
-      final RpcResponseListener<BlobSidecarOld> listener) {
+      final UInt64 startSlot, final UInt64 count, final RpcResponseListener<BlobSidecar> listener) {
     return rpcMethods
         .blobSidecarsByRange()
         .map(
@@ -376,7 +373,7 @@ class DefaultEth2Peer extends DelegatingPeer implements Eth2Peer {
 
   @Override
   public Optional<RequestApproval> approveBlobSidecarsRequest(
-      final ResponseCallback<BlobSidecarOld> callback, long blobSidecarsCount) {
+      final ResponseCallback<BlobSidecar> callback, long blobSidecarsCount) {
     return approveObjectsRequest(
         "blob sidecars", blobSidecarsRequestTracker, blobSidecarsCount, callback);
   }
