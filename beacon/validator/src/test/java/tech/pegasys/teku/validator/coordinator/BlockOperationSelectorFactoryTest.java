@@ -16,7 +16,6 @@ package tech.pegasys.teku.validator.coordinator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
@@ -37,7 +36,6 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
@@ -156,7 +154,6 @@ class BlockOperationSelectorFactoryTest {
   private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
   private final ExecutionLayerBlockProductionManager executionLayer =
       mock(ExecutionLayerBlockProductionManager.class);
-  private final KZG kzg = mock(KZG.class);
 
   private final ExecutionPayload defaultExecutionPayload =
       SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
@@ -187,8 +184,7 @@ class BlockOperationSelectorFactoryTest {
           eth1DataCache,
           defaultGraffiti,
           forkChoiceNotifier,
-          executionLayer,
-          kzg);
+          executionLayer);
 
   @BeforeEach
   void setUp() {
@@ -206,7 +202,6 @@ class BlockOperationSelectorFactoryTest {
         .thenReturn(SafeFuture.completedFuture(ACCEPT));
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    when(kzg.verifyBlobKzgProofBatch(anyList(), anyList(), anyList())).thenReturn(true);
   }
 
   @Test
@@ -570,28 +565,6 @@ class BlockOperationSelectorFactoryTest {
         .isInstanceOf(IllegalStateException.class)
         .hasMessage(
             "Commitments in the builder BlobsBundle don't match the commitments in the block");
-  }
-
-  @Test
-  void shouldFailCreatingBlobSidecarsIfKzgVerificationChecksDoNotPass() {
-    final SszList<SszKZGCommitment> commitments = dataStructureUtil.randomBlobKzgCommitments(3);
-    final SignedBeaconBlock signedBlindedBeaconBlock =
-        dataStructureUtil.randomSignedBlindedBeaconBlockWithCommitments(commitments);
-
-    final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
-        dataStructureUtil.randomBuilderBlobsBundle(commitments);
-
-    prepareCachedBuilderPayload(
-        signedBlindedBeaconBlock.getSlot(),
-        dataStructureUtil.randomExecutionPayload(),
-        Optional.of(blobsBundle));
-
-    when(kzg.verifyBlobKzgProofBatch(anyList(), anyList(), anyList())).thenReturn(false);
-
-    assertThatThrownBy(() -> factory.createBlobSidecarsSelector().apply(signedBlindedBeaconBlock))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessageMatching(
-            "The constructed blob sidecars for block \\w+ and slot \\d+ didn't pass the KZG verification checks");
   }
 
   @Test

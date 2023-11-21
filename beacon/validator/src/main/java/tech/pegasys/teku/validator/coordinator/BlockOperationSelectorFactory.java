@@ -27,7 +27,6 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -76,7 +75,6 @@ public class BlockOperationSelectorFactory {
   private final Bytes32 graffiti;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager;
-  private final KZG kzg;
 
   public BlockOperationSelectorFactory(
       final Spec spec,
@@ -90,8 +88,7 @@ public class BlockOperationSelectorFactory {
       final Eth1DataCache eth1DataCache,
       final Bytes32 graffiti,
       final ForkChoiceNotifier forkChoiceNotifier,
-      final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager,
-      final KZG kzg) {
+      final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager) {
     this.spec = spec;
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingPool;
@@ -104,7 +101,6 @@ public class BlockOperationSelectorFactory {
     this.graffiti = graffiti;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.executionLayerBlockProductionManager = executionLayerBlockProductionManager;
-    this.kzg = kzg;
   }
 
   public Consumer<BeaconBlockBodyBuilder> createSelector(
@@ -370,23 +366,12 @@ public class BlockOperationSelectorFactory {
         proofs = blockContainer.getKzgProofs().orElseThrow();
       }
 
-      final List<BlobSidecar> blobSidecars =
-          IntStream.range(0, blobs.size())
-              .mapToObj(
-                  index ->
-                      miscHelpersDeneb.constructBlobSidecar(
-                          block, UInt64.valueOf(index), blobs.get(index), proofs.get(index)))
-              .toList();
-
-      // perform KZG checks on the blob sidecars
-      if (!miscHelpersDeneb.verifyBlobKzgProofBatch(kzg, blobSidecars)) {
-        throw new IllegalStateException(
-            String.format(
-                "The constructed blob sidecars for block %s and slot %s didn't pass the KZG verification checks",
-                block.getRoot(), slot));
-      }
-
-      return blobSidecars;
+      return IntStream.range(0, blobs.size())
+          .mapToObj(
+              index ->
+                  miscHelpersDeneb.constructBlobSidecar(
+                      block, UInt64.valueOf(index), blobs.get(index), proofs.get(index)))
+          .toList();
     };
   }
 
