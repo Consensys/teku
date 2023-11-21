@@ -52,7 +52,6 @@ import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -384,14 +383,13 @@ public class Spec {
         .sszDeserialize(serializedBlobs);
   }
 
-  public BlobSidecarOld deserializeBlobSidecar(
-      final Bytes serializedBlobSidecar, final UInt64 slot) {
+  public BlobSidecar deserializeBlobSidecar(final Bytes serializedBlobSidecar, final UInt64 slot) {
     return atSlot(slot)
         .getSchemaDefinitions()
         .toVersionDeneb()
         .orElseThrow(
             () -> new RuntimeException("Deneb milestone is required to deserialize blob sidecar"))
-        .getBlobSidecarOldSchema()
+        .getBlobSidecarSchema()
         .sszDeserialize(serializedBlobSidecar);
   }
 
@@ -436,10 +434,6 @@ public class Spec {
 
   public Bytes computeSigningRoot(BeaconBlock block, Bytes32 domain) {
     return atBlock(block).miscHelpers().computeSigningRoot(block, domain);
-  }
-
-  public Bytes computeSigningRoot(BlobSidecarOld blobSidecar, Bytes32 domain) {
-    return atSlot(blobSidecar.getSlot()).miscHelpers().computeSigningRoot(blobSidecar, domain);
   }
 
   public Bytes computeSigningRoot(BeaconBlockHeader blockHeader, Bytes32 domain) {

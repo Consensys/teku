@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -185,7 +184,6 @@ public class HistoricalBatchFetcherTest {
   }
 
   @Test
-  @Disabled("TODO for new BlobSidecars")
   public void run_returnAllBlocksAndBlobSidecarsOnFirstRequest() {
     when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
 
@@ -208,7 +206,6 @@ public class HistoricalBatchFetcherTest {
   }
 
   @Test
-  @Disabled("TODO for new BlobSidecars")
   public void run_failsOnBlobSidecarsValidationFailure() {
     when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
     when(blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(any(), anyList()))

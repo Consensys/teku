@@ -56,11 +56,8 @@ public class SingleMerkleProofTestExecutor implements TestExecutor {
     final Data data = loadDataFile(testDefinition, Data.class);
 
     switch (objectType) {
-      case "BeaconBlockBody":
-        runBeaconBlockBodyTest(testDefinition, proofType, data);
-        break;
-      default:
-        throw new RuntimeException("Unknown object type " + objectType);
+      case "BeaconBlockBody" -> runBeaconBlockBodyTest(testDefinition, proofType, data);
+      default -> throw new RuntimeException("Unknown object type " + objectType);
     }
   }
 
@@ -86,7 +83,6 @@ public class SingleMerkleProofTestExecutor implements TestExecutor {
 
   void runBeaconBlockBodyTest(
       final TestDefinition testDefinition, final String proofType, final Data data) {
-    final Predicates predicates = new Predicates(testDefinition.getSpec().getGenesisSpecConfig());
     final BeaconBlockBody beaconBlockBody =
         TestDataUtils.loadSsz(
             testDefinition,
@@ -94,45 +90,49 @@ public class SingleMerkleProofTestExecutor implements TestExecutor {
             testDefinition.getSpec().getGenesisSchemaDefinitions().getBeaconBlockBodySchema());
 
     switch (proofType) {
-      case "blob_kzg_commitment_merkle_proof":
-        final Bytes32 kzgCommitmentHash = Bytes32.fromHexString(data.leaf);
-
-        // Forward check
-        assertThat(
-                predicates.isValidMerkleBranch(
-                    kzgCommitmentHash,
-                    createKzgCommitmentMerkleProofBranchFromData(testDefinition, data.branch),
-                    getKzgCommitmentInclusionProofDepth(testDefinition),
-                    data.leafIndex,
-                    beaconBlockBody.hashTreeRoot()))
-            .isTrue();
-
-        // Find which commitment is in puzzle by hash root
-        final SszList<SszKZGCommitment> sszKZGCommitments =
-            beaconBlockBody.getOptionalBlobKzgCommitments().orElseThrow();
-        Optional<Integer> kzgCommitmentIndexFound = Optional.empty();
-        for (int i = 0; i < sszKZGCommitments.size(); ++i) {
-          if (sszKZGCommitments.get(i).hashTreeRoot().equals(kzgCommitmentHash)) {
-            kzgCommitmentIndexFound = Optional.of(i);
-            break;
-          }
-        }
-        assertThat(kzgCommitmentIndexFound).isPresent();
-        final UInt64 kzgCommitmentIndex = UInt64.valueOf(kzgCommitmentIndexFound.get());
-
-        // Verify 2 MiscHelpersDeneb helpers
-        final MiscHelpersDeneb miscHelpersDeneb =
-            MiscHelpersDeneb.required(testDefinition.getSpec().getGenesisSpec().miscHelpers());
-        assertThat(miscHelpersDeneb.getBlobSidecarKzgCommitmentGeneralizedIndex(kzgCommitmentIndex))
-            .isEqualTo(data.leafIndex);
-        assertThat(
-                miscHelpersDeneb.computeKzgCommitmentInclusionProof(
-                    kzgCommitmentIndex, beaconBlockBody))
-            .isEqualTo(data.branch.stream().map(Bytes32::fromHexString).toList());
-        break;
-      default:
-        throw new RuntimeException("Unknown proof type " + proofType);
+      case "blob_kzg_commitment_merkle_proof" -> runBlobKzgCommitmentMerkleProofTest(
+          testDefinition, data, beaconBlockBody);
+      default -> throw new RuntimeException("Unknown proof type " + proofType);
     }
+  }
+
+  private void runBlobKzgCommitmentMerkleProofTest(
+      final TestDefinition testDefinition, final Data data, final BeaconBlockBody beaconBlockBody) {
+    final Predicates predicates = new Predicates(testDefinition.getSpec().getGenesisSpecConfig());
+    final Bytes32 kzgCommitmentHash = Bytes32.fromHexString(data.leaf);
+
+    // Forward check
+    assertThat(
+            predicates.isValidMerkleBranch(
+                kzgCommitmentHash,
+                createKzgCommitmentMerkleProofBranchFromData(testDefinition, data.branch),
+                getKzgCommitmentInclusionProofDepth(testDefinition),
+                data.leafIndex,
+                beaconBlockBody.hashTreeRoot()))
+        .isTrue();
+
+    // Find which commitment is in puzzle by hash root
+    final SszList<SszKZGCommitment> sszKZGCommitments =
+        beaconBlockBody.getOptionalBlobKzgCommitments().orElseThrow();
+    Optional<Integer> kzgCommitmentIndexFound = Optional.empty();
+    for (int i = 0; i < sszKZGCommitments.size(); ++i) {
+      if (sszKZGCommitments.get(i).hashTreeRoot().equals(kzgCommitmentHash)) {
+        kzgCommitmentIndexFound = Optional.of(i);
+        break;
+      }
+    }
+    assertThat(kzgCommitmentIndexFound).isPresent();
+    final UInt64 kzgCommitmentIndex = UInt64.valueOf(kzgCommitmentIndexFound.get());
+
+    // Verify 2 MiscHelpersDeneb helpers
+    final MiscHelpersDeneb miscHelpersDeneb =
+        MiscHelpersDeneb.required(testDefinition.getSpec().getGenesisSpec().miscHelpers());
+    assertThat(miscHelpersDeneb.getBlobSidecarKzgCommitmentGeneralizedIndex(kzgCommitmentIndex))
+        .isEqualTo(data.leafIndex);
+    assertThat(
+            miscHelpersDeneb.computeKzgCommitmentInclusionProof(
+                kzgCommitmentIndex, beaconBlockBody))
+        .isEqualTo(data.branch.stream().map(Bytes32::fromHexString).toList());
   }
 
   private SszBytes32Vector createKzgCommitmentMerkleProofBranchFromData(

@@ -26,7 +26,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -52,7 +52,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   protected Map<Bytes32, BlockCheckpoints> blockCheckpoints;
   protected Map<Checkpoint, BeaconState> checkpointStates;
   protected Map<UInt64, VoteTracker> votes;
-  protected Map<SlotAndBlockRoot, List<BlobSidecarOld>> blobSidecars;
+  protected Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars;
   protected Optional<UInt64> earliestBlobSidecarSlot;
   protected Optional<Bytes32> proposerBoostRoot = Optional.empty();
   protected final TestReadOnlyForkChoiceStrategy forkChoiceStrategy =
@@ -71,7 +71,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
       final Map<Bytes32, BlockCheckpoints> blockCheckpoints,
       final Map<Checkpoint, BeaconState> checkpointStates,
       final Map<UInt64, VoteTracker> votes,
-      final Map<SlotAndBlockRoot, List<BlobSidecarOld>> blobSidecars,
+      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     this.spec = spec;
     this.timeMillis = secondsToMillis(time);
@@ -247,7 +247,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public Optional<List<BlobSidecarOld>> getBlobSidecarsIfAvailable(
+  public Optional<List<BlobSidecar>> getBlobSidecarsIfAvailable(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return Optional.ofNullable(blobSidecars.get(slotAndBlockRoot));
   }
@@ -263,7 +263,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
       final SignedBeaconBlock block,
       final BeaconState state,
       final BlockCheckpoints checkpoints,
-      final Optional<List<BlobSidecarOld>> blobSidecars,
+      final Optional<List<BlobSidecar>> blobSidecars,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     blocks.put(block.getRoot(), block);
     blockStates.put(block.getRoot(), state);
