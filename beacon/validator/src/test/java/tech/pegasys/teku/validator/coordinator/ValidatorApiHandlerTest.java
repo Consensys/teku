@@ -85,6 +85,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
@@ -102,6 +103,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
@@ -857,7 +859,8 @@ class ValidatorApiHandlerTest {
     verify(blobSidecarGossipChannel).publishBlobSidecars(blobSidecarsCaptor1.capture());
     assertThat(BlobSidecarSummary.fromBlobSidecars(blobSidecarsCaptor1.getValue()))
         .isEqualTo(expectedBlobSidecars);
-    verify(blobSidecarPool).onCompletedBlockAndBlobSidecars(block, blobSidecarsCaptor2.capture());
+    verify(blobSidecarPool)
+        .onCompletedBlockAndBlobSidecars(eq(block), blobSidecarsCaptor2.capture());
     assertThat(BlobSidecarSummary.fromBlobSidecars(blobSidecarsCaptor2.getValue()))
         .isEqualTo(expectedBlobSidecars);
     verify(blockGossipChannel).publishBlock(block);
@@ -882,7 +885,8 @@ class ValidatorApiHandlerTest {
     verify(blobSidecarGossipChannel).publishBlobSidecars(blobSidecarsCaptor1.capture());
     assertThat(BlobSidecarSummary.fromBlobSidecars(blobSidecarsCaptor1.getValue()))
         .isEqualTo(expectedBlobSidecars);
-    verify(blobSidecarPool).onCompletedBlockAndBlobSidecars(block, blobSidecarsCaptor2.capture());
+    verify(blobSidecarPool)
+        .onCompletedBlockAndBlobSidecars(eq(block), blobSidecarsCaptor2.capture());
     assertThat(BlobSidecarSummary.fromBlobSidecars(blobSidecarsCaptor2.getValue()))
         .isEqualTo(expectedBlobSidecars);
     verify(blockGossipChannel).publishBlock(block);
@@ -909,7 +913,8 @@ class ValidatorApiHandlerTest {
     verify(blobSidecarGossipChannel).publishBlobSidecars(blobSidecarsCaptor1.capture());
     assertThat(BlobSidecarSummary.fromBlobSidecars(blobSidecarsCaptor1.getValue()))
         .isEqualTo(expectedBlobSidecars);
-    verify(blobSidecarPool).onCompletedBlockAndBlobSidecars(block, blobSidecarsCaptor2.capture());
+    verify(blobSidecarPool)
+        .onCompletedBlockAndBlobSidecars(eq(block), blobSidecarsCaptor2.capture());
     assertThat(BlobSidecarSummary.fromBlobSidecars(blobSidecarsCaptor2.getValue()))
         .isEqualTo(expectedBlobSidecars);
     verify(blockGossipChannel).publishBlock(block);
@@ -918,7 +923,7 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void sendSignedBlock_shoulNotGossipAndImportBlobsWhenBlobsDoNotExist() {
+  public void sendSignedBlock_shouldGossipAndImportEmptyBlobsWhenBlobsDoNotExist() {
     setupDeneb();
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
 
@@ -1262,6 +1267,30 @@ class ValidatorApiHandlerTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager);
+
+    // BlobSidecar builder
+    doAnswer(
+            invocation -> {
+              final SignedBlockContainer blockContainer = invocation.getArgument(0);
+              final MiscHelpersDeneb miscHelpersDeneb =
+                  MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers());
+              if (blockContainer.getBlobs().isEmpty()) {
+                return List.of();
+              }
+              final SszList<Blob> blobs = blockContainer.getBlobs().orElseThrow();
+              final SszList<SszKZGProof> proofs = blockContainer.getKzgProofs().orElseThrow();
+              return IntStream.range(0, blobs.size())
+                  .mapToObj(
+                      index ->
+                          miscHelpersDeneb.constructBlobSidecar(
+                              blockContainer.getSignedBlock(),
+                              UInt64.valueOf(index),
+                              blobs.get(index),
+                              proofs.get(index)))
+                  .toList();
+            })
+        .when(blockFactory)
+        .createBlobSidecars(any());
   }
 
   private SafeFuture<BlockImportAndBroadcastValidationResults> prepareBlockImportResult(
