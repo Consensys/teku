@@ -923,7 +923,7 @@ class ValidatorApiHandlerTest {
   }
 
   @Test
-  public void sendSignedBlock_shouldGossipAndImportEmptyBlobsWhenBlobsDoNotExist() {
+  public void sendSignedBlock_shouldGossipAndImportEmptyBlobSidecarsWhenBlobsDoNotExist() {
     setupDeneb();
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
 
