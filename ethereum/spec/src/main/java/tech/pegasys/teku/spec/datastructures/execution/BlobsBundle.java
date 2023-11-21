@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.base.MoreObjects;
 import java.util.List;
 import java.util.Objects;
@@ -28,6 +30,16 @@ public class BlobsBundle {
 
   public BlobsBundle(
       final List<KZGCommitment> commitments, final List<KZGProof> proofs, final List<Blob> blobs) {
+    checkArgument(
+        commitments.size() == blobs.size(),
+        "Expected %s commitments but got %s",
+        blobs.size(),
+        commitments.size());
+    checkArgument(
+        proofs.size() == blobs.size(),
+        "Expected %s proofs but got %s",
+        blobs.size(),
+        proofs.size());
     this.commitments = commitments;
     this.proofs = proofs;
     this.blobs = blobs;

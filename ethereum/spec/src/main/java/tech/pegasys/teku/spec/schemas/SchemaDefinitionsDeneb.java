@@ -23,7 +23,6 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchemaOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
@@ -78,7 +77,6 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   private final BlobSchema blobSchema;
   private final SszListSchema<Blob, ? extends SszList<Blob>> blobsInBlockSchema;
   private final BlobSidecarSchema blobSidecarSchema;
-  private final BlobSidecarSchemaOld blobSidecarOldSchema;
   private final BlockContentsSchema blockContentsSchema;
   private final SignedBlockContentsSchema signedBlockContentsSchema;
   private final BlobsBundleSchema blobsBundleSchema;
@@ -129,7 +127,6 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
             SignedBeaconBlockHeader.SSZ_SCHEMA,
             blobSchema,
             specConfig.getKzgCommitmentInclusionProofDepth());
-    this.blobSidecarOldSchema = BlobSidecarSchemaOld.create(blobSchema);
     this.blockContentsSchema =
         BlockContentsSchema.create(specConfig, beaconBlockSchema, blobSchema, "BlockContentsDeneb");
     this.signedBlockContentsSchema =
@@ -247,10 +244,6 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
 
   public BlobSidecarSchema getBlobSidecarSchema() {
     return blobSidecarSchema;
-  }
-
-  public BlobSidecarSchemaOld getBlobSidecarOldSchema() {
-    return blobSidecarOldSchema;
   }
 
   public BlockContentsSchema getBlockContentsSchema() {

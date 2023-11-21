@@ -47,7 +47,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockInvariants;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
@@ -415,7 +415,7 @@ public class DebugDbCommand implements Runnable {
         for (final Iterator<SlotAndBlockRootAndBlobIndex> it = keyStream.iterator();
             it.hasNext(); ) {
           final SlotAndBlockRootAndBlobIndex key = it.next();
-          final BlobSidecarOld blobSidecar = database.getBlobSidecar(key).orElseThrow();
+          final BlobSidecar blobSidecar = database.getBlobSidecar(key).orElseThrow();
           out.putNextEntry(
               new ZipEntry(
                   blobSidecar.getSlot()

@@ -25,7 +25,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
@@ -106,11 +105,6 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   public void prepareForBlockImport(final BlobSidecar blobSidecar) {
     blobSidecarPool.onNewBlobSidecar(blobSidecar);
     receivedBlobSidecarSubscribers.forEach(s -> s.onBlobSidecarReceived(blobSidecar));
-  }
-
-  @Override
-  public void prepareForBlockImport(final BlobSidecarOld blobSidecar) {
-    throw new RuntimeException("Deprecated");
   }
 
   @Override

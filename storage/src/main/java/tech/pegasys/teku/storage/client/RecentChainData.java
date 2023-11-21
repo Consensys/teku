@@ -39,7 +39,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -500,7 +500,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return getForkChoiceStrategy().flatMap(forkChoice -> forkChoice.executionBlockHash(root));
   }
 
-  public Optional<List<BlobSidecarOld>> getBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
+  public Optional<List<BlobSidecar>> getBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
     return Optional.ofNullable(store)
         .flatMap(s -> store.getBlobSidecarsIfAvailable(slotAndBlockRoot));
   }

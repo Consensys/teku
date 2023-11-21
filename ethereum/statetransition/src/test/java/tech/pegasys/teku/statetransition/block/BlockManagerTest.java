@@ -1121,14 +1121,12 @@ public class BlockManagerTest {
     return blobSidecarsAvailabilityChecker;
   }
 
-  @SuppressWarnings("unused")
   private void assertThatStored(
       final BeaconBlock beaconBlock, final List<BlobSidecar> blobSidecars) {
     assertThat(localRecentChainData.retrieveBlockByRoot(beaconBlock.getRoot()))
         .isCompletedWithValue(Optional.of(beaconBlock));
-    // TODO
-    //    assertThat(localRecentChainData.getBlobSidecars(beaconBlock.getSlotAndBlockRoot()))
-    //        .contains(blobSidecars);
+    assertThat(localRecentChainData.getBlobSidecars(beaconBlock.getSlotAndBlockRoot()))
+        .contains(blobSidecars);
   }
 
   private void assertThatNothingStoredForSlotRoot(final SlotAndBlockRoot slotAndBlockRoot) {
