@@ -401,6 +401,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     metricsSystem,
                     storeConfig,
                     beaconAsyncRunner,
+                    timeProvider,
                     storageQueryChannel,
                     storageUpdateChannel,
                     voteUpdateChannel,

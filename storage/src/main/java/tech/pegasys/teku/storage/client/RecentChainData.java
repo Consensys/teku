@@ -35,6 +35,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -98,10 +99,13 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private volatile Optional<ChainHead> chainHead = Optional.empty();
   private volatile UInt64 genesisTime;
 
+  private final BlockTimelinessTracker blockTimelinessTracker;
+
   RecentChainData(
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final StoreConfig storeConfig,
+      final TimeProvider timeProvider,
       final BlockProvider blockProvider,
       final StateAndBlockSummaryProvider stateProvider,
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
@@ -120,6 +124,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     this.chainHeadChannel = chainHeadChannel;
     this.storageUpdateChannel = storageUpdateChannel;
     this.finalizedCheckpointChannel = finalizedCheckpointChannel;
+    this.blockTimelinessTracker = new BlockTimelinessTracker(spec, this, timeProvider);
     reorgCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.BEACON,
@@ -612,5 +617,14 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return getForkChoiceStrategy()
         .map(forkChoiceStrategy -> forkChoiceStrategy.getBlockRootsAtSlot(slot))
         .orElse(Collections.emptyList());
+  }
+
+  public void setBlockTimelinessFromArrivalTime(
+      final SignedBeaconBlock block, final UInt64 arrivalTime) {
+    blockTimelinessTracker.setBlockTimelinessFromArrivalTime(block, arrivalTime);
+  }
+
+  public Optional<Boolean> getBlockTimeliness(final Bytes32 blockRoot) {
+    return blockTimelinessTracker.isBlockTimely(blockRoot);
   }
 }

@@ -22,6 +22,8 @@ import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
@@ -39,6 +41,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final StoreConfig storeConfig,
+      final TimeProvider timeProvider,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
@@ -48,6 +51,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
         asyncRunner,
         metricsSystem,
         storeConfig,
+        timeProvider,
         BlockProvider.NOOP,
         StateAndBlockSummaryProvider.NOOP,
         EarliestBlobSidecarSlotProvider.NOOP,
@@ -87,6 +91,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
           SYNC_RUNNER,
           new NoOpMetricsSystem(),
           storeConfig,
+          new SystemTimeProvider(),
           storageUpdateChannel,
           votes -> {},
           finalizedCheckpointChannel,
