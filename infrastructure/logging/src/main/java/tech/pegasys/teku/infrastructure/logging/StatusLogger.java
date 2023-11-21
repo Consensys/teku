@@ -502,6 +502,14 @@ public class StatusLogger {
         Color.YELLOW);
   }
 
+  public void warnIgnoringWeakSubjectivityPeriod() {
+    log.warn(
+        print(
+            "Ignoring weak subjectivity period check (--ignore-weak-subjectivity-period-enabled). Syncing "
+                + "from outside of the weak subjectivity period is considered UNSAFE.",
+            Color.YELLOW));
+  }
+
   private void logWithColorIfLevelGreaterThanInfo(
       final Level level, final String msg, final ColorConsolePrinter.Color color) {
     final boolean useColor = level.compareTo(Level.INFO) < 0;
