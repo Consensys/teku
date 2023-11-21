@@ -27,7 +27,6 @@ import com.google.common.io.Resources;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.migrated.StateValidatorBalanceData;
@@ -57,13 +56,13 @@ class PostStateValidatorBalancesTest
             .build();
     request.setRequestBody(List.of("1", "2"));
 
-    final Optional<ObjectAndMetaData<List<StateValidatorBalanceData>>> expectedData =
-        chainDataProvider.getStateValidatorBalances("head", List.of("1", "2")).get();
+    final ObjectAndMetaData<List<StateValidatorBalanceData>> expectedData =
+        chainDataProvider.getStateValidatorBalances("head", List.of("1", "2")).get().orElseThrow();
 
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseBody()).isEqualTo(expectedData.orElseThrow());
+    assertThat(request.getResponseBody()).isEqualTo(expectedData);
   }
 
   @Test
@@ -74,13 +73,13 @@ class PostStateValidatorBalancesTest
             .pathParameter("state_id", "head")
             .build();
 
-    final Optional<ObjectAndMetaData<List<StateValidatorBalanceData>>> expectedData =
-        chainDataProvider.getStateValidatorBalances("head", List.of()).get();
+    final ObjectAndMetaData<List<StateValidatorBalanceData>> expectedData =
+        chainDataProvider.getStateValidatorBalances("head", List.of()).get().orElseThrow();
 
     handler.handleRequest(request);
 
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    assertThat(request.getResponseBody()).isEqualTo(expectedData.orElseThrow());
+    assertThat(request.getResponseBody()).isEqualTo(expectedData);
   }
 
   @Test
