@@ -59,7 +59,7 @@ public class GetAllBlobSidecarsAtSlotTest extends AbstractMigratedBeaconHandlerT
   void shouldReturnAllBlobSidecarsAtSlot() throws JsonProcessingException {
     final List<BlobSidecarOld> nonCanonicalBlobSidecars =
         dataStructureUtil.randomBlobSidecarsOld(4);
-    when(chainDataProvider.getAllBlobSidecarsAtSlot(eq(UInt64.ONE), eq(indices)))
+    when(chainDataProvider.getAllBlobSidecarsAtSlotOld(eq(UInt64.ONE), eq(indices)))
         .thenReturn(SafeFuture.completedFuture(Optional.of(nonCanonicalBlobSidecars)));
 
     handler.handleRequest(request);

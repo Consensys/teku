@@ -24,7 +24,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -96,7 +96,7 @@ public class TestStoreFactory {
     Map<Bytes32, BeaconState> blockStates = new HashMap<>();
     Map<Checkpoint, BeaconState> checkpointStates = new HashMap<>();
     Map<UInt64, VoteTracker> votes = new HashMap<>();
-    Map<SlotAndBlockRoot, List<BlobSidecarOld>> blobSidecars = new HashMap<>();
+    Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = new HashMap<>();
 
     blocks.put(anchorRoot, anchor.getSignedBeaconBlock().orElseThrow());
     blockStates.put(anchorRoot, anchorState);

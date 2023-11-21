@@ -29,7 +29,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.encodings.RpcEncoding;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
@@ -230,7 +230,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
     return Arrays.stream(SpecMilestone.values()).map(Arguments::of);
   }
 
-  protected List<BlobSidecarOld> retrieveCanonicalBlobSidecarsFromPeerStorage(
+  protected List<BlobSidecar> retrieveCanonicalBlobSidecarsFromPeerStorage(
       final Stream<UInt64> slots) {
 
     return slots
@@ -246,7 +246,7 @@ public abstract class AbstractRpcMethodIntegrationTest {
         .toList();
   }
 
-  private List<BlobSidecarOld> safeRetrieveBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
+  private List<BlobSidecar> safeRetrieveBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
     try {
       return Waiter.waitFor(
           peerStorage.chainStorage().getBlobSidecarsBySlotAndBlockRoot(slotAndBlockRoot));

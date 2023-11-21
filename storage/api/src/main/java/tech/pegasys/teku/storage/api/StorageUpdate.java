@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -42,7 +42,7 @@ public class StorageUpdate {
   private final Map<Bytes32, BlockAndCheckpoints> hotBlocks;
   private final Map<Bytes32, BeaconState> hotStates;
   private final Map<Bytes32, UInt64> deletedHotBlocks;
-  private final Map<SlotAndBlockRoot, List<BlobSidecarOld>> blobSidecars;
+  private final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars;
   private final Optional<UInt64> maybeEarliestBlobSidecarSlot;
   private final boolean optimisticTransitionBlockRootSet;
   private final Optional<Bytes32> optimisticTransitionBlockRoot;
@@ -56,7 +56,7 @@ public class StorageUpdate {
       final Optional<Checkpoint> bestJustifiedCheckpoint,
       final Map<Bytes32, BlockAndCheckpoints> hotBlocks,
       final Map<Bytes32, BeaconState> hotStates,
-      final Map<SlotAndBlockRoot, List<BlobSidecarOld>> blobSidecars,
+      final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot,
       final Map<Bytes32, UInt64> deletedHotBlocks,
       final Map<Bytes32, SlotAndBlockRoot> stateRoots,
@@ -118,7 +118,7 @@ public class StorageUpdate {
     return hotBlocks;
   }
 
-  public Map<SlotAndBlockRoot, List<BlobSidecarOld>> getBlobSidecars() {
+  public Map<SlotAndBlockRoot, List<BlobSidecar>> getBlobSidecars() {
     return blobSidecars;
   }
 
