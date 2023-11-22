@@ -11,28 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.remote;
+package tech.pegasys.teku.validator.eventadapter;
 
-import okhttp3.HttpUrl;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
-import tech.pegasys.teku.validator.api.required.SyncingStatus;
+import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.beaconnode.metrics.MetricRecordingValidatorApiChannel;
 
-public class RemoteMetricRecordingValidatorApiChannel extends MetricRecordingValidatorApiChannel
-    implements RemoteValidatorApiChannel {
+public class InProcessMetricRecordingValidatorApiChannel
+    extends MetricRecordingValidatorApiChannel {
 
-  static final String BEACON_NODE_REQUESTS_COUNTER_NAME = "remote_beacon_nodes_requests_total";
+  static final String BEACON_NODE_REQUESTS_COUNTER_NAME = "beacon_node_requests_total";
 
-  private final RemoteValidatorApiChannel delegate;
-
-  public RemoteMetricRecordingValidatorApiChannel(
-      final MetricsSystem metricsSystem, final RemoteValidatorApiChannel delegate) {
+  public InProcessMetricRecordingValidatorApiChannel(
+      final MetricsSystem metricsSystem, final ValidatorApiChannel delegate) {
     super(metricsSystem, delegate);
-    this.delegate = delegate;
   }
 
   @Override
@@ -40,26 +35,13 @@ public class RemoteMetricRecordingValidatorApiChannel extends MetricRecordingVal
     return metricsSystem.createLabelledCounter(
         TekuMetricCategory.VALIDATOR,
         BEACON_NODE_REQUESTS_COUNTER_NAME,
-        "Counter recording the number of remote requests sent to the beacon node(s)",
-        "endpoint",
+        "Counter recording the number of requests sent to the beacon node",
         "method",
         "outcome");
   }
 
   @Override
   public void recordRequest(final String methodLabel, final RequestOutcome outcome) {
-    beaconNodeRequestsCounter
-        .labels(getEndpoint().toString(), methodLabel, outcome.toString())
-        .inc();
-  }
-
-  @Override
-  public HttpUrl getEndpoint() {
-    return delegate.getEndpoint();
-  }
-
-  @Override
-  public SafeFuture<SyncingStatus> getSyncingStatus() {
-    return delegate.getSyncingStatus();
+    beaconNodeRequestsCounter.labels(methodLabel, outcome.toString()).inc();
   }
 }

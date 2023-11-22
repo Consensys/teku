@@ -33,7 +33,6 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -59,26 +58,23 @@ import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
-public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
+public abstract class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
-  static final String BEACON_NODE_REQUESTS_COUNTER_NAME = "beacon_node_requests_total";
+  protected final LabelledMetric<Counter> beaconNodeRequestsCounter;
 
   private final ValidatorApiChannel delegate;
-  private final LabelledMetric<Counter> beaconNodeRequestsCounter;
   private final LabelledMetric<OperationTimer> dutyTimer;
 
   public MetricRecordingValidatorApiChannel(
       final MetricsSystem metricsSystem, final ValidatorApiChannel delegate) {
+    beaconNodeRequestsCounter = createCounter(metricsSystem);
     this.delegate = delegate;
-    beaconNodeRequestsCounter =
-        metricsSystem.createLabelledCounter(
-            TekuMetricCategory.VALIDATOR,
-            BEACON_NODE_REQUESTS_COUNTER_NAME,
-            "Counter recording the number of requests sent to the beacon node",
-            "method",
-            "outcome");
     dutyTimer = ValidatorDutyMetricUtils.createValidatorDutyMetric(metricsSystem);
   }
+
+  public abstract LabelledMetric<Counter> createCounter(MetricsSystem metricsSystem);
+
+  public abstract void recordRequest(String methodLabel, RequestOutcome outcome);
 
   @Override
   public SafeFuture<Optional<GenesisData>> getGenesisData() {
@@ -304,11 +300,7 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
     recordRequest(methodLabel, RequestOutcome.DATA_UNAVAILABLE);
   }
 
-  private void recordRequest(final String methodLabel, final RequestOutcome outcome) {
-    beaconNodeRequestsCounter.labels(methodLabel, outcome.displayName).inc();
-  }
-
-  enum RequestOutcome {
+  public enum RequestOutcome {
     SUCCESS("success"),
     ERROR("error"),
     DATA_UNAVAILABLE("data_unavailable");

@@ -26,6 +26,9 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import org.junit.jupiter.api.Named;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -48,10 +51,32 @@ import tech.pegasys.teku.validator.beaconnode.metrics.MetricRecordingValidatorAp
 
 class MetricRecordingValidatorApiChannelTest {
 
+  private static final String COUNTER_NAME = "total_requests_test";
+
   private final ValidatorApiChannel delegate = mock(ValidatorApiChannel.class);
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
+
   private final MetricRecordingValidatorApiChannel apiChannel =
-      new MetricRecordingValidatorApiChannel(metricsSystem, delegate);
+      new MetricRecordingValidatorApiChannel(metricsSystem, delegate) {
+
+        private final LabelledMetric<Counter> testCounter =
+            metricsSystem.createLabelledCounter(
+                TekuMetricCategory.VALIDATOR,
+                COUNTER_NAME,
+                "Counter used for testing",
+                "method",
+                "outcome");
+
+        @Override
+        public LabelledMetric<Counter> createCounter(final MetricsSystem metricsSystem) {
+          return testCounter;
+        }
+
+        @Override
+        public void recordRequest(final String methodLabel, final RequestOutcome outcome) {
+          testCounter.labels(methodLabel, outcome.toString()).inc();
+        }
+      };
 
   @ParameterizedTest(name = "{displayName} - {0}")
   @MethodSource("getDataRequestArguments")
@@ -191,8 +216,13 @@ class MetricRecordingValidatorApiChannelTest {
             BeaconNodeRequestLabels.GET_GENESIS_METHOD,
             new GenesisData(dataStructureUtil.randomUInt64(), Bytes32.random())),
         requestDataTest(
-            "createUnsignedBlock",
+            "createUnsignedBlockDeprecated",
             channel -> channel.createUnsignedBlock(slot, signature, Optional.empty(), false),
+            BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD,
+            dataStructureUtil.randomBeaconBlock(slot)),
+        requestDataTest(
+            "createUnsignedBlock",
+            channel -> channel.createUnsignedBlock(slot, signature, Optional.empty()),
             BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD,
             dataStructureUtil.randomBeaconBlock(slot)),
         requestDataTest(
@@ -265,9 +295,7 @@ class MetricRecordingValidatorApiChannelTest {
 
   private long getCounterValue(final String methodLabel, final RequestOutcome outcome) {
     return metricsSystem
-        .getCounter(
-            TekuMetricCategory.VALIDATOR,
-            MetricRecordingValidatorApiChannel.BEACON_NODE_REQUESTS_COUNTER_NAME)
+        .getCounter(TekuMetricCategory.VALIDATOR, COUNTER_NAME)
         .getValue(methodLabel, outcome.toString());
   }
 }

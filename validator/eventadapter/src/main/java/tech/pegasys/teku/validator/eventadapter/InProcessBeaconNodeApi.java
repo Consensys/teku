@@ -27,7 +27,6 @@ import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
 import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 import tech.pegasys.teku.validator.beaconnode.TimeBasedEventAdapter;
-import tech.pegasys.teku.validator.beaconnode.metrics.MetricRecordingValidatorApiChannel;
 
 public class InProcessBeaconNodeApi implements BeaconNodeApi {
 
@@ -49,7 +48,7 @@ public class InProcessBeaconNodeApi implements BeaconNodeApi {
     final MetricsSystem metricsSystem = services.getMetricsSystem();
     final EventChannels eventChannels = services.getEventChannels();
     final ValidatorApiChannel validatorApiChannel =
-        new MetricRecordingValidatorApiChannel(
+        new InProcessMetricRecordingValidatorApiChannel(
             metricsSystem, eventChannels.getPublisher(ValidatorApiChannel.class, asyncRunner));
     final ValidatorTimingChannel validatorTimingChannel =
         eventChannels.getPublisher(ValidatorTimingChannel.class);

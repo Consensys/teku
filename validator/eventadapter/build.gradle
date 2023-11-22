@@ -18,5 +18,5 @@ dependencies {
   implementation 'org.apache.commons:commons-lang3'
 
   testImplementation 'org.mockito:mockito-core'
-  testImplementation testFixtures(project(':ethereum:spec'))
+  testImplementation testFixtures(project(':infrastructure:metrics'))
 }

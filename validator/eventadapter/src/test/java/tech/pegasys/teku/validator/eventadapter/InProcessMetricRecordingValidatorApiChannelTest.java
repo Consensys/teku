@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,33 +11,25 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.remote;
+package tech.pegasys.teku.validator.eventadapter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.validator.remote.RemoteMetricRecordingValidatorApiChannel.BEACON_NODE_REQUESTS_COUNTER_NAME;
+import static tech.pegasys.teku.validator.eventadapter.InProcessMetricRecordingValidatorApiChannel.BEACON_NODE_REQUESTS_COUNTER_NAME;
 
-import okhttp3.HttpUrl;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.beaconnode.metrics.MetricRecordingValidatorApiChannel;
 import tech.pegasys.teku.validator.beaconnode.metrics.MetricRecordingValidatorApiChannel.RequestOutcome;
 
-public class RemoteMetricRecordingValidatorApiChannelTest {
+class InProcessMetricRecordingValidatorApiChannelTest {
 
-  private static final String DELEGATE_ENDPOINT = "http://delegate.com/";
-
-  private final RemoteValidatorApiChannel delegate = mock(RemoteValidatorApiChannel.class);
+  private final ValidatorApiChannel delegate = mock(ValidatorApiChannel.class);
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
-  private final RemoteMetricRecordingValidatorApiChannel apiChannel =
-      new RemoteMetricRecordingValidatorApiChannel(metricsSystem, delegate);
-
-  @BeforeEach
-  public void setup() {
-    when(delegate.getEndpoint()).thenReturn(HttpUrl.get(DELEGATE_ENDPOINT));
-  }
+  private final MetricRecordingValidatorApiChannel apiChannel =
+      new InProcessMetricRecordingValidatorApiChannel(metricsSystem, delegate);
 
   @Test
   public void recordsRequest() {
@@ -52,6 +44,6 @@ public class RemoteMetricRecordingValidatorApiChannelTest {
   private long getCounterValue(final String methodLabel, final RequestOutcome outcome) {
     return metricsSystem
         .getCounter(TekuMetricCategory.VALIDATOR, BEACON_NODE_REQUESTS_COUNTER_NAME)
-        .getValue(DELEGATE_ENDPOINT, methodLabel, outcome.toString());
+        .getValue(methodLabel, outcome.toString());
   }
 }
