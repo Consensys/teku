@@ -16,5 +16,6 @@ the [releases page](https://github.com/Consensys/teku/releases).
 - Support to new Beacon APIs `publishBlindedBlockV2` and `publishBlockV2` which introduce broadcast validation parameter. 
 - Added configuration attributes in support of honest validator late block reorg, which adds `REORG_HEAD_WEIGHT_THRESHOLD`, `REORG_PARENT_WEIGHT_THRESHOLD`, and  `REORG_MAX_EPOCHS_SINCE_FINALIZATION` to phase 0 configurations. Mainnet values have been added as defaults for configurations that have not explicitly listed them.
 - Added POST `/eth/v1/beacon/states/{state_id}/validators` beacon API.
+- Added POST `/eth/v1/beacon/states/{state_id}/validator_balances` beacon API.
 
 ### Bug Fixes
