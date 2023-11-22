@@ -30,7 +30,6 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -234,16 +233,8 @@ class BlockProductionDutyTest {
 
     assertThat(kzgProofsFromSignedBlockContent).isNotEmpty();
 
-    IntStream.range(0, kzgProofsFromSignedBlockContent.size())
-        .forEach(
-            index -> {
-              final SszKZGProof kzgProofFromSignedBlockContents =
-                  kzgProofsFromSignedBlockContent.get(index);
-              final SszKZGProof kzgProofFromUnsignedBlockContents =
-                  kzgProofsFromUnsignedBlockContents.get(index);
-              assertThat(kzgProofFromSignedBlockContents)
-                  .isEqualTo(kzgProofFromUnsignedBlockContents);
-            });
+    assertThat(kzgProofsFromUnsignedBlockContents)
+        .isEqualTo(kzgProofsFromSignedBlockContent.asList());
 
     assertThat(signedBlockContents.getBlobs()).isPresent();
 
@@ -251,13 +242,7 @@ class BlockProductionDutyTest {
 
     assertThat(blobsFromSignedBlockContents).isNotEmpty();
 
-    IntStream.range(0, blobsFromSignedBlockContents.size())
-        .forEach(
-            index -> {
-              final Blob blobFromSignedBlockContents = blobsFromSignedBlockContents.get(index);
-              final Blob blobFromUnsignedBlockContents = blobsFromUnsignedBlockContents.get(index);
-              assertThat(blobFromSignedBlockContents).isEqualTo(blobFromUnsignedBlockContents);
-            });
+    assertThat(blobsFromUnsignedBlockContents).isEqualTo(blobsFromSignedBlockContents.asList());
 
     verify(validatorDutyMetrics)
         .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
@@ -625,16 +610,8 @@ class BlockProductionDutyTest {
 
     assertThat(kzgProofsFromSignedBlockContent).isNotEmpty();
 
-    IntStream.range(0, kzgProofsFromSignedBlockContent.size())
-        .forEach(
-            index -> {
-              final SszKZGProof kzgProofFromSignedBlockContents =
-                  kzgProofsFromSignedBlockContent.get(index);
-              final SszKZGProof kzgProofFromUnsignedBlockContents =
-                  kzgProofsFromUnsignedBlockContents.get(index);
-              assertThat(kzgProofFromSignedBlockContents)
-                  .isEqualTo(kzgProofFromUnsignedBlockContents);
-            });
+    assertThat(kzgProofsFromUnsignedBlockContents)
+        .isEqualTo(kzgProofsFromSignedBlockContent.asList());
 
     assertThat(signedBlockContents.getBlobs()).isPresent();
 
@@ -642,13 +619,7 @@ class BlockProductionDutyTest {
 
     assertThat(blobsFromSignedBlockContents).isNotEmpty();
 
-    IntStream.range(0, blobsFromSignedBlockContents.size())
-        .forEach(
-            index -> {
-              final Blob blobFromSignedBlockContents = blobsFromSignedBlockContents.get(index);
-              final Blob blobFromUnsignedBlockContents = blobsFromUnsignedBlockContents.get(index);
-              assertThat(blobFromSignedBlockContents).isEqualTo(blobFromUnsignedBlockContents);
-            });
+    assertThat(blobsFromUnsignedBlockContents).isEqualTo(blobsFromSignedBlockContents.asList());
 
     verify(validatorDutyMetrics)
         .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));

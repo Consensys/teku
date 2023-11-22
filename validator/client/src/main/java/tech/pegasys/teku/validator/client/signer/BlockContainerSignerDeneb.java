@@ -51,7 +51,7 @@ public class BlockContainerSignerDeneb implements BlockContainerSigner {
               if (signedBlock.isBlinded()) {
                 return signedBlock;
               } else {
-                final List<KZGProof> kzpProofs =
+                final List<KZGProof> kzgProofs =
                     unsignedBlockContainer
                         .getKzgProofs()
                         .map(
@@ -77,7 +77,7 @@ public class BlockContainerSignerDeneb implements BlockContainerSigner {
                                         unsignedBlockContainer.getSlot().longValue())));
                 return schemaDefinitions
                     .getSignedBlockContentsSchema()
-                    .create(signedBlock, kzpProofs, blobs);
+                    .create(signedBlock, kzgProofs, blobs);
               }
             });
   }
