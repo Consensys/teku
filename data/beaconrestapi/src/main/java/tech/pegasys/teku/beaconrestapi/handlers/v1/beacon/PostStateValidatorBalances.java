@@ -14,14 +14,11 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.base.Throwables;
 import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
@@ -59,18 +56,7 @@ public class PostStateValidatorBalances extends RestApiEndpoint {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    final Optional<List<String>> validators;
-    try {
-      validators = request.getOptionalRequestBody();
-    } catch (RuntimeException e) {
-      final Throwable throwable = Throwables.getRootCause(e);
-      if (throwable instanceof JsonParseException) {
-        request.respondError(SC_BAD_REQUEST, throwable.getMessage());
-      } else {
-        throw e;
-      }
-      return;
-    }
+    final Optional<List<String>> validators = request.getOptionalRequestBody();
 
     final SafeFuture<Optional<ObjectAndMetaData<List<StateValidatorBalanceData>>>> future =
         chainDataProvider.getStateValidatorBalances(

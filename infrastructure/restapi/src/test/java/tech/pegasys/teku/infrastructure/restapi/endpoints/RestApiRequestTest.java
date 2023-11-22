@@ -259,6 +259,15 @@ public class RestApiRequestTest {
   }
 
   @Test
+  public void whenParsingOptionalBodyThrowsJsonProcessingException_ShouldRethrow() {
+    final InputStream inputStream = IOUtils.toInputStream("[", StandardCharsets.UTF_8);
+    when(context.bodyInputStream()).thenReturn(inputStream);
+
+    assertThatThrownBy(() -> new JavalinRestApiRequest(context, METADATA).getOptionalRequestBody())
+        .isInstanceOf(JsonProcessingException.class);
+  }
+
+  @Test
   public void whenUnderlyingInputStreamThrowsIOException_ShouldThrowRuntimeWithCause()
       throws Exception {
     final InputStream inputStream = spy(IOUtils.toInputStream("", StandardCharsets.UTF_8));

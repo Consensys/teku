@@ -62,6 +62,8 @@ public class JavalinRestApiRequest implements RestApiRequest {
         pushbackInputStream.unread(firstByte);
         return Optional.of(metadata.getRequestBody(pushbackInputStream, context.headerMap()));
       }
+    } catch (final JsonProcessingException e) {
+      throw e;
     } catch (final IOException e) {
       throw new RuntimeException("Error reading request body", e);
     }
