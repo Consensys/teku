@@ -16,7 +16,7 @@ package tech.pegasys.teku.validator.remote;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static tech.pegasys.teku.validator.remote.RemoteMetricRecordingValidatorApiChannel.BEACON_NODE_REQUESTS_COUNTER_NAME;
+import static tech.pegasys.teku.validator.beaconnode.metrics.MetricRecordingValidatorApiChannel.BEACON_NODE_REQUESTS_COUNTER_NAME;
 
 import okhttp3.HttpUrl;
 import org.junit.jupiter.api.BeforeEach;

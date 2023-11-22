@@ -25,8 +25,6 @@ import tech.pegasys.teku.validator.beaconnode.metrics.MetricRecordingValidatorAp
 public class RemoteMetricRecordingValidatorApiChannel extends MetricRecordingValidatorApiChannel
     implements RemoteValidatorApiChannel {
 
-  static final String BEACON_NODE_REQUESTS_COUNTER_NAME = "remote_beacon_nodes_requests_total";
-
   private final RemoteValidatorApiChannel delegate;
 
   public RemoteMetricRecordingValidatorApiChannel(
@@ -40,7 +38,7 @@ public class RemoteMetricRecordingValidatorApiChannel extends MetricRecordingVal
     return metricsSystem.createLabelledCounter(
         TekuMetricCategory.VALIDATOR,
         BEACON_NODE_REQUESTS_COUNTER_NAME,
-        "Counter recording the number of remote requests sent to the beacon node(s)",
+        "Counter recording the number of remote requests sent to the configured beacon node(s)",
         "endpoint",
         "method",
         "outcome");

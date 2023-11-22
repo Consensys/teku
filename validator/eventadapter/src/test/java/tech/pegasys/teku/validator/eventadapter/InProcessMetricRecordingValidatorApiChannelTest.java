@@ -15,7 +15,7 @@ package tech.pegasys.teku.validator.eventadapter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static tech.pegasys.teku.validator.eventadapter.InProcessMetricRecordingValidatorApiChannel.BEACON_NODE_REQUESTS_COUNTER_NAME;
+import static tech.pegasys.teku.validator.beaconnode.metrics.MetricRecordingValidatorApiChannel.BEACON_NODE_REQUESTS_COUNTER_NAME;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;

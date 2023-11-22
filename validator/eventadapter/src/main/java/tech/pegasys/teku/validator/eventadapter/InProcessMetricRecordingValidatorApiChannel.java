@@ -23,8 +23,6 @@ import tech.pegasys.teku.validator.beaconnode.metrics.MetricRecordingValidatorAp
 public class InProcessMetricRecordingValidatorApiChannel
     extends MetricRecordingValidatorApiChannel {
 
-  static final String BEACON_NODE_REQUESTS_COUNTER_NAME = "beacon_node_requests_total";
-
   public InProcessMetricRecordingValidatorApiChannel(
       final MetricsSystem metricsSystem, final ValidatorApiChannel delegate) {
     super(metricsSystem, delegate);

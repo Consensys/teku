@@ -149,7 +149,7 @@ public class TekuValidatorNode extends Node {
 
   public void waitForDutiesRequestedFrom(final TekuNode node) {
     waitForMetric(
-        withNameEqualsTo("validator_remote_beacon_nodes_requests_total"),
+        withNameEqualsTo("validator_beacon_node_requests_total"),
         withLabelsContaining(
             Map.of(
                 "endpoint", node.getBeaconRestApiUrl() + "/",
@@ -160,7 +160,7 @@ public class TekuValidatorNode extends Node {
 
   public void waitForAttestationPublishedTo(final TekuNode node) {
     waitForMetric(
-        withNameEqualsTo("validator_remote_beacon_nodes_requests_total"),
+        withNameEqualsTo("validator_beacon_node_requests_total"),
         withLabelsContaining(
             Map.of(
                 "endpoint", node.getBeaconRestApiUrl() + "/",
