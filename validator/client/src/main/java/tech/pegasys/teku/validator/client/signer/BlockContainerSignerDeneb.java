@@ -13,10 +13,8 @@
 
 package tech.pegasys.teku.validator.client.signer;
 
-import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.ssz.SszCollection;
-import tech.pegasys.teku.kzg.KZGProof;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -51,24 +49,18 @@ public class BlockContainerSignerDeneb implements BlockContainerSigner {
               if (signedBlock.isBlinded()) {
                 return signedBlock;
               } else {
-                final List<KZGProof> kzgProofs =
+                final SszList<SszKZGProof> kzgProofs =
                     unsignedBlockContainer
                         .getKzgProofs()
-                        .map(
-                            sszKzgProofs ->
-                                sszKzgProofs.asList().stream()
-                                    .map(SszKZGProof::getKZGProof)
-                                    .toList())
                         .orElseThrow(
                             () ->
                                 new RuntimeException(
                                     String.format(
                                         "Unable to get KZG Proofs when signing Deneb block at slot %d",
                                         unsignedBlockContainer.getSlot().longValue())));
-                final List<Blob> blobs =
+                final SszList<Blob> blobs =
                     unsignedBlockContainer
                         .getBlobs()
-                        .map(SszCollection::asList)
                         .orElseThrow(
                             () ->
                                 new RuntimeException(
