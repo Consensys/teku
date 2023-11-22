@@ -59,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -186,6 +187,8 @@ class BlockProductionDutyTest {
     final BeaconBlock unsignedBlock = unsignedBlockContents.getBlock();
     final List<Blob> blobsFromUnsignedBlockContents =
         unsignedBlockContents.getBlobs().orElseThrow().asList();
+    final List<SszKZGProof> kzgProofsFromUnsignedBlockContents =
+        unsignedBlockContents.getKzgProofs().orElseThrow().asList();
     when(signer.createRandaoReveal(spec.computeEpochAtSlot(denebSlot), fork))
         .thenReturn(completedFuture(randaoReveal));
     when(signer.signBlock(unsignedBlockContents.getBlock(), fork))
@@ -224,6 +227,24 @@ class BlockProductionDutyTest {
     assertThat(signedBlock.getMessage()).isEqualTo(unsignedBlock);
     assertThat(signedBlock.getSignature()).isEqualTo(blockSignature);
 
+    assertThat(signedBlockContents.getKzgProofs()).isPresent();
+
+    final SszList<SszKZGProof> kzgProofsFromSignedBlockContent =
+        signedBlockContents.getKzgProofs().get();
+
+    assertThat(kzgProofsFromSignedBlockContent).isNotEmpty();
+
+    IntStream.range(0, kzgProofsFromSignedBlockContent.size())
+        .forEach(
+            index -> {
+              final SszKZGProof kzgProofFromSignedBlockContents =
+                  kzgProofsFromSignedBlockContent.get(index);
+              final SszKZGProof kzgProofFromUnsignedBlockContents =
+                  kzgProofsFromUnsignedBlockContents.get(index);
+              assertThat(kzgProofFromSignedBlockContents)
+                  .isEqualTo(kzgProofFromUnsignedBlockContents);
+            });
+
     assertThat(signedBlockContents.getBlobs()).isPresent();
 
     final SszList<Blob> blobsFromSignedBlockContents = signedBlockContents.getBlobs().get();
@@ -244,6 +265,153 @@ class BlockProductionDutyTest {
         .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
     verify(validatorDutyMetrics)
         .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SEND));
+  }
+
+  @Test
+  public void forDeneb_shouldCreateAndPublishBlindedBlock() {
+    duty =
+        new BlockProductionDuty(
+            validator,
+            denebSlot,
+            forkProvider,
+            validatorApiChannel,
+            blockContainerSigner,
+            true,
+            false,
+            spec,
+            validatorDutyMetrics);
+
+    final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
+    final BLSSignature blockSignature = dataStructureUtil.randomSignature();
+    final BeaconBlock unsignedBlindedBlock = dataStructureUtil.randomBlindedBeaconBlock(denebSlot);
+
+    when(signer.createRandaoReveal(spec.computeEpochAtSlot(denebSlot), fork))
+        .thenReturn(completedFuture(randaoReveal));
+    when(signer.signBlock(unsignedBlindedBlock.getBlock(), fork))
+        .thenReturn(completedFuture(blockSignature));
+    when(validatorApiChannel.createUnsignedBlock(
+            denebSlot, randaoReveal, Optional.of(graffiti), true))
+        .thenReturn(completedFuture(Optional.of(unsignedBlindedBlock)));
+    when(validatorApiChannel.sendSignedBlock(any(), any()))
+        .thenReturn(completedFuture(SendSignedBlockResult.success(unsignedBlindedBlock.getRoot())));
+
+    performAndReportDuty(denebSlot);
+
+    final ArgumentCaptor<SignedBlockContainer> signedBlindedBlockContainerArgumentCaptor =
+        ArgumentCaptor.forClass(SignedBlockContainer.class);
+
+    verify(validatorApiChannel)
+        .sendSignedBlock(signedBlindedBlockContainerArgumentCaptor.capture(), any());
+    verify(validatorLogger)
+        .dutyCompleted(
+            eq(TYPE),
+            eq(denebSlot),
+            eq(1),
+            eq(Set.of(unsignedBlindedBlock.hashTreeRoot())),
+            ArgumentMatchers.argThat(Optional::isPresent));
+    verifyNoMoreInteractions(validatorLogger);
+
+    final SignedBlockContainer signedBlindedBlockContainer =
+        signedBlindedBlockContainerArgumentCaptor.getValue();
+
+    assertThat(signedBlindedBlockContainer).isInstanceOf(SignedBeaconBlock.class);
+
+    final SignedBeaconBlock signedBlock = signedBlindedBlockContainer.getSignedBlock();
+
+    assertThat(signedBlock.getMessage()).isEqualTo(unsignedBlindedBlock);
+    assertThat(signedBlock.isBlinded()).isTrue();
+    assertThat(signedBlock.getSignature()).isEqualTo(blockSignature);
+
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
+    verify(validatorDutyMetrics)
+        .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SEND));
+  }
+
+  @Test
+  public void forDeneb_shouldFailWhenNoKzgProofs() {
+    duty =
+        new BlockProductionDuty(
+            validator,
+            denebSlot,
+            forkProvider,
+            validatorApiChannel,
+            blockContainerSigner,
+            false,
+            false,
+            spec,
+            validatorDutyMetrics);
+
+    final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
+    final BLSSignature blockSignature = dataStructureUtil.randomSignature();
+    // can create BlockContents only post-Deneb
+    final BlockContents unsignedBlockContents = dataStructureUtil.randomBlockContents(denebSlot);
+    final BlockContents unsignedBlockContentsMock = mock(BlockContents.class);
+    when(unsignedBlockContentsMock.getKzgProofs()).thenReturn(Optional.empty());
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    when(unsignedBlockContentsMock.getSlot()).thenReturn(unsignedBlockContents.getSlot());
+    when(unsignedBlockContentsMock.getBlock()).thenReturn(unsignedBlockContents.getBlock());
+    when(signer.createRandaoReveal(spec.computeEpochAtSlot(denebSlot), fork))
+        .thenReturn(completedFuture(randaoReveal));
+    when(signer.signBlock(unsignedBlockContentsMock.getBlock(), fork))
+        .thenReturn(completedFuture(blockSignature));
+    when(validatorApiChannel.createUnsignedBlock(
+            denebSlot, randaoReveal, Optional.of(graffiti), false))
+        .thenReturn(completedFuture(Optional.of(unsignedBlockContentsMock)));
+    when(validatorApiChannel.sendSignedBlock(any(), any()))
+        .thenReturn(completedFuture(SendSignedBlockResult.success(blockRoot)));
+
+    final RuntimeException error =
+        new RuntimeException(
+            String.format(
+                "Unable to get KZG Proofs when signing Deneb block at slot %d",
+                denebSlot.longValue()));
+
+    assertDutyFails(error, denebSlot);
+  }
+
+  @Test
+  public void forDeneb_shouldFailWhenNoBlobs() {
+    duty =
+        new BlockProductionDuty(
+            validator,
+            denebSlot,
+            forkProvider,
+            validatorApiChannel,
+            blockContainerSigner,
+            false,
+            false,
+            spec,
+            validatorDutyMetrics);
+
+    final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
+    final BLSSignature blockSignature = dataStructureUtil.randomSignature();
+    // can create BlockContents only post-Deneb
+    final BlockContents unsignedBlockContents = dataStructureUtil.randomBlockContents(denebSlot);
+    final BlockContents unsignedBlockContentsMock = mock(BlockContents.class);
+    when(unsignedBlockContentsMock.getBlobs()).thenReturn(Optional.empty());
+    when(unsignedBlockContentsMock.getKzgProofs()).thenReturn(unsignedBlockContents.getKzgProofs());
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    when(unsignedBlockContentsMock.getSlot()).thenReturn(unsignedBlockContents.getSlot());
+    when(unsignedBlockContentsMock.getBlock()).thenReturn(unsignedBlockContents.getBlock());
+    when(signer.createRandaoReveal(spec.computeEpochAtSlot(denebSlot), fork))
+        .thenReturn(completedFuture(randaoReveal));
+    when(signer.signBlock(unsignedBlockContentsMock.getBlock(), fork))
+        .thenReturn(completedFuture(blockSignature));
+    when(validatorApiChannel.createUnsignedBlock(
+            denebSlot, randaoReveal, Optional.of(graffiti), false))
+        .thenReturn(completedFuture(Optional.of(unsignedBlockContentsMock)));
+    when(validatorApiChannel.sendSignedBlock(any(), any()))
+        .thenReturn(completedFuture(SendSignedBlockResult.success(blockRoot)));
+
+    final RuntimeException error =
+        new RuntimeException(
+            String.format(
+                "Unable to get blobs when signing Deneb block at slot %d", denebSlot.longValue()));
+
+    assertDutyFails(error, denebSlot);
   }
 
   @Test
@@ -411,6 +579,8 @@ class BlockProductionDutyTest {
     final BeaconBlock unsignedBlock = unsignedBlockContents.getBlock();
     final List<Blob> blobsFromUnsignedBlockContents =
         unsignedBlockContents.getBlobs().orElseThrow().asList();
+    final List<SszKZGProof> kzgProofsFromUnsignedBlockContents =
+        unsignedBlockContents.getKzgProofs().orElseThrow().asList();
 
     when(signer.createRandaoReveal(spec.computeEpochAtSlot(denebSlot), fork))
         .thenReturn(completedFuture(randaoReveal));
@@ -448,6 +618,24 @@ class BlockProductionDutyTest {
     assertThat(signedBlock.getMessage()).isEqualTo(unsignedBlock);
     assertThat(signedBlock.getSignature()).isEqualTo(blockSignature);
 
+    assertThat(signedBlockContents.getKzgProofs()).isPresent();
+
+    final SszList<SszKZGProof> kzgProofsFromSignedBlockContent =
+        signedBlockContents.getKzgProofs().get();
+
+    assertThat(kzgProofsFromSignedBlockContent).isNotEmpty();
+
+    IntStream.range(0, kzgProofsFromSignedBlockContent.size())
+        .forEach(
+            index -> {
+              final SszKZGProof kzgProofFromSignedBlockContents =
+                  kzgProofsFromSignedBlockContent.get(index);
+              final SszKZGProof kzgProofFromUnsignedBlockContents =
+                  kzgProofsFromUnsignedBlockContents.get(index);
+              assertThat(kzgProofFromSignedBlockContents)
+                  .isEqualTo(kzgProofFromUnsignedBlockContents);
+            });
+
     assertThat(signedBlockContents.getBlobs()).isPresent();
 
     final SszList<Blob> blobsFromSignedBlockContents = signedBlockContents.getBlobs().get();
@@ -471,10 +659,21 @@ class BlockProductionDutyTest {
   }
 
   public void assertDutyFails(final RuntimeException error) {
-    performAndReportDuty();
+    assertDutyFails(error, CAPELLA_SLOT);
+  }
+
+  public void assertDutyFails(final RuntimeException expectedError, final UInt64 slot) {
+    performAndReportDuty(slot);
+    final ArgumentCaptor<Throwable> errorCaptor = ArgumentCaptor.forClass(Throwable.class);
     verify(validatorLogger)
         .dutyFailed(
-            TYPE, CAPELLA_SLOT, Set.of(validator.getPublicKey().toAbbreviatedString()), error);
+            eq(TYPE),
+            eq(slot),
+            eq(Set.of(validator.getPublicKey().toAbbreviatedString())),
+            errorCaptor.capture());
+    final Throwable actualError = errorCaptor.getValue();
+    assertThat(expectedError.getCause()).isEqualTo(actualError.getCause());
+    assertThat(expectedError.getMessage()).isEqualTo(actualError.getMessage());
     verifyNoMoreInteractions(validatorLogger);
   }
 
