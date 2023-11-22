@@ -87,7 +87,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
             asyncRunner,
             metricsSystem);
     final List<? extends RemoteValidatorApiChannel> failoverValidatorApis =
-        createFailoverValidatorApiChannel(
+        createFailoverValidatorApiChannels(
             validatorConfig,
             remoteBeaconNodeEndpoints,
             okHttpClient,
@@ -114,7 +114,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
     final ValidatorApiChannel validatorApi;
 
-    if (!remoteBeaconNodeEndpoints.getFailoverEndpoints().isEmpty()) {
+    if (!failoverValidatorApis.isEmpty()) {
       LOG.info(
           "Will use {} as failover Beacon Node endpoints",
           remoteBeaconNodeEndpoints.getFailoverEndpoints());
@@ -190,7 +190,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
             asyncRunner));
   }
 
-  public static List<? extends RemoteValidatorApiChannel> createFailoverValidatorApiChannel(
+  public static List<? extends RemoteValidatorApiChannel> createFailoverValidatorApiChannels(
       final ValidatorConfig validatorConfig,
       final RemoteBeaconNodeEndpoints remoteBeaconNodeEndpoints,
       final OkHttpClient httpClient,

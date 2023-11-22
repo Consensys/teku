@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.validator.remote.sentry;
 
-import static tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi.createFailoverValidatorApiChannel;
+import static tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi.createFailoverValidatorApiChannels;
 import static tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi.createPrimaryValidatorApiChannel;
 
 import java.net.URI;
@@ -87,7 +87,7 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
             asyncRunner,
             metricsSystem);
     final List<? extends RemoteValidatorApiChannel> dutiesProviderFailoverValidatorApiChannels =
-        createFailoverValidatorApiChannel(
+        createFailoverValidatorApiChannels(
             validatorConfig,
             dutiesProviderHttpClient,
             sentryNodesHttpClient,
@@ -113,6 +113,7 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
     eventChannels.subscribe(ValidatorTimingChannel.class, beaconNodeReadinessManager);
 
     final ValidatorApiChannel dutiesProviderValidatorApi;
+
     if (!dutiesProviderFailoverValidatorApiChannels.isEmpty()) {
       dutiesProviderValidatorApi =
           new FailoverValidatorApiHandler(
@@ -200,7 +201,7 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
             asyncRunner,
             metricsSystem);
     final List<? extends RemoteValidatorApiChannel> failoverValidatorApis =
-        createFailoverValidatorApiChannel(
+        createFailoverValidatorApiChannels(
             validatorConfig,
             remoteBeaconNodeEndpoints,
             httpClient,
@@ -210,7 +211,7 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
 
     final ValidatorApiChannel validatorApi;
 
-    if (!remoteBeaconNodeEndpoints.getFailoverEndpoints().isEmpty()) {
+    if (!failoverValidatorApis.isEmpty()) {
       LOG.info(
           "Will use {} as failover Beacon Node endpoints",
           remoteBeaconNodeEndpoints.getFailoverEndpoints());

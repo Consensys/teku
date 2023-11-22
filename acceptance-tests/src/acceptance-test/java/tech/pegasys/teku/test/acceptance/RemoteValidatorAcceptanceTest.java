@@ -51,7 +51,7 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
     beaconNode.start();
     validatorClient.start();
 
-    waitForValidatorDutiesToComplete();
+    waitForValidatorDutiesToComplete(beaconNode);
   }
 
   @Test
@@ -63,7 +63,7 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
     beaconNode.start();
 
     waitForSuccessfulEventStreamConnection();
-    waitForValidatorDutiesToComplete();
+    waitForValidatorDutiesToComplete(beaconNode);
   }
 
   @Test
@@ -91,15 +91,14 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
     validatorClient.start();
 
     waitForSuccessfulEventStreamConnection();
-    waitForValidatorDutiesToComplete();
+    waitForValidatorDutiesToComplete(beaconNode);
 
     beaconNode.stop();
 
     validatorClient.waitForLogMessageContaining(
         "Switching to failover beacon node for event streaming");
     waitForSuccessfulEventStreamConnection();
-    waitForValidatorDutiesToComplete();
-    waitForDutiesRequestedFromAndPublishedTo(failoverBeaconNode);
+    waitForValidatorDutiesToComplete(failoverBeaconNode);
 
     // primary beacon node recovers
     beaconNode.start();
@@ -107,8 +106,7 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
     validatorClient.waitForLogMessageContaining(
         "Switching back to the primary beacon node for event streaming");
     waitForSuccessfulEventStreamConnection();
-    waitForValidatorDutiesToComplete();
-    waitForDutiesRequestedFromAndPublishedTo(beaconNode);
+    waitForValidatorDutiesToComplete(beaconNode);
   }
 
   @Test
@@ -140,8 +138,7 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
     validatorClient.waitForLogMessageContaining(
         "Switching to failover beacon node for event streaming");
     waitForSuccessfulEventStreamConnection();
-    waitForValidatorDutiesToComplete();
-    waitForDutiesRequestedFromAndPublishedTo(beaconNode);
+    waitForValidatorDutiesToComplete(beaconNode);
   }
 
   private void waitForSuccessfulEventStreamConnection() {
@@ -149,15 +146,12 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
         "Successfully connected to beacon node event stream");
   }
 
-  private void waitForValidatorDutiesToComplete() {
+  private void waitForValidatorDutiesToComplete(final TekuNode beaconNode) {
     validatorClient.waitForLogMessageContaining("Published block");
     validatorClient.waitForLogMessageContaining("Published attestation");
     validatorClient.waitForLogMessageContaining("Published aggregate");
     validatorClient.waitForLogMessageContaining("Published sync_signature");
     validatorClient.waitForLogMessageContaining("Published sync_contribution");
-  }
-
-  private void waitForDutiesRequestedFromAndPublishedTo(final TekuNode beaconNode) {
     validatorClient.waitForDutiesRequestedFrom(beaconNode);
     validatorClient.waitForAttestationPublishedTo(beaconNode);
     validatorClient.waitForBlockPublishedTo(beaconNode);
