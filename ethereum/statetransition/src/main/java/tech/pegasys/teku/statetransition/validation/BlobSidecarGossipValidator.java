@@ -266,7 +266,7 @@ public class BlobSidecarGossipValidator {
               }
               validSignedBlockHeaders.add(blobSidecar.getSignedBeaconBlockHeader().hashTreeRoot());
 
-              return InternalValidationResult.ACCEPT;
+              return ACCEPT;
             });
   }
 
