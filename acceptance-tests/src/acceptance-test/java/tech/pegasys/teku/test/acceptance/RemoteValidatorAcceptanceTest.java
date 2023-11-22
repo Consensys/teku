@@ -51,6 +51,7 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
     beaconNode.start();
     validatorClient.start();
 
+    waitForSuccessfulEventStreamConnection();
     waitForValidatorDutiesToComplete(beaconNode);
   }
 
@@ -111,17 +112,15 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldPerformDutiesIfPrimaryBeaconNodeIsDownOnStartup() throws Exception {
-    // creating a primary beacon node which we would never start
-    final TekuNode primaryBeaconNode =
+    final TekuNode failoverBeaconNode =
         createTekuNode(
             config ->
                 config
                     .withNetwork(NETWORK_NAME)
                     .withInteropNumberOfValidators(VALIDATOR_COUNT)
-                    .withInteropValidators(0, 0)
-                    .withPeers(beaconNode));
+                    .withInteropValidators(0, 0));
 
-    beaconNode.start();
+    failoverBeaconNode.start();
 
     validatorClient =
         createValidatorNode(
@@ -129,7 +128,8 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
                 config
                     .withNetwork(NETWORK_NAME)
                     .withInteropValidators(0, VALIDATOR_COUNT)
-                    .withBeaconNodes(primaryBeaconNode, beaconNode));
+                    // will never start the primary beacon node
+                    .withBeaconNodes(beaconNode, failoverBeaconNode));
 
     validatorClient.start();
 
@@ -138,7 +138,7 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
     validatorClient.waitForLogMessageContaining(
         "Switching to failover beacon node for event streaming");
     waitForSuccessfulEventStreamConnection();
-    waitForValidatorDutiesToComplete(beaconNode);
+    waitForValidatorDutiesToComplete(failoverBeaconNode);
   }
 
   private void waitForSuccessfulEventStreamConnection() {
