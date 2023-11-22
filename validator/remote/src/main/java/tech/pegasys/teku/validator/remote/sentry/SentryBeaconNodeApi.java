@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.validator.remote.sentry;
 
+import static tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi.createFailoverValidatorApiChannel;
+import static tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi.createPrimaryValidatorApiChannel;
+
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
@@ -38,9 +41,7 @@ import tech.pegasys.teku.validator.remote.BeaconNodeReadinessChannel;
 import tech.pegasys.teku.validator.remote.BeaconNodeReadinessManager;
 import tech.pegasys.teku.validator.remote.FailoverValidatorApiHandler;
 import tech.pegasys.teku.validator.remote.RemoteBeaconNodeEndpoints;
-import tech.pegasys.teku.validator.remote.RemoteMetricRecordingValidatorApiChannel;
 import tech.pegasys.teku.validator.remote.RemoteValidatorApiChannel;
-import tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler;
 import tech.pegasys.teku.validator.remote.eventsource.EventSourceBeaconChainEventAdapter;
 
 public class SentryBeaconNodeApi implements BeaconNodeApi {
@@ -178,44 +179,6 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
 
     return new SentryBeaconNodeApi(
         beaconChainEventAdapter, sentryValidatorApi, beaconNodeReadinessManager);
-  }
-
-  private static RemoteValidatorApiChannel createPrimaryValidatorApiChannel(
-      final ValidatorConfig validatorConfig,
-      final RemoteBeaconNodeEndpoints remoteBeaconNodeEndpoints,
-      final OkHttpClient httpClient,
-      final Spec spec,
-      final AsyncRunner asyncRunner,
-      final MetricsSystem metricsSystem) {
-    return new RemoteMetricRecordingValidatorApiChannel(
-        metricsSystem,
-        RemoteValidatorApiHandler.create(
-            remoteBeaconNodeEndpoints.getPrimaryEndpoint(),
-            httpClient,
-            spec,
-            validatorConfig.isValidatorClientUseSszBlocksEnabled(),
-            asyncRunner));
-  }
-
-  private static List<? extends RemoteValidatorApiChannel> createFailoverValidatorApiChannel(
-      final ValidatorConfig validatorConfig,
-      final RemoteBeaconNodeEndpoints remoteBeaconNodeEndpoints,
-      final OkHttpClient httpClient,
-      final Spec spec,
-      final AsyncRunner asyncRunner,
-      final MetricsSystem metricsSystem) {
-    return remoteBeaconNodeEndpoints.getFailoverEndpoints().stream()
-        .map(
-            endpoint ->
-                new RemoteMetricRecordingValidatorApiChannel(
-                    metricsSystem,
-                    RemoteValidatorApiHandler.create(
-                        endpoint,
-                        httpClient,
-                        spec,
-                        validatorConfig.isValidatorClientUseSszBlocksEnabled(),
-                        asyncRunner)))
-        .toList();
   }
 
   private static ValidatorApiChannel createRemoteValidatorApiForRole(

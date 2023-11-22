@@ -78,31 +78,22 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
     final RemoteBeaconNodeEndpoints remoteBeaconNodeEndpoints =
         new RemoteBeaconNodeEndpoints(beaconNodeApiEndpoints);
 
-    final HttpUrl primaryEndpoint = remoteBeaconNodeEndpoints.getPrimaryEndpoint();
-    final List<HttpUrl> failoverEndpoints = remoteBeaconNodeEndpoints.getFailoverEndpoints();
-
     final RemoteValidatorApiChannel primaryValidatorApi =
-        new RemoteMetricRecordingValidatorApiChannel(
-            metricsSystem,
-            RemoteValidatorApiHandler.create(
-                primaryEndpoint,
-                okHttpClient,
-                spec,
-                validatorConfig.isValidatorClientUseSszBlocksEnabled(),
-                asyncRunner));
+        createPrimaryValidatorApiChannel(
+            validatorConfig,
+            remoteBeaconNodeEndpoints,
+            okHttpClient,
+            spec,
+            asyncRunner,
+            metricsSystem);
     final List<? extends RemoteValidatorApiChannel> failoverValidatorApis =
-        failoverEndpoints.stream()
-            .map(
-                endpoint ->
-                    new RemoteMetricRecordingValidatorApiChannel(
-                        metricsSystem,
-                        RemoteValidatorApiHandler.create(
-                            endpoint,
-                            okHttpClient,
-                            spec,
-                            validatorConfig.isValidatorClientUseSszBlocksEnabled(),
-                            asyncRunner)))
-            .toList();
+        createFailoverValidatorApiChannel(
+            validatorConfig,
+            remoteBeaconNodeEndpoints,
+            okHttpClient,
+            spec,
+            asyncRunner,
+            metricsSystem);
 
     final EventChannels eventChannels = serviceConfig.getEventChannels();
 
@@ -123,8 +114,10 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
     final ValidatorApiChannel validatorApi;
 
-    if (!failoverEndpoints.isEmpty()) {
-      LOG.info("Will use {} as failover Beacon Node endpoints", failoverEndpoints);
+    if (!remoteBeaconNodeEndpoints.getFailoverEndpoints().isEmpty()) {
+      LOG.info(
+          "Will use {} as failover Beacon Node endpoints",
+          remoteBeaconNodeEndpoints.getFailoverEndpoints());
       validatorApi =
           new FailoverValidatorApiHandler(
               beaconNodeReadinessManager,
@@ -178,6 +171,44 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
   @Override
   public ValidatorApiChannel getValidatorApi() {
     return validatorApiChannel;
+  }
+
+  public static RemoteValidatorApiChannel createPrimaryValidatorApiChannel(
+      final ValidatorConfig validatorConfig,
+      final RemoteBeaconNodeEndpoints remoteBeaconNodeEndpoints,
+      final OkHttpClient httpClient,
+      final Spec spec,
+      final AsyncRunner asyncRunner,
+      final MetricsSystem metricsSystem) {
+    return new RemoteMetricRecordingValidatorApiChannel(
+        metricsSystem,
+        RemoteValidatorApiHandler.create(
+            remoteBeaconNodeEndpoints.getPrimaryEndpoint(),
+            httpClient,
+            spec,
+            validatorConfig.isValidatorClientUseSszBlocksEnabled(),
+            asyncRunner));
+  }
+
+  public static List<? extends RemoteValidatorApiChannel> createFailoverValidatorApiChannel(
+      final ValidatorConfig validatorConfig,
+      final RemoteBeaconNodeEndpoints remoteBeaconNodeEndpoints,
+      final OkHttpClient httpClient,
+      final Spec spec,
+      final AsyncRunner asyncRunner,
+      final MetricsSystem metricsSystem) {
+    return remoteBeaconNodeEndpoints.getFailoverEndpoints().stream()
+        .map(
+            endpoint ->
+                new RemoteMetricRecordingValidatorApiChannel(
+                    metricsSystem,
+                    RemoteValidatorApiHandler.create(
+                        endpoint,
+                        httpClient,
+                        spec,
+                        validatorConfig.isValidatorClientUseSszBlocksEnabled(),
+                        asyncRunner)))
+        .toList();
   }
 
   public static List<HttpUrl> convertToOkHttpUrls(final List<URI> beaconNodeApiEndpoints) {
