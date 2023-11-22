@@ -42,7 +42,7 @@ public abstract class AbstractSszComposite<SszChildT extends SszData>
   private final IntCache<SszChildT> childrenViewCache;
   private int sizeCache = -1;
   private final SszCompositeSchema<?> schema;
-  private final com.google.common.base.Supplier<TreeNode> backingNode;
+  private final Supplier<TreeNode> backingNode;
 
   /** Creates an instance from a schema and a backing node */
   protected AbstractSszComposite(SszCompositeSchema<?> schema, Supplier<TreeNode> lazyBackingNode) {
