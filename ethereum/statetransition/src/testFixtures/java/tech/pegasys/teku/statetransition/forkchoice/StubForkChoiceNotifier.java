@@ -69,4 +69,9 @@ public class StubForkChoiceNotifier implements ForkChoiceNotifier {
 
   @Override
   public void onTerminalBlockReached(final Bytes32 executionBlockHash) {}
+
+  @Override
+  public boolean validatorIsConnected(UInt64 validatorIndex, UInt64 currentSlot) {
+    return true;
+  }
 }

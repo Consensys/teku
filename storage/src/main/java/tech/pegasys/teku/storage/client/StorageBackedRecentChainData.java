@@ -26,6 +26,7 @@ import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
@@ -49,6 +50,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final StoreConfig storeConfig,
+      final TimeProvider timeProvider,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
@@ -59,6 +61,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
         asyncRunner,
         metricsSystem,
         storeConfig,
+        timeProvider,
         storageQueryChannel::getHotBlocksByRoot,
         storageQueryChannel::getHotStateAndBlockSummaryByBlockRoot,
         storageQueryChannel::getEarliestAvailableBlobSidecarSlot,
@@ -77,6 +80,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final MetricsSystem metricsSystem,
       final StoreConfig storeConfig,
       final AsyncRunner asyncRunner,
+      final TimeProvider timeProvider,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
@@ -88,6 +92,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
             asyncRunner,
             metricsSystem,
             storeConfig,
+            timeProvider,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
@@ -103,6 +108,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final StoreConfig storeConfig,
+      final TimeProvider timeProvider,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
@@ -114,6 +120,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
             asyncRunner,
             metricsSystem,
             storeConfig,
+            timeProvider,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,

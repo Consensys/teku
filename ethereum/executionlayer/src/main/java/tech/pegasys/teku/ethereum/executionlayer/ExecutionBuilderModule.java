@@ -392,8 +392,8 @@ public class ExecutionBuilderModule {
       final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture) {
     // note: we don't do any particular consistency check here.
     // the header/payload compatibility check is done by SignedBeaconBlockUnblinder
-    // TODO: clarify where is blobs bundle compatibility check done
-    // the blobs bundle compatibility is done by ...
+    // the blobs bundle compatibility check is done by
+    // BlockOperationSelectorFactory#createBlobSidecarsSelector
     return headerWithFallbackDataFuture.thenCompose(
         headerWithFallbackData -> {
           if (headerWithFallbackData.getFallbackData().isEmpty()) {

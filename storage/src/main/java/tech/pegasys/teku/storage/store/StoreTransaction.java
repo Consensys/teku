@@ -35,7 +35,7 @@ import tech.pegasys.teku.dataproviders.generators.StateAtSlotTask;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -71,7 +71,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   Map<Bytes32, SlotAndBlockRoot> stateRoots = new HashMap<>();
   Set<Bytes32> pulledUpBlockCheckpoints = new HashSet<>();
   Map<Bytes32, TransactionBlockData> blockData = new HashMap<>();
-  Map<SlotAndBlockRoot, List<BlobSidecarOld>> blobSidecars = new HashMap<>();
+  Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = new HashMap<>();
   Optional<UInt64> maybeEarliestBlobSidecarTransactionSlot = Optional.empty();
   private final UpdatableStore.StoreUpdateHandler updateHandler;
 
@@ -93,7 +93,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
       final SignedBeaconBlock block,
       final BeaconState state,
       final BlockCheckpoints blockCheckpoints,
-      final Optional<List<BlobSidecarOld>> blobSidecars,
+      final Optional<List<BlobSidecar>> blobSidecars,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     blockData.put(block.getRoot(), new TransactionBlockData(block, state, blockCheckpoints));
     if (!blobSidecars.isEmpty()) {
@@ -459,7 +459,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public Optional<List<BlobSidecarOld>> getBlobSidecarsIfAvailable(
+  public Optional<List<BlobSidecar>> getBlobSidecarsIfAvailable(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return Optional.ofNullable(blobSidecars.get(slotAndBlockRoot))
         .or(() -> store.getBlobSidecarsIfAvailable(slotAndBlockRoot));

@@ -17,8 +17,8 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 
 public interface BlobSidecarSelector {
-  SafeFuture<Optional<List<BlobSidecarOld>>> getBlobSidecars(List<UInt64> indices);
+  SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecars(List<UInt64> indices);
 }

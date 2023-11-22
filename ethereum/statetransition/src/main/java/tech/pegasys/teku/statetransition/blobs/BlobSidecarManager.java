@@ -18,7 +18,6 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
@@ -36,9 +35,6 @@ public interface BlobSidecarManager {
 
         @Override
         public void prepareForBlockImport(final BlobSidecar blobSidecar) {}
-
-        @Override
-        public void prepareForBlockImport(final BlobSidecarOld blobSidecar) {}
 
         @Override
         public void subscribeToReceivedBlobSidecar(
@@ -66,9 +62,6 @@ public interface BlobSidecarManager {
       BlobSidecar blobSidecar, Optional<UInt64> arrivalTimestamp);
 
   void prepareForBlockImport(BlobSidecar blobSidecar);
-
-  @Deprecated
-  void prepareForBlockImport(BlobSidecarOld blobSidecar);
 
   void subscribeToReceivedBlobSidecar(ReceivedBlobSidecarListener receivedBlobSidecarListener);
 

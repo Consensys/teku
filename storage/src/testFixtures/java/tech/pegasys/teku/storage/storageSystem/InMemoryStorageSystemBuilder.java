@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.List;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
@@ -98,6 +99,7 @@ public class InMemoryStorageSystemBuilder {
         createRestartSupplier(),
         storageMode,
         storeConfig,
+        new SystemTimeProvider(),
         spec,
         ChainBuilder.create(spec, validatorKeys));
   }

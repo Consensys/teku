@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.coordinator;
 
+import com.google.common.base.Preconditions;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -339,6 +340,8 @@ public class BlockOperationSelectorFactory {
   public Function<SignedBlockContainer, List<BlobSidecar>> createBlobSidecarsSelector() {
     return blockContainer -> {
       final UInt64 slot = blockContainer.getSlot();
+      final SignedBeaconBlock block = blockContainer.getSignedBlock();
+
       final MiscHelpersDeneb miscHelpersDeneb =
           MiscHelpersDeneb.required(spec.atSlot(slot).miscHelpers());
 
@@ -350,31 +353,24 @@ public class BlockOperationSelectorFactory {
         // blobs and the proofs wouldn't be part of the BlockContainer
         final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
             getCachedBuilderBlobsBundle(slot);
+        // consistency check because the BlobsBundle comes from an external source (a builder)
+        final SszList<SszKZGCommitment> blockCommitments =
+            block.getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
+        Preconditions.checkState(
+            blobsBundle.getCommitments().hashTreeRoot().equals(blockCommitments.hashTreeRoot()),
+            "Commitments in the builder BlobsBundle don't match the commitments in the block");
         blobs = blobsBundle.getBlobs();
         proofs = blobsBundle.getProofs();
       } else {
-        blobs =
-            blockContainer
-                .getBlobs()
-                .orElseThrow(
-                    () ->
-                        new IllegalStateException("Blobs are not available in " + blockContainer));
-        proofs =
-            blockContainer
-                .getKzgProofs()
-                .orElseThrow(
-                    () ->
-                        new IllegalStateException("Proofs are not available in " + blockContainer));
+        blobs = blockContainer.getBlobs().orElseThrow();
+        proofs = blockContainer.getKzgProofs().orElseThrow();
       }
 
       return IntStream.range(0, blobs.size())
           .mapToObj(
               index ->
                   miscHelpersDeneb.constructBlobSidecar(
-                      blockContainer.getSignedBlock(),
-                      UInt64.valueOf(index),
-                      blobs.get(index),
-                      proofs.get(index)))
+                      block, UInt64.valueOf(index), blobs.get(index), proofs.get(index)))
           .toList();
     };
   }

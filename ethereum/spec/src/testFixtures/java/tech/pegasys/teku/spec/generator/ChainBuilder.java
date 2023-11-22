@@ -48,9 +48,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchemaOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -97,13 +95,6 @@ public class ChainBuilder {
   private final NavigableMap<UInt64, SignedBlockAndState> blocks = new TreeMap<>();
   private final Map<Bytes32, SignedBlockAndState> blocksByHash = new HashMap<>();
 
-  @Deprecated
-  private final NavigableMap<SlotAndBlockRoot, List<BlobSidecarOld>> blobSidecarsOld =
-      new TreeMap<>();
-
-  @Deprecated
-  private final Map<Bytes32, List<BlobSidecarOld>> blobSidecarsByHashOld = new HashMap<>();
-
   private final NavigableMap<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = new TreeMap<>();
   private final Map<Bytes32, List<BlobSidecar>> blobSidecarsByHash = new HashMap<>();
   private Optional<UInt64> earliestBlobSidecarSlot;
@@ -135,25 +126,6 @@ public class ChainBuilder {
               }
             });
 
-    // TODO: remove
-    if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
-      final BlobSidecarSchemaOld blobSidecarOldSchema =
-          SchemaDefinitionsDeneb.required(
-                  spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
-              .getBlobSidecarOldSchema();
-      existingBlobSidecars.forEach(
-          (key, value) ->
-              blobSidecarsOld.put(key, value.stream().map(blobSidecarOldSchema::create).toList()));
-      blobSidecarsOld
-          .values()
-          .forEach(
-              b -> {
-                if (!b.isEmpty()) {
-                  blobSidecarsByHashOld.put(b.get(0).getBlockRoot(), b);
-                }
-              });
-    }
-
     this.earliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot;
   }
 
@@ -174,21 +146,8 @@ public class ChainBuilder {
     return Optional.ofNullable(blocksByHash.get(blockRoot));
   }
 
-  @Deprecated
-  public List<BlobSidecarOld> getBlobSidecarsOld(final Bytes32 blockRoot) {
-    return Optional.ofNullable(blobSidecarsByHashOld.get(blockRoot))
-        .orElse(Collections.emptyList());
-  }
-
   public List<BlobSidecar> getBlobSidecars(final Bytes32 blockRoot) {
     return Optional.ofNullable(blobSidecarsByHash.get(blockRoot)).orElse(Collections.emptyList());
-  }
-
-  @Deprecated
-  public Optional<BlobSidecarOld> getBlobSidecarOld(final BlobIdentifier blobIdentifier) {
-    return getBlobSidecarsOld(blobIdentifier.getBlockRoot()).stream()
-        .filter(blobSidecar -> blobSidecar.getIndex().equals(blobIdentifier.getIndex()))
-        .findFirst();
   }
 
   public Optional<BlobSidecar> getBlobSidecar(final BlobIdentifier blobIdentifier) {
@@ -249,25 +208,9 @@ public class ChainBuilder {
         .filter(b -> b.getBlock().getSlot().isLessThanOrEqualTo(toSlot));
   }
 
-  @Deprecated
-  public Stream<Map.Entry<SlotAndBlockRoot, List<BlobSidecarOld>>> streamBlobSidecarsOld(
-      final long fromSlot, final long toSlot) {
-    return streamBlobSidecarsOld(UInt64.valueOf(fromSlot), UInt64.valueOf(toSlot));
-  }
-
   public Stream<Map.Entry<SlotAndBlockRoot, List<BlobSidecar>>> streamBlobSidecars(
       final long fromSlot, final long toSlot) {
     return streamBlobSidecars(UInt64.valueOf(fromSlot), UInt64.valueOf(toSlot));
-  }
-
-  @Deprecated
-  public Stream<Map.Entry<SlotAndBlockRoot, List<BlobSidecarOld>>> streamBlobSidecarsOld(
-      final UInt64 fromSlot, final UInt64 toSlot) {
-    return blobSidecarsOld.entrySet().stream()
-        .filter(slot -> slot.getKey().getSlot().isGreaterThanOrEqualTo(fromSlot))
-        .filter(slot -> slot.getKey().getSlot().isLessThanOrEqualTo(toSlot))
-        .filter(entry -> !entry.getValue().isEmpty())
-        .sorted(Map.Entry.comparingByKey());
   }
 
   public Stream<Map.Entry<SlotAndBlockRoot, List<BlobSidecar>>> streamBlobSidecars(
@@ -277,11 +220,6 @@ public class ChainBuilder {
         .filter(slot -> slot.getKey().getSlot().isLessThanOrEqualTo(toSlot))
         .filter(entry -> !entry.getValue().isEmpty())
         .sorted(Map.Entry.comparingByKey());
-  }
-
-  @Deprecated
-  public Stream<BlobSidecarOld> streamBlobSidecarsOld() {
-    return blobSidecarsOld.values().stream().flatMap(Collection::stream);
   }
 
   public Stream<BlobSidecar> streamBlobSidecars() {
@@ -608,20 +546,6 @@ public class ChainBuilder {
     }
     this.blobSidecars.put(slotAndBlockRoot, blobSidecars);
     blobSidecarsByHash.put(slotAndBlockRoot.getBlockRoot(), blobSidecars);
-    trackBlobSidecarsOld(slotAndBlockRoot, blobSidecars);
-  }
-
-  @Deprecated
-  private void trackBlobSidecarsOld(
-      final SlotAndBlockRoot slotAndBlockRoot, final List<BlobSidecar> blobSidecars) {
-    final BlobSidecarSchemaOld blobSidecarOldSchema =
-        SchemaDefinitionsDeneb.required(
-                spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions())
-            .getBlobSidecarOldSchema();
-    final List<BlobSidecarOld> blobSidecarOldList =
-        blobSidecars.stream().map(blobSidecarOldSchema::create).toList();
-    blobSidecarsOld.put(slotAndBlockRoot, blobSidecarOldList);
-    blobSidecarsByHashOld.put(slotAndBlockRoot.getBlockRoot(), blobSidecarOldList);
   }
 
   private SignedBlockAndState appendNewBlockToChain(final UInt64 slot, final BlockOptions options) {
