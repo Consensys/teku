@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.beaconnode.metrics;
+package tech.pegasys.teku.validator.remote;
 
 import static tech.pegasys.teku.infrastructure.metrics.Validator.DutyType.ATTESTATION_PRODUCTION;
 import static tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils.startTimer;
@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import okhttp3.HttpUrl;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
@@ -57,24 +58,27 @@ import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
-import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.api.required.SyncingStatus;
+import tech.pegasys.teku.validator.beaconnode.metrics.BeaconNodeRequestLabels;
 
-public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
+public class RemoteMetricRecordingValidatorApiChannel implements RemoteValidatorApiChannel {
 
-  static final String BEACON_NODE_REQUESTS_COUNTER_NAME = "beacon_node_requests_total";
+  static final String REMOTE_BEACON_NODE_REQUESTS_COUNTER_NAME =
+      "remote_beacon_node_requests_total";
 
-  private final ValidatorApiChannel delegate;
+  private final RemoteValidatorApiChannel delegate;
   private final LabelledMetric<Counter> beaconNodeRequestsCounter;
   private final LabelledMetric<OperationTimer> dutyTimer;
 
-  public MetricRecordingValidatorApiChannel(
-      final MetricsSystem metricsSystem, final ValidatorApiChannel delegate) {
+  public RemoteMetricRecordingValidatorApiChannel(
+      final MetricsSystem metricsSystem, final RemoteValidatorApiChannel delegate) {
     this.delegate = delegate;
     beaconNodeRequestsCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.VALIDATOR,
-            BEACON_NODE_REQUESTS_COUNTER_NAME,
-            "Counter recording the number of requests sent to the beacon node",
+            REMOTE_BEACON_NODE_REQUESTS_COUNTER_NAME,
+            "Counter recording the number of remote requests sent to the beacon node(s)",
+            "endpoint",
             "method",
             "outcome");
     dutyTimer = ValidatorDutyMetricUtils.createValidatorDutyMetric(metricsSystem);
@@ -261,6 +265,16 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
         BeaconNodeRequestLabels.GET_VALIDATORS_LIVENESS);
   }
 
+  @Override
+  public HttpUrl getEndpoint() {
+    return delegate.getEndpoint();
+  }
+
+  @Override
+  public SafeFuture<SyncingStatus> getSyncingStatus() {
+    return delegate.getSyncingStatus();
+  }
+
   private <T> SafeFuture<T> countDataRequest(
       final SafeFuture<T> request, final String methodLabel) {
     return request
@@ -305,7 +319,9 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   }
 
   private void recordRequest(final String methodLabel, final RequestOutcome outcome) {
-    beaconNodeRequestsCounter.labels(methodLabel, outcome.displayName).inc();
+    beaconNodeRequestsCounter
+        .labels(getEndpoint().toString(), methodLabel, outcome.displayName)
+        .inc();
   }
 
   enum RequestOutcome {

@@ -19,15 +19,14 @@ import java.util.stream.Collectors;
 public class FailoverRequestException extends RuntimeException {
 
   public FailoverRequestException(
-      final String method, final Map<RemoteValidatorApiChannel, Throwable> capturedExceptions) {
-    super(createErrorMessage(method, capturedExceptions));
+      final Map<RemoteValidatorApiChannel, Throwable> capturedExceptions) {
+    super(createErrorMessage(capturedExceptions));
   }
 
   private static String createErrorMessage(
-      final String method, final Map<RemoteValidatorApiChannel, Throwable> capturedExceptions) {
+      final Map<RemoteValidatorApiChannel, Throwable> capturedExceptions) {
     final String prefix =
-        String.format(
-            "Remote request (%s) failed on all configured Beacon Node endpoints%n", method);
+        String.format("Remote request failed on all configured Beacon Node endpoints%n");
     final String errorSummary =
         capturedExceptions.entrySet().stream()
             .map(entry -> entry.getKey().getEndpoint() + ": " + entry.getValue())

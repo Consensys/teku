@@ -37,7 +37,6 @@ import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
 import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 import tech.pegasys.teku.validator.beaconnode.TimeBasedEventAdapter;
-import tech.pegasys.teku.validator.beaconnode.metrics.MetricRecordingValidatorApiChannel;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpClientAuth;
 import tech.pegasys.teku.validator.remote.eventsource.EventSourceBeaconChainEventAdapter;
 
@@ -74,36 +73,38 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
     final OkHttpClient okHttpClient =
         createOkHttpClient(convertToOkHttpUrls(beaconNodeApiEndpoints));
+    final MetricsSystem metricsSystem = serviceConfig.getMetricsSystem();
+
     final RemoteBeaconNodeEndpoints remoteBeaconNodeEndpoints =
         new RemoteBeaconNodeEndpoints(beaconNodeApiEndpoints);
+
     final HttpUrl primaryEndpoint = remoteBeaconNodeEndpoints.getPrimaryEndpoint();
     final List<HttpUrl> failoverEndpoints = remoteBeaconNodeEndpoints.getFailoverEndpoints();
 
     final RemoteValidatorApiChannel primaryValidatorApi =
-        RemoteValidatorApiHandler.create(
-            primaryEndpoint,
-            okHttpClient,
-            spec,
-            validatorConfig.isValidatorClientUseSszBlocksEnabled(),
-            asyncRunner);
+        new RemoteMetricRecordingValidatorApiChannel(
+            metricsSystem,
+            RemoteValidatorApiHandler.create(
+                primaryEndpoint,
+                okHttpClient,
+                spec,
+                validatorConfig.isValidatorClientUseSszBlocksEnabled(),
+                asyncRunner));
     final List<? extends RemoteValidatorApiChannel> failoverValidatorApis =
         failoverEndpoints.stream()
             .map(
                 endpoint ->
-                    RemoteValidatorApiHandler.create(
-                        endpoint,
-                        okHttpClient,
-                        spec,
-                        validatorConfig.isValidatorClientUseSszBlocksEnabled(),
-                        asyncRunner))
+                    new RemoteMetricRecordingValidatorApiChannel(
+                        metricsSystem,
+                        RemoteValidatorApiHandler.create(
+                            endpoint,
+                            okHttpClient,
+                            spec,
+                            validatorConfig.isValidatorClientUseSszBlocksEnabled(),
+                            asyncRunner)))
             .toList();
 
     final EventChannels eventChannels = serviceConfig.getEventChannels();
-    final MetricsSystem metricsSystem = serviceConfig.getMetricsSystem();
-
-    if (!failoverEndpoints.isEmpty()) {
-      LOG.info("Will use {} as failover Beacon Node endpoints", failoverEndpoints);
-    }
 
     final BeaconNodeReadinessChannel beaconNodeReadinessChannel =
         eventChannels.getPublisher(BeaconNodeReadinessChannel.class);
@@ -120,16 +121,20 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
 
     eventChannels.subscribe(ValidatorTimingChannel.class, beaconNodeReadinessManager);
 
-    final ValidatorApiChannel validatorApi =
-        new MetricRecordingValidatorApiChannel(
-            metricsSystem,
-            new FailoverValidatorApiHandler(
-                beaconNodeReadinessManager,
-                primaryValidatorApi,
-                failoverValidatorApis,
-                validatorConfig.isFailoversSendSubnetSubscriptionsEnabled(),
-                validatorConfig.isFailoversPublishSignedDutiesEnabled(),
-                metricsSystem));
+    final ValidatorApiChannel validatorApi;
+
+    if (!failoverEndpoints.isEmpty()) {
+      LOG.info("Will use {} as failover Beacon Node endpoints", failoverEndpoints);
+      validatorApi =
+          new FailoverValidatorApiHandler(
+              beaconNodeReadinessManager,
+              primaryValidatorApi,
+              failoverValidatorApis,
+              validatorConfig.isFailoversSendSubnetSubscriptionsEnabled(),
+              validatorConfig.isFailoversPublishSignedDutiesEnabled());
+    } else {
+      validatorApi = primaryValidatorApi;
+    }
 
     final EventSourceBeaconChainEventAdapter beaconChainEventAdapter =
         new EventSourceBeaconChainEventAdapter(

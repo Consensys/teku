@@ -180,17 +180,16 @@ public class ProposerConfigManager implements ProposerConfigPropertiesProvider {
 
   private <T> Optional<T> getAttributeWithFallback(
       final Function<Config, Optional<T>> selector, final BLSPublicKey publicKey) {
-    final Optional<ProposerConfig> localMaybeProposerConfig = maybeProposerConfig.get();
-
-    if (localMaybeProposerConfig.isEmpty()) {
-      return runtimeProposerConfig.getProposerConfig(publicKey).flatMap(selector);
-    }
-    return localMaybeProposerConfig
+    return maybeProposerConfig
         .get()
-        .getConfigForPubKey(publicKey)
-        .flatMap(selector)
-        .or(() -> runtimeProposerConfig.getProposerConfig(publicKey).flatMap(selector))
-        .or(() -> selector.apply(localMaybeProposerConfig.get().getDefaultConfig()));
+        .map(
+            proposerConfig ->
+                proposerConfig
+                    .getConfigForPubKey(publicKey)
+                    .flatMap(selector)
+                    .or(() -> runtimeProposerConfig.getProposerConfig(publicKey).flatMap(selector))
+                    .or(() -> selector.apply(proposerConfig.getDefaultConfig())))
+        .orElseGet(() -> runtimeProposerConfig.getProposerConfig(publicKey).flatMap(selector));
   }
 
   private Optional<Eth1Address> getFeeRecipientFromProposerConfig(final BLSPublicKey publicKey) {
