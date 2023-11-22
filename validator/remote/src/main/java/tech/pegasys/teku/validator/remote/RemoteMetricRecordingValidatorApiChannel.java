@@ -64,7 +64,7 @@ import tech.pegasys.teku.validator.beaconnode.metrics.BeaconNodeRequestLabels;
 public class RemoteMetricRecordingValidatorApiChannel implements RemoteValidatorApiChannel {
 
   static final String REMOTE_BEACON_NODE_REQUESTS_COUNTER_NAME =
-      "remote_beacon_node_requests_total";
+      "remote_beacon_nodes_requests_total";
 
   private final RemoteValidatorApiChannel delegate;
   private final LabelledMetric<Counter> beaconNodeRequestsCounter;
