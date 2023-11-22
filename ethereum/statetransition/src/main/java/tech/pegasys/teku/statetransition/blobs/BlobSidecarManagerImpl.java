@@ -25,7 +25,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
@@ -109,11 +108,6 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   }
 
   @Override
-  public void prepareForBlockImport(final BlobSidecarOld blobSidecar) {
-    throw new RuntimeException("Deprecated");
-  }
-
-  @Override
   public void subscribeToReceivedBlobSidecar(
       final ReceivedBlobSidecarListener receivedBlobSidecarListener) {
     receivedBlobSidecarSubscribers.subscribe(receivedBlobSidecarListener);
@@ -136,12 +130,6 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
 
     return new ForkChoiceBlobSidecarsAvailabilityChecker(
         spec, asyncRunner, recentChainData, blockBlobSidecarsTracker, kzg);
-  }
-
-  @Override
-  public BlobSidecarsAndValidationResult createAvailabilityCheckerAndValidateImmediatelyOld(
-      final SignedBeaconBlock block, final List<BlobSidecarOld> blobSidecars) {
-    throw new RuntimeException("Deprecated");
   }
 
   @Override

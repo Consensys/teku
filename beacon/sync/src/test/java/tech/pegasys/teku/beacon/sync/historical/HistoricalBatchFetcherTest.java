@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -42,7 +41,7 @@ import tech.pegasys.teku.networking.eth2.peers.RespondingEth2Peer;
 import tech.pegasys.teku.networking.eth2.rpc.core.InvalidResponseException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -74,7 +73,7 @@ public class HistoricalBatchFetcherTest {
       ArgumentCaptor.forClass(Collection.class);
 
   @SuppressWarnings("unchecked")
-  private final ArgumentCaptor<Map<SlotAndBlockRoot, List<BlobSidecarOld>>> blobSidecarCaptor =
+  private final ArgumentCaptor<Map<SlotAndBlockRoot, List<BlobSidecar>>> blobSidecarCaptor =
       ArgumentCaptor.forClass(Map.class);
 
   @SuppressWarnings("unchecked")
@@ -85,7 +84,7 @@ public class HistoricalBatchFetcherTest {
 
   private final int maxRequests = 5;
   private List<SignedBeaconBlock> blockBatch;
-  private Map<SlotAndBlockRoot, List<BlobSidecarOld>> blobSidecarsBatch;
+  private Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBatch;
   private SignedBeaconBlock firstBlockInBatch;
   private SignedBeaconBlock lastBlockInBatch;
   private HistoricalBatchFetcher fetcher;
@@ -121,7 +120,7 @@ public class HistoricalBatchFetcherTest {
     firstBlockInBatch = blockBatch.get(0);
     blobSidecarsBatch =
         chainBuilder
-            .streamBlobSidecarsOld(10, 20)
+            .streamBlobSidecars(10, 20)
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
     final StorageQueryChannel historicalChainData = mock(StorageQueryChannel.class);
@@ -185,7 +184,6 @@ public class HistoricalBatchFetcherTest {
   }
 
   @Test
-  @Disabled("TODO for new BlobSidecars")
   public void run_returnAllBlocksAndBlobSidecarsOnFirstRequest() {
     when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
 
@@ -208,7 +206,6 @@ public class HistoricalBatchFetcherTest {
   }
 
   @Test
-  @Disabled("TODO for new BlobSidecars")
   public void run_failsOnBlobSidecarsValidationFailure() {
     when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
     when(blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(any(), anyList()))
@@ -293,8 +290,7 @@ public class HistoricalBatchFetcherTest {
   }
 
   @ParameterizedTest
-  //  @ValueSource(booleans = {true, false}) TODO for new BlobSidecar
-  @ValueSource(booleans = {false})
+  @ValueSource(booleans = {true, false})
   public void run_requestBatchForRangeOfEmptyBlocks(final boolean blobSidecarsRequired) {
     if (blobSidecarsRequired) {
       when(blobSidecarManager.isAvailabilityRequiredAtSlot(any())).thenReturn(true);
@@ -336,7 +332,7 @@ public class HistoricalBatchFetcherTest {
             blobSidecarCaptor.capture(),
             earliestBlobSidecarSlotCaptor.capture());
     assertThat(blockCaptor.getValue()).containsExactly(lastBlockInBatch);
-    final Map<SlotAndBlockRoot, List<BlobSidecarOld>> blobSidecars = blobSidecarCaptor.getValue();
+    final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = blobSidecarCaptor.getValue();
     if (blobSidecarsRequired) {
       assertThat(blobSidecars).isEmpty();
       // start slot is in availability window, it's the earliest known blob sidecar slot

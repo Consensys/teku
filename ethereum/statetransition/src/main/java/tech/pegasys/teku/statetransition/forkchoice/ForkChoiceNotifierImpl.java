@@ -109,6 +109,11 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
   }
 
   @Override
+  public boolean validatorIsConnected(UInt64 validatorIndex, UInt64 currentSlot) {
+    return proposersDataManager.validatorIsConnected(validatorIndex, currentSlot);
+  }
+
+  @Override
   public void onPreparedProposersUpdated() {
     eventThread.execute(this::internalUpdatePreparableProposers);
   }

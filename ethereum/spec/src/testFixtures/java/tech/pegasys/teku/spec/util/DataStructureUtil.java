@@ -89,9 +89,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobKzgCommitmentsSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchemaOld;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -903,6 +901,27 @@ public final class DataStructureUtil {
     return signedBlock(beaconBlock);
   }
 
+  public SignedBeaconBlock randomSignedBlindedBeaconBlockWithCommitments(
+      final SszList<SszKZGCommitment> commitments) {
+    final UInt64 proposerIndex = randomUInt64();
+    final UInt64 slot = randomUInt64();
+    final Bytes32 stateRoot = randomBytes32();
+    final Bytes32 parentRoot = randomBytes32();
+
+    final BeaconBlockBody body = randomBlindedBeaconBlockBodyWithCommitments(slot, commitments);
+
+    final BeaconBlock beaconBlock =
+        new BeaconBlock(
+            spec.atSlot(slot).getSchemaDefinitions().getBlindedBeaconBlockSchema(),
+            slot,
+            proposerIndex,
+            parentRoot,
+            stateRoot,
+            body);
+
+    return signedBlock(beaconBlock);
+  }
+
   public SignedBeaconBlock randomSignedBeaconBlock() {
     return randomSignedBeaconBlock(randomUInt64());
   }
@@ -945,12 +964,17 @@ public final class DataStructureUtil {
   }
 
   public SignedBeaconBlock randomSignedBeaconBlockWithCommitments(final int count) {
+    return randomSignedBeaconBlockWithCommitments(randomBlobKzgCommitments(count));
+  }
+
+  public SignedBeaconBlock randomSignedBeaconBlockWithCommitments(
+      final SszList<SszKZGCommitment> commitments) {
     final UInt64 proposerIndex = randomUInt64();
     final UInt64 slot = randomUInt64();
     final Bytes32 stateRoot = randomBytes32();
     final Bytes32 parentRoot = randomBytes32();
 
-    final BeaconBlockBody body = randomBeaconBlockBodyWithCommitments(count);
+    final BeaconBlockBody body = randomBeaconBlockBodyWithCommitments(commitments);
 
     final BeaconBlock beaconBlock =
         new BeaconBlock(
@@ -1181,6 +1205,49 @@ public final class DataStructureUtil {
     return randomBlindedBeaconBlockBody(randomUInt64());
   }
 
+  public BeaconBlockBody randomBlindedBeaconBlockBodyWithCommitments(
+      final UInt64 slot, final SszList<SszKZGCommitment> commitments) {
+    final BeaconBlockBodySchema<?> schema =
+        spec.atSlot(slot).getSchemaDefinitions().getBlindedBeaconBlockBodySchema();
+
+    return schema
+        .createBlockBody(
+            builder -> {
+              builder
+                  .randaoReveal(randomSignature())
+                  .eth1Data(randomEth1Data())
+                  .graffiti(Bytes32.ZERO)
+                  .proposerSlashings(
+                      randomSszList(
+                          schema.getProposerSlashingsSchema(), this::randomProposerSlashing, 1))
+                  .attesterSlashings(
+                      randomSszList(
+                          schema.getAttesterSlashingsSchema(), this::randomAttesterSlashing, 1))
+                  .attestations(
+                      randomSszList(schema.getAttestationsSchema(), this::randomAttestation, 3))
+                  .deposits(
+                      randomSszList(schema.getDepositsSchema(), this::randomDepositWithoutIndex, 1))
+                  .voluntaryExits(
+                      randomSszList(
+                          schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1))
+                  .syncAggregate(randomSyncAggregateIfRequiredBySchema(schema));
+              if (builder.supportsSyncAggregate()) {
+                builder.syncAggregate(randomSyncAggregateIfRequiredBySchema(schema));
+              }
+              if (builder.supportsExecutionPayload()) {
+                builder.executionPayloadHeader(
+                    SafeFuture.completedFuture(randomExecutionPayloadHeader(spec.atSlot(slot))));
+              }
+              if (builder.supportsBlsToExecutionChanges()) {
+                builder.blsToExecutionChanges(randomSignedBlsToExecutionChangesList());
+              }
+              if (builder.supportsKzgCommitments()) {
+                builder.blobKzgCommitments(SafeFuture.completedFuture(commitments));
+              }
+            })
+        .join();
+  }
+
   public BeaconBlockBody randomBlindedBeaconBlockBody(UInt64 slotNum) {
     BeaconBlockBodySchema<?> schema =
         spec.atSlot(slotNum).getSchemaDefinitions().getBlindedBeaconBlockBodySchema();
@@ -1206,7 +1273,7 @@ public final class DataStructureUtil {
                       randomSszList(
                           schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1));
               if (builder.supportsSyncAggregate()) {
-                builder.syncAggregate(this.randomSyncAggregateIfRequiredBySchema(schema));
+                builder.syncAggregate(randomSyncAggregateIfRequiredBySchema(schema));
               }
               if (builder.supportsExecutionPayload()) {
                 builder.executionPayloadHeader(
@@ -1247,7 +1314,7 @@ public final class DataStructureUtil {
                       randomSszList(
                           schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1));
               if (builder.supportsSyncAggregate()) {
-                builder.syncAggregate(this.randomSyncAggregateIfRequiredBySchema(schema));
+                builder.syncAggregate(randomSyncAggregateIfRequiredBySchema(schema));
               }
               if (builder.supportsExecutionPayload()) {
                 builder.executionPayload(
@@ -1287,7 +1354,7 @@ public final class DataStructureUtil {
                       randomSszList(
                           schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1));
               if (builder.supportsSyncAggregate()) {
-                builder.syncAggregate(this.randomSyncAggregateIfRequiredBySchema(schema));
+                builder.syncAggregate(randomSyncAggregateIfRequiredBySchema(schema));
               }
               if (builder.supportsExecutionPayload()) {
                 builder.executionPayload(SafeFuture.completedFuture(randomExecutionPayload()));
@@ -1336,7 +1403,7 @@ public final class DataStructureUtil {
                       randomSszList(
                           schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1));
               if (builder.supportsSyncAggregate()) {
-                builder.syncAggregate(this.randomSyncAggregateIfRequiredBySchema(schema));
+                builder.syncAggregate(randomSyncAggregateIfRequiredBySchema(schema));
               }
               if (builder.supportsExecutionPayload()) {
                 builder.executionPayload(
@@ -1376,15 +1443,20 @@ public final class DataStructureUtil {
                     .voluntaryExits(
                         randomSszList(
                             schema.getVoluntaryExitsSchema(), this::randomSignedVoluntaryExit, 1))
-                    .syncAggregate(this.randomSyncAggregateIfRequiredBySchema(schema))
+                    .syncAggregate(randomSyncAggregateIfRequiredBySchema(schema))
                     .executionPayload(SafeFuture.completedFuture(randomExecutionPayload()))
-                    .blsToExecutionChanges(this.randomSignedBlsToExecutionChangesList())
-                    .blobKzgCommitments(SafeFuture.completedFuture(this.emptyBlobKzgCommitments())))
+                    .blsToExecutionChanges(randomSignedBlsToExecutionChangesList())
+                    .blobKzgCommitments(SafeFuture.completedFuture(emptyBlobKzgCommitments())))
         .join();
   }
 
   public BeaconBlockBody randomBeaconBlockBodyWithCommitments(final int count) {
-    BeaconBlockBodySchema<?> schema =
+    return randomBeaconBlockBodyWithCommitments(randomBlobKzgCommitments(count));
+  }
+
+  public BeaconBlockBody randomBeaconBlockBodyWithCommitments(
+      final SszList<SszKZGCommitment> commitments) {
+    final BeaconBlockBodySchema<?> schema =
         spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
     return schema
         .createBlockBody(
@@ -1410,13 +1482,12 @@ public final class DataStructureUtil {
                     .syncAggregate(randomSyncAggregateIfRequiredBySchema(schema))
                     .executionPayload(SafeFuture.completedFuture(randomExecutionPayload()))
                     .blsToExecutionChanges(randomSignedBlsToExecutionChangesList())
-                    .blobKzgCommitments(
-                        SafeFuture.completedFuture(randomBlobKzgCommitments(count))))
+                    .blobKzgCommitments(SafeFuture.completedFuture(commitments)))
         .join();
   }
 
   public BeaconBlockBody randomFullBeaconBlockBody() {
-    BeaconBlockBodySchema<?> schema =
+    final BeaconBlockBodySchema<?> schema =
         spec.getGenesisSpec().getSchemaDefinitions().getBeaconBlockBodySchema();
     return schema
         .createBlockBody(
@@ -2117,37 +2188,6 @@ public final class DataStructureUtil {
     return randomBlob().getBytes();
   }
 
-  @Deprecated
-  public List<BlobSidecarOld> randomBlobSidecarsForBlockOld(final SignedBeaconBlock block) {
-    return randomBlobSidecarsForBlockOld(block, (__, builder) -> builder);
-  }
-
-  @Deprecated
-  public List<BlobSidecarOld> randomBlobSidecarsForBlockOld(
-      final SignedBeaconBlock block,
-      final BiFunction<Integer, RandomBlobSidecarOldBuilder, RandomBlobSidecarOldBuilder>
-          modifier) {
-    final SszList<SszKZGCommitment> blobKzgCommitments =
-        BeaconBlockBodyDeneb.required(block.getBeaconBlock().orElseThrow().getBody())
-            .getBlobKzgCommitments();
-
-    return IntStream.range(0, blobKzgCommitments.size())
-        .mapToObj(
-            index -> {
-              final RandomBlobSidecarOldBuilder builder =
-                  createRandomBlobSidecarBuilderOld()
-                      .slot(block.getSlot())
-                      .blockRoot(block.getRoot())
-                      .blockParentRoot(block.getParentRoot())
-                      .proposerIndex(block.getMessage().getProposerIndex())
-                      .kzgCommitment(blobKzgCommitments.get(index).getBytes())
-                      .index(UInt64.valueOf(index));
-
-              return modifier.apply(index, builder).build();
-            })
-        .collect(toList());
-  }
-
   public List<BlobSidecar> randomBlobSidecarsForBlock(final SignedBeaconBlock block) {
     return randomBlobSidecarsForBlock(
         block, (blobSidecarIndex, blobSidecarBuilder) -> blobSidecarBuilder);
@@ -2179,26 +2219,12 @@ public final class DataStructureUtil {
     return new RandomBlobSidecarBuilder().build();
   }
 
-  @Deprecated
-  public BlobSidecarOld randomBlobSidecarOld() {
-    return new RandomBlobSidecarOldBuilder().build();
-  }
-
-  @Deprecated
-  public BlobSidecarOld randomBlobSidecarOld(final BlobIdentifier blobIdentifier) {
-    return new RandomBlobSidecarOldBuilder()
-        .index(blobIdentifier.getIndex())
-        .blockRoot(blobIdentifier.getBlockRoot())
+  public BlobSidecar randomBlobSidecarForBlock(
+      final SignedBeaconBlock signedBeaconBlock, final long index) {
+    return new RandomBlobSidecarBuilder()
+        .signedBeaconBlockHeader(signedBeaconBlock.asHeader())
+        .index(UInt64.valueOf(index))
         .build();
-  }
-
-  @Deprecated
-  public List<BlobSidecarOld> randomBlobSidecarsOld(final int count) {
-    List<BlobSidecarOld> blobSidecars = new ArrayList<>();
-    for (int i = 0; i < count; i++) {
-      blobSidecars.add(new RandomBlobSidecarOldBuilder().build());
-    }
-    return blobSidecars;
   }
 
   public List<Blob> randomBlobs(int count, UInt64 slot) {
@@ -2218,26 +2244,6 @@ public final class DataStructureUtil {
     return blobSidecars;
   }
 
-  @Deprecated
-  public BlobSidecarOld randomBlobSidecarOld(
-      final UInt64 slot, final Bytes32 blockRoot, final UInt64 index) {
-    return new RandomBlobSidecarOldBuilder().slot(slot).index(index).blockRoot(blockRoot).build();
-  }
-
-  @Deprecated
-  public BlobSidecarOld randomBlobSidecarOld(
-      final UInt64 slot,
-      final Bytes32 blockRoot,
-      final Bytes32 parentBlockRoot,
-      final UInt64 index) {
-    return new RandomBlobSidecarOldBuilder()
-        .slot(slot)
-        .index(index)
-        .blockRoot(blockRoot)
-        .blockParentRoot(parentBlockRoot)
-        .build();
-  }
-
   public BlobIdentifier randomBlobIdentifier() {
     return randomBlobIdentifier(randomBytes32());
   }
@@ -2253,18 +2259,26 @@ public final class DataStructureUtil {
     return IntStream.range(0, count).mapToObj(__ -> randomBlobIdentifier()).collect(toList());
   }
 
-  public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle() {
+  public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle(
+      final int count) {
+    return randomBuilderBlobsBundle(randomBlobKzgCommitments(count));
+  }
+
+  public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle(
+      final SszList<SszKZGCommitment> commitments) {
     final UInt64 slot = randomSlot();
     final SchemaDefinitionsDeneb schemaDefinitions = getDenebSchemaDefinitions(slot);
     final BlobsBundleSchema schema = schemaDefinitions.getBlobsBundleSchema();
 
-    final int numberOfBlobs = randomNumberOfBlobsPerBlock();
-
     return new tech.pegasys.teku.spec.datastructures.builder.BlobsBundle(
         schema,
-        randomSszList(schema.getCommitmentsSchema(), this::randomSszKZGCommitment, numberOfBlobs),
-        randomSszList(schema.getProofsSchema(), this::randomSszKZGProof, numberOfBlobs),
-        randomSszList(schema.getBlobsSchema(), this::randomBlob, numberOfBlobs));
+        commitments,
+        randomSszList(schema.getProofsSchema(), this::randomSszKZGProof, commitments.size()),
+        randomSszList(schema.getBlobsSchema(), this::randomBlob, commitments.size()));
+  }
+
+  public tech.pegasys.teku.spec.datastructures.builder.BlobsBundle randomBuilderBlobsBundle() {
+    return randomBuilderBlobsBundle(randomNumberOfBlobsPerBlock());
   }
 
   public BlobsBundle randomBlobsBundle() {
@@ -2297,12 +2311,31 @@ public final class DataStructureUtil {
 
   public SignedBlockContents randomSignedBlockContents(final UInt64 slot) {
     final SignedBeaconBlock signedBeaconBlock = randomSignedBeaconBlock(slot);
-    final int randomNumberOfBlobs = randomNumberOfBlobsPerBlock();
-    final List<Blob> blobs = randomBlobs(randomNumberOfBlobs, slot);
-    final List<KZGProof> kzgProofs = randomKZGProofs(randomNumberOfBlobs);
+    final int numberOfBlobs =
+        signedBeaconBlock
+            .getMessage()
+            .getBody()
+            .getOptionalBlobKzgCommitments()
+            .orElseThrow()
+            .size();
+    final List<Blob> blobs = randomBlobs(numberOfBlobs, slot);
+    final List<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
     return getDenebSchemaDefinitions(slot)
         .getSignedBlockContentsSchema()
         .create(signedBeaconBlock, kzgProofs, blobs);
+  }
+
+  public SignedBlockContents randomSignedBlockContents(final BlobsBundle blobsBundle) {
+    final UInt64 slot = randomUInt64();
+    final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
+        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
+            .getBlobKzgCommitmentsSchema();
+    final SignedBeaconBlock signedBeaconBlock =
+        randomSignedBeaconBlockWithCommitments(
+            blobKzgCommitmentsSchema.createFromBlobsBundle(blobsBundle));
+    return getDenebSchemaDefinitions(slot)
+        .getSignedBlockContentsSchema()
+        .create(signedBeaconBlock, blobsBundle.getProofs(), blobsBundle.getBlobs());
   }
 
   public BlockContents randomBlockContents() {
@@ -2311,17 +2344,13 @@ public final class DataStructureUtil {
 
   public BlockContents randomBlockContents(final UInt64 slot) {
     final BeaconBlock beaconBlock = randomBeaconBlock(slot);
-    final int randomNumberOfBlobs = randomNumberOfBlobsPerBlock();
-    final List<Blob> blobs = randomBlobs(randomNumberOfBlobs, slot);
-    final List<KZGProof> kzgProofs = randomKZGProofs(randomNumberOfBlobs);
+    final int numberOfBlobs =
+        beaconBlock.getBody().getOptionalBlobKzgCommitments().orElseThrow().size();
+    final List<Blob> blobs = randomBlobs(numberOfBlobs, slot);
+    final List<KZGProof> kzgProofs = randomKZGProofs(numberOfBlobs);
     return getDenebSchemaDefinitions(slot)
         .getBlockContentsSchema()
         .create(beaconBlock, kzgProofs, blobs);
-  }
-
-  @Deprecated
-  public RandomBlobSidecarOldBuilder createRandomBlobSidecarBuilderOld() {
-    return new RandomBlobSidecarOldBuilder();
   }
 
   public RandomBlobSidecarBuilder createRandomBlobSidecarBuilder() {
@@ -2349,81 +2378,6 @@ public final class DataStructureUtil {
         spec.getGenesisSchemaDefinitions().getBeaconBlockBodySchema().getAttestationsSchema(),
         () -> randomAttestation(slot),
         count);
-  }
-
-  @Deprecated
-  public class RandomBlobSidecarOldBuilder {
-    private Optional<Bytes32> blockRoot = Optional.empty();
-    private Optional<UInt64> index = Optional.empty();
-    private Optional<UInt64> slot = Optional.empty();
-    private Optional<Bytes32> blockParentRoot = Optional.empty();
-    private Optional<UInt64> proposerIndex = Optional.empty();
-    private Optional<Bytes> blob = Optional.empty();
-    private Optional<Bytes48> kzgCommitment = Optional.empty();
-    private Optional<Bytes48> kzgProof = Optional.empty();
-
-    public RandomBlobSidecarOldBuilder blockRoot(final Bytes32 blockRoot) {
-      this.blockRoot = Optional.of(blockRoot);
-      return this;
-    }
-
-    public RandomBlobSidecarOldBuilder index(final UInt64 index) {
-      this.index = Optional.of(index);
-      return this;
-    }
-
-    public RandomBlobSidecarOldBuilder slot(final UInt64 slot) {
-      this.slot = Optional.of(slot);
-      return this;
-    }
-
-    public RandomBlobSidecarOldBuilder blockParentRoot(final Bytes32 blockParentRoot) {
-      this.blockParentRoot = Optional.of(blockParentRoot);
-      return this;
-    }
-
-    public RandomBlobSidecarOldBuilder proposerIndex(final UInt64 proposerIndex) {
-      this.proposerIndex = Optional.of(proposerIndex);
-      return this;
-    }
-
-    public RandomBlobSidecarOldBuilder blob(final Bytes blob) {
-      this.blob = Optional.of(blob);
-      return this;
-    }
-
-    public RandomBlobSidecarOldBuilder kzgCommitment(final Bytes48 kzgCommitment) {
-      this.kzgCommitment = Optional.of(kzgCommitment);
-      return this;
-    }
-
-    public RandomBlobSidecarOldBuilder kzgProof(final Bytes48 kzgProof) {
-      this.kzgProof = Optional.of(kzgProof);
-      return this;
-    }
-
-    public RandomBlobSidecarOldBuilder forBlock(final BeaconBlock block) {
-      this.slot = Optional.of(block.getSlot());
-      this.blockRoot = Optional.of(block.getRoot());
-      this.blockParentRoot = Optional.of(block.getParentRoot());
-      this.proposerIndex = Optional.of(block.getProposerIndex());
-      return this;
-    }
-
-    public BlobSidecarOld build() {
-      final BlobSidecarSchemaOld blobSidecarSchema =
-          getDenebSchemaDefinitions(slot.orElse(randomUInt64())).getBlobSidecarOldSchema();
-
-      return blobSidecarSchema.create(
-          blockRoot.orElse(randomBytes32()),
-          index.orElse(randomUInt64()),
-          slot.orElse(randomUInt64()),
-          blockParentRoot.orElse(randomBytes32()),
-          proposerIndex.orElse(randomUInt64()),
-          blob.orElse(randomBytes(blobSidecarSchema.getBlobSchema().getLength())),
-          kzgCommitment.orElse(randomBytes48()),
-          kzgProof.orElse(randomBytes48()));
-    }
   }
 
   public class RandomBlobSidecarBuilder {
@@ -2475,7 +2429,7 @@ public final class DataStructureUtil {
               .getBlobSidecarSchema();
 
       return blobSidecarSchema.create(
-          index.orElse(randomUInt64()),
+          index.orElse(randomBlobSidecarIndex()),
           blob.orElse(randomBytes(blobSidecarSchema.getBlobSchema().getLength())),
           kzgCommitment.orElse(randomBytes48()),
           kzgProof.orElse(randomBytes48()),
@@ -2485,11 +2439,10 @@ public final class DataStructureUtil {
   }
 
   public List<Bytes32> randomKzgCommitmentInclusionProof() {
-    final BlobSidecarSchema blobSidecarSchema =
-        getDenebSchemaDefinitions(randomSlot()).getBlobSidecarSchema();
-    return IntStream.range(0, blobSidecarSchema.getKzgCommitmentInclusionProofSchema().getLength())
-        .mapToObj(__ -> randomBytes32())
-        .toList();
+    final int depth =
+        SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig())
+            .getKzgCommitmentInclusionProofDepth();
+    return IntStream.range(0, depth).mapToObj(__ -> randomBytes32()).toList();
   }
 
   public SszList<SszKZGCommitment> randomBlobKzgCommitments() {
@@ -2524,6 +2477,10 @@ public final class DataStructureUtil {
     }
 
     return rewardAndPenaltyDeltas;
+  }
+
+  public UInt64 randomBlobSidecarIndex() {
+    return randomUInt64(spec.getMaxBlobsPerBlock().orElseThrow());
   }
 
   private int randomNumberOfBlobsPerBlock() {

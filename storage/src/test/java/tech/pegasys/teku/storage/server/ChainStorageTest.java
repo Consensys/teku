@@ -33,7 +33,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -173,11 +173,11 @@ public class ChainStorageTest {
             .map(SignedBlockAndState::getBlock)
             .collect(Collectors.toList());
 
-    final Map<SlotAndBlockRoot, List<BlobSidecarOld>> missingHistoricalBlobSidecars =
+    final Map<SlotAndBlockRoot, List<BlobSidecar>> missingHistoricalBlobSidecars =
         chainBuilder
-            .streamBlobSidecarsOld(0, firstMissingBlockSlot)
+            .streamBlobSidecars(0, firstMissingBlockSlot)
             .flatMap(entry -> entry.getValue().stream())
-            .collect(Collectors.groupingBy(BlobSidecarOld::getSlotAndBlockRoot));
+            .collect(Collectors.groupingBy(BlobSidecar::getSlotAndBlockRoot));
 
     // Sanity check - blocks and blob sidecars should be unavailable initially
     for (SignedBeaconBlock missingHistoricalBlock : missingHistoricalBlocks) {
@@ -192,7 +192,7 @@ public class ChainStorageTest {
       assertThatSafeFuture(sidecarKeysResult).isCompletedWithValueMatching(List::isEmpty);
     }
 
-    final Map<SlotAndBlockRoot, List<BlobSidecarOld>> finalizedBlobSidecars =
+    final Map<SlotAndBlockRoot, List<BlobSidecar>> finalizedBlobSidecars =
         testBlobSidecars ? missingHistoricalBlobSidecars : Map.of();
     assertThat(chainStorage.getEarliestAvailableBlobSidecarSlot())
         .isCompletedWithValueMatching(Optional::isEmpty);
@@ -228,7 +228,7 @@ public class ChainStorageTest {
       final SafeFuture<Optional<SignedBeaconBlock>> blockResult =
           chainStorage.getBlockByBlockRoot(missingHistoricalBlock.getRoot());
       assertThatSafeFuture(blockResult).isCompletedWithOptionalContaining(missingHistoricalBlock);
-      final SafeFuture<List<BlobSidecarOld>> sidecarsResult =
+      final SafeFuture<List<BlobSidecar>> sidecarsResult =
           chainStorage
               .getBlobSidecarKeys(
                   missingHistoricalBlock.getSlot(),
@@ -295,11 +295,11 @@ public class ChainStorageTest {
             .map(SignedBlockAndState::getBlock)
             .collect(Collectors.toList());
 
-    final Map<SlotAndBlockRoot, List<BlobSidecarOld>> missingHistoricalBlobSidecars =
+    final Map<SlotAndBlockRoot, List<BlobSidecar>> missingHistoricalBlobSidecars =
         chainBuilder
-            .streamBlobSidecarsOld(0, firstMissingBlockSlot)
+            .streamBlobSidecars(0, firstMissingBlockSlot)
             .flatMap(entry -> entry.getValue().stream())
-            .collect(Collectors.groupingBy(BlobSidecarOld::getSlotAndBlockRoot));
+            .collect(Collectors.groupingBy(BlobSidecar::getSlotAndBlockRoot));
 
     // Sanity check - blocks and blob sidecars should be unavailable initially
     for (SignedBeaconBlock missingHistoricalBlock : missingHistoricalBlocks) {

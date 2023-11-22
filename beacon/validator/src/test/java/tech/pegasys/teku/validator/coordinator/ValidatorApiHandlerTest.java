@@ -50,6 +50,7 @@ import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
@@ -66,6 +67,8 @@ import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUti
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.kzg.KZGCommitment;
+import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationTopicSubscriber;
@@ -76,10 +79,13 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
@@ -93,8 +99,11 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
@@ -151,6 +160,14 @@ class ValidatorApiHandlerTest {
       mock(SyncCommitteeContributionPool.class);
   private final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager =
       mock(SyncCommitteeSubscriptionManager.class);
+
+  @SuppressWarnings("unchecked")
+  private final ArgumentCaptor<List<BlobSidecar>> blobSidecarsCaptor1 =
+      ArgumentCaptor.forClass(List.class);
+
+  @SuppressWarnings("unchecked")
+  private final ArgumentCaptor<List<BlobSidecar>> blobSidecarsCaptor2 =
+      ArgumentCaptor.forClass(List.class);
 
   private Spec spec;
   private UInt64 epochStartSlot;
@@ -831,15 +848,21 @@ class ValidatorApiHandlerTest {
     final SignedBlockContents blockContents =
         dataStructureUtil.randomSignedBlockContents(UInt64.valueOf(5));
     final SignedBeaconBlock block = blockContents.getSignedBlock();
+    final List<BlobSidecarSummary> expectedBlobSidecars =
+        BlobSidecarSummary.fromSignedBlockContents(blockContents);
 
     when(blockImportChannel.importBlock(block, NOT_REQUIRED))
         .thenReturn(prepareBlockImportResult(BlockImportResult.successful(block)));
     final SafeFuture<SendSignedBlockResult> result =
         validatorApiHandler.sendSignedBlock(blockContents, NOT_REQUIRED);
 
-    // TODO: fix assertion for blob sidecars
-    verify(blobSidecarGossipChannel).publishBlobSidecars(List.of());
-    verify(blobSidecarPool).onCompletedBlockAndBlobSidecars(block, List.of());
+    verify(blobSidecarGossipChannel).publishBlobSidecars(blobSidecarsCaptor1.capture());
+    assertThat(BlobSidecarSummary.fromBlobSidecars(blobSidecarsCaptor1.getValue()))
+        .isEqualTo(expectedBlobSidecars);
+    verify(blobSidecarPool)
+        .onCompletedBlockAndBlobSidecars(eq(block), blobSidecarsCaptor2.capture());
+    assertThat(BlobSidecarSummary.fromBlobSidecars(blobSidecarsCaptor2.getValue()))
+        .isEqualTo(expectedBlobSidecars);
     verify(blockGossipChannel).publishBlock(block);
     verify(blockImportChannel).importBlock(block, NOT_REQUIRED);
     assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
@@ -851,15 +874,21 @@ class ValidatorApiHandlerTest {
     final SignedBlockContents blockContents =
         dataStructureUtil.randomSignedBlockContents(UInt64.valueOf(5));
     final SignedBeaconBlock block = blockContents.getSignedBlock();
+    final List<BlobSidecarSummary> expectedBlobSidecars =
+        BlobSidecarSummary.fromSignedBlockContents(blockContents);
 
     when(blockImportChannel.importBlock(block, NOT_REQUIRED))
         .thenReturn(prepareBlockImportResult(BlockImportResult.FAILED_INVALID_ANCESTRY));
     final SafeFuture<SendSignedBlockResult> result =
         validatorApiHandler.sendSignedBlock(blockContents, NOT_REQUIRED);
 
-    // TODO: fix assertion for blob sidecars
-    verify(blobSidecarGossipChannel).publishBlobSidecars(List.of());
-    verify(blobSidecarPool).onCompletedBlockAndBlobSidecars(block, List.of());
+    verify(blobSidecarGossipChannel).publishBlobSidecars(blobSidecarsCaptor1.capture());
+    assertThat(BlobSidecarSummary.fromBlobSidecars(blobSidecarsCaptor1.getValue()))
+        .isEqualTo(expectedBlobSidecars);
+    verify(blobSidecarPool)
+        .onCompletedBlockAndBlobSidecars(eq(block), blobSidecarsCaptor2.capture());
+    assertThat(BlobSidecarSummary.fromBlobSidecars(blobSidecarsCaptor2.getValue()))
+        .isEqualTo(expectedBlobSidecars);
     verify(blockGossipChannel).publishBlock(block);
     verify(blockImportChannel).importBlock(block, NOT_REQUIRED);
     assertThat(result)
@@ -873,22 +902,28 @@ class ValidatorApiHandlerTest {
     final SignedBlockContents blockContents =
         dataStructureUtil.randomSignedBlockContents(UInt64.valueOf(5));
     final SignedBeaconBlock block = blockContents.getSignedBlock();
+    final List<BlobSidecarSummary> expectedBlobSidecars =
+        BlobSidecarSummary.fromSignedBlockContents(blockContents);
 
     when(blockImportChannel.importBlock(block, NOT_REQUIRED))
         .thenReturn(prepareBlockImportResult(BlockImportResult.knownBlock(block, false)));
     final SafeFuture<SendSignedBlockResult> result =
         validatorApiHandler.sendSignedBlock(blockContents, NOT_REQUIRED);
 
-    // TODO: fix assertion for blob sidecars
-    verify(blobSidecarGossipChannel).publishBlobSidecars(List.of());
-    verify(blobSidecarPool).onCompletedBlockAndBlobSidecars(block, List.of());
+    verify(blobSidecarGossipChannel).publishBlobSidecars(blobSidecarsCaptor1.capture());
+    assertThat(BlobSidecarSummary.fromBlobSidecars(blobSidecarsCaptor1.getValue()))
+        .isEqualTo(expectedBlobSidecars);
+    verify(blobSidecarPool)
+        .onCompletedBlockAndBlobSidecars(eq(block), blobSidecarsCaptor2.capture());
+    assertThat(BlobSidecarSummary.fromBlobSidecars(blobSidecarsCaptor2.getValue()))
+        .isEqualTo(expectedBlobSidecars);
     verify(blockGossipChannel).publishBlock(block);
     verify(blockImportChannel).importBlock(block, NOT_REQUIRED);
     assertThat(result).isCompletedWithValue(SendSignedBlockResult.success(block.getRoot()));
   }
 
   @Test
-  public void sendSignedBlock_shoulNotGossipAndImportBlobsWhenBlobsDoNotExist() {
+  public void sendSignedBlock_shouldGossipAndImportEmptyBlobSidecarsWhenBlobsDoNotExist() {
     setupDeneb();
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(5);
 
@@ -898,7 +933,6 @@ class ValidatorApiHandlerTest {
         validatorApiHandler.sendSignedBlock(block, NOT_REQUIRED);
     safeJoin(result);
 
-    // TODO: fix assertion for blob sidecars (there should be no interactions)
     verify(blobSidecarPool).onCompletedBlockAndBlobSidecars(block, List.of());
     verify(blobSidecarGossipChannel).publishBlobSidecars(List.of());
     verify(blockGossipChannel).publishBlock(block);
@@ -1233,6 +1267,30 @@ class ValidatorApiHandlerTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager);
+
+    // BlobSidecar builder
+    doAnswer(
+            invocation -> {
+              final SignedBlockContainer blockContainer = invocation.getArgument(0);
+              final MiscHelpersDeneb miscHelpersDeneb =
+                  MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers());
+              if (blockContainer.getBlobs().isEmpty()) {
+                return List.of();
+              }
+              final SszList<Blob> blobs = blockContainer.getBlobs().orElseThrow();
+              final SszList<SszKZGProof> proofs = blockContainer.getKzgProofs().orElseThrow();
+              return IntStream.range(0, blobs.size())
+                  .mapToObj(
+                      index ->
+                          miscHelpersDeneb.constructBlobSidecar(
+                              blockContainer.getSignedBlock(),
+                              UInt64.valueOf(index),
+                              blobs.get(index),
+                              proofs.get(index)))
+                  .toList();
+            })
+        .when(blockFactory)
+        .createBlobSidecars(any());
   }
 
   private SafeFuture<BlockImportAndBroadcastValidationResults> prepareBlockImportResult(
@@ -1240,5 +1298,48 @@ class ValidatorApiHandlerTest {
     return SafeFuture.completedFuture(
         new BlockImportAndBroadcastValidationResults(
             SafeFuture.completedFuture(blockImportResult)));
+  }
+
+  private record BlobSidecarSummary(
+      Blob blob, KZGProof kzgProof, KZGCommitment commitment, Bytes32 blockRoot) {
+    static List<BlobSidecarSummary> fromSignedBlockContents(
+        final SignedBlockContents signedBlockContents) {
+      final List<Blob> blobs = signedBlockContents.getBlobs().orElseThrow().asList();
+      final List<KZGProof> proofs =
+          signedBlockContents.getKzgProofs().orElseThrow().stream()
+              .map(SszKZGProof::getKZGProof)
+              .toList();
+      final List<KZGCommitment> commitments =
+          signedBlockContents
+              .getSignedBlock()
+              .getMessage()
+              .getBody()
+              .getOptionalBlobKzgCommitments()
+              .orElseThrow()
+              .stream()
+              .map(SszKZGCommitment::getKZGCommitment)
+              .toList();
+      return IntStream.range(0, blobs.size())
+          .mapToObj(
+              index ->
+                  new BlobSidecarSummary(
+                      blobs.get(index),
+                      proofs.get(index),
+                      commitments.get(index),
+                      signedBlockContents.getRoot()))
+          .toList();
+    }
+
+    static List<BlobSidecarSummary> fromBlobSidecars(final List<BlobSidecar> blobSidecars) {
+      return blobSidecars.stream()
+          .map(
+              blobSidecar ->
+                  new BlobSidecarSummary(
+                      blobSidecar.getBlob(),
+                      blobSidecar.getKZGProof(),
+                      blobSidecar.getKZGCommitment(),
+                      blobSidecar.getBlockRoot()))
+          .toList();
+    }
   }
 }

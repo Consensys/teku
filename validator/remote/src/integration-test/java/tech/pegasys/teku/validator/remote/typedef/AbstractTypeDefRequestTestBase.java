@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
+/** Use {@link #serializeSszObjectToJsonWithDataWrapper(SszData)} for serializing object to JSON */
 public class AbstractTypeDefRequestTestBase {
 
   protected static final String JSON_CONTENT_TYPE = "application/json; charset=utf-8";

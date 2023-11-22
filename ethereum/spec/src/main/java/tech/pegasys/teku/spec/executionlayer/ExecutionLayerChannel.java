@@ -21,7 +21,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
@@ -76,7 +76,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
 
         @Override
         public SafeFuture<BuilderPayload> builderGetPayload(
-            final SignedBlockContainer signedBlockContainer,
+            final SignedBeaconBlock signedBeaconBlock,
             final Function<UInt64, Optional<ExecutionPayloadResult>>
                 getCachedPayloadResultFunction) {
           return SafeFuture.completedFuture(null);
@@ -117,11 +117,11 @@ public interface ExecutionLayerChannel extends ChannelInterface {
       SszList<SignedValidatorRegistration> signedValidatorRegistrations, UInt64 slot);
 
   /**
-   * This is low level method, use {@link ExecutionLayerBlockProductionManager#getUnblindedPayload(
-   * SignedBlockContainer)} instead
+   * This is low level method, use {@link
+   * ExecutionLayerBlockProductionManager#getUnblindedPayload(SignedBeaconBlock)} instead
    */
   SafeFuture<BuilderPayload> builderGetPayload(
-      SignedBlockContainer signedBlockContainer,
+      SignedBeaconBlock signedBeaconBlock,
       Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction);
 
   /**

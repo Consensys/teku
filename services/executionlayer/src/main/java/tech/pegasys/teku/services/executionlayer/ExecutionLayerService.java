@@ -201,7 +201,7 @@ public class ExecutionLayerService extends Service {
         builderClient,
         config.getSpec(),
         metricsSystem,
-        new BuilderBidValidatorImpl(EVENT_LOG),
+        new BuilderBidValidatorImpl(config.getSpec(), EVENT_LOG),
         builderCircuitBreaker,
         config.getBuilderBidCompareFactor(),
         config.getUseShouldOverrideBuilderFlag());

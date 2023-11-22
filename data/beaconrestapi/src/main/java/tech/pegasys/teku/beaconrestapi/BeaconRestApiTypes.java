@@ -60,7 +60,7 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 import java.util.Locale;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators.StatusParameter;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
@@ -76,8 +76,8 @@ import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 public class BeaconRestApiTypes {
   private static final StringValueTypeDefinition<StatusParameter> STATUS_VALUE =
       DeserializableTypeDefinition.string(StatusParameter.class)
-          .formatter(StatusParameter::toString)
-          .parser(StatusParameter::valueOf)
+          .formatter(StatusParameter::getValue)
+          .parser(StatusParameter::parse)
           .example("active_ongoing")
           .description("ValidatorStatus string")
           .format("string")

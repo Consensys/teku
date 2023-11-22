@@ -31,6 +31,7 @@ import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -76,6 +77,7 @@ public class StorageBackedRecentChainDataTest {
             new StubMetricsSystem(),
             storeConfig,
             asyncRunner,
+            new SystemTimeProvider(),
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
@@ -123,6 +125,7 @@ public class StorageBackedRecentChainDataTest {
             new StubMetricsSystem(),
             storeConfig,
             asyncRunner,
+            new SystemTimeProvider(),
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
@@ -173,6 +176,7 @@ public class StorageBackedRecentChainDataTest {
             new StubMetricsSystem(),
             StoreConfig.createDefault(),
             asyncRunner,
+            new SystemTimeProvider(),
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
@@ -219,6 +223,7 @@ public class StorageBackedRecentChainDataTest {
             new StubMetricsSystem(),
             StoreConfig.createDefault(),
             asyncRunner,
+            new SystemTimeProvider(),
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,

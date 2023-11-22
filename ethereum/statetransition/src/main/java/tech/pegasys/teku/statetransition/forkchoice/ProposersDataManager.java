@@ -139,6 +139,12 @@ public class ProposersDataManager implements SlotEventsChannel {
                     headState, signedValidatorRegistrations, currentSlot));
   }
 
+  // used in ForkChoice validator_is_connected
+  public boolean validatorIsConnected(final UInt64 validatorIndex, final UInt64 currentSlot) {
+    final PreparedProposerInfo info = preparedProposerInfoByValidatorIndex.get(validatorIndex);
+    return info != null && !info.hasExpired(currentSlot);
+  }
+
   private void updatePreparedProposerCache(
       final Collection<BeaconPreparableProposer> preparedProposers, final UInt64 currentSlot) {
     final UInt64 expirySlot =

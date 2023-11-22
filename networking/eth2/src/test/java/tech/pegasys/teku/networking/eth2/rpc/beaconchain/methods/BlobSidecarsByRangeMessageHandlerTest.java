@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tuweni.bytes.Bytes32;
 import org.assertj.core.api.AssertionsForInterfaceTypes;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,8 +53,9 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
 import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
@@ -99,7 +101,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
       spec.forMilestone(SpecMilestone.DENEB).miscHelpers().toVersionDeneb().orElseThrow();
 
   @SuppressWarnings("unchecked")
-  private final ResponseCallback<BlobSidecarOld> listener = mock(ResponseCallback.class);
+  private final ResponseCallback<BlobSidecar> listener = mock(ResponseCallback.class);
 
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
@@ -261,8 +263,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock);
 
-    final List<BlobSidecarOld> expectedSent =
-        setUpBlobSidecarsData(startSlot, request.getMaxSlot());
+    final List<BlobSidecar> expectedSent = setUpBlobSidecarsData(startSlot, request.getMaxSlot());
 
     handler.onIncomingMessage(protocolId, peer, request, listener);
 
@@ -274,12 +275,11 @@ public class BlobSidecarsByRangeMessageHandlerTest {
         .adjustBlobSidecarsRequest(
             eq(allowedObjectsRequest.get()), eq(Long.valueOf(expectedSent.size())));
 
-    final ArgumentCaptor<BlobSidecarOld> argumentCaptor =
-        ArgumentCaptor.forClass(BlobSidecarOld.class);
+    final ArgumentCaptor<BlobSidecar> argumentCaptor = ArgumentCaptor.forClass(BlobSidecar.class);
 
     verify(listener, times(expectedSent.size())).respond(argumentCaptor.capture());
 
-    final List<BlobSidecarOld> actualSent = argumentCaptor.getAllValues();
+    final List<BlobSidecar> actualSent = argumentCaptor.getAllValues();
 
     verify(listener).completeSuccessfully();
 
@@ -296,7 +296,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     final BlobSidecarsByRangeRequestMessage request =
         new BlobSidecarsByRangeRequestMessage(startSlot, count, maxBlobsPerBlock);
 
-    final List<BlobSidecarOld> allAvailableBlobs =
+    final List<BlobSidecar> allAvailableBlobs =
         setUpBlobSidecarsData(startSlot, request.getMaxSlot());
 
     // we simulate that the canonical non-finalized chain only contains blobs from last
@@ -304,7 +304,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     final SlotAndBlockRoot canonicalSlotAndBlockRoot =
         allAvailableBlobs.get(allAvailableBlobs.size() - 1).getSlotAndBlockRoot();
 
-    final List<BlobSidecarOld> expectedSent =
+    final List<BlobSidecar> expectedSent =
         allAvailableBlobs.stream()
             .filter(
                 blobSidecar ->
@@ -315,7 +315,7 @@ public class BlobSidecarsByRangeMessageHandlerTest {
                             .getSlotAndBlockRoot()
                             .equals(canonicalSlotAndBlockRoot) // include non canonical
                 )
-            .collect(Collectors.toUnmodifiableList());
+            .toList();
 
     // let return only canonical slot and block root as canonical
     when(combinedChainDataClient.getAncestorRoots(eq(startSlot), eq(ONE), any()))
@@ -333,12 +333,11 @@ public class BlobSidecarsByRangeMessageHandlerTest {
         .adjustBlobSidecarsRequest(
             eq(allowedObjectsRequest.get()), eq(Long.valueOf(expectedSent.size())));
 
-    final ArgumentCaptor<BlobSidecarOld> argumentCaptor =
-        ArgumentCaptor.forClass(BlobSidecarOld.class);
+    final ArgumentCaptor<BlobSidecar> argumentCaptor = ArgumentCaptor.forClass(BlobSidecar.class);
 
     verify(listener, times(expectedSent.size())).respond(argumentCaptor.capture());
 
-    final List<BlobSidecarOld> actualSent = argumentCaptor.getAllValues();
+    final List<BlobSidecar> actualSent = argumentCaptor.getAllValues();
 
     verify(listener).completeSuccessfully();
 
@@ -360,12 +359,11 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     // no adjustment
     verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
 
-    final ArgumentCaptor<BlobSidecarOld> argumentCaptor =
-        ArgumentCaptor.forClass(BlobSidecarOld.class);
+    final ArgumentCaptor<BlobSidecar> argumentCaptor = ArgumentCaptor.forClass(BlobSidecar.class);
 
     verify(listener, never()).respond(argumentCaptor.capture());
 
-    final List<BlobSidecarOld> actualSent = argumentCaptor.getAllValues();
+    final List<BlobSidecar> actualSent = argumentCaptor.getAllValues();
 
     verify(listener).completeSuccessfully();
 
@@ -389,12 +387,11 @@ public class BlobSidecarsByRangeMessageHandlerTest {
     // no adjustment
     verify(peer, never()).adjustBlobSidecarsRequest(any(), anyLong());
 
-    final ArgumentCaptor<BlobSidecarOld> argumentCaptor =
-        ArgumentCaptor.forClass(BlobSidecarOld.class);
+    final ArgumentCaptor<BlobSidecar> argumentCaptor = ArgumentCaptor.forClass(BlobSidecar.class);
 
     verify(listener, never()).respond(argumentCaptor.capture());
 
-    final List<BlobSidecarOld> actualSent = argumentCaptor.getAllValues();
+    final List<BlobSidecar> actualSent = argumentCaptor.getAllValues();
 
     verify(listener).completeSuccessfully();
 
@@ -407,20 +404,30 @@ public class BlobSidecarsByRangeMessageHandlerTest {
             spec.getSlotStartTime(currentEpoch.times(spec.getSlotsPerEpoch(ZERO)), genesisTime));
   }
 
-  private List<BlobSidecarOld> setUpBlobSidecarsData(final UInt64 startSlot, final UInt64 maxSlot) {
-    final List<SlotAndBlockRootAndBlobIndex> keys = setupKeyList(startSlot, maxSlot);
+  private List<BlobSidecar> setUpBlobSidecarsData(final UInt64 startSlot, final UInt64 maxSlot) {
+    final List<Pair<SignedBeaconBlockHeader, SlotAndBlockRootAndBlobIndex>> headerAndKeys =
+        setupKeyAndHeaderList(startSlot, maxSlot);
     when(combinedChainDataClient.getBlobSidecarKeys(eq(startSlot), eq(maxSlot), any()))
         .thenAnswer(
             args ->
                 SafeFuture.completedFuture(
-                    keys.subList(
-                        0, Math.min(keys.size(), ((UInt64) args.getArgument(2)).intValue()))));
-    return keys.stream().map(this::setUpBlobSidecarDataForKey).collect(Collectors.toList());
+                    headerAndKeys
+                        .subList(
+                            0,
+                            Math.min(
+                                headerAndKeys.size(), ((UInt64) args.getArgument(2)).intValue()))
+                        .stream()
+                        .map(Pair::getValue)
+                        .toList()));
+    return headerAndKeys.stream()
+        .map(this::setUpBlobSidecarDataForKey)
+        .collect(Collectors.toList());
   }
 
-  private List<SlotAndBlockRootAndBlobIndex> setupKeyList(
+  private List<Pair<SignedBeaconBlockHeader, SlotAndBlockRootAndBlobIndex>> setupKeyAndHeaderList(
       final UInt64 startSlot, final UInt64 maxSlot) {
-    final List<SlotAndBlockRootAndBlobIndex> keys = new ArrayList<>();
+    final List<Pair<SignedBeaconBlockHeader, SlotAndBlockRootAndBlobIndex>> headerAndKeys =
+        new ArrayList<>();
     UInt64.rangeClosed(startSlot, maxSlot)
         .forEach(
             slot -> {
@@ -432,21 +439,23 @@ public class BlobSidecarsByRangeMessageHandlerTest {
                           .minusMinZero(1))
                   .forEach(
                       index ->
-                          keys.add(new SlotAndBlockRootAndBlobIndex(slot, block.getRoot(), index)));
+                          headerAndKeys.add(
+                              Pair.of(
+                                  block.asHeader(),
+                                  new SlotAndBlockRootAndBlobIndex(slot, block.getRoot(), index))));
             });
-    return keys;
+    return headerAndKeys;
   }
 
-  private BlobSidecarOld setUpBlobSidecarDataForKey(final SlotAndBlockRootAndBlobIndex key) {
-    final BlobSidecarOld blobSidecar =
+  private BlobSidecar setUpBlobSidecarDataForKey(
+      final Pair<SignedBeaconBlockHeader, SlotAndBlockRootAndBlobIndex> keyAndHeaders) {
+    final BlobSidecar blobSidecar =
         dataStructureUtil
-            .createRandomBlobSidecarBuilderOld()
-            .blockRoot(key.getBlockRoot())
-            .slot(key.getSlot())
-            .index(key.getBlobIndex())
-            .blockParentRoot(dataStructureUtil.randomBytes32())
+            .createRandomBlobSidecarBuilder()
+            .signedBeaconBlockHeader(keyAndHeaders.getLeft())
+            .index(keyAndHeaders.getValue().getBlobIndex())
             .build();
-    when(combinedChainDataClient.getBlobSidecarByKey(key))
+    when(combinedChainDataClient.getBlobSidecarByKey(keyAndHeaders.getValue()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blobSidecar)));
     return blobSidecar;
   }

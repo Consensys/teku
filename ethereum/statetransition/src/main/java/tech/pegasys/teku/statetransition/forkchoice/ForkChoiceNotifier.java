@@ -32,6 +32,8 @@ public interface ForkChoiceNotifier {
 
   void onTerminalBlockReached(Bytes32 executionBlockHash);
 
+  boolean validatorIsConnected(UInt64 validatorIndex, UInt64 currentSlot);
+
   long subscribeToForkChoiceUpdatedResult(ForkChoiceUpdatedResultSubscriber subscriber);
 
   boolean unsubscribeFromForkChoiceUpdatedResult(long subscriberId);
