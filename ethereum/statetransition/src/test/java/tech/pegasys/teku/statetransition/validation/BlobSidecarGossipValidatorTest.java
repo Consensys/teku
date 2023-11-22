@@ -15,7 +15,10 @@ package tech.pegasys.teku.statetransition.validation;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
@@ -30,6 +33,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -46,6 +50,7 @@ public class BlobSidecarGossipValidatorTest {
   private final GossipValidationHelper gossipValidationHelper = mock(GossipValidationHelper.class);
   private final MiscHelpersDeneb miscHelpersDeneb = mock(MiscHelpersDeneb.class);
   private final KZG kzg = mock(KZG.class);
+  private DataStructureUtil dataStructureUtil;
   private BlobSidecarGossipValidator blobSidecarValidator;
 
   private UInt64 parentSlot;
@@ -61,7 +66,7 @@ public class BlobSidecarGossipValidatorTest {
 
   @BeforeEach
   void setup(final SpecContext specContext) {
-    final DataStructureUtil dataStructureUtil = specContext.getDataStructureUtil();
+    this.dataStructureUtil = specContext.getDataStructureUtil();
 
     blobSidecarValidator =
         BlobSidecarGossipValidator.create(
@@ -135,6 +140,9 @@ public class BlobSidecarGossipValidatorTest {
   void shouldRejectWhenSlotIsNotDeneb() {
     final Spec mockedSpec = mock(Spec.class);
     when(mockedSpec.getMaxBlobsPerBlock(slot)).thenReturn(Optional.empty());
+    final SpecVersion mockedSpecVersion = mock(SpecVersion.class);
+    when(mockedSpec.getGenesisSpec()).thenReturn(mockedSpecVersion);
+    when(mockedSpecVersion.getSlotsPerEpoch()).thenReturn(1);
 
     blobSidecarValidator =
         BlobSidecarGossipValidator.create(
@@ -267,5 +275,63 @@ public class BlobSidecarGossipValidatorTest {
 
     SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+  }
+
+  @TestTemplate
+  void shouldNotVerifyKnownValidSignedHeader() {
+    SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar))
+        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+
+    verify(miscHelpersDeneb).verifyBlobSidecarMerkleProof(blobSidecar);
+    verify(miscHelpersDeneb).verifyBlobKzgProof(kzg, blobSidecar);
+    verify(gossipValidationHelper).getParentStateInBlockEpoch(any(), any(), any());
+    verify(gossipValidationHelper).isProposerTheExpectedProposer(any(), any(), any());
+    verify(gossipValidationHelper)
+        .isSignatureValidWithRespectToProposerIndex(any(), any(), any(), any());
+    clearInvocations(gossipValidationHelper);
+
+    // Other BlobSidecar from the same block
+    final BlobSidecar blobSidecar0 =
+        dataStructureUtil
+            .createRandomBlobSidecarBuilder()
+            .signedBeaconBlockHeader(blobSidecar.getSignedBeaconBlockHeader())
+            .index(UInt64.ZERO)
+            .build();
+
+    SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar0))
+        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+
+    verify(miscHelpersDeneb).verifyBlobSidecarMerkleProof(blobSidecar0);
+    verify(miscHelpersDeneb).verifyBlobKzgProof(kzg, blobSidecar0);
+    verify(gossipValidationHelper, never()).getParentStateInBlockEpoch(any(), any(), any());
+    verify(gossipValidationHelper, never()).isProposerTheExpectedProposer(any(), any(), any());
+    verify(gossipValidationHelper, never())
+        .isSignatureValidWithRespectToProposerIndex(any(), any(), any(), any());
+    clearInvocations(gossipValidationHelper);
+
+    // BlobSidecar from the new block
+    final BlobSidecar blobSidecarNew =
+        dataStructureUtil.createRandomBlobSidecarBuilder().index(UInt64.ZERO).build();
+    final Bytes32 parentRoot =
+        blobSidecarNew.getSignedBeaconBlockHeader().getMessage().getParentRoot();
+
+    when(gossipValidationHelper.isSlotFinalized(blobSidecarNew.getSlot())).thenReturn(false);
+    when(gossipValidationHelper.isSlotFromFuture(blobSidecarNew.getSlot())).thenReturn(false);
+    when(gossipValidationHelper.isBlockAvailable(parentRoot)).thenReturn(true);
+    when(gossipValidationHelper.getSlotForBlockRoot(parentRoot))
+        .thenReturn(Optional.of(parentSlot));
+    when(gossipValidationHelper.getParentStateInBlockEpoch(
+            parentSlot, parentRoot, blobSidecarNew.getSlot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(
+            blobSidecarNew.getSlot(), parentRoot))
+        .thenReturn(true);
+
+    SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecarNew))
+        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+
+    verify(miscHelpersDeneb).verifyBlobSidecarMerkleProof(blobSidecarNew);
+    verify(miscHelpersDeneb).verifyBlobKzgProof(kzg, blobSidecarNew);
+    verify(gossipValidationHelper).getParentStateInBlockEpoch(any(), any(), any());
   }
 }
