@@ -37,13 +37,21 @@ public class SignedBlockContents
       final SignedBeaconBlock signedBeaconBlock,
       final List<KZGProof> kzgProofs,
       final List<Blob> blobs) {
-    super(
+    this(
         schema,
         signedBeaconBlock,
         schema
             .getKzgProofsSchema()
             .createFromElements(kzgProofs.stream().map(SszKZGProof::new).toList()),
         schema.getBlobsSchema().createFromElements(blobs));
+  }
+
+  public SignedBlockContents(
+      final SignedBlockContentsSchema schema,
+      final SignedBeaconBlock signedBeaconBlock,
+      final SszList<SszKZGProof> kzgProofs,
+      final SszList<Blob> blobs) {
+    super(schema, signedBeaconBlock, kzgProofs, blobs);
   }
 
   @Override

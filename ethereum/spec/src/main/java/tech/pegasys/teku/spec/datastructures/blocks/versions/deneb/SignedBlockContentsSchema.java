@@ -68,6 +68,13 @@ public class SignedBlockContentsSchema
     return new SignedBlockContents(this, signedBeaconBlock, kzgProofs, blobs);
   }
 
+  public SignedBlockContents create(
+      final SignedBeaconBlock signedBeaconBlock,
+      final SszList<SszKZGProof> kzgProofs,
+      final SszList<Blob> blobs) {
+    return new SignedBlockContents(this, signedBeaconBlock, kzgProofs, blobs);
+  }
+
   @Override
   public SignedBlockContents createFromBackingNode(final TreeNode node) {
     return new SignedBlockContents(this, node);
