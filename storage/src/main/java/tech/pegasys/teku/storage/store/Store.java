@@ -562,7 +562,7 @@ class Store extends CacheableStore {
                               specVersion.getConfig().getReorgHeadWeightThreshold());
                       final boolean result = headWeight.isLessThan(reorgThreashold);
 
-                      LOG.debug(
+                      LOG.trace(
                           "isHeadWeak {}: headWeight: {}, reorgThreshold: {}, result: {}",
                           root,
                           headWeight,
@@ -607,7 +607,7 @@ class Store extends CacheableStore {
                               specVersion.getConfig().getReorgParentWeightThreshold());
                       final boolean result = parentWeight.isGreaterThan(parentThreshold);
 
-                      LOG.debug(
+                      LOG.trace(
                           "isParentStrong {}: parentWeight: {}, parentThreshold: {}, result: {}",
                           parentRoot,
                           parentWeight,
@@ -636,7 +636,7 @@ class Store extends CacheableStore {
         maybeHeadData.get().getCheckpoints().getUnrealizedJustifiedCheckpoint();
     final Checkpoint parentUnrealizedJustifiedCheckpoint =
         maybeParentData.get().getCheckpoints().getUnrealizedJustifiedCheckpoint();
-    LOG.debug(
+    LOG.trace(
         "head {}, compared to parent {}",
         headUnrealizedJustifiedCheckpoint,
         parentUnrealizedJustifiedCheckpoint);
