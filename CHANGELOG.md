@@ -11,6 +11,7 @@ the [releases page](https://github.com/Consensys/teku/releases).
 
 ### Breaking Changes
 - By default, Teku won't allow syncing from genesis, users should use `--checkpoint-sync-url` when starting a new node. It is possible to revert back to the previous behaviour using the flag `--ignore-weak-subjectivity-period-enabled`.
+- `validator_remote_beacon_nodes_requests_total` metric for the validator client would not be available if there are no failovers configured. In that case `validator_beacon_node_requests_total` can be used instead.
 
 ### Additions and Improvements
 - Support to new Beacon APIs `publishBlindedBlockV2` and `publishBlockV2` which introduce broadcast validation parameter. 
