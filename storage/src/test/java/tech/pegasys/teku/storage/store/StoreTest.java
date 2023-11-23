@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
@@ -37,6 +38,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.forkchoice.InvalidCheckpointException;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
@@ -88,6 +91,123 @@ class StoreTest extends AbstractStoreTest {
               .describedAs("block %s", expectedBlock.getSlot())
               .isCompletedWithValue(Optional.of(expectedBlock));
         });
+  }
+
+  @Test
+  public void isHeadWeak_withoutNodeData() {
+    processChainHeadWithMockForkChoiceStrategy(
+        (store, blockAndState) -> {
+          final Bytes32 root = blockAndState.getRoot();
+          final SafeFuture<Optional<Boolean>> isHeadWeakFuture = store.isHeadWeak(root);
+          assertThat(safeJoin(isHeadWeakFuture)).isEmpty();
+        });
+  }
+
+  @Test
+  public void isHeadWeak_withSufficientWeightIsFalse() {
+    processChainHeadWithMockForkChoiceStrategy(
+        (store, blockAndState) -> {
+          final Bytes32 root = blockAndState.getRoot();
+          setProtoNodeDataForBlock(blockAndState, UInt64.valueOf("2400000001"), UInt64.MAX_VALUE);
+
+          final SafeFuture<Optional<Boolean>> isHeadWeakFuture = store.isHeadWeak(root);
+          assertThat(safeJoin(isHeadWeakFuture)).contains(false);
+        });
+  }
+
+  @Test
+  public void isHeadWeak_Boundary() {
+    processChainHeadWithMockForkChoiceStrategy(
+        (store, blockAndState) -> {
+          final Bytes32 root = blockAndState.getRoot();
+          setProtoNodeDataForBlock(blockAndState, UInt64.valueOf("2399999999"), UInt64.MAX_VALUE);
+
+          final SafeFuture<Optional<Boolean>> isHeadWeakFuture = store.isHeadWeak(root);
+          assertThat(safeJoin(isHeadWeakFuture)).contains(true);
+        });
+  }
+
+  @Test
+  public void isHeadWeak_withLowWeightIsTrue() {
+    processChainHeadWithMockForkChoiceStrategy(
+        (store, blockAndState) -> {
+          final Bytes32 root = blockAndState.getRoot();
+          setProtoNodeDataForBlock(blockAndState, UInt64.valueOf("1000000000"), UInt64.MAX_VALUE);
+
+          final SafeFuture<Optional<Boolean>> isHeadWeakFuture = store.isHeadWeak(root);
+          assertThat(safeJoin(isHeadWeakFuture)).contains(true);
+        });
+  }
+
+  @Test
+  public void isParentStrong_withoutNodeData() {
+    processChainHeadWithMockForkChoiceStrategy(
+        (store, blockAndState) -> {
+          final Bytes32 root = blockAndState.getBlock().getParentRoot();
+          final SafeFuture<Optional<Boolean>> isParentStrongFuture = store.isParentStrong(root);
+          assertThat(safeJoin(isParentStrongFuture)).isEmpty();
+        });
+  }
+
+  @Test
+  public void isParentStrong_withSufficientWeight() {
+    processChainHeadWithMockForkChoiceStrategy(
+        (store, blockAndState) -> {
+          final Bytes32 root = blockAndState.getBlock().getParentRoot();
+          setProtoNodeDataForBlock(blockAndState, UInt64.ZERO, UInt64.valueOf("19200000001"));
+          final SafeFuture<Optional<Boolean>> isParentStrongFuture = store.isParentStrong(root);
+          assertThat(safeJoin(isParentStrongFuture)).contains(true);
+        });
+  }
+
+  @Test
+  public void isParentStrong_wityBoundaryWeight() {
+    processChainHeadWithMockForkChoiceStrategy(
+        (store, blockAndState) -> {
+          final Bytes32 root = blockAndState.getBlock().getParentRoot();
+          setProtoNodeDataForBlock(blockAndState, UInt64.ZERO, UInt64.valueOf("19200000000"));
+          final SafeFuture<Optional<Boolean>> isParentStrongFuture = store.isParentStrong(root);
+          assertThat(safeJoin(isParentStrongFuture)).contains(false);
+        });
+  }
+
+  @Test
+  public void isParentStrong_wityZeroWeight() {
+    processChainHeadWithMockForkChoiceStrategy(
+        (store, blockAndState) -> {
+          final Bytes32 root = blockAndState.getBlock().getParentRoot();
+          setProtoNodeDataForBlock(blockAndState, UInt64.ZERO, UInt64.ZERO);
+          final SafeFuture<Optional<Boolean>> isParentStrongFuture = store.isParentStrong(root);
+          assertThat(safeJoin(isParentStrongFuture)).contains(false);
+        });
+  }
+
+  private void setProtoNodeDataForBlock(
+      SignedBlockAndState blockAndState, final UInt64 headValue, final UInt64 parentValue) {
+    final Bytes32 root = blockAndState.getRoot();
+    final Bytes32 parentRoot = blockAndState.getParentRoot();
+    final ProtoNodeData protoNodeData =
+        new ProtoNodeData(
+            UInt64.ONE,
+            root,
+            blockAndState.getParentRoot(),
+            blockAndState.getStateRoot(),
+            Bytes32.random(),
+            ProtoNodeValidationStatus.VALID,
+            null,
+            headValue);
+    final ProtoNodeData parentNodeData =
+        new ProtoNodeData(
+            UInt64.ZERO,
+            parentRoot,
+            Bytes32.random(),
+            blockAndState.getStateRoot(),
+            Bytes32.random(),
+            ProtoNodeValidationStatus.VALID,
+            null,
+            parentValue);
+    when(dummyForkChoiceStrategy.getBlockData(root)).thenReturn(Optional.of(protoNodeData));
+    when(dummyForkChoiceStrategy.getBlockData(parentRoot)).thenReturn(Optional.of(parentNodeData));
   }
 
   @Test

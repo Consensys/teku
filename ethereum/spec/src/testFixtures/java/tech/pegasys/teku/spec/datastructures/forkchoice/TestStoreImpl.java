@@ -247,6 +247,16 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
+  public SafeFuture<Optional<Boolean>> isHeadWeak(Bytes32 root) {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
+
+  @Override
+  public SafeFuture<Optional<Boolean>> isParentStrong(Bytes32 parentRoot) {
+    return SafeFuture.completedFuture(Optional.empty());
+  }
+
+  @Override
   public Optional<List<BlobSidecar>> getBlobSidecarsIfAvailable(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return Optional.ofNullable(blobSidecars.get(slotAndBlockRoot));
