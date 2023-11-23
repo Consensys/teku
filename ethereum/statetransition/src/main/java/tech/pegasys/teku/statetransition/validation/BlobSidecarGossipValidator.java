@@ -256,16 +256,21 @@ public class BlobSidecarGossipValidator {
                 return reject("BlobSidecar block header signature is invalid.");
               }
 
-              synchronized (this) {
-                if (!receivedValidBlobSidecarInfoSet.add(
-                    new SlotProposerIndexAndBlobIndex(
-                        blockHeader.getSlot(),
-                        blockHeader.getProposerIndex(),
-                        blobSidecar.getIndex()))) {
-                  return ignore(
-                      "BlobSidecar is not the first valid for its slot and index. It will be dropped.");
-                }
+              /*
+               * Checking it again at the very end because whole method is not synchronized
+               *
+               * [IGNORE] The sidecar is the first sidecar for the tuple (block_header.slot, block_header.proposer_index, blob_sidecar.index)
+               *  with valid header signature, sidecar inclusion proof, and kzg proof.
+               */
+              if (!receivedValidBlobSidecarInfoSet.add(
+                  new SlotProposerIndexAndBlobIndex(
+                      blockHeader.getSlot(),
+                      blockHeader.getProposerIndex(),
+                      blobSidecar.getIndex()))) {
+                return ignore(
+                    "BlobSidecar is not the first valid for its slot and index. It will be dropped.");
               }
+
               validSignedBlockHeaders.add(blobSidecar.getSignedBeaconBlockHeader().hashTreeRoot());
 
               return ACCEPT;
@@ -301,15 +306,17 @@ public class BlobSidecarGossipValidator {
           reject("BlobSidecar block header does not descend from finalized checkpoint"));
     }
 
-    synchronized (this) {
-      if (!receivedValidBlobSidecarInfoSet.add(
-          new SlotProposerIndexAndBlobIndex(
-              blockHeader.getSlot(), blockHeader.getProposerIndex(), blobSidecar.getIndex()))) {
-        return SafeFuture.completedFuture(
-            ignore(
-                "BlobSidecar is not the first valid for its slot and index. It will be dropped."));
-      }
+    /*
+     * [IGNORE] The sidecar is the first sidecar for the tuple (block_header.slot, block_header.proposer_index, blob_sidecar.index)
+     *  with valid header signature, sidecar inclusion proof, and kzg proof.
+     */
+    if (!receivedValidBlobSidecarInfoSet.add(
+        new SlotProposerIndexAndBlobIndex(
+            blockHeader.getSlot(), blockHeader.getProposerIndex(), blobSidecar.getIndex()))) {
+      return SafeFuture.completedFuture(
+          ignore("BlobSidecar is not the first valid for its slot and index. It will be dropped."));
     }
+
     return SafeFuture.completedFuture(ACCEPT);
   }
 
