@@ -389,8 +389,7 @@ public class ValidatorClientService extends Service {
         services.getMetricsSystem(),
         config.getValidatorRestApiConfig().isRestApiEnabled()
             ? Optional.of(services.getDataDirLayout())
-            : Optional.empty(),
-        exitWhenNoValidatorKeysEnabled);
+            : Optional.empty());
   }
 
   private void initializeValidators(

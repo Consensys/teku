@@ -235,8 +235,7 @@ public class ValidatorLoader {
       final PublicKeyLoader publicKeyLoader,
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
-      final Optional<DataDirLayout> maybeMutableDir,
-      final boolean exitWhenNoValidatorKeysEnabled) {
+      final Optional<DataDirLayout> maybeMutableDir) {
     final ValidatorSourceFactory validatorSources =
         new ValidatorSourceFactory(
             spec,
@@ -257,7 +256,7 @@ public class ValidatorLoader {
         config.getGraffitiProvider(),
         maybeMutableDir,
         slashingProtectionLogger,
-        exitWhenNoValidatorKeysEnabled);
+        config.isExitWhenNoValidatorKeysEnabled());
   }
 
   @VisibleForTesting
