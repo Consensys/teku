@@ -31,6 +31,9 @@ public class Constants {
   // sync committee size.
   public static final int VALID_CONTRIBUTION_AND_PROOF_SET_SIZE = 512;
   public static final int VALID_SYNC_COMMITTEE_MESSAGE_SET_SIZE = 512;
+  // When finalization is at its best case with 100% of votes we could have up to 3 full
+  // epochs of non-finalized blocks
+  public static final int BEST_CASE_NON_FINALIZED_EPOCHS = 3;
 
   public static final Duration ETH1_INDIVIDUAL_BLOCK_RETRY_TIMEOUT = Duration.ofMillis(500);
   public static final Duration ETH1_DEPOSIT_REQUEST_RETRY_TIMEOUT = Duration.ofSeconds(2);

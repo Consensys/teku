@@ -14,6 +14,7 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.spec.config.Constants.BEST_CASE_NON_FINALIZED_EPOCHS;
 import static tech.pegasys.teku.spec.config.Constants.VALID_BLOCK_SET_SIZE;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
@@ -66,7 +67,8 @@ public class BlobSidecarGossipValidator {
 
     final int validInfoSize = VALID_BLOCK_SET_SIZE * maybeMaxBlobsPerBlock.orElse(1);
     // It's not fatal if we miss something and we don't need finalized data
-    final int validSignedBlockHeadersSize = spec.getGenesisSpec().getSlotsPerEpoch() * 3;
+    final int validSignedBlockHeadersSize =
+        spec.getGenesisSpec().getSlotsPerEpoch() * BEST_CASE_NON_FINALIZED_EPOCHS;
 
     return new BlobSidecarGossipValidator(
         spec,

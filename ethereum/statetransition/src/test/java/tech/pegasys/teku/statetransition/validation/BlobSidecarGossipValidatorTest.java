@@ -334,4 +334,104 @@ public class BlobSidecarGossipValidatorTest {
     verify(miscHelpersDeneb).verifyBlobKzgProof(kzg, blobSidecarNew);
     verify(gossipValidationHelper).getParentStateInBlockEpoch(any(), any(), any());
   }
+
+  @TestTemplate
+  void shouldVerifySignedHeaderAgainAfterItDroppedFromCache() {
+    final Spec specMock = mock(Spec.class);
+    final SpecVersion specVersion = mock(SpecVersion.class);
+    when(specMock.getMaxBlobsPerBlock(any())).thenReturn(Optional.of(6));
+    when(specMock.getGenesisSpec()).thenReturn(specVersion);
+    // This will make cache of size 3
+    when(specVersion.getSlotsPerEpoch()).thenReturn(1);
+    this.blobSidecarValidator =
+        BlobSidecarGossipValidator.create(
+            specMock, invalidBlocks, gossipValidationHelper, miscHelpersDeneb, kzg);
+    // Accept everything
+    when(gossipValidationHelper.isSlotFinalized(any())).thenReturn(false);
+    when(gossipValidationHelper.isSlotFromFuture(any())).thenReturn(false);
+    when(gossipValidationHelper.isBlockAvailable(any())).thenReturn(true);
+    when(gossipValidationHelper.getParentStateInBlockEpoch(any(), any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(postState)));
+    when(gossipValidationHelper.isProposerTheExpectedProposer(any(), any(), any()))
+        .thenReturn(true);
+    when(gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(any(), any()))
+        .thenReturn(true);
+    when(gossipValidationHelper.isSignatureValidWithRespectToProposerIndex(
+            any(), any(), any(), any()))
+        .thenReturn(true);
+
+    // First blobSidecar
+    SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar))
+        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+    clearInvocations(gossipValidationHelper);
+
+    // Other BlobSidecar from the same block, known valid block header is detected, so short
+    // validation is used
+    final BlobSidecar blobSidecar0 =
+        dataStructureUtil
+            .createRandomBlobSidecarBuilder()
+            .signedBeaconBlockHeader(blobSidecar.getSignedBeaconBlockHeader())
+            .index(UInt64.ZERO)
+            .build();
+
+    SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar0))
+        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+
+    verify(gossipValidationHelper, never())
+        .isSignatureValidWithRespectToProposerIndex(any(), any(), any(), any());
+    clearInvocations(gossipValidationHelper);
+
+    // 2nd block BlobSidecar
+    final BlobSidecar blobSidecar2 = dataStructureUtil.randomBlobSidecar();
+    when(gossipValidationHelper.getSlotForBlockRoot(any()))
+        .thenReturn(Optional.of(blobSidecar2.getSlot().decrement()));
+
+    SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar2))
+        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+
+    verify(gossipValidationHelper)
+        .isSignatureValidWithRespectToProposerIndex(any(), any(), any(), any());
+    clearInvocations(gossipValidationHelper);
+
+    // 3rd block BlobSidecar
+    final BlobSidecar blobSidecar3 = dataStructureUtil.randomBlobSidecar();
+    when(gossipValidationHelper.getSlotForBlockRoot(any()))
+        .thenReturn(Optional.of(blobSidecar3.getSlot().decrement()));
+
+    SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar3))
+        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+
+    verify(gossipValidationHelper)
+        .isSignatureValidWithRespectToProposerIndex(any(), any(), any(), any());
+    clearInvocations(gossipValidationHelper);
+
+    // 4th block BlobSidecar, erasing block from blobSidecar0 from cache
+    final BlobSidecar blobSidecar4 = dataStructureUtil.randomBlobSidecar();
+    when(gossipValidationHelper.getSlotForBlockRoot(any()))
+        .thenReturn(Optional.of(blobSidecar4.getSlot().decrement()));
+
+    SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar4))
+        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+
+    verify(gossipValidationHelper)
+        .isSignatureValidWithRespectToProposerIndex(any(), any(), any(), any());
+    clearInvocations(gossipValidationHelper);
+
+    // BlobSidecar from the same block as blobSidecar0 and blobSidecar
+    final BlobSidecar blobSidecar5 =
+        dataStructureUtil
+            .createRandomBlobSidecarBuilder()
+            .signedBeaconBlockHeader(blobSidecar.getSignedBeaconBlockHeader())
+            .index(UInt64.valueOf(2))
+            .build();
+    when(gossipValidationHelper.getSlotForBlockRoot(any()))
+        .thenReturn(Optional.of(blobSidecar5.getSlot().decrement()));
+
+    SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar5))
+        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+
+    // Signature is validating again though header was known valid until dropped from cache
+    verify(gossipValidationHelper)
+        .isSignatureValidWithRespectToProposerIndex(any(), any(), any(), any());
+  }
 }
