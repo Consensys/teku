@@ -174,8 +174,9 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
       final OkHttpClient httpClient,
       final Spec spec,
       final AsyncRunner asyncRunner) {
+    final List<HttpUrl> failoverEndpoints = remoteBeaconNodeEndpoints.getFailoverEndpoints();
     final List<? extends RemoteValidatorApiChannel> failoverValidatorApis =
-        remoteBeaconNodeEndpoints.getFailoverEndpoints().stream()
+        failoverEndpoints.stream()
             .map(
                 endpoint ->
                     RemoteValidatorApiHandler.create(
@@ -186,10 +187,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
                         asyncRunner))
             .toList();
 
-    if (!remoteBeaconNodeEndpoints.getFailoverEndpoints().isEmpty()) {
-      LOG.info(
-          "Will use {} as failover Beacon Node endpoints",
-          remoteBeaconNodeEndpoints.getFailoverEndpoints());
+    if (!failoverValidatorApis.isEmpty()) {
+      LOG.info("Will use {} as failover Beacon Node endpoints", failoverEndpoints);
     }
 
     return failoverValidatorApis;
@@ -201,19 +200,20 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
       final BeaconNodeReadinessManager beaconNodeReadinessManager,
       final ValidatorConfig validatorConfig,
       final MetricsSystem metricsSystem) {
+    final ValidatorApiChannel validatorApi;
     if (!failoverValidatorApis.isEmpty()) {
-      return new MetricRecordingValidatorApiChannel(
-          metricsSystem,
+      validatorApi =
           new FailoverValidatorApiHandler(
               beaconNodeReadinessManager,
               primaryValidatorApi,
               failoverValidatorApis,
               validatorConfig.isFailoversSendSubnetSubscriptionsEnabled(),
               validatorConfig.isFailoversPublishSignedDutiesEnabled(),
-              metricsSystem));
+              metricsSystem);
     } else {
-      return new MetricRecordingValidatorApiChannel(metricsSystem, primaryValidatorApi);
+      validatorApi = primaryValidatorApi;
     }
+    return new MetricRecordingValidatorApiChannel(metricsSystem, validatorApi);
   }
 
   public static List<HttpUrl> convertToOkHttpUrls(final List<URI> beaconNodeApiEndpoints) {
