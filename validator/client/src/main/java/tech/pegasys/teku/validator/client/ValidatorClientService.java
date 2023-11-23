@@ -144,9 +144,7 @@ public class ValidatorClientService extends Service {
         new GenesisDataProvider(asyncRunner, validatorApiChannel);
     final ForkProvider forkProvider = new ForkProvider(config.getSpec(), genesisDataProvider);
 
-    final ValidatorLoader validatorLoader =
-        createValidatorLoader(
-            services, config, asyncRunner, validatorConfig.isExitWhenNoValidatorKeysEnabled());
+    final ValidatorLoader validatorLoader = createValidatorLoader(services, config, asyncRunner);
     final ValidatorRestApiConfig validatorApiConfig = config.getValidatorRestApiConfig();
     final ValidatorStatusProvider validatorStatusProvider =
         new OwnedValidatorStatusProvider(
@@ -364,8 +362,7 @@ public class ValidatorClientService extends Service {
   private static ValidatorLoader createValidatorLoader(
       final ServiceConfig services,
       final ValidatorClientConfiguration config,
-      final AsyncRunner asyncRunner,
-      final boolean exitWhenNoValidatorKeysEnabled) {
+      final AsyncRunner asyncRunner) {
     final Path slashingProtectionPath = getSlashingProtectionPath(services.getDataDirLayout());
     final SlashingProtector slashingProtector =
         new LocalSlashingProtector(
