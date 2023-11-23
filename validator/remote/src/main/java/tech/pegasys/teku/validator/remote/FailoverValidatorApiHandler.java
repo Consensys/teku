@@ -96,7 +96,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.VALIDATOR,
             REMOTE_BEACON_NODES_REQUESTS_COUNTER_NAME,
-            "Counter recording the number of requests sent to the configured Beacon Nodes endpoints",
+            "Counter recording the number of requests sent to the primary and failover Beacon Nodes endpoints",
             "endpoint",
             "method",
             "outcome");
