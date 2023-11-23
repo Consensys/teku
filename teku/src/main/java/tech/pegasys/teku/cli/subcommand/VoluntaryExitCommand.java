@@ -335,7 +335,7 @@ public class VoluntaryExitCommand implements Callable<Integer> {
             asyncRunner,
             metricsSystem,
             dataDirLayout,
-            config.validatorClient().getValidatorConfig().allowNoLoadedKeys());
+            config.validatorClient().getValidatorConfig().isExitWhenNoValidatorKeysEnabled());
 
     validatorLoader.loadValidators();
     final Map<BLSPublicKey, Validator> activeValidators =

@@ -138,7 +138,7 @@ class ValidatorLoaderTest {
             asyncRunner,
             metricsSystem,
             Optional.empty(),
-            true);
+            false);
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -177,7 +177,7 @@ class ValidatorLoaderTest {
             asyncRunner,
             metricsSystem,
             Optional.empty(),
-            true);
+            false);
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -222,7 +222,7 @@ class ValidatorLoaderTest {
             asyncRunner,
             metricsSystem,
             Optional.empty(),
-            true);
+            false);
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -269,7 +269,7 @@ class ValidatorLoaderTest {
             asyncRunner,
             metricsSystem,
             Optional.empty(),
-            true);
+            false);
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -315,7 +315,7 @@ class ValidatorLoaderTest {
             asyncRunner,
             metricsSystem,
             Optional.of(dataDirLayout),
-            true);
+            false);
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -354,7 +354,7 @@ class ValidatorLoaderTest {
             asyncRunner,
             metricsSystem,
             Optional.empty(),
-            true);
+            false);
 
     final DeleteKeyResult result =
         validatorLoader.deleteLocalMutableValidator(dataStructureUtil.randomPublicKey());
@@ -385,7 +385,7 @@ class ValidatorLoaderTest {
             asyncRunner,
             metricsSystem,
             Optional.empty(),
-            true);
+            false);
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -411,7 +411,7 @@ class ValidatorLoaderTest {
             null,
             Optional.of(dataDirLayout),
             slashingProtectionLogger,
-            true);
+            false);
 
     when(validatorSource.deleteValidator(publicKey)).thenReturn(DeleteKeyResult.success());
     loader.deleteLocalMutableValidator(publicKey);
@@ -441,7 +441,7 @@ class ValidatorLoaderTest {
             asyncRunner,
             metricsSystem,
             Optional.of(dataDirLayout),
-            true);
+            false);
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -478,7 +478,7 @@ class ValidatorLoaderTest {
             asyncRunner,
             metricsSystem,
             Optional.empty(),
-            true);
+            false);
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -514,7 +514,7 @@ class ValidatorLoaderTest {
             asyncRunner,
             metricsSystem,
             Optional.empty(),
-            true);
+            false);
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -556,7 +556,7 @@ class ValidatorLoaderTest {
             asyncRunner,
             metricsSystem,
             Optional.empty(),
-            true);
+            false);
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -594,7 +594,7 @@ class ValidatorLoaderTest {
             asyncRunner,
             metricsSystem,
             Optional.empty(),
-            true);
+            false);
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -627,7 +627,7 @@ class ValidatorLoaderTest {
             asyncRunner,
             metricsSystem,
             Optional.empty(),
-            true);
+            false);
 
     // No validators initially
     validatorLoader.loadValidators();
@@ -663,7 +663,7 @@ class ValidatorLoaderTest {
             asyncRunner,
             metricsSystem,
             Optional.empty(),
-            true);
+            false);
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
@@ -685,7 +685,7 @@ class ValidatorLoaderTest {
             asyncRunner,
             metricsSystem,
             Optional.empty(),
-            true);
+            false);
     validatorLoader.loadValidators();
     final LocalValidatorImportResult result =
         validatorLoader.loadLocalMutableValidator(null, "", Optional.empty(), true);
@@ -711,7 +711,7 @@ class ValidatorLoaderTest {
             asyncRunner,
             metricsSystem,
             Optional.of(new SimpleDataDirLayout(tempDir)),
-            true);
+            false);
     validatorLoader.loadValidators();
 
     final String keystoreString =
@@ -749,7 +749,7 @@ class ValidatorLoaderTest {
             asyncRunner,
             metricsSystem,
             Optional.empty(),
-            true);
+            false);
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
 

@@ -54,7 +54,7 @@ public class ValidatorLoader {
   private final GraffitiProvider graffitiProvider;
   private final Optional<DataDirLayout> maybeDataDirLayout;
   private final SlashingProtectionLogger slashingProtectionLogger;
-  private final boolean allowNoLoadedKeys;
+  private final boolean exitWhenNoValidatorKeysEnabled;
 
   private ValidatorLoader(
       final List<ValidatorSource> validatorSources,
@@ -63,14 +63,14 @@ public class ValidatorLoader {
       final GraffitiProvider graffitiProvider,
       final Optional<DataDirLayout> maybeDataDirLayout,
       final SlashingProtectionLogger slashingProtectionLogger,
-      final boolean allowNoLoadedKeys) {
+      final boolean exitWhenNoValidatorKeysEnabled) {
     this.validatorSources = validatorSources;
     this.mutableLocalValidatorSource = mutableLocalValidatorSource;
     this.mutableExternalValidatorSource = mutableExternalValidatorSource;
     this.graffitiProvider = graffitiProvider;
     this.maybeDataDirLayout = maybeDataDirLayout;
     this.slashingProtectionLogger = slashingProtectionLogger;
-    this.allowNoLoadedKeys = allowNoLoadedKeys;
+    this.exitWhenNoValidatorKeysEnabled = exitWhenNoValidatorKeysEnabled;
   }
 
   // synchronized to ensure that only one load is active at a time
@@ -85,7 +85,7 @@ public class ValidatorLoader {
         getOwnedValidators().getActiveValidators().stream()
             .filter(validator -> validator.getSigner().isLocal())
             .count();
-    if (!allowNoLoadedKeys && loadedValidators == 0) {
+    if (exitWhenNoValidatorKeysEnabled && loadedValidators == 0) {
       throw new IllegalStateException(
           "No loaded validators when --allow-no-loaded-keys option is false");
     }
@@ -236,7 +236,7 @@ public class ValidatorLoader {
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final Optional<DataDirLayout> maybeMutableDir,
-      final boolean allowNoLoadedKeys) {
+      final boolean exitWhenNoValidatorKeysEnabled) {
     final ValidatorSourceFactory validatorSources =
         new ValidatorSourceFactory(
             spec,
@@ -257,7 +257,7 @@ public class ValidatorLoader {
         config.getGraffitiProvider(),
         maybeMutableDir,
         slashingProtectionLogger,
-        allowNoLoadedKeys);
+        exitWhenNoValidatorKeysEnabled);
   }
 
   @VisibleForTesting
@@ -268,7 +268,7 @@ public class ValidatorLoader {
       final GraffitiProvider graffitiProvider,
       final Optional<DataDirLayout> maybeDataDirLayout,
       final SlashingProtectionLogger slashingProtectionLogger,
-      final boolean allowNoLoadedKeys) {
+      final boolean exitWhenNoValidatorKeysEnabled) {
     return new ValidatorLoader(
         validatorSources,
         mutableLocalValidatorSource,
@@ -276,7 +276,7 @@ public class ValidatorLoader {
         graffitiProvider,
         maybeDataDirLayout,
         slashingProtectionLogger,
-        allowNoLoadedKeys);
+        exitWhenNoValidatorKeysEnabled);
   }
 
   private void addValidatorsFromSource(
