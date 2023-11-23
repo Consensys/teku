@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.store;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -180,6 +182,79 @@ class StoreTest extends AbstractStoreTest {
           final SafeFuture<Optional<Boolean>> isParentStrongFuture = store.isParentStrong(root);
           assertThat(safeJoin(isParentStrongFuture)).contains(false);
         });
+  }
+
+  @Test
+  public void isFfgCompetitive_checkpointMatches() {
+    final BlockCheckpoints headBlockCheckpoint = mock(BlockCheckpoints.class);
+    final BlockCheckpoints parentBlockCheckpoint = mock(BlockCheckpoints.class);
+    final Checkpoint checkpoint = new Checkpoint(UInt64.ZERO, Bytes32.random());
+    when(headBlockCheckpoint.getUnrealizedJustifiedCheckpoint()).thenReturn(checkpoint);
+    when(parentBlockCheckpoint.getUnrealizedJustifiedCheckpoint()).thenReturn(checkpoint);
+    processChainHeadWithMockForkChoiceStrategy(
+        (store, blockAndState) -> {
+          final Bytes32 root = blockAndState.getRoot();
+          final Bytes32 parentRoot = blockAndState.getBlock().getParentRoot();
+          setProtoNodeDataForBlock(blockAndState, headBlockCheckpoint, parentBlockCheckpoint);
+          assertThat(store.isFfgCompetitive(root, parentRoot)).contains(true);
+        });
+  }
+
+  @Test
+  public void isFfgCompetitive_checkpointDifferent() {
+    final BlockCheckpoints headBlockCheckpoint = mock(BlockCheckpoints.class);
+    final BlockCheckpoints parentBlockCheckpoint = mock(BlockCheckpoints.class);
+    final Checkpoint checkpoint = new Checkpoint(UInt64.ZERO, Bytes32.random());
+    final Checkpoint checkpointParent = new Checkpoint(UInt64.ONE, Bytes32.random());
+    when(headBlockCheckpoint.getUnrealizedJustifiedCheckpoint()).thenReturn(checkpoint);
+    when(parentBlockCheckpoint.getUnrealizedJustifiedCheckpoint()).thenReturn(checkpointParent);
+    processChainHeadWithMockForkChoiceStrategy(
+        (store, blockAndState) -> {
+          final Bytes32 root = blockAndState.getRoot();
+          final Bytes32 parentRoot = blockAndState.getBlock().getParentRoot();
+          setProtoNodeDataForBlock(blockAndState, headBlockCheckpoint, parentBlockCheckpoint);
+          assertThat(store.isFfgCompetitive(root, parentRoot)).contains(false);
+        });
+  }
+
+  @Test
+  public void isFfgCompetitive_missingProtoNodeEntries() {
+    processChainHeadWithMockForkChoiceStrategy(
+        (store, blockAndState) -> {
+          final Bytes32 root = blockAndState.getRoot();
+          final Bytes32 parentRoot = blockAndState.getBlock().getParentRoot();
+          assertThat(store.isFfgCompetitive(root, parentRoot)).isEmpty();
+        });
+  }
+
+  private void setProtoNodeDataForBlock(
+      SignedBlockAndState blockAndState,
+      BlockCheckpoints headCheckpoint,
+      BlockCheckpoints parentCheckpoint) {
+    final Bytes32 root = blockAndState.getRoot();
+    final Bytes32 parentRoot = blockAndState.getParentRoot();
+    final ProtoNodeData protoNodeData =
+        new ProtoNodeData(
+            UInt64.ONE,
+            root,
+            blockAndState.getParentRoot(),
+            blockAndState.getStateRoot(),
+            Bytes32.random(),
+            ProtoNodeValidationStatus.VALID,
+            headCheckpoint,
+            UInt64.ZERO);
+    final ProtoNodeData parentNodeData =
+        new ProtoNodeData(
+            UInt64.ZERO,
+            parentRoot,
+            Bytes32.random(),
+            blockAndState.getStateRoot(),
+            Bytes32.random(),
+            ProtoNodeValidationStatus.VALID,
+            parentCheckpoint,
+            UInt64.ZERO);
+    when(dummyForkChoiceStrategy.getBlockData(root)).thenReturn(Optional.of(protoNodeData));
+    when(dummyForkChoiceStrategy.getBlockData(parentRoot)).thenReturn(Optional.of(parentNodeData));
   }
 
   private void setProtoNodeDataForBlock(

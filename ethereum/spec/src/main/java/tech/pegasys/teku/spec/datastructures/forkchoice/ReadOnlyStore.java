@@ -140,4 +140,7 @@ public interface ReadOnlyStore {
 
   // implements is_parent_strong from fork-choice Consensus Spec
   SafeFuture<Optional<Boolean>> isParentStrong(final Bytes32 parentRoot);
+
+  // implements is_ffg_competitive from Consensus Spec
+  Optional<Boolean> isFfgCompetitive(final Bytes32 headRoot, final Bytes32 parentRoot);
 }

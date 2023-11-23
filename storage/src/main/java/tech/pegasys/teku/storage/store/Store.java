@@ -625,6 +625,25 @@ class Store extends CacheableStore {
             });
   }
 
+  @Override
+  public Optional<Boolean> isFfgCompetitive(Bytes32 headRoot, Bytes32 parentRoot) {
+    final Optional<ProtoNodeData> maybeHeadData = getBlockDataFromForkChoiceStrategy(headRoot);
+    final Optional<ProtoNodeData> maybeParentData = getBlockDataFromForkChoiceStrategy(parentRoot);
+    if (maybeParentData.isEmpty() || maybeHeadData.isEmpty()) {
+      return Optional.empty();
+    }
+    final Checkpoint headUnrealizedJustifiedCheckpoint =
+        maybeHeadData.get().getCheckpoints().getUnrealizedJustifiedCheckpoint();
+    final Checkpoint parentUnrealizedJustifiedCheckpoint =
+        maybeParentData.get().getCheckpoints().getUnrealizedJustifiedCheckpoint();
+    LOG.debug(
+        "head {}, compared to parent {}",
+        headUnrealizedJustifiedCheckpoint,
+        parentUnrealizedJustifiedCheckpoint);
+    return Optional.of(
+        headUnrealizedJustifiedCheckpoint.equals(parentUnrealizedJustifiedCheckpoint));
+  }
+
   private Optional<ProtoNodeData> getBlockDataFromForkChoiceStrategy(final Bytes32 root) {
     readLock.lock();
     try {
