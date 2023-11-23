@@ -137,7 +137,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            true);
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -175,7 +176,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            true);
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -219,7 +221,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            true);
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -265,7 +268,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            true);
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -310,7 +314,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.of(dataDirLayout));
+            Optional.of(dataDirLayout),
+            true);
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -348,7 +353,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            true);
 
     final DeleteKeyResult result =
         validatorLoader.deleteLocalMutableValidator(dataStructureUtil.randomPublicKey());
@@ -378,7 +384,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            true);
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -403,7 +410,8 @@ class ValidatorLoaderTest {
             Optional.of(validatorSource),
             null,
             Optional.of(dataDirLayout),
-            slashingProtectionLogger);
+            slashingProtectionLogger,
+            true);
 
     when(validatorSource.deleteValidator(publicKey)).thenReturn(DeleteKeyResult.success());
     loader.deleteLocalMutableValidator(publicKey);
@@ -432,7 +440,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.of(dataDirLayout));
+            Optional.of(dataDirLayout),
+            true);
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -468,7 +477,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            true);
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -503,7 +513,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            true);
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -544,7 +555,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            true);
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -581,7 +593,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            true);
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
@@ -613,7 +626,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            true);
 
     // No validators initially
     validatorLoader.loadValidators();
@@ -648,7 +662,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            true);
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
@@ -669,7 +684,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            true);
     validatorLoader.loadValidators();
     final LocalValidatorImportResult result =
         validatorLoader.loadLocalMutableValidator(null, "", Optional.empty(), true);
@@ -694,7 +710,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.of(new SimpleDataDirLayout(tempDir)));
+            Optional.of(new SimpleDataDirLayout(tempDir)),
+            true);
     validatorLoader.loadValidators();
 
     final String keystoreString =
@@ -731,7 +748,8 @@ class ValidatorLoaderTest {
             publicKeyLoader,
             asyncRunner,
             metricsSystem,
-            Optional.empty());
+            Optional.empty(),
+            true);
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
 

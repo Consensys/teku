@@ -130,6 +130,16 @@ public class ValidatorOptions {
       fallbackValue = "true")
   private boolean blockV3Enabled = ValidatorConfig.DEFAULT_BLOCK_V3_ENABLED;
 
+  @Option(
+      names = {"--allow-no-loaded-keys"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable allowing no loaded validator keys",
+      hidden = true,
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean allowNoLoadedKeys = ValidatorConfig.DEFAULT_ALLOW_NO_LOADED_KEYS;
+
   public void configure(TekuConfiguration.Builder builder) {
     builder.validator(
         config ->
@@ -145,7 +155,8 @@ public class ValidatorOptions {
                 .executorMaxQueueSize(executorMaxQueueSize)
                 .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled)
                 .executorThreads(executorThreads)
-                .blockV3enabled(blockV3Enabled));
+                .blockV3enabled(blockV3Enabled)
+                .allowNoLoadedKeys(allowNoLoadedKeys));
     validatorProposerOptions.configure(builder);
     validatorKeysOptions.configure(builder);
   }

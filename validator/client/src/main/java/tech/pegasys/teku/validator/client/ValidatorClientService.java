@@ -144,7 +144,8 @@ public class ValidatorClientService extends Service {
         new GenesisDataProvider(asyncRunner, validatorApiChannel);
     final ForkProvider forkProvider = new ForkProvider(config.getSpec(), genesisDataProvider);
 
-    final ValidatorLoader validatorLoader = createValidatorLoader(services, config, asyncRunner);
+    final ValidatorLoader validatorLoader =
+        createValidatorLoader(services, config, asyncRunner, validatorConfig.allowNoLoadedKeys());
     final ValidatorRestApiConfig validatorApiConfig = config.getValidatorRestApiConfig();
     final ValidatorStatusProvider validatorStatusProvider =
         new OwnedValidatorStatusProvider(
@@ -362,7 +363,8 @@ public class ValidatorClientService extends Service {
   private static ValidatorLoader createValidatorLoader(
       final ServiceConfig services,
       final ValidatorClientConfiguration config,
-      final AsyncRunner asyncRunner) {
+      final AsyncRunner asyncRunner,
+      final boolean allowNoLoadedKeys) {
     final Path slashingProtectionPath = getSlashingProtectionPath(services.getDataDirLayout());
     final SlashingProtector slashingProtector =
         new LocalSlashingProtector(
@@ -386,7 +388,8 @@ public class ValidatorClientService extends Service {
         services.getMetricsSystem(),
         config.getValidatorRestApiConfig().isRestApiEnabled()
             ? Optional.of(services.getDataDirLayout())
-            : Optional.empty());
+            : Optional.empty(),
+        allowNoLoadedKeys);
   }
 
   private void initializeValidators(
