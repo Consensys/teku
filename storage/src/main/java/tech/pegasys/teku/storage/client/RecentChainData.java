@@ -624,7 +624,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     blockTimelinessTracker.setBlockTimelinessFromArrivalTime(block, arrivalTime);
   }
 
-  public Optional<Boolean> getBlockTimeliness(final Bytes32 blockRoot) {
-    return blockTimelinessTracker.isBlockTimely(blockRoot);
+  // implements is_head_late from consensus spec
+  public boolean isBlockLate(final Bytes32 blockRoot) {
+    return blockTimelinessTracker.isBlockLate(blockRoot);
+  }
+
+  public boolean isProposingOnTime(final UInt64 slot) {
+    return blockTimelinessTracker.isProposingOnTime(slot);
   }
 }

@@ -452,6 +452,21 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
+  public SafeFuture<Optional<Boolean>> isHeadWeak(Bytes32 root) {
+    return store.isHeadWeak(root);
+  }
+
+  @Override
+  public SafeFuture<Optional<Boolean>> isParentStrong(Bytes32 parentRoot) {
+    return store.isParentStrong(parentRoot);
+  }
+
+  @Override
+  public Optional<Boolean> isFfgCompetitive(Bytes32 headRoot, Bytes32 parentRoot) {
+    return store.isFfgCompetitive(headRoot, parentRoot);
+  }
+
+  @Override
   public Optional<SignedBeaconBlock> getBlockIfAvailable(final Bytes32 blockRoot) {
     return Optional.ofNullable(blockData.get(blockRoot))
         .map(SignedBlockAndState::getBlock)
