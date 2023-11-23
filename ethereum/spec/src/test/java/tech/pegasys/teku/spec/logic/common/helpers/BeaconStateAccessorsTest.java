@@ -137,8 +137,7 @@ public class BeaconStateAccessorsTest {
         spec.atSlot(state.getSlot()).beaconStateAccessors().getTotalActiveBalance(state);
     final UInt64 totalActiveBalancePerSlot =
         totalActiveBalance.dividedBy(spec.getGenesisSpec().getSlotsPerEpoch());
-    final UInt64 fraction =
-        beaconStateAccessors.calculateCommitteeFraction(state, UInt64.valueOf(100));
+    final UInt64 fraction = beaconStateAccessors.calculateCommitteeFraction(state, 100);
     // at its simplest, if we've divided by slots in the function, this should be
     // totalActiveBalance/slots (because fraction is 100%)
     assertThat(fraction).isEqualTo(totalActiveBalancePerSlot);
@@ -151,7 +150,7 @@ public class BeaconStateAccessorsTest {
         spec.atSlot(state.getSlot()).beaconStateAccessors().getTotalActiveBalance(state);
     final UInt64 totalActiveBalancePerSlot =
         totalActiveBalance.dividedBy(spec.getGenesisSpec().getSlotsPerEpoch());
-    final UInt64 fraction = beaconStateAccessors.calculateCommitteeFraction(state, UInt64.ONE);
+    final UInt64 fraction = beaconStateAccessors.calculateCommitteeFraction(state, 1);
     // should be 1% of balance per slot...
     assertThat(fraction).isEqualTo(totalActiveBalancePerSlot.dividedBy(100));
   }

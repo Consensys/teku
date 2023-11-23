@@ -170,7 +170,7 @@ public abstract class BeaconStateAccessors {
    * @return
    */
   public UInt64 calculateCommitteeFraction(
-      final BeaconState beaconState, final UInt64 committeePercent) {
+      final BeaconState beaconState, final int committeePercent) {
     final UInt64 committeeWeight =
         getTotalActiveBalance(beaconState).dividedBy(config.getSlotsPerEpoch());
     return committeeWeight.times(committeePercent).dividedBy(100);

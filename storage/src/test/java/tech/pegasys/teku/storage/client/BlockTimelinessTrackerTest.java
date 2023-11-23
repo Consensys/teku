@@ -22,7 +22,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -36,7 +35,7 @@ class BlockTimelinessTrackerTest {
   private final RecentChainData recentChainData = mock(RecentChainData.class);
   private final UInt64 slot = UInt64.ONE;
 
-  private TimeProvider timeProvider;
+  private StubTimeProvider timeProvider;
   private Bytes32 blockRoot;
   private SignedBlockAndState signedBlockAndState;
   private BlockTimelinessTracker tracker;
@@ -51,6 +50,8 @@ class BlockTimelinessTrackerTest {
 
     when(recentChainData.getGenesisTime())
         .thenReturn(signedBlockAndState.getState().getGenesisTime());
+    when(recentChainData.getGenesisTimeMillis())
+        .thenReturn(signedBlockAndState.getState().getGenesisTime().times(1000));
     when(recentChainData.getCurrentSlot()).thenReturn(Optional.of(UInt64.ONE));
   }
 
@@ -60,6 +61,7 @@ class BlockTimelinessTrackerTest {
 
     tracker.setBlockTimelinessFromArrivalTime(signedBlockAndState.getBlock(), computedTime);
     assertThat(tracker.isBlockTimely(blockRoot)).contains(true);
+    assertThat(tracker.isBlockLate(blockRoot)).isFalse();
   }
 
   @Test
@@ -68,6 +70,7 @@ class BlockTimelinessTrackerTest {
 
     tracker.setBlockTimelinessFromArrivalTime(signedBlockAndState.getBlock(), computedTime);
     assertThat(tracker.isBlockTimely(blockRoot)).contains(false);
+    assertThat(tracker.isBlockLate(blockRoot)).isTrue();
   }
 
   @Test
@@ -76,6 +79,7 @@ class BlockTimelinessTrackerTest {
 
     tracker.setBlockTimelinessFromArrivalTime(signedBlockAndState.getBlock(), computedTime);
     assertThat(tracker.isBlockTimely(blockRoot)).contains(false);
+    assertThat(tracker.isBlockLate(blockRoot)).isTrue();
   }
 
   @Test
@@ -85,11 +89,47 @@ class BlockTimelinessTrackerTest {
     tracker.setBlockTimelinessFromArrivalTime(
         dataStructureUtil.randomSignedBeaconBlock(0), computedTime);
     assertThat(tracker.isBlockTimely(blockRoot)).isEmpty();
+    assertThat(tracker.isBlockLate(blockRoot)).isFalse();
   }
 
   @Test
   void blockTimeliness_shouldReportEmptyIfNotSet() {
     assertThat(tracker.isBlockTimely(blockRoot)).isEmpty();
+    assertThat(tracker.isBlockLate(blockRoot)).isFalse();
+  }
+
+  @Test
+  void isProposingOnTime_shouldDetectBeforeSlotStartAsOk() {
+    // Advance time to 500ms before slot start
+    timeProvider.advanceTimeByMillis(millisPerSlot - 500);
+    assertThat(tracker.isProposingOnTime(slot)).isTrue();
+  }
+
+  @Test
+  void isProposingOnTime_shouldDetectSlotStartAsOnTime() {
+    // Advance time by 1 slot, leaving us at exactly slot time
+    timeProvider.advanceTimeByMillis(millisPerSlot);
+    assertThat(tracker.isProposingOnTime(slot)).isTrue();
+  }
+
+  @Test
+  void isProposingOnTime_shouldDetectLateIfAttestationsDue() {
+    // attestation is due 2 seconds into slot
+    timeProvider.advanceTimeByMillis(millisPerSlot + 2000);
+    assertThat(tracker.isProposingOnTime(slot)).isFalse();
+  }
+
+  @Test
+  void isProposingOnTime_shouldDetectOnTimeBeforeCutoff() {
+    /// 999 ms into slot, cutoff is 1000ms
+    timeProvider.advanceTimeByMillis(millisPerSlot + 999);
+    assertThat(tracker.isProposingOnTime(slot)).isTrue();
+  }
+
+  @Test
+  void isProposingOnTime_shouldDetectLateIfHalfWayToAttestationDue() {
+    timeProvider.advanceTimeByMillis(millisPerSlot + 1000);
+    assertThat(tracker.isProposingOnTime(slot)).isFalse();
   }
 
   private UInt64 computeTime(final UInt64 slot, final long timeIntoSlot) {
