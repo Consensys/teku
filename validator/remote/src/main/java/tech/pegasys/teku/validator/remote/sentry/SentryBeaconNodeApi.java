@@ -13,12 +13,14 @@
 
 package tech.pegasys.teku.validator.remote.sentry;
 
+import static tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi.createFailoverValidatorApis;
+import static tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi.createPrimaryValidatorApi;
+import static tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi.createValidatorApiWithMetrics;
+
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import okhttp3.OkHttpClient;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -34,18 +36,13 @@ import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
 import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 import tech.pegasys.teku.validator.beaconnode.TimeBasedEventAdapter;
-import tech.pegasys.teku.validator.beaconnode.metrics.MetricRecordingValidatorApiChannel;
 import tech.pegasys.teku.validator.remote.BeaconNodeReadinessChannel;
 import tech.pegasys.teku.validator.remote.BeaconNodeReadinessManager;
-import tech.pegasys.teku.validator.remote.FailoverValidatorApiHandler;
 import tech.pegasys.teku.validator.remote.RemoteBeaconNodeEndpoints;
 import tech.pegasys.teku.validator.remote.RemoteValidatorApiChannel;
-import tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler;
 import tech.pegasys.teku.validator.remote.eventsource.EventSourceBeaconChainEventAdapter;
 
 public class SentryBeaconNodeApi implements BeaconNodeApi {
-
-  private static final Logger LOG = LogManager.getLogger();
 
   private final BeaconChainEventAdapter beaconChainEventAdapter;
   private final ValidatorApiChannel validatorApiChannel;
@@ -76,11 +73,11 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
     final RemoteBeaconNodeEndpoints dutiesProviderHttpClient =
         new RemoteBeaconNodeEndpoints(dutiesProviderNodeConfig.getEndpointsAsURIs());
 
-    final RemoteValidatorApiChannel dutiesProviderPrimaryValidatorApiChannel =
-        createPrimaryValidatorApiChannel(
+    final RemoteValidatorApiChannel dutiesProviderPrimaryValidatorApi =
+        createPrimaryValidatorApi(
             validatorConfig, dutiesProviderHttpClient, sentryNodesHttpClient, spec, asyncRunner);
-    final List<? extends RemoteValidatorApiChannel> dutiesProviderFailoverValidatorApiChannel =
-        createFailoverValidatorApiChannel(
+    final List<? extends RemoteValidatorApiChannel> dutiesProviderFailoverValidatorApis =
+        createFailoverValidatorApis(
             validatorConfig, dutiesProviderHttpClient, sentryNodesHttpClient, spec, asyncRunner);
 
     final EventChannels eventChannels = serviceConfig.getEventChannels();
@@ -94,23 +91,20 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
 
     final BeaconNodeReadinessManager beaconNodeReadinessManager =
         new BeaconNodeReadinessManager(
-            dutiesProviderPrimaryValidatorApiChannel,
-            dutiesProviderFailoverValidatorApiChannel,
+            dutiesProviderPrimaryValidatorApi,
+            dutiesProviderFailoverValidatorApis,
             ValidatorLogger.VALIDATOR_LOGGER,
             beaconNodeReadinessChannel);
 
     eventChannels.subscribe(ValidatorTimingChannel.class, beaconNodeReadinessManager);
 
     final ValidatorApiChannel dutiesProviderValidatorApi =
-        new MetricRecordingValidatorApiChannel(
-            serviceConfig.getMetricsSystem(),
-            new FailoverValidatorApiHandler(
-                beaconNodeReadinessManager,
-                dutiesProviderPrimaryValidatorApiChannel,
-                dutiesProviderFailoverValidatorApiChannel,
-                validatorConfig.isFailoversSendSubnetSubscriptionsEnabled(),
-                validatorConfig.isFailoversPublishSignedDutiesEnabled(),
-                serviceConfig.getMetricsSystem()));
+        createValidatorApiWithMetrics(
+            dutiesProviderPrimaryValidatorApi,
+            dutiesProviderFailoverValidatorApis,
+            beaconNodeReadinessManager,
+            validatorConfig,
+            metricsSystem);
 
     final Optional<ValidatorApiChannel> blockHandlerValidatorApi =
         beaconNodesSentryConfig
@@ -148,8 +142,8 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
     final EventSourceBeaconChainEventAdapter beaconChainEventAdapter =
         new EventSourceBeaconChainEventAdapter(
             beaconNodeReadinessManager,
-            dutiesProviderPrimaryValidatorApiChannel,
-            dutiesProviderFailoverValidatorApiChannel,
+            dutiesProviderPrimaryValidatorApi,
+            dutiesProviderFailoverValidatorApis,
             sentryNodesHttpClient,
             ValidatorLogger.VALIDATOR_LOGGER,
             new TimeBasedEventAdapter(
@@ -168,47 +162,6 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
         beaconChainEventAdapter, sentryValidatorApi, beaconNodeReadinessManager);
   }
 
-  private static RemoteValidatorApiChannel createPrimaryValidatorApiChannel(
-      final ValidatorConfig validatorConfig,
-      final RemoteBeaconNodeEndpoints remoteBeaconNodeEndpoints,
-      final OkHttpClient httpClient,
-      final Spec spec,
-      final AsyncRunner asyncRunner) {
-    return RemoteValidatorApiHandler.create(
-        remoteBeaconNodeEndpoints.getPrimaryEndpoint(),
-        httpClient,
-        spec,
-        validatorConfig.isValidatorClientUseSszBlocksEnabled(),
-        asyncRunner);
-  }
-
-  private static List<? extends RemoteValidatorApiChannel> createFailoverValidatorApiChannel(
-      final ValidatorConfig validatorConfig,
-      final RemoteBeaconNodeEndpoints remoteBeaconNodeEndpoints,
-      final OkHttpClient httpClient,
-      final Spec spec,
-      final AsyncRunner asyncRunner) {
-    final List<? extends RemoteValidatorApiChannel> failoverValidatorApis =
-        remoteBeaconNodeEndpoints.getFailoverEndpoints().stream()
-            .map(
-                endpoint ->
-                    RemoteValidatorApiHandler.create(
-                        endpoint,
-                        httpClient,
-                        spec,
-                        validatorConfig.isValidatorClientUseSszBlocksEnabled(),
-                        asyncRunner))
-            .toList();
-
-    if (!remoteBeaconNodeEndpoints.getFailoverEndpoints().isEmpty()) {
-      LOG.info(
-          "Will use {} as failover Beacon Node endpoints",
-          remoteBeaconNodeEndpoints.getFailoverEndpoints());
-    }
-
-    return failoverValidatorApis;
-  }
-
   private static ValidatorApiChannel createRemoteValidatorApiForRole(
       final ValidatorConfig validatorConfig,
       final BeaconNodeReadinessManager beaconNodeReadinessManager,
@@ -220,21 +173,17 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
     final RemoteBeaconNodeEndpoints remoteBeaconNodeEndpoints =
         new RemoteBeaconNodeEndpoints(endpoints);
     final RemoteValidatorApiChannel primaryValidatorApi =
-        createPrimaryValidatorApiChannel(
+        createPrimaryValidatorApi(
             validatorConfig, remoteBeaconNodeEndpoints, httpClient, spec, asyncRunner);
     final List<? extends RemoteValidatorApiChannel> failoverValidatorApis =
-        createFailoverValidatorApiChannel(
+        createFailoverValidatorApis(
             validatorConfig, remoteBeaconNodeEndpoints, httpClient, spec, asyncRunner);
-
-    return new MetricRecordingValidatorApiChannel(
-        metricsSystem,
-        new FailoverValidatorApiHandler(
-            beaconNodeReadinessManager,
-            primaryValidatorApi,
-            failoverValidatorApis,
-            validatorConfig.isFailoversSendSubnetSubscriptionsEnabled(),
-            validatorConfig.isFailoversPublishSignedDutiesEnabled(),
-            metricsSystem));
+    return createValidatorApiWithMetrics(
+        primaryValidatorApi,
+        failoverValidatorApis,
+        beaconNodeReadinessManager,
+        validatorConfig,
+        metricsSystem);
   }
 
   @Override

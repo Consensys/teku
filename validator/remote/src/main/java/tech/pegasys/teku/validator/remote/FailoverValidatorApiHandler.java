@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.remote;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.util.Collection;
 import java.util.HashMap;
@@ -85,6 +86,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       final boolean failoversSendSubnetSubscriptions,
       final boolean failoversPublishSignedDuties,
       final MetricsSystem metricsSystem) {
+    Preconditions.checkState(!failoverDelegates.isEmpty(), "No failovers are configured");
     this.beaconNodeReadinessManager = beaconNodeReadinessManager;
     this.primaryDelegate = primaryDelegate;
     this.failoverDelegates = failoverDelegates;
@@ -94,7 +96,7 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.VALIDATOR,
             REMOTE_BEACON_NODES_REQUESTS_COUNTER_NAME,
-            "Counter recording the number of requests sent to the configured Beacon Nodes endpoint(s)",
+            "Counter recording the number of requests sent to the configured Beacon Nodes endpoints",
             "endpoint",
             "method",
             "outcome");
@@ -157,12 +159,10 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
             apiChannel
                 .createUnsignedBlock(slot, randaoReveal, graffiti, blinded)
                 .thenPeek(
-                    blockContainer -> {
-                      if (!failoverDelegates.isEmpty()
-                          && blockContainer.map(BlockContainer::isBlinded).orElse(false)) {
-                        blindedBlockCreatorCache.put(slot, apiChannel);
-                      }
-                    });
+                    blockContainer ->
+                        blockContainer
+                            .filter(BlockContainer::isBlinded)
+                            .ifPresent(__ -> blindedBlockCreatorCache.put(slot, apiChannel)));
     return tryRequestUntilSuccess(request, BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD);
   }
 
@@ -174,12 +174,10 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
             apiChannel
                 .createUnsignedBlock(slot, randaoReveal, graffiti)
                 .thenPeek(
-                    blockContainer -> {
-                      if (!failoverDelegates.isEmpty()
-                          && blockContainer.map(BlockContainer::isBlinded).orElse(false)) {
-                        blindedBlockCreatorCache.put(slot, apiChannel);
-                      }
-                    });
+                    blockContainer ->
+                        blockContainer
+                            .filter(BlockContainer::isBlinded)
+                            .ifPresent(__ -> blindedBlockCreatorCache.put(slot, apiChannel)));
     return tryRequestUntilSuccess(request, BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD);
   }
 
@@ -318,20 +316,20 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
 
   /**
    * Relays the given request to the primary Beacon Node along with all failover Beacon Node
-   * endpoints if relayRequestToFailovers flag is true. If there are failovers configured, the
-   * request to the primary Beacon Node will be skipped if the {@link BeaconNodeReadinessManager}
-   * marked it as NOT ready.The returned {@link SafeFuture} will complete with the response from the
-   * primary Beacon Node or in case in failure or if the primary node is NOT ready, it will complete
-   * with the first successful response from a failover node. The returned {@link SafeFuture} will
-   * only complete exceptionally when the request to the primary Beacon Node and all the requests to
-   * the failover nodes fail. In this case, the returned {@link SafeFuture} will complete
-   * exceptionally with a {@link FailoverRequestException}.
+   * endpoints if relayRequestToFailovers flag is true. The request to the primary Beacon Node will
+   * be skipped if the {@link BeaconNodeReadinessManager} marked it as NOT ready.The returned {@link
+   * SafeFuture} will complete with the response from the primary Beacon Node or in case in failure
+   * or if the primary node is NOT ready, it will complete with the first successful response from a
+   * failover node. The returned {@link SafeFuture} will only complete exceptionally when the
+   * request to the primary Beacon Node and all the requests to the failover nodes fail. In this
+   * case, the returned {@link SafeFuture} will complete exceptionally with a {@link
+   * FailoverRequestException}.
    */
   private <T> SafeFuture<T> relayRequest(
       final ValidatorApiChannelRequest<T> request,
       final String method,
       final boolean relayRequestToFailovers) {
-    if (failoverDelegates.isEmpty() || !relayRequestToFailovers) {
+    if (!relayRequestToFailovers) {
       return runPrimaryRequest(request, method);
     }
     final Map<RemoteValidatorApiChannel, Throwable> capturedExceptions = new ConcurrentHashMap<>();
@@ -381,19 +379,15 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   }
 
   /**
-   * Tries the given request first with the primary Beacon Node. If there are failovers configured,
-   * the request to the primary Beacon Node will be skipped if the {@link
-   * BeaconNodeReadinessManager} marked it as NOT ready. If the request to the primary Beacon Node
-   * fails, the request will be retried against each failover Beacon Node in order of readiness
-   * determined by the {@link BeaconNodeReadinessManager} until there is a successful response. In
-   * case all the requests fail, the returned {@link SafeFuture} will complete exceptionally with a
-   * {@link FailoverRequestException}.
+   * Tries the given request first with the primary Beacon Node. The request to the primary Beacon
+   * Node will be skipped if the {@link BeaconNodeReadinessManager} marked it as NOT ready. If the
+   * request to the primary Beacon Node fails, the request will be retried against each failover
+   * Beacon Node in order of readiness determined by the {@link BeaconNodeReadinessManager} until
+   * there is a successful response. In case all the requests fail, the returned {@link SafeFuture}
+   * will complete exceptionally with a {@link FailoverRequestException}.
    */
   private <T> SafeFuture<T> tryRequestUntilSuccess(
       final ValidatorApiChannelRequest<T> request, final String method) {
-    if (failoverDelegates.isEmpty()) {
-      return runPrimaryRequest(request, method);
-    }
     if (!beaconNodeReadinessManager.isReady(primaryDelegate)) {
       LOG.debug(
           "Remote request ({}) will NOT be sent to the primary Beacon Node {} because it is NOT ready. Will try sending the request to one of the configured failovers.",

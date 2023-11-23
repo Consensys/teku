@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.remote;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doReturn;
@@ -130,6 +131,21 @@ class FailoverValidatorApiHandlerTest {
             stubMetricsSystem);
   }
 
+  @Test
+  void doesNotCreateHandlerIfNoFailoversConfigured() {
+    assertThatThrownBy(
+            () ->
+                new FailoverValidatorApiHandler(
+                    beaconNodeReadinessManager,
+                    primaryApiChannel,
+                    List.of(),
+                    true,
+                    true,
+                    stubMetricsSystem))
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessage("No failovers are configured");
+  }
+
   @ParameterizedTest(name = "{0}")
   @MethodSource("getRequestsUsingFailover")
   <T> void requestSucceedsWithoutFailover(
@@ -232,35 +248,6 @@ class FailoverValidatorApiHandlerTest {
         failoverApiChannel2,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 0L, RequestOutcome.ERROR, 1L));
-  }
-
-  @ParameterizedTest(name = "{0}")
-  @MethodSource("getRequestsUsingFailover")
-  <T> void requestFailsAndNoFailoversConfigured(final ValidatorApiChannelRequest<T> request) {
-
-    failoverApiHandler =
-        new FailoverValidatorApiHandler(
-            beaconNodeReadinessManager,
-            primaryApiChannel,
-            List.of(),
-            true,
-            true,
-            stubMetricsSystem);
-
-    // readiness is ignored
-    when(beaconNodeReadinessManager.isReady(primaryApiChannel)).thenReturn(false);
-
-    setupFailures(request, primaryApiChannel);
-
-    final SafeFuture<T> result = request.run(failoverApiHandler);
-
-    SafeFutureAssert.assertThatSafeFuture(result)
-        .isCompletedExceptionallyWithMessage(
-            "Request failed for " + primaryApiChannel.getEndpoint());
-
-    assertThat(result).isCompletedExceptionally();
-
-    verifyNoInteractions(failoverApiChannel1, failoverApiChannel2);
   }
 
   @ParameterizedTest(name = "{0}")
@@ -373,41 +360,6 @@ class FailoverValidatorApiHandlerTest {
         failoverApiChannel2,
         methodLabel,
         Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
-  }
-
-  @ParameterizedTest(name = "{0}")
-  @MethodSource("getRelayRequests")
-  <T> void requestIsNotRelayedIfNoFailoversAreConfigured(
-      final ValidatorApiChannelRequest<T> request,
-      final Consumer<ValidatorApiChannel> verifyCallIsMade,
-      final String methodLabel,
-      final T response) {
-
-    failoverApiHandler =
-        new FailoverValidatorApiHandler(
-            beaconNodeReadinessManager,
-            primaryApiChannel,
-            List.of(),
-            true,
-            true,
-            stubMetricsSystem);
-
-    // readiness is ignored
-    when(beaconNodeReadinessManager.isReady(primaryApiChannel)).thenReturn(false);
-
-    setupSuccesses(request, response, primaryApiChannel);
-
-    final SafeFuture<T> result = request.run(failoverApiHandler);
-
-    assertThat(result).isCompletedWithValue(response);
-    verifyCallIsMade.accept(primaryApiChannel);
-
-    verifyRequestCounters(
-        primaryApiChannel,
-        methodLabel,
-        Map.of(RequestOutcome.SUCCESS, 1L, RequestOutcome.ERROR, 0L));
-
-    verifyNoInteractions(failoverApiChannel1, failoverApiChannel2);
   }
 
   @ParameterizedTest(name = "{0}")
