@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
+import tech.pegasys.teku.test.acceptance.dsl.TekuDepositSender;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuVoluntaryExit;
@@ -31,25 +32,29 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
   @Test
   void shouldChangeValidatorStatusAfterSubmittingVoluntaryExit() throws Exception {
     final String networkName = "swift";
-    final ValidatorKeystores validatorKeystores =
-        createTekuDepositSender(networkName).generateValidatorKeys(4);
-    final ValidatorKeystores extraKeys =
-        createTekuDepositSender(networkName).generateValidatorKeys(1);
+
+    final TekuDepositSender depositSender = createTekuDepositSender(networkName);
+    final ValidatorKeystores validatorKeysToExit = depositSender.generateValidatorKeys(4);
+    // network of 8 validators (4 of them will exit)
+    final ValidatorKeystores validatorKeys =
+        ValidatorKeystores.add(validatorKeysToExit, depositSender.generateValidatorKeys(4));
+    // 1 unknown key to the network
+    final ValidatorKeystores unknownKeys = depositSender.generateValidatorKeys(1);
 
     final InitialStateData genesis =
-        createGenesisGenerator().network(networkName).validatorKeys(validatorKeystores).generate();
+        createGenesisGenerator().network(networkName).validatorKeys(validatorKeys).generate();
 
     final TekuNode beaconNode =
         createTekuNode(config -> config.withNetwork(networkName).withInitialState(genesis));
 
     final TekuVoluntaryExit voluntaryExitProcessFailing =
         createVoluntaryExit(config -> config.withBeaconNode(beaconNode))
-            .withValidatorKeystores(validatorKeystores);
+            .withValidatorKeystores(validatorKeysToExit);
 
     final TekuVoluntaryExit voluntaryExitProcessSuccessful =
         createVoluntaryExit(config -> config.withBeaconNode(beaconNode))
-            .withValidatorKeystores(validatorKeystores)
-            .withValidatorKeystores(extraKeys);
+            .withValidatorKeystores(validatorKeysToExit)
+            .withValidatorKeystores(unknownKeys);
 
     final TekuValidatorNode validatorClient =
         createValidatorNode(
@@ -58,7 +63,7 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
                         .withNetwork(networkName)
                         .withInteropModeDisabled()
                         .withBeaconNode(beaconNode))
-            .withValidatorKeystores(validatorKeystores);
+            .withValidatorKeystores(validatorKeys);
 
     beaconNode.start();
     validatorClient.start();
@@ -83,6 +88,6 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
     assertThat(validatorIds.size()).isEqualTo(4);
     assertThat(validatorIds).containsExactlyInAnyOrder(0, 1, 2, 3);
     assertThat(voluntaryExitProcessSuccessful.getLoggedErrors())
-        .contains("Validator not found: " + extraKeys.getPublicKeys().get(0).toString());
+        .contains("Validator not found: " + unknownKeys.getPublicKeys().get(0).toString());
   }
 }
