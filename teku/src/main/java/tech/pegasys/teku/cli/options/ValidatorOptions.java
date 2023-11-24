@@ -133,7 +133,7 @@ public class ValidatorOptions {
   @Option(
       names = {"--exit-when-no-validator-keys-enabled"},
       paramLabel = "<BOOLEAN>",
-      description = "Enable allowing no loaded validator keys",
+      description = "Enable terminating the process if no validator keys are found during startup",
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "0..1",
       fallbackValue = "true")
