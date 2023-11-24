@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
+import tech.pegasys.teku.test.acceptance.dsl.TekuDepositSender;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuVoluntaryExit;
@@ -32,15 +33,13 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
   void shouldChangeValidatorStatusAfterSubmittingVoluntaryExit() throws Exception {
     final String networkName = "swift";
 
-    final ValidatorKeystores validatorKeysToExit =
-        createTekuDepositSender(networkName).generateValidatorKeys(4);
+    final TekuDepositSender depositSender = createTekuDepositSender(networkName);
+    final ValidatorKeystores validatorKeysToExit = depositSender.generateValidatorKeys(4);
     // network of 32 validators (4 of them will exit)
     final ValidatorKeystores validatorKeys =
-        ValidatorKeystores.add(
-            createTekuDepositSender(networkName).generateValidatorKeys(28), validatorKeysToExit);
+        ValidatorKeystores.add(depositSender.generateValidatorKeys(28), validatorKeysToExit);
     // 1 unknown key to the network
-    final ValidatorKeystores unknownKeys =
-        createTekuDepositSender(networkName).generateValidatorKeys(1);
+    final ValidatorKeystores unknownKeys = depositSender.generateValidatorKeys(1);
 
     final InitialStateData genesis =
         createGenesisGenerator().network(networkName).validatorKeys(validatorKeys).generate();
