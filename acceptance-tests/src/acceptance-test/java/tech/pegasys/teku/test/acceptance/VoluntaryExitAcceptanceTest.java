@@ -37,7 +37,7 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
     final ValidatorKeystores validatorKeysToExit = depositSender.generateValidatorKeys(4);
     // network of 32 validators (4 of them will exit)
     final ValidatorKeystores validatorKeys =
-        ValidatorKeystores.add(depositSender.generateValidatorKeys(28), validatorKeysToExit);
+        ValidatorKeystores.add(validatorKeysToExit, depositSender.generateValidatorKeys(28));
     // 1 unknown key to the network
     final ValidatorKeystores unknownKeys = depositSender.generateValidatorKeys(1);
 
