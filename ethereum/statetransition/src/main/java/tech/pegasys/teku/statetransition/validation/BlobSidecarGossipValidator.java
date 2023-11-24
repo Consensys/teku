@@ -14,7 +14,9 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
+import static tech.pegasys.teku.spec.config.Constants.BEST_CASE_NON_FINALIZED_EPOCHS;
 import static tech.pegasys.teku.spec.config.Constants.VALID_BLOCK_SET_SIZE;
+import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ACCEPT;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 
@@ -48,6 +50,7 @@ public class BlobSidecarGossipValidator {
 
   private final Spec spec;
   private final Set<SlotProposerIndexAndBlobIndex> receivedValidBlobSidecarInfoSet;
+  private final Set<Bytes32> validSignedBlockHeaders;
   private final GossipValidationHelper gossipValidationHelper;
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots;
   private final MiscHelpersDeneb miscHelpersDeneb;
@@ -63,6 +66,9 @@ public class BlobSidecarGossipValidator {
     final Optional<Integer> maybeMaxBlobsPerBlock = spec.getMaxBlobsPerBlock();
 
     final int validInfoSize = VALID_BLOCK_SET_SIZE * maybeMaxBlobsPerBlock.orElse(1);
+    // It's not fatal if we miss something and we don't need finalized data
+    final int validSignedBlockHeadersSize =
+        spec.getGenesisSpec().getSlotsPerEpoch() * BEST_CASE_NON_FINALIZED_EPOCHS;
 
     return new BlobSidecarGossipValidator(
         spec,
@@ -70,7 +76,8 @@ public class BlobSidecarGossipValidator {
         validationHelper,
         miscHelpersDeneb,
         kzg,
-        LimitedSet.createSynchronized(validInfoSize));
+        LimitedSet.createSynchronized(validInfoSize),
+        LimitedSet.createSynchronized(validSignedBlockHeadersSize));
   }
 
   @VisibleForTesting
@@ -84,13 +91,15 @@ public class BlobSidecarGossipValidator {
       final GossipValidationHelper gossipValidationHelper,
       final MiscHelpersDeneb miscHelpersDeneb,
       final KZG kzg,
-      final Set<SlotProposerIndexAndBlobIndex> receivedValidBlobSidecarInfoSet) {
+      final Set<SlotProposerIndexAndBlobIndex> receivedValidBlobSidecarInfoSet,
+      final Set<Bytes32> validSignedBlockHeaders) {
     this.spec = spec;
     this.invalidBlockRoots = invalidBlockRoots;
     this.gossipValidationHelper = gossipValidationHelper;
     this.miscHelpersDeneb = miscHelpersDeneb;
     this.kzg = kzg;
     this.receivedValidBlobSidecarInfoSet = receivedValidBlobSidecarInfoSet;
+    this.validSignedBlockHeaders = validSignedBlockHeaders;
   }
 
   public SafeFuture<InternalValidationResult> validate(final BlobSidecar blobSidecar) {
@@ -132,6 +141,12 @@ public class BlobSidecarGossipValidator {
     if (gossipValidationHelper.isSlotFinalized(blockHeader.getSlot())) {
       LOG.trace("BlobSidecar is too old (slot already finalized)");
       return completedFuture(InternalValidationResult.IGNORE);
+    }
+
+    // Optimization: If we have already completely verified BlobSidecar with the same
+    // SignedBlockHeader, we can skip most steps and jump to shortened validation
+    if (validSignedBlockHeaders.contains(blobSidecar.getSignedBeaconBlockHeader().hashTreeRoot())) {
+      return validateBlobSidecarWithKnownValidHeader(blobSidecar, blockHeader);
     }
 
     /*
@@ -241,6 +256,12 @@ public class BlobSidecarGossipValidator {
                 return reject("BlobSidecar block header signature is invalid.");
               }
 
+              /*
+               * Checking it again at the very end because whole method is not synchronized
+               *
+               * [IGNORE] The sidecar is the first sidecar for the tuple (block_header.slot, block_header.proposer_index, blob_sidecar.index)
+               *  with valid header signature, sidecar inclusion proof, and kzg proof.
+               */
               if (!receivedValidBlobSidecarInfoSet.add(
                   new SlotProposerIndexAndBlobIndex(
                       blockHeader.getSlot(),
@@ -250,8 +271,53 @@ public class BlobSidecarGossipValidator {
                     "BlobSidecar is not the first valid for its slot and index. It will be dropped.");
               }
 
-              return InternalValidationResult.ACCEPT;
+              validSignedBlockHeaders.add(blobSidecar.getSignedBeaconBlockHeader().hashTreeRoot());
+
+              return ACCEPT;
             });
+  }
+
+  private SafeFuture<InternalValidationResult> validateBlobSidecarWithKnownValidHeader(
+      final BlobSidecar blobSidecar, final BeaconBlockHeader blockHeader) {
+
+    /*
+     * [REJECT] The sidecar's inclusion proof is valid as verified by `verify_blob_sidecar_inclusion_proof(blob_sidecar)`.
+     */
+    if (!miscHelpersDeneb.verifyBlobSidecarMerkleProof(blobSidecar)) {
+      return completedFuture(reject("BlobSidecar inclusion proof validation failed"));
+    }
+
+    /*
+     * [REJECT] The sidecar's blob is valid as verified by
+     * `verify_blob_kzg_proof(blob_sidecar.blob, blob_sidecar.kzg_commitment, blob_sidecar.kzg_proof)`.
+     */
+    if (!miscHelpersDeneb.verifyBlobKzgProof(kzg, blobSidecar)) {
+      return completedFuture(reject("BlobSidecar does not pass kzg validation"));
+    }
+
+    // This can be changed between two received BlobSidecars from one block, so checking
+    /*
+     * [REJECT] The current finalized_checkpoint is an ancestor of the sidecar's block -- i.e.
+     * `get_checkpoint_block(store, block_header.parent_root, store.finalized_checkpoint.epoch) == store.finalized_checkpoint.root`.
+     */
+    if (!gossipValidationHelper.currentFinalizedCheckpointIsAncestorOfBlock(
+        blockHeader.getSlot(), blockHeader.getParentRoot())) {
+      return completedFuture(
+          reject("BlobSidecar block header does not descend from finalized checkpoint"));
+    }
+
+    /*
+     * [IGNORE] The sidecar is the first sidecar for the tuple (block_header.slot, block_header.proposer_index, blob_sidecar.index)
+     *  with valid header signature, sidecar inclusion proof, and kzg proof.
+     */
+    if (!receivedValidBlobSidecarInfoSet.add(
+        new SlotProposerIndexAndBlobIndex(
+            blockHeader.getSlot(), blockHeader.getProposerIndex(), blobSidecar.getIndex()))) {
+      return SafeFuture.completedFuture(
+          ignore("BlobSidecar is not the first valid for its slot and index. It will be dropped."));
+    }
+
+    return SafeFuture.completedFuture(ACCEPT);
   }
 
   private boolean verifyBlockHeaderSignature(
