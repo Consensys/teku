@@ -501,9 +501,16 @@ def dockerBuildDir = "build/docker-teku/"
 
 task distDocker  {
   dependsOn dockerDistUntar
-
+  def getExecutableAndArg = {
+    if (System.getProperty('os.name').toLowerCase().contains('windows')) {
+      return ["cmd", "/c"]
+    } else {
+      return ["sh", "-c"]
+    }
+  }
   def dockerBuildVersion = 'develop'
   doLast {
+    def executableAndArg = getExecutableAndArg()
     for (def variant in dockerJdkVariants) {
       copy {
         from file("${projectDir}/docker/${variant}/Dockerfile")
@@ -512,14 +519,14 @@ task distDocker  {
       exec {
         def image = "${dockerImage}:${dockerBuildVersion}-${variant}"
         workingDir dockerBuildDir
-        executable "sh"
-        args "-c", "docker build --pull --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
+        executable executableAndArg[0]
+        args executableAndArg[1], "docker build --pull --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} -t ${image} ."
       }
     }
     // tag the "default" (which is the variant in the zero position)
     exec {
-      executable "sh"
-      args "-c", "docker tag '${dockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]}' '${dockerImage}:${dockerBuildVersion}'"
+      executable executableAndArg[0]
+      args executableAndArg[1], "docker tag ${dockerImage}:${dockerBuildVersion}-${dockerJdkVariants[0]} ${dockerImage}:${dockerBuildVersion}"
     }
   }
 }
