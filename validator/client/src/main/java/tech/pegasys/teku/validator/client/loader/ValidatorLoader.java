@@ -54,7 +54,6 @@ public class ValidatorLoader {
   private final GraffitiProvider graffitiProvider;
   private final Optional<DataDirLayout> maybeDataDirLayout;
   private final SlashingProtectionLogger slashingProtectionLogger;
-  private final boolean exitWhenNoValidatorKeysEnabled;
 
   private ValidatorLoader(
       final List<ValidatorSource> validatorSources,
@@ -62,15 +61,13 @@ public class ValidatorLoader {
       final Optional<ValidatorSource> mutableExternalValidatorSource,
       final GraffitiProvider graffitiProvider,
       final Optional<DataDirLayout> maybeDataDirLayout,
-      final SlashingProtectionLogger slashingProtectionLogger,
-      final boolean exitWhenNoValidatorKeysEnabled) {
+      final SlashingProtectionLogger slashingProtectionLogger) {
     this.validatorSources = validatorSources;
     this.mutableLocalValidatorSource = mutableLocalValidatorSource;
     this.mutableExternalValidatorSource = mutableExternalValidatorSource;
     this.graffitiProvider = graffitiProvider;
     this.maybeDataDirLayout = maybeDataDirLayout;
     this.slashingProtectionLogger = slashingProtectionLogger;
-    this.exitWhenNoValidatorKeysEnabled = exitWhenNoValidatorKeysEnabled;
   }
 
   // synchronized to ensure that only one load is active at a time
@@ -80,15 +77,6 @@ public class ValidatorLoader {
     MultithreadedValidatorLoader.loadValidators(
         ownedValidators, validatorProviders, graffitiProvider);
     slashingProtectionLogger.protectionSummary(ownedValidators.getActiveValidators());
-
-    final long loadedValidators =
-        getOwnedValidators().getActiveValidators().stream()
-            .filter(validator -> validator.getSigner().isLocal())
-            .count();
-    if (exitWhenNoValidatorKeysEnabled && loadedValidators == 0) {
-      throw new IllegalStateException(
-          "No loaded validators when --allow-no-loaded-keys option is false");
-    }
   }
 
   public DeleteKeyResult deleteLocalMutableValidator(final BLSPublicKey publicKey) {
@@ -255,8 +243,7 @@ public class ValidatorLoader {
         validatorSources.getMutableExternalValidatorSource(),
         config.getGraffitiProvider(),
         maybeMutableDir,
-        slashingProtectionLogger,
-        config.isExitWhenNoValidatorKeysEnabled());
+        slashingProtectionLogger);
   }
 
   @VisibleForTesting
@@ -266,16 +253,14 @@ public class ValidatorLoader {
       final Optional<ValidatorSource> mutableExternalValidatorSource,
       final GraffitiProvider graffitiProvider,
       final Optional<DataDirLayout> maybeDataDirLayout,
-      final SlashingProtectionLogger slashingProtectionLogger,
-      final boolean exitWhenNoValidatorKeysEnabled) {
+      final SlashingProtectionLogger slashingProtectionLogger) {
     return new ValidatorLoader(
         validatorSources,
         mutableLocalValidatorSource,
         mutableExternalValidatorSource,
         graffitiProvider,
         maybeDataDirLayout,
-        slashingProtectionLogger,
-        exitWhenNoValidatorKeysEnabled);
+        slashingProtectionLogger);
   }
 
   private void addValidatorsFromSource(

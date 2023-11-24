@@ -270,6 +270,12 @@ public class ValidatorClientService extends Service {
             })
         .always(() -> LOG.trace("Finished starting validator client service."));
 
+    if (validatorConfig.isExitWhenNoValidatorKeysEnabled()
+        && validatorLoader.getOwnedValidators().getActiveValidators().size() == 0) {
+      throw new IllegalStateException(
+          "No loaded validators when --exit-when-no-validator-keys-enabled option is false");
+    }
+
     return validatorClientService;
   }
 

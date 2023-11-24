@@ -403,8 +403,7 @@ class ValidatorLoaderTest {
             Optional.of(validatorSource),
             null,
             Optional.of(dataDirLayout),
-            slashingProtectionLogger,
-            false);
+            slashingProtectionLogger);
 
     when(validatorSource.deleteValidator(publicKey)).thenReturn(DeleteKeyResult.success());
     loader.deleteLocalMutableValidator(publicKey);
