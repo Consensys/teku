@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
@@ -617,6 +618,74 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return getForkChoiceStrategy()
         .map(forkChoiceStrategy -> forkChoiceStrategy.getBlockRootsAtSlot(slot))
         .orElse(Collections.emptyList());
+  }
+
+  public Bytes32 getProposerHead(final Bytes32 headRoot, final UInt64 slot) {
+    // if proposer boost is still active, don't attempt to override head
+    final boolean isProposerBoostActive =
+        store.getProposerBoostRoot().map(root -> !root.equals(headRoot)).orElse(false);
+    final boolean isShufflingStable = spec.atSlot(slot).getForkChoiceUtil().isShufflingStable(slot);
+    final boolean isFinalizationOk =
+        spec.atSlot(slot).getForkChoiceUtil().isFinalizationOk(store, slot);
+    final boolean isProposingOnTime = isProposingOnTime(slot);
+    final boolean isHeadLate = isBlockLate(headRoot);
+    final Optional<SignedBeaconBlock> maybeHead = store.getBlockIfAvailable(headRoot);
+
+    // to return parent root, we need all of (isHeadLate, isShufflingStable, isFfgCompetetive,
+    // isFinalizationOk, isProposingOnTime, isSingleSlotReorg, isHeadWeak, isParentStrong)
+
+    // cheap checks of that list:
+    // (isHeadLate, isShufflingStable, isFinalizationOk, isProposingOnTime);
+    // and  isProposerBoostActive (assert condition);
+    // finally need head block to make further checks
+    if (!isHeadLate
+        || !isShufflingStable
+        || !isFinalizationOk
+        || !isProposingOnTime
+        || isProposerBoostActive
+        || maybeHead.isEmpty()) {
+      return headRoot;
+    }
+
+    final SignedBeaconBlock head = maybeHead.get();
+    final boolean isFfgCompetitive =
+        store.isFfgCompetitive(headRoot, head.getParentRoot()).orElse(false);
+
+    final Optional<UInt64> maybeParentSlot = getSlotForBlockRoot(head.getParentRoot());
+    final boolean isParentSlotOk =
+        maybeParentSlot.map(uInt64 -> uInt64.increment().equals(head.getSlot())).orElse(false);
+    final boolean isCurrentTimeOk = head.getSlot().increment().equals(slot);
+    final boolean isSingleSlotReorg = isParentSlotOk && isCurrentTimeOk;
+
+    // from the initial list, check
+    // isFfgCompetitive, isSingleSlotReorg
+    if (!isFfgCompetitive || !isSingleSlotReorg) {
+      return headRoot;
+    }
+
+    final SafeFuture<Optional<BeaconState>> future =
+        store.retrieveCheckpointState(store.getJustifiedCheckpoint());
+    try {
+      final Optional<BeaconState> maybeJustifiedState = future.join();
+      // to make further checks, we would need the justified state, return headRoot if we don't have
+      // it.
+      if (maybeJustifiedState.isEmpty()) {
+        return headRoot;
+      }
+      final boolean isHeadWeak = store.isHeadWeak(maybeJustifiedState.get(), headRoot);
+      final boolean isParentStrong =
+          store.isParentStrong(maybeJustifiedState.get(), head.getParentRoot());
+      // finally, the parent must be strong, and the current head must be weak.
+      if (isHeadWeak && isParentStrong) {
+        return head.getParentRoot();
+      }
+    } catch (Exception exception) {
+      if (!(exception instanceof CancellationException)) {
+        LOG.error("Failed to get justified checkpoint", exception);
+      }
+    }
+
+    return headRoot;
   }
 
   public void setBlockTimelinessFromArrivalTime(

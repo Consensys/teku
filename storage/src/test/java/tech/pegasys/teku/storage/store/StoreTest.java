@@ -100,8 +100,7 @@ class StoreTest extends AbstractStoreTest {
     processChainHeadWithMockForkChoiceStrategy(
         (store, blockAndState) -> {
           final Bytes32 root = blockAndState.getRoot();
-          final SafeFuture<Optional<Boolean>> isHeadWeakFuture = store.isHeadWeak(root);
-          assertThat(safeJoin(isHeadWeakFuture)).isEmpty();
+          assertThat(store.isHeadWeak(justifiedState(store), root)).isFalse();
         });
   }
 
@@ -112,8 +111,7 @@ class StoreTest extends AbstractStoreTest {
           final Bytes32 root = blockAndState.getRoot();
           setProtoNodeDataForBlock(blockAndState, UInt64.valueOf("2400000001"), UInt64.MAX_VALUE);
 
-          final SafeFuture<Optional<Boolean>> isHeadWeakFuture = store.isHeadWeak(root);
-          assertThat(safeJoin(isHeadWeakFuture)).contains(false);
+          assertThat(store.isHeadWeak(justifiedState(store), root)).isFalse();
         });
   }
 
@@ -124,8 +122,7 @@ class StoreTest extends AbstractStoreTest {
           final Bytes32 root = blockAndState.getRoot();
           setProtoNodeDataForBlock(blockAndState, UInt64.valueOf("2399999999"), UInt64.MAX_VALUE);
 
-          final SafeFuture<Optional<Boolean>> isHeadWeakFuture = store.isHeadWeak(root);
-          assertThat(safeJoin(isHeadWeakFuture)).contains(true);
+          assertThat(store.isHeadWeak(justifiedState(store), root)).isTrue();
         });
   }
 
@@ -136,8 +133,7 @@ class StoreTest extends AbstractStoreTest {
           final Bytes32 root = blockAndState.getRoot();
           setProtoNodeDataForBlock(blockAndState, UInt64.valueOf("1000000000"), UInt64.MAX_VALUE);
 
-          final SafeFuture<Optional<Boolean>> isHeadWeakFuture = store.isHeadWeak(root);
-          assertThat(safeJoin(isHeadWeakFuture)).contains(true);
+          assertThat(store.isHeadWeak(justifiedState(store), root)).isTrue();
         });
   }
 
@@ -146,8 +142,7 @@ class StoreTest extends AbstractStoreTest {
     processChainHeadWithMockForkChoiceStrategy(
         (store, blockAndState) -> {
           final Bytes32 root = blockAndState.getBlock().getParentRoot();
-          final SafeFuture<Optional<Boolean>> isParentStrongFuture = store.isParentStrong(root);
-          assertThat(safeJoin(isParentStrongFuture)).isEmpty();
+          assertThat(store.isParentStrong(justifiedState(store), root)).isFalse();
         });
   }
 
@@ -157,8 +152,7 @@ class StoreTest extends AbstractStoreTest {
         (store, blockAndState) -> {
           final Bytes32 root = blockAndState.getBlock().getParentRoot();
           setProtoNodeDataForBlock(blockAndState, UInt64.ZERO, UInt64.valueOf("19200000001"));
-          final SafeFuture<Optional<Boolean>> isParentStrongFuture = store.isParentStrong(root);
-          assertThat(safeJoin(isParentStrongFuture)).contains(true);
+          assertThat(store.isParentStrong(justifiedState(store), root)).isTrue();
         });
   }
 
@@ -168,8 +162,7 @@ class StoreTest extends AbstractStoreTest {
         (store, blockAndState) -> {
           final Bytes32 root = blockAndState.getBlock().getParentRoot();
           setProtoNodeDataForBlock(blockAndState, UInt64.ZERO, UInt64.valueOf("19200000000"));
-          final SafeFuture<Optional<Boolean>> isParentStrongFuture = store.isParentStrong(root);
-          assertThat(safeJoin(isParentStrongFuture)).contains(false);
+          assertThat(store.isParentStrong(justifiedState(store), root)).isFalse();
         });
   }
 
@@ -179,8 +172,7 @@ class StoreTest extends AbstractStoreTest {
         (store, blockAndState) -> {
           final Bytes32 root = blockAndState.getBlock().getParentRoot();
           setProtoNodeDataForBlock(blockAndState, UInt64.ZERO, UInt64.ZERO);
-          final SafeFuture<Optional<Boolean>> isParentStrongFuture = store.isParentStrong(root);
-          assertThat(safeJoin(isParentStrongFuture)).contains(false);
+          assertThat(store.isParentStrong(justifiedState(store), root)).isFalse();
         });
   }
 
@@ -523,6 +515,10 @@ class StoreTest extends AbstractStoreTest {
     for (final SignedBlockAndState signedBlockAndState : last32) {
       assertThat(store.getBlockIfAvailable(signedBlockAndState.getRoot())).isPresent();
     }
+  }
+
+  private BeaconState justifiedState(final UpdatableStore store) {
+    return safeJoin(store.retrieveCheckpointState(store.getJustifiedCheckpoint())).orElseThrow();
   }
 
   private void testApplyChangesWhenTransactionCommits(final boolean withInterleavedTransaction) {
