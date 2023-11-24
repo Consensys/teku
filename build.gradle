@@ -499,18 +499,12 @@ def dockerImage = "consensys/teku"
 def dockerJdkVariants = [ "jdk17" ]
 def dockerBuildDir = "build/docker-teku/"
 
+def executableAndArg = System.getProperty('os.name').toLowerCase().contains('windows') ? ["cmd", "/c"] : ["sh", "-c"]
+
 task distDocker  {
   dependsOn dockerDistUntar
-  def getExecutableAndArg = {
-    if (System.getProperty('os.name').toLowerCase().contains('windows')) {
-      return ["cmd", "/c"]
-    } else {
-      return ["sh", "-c"]
-    }
-  }
   def dockerBuildVersion = 'develop'
   doLast {
-    def executableAndArg = getExecutableAndArg()
     for (def variant in dockerJdkVariants) {
       copy {
         from file("${projectDir}/docker/${variant}/Dockerfile")
@@ -563,8 +557,8 @@ task uploadDocker {
 
       exec {
         workingDir dockerBuildDir
-        executable "sh"
-        args "-c", "docker build --pull --platform ${platform} --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} ${tags} ."
+        executable executableAndArg[0]
+        args executableAndArg[1], "docker build --pull --platform ${platform} --build-arg BUILD_DATE=${buildTime()} --build-arg VERSION=${dockerBuildVersion} --build-arg VCS_REF=${getCheckedOutGitCommitHash()} ${tags} ."
       }
 
       //docker trust sign runs one image at a time, so we have to remove the '-t' in the string and split into a list we can use
@@ -572,8 +566,8 @@ task uploadDocker {
       for (def t in trustTags) {
         exec {
           workingDir dockerBuildDir
-          executable "sh"
-          args "-c", "docker trust sign ${t} && docker push ${t} "
+          executable executableAndArg[0]
+          args executableAndArg[1], "docker trust sign ${t} && docker push ${t} "
         }
       }
     }
@@ -607,8 +601,8 @@ task manifestDocker {
       for (def tag in tags) {
         platforms.forEach { platform -> cmd += "${tag}-${platform} " }
         exec {
-          executable "sh"
-          args "-c", "docker manifest create ${tag} ${cmd} && docker manifest push ${tag}"
+          executable executableAndArg[0]
+          args executableAndArg[1], "docker manifest create ${tag} ${cmd} && docker manifest push ${tag}"
         }
       }
     }
