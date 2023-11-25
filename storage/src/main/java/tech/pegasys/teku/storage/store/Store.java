@@ -655,11 +655,6 @@ class Store extends CacheableStore {
     if (!containsBlock(blockRoot)) {
       return EmptyStoreResults.EMPTY_SIGNED_BLOCK_FUTURE;
     }
-    final Optional<SignedBeaconBlock> inMemoryBlock = getBlockIfAvailable(blockRoot);
-    if (inMemoryBlock.isPresent()) {
-      return SafeFuture.completedFuture(inMemoryBlock);
-    }
-
     // Retrieve block
     return blockProvider.getBlock(blockRoot);
   }
