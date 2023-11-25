@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -34,6 +35,21 @@ public interface BlockProvider {
 
   static BlockProvider fromDynamicMap(Supplier<Map<Bytes32, SignedBeaconBlock>> mapSupplier) {
     return (roots) -> fromMap(mapSupplier.get()).getBlocks(roots);
+  }
+
+  static BlockProvider fromMapWithLock(
+      final Map<Bytes32, SignedBeaconBlock> blockMap, final Lock readLock) {
+    return (roots) -> {
+      readLock.lock();
+      try {
+        return SafeFuture.completedFuture(
+            roots.stream()
+                .filter(blockMap::containsKey)
+                .collect(Collectors.toMap(Function.identity(), blockMap::get)));
+      } finally {
+        readLock.unlock();
+      }
+    };
   }
 
   static BlockProvider fromMap(final Map<Bytes32, SignedBeaconBlock> blockMap) {
