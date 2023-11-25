@@ -30,7 +30,6 @@ public class StoreAssertions {
                 .withComparatorForType((o1, o2) -> o1.equals(o2) ? 0 : 1, SszData.class)
                 .build())
         .ignoringFields(
-            "asyncRunner",
             "timeMillis",
             "stateCountGauge",
             "blockCountGauge",
