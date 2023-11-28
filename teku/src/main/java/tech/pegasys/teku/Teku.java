@@ -23,6 +23,7 @@ import tech.pegasys.teku.bls.impl.blst.BlstLoader;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.cli.BeaconNodeCommand.StartAction;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.exceptions.TekuCLIException;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 
 public final class Teku {
@@ -36,22 +37,18 @@ public final class Teku {
   public static void main(String[] args) {
     Thread.setDefaultUncaughtExceptionHandler(new TekuDefaultExceptionHandler());
 
-    try {
-      Optional<Node> maybeNode = Teku.startFromCLIArgs(args);
+    final Optional<Node> maybeNode = Teku.startFromCLIArgs(args);
 
-      maybeNode.ifPresent(
-          node ->
-              // Detect SIGTERM
-              Runtime.getRuntime()
-                  .addShutdownHook(
-                      new Thread(
-                          () -> {
-                            System.out.println("Teku is shutting down");
-                            node.stop();
-                          })));
-    } catch (CLIException e) {
-      System.exit(e.getResultCode());
-    }
+    maybeNode.ifPresent(
+        node ->
+            // Detect SIGTERM
+            Runtime.getRuntime()
+                .addShutdownHook(
+                    new Thread(
+                        () -> {
+                          System.out.println("Teku is shutting down");
+                          node.stop();
+                        })));
   }
 
   private static int start(StartAction startAction, final String... args) {
@@ -80,12 +77,12 @@ public final class Teku {
     return node;
   }
 
-  static Optional<Node> startFromCLIArgs(String[] cliArgs) throws CLIException {
+  static Optional<Node> startFromCLIArgs(String[] cliArgs) throws TekuCLIException {
     AtomicReference<Node> nodeRef = new AtomicReference<>();
     int result =
         start((config, validatorClient) -> nodeRef.set(start(config, validatorClient)), cliArgs);
     if (result != 0) {
-      throw new CLIException(result);
+      throw new TekuCLIException(result);
     }
     return Optional.ofNullable(nodeRef.get());
   }
@@ -96,18 +93,5 @@ public final class Teku {
 
   static ValidatorNode startValidatorNode(TekuConfiguration config) {
     return (ValidatorNode) start(config, true);
-  }
-
-  private static class CLIException extends RuntimeException {
-    private final int resultCode;
-
-    public CLIException(int resultCode) {
-      super("Unable to start Teku. Exit code: " + resultCode);
-      this.resultCode = resultCode;
-    }
-
-    public int getResultCode() {
-      return resultCode;
-    }
   }
 }

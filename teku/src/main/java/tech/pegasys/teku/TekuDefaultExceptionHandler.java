@@ -25,6 +25,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.events.ChannelExceptionHandler;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
+import tech.pegasys.teku.infrastructure.exceptions.TekuCLIException;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
@@ -91,6 +92,8 @@ public final class TekuDefaultExceptionHandler
           "Unexpected rejected execution due to full task queue in {}", subscriberDescription);
     } else if (isSpecFailure(exception)) {
       statusLog.specificationFailure(subscriberDescription, exception);
+    } else if (exception instanceof TekuCLIException cliEx) {
+      System.exit(cliEx.getResultCode());
     } else {
       statusLog.unexpectedFailure(subscriberDescription, exception);
     }
