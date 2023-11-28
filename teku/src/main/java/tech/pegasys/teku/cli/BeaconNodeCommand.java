@@ -74,6 +74,7 @@ import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
+import tech.pegasys.teku.validator.client.NoValidatorKeysStateException;
 
 @SuppressWarnings("unused")
 @Command(
@@ -352,7 +353,17 @@ public class BeaconNodeCommand implements Callable<Integer> {
   }
 
   public void reportUnexpectedError(final Throwable t) {
-    getLogger().fatal("Teku failed to start", t);
+    if (t instanceof NoValidatorKeysStateException) {
+      getLogger().fatal("Teku failed to start: " + t.getMessage());
+    } else {
+      getLogger().fatal("Teku failed to start", t);
+    }
+    errorWriter.println("Teku failed to start: " + t.getMessage());
+    printUsage(errorWriter);
+  }
+
+  public void reportUnexpectedErrorNoStacktrace(final Throwable t) {
+    getLogger().fatal("Teku failed to start", t.getMessage());
     errorWriter.println("Teku failed to start: " + t.getMessage());
     printUsage(errorWriter);
   }
