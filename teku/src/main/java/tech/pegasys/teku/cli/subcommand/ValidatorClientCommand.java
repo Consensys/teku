@@ -38,6 +38,7 @@ import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
+import tech.pegasys.teku.validator.client.NoValidatorKeysStateException;
 
 @Command(
     name = "validator-client",
@@ -110,6 +111,9 @@ public class ValidatorClientCommand implements Callable<Integer> {
               parentCommand::reportUserError, () -> parentCommand.reportUnexpectedError(e));
     } catch (Throwable t) {
       parentCommand.reportUnexpectedError(t);
+      if (t instanceof NoValidatorKeysStateException) {
+        return 2;
+      }
     }
     return 1;
   }

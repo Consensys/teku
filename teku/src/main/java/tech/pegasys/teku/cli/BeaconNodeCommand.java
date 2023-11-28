@@ -348,6 +348,9 @@ public class BeaconNodeCommand implements Callable<Integer> {
           .ifPresentOrElse(this::reportUserError, () -> reportUnexpectedError(e));
     } catch (Throwable t) {
       reportUnexpectedError(t);
+      if (t instanceof NoValidatorKeysStateException) {
+        return 2;
+      }
     }
     return 1;
   }
