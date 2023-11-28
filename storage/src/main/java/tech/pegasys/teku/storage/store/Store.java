@@ -532,94 +532,55 @@ class Store extends CacheableStore {
   }
 
   @Override
-  public SafeFuture<Optional<Boolean>> isHeadWeak(final Bytes32 root) {
-
+  public boolean isHeadWeak(final BeaconState justifiedState, final Bytes32 root) {
     final Optional<ProtoNodeData> maybeBlockData = getBlockDataFromForkChoiceStrategy(root);
-    if (maybeBlockData.isEmpty()) {
-      LOG.trace("isHeadWeak {}: no block data in protoArray, returning false", root);
-      return SafeFuture.completedFuture(Optional.empty());
-    }
+    return maybeBlockData
+        .map(
+            blockData -> {
+              final UInt64 headWeight = blockData.getWeight();
 
-    final UInt64 headWeight = maybeBlockData.get().getWeight();
+              final SpecVersion specVersion = spec.atSlot(justifiedState.getSlot());
+              final BeaconStateAccessors beaconStateAccessors = specVersion.beaconStateAccessors();
+              final UInt64 reorgThreshold =
+                  beaconStateAccessors.calculateCommitteeFraction(
+                      justifiedState, specVersion.getConfig().getReorgHeadWeightThreshold());
+              final boolean result = headWeight.isLessThan(reorgThreshold);
 
-    final SafeFuture<Optional<BeaconState>> futureMaybeJustifiedState =
-        retrieveCheckpointState(justifiedCheckpoint);
-
-    return futureMaybeJustifiedState
-        .thenApply(
-            maybeJustifiedState ->
-                maybeJustifiedState.map(
-                    justifiedState -> {
-                      final SpecVersion specVersion = spec.atSlot(justifiedState.getSlot());
-                      final BeaconStateAccessors beaconStateAccessors =
-                          specVersion.beaconStateAccessors();
-                      final UInt64 reorgThreashold =
-                          beaconStateAccessors.calculateCommitteeFraction(
-                              justifiedState,
-                              specVersion.getConfig().getReorgHeadWeightThreshold());
-                      final boolean result = headWeight.isLessThan(reorgThreashold);
-
-                      LOG.trace(
-                          "isHeadWeak {}: headWeight: {}, reorgThreshold: {}, result: {}",
-                          root,
-                          headWeight,
-                          reorgThreashold,
-                          result);
-                      return result;
-                    }))
-        .exceptionallyCompose(
-            err -> {
-              LOG.error(
-                  "Failed to retrieve justified state when checking head weight for block {}.",
+              LOG.trace(
+                  "isHeadWeak {}: headWeight: {}, reorgThreshold: {}, result: {}",
                   root,
-                  err);
-              return SafeFuture.completedFuture(Optional.empty());
-            });
+                  headWeight,
+                  reorgThreshold,
+                  result);
+              return result;
+            })
+        .orElse(false);
   }
 
   @Override
-  public SafeFuture<Optional<Boolean>> isParentStrong(final Bytes32 parentRoot) {
+  public boolean isParentStrong(final BeaconState justifiedState, final Bytes32 parentRoot) {
     final Optional<ProtoNodeData> maybeBlockData = getBlockDataFromForkChoiceStrategy(parentRoot);
-    if (maybeBlockData.isEmpty()) {
-      LOG.trace("isParentStrong {}: no block data in protoArray, returning false", parentRoot);
-      return SafeFuture.completedFuture(Optional.empty());
-    }
+    return maybeBlockData
+        .map(
+            blockData -> {
+              final UInt64 parentWeight = blockData.getWeight();
 
-    final UInt64 parentWeight = maybeBlockData.get().getWeight();
+              final SpecVersion specVersion = spec.atSlot(justifiedState.getSlot());
+              final BeaconStateAccessors beaconStateAccessors = specVersion.beaconStateAccessors();
+              final UInt64 parentThreshold =
+                  beaconStateAccessors.calculateCommitteeFraction(
+                      justifiedState, specVersion.getConfig().getReorgParentWeightThreshold());
+              final boolean result = parentWeight.isGreaterThan(parentThreshold);
 
-    final SafeFuture<Optional<BeaconState>> futureMaybeJustifiedState =
-        retrieveCheckpointState(justifiedCheckpoint);
-
-    return futureMaybeJustifiedState
-        .thenApply(
-            maybeJustifiedState ->
-                maybeJustifiedState.map(
-                    justifiedState -> {
-                      final SpecVersion specVersion = spec.atSlot(justifiedState.getSlot());
-                      final BeaconStateAccessors beaconStateAccessors =
-                          specVersion.beaconStateAccessors();
-                      final UInt64 parentThreshold =
-                          beaconStateAccessors.calculateCommitteeFraction(
-                              justifiedState,
-                              specVersion.getConfig().getReorgParentWeightThreshold());
-                      final boolean result = parentWeight.isGreaterThan(parentThreshold);
-
-                      LOG.trace(
-                          "isParentStrong {}: parentWeight: {}, parentThreshold: {}, result: {}",
-                          parentRoot,
-                          parentWeight,
-                          parentThreshold,
-                          result);
-                      return result;
-                    }))
-        .exceptionallyCompose(
-            err -> {
-              LOG.error(
-                  "Failed to retrieve justified state when checking weight for parent {}.",
+              LOG.debug(
+                  "isParentStrong {}: parentWeight: {}, parentThreshold: {}, result: {}",
                   parentRoot,
-                  err);
-              return SafeFuture.completedFuture(Optional.empty());
-            });
+                  parentWeight,
+                  parentThreshold,
+                  result);
+              return result;
+            })
+        .orElse(false);
   }
 
   @Override
