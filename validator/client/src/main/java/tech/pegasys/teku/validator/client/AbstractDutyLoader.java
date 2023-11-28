@@ -20,6 +20,7 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
+import tech.pegasys.teku.validator.client.exception.NodeDataUnavailableException;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
 public abstract class AbstractDutyLoader<D, S extends ScheduledDuties> implements DutyLoader<S> {

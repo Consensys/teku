@@ -11,11 +11,11 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client;
+package tech.pegasys.teku.validator.client.exception;
 
-public class SetGasLimitException extends IllegalArgumentException {
+public class NodeDataUnavailableException extends RuntimeException {
 
-  public SetGasLimitException(String message) {
+  public NodeDataUnavailableException(final String message) {
     super(message);
   }
 }

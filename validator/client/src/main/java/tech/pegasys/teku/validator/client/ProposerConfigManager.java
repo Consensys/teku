@@ -28,6 +28,8 @@ import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.ProposerConfig.BuilderConfig;
 import tech.pegasys.teku.validator.client.ProposerConfig.Config;
 import tech.pegasys.teku.validator.client.ProposerConfig.RegistrationOverrides;
+import tech.pegasys.teku.validator.client.exception.SetFeeRecipientException;
+import tech.pegasys.teku.validator.client.exception.SetGasLimitException;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
 

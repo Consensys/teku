@@ -30,7 +30,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.client.ProposerConfigManager;
-import tech.pegasys.teku.validator.client.SetGasLimitException;
+import tech.pegasys.teku.validator.client.exception.SetGasLimitException;
 
 public class SetGasLimit extends RestApiEndpoint {
 

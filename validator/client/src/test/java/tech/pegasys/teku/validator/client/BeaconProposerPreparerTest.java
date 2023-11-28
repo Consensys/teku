@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.client.exception.SetFeeRecipientException;
 
 @TestSpecContext(milestone = SpecMilestone.BELLATRIX)
 public class BeaconProposerPreparerTest {

@@ -40,6 +40,8 @@ import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.ProposerConfig.RegistrationOverrides;
+import tech.pegasys.teku.validator.client.exception.SetFeeRecipientException;
+import tech.pegasys.teku.validator.client.exception.SetGasLimitException;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
 

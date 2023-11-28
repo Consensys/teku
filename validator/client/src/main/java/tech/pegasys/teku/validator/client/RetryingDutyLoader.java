@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
 import tech.pegasys.teku.validator.client.duties.ScheduledDuties;
+import tech.pegasys.teku.validator.client.exception.NodeDataUnavailableException;
 
 public class RetryingDutyLoader<S extends ScheduledDuties> implements DutyLoader<S> {
   private static final Logger LOG = LogManager.getLogger();

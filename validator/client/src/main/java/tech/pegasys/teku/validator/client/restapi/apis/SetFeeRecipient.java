@@ -30,7 +30,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.validator.client.ProposerConfigManager;
-import tech.pegasys.teku.validator.client.SetFeeRecipientException;
+import tech.pegasys.teku.validator.client.exception.SetFeeRecipientException;
 
 public class SetFeeRecipient extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/{pubkey}/feerecipient";

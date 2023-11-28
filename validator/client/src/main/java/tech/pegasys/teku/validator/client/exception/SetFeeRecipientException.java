@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client;
+package tech.pegasys.teku.validator.client.exception;
 
 public class SetFeeRecipientException extends IllegalArgumentException {
 
