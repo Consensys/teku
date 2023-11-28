@@ -464,14 +464,10 @@ public class ForkChoiceTestExecutor implements TestExecutor {
 
           case "get_proposer_head" -> {
             final Bytes32 expectedProposerHead = getBytes32(checks, checkType);
-            final Optional<Bytes32> boostedRoot = recentChainData.getBestBlockRoot();
-            if (expectedProposerHead.isZero()) {
-              assertThat(boostedRoot).describedAs("get_proposer_head").isEmpty();
-            } else {
-              assertThat(boostedRoot)
-                  .describedAs("get_proposer_head")
-                  .contains(expectedProposerHead);
-            }
+            final Bytes32 root =
+                recentChainData.getProposerHead(
+                    expectedProposerHead, recentChainData.getHeadSlot().increment());
+            assertThat(root).describedAs("get_proposer_head").isEqualTo(expectedProposerHead);
           }
 
           case "should_override_forkchoice_update" -> {

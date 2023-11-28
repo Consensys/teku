@@ -247,13 +247,13 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public SafeFuture<Optional<Boolean>> isHeadWeak(Bytes32 root) {
-    return SafeFuture.completedFuture(Optional.empty());
+  public boolean isHeadWeak(BeaconState justifiedState, Bytes32 root) {
+    return false;
   }
 
   @Override
-  public SafeFuture<Optional<Boolean>> isParentStrong(Bytes32 parentRoot) {
-    return SafeFuture.completedFuture(Optional.empty());
+  public boolean isParentStrong(BeaconState justifiedState, Bytes32 parentRoot) {
+    return false;
   }
 
   @Override

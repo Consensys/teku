@@ -136,10 +136,10 @@ public interface ReadOnlyStore {
       Checkpoint checkpoint, BeaconState latestStateAtEpoch);
 
   // implements is_head_weak from fork-choice Consensus Spec
-  SafeFuture<Optional<Boolean>> isHeadWeak(final Bytes32 root);
+  boolean isHeadWeak(BeaconState justifiedState, Bytes32 root);
 
   // implements is_parent_strong from fork-choice Consensus Spec
-  SafeFuture<Optional<Boolean>> isParentStrong(final Bytes32 parentRoot);
+  boolean isParentStrong(BeaconState justifiedState, Bytes32 parentRoot);
 
   // implements is_ffg_competitive from Consensus Spec
   Optional<Boolean> isFfgCompetitive(final Bytes32 headRoot, final Bytes32 parentRoot);

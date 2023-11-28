@@ -74,9 +74,7 @@ public class TekuDepositSender extends Node {
         new DepositSenderService(
             spec, eth1Node.getExternalJsonRpcUrl(), eth1Credentials, eth1Address, amount)) {
       final List<SafeFuture<TransactionReceipt>> transactionReceipts =
-          validatorKeys.getValidatorKeys().stream()
-              .map(depositSenderService::sendDeposit)
-              .collect(Collectors.toList());
+          validatorKeys.getValidatorKeys().stream().map(depositSenderService::sendDeposit).toList();
       final SafeFuture<Void> future =
           SafeFuture.allOf(transactionReceipts.toArray(SafeFuture[]::new));
       Waiter.waitFor(future, Duration.ofMinutes(2));

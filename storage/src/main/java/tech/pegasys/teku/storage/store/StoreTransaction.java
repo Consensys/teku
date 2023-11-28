@@ -452,13 +452,13 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public SafeFuture<Optional<Boolean>> isHeadWeak(Bytes32 root) {
-    return store.isHeadWeak(root);
+  public boolean isHeadWeak(BeaconState justifiedState, Bytes32 root) {
+    return store.isHeadWeak(justifiedState, root);
   }
 
   @Override
-  public SafeFuture<Optional<Boolean>> isParentStrong(Bytes32 parentRoot) {
-    return store.isParentStrong(parentRoot);
+  public boolean isParentStrong(BeaconState justifiedState, Bytes32 parentRoot) {
+    return store.isParentStrong(justifiedState, parentRoot);
   }
 
   @Override
