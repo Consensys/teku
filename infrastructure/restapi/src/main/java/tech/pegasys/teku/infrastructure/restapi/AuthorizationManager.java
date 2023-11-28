@@ -25,7 +25,6 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
@@ -34,22 +33,53 @@ import org.apache.logging.log4j.Logger;
 public class AuthorizationManager implements AccessManager {
   private static final Logger LOG = LogManager.getLogger();
   private static final String BEARER_PREFIX = "Bearer ";
-  private Optional<String> bearer;
+  private String bearer;
 
   public AuthorizationManager(final Path path) {
+    bearer = readPasswordFile(path);
+  }
+
+  private String readPasswordFile(final Path path) {
     final File passwordFile = path.toFile();
-    final String initFailedMessage =
-        "Failed to initialize authorization bearer token - all API requests will be rejected.";
-    if (!passwordFile.exists() || !passwordFile.canRead() || passwordFile.isDirectory()) {
-      LOG.error(initFailedMessage);
-      bearer = Optional.empty();
-      return;
+    final StringBuilder errorMessage =
+        new StringBuilder("Failed to initialize authorization bearer token - ");
+
+    if (!passwordFile.exists()) {
+      errorMessage.append(
+          String.format("password file %s does not exist", passwordFile.getAbsolutePath()));
+      LOG.error(errorMessage);
+      throw new IllegalStateException(errorMessage.toString());
     }
+
+    if (!passwordFile.canRead()) {
+      errorMessage.append(
+          String.format("cannot read password file %s", passwordFile.getAbsolutePath()));
+      LOG.error(errorMessage);
+      throw new IllegalStateException(errorMessage.toString());
+    }
+
+    if (passwordFile.isDirectory()) {
+      errorMessage.append(
+          String.format("password file %s is a directory", passwordFile.getAbsolutePath()));
+      LOG.error(errorMessage);
+      throw new IllegalStateException(errorMessage.toString());
+    }
+
     try (Stream<String> lines = Files.lines(path)) {
-      bearer = lines.findFirst().map(val -> URLEncoder.encode(val, StandardCharsets.UTF_8));
+      return lines
+          .findFirst()
+          .map(val -> URLEncoder.encode(val, StandardCharsets.UTF_8))
+          .orElseThrow(
+              () -> {
+                errorMessage.append(
+                    String.format("password file %s is empty", passwordFile.getAbsolutePath()));
+                LOG.error(errorMessage);
+                return new IllegalStateException(errorMessage.toString());
+              });
     } catch (IOException e) {
-      LOG.error(initFailedMessage, e);
-      bearer = Optional.empty();
+      errorMessage.append(String.format(e.getMessage(), passwordFile.getAbsolutePath()));
+      LOG.error(errorMessage);
+      throw new IllegalStateException(errorMessage.toString());
     }
   }
 
@@ -67,7 +97,7 @@ public class AuthorizationManager implements AccessManager {
       return;
     }
 
-    if (bearer.isEmpty() || bearer.get().length() == 0) {
+    if (bearer.isEmpty()) {
       unauthorized(ctx, "API Reject - no bearer loaded by server.");
       return;
     }
@@ -77,7 +107,7 @@ public class AuthorizationManager implements AccessManager {
       unauthorized(ctx, "API Reject - authorization bearer missing from request header");
       return;
     }
-    if (!auth.substring(BEARER_PREFIX.length()).equals(bearer.get())) {
+    if (!auth.substring(BEARER_PREFIX.length()).equals(bearer)) {
       unauthorized(ctx, "API Reject - Unauthorized");
       return;
     }
