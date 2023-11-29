@@ -37,9 +37,9 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
 
     final TekuDepositSender depositSender = createTekuDepositSender(networkName);
     final ValidatorKeystores validatorKeysToExit = depositSender.generateValidatorKeys(4);
-    // network of 5 validators (4 of them will exit)
+    // network of 8 validators (4 of them will exit)
     final ValidatorKeystores validatorKeys =
-        ValidatorKeystores.add(validatorKeysToExit, depositSender.generateValidatorKeys(1));
+        ValidatorKeystores.add(validatorKeysToExit, depositSender.generateValidatorKeys(4));
     // 1 unknown key to the network
     final ValidatorKeystores unknownKeys = depositSender.generateValidatorKeys(1);
 
