@@ -124,12 +124,18 @@ public class AuthorizationManagerTest {
   public void createAuthorizationManagerShouldFailWhenCannotReadPasswordFile(
       @TempDir final Path tempDir) throws IOException {
     final Path unreadableFilePath = Files.createFile(tempDir.resolve("unreadable_file"));
-    unreadableFilePath.toFile().setReadable(false);
 
-    assertThatThrownBy(() -> new AuthorizationManager(unreadableFilePath))
-        .isInstanceOf(InvalidConfigurationException.class)
-        .hasMessageContaining(
-            "cannot read password file %s", unreadableFilePath.toFile().getAbsolutePath());
+    if (!unreadableFilePath.toFile().setReadable(false)) {
+      // If the underlying OS does not support setting file permissions we ignore the check on the
+      // error message
+      assertThatThrownBy(() -> new AuthorizationManager(unreadableFilePath))
+          .isInstanceOf(InvalidConfigurationException.class);
+    } else {
+      assertThatThrownBy(() -> new AuthorizationManager(unreadableFilePath))
+          .isInstanceOf(InvalidConfigurationException.class)
+          .hasMessageContaining(
+              "cannot read password file %s", unreadableFilePath.toFile().getAbsolutePath());
+    }
   }
 
   @Test
