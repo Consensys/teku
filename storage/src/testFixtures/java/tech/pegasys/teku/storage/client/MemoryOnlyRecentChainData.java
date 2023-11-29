@@ -46,6 +46,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
       final VoteUpdateChannel voteUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
+      final ValidatorIsConnectedProvider validatorIsConnectedProvider,
       final Spec spec) {
     super(
         asyncRunner,
@@ -59,6 +60,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
         voteUpdateChannel,
         finalizedCheckpointChannel,
         chainHeadChannel,
+        validatorIsConnectedProvider,
         spec);
   }
 
@@ -86,6 +88,9 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
         new StubFinalizedCheckpointChannel();
     private ChainHeadChannel chainHeadChannel = new StubChainHeadChannel();
 
+    private ValidatorIsConnectedProvider validatorIsConnectedProvider =
+        ValidatorIsConnectedProvider.NOOP;
+
     public RecentChainData build() {
       return new MemoryOnlyRecentChainData(
           SYNC_RUNNER,
@@ -96,6 +101,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
           votes -> {},
           finalizedCheckpointChannel,
           chainHeadChannel,
+          validatorIsConnectedProvider,
           spec);
     }
 
@@ -114,6 +120,12 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
     public Builder storageUpdateChannel(final StorageUpdateChannel storageUpdateChannel) {
       checkNotNull(storageUpdateChannel);
       this.storageUpdateChannel = storageUpdateChannel;
+      return this;
+    }
+
+    public Builder validatorIsConnectedProvider(
+        final ValidatorIsConnectedProvider validatorIsConnectedProvider) {
+      this.validatorIsConnectedProvider = validatorIsConnectedProvider;
       return this;
     }
 

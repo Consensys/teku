@@ -91,7 +91,7 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
 
   // Readonly methods
   @Override
-  public UInt64 getTimeMillis() {
+  public UInt64 getTimeInMillis() {
     return timeMillis;
   }
 

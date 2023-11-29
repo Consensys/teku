@@ -93,7 +93,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           .put("sync/optimistic", new ForkChoiceTestExecutor())
           // TODO: following tests are related to late block reorgs.
           //  Must be re-enabled once implementation #6595 is done
-          .put("fork_choice/should_override_forkchoice_update", IGNORE_TESTS)
+          .put("fork_choice/should_override_forkchoice_update", new ForkChoiceTestExecutor())
           .put("fork_choice/get_proposer_head", new ForkChoiceTestExecutor("basic_is_parent_root"))
           .build();
 
@@ -475,9 +475,12 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             final boolean expectedResult = shouldOverrideForkChoiceUpdateCheck.get("result");
             final boolean expectedValidatorIsConnected =
                 shouldOverrideForkChoiceUpdateCheck.get("validator_is_connected");
-            // only currently handle result == true
-            assertThat(expectedResult).isTrue();
-            // only currently handle validatorIsConnected == true
+            final boolean shouldOverrideChainHead =
+                recentChainData.shouldOverrideForkChoiceUpdate(
+                    recentChainData.getBestBlockRoot().orElseThrow());
+            assertThat(shouldOverrideChainHead).isEqualTo(expectedResult);
+            // We've currently only handled the validatorIsConnected 'true' case in reftests,
+            // lets validate we're dealing with that and don't have to extend tests further.
             assertThat(expectedValidatorIsConnected).isTrue();
           }
 

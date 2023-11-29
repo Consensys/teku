@@ -453,7 +453,7 @@ class ForkChoiceTest {
     if (advanceTimeSlotMillis > 0) {
       StoreTransaction transaction = recentChainData.startStoreTransaction();
       UInt64 timeIntoSlotMillis =
-          recentChainData.getStore().getTimeMillis().plus(advanceTimeSlotMillis);
+          recentChainData.getStore().getTimeInMillis().plus(advanceTimeSlotMillis);
       transaction.setTimeMillis(timeIntoSlotMillis);
       safeJoin(transaction.commit());
     }

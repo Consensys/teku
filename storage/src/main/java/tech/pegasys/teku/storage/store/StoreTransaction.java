@@ -136,7 +136,7 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
 
   @Override
   public void setTimeMillis(UInt64 timeMillis) {
-    final UInt64 storeTimeMillis = store.getTimeMillis();
+    final UInt64 storeTimeMillis = store.getTimeInMillis();
     checkArgument(
         timeMillis.isGreaterThanOrEqualTo(storeTimeMillis),
         "Cannot revert time (millis) from %s to %s",
@@ -240,8 +240,8 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public UInt64 getTimeMillis() {
-    return timeMillis.orElseGet(store::getTimeMillis);
+  public UInt64 getTimeInMillis() {
+    return timeMillis.orElseGet(store::getTimeInMillis);
   }
 
   @Override

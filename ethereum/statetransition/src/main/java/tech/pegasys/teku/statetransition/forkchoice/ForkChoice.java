@@ -202,6 +202,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final Optional<BlockImportPerformance> blockImportPerformance,
       final BlockBroadcastValidator blockBroadcastValidator,
       final ExecutionLayerChannel executionLayer) {
+    recentChainData.setBlockTimelinessIfEmpty(block);
     return recentChainData
         .retrieveStateAtSlot(new SlotAndBlockRoot(block.getSlot(), block.getParentRoot()))
         .thenPeek(__ -> blockImportPerformance.ifPresent(BlockImportPerformance::preStateRetrieved))
@@ -668,7 +669,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   private UInt64 getMillisIntoSlot(StoreTransaction transaction, UInt64 millisPerSlot) {
     return transaction
-        .getTimeMillis()
+        .getTimeInMillis()
         .minus(secondsToMillis(transaction.getGenesisTime()))
         .mod(millisPerSlot);
   }
@@ -843,7 +844,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   SafeFuture<Void> prepareForBlockProduction(final UInt64 slot) {
     final UInt64 slotStartTimeMillis =
         spec.getSlotStartTimeMillis(slot, recentChainData.getGenesisTimeMillis());
-    final UInt64 currentTime = recentChainData.getStore().getTimeMillis();
+    final UInt64 currentTime = recentChainData.getStore().getTimeInMillis();
     // We haven't yet transitioned into this slot but will do very soon, so make it happen now
     if (!currentTime
         .plus(BLOCK_CREATION_TOLERANCE_MS)
