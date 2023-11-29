@@ -30,6 +30,7 @@ import java.nio.file.Path;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 public class AuthorizationManagerTest {
   private static final String PASS = "secure";
@@ -114,7 +115,7 @@ public class AuthorizationManagerTest {
     final Path directory = Path.of("/foo/bar");
 
     assertThatThrownBy(() -> new AuthorizationManager(directory))
-        .isInstanceOf(IllegalStateException.class)
+        .isInstanceOf(InvalidConfigurationException.class)
         .hasMessageContaining(
             "password file %s does not exist", directory.toFile().getAbsolutePath());
   }
@@ -126,7 +127,7 @@ public class AuthorizationManagerTest {
     unreadableFilePath.toFile().setReadable(false);
 
     assertThatThrownBy(() -> new AuthorizationManager(unreadableFilePath))
-        .isInstanceOf(IllegalStateException.class)
+        .isInstanceOf(InvalidConfigurationException.class)
         .hasMessageContaining(
             "cannot read password file %s", unreadableFilePath.toFile().getAbsolutePath());
   }
@@ -137,7 +138,7 @@ public class AuthorizationManagerTest {
     final Path directory = Files.createDirectories(tempDir);
 
     assertThatThrownBy(() -> new AuthorizationManager(directory))
-        .isInstanceOf(IllegalStateException.class)
+        .isInstanceOf(InvalidConfigurationException.class)
         .hasMessageContaining(
             "password file %s is a directory", directory.toFile().getAbsolutePath());
   }
@@ -148,7 +149,7 @@ public class AuthorizationManagerTest {
     final Path directory = Files.writeString(tempDir.resolve("passwd"), "");
 
     assertThatThrownBy(() -> new AuthorizationManager(directory))
-        .isInstanceOf(IllegalStateException.class)
+        .isInstanceOf(InvalidConfigurationException.class)
         .hasMessageContaining("password file %s is empty", directory.toFile().getAbsolutePath());
   }
 

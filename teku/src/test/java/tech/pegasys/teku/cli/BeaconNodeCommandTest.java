@@ -43,23 +43,29 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Model.OptionSpec;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig.LoggingConfigBuilder;
 import tech.pegasys.teku.networking.nat.NatMethod;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
@@ -685,5 +691,24 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     Files.write(file, contents);
     file.toFile().deleteOnExit();
     return file;
+  }
+
+  @ParameterizedTest
+  @MethodSource("exceptionsAndExpectedStatusCodeParam")
+  public void handlingExceptionShouldReturnExpectedStatusCode(
+      final Throwable throwable, final int expectedStatusCode) {
+    assertThat(beaconNodeCommand.handleExceptionAndReturnExitCode(throwable))
+        .isEqualTo(expectedStatusCode);
+  }
+
+  private static Stream<Arguments> exceptionsAndExpectedStatusCodeParam() {
+    return Stream.of(
+        Arguments.of(new IllegalStateException("foo"), 1),
+        Arguments.of(new RuntimeException("foo"), 1),
+        Arguments.of(new InvalidConfigurationException("foo"), 2),
+        Arguments.of(DatabaseStorageException.unrecoverable("foo"), 2),
+        // Even when wrapped on something like completion exception, we still want it to return 2
+        Arguments.of(new CompletionException(new InvalidConfigurationException("foo")), 2),
+        Arguments.of(new CompletionException(DatabaseStorageException.unrecoverable("foo")), 2));
   }
 }

@@ -29,11 +29,12 @@ import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 public class AuthorizationManager implements AccessManager {
   private static final Logger LOG = LogManager.getLogger();
   private static final String BEARER_PREFIX = "Bearer ";
-  private String bearer;
+  private final String bearer;
 
   public AuthorizationManager(final Path path) {
     bearer = readPasswordFile(path);
@@ -48,21 +49,21 @@ public class AuthorizationManager implements AccessManager {
       errorMessage.append(
           String.format("password file %s does not exist", passwordFile.getAbsolutePath()));
       LOG.error(errorMessage);
-      throw new IllegalStateException(errorMessage.toString());
+      throw new InvalidConfigurationException(errorMessage.toString());
     }
 
     if (!passwordFile.canRead()) {
       errorMessage.append(
           String.format("cannot read password file %s", passwordFile.getAbsolutePath()));
       LOG.error(errorMessage);
-      throw new IllegalStateException(errorMessage.toString());
+      throw new InvalidConfigurationException(errorMessage.toString());
     }
 
     if (passwordFile.isDirectory()) {
       errorMessage.append(
           String.format("password file %s is a directory", passwordFile.getAbsolutePath()));
       LOG.error(errorMessage);
-      throw new IllegalStateException(errorMessage.toString());
+      throw new InvalidConfigurationException(errorMessage.toString());
     }
 
     try (Stream<String> lines = Files.lines(path)) {
@@ -74,12 +75,12 @@ public class AuthorizationManager implements AccessManager {
                 errorMessage.append(
                     String.format("password file %s is empty", passwordFile.getAbsolutePath()));
                 LOG.error(errorMessage);
-                return new IllegalStateException(errorMessage.toString());
+                return new InvalidConfigurationException(errorMessage.toString());
               });
     } catch (IOException e) {
       errorMessage.append(String.format(e.getMessage(), passwordFile.getAbsolutePath()));
       LOG.error(errorMessage);
-      throw new IllegalStateException(errorMessage.toString());
+      throw new InvalidConfigurationException(errorMessage.toString());
     }
   }
 
