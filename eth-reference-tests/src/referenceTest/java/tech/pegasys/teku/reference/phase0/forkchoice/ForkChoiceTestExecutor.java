@@ -93,7 +93,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           .put("sync/optimistic", new ForkChoiceTestExecutor())
           // TODO: following tests are related to late block reorgs.
           //  Must be re-enabled once implementation #6595 is done
-          .put("fork_choice/should_override_forkchoice_update", new ForkChoiceTestExecutor())
+          .put("fork_choice/should_override_forkchoice_update", IGNORE_TESTS)
           .put("fork_choice/get_proposer_head", new ForkChoiceTestExecutor("basic_is_parent_root"))
           .build();
 
