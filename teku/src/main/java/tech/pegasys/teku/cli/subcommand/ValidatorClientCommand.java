@@ -111,7 +111,7 @@ public class ValidatorClientCommand implements Callable<Integer> {
               parentCommand::reportUserError, () -> parentCommand.reportUnexpectedError(e));
     } catch (Throwable t) {
       parentCommand.reportUnexpectedError(t);
-      if (t instanceof NoValidatorKeysStateException) {
+      if (ExceptionUtil.hasCause(t, NoValidatorKeysStateException.class)) {
         return 2;
       }
     }

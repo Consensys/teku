@@ -348,7 +348,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
           .ifPresentOrElse(this::reportUserError, () -> reportUnexpectedError(e));
     } catch (Throwable t) {
       reportUnexpectedError(t);
-      if (t instanceof NoValidatorKeysStateException) {
+      if (ExceptionUtil.hasCause(t, NoValidatorKeysStateException.class)) {
         return 2;
       }
     }
@@ -356,7 +356,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
   }
 
   public void reportUnexpectedError(final Throwable t) {
-    if (t instanceof NoValidatorKeysStateException) {
+    if (ExceptionUtil.hasCause(t, NoValidatorKeysStateException.class)) {
       getLogger().fatal("Teku failed to start: " + t.getMessage());
     } else {
       getLogger().fatal("Teku failed to start", t);
