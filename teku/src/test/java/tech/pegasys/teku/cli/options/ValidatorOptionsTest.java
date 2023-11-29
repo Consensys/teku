@@ -202,4 +202,20 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
             config.validatorClient().getValidatorConfig().getBuilderRegistrationDefaultGasLimit())
         .isEqualTo(UInt64.valueOf(1000));
   }
+
+  @Test
+  public void shouldDefaultFalseExitWhenNoValidatorKeysEnabled() {
+    final ValidatorConfig config =
+        getTekuConfigurationFromArguments().validatorClient().getValidatorConfig();
+    assertThat(config.isExitWhenNoValidatorKeysEnabled()).isFalse();
+  }
+
+  @Test
+  public void shouldSetExitWhenNoValidatorKeysEnabled() {
+    final ValidatorConfig config =
+        getTekuConfigurationFromArguments("--exit-when-no-validator-keys-enabled=true")
+            .validatorClient()
+            .getValidatorConfig();
+    assertThat(config.isExitWhenNoValidatorKeysEnabled()).isTrue();
+  }
 }
