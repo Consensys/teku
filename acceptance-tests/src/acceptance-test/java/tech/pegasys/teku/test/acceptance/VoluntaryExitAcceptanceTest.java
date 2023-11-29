@@ -29,15 +29,17 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
 
+  private static final String DOCKER_IMAGE_LINE_SEPARATOR = "\n"; // Unix line separator
+
   @Test
   void shouldChangeValidatorStatusAfterSubmittingVoluntaryExit() throws Exception {
     final String networkName = "swift";
 
     final TekuDepositSender depositSender = createTekuDepositSender(networkName);
     final ValidatorKeystores validatorKeysToExit = depositSender.generateValidatorKeys(4);
-    // network of 8 validators (4 of them will exit)
+    // network of 5 validators (4 of them will exit)
     final ValidatorKeystores validatorKeys =
-        ValidatorKeystores.add(validatorKeysToExit, depositSender.generateValidatorKeys(4));
+        ValidatorKeystores.add(validatorKeysToExit, depositSender.generateValidatorKeys(1));
     // 1 unknown key to the network
     final ValidatorKeystores unknownKeys = depositSender.generateValidatorKeys(1);
 
@@ -81,7 +83,8 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
     voluntaryExitProcessFailing.waitForExit();
     voluntaryExitProcessSuccessful.waitForExit();
     final List<Integer> validatorIds =
-        Arrays.stream(voluntaryExitProcessFailing.getLoggedErrors().split(System.lineSeparator()))
+        Arrays.stream(
+                voluntaryExitProcessFailing.getLoggedErrors().split(DOCKER_IMAGE_LINE_SEPARATOR))
             .filter(s -> s.contains("Validator cannot exit until epoch 3"))
             .map(s -> Integer.parseInt(s.substring(19, 20)))
             .collect(Collectors.toList());
