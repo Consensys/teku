@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.store;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.dataproviders.generators.StateAtSlotTask.AsyncStateProvider.fromAnchor;
 import static tech.pegasys.teku.dataproviders.lookup.BlockProvider.fromDynamicMap;
-import static tech.pegasys.teku.dataproviders.lookup.BlockProvider.fromMap;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -32,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -173,22 +173,33 @@ class Store extends CacheableStore {
     this.finalizedOptimisticTransitionPayload = finalizedOptimisticTransitionPayload;
 
     // Set up block provider to draw from in-memory blocks
-    readLock.lock();
-    try {
-      this.blockProvider =
-          BlockProvider.combined(
-              fromDynamicMap(
-                  () ->
-                      this.getLatestFinalized()
-                          .getSignedBeaconBlock()
-                          .map((b) -> Map.of(b.getRoot(), b))
-                          .orElseGet(Collections::emptyMap)),
-              fromMap(this.blocks),
-              blockProvider);
-    } finally {
-      readLock.unlock();
-    }
+    this.blockProvider =
+        BlockProvider.combined(
+            fromDynamicMap(
+                () ->
+                    this.getLatestFinalized()
+                        .getSignedBeaconBlock()
+                        .map((b) -> Map.of(b.getRoot(), b))
+                        .orElseGet(Collections::emptyMap)),
+            createBlockProviderFromMapWhileLocked(this.blocks),
+            blockProvider);
+
     this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
+  }
+
+  private BlockProvider createBlockProviderFromMapWhileLocked(
+      final Map<Bytes32, SignedBeaconBlock> blockMap) {
+    return (roots) -> {
+      readLock.lock();
+      try {
+        return SafeFuture.completedFuture(
+            roots.stream()
+                .filter(blockMap::containsKey)
+                .collect(Collectors.toMap(Function.identity(), blockMap::get)));
+      } finally {
+        readLock.unlock();
+      }
+    };
   }
 
   static UpdatableStore create(
