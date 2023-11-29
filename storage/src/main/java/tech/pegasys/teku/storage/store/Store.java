@@ -16,7 +16,7 @@ package tech.pegasys.teku.storage.store;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.dataproviders.generators.StateAtSlotTask.AsyncStateProvider.fromAnchor;
 import static tech.pegasys.teku.dataproviders.lookup.BlockProvider.fromDynamicMap;
-import static tech.pegasys.teku.dataproviders.lookup.BlockProvider.fromMapWithLock;
+import static tech.pegasys.teku.dataproviders.lookup.BlockProvider.fromMap;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -116,7 +116,6 @@ class Store extends CacheableStore {
   private UInt64 highestVotedValidatorIndex;
 
   private Store(
-      final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final Spec spec,
       final int hotStatePersistenceFrequencyInEpochs,
@@ -174,16 +173,21 @@ class Store extends CacheableStore {
     this.finalizedOptimisticTransitionPayload = finalizedOptimisticTransitionPayload;
 
     // Set up block provider to draw from in-memory blocks
-    this.blockProvider =
-        BlockProvider.combined(
-            fromDynamicMap(
-                () ->
-                    this.getLatestFinalized()
-                        .getSignedBeaconBlock()
-                        .map((b) -> Map.of(b.getRoot(), b))
-                        .orElseGet(Collections::emptyMap)),
-            fromMapWithLock(this.blocks, asyncRunner, readLock),
-            blockProvider);
+    readLock.lock();
+    try {
+      this.blockProvider =
+          BlockProvider.combined(
+              fromDynamicMap(
+                  () ->
+                      this.getLatestFinalized()
+                          .getSignedBeaconBlock()
+                          .map((b) -> Map.of(b.getRoot(), b))
+                          .orElseGet(Collections::emptyMap)),
+              fromMap(this.blocks),
+              blockProvider);
+    } finally {
+      readLock.unlock();
+    }
     this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
   }
 
@@ -224,7 +228,6 @@ class Store extends CacheableStore {
         LimitedMap.createSynchronizedNatural(config.getBlockCacheSize());
 
     return new Store(
-        asyncRunner,
         metricsSystem,
         spec,
         config.getHotStatePersistenceFrequencyInEpochs(),
