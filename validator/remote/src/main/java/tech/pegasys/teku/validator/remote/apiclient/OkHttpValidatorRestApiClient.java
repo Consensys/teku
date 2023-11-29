@@ -44,7 +44,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -98,7 +97,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
 
   private static final MediaType APPLICATION_JSON =
       MediaType.parse("application/json; charset=utf-8");
-  private static final Map<String, String> EMPTY_QUERY_PARAMS = emptyMap();
+  private static final Map<String, String> EMPTY_MAP = emptyMap();
 
   private final JsonProvider jsonProvider = new JsonProvider();
   private final OkHttpClient httpClient;
@@ -111,22 +110,20 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
 
   public Optional<GetSpecResponse> getConfigSpec() {
     return get(
-        GET_CONFIG_SPEC,
-        EMPTY_QUERY_PARAMS,
-        EMPTY_QUERY_PARAMS,
-        createHandler(GetSpecResponse.class));
+        GET_CONFIG_SPEC, EMPTY_MAP, EMPTY_MAP, EMPTY_MAP, createHandler(GetSpecResponse.class));
   }
 
   @Override
   public Optional<GetGenesisResponse> getGenesis() {
-    return get(GET_GENESIS, EMPTY_QUERY_PARAMS, createHandler(GetGenesisResponse.class));
+    return get(GET_GENESIS, EMPTY_MAP, createHandler(GetGenesisResponse.class));
   }
 
   public Optional<GetBlockHeaderResponse> getBlockHeader(final String blockId) {
     return get(
         GET_BLOCK_HEADER,
         Map.of("block_id", blockId),
-        EMPTY_QUERY_PARAMS,
+        EMPTY_MAP,
+        EMPTY_MAP,
         createHandler(GetBlockHeaderResponse.class));
   }
 
@@ -134,7 +131,12 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   public Optional<List<ValidatorResponse>> getValidators(final List<String> validatorIds) {
     final Map<String, String> queryParams = new HashMap<>();
     queryParams.put("id", String.join(",", validatorIds));
-    return get(GET_VALIDATORS, queryParams, createHandler(GetStateValidatorsResponse.class))
+    return get(
+            GET_VALIDATORS,
+            EMPTY_MAP,
+            EMPTY_MAP,
+            queryParams,
+            createHandler(GetStateValidatorsResponse.class))
         .map(response -> response.data);
   }
 
@@ -153,7 +155,8 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
     return get(
         GET_PROPOSER_DUTIES,
         Map.of("epoch", epoch.toString()),
-        emptyMap(),
+        EMPTY_MAP,
+        EMPTY_MAP,
         createHandler(GetProposerDutiesResponse.class));
   }
 
@@ -176,6 +179,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
             GET_UNSIGNED_BLOCK_V2,
             pathParams,
             queryParams,
+            EMPTY_MAP,
             createHandler(GetNewBlockResponseV2.class))
         .map(response -> (BeaconBlock) response.data);
   }
@@ -186,6 +190,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
             GET_UNSIGNED_BLINDED_BLOCK,
             pathParams,
             queryParams,
+            EMPTY_MAP,
             createHandler(GetNewBlindedBlockResponse.class))
         .map(response -> (BeaconBlock) response.data);
   }
@@ -315,6 +320,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
             GET_SYNC_COMMITTEE_CONTRIBUTION,
             pathParams,
             queryParams,
+            EMPTY_MAP,
             createHandler(GetSyncCommitteeContributionResponse.class)
                 .withHandler(SC_NOT_FOUND, (request, response) -> Optional.empty()))
         .map(response -> response.data);
@@ -347,17 +353,25 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
       final ValidatorApiMethod apiMethod,
       final Map<String, String> queryParams,
       final ResponseHandler<T> responseHandler) {
-    return get(apiMethod, emptyMap(), queryParams, responseHandler);
+    return get(apiMethod, EMPTY_MAP, queryParams, EMPTY_MAP, responseHandler);
   }
 
   public <T> Optional<T> get(
       final ValidatorApiMethod apiMethod,
       final Map<String, String> urlParams,
       final Map<String, String> queryParams,
+      final Map<String, String> encodedQueryParams,
       final ResponseHandler<T> responseHandler) {
     final HttpUrl.Builder httpUrlBuilder = urlBuilder(apiMethod, urlParams);
     if (queryParams != null && !queryParams.isEmpty()) {
       queryParams.forEach(httpUrlBuilder::addQueryParameter);
+    }
+    // The encodedQueryParams are considered to be encoded already
+    // and should not be encoded again. This is useful to prevent
+    // the comma in an array of values (e.g. id=1,2,3) from being
+    // encoded.
+    if (encodedQueryParams != null && !encodedQueryParams.isEmpty()) {
+      encodedQueryParams.forEach(httpUrlBuilder::addEncodedQueryParameter);
     }
 
     final Request request = requestBuilder().url(httpUrlBuilder.build()).build();
@@ -404,7 +418,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
       final ValidatorApiMethod apiMethod,
       final Object requestBodyObj,
       final ResponseHandler<T> responseHandler) {
-    return post(apiMethod, Collections.emptyMap(), requestBodyObj, responseHandler);
+    return post(apiMethod, EMPTY_MAP, requestBodyObj, responseHandler);
   }
 
   private HttpUrl.Builder urlBuilder(

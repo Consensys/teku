@@ -139,8 +139,7 @@ class OkHttpValidatorRestApiClientTest {
     final RecordedRequest request = mockWebServer.takeRequest();
     assertThat(request.getMethod()).isEqualTo("GET");
     assertThat(request.getPath()).contains(ValidatorApiMethod.GET_VALIDATORS.getPath(emptyMap()));
-    // %2C is ,
-    assertThat(request.getPath()).contains("?id=1%2C0x1234");
+    assertThat(request.getPath()).contains("?id=1,0x1234");
   }
 
   @Test
