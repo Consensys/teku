@@ -52,6 +52,7 @@ import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockAndCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -59,6 +60,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.datastructures.execution.SlotAndExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteUpdater;
 import tech.pegasys.teku.spec.datastructures.hashtree.HashTree;
@@ -67,6 +69,7 @@ import tech.pegasys.teku.spec.datastructures.state.BlockRootAndState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
@@ -184,7 +187,7 @@ class Store extends CacheableStore {
     this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
   }
 
-  public static UpdatableStore create(
+  static UpdatableStore create(
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final Spec spec,
@@ -200,9 +203,8 @@ class Store extends CacheableStore {
       final Checkpoint bestJustifiedCheckpoint,
       final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot,
       final Map<UInt64, VoteTracker> votes,
-      final StoreConfig config) {
-
-    // Create limited collections for non-final data
+      final StoreConfig config,
+      final ForkChoiceStrategy forkChoiceStrategy) {
     final Map<Bytes32, SignedBeaconBlock> blocks =
         LimitedMap.createSynchronizedNatural(config.getBlockCacheSize());
     final CachingTaskQueue<SlotAndBlockRoot, BeaconState> checkpointStateTaskQueue =
@@ -220,18 +222,6 @@ class Store extends CacheableStore {
             : Optional.empty();
     final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars =
         LimitedMap.createSynchronizedNatural(config.getBlockCacheSize());
-
-    final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(time, genesisTime));
-    final ForkChoiceStrategy forkChoiceStrategy =
-        ForkChoiceStrategy.initialize(
-            spec,
-            buildProtoArray(
-                spec,
-                blockInfoByRoot,
-                initialCheckpoint,
-                currentEpoch,
-                justifiedCheckpoint,
-                finalizedAnchor));
 
     return new Store(
         asyncRunner,
@@ -255,6 +245,54 @@ class Store extends CacheableStore {
         checkpointStateTaskQueue,
         maybeEpochStates,
         blobSidecars);
+  }
+
+  public static UpdatableStore create(
+      final AsyncRunner asyncRunner,
+      final MetricsSystem metricsSystem,
+      final Spec spec,
+      final BlockProvider blockProvider,
+      final StateAndBlockSummaryProvider stateAndBlockProvider,
+      final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
+      final Optional<Checkpoint> initialCheckpoint,
+      final UInt64 time,
+      final UInt64 genesisTime,
+      final AnchorPoint finalizedAnchor,
+      final Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload,
+      final Checkpoint justifiedCheckpoint,
+      final Checkpoint bestJustifiedCheckpoint,
+      final Map<Bytes32, StoredBlockMetadata> blockInfoByRoot,
+      final Map<UInt64, VoteTracker> votes,
+      final StoreConfig config) {
+    final UInt64 currentEpoch = spec.computeEpochAtSlot(spec.getCurrentSlot(time, genesisTime));
+    final ForkChoiceStrategy forkChoiceStrategy =
+        ForkChoiceStrategy.initialize(
+            spec,
+            buildProtoArray(
+                spec,
+                blockInfoByRoot,
+                initialCheckpoint,
+                currentEpoch,
+                justifiedCheckpoint,
+                finalizedAnchor));
+    return create(
+        asyncRunner,
+        metricsSystem,
+        spec,
+        blockProvider,
+        stateAndBlockProvider,
+        earliestBlobSidecarSlotProvider,
+        initialCheckpoint,
+        time,
+        genesisTime,
+        finalizedAnchor,
+        finalizedOptimisticTransitionPayload,
+        justifiedCheckpoint,
+        bestJustifiedCheckpoint,
+        blockInfoByRoot,
+        votes,
+        config,
+        forkChoiceStrategy);
   }
 
   private static ProtoArray buildProtoArray(
@@ -491,6 +529,86 @@ class Store extends CacheableStore {
     readLock.lock();
     try {
       return Optional.ofNullable(blocks.get(blockRoot));
+    } finally {
+      readLock.unlock();
+    }
+  }
+
+  @Override
+  public boolean isHeadWeak(final BeaconState justifiedState, final Bytes32 root) {
+    final Optional<ProtoNodeData> maybeBlockData = getBlockDataFromForkChoiceStrategy(root);
+    return maybeBlockData
+        .map(
+            blockData -> {
+              final UInt64 headWeight = blockData.getWeight();
+
+              final SpecVersion specVersion = spec.atSlot(justifiedState.getSlot());
+              final BeaconStateAccessors beaconStateAccessors = specVersion.beaconStateAccessors();
+              final UInt64 reorgThreshold =
+                  beaconStateAccessors.calculateCommitteeFraction(
+                      justifiedState, specVersion.getConfig().getReorgHeadWeightThreshold());
+              final boolean result = headWeight.isLessThan(reorgThreshold);
+
+              LOG.trace(
+                  "isHeadWeak {}: headWeight: {}, reorgThreshold: {}, result: {}",
+                  root,
+                  headWeight,
+                  reorgThreshold,
+                  result);
+              return result;
+            })
+        .orElse(false);
+  }
+
+  @Override
+  public boolean isParentStrong(final BeaconState justifiedState, final Bytes32 parentRoot) {
+    final Optional<ProtoNodeData> maybeBlockData = getBlockDataFromForkChoiceStrategy(parentRoot);
+    return maybeBlockData
+        .map(
+            blockData -> {
+              final UInt64 parentWeight = blockData.getWeight();
+
+              final SpecVersion specVersion = spec.atSlot(justifiedState.getSlot());
+              final BeaconStateAccessors beaconStateAccessors = specVersion.beaconStateAccessors();
+              final UInt64 parentThreshold =
+                  beaconStateAccessors.calculateCommitteeFraction(
+                      justifiedState, specVersion.getConfig().getReorgParentWeightThreshold());
+              final boolean result = parentWeight.isGreaterThan(parentThreshold);
+
+              LOG.debug(
+                  "isParentStrong {}: parentWeight: {}, parentThreshold: {}, result: {}",
+                  parentRoot,
+                  parentWeight,
+                  parentThreshold,
+                  result);
+              return result;
+            })
+        .orElse(false);
+  }
+
+  @Override
+  public Optional<Boolean> isFfgCompetitive(Bytes32 headRoot, Bytes32 parentRoot) {
+    final Optional<ProtoNodeData> maybeHeadData = getBlockDataFromForkChoiceStrategy(headRoot);
+    final Optional<ProtoNodeData> maybeParentData = getBlockDataFromForkChoiceStrategy(parentRoot);
+    if (maybeParentData.isEmpty() || maybeHeadData.isEmpty()) {
+      return Optional.empty();
+    }
+    final Checkpoint headUnrealizedJustifiedCheckpoint =
+        maybeHeadData.get().getCheckpoints().getUnrealizedJustifiedCheckpoint();
+    final Checkpoint parentUnrealizedJustifiedCheckpoint =
+        maybeParentData.get().getCheckpoints().getUnrealizedJustifiedCheckpoint();
+    LOG.trace(
+        "head {}, compared to parent {}",
+        headUnrealizedJustifiedCheckpoint,
+        parentUnrealizedJustifiedCheckpoint);
+    return Optional.of(
+        headUnrealizedJustifiedCheckpoint.equals(parentUnrealizedJustifiedCheckpoint));
+  }
+
+  private Optional<ProtoNodeData> getBlockDataFromForkChoiceStrategy(final Bytes32 root) {
+    readLock.lock();
+    try {
+      return forkChoiceStrategy.getBlockData(root);
     } finally {
       readLock.unlock();
     }

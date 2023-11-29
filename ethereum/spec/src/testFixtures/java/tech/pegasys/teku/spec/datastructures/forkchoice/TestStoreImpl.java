@@ -247,6 +247,21 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
+  public boolean isHeadWeak(BeaconState justifiedState, Bytes32 root) {
+    return false;
+  }
+
+  @Override
+  public boolean isParentStrong(BeaconState justifiedState, Bytes32 parentRoot) {
+    return false;
+  }
+
+  @Override
+  public Optional<Boolean> isFfgCompetitive(Bytes32 headRoot, Bytes32 parentRoot) {
+    return Optional.empty();
+  }
+
+  @Override
   public Optional<List<BlobSidecar>> getBlobSidecarsIfAvailable(
       final SlotAndBlockRoot slotAndBlockRoot) {
     return Optional.ofNullable(blobSidecars.get(slotAndBlockRoot));

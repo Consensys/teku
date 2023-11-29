@@ -134,4 +134,13 @@ public interface ReadOnlyStore {
 
   SafeFuture<Optional<BeaconState>> retrieveCheckpointState(
       Checkpoint checkpoint, BeaconState latestStateAtEpoch);
+
+  // implements is_head_weak from fork-choice Consensus Spec
+  boolean isHeadWeak(BeaconState justifiedState, Bytes32 root);
+
+  // implements is_parent_strong from fork-choice Consensus Spec
+  boolean isParentStrong(BeaconState justifiedState, Bytes32 parentRoot);
+
+  // implements is_ffg_competitive from Consensus Spec
+  Optional<Boolean> isFfgCompetitive(final Bytes32 headRoot, final Bytes32 parentRoot);
 }
