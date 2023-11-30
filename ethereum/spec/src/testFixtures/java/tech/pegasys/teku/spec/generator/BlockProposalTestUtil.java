@@ -132,7 +132,7 @@ public class BlockProposalTestUtil {
                         kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments)));
               }
             },
-            false)
+            Optional.of(false))
         .thenApply(
             newBlockAndState -> {
               // Sign block and set block signature

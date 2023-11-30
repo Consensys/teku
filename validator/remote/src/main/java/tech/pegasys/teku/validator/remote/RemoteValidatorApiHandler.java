@@ -263,20 +263,16 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
                 .orElse(emptyList()));
   }
 
-  @Deprecated
   @Override
   public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final boolean blinded) {
-    return sendRequest(
-        () -> typeDefClient.createUnsignedBlock(slot, randaoReveal, graffiti, blinded));
-  }
-
-  @Override
-  public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
-      final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
+      final Optional<Boolean> blinded) {
+    if (blinded.isPresent()) {
+      return sendRequest(
+          () -> typeDefClient.createUnsignedBlock(slot, randaoReveal, graffiti, blinded.get()));
+    }
     return sendRequest(() -> typeDefClient.createUnsignedBlock(slot, randaoReveal, graffiti));
   }
 

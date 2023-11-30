@@ -390,7 +390,7 @@ class RemoteValidatorApiHandlerTest {
 
     SafeFuture<Optional<BlockContainer>> future =
         apiHandler.createUnsignedBlock(
-            UInt64.ONE, blsSignature, Optional.of(Bytes32.random()), false);
+            UInt64.ONE, blsSignature, Optional.of(Bytes32.random()), Optional.of(false));
 
     assertThat(unwrapToOptional(future)).isEmpty();
   }
@@ -406,7 +406,7 @@ class RemoteValidatorApiHandlerTest {
         .thenReturn(Optional.of(beaconBlock));
 
     SafeFuture<Optional<BlockContainer>> future =
-        apiHandler.createUnsignedBlock(UInt64.ONE, blsSignature, graffiti, false);
+        apiHandler.createUnsignedBlock(UInt64.ONE, blsSignature, graffiti, Optional.of(false));
 
     assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(beaconBlock);
   }
@@ -425,7 +425,7 @@ class RemoteValidatorApiHandlerTest {
         .thenReturn(Optional.of(blockContents));
 
     SafeFuture<Optional<BlockContainer>> future =
-        apiHandler.createUnsignedBlock(UInt64.ONE, blsSignature, graffiti, false);
+        apiHandler.createUnsignedBlock(UInt64.ONE, blsSignature, graffiti, Optional.of(false));
 
     assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(blockContents);
   }
