@@ -56,6 +56,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final VoteUpdateChannel voteUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
+      final ValidatorIsConnectedProvider validatorIsConnectedProvider,
       final Spec spec) {
     super(
         asyncRunner,
@@ -69,6 +70,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
         voteUpdateChannel,
         finalizedCheckpointChannel,
         chainHeadChannel,
+        validatorIsConnectedProvider,
         spec);
     this.storeConfig = storeConfig;
     this.storageQueryChannel = storageQueryChannel;
@@ -86,6 +88,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final VoteUpdateChannel voteUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
+      final ValidatorIsConnectedProvider validatorIsConnectedProvider,
       final Spec spec) {
     StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
@@ -98,6 +101,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
             voteUpdateChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
+            validatorIsConnectedProvider,
             spec);
 
     return client.initializeFromStorageWithRetry(asyncRunner);
@@ -114,6 +118,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final VoteUpdateChannel voteUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
+      final ValidatorIsConnectedProvider validatorIsConnectedProvider,
       final Spec spec) {
     StorageBackedRecentChainData client =
         new StorageBackedRecentChainData(
@@ -126,6 +131,7 @@ public class StorageBackedRecentChainData extends RecentChainData {
             voteUpdateChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
+            validatorIsConnectedProvider,
             spec);
 
     return client.initializeFromStorage().join();

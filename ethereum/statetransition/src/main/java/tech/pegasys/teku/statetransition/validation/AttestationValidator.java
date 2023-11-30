@@ -97,7 +97,7 @@ public class AttestationValidator {
     }
 
     final UInt64 genesisTime = recentChainData.getGenesisTime();
-    final UInt64 currentTimeMillis = recentChainData.getStore().getTimeMillis();
+    final UInt64 currentTimeMillis = recentChainData.getStore().getTimeInMillis();
 
     final Optional<SlotInclusionGossipValidationResult> slotInclusionGossipValidationResult =
         spec.atSlot(data.getSlot())

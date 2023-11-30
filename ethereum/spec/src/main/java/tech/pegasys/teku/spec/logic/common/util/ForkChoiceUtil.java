@@ -218,7 +218,7 @@ public class ForkChoiceUtil {
   public void onTick(final MutableStore store, final UInt64 timeMillis) {
     // To be extra safe check both time and genesisTime, although time should always be >=
     // genesisTime
-    if (store.getTimeMillis().isGreaterThan(timeMillis)
+    if (store.getTimeInMillis().isGreaterThan(timeMillis)
         || store.getGenesisTimeMillis().isGreaterThan(timeMillis)) {
       return;
     }

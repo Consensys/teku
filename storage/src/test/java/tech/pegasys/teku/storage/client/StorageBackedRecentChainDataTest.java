@@ -64,6 +64,9 @@ public class StorageBackedRecentChainDataTest {
   private final ChainHeadChannel chainHeadChannel = new StubChainHeadChannel();
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
+  private final ValidatorIsConnectedProvider validatorIsConnectedProvider =
+      ValidatorIsConnectedProvider.NOOP;
+
   @Test
   public void storageBackedClient_storeInitializeViaGetStoreRequest()
       throws ExecutionException, InterruptedException {
@@ -83,6 +86,7 @@ public class StorageBackedRecentChainDataTest {
             voteUpdateChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
+            validatorIsConnectedProvider,
             spec);
 
     // We should have posted a request to get the store from storage
@@ -131,6 +135,7 @@ public class StorageBackedRecentChainDataTest {
             voteUpdateChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
+            validatorIsConnectedProvider,
             spec);
 
     // We should have posted a request to get the store from storage
@@ -182,6 +187,7 @@ public class StorageBackedRecentChainDataTest {
             voteUpdateChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
+            validatorIsConnectedProvider,
             spec);
 
     // We should have posted a request to get the store from storage
@@ -229,6 +235,7 @@ public class StorageBackedRecentChainDataTest {
             voteUpdateChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
+            validatorIsConnectedProvider,
             spec);
 
     // We should have posted a request to get the store from storage

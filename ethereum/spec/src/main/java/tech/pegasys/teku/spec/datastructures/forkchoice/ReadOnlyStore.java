@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
@@ -34,18 +35,11 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public interface ReadOnlyStore {
+public interface ReadOnlyStore extends TimeProvider {
 
   default UInt64 getTimeSeconds() {
-    return millisToSeconds(getTimeMillis());
+    return millisToSeconds(getTimeInMillis());
   }
-
-  /**
-   * Returns time in milliseconds to allow for more fine-grained time calculations
-   *
-   * @return the time in milliseconds
-   */
-  UInt64 getTimeMillis();
 
   UInt64 getGenesisTime();
 
