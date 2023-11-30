@@ -62,7 +62,7 @@ public class ExternalSignerIntegrationTest extends AbstractExternalSignerIntegra
   @Test
   void failsSigningWhenSigningServiceTimesOut() {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(10);
-    final long ensureTimeout = 5;
+    final long ensureTimeout = 200;
     final Delay delay = new Delay(MILLISECONDS, TIMEOUT.plusMillis(ensureTimeout).toMillis());
     client.when(request()).respond(response().withDelay(delay));
 
