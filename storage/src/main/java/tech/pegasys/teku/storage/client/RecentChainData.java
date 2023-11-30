@@ -638,7 +638,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     final boolean isHeadLate = isBlockLate(headRoot);
     final Optional<SignedBeaconBlock> maybeHead = store.getBlockIfAvailable(headRoot);
 
-    // to return parent root, we need all of (isHeadLate, isShufflingStable, isFfgCompetetive,
+    // to return parent root, we need all of (isHeadLate, isShufflingStable, isFfgCompetitive,
     // isFinalizationOk, isProposingOnTime, isSingleSlotReorg, isHeadWeak, isParentStrong)
 
     // cheap checks of that list:
@@ -709,7 +709,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     }
     final SignedBeaconBlock head = maybeHead.get();
     final UInt64 currentSlot = maybeCurrentSlot.get();
-    final UInt64 proposalSlot = currentSlot.increment();
+    final UInt64 proposalSlot = maybeHead.get().getSlot().increment();
     final boolean isShufflingStable =
         spec.atSlot(proposalSlot).getForkChoiceUtil().isShufflingStable(proposalSlot);
 
@@ -729,7 +729,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     final boolean isProposingOnTime = isProposingOnTime(proposalSlot);
     final boolean isCurrentTimeOk =
         head.getSlot().equals(currentSlot)
-            || (currentSlot.increment().equals(proposalSlot) && isProposingOnTime);
+            || (currentSlot.equals(proposalSlot) && isProposingOnTime);
     final boolean isHeadWeak;
     final boolean isParentStrong;
     if (currentSlot.isGreaterThan(head.getSlot())) {

@@ -17,10 +17,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.storage.client.ValidatorIsConnectedProvider;
 
-public class ValidatorIsConenctedProviderImpl implements ValidatorIsConnectedProvider {
+public class ValidatorIsConnectedProviderImpl implements ValidatorIsConnectedProvider {
   private final ForkChoiceNotifier forkChoiceNotifier;
 
-  public ValidatorIsConenctedProviderImpl(ForkChoiceNotifier forkChoiceNotifier) {
+  public ValidatorIsConnectedProviderImpl(ForkChoiceNotifier forkChoiceNotifier) {
     this.forkChoiceNotifier = forkChoiceNotifier;
   }
 
