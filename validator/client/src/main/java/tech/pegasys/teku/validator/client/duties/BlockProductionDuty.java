@@ -16,6 +16,9 @@ package tech.pegasys.teku.validator.client.duties;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import com.google.common.annotations.VisibleForTesting;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -153,25 +156,25 @@ public class BlockProductionDuty implements Duty {
             });
   }
 
-  @Override
-  public String toString() {
-    return "BlockProductionDuty{"
-        + "validator="
-        + validator
-        + ", slot="
-        + slot
-        + ", forkProvider="
-        + forkProvider
-        + '}';
+  @VisibleForTesting
+  List<String> getBlockSummary(final BeaconBlockBody blockBody) {
+    final List<String> context = new ArrayList<>();
+    getBlobsSummary(blockBody).ifPresent(context::add);
+    getExecutionSummary(blockBody).ifPresent(context::add);
+    return context;
   }
 
-  static Optional<String> getBlockSummary(final BeaconBlockBody blockBody) {
+  private Optional<String> getBlobsSummary(final BeaconBlockBody blockBody) {
     return blockBody
-        .getOptionalExecutionPayloadSummary()
-        .map(BlockProductionDuty::getSummaryString);
+        .getOptionalBlobKzgCommitments()
+        .map(blobKzgCommitments -> "Blobs: " + blobKzgCommitments.size());
   }
 
-  private static String getSummaryString(final ExecutionPayloadSummary summary) {
+  private Optional<String> getExecutionSummary(final BeaconBlockBody blockBody) {
+    return blockBody.getOptionalExecutionPayloadSummary().map(this::getExecutionSummaryString);
+  }
+
+  private String getExecutionSummaryString(final ExecutionPayloadSummary summary) {
     UInt64 gasPercentage;
     try {
       gasPercentage =
@@ -183,10 +186,22 @@ public class BlockProductionDuty implements Duty {
       LOG.debug("Failed to compute percentage", e);
     }
     return String.format(
-        "%s (%s%%) gas, EL block:  %s (%s)",
+        "%s (%s%%) gas, EL block: %s (%s)",
         summary.getGasUsed(),
         gasPercentage,
         summary.getBlockHash().toUnprefixedHexString(),
         summary.getBlockNumber());
+  }
+
+  @Override
+  public String toString() {
+    return "BlockProductionDuty{"
+        + "validator="
+        + validator
+        + ", slot="
+        + slot
+        + ", forkProvider="
+        + forkProvider
+        + '}';
   }
 }
