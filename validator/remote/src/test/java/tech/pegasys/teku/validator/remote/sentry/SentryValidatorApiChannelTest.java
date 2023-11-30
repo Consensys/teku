@@ -123,11 +123,14 @@ class SentryValidatorApiChannelTest {
   @Test
   void createUnsignedBlockShouldUseBlockHandlerChannelWhenAvailable() {
     sentryValidatorApiChannel.createUnsignedBlock(
-        UInt64.ZERO, BLSSignature.empty(), Optional.empty(), false);
+        UInt64.ZERO, BLSSignature.empty(), Optional.empty(), Optional.of(false));
 
     verify(blockHandlerChannel)
         .createUnsignedBlock(
-            eq(UInt64.ZERO), eq(BLSSignature.empty()), eq(Optional.empty()), eq(false));
+            eq(UInt64.ZERO),
+            eq(BLSSignature.empty()),
+            eq(Optional.empty()),
+            eq(Optional.of(false)));
     verifyNoInteractions(dutiesProviderChannel);
     verifyNoInteractions(attestationPublisherChannel);
   }
@@ -139,11 +142,14 @@ class SentryValidatorApiChannelTest {
             dutiesProviderChannel, Optional.empty(), Optional.of(attestationPublisherChannel));
 
     sentryValidatorApiChannel.createUnsignedBlock(
-        UInt64.ZERO, BLSSignature.empty(), Optional.empty(), false);
+        UInt64.ZERO, BLSSignature.empty(), Optional.empty(), Optional.of(false));
 
     verify(dutiesProviderChannel)
         .createUnsignedBlock(
-            eq(UInt64.ZERO), eq(BLSSignature.empty()), eq(Optional.empty()), eq(false));
+            eq(UInt64.ZERO),
+            eq(BLSSignature.empty()),
+            eq(Optional.empty()),
+            eq(Optional.of(false)));
     verifyNoInteractions(blockHandlerChannel);
     verifyNoInteractions(attestationPublisherChannel);
   }

@@ -29,6 +29,8 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
 
+  private static final String DOCKER_IMAGE_LINE_SEPARATOR = "\n"; // Unix line separator
+
   @Test
   void shouldChangeValidatorStatusAfterSubmittingVoluntaryExit() throws Exception {
     final String networkName = "swift";
@@ -81,7 +83,8 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
     voluntaryExitProcessFailing.waitForExit();
     voluntaryExitProcessSuccessful.waitForExit();
     final List<Integer> validatorIds =
-        Arrays.stream(voluntaryExitProcessFailing.getLoggedErrors().split(System.lineSeparator()))
+        Arrays.stream(
+                voluntaryExitProcessFailing.getLoggedErrors().split(DOCKER_IMAGE_LINE_SEPARATOR))
             .filter(s -> s.contains("Validator cannot exit until epoch 3"))
             .map(s -> Integer.parseInt(s.substring(19, 20)))
             .collect(Collectors.toList());

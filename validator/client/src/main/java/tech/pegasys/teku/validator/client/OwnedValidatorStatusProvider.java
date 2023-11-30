@@ -189,6 +189,7 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
           validatorStatusSubscribers.forEach(
               s -> s.onValidatorStatuses(latestValidatorStatuses.get(), true));
         }
+        lookupInProgress.set(false);
         return;
       }
       validatorApiChannel

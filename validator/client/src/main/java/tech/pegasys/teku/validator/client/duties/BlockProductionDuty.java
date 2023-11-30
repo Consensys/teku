@@ -109,10 +109,11 @@ public class BlockProductionDuty implements Duty {
   private SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
       final BLSSignature randaoReveal) {
     if (blockV3Enabled) {
-      return validatorApiChannel.createUnsignedBlock(slot, randaoReveal, validator.getGraffiti());
+      return validatorApiChannel.createUnsignedBlock(
+          slot, randaoReveal, validator.getGraffiti(), Optional.empty());
     } else {
       return validatorApiChannel.createUnsignedBlock(
-          slot, randaoReveal, validator.getGraffiti(), useBlindedBlock);
+          slot, randaoReveal, validator.getGraffiti(), Optional.of(useBlindedBlock));
     }
   }
 
