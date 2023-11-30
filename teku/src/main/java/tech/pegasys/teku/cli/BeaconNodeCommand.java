@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletionException;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -339,16 +338,22 @@ public class BeaconNodeCommand implements Callable<Integer> {
       final TekuConfiguration tekuConfig = tekuConfiguration();
       startAction.start(tekuConfig, false);
       return 0;
-    } catch (InvalidConfigurationException | DatabaseStorageException ex) {
-      reportUserError(ex);
-    } catch (CompletionException e) {
-      ExceptionUtil.<Throwable>getCause(e, InvalidConfigurationException.class)
-          .or(() -> ExceptionUtil.getCause(e, DatabaseStorageException.class))
-          .ifPresentOrElse(this::reportUserError, () -> reportUnexpectedError(e));
-    } catch (Throwable t) {
-      reportUnexpectedError(t);
+    } catch (final Throwable t) {
+      return handleExceptionAndReturnExitCode(t);
     }
-    return 1;
+  }
+
+  public int handleExceptionAndReturnExitCode(final Throwable e) {
+    final Optional<Throwable> maybeUserErrorException =
+        ExceptionUtil.<Throwable>getCause(e, InvalidConfigurationException.class)
+            .or(() -> ExceptionUtil.getCause(e, DatabaseStorageException.class));
+    if (maybeUserErrorException.isPresent()) {
+      reportUserError(maybeUserErrorException.get());
+      return 2;
+    } else {
+      reportUnexpectedError(e);
+      return 1;
+    }
   }
 
   public void reportUnexpectedError(final Throwable t) {
