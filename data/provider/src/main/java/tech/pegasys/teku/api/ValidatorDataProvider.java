@@ -110,6 +110,7 @@ public class ValidatorDataProvider {
     return combinedChainDataClient.isStoreAvailable();
   }
 
+  @Deprecated
   public SafeFuture<Optional<BlockContainer>> getUnsignedBeaconBlockAtSlot(
       final UInt64 slot,
       final BLSSignature randao,
