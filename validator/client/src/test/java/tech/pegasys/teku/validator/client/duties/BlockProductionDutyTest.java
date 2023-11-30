@@ -420,9 +420,18 @@ class BlockProductionDutyTest {
                     UInt64.valueOf(102400),
                     dataStructureUtil.randomBytes32(),
                     dataStructureUtil.randomUInt64())));
-    assertThat(BlockProductionDuty.getBlockSummary(block))
-        .contains(
-            "102400 (10%) gas, EL block:  499db7404cbff78670f0209f1932346fef68d985cb55a8d27472742bdf54d379 (4661716390776343276)");
+    assertThat(duty.getBlockSummary(block))
+        .containsExactly(
+            "102400 (10%) gas, EL block: 499db7404cbff78670f0209f1932346fef68d985cb55a8d27472742bdf54d379 (4661716390776343276)");
+  }
+
+  @Test
+  public void denebBlockSummary() {
+    final BeaconBlockBody block = dataStructureUtil.randomBeaconBlockBody(denebSlot);
+    assertThat(duty.getBlockSummary(block))
+        .containsExactly(
+            "Blobs: 1",
+            "4483248126065046120 (0%) gas, EL block: b736203ee72088edaf7eb5c7839744f5b1be69f748eea8fea77740914415c5b4 (4479943159631677864)");
   }
 
   @Test
