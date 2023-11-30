@@ -86,6 +86,7 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -786,10 +787,12 @@ public class TekuNode extends Node {
     public static final String DEFAULT_NETWORK_NAME = "swift";
     public static final String EE_JWT_SECRET_FILE_KEY = "ee-jwt-secret-file";
     private static final String INITIAL_STATE_FILE = "/state.ssz";
+    private static final String TRUSTED_SETUP_FILE = "/trusted-setup.txt";
 
     private Optional<URL> maybeNetworkYaml = Optional.empty();
     private Optional<URL> maybeJwtFile = Optional.empty();
     private Optional<InitialStateData> maybeInitialState = Optional.empty();
+    private Optional<URL> maybeTrustedSetup = Optional.empty();
 
     private final PrivKey privateKey = KeyKt.generateKeyPair(KeyType.SECP256K1).component1();
     private final PeerId peerId = PeerId.fromPubKey(privateKey.publicKey());
@@ -931,6 +934,16 @@ public class TekuNode extends Node {
       return this;
     }
 
+    public Config withDenebEpoch(final UInt64 denebForkEpoch) {
+      configMap.put("Xnetwork-deneb-fork-epoch", denebForkEpoch.toString());
+      specConfigModifier =
+          specConfigModifier.andThen(
+              specConfigBuilder ->
+                  specConfigBuilder.denebBuilder(
+                      denebBuilder -> denebBuilder.denebForkEpoch(denebForkEpoch)));
+      return this;
+    }
+
     public Config withTotalTerminalDifficulty(final long totalTerminalDifficulty) {
       return withTotalTerminalDifficulty(UInt256.valueOf(totalTerminalDifficulty));
     }
@@ -951,6 +964,19 @@ public class TekuNode extends Node {
     public Config withInitialState(final InitialStateData initialState) {
       configMap.put("initial-state", INITIAL_STATE_FILE);
       this.maybeInitialState = Optional.of(initialState);
+      return this;
+    }
+
+    public Config withTrustedSetup(final URL trustedSetup) {
+      configMap.put("Xtrusted-setup", TRUSTED_SETUP_FILE);
+      this.maybeTrustedSetup = Optional.of(trustedSetup);
+      return this;
+    }
+
+    public Config withTrustedSetupFromClasspath(final String trustedSetup) {
+      configMap.put("Xtrusted-setup", TRUSTED_SETUP_FILE);
+      final URL trustedSetupResource = Eth2NetworkConfiguration.class.getResource(trustedSetup);
+      this.maybeTrustedSetup = Optional.of(trustedSetupResource);
       return this;
     }
 
@@ -1032,6 +1058,9 @@ public class TekuNode extends Node {
         final File initialStateFile =
             copyToTmpFile(initialStateData.writeToTempFile().toURI().toURL());
         configFiles.put(initialStateFile, INITIAL_STATE_FILE);
+      }
+      if (maybeTrustedSetup.isPresent()) {
+        configFiles.put(copyToTmpFile(maybeTrustedSetup.get()), TRUSTED_SETUP_FILE);
       }
 
       final File privateKeyFile = File.createTempFile("private-key", ".txt");
