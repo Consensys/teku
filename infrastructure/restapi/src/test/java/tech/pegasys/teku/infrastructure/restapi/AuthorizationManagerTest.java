@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.infrastructure.restapi;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -29,6 +30,7 @@ import java.nio.file.Path;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 public class AuthorizationManagerTest {
   private static final String PASS = "secure";
@@ -83,31 +85,6 @@ public class AuthorizationManagerTest {
   }
 
   @Test
-  void shouldDenyAccessIfServerBearerMissing(@TempDir final Path tempDir) throws Exception {
-    when(context.method()).thenReturn(HandlerType.GET);
-    when(context.matchedPath()).thenReturn("/aPath");
-    when(context.header("Authorization")).thenReturn(null);
-    AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
-    manager.manage(handler, context, roles);
-    verify(handler, times(0)).handle(context);
-    verify(context).status(401);
-    verify(context).json(any());
-  }
-
-  @Test
-  void shouldDenyAccessIfServerBearerEmpty(@TempDir final Path tempDir) throws Exception {
-    Files.createFile(tempDir.resolve("passwd"));
-    when(context.method()).thenReturn(HandlerType.GET);
-    when(context.matchedPath()).thenReturn("/aPath");
-    when(context.header("Authorization")).thenReturn(null);
-    AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
-    manager.manage(handler, context, roles);
-    verify(handler, times(0)).handle(context);
-    verify(context).status(401);
-    verify(context).json(any());
-  }
-
-  @Test
   void shouldDenyAccessIfHeaderIsNotBearer(@TempDir final Path tempDir) throws Exception {
     setupPasswordFile(tempDir);
     when(context.method()).thenReturn(HandlerType.GET);
@@ -131,6 +108,55 @@ public class AuthorizationManagerTest {
     verify(handler, times(0)).handle(context);
     verify(context).status(401);
     verify(context).json(any());
+  }
+
+  @Test
+  public void createAuthorizationManagerShouldFailWhenPasswordFileDoesNotExist() {
+    final Path directory = Path.of("/foo/bar");
+
+    assertThatThrownBy(() -> new AuthorizationManager(directory))
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessageContaining(
+            "password file %s does not exist", directory.toFile().getAbsolutePath());
+  }
+
+  @Test
+  public void createAuthorizationManagerShouldFailWhenCannotReadPasswordFile(
+      @TempDir final Path tempDir) throws IOException {
+    final Path unreadableFilePath = Files.createFile(tempDir.resolve("unreadable_file"));
+
+    if (!unreadableFilePath.toFile().setReadable(false)) {
+      // If the underlying OS does not support setting file permissions we ignore the check on the
+      // error message
+      assertThatThrownBy(() -> new AuthorizationManager(unreadableFilePath))
+          .isInstanceOf(InvalidConfigurationException.class);
+    } else {
+      assertThatThrownBy(() -> new AuthorizationManager(unreadableFilePath))
+          .isInstanceOf(InvalidConfigurationException.class)
+          .hasMessageContaining(
+              "cannot read password file %s", unreadableFilePath.toFile().getAbsolutePath());
+    }
+  }
+
+  @Test
+  public void createAuthorizationManagerShouldFailWhenPasswordFileIsADirectory(
+      @TempDir final Path tempDir) throws IOException {
+    final Path directory = Files.createDirectories(tempDir);
+
+    assertThatThrownBy(() -> new AuthorizationManager(directory))
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessageContaining(
+            "password file %s is a directory", directory.toFile().getAbsolutePath());
+  }
+
+  @Test
+  public void createAuthorizationManagerShouldFailWhenPasswordFileIsEmpty(
+      @TempDir final Path tempDir) throws IOException {
+    final Path directory = Files.writeString(tempDir.resolve("passwd"), "");
+
+    assertThatThrownBy(() -> new AuthorizationManager(directory))
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessageContaining("password file %s is empty", directory.toFile().getAbsolutePath());
   }
 
   private void setupPasswordFile(final Path tempDir) throws IOException {
