@@ -204,7 +204,7 @@ public abstract class AbstractBlockFactoryTest {
     final BlockContainer blockContainer =
         safeJoin(
             blockFactory.createUnsignedBlock(
-                blockSlotState, newSlot, randaoReveal, Optional.empty(), blinded));
+                blockSlotState, newSlot, randaoReveal, Optional.empty(), Optional.of(blinded)));
 
     final BeaconBlock block = blockContainer.getBlock();
 

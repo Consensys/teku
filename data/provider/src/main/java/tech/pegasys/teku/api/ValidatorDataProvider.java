@@ -116,14 +116,14 @@ public class ValidatorDataProvider {
       final Optional<Bytes32> graffiti,
       final boolean isBlinded) {
     checkBlockProducingParameters(slot, randao);
-    return validatorApiChannel.createUnsignedBlock(slot, randao, graffiti, isBlinded);
+    return validatorApiChannel.createUnsignedBlock(slot, randao, graffiti, Optional.of(isBlinded));
   }
 
   public SafeFuture<Optional<BlockContainerAndMetaData<BlockContainer>>> produceBlock(
       final UInt64 slot, final BLSSignature randao, final Optional<Bytes32> graffiti) {
     checkBlockProducingParameters(slot, randao);
     return validatorApiChannel
-        .createUnsignedBlock(slot, randao, graffiti)
+        .createUnsignedBlock(slot, randao, graffiti, Optional.empty())
         .thenCompose(this::lookUpBlockValues);
   }
 

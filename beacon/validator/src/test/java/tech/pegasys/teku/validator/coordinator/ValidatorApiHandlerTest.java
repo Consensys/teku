@@ -481,7 +481,7 @@ class ValidatorApiHandlerTest {
     nodeIsSyncing();
     final SafeFuture<Optional<BlockContainer>> result =
         validatorApiHandler.createUnsignedBlock(
-            ONE, dataStructureUtil.randomSignature(), Optional.empty(), false);
+            ONE, dataStructureUtil.randomSignature(), Optional.empty(), Optional.of(false));
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -498,7 +498,7 @@ class ValidatorApiHandlerTest {
 
     final SafeFuture<Optional<BlockContainer>> result =
         validatorApiHandler.createUnsignedBlock(
-            newSlot, dataStructureUtil.randomSignature(), Optional.empty(), false);
+            newSlot, dataStructureUtil.randomSignature(), Optional.empty(), Optional.of(false));
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -515,14 +515,16 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getStateAtSlotExact(newSlot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
     when(blockFactory.createUnsignedBlock(
-            blockSlotState, newSlot, randaoReveal, Optional.empty(), false))
+            blockSlotState, newSlot, randaoReveal, Optional.empty(), Optional.of(false)))
         .thenReturn(SafeFuture.completedFuture(createdBlock));
 
     final SafeFuture<Optional<BlockContainer>> result =
-        validatorApiHandler.createUnsignedBlock(newSlot, randaoReveal, Optional.empty(), false);
+        validatorApiHandler.createUnsignedBlock(
+            newSlot, randaoReveal, Optional.empty(), Optional.of(false));
 
     verify(blockFactory)
-        .createUnsignedBlock(blockSlotState, newSlot, randaoReveal, Optional.empty(), false);
+        .createUnsignedBlock(
+            blockSlotState, newSlot, randaoReveal, Optional.empty(), Optional.of(false));
     assertThat(result).isCompletedWithValue(Optional.of(createdBlock));
   }
 
