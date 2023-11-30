@@ -66,6 +66,7 @@ import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.kzg.KZGProof;
@@ -186,6 +187,7 @@ class ValidatorApiHandlerTest {
         .thenReturn(ValidatorDutyMetricUtils.createValidatorDutyMetric(new StubMetricsSystem()));
     this.validatorApiHandler =
         new ValidatorApiHandler(
+            StubTimeProvider.withTimeInMillis(0),
             chainDataProvider,
             nodeDataProvider,
             chainDataClient,
@@ -206,10 +208,11 @@ class ValidatorApiHandlerTest {
             proposersDataManager,
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
-            syncCommitteeSubscriptionManager);
+            syncCommitteeSubscriptionManager,
+            false);
 
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    when(forkChoiceTrigger.prepareForBlockProduction(any())).thenReturn(SafeFuture.COMPLETE);
+    when(forkChoiceTrigger.prepareForBlockProduction(any(), any())).thenReturn(SafeFuture.COMPLETE);
     when(chainDataClient.isOptimisticBlock(any())).thenReturn(false);
     doAnswer(invocation -> SafeFuture.completedFuture(invocation.getArgument(0)))
         .when(blockFactory)
@@ -439,6 +442,7 @@ class ValidatorApiHandlerTest {
     final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(EPOCH);
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
+            StubTimeProvider.withTimeInMillis(0),
             chainDataProvider,
             nodeDataProvider,
             chainDataClient,
@@ -459,7 +463,8 @@ class ValidatorApiHandlerTest {
             proposersDataManager,
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
-            syncCommitteeSubscriptionManager);
+            syncCommitteeSubscriptionManager,
+            false);
     // Best state is still in Phase0
     final BeaconState state =
         dataStructureUtil.stateBuilderPhase0().slot(previousEpochStartSlot.minus(1)).build();
@@ -515,7 +520,12 @@ class ValidatorApiHandlerTest {
     when(chainDataClient.getStateAtSlotExact(newSlot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
     when(blockFactory.createUnsignedBlock(
-            blockSlotState, newSlot, randaoReveal, Optional.empty(), Optional.of(false)))
+            blockSlotState,
+            newSlot,
+            randaoReveal,
+            Optional.empty(),
+            Optional.of(false),
+            Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(createdBlock));
 
     final SafeFuture<Optional<BlockContainer>> result =
@@ -524,7 +534,12 @@ class ValidatorApiHandlerTest {
 
     verify(blockFactory)
         .createUnsignedBlock(
-            blockSlotState, newSlot, randaoReveal, Optional.empty(), Optional.of(false));
+            blockSlotState,
+            newSlot,
+            randaoReveal,
+            Optional.empty(),
+            Optional.of(false),
+            Optional.empty());
     assertThat(result).isCompletedWithValue(Optional.of(createdBlock));
   }
 
@@ -1248,6 +1263,7 @@ class ValidatorApiHandlerTest {
     this.dataStructureUtil = new DataStructureUtil(spec);
     this.validatorApiHandler =
         new ValidatorApiHandler(
+            StubTimeProvider.withTimeInMillis(0),
             chainDataProvider,
             nodeDataProvider,
             chainDataClient,
@@ -1268,7 +1284,8 @@ class ValidatorApiHandlerTest {
             proposersDataManager,
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
-            syncCommitteeSubscriptionManager);
+            syncCommitteeSubscriptionManager,
+            false);
 
     // BlobSidecar builder
     doAnswer(

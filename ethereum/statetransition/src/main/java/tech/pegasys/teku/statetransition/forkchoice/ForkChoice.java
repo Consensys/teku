@@ -28,6 +28,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -841,7 +842,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             });
   }
 
-  SafeFuture<Void> prepareForBlockProduction(final UInt64 slot) {
+  SafeFuture<Void> prepareForBlockProduction(
+      final UInt64 slot, final Optional<BlockProductionPerformance> blockProductionPerformance) {
     final UInt64 slotStartTimeMillis =
         spec.getSlotStartTimeMillis(slot, recentChainData.getGenesisTimeMillis());
     final UInt64 currentTime = recentChainData.getStore().getTimeInMillis();
@@ -858,9 +860,22 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
 
     return SafeFuture.allOf(
-            tickProcessor.onTick(slotStartTimeMillis), applyDeferredAttestations(slot))
+            tickProcessor
+                .onTick(slotStartTimeMillis)
+                .thenPeek(
+                    __ ->
+                        blockProductionPerformance.ifPresent(
+                            BlockProductionPerformance::prepareOnTick)),
+            applyDeferredAttestations(slot)
+                .thenPeek(
+                    __ ->
+                        blockProductionPerformance.ifPresent(
+                            BlockProductionPerformance::prepareApplyDeferredAttestations)))
         .thenCompose(__ -> processHead(Optional.of(slot), true))
-        .toVoid();
+        .thenRun(
+            () ->
+                blockProductionPerformance.ifPresent(
+                    BlockProductionPerformance::prepareProcessHead));
   }
 
   private SafeFuture<Void> applyDeferredAttestations(final UInt64 slot) {

@@ -24,6 +24,7 @@ import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -107,7 +108,8 @@ public class BlockOperationSelectorFactory {
       final Bytes32 parentRoot,
       final BeaconState blockSlotState,
       final BLSSignature randaoReveal,
-      final Optional<Bytes32> optionalGraffiti) {
+      final Optional<Bytes32> optionalGraffiti,
+      final Optional<BlockProductionPerformance> blockProductionPerformance) {
     return bodyBuilder -> {
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
 
@@ -168,8 +170,11 @@ public class BlockOperationSelectorFactory {
       if (bodyBuilder.supportsExecutionPayload()) {
         final SchemaDefinitions schemaDefinitions =
             spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions();
-        setExecutionData(bodyBuilder, schemaDefinitions, parentRoot, blockSlotState);
+        setExecutionData(
+            bodyBuilder, schemaDefinitions, parentRoot, blockSlotState, blockProductionPerformance);
       }
+
+      blockProductionPerformance.ifPresent(BlockProductionPerformance::beaconBlockPrepared);
     };
   }
 
@@ -177,7 +182,8 @@ public class BlockOperationSelectorFactory {
       final BeaconBlockBodyBuilder bodyBuilder,
       final SchemaDefinitions schemaDefinitions,
       final Bytes32 parentRoot,
-      final BeaconState blockSlotState) {
+      final BeaconState blockSlotState,
+      final Optional<BlockProductionPerformance> blockProductionPerformance) {
     final SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContextFuture =
         forkChoiceNotifier.getPayloadId(parentRoot, blockSlotState.getSlot());
 
@@ -185,16 +191,24 @@ public class BlockOperationSelectorFactory {
     if (!bodyBuilder.supportsKzgCommitments()) {
       if (bodyBuilder.isBlinded()) {
         builderSetPayloadHeader(
-            bodyBuilder, schemaDefinitions, blockSlotState, executionPayloadContextFuture);
+            bodyBuilder,
+            schemaDefinitions,
+            blockSlotState,
+            executionPayloadContextFuture,
+            blockProductionPerformance);
       } else {
         builderSetPayload(
-            bodyBuilder, schemaDefinitions, blockSlotState, executionPayloadContextFuture);
+            bodyBuilder,
+            schemaDefinitions,
+            blockSlotState,
+            executionPayloadContextFuture,
+            blockProductionPerformance);
       }
       return;
     }
 
     // Post-Deneb: Execution Payload / Execution Payload Header + KZG Commitments
-    SafeFuture<ExecutionPayloadResult> executionPayloadResultFuture =
+    final SafeFuture<ExecutionPayloadResult> executionPayloadResultFuture =
         executionPayloadContextFuture.thenApply(
             executionPayloadContextOptional ->
                 executionLayerBlockProductionManager.initiateBlockAndBlobsProduction(
@@ -205,7 +219,8 @@ public class BlockOperationSelectorFactory {
                             new IllegalStateException(
                                 "Cannot provide kzg commitments before The Merge")),
                     blockSlotState,
-                    bodyBuilder.isBlinded()));
+                    bodyBuilder.isBlinded(),
+                    blockProductionPerformance));
     builderSetPayloadPostMerge(bodyBuilder, executionPayloadResultFuture);
     builderSetKzgCommitments(bodyBuilder, schemaDefinitions, executionPayloadResultFuture);
   }
@@ -233,7 +248,8 @@ public class BlockOperationSelectorFactory {
       final BeaconBlockBodyBuilder bodyBuilder,
       final SchemaDefinitions schemaDefinitions,
       final BeaconState blockSlotState,
-      final SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContextFuture) {
+      final SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContextFuture,
+      final Optional<BlockProductionPerformance> blockProductionPerformance) {
     final Supplier<SafeFuture<ExecutionPayload>> preMergePayload =
         () ->
             SafeFuture.completedFuture(
@@ -248,7 +264,11 @@ public class BlockOperationSelectorFactory {
                     .map(
                         payloadContext ->
                             executionLayerBlockProductionManager
-                                .initiateBlockProduction(payloadContext, blockSlotState, false)
+                                .initiateBlockProduction(
+                                    payloadContext,
+                                    blockSlotState,
+                                    false,
+                                    blockProductionPerformance)
                                 .getExecutionPayloadFuture()
                                 .orElseThrow())
                     .orElseGet(preMergePayload)));
@@ -258,7 +278,8 @@ public class BlockOperationSelectorFactory {
       final BeaconBlockBodyBuilder bodyBuilder,
       final SchemaDefinitions schemaDefinitions,
       final BeaconState blockSlotState,
-      final SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContextFuture) {
+      final SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContextFuture,
+      final Optional<BlockProductionPerformance> blockProductionPerformance) {
     final Supplier<SafeFuture<ExecutionPayloadHeader>> preMergePayloadHeader =
         () ->
             SafeFuture.completedFuture(
@@ -273,7 +294,11 @@ public class BlockOperationSelectorFactory {
                 return preMergePayloadHeader.get();
               } else {
                 return executionLayerBlockProductionManager
-                    .initiateBlockProduction(executionPayloadContext.get(), blockSlotState, true)
+                    .initiateBlockProduction(
+                        executionPayloadContext.get(),
+                        blockSlotState,
+                        true,
+                        blockProductionPerformance)
                     .getHeaderWithFallbackDataFuture()
                     .orElseThrow()
                     .thenApply(HeaderWithFallbackData::getExecutionPayloadHeader);

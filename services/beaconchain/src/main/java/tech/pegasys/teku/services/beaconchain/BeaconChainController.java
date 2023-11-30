@@ -884,6 +884,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
+            timeProvider,
             new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculator),
             dataProvider.getNodeDataProvider(),
             combinedChainDataClient,
@@ -904,7 +905,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             proposersDataManager,
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
-            syncCommitteeSubscriptionManager);
+            syncCommitteeSubscriptionManager,
+            beaconConfig.getMetricsConfig().isBlockProductionPerformanceEnabled());
     eventChannels
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
         .subscribeMultithreaded(

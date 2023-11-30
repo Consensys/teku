@@ -108,7 +108,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
             .createFromExecutionPayload(payload);
 
     final ExecutionPayloadResult executionPayloadResult =
-        blockProductionManager.initiateBlockProduction(executionPayloadContext, state, true);
+        blockProductionManager.initiateBlockProduction(
+            executionPayloadContext, state, true, Optional.empty());
     assertThat(executionPayloadResult.getExecutionPayloadContext())
         .isEqualTo(executionPayloadContext);
     assertThat(executionPayloadResult.getExecutionPayloadFuture()).isEmpty();
@@ -161,7 +162,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
     final HeaderWithFallbackData expectedResult = HeaderWithFallbackData.create(header);
 
     final ExecutionPayloadResult executionPayloadResult =
-        blockProductionManager.initiateBlockProduction(executionPayloadContext, state, true);
+        blockProductionManager.initiateBlockProduction(
+            executionPayloadContext, state, true, Optional.empty());
     assertThat(executionPayloadResult.getExecutionPayloadContext())
         .isEqualTo(executionPayloadContext);
     assertThat(executionPayloadResult.getExecutionPayloadFuture()).isEmpty();
@@ -205,7 +207,8 @@ class ExecutionLayerBlockProductionManagerImplTest {
         prepareEngineGetPayloadResponse(executionPayloadContext, executionPayloadValue, slot);
 
     final ExecutionPayloadResult executionPayloadResult =
-        blockProductionManager.initiateBlockProduction(executionPayloadContext, state, false);
+        blockProductionManager.initiateBlockProduction(
+            executionPayloadContext, state, false, Optional.empty());
     assertThat(executionPayloadResult.getExecutionPayloadContext())
         .isEqualTo(executionPayloadContext);
     assertThat(executionPayloadResult.getHeaderWithFallbackDataFuture()).isEmpty();
@@ -256,7 +259,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
     final ExecutionPayloadResult executionPayloadResult =
         blockProductionManager.initiateBlockAndBlobsProduction(
-            executionPayloadContext, state, true);
+            executionPayloadContext, state, true, Optional.empty());
     assertThat(executionPayloadResult.getExecutionPayloadContext())
         .isEqualTo(executionPayloadContext);
     assertThat(executionPayloadResult.getExecutionPayloadFuture()).isEmpty();
@@ -310,7 +313,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
     final ExecutionPayloadResult executionPayloadResult =
         blockProductionManager.initiateBlockAndBlobsProduction(
-            executionPayloadContext, state, true);
+            executionPayloadContext, state, true, Optional.empty());
     assertThat(executionPayloadResult.getExecutionPayloadContext())
         .isEqualTo(executionPayloadContext);
     assertThat(executionPayloadResult.getExecutionPayloadFuture()).isEmpty();
@@ -356,7 +359,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
     final ExecutionPayloadResult executionPayloadResult =
         blockProductionManager.initiateBlockAndBlobsProduction(
-            executionPayloadContext, state, false);
+            executionPayloadContext, state, false, Optional.empty());
     assertThat(executionPayloadResult.getExecutionPayloadContext())
         .isEqualTo(executionPayloadContext);
     assertThat(executionPayloadResult.getHeaderWithFallbackDataFuture()).isEmpty();

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.executionlayer;
 
 import java.util.Optional;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -40,7 +41,8 @@ public interface ExecutionLayerBlockProductionManager {
         public ExecutionPayloadResult initiateBlockProduction(
             final ExecutionPayloadContext context,
             final BeaconState blockSlotState,
-            final boolean isBlind) {
+            final boolean isBlind,
+            final Optional<BlockProductionPerformance> blockProductionPerformance) {
           return null;
         }
 
@@ -48,7 +50,8 @@ public interface ExecutionLayerBlockProductionManager {
         public ExecutionPayloadResult initiateBlockAndBlobsProduction(
             final ExecutionPayloadContext context,
             final BeaconState blockSlotState,
-            final boolean isBlind) {
+            final boolean isBlind,
+            final Optional<BlockProductionPerformance> blockProductionPerformance) {
           return null;
         }
 
@@ -70,10 +73,14 @@ public interface ExecutionLayerBlockProductionManager {
    * @param context Payload context
    * @param blockSlotState pre state
    * @param isBlind Block type. Use blind for builder building
+   * @param blockProductionPerformance Block production performance tracker
    * @return Container with filled Payload or Payload Header futures
    */
   ExecutionPayloadResult initiateBlockProduction(
-      ExecutionPayloadContext context, BeaconState blockSlotState, boolean isBlind);
+      ExecutionPayloadContext context,
+      BeaconState blockSlotState,
+      boolean isBlind,
+      Optional<BlockProductionPerformance> blockProductionPerformance);
 
   /**
    * Initiates block and sidecar blobs production flow with execution client or builder. Use since
@@ -82,15 +89,19 @@ public interface ExecutionLayerBlockProductionManager {
    * @param context Payload context
    * @param blockSlotState pre state
    * @param isBlind Block type. Use blind for builder building
+   * @param blockProductionPerformance Block production performance tracker
    * @return Container with filled Payload or Payload Header futures
    */
   ExecutionPayloadResult initiateBlockAndBlobsProduction(
-      ExecutionPayloadContext context, BeaconState blockSlotState, boolean isBlind);
+      ExecutionPayloadContext context,
+      BeaconState blockSlotState,
+      boolean isBlind,
+      Optional<BlockProductionPerformance> blockProductionPerformance);
 
   /**
-   * Required {@link #initiateBlockProduction(ExecutionPayloadContext, BeaconState, boolean)} or
-   * {@link #initiateBlockAndBlobsProduction(ExecutionPayloadContext, BeaconState, boolean)} to have
-   * been called first in order for a value to be present
+   * Required {@link #initiateBlockProduction(ExecutionPayloadContext, BeaconState, boolean,
+   * Optional)} or {@link #initiateBlockAndBlobsProduction(ExecutionPayloadContext, BeaconState,
+   * boolean, Optional)} to have been called first in order for a value to be present
    */
   Optional<ExecutionPayloadResult> getCachedPayloadResult(UInt64 slot);
 

@@ -31,6 +31,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
@@ -321,7 +322,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   public SafeFuture<HeaderWithFallbackData> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
-      final SafeFuture<UInt256> payloadValueResult) {
+      final SafeFuture<UInt256> payloadValueResult,
+      final Optional<BlockProductionPerformance> blockProductionPerformance) {
     final UInt64 slot = state.getSlot();
     LOG.info(
         "getPayloadHeader: payloadId: {} slot: {} ... delegating to getPayload ...",
@@ -331,6 +333,9 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
 
     return engineGetPayload(executionPayloadContext, slot)
+        .thenPeek(
+            __ ->
+                blockProductionPerformance.ifPresent(BlockProductionPerformance::engineGetPayload))
         .thenApply(
             getPayloadResponse -> {
               final ExecutionPayload executionPayload = getPayloadResponse.getExecutionPayload();
@@ -362,7 +367,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                                 .createFromBlobsBundle(blobsBundle);
                           });
               return HeaderWithFallbackData.create(payloadHeader, blobKzgCommitments);
-            });
+            })
+        .thenPeek(
+            __ ->
+                blockProductionPerformance.ifPresent(BlockProductionPerformance::builderGetHeader));
   }
 
   @Override

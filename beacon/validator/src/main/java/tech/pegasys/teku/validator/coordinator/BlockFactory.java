@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -32,7 +33,8 @@ public interface BlockFactory {
       UInt64 newSlot,
       BLSSignature randaoReveal,
       Optional<Bytes32> optionalGraffiti,
-      final Optional<Boolean> blinded);
+      final Optional<Boolean> blinded,
+      final Optional<BlockProductionPerformance> blockProductionPerformance);
 
   SafeFuture<SignedBeaconBlock> unblindSignedBlockIfBlinded(SignedBeaconBlock maybeBlindedBlock);
 

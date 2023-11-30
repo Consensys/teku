@@ -37,6 +37,7 @@ import tech.pegasys.teku.ethereum.executionclient.rest.RestBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestClient;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JClient;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JExecutionEngineClient;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -242,9 +243,10 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   public SafeFuture<HeaderWithFallbackData> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
-      final SafeFuture<UInt256> payloadValueResult) {
+      final SafeFuture<UInt256> payloadValueResult,
+      final Optional<BlockProductionPerformance> blockProductionPerformance) {
     return executionBuilderModule.builderGetHeader(
-        executionPayloadContext, state, payloadValueResult);
+        executionPayloadContext, state, payloadValueResult, blockProductionPerformance);
   }
 
   @VisibleForTesting

@@ -19,6 +19,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -49,10 +50,10 @@ class ForkChoiceTriggerTest {
   @Test
   void shouldRunForkChoicePriorToBlockProduction() {
     final SafeFuture<Void> prepareFuture = new SafeFuture<>();
-    when(forkChoice.prepareForBlockProduction(any())).thenReturn(prepareFuture);
-    final SafeFuture<Void> result = trigger.prepareForBlockProduction(UInt64.ONE);
+    when(forkChoice.prepareForBlockProduction(any(), any())).thenReturn(prepareFuture);
+    final SafeFuture<Void> result = trigger.prepareForBlockProduction(UInt64.ONE, Optional.empty());
     assertThatSafeFuture(result).isNotDone();
-    verify(forkChoice).prepareForBlockProduction(UInt64.ONE);
+    verify(forkChoice).prepareForBlockProduction(UInt64.ONE, Optional.empty());
 
     prepareFuture.complete(null);
     assertThatSafeFuture(result).isCompleted();

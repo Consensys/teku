@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.statetransition.forkchoice;
 
+import java.util.Optional;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -34,8 +36,9 @@ public class ForkChoiceTrigger {
     forkChoiceRatchet.ensureForkChoiceCompleteForSlot(nodeSlot).join();
   }
 
-  public SafeFuture<Void> prepareForBlockProduction(final UInt64 slot) {
-    return forkChoice.prepareForBlockProduction(slot);
+  public SafeFuture<Void> prepareForBlockProduction(
+      final UInt64 slot, final Optional<BlockProductionPerformance> blockProductionPerformance) {
+    return forkChoice.prepareForBlockProduction(slot, blockProductionPerformance);
   }
 
   public SafeFuture<Void> prepareForAttestationProduction(final UInt64 slot) {

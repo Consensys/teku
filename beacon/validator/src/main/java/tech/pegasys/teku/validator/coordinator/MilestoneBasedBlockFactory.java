@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -65,11 +66,18 @@ public class MilestoneBasedBlockFactory implements BlockFactory {
       final UInt64 newSlot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti,
-      final Optional<Boolean> blinded) {
+      final Optional<Boolean> blinded,
+      final Optional<BlockProductionPerformance> blockProductionPerformance) {
     final SpecMilestone milestone = getMilestone(newSlot);
     return registeredFactories
         .get(milestone)
-        .createUnsignedBlock(blockSlotState, newSlot, randaoReveal, optionalGraffiti, blinded);
+        .createUnsignedBlock(
+            blockSlotState,
+            newSlot,
+            randaoReveal,
+            optionalGraffiti,
+            blinded,
+            blockProductionPerformance);
   }
 
   @Override

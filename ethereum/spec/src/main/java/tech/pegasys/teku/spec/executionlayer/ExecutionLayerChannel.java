@@ -17,6 +17,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -86,7 +87,8 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         public SafeFuture<HeaderWithFallbackData> builderGetHeader(
             final ExecutionPayloadContext executionPayloadContext,
             final BeaconState state,
-            final SafeFuture<UInt256> payloadValueResult) {
+            final SafeFuture<UInt256> payloadValueResult,
+            final Optional<BlockProductionPerformance> blockProductionPerformance) {
           payloadValueResult.complete(null);
           return SafeFuture.completedFuture(null);
         }
@@ -107,7 +109,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
   /**
    * This is low level method, use {@link
    * ExecutionLayerBlockProductionManager#initiateBlockProduction(ExecutionPayloadContext,
-   * BeaconState, boolean)} instead
+   * BeaconState, boolean, Optional)} instead
    */
   SafeFuture<GetPayloadResponse> engineGetPayload(
       ExecutionPayloadContext executionPayloadContext, UInt64 slot);
@@ -127,7 +129,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
   /**
    * This is low level method, use {@link
    * ExecutionLayerBlockProductionManager#initiateBlockProduction(ExecutionPayloadContext,
-   * BeaconState, boolean)} instead
+   * BeaconState, boolean, Optional)} instead
    *
    * @param executionPayloadContext The execution payload context
    * @param state The beacon state
@@ -137,5 +139,6 @@ public interface ExecutionLayerChannel extends ChannelInterface {
   SafeFuture<HeaderWithFallbackData> builderGetHeader(
       ExecutionPayloadContext executionPayloadContext,
       BeaconState state,
-      SafeFuture<UInt256> payloadValueResult);
+      SafeFuture<UInt256> payloadValueResult,
+      Optional<BlockProductionPerformance> blockProductionPerformance);
 }

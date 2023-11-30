@@ -204,7 +204,12 @@ public abstract class AbstractBlockFactoryTest {
     final BlockContainer blockContainer =
         safeJoin(
             blockFactory.createUnsignedBlock(
-                blockSlotState, newSlot, randaoReveal, Optional.empty(), Optional.of(blinded)));
+                blockSlotState,
+                newSlot,
+                randaoReveal,
+                Optional.empty(),
+                Optional.of(blinded),
+                Optional.empty()));
 
     final BeaconBlock block = blockContainer.getBlock();
 
@@ -408,7 +413,7 @@ public abstract class AbstractBlockFactoryTest {
 
   private void setupExecutionLayerBlockAndBlobsProduction() {
     // pre Deneb
-    when(executionLayer.initiateBlockProduction(any(), any(), eq(false)))
+    when(executionLayer.initiateBlockProduction(any(), any(), eq(false), any()))
         .thenAnswer(
             args -> {
               final ExecutionPayloadResult executionPayloadResult =
@@ -421,7 +426,7 @@ public abstract class AbstractBlockFactoryTest {
               cachedExecutionPayloadResult = executionPayloadResult;
               return executionPayloadResult;
             });
-    when(executionLayer.initiateBlockProduction(any(), any(), eq(true)))
+    when(executionLayer.initiateBlockProduction(any(), any(), eq(true), any()))
         .thenAnswer(
             args -> {
               final ExecutionPayloadResult executionPayloadResult =
@@ -437,7 +442,7 @@ public abstract class AbstractBlockFactoryTest {
               return executionPayloadResult;
             });
     // post Deneb
-    when(executionLayer.initiateBlockAndBlobsProduction(any(), any(), eq(false)))
+    when(executionLayer.initiateBlockAndBlobsProduction(any(), any(), eq(false), any()))
         .thenAnswer(
             args -> {
               final ExecutionPayloadResult executionPayloadResult =
@@ -450,7 +455,7 @@ public abstract class AbstractBlockFactoryTest {
               cachedExecutionPayloadResult = executionPayloadResult;
               return executionPayloadResult;
             });
-    when(executionLayer.initiateBlockAndBlobsProduction(any(), any(), eq(true)))
+    when(executionLayer.initiateBlockAndBlobsProduction(any(), any(), eq(true), any()))
         .thenAnswer(
             args -> {
               final ExecutionPayloadResult executionPayloadResult =

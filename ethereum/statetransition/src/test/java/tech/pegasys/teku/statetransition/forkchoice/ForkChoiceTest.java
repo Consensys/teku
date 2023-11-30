@@ -1053,7 +1053,7 @@ class ForkChoiceTest {
     storageSystem.chainUpdater().setTimeMillis(newTime);
 
     assertThat(recentChainData.getCurrentSlot()).isEqualTo(Optional.of(ZERO));
-    assertThat(forkChoice.prepareForBlockProduction(ONE)).isCompleted();
+    assertThat(forkChoice.prepareForBlockProduction(ONE, Optional.empty())).isCompleted();
     assertThat(recentChainData.getCurrentSlot()).isEqualTo(Optional.of(ONE));
 
     verify(forkChoiceNotifier, times(1)).onForkChoiceUpdated(any(), eq(Optional.of(ONE)));
@@ -1067,7 +1067,7 @@ class ForkChoiceTest {
     storageSystem.chainUpdater().setTimeMillis(newTime);
 
     assertThat(recentChainData.getCurrentSlot()).isEqualTo(Optional.of(ZERO));
-    assertThat(forkChoice.prepareForBlockProduction(ONE)).isCompleted();
+    assertThat(forkChoice.prepareForBlockProduction(ONE, Optional.empty())).isCompleted();
     assertThat(recentChainData.getCurrentSlot()).isEqualTo(Optional.of(ZERO));
 
     verifyNoInteractions(forkChoiceNotifier);
