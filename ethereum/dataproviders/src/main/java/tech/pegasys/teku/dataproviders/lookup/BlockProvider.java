@@ -20,12 +20,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.locks.Lock;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
@@ -36,24 +34,6 @@ public interface BlockProvider {
 
   static BlockProvider fromDynamicMap(Supplier<Map<Bytes32, SignedBeaconBlock>> mapSupplier) {
     return (roots) -> fromMap(mapSupplier.get()).getBlocks(roots);
-  }
-
-  static BlockProvider fromMapWithLock(
-      final Map<Bytes32, SignedBeaconBlock> blockMap,
-      final AsyncRunner asyncRunner,
-      final Lock readLock) {
-    return (roots) ->
-        asyncRunner.runAsync(
-            () -> {
-              readLock.lock();
-              try {
-                return roots.stream()
-                    .filter(blockMap::containsKey)
-                    .collect(Collectors.toMap(Function.identity(), blockMap::get));
-              } finally {
-                readLock.unlock();
-              }
-            });
   }
 
   static BlockProvider fromMap(final Map<Bytes32, SignedBeaconBlock> blockMap) {
