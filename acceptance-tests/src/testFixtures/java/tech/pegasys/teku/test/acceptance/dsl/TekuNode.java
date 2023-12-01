@@ -61,6 +61,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
@@ -142,6 +143,21 @@ public class TekuNode extends Node {
   }
 
   public void start() throws Exception {
+    setUpStart();
+    container.start();
+  }
+
+  public void startWithFailure(final String expectedError) throws Exception {
+    setUpStart();
+    container.waitingFor(
+        new LogMessageWaitStrategy()
+            .withRegEx(".*Teku failed to start.*")
+            .withRegEx(".*" + expectedError + ".*")
+            .withStartupTimeout(Duration.ofSeconds(10)));
+    container.start();
+  }
+
+  private void setUpStart() throws Exception {
     assertThat(started).isFalse();
     LOG.debug("Start node {}", nodeAlias);
     started = true;
@@ -152,7 +168,6 @@ public class TekuNode extends Node {
             container.withCopyFileToContainer(
                 MountableFile.forHostPath(localFile.getAbsolutePath()), targetPath));
     config.getTarballsToCopy().forEach(this::copyContentsToWorkingDirectory);
-    container.start();
   }
 
   public void startEventListener(final EventType... eventTypes) {

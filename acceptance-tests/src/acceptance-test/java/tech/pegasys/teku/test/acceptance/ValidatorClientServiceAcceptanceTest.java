@@ -20,11 +20,9 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
 
   @Test
-  void shouldFail() throws Exception {
+  void shouldFailWithNoValidatorKeysWhenExitOptionEnabled() throws Exception {
     TekuNode beaconNode = createTekuNode(config -> config.withExitWhenNoValidatorKeysEnabled(true));
-    beaconNode.start();
-
-    beaconNode.waitForLogMessageContaining(
+    beaconNode.startWithFailure(
         "No loaded validators when --exit-when-no-validator-keys-enabled option is false");
   }
 }
