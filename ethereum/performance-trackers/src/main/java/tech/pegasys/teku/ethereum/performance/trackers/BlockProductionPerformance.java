@@ -20,7 +20,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BlockProductionPerformance {
   public static final String COMPLETE_LABEL = "complete";
-  public static final int LATE_EVENT_MS = 2_000;
+  public static final int LATE_EVENT_MS = 500;
   private final PerformanceTracker performanceTracker;
   private final UInt64 slot;
   private UInt64 slotTime = UInt64.ZERO;
