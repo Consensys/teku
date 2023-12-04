@@ -19,5 +19,6 @@ the [releases page](https://github.com/Consensys/teku/releases).
 - Added POST `/eth/v1/beacon/states/{state_id}/validators` beacon API.
 - Added POST `/eth/v1/beacon/states/{state_id}/validator_balances` beacon API.
 - Third party library updates.
+- Added `--exit-when-no-validator-keys-enabled` command line option.
 
 ### Bug Fixes
