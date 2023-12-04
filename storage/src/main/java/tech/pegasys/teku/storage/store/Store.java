@@ -417,7 +417,7 @@ class Store extends CacheableStore {
   }
 
   @Override
-  public UInt64 getTimeMillis() {
+  public UInt64 getTimeInMillis() {
     readLock.lock();
     try {
       return timeMillis;

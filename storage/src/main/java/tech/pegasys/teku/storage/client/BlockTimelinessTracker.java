@@ -15,10 +15,9 @@ package tech.pegasys.teku.storage.client;
 
 import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT;
 
-import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -31,32 +30,37 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 public class BlockTimelinessTracker {
   private static final Logger LOG = LogManager.getLogger();
   private final Map<Bytes32, Boolean> blockTimeliness;
-  private final TimeProvider timeProvider;
+  private final Supplier<TimeProvider> timeProviderSupplier;
   private final Spec spec;
   private final RecentChainData recentChainData;
 
-  private final Supplier<UInt64> genesisTimeSupplier;
-  private final Supplier<UInt64> genesisTimeMillisSupplier;
+  public BlockTimelinessTracker(final Spec spec, final RecentChainData recentChainData) {
+    this(spec, recentChainData, recentChainData::getStore);
+  }
 
   // implements is_timely from Consensus Spec
-  public BlockTimelinessTracker(
-      final Spec spec, final RecentChainData recentChainData, final TimeProvider timeProvider) {
+  BlockTimelinessTracker(
+      final Spec spec,
+      final RecentChainData recentChainData,
+      final Supplier<TimeProvider> timeProviderSupplier) {
     this.spec = spec;
     final int epochsForTimeliness =
         Math.max(spec.getGenesisSpecConfig().getReorgMaxEpochsSinceFinalization(), 3);
     this.blockTimeliness =
         LimitedMap.createSynchronizedNatural(
             spec.getGenesisSpec().getSlotsPerEpoch() * epochsForTimeliness);
-    this.timeProvider = timeProvider;
+    this.timeProviderSupplier = timeProviderSupplier;
     this.recentChainData = recentChainData;
-    this.genesisTimeSupplier = Suppliers.memoize(recentChainData::getGenesisTime);
-    this.genesisTimeMillisSupplier = Suppliers.memoize(recentChainData::getGenesisTimeMillis);
   }
 
   public void setBlockTimelinessFromArrivalTime(
       final SignedBeaconBlock block, final UInt64 arrivalTimeMillis) {
+    if (blockTimeliness.get(block.getRoot()) != null) {
+      return;
+    }
     final UInt64 computedSlot =
-        spec.getCurrentSlot(timeProvider.getTimeInSeconds(), genesisTimeSupplier.get());
+        spec.getCurrentSlot(
+            timeProviderSupplier.get().getTimeInSeconds(), recentChainData.getGenesisTime());
     final Bytes32 root = block.getRoot();
     if (computedSlot.isGreaterThan(block.getMessage().getSlot())) {
       LOG.debug(
@@ -72,7 +76,7 @@ public class BlockTimelinessTracker {
         .ifPresent(
             slot -> {
               final UInt64 slotStartTimeMillis =
-                  spec.getSlotStartTimeMillis(slot, genesisTimeMillisSupplier.get());
+                  spec.getSlotStartTimeMillis(slot, recentChainData.getGenesisTimeMillis());
               final int millisIntoSlot =
                   arrivalTimeMillis.minusMinZero(slotStartTimeMillis).intValue();
 
@@ -103,9 +107,9 @@ public class BlockTimelinessTracker {
   // then splitting into 6 segments is half-way to the attestation time.
   public boolean isProposingOnTime(final UInt64 slot) {
     final UInt64 slotStartTimeMillis =
-        spec.getSlotStartTimeMillis(slot, genesisTimeMillisSupplier.get());
+        spec.getSlotStartTimeMillis(slot, recentChainData.getGenesisTimeMillis());
     final UInt64 timelinessLimit = spec.getMillisPerSlot(slot).dividedBy(INTERVALS_PER_SLOT * 2);
-    final UInt64 currentTimeMillis = timeProvider.getTimeInMillis();
+    final UInt64 currentTimeMillis = timeProviderSupplier.get().getTimeInMillis();
     final boolean isTimely =
         currentTimeMillis.minusMinZero(slotStartTimeMillis).isLessThan(timelinessLimit);
     LOG.debug(

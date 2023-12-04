@@ -41,14 +41,13 @@ public class BlockFactoryPhase0 implements BlockFactory {
     this.operationSelector = operationSelector;
   }
 
-  @Deprecated
   @Override
   public SafeFuture<BlockContainer> createUnsignedBlock(
       final BeaconState blockSlotState,
       final UInt64 newSlot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti,
-      final boolean blinded) {
+      final Optional<Boolean> blinded) {
     checkArgument(
         blockSlotState.getSlot().equals(newSlot),
         "Block slot state for slot %s but should be for slot %s",
@@ -68,33 +67,6 @@ public class BlockFactoryPhase0 implements BlockFactory {
             operationSelector.createSelector(
                 parentRoot, blockSlotState, randaoReveal, optionalGraffiti),
             blinded)
-        .thenApply(BeaconBlockAndState::getBlock);
-  }
-
-  @Override
-  public SafeFuture<BlockContainer> createUnsignedBlock(
-      final BeaconState blockSlotState,
-      final UInt64 newSlot,
-      final BLSSignature randaoReveal,
-      final Optional<Bytes32> optionalGraffiti) {
-    checkArgument(
-        blockSlotState.getSlot().equals(newSlot),
-        "Block slot state for slot %s but should be for slot %s",
-        blockSlotState.getSlot(),
-        newSlot);
-
-    // Process empty slots up to the one before the new block slot
-    final UInt64 slotBeforeBlock = newSlot.minus(UInt64.ONE);
-
-    final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, slotBeforeBlock);
-
-    return spec.createNewUnsignedBlock(
-            newSlot,
-            spec.getBeaconProposerIndex(blockSlotState, newSlot),
-            blockSlotState,
-            parentRoot,
-            operationSelector.createSelector(
-                parentRoot, blockSlotState, randaoReveal, optionalGraffiti))
         .thenApply(BeaconBlockAndState::getBlock);
   }
 

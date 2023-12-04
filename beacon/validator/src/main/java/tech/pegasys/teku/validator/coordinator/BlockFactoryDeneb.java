@@ -41,37 +41,15 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
             spec.forMilestone(SpecMilestone.DENEB).getSchemaDefinitions());
   }
 
-  @Deprecated
   @Override
   public SafeFuture<BlockContainer> createUnsignedBlock(
       final BeaconState blockSlotState,
       final UInt64 newSlot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti,
-      final boolean blinded) {
+      final Optional<Boolean> blinded) {
     return super.createUnsignedBlock(
             blockSlotState, newSlot, randaoReveal, optionalGraffiti, blinded)
-        .thenApply(BlockContainer::getBlock)
-        .thenCompose(
-            block -> {
-              if (block.isBlinded()) {
-                return SafeFuture.completedFuture(block);
-              }
-              // The execution BlobsBundle has been cached as part of the block creation
-              return operationSelector
-                  .createBlobsBundleSelector()
-                  .apply(block)
-                  .thenApply(blobsBundle -> createBlockContents(block, blobsBundle));
-            });
-  }
-
-  @Override
-  public SafeFuture<BlockContainer> createUnsignedBlock(
-      final BeaconState blockSlotState,
-      final UInt64 newSlot,
-      final BLSSignature randaoReveal,
-      final Optional<Bytes32> optionalGraffiti) {
-    return super.createUnsignedBlock(blockSlotState, newSlot, randaoReveal, optionalGraffiti)
         .thenApply(BlockContainer::getBlock)
         .thenCompose(
             block -> {

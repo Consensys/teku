@@ -73,9 +73,8 @@ public class DutyResult {
     return success(result, 1);
   }
 
-  public static DutyResult success(final Bytes32 result, final Optional<String> summary) {
-    return new DutyResult(
-        1, 0, singleton(result), emptyMap(), summary.map(List::of).orElse(List.of()));
+  public static DutyResult success(final Bytes32 result, final List<String> context) {
+    return new DutyResult(1, 0, singleton(result), emptyMap(), context);
   }
 
   public static DutyResult success(final Bytes32 result, final int count) {

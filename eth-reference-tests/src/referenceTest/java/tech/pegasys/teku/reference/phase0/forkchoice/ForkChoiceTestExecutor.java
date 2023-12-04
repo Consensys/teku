@@ -475,9 +475,12 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             final boolean expectedResult = shouldOverrideForkChoiceUpdateCheck.get("result");
             final boolean expectedValidatorIsConnected =
                 shouldOverrideForkChoiceUpdateCheck.get("validator_is_connected");
-            // only currently handle result == true
-            assertThat(expectedResult).isTrue();
-            // only currently handle validatorIsConnected == true
+            final boolean shouldOverrideChainHead =
+                recentChainData.shouldOverrideForkChoiceUpdate(
+                    recentChainData.getBestBlockRoot().orElseThrow());
+            assertThat(shouldOverrideChainHead).isEqualTo(expectedResult);
+            // We've currently only handled the validatorIsConnected 'true' case in reftests,
+            // lets validate we're dealing with that and don't have to extend tests further.
             assertThat(expectedValidatorIsConnected).isTrue();
           }
 

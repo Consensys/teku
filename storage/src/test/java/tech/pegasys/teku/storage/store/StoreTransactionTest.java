@@ -43,14 +43,14 @@ public class StoreTransactionTest extends AbstractStoreTest {
     final UpdatableStore store = createGenesisStore();
 
     // Make sure time is non-zero
-    setTime(store, store.getTimeMillis().plus(10));
+    setTime(store, store.getTimeInMillis().plus(10));
 
-    final UInt64 invalidTime = store.getTimeMillis().minus(1);
+    final UInt64 invalidTime = store.getTimeInMillis().minus(1);
     assertThatThrownBy(() -> setTime(store, invalidTime))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining(
             String.format(
-                "Cannot revert time (millis) from %s to %s", store.getTimeMillis(), invalidTime));
+                "Cannot revert time (millis) from %s to %s", store.getTimeInMillis(), invalidTime));
   }
 
   @Test
@@ -58,18 +58,18 @@ public class StoreTransactionTest extends AbstractStoreTest {
     final UpdatableStore store = createGenesisStore();
 
     // Make sure time is non-zero
-    setTime(store, store.getTimeMillis().plus(10));
+    setTime(store, store.getTimeInMillis().plus(10));
 
     final StoreTransaction txA = store.startTransaction(storageUpdateChannel);
-    final UInt64 timeA = store.getTimeMillis().plus(1);
+    final UInt64 timeA = store.getTimeInMillis().plus(1);
 
     final UInt64 timeB = timeA.plus(1);
     setTime(store, timeB);
-    assertThat(store.getTimeMillis()).isEqualTo(timeB);
+    assertThat(store.getTimeInMillis()).isEqualTo(timeB);
 
     // Commit tx, time should not be updated
     assertThat(txA.commit()).isCompleted();
-    assertThat(store.getTimeMillis()).isEqualTo(timeB);
+    assertThat(store.getTimeInMillis()).isEqualTo(timeB);
   }
 
   @Test
