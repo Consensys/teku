@@ -22,6 +22,8 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 
 public class AttestationDutyScheduler extends AbstractDutyScheduler {
   private static final Logger LOG = LogManager.getLogger();
@@ -42,6 +44,12 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
   public void onAttestationCreationDue(final UInt64 slot) {
     onProductionDue(slot);
   }
+
+  @Override
+  public void onAttesterSlashing(final AttesterSlashing attesterSlashing) {}
+
+  @Override
+  public void onProposerSlashing(final ProposerSlashing proposerSlashing) {}
 
   @Override
   protected Bytes32 getExpectedDependentRoot(

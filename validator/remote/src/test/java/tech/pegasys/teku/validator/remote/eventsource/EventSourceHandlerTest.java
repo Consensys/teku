@@ -28,19 +28,21 @@ import tech.pegasys.teku.api.response.v1.HeadEvent;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 class EventSourceHandlerTest {
-  private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createDefault());
+
+  final Spec spec = TestSpecFactory.createDefault();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final JsonProvider jsonProvider = new JsonProvider();
   private final ValidatorTimingChannel validatorTimingChannel = mock(ValidatorTimingChannel.class);
   final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private final EventSourceHandler handler =
-      new EventSourceHandler(validatorTimingChannel, metricsSystem, true);
+      new EventSourceHandler(validatorTimingChannel, metricsSystem, true, spec);
 
   @Test
   void onOpen_shouldNotifyOfPotentialMissedEvents() {
@@ -102,7 +104,7 @@ class EventSourceHandlerTest {
   @Test
   void onHeadEvent_shouldNotGenerateEarlyAttestationsIfNotEnabled() throws Exception {
     final EventSourceHandler onTimeHandler =
-        new EventSourceHandler(validatorTimingChannel, metricsSystem, false);
+        new EventSourceHandler(validatorTimingChannel, metricsSystem, false, spec);
 
     final UInt64 slot = UInt64.valueOf(134);
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
