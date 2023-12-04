@@ -227,7 +227,7 @@ class ForkChoiceUtilTest {
   void onTick_shouldExitImmediatelyWhenCurrentTimeIsBeforeGenesisTime() {
     final MutableStore store = mock(MutableStore.class);
     when(store.getGenesisTimeMillis()).thenReturn(UInt64.valueOf(3000000));
-    when(store.getTimeMillis()).thenReturn(UInt64.ZERO);
+    when(store.getTimeInMillis()).thenReturn(UInt64.ZERO);
     forkChoiceUtil.onTick(store, UInt64.valueOf(2000000));
 
     verify(store, never()).setTimeMillis(any());
@@ -237,7 +237,7 @@ class ForkChoiceUtilTest {
   void onTick_shouldExitImmediatelyWhenCurrentTimeIsBeforeStoreTime() {
     final MutableStore store = mock(MutableStore.class);
     when(store.getGenesisTimeMillis()).thenReturn(UInt64.valueOf(3000000));
-    when(store.getTimeMillis()).thenReturn(UInt64.valueOf(5000000));
+    when(store.getTimeInMillis()).thenReturn(UInt64.valueOf(5000000));
     forkChoiceUtil.onTick(store, UInt64.valueOf(4000000));
 
     verify(store, never()).setTimeMillis(any());
@@ -246,9 +246,9 @@ class ForkChoiceUtilTest {
   @Test
   void onTick_setsStoreTimeMillis() {
     final TestStoreImpl store = new TestStoreFactory(spec).createGenesisStore();
-    final UInt64 expectedMillis = store.getTimeMillis().plus(123456);
+    final UInt64 expectedMillis = store.getTimeInMillis().plus(123456);
     forkChoiceUtil.onTick(store, expectedMillis);
-    assertThat(store.getTimeMillis()).isEqualTo(expectedMillis);
+    assertThat(store.getTimeInMillis()).isEqualTo(expectedMillis);
   }
 
   @Test
@@ -277,7 +277,7 @@ class ForkChoiceUtilTest {
         spec.getSlotStartTimeMillis(
             spec.computeStartSlotAtEpoch(UInt64.valueOf(3)), store.getGenesisTimeMillis());
     forkChoiceUtil.onTick(store, finalMillis);
-    assertThat(store.getTimeMillis()).isEqualTo(finalMillis);
+    assertThat(store.getTimeInMillis()).isEqualTo(finalMillis);
 
     // Check the pull-up for epoch 2 was still performed
     assertThat(store.getJustifiedCheckpoint())

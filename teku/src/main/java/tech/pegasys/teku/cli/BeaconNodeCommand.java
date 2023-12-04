@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletionException;
 import java.util.stream.Stream;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -74,6 +73,7 @@ import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
+import tech.pegasys.teku.validator.client.NoValidatorKeysStateException;
 import tech.pegasys.teku.validator.client.NoValidatorKeysStateException;
 
 @SuppressWarnings("unused")
@@ -340,19 +340,25 @@ public class BeaconNodeCommand implements Callable<Integer> {
       final TekuConfiguration tekuConfig = tekuConfiguration();
       startAction.start(tekuConfig, false);
       return 0;
-    } catch (InvalidConfigurationException | DatabaseStorageException ex) {
-      reportUserError(ex);
-    } catch (CompletionException e) {
-      ExceptionUtil.<Throwable>getCause(e, InvalidConfigurationException.class)
-          .or(() -> ExceptionUtil.getCause(e, DatabaseStorageException.class))
-          .ifPresentOrElse(this::reportUserError, () -> reportUnexpectedError(e));
-    } catch (Throwable t) {
-      reportUnexpectedError(t);
+    } catch (final Throwable t) {
+      return handleExceptionAndReturnExitCode(t);
+    }
+  }
+
+  public int handleExceptionAndReturnExitCode(final Throwable e) {
+    final Optional<Throwable> maybeUserErrorException =
+        ExceptionUtil.<Throwable>getCause(e, InvalidConfigurationException.class)
+            .or(() -> ExceptionUtil.getCause(e, DatabaseStorageException.class));
+    if (maybeUserErrorException.isPresent()) {
+      reportUserError(maybeUserErrorException.get());
+      return 2;
+    } else {
+      reportUnexpectedError(e);
       if (ExceptionUtil.hasCause(t, NoValidatorKeysStateException.class)) {
         return 2;
       }
+      return 1;
     }
-    return 1;
   }
 
   public void reportUnexpectedError(final Throwable t) {

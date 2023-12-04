@@ -32,6 +32,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.EarliestAvailableBlockSlot;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
+import tech.pegasys.teku.storage.client.ValidatorIsConnectedProvider;
 import tech.pegasys.teku.storage.server.ChainStorage;
 import tech.pegasys.teku.storage.server.Database;
 import tech.pegasys.teku.storage.server.DepositStorage;
@@ -109,6 +110,7 @@ public class StorageSystem implements AutoCloseable {
             chainStorageServer,
             finalizedCheckpointChannel,
             chainHeadChannel,
+            ValidatorIsConnectedProvider.NOOP,
             spec);
 
     // Create combined client

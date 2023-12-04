@@ -16,7 +16,6 @@ package tech.pegasys.teku.storage.store;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.dataproviders.generators.StateAtSlotTask.AsyncStateProvider.fromAnchor;
 import static tech.pegasys.teku.dataproviders.lookup.BlockProvider.fromDynamicMap;
-import static tech.pegasys.teku.dataproviders.lookup.BlockProvider.fromMapWithLock;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -32,6 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -116,7 +116,6 @@ class Store extends CacheableStore {
   private UInt64 highestVotedValidatorIndex;
 
   private Store(
-      final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final Spec spec,
       final int hotStatePersistenceFrequencyInEpochs,
@@ -182,9 +181,25 @@ class Store extends CacheableStore {
                         .getSignedBeaconBlock()
                         .map((b) -> Map.of(b.getRoot(), b))
                         .orElseGet(Collections::emptyMap)),
-            fromMapWithLock(this.blocks, asyncRunner, readLock),
+            createBlockProviderFromMapWhileLocked(this.blocks),
             blockProvider);
+
     this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
+  }
+
+  private BlockProvider createBlockProviderFromMapWhileLocked(
+      final Map<Bytes32, SignedBeaconBlock> blockMap) {
+    return (roots) -> {
+      readLock.lock();
+      try {
+        return SafeFuture.completedFuture(
+            roots.stream()
+                .filter(blockMap::containsKey)
+                .collect(Collectors.toMap(Function.identity(), blockMap::get)));
+      } finally {
+        readLock.unlock();
+      }
+    };
   }
 
   static UpdatableStore create(
@@ -224,7 +239,6 @@ class Store extends CacheableStore {
         LimitedMap.createSynchronizedNatural(config.getBlockCacheSize());
 
     return new Store(
-        asyncRunner,
         metricsSystem,
         spec,
         config.getHotStatePersistenceFrequencyInEpochs(),
@@ -403,7 +417,7 @@ class Store extends CacheableStore {
   }
 
   @Override
-  public UInt64 getTimeMillis() {
+  public UInt64 getTimeInMillis() {
     readLock.lock();
     try {
       return timeMillis;

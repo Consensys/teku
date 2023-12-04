@@ -46,7 +46,7 @@ class BlockTimelinessTrackerTest {
     blockRoot = signedBlockAndState.getBlock().getMessage().getRoot();
     timeProvider =
         StubTimeProvider.withTimeInSeconds(signedBlockAndState.getState().getGenesisTime());
-    tracker = new BlockTimelinessTracker(spec, recentChainData, timeProvider);
+    tracker = new BlockTimelinessTracker(spec, recentChainData, () -> timeProvider);
 
     when(recentChainData.getGenesisTime())
         .thenReturn(signedBlockAndState.getState().getGenesisTime());
@@ -60,6 +60,19 @@ class BlockTimelinessTrackerTest {
     final UInt64 computedTime = computeTime(slot, 500);
 
     tracker.setBlockTimelinessFromArrivalTime(signedBlockAndState.getBlock(), computedTime);
+    assertThat(tracker.isBlockTimely(blockRoot)).contains(true);
+    assertThat(tracker.isBlockLate(blockRoot)).isFalse();
+  }
+
+  @Test
+  void blockTimeliness_shouldSetTimelinessOnce() {
+    final UInt64 computedTime = computeTime(slot, 500);
+
+    tracker.setBlockTimelinessFromArrivalTime(signedBlockAndState.getBlock(), computedTime);
+    // The block would be late in the tracker if this set is not ignored, but it should be ignored
+    // because its already been set
+    tracker.setBlockTimelinessFromArrivalTime(
+        signedBlockAndState.getBlock(), computedTime.plus(3000));
     assertThat(tracker.isBlockTimely(blockRoot)).contains(true);
     assertThat(tracker.isBlockLate(blockRoot)).isFalse();
   }

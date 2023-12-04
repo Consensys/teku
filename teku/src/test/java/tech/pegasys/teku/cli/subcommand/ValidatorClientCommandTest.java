@@ -40,7 +40,7 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
           "--network", "auto", "vc",
         };
     int parseResult = beaconNodeCommand.parse(argsNetworkOptOnParent);
-    assertThat(parseResult).isEqualTo(1);
+    assertThat(parseResult).isEqualTo(2);
     String cmdOutput = getCommandLineOutput();
     assertThat(cmdOutput)
         .contains("--network option should not be specified before the validator-client command");
@@ -203,7 +203,7 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
     };
 
     int parseResult = beaconNodeCommand.parse(args);
-    assertThat(parseResult).isEqualTo(1);
+    assertThat(parseResult).isEqualTo(2);
     String cmdOutput = getCommandLineOutput();
     assertThat(cmdOutput)
         .contains(

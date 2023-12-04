@@ -190,7 +190,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
       blockContainer = dataStructureUtil.randomBeaconBlock(ONE);
     }
     final ValidatorApiChannel validatorApiChannelMock = mock(ValidatorApiChannel.class);
-    when(validatorApiChannelMock.createUnsignedBlock(any(), any(), any()))
+    when(validatorApiChannelMock.createUnsignedBlock(any(), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainer)));
     final CombinedChainDataClient combinedChainDataClientMock = mock(CombinedChainDataClient.class);
     when(combinedChainDataClientMock.getCurrentSlot()).thenReturn(ZERO);
@@ -251,7 +251,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
       blockContainer = dataStructureUtil.randomBeaconBlock(ONE);
     }
     final ValidatorApiChannel validatorApiChannelMock = mock(ValidatorApiChannel.class);
-    when(validatorApiChannelMock.createUnsignedBlock(any(), any(), any()))
+    when(validatorApiChannelMock.createUnsignedBlock(any(), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainer)));
     final CombinedChainDataClient combinedChainDataClientMock = mock(CombinedChainDataClient.class);
     when(combinedChainDataClientMock.getCurrentSlot()).thenReturn(ZERO);
@@ -312,7 +312,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
       blockContainer = dataStructureUtil.randomBeaconBlock(ONE);
     }
     final ValidatorApiChannel validatorApiChannelMock = mock(ValidatorApiChannel.class);
-    when(validatorApiChannelMock.createUnsignedBlock(any(), any(), any()))
+    when(validatorApiChannelMock.createUnsignedBlock(any(), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainer)));
     final CombinedChainDataClient combinedChainDataClientMock = mock(CombinedChainDataClient.class);
     when(combinedChainDataClientMock.getCurrentSlot()).thenReturn(ZERO);
@@ -364,7 +364,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
     assumeThat(specMilestone).isLessThan(ALTAIR);
     final BlockContainer blockContainer = dataStructureUtil.randomBeaconBlock(ONE);
     final ValidatorApiChannel validatorApiChannelMock = mock(ValidatorApiChannel.class);
-    when(validatorApiChannelMock.createUnsignedBlock(any(), any(), any()))
+    when(validatorApiChannelMock.createUnsignedBlock(any(), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainer)));
     final BeaconState parentStateMock = mock(BeaconState.class);
     final CombinedChainDataClient combinedChainDataClientMock = mock(CombinedChainDataClient.class);

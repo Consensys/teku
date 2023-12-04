@@ -16,7 +16,6 @@ package tech.pegasys.teku.cli.subcommand;
 import static tech.pegasys.teku.cli.subcommand.RemoteSpecLoader.getSpecWithRetry;
 
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletionException;
 import org.apache.logging.log4j.Level;
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
@@ -101,21 +100,12 @@ public class ValidatorClientCommand implements Callable<Integer> {
       final TekuConfiguration globalConfiguration = tekuConfiguration();
       parentCommand.getStartAction().start(globalConfiguration, true);
       return 0;
-    } catch (InvalidConfigurationException | DatabaseStorageException ex) {
-      parentCommand.reportUserError(ex);
-    } catch (CompletionException e) {
-
-      ExceptionUtil.<Throwable>getCause(e, InvalidConfigurationException.class)
-          .or(() -> ExceptionUtil.getCause(e, DatabaseStorageException.class))
-          .ifPresentOrElse(
-              parentCommand::reportUserError, () -> parentCommand.reportUnexpectedError(e));
-    } catch (Throwable t) {
-      parentCommand.reportUnexpectedError(t);
+    } catch (final Throwable t) {
       if (ExceptionUtil.hasCause(t, NoValidatorKeysStateException.class)) {
         return 2;
       }
+      return parentCommand.handleExceptionAndReturnExitCode(t);
     }
-    return 1;
   }
 
   private void startLogging() {

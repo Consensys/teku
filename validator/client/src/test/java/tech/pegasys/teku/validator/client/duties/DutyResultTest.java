@@ -141,8 +141,7 @@ class DutyResultTest {
     final Bytes32 root1 = dataStructureUtil.randomBytes32();
     final Bytes32 root2 = dataStructureUtil.randomBytes32();
     final DutyResult combined =
-        DutyResult.success(root1, Optional.of("a"))
-            .combine(DutyResult.success(root2, Optional.of("b")));
+        DutyResult.success(root1, List.of("a")).combine(DutyResult.success(root2, List.of("b")));
     combined.report(TYPE, SLOT, validatorLogger);
     verify(validatorLogger).dutyCompleted(TYPE, SLOT, 2, Set.of(root1, root2), Optional.of("a, b"));
     verifyNoMoreInteractions(validatorLogger);

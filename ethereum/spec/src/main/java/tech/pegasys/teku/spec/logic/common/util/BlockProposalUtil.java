@@ -51,7 +51,7 @@ public class BlockProposalUtil {
       final BeaconState blockSlotState,
       final Bytes32 parentBlockSigningRoot,
       final Consumer<BeaconBlockBodyBuilder> bodyBuilder,
-      final boolean blinded) {
+      final Optional<Boolean> blinded) {
     checkArgument(
         blockSlotState.getSlot().equals(newSlot),
         "Block slot state from incorrect slot. Expected %s but got %s",
@@ -62,7 +62,7 @@ public class BlockProposalUtil {
     final SafeFuture<? extends BeaconBlockBody> beaconBlockBody;
     final BeaconBlockSchema beaconBlockSchema;
 
-    if (blinded) {
+    if (blinded.orElse(ValidatorsUtil.DEFAULT_PRODUCE_BLINDED_BLOCK)) {
       beaconBlockBody = createBlindedBeaconBlockBody(bodyBuilder);
       beaconBlockSchema = schemaDefinitions.getBlindedBeaconBlockSchema();
     } else {
@@ -108,21 +108,6 @@ public class BlockProposalUtil {
               }
               return SafeFuture.failedFuture(error);
             });
-  }
-
-  public SafeFuture<BeaconBlockAndState> createNewUnsignedBlock(
-      final UInt64 newSlot,
-      final int proposerIndex,
-      final BeaconState blockSlotState,
-      final Bytes32 parentBlockSigningRoot,
-      final Consumer<BeaconBlockBodyBuilder> bodyBuilder) {
-    return createNewUnsignedBlock(
-        newSlot,
-        proposerIndex,
-        blockSlotState,
-        parentBlockSigningRoot,
-        bodyBuilder,
-        ValidatorsUtil.DEFAULT_PRODUCE_BLINDED_BLOCK);
   }
 
   private SafeFuture<? extends BeaconBlockBody> createBeaconBlockBody(
