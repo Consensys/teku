@@ -281,11 +281,11 @@ public class EventLogger {
 
   public void slowBlockProductionEvent(
       final UInt64 slot, final UInt64 totalProcessingDuration, final String timings) {
-    final String slowTickLog =
+    final String slowBlockProductionLog =
         String.format(
             "Slow Block Production Event   *** Slot: %s %s total: %sms",
             slot, timings, totalProcessingDuration);
-    warn(slowTickLog, Color.YELLOW);
+    warn(slowBlockProductionLog, Color.YELLOW);
   }
 
   public void executionLayerStubEnabled() {
