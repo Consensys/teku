@@ -14,10 +14,13 @@
 package tech.pegasys.teku.validator.client;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -113,32 +116,101 @@ public class ValidatorStatusProviderTest {
   }
 
   @Test
+  @SuppressWarnings("unchecked")
   void shouldUpdateValidatorStatusesOnFirstEpochSlot() {
     when(validatorApiChannel.getValidatorStatuses(validatorKeys))
+        // 1st call - no data at all
+        .thenReturn(SafeFuture.completedFuture(Optional.of(Map.of())))
+        // 2nd call - pending status
         .thenReturn(
             SafeFuture.completedFuture(
                 Optional.of(Map.of(validatorKey, ValidatorStatus.pending_initialized))))
+        // 3rd call - active status
         .thenReturn(
             SafeFuture.completedFuture(
                 Optional.of(Map.of(validatorKey, ValidatorStatus.active_ongoing))));
 
+    // Epoch 0
     assertThat(provider.start()).isCompleted();
-    verify(validatorStatusSubscriber).onValidatorStatuses(anyMap(), eq(false));
+    final ArgumentCaptor<Map<BLSPublicKey, ValidatorStatus>> statusesCaptor0 =
+        ArgumentCaptor.forClass(Map.class);
+    verify(validatorStatusSubscriber).onValidatorStatuses(statusesCaptor0.capture(), eq(false));
+    assertThat(statusesCaptor0.getValue()).isEmpty();
+    clearInvocations(validatorStatusSubscriber);
 
     final StubLabelledGauge gauge =
         metricsSystem.getLabelledGauge(TekuMetricCategory.VALIDATOR, VALIDATOR_COUNTS_METRIC);
     assertThat(gauge.getValue(ValidatorStatus.pending_initialized.name()))
-        .isEqualTo(OptionalDouble.of(1));
+        .isEqualTo(OptionalDouble.of(0));
     assertThat(gauge.getValue(ValidatorStatus.active_ongoing.name()))
         .isEqualTo(OptionalDouble.of(0));
 
+    // Epoch 1
     provider.onSlot(spec.computeStartSlotAtEpoch(UInt64.ONE).plus(1));
-    verify(validatorStatusSubscriber, times(2)).onValidatorStatuses(anyMap(), eq(false));
+    final ArgumentCaptor<Map<BLSPublicKey, ValidatorStatus>> statusesCaptor1 =
+        ArgumentCaptor.forClass(Map.class);
+    verify(validatorStatusSubscriber).onValidatorStatuses(statusesCaptor1.capture(), eq(false));
+    assertThat(statusesCaptor1.getValue())
+        .satisfies(
+            map -> {
+              assertThat(map.size()).isEqualTo(1);
+              assertThat(map.get(validatorKey)).isEqualTo(ValidatorStatus.pending_initialized);
+            });
+
+    assertThat(gauge.getValue(ValidatorStatus.pending_initialized.name()))
+        .isEqualTo(OptionalDouble.of(1));
+    assertThat(gauge.getValue(ValidatorStatus.active_ongoing.name()))
+        .isEqualTo(OptionalDouble.of(0));
+    clearInvocations(validatorStatusSubscriber);
+
+    // Epoch 2
+    provider.onSlot(spec.computeStartSlotAtEpoch(UInt64.valueOf(2)).plus(1));
+    final ArgumentCaptor<Map<BLSPublicKey, ValidatorStatus>> statusesCaptor2 =
+        ArgumentCaptor.forClass(Map.class);
+    verify(validatorStatusSubscriber).onValidatorStatuses(statusesCaptor2.capture(), eq(false));
+    assertThat(statusesCaptor2.getValue())
+        .satisfies(
+            map -> {
+              assertThat(map.size()).isEqualTo(1);
+              assertThat(map.get(validatorKey)).isEqualTo(ValidatorStatus.active_ongoing);
+            });
 
     assertThat(gauge.getValue(ValidatorStatus.pending_initialized.name()))
         .isEqualTo(OptionalDouble.of(0));
     assertThat(gauge.getValue(ValidatorStatus.active_ongoing.name()))
         .isEqualTo(OptionalDouble.of(1));
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void shouldUpdateValidatorStatusesWhenStartedWithNoOwnedValidators() {
+    this.ownedValidators = new OwnedValidators();
+    this.provider =
+        new OwnedValidatorStatusProvider(
+            metricsSystem, ownedValidators, validatorApiChannel, spec, asyncRunner);
+    provider.subscribeValidatorStatusesUpdates(validatorStatusSubscriber);
+    provider.onSlot(UInt64.ZERO);
+    when(validatorApiChannel.getValidatorStatuses(validatorKeys))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(Map.of(validatorKey, ValidatorStatus.active_ongoing))));
+
+    // Epoch 0 - no owned validators
+    assertThat(provider.start()).isCompleted();
+    verify(validatorStatusSubscriber, never()).onValidatorStatuses(anyMap(), anyBoolean());
+
+    // Epoch 1 - one owned validator added
+    ownedValidators.addValidator(new Validator(validatorKey, NO_OP_SIGNER, Optional::empty));
+    provider.onSlot(spec.computeStartSlotAtEpoch(UInt64.ONE).plus(1));
+    final ArgumentCaptor<Map<BLSPublicKey, ValidatorStatus>> statusesCaptor =
+        ArgumentCaptor.forClass(Map.class);
+    verify(validatorStatusSubscriber).onValidatorStatuses(statusesCaptor.capture(), eq(false));
+    assertThat(statusesCaptor.getValue())
+        .satisfies(
+            map -> {
+              assertThat(map.size()).isEqualTo(1);
+              assertThat(map.get(validatorKey)).isEqualTo(ValidatorStatus.active_ongoing);
+            });
   }
 
   @Test
