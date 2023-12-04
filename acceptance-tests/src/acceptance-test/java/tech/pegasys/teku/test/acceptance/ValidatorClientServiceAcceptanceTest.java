@@ -16,13 +16,25 @@ package tech.pegasys.teku.test.acceptance;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 
 public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
 
   @Test
-  void shouldFailWithNoValidatorKeysWhenExitOptionEnabled() throws Exception {
+  void shouldFailWithNoValidatorKeysWhenExitOptionEnabledOnBeaconNode() throws Exception {
     TekuNode beaconNode = createTekuNode(config -> config.withExitWhenNoValidatorKeysEnabled(true));
     beaconNode.startWithFailure(
+        "No loaded validators when --exit-when-no-validator-keys-enabled option is false");
+  }
+
+  @Test
+  void shouldFailWithNoValidatorKeysWhenExitOptionEnabledOnValidatorClient() throws Exception {
+    TekuNode beaconNode = createTekuNode();
+    TekuValidatorNode validatorClient =
+        createValidatorNode(
+            config -> config.withBeaconNode(beaconNode).withExitWhenNoValidatorKeysEnabled(true));
+    beaconNode.start();
+    validatorClient.startWithFailure(
         "No loaded validators when --exit-when-no-validator-keys-enabled option is false");
   }
 }

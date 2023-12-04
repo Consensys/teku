@@ -151,7 +151,6 @@ public class TekuNode extends Node {
     setUpStart();
     container.waitingFor(
         new LogMessageWaitStrategy()
-            .withRegEx(".*Teku failed to start.*")
             .withRegEx(".*" + expectedError + ".*")
             .withStartupTimeout(Duration.ofSeconds(10)));
     container.start();
