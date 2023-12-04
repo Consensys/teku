@@ -74,7 +74,6 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.validator.client.NoValidatorKeysStateException;
-import tech.pegasys.teku.validator.client.NoValidatorKeysStateException;
 
 @SuppressWarnings("unused")
 @Command(
@@ -354,7 +353,7 @@ public class BeaconNodeCommand implements Callable<Integer> {
       return 2;
     } else {
       reportUnexpectedError(e);
-      if (ExceptionUtil.hasCause(t, NoValidatorKeysStateException.class)) {
+      if (ExceptionUtil.hasCause(e, NoValidatorKeysStateException.class)) {
         return 2;
       }
       return 1;

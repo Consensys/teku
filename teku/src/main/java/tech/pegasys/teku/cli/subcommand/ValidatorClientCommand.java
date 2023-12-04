@@ -31,13 +31,10 @@ import tech.pegasys.teku.cli.options.ValidatorClientOptions;
 import tech.pegasys.teku.cli.options.ValidatorOptions;
 import tech.pegasys.teku.cli.options.ValidatorRestApiOptions;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
-import tech.pegasys.teku.storage.server.DatabaseStorageException;
-import tech.pegasys.teku.validator.client.NoValidatorKeysStateException;
 
 @Command(
     name = "validator-client",
@@ -101,9 +98,6 @@ public class ValidatorClientCommand implements Callable<Integer> {
       parentCommand.getStartAction().start(globalConfiguration, true);
       return 0;
     } catch (final Throwable t) {
-      if (ExceptionUtil.hasCause(t, NoValidatorKeysStateException.class)) {
-        return 2;
-      }
       return parentCommand.handleExceptionAndReturnExitCode(t);
     }
   }
