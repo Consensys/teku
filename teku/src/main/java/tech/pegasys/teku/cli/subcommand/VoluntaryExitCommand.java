@@ -61,6 +61,7 @@ import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.signatures.RejectingSlashingProtector;
+import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.loader.HttpClientExternalSignerFactory;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
@@ -318,20 +319,20 @@ public class VoluntaryExitCommand implements Callable<Integer> {
       dataDirLayout = Optional.of(DataDirLayout.createFrom(dataOptions.getDataConfig()));
     }
 
+    final ValidatorConfig validatorConfig = config.validatorClient().getValidatorConfig();
     final Supplier<HttpClient> externalSignerHttpClientFactory =
-        HttpClientExternalSignerFactory.create(config.validatorClient().getValidatorConfig());
+        HttpClientExternalSignerFactory.create(validatorConfig);
 
     final ValidatorLoader validatorLoader =
         ValidatorLoader.create(
             spec,
-            config.validatorClient().getValidatorConfig(),
+            validatorConfig,
             config.validatorClient().getInteropConfig(),
             externalSignerHttpClientFactory,
             new RejectingSlashingProtector(),
             slashingProtectionLogger,
             new PublicKeyLoader(
-                externalSignerHttpClientFactory,
-                config.validatorClient().getValidatorConfig().getValidatorExternalSignerUrl()),
+                externalSignerHttpClientFactory, validatorConfig.getValidatorExternalSignerUrl()),
             asyncRunner,
             metricsSystem,
             dataDirLayout);

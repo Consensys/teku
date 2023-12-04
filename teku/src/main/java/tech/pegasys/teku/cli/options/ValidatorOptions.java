@@ -130,6 +130,16 @@ public class ValidatorOptions {
       fallbackValue = "true")
   private boolean blockV3Enabled = ValidatorConfig.DEFAULT_BLOCK_V3_ENABLED;
 
+  @Option(
+      names = {"--exit-when-no-validator-keys-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable terminating the process if no validator keys are found during startup",
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean exitWhenNoValidatorKeysEnabled =
+      ValidatorConfig.DEFAULT_EXIT_WHEN_NO_VALIDATOR_KEYS_ENABLED;
+
   public void configure(TekuConfiguration.Builder builder) {
     builder.validator(
         config ->
@@ -145,7 +155,8 @@ public class ValidatorOptions {
                 .executorMaxQueueSize(executorMaxQueueSize)
                 .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled)
                 .executorThreads(executorThreads)
-                .blockV3enabled(blockV3Enabled));
+                .blockV3enabled(blockV3Enabled)
+                .exitWhenNoValidatorKeysEnabled(exitWhenNoValidatorKeysEnabled));
     validatorProposerOptions.configure(builder);
     validatorKeysOptions.configure(builder);
   }
