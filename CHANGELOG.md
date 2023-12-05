@@ -22,3 +22,4 @@ the [releases page](https://github.com/Consensys/teku/releases).
 - Added `--exit-when-no-validator-keys-enabled` command line option.
 
 ### Bug Fixes
+- Fixed bugs when validator statuses were not updated and builder registrations were not sent in some cases
