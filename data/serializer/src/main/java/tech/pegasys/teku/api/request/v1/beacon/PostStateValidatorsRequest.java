@@ -15,19 +15,15 @@ package tech.pegasys.teku.api.request.v1.beacon;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.swagger.v3.oas.annotations.media.ArraySchema;
-import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.ValidatorStatus;
 
 public class PostStateValidatorsRequest {
 
   @JsonProperty("ids")
-  @ArraySchema(schema = @Schema(type = "string"))
   public final List<String> ids;
 
   @JsonProperty("statuses")
-  @ArraySchema(schema = @Schema(type = "string"))
   public final List<ValidatorStatus> statuses;
 
   @JsonCreator
