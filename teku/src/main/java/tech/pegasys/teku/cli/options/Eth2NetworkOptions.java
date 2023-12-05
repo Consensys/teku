@@ -93,6 +93,17 @@ public class Eth2NetworkOptions {
   private String trustedSetup = null; // Depends on network configuration
 
   @Option(
+      names = {"--Xfork-choice-late-block-reorg-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Allow late blocks to be reorged out if they meet the requirements.",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private boolean forkChoiceLateBlockReorgEnabled =
+      Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
+
+  @Option(
       names = {"--Xnetwork-altair-fork-epoch"},
       hidden = true,
       paramLabel = "<epoch>",
@@ -328,6 +339,7 @@ public class Eth2NetworkOptions {
         .asyncBeaconChainMaxQueue(asyncBeaconChainMaxQueue)
         .forkChoiceUpdateHeadOnBlockImportEnabled(forkChoiceUpdateHeadOnBlockImportEnabled)
         .forkChoiceProposerBoostUniquenessEnabled(forkChoiceProposerBoostUniquenessEnabled)
+        .forkChoiceLateBlockReorgEnabled(forkChoiceLateBlockReorgEnabled)
         .epochsStoreBlobs(epochsStoreBlobs);
   }
 
