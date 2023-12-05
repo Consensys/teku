@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_METHOD_NOT_ALLOWED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -136,10 +137,12 @@ class OkHttpValidatorRestApiClientTest {
 
     apiClient.getValidators(List.of("1", "0x1234"));
 
+    assertThat(mockWebServer.getRequestCount()).isEqualTo(1);
     final RecordedRequest request = mockWebServer.takeRequest();
-    assertThat(request.getMethod()).isEqualTo("GET");
+    assertThat(request.getMethod()).isEqualTo("POST");
     assertThat(request.getPath()).contains(ValidatorApiMethod.GET_VALIDATORS.getPath(emptyMap()));
-    assertThat(request.getPath()).contains("?id=1,0x1234");
+    assertThat(request.getBody().readUtf8())
+        .isEqualTo("{\"ids\":[\"1\",\"0x1234\"],\"statuses\":[]}");
   }
 
   @Test
@@ -167,6 +170,41 @@ class OkHttpValidatorRestApiClientTest {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(asJson(response)));
 
     Optional<List<ValidatorResponse>> result = apiClient.getValidators(List.of("1", "2"));
+
+    assertThat(mockWebServer.getRequestCount()).isEqualTo(1);
+
+    assertThat(result).isPresent();
+    assertThat(result.get()).usingRecursiveComparison().isEqualTo(expected);
+  }
+
+  @Test
+  void getValidators_MakesExpectedGetRequest_WhenPostNotAllowed() throws Exception {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_METHOD_NOT_ALLOWED));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
+
+    apiClient.getValidators(List.of("1", "0x1234"));
+
+    assertThat(mockWebServer.getRequestCount()).isEqualTo(2);
+    // ignore first request
+    mockWebServer.takeRequest();
+    final RecordedRequest request = mockWebServer.takeRequest();
+    assertThat(request.getMethod()).isEqualTo("GET");
+    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_VALIDATORS.getPath(emptyMap()));
+    assertThat(request.getPath()).contains("?id=1,0x1234");
+  }
+
+  @Test
+  public void getValidators_WhenPostNotAllowedAndGetSuccess_ReturnsResponse() {
+    final List<ValidatorResponse> expected =
+        List.of(schemaObjects.validatorResponse(), schemaObjects.validatorResponse());
+    final GetStateValidatorsResponse response = new GetStateValidatorsResponse(false, expected);
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_METHOD_NOT_ALLOWED));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(asJson(response)));
+
+    Optional<List<ValidatorResponse>> result = apiClient.getValidators(List.of("1", "2"));
+
+    assertThat(mockWebServer.getRequestCount()).isEqualTo(2);
 
     assertThat(result).isPresent();
     assertThat(result.get()).usingRecursiveComparison().isEqualTo(expected);

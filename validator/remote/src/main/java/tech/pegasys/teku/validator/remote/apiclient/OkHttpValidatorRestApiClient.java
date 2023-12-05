@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.remote.apiclient;
 
 import static java.util.Collections.emptyMap;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_METHOD_NOT_ALLOWED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_AGGREGATE;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_ATTESTATION_DUTIES;
@@ -59,6 +60,7 @@ import okhttp3.Response;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.request.v1.beacon.PostStateValidatorsRequest;
 import tech.pegasys.teku.api.request.v1.validator.BeaconCommitteeSubscriptionRequest;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeaderResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
@@ -129,6 +131,12 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
 
   @Override
   public Optional<List<ValidatorResponse>> getValidators(final List<String> validatorIds) {
+    try {
+      return postValidators(validatorIds);
+    } catch (final PostStateValidatorsNotAllowedException ex) {
+      LOG.debug(
+          "POST method for getting validator from state is not allowed. Falling back to GET.");
+    }
     final Map<String, String> queryParams = new HashMap<>();
     queryParams.put("id", String.join(",", validatorIds));
     return get(
@@ -137,6 +145,22 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
             EMPTY_MAP,
             queryParams,
             createHandler(GetStateValidatorsResponse.class))
+        .map(response -> response.data);
+  }
+
+  private Optional<List<ValidatorResponse>> postValidators(final List<String> validatorIds) {
+    final PostStateValidatorsRequest request =
+        new PostStateValidatorsRequest(validatorIds, List.of());
+    return post(
+            GET_VALIDATORS,
+            EMPTY_MAP,
+            request,
+            createHandler(GetStateValidatorsResponse.class)
+                .withHandler(
+                    SC_METHOD_NOT_ALLOWED,
+                    (req, res) -> {
+                      throw new PostStateValidatorsNotAllowedException();
+                    }))
         .map(response -> response.data);
   }
 
@@ -237,7 +261,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
             GET_AGGREGATE,
             queryParams,
             createHandler(GetAggregatedAttestationResponse.class)
-                .withHandler(SC_NOT_FOUND, (request, response) -> Optional.empty()))
+                .withHandler(SC_NOT_FOUND, (req, res) -> Optional.empty()))
         .map(result -> result.data);
   }
 
@@ -322,7 +346,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
             queryParams,
             EMPTY_MAP,
             createHandler(GetSyncCommitteeContributionResponse.class)
-                .withHandler(SC_NOT_FOUND, (request, response) -> Optional.empty()))
+                .withHandler(SC_NOT_FOUND, (req, res) -> Optional.empty()))
         .map(response -> response.data);
   }
 
