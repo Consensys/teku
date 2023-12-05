@@ -273,7 +273,7 @@ public class ValidatorClientService extends Service {
     if (validatorConfig.isExitWhenNoValidatorKeysEnabled()
         && validatorLoader.getOwnedValidators().getActiveValidators().size() == 0) {
       throw new NoValidatorKeysStateException(
-          "No loaded validators when --exit-when-no-validator-keys-enabled option is false");
+          "No loaded validators when --exit-when-no-validator-keys-enabled option is true");
     }
 
     return validatorClientService;

@@ -101,6 +101,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final Subscribers<OptimisticHeadSubscriber> optimisticSyncSubscribers =
       Subscribers.create(true);
   private final TickProcessor tickProcessor;
+  private final boolean forkChoiceLateBlockReorgEnabled;
   private Optional<Boolean> optimisticSyncing = Optional.empty();
 
   public ForkChoice(
@@ -114,6 +115,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final MergeTransitionBlockValidator transitionBlockValidator,
       final boolean forkChoiceUpdateHeadOnBlockImportEnabled,
       final boolean forkChoiceProposerBoostUniquenessEnabled,
+      final boolean forkChoiceLateBlockReorgEnabled,
       final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
@@ -127,6 +129,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.tickProcessor = tickProcessor;
     this.forkChoiceUpdateHeadOnBlockImportEnabled = forkChoiceUpdateHeadOnBlockImportEnabled;
     this.forkChoiceProposerBoostUniquenessEnabled = forkChoiceProposerBoostUniquenessEnabled;
+    this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
+    LOG.debug("forkChoiceLateBlockReorgEnabled is set to {}", forkChoiceLateBlockReorgEnabled);
+
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
     forkChoiceNotifier.subscribeToForkChoiceUpdatedResult(this);
   }
@@ -155,6 +160,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         transitionBlockValidator,
         true,
         true,
+        false,
         metricsSystem);
   }
 
@@ -195,6 +201,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   public SafeFuture<Boolean> processHead() {
     return processHead(Optional.empty(), false);
+  }
+
+  public boolean isForkChoiceLateBlockReorgEnabled() {
+    return forkChoiceLateBlockReorgEnabled;
   }
 
   /** Import a block to the store. */
