@@ -45,16 +45,15 @@ class AbstractEpochProcessorTest {
   private final EpochProcessorCapella epochProcessor =
       (EpochProcessorCapella) spec.getGenesisSpec().getEpochProcessor();
 
+  final int throttlingPeriod = 1; // expect maximum of one call per epoch
+  final Logger logger = mock(Logger.class);
+  final Throttler<Logger> loggerThrottler = spyLogThrottler(logger, throttlingPeriod);
+  final BeaconState state = createStateInInactivityLeak();
+  final UInt64 currentEpoch = spec.getCurrentEpoch(state);
+  final int slotsPerEpoch = spec.getSlotsPerEpoch(state.getSlot());
+
   @Test
   public void shouldThrottleInactivityLeakLogs() throws Exception {
-    final int throttlingPeriod = 1; // expect maximum of one call per epoch
-    final Logger logger = mock(Logger.class);
-    final Throttler<Logger> loggerThrottler = spyLogThrottler(logger, throttlingPeriod);
-
-    final BeaconState state = createStateInInactivityLeak();
-    final UInt64 currentEpoch = spec.getCurrentEpoch(state);
-
-    final int slotsPerEpoch = spec.getSlotsPerEpoch(state.getSlot());
     // First two processEpoch calls within the same epoch
     epochProcessor.processEpoch(state);
     epochProcessor.processEpoch(advanceNSlots(state, 1));
@@ -92,8 +91,7 @@ class AbstractEpochProcessorTest {
         .build();
   }
 
-  private Throttler<Logger> spyLogThrottler(final Logger logger, final int throttlingPeriod)
-      throws IllegalAccessException {
+  private Throttler<Logger> spyLogThrottler(final Logger logger, final int throttlingPeriod) {
     Throttler<Logger> loggerThrottler =
         spy(new Throttler<>(logger, UInt64.valueOf(throttlingPeriod)));
     Field field =
@@ -104,7 +102,11 @@ class AbstractEpochProcessorTest {
             .get(0);
 
     field.setAccessible(true);
-    field.set(epochProcessor, loggerThrottler);
+    try {
+      field.set(epochProcessor, loggerThrottler);
+    } catch (IllegalAccessException e) {
+      throw new RuntimeException(e);
+    }
 
     return loggerThrottler;
   }
