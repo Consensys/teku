@@ -50,6 +50,8 @@ public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
 
   public static final boolean DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED = false;
+
+  public static final boolean DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED = false;
   public static final boolean DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED = true;
 
   public static final int DEFAULT_ASYNC_P2P_MAX_THREADS = 10;
@@ -97,6 +99,7 @@ public class Eth2NetworkConfiguration {
   private final int asyncBeaconChainMaxThreads;
   private final int asyncBeaconChainMaxQueue;
   private final int asyncP2pMaxQueue;
+  private final boolean forkChoiceLateBlockReorgEnabled;
 
   private Eth2NetworkConfiguration(
       final Spec spec,
@@ -124,7 +127,8 @@ public class Eth2NetworkConfiguration {
       final int asyncP2pMaxThreads,
       final int asyncP2pMaxQueue,
       final int asyncBeaconChainMaxThreads,
-      final int asyncBeaconChainMaxQueue) {
+      final int asyncBeaconChainMaxQueue,
+      final boolean forkChoiceLateBlockReorgEnabled) {
     this.spec = spec;
     this.constants = constants;
     this.initialState = initialState;
@@ -154,6 +158,7 @@ public class Eth2NetworkConfiguration {
     this.asyncP2pMaxQueue = asyncP2pMaxQueue;
     this.asyncBeaconChainMaxThreads = asyncBeaconChainMaxThreads;
     this.asyncBeaconChainMaxQueue = asyncBeaconChainMaxQueue;
+    this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
   }
 
   public static Eth2NetworkConfiguration.Builder builder(final String network) {
@@ -271,6 +276,10 @@ public class Eth2NetworkConfiguration {
     return asyncBeaconChainMaxQueue;
   }
 
+  public boolean isForkChoiceLateBlockReorgEnabled() {
+    return forkChoiceLateBlockReorgEnabled;
+  }
+
   @Override
   public String toString() {
     return constants;
@@ -306,6 +315,7 @@ public class Eth2NetworkConfiguration {
         DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
     private boolean forkChoiceProposerBoostUniquenessEnabled =
         DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED;
+    private boolean forkChoiceLateBlockReorgEnabled = DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
 
     public void spec(Spec spec) {
       this.spec = spec;
@@ -380,7 +390,8 @@ public class Eth2NetworkConfiguration {
           asyncP2pMaxThreads,
           asyncP2pMaxQueue,
           asyncBeaconChainMaxThreads,
-          asyncBeaconChainMaxQueue);
+          asyncBeaconChainMaxQueue,
+          forkChoiceLateBlockReorgEnabled);
     }
 
     private void validateCommandLineParameters() {
@@ -830,6 +841,11 @@ public class Eth2NetworkConfiguration {
       checkArgument(
           epochsStoreBlobsInt > 0, "Number of the epochs to store blobs for should be > 0");
       return Optional.of(epochsStoreBlobsInt);
+    }
+
+    public Builder forkChoiceLateBlockReorgEnabled(boolean forkChoiceLateBlockReorgEnabled) {
+      this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
+      return this;
     }
   }
 }
