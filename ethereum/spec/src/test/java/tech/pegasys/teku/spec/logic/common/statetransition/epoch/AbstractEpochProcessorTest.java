@@ -73,6 +73,7 @@ class AbstractEpochProcessorTest {
     return state.updated(s -> s.setSlot(s.getSlot().plus(slotsToAdvance)));
   }
 
+  @SuppressWarnings("MockNotUsedInProduction")
   private BeaconState createStateInInactivityLeak() {
     final UInt64 maxEffectiveBalance = spec.getGenesisSpecConfig().getMaxEffectiveBalance();
     final Validator validator =
