@@ -129,13 +129,20 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
         createHandler(GetBlockHeaderResponse.class));
   }
 
+  /**
+   * Tries <a
+   * href="https://ethereum.github.io/beacon-APIs/?urls.primaryName=dev#/Beacon/postStateValidators">POST
+   * Get validators from state</a> and falls back to <a
+   * href="https://ethereum.github.io/beacon-APIs/?urls.primaryName=dev#/Beacon/getStateValidators">GET
+   * Get validators from state</a> if POST method is not allowed
+   */
   @Override
   public Optional<List<ValidatorResponse>> getValidators(final List<String> validatorIds) {
     try {
       return postValidators(validatorIds);
     } catch (final PostStateValidatorsNotAllowedException ex) {
       LOG.debug(
-          "POST method for getting validator from state is not allowed. Falling back to GET.");
+          "POST method for getting validators from state is not allowed. Falling back to GET.");
     }
     final Map<String, String> queryParams = new HashMap<>();
     queryParams.put("id", String.join(",", validatorIds));
