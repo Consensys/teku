@@ -403,6 +403,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     storeConfig,
                     beaconAsyncRunner,
                     timeProvider,
+                    (blockRoot) -> blobSidecarPool.getBlock(blockRoot),
+                    (blockRoot, index) -> blobSidecarPool.getBlobSidecar(blockRoot, index),
                     storageQueryChannel,
                     storageUpdateChannel,
                     voteUpdateChannel,

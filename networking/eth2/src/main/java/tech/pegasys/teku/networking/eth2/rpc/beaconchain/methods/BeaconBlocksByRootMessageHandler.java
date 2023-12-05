@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
@@ -108,9 +109,7 @@ public class BeaconBlocksByRootMessageHandler
         future =
             future.thenCompose(
                 __ ->
-                    recentChainData
-                        .getStore()
-                        .retrieveSignedBlock(blockRoot.get())
+                    retrieveBlock(blockRoot.get())
                         .thenCompose(
                             block -> {
                               final Optional<RpcException> validationResult =
@@ -142,6 +141,15 @@ public class BeaconBlocksByRootMessageHandler
       requestCounter.labels("ok").inc();
       callback.completeSuccessfully();
     }
+  }
+
+  private SafeFuture<Optional<SignedBeaconBlock>> retrieveBlock(final Bytes32 blockRoot) {
+    final Optional<SignedBeaconBlock> recentlyValidatedSignedBlock =
+        recentChainData.getRecentlyValidatedSignedBlockByRoot(blockRoot);
+    if (recentlyValidatedSignedBlock.isPresent()) {
+      return SafeFuture.completedFuture(recentlyValidatedSignedBlock);
+    }
+    return recentChainData.retrieveSignedBlockByRoot(blockRoot);
   }
 
   private UInt64 getMaxRequestBlocks() {

@@ -571,6 +571,11 @@ public class CombinedChainDataClient {
 
   public SafeFuture<Optional<BlobSidecar>> getBlobSidecarByBlockRootAndIndex(
       final Bytes32 blockRoot, final UInt64 index) {
+    final Optional<BlobSidecar> recentlyValidatedBlobSidecar =
+        recentChainData.getRecentlyValidatedBlobSidecar(blockRoot, index);
+    if (recentlyValidatedBlobSidecar.isPresent()) {
+      return SafeFuture.completedFuture(recentlyValidatedBlobSidecar);
+    }
     final Optional<UInt64> hotSlotForBlockRoot = recentChainData.getSlotForBlockRoot(blockRoot);
     if (hotSlotForBlockRoot.isPresent()) {
       return getBlobSidecarByKey(
