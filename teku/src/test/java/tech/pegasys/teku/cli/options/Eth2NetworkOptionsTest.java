@@ -126,6 +126,15 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(Boolean.valueOf(value));
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"true", "false"})
+  void shouldSetLateBlockImportEnabled(final String value) {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments("--Xfork-choice-late-block-reorg-enabled", value);
+    assertThat(config.eth2NetworkConfiguration().isForkChoiceLateBlockReorgEnabled())
+        .isEqualTo(Boolean.valueOf(value));
+  }
+
   @Test
   void shouldMergeTransitionsOverrideBeEmptyByDefault() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
