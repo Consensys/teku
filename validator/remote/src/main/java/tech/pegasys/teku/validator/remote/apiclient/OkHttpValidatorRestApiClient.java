@@ -92,6 +92,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
+import tech.pegasys.teku.validator.remote.apiclient.ResponseHandler.Handler;
 
 public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
 
@@ -100,6 +101,11 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   private static final MediaType APPLICATION_JSON =
       MediaType.parse("application/json; charset=utf-8");
   private static final Map<String, String> EMPTY_MAP = emptyMap();
+  private static final Handler<GetStateValidatorsResponse>
+      POST_VALIDATORS_NOT_ALLOWED_THROWING_EXCEPTION_HANDLER =
+          (req, res) -> {
+            throw new PostStateValidatorsNotAllowedException();
+          };
 
   private final JsonProvider jsonProvider = new JsonProvider();
   private final OkHttpClient httpClient;
@@ -163,11 +169,9 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
             EMPTY_MAP,
             request,
             createHandler(GetStateValidatorsResponse.class)
+                .withHandler(SC_NOT_FOUND, POST_VALIDATORS_NOT_ALLOWED_THROWING_EXCEPTION_HANDLER)
                 .withHandler(
-                    SC_METHOD_NOT_ALLOWED,
-                    (req, res) -> {
-                      throw new PostStateValidatorsNotAllowedException();
-                    }))
+                    SC_METHOD_NOT_ALLOWED, POST_VALIDATORS_NOT_ALLOWED_THROWING_EXCEPTION_HANDLER))
         .map(response -> response.data);
   }
 

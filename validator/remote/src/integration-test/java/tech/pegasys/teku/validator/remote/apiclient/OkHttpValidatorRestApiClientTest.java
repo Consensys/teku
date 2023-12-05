@@ -177,9 +177,11 @@ class OkHttpValidatorRestApiClientTest {
     assertThat(result.get()).usingRecursiveComparison().isEqualTo(expected);
   }
 
-  @Test
-  void getValidators_MakesExpectedGetRequest_WhenPostNotAllowed() throws Exception {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_METHOD_NOT_ALLOWED));
+  @ParameterizedTest
+  @ValueSource(ints = {SC_NOT_FOUND, SC_METHOD_NOT_ALLOWED})
+  void getValidators_MakesExpectedGetRequest_WhenPostNotAllowed(final int responseCode)
+      throws Exception {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(responseCode));
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
     apiClient.getValidators(List.of("1", "0x1234"));
@@ -193,13 +195,15 @@ class OkHttpValidatorRestApiClientTest {
     assertThat(request.getPath()).contains("?id=1,0x1234");
   }
 
-  @Test
-  public void getValidators_WhenPostNotAllowedAndGetSuccess_ReturnsResponse() {
+  @ParameterizedTest
+  @ValueSource(ints = {SC_NOT_FOUND, SC_METHOD_NOT_ALLOWED})
+  public void getValidators_WhenPostNotAllowedAndGetSuccess_ReturnsResponse(
+      final int responseCode) {
     final List<ValidatorResponse> expected =
         List.of(schemaObjects.validatorResponse(), schemaObjects.validatorResponse());
     final GetStateValidatorsResponse response = new GetStateValidatorsResponse(false, expected);
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_METHOD_NOT_ALLOWED));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(responseCode));
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(asJson(response)));
 
     Optional<List<ValidatorResponse>> result = apiClient.getValidators(List.of("1", "2"));
