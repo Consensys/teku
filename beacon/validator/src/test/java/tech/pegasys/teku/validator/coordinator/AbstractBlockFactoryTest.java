@@ -33,6 +33,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -209,7 +210,7 @@ public abstract class AbstractBlockFactoryTest {
                 randaoReveal,
                 Optional.empty(),
                 Optional.of(blinded),
-                Optional.empty()));
+                BlockProductionPerformance.NOOP));
 
     final BeaconBlock block = blockContainer.getBlock();
 

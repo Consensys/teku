@@ -88,7 +88,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
             final ExecutionPayloadContext executionPayloadContext,
             final BeaconState state,
             final SafeFuture<UInt256> payloadValueResult,
-            final Optional<BlockProductionPerformance> blockProductionPerformance) {
+            final BlockProductionPerformance blockProductionPerformance) {
           payloadValueResult.complete(null);
           return SafeFuture.completedFuture(null);
         }
@@ -109,7 +109,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
   /**
    * This is low level method, use {@link
    * ExecutionLayerBlockProductionManager#initiateBlockProduction(ExecutionPayloadContext,
-   * BeaconState, boolean, Optional)} instead
+   * BeaconState, boolean, BlockProductionPerformance)} instead
    */
   SafeFuture<GetPayloadResponse> engineGetPayload(
       ExecutionPayloadContext executionPayloadContext, UInt64 slot);
@@ -129,7 +129,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
   /**
    * This is low level method, use {@link
    * ExecutionLayerBlockProductionManager#initiateBlockProduction(ExecutionPayloadContext,
-   * BeaconState, boolean, Optional)} instead
+   * BeaconState, boolean, BlockProductionPerformance)} instead
    *
    * @param executionPayloadContext The execution payload context
    * @param state The beacon state
@@ -140,5 +140,5 @@ public interface ExecutionLayerChannel extends ChannelInterface {
       ExecutionPayloadContext executionPayloadContext,
       BeaconState state,
       SafeFuture<UInt256> payloadValueResult,
-      Optional<BlockProductionPerformance> blockProductionPerformance);
+      BlockProductionPerformance blockProductionPerformance);
 }

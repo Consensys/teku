@@ -34,7 +34,7 @@ public interface BlockFactory {
       BLSSignature randaoReveal,
       Optional<Bytes32> optionalGraffiti,
       final Optional<Boolean> blinded,
-      final Optional<BlockProductionPerformance> blockProductionPerformance);
+      final BlockProductionPerformance blockProductionPerformance);
 
   SafeFuture<SignedBeaconBlock> unblindSignedBlockIfBlinded(SignedBeaconBlock maybeBlindedBlock);
 

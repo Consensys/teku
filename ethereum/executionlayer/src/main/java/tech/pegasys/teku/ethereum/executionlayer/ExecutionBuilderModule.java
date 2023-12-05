@@ -128,15 +128,12 @@ public class ExecutionBuilderModule {
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
       final SafeFuture<UInt256> payloadValueResult,
-      final Optional<BlockProductionPerformance> blockProductionPerformance) {
+      final BlockProductionPerformance blockProductionPerformance) {
 
     final SafeFuture<GetPayloadResponse> localGetPayloadResponse =
         executionLayerManager
             .engineGetPayloadForFallback(executionPayloadContext, state.getSlot())
-            .thenPeek(
-                __ ->
-                    blockProductionPerformance.ifPresent(
-                        BlockProductionPerformance::engineGetPayload));
+            .thenPeek(__ -> blockProductionPerformance.engineGetPayload());
 
     final Optional<SafeFuture<HeaderWithFallbackData>> validationResult =
         validateBuilderGetHeader(
@@ -169,7 +166,7 @@ public class ExecutionBuilderModule {
         .thenApply(ResponseUnwrapper::unwrapBuilderResponseOrThrow)
         .thenPeek(
             signedBuilderBidMaybe -> {
-              blockProductionPerformance.ifPresent(BlockProductionPerformance::builderGetHeader);
+              blockProductionPerformance.builderGetHeader();
               LOG.trace(
                   "builderGetHeader(slot={}, pubKey={}, parentHash={}) -> {}",
                   slot,
@@ -255,10 +252,10 @@ public class ExecutionBuilderModule {
       final SignedValidatorRegistration validatorRegistration,
       final Optional<ExecutionPayload> localExecutionPayload,
       final SafeFuture<UInt256> payloadValueResult,
-      final Optional<BlockProductionPerformance> blockProductionPerformance) {
+      final BlockProductionPerformance blockProductionPerformance) {
     builderBidValidator.validateBuilderBid(
         signedBuilderBid, validatorRegistration, state, localExecutionPayload);
-    blockProductionPerformance.ifPresent(BlockProductionPerformance::builderBidValidated);
+    blockProductionPerformance.builderBidValidated();
     final BuilderBid builderBid = signedBuilderBid.getMessage();
     payloadValueResult.complete(builderBid.getValue());
     return SafeFuture.completedFuture(

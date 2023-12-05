@@ -244,7 +244,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
       final SafeFuture<UInt256> payloadValueResult,
-      final Optional<BlockProductionPerformance> blockProductionPerformance) {
+      final BlockProductionPerformance blockProductionPerformance) {
     return executionBuilderModule.builderGetHeader(
         executionPayloadContext, state, payloadValueResult, blockProductionPerformance);
   }

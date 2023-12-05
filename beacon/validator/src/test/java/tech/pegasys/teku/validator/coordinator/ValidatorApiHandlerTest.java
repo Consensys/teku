@@ -61,6 +61,7 @@ import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils;
@@ -525,7 +526,7 @@ class ValidatorApiHandlerTest {
             randaoReveal,
             Optional.empty(),
             Optional.of(false),
-            Optional.empty()))
+            BlockProductionPerformance.NOOP))
         .thenReturn(SafeFuture.completedFuture(createdBlock));
 
     final SafeFuture<Optional<BlockContainer>> result =
@@ -539,7 +540,7 @@ class ValidatorApiHandlerTest {
             randaoReveal,
             Optional.empty(),
             Optional.of(false),
-            Optional.empty());
+            BlockProductionPerformance.NOOP);
     assertThat(result).isCompletedWithValue(Optional.of(createdBlock));
   }
 

@@ -323,7 +323,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
       final SafeFuture<UInt256> payloadValueResult,
-      final Optional<BlockProductionPerformance> blockProductionPerformance) {
+      final BlockProductionPerformance blockProductionPerformance) {
     final UInt64 slot = state.getSlot();
     LOG.info(
         "getPayloadHeader: payloadId: {} slot: {} ... delegating to getPayload ...",
@@ -333,9 +333,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
 
     return engineGetPayload(executionPayloadContext, slot)
-        .thenPeek(
-            __ ->
-                blockProductionPerformance.ifPresent(BlockProductionPerformance::engineGetPayload))
+        .thenPeek(__ -> blockProductionPerformance.engineGetPayload())
         .thenApply(
             getPayloadResponse -> {
               final ExecutionPayload executionPayload = getPayloadResponse.getExecutionPayload();
@@ -368,9 +366,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                           });
               return HeaderWithFallbackData.create(payloadHeader, blobKzgCommitments);
             })
-        .thenPeek(
-            __ ->
-                blockProductionPerformance.ifPresent(BlockProductionPerformance::builderGetHeader));
+        .thenPeek(__ -> blockProductionPerformance.builderGetHeader());
   }
 
   @Override

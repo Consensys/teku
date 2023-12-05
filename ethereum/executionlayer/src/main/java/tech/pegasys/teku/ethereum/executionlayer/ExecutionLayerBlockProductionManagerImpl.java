@@ -72,7 +72,7 @@ public class ExecutionLayerBlockProductionManagerImpl
       final ExecutionPayloadContext context,
       final BeaconState blockSlotState,
       final boolean isBlind,
-      final Optional<BlockProductionPerformance> blockProductionPerformance) {
+      final BlockProductionPerformance blockProductionPerformance) {
     final ExecutionPayloadResult result;
     if (!isBlind) {
       final SafeFuture<GetPayloadResponse> getPayloadResponseFuture =
@@ -100,16 +100,13 @@ public class ExecutionLayerBlockProductionManagerImpl
       final ExecutionPayloadContext context,
       final BeaconState blockSlotState,
       final boolean isBlind,
-      final Optional<BlockProductionPerformance> blockProductionPerformance) {
+      final BlockProductionPerformance blockProductionPerformance) {
     final ExecutionPayloadResult result;
     if (!isBlind) {
       final SafeFuture<GetPayloadResponse> getPayloadResponseFuture =
           executionLayerChannel
               .engineGetPayload(context, blockSlotState.getSlot())
-              .thenPeek(
-                  __ ->
-                      blockProductionPerformance.ifPresent(
-                          BlockProductionPerformance::engineGetPayload));
+              .thenPeek(__ -> blockProductionPerformance.engineGetPayload());
       final SafeFuture<ExecutionPayload> executionPayloadFuture =
           getPayloadResponseFuture.thenApply(GetPayloadResponse::getExecutionPayload);
       final SafeFuture<Optional<BlobsBundle>> blobsBundleFuture =
@@ -146,7 +143,7 @@ public class ExecutionLayerBlockProductionManagerImpl
   private ExecutionPayloadResult builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
-      final Optional<BlockProductionPerformance> blockProductionPerformance) {
+      final BlockProductionPerformance blockProductionPerformance) {
 
     final SafeFuture<UInt256> executionPayloadValueFuture = new SafeFuture<>();
 

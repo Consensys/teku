@@ -843,7 +843,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   }
 
   SafeFuture<Void> prepareForBlockProduction(
-      final UInt64 slot, final Optional<BlockProductionPerformance> blockProductionPerformance) {
+      final UInt64 slot, final BlockProductionPerformance blockProductionPerformance) {
     final UInt64 slotStartTimeMillis =
         spec.getSlotStartTimeMillis(slot, recentChainData.getGenesisTimeMillis());
     final UInt64 currentTime = recentChainData.getStore().getTimeInMillis();
@@ -862,20 +862,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     return SafeFuture.allOf(
             tickProcessor
                 .onTick(slotStartTimeMillis)
-                .thenPeek(
-                    __ ->
-                        blockProductionPerformance.ifPresent(
-                            BlockProductionPerformance::prepareOnTick)),
+                .thenPeek(__ -> blockProductionPerformance.prepareOnTick()),
             applyDeferredAttestations(slot)
-                .thenPeek(
-                    __ ->
-                        blockProductionPerformance.ifPresent(
-                            BlockProductionPerformance::prepareApplyDeferredAttestations)))
+                .thenPeek(__ -> blockProductionPerformance.prepareApplyDeferredAttestations()))
         .thenCompose(__ -> processHead(Optional.of(slot), true))
-        .thenRun(
-            () ->
-                blockProductionPerformance.ifPresent(
-                    BlockProductionPerformance::prepareProcessHead));
+        .thenRun(blockProductionPerformance::prepareProcessHead);
   }
 
   private SafeFuture<Void> applyDeferredAttestations(final UInt64 slot) {

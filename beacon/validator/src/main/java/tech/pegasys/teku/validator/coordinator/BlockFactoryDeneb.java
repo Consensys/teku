@@ -49,7 +49,7 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti,
       final Optional<Boolean> blinded,
-      final Optional<BlockProductionPerformance> blockProductionPerformance) {
+      final BlockProductionPerformance blockProductionPerformance) {
     return super.createUnsignedBlock(
             blockSlotState,
             newSlot,

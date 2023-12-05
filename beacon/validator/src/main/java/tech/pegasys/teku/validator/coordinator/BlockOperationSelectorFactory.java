@@ -109,7 +109,7 @@ public class BlockOperationSelectorFactory {
       final BeaconState blockSlotState,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti,
-      final Optional<BlockProductionPerformance> blockProductionPerformance) {
+      final BlockProductionPerformance blockProductionPerformance) {
     return bodyBuilder -> {
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
 
@@ -174,7 +174,7 @@ public class BlockOperationSelectorFactory {
             bodyBuilder, schemaDefinitions, parentRoot, blockSlotState, blockProductionPerformance);
       }
 
-      blockProductionPerformance.ifPresent(BlockProductionPerformance::beaconBlockPrepared);
+      blockProductionPerformance.beaconBlockPrepared();
     };
   }
 
@@ -183,7 +183,7 @@ public class BlockOperationSelectorFactory {
       final SchemaDefinitions schemaDefinitions,
       final Bytes32 parentRoot,
       final BeaconState blockSlotState,
-      final Optional<BlockProductionPerformance> blockProductionPerformance) {
+      final BlockProductionPerformance blockProductionPerformance) {
     final SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContextFuture =
         forkChoiceNotifier.getPayloadId(parentRoot, blockSlotState.getSlot());
 
@@ -249,7 +249,7 @@ public class BlockOperationSelectorFactory {
       final SchemaDefinitions schemaDefinitions,
       final BeaconState blockSlotState,
       final SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContextFuture,
-      final Optional<BlockProductionPerformance> blockProductionPerformance) {
+      final BlockProductionPerformance blockProductionPerformance) {
     final Supplier<SafeFuture<ExecutionPayload>> preMergePayload =
         () ->
             SafeFuture.completedFuture(
@@ -279,7 +279,7 @@ public class BlockOperationSelectorFactory {
       final SchemaDefinitions schemaDefinitions,
       final BeaconState blockSlotState,
       final SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContextFuture,
-      final Optional<BlockProductionPerformance> blockProductionPerformance) {
+      final BlockProductionPerformance blockProductionPerformance) {
     final Supplier<SafeFuture<ExecutionPayloadHeader>> preMergePayloadHeader =
         () ->
             SafeFuture.completedFuture(

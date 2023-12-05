@@ -49,7 +49,7 @@ public class BlockFactoryPhase0 implements BlockFactory {
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti,
       final Optional<Boolean> blinded,
-      final Optional<BlockProductionPerformance> blockProductionPerformance) {
+      final BlockProductionPerformance blockProductionPerformance) {
     checkArgument(
         blockSlotState.getSlot().equals(newSlot),
         "Block slot state for slot %s but should be for slot %s",

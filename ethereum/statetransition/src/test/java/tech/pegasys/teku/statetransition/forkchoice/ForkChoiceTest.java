@@ -57,6 +57,7 @@ import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -1053,7 +1054,8 @@ class ForkChoiceTest {
     storageSystem.chainUpdater().setTimeMillis(newTime);
 
     assertThat(recentChainData.getCurrentSlot()).isEqualTo(Optional.of(ZERO));
-    assertThat(forkChoice.prepareForBlockProduction(ONE, Optional.empty())).isCompleted();
+    assertThat(forkChoice.prepareForBlockProduction(ONE, BlockProductionPerformance.NOOP))
+        .isCompleted();
     assertThat(recentChainData.getCurrentSlot()).isEqualTo(Optional.of(ONE));
 
     verify(forkChoiceNotifier, times(1)).onForkChoiceUpdated(any(), eq(Optional.of(ONE)));
@@ -1067,7 +1069,8 @@ class ForkChoiceTest {
     storageSystem.chainUpdater().setTimeMillis(newTime);
 
     assertThat(recentChainData.getCurrentSlot()).isEqualTo(Optional.of(ZERO));
-    assertThat(forkChoice.prepareForBlockProduction(ONE, Optional.empty())).isCompleted();
+    assertThat(forkChoice.prepareForBlockProduction(ONE, BlockProductionPerformance.NOOP))
+        .isCompleted();
     assertThat(recentChainData.getCurrentSlot()).isEqualTo(Optional.of(ZERO));
 
     verifyNoInteractions(forkChoiceNotifier);

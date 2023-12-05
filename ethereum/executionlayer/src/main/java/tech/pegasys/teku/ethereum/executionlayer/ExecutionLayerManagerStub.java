@@ -54,7 +54,7 @@ public class ExecutionLayerManagerStub extends ExecutionLayerChannelStub
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
       final SafeFuture<UInt256> payloadValueResult,
-      final Optional<BlockProductionPerformance> blockProductionPerformance) {
+      final BlockProductionPerformance blockProductionPerformance) {
     LOG.info("Builder Circuit Breaker isEngaged: " + builderCircuitBreaker.isEngaged(state));
     return super.builderGetHeader(
         executionPayloadContext, state, payloadValueResult, blockProductionPerformance);

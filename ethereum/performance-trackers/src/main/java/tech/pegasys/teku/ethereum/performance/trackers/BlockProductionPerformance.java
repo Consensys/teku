@@ -13,73 +13,63 @@
 
 package tech.pegasys.teku.ethereum.performance.trackers;
 
-import tech.pegasys.teku.infrastructure.logging.EventLogger;
-import tech.pegasys.teku.infrastructure.time.PerformanceTracker;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class BlockProductionPerformance {
-  public static final String COMPLETE_LABEL = "complete";
-  public static final int LATE_EVENT_MS = 100;
-  private final PerformanceTracker performanceTracker;
-  private final UInt64 slot;
-  private UInt64 slotTime = UInt64.ZERO;
+public interface BlockProductionPerformance {
+  String COMPLETE_LABEL = "complete";
+  int LATE_EVENT_MS = 100;
 
-  public BlockProductionPerformance(final TimeProvider timeProvider, final UInt64 slot) {
-    this.performanceTracker = new PerformanceTracker(timeProvider);
-    this.slot = slot;
-    performanceTracker.addEvent("start");
-  }
+  BlockProductionPerformance NOOP =
+      new BlockProductionPerformance() {
+        @Override
+        public void slotTime(final Supplier<UInt64> slotTimeSupplier) {}
 
-  public void slotTime(final UInt64 slotTime) {
-    this.slotTime = slotTime;
-  }
+        @Override
+        public void complete() {}
 
-  public void complete() {
-    if (slotTime.isZero()) {
-      // we haven't managed to calculate slot time, something wrong happened
-      return;
-    }
-    final UInt64 completionTime = performanceTracker.addEvent(COMPLETE_LABEL);
-    final boolean isLateEvent = completionTime.minusMinZero(slotTime).isGreaterThan(LATE_EVENT_MS);
-    performanceTracker.report(
-        slotTime,
-        isLateEvent,
-        (event, stepDuration) -> {},
-        totalDuration -> {},
-        (totalDuration, timings) ->
-            EventLogger.EVENT_LOG.slowBlockProductionEvent(slot, totalDuration, timings));
-  }
+        @Override
+        public void prepareOnTick() {}
 
-  public void prepareOnTick() {
-    performanceTracker.addEvent("preparation_on_tick");
-  }
+        @Override
+        public void prepareApplyDeferredAttestations() {}
 
-  public void prepareApplyDeferredAttestations() {
-    performanceTracker.addEvent("preparation_apply_deferred_attestations");
-  }
+        @Override
+        public void prepareProcessHead() {}
 
-  public void prepareProcessHead() {
-    performanceTracker.addEvent("preparation_process_head");
-  }
+        @Override
+        public void beaconBlockPrepared() {}
 
-  public void beaconBlockPrepared() {
-    performanceTracker.addEvent("beacon_block_prepared");
-  }
+        @Override
+        public void getStateAtSlot() {}
 
-  public void getStateAtSlot() {
-    performanceTracker.addEvent("retrieve_state");
-  }
+        @Override
+        public void engineGetPayload() {}
 
-  public void engineGetPayload() {
-    performanceTracker.addEvent("local_get_payload");
-  }
+        @Override
+        public void builderGetHeader() {}
 
-  public void builderGetHeader() {
-    performanceTracker.addEvent("builder_get_header");
-  }
+        @Override
+        public void builderBidValidated() {}
+      };
 
-  public void builderBidValidated() {
-    performanceTracker.addEvent("builder_bid_validated");
-  }
+  void slotTime(Supplier<UInt64> slotTimeSupplier);
+
+  void complete();
+
+  void prepareOnTick();
+
+  void prepareApplyDeferredAttestations();
+
+  void prepareProcessHead();
+
+  void beaconBlockPrepared();
+
+  void getStateAtSlot();
+
+  void engineGetPayload();
+
+  void builderGetHeader();
+
+  void builderBidValidated();
 }

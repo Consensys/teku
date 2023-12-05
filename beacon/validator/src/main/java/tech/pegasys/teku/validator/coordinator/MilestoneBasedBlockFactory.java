@@ -67,7 +67,7 @@ public class MilestoneBasedBlockFactory implements BlockFactory {
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti,
       final Optional<Boolean> blinded,
-      final Optional<BlockProductionPerformance> blockProductionPerformance) {
+      final BlockProductionPerformance blockProductionPerformance) {
     final SpecMilestone milestone = getMilestone(newSlot);
     return registeredFactories
         .get(milestone)

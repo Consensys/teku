@@ -42,7 +42,7 @@ public interface ExecutionLayerBlockProductionManager {
             final ExecutionPayloadContext context,
             final BeaconState blockSlotState,
             final boolean isBlind,
-            final Optional<BlockProductionPerformance> blockProductionPerformance) {
+            final BlockProductionPerformance blockProductionPerformance) {
           return null;
         }
 
@@ -51,7 +51,7 @@ public interface ExecutionLayerBlockProductionManager {
             final ExecutionPayloadContext context,
             final BeaconState blockSlotState,
             final boolean isBlind,
-            final Optional<BlockProductionPerformance> blockProductionPerformance) {
+            final BlockProductionPerformance blockProductionPerformance) {
           return null;
         }
 
@@ -80,7 +80,7 @@ public interface ExecutionLayerBlockProductionManager {
       ExecutionPayloadContext context,
       BeaconState blockSlotState,
       boolean isBlind,
-      Optional<BlockProductionPerformance> blockProductionPerformance);
+      BlockProductionPerformance blockProductionPerformance);
 
   /**
    * Initiates block and sidecar blobs production flow with execution client or builder. Use since
@@ -96,12 +96,13 @@ public interface ExecutionLayerBlockProductionManager {
       ExecutionPayloadContext context,
       BeaconState blockSlotState,
       boolean isBlind,
-      Optional<BlockProductionPerformance> blockProductionPerformance);
+      BlockProductionPerformance blockProductionPerformance);
 
   /**
    * Required {@link #initiateBlockProduction(ExecutionPayloadContext, BeaconState, boolean,
-   * Optional)} or {@link #initiateBlockAndBlobsProduction(ExecutionPayloadContext, BeaconState,
-   * boolean, Optional)} to have been called first in order for a value to be present
+   * BlockProductionPerformance)} or {@link
+   * #initiateBlockAndBlobsProduction(ExecutionPayloadContext, BeaconState, boolean,
+   * BlockProductionPerformance)} to have been called first in order for a value to be present
    */
   Optional<ExecutionPayloadResult> getCachedPayloadResult(UInt64 slot);
 

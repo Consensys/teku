@@ -47,6 +47,7 @@ import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanceImpl;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -321,24 +322,20 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     if (isSyncActive()) {
       return NodeSyncingException.failedFuture();
     }
-    final Optional<BlockProductionPerformance> blockProductionPerformance =
+    final BlockProductionPerformance blockProductionPerformance =
         blockProductionPerformanceTrackingEnabled
-            ? Optional.of(new BlockProductionPerformance(timeProvider, slot))
-            : Optional.empty();
+            ? new BlockProductionPerformanceImpl(timeProvider, slot)
+            : BlockProductionPerformance.NOOP;
     return forkChoiceTrigger
         .prepareForBlockProduction(slot, blockProductionPerformance)
         .thenCompose(__ -> combinedChainDataClient.getStateAtSlotExact(slot))
         .thenPeek(
             maybeState -> {
-              if (blockProductionPerformance.isEmpty()) {
-                return;
-              }
               maybeState.ifPresent(
                   state ->
-                      blockProductionPerformance
-                          .get()
-                          .slotTime(secondsToMillis(spec.computeTimeAtSlot(state, slot))));
-              blockProductionPerformance.get().getStateAtSlot();
+                      blockProductionPerformance.slotTime(
+                          () -> secondsToMillis(spec.computeTimeAtSlot(state, slot))));
+              blockProductionPerformance.getStateAtSlot();
             })
         .thenCompose(
             blockSlotState ->
@@ -349,7 +346,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                     blinded,
                     blockSlotState,
                     blockProductionPerformance))
-        .thenPeek(__ -> blockProductionPerformance.ifPresent(BlockProductionPerformance::complete));
+        .thenPeek(__ -> blockProductionPerformance.complete());
   }
 
   private SafeFuture<Optional<BlockContainer>> createBlock(
@@ -358,7 +355,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final Optional<Bytes32> graffiti,
       final Optional<Boolean> blinded,
       final Optional<BeaconState> maybeBlockSlotState,
-      final Optional<BlockProductionPerformance> blockProductionPerformance) {
+      final BlockProductionPerformance blockProductionPerformance) {
     if (maybeBlockSlotState.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
     }
