@@ -31,6 +31,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
@@ -210,7 +211,11 @@ class BlockOperationSelectorFactoryTest {
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
     factory
         .createSelector(
-            parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
+            parentRoot,
+            blockSlotState,
+            dataStructureUtil.randomSignature(),
+            Optional.empty(),
+            BlockProductionPerformance.NOOP)
         .accept(bodyBuilder);
 
     assertThat(bodyBuilder.proposerSlashings).isEmpty();
@@ -240,7 +245,12 @@ class BlockOperationSelectorFactoryTest {
     addToPool(blsToExecutionChangePool, blsToExecutionChange);
 
     factory
-        .createSelector(parentRoot, blockSlotState, randaoReveal, Optional.empty())
+        .createSelector(
+            parentRoot,
+            blockSlotState,
+            randaoReveal,
+            Optional.empty(),
+            BlockProductionPerformance.NOOP)
         .accept(bodyBuilder);
 
     assertThat(bodyBuilder.randaoReveal).isEqualTo(randaoReveal);
@@ -312,7 +322,12 @@ class BlockOperationSelectorFactoryTest {
         .thenReturn(Optional.of(BlsToExecutionChangeInvalidReason.invalidValidatorIndex()));
 
     factory
-        .createSelector(parentRoot, blockSlotState, randaoReveal, Optional.empty())
+        .createSelector(
+            parentRoot,
+            blockSlotState,
+            randaoReveal,
+            Optional.empty(),
+            BlockProductionPerformance.NOOP)
         .accept(bodyBuilder);
 
     assertThat(bodyBuilder.randaoReveal).isEqualTo(randaoReveal);
@@ -334,7 +349,11 @@ class BlockOperationSelectorFactoryTest {
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconStatePreMerge(slot);
     factory
         .createSelector(
-            parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
+            parentRoot,
+            blockSlotState,
+            dataStructureUtil.randomSignature(),
+            Optional.empty(),
+            BlockProductionPerformance.NOOP)
         .accept(bodyBuilder);
     assertThat(bodyBuilder.executionPayload).isEqualTo(defaultExecutionPayload);
   }
@@ -345,7 +364,11 @@ class BlockOperationSelectorFactoryTest {
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconStatePreMerge(slot);
     factory
         .createSelector(
-            parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
+            parentRoot,
+            blockSlotState,
+            dataStructureUtil.randomSignature(),
+            Optional.empty(),
+            BlockProductionPerformance.NOOP)
         .accept(blindedBodyBuilder);
     assertThat(blindedBodyBuilder.executionPayloadHeader)
         .isEqualTo(executionPayloadHeaderOfDefaultPayload);
@@ -367,7 +390,11 @@ class BlockOperationSelectorFactoryTest {
 
     factory
         .createSelector(
-            parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
+            parentRoot,
+            blockSlotState,
+            dataStructureUtil.randomSignature(),
+            Optional.empty(),
+            BlockProductionPerformance.NOOP)
         .accept(bodyBuilder);
 
     assertThat(bodyBuilder.executionPayload).isEqualTo(randomExecutionPayload);
@@ -390,7 +417,11 @@ class BlockOperationSelectorFactoryTest {
 
     factory
         .createSelector(
-            parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
+            parentRoot,
+            blockSlotState,
+            dataStructureUtil.randomSignature(),
+            Optional.empty(),
+            BlockProductionPerformance.NOOP)
         .accept(blindedBodyBuilder);
 
     assertThat(blindedBodyBuilder.executionPayloadHeader).isEqualTo(randomExecutionPayloadHeader);
@@ -412,7 +443,11 @@ class BlockOperationSelectorFactoryTest {
 
     factory
         .createSelector(
-            parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
+            parentRoot,
+            blockSlotState,
+            dataStructureUtil.randomSignature(),
+            Optional.empty(),
+            BlockProductionPerformance.NOOP)
         .accept(bodyBuilder);
 
     assertThat(bodyBuilder.executionPayload).isEqualTo(randomExecutionPayload);
@@ -454,7 +489,11 @@ class BlockOperationSelectorFactoryTest {
 
     factory
         .createSelector(
-            parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
+            parentRoot,
+            blockSlotState,
+            dataStructureUtil.randomSignature(),
+            Optional.empty(),
+            BlockProductionPerformance.NOOP)
         .accept(bodyBuilder);
 
     assertThat(bodyBuilder.blobKzgCommitments)
@@ -485,7 +524,11 @@ class BlockOperationSelectorFactoryTest {
 
     factory
         .createSelector(
-            parentRoot, blockSlotState, dataStructureUtil.randomSignature(), Optional.empty())
+            parentRoot,
+            blockSlotState,
+            dataStructureUtil.randomSignature(),
+            Optional.empty(),
+            BlockProductionPerformance.NOOP)
         .accept(bodyBuilder);
 
     assertThat(bodyBuilder.blobKzgCommitments).hasSameElementsAs(blobKzgCommitments);
@@ -618,7 +661,8 @@ class BlockOperationSelectorFactoryTest {
       final ExecutionPayload executionPayload,
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState blockSlotState) {
-    when(executionLayer.initiateBlockProduction(executionPayloadContext, blockSlotState, false))
+    when(executionLayer.initiateBlockProduction(
+            executionPayloadContext, blockSlotState, false, BlockProductionPerformance.NOOP))
         .thenReturn(
             new ExecutionPayloadResult(
                 executionPayloadContext,
@@ -632,7 +676,8 @@ class BlockOperationSelectorFactoryTest {
       final ExecutionPayloadHeader executionPayloadHeader,
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState blockSlotState) {
-    when(executionLayer.initiateBlockProduction(executionPayloadContext, blockSlotState, true))
+    when(executionLayer.initiateBlockProduction(
+            executionPayloadContext, blockSlotState, true, BlockProductionPerformance.NOOP))
         .thenReturn(
             new ExecutionPayloadResult(
                 executionPayloadContext,
@@ -650,7 +695,7 @@ class BlockOperationSelectorFactoryTest {
       final BeaconState blockSlotState,
       final BlobsBundle blobsBundle) {
     when(executionLayer.initiateBlockAndBlobsProduction(
-            executionPayloadContext, blockSlotState, false))
+            executionPayloadContext, blockSlotState, false, BlockProductionPerformance.NOOP))
         .thenReturn(
             new ExecutionPayloadResult(
                 executionPayloadContext,
@@ -668,7 +713,7 @@ class BlockOperationSelectorFactoryTest {
     final HeaderWithFallbackData headerWithFallbackData =
         HeaderWithFallbackData.create(executionPayloadHeader, Optional.of(blobKzgCommitments));
     when(executionLayer.initiateBlockAndBlobsProduction(
-            executionPayloadContext, blockSlotState, true))
+            executionPayloadContext, blockSlotState, true, BlockProductionPerformance.NOOP))
         .thenReturn(
             new ExecutionPayloadResult(
                 executionPayloadContext,

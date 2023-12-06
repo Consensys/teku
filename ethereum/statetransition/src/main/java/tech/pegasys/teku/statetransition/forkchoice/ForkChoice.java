@@ -28,6 +28,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -100,6 +101,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final Subscribers<OptimisticHeadSubscriber> optimisticSyncSubscribers =
       Subscribers.create(true);
   private final TickProcessor tickProcessor;
+  private final boolean forkChoiceLateBlockReorgEnabled;
   private Optional<Boolean> optimisticSyncing = Optional.empty();
 
   public ForkChoice(
@@ -113,6 +115,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final MergeTransitionBlockValidator transitionBlockValidator,
       final boolean forkChoiceUpdateHeadOnBlockImportEnabled,
       final boolean forkChoiceProposerBoostUniquenessEnabled,
+      final boolean forkChoiceLateBlockReorgEnabled,
       final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.forkChoiceExecutor = forkChoiceExecutor;
@@ -126,6 +129,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.tickProcessor = tickProcessor;
     this.forkChoiceUpdateHeadOnBlockImportEnabled = forkChoiceUpdateHeadOnBlockImportEnabled;
     this.forkChoiceProposerBoostUniquenessEnabled = forkChoiceProposerBoostUniquenessEnabled;
+    this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
+    LOG.debug("forkChoiceLateBlockReorgEnabled is set to {}", forkChoiceLateBlockReorgEnabled);
+
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
     forkChoiceNotifier.subscribeToForkChoiceUpdatedResult(this);
   }
@@ -154,6 +160,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         transitionBlockValidator,
         true,
         true,
+        false,
         metricsSystem);
   }
 
@@ -194,6 +201,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   public SafeFuture<Boolean> processHead() {
     return processHead(Optional.empty(), false);
+  }
+
+  public boolean isForkChoiceLateBlockReorgEnabled() {
+    return forkChoiceLateBlockReorgEnabled;
   }
 
   /** Import a block to the store. */
@@ -841,7 +852,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             });
   }
 
-  SafeFuture<Void> prepareForBlockProduction(final UInt64 slot) {
+  SafeFuture<Void> prepareForBlockProduction(
+      final UInt64 slot, final BlockProductionPerformance blockProductionPerformance) {
     final UInt64 slotStartTimeMillis =
         spec.getSlotStartTimeMillis(slot, recentChainData.getGenesisTimeMillis());
     final UInt64 currentTime = recentChainData.getStore().getTimeInMillis();
@@ -858,9 +870,13 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
 
     return SafeFuture.allOf(
-            tickProcessor.onTick(slotStartTimeMillis), applyDeferredAttestations(slot))
+            tickProcessor
+                .onTick(slotStartTimeMillis)
+                .thenPeek(__ -> blockProductionPerformance.prepareOnTick()),
+            applyDeferredAttestations(slot)
+                .thenPeek(__ -> blockProductionPerformance.prepareApplyDeferredAttestations()))
         .thenCompose(__ -> processHead(Optional.of(slot), true))
-        .toVoid();
+        .thenRun(blockProductionPerformance::prepareProcessHead);
   }
 
   private SafeFuture<Void> applyDeferredAttestations(final UInt64 slot) {

@@ -35,6 +35,8 @@ import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.ChainDataLoader;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
@@ -144,12 +146,25 @@ public class WeakSubjectivityInitializer {
       final UInt64 currentSlot,
       final Spec spec,
       final WeakSubjectivityCalculator weakSubjectivityCalculator) {
+    final UInt64 checkpointSlot =
+        spec.computeStartSlotAtEpoch(initialAnchor.getCheckpoint().getEpoch());
+    final BeaconState stateAtCheckpoint;
+    if (initialAnchor.getState().getSlot().isLessThan(checkpointSlot)) {
+      // play empty slot up to checkpoint slot
+      try {
+        stateAtCheckpoint = spec.processSlots(initialAnchor.getState(), checkpointSlot);
+      } catch (SlotProcessingException | EpochProcessingException e) {
+        throw new RuntimeException(e);
+      }
+    } else {
+      stateAtCheckpoint = initialAnchor.getState();
+    }
     final CheckpointState checkpointState =
         CheckpointState.create(
             spec,
             initialAnchor.getCheckpoint(),
             initialAnchor.getBlockSummary(),
-            initialAnchor.getState());
+            stateAtCheckpoint);
     if (!weakSubjectivityCalculator.isWithinWeakSubjectivityPeriod(checkpointState, currentSlot)) {
       throw new IllegalStateException(
           "Cannot sync outside of weak subjectivity period. Consider re-syncing your node using --checkpoint-sync-url or use --ignore-weak-subjectivity-period-enabled to ignore this check.");

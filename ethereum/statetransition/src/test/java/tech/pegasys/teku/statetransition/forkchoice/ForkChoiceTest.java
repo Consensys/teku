@@ -32,6 +32,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
 import static tech.pegasys.teku.statetransition.forkchoice.ForkChoice.BLOCK_CREATION_TOLERANCE_MS;
@@ -57,6 +58,7 @@ import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -165,6 +167,7 @@ class ForkChoiceTest {
             transitionBlockValidator,
             DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED,
             DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED,
+            DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
             metricsSystem);
 
     // Starting and mocks
@@ -421,6 +424,7 @@ class ForkChoiceTest {
             transitionBlockValidator,
             DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED,
             DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED,
+            DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
             metricsSystem);
 
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
@@ -1053,7 +1057,8 @@ class ForkChoiceTest {
     storageSystem.chainUpdater().setTimeMillis(newTime);
 
     assertThat(recentChainData.getCurrentSlot()).isEqualTo(Optional.of(ZERO));
-    assertThat(forkChoice.prepareForBlockProduction(ONE)).isCompleted();
+    assertThat(forkChoice.prepareForBlockProduction(ONE, BlockProductionPerformance.NOOP))
+        .isCompleted();
     assertThat(recentChainData.getCurrentSlot()).isEqualTo(Optional.of(ONE));
 
     verify(forkChoiceNotifier, times(1)).onForkChoiceUpdated(any(), eq(Optional.of(ONE)));
@@ -1067,7 +1072,8 @@ class ForkChoiceTest {
     storageSystem.chainUpdater().setTimeMillis(newTime);
 
     assertThat(recentChainData.getCurrentSlot()).isEqualTo(Optional.of(ZERO));
-    assertThat(forkChoice.prepareForBlockProduction(ONE)).isCompleted();
+    assertThat(forkChoice.prepareForBlockProduction(ONE, BlockProductionPerformance.NOOP))
+        .isCompleted();
     assertThat(recentChainData.getCurrentSlot()).isEqualTo(Optional.of(ZERO));
 
     verifyNoInteractions(forkChoiceNotifier);

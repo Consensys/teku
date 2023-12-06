@@ -119,7 +119,7 @@ public class TekuValidatorNode extends Node {
     container.waitingFor(
         new LogMessageWaitStrategy()
             .withRegEx(".*" + expectedError + ".*")
-            .withStartupTimeout(Duration.ofSeconds(30)));
+            .withStartupTimeout(Duration.ofSeconds(10)));
     container.start();
   }
 

@@ -1,5 +1,6 @@
 dependencies {
   implementation project(':ethereum:events')
+  implementation project(':ethereum:performance-trackers')
   implementation project(':ethereum:executionclient')
   implementation project(':ethereum:execution-types')
   implementation project(':ethereum:spec')
