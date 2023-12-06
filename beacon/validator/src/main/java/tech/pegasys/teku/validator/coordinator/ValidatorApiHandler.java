@@ -346,7 +346,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                     blinded,
                     blockSlotState,
                     blockProductionPerformance))
-        .thenPeek(__ -> blockProductionPerformance.complete());
+        .alwaysRun(blockProductionPerformance::complete);
   }
 
   private SafeFuture<Optional<BlockContainer>> createBlock(

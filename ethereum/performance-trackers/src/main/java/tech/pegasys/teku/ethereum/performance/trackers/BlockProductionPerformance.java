@@ -18,7 +18,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface BlockProductionPerformance {
   String COMPLETE_LABEL = "complete";
-  int LATE_EVENT_MS = 100;
+  int LATE_EVENT_MS = 250;
 
   BlockProductionPerformance NOOP =
       new BlockProductionPerformance() {
