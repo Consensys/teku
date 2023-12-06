@@ -1,0 +1,265 @@
+/*
+ * Copyright Consensys Software Inc., 2022
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.infrastructure.ssz.schema.impl;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+
+import com.google.common.base.Objects;
+import com.google.common.base.Suppliers;
+import java.nio.ByteOrder;
+import java.util.Optional;
+import java.util.function.Supplier;
+import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableObjectTypeDefinitionBuilder;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.ssz.SszData;
+import tech.pegasys.teku.infrastructure.ssz.SszOptional;
+import tech.pegasys.teku.infrastructure.ssz.impl.SszOptionalImpl;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszOptionalSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszDeserializeException;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszLengthBounds;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszReader;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszWriter;
+import tech.pegasys.teku.infrastructure.ssz.tree.BranchNode;
+import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
+import tech.pegasys.teku.infrastructure.ssz.tree.LeafDataNode;
+import tech.pegasys.teku.infrastructure.ssz.tree.LeafNode;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource.CompressedBranchInfo;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeStore;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil;
+
+public abstract class SszOptionalSchemaImpl<SszOptionalT extends SszOptional>
+    implements SszOptionalSchema<SszOptionalT> {
+
+  private static final byte IS_PRESENT_PREFIX = 1;
+  private static final int PREFIX_SIZE_BYTES = 1;
+
+  private static LeafNode createLengthNode(boolean isPresent) {
+    return isPresent
+        ? LeafNode.create(Bytes.ofUnsignedLong(1, ByteOrder.LITTLE_ENDIAN))
+        : LeafNode.ZERO_LEAVES[8];
+  }
+
+  public static SszOptionalSchema<SszOptional> createGenericSchema(SszSchema<?> childSchema) {
+    return new SszOptionalSchemaImpl<>(childSchema) {
+      @Override
+      public SszOptional createFromBackingNode(TreeNode node) {
+        return new SszOptionalImpl(this, node);
+      }
+    };
+  }
+
+  private final SszSchema<?> childSchema;
+  private final TreeNode defaultTree;
+  private final Supplier<SszLengthBounds> lengthBounds =
+      Suppliers.memoize(this::calcSszLengthBounds);
+
+  public SszOptionalSchemaImpl(SszSchema<?> childSchema) {
+    this.childSchema = childSchema;
+    defaultTree = createOptionalNode(childSchema.getDefaultTree(), false);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public DeserializableTypeDefinition<SszOptionalT> getJsonTypeDefinition() {
+    final DeserializableObjectTypeDefinitionBuilder<SszOptionalT, OptionalBuilder<SszOptionalT>>
+        builder = DeserializableTypeDefinition.object();
+    builder.initializer(() -> new OptionalBuilder<>(this)).finisher(OptionalBuilder::build);
+    builder.withOptionalField(
+        "Optional[]", // FIXME
+        (DeserializableTypeDefinition<Object>) childSchema.getJsonTypeDefinition(),
+        value -> Optional.ofNullable(value.getValue()),
+        (optionalBuilder, maybeValue) -> optionalBuilder.set(maybeValue));
+    return builder.build();
+  }
+
+  private static class OptionalBuilder<SszOptionalT extends SszOptional> {
+    private final SszOptionalSchema<SszOptionalT> schema;
+
+    private Optional<SszData> value;
+
+    private OptionalBuilder(final SszOptionalSchema<SszOptionalT> schema) {
+      this.schema = schema;
+    }
+
+    @SuppressWarnings("unchecked")
+    public void set(final Optional<?> maybeValue) {
+      maybeValue.ifPresent(
+          value -> {
+            checkArgument(this.value == null, "Cannot set null for SszOptional");
+            checkArgument(value instanceof SszData, "Got invalid value for SszOptional");
+            this.value = (Optional<SszData>) value;
+          });
+    }
+
+    public SszOptionalT build() {
+      return schema.createFromValue(value);
+    }
+  }
+
+  @Override
+  public SszSchema<?> getChildSchema() {
+    return childSchema;
+  }
+
+  @Override
+  public boolean isPrimitive() {
+    return false;
+  }
+
+  @Override
+  public TreeNode getDefaultTree() {
+    return defaultTree;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public abstract SszOptionalT createFromBackingNode(TreeNode node);
+
+  @Override
+  public SszOptionalT createFromValue(Optional<SszData> value) {
+    if (value.isEmpty()) {
+      return createFromBackingNode(getDefaultTree());
+    }
+    checkArgument(getChildSchema().equals(value.get().getSchema()), "Incompatible value schema");
+    return createFromBackingNode(createOptionalNode(value.get().getBackingNode(), true));
+  }
+
+  @Override
+  public int getSszVariablePartSize(TreeNode node) {
+    return childSchema.getSszSize(getValueNode(node));
+  }
+
+  @Override
+  public int sszSerializeTree(TreeNode node, SszWriter writer) {
+    writer.write(Bytes.of(IS_PRESENT_PREFIX));
+    int valueSszLength = childSchema.sszSerializeTree(getValueNode(node), writer);
+    return valueSszLength + PREFIX_SIZE_BYTES;
+  }
+
+  @Override
+  public TreeNode sszDeserializeTree(SszReader reader) throws SszDeserializeException {
+    if (reader.getAvailableBytes() == 0) {
+      return getDefaultTree();
+    }
+    int isPresent = reader.read(1).get(0) & 0xFF;
+    if (isPresent > IS_PRESENT_PREFIX) {
+      throw new SszDeserializeException(
+          "Invalid prefix " + isPresent + " for Optiona schema: " + this);
+    }
+    TreeNode valueNode = childSchema.sszDeserializeTree(reader);
+    return createOptionalNode(valueNode, isPresent == IS_PRESENT_PREFIX);
+  }
+
+  public boolean getIsPresentFromOptionalNode(TreeNode optionalNode) {
+    checkArgument(optionalNode instanceof LeafDataNode, "Invalid optional node");
+    LeafDataNode dataNode = (LeafDataNode) optionalNode;
+    Bytes bytes = dataNode.getData();
+    checkArgument(bytes.size() == PREFIX_SIZE_BYTES, "Invalid selector node");
+    int isPresent = bytes.get(0) & 0xFF;
+    checkArgument(isPresent <= IS_PRESENT_PREFIX, "Incorrect optional prefix");
+    return isPresent == IS_PRESENT_PREFIX;
+  }
+
+  public TreeNode getValueNode(TreeNode optionalNode) {
+    return optionalNode.get(GIndexUtil.LEFT_CHILD_G_INDEX);
+  }
+
+  private TreeNode getOptionalNode(TreeNode optionalNode) {
+    return optionalNode.get(GIndexUtil.RIGHT_CHILD_G_INDEX);
+  }
+
+  private TreeNode createOptionalNode(TreeNode valueNode, boolean isPresent) {
+    return BranchNode.create(valueNode, createLengthNode(isPresent));
+  }
+
+  @Override
+  public void storeBackingNodes(
+      TreeNodeStore nodeStore, int maxBranchLevelsSkipped, long rootGIndex, TreeNode node) {
+    TreeNode optionalNode = getOptionalNode(node);
+    TreeNode valueNode = getValueNode(node);
+    boolean isPresent = getIsPresentFromOptionalNode(optionalNode);
+    if (!isPresent) {
+      return;
+    }
+    nodeStore.storeLeafNode(optionalNode, GIndexUtil.gIdxRightGIndex(rootGIndex));
+
+    childSchema.storeBackingNodes(
+        nodeStore, maxBranchLevelsSkipped, GIndexUtil.gIdxLeftGIndex(rootGIndex), valueNode);
+
+    nodeStore.storeBranchNode(
+        node.hashTreeRoot(),
+        rootGIndex,
+        1,
+        new Bytes32[] {valueNode.hashTreeRoot(), optionalNode.hashTreeRoot()});
+  }
+
+  @Override
+  public TreeNode loadBackingNodes(TreeNodeSource nodeSource, Bytes32 rootHash, long rootGIndex) {
+    if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(rootHash) || rootHash.equals(Bytes32.ZERO)) {
+      return getDefaultTree();
+    }
+
+    final CompressedBranchInfo branchData = nodeSource.loadBranchNode(rootHash, rootGIndex);
+    checkState(
+        branchData.getChildren().length == 2, "Optional root node must have exactly two child");
+    checkState(branchData.getDepth() == 1, "Optional root node must have depth of 1");
+    final Bytes32 valueHash = branchData.getChildren()[0];
+    final Bytes32 optionalHash = branchData.getChildren()[1];
+    final int isPresent =
+        nodeSource
+            .loadLeafNode(optionalHash, GIndexUtil.gIdxRightGIndex(rootGIndex))
+            .getInt(0, ByteOrder.LITTLE_ENDIAN);
+    checkState(isPresent <= IS_PRESENT_PREFIX, "Selector is out of bounds");
+    TreeNode valueNode =
+        childSchema.loadBackingNodes(nodeSource, valueHash, GIndexUtil.gIdxLeftGIndex(rootGIndex));
+    return createOptionalNode(valueNode, isPresent == IS_PRESENT_PREFIX);
+  }
+
+  @Override
+  public SszLengthBounds getSszLengthBounds() {
+    return lengthBounds.get();
+  }
+
+  private SszLengthBounds calcSszLengthBounds() {
+    return childSchema.getSszLengthBounds().addBytes(PREFIX_SIZE_BYTES).ceilToBytes();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SszOptionalSchemaImpl)) {
+      return false;
+    }
+    SszOptionalSchemaImpl<?> that = (SszOptionalSchemaImpl<?>) o;
+    return Objects.equal(childSchema, that.childSchema);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(childSchema);
+  }
+
+  @Override
+  public String toString() {
+    return "Optional" + childSchema;
+  }
+}

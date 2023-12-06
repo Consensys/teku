@@ -14,6 +14,7 @@
 package tech.pegasys.teku.infrastructure.ssz;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszCollectionSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszOptionalSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszUnionSchema;
@@ -131,6 +133,18 @@ public class RandomSszDataGenerator {
                 unionSchema.createFromValue(
                     selector, randomData(unionSchema.getChildSchema(selector)));
           });
+    } else if (schema instanceof SszOptionalSchema) {
+      return Stream.generate(
+          () -> {
+            SszOptionalSchema<?> optionalSchema = (SszOptionalSchema<?>) schema;
+            boolean isPresent = random.nextBoolean();
+            return (T)
+                optionalSchema.createFromValue(
+                    isPresent
+                        ? Optional.of(randomData(optionalSchema.getChildSchema()))
+                        : Optional.empty());
+          });
+
     } else {
       throw new IllegalArgumentException("Unknown schema: " + schema);
     }
