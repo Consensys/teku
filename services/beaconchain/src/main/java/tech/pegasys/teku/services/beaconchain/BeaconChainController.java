@@ -52,6 +52,7 @@ import tech.pegasys.teku.beaconrestapi.JsonTypeDefinitionBeaconRestApi;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanceFactory;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
@@ -883,9 +884,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
     } else {
       blobSidecarGossipChannel = BlobSidecarGossipChannel.NOOP;
     }
+    final BlockProductionPerformanceFactory blockProductionPerformanceFactory =
+        new BlockProductionPerformanceFactory(
+            timeProvider,
+            beaconConfig.getMetricsConfig().isBlockProductionPerformanceEnabled(),
+            beaconConfig.getMetricsConfig().getBlockProductionPerformanceWarningThreshold());
+
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
-            timeProvider,
             new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculator),
             dataProvider.getNodeDataProvider(),
             combinedChainDataClient,
@@ -907,7 +913,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
-            beaconConfig.getMetricsConfig().isBlockProductionPerformanceEnabled());
+            blockProductionPerformanceFactory);
     eventChannels
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
         .subscribeMultithreaded(

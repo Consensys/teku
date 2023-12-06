@@ -76,7 +76,9 @@ public class ExecutionLayerBlockProductionManagerImpl
     final ExecutionPayloadResult result;
     if (!isBlind) {
       final SafeFuture<GetPayloadResponse> getPayloadResponseFuture =
-          executionLayerChannel.engineGetPayload(context, blockSlotState.getSlot());
+          executionLayerChannel
+              .engineGetPayload(context, blockSlotState.getSlot())
+              .thenPeek(__ -> blockProductionPerformance.engineGetPayload());
       final SafeFuture<ExecutionPayload> executionPayloadFuture =
           getPayloadResponseFuture.thenApply(GetPayloadResponse::getExecutionPayload);
       final SafeFuture<UInt256> executionPayloadValueFuture =
