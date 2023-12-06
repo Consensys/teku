@@ -527,7 +527,8 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
         protoArray.getForkChoiceState(
             recentChainData.getCurrentEpoch().orElseThrow(),
             recentChainData.getJustifiedCheckpoint().orElseThrow(),
-            recentChainData.getFinalizedCheckpoint().orElseThrow());
+            recentChainData.getFinalizedCheckpoint().orElseThrow(),
+            false);
 
     // Should have reverted to the justified checkpoint as head
     assertThat(forkChoiceState.getHeadBlockRoot()).isEqualTo(currentJustified.getRoot());
@@ -535,6 +536,41 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     assertThat(protoArray.isFullyValidated(currentJustified.getRoot())).isTrue();
     // But we consider the chain head optimistic because of the updated justified checkpoint
     assertThat(forkChoiceState.isHeadOptimistic()).isTrue();
+  }
+
+  @Test
+  void shouldOverrideForkChoice() {
+    final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    final ChainUpdater chainUpdater = storageSystem.chainUpdater();
+    chainUpdater.initializeGenesisWithPayload(
+        true, dataStructureUtil.randomExecutionPayloadHeader());
+    final ForkChoiceStrategy protoArray = getProtoArray(storageSystem);
+    final RecentChainData recentChainData = storageSystem.recentChainData();
+    final SignedBlockAndState parent = chainUpdater.advanceChain();
+    final SignedBlockAndState head = chainUpdater.advanceChain();
+
+    final ForkChoiceState forkChoiceState =
+        protoArray.getForkChoiceState(
+            recentChainData.getCurrentEpoch().orElseThrow(),
+            recentChainData.getJustifiedCheckpoint().orElseThrow(),
+            recentChainData.getFinalizedCheckpoint().orElseThrow(),
+            false);
+    final ForkChoiceState forkChoiceStateParent =
+        protoArray.getForkChoiceState(
+            recentChainData.getCurrentEpoch().orElseThrow(),
+            recentChainData.getJustifiedCheckpoint().orElseThrow(),
+            recentChainData.getFinalizedCheckpoint().orElseThrow(),
+            true);
+
+    assertThat(forkChoiceState.getHeadBlockSlot())
+        .isGreaterThan(forkChoiceStateParent.getHeadBlockSlot());
+    assertThat(forkChoiceState.getFinalizedExecutionBlockHash())
+        .isEqualTo(forkChoiceStateParent.getFinalizedExecutionBlockHash());
+    assertThat(forkChoiceState.getSafeExecutionBlockHash())
+        .isEqualTo(forkChoiceStateParent.getSafeExecutionBlockHash());
+    assertThat(forkChoiceState.getHeadBlockRoot()).isEqualTo(head.getBlock().getRoot());
+    assertThat(forkChoiceStateParent.getHeadBlockRoot()).isEqualTo(parent.getBlock().getRoot());
+    assertThat(forkChoiceStateParent.getHeadBlockSlot()).isEqualTo(parent.getBlock().getSlot());
   }
 
   private StorageSystem initStorageSystem() {

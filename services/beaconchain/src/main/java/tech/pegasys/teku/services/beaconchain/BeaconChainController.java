@@ -407,7 +407,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     voteUpdateChannel,
                     eventChannels.getPublisher(FinalizedCheckpointChannel.class, beaconAsyncRunner),
                     coalescingChainHeadChannel,
-                    new ValidatorIsConnectedProviderImpl(forkChoiceNotifier),
+                    new ValidatorIsConnectedProviderImpl(() -> forkChoiceNotifier),
                     spec))
         .thenCompose(
             client -> {

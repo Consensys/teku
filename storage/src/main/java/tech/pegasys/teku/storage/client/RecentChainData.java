@@ -651,6 +651,14 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         || !isProposingOnTime
         || isProposerBoostActive
         || maybeHead.isEmpty()) {
+      LOG.debug(
+          "getProposerHead - return headRoot - isHeadLate {}, isShufflingStable {}, isFinalizationOk {}, isProposingOnTime {}, isProposerBoostActive {}, head.isEmpty {}",
+          () -> isHeadLate,
+          () -> isShufflingStable,
+          () -> isFinalizationOk,
+          () -> isProposingOnTime,
+          () -> isProposerBoostActive,
+          () -> headRoot.isEmpty());
       return headRoot;
     }
 
@@ -667,6 +675,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     // from the initial list, check
     // isFfgCompetitive, isSingleSlotReorg
     if (!isFfgCompetitive || !isSingleSlotReorg) {
+      LOG.debug(
+          "getProposerHead - return headRoot - isFfgCompetitive {}, isSingleSlotReorg {}",
+          () -> isFfgCompetitive,
+          () -> isSingleSlotReorg);
       return headRoot;
     }
 
@@ -677,6 +689,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       // to make further checks, we would need the justified state, return headRoot if we don't have
       // it.
       if (maybeJustifiedState.isEmpty()) {
+        LOG.debug("getProposerHead - return headRoot - maybeJustifiedState.isEmpty true");
         return headRoot;
       }
       final boolean isHeadWeak = store.isHeadWeak(maybeJustifiedState.get(), headRoot);
@@ -684,6 +697,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
           store.isParentStrong(maybeJustifiedState.get(), head.getParentRoot());
       // finally, the parent must be strong, and the current head must be weak.
       if (isHeadWeak && isParentStrong) {
+        LOG.debug("getProposerHead - return parentRoot - isHeadWeak true && isParentStrong true");
         return head.getParentRoot();
       }
     } catch (Exception exception) {
@@ -692,6 +706,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       }
     }
 
+    LOG.debug("getProposerHead - return headRoot");
     return headRoot;
   }
 
@@ -705,6 +720,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     final boolean isHeadLate = isBlockLate(headRoot);
     if (maybeHead.isEmpty() || maybeCurrentSlot.isEmpty() || !isHeadLate) {
       // ! isHeadLate, or we don't have data we need (currentSlot and the block in question)
+      LOG.debug(
+          "shouldOverrideForkChoiceUpdate head {}, currentSlot {}, isHeadLate {}",
+          () -> maybeHead.map(SignedBeaconBlock::getRoot),
+          () -> maybeCurrentSlot,
+          () -> isHeadLate);
       return false;
     }
     final SignedBeaconBlock head = maybeHead.get();
@@ -721,6 +741,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
     if (!isShufflingStable || !isFfgCompetitive || !isFinalizationOk || maybeParentSlot.isEmpty()) {
       // !shufflingStable or !ffgCompetetive or !finalizationOk, or parentSlot is not found
+      LOG.debug(
+          "shouldOverrideForkChoiceUpdate isShufflingStable {}, isFfgCompetitive {}, isFinalizationOk {}, maybeParentSlot {}",
+          () -> isShufflingStable,
+          () -> isFfgCompetitive,
+          () -> isFinalizationOk,
+          () -> maybeParentSlot);
       return false;
     }
 
@@ -755,6 +781,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     }
     final boolean isSingleSlotReorg = isParentSlotOk && isCurrentTimeOk;
     if (!isSingleSlotReorg || !isHeadWeak || !isParentStrong) {
+
+      LOG.debug(
+          "shouldOverrideForkChoiceUpdate isSingleSlotReorg {}, isHeadWeak {}, isParentStrong {}",
+          () -> isSingleSlotReorg,
+          () -> isHeadWeak,
+          () -> isParentStrong);
       return false;
     }
 
@@ -768,6 +800,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final BeaconState proposerPreState = spec.processSlots(maybeParentState.get(), proposalSlot);
       final int proposerIndex = spec.getBeaconProposerIndex(proposerPreState, proposalSlot);
       if (!validatorIsConnectedProvider.isValidatorConnected(proposerIndex, proposalSlot)) {
+        LOG.debug(
+            "shouldOverrideForkChoiceUpdate isValidatorConnected({}) {}, ",
+            () -> proposerIndex,
+            () -> false);
         return false;
       }
     } catch (SlotProcessingException | EpochProcessingException e) {

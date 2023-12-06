@@ -28,21 +28,22 @@ public class ForkChoiceStateProvider {
   }
 
   public SafeFuture<ForkChoiceState> getForkChoiceStateAsync() {
-    return forkChoiceExecutor.execute(this::internalGetForkChoiceState);
+    return forkChoiceExecutor.execute(() -> internalGetForkChoiceState(false));
   }
 
-  public ForkChoiceState getForkChoiceStateSync() {
+  public ForkChoiceState getForkChoiceStateSync(final boolean isForkChoiceOverrideHead) {
     forkChoiceExecutor.checkOnEventThread();
-    return internalGetForkChoiceState();
+    return internalGetForkChoiceState(isForkChoiceOverrideHead);
   }
 
-  private ForkChoiceState internalGetForkChoiceState() {
+  private ForkChoiceState internalGetForkChoiceState(final boolean isForkChoiceOverrideHead) {
     return recentChainData
         .getUpdatableForkChoiceStrategy()
         .orElseThrow()
         .getForkChoiceState(
             recentChainData.getCurrentEpoch().orElseThrow(),
             recentChainData.getJustifiedCheckpoint().orElseThrow(),
-            recentChainData.getFinalizedCheckpoint().orElseThrow());
+            recentChainData.getFinalizedCheckpoint().orElseThrow(),
+            isForkChoiceOverrideHead);
   }
 }
