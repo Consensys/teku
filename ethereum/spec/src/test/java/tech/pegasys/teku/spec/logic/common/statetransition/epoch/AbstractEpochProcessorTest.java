@@ -46,8 +46,8 @@ class AbstractEpochProcessorTest {
       (EpochProcessorCapella) spec.getGenesisSpec().getEpochProcessor();
 
   private final int throttlingPeriod = 1; // expect maximum of one call per epoch
-  private static final Logger logger = mock(Logger.class);
-  private final Throttler<Logger> loggerThrottler = spyLogThrottler(logger, throttlingPeriod);
+  private static final Logger LOGGER = mock(Logger.class);
+  private final Throttler<Logger> loggerThrottler = spyLogThrottler(LOGGER, throttlingPeriod);
   private final BeaconState state = createStateInInactivityLeak();
   private final UInt64 currentEpoch = spec.getCurrentEpoch(state);
   private final int slotsPerEpoch = spec.getSlotsPerEpoch(state.getSlot());
@@ -65,7 +65,7 @@ class AbstractEpochProcessorTest {
     verify(loggerThrottler, times(1)).invoke(eq(currentEpoch.increment()), any());
 
     // Real logger only called 2 times (one per epoch)
-    verify(logger, times(2)).info(anyString());
+    verify(LOGGER, times(2)).info(anyString());
   }
 
   private BeaconState advanceNSlots(final BeaconState state, final long slotsToAdvance) {
