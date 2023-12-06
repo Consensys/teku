@@ -128,6 +128,7 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
 
   private SafeFuture<Void> initValidatorStatuses() {
     if (validators.hasNoValidators()) {
+      startupComplete.set(true);
       return SafeFuture.COMPLETE;
     }
     if (currentEpoch.get() == null) {

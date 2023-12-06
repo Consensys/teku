@@ -1,0 +1,4 @@
+dependencies {
+  implementation project(':infrastructure:logging')
+  implementation project(':infrastructure:time')
+}

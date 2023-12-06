@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -47,9 +48,15 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
       final UInt64 newSlot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti,
-      final Optional<Boolean> blinded) {
+      final Optional<Boolean> blinded,
+      final BlockProductionPerformance blockProductionPerformance) {
     return super.createUnsignedBlock(
-            blockSlotState, newSlot, randaoReveal, optionalGraffiti, blinded)
+            blockSlotState,
+            newSlot,
+            randaoReveal,
+            optionalGraffiti,
+            blinded,
+            blockProductionPerformance)
         .thenApply(BlockContainer::getBlock)
         .thenCompose(
             block -> {

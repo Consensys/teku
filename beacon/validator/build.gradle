@@ -12,6 +12,7 @@ dependencies {
   implementation project(':storage')
   implementation project(':storage:api')
   implementation project(':infrastructure:serviceutils')
+  implementation project(':ethereum:performance-trackers')
   implementation project(':ethereum:statetransition')
   implementation project(':ethereum:events')
   implementation project(':ethereum:pow:api')

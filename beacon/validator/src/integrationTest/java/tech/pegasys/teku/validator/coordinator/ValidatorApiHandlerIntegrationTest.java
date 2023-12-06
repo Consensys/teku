@@ -32,6 +32,7 @@ import tech.pegasys.teku.beacon.sync.events.SyncStateTracker;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
@@ -97,6 +98,7 @@ public class ValidatorApiHandlerIntegrationTest {
   private final DutyMetrics dutyMetrics = mock(DutyMetrics.class);
   private final ValidatorApiHandler handler =
       new ValidatorApiHandler(
+          new SystemTimeProvider(),
           chainDataProvider,
           nodeDataProvider,
           combinedChainDataClient,
@@ -117,7 +119,8 @@ public class ValidatorApiHandlerIntegrationTest {
           proposersDataManager,
           syncCommitteeMessagePool,
           syncCommitteeContributionPool,
-          syncCommitteeSubscriptionManager);
+          syncCommitteeSubscriptionManager,
+          true);
 
   @BeforeEach
   public void setup() {

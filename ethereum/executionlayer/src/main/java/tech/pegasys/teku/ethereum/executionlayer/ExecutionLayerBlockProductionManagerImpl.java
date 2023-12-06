@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListMap;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -70,7 +71,8 @@ public class ExecutionLayerBlockProductionManagerImpl
   public ExecutionPayloadResult initiateBlockProduction(
       final ExecutionPayloadContext context,
       final BeaconState blockSlotState,
-      final boolean isBlind) {
+      final boolean isBlind,
+      final BlockProductionPerformance blockProductionPerformance) {
     final ExecutionPayloadResult result;
     if (!isBlind) {
       final SafeFuture<GetPayloadResponse> getPayloadResponseFuture =
@@ -87,7 +89,7 @@ public class ExecutionLayerBlockProductionManagerImpl
               Optional.empty(),
               Optional.of(executionPayloadValueFuture));
     } else {
-      result = builderGetHeader(context, blockSlotState);
+      result = builderGetHeader(context, blockSlotState, blockProductionPerformance);
     }
     executionResultCache.put(blockSlotState.getSlot(), result);
     return result;
@@ -97,11 +99,14 @@ public class ExecutionLayerBlockProductionManagerImpl
   public ExecutionPayloadResult initiateBlockAndBlobsProduction(
       final ExecutionPayloadContext context,
       final BeaconState blockSlotState,
-      final boolean isBlind) {
+      final boolean isBlind,
+      final BlockProductionPerformance blockProductionPerformance) {
     final ExecutionPayloadResult result;
     if (!isBlind) {
       final SafeFuture<GetPayloadResponse> getPayloadResponseFuture =
-          executionLayerChannel.engineGetPayload(context, blockSlotState.getSlot());
+          executionLayerChannel
+              .engineGetPayload(context, blockSlotState.getSlot())
+              .thenPeek(__ -> blockProductionPerformance.engineGetPayload());
       final SafeFuture<ExecutionPayload> executionPayloadFuture =
           getPayloadResponseFuture.thenApply(GetPayloadResponse::getExecutionPayload);
       final SafeFuture<Optional<BlobsBundle>> blobsBundleFuture =
@@ -116,7 +121,7 @@ public class ExecutionLayerBlockProductionManagerImpl
               Optional.empty(),
               Optional.of(executionPayloadValueFuture));
     } else {
-      result = builderGetHeader(context, blockSlotState);
+      result = builderGetHeader(context, blockSlotState, blockProductionPerformance);
     }
     executionResultCache.put(blockSlotState.getSlot(), result);
     return result;
@@ -136,13 +141,19 @@ public class ExecutionLayerBlockProductionManagerImpl
   }
 
   private ExecutionPayloadResult builderGetHeader(
-      final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
+      final ExecutionPayloadContext executionPayloadContext,
+      final BeaconState state,
+      final BlockProductionPerformance blockProductionPerformance) {
 
     final SafeFuture<UInt256> executionPayloadValueFuture = new SafeFuture<>();
 
     final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture =
         executionLayerChannel
-            .builderGetHeader(executionPayloadContext, state, executionPayloadValueFuture)
+            .builderGetHeader(
+                executionPayloadContext,
+                state,
+                executionPayloadValueFuture,
+                blockProductionPerformance)
             .whenException(executionPayloadValueFuture::completeExceptionally);
 
     return new ExecutionPayloadResult(
