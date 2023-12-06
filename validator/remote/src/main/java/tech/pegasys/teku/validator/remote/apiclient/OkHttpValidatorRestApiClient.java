@@ -145,7 +145,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   @Override
   public Optional<List<ValidatorResponse>> postValidators(final List<String> validatorIds) {
     final PostStateValidatorsRequest requestBody =
-        new PostStateValidatorsRequest(validatorIds, null);
+        new PostStateValidatorsRequest(validatorIds, List.of());
     return post(
             GET_VALIDATORS,
             EMPTY_MAP,
