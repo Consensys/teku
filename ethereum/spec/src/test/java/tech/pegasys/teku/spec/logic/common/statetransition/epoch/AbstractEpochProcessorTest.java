@@ -45,12 +45,12 @@ class AbstractEpochProcessorTest {
   private final EpochProcessorCapella epochProcessor =
       (EpochProcessorCapella) spec.getGenesisSpec().getEpochProcessor();
 
-  final int throttlingPeriod = 1; // expect maximum of one call per epoch
-  final Logger logger = mock(Logger.class);
-  final Throttler<Logger> loggerThrottler = spyLogThrottler(logger, throttlingPeriod);
-  final BeaconState state = createStateInInactivityLeak();
-  final UInt64 currentEpoch = spec.getCurrentEpoch(state);
-  final int slotsPerEpoch = spec.getSlotsPerEpoch(state.getSlot());
+  private final int throttlingPeriod = 1; // expect maximum of one call per epoch
+  private final Logger logger = mock(Logger.class);
+  private final Throttler<Logger> loggerThrottler = spyLogThrottler(logger, throttlingPeriod);
+  private final BeaconState state = createStateInInactivityLeak();
+  private final UInt64 currentEpoch = spec.getCurrentEpoch(state);
+  private final int slotsPerEpoch = spec.getSlotsPerEpoch(state.getSlot());
 
   @Test
   public void shouldThrottleInactivityLeakLogs() throws Exception {

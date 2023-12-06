@@ -125,7 +125,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     processSyncCommitteeUpdates(state);
 
     if (beaconStateAccessors.isInactivityLeak(state)) {
-      loggerThrottler.invoke(currentEpoch, (log) -> log.info("Beacon chain is in activity leak"));
+      loggerThrottler.invoke(currentEpoch, (log) -> log.info("Beacon chain is in inactivity leak"));
     }
   }
 
