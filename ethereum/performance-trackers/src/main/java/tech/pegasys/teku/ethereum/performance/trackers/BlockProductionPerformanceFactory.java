@@ -17,7 +17,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class BlockProductionPerformanceFactory {
-  final TimeProvider timeProvider;
+  private final TimeProvider timeProvider;
   private final boolean enabled;
   private final int lateEventThreshold;
 
