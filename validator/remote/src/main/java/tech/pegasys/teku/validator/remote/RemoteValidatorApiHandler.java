@@ -76,6 +76,7 @@ import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
+import tech.pegasys.teku.validator.remote.apiclient.PostStateValidatorsNotExistingException;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
@@ -127,26 +128,49 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
       return SafeFuture.completedFuture(emptyMap());
     }
     return sendRequest(
-        () ->
-            makeBatchedValidatorRequest(publicKeys, ValidatorResponse::getIndex)
-                .orElse(emptyMap()));
+        () -> makeValidatorRequest(publicKeys, ValidatorResponse::getIndex).orElse(emptyMap()));
   }
 
   @Override
   public SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
-      Collection<BLSPublicKey> publicKeys) {
-    return sendRequest(() -> makeBatchedValidatorRequest(publicKeys, ValidatorResponse::getStatus));
+      final Collection<BLSPublicKey> publicKeys) {
+    return sendRequest(() -> makeValidatorRequest(publicKeys, ValidatorResponse::getStatus));
+  }
+
+  private <T> Optional<Map<BLSPublicKey, T>> makeValidatorRequest(
+      final Collection<BLSPublicKey> publicKeys,
+      final Function<ValidatorResponse, T> valueExtractor) {
+    try {
+      return apiClient
+          .postValidators(convertsPublicKeysToValidatorIds(publicKeys))
+          .map(responses -> convertToValidatorMap(responses, valueExtractor));
+    } catch (final PostStateValidatorsNotExistingException __) {
+      LOG.debug(
+          "POST method is not available for getting validators from state. Will use GET instead.");
+      return makeBatchedValidatorRequest(publicKeys, valueExtractor);
+    }
+  }
+
+  private List<String> convertsPublicKeysToValidatorIds(final Collection<BLSPublicKey> publicKeys) {
+    return publicKeys.stream().map(BLSPublicKey::toHexString).toList();
+  }
+
+  private <T> Map<BLSPublicKey, T> convertToValidatorMap(
+      final List<ValidatorResponse> validatorResponses,
+      final Function<ValidatorResponse, T> valueExtractor) {
+    return validatorResponses.stream()
+        .collect(toMap(ValidatorResponse::getPublicKey, valueExtractor));
   }
 
   private <T> Optional<Map<BLSPublicKey, T>> makeBatchedValidatorRequest(
-      Collection<BLSPublicKey> publicKeysCollection,
-      Function<ValidatorResponse, T> valueExtractor) {
+      final Collection<BLSPublicKey> publicKeysCollection,
+      final Function<ValidatorResponse, T> valueExtractor) {
     final List<BLSPublicKey> publicKeys = new ArrayList<>(publicKeysCollection);
     final Map<BLSPublicKey, T> returnedObjects = new HashMap<>();
     for (int i = 0; i < publicKeys.size(); i += MAX_PUBLIC_KEY_BATCH_SIZE) {
       final List<BLSPublicKey> batch =
           publicKeys.subList(i, Math.min(publicKeys.size(), i + MAX_PUBLIC_KEY_BATCH_SIZE));
-      Optional<Map<BLSPublicKey, T>> validatorObjects =
+      final Optional<Map<BLSPublicKey, T>> validatorObjects =
           requestValidatorObject(batch, valueExtractor);
       if (validatorObjects.isEmpty()) {
         return Optional.empty();
@@ -159,15 +183,8 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   private <T> Optional<Map<BLSPublicKey, T>> requestValidatorObject(
       final List<BLSPublicKey> batch, Function<ValidatorResponse, T> valueExtractor) {
     return apiClient
-        .getValidators(batch.stream().map(key -> key.toBytesCompressed().toHexString()).toList())
+        .getValidators(convertsPublicKeysToValidatorIds(batch))
         .map(responses -> convertToValidatorMap(responses, valueExtractor));
-  }
-
-  private <T> Map<BLSPublicKey, T> convertToValidatorMap(
-      final List<ValidatorResponse> validatorResponses,
-      Function<ValidatorResponse, T> valueExtractor) {
-    return validatorResponses.stream()
-        .collect(toMap(ValidatorResponse::getPublicKey, valueExtractor));
   }
 
   @Override
