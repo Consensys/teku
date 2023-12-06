@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.beacon.pow.DepositSnapshotFileLoader.DEFAULT_SNAPSHOT_RESOURCE_PATHS;
 
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -147,5 +148,81 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
                     .build())
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessage("Use either custom deposit tree snapshot path or snapshot bundle");
+  }
+
+  @Test
+  public void shouldSetDefaultSnapshotConfig() {
+    final String[] args = {"--network=mainnet"};
+    final PowchainConfiguration config = getTekuConfigurationFromArguments(args).powchain();
+    assertThat(config.getDepositSnapshotPath())
+        .contains(
+            PowchainConfiguration.class
+                .getResource(
+                    DEFAULT_SNAPSHOT_RESOURCE_PATHS.get(
+                        Eth2Network.fromStringLenient("mainnet").get()))
+                .toExternalForm());
+    assertThat(config.isDepositSnapshotEnabled()).isTrue();
+  }
+
+  @Test
+  public void shouldUseBundledSnapshotWhenSetAndEnabled() { // don't use checkpoint sync
+    final String[] args = {
+      "--network=mainnet",
+      "--deposit-snapshot-enabled=true",
+      "--checkpoint-sync-url=http://checkpoint/path/"
+    };
+    final PowchainConfiguration config = getTekuConfigurationFromArguments(args).powchain();
+    assertThatThrownBy(() -> getTekuConfigurationFromArguments(args).powchain());
+    assertThat(config.getDepositSnapshotPath())
+        .contains(
+            PowchainConfiguration.class
+                .getResource(
+                    DEFAULT_SNAPSHOT_RESOURCE_PATHS.get(
+                        Eth2Network.fromStringLenient("mainnet").get()))
+                .toExternalForm());
+    assertThat(config.isDepositSnapshotEnabled()).isTrue();
+  }
+
+  @Test
+  public void shouldUseDepositSnapshotPathWhenSet() {
+    final String[] args = {"--Xdeposit-snapshot=/some/path/"};
+    final PowchainConfiguration config = getTekuConfigurationFromArguments(args).powchain();
+    assertThat(config.getDepositSnapshotPath()).isEqualTo(Optional.of("/some/path/"));
+    assertThat(config.isDepositSnapshotEnabled()).isFalse();
+  }
+
+  @Test
+  public void shouldUseDepositSnapshotPathWhenSetIgnoringCheckpointSync() {
+    final String[] args = {
+      "--Xdeposit-snapshot=/some/path/",
+      "--deposit-snapshot-enabled=false",
+      "--checkpoint-sync-url=http://checkpoint/path/"
+    };
+    final PowchainConfiguration config = getTekuConfigurationFromArguments(args).powchain();
+    assertThatThrownBy(() -> getTekuConfigurationFromArguments(args).powchain());
+    assertThat(config.getDepositSnapshotPath()).isEqualTo(Optional.of("/some/path/"));
+    assertThat(config.isDepositSnapshotEnabled()).isFalse();
+  }
+
+  @Test
+  public void shouldUseCheckpointSyncWhenDepositSnapshotDisabled() {
+    final String[] args = {
+      "--deposit-snapshot-enabled=false", "--checkpoint-sync-url=http://checkpoint/path/"
+    };
+    final PowchainConfiguration config = getTekuConfigurationFromArguments(args).powchain();
+    assertThatThrownBy(() -> getTekuConfigurationFromArguments(args).powchain());
+    assertThat(config.getDepositSnapshotPath())
+        .isEqualTo(Optional.of("http://checkpoint/eth/v1/beacon/deposit_snapshot"));
+    assertThat(config.isDepositSnapshotEnabled()).isFalse();
+  }
+
+  @Test
+  public void shouldUseCheckpointSyncWhenDefaults() {
+    final String[] args = {"--checkpoint-sync-url=http://checkpoint/path/"};
+    final PowchainConfiguration config = getTekuConfigurationFromArguments(args).powchain();
+    assertThatThrownBy(() -> getTekuConfigurationFromArguments(args).powchain());
+    assertThat(config.getDepositSnapshotPath())
+        .isEqualTo(Optional.of("http://checkpoint/eth/v1/beacon/deposit_snapshot"));
+    assertThat(config.isDepositSnapshotEnabled()).isFalse();
   }
 }
