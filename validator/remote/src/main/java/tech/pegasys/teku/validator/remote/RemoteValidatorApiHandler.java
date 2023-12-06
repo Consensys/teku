@@ -142,7 +142,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
       final Function<ValidatorResponse, T> valueExtractor) {
     try {
       return apiClient
-          .postValidators(convertsPublicKeysToValidatorIds(publicKeys))
+          .postValidators(convertPublicKeysToValidatorIds(publicKeys))
           .map(responses -> convertToValidatorMap(responses, valueExtractor));
     } catch (final PostStateValidatorsNotExistingException __) {
       LOG.debug(
@@ -151,7 +151,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
     }
   }
 
-  private List<String> convertsPublicKeysToValidatorIds(final Collection<BLSPublicKey> publicKeys) {
+  private List<String> convertPublicKeysToValidatorIds(final Collection<BLSPublicKey> publicKeys) {
     return publicKeys.stream().map(BLSPublicKey::toHexString).toList();
   }
 
@@ -183,7 +183,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   private <T> Optional<Map<BLSPublicKey, T>> requestValidatorObject(
       final List<BLSPublicKey> batch, Function<ValidatorResponse, T> valueExtractor) {
     return apiClient
-        .getValidators(convertsPublicKeysToValidatorIds(batch))
+        .getValidators(convertPublicKeysToValidatorIds(batch))
         .map(responses -> convertToValidatorMap(responses, valueExtractor));
   }
 
