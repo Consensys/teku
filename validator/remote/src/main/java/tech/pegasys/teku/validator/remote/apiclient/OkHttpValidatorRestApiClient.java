@@ -24,15 +24,11 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GE
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_PROPOSER_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_SYNC_COMMITTEE_CONTRIBUTION;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_SYNC_COMMITTEE_DUTIES;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLINDED_BLOCK;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLOCK_V2;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_VALIDATORS;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.PREPARE_BEACON_PROPOSER;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_CONTRIBUTION_AND_PROOF;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_AGGREGATE_AND_PROOF;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_ATTESTATION;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_BLINDED_BLOCK;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_BLOCK;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SIGNED_VOLUNTARY_EXIT;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_SYNC_COMMITTEE_MESSAGES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_VALIDATOR_LIVENESS;
@@ -69,18 +65,13 @@ import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.config.GetSpecResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
-import tech.pegasys.teku.api.response.v1.validator.GetNewBlindedBlockResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetSyncCommitteeContributionResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
-import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
 import tech.pegasys.teku.api.schema.Attestation;
-import tech.pegasys.teku.api.schema.BLSSignature;
-import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
@@ -91,8 +82,6 @@ import tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
-import tech.pegasys.teku.validator.api.SendSignedBlockResult;
-import tech.pegasys.teku.validator.remote.apiclient.ResponseHandler.Handler;
 
 public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
 
@@ -101,11 +90,6 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   private static final MediaType APPLICATION_JSON =
       MediaType.parse("application/json; charset=utf-8");
   private static final Map<String, String> EMPTY_MAP = emptyMap();
-  private static final Handler<GetStateValidatorsResponse>
-      POST_VALIDATORS_NOT_ALLOWED_THROWING_EXCEPTION_HANDLER =
-          (req, res) -> {
-            throw new PostStateValidatorsNotAllowedException();
-          };
 
   private final JsonProvider jsonProvider = new JsonProvider();
   private final OkHttpClient httpClient;
@@ -136,20 +120,12 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   /**
-   * Tries <a
-   * href="https://ethereum.github.io/beacon-APIs/?urls.primaryName=dev#/Beacon/postStateValidators">POST
-   * Get validators from state</a> and falls back to <a
+   * <a
    * href="https://ethereum.github.io/beacon-APIs/?urls.primaryName=dev#/Beacon/getStateValidators">GET
-   * Get validators from state</a> if POST method is not allowed
+   * Get validators from state</a>
    */
   @Override
   public Optional<List<ValidatorResponse>> getValidators(final List<String> validatorIds) {
-    try {
-      return postValidators(validatorIds);
-    } catch (final PostStateValidatorsNotAllowedException ex) {
-      LOG.debug(
-          "POST method for getting validators from state is not allowed. Falling back to GET.");
-    }
     final Map<String, String> queryParams = new HashMap<>();
     queryParams.put("id", String.join(",", validatorIds));
     return get(
@@ -161,17 +137,26 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
         .map(response -> response.data);
   }
 
-  private Optional<List<ValidatorResponse>> postValidators(final List<String> validatorIds) {
-    final PostStateValidatorsRequest request =
-        new PostStateValidatorsRequest(validatorIds, List.of());
+  /**
+   * <a
+   * href="https://ethereum.github.io/beacon-APIs/?urls.primaryName=dev#/Beacon/postStateValidators">POST
+   * Get validators from state</a>
+   */
+  @Override
+  public Optional<List<ValidatorResponse>> postValidators(final List<String> validatorIds) {
+    final PostStateValidatorsRequest requestBody =
+        new PostStateValidatorsRequest(validatorIds, null);
     return post(
             GET_VALIDATORS,
             EMPTY_MAP,
-            request,
+            requestBody,
             createHandler(GetStateValidatorsResponse.class)
-                .withHandler(SC_NOT_FOUND, POST_VALIDATORS_NOT_ALLOWED_THROWING_EXCEPTION_HANDLER)
                 .withHandler(
-                    SC_METHOD_NOT_ALLOWED, POST_VALIDATORS_NOT_ALLOWED_THROWING_EXCEPTION_HANDLER))
+                    (request, response) -> {
+                      throw new PostStateValidatorsNotExistingException();
+                    },
+                    SC_NOT_FOUND,
+                    SC_METHOD_NOT_ALLOWED))
         .map(response -> response.data);
   }
 
@@ -193,52 +178,6 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
         EMPTY_MAP,
         EMPTY_MAP,
         createHandler(GetProposerDutiesResponse.class));
-  }
-
-  @Override
-  public Optional<BeaconBlock> createUnsignedBlock(
-      final UInt64 slot,
-      final BLSSignature randaoReveal,
-      final Optional<Bytes32> graffiti,
-      final boolean blinded) {
-    final Map<String, String> pathParams = Map.of("slot", slot.toString());
-    final Map<String, String> queryParams = new HashMap<>();
-    queryParams.put("randao_reveal", encodeQueryParam(randaoReveal));
-    graffiti.ifPresent(bytes32 -> queryParams.put("graffiti", encodeQueryParam(bytes32)));
-
-    if (blinded) {
-      return createUnsignedBlindedBlock(pathParams, queryParams);
-    }
-
-    return get(
-            GET_UNSIGNED_BLOCK_V2,
-            pathParams,
-            queryParams,
-            EMPTY_MAP,
-            createHandler(GetNewBlockResponseV2.class))
-        .map(response -> (BeaconBlock) response.data);
-  }
-
-  private Optional<BeaconBlock> createUnsignedBlindedBlock(
-      final Map<String, String> pathParams, final Map<String, String> queryParams) {
-    return get(
-            GET_UNSIGNED_BLINDED_BLOCK,
-            pathParams,
-            queryParams,
-            EMPTY_MAP,
-            createHandler(GetNewBlindedBlockResponse.class))
-        .map(response -> (BeaconBlock) response.data);
-  }
-
-  @Override
-  public SendSignedBlockResult sendSignedBlock(final SignedBeaconBlock beaconBlock) {
-    final ValidatorApiMethod apiMethod =
-        beaconBlock.getMessage().getBody().isBlinded()
-            ? SEND_SIGNED_BLINDED_BLOCK
-            : SEND_SIGNED_BLOCK;
-    return post(apiMethod, beaconBlock, createHandler())
-        .map(__ -> SendSignedBlockResult.success(Bytes32.ZERO))
-        .orElseGet(() -> SendSignedBlockResult.notImported("UNKNOWN"));
   }
 
   @Override
@@ -272,7 +211,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
             GET_AGGREGATE,
             queryParams,
             createHandler(GetAggregatedAttestationResponse.class)
-                .withHandler(SC_NOT_FOUND, (req, res) -> Optional.empty()))
+                .withHandler(SC_NOT_FOUND, (request, response) -> Optional.empty()))
         .map(result -> result.data);
   }
 
@@ -357,7 +296,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
             queryParams,
             EMPTY_MAP,
             createHandler(GetSyncCommitteeContributionResponse.class)
-                .withHandler(SC_NOT_FOUND, (req, res) -> Optional.empty()))
+                .withHandler(SC_NOT_FOUND, (request, response) -> Optional.empty()))
         .map(response -> response.data);
   }
 

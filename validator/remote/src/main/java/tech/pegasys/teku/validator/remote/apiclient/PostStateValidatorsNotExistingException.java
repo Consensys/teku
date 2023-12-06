@@ -13,4 +13,4 @@
 
 package tech.pegasys.teku.validator.remote.apiclient;
 
-public class PostStateValidatorsNotAllowedException extends RuntimeException {}
+public class PostStateValidatorsNotExistingException extends RuntimeException {}
