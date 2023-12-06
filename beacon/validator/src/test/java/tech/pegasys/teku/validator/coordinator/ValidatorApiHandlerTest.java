@@ -62,6 +62,7 @@ import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanceFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils;
@@ -171,6 +172,9 @@ class ValidatorApiHandlerTest {
   private final ArgumentCaptor<List<BlobSidecar>> blobSidecarsCaptor2 =
       ArgumentCaptor.forClass(List.class);
 
+  private final BlockProductionPerformanceFactory blockProductionPerformanceFactory =
+      new BlockProductionPerformanceFactory(StubTimeProvider.withTimeInMillis(0), false, 0);
+
   private Spec spec;
   private UInt64 epochStartSlot;
   private UInt64 previousEpochStartSlot;
@@ -188,7 +192,6 @@ class ValidatorApiHandlerTest {
         .thenReturn(ValidatorDutyMetricUtils.createValidatorDutyMetric(new StubMetricsSystem()));
     this.validatorApiHandler =
         new ValidatorApiHandler(
-            StubTimeProvider.withTimeInMillis(0),
             chainDataProvider,
             nodeDataProvider,
             chainDataClient,
@@ -210,7 +213,7 @@ class ValidatorApiHandlerTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
-            false);
+            blockProductionPerformanceFactory);
 
     when(syncStateProvider.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
     when(forkChoiceTrigger.prepareForBlockProduction(any(), any())).thenReturn(SafeFuture.COMPLETE);
@@ -443,7 +446,6 @@ class ValidatorApiHandlerTest {
     final Spec spec = TestSpecFactory.createMinimalWithAltairForkEpoch(EPOCH);
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
-            StubTimeProvider.withTimeInMillis(0),
             chainDataProvider,
             nodeDataProvider,
             chainDataClient,
@@ -465,7 +467,7 @@ class ValidatorApiHandlerTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
-            false);
+            blockProductionPerformanceFactory);
     // Best state is still in Phase0
     final BeaconState state =
         dataStructureUtil.stateBuilderPhase0().slot(previousEpochStartSlot.minus(1)).build();
@@ -1264,7 +1266,6 @@ class ValidatorApiHandlerTest {
     this.dataStructureUtil = new DataStructureUtil(spec);
     this.validatorApiHandler =
         new ValidatorApiHandler(
-            StubTimeProvider.withTimeInMillis(0),
             chainDataProvider,
             nodeDataProvider,
             chainDataClient,
@@ -1286,7 +1287,7 @@ class ValidatorApiHandlerTest {
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
             syncCommitteeSubscriptionManager,
-            false);
+            blockProductionPerformanceFactory);
 
     // BlobSidecar builder
     doAnswer(
