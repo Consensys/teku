@@ -52,7 +52,7 @@ public class DeserializableArrayTypeDefinition<ItemT, CollectionT extends Iterab
   @Override
   public CollectionT deserialize(final JsonParser parser) throws IOException {
     if (!parser.isExpectedStartArrayToken()) {
-      if (parser.currentToken().equals(VALUE_NULL)) {
+      if (!parser.hasCurrentToken() || parser.currentToken().equals(VALUE_NULL)) {
         return createFromList.apply(Collections.emptyList());
       }
       throw MismatchedInputException.from(
