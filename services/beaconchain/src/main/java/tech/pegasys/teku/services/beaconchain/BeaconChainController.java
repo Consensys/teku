@@ -172,6 +172,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.storage.client.EarliestAvailableBlockSlot;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.client.StorageBackedRecentChainData;
+import tech.pegasys.teku.storage.client.ValidatorIsConnectedProvider;
 import tech.pegasys.teku.storage.store.FileKeyValueStore;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 import tech.pegasys.teku.storage.store.StoreConfig;
@@ -393,6 +394,11 @@ public class BeaconChainController extends Service implements BeaconChainControl
     storageQueryChannel = combinedStorageChannel;
     storageUpdateChannel = combinedStorageChannel;
     final VoteUpdateChannel voteUpdateChannel = eventChannels.getPublisher(VoteUpdateChannel.class);
+
+    ValidatorIsConnectedProvider validatorIsConnectedProvider =
+        beaconConfig.eth2NetworkConfig().isForkChoiceValidatorIsProposerAlwaysEnabled()
+            ? ValidatorIsConnectedProvider.NOOP
+            : new ValidatorIsConnectedProviderImpl(() -> forkChoiceNotifier);
     // Init other services
     return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
         .thenCompose(
@@ -407,7 +413,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     voteUpdateChannel,
                     eventChannels.getPublisher(FinalizedCheckpointChannel.class, beaconAsyncRunner),
                     coalescingChainHeadChannel,
-                    new ValidatorIsConnectedProviderImpl(() -> forkChoiceNotifier),
+                    validatorIsConnectedProvider,
                     spec))
         .thenCompose(
             client -> {

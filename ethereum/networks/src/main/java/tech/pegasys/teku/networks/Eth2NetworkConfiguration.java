@@ -54,6 +54,8 @@ public class Eth2NetworkConfiguration {
   public static final boolean DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED = false;
   public static final boolean DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED = true;
 
+  public static final boolean DEFAULT_FORK_CHOICE_VALIDATOR_IS_PROPOSER_ALWAYS_ENABLED = false;
+
   public static final int DEFAULT_ASYNC_P2P_MAX_THREADS = 10;
 
   public static final int DEFAULT_ASYNC_P2P_MAX_QUEUE = DEFAULT_MAX_QUEUE_SIZE;
@@ -101,6 +103,8 @@ public class Eth2NetworkConfiguration {
   private final int asyncP2pMaxQueue;
   private final boolean forkChoiceLateBlockReorgEnabled;
 
+  private final boolean forkChoiceValidatorIsProposerAlwaysEnabled;
+
   private Eth2NetworkConfiguration(
       final Spec spec,
       final String constants,
@@ -128,7 +132,8 @@ public class Eth2NetworkConfiguration {
       final int asyncP2pMaxQueue,
       final int asyncBeaconChainMaxThreads,
       final int asyncBeaconChainMaxQueue,
-      final boolean forkChoiceLateBlockReorgEnabled) {
+      final boolean forkChoiceLateBlockReorgEnabled,
+      final boolean forkChoiceValidatorIsProposerAlwaysEnabled) {
     this.spec = spec;
     this.constants = constants;
     this.initialState = initialState;
@@ -159,6 +164,7 @@ public class Eth2NetworkConfiguration {
     this.asyncBeaconChainMaxThreads = asyncBeaconChainMaxThreads;
     this.asyncBeaconChainMaxQueue = asyncBeaconChainMaxQueue;
     this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
+    this.forkChoiceValidatorIsProposerAlwaysEnabled = forkChoiceValidatorIsProposerAlwaysEnabled;
   }
 
   public static Eth2NetworkConfiguration.Builder builder(final String network) {
@@ -280,6 +286,10 @@ public class Eth2NetworkConfiguration {
     return forkChoiceLateBlockReorgEnabled;
   }
 
+  public boolean isForkChoiceValidatorIsProposerAlwaysEnabled() {
+    return forkChoiceValidatorIsProposerAlwaysEnabled;
+  }
+
   @Override
   public String toString() {
     return constants;
@@ -316,6 +326,8 @@ public class Eth2NetworkConfiguration {
     private boolean forkChoiceProposerBoostUniquenessEnabled =
         DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED;
     private boolean forkChoiceLateBlockReorgEnabled = DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
+    private boolean forkChoiceValidatorIsProposerAlwaysEnabled =
+        DEFAULT_FORK_CHOICE_VALIDATOR_IS_PROPOSER_ALWAYS_ENABLED;
 
     public void spec(Spec spec) {
       this.spec = spec;
@@ -391,7 +403,8 @@ public class Eth2NetworkConfiguration {
           asyncP2pMaxQueue,
           asyncBeaconChainMaxThreads,
           asyncBeaconChainMaxQueue,
-          forkChoiceLateBlockReorgEnabled);
+          forkChoiceLateBlockReorgEnabled,
+          forkChoiceValidatorIsProposerAlwaysEnabled);
     }
 
     private void validateCommandLineParameters() {
@@ -845,6 +858,12 @@ public class Eth2NetworkConfiguration {
 
     public Builder forkChoiceLateBlockReorgEnabled(boolean forkChoiceLateBlockReorgEnabled) {
       this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
+      return this;
+    }
+
+    public Builder forkChoiceValidatorIsProposerAlwaysEnabled(
+        boolean forkChoiceValidatorIsProposerAlwaysEnabled) {
+      this.forkChoiceValidatorIsProposerAlwaysEnabled = forkChoiceValidatorIsProposerAlwaysEnabled;
       return this;
     }
   }

@@ -244,6 +244,18 @@ public class Eth2NetworkOptions {
       Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED;
 
   @Option(
+      names = {"--Xfork-choice-validator-is-proposer-always-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "When considering late block reorg, override validator-is-proposer check to be always true.",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private boolean forkChoiceValidatorIsProposerAlwaysEnabled =
+      Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_VALIDATOR_IS_PROPOSER_ALWAYS_ENABLED;
+
+  @Option(
       names = {"--Xeth1-deposit-contract-deploy-block-override"},
       hidden = true,
       paramLabel = "<NUMBER>",
@@ -340,6 +352,7 @@ public class Eth2NetworkOptions {
         .forkChoiceUpdateHeadOnBlockImportEnabled(forkChoiceUpdateHeadOnBlockImportEnabled)
         .forkChoiceProposerBoostUniquenessEnabled(forkChoiceProposerBoostUniquenessEnabled)
         .forkChoiceLateBlockReorgEnabled(forkChoiceLateBlockReorgEnabled)
+        .forkChoiceValidatorIsProposerAlwaysEnabled(forkChoiceValidatorIsProposerAlwaysEnabled)
         .epochsStoreBlobs(epochsStoreBlobs);
   }
 

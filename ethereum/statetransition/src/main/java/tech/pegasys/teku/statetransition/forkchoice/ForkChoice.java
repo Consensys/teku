@@ -798,6 +798,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
   }
 
+  @SuppressWarnings("AlreadyChecked")
   private void notifyForkChoiceUpdated(
       final ForkChoiceState forkChoiceState, final Optional<UInt64> proposingSlot) {
     if (!forkChoiceLateBlockReorgEnabled) {
@@ -813,12 +814,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                 recentChainData.getProposerHead(
                     forkChoiceState.getHeadBlockRoot(), proposingSlot.get()));
 
-    if (!shouldOverrideForkChoice
-        || (maybeProposerHead.isPresent()
-            && maybeProposerHead.get().equals(forkChoiceState.getHeadBlockRoot()))) {
+    if (!shouldOverrideForkChoice) {
       LOG.debug(
-          "Fork Choice Notify shouldOverrideForkChoice {}, chose fork choice head {}:({})",
+          "Fork Choice Notify shouldOverrideForkChoice {}, getProposerHead {}, chose fork choice head {}:({})",
           () -> shouldOverrideForkChoice,
+          () -> maybeProposerHead,
           forkChoiceState::getHeadBlockRoot,
           forkChoiceState::getHeadBlockSlot);
       forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState, proposingSlot);
@@ -828,7 +828,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       LOG.debug(
           "Fork Choice Notify shouldOverrideForkChoice {}, getProposerHead {}, chose fork choice head {}:({})",
           () -> shouldOverrideForkChoice,
-          () -> maybeProposerHead.orElse(Bytes32.ZERO),
+          () -> maybeProposerHead,
           forkChoiceState::getHeadBlockRoot,
           forkChoiceState::getHeadBlockSlot);
       forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState, proposingSlot);
