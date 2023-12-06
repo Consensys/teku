@@ -15,11 +15,14 @@ package tech.pegasys.teku.infrastructure.json;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.OneOfTypeTestTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -83,6 +86,16 @@ class JsonUtilTest {
             CoreTypes.UINT64_TYPE,
             "slot");
     assertThat(result).contains(UInt64.valueOf(1234));
+  }
+
+  @Test
+  void getAttribute_handlesNullAsEmptyList() throws Exception {
+    final Optional<List<String>> result =
+        JsonUtil.getAttribute(
+            "{\"data\": { \"slot\": \"1\"}," + "\"meta\": null," + " \"slot\":\"1234\"}",
+            DeserializableTypeDefinition.listOf(STRING_TYPE),
+            "meta");
+    assertThat(result).contains(List.of());
   }
 
   @Test

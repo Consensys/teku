@@ -42,4 +42,11 @@ class DeserializableArrayTypeDefinitionTest {
 
     assertThat(result).isEqualTo(value);
   }
+
+  @Test
+  void shouldHandleNullAsEmptyList() throws Exception {
+    final List<String> result = JsonUtil.parse("null", stringListType);
+
+    assertThat(result).isEqualTo(emptyList());
+  }
 }

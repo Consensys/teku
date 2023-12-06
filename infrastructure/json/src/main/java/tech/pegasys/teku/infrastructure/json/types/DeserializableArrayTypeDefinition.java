@@ -13,11 +13,14 @@
 
 package tech.pegasys.teku.infrastructure.json.types;
 
+import static com.fasterxml.jackson.core.JsonToken.VALUE_NULL;
+
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
@@ -49,6 +52,9 @@ public class DeserializableArrayTypeDefinition<ItemT, CollectionT extends Iterab
   @Override
   public CollectionT deserialize(final JsonParser parser) throws IOException {
     if (!parser.isExpectedStartArrayToken()) {
+      if (parser.currentToken().equals(VALUE_NULL)) {
+        return createFromList.apply(Collections.emptyList());
+      }
       throw MismatchedInputException.from(
           parser, String.class, "Array expected but got " + parser.getCurrentToken());
     }
