@@ -46,7 +46,7 @@ class AbstractEpochProcessorTest {
       (EpochProcessorCapella) spec.getGenesisSpec().getEpochProcessor();
 
   private final int throttlingPeriod = 1; // expect maximum of one call per epoch
-  private final Logger logger = mock(Logger.class);
+  private static final Logger logger = mock(Logger.class);
   private final Throttler<Logger> loggerThrottler = spyLogThrottler(logger, throttlingPeriod);
   private final BeaconState state = createStateInInactivityLeak();
   private final UInt64 currentEpoch = spec.getCurrentEpoch(state);
