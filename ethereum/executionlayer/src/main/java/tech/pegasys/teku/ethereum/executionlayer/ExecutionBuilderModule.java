@@ -28,6 +28,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
@@ -126,10 +127,13 @@ public class ExecutionBuilderModule {
   public SafeFuture<HeaderWithFallbackData> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
-      final SafeFuture<UInt256> payloadValueResult) {
+      final SafeFuture<UInt256> payloadValueResult,
+      final BlockProductionPerformance blockProductionPerformance) {
 
     final SafeFuture<GetPayloadResponse> localGetPayloadResponse =
-        executionLayerManager.engineGetPayloadForFallback(executionPayloadContext, state.getSlot());
+        executionLayerManager
+            .engineGetPayloadForFallback(executionPayloadContext, state.getSlot())
+            .thenPeek(__ -> blockProductionPerformance.engineGetPayload());
 
     final Optional<SafeFuture<HeaderWithFallbackData>> validationResult =
         validateBuilderGetHeader(
@@ -161,13 +165,15 @@ public class ExecutionBuilderModule {
         .getHeader(slot, validatorPublicKey, executionPayloadContext.getParentHash())
         .thenApply(ResponseUnwrapper::unwrapBuilderResponseOrThrow)
         .thenPeek(
-            signedBuilderBidMaybe ->
-                LOG.trace(
-                    "builderGetHeader(slot={}, pubKey={}, parentHash={}) -> {}",
-                    slot,
-                    validatorPublicKey,
-                    executionPayloadContext.getParentHash(),
-                    signedBuilderBidMaybe))
+            signedBuilderBidMaybe -> {
+              blockProductionPerformance.builderGetHeader();
+              LOG.trace(
+                  "builderGetHeader(slot={}, pubKey={}, parentHash={}) -> {}",
+                  slot,
+                  validatorPublicKey,
+                  executionPayloadContext.getParentHash(),
+                  signedBuilderBidMaybe);
+            })
         .thenComposeCombined(
             safeLocalGetPayloadResponse,
             (signedBuilderBidMaybe, maybeLocalGetPayloadResponse) -> {
@@ -217,7 +223,8 @@ public class ExecutionBuilderModule {
                     state,
                     validatorRegistration.get(),
                     localExecutionPayload,
-                    payloadValueResult);
+                    payloadValueResult,
+                    blockProductionPerformance);
               }
             })
         .exceptionallyCompose(
@@ -244,9 +251,11 @@ public class ExecutionBuilderModule {
       final BeaconState state,
       final SignedValidatorRegistration validatorRegistration,
       final Optional<ExecutionPayload> localExecutionPayload,
-      final SafeFuture<UInt256> payloadValueResult) {
+      final SafeFuture<UInt256> payloadValueResult,
+      final BlockProductionPerformance blockProductionPerformance) {
     builderBidValidator.validateBuilderBid(
         signedBuilderBid, validatorRegistration, state, localExecutionPayload);
+    blockProductionPerformance.builderBidValidated();
     final BuilderBid builderBid = signedBuilderBid.getMessage();
     payloadValueResult.complete(builderBid.getValue());
     return SafeFuture.completedFuture(
