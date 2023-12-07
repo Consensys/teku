@@ -17,6 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
+import com.google.common.base.Splitter;
+import com.google.common.collect.Iterables;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -64,7 +66,9 @@ public class ExternalSignerBasicAuthIntegrationTest extends AbstractExternalSign
     final String recordedAuthHeader = recordedRequests[0].getFirstHeader("Authorization");
     final String decodedAuthHeader =
         new String(
-            Base64.getDecoder().decode(recordedAuthHeader.split(" ")[1]), StandardCharsets.UTF_8);
+            Base64.getDecoder()
+                .decode(Iterables.get(Splitter.on(" ").split(recordedAuthHeader), 1)),
+            StandardCharsets.UTF_8);
     assertThat(decodedAuthHeader).isEqualTo(username + ":" + password);
   }
 }
