@@ -186,8 +186,10 @@ public class PowchainConfiguration {
       if (StringUtils.isNotBlank(checkpointSyncUrl)) {
         this.depositSnapshotPath =
             Optional.of(UrlSanitizer.appendPath(checkpointSyncUrl, DEPOSIT_SNAPSHOT_URL_PATH));
+        return this;
       }
-      return this;
+      throw new IllegalStateException(
+          "--checkpoint-sync-url option is empty, but needed for deposit snapshot path");
     }
 
     public Builder setDepositSnapshotPathForNetwork(final Optional<Eth2Network> eth2Network) {
