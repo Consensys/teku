@@ -44,6 +44,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueueWithPriority;
+import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -64,8 +65,8 @@ public class ExternalSigner implements Signer {
   public static final String EXTERNAL_SIGNER_ENDPOINT = "/api/v1/eth2/sign";
   private static final String FORK_INFO = "fork_info";
   private final JsonProvider jsonProvider = new JsonProvider();
-  private final URL signingServiceUrl;
   private final Optional<String> maybeBasicAuthorization;
+  private final URL signingServiceUrl;
   private final BLSPublicKey blsPublicKey;
   private final Duration timeout;
   private final Spec spec;
@@ -87,8 +88,8 @@ public class ExternalSigner implements Signer {
       final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.httpClient = httpClient;
-    this.signingServiceUrl = signingServiceUrl;
-    this.maybeBasicAuthorization = createBasicAuthorization();
+    this.maybeBasicAuthorization = createBasicAuthorization(signingServiceUrl);
+    this.signingServiceUrl = UrlSanitizer.sanitizeUrl(signingServiceUrl);
     this.blsPublicKey = blsPublicKey;
     this.timeout = timeout;
     this.taskQueue = taskQueue;
@@ -105,7 +106,7 @@ public class ExternalSigner implements Signer {
     timeoutCounter = labelledCounter.labels("timeout");
   }
 
-  private Optional<String> createBasicAuthorization() {
+  private Optional<String> createBasicAuthorization(final URL signingServiceUrl) {
     return Optional.ofNullable(signingServiceUrl.getUserInfo())
         .map(
             userInfo ->

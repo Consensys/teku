@@ -60,10 +60,12 @@ public class ExternalSignerBasicAuthIntegrationTest extends AbstractExternalSign
     final BLSSignature response = externalSigner.signBlock(block, forkInfo).join();
     assertThat(response).isEqualTo(expectedSignature);
 
-    // verify Authorization header
     final HttpRequest[] recordedRequests = client.retrieveRecordedRequests(request());
     assertThat(recordedRequests).hasSize(1);
-    final String recordedAuthHeader = recordedRequests[0].getFirstHeader("Authorization");
+    final HttpRequest recordedRequest = recordedRequests[0];
+
+    // verify Authorization header
+    final String recordedAuthHeader = recordedRequest.getFirstHeader("Authorization");
     final String decodedAuthHeader =
         new String(
             Base64.getDecoder()
