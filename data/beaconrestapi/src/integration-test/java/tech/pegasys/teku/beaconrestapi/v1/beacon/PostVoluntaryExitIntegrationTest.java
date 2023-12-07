@@ -56,6 +56,21 @@ public class PostVoluntaryExitIntegrationTest extends AbstractDataBackedRestAPII
   }
 
   @Test
+  public void shouldIncludeRejectReasonWhenOperationValidatorRejectsOperation() throws Exception {
+    final tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit signedVoluntaryExit =
+        dataStructureUtil.randomSignedVoluntaryExit();
+
+    final SignedVoluntaryExit schemaExit = new SignedVoluntaryExit(signedVoluntaryExit);
+
+    when(voluntaryExitPool.addLocal(signedVoluntaryExit))
+        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("the reason")));
+
+    Response response = post(PostVoluntaryExit.ROUTE, jsonProvider.objectToJSON(schemaExit));
+    assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.body().string()).contains("the reason");
+  }
+
+  @Test
   public void shouldReturnServerErrorWhenUnexpectedErrorHappens() throws Exception {
     final tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit signedVoluntaryExit =
         dataStructureUtil.randomSignedVoluntaryExit();
