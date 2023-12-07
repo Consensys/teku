@@ -41,7 +41,7 @@ public class MetricsConfig {
   public static final boolean DEFAULT_BLOCK_PERFORMANCE_ENABLED = true;
   public static final boolean DEFAULT_TICK_PERFORMANCE_ENABLED = false;
   public static final boolean DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_ENABLED = true;
-  public static final int DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_WARNING_THRESHOLD = 250;
+  public static final int DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_WARNING_THRESHOLD = 300;
   public static final boolean DEFAULT_BLOB_SIDECARS_STORAGE_COUNTERS_ENABLED = false;
 
   private final boolean metricsEnabled;
