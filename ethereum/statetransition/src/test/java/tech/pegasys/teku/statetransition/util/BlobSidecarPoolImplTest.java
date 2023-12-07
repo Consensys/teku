@@ -487,7 +487,7 @@ public class BlobSidecarPoolImplTest {
             (slotAndRoot) -> {
               BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
               when(tracker.getMissingBlobSidecars()).thenReturn(missingBlobs.stream());
-              when(tracker.getBlock()).thenReturn(block.getBeaconBlock());
+              when(tracker.getBlock()).thenReturn(Optional.of(block));
               return tracker;
             });
 
@@ -652,7 +652,7 @@ public class BlobSidecarPoolImplTest {
             (slotAndRoot) -> {
               BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
               when(tracker.getMissingBlobSidecars()).thenReturn(missingBlobs.stream());
-              when(tracker.getBlock()).thenReturn(block.getBeaconBlock());
+              when(tracker.getBlock()).thenReturn(Optional.of(block));
               when(tracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
               when(tracker.isFetchTriggered()).thenReturn(true);
               return tracker;
@@ -846,7 +846,7 @@ public class BlobSidecarPoolImplTest {
             (slotAndRoot) -> {
               BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
               when(tracker.getMissingBlobSidecars()).thenReturn(missingBlobs1.stream());
-              when(tracker.getBlock()).thenReturn(block1.getBeaconBlock());
+              when(tracker.getBlock()).thenReturn(Optional.of(block1));
               return tracker;
             });
 
@@ -864,7 +864,7 @@ public class BlobSidecarPoolImplTest {
             (slotAndRoot) -> {
               BlockBlobSidecarsTracker tracker = mock(BlockBlobSidecarsTracker.class);
               when(tracker.getMissingBlobSidecars()).thenReturn(missingBlobs2.stream());
-              when(tracker.getBlock()).thenReturn(block2.getBeaconBlock());
+              when(tracker.getBlock()).thenReturn(Optional.of(block2));
               return tracker;
             });
 

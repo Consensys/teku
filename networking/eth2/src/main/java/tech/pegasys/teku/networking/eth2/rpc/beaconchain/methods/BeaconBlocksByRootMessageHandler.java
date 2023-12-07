@@ -78,69 +78,73 @@ public class BeaconBlocksByRootMessageHandler
       final ResponseCallback<SignedBeaconBlock> callback) {
     LOG.trace(
         "Peer {} requested {} BeaconBlocks with roots: {}", peer.getId(), message.size(), message);
-    if (recentChainData.getStore() != null) {
 
-      final UInt64 maxRequestBlocks = getMaxRequestBlocks();
+    final UInt64 maxRequestBlocks = getMaxRequestBlocks();
 
-      if (message.size() > maxRequestBlocks.intValue()) {
-        requestCounter.labels("count_too_big").inc();
-        callback.completeWithErrorResponse(
-            new RpcException(
-                INVALID_REQUEST_CODE,
-                "Only a maximum of " + maxRequestBlocks + " blocks can be requested per request"));
-        return;
-      }
-
-      SafeFuture<Void> future = SafeFuture.COMPLETE;
-
-      final Optional<RequestApproval> blocksRequestApproval =
-          peer.approveBlocksRequest(callback, message.size());
-
-      if (!peer.approveRequest() || blocksRequestApproval.isEmpty()) {
-        requestCounter.labels("rate_limited").inc();
-        return;
-      }
-
-      requestCounter.labels("ok").inc();
-      totalBlocksRequestedCounter.inc(message.size());
-      final AtomicInteger sentBlocks = new AtomicInteger(0);
-
-      for (SszBytes32 blockRoot : message) {
-        future =
-            future.thenCompose(
-                __ ->
-                    retrieveBlock(blockRoot.get())
-                        .thenCompose(
-                            block -> {
-                              final Optional<RpcException> validationResult =
-                                  block.flatMap(b -> validateResponse(protocolId, b));
-                              if (validationResult.isPresent()) {
-                                return SafeFuture.failedFuture(validationResult.get());
-                              }
-                              return block
-                                  .map(
-                                      signedBeaconBlock ->
-                                          callback
-                                              .respond(signedBeaconBlock)
-                                              .thenRun(sentBlocks::incrementAndGet))
-                                  .orElse(SafeFuture.COMPLETE);
-                            }));
-      }
-      future.finish(
-          () -> {
-            if (sentBlocks.get() != message.size()) {
-              peer.adjustBlocksRequest(blocksRequestApproval.get(), sentBlocks.get());
-            }
-            callback.completeSuccessfully();
-          },
-          err -> {
-            peer.adjustBlocksRequest(blocksRequestApproval.get(), 0);
-            handleError(callback, err);
-          });
-    } else {
-      requestCounter.labels("ok").inc();
-      callback.completeSuccessfully();
+    if (message.size() > maxRequestBlocks.intValue()) {
+      requestCounter.labels("count_too_big").inc();
+      callback.completeWithErrorResponse(
+          new RpcException(
+              INVALID_REQUEST_CODE,
+              "Only a maximum of " + maxRequestBlocks + " blocks can be requested per request"));
+      return;
     }
+
+    SafeFuture<Void> future = SafeFuture.COMPLETE;
+
+    final Optional<RequestApproval> blocksRequestApproval =
+        peer.approveBlocksRequest(callback, message.size());
+
+    if (!peer.approveRequest() || blocksRequestApproval.isEmpty()) {
+      requestCounter.labels("rate_limited").inc();
+      return;
+    }
+
+    requestCounter.labels("ok").inc();
+    totalBlocksRequestedCounter.inc(message.size());
+    final AtomicInteger sentBlocks = new AtomicInteger(0);
+
+    for (SszBytes32 blockRoot : message) {
+      future =
+          future.thenCompose(
+              __ ->
+                  retrieveBlock(blockRoot.get())
+                      .thenCompose(
+                          block -> {
+                            final Optional<RpcException> validationResult =
+                                block.flatMap(b -> validateResponse(protocolId, b));
+                            if (validationResult.isPresent()) {
+                              return SafeFuture.failedFuture(validationResult.get());
+                            }
+                            return block
+                                .map(
+                                    signedBeaconBlock ->
+                                        callback
+                                            .respond(signedBeaconBlock)
+                                            .thenRun(sentBlocks::incrementAndGet))
+                                .orElse(SafeFuture.COMPLETE);
+                          }));
+    }
+    future.finish(
+        () -> {
+          if (sentBlocks.get() != message.size()) {
+            peer.adjustBlocksRequest(blocksRequestApproval.get(), sentBlocks.get());
+          }
+          callback.completeSuccessfully();
+        },
+        err -> {
+          peer.adjustBlocksRequest(blocksRequestApproval.get(), 0);
+          handleError(callback, err);
+        });
+  }
+
+  private SafeFuture<Optional<SignedBeaconBlock>> retrieveBlock(final Bytes32 blockRoot) {
+    final Optional<SignedBeaconBlock> recentlyValidatedSignedBlock =
+        recentChainData.getRecentlyValidatedSignedBlockByRoot(blockRoot);
+    if (recentlyValidatedSignedBlock.isPresent()) {
+      return SafeFuture.completedFuture(recentlyValidatedSignedBlock);
+    }
+    return recentChainData.retrieveSignedBlockByRoot(blockRoot);
   }
 
   private SafeFuture<Optional<SignedBeaconBlock>> retrieveBlock(final Bytes32 blockRoot) {

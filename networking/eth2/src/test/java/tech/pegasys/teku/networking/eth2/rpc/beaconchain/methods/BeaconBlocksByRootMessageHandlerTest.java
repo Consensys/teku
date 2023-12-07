@@ -86,9 +86,9 @@ public class BeaconBlocksByRootMessageHandlerTest {
     chainUpdater.initializeGenesis();
     when(peer.approveRequest()).thenReturn(true);
     when(peer.approveBlocksRequest(any(), anyLong())).thenReturn(allowedObjectsRequest);
-    when(recentChainData.getStore()).thenReturn(store);
+    when(recentChainData.getRecentlyValidatedSignedBlockByRoot(any())).thenReturn(Optional.empty());
     // Forward block requests from the mock to the actual store
-    when(store.retrieveSignedBlock(any()))
+    when(recentChainData.retrieveSignedBlockByRoot(any()))
         .thenAnswer(
             i -> storageSystem.recentChainData().getStore().retrieveSignedBlock(i.getArgument(0)));
     when(callback.respond(any())).thenReturn(SafeFuture.COMPLETE);
@@ -144,7 +144,7 @@ public class BeaconBlocksByRootMessageHandlerTest {
     verify(peer, never()).adjustBlocksRequest(any(), anyLong());
 
     for (SignedBeaconBlock block : blocks) {
-      verify(store).retrieveSignedBlock(block.getRoot());
+      verify(recentChainData).retrieveSignedBlockByRoot(block.getRoot());
       verify(callback).respond(block);
     }
   }
@@ -166,7 +166,7 @@ public class BeaconBlocksByRootMessageHandlerTest {
         .adjustBlocksRequest(eq(allowedObjectsRequest.get()), eq(Long.valueOf(0)));
 
     // Check that we only asked for the first block
-    verify(store, times(1)).retrieveSignedBlock(any());
+    verify(recentChainData, times(1)).retrieveSignedBlockByRoot(any());
     verify(callback, times(1)).respond(any());
   }
 
@@ -187,7 +187,7 @@ public class BeaconBlocksByRootMessageHandlerTest {
     verify(peer, never()).adjustBlocksRequest(any(), anyLong());
 
     for (SignedBeaconBlock block : blocks) {
-      verify(store).retrieveSignedBlock(block.getRoot());
+      verify(recentChainData).retrieveSignedBlockByRoot(block.getRoot());
       verify(callback).respond(block);
     }
   }

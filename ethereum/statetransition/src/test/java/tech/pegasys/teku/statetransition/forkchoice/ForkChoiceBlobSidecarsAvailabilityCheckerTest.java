@@ -525,7 +525,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
         ImmutableSortedMap.naturalOrder();
     blobSidecarsInitial.forEach(blobSidecar -> mapBuilder.put(blobSidecar.getIndex(), blobSidecar));
 
-    when(blockBlobSidecarsTracker.getBlock()).thenReturn(block.getBeaconBlock());
+    when(blockBlobSidecarsTracker.getBlock()).thenReturn(Optional.of(block));
     when(blockBlobSidecarsTracker.getBlobSidecars()).thenReturn(mapBuilder.build());
     when(blockBlobSidecarsTracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
 
@@ -610,7 +610,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
         blobSidecar -> mapBuilder.put(blobSidecar.getIndex(), blobSidecar));
 
     when(spec.isAvailabilityOfBlobSidecarsRequiredAtSlot(store, block.getSlot())).thenReturn(false);
-    when(blockBlobSidecarsTracker.getBlock()).thenReturn(block.getBeaconBlock());
+    when(blockBlobSidecarsTracker.getBlock()).thenReturn(Optional.of(block));
     when(blockBlobSidecarsTracker.getCompletionFuture()).thenReturn(SafeFuture.COMPLETE);
     when(blockBlobSidecarsTracker.getBlobSidecars()).thenReturn(ImmutableSortedMap.of());
     when(blockBlobSidecarsTracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());

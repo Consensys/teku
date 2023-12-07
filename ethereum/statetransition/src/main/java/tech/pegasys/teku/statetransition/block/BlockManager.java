@@ -158,7 +158,12 @@ public class BlockManager extends Service
               || result.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
             doImportBlock(block, blockImportPerformance, BlockBroadcastValidator.NOOP)
                 .finish(err -> LOG.error("Failed to process received block.", err));
+            return;
           }
+
+          // block failed gossip validation, let's drop it from the pool, so it won't be served via
+          // RPC anymore
+          blobSidecarPool.removeAllForBlock(block.getRoot());
         });
     return validationResult;
   }
