@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import okhttp3.HttpUrl;
@@ -84,8 +85,11 @@ import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
 public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
 
   private static final Logger LOG = LogManager.getLogger();
+
   static final int MAX_PUBLIC_KEY_BATCH_SIZE = 50;
   static final int MAX_RATE_LIMITING_RETRIES = 3;
+
+  private final AtomicBoolean usePostValidatorsEndpoint = new AtomicBoolean(true);
 
   private final HttpUrl endpoint;
   private final Spec spec;
@@ -140,13 +144,18 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   private <T> Optional<Map<BLSPublicKey, T>> makeValidatorRequest(
       final Collection<BLSPublicKey> publicKeys,
       final Function<ValidatorResponse, T> valueExtractor) {
-    try {
-      return apiClient
-          .postValidators(convertPublicKeysToValidatorIds(publicKeys))
-          .map(responses -> convertToValidatorMap(responses, valueExtractor));
-    } catch (final PostStateValidatorsNotExistingException __) {
-      LOG.debug(
-          "POST method is not available for getting validators from state. Will use GET instead.");
+    if (usePostValidatorsEndpoint.get()) {
+      try {
+        return apiClient
+            .postValidators(convertPublicKeysToValidatorIds(publicKeys))
+            .map(responses -> convertToValidatorMap(responses, valueExtractor));
+      } catch (final PostStateValidatorsNotExistingException __) {
+        LOG.debug(
+            "POST method is not available for getting validators from state. Will use GET instead.");
+        usePostValidatorsEndpoint.set(false);
+        return makeBatchedValidatorRequest(publicKeys, valueExtractor);
+      }
+    } else {
       return makeBatchedValidatorRequest(publicKeys, valueExtractor);
     }
   }

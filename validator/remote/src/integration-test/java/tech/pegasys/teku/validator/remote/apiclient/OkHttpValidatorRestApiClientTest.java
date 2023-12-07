@@ -160,8 +160,7 @@ class OkHttpValidatorRestApiClientTest {
     final RecordedRequest request = mockWebServer.takeRequest();
     assertThat(request.getMethod()).isEqualTo("POST");
     assertThat(request.getPath()).contains(ValidatorApiMethod.GET_VALIDATORS.getPath(emptyMap()));
-    assertThat(request.getBody().readUtf8())
-        .isEqualTo("{\"ids\":[\"1\",\"0x1234\"],\"statuses\":[]}");
+    assertThat(request.getBody().readUtf8()).isEqualTo("{\"ids\":[\"1\",\"0x1234\"]}");
   }
 
   @Test
