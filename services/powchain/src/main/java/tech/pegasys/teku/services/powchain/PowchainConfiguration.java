@@ -188,8 +188,7 @@ public class PowchainConfiguration {
             Optional.of(UrlSanitizer.appendPath(checkpointSyncUrl, DEPOSIT_SNAPSHOT_URL_PATH));
         return this;
       }
-      throw new IllegalStateException(
-          "--checkpoint-sync-url option is empty, but needed for deposit snapshot path");
+      throw new IllegalStateException("checkpointSyncUrl cannot be null/empty");
     }
 
     public Builder setDepositSnapshotPathForNetwork(final Optional<Eth2Network> eth2Network) {
