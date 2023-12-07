@@ -161,7 +161,6 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
       "--checkpoint-sync-url=http://checkpoint/path/"
     };
     final PowchainConfiguration config = getTekuConfigurationFromArguments(args).powchain();
-    assertThatThrownBy(() -> getTekuConfigurationFromArguments(args).powchain());
     assertThat(config.getDepositSnapshotPath()).contains(getDefaultBundleSnapshotPath("mainnet"));
     assertThat(config.isDepositSnapshotEnabled()).isTrue();
   }
@@ -182,7 +181,6 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
       "--checkpoint-sync-url=http://checkpoint/path/"
     };
     final PowchainConfiguration config = getTekuConfigurationFromArguments(args).powchain();
-    assertThatThrownBy(() -> getTekuConfigurationFromArguments(args).powchain());
     assertThat(config.getDepositSnapshotPath()).isEqualTo(Optional.of("/some/path/"));
     assertThat(config.isDepositSnapshotEnabled()).isFalse();
   }
@@ -193,7 +191,6 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
       "--deposit-snapshot-enabled=false", "--checkpoint-sync-url=http://checkpoint/path/"
     };
     final PowchainConfiguration config = getTekuConfigurationFromArguments(args).powchain();
-    assertThatThrownBy(() -> getTekuConfigurationFromArguments(args).powchain());
     assertThat(config.getDepositSnapshotPath())
         .isEqualTo(Optional.of("http://checkpoint/eth/v1/beacon/deposit_snapshot"));
     assertThat(config.isDepositSnapshotEnabled()).isFalse();
@@ -203,7 +200,6 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
   public void shouldUseCheckpointSyncWhenDefaults() {
     final String[] args = {"--checkpoint-sync-url=http://checkpoint/path/"};
     final PowchainConfiguration config = getTekuConfigurationFromArguments(args).powchain();
-    assertThatThrownBy(() -> getTekuConfigurationFromArguments(args).powchain());
     assertThat(config.getDepositSnapshotPath())
         .isEqualTo(Optional.of("http://checkpoint/eth/v1/beacon/deposit_snapshot"));
     assertThat(config.isDepositSnapshotEnabled()).isFalse();
