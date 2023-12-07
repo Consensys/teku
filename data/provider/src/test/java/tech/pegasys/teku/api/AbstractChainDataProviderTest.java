@@ -23,6 +23,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import tech.pegasys.teku.api.blobselector.BlobSidecarSelectorFactory;
+import tech.pegasys.teku.api.blockrootselector.BlockRootSelectorFactory;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -56,6 +57,7 @@ public abstract class AbstractChainDataProviderTest {
   protected RecentChainData recentChainData;
   protected CombinedChainDataClient combinedChainDataClient;
   protected BlockSelectorFactory blockSelectorFactory;
+  protected BlockRootSelectorFactory blockRootSelectorFactory;
   protected BlobSidecarSelectorFactory blobSidecarSelectorFactory;
   protected StateSelectorFactory stateSelectorFactory;
   protected BeaconState beaconStateInternal;
@@ -102,6 +104,8 @@ public abstract class AbstractChainDataProviderTest {
   protected ChainDataProvider setupBySpec(
       final Spec spec, final DataStructureUtil dataStructureUtil, final int validatorCount) {
     this.blockSelectorFactory = spy(new BlockSelectorFactory(spec, mockCombinedChainDataClient));
+    this.blockRootSelectorFactory =
+        spy(new BlockRootSelectorFactory(spec, mockCombinedChainDataClient));
     this.stateSelectorFactory = spy(new StateSelectorFactory(spec, mockCombinedChainDataClient));
     this.blobSidecarSelectorFactory =
         spy(new BlobSidecarSelectorFactory(mockCombinedChainDataClient));
@@ -111,6 +115,7 @@ public abstract class AbstractChainDataProviderTest {
             recentChainData,
             mockCombinedChainDataClient,
             blockSelectorFactory,
+            blockRootSelectorFactory,
             stateSelectorFactory,
             blobSidecarSelectorFactory,
             rewardCalculatorMock);

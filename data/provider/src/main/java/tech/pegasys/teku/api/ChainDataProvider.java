@@ -34,6 +34,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.api.blobselector.BlobSidecarSelectorFactory;
+import tech.pegasys.teku.api.blockrootselector.BlockRootSelectorFactory;
 import tech.pegasys.teku.api.blockselector.BlockSelectorFactory;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
@@ -81,6 +82,7 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 public class ChainDataProvider {
   private static final Logger LOG = LogManager.getLogger();
   private final BlockSelectorFactory blockSelectorFactory;
+  private final BlockRootSelectorFactory blockRootSelectorFactory;
   private final StateSelectorFactory stateSelectorFactory;
   private final BlobSidecarSelectorFactory blobSidecarSelectorFactory;
   private final Spec spec;
@@ -99,6 +101,7 @@ public class ChainDataProvider {
         recentChainData,
         combinedChainDataClient,
         new BlockSelectorFactory(spec, combinedChainDataClient),
+        new BlockRootSelectorFactory(spec, combinedChainDataClient),
         new StateSelectorFactory(spec, combinedChainDataClient),
         new BlobSidecarSelectorFactory(combinedChainDataClient),
         rewardCalculator);
@@ -110,6 +113,7 @@ public class ChainDataProvider {
       final RecentChainData recentChainData,
       final CombinedChainDataClient combinedChainDataClient,
       final BlockSelectorFactory blockSelectorFactory,
+      final BlockRootSelectorFactory blockRootSelectorFactory,
       final StateSelectorFactory stateSelectorFactory,
       final BlobSidecarSelectorFactory blobSidecarSelectorFactory,
       final RewardCalculator rewardCalculator) {
@@ -118,6 +122,7 @@ public class ChainDataProvider {
     this.recentChainData = recentChainData;
     this.schemaObjectProvider = new SchemaObjectProvider(spec);
     this.blockSelectorFactory = blockSelectorFactory;
+    this.blockRootSelectorFactory = blockRootSelectorFactory;
     this.stateSelectorFactory = stateSelectorFactory;
     this.blobSidecarSelectorFactory = blobSidecarSelectorFactory;
     this.rewardCalculator = rewardCalculator;
@@ -192,7 +197,7 @@ public class ChainDataProvider {
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> getBlockRoot(final String blockIdParam) {
-    return fromBlock(blockIdParam, SignedBeaconBlock::getRoot);
+    return blockRootSelectorFactory.createSelectorForBlockId(blockIdParam).getBlockRoot();
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<List<Attestation>>>> getBlockAttestations(

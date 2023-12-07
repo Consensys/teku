@@ -100,6 +100,19 @@ public class CombinedChainDataClient {
     return historicalChainData.getFinalizedBlockAtSlot(slot);
   }
 
+  public SafeFuture<Optional<Bytes32>> getBlockRootAtSlotExact(final UInt64 slot) {
+    if (!isChainDataFullyAvailable()) {
+      return SafeFuture.completedFuture(Optional.empty());
+    }
+    final Optional<Bytes32> recentRoot = recentChainData.getBlockRootInEffectBySlot(slot);
+    if (recentRoot.isPresent()) {
+      return SafeFuture.completedFuture(recentRoot);
+    }
+    return historicalChainData
+        .getFinalizedBlockAtSlot(slot)
+        .thenApply(maybeBlock -> maybeBlock.map(SignedBeaconBlock::getRoot));
+  }
+
   /**
    * Returns the block proposed for the requested slot on the chain identified by <code>
    * headBlockRoot</code>. If the slot was empty, no block is returned.
@@ -622,6 +635,14 @@ public class CombinedChainDataClient {
     }
 
     return getStore().getLatestFinalized().getSignedBeaconBlock();
+  }
+
+  public Optional<Bytes32> getFinalizedBlockHashTreeRoot() {
+    if (recentChainData.isPreGenesis()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(getStore().getLatestFinalized().getRoot());
   }
 
   public Optional<AnchorPoint> getLatestFinalized() {
