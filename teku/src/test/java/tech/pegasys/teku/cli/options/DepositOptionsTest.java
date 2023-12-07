@@ -122,12 +122,7 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.powchain().isDepositSnapshotEnabled()).isTrue();
     assertThat(config.powchain().getDepositSnapshotPath())
-        .contains(
-            PowchainConfiguration.class
-                .getResource(
-                    DEFAULT_SNAPSHOT_RESOURCE_PATHS.get(
-                        Eth2Network.fromStringLenient(network).get()))
-                .toExternalForm());
+        .contains(getDefaultBundleSnapshotPath(network));
   }
 
   @Test
@@ -154,18 +149,12 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
   public void shouldSetDefaultSnapshotConfig() {
     final String[] args = {"--network=mainnet"};
     final PowchainConfiguration config = getTekuConfigurationFromArguments(args).powchain();
-    assertThat(config.getDepositSnapshotPath())
-        .contains(
-            PowchainConfiguration.class
-                .getResource(
-                    DEFAULT_SNAPSHOT_RESOURCE_PATHS.get(
-                        Eth2Network.fromStringLenient("mainnet").get()))
-                .toExternalForm());
+    assertThat(config.getDepositSnapshotPath()).contains(getDefaultBundleSnapshotPath("mainnet"));
     assertThat(config.isDepositSnapshotEnabled()).isTrue();
   }
 
   @Test
-  public void shouldUseBundledSnapshotWhenSetAndEnabled() { // don't use checkpoint sync
+  public void shouldUseBundledSnapshotWhenSetAndEnabled() {
     final String[] args = {
       "--network=mainnet",
       "--deposit-snapshot-enabled=true",
@@ -173,13 +162,7 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
     };
     final PowchainConfiguration config = getTekuConfigurationFromArguments(args).powchain();
     assertThatThrownBy(() -> getTekuConfigurationFromArguments(args).powchain());
-    assertThat(config.getDepositSnapshotPath())
-        .contains(
-            PowchainConfiguration.class
-                .getResource(
-                    DEFAULT_SNAPSHOT_RESOURCE_PATHS.get(
-                        Eth2Network.fromStringLenient("mainnet").get()))
-                .toExternalForm());
+    assertThat(config.getDepositSnapshotPath()).contains(getDefaultBundleSnapshotPath("mainnet"));
     assertThat(config.isDepositSnapshotEnabled()).isTrue();
   }
 
@@ -224,5 +207,12 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.getDepositSnapshotPath())
         .isEqualTo(Optional.of("http://checkpoint/eth/v1/beacon/deposit_snapshot"));
     assertThat(config.isDepositSnapshotEnabled()).isFalse();
+  }
+
+  private String getDefaultBundleSnapshotPath(final String network) {
+    return PowchainConfiguration.class
+        .getResource(
+            DEFAULT_SNAPSHOT_RESOURCE_PATHS.get(Eth2Network.fromStringLenient(network).get()))
+        .toExternalForm();
   }
 }
