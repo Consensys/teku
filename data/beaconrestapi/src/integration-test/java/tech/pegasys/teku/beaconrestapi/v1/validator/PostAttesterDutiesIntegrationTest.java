@@ -18,6 +18,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 
 import java.io.IOException;
+import java.util.List;
 import okhttp3.Response;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
@@ -37,5 +38,20 @@ public class PostAttesterDutiesIntegrationTest extends AbstractDataBackedRestAPI
 
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
     assertThat(response.body().string()).contains("Array expected but got null");
+  }
+
+  @Test
+  void shouldGiveDecentErrorIfEmptyArray() throws IOException {
+    startRestAPIAtGenesis(SpecMilestone.ALTAIR);
+
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+
+    Response response =
+        post(
+            PostAttesterDuties.ROUTE.replace("{epoch}", "1"), jsonProvider.objectToJSON(List.of()));
+
+    assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.body().string())
+        .contains("At least one validator index should be provided");
   }
 }
