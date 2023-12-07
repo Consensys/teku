@@ -15,7 +15,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.EPOCH_PARAMETER;
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.PUBLIC_KEY_TYPE;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
@@ -99,7 +98,7 @@ public class PostAttesterDuties extends RestApiEndpoint {
                     + "`get_block_root_at_slot(state, compute_start_slot_at_epoch(epoch - 1) - 1)` "
                     + "or the genesis block root in the case of underflow.")
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
-            .requestBodyType(DeserializableTypeDefinition.listOf(INTEGER_TYPE))
+            .requestBodyType(DeserializableTypeDefinition.listOf(INTEGER_TYPE, 1))
             .pathParam(EPOCH_PARAMETER)
             .response(SC_OK, "Success response", RESPONSE_TYPE)
             .withServiceUnavailableResponse()
@@ -119,10 +118,6 @@ public class PostAttesterDuties extends RestApiEndpoint {
     final UInt64 epoch = request.getPathParameter(EPOCH_PARAMETER);
     final List<Integer> requestBody = request.getRequestBody();
     final IntList indices = IntArrayList.toList(requestBody.stream().mapToInt(Integer::intValue));
-    if (indices.isEmpty()) {
-      request.respondError(SC_BAD_REQUEST, "At least one validator index should be provided.");
-      return;
-    }
 
     SafeFuture<Optional<AttesterDuties>> future =
         validatorDataProvider.getAttesterDuties(epoch, indices);
