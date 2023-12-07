@@ -19,6 +19,7 @@ import static org.mockserver.model.HttpResponse.response;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
@@ -62,7 +63,8 @@ public class ExternalSignerBasicAuthIntegrationTest extends AbstractExternalSign
     assertThat(recordedRequests).hasSize(1);
     final String recordedAuthHeader = recordedRequests[0].getFirstHeader("Authorization");
     final String decodedAuthHeader =
-        new String(Base64.getDecoder().decode(recordedAuthHeader.split("\\s")[1]));
+        new String(
+            Base64.getDecoder().decode(recordedAuthHeader.split(" ")[1]), StandardCharsets.UTF_8);
     assertThat(decodedAuthHeader).isEqualTo(username + ":" + password);
   }
 }
