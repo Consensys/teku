@@ -174,10 +174,11 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
       "--deposit-snapshot-enabled=false", "--checkpoint-sync-url=http://checkpoint/path/"
     };
     final String[] checkpointSyncUrlSet = {"--checkpoint-sync-url=http://checkpoint/path/"};
+    final String defaultBundleSnapshotPath = getDefaultBundleSnapshotPath("mainnet");
 
     return Stream.of(
-        Arguments.of(emptyConfig, getDefaultBundleSnapshotPath("mainnet"), true),
-        Arguments.of(depositSnapshotEnabledSet, getDefaultBundleSnapshotPath("mainnet"), true),
+        Arguments.of(emptyConfig, defaultBundleSnapshotPath, true),
+        Arguments.of(depositSnapshotEnabledSet, defaultBundleSnapshotPath, true),
         Arguments.of(depositSnapshotPathSet, "/some/path/", false),
         Arguments.of(depositSnapshotPathSetAndCheckpointSync, "/some/path/", false),
         Arguments.of(
