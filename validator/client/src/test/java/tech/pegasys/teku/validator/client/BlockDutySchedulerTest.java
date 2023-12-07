@@ -335,7 +335,8 @@ public class BlockDutySchedulerTest extends AbstractDutySchedulerTest {
                         new SlotBasedScheduledDuties<>(
                             blockDutyFactory,
                             dependentRoot,
-                            validatorDutyMetrics::performDutyWithMetrics),
+                            validatorDutyMetrics::performDutyWithMetrics,
+                            true),
                     new OwnedValidators(
                         Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
                     validatorIndexProvider)),

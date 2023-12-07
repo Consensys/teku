@@ -434,7 +434,8 @@ public class ValidatorClientService extends Service {
                     new SlotBasedScheduledDuties<>(
                         attestationDutyFactory,
                         dependentRoot,
-                        validatorDutyMetrics::performDutyWithMetrics),
+                        validatorDutyMetrics::performDutyWithMetrics,
+                        false),
                 validators,
                 validatorIndexProvider,
                 beaconCommitteeSubscriptions,
@@ -448,7 +449,8 @@ public class ValidatorClientService extends Service {
                     new SlotBasedScheduledDuties<>(
                         blockDutyFactory,
                         dependentRoot,
-                        validatorDutyMetrics::performDutyWithMetrics),
+                        validatorDutyMetrics::performDutyWithMetrics,
+                        true),
                 validators,
                 validatorIndexProvider));
     validatorTimingChannels.add(new BlockDutyScheduler(metricsSystem, blockDutyLoader, spec));

@@ -32,13 +32,17 @@ public class SlotBasedScheduledDuties<P extends Duty, A extends Duty> implements
 
   private final Function<Duty, SafeFuture<DutyResult>> dutyFunction;
 
+  private final boolean mayNeedToRecalculate;
+
   public SlotBasedScheduledDuties(
       final DutyFactory<P, A> dutyFactory,
       final Bytes32 dependentRoot,
-      final Function<Duty, SafeFuture<DutyResult>> dutyFunction) {
+      final Function<Duty, SafeFuture<DutyResult>> dutyFunction,
+      final boolean mayNeedToRecalculate) {
     this.dutyFactory = dutyFactory;
     this.dependentRoot = dependentRoot;
     this.dutyFunction = dutyFunction;
+    this.mayNeedToRecalculate = mayNeedToRecalculate;
   }
 
   public Bytes32 getDependentRoot() {
@@ -108,6 +112,6 @@ public class SlotBasedScheduledDuties<P extends Duty, A extends Duty> implements
 
   @Override
   public boolean requiresRecalculation(final Bytes32 newHeadDependentRoot) {
-    return !getDependentRoot().equals(newHeadDependentRoot);
+    return mayNeedToRecalculate && !getDependentRoot().equals(newHeadDependentRoot);
   }
 }
