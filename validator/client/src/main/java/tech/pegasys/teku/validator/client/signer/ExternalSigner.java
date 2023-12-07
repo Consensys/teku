@@ -24,10 +24,12 @@ import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpRequest.Builder;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpTimeoutException;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -63,6 +65,7 @@ public class ExternalSigner implements Signer {
   private static final String FORK_INFO = "fork_info";
   private final JsonProvider jsonProvider = new JsonProvider();
   private final URL signingServiceUrl;
+  private final Optional<String> maybeBasicAuthorization;
   private final BLSPublicKey blsPublicKey;
   private final Duration timeout;
   private final Spec spec;
@@ -85,6 +88,7 @@ public class ExternalSigner implements Signer {
     this.spec = spec;
     this.httpClient = httpClient;
     this.signingServiceUrl = signingServiceUrl;
+    this.maybeBasicAuthorization = createBasicAuthorization();
     this.blsPublicKey = blsPublicKey;
     this.timeout = timeout;
     this.taskQueue = taskQueue;
@@ -99,6 +103,11 @@ public class ExternalSigner implements Signer {
     successCounter = labelledCounter.labels("success");
     failedCounter = labelledCounter.labels("failed");
     timeoutCounter = labelledCounter.labels("timeout");
+  }
+
+  private Optional<String> createBasicAuthorization() {
+    return Optional.ofNullable(signingServiceUrl.getUserInfo())
+        .map(userInfo -> Base64.getEncoder().encodeToString(userInfo.getBytes()));
   }
 
   @Override
@@ -306,15 +315,17 @@ public class ExternalSigner implements Signer {
               final String requestBody = createSigningRequestBody(signingRoot, type, metadata);
               final URI uri =
                   signingServiceUrl.toURI().resolve(EXTERNAL_SIGNER_ENDPOINT + "/" + publicKey);
-              final HttpRequest request =
+              final Builder requestBuilder =
                   HttpRequest.newBuilder()
                       .uri(uri)
                       .timeout(timeout)
                       .header("Content-Type", "application/json")
-                      .POST(BodyPublishers.ofString(requestBody))
-                      .build();
+                      .POST(BodyPublishers.ofString(requestBody));
+              maybeBasicAuthorization.ifPresent(
+                  basicAuthorization ->
+                      requestBuilder.header("Authorization", "Basic " + basicAuthorization));
               return httpClient
-                  .sendAsync(request, BodyHandlers.ofString())
+                  .sendAsync(requestBuilder.build(), BodyHandlers.ofString())
                   .handleAsync(
                       (response, error) ->
                           this.getBlsSignatureResponder(
