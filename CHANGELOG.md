@@ -21,6 +21,7 @@ the [releases page](https://github.com/Consensys/teku/releases).
 - Third party library updates.
 - Added `--exit-when-no-validator-keys-enabled` command line option.
 - Updated Gnosis chain bootnodes.
+- Support Basic authentication for external signers
 
 ### Bug Fixes
 - Fixed bugs when validator statuses were not updated and builder registrations were not sent in some cases
