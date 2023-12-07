@@ -170,7 +170,7 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
       "--deposit-snapshot-enabled=false",
       "--checkpoint-sync-url=http://checkpoint/path/"
     };
-    final String[] depositSnapshotEnabledFalseAndSync = {
+    final String[] depositSnapshotDisabledAndSync = {
       "--deposit-snapshot-enabled=false", "--checkpoint-sync-url=http://checkpoint/path/"
     };
     final String[] checkpointSyncUrlSet = {"--checkpoint-sync-url=http://checkpoint/path/"};
@@ -182,7 +182,7 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
         Arguments.of(depositSnapshotPathSet, "/some/path/", false),
         Arguments.of(depositSnapshotPathSetAndCheckpointSync, "/some/path/", false),
         Arguments.of(
-            depositSnapshotEnabledFalseAndSync,
+            depositSnapshotDisabledAndSync,
             "http://checkpoint/eth/v1/beacon/deposit_snapshot",
             false),
         Arguments.of(
