@@ -47,6 +47,7 @@ public class PostStateValidatorBalances extends RestApiEndpoint {
             .description("Returns filterable list of validator balances.")
             .tags(TAG_BEACON)
             .pathParam(PARAMETER_STATE_ID)
+            .optionalRequestBody()
             .requestBodyType(DeserializableTypeDefinition.listOf(STRING_TYPE))
             .response(SC_OK, "Request successful", GetStateValidatorBalances.RESPONSE_TYPE)
             .withNotFoundResponse()
