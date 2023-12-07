@@ -57,8 +57,7 @@ class SlotBasedScheduledDutiesTest {
       new SlotBasedScheduledDuties<>(
           dutyFactory,
           Bytes32.fromHexString("0x838382"),
-          validatorDutyMetrics::performDutyWithMetrics,
-          true);
+          validatorDutyMetrics::performDutyWithMetrics);
 
   @Test
   public void shouldDiscardMissedProductionDuties() {

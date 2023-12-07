@@ -167,6 +167,69 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
   }
 
   @Test
+  public void shouldRefetchDutiesForMultipleEpochsWhenCurrentAndPreviousDependentRootChanges() {
+    createDutySchedulerWithRealDuties();
+    final UInt64 currentEpoch = UInt64.valueOf(5);
+    final UInt64 currentSlot = spec.computeStartSlotAtEpoch(currentEpoch);
+    final UInt64 nextEpoch = currentEpoch.plus(1);
+    final Bytes32 previousDutyDependentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 currentDutyDependentRoot = dataStructureUtil.randomBytes32();
+    when(validatorApiChannel.getAttestationDuties(eq(currentEpoch), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(new AttesterDuties(false, previousDutyDependentRoot, emptyList()))));
+    when(validatorApiChannel.getAttestationDuties(eq(nextEpoch), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(new AttesterDuties(false, currentDutyDependentRoot, emptyList()))));
+    dutyScheduler.onSlot(currentSlot);
+
+    verify(validatorApiChannel).getAttestationDuties(currentEpoch, VALIDATOR_INDICES);
+    verify(validatorApiChannel).getAttestationDuties(nextEpoch, VALIDATOR_INDICES);
+
+    dutyScheduler.onHeadUpdate(
+        currentSlot,
+        dataStructureUtil.randomBytes32(),
+        dataStructureUtil.randomBytes32(),
+        dataStructureUtil.randomBytes32());
+
+    verify(validatorApiChannel, times(2)).getAttestationDuties(currentEpoch, VALIDATOR_INDICES);
+    verify(validatorApiChannel, times(2)).getAttestationDuties(nextEpoch, VALIDATOR_INDICES);
+    verifyNoMoreInteractions(validatorApiChannel);
+  }
+
+  @Test
+  public void shouldRefetchDutiesForNextEpochWhenHeadUpdateHasNewCurrentDependentRoot() {
+    createDutySchedulerWithRealDuties();
+    final UInt64 currentEpoch = UInt64.valueOf(5);
+    final UInt64 currentSlot = spec.computeStartSlotAtEpoch(currentEpoch);
+    final UInt64 nextEpoch = currentEpoch.plus(1);
+    final Bytes32 previousDutyDependentRoot = dataStructureUtil.randomBytes32();
+    final Bytes32 currentDutyDependentRoot = dataStructureUtil.randomBytes32();
+    when(validatorApiChannel.getAttestationDuties(eq(currentEpoch), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(new AttesterDuties(false, previousDutyDependentRoot, emptyList()))));
+    when(validatorApiChannel.getAttestationDuties(eq(nextEpoch), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(new AttesterDuties(false, currentDutyDependentRoot, emptyList()))));
+    dutyScheduler.onSlot(currentSlot);
+
+    verify(validatorApiChannel).getAttestationDuties(currentEpoch, VALIDATOR_INDICES);
+    verify(validatorApiChannel).getAttestationDuties(nextEpoch, VALIDATOR_INDICES);
+
+    dutyScheduler.onHeadUpdate(
+        currentSlot,
+        previousDutyDependentRoot,
+        dataStructureUtil.randomBytes32(),
+        dataStructureUtil.randomBytes32());
+
+    verify(validatorApiChannel, times(2)).getAttestationDuties(nextEpoch, VALIDATOR_INDICES);
+    verifyNoMoreInteractions(validatorApiChannel);
+  }
+
+  @Test
   public void shouldNotRefetchDutiesWhenHeadUpdateReceivedWithNoChangeInDependentRoots() {
     createDutySchedulerWithRealDuties();
     final UInt64 currentEpoch = UInt64.valueOf(5);
@@ -686,7 +749,7 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             forkProvider,
             dependentRoot ->
                 new SlotBasedScheduledDuties<>(
-                    attestationDutyFactory, dependentRoot, Duty::performDuty, false),
+                    attestationDutyFactory, dependentRoot, Duty::performDuty),
             new OwnedValidators(Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
             validatorIndexProvider,
             beaconCommitteeSubscriptions,
