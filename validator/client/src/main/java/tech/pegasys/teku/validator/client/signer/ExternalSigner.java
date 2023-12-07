@@ -24,10 +24,10 @@ import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
-import java.net.http.HttpRequest.Builder;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpTimeoutException;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.Map;
@@ -107,7 +107,9 @@ public class ExternalSigner implements Signer {
 
   private Optional<String> createBasicAuthorization() {
     return Optional.ofNullable(signingServiceUrl.getUserInfo())
-        .map(userInfo -> Base64.getEncoder().encodeToString(userInfo.getBytes()));
+        .map(
+            userInfo ->
+                Base64.getEncoder().encodeToString(userInfo.getBytes(StandardCharsets.UTF_8)));
   }
 
   @Override
@@ -315,7 +317,7 @@ public class ExternalSigner implements Signer {
               final String requestBody = createSigningRequestBody(signingRoot, type, metadata);
               final URI uri =
                   signingServiceUrl.toURI().resolve(EXTERNAL_SIGNER_ENDPOINT + "/" + publicKey);
-              final Builder requestBuilder =
+              final HttpRequest.Builder requestBuilder =
                   HttpRequest.newBuilder()
                       .uri(uri)
                       .timeout(timeout)
