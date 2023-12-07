@@ -19,8 +19,11 @@ import static tech.pegasys.teku.beacon.pow.DepositSnapshotFileLoader.DEFAULT_SNA
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
@@ -145,67 +148,47 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
         .hasMessage("Use either custom deposit tree snapshot path or snapshot bundle");
   }
 
-  @Test
-  public void shouldSetDefaultSnapshotConfig() {
-    final String[] args = {"--network=mainnet"};
+  @ParameterizedTest
+  @MethodSource("getDepositSnapshotOptions")
+  public void shouldHandleSnapshotPathAndEnabledConfig(
+      final String[] args, final String expectedPath, final boolean expectedIsEnabled) {
     final PowchainConfiguration config = getTekuConfigurationFromArguments(args).powchain();
-    assertThat(config.getDepositSnapshotPath()).contains(getDefaultBundleSnapshotPath("mainnet"));
-    assertThat(config.isDepositSnapshotEnabled()).isTrue();
+    assertThat(config.getDepositSnapshotPath()).isEqualTo(Optional.of(expectedPath));
+    assertThat(config.isDepositSnapshotEnabled()).isEqualTo(expectedIsEnabled);
   }
 
-  @Test
-  public void shouldUseBundledSnapshotWhenSetAndEnabled() {
-    final String[] args = {
+  public static Stream<Arguments> getDepositSnapshotOptions() {
+    final String[] emptyConfig = {"--network=mainnet"};
+    final String[] depositSnapshotEnabledSet = {
       "--network=mainnet",
       "--deposit-snapshot-enabled=true",
       "--checkpoint-sync-url=http://checkpoint/path/"
     };
-    final PowchainConfiguration config = getTekuConfigurationFromArguments(args).powchain();
-    assertThat(config.getDepositSnapshotPath()).contains(getDefaultBundleSnapshotPath("mainnet"));
-    assertThat(config.isDepositSnapshotEnabled()).isTrue();
-  }
-
-  @Test
-  public void shouldUseDepositSnapshotPathWhenSet() {
-    final String[] args = {"--Xdeposit-snapshot=/some/path/"};
-    final PowchainConfiguration config = getTekuConfigurationFromArguments(args).powchain();
-    assertThat(config.getDepositSnapshotPath()).isEqualTo(Optional.of("/some/path/"));
-    assertThat(config.isDepositSnapshotEnabled()).isFalse();
-  }
-
-  @Test
-  public void shouldUseDepositSnapshotPathWhenSetIgnoringCheckpointSync() {
-    final String[] args = {
+    final String[] depositSnapshotPathSet = {"--Xdeposit-snapshot=/some/path/"};
+    final String[] depositSnapshotPathSetAndCheckpointSync = {
       "--Xdeposit-snapshot=/some/path/",
       "--deposit-snapshot-enabled=false",
       "--checkpoint-sync-url=http://checkpoint/path/"
     };
-    final PowchainConfiguration config = getTekuConfigurationFromArguments(args).powchain();
-    assertThat(config.getDepositSnapshotPath()).isEqualTo(Optional.of("/some/path/"));
-    assertThat(config.isDepositSnapshotEnabled()).isFalse();
-  }
-
-  @Test
-  public void shouldUseCheckpointSyncWhenDepositSnapshotDisabled() {
-    final String[] args = {
+    final String[] depositSnapshotEnabledFalseAndSync = {
       "--deposit-snapshot-enabled=false", "--checkpoint-sync-url=http://checkpoint/path/"
     };
-    final PowchainConfiguration config = getTekuConfigurationFromArguments(args).powchain();
-    assertThat(config.getDepositSnapshotPath())
-        .isEqualTo(Optional.of("http://checkpoint/eth/v1/beacon/deposit_snapshot"));
-    assertThat(config.isDepositSnapshotEnabled()).isFalse();
+    final String[] checkpointSyncUrlSet = {"--checkpoint-sync-url=http://checkpoint/path/"};
+
+    return Stream.of(
+        Arguments.of(emptyConfig, getDefaultBundleSnapshotPath("mainnet"), true),
+        Arguments.of(depositSnapshotEnabledSet, getDefaultBundleSnapshotPath("mainnet"), true),
+        Arguments.of(depositSnapshotPathSet, "/some/path/", false),
+        Arguments.of(depositSnapshotPathSetAndCheckpointSync, "/some/path/", false),
+        Arguments.of(
+            depositSnapshotEnabledFalseAndSync,
+            "http://checkpoint/eth/v1/beacon/deposit_snapshot",
+            false),
+        Arguments.of(
+            checkpointSyncUrlSet, "http://checkpoint/eth/v1/beacon/deposit_snapshot", false));
   }
 
-  @Test
-  public void shouldUseCheckpointSyncWhenDefaults() {
-    final String[] args = {"--checkpoint-sync-url=http://checkpoint/path/"};
-    final PowchainConfiguration config = getTekuConfigurationFromArguments(args).powchain();
-    assertThat(config.getDepositSnapshotPath())
-        .isEqualTo(Optional.of("http://checkpoint/eth/v1/beacon/deposit_snapshot"));
-    assertThat(config.isDepositSnapshotEnabled()).isFalse();
-  }
-
-  private String getDefaultBundleSnapshotPath(final String network) {
+  private static String getDefaultBundleSnapshotPath(final String network) {
     return PowchainConfiguration.class
         .getResource(
             DEFAULT_SNAPSHOT_RESOURCE_PATHS.get(Eth2Network.fromStringLenient(network).get()))
