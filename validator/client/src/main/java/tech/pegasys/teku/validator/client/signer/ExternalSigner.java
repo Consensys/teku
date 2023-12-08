@@ -307,14 +307,15 @@ public class ExternalSigner implements Signer {
               final String requestBody = createSigningRequestBody(signingRoot, type, metadata);
               final URI uri =
                   signingServiceUrl.toURI().resolve(EXTERNAL_SIGNER_ENDPOINT + "/" + publicKey);
-              final HttpRequest.Builder requestBuilder =
+              final HttpRequest request =
                   HttpRequest.newBuilder()
                       .uri(uri)
                       .timeout(timeout)
                       .header("Content-Type", "application/json")
-                      .POST(BodyPublishers.ofString(requestBody));
+                      .POST(BodyPublishers.ofString(requestBody))
+                      .build();
               return httpClient
-                  .sendAsync(requestBuilder.build(), BodyHandlers.ofString())
+                  .sendAsync(request, BodyHandlers.ofString())
                   .handleAsync(
                       (response, error) ->
                           this.getBlsSignatureResponder(
