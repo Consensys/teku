@@ -85,6 +85,7 @@ public class ExternalSigner implements Signer {
       final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.httpClient = httpClient;
+    // sanitize for safe logging
     this.signingServiceUrl = UrlSanitizer.sanitizeUrl(signingServiceUrl);
     this.blsPublicKey = blsPublicKey;
     this.timeout = timeout;
