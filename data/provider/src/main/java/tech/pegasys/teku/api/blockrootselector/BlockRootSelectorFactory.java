@@ -51,9 +51,24 @@ public class BlockRootSelectorFactory extends AbstractSelectorFactory<BlockRootS
 
   @Override
   public BlockRootSelector finalizedSelector() {
-    return () ->
-        SafeFuture.completedFuture(
-            lookupBlockRootData(client.getFinalizedBlock(), client.isChainHeadOptimistic()));
+    return () -> {
+      final Optional<Bytes32> maybeFinalizedBlockRoot = client.getFinalizedBlockRoot();
+      final Optional<UInt64> maybeFinalizedSlot = client.getFinalizedBlockSlot();
+      if (maybeFinalizedBlockRoot.isPresent() && maybeFinalizedSlot.isPresent()) {
+        return SafeFuture.completedFuture(
+            Optional.of(
+                lookupBlockRootData(
+                    maybeFinalizedBlockRoot.get(),
+                    maybeFinalizedSlot.get(),
+                    client.isChainHeadOptimistic(),
+                    true,
+                    true)));
+      } else {
+        return SafeFuture.completedFuture(
+            lookupCanonicalBlockRootData(
+                client.getFinalizedBlock(), client.isChainHeadOptimistic()));
+      }
+    };
   }
 
   @Override
@@ -61,7 +76,7 @@ public class BlockRootSelectorFactory extends AbstractSelectorFactory<BlockRootS
     return () ->
         client
             .getBlockRootAtSlotExact(GENESIS_SLOT)
-            .thenApply(maybeBlock -> lookupBlockRootData(maybeBlock, false, GENESIS_SLOT));
+            .thenApply(maybeBlock -> lookupCanonicalBlockRootData(maybeBlock, false, GENESIS_SLOT));
   }
 
   @Override
@@ -88,7 +103,7 @@ public class BlockRootSelectorFactory extends AbstractSelectorFactory<BlockRootS
 
   private SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> fromChainHead(final ChainHead head) {
     return head.getBlock()
-        .thenApply(maybeBlock -> lookupBlockRootData(maybeBlock, head.isOptimistic()));
+        .thenApply(maybeBlock -> lookupCanonicalBlockRootData(maybeBlock, head.isOptimistic()));
   }
 
   private SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> forSlot(
@@ -103,17 +118,18 @@ public class BlockRootSelectorFactory extends AbstractSelectorFactory<BlockRootS
     return client
         .getBlockRootAtSlotExact(slot)
         .thenApply(
-            maybeBlockRoot -> lookupBlockRootData(maybeBlockRoot, head.isOptimistic(), slot));
+            maybeBlockRoot ->
+                lookupCanonicalBlockRootData(maybeBlockRoot, head.isOptimistic(), slot));
   }
 
-  private Optional<ObjectAndMetaData<Bytes32>> lookupBlockRootData(
+  private Optional<ObjectAndMetaData<Bytes32>> lookupCanonicalBlockRootData(
       final Optional<Bytes32> maybeBlockRoot, final boolean isOptimistic, final UInt64 slot) {
     return maybeBlockRoot.map(
         blockRoot ->
             lookupBlockRootData(blockRoot, slot, isOptimistic, true, client.isFinalized(slot)));
   }
 
-  private Optional<ObjectAndMetaData<Bytes32>> lookupBlockRootData(
+  private Optional<ObjectAndMetaData<Bytes32>> lookupCanonicalBlockRootData(
       final Optional<SignedBeaconBlock> maybeBlock, final boolean isOptimistic) {
     return maybeBlock.map(
         block ->

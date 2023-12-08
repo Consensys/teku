@@ -637,11 +637,10 @@ public class CombinedChainDataClient {
     return getStore().getLatestFinalized().getSignedBeaconBlock();
   }
 
-  public Optional<Bytes32> getFinalizedBlockHashTreeRoot() {
+  public Optional<Bytes32> getFinalizedBlockRoot() {
     if (recentChainData.isPreGenesis()) {
       return Optional.empty();
     }
-
     return Optional.of(getStore().getLatestFinalized().getRoot());
   }
 
