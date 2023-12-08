@@ -147,15 +147,6 @@ public class BeaconBlocksByRootMessageHandler
     return recentChainData.retrieveSignedBlockByRoot(blockRoot);
   }
 
-  private SafeFuture<Optional<SignedBeaconBlock>> retrieveBlock(final Bytes32 blockRoot) {
-    final Optional<SignedBeaconBlock> recentlyValidatedSignedBlock =
-        recentChainData.getRecentlyValidatedSignedBlockByRoot(blockRoot);
-    if (recentlyValidatedSignedBlock.isPresent()) {
-      return SafeFuture.completedFuture(recentlyValidatedSignedBlock);
-    }
-    return recentChainData.retrieveSignedBlockByRoot(blockRoot);
-  }
-
   private UInt64 getMaxRequestBlocks() {
     final UInt64 currentEpoch = recentChainData.getCurrentEpoch().orElse(UInt64.ZERO);
     final SpecMilestone milestone = spec.getForkSchedule().getSpecMilestoneAtEpoch(currentEpoch);
