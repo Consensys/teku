@@ -28,6 +28,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
@@ -35,6 +37,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -103,6 +106,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final TickProcessor tickProcessor;
   private final boolean forkChoiceLateBlockReorgEnabled;
   private Optional<Boolean> optimisticSyncing = Optional.empty();
+  private final LabelledMetric<Counter> getProposerHeadSelectedParentCounter;
 
   public ForkChoice(
       final Spec spec,
@@ -131,6 +135,13 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.forkChoiceProposerBoostUniquenessEnabled = forkChoiceProposerBoostUniquenessEnabled;
     this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
     LOG.debug("forkChoiceLateBlockReorgEnabled is set to {}", forkChoiceLateBlockReorgEnabled);
+
+    getProposerHeadSelectedParentCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.BEACON,
+            "get_proposer_head_selection_total",
+            "Reports the number proposals made where the parent block was built on.",
+            "selected_source");
 
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
     forkChoiceNotifier.subscribeToForkChoiceUpdatedResult(this);
@@ -823,15 +834,21 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
           forkChoiceState::getHeadBlockRoot,
           forkChoiceState::getHeadBlockSlot);
       forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState, proposingSlot);
+      maybeProposerHead.ifPresent(
+          proposerHead ->
+              getProposerHeadSelectedParentCounter
+                  .labels("should_override_fork_choice_false")
+                  .inc());
       return;
     } else if (maybeProposerHead.isPresent()
         && maybeProposerHead.get().equals(forkChoiceState.getHeadBlockRoot())) {
       LOG.debug(
-          "Fork Choice Notify shouldOverrideForkChoice {}, getProposerHead {}, chose fork choice head {}:({})",
+          "Fork Choice Notify shouldOverrideForkChoice {}, getProposerHead {}, chose head {}:({})",
           () -> shouldOverrideForkChoice,
           () -> maybeProposerHead,
           forkChoiceState::getHeadBlockRoot,
           forkChoiceState::getHeadBlockSlot);
+      getProposerHeadSelectedParentCounter.labels("head").inc();
       forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState, proposingSlot);
       return;
     }
@@ -844,6 +861,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         forkChoiceState::getHeadBlockSlot,
         parentForkChoiceState::getHeadBlockRoot,
         parentForkChoiceState::getHeadBlockSlot);
+    getProposerHeadSelectedParentCounter.labels("parent").inc();
     forkChoiceNotifier.onForkChoiceUpdated(parentForkChoiceState, proposingSlot);
   }
 
