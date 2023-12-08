@@ -56,7 +56,7 @@ public class AttestationDutyScheduler extends AbstractDutyScheduler {
         dutyEpoch,
         headEpoch);
     if (headEpoch.equals(dutyEpoch)) {
-      LOG.debug("headEpoch {} - returning previousEpochDependentRoot", () -> headEpoch);
+      LOG.debug("headEpoch {} - returning previousDutyDependentRoot", () -> headEpoch);
       return previousDutyDependentRoot;
     } else if (headEpoch.increment().equals(dutyEpoch)) {
       LOG.debug("dutyEpoch (next epoch) {} - returning currentDutyDependentRoot", () -> dutyEpoch);
