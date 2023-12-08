@@ -17,6 +17,9 @@ import com.google.common.base.Suppliers;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.Authenticator;
+import java.net.PasswordAuthentication;
+import java.net.URL;
 import java.net.http.HttpClient;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -49,7 +52,12 @@ public class HttpClientExternalSignerFactory implements Supplier<HttpClient> {
   @Override
   public HttpClient get() {
     final HttpClient.Builder builder = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1);
-    if (isTLSEnabled()) {
+    final URL externalSignerUrl = validatorConfig.getValidatorExternalSignerUrl();
+    if (isTLSEnabled(externalSignerUrl)) {
+      final String userInfo = externalSignerUrl.getUserInfo();
+      if (userInfo != null) {
+        configureBasicAuthentication(builder, userInfo);
+      }
       builder.sslContext(
           getSSLContext(
               validatorConfig.getValidatorExternalSignerKeystorePasswordFilePair(),
@@ -58,9 +66,22 @@ public class HttpClientExternalSignerFactory implements Supplier<HttpClient> {
     return builder.build();
   }
 
-  private boolean isTLSEnabled() {
-    final String protocol = validatorConfig.getValidatorExternalSignerUrl().getProtocol();
-    return protocol != null && protocol.equalsIgnoreCase("https");
+  private boolean isTLSEnabled(final URL externalSignerUrl) {
+    return "https".equalsIgnoreCase(externalSignerUrl.getProtocol());
+  }
+
+  private void configureBasicAuthentication(
+      final HttpClient.Builder builder, final String userInfo) {
+    final String[] authCredentials = userInfo.split(":");
+    final String username = authCredentials[0];
+    final String password = authCredentials[1];
+    builder.authenticator(
+        new Authenticator() {
+          @Override
+          protected PasswordAuthentication getPasswordAuthentication() {
+            return new PasswordAuthentication(username, password.toCharArray());
+          }
+        });
   }
 
   private SSLContext getSSLContext(

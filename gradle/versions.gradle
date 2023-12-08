@@ -38,7 +38,10 @@ dependencyManagement {
 
     dependency 'org.jetbrains.kotlin:kotlin-stdlib:1.9.21'
 
-    dependency 'org.mock-server:mockserver-junit-jupiter:5.15.0'
+    dependency('org.mock-server:mockserver-junit-jupiter:5.15.0') {
+      exclude 'org.bouncycastle:bcpkix-jdk15on'
+      exclude 'org.bouncycastle:bcprov-jdk15on'
+    }
 
     dependencySet(group: 'io.swagger.core.v3', version: '2.2.19') {
       entry 'swagger-parser'

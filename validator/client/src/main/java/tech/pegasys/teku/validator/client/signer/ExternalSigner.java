@@ -18,7 +18,6 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_PRECONDIT
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import java.net.URI;
 import java.net.URL;
@@ -28,9 +27,7 @@ import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpTimeoutException;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Base64;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
@@ -66,7 +63,6 @@ public class ExternalSigner implements Signer {
   public static final String EXTERNAL_SIGNER_ENDPOINT = "/api/v1/eth2/sign";
   private static final String FORK_INFO = "fork_info";
   private final JsonProvider jsonProvider = new JsonProvider();
-  private final Optional<String> maybeBasicAuthorization;
   private final URL signingServiceUrl;
   private final BLSPublicKey blsPublicKey;
   private final Duration timeout;
@@ -89,7 +85,6 @@ public class ExternalSigner implements Signer {
       final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.httpClient = httpClient;
-    this.maybeBasicAuthorization = createBasicAuthorization(signingServiceUrl);
     this.signingServiceUrl = UrlSanitizer.sanitizeUrl(signingServiceUrl);
     this.blsPublicKey = blsPublicKey;
     this.timeout = timeout;
@@ -105,17 +100,6 @@ public class ExternalSigner implements Signer {
     successCounter = labelledCounter.labels("success");
     failedCounter = labelledCounter.labels("failed");
     timeoutCounter = labelledCounter.labels("timeout");
-  }
-
-  private Optional<String> createBasicAuthorization(final URL signingServiceUrl) {
-    return Optional.ofNullable(signingServiceUrl.getUserInfo())
-        .map(
-            userInfo -> {
-              Preconditions.checkArgument(
-                  "https".equalsIgnoreCase(signingServiceUrl.getProtocol()),
-                  "Invalid protocol. Basic authentication requires HTTPS.");
-              return Base64.getEncoder().encodeToString(userInfo.getBytes(StandardCharsets.UTF_8));
-            });
   }
 
   @Override
@@ -329,9 +313,6 @@ public class ExternalSigner implements Signer {
                       .timeout(timeout)
                       .header("Content-Type", "application/json")
                       .POST(BodyPublishers.ofString(requestBody));
-              maybeBasicAuthorization.ifPresent(
-                  basicAuthorization ->
-                      requestBuilder.header("Authorization", "Basic " + basicAuthorization));
               return httpClient
                   .sendAsync(requestBuilder.build(), BodyHandlers.ofString())
                   .handleAsync(

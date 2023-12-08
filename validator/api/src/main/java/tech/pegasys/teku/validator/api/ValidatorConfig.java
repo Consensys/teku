@@ -679,11 +679,13 @@ public class ValidatorConfig {
         return;
       }
 
-      if (validatorExternalSignerKeystore != null || validatorExternalSignerTruststore != null) {
+      if (validatorExternalSignerKeystore != null
+          || validatorExternalSignerTruststore != null
+          || validatorExternalSignerUrl.getUserInfo() != null) {
         if (!isURLSchemeHttps(validatorExternalSignerUrl)) {
           final String errorMessage =
               String.format(
-                  "Invalid configuration. --validators-external-signer-url (%s) must start with https because external signer keystore/truststore are defined",
+                  "Invalid configuration. --validators-external-signer-url (%s) must start with https because external signer keystore/truststore are defined or basic authentication is used",
                   validatorExternalSignerUrl);
           throw new InvalidConfigurationException(errorMessage);
         }

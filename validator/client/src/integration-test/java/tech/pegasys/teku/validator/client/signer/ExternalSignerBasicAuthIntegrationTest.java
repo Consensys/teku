@@ -25,44 +25,48 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import org.mockserver.matchers.Times;
 import org.mockserver.model.HttpRequest;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 
-public class ExternalSignerBasicAuthIntegrationTest extends AbstractExternalSignerIntegrationTest {
+public class ExternalSignerBasicAuthIntegrationTest
+    extends AbstractSecureExternalSignerIntegrationTest {
 
   private final String username = "foo";
   private final String password = "bar";
 
   @Override
-  public Spec getSpec() {
-    return TestSpecFactory.createMinimalAltair();
-  }
-
-  @Override
   protected URL getUrl() throws MalformedURLException {
     return new URL(
-        String.format("http://%s:%s@127.0.0.1:%s", username, password, client.getLocalPort()));
+        String.format("https://%s:%s@127.0.0.1:%s", username, password, client.getLocalPort()));
   }
 
   @Test
   public void addsBasicAuthorizationToSigningRequest() {
+
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock(10);
     final BLSSignature expectedSignature =
         BLSSignature.fromBytesCompressed(
             Bytes.fromBase64String(
                 "luIZGEgsjSbFo4MEPVeqaqqm1AnnTODcxFy9gPmdAywVmDIpqkzYed8DJ2l4zx5WAejUTox+NO5HQ4M2APMNovd7FuqnCSVUEftrL4WtJqegPrING2ZCtVTrcaUzFpUQ"));
 
-    client.when(request()).respond(response().withBody(expectedSignature.toString()));
+    // This will trigger the HttpClient to include the "Authorization" header in the next request
+    // and is the normal behaviour of servers
+    client
+        .when(request().withSecure(true), Times.exactly(1))
+        .respond(response().withStatusCode(401).withHeader("WWW-Authenticate", "Basic"));
+    client
+        .when(request().withSecure(true))
+        .respond(response().withBody(expectedSignature.toString()));
 
     final BLSSignature response = externalSigner.signBlock(block, forkInfo).join();
     assertThat(response).isEqualTo(expectedSignature);
 
     final HttpRequest[] recordedRequests = client.retrieveRecordedRequests(request());
-    assertThat(recordedRequests).hasSize(1);
-    final HttpRequest recordedRequest = recordedRequests[0];
+    assertThat(recordedRequests).hasSize(2);
+    // second request will be the authenticated one
+    final HttpRequest recordedRequest = recordedRequests[1];
 
     // verify Authorization header
     final String recordedAuthHeader = recordedRequest.getFirstHeader("Authorization");
