@@ -125,7 +125,7 @@ public class MetricsOptions {
       showDefaultValue = Visibility.ALWAYS,
       paramLabel = "<INTEGER>",
       description =
-          "Specifies the threshold time (in milliseconds) beyond which block production is deemed slow.",
+          "The time (in ms) at which block production is to be considered 'slow'. If set to 100, block production taking at least 100ms would raise a warning.",
       fallbackValue = "true",
       arity = "0..1")
   private int blockProductionPerformanceWarningThreshold =
