@@ -112,7 +112,7 @@ public class ExternalSigner implements Signer {
         .map(
             userInfo -> {
               Preconditions.checkArgument(
-                  "https".equals(signingServiceUrl.getProtocol()),
+                  "https".equalsIgnoreCase(signingServiceUrl.getProtocol()),
                   "Invalid protocol. Basic authentication requires HTTPS.");
               return Base64.getEncoder().encodeToString(userInfo.getBytes(StandardCharsets.UTF_8));
             });

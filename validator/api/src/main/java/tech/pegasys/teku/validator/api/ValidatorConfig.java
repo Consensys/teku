@@ -699,8 +699,7 @@ public class ValidatorConfig {
     }
 
     private static boolean isURLSchemeHttps(final URL url) {
-      final String protocol = url.getProtocol();
-      return protocol != null && protocol.equalsIgnoreCase("https");
+      return "https".equalsIgnoreCase(url.getProtocol());
     }
 
     private boolean onlyOneInitialized(final Object o1, final Object o2) {
