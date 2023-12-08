@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_PRECONDIT
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import com.google.common.base.Throwables;
 import java.net.URI;
 import java.net.URL;
@@ -109,8 +110,12 @@ public class ExternalSigner implements Signer {
   private Optional<String> createBasicAuthorization(final URL signingServiceUrl) {
     return Optional.ofNullable(signingServiceUrl.getUserInfo())
         .map(
-            userInfo ->
-                Base64.getEncoder().encodeToString(userInfo.getBytes(StandardCharsets.UTF_8)));
+            userInfo -> {
+              Preconditions.checkArgument(
+                  "https".equals(signingServiceUrl.getProtocol()),
+                  "Invalid protocol. Basic authentication requires HTTPS.");
+              return Base64.getEncoder().encodeToString(userInfo.getBytes(StandardCharsets.UTF_8));
+            });
   }
 
   @Override
