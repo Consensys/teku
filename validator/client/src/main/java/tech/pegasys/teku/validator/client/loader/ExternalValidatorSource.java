@@ -37,7 +37,6 @@ import tech.pegasys.teku.bls.keystore.model.KeyStoreData;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueueWithPriority;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
@@ -252,16 +251,17 @@ public class ExternalValidatorSource extends AbstractValidatorSource implements 
       final ValidatorConfig config,
       final Supplier<HttpClient> externalSignerHttpClientFactory,
       final AsyncRunner asyncRunner) {
-    // sanitize for safe logging
-    final URL externalSignerUrl = UrlSanitizer.sanitizeUrl(config.getValidatorExternalSignerUrl());
     final ExternalSignerUpcheck externalSignerUpcheck =
         new ExternalSignerUpcheck(
             externalSignerHttpClientFactory.get(),
-            externalSignerUrl,
+            config.getValidatorExternalSignerUrl(),
             config.getValidatorExternalSignerTimeout());
     final ExternalSignerStatusLogger externalSignerStatusLogger =
         new ExternalSignerStatusLogger(
-            STATUS_LOG, externalSignerUpcheck::upcheck, externalSignerUrl, asyncRunner);
+            STATUS_LOG,
+            externalSignerUpcheck::upcheck,
+            config.getValidatorExternalSignerUrl(),
+            asyncRunner);
     // initial status log
     externalSignerStatusLogger.log();
     // recurring status log

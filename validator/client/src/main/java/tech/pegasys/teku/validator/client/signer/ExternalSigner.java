@@ -42,7 +42,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueueWithPriority;
-import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -85,8 +84,7 @@ public class ExternalSigner implements Signer {
       final MetricsSystem metricsSystem) {
     this.spec = spec;
     this.httpClient = httpClient;
-    // sanitize for safe logging
-    this.signingServiceUrl = UrlSanitizer.sanitizeUrl(signingServiceUrl);
+    this.signingServiceUrl = signingServiceUrl;
     this.blsPublicKey = blsPublicKey;
     this.timeout = timeout;
     this.taskQueue = taskQueue;

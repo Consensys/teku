@@ -33,6 +33,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ValidatorConfig {
@@ -65,6 +66,7 @@ public class ValidatorConfig {
   private final List<String> validatorExternalSignerPublicKeySources;
   private final boolean validatorExternalSignerSlashingProtectionEnabled;
   private final URL validatorExternalSignerUrl;
+  private final URL unsanitizedValidatorExternalSignerUrl;
   private final Duration validatorExternalSignerTimeout;
   private final Path validatorExternalSignerKeystore;
   private final Path validatorExternalSignerKeystorePasswordFile;
@@ -100,6 +102,7 @@ public class ValidatorConfig {
       final List<String> validatorKeys,
       final List<String> validatorExternalSignerPublicKeySources,
       final URL validatorExternalSignerUrl,
+      final URL unsanitizedValidatorExternalSignerUrl,
       final Duration validatorExternalSignerTimeout,
       final Path validatorExternalSignerKeystore,
       final Path validatorExternalSignerKeystorePasswordFile,
@@ -133,6 +136,7 @@ public class ValidatorConfig {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
+    this.unsanitizedValidatorExternalSignerUrl = unsanitizedValidatorExternalSignerUrl;
     this.validatorExternalSignerTimeout = validatorExternalSignerTimeout;
     this.validatorExternalSignerKeystore = validatorExternalSignerKeystore;
     this.validatorExternalSignerKeystorePasswordFile = validatorExternalSignerKeystorePasswordFile;
@@ -190,6 +194,10 @@ public class ValidatorConfig {
 
   public URL getValidatorExternalSignerUrl() {
     return validatorExternalSignerUrl;
+  }
+
+  public URL getUnsanitizedValidatorExternalSignerUrl() {
+    return unsanitizedValidatorExternalSignerUrl;
   }
 
   public Duration getValidatorExternalSignerTimeout() {
@@ -316,6 +324,7 @@ public class ValidatorConfig {
     private List<String> validatorKeys = new ArrayList<>();
     private List<String> validatorExternalSignerPublicKeySources = new ArrayList<>();
     private URL validatorExternalSignerUrl;
+    private URL unsanitizedValidatorExternalSignerUrl;
     private int validatorExternalSignerConcurrentRequestLimit =
         DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT;
     private Duration validatorExternalSignerTimeout = DEFAULT_VALIDATOR_EXTERNAL_SIGNER_TIMEOUT;
@@ -371,8 +380,9 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder validatorExternalSignerUrl(URL validatorExternalSignerUrl) {
-      this.validatorExternalSignerUrl = validatorExternalSignerUrl;
+    public Builder validatorExternalSignerUrl(final URL validatorExternalSignerUrl) {
+      this.validatorExternalSignerUrl = UrlSanitizer.sanitizeUrl(validatorExternalSignerUrl);
+      this.unsanitizedValidatorExternalSignerUrl = validatorExternalSignerUrl;
       return this;
     }
 
@@ -582,6 +592,7 @@ public class ValidatorConfig {
           validatorKeys,
           validatorExternalSignerPublicKeySources,
           validatorExternalSignerUrl,
+          unsanitizedValidatorExternalSignerUrl,
           validatorExternalSignerTimeout,
           validatorExternalSignerKeystore,
           validatorExternalSignerKeystorePasswordFile,
@@ -681,7 +692,7 @@ public class ValidatorConfig {
 
       if (validatorExternalSignerKeystore != null
           || validatorExternalSignerTruststore != null
-          || validatorExternalSignerUrl.getUserInfo() != null) {
+          || unsanitizedValidatorExternalSignerUrl.getUserInfo() != null) {
         if (!isURLSchemeHttps(validatorExternalSignerUrl)) {
           final String errorMessage =
               String.format(

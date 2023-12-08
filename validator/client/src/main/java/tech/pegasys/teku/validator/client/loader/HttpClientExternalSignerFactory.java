@@ -54,7 +54,7 @@ public class HttpClientExternalSignerFactory implements Supplier<HttpClient> {
   @Override
   public HttpClient get() {
     final HttpClient.Builder builder = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1);
-    final URL externalSignerUrl = validatorConfig.getValidatorExternalSignerUrl();
+    final URL externalSignerUrl = validatorConfig.getUnsanitizedValidatorExternalSignerUrl();
     if (isTLSEnabled(externalSignerUrl)) {
       final String userInfo = externalSignerUrl.getUserInfo();
       if (userInfo != null) {
