@@ -140,7 +140,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
             "get_proposer_head_selection_total",
-            "Reports the number proposals made where the parent block was built on.",
+            "when late_block_reorg is enabled, counts based on the proposer parent being based on fork choice, head, or parent of head.",
             "selected_source");
 
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
@@ -835,10 +835,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
           forkChoiceState::getHeadBlockSlot);
       forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState, proposingSlot);
       maybeProposerHead.ifPresent(
-          proposerHead ->
-              getProposerHeadSelectedParentCounter
-                  .labels("should_override_fork_choice_false")
-                  .inc());
+          proposerHead -> getProposerHeadSelectedParentCounter.labels("fork_choice").inc());
       return;
     } else if (maybeProposerHead.isPresent()
         && maybeProposerHead.get().equals(forkChoiceState.getHeadBlockRoot())) {
