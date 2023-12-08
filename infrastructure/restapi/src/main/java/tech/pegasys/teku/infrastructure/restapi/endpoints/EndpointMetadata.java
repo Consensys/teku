@@ -75,6 +75,7 @@ public class EndpointMetadata {
   private final String summary;
   private final Optional<String> security;
   private final String description;
+  private final boolean requiredRequestBody;
   private final boolean deprecated;
   private final String defaultResponseContentType;
   private final Map<String, OpenApiResponse> responses;
@@ -97,6 +98,7 @@ public class EndpointMetadata {
       final String defaultResponseContentType,
       final Map<String, OpenApiResponse> responses,
       final String defaultRequestContentType,
+      final boolean requiredRequestBody,
       final Map<String, RequestContentTypeDefinition<?>> requestBodyTypes,
       final List<String> tags,
       final Map<String, StringValueTypeDefinition<?>> pathParams,
@@ -109,6 +111,7 @@ public class EndpointMetadata {
     this.summary = summary;
     this.security = security;
     this.description = description;
+    this.requiredRequestBody = requiredRequestBody;
     this.deprecated = deprecated;
     this.defaultResponseContentType = defaultResponseContentType;
     this.responses = responses;
@@ -313,6 +316,9 @@ public class EndpointMetadata {
 
     if (!requestBodyTypes.isEmpty()) {
       gen.writeObjectFieldStart("requestBody");
+      if (!requiredRequestBody) {
+        gen.writeBooleanField("required", false);
+      }
       gen.writeObjectFieldStart("content");
       for (Map.Entry<String, RequestContentTypeDefinition<?>> requestTypeEntry :
           requestBodyTypes.entrySet()) {
@@ -400,6 +406,10 @@ public class EndpointMetadata {
     return requestContentTypeDefinition;
   }
 
+  public boolean isRequiredRequestBody() {
+    return requiredRequestBody;
+  }
+
   public static class EndpointMetaDataBuilder {
     private HandlerType method;
     private String path;
@@ -407,6 +417,7 @@ public class EndpointMetadata {
     private String summary;
     private String description;
     private boolean deprecated = false;
+    private boolean requiredRequestBody = true;
     private final Map<String, StringValueTypeDefinition<?>> pathParams = new LinkedHashMap<>();
     private final Map<String, StringValueTypeDefinition<?>> queryParams = new LinkedHashMap<>();
     private final Map<String, StringValueTypeDefinition<?>> requiredQueryParams =
@@ -520,6 +531,11 @@ public class EndpointMetadata {
         final DeserializableTypeDefinition<?> requestBodyType) {
       this.requestBodyTypes.put(
           ContentTypes.JSON, new SimpleJsonRequestContentTypeDefinition<>(requestBodyType));
+      return this;
+    }
+
+    public EndpointMetaDataBuilder optionalRequestBody() {
+      this.requiredRequestBody = false;
       return this;
     }
 
@@ -695,6 +711,7 @@ public class EndpointMetadata {
           defaultResponseType,
           responses,
           defaultRequestType,
+          requiredRequestBody,
           requestBodyTypes,
           tags,
           pathParams,
