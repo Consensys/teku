@@ -113,6 +113,7 @@ public class BlobSidecarPoolImplTest {
     blobSidecarPool.onNewBlock(block);
 
     assertThat(blobSidecarPool.containsBlock(block.getRoot())).isTrue();
+    assertThat(blobSidecarPool.getBlock(block.getRoot())).contains(block);
     assertThat(requiredBlockRootEvents).isEmpty();
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
     assertThat(requiredBlobSidecarEvents).isEmpty();
@@ -134,6 +135,8 @@ public class BlobSidecarPoolImplTest {
 
     assertThat(blobSidecarPool.containsBlobSidecar(blobIdentifierFromBlobSidecar(blobSidecar)))
         .isTrue();
+    assertThat(blobSidecarPool.getBlobSidecar(blobSidecar.getBlockRoot(), blobSidecar.getIndex()))
+        .contains(blobSidecar);
     assertThat(requiredBlockRootEvents).isEmpty();
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
     assertThat(requiredBlobSidecarEvents).isEmpty();
