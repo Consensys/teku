@@ -15,22 +15,17 @@ package tech.pegasys.teku.validator.remote.apiclient;
 
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
-import tech.pegasys.teku.api.SchemaObjectProvider;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.BLSPubKey;
-import tech.pegasys.teku.api.schema.BLSSignature;
-import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution;
-import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -61,10 +56,6 @@ public class SchemaObjectsTestFixture {
     return new SignedVoluntaryExit(dataStructureUtil.randomSignedVoluntaryExit());
   }
 
-  public BLSSignature blsSignature() {
-    return new BLSSignature(dataStructureUtil.randomSignature());
-  }
-
   public ValidatorResponse validatorResponse() {
     return validatorResponse(dataStructureUtil.randomLong(), dataStructureUtil.randomPublicKey());
   }
@@ -85,29 +76,10 @@ public class SchemaObjectsTestFixture {
             FAR_FUTURE_EPOCH));
   }
 
-  public BeaconBlock beaconBlock() {
-    return new BeaconBlockPhase0(dataStructureUtil.randomBeaconBlock(UInt64.ONE));
-  }
-
-  public BeaconBlock beaconBlockAltair() {
-    final Spec altairSpec = TestSpecFactory.createMainnetAltair();
-    final DataStructureUtil altairData = new DataStructureUtil(altairSpec);
-    final SchemaObjectProvider schemaObjectProvider = new SchemaObjectProvider(altairSpec);
-    return schemaObjectProvider.getBeaconBlock(altairData.randomBeaconBlock(UInt64.ONE));
-  }
-
   public SyncCommitteeContribution syncCommitteeContribution(final UInt64 slot) {
     final Spec altairSpec = TestSpecFactory.createMainnetAltair();
     final DataStructureUtil altairData = new DataStructureUtil(altairSpec);
     return new SyncCommitteeContribution(altairData.randomSyncCommitteeContribution(slot));
-  }
-
-  public SignedBeaconBlock signedBeaconBlock() {
-    return SignedBeaconBlock.create(dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE));
-  }
-
-  public SignedBeaconBlock signedBlindedBlock() {
-    return SignedBeaconBlock.create(dataStructureUtil.randomSignedBlindedBeaconBlock(UInt64.ONE));
   }
 
   public Attestation attestation() {
