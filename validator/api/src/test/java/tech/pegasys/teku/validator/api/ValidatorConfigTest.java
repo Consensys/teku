@@ -140,6 +140,19 @@ class ValidatorConfigTest {
   }
 
   @Test
+  public void shouldThrowIfExternalSignerUrlHasUserInfoButTheSchemeIsNotHttps()
+      throws MalformedURLException {
+    final ValidatorConfig.Builder builder =
+        configBuilder
+            .validatorExternalSignerPublicKeySources(List.of("0x"))
+            .validatorExternalSignerUrl(URI.create("http://foo:bar@localhost:1080").toURL());
+    Assertions.assertThatExceptionOfType(InvalidConfigurationException.class)
+        .isThrownBy(builder::build)
+        .withMessageContaining(
+            "Invalid configuration. --validators-external-signer-url (http://foo:bar@localhost:1080) must start with https because external signer keystore/truststore are defined or basic authentication is used");
+  }
+
+  @Test
   public void shouldNotThrowIfBothExternalSignerTruststoreAndPasswordFileAreSpecified() {
     final ValidatorConfig.Builder builder =
         configBuilder
