@@ -381,8 +381,10 @@ public class ValidatorConfig {
     }
 
     public Builder validatorExternalSignerUrl(final URL validatorExternalSignerUrl) {
-      this.validatorExternalSignerUrl = UrlSanitizer.sanitizeUrl(validatorExternalSignerUrl);
-      this.unsanitizedValidatorExternalSignerUrl = validatorExternalSignerUrl;
+      if (validatorExternalSignerUrl != null) {
+        this.validatorExternalSignerUrl = UrlSanitizer.sanitizeUrl(validatorExternalSignerUrl);
+        this.unsanitizedValidatorExternalSignerUrl = validatorExternalSignerUrl;
+      }
       return this;
     }
 
