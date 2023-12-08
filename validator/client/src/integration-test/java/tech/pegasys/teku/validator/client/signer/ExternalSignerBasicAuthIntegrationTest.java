@@ -18,7 +18,6 @@ import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 
 import com.google.common.base.Splitter;
-import com.google.common.collect.Iterables;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -72,8 +71,7 @@ public class ExternalSignerBasicAuthIntegrationTest
     final String recordedAuthHeader = recordedRequest.getFirstHeader("Authorization");
     final String decodedAuthHeader =
         new String(
-            Base64.getDecoder()
-                .decode(Iterables.get(Splitter.on(" ").split(recordedAuthHeader), 1)),
+            Base64.getDecoder().decode(Splitter.on(' ').splitToList(recordedAuthHeader).get(1)),
             StandardCharsets.UTF_8);
     assertThat(decodedAuthHeader).isEqualTo(username + ":" + password);
   }

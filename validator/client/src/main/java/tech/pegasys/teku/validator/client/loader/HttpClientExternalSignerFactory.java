@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
+import com.google.common.base.Splitter;
 import com.google.common.base.Suppliers;
 import java.io.File;
 import java.io.IOException;
@@ -27,6 +28,7 @@ import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import java.util.function.Supplier;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -72,9 +74,9 @@ public class HttpClientExternalSignerFactory implements Supplier<HttpClient> {
 
   private void configureBasicAuthentication(
       final HttpClient.Builder builder, final String userInfo) {
-    final String[] authCredentials = userInfo.split(":");
-    final String username = authCredentials[0];
-    final String password = authCredentials[1];
+    final List<String> authCredentials = Splitter.on(':').splitToList(userInfo);
+    final String username = authCredentials.get(0);
+    final String password = authCredentials.get(1);
     builder.authenticator(
         new Authenticator() {
           @Override
