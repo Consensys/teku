@@ -60,7 +60,7 @@ public abstract class AbstractExternalSignerIntegrationTest {
     final ValidatorConfig config =
         ValidatorConfig.builder()
             .validatorExternalSignerPublicKeySources(List.of(KEYPAIR.getPublicKey().toString()))
-            .validatorExternalSignerUrl(getUrl())
+            .validatorExternalSignerUrl(new URL("http://127.0.0.1:" + client.getLocalPort()))
             .validatorExternalSignerTimeout(TIMEOUT)
             .build();
     final Supplier<HttpClient> externalSignerHttpClientFactory =
@@ -80,10 +80,6 @@ public abstract class AbstractExternalSignerIntegrationTest {
   @AfterEach
   void tearDown() {
     client.reset();
-  }
-
-  protected URL getUrl() throws MalformedURLException {
-    return new URL("http://127.0.0.1:" + client.getLocalPort());
   }
 
   public abstract Spec getSpec();
