@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
-import java.net.URL;
 import java.net.http.HttpClient;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -54,12 +53,10 @@ public class HttpClientExternalSignerFactory implements Supplier<HttpClient> {
   @Override
   public HttpClient get() {
     final HttpClient.Builder builder = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1);
-    final URL externalSignerUrl = validatorConfig.getUnsanitizedValidatorExternalSignerUrl();
-    if (isTLSEnabled(externalSignerUrl)) {
-      final String userInfo = externalSignerUrl.getUserInfo();
-      if (userInfo != null) {
-        configureBasicAuthentication(builder, userInfo);
-      }
+    if (isTLSEnabled()) {
+      validatorConfig
+          .getValidatorExternalSignerUserInfo()
+          .ifPresent(userInfo -> configureBasicAuthentication(builder, userInfo));
       builder.sslContext(
           getSSLContext(
               validatorConfig.getValidatorExternalSignerKeystorePasswordFilePair(),
@@ -68,8 +65,8 @@ public class HttpClientExternalSignerFactory implements Supplier<HttpClient> {
     return builder.build();
   }
 
-  private boolean isTLSEnabled(final URL externalSignerUrl) {
-    return "https".equalsIgnoreCase(externalSignerUrl.getProtocol());
+  private boolean isTLSEnabled() {
+    return "https".equalsIgnoreCase(validatorConfig.getValidatorExternalSignerUrl().getProtocol());
   }
 
   private void configureBasicAuthentication(

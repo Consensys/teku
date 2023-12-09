@@ -66,7 +66,7 @@ public class ValidatorConfig {
   private final List<String> validatorExternalSignerPublicKeySources;
   private final boolean validatorExternalSignerSlashingProtectionEnabled;
   private final URL validatorExternalSignerUrl;
-  private final URL unsanitizedValidatorExternalSignerUrl;
+  private final Optional<String> validatorExternalSignerUserInfo;
   private final Duration validatorExternalSignerTimeout;
   private final Path validatorExternalSignerKeystore;
   private final Path validatorExternalSignerKeystorePasswordFile;
@@ -102,7 +102,7 @@ public class ValidatorConfig {
       final List<String> validatorKeys,
       final List<String> validatorExternalSignerPublicKeySources,
       final URL validatorExternalSignerUrl,
-      final URL unsanitizedValidatorExternalSignerUrl,
+      final Optional<String> validatorExternalSignerUserInfo,
       final Duration validatorExternalSignerTimeout,
       final Path validatorExternalSignerKeystore,
       final Path validatorExternalSignerKeystorePasswordFile,
@@ -136,7 +136,7 @@ public class ValidatorConfig {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
-    this.unsanitizedValidatorExternalSignerUrl = unsanitizedValidatorExternalSignerUrl;
+    this.validatorExternalSignerUserInfo = validatorExternalSignerUserInfo;
     this.validatorExternalSignerTimeout = validatorExternalSignerTimeout;
     this.validatorExternalSignerKeystore = validatorExternalSignerKeystore;
     this.validatorExternalSignerKeystorePasswordFile = validatorExternalSignerKeystorePasswordFile;
@@ -196,8 +196,8 @@ public class ValidatorConfig {
     return validatorExternalSignerUrl;
   }
 
-  public URL getUnsanitizedValidatorExternalSignerUrl() {
-    return unsanitizedValidatorExternalSignerUrl;
+  public Optional<String> getValidatorExternalSignerUserInfo() {
+    return validatorExternalSignerUserInfo;
   }
 
   public Duration getValidatorExternalSignerTimeout() {
@@ -324,7 +324,7 @@ public class ValidatorConfig {
     private List<String> validatorKeys = new ArrayList<>();
     private List<String> validatorExternalSignerPublicKeySources = new ArrayList<>();
     private URL validatorExternalSignerUrl;
-    private URL unsanitizedValidatorExternalSignerUrl;
+    private Optional<String> validatorExternalSignerUserInfo = Optional.empty();
     private int validatorExternalSignerConcurrentRequestLimit =
         DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT;
     private Duration validatorExternalSignerTimeout = DEFAULT_VALIDATOR_EXTERNAL_SIGNER_TIMEOUT;
@@ -383,7 +383,8 @@ public class ValidatorConfig {
     public Builder validatorExternalSignerUrl(final URL validatorExternalSignerUrl) {
       if (validatorExternalSignerUrl != null) {
         this.validatorExternalSignerUrl = UrlSanitizer.sanitizeUrl(validatorExternalSignerUrl);
-        this.unsanitizedValidatorExternalSignerUrl = validatorExternalSignerUrl;
+        this.validatorExternalSignerUserInfo =
+            Optional.ofNullable(validatorExternalSignerUrl.getUserInfo());
       }
       return this;
     }
@@ -594,7 +595,7 @@ public class ValidatorConfig {
           validatorKeys,
           validatorExternalSignerPublicKeySources,
           validatorExternalSignerUrl,
-          unsanitizedValidatorExternalSignerUrl,
+          validatorExternalSignerUserInfo,
           validatorExternalSignerTimeout,
           validatorExternalSignerKeystore,
           validatorExternalSignerKeystorePasswordFile,
@@ -694,7 +695,7 @@ public class ValidatorConfig {
 
       if (validatorExternalSignerKeystore != null
           || validatorExternalSignerTruststore != null
-          || unsanitizedValidatorExternalSignerUrl.getUserInfo() != null) {
+          || validatorExternalSignerUserInfo.isPresent()) {
         if (!isURLSchemeHttps(validatorExternalSignerUrl)) {
           final String errorMessage =
               String.format(
