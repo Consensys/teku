@@ -21,6 +21,7 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +33,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
@@ -40,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 
 /** Note: Most tests should be added to the integration-test directory */
 class CombinedChainDataClientTest {
@@ -122,6 +126,62 @@ class CombinedChainDataClientTest {
 
     assertThat(client.isOptimisticBlock(firstBlock.getRoot())).isTrue();
     assertThat(client.isOptimisticBlock(secondBlock.getRoot())).isFalse();
+  }
+
+  @Test
+  void getStateForBlockProduction_shouldReturnParentPreState()
+      throws ExecutionException, InterruptedException {
+    final UInt64 proposalSlot = UInt64.valueOf(3);
+    final UpdatableStore store = mock(UpdatableStore.class);
+    final SignedBlockAndState parentBlockAndState =
+        dataStructureUtil.randomSignedBlockAndState(UInt64.ONE);
+    final SignedBeaconBlock headBlock =
+        dataStructureUtil.randomSignedBeaconBlock(2, parentBlockAndState.getRoot());
+    when(recentChainData.getStore()).thenReturn(store);
+    when(recentChainData.getBestBlockRoot()).thenReturn(Optional.of(headBlock.getRoot()));
+    when(recentChainData.getProposerHead(headBlock.getRoot(), proposalSlot))
+        .thenReturn(parentBlockAndState.getRoot());
+    when(store.retrieveBlockState(parentBlockAndState.getRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(parentBlockAndState.getState())));
+
+    final SafeFuture<Optional<BeaconState>> future =
+        client.getStateForBlockProduction(proposalSlot, true);
+    assertThat(future).isCompleted();
+    assertThat(future.get()).isNotEmpty();
+    final BeaconState preState = future.get().orElseThrow();
+    assertThat(preState.getLatestBlockHeader().getRoot()).isEqualTo(parentBlockAndState.getRoot());
+    assertThat(preState.getSlot()).isEqualTo(proposalSlot);
+  }
+
+  @Test
+  void getStateForBlockProduction_shouldReturnHeadPreState()
+      throws ExecutionException, InterruptedException {
+    final UInt64 proposalSlot = UInt64.valueOf(3);
+    final UpdatableStore store = mock(UpdatableStore.class);
+    final SignedBlockAndState parentBlockAndState =
+        dataStructureUtil.randomSignedBlockAndState(UInt64.ONE);
+    final SignedBlockAndState headBlockAndState =
+        dataStructureUtil.randomSignedBlockAndState(
+            UInt64.valueOf(2), parentBlockAndState.getRoot());
+    when(recentChainData.getStore()).thenReturn(store);
+    when(recentChainData.getBlockRootInEffectBySlot(proposalSlot))
+        .thenReturn(Optional.of(headBlockAndState.getRoot()));
+    when(store.retrieveStateAtSlot(new SlotAndBlockRoot(proposalSlot, headBlockAndState.getRoot())))
+        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
+    when(recentChainData.retrieveSignedBlockByRoot(headBlockAndState.getRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(headBlockAndState.getBlock())));
+    when(store.retrieveBlockState(headBlockAndState.getRoot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(headBlockAndState.getState())));
+    when(recentChainData.getCurrentSlot())
+        .thenReturn(Optional.of(headBlockAndState.getSlot().increment()));
+
+    final SafeFuture<Optional<BeaconState>> future =
+        client.getStateForBlockProduction(proposalSlot, false);
+    assertThat(future).isCompleted();
+    assertThat(future.get()).isNotEmpty();
+    final BeaconState preState = future.get().orElseThrow();
+
+    assertThat(preState.getLatestBlockHeader().getRoot()).isEqualTo(headBlockAndState.getRoot());
   }
 
   @Test

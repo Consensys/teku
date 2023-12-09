@@ -326,9 +326,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         blockProductionPerformanceTrackingEnabled
             ? new BlockProductionPerformanceImpl(timeProvider, slot)
             : BlockProductionPerformance.NOOP;
+
     return forkChoiceTrigger
         .prepareForBlockProduction(slot, blockProductionPerformance)
-        .thenCompose(__ -> combinedChainDataClient.getStateAtSlotExact(slot))
+        .thenCompose(
+            __ ->
+                combinedChainDataClient.getStateForBlockProduction(
+                    slot, forkChoiceTrigger.isForkChoiceOverrideLateBlockEnabled()))
         .thenPeek(
             maybeState -> {
               maybeState.ifPresent(

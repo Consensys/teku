@@ -240,6 +240,32 @@ public class CombinedChainDataClient {
     return regenerateStateAndSlotExact(slot);
   }
 
+  public SafeFuture<Optional<BeaconState>> getStateForBlockProduction(
+      final UInt64 slot, final boolean isForkChoiceLateBlockReorgEnabled) {
+    final Optional<Bytes32> headRoot = getBestBlockRoot();
+    if (headRoot.isEmpty() || !isForkChoiceLateBlockReorgEnabled) {
+      return getStateAtSlotExact(slot);
+    }
+    final Bytes32 root = recentChainData.getProposerHead(headRoot.get(), slot);
+    if (root.equals(headRoot.get())) {
+      return getStateAtSlotExact(slot);
+    }
+    // otherwise we're looking for the parent slot
+    return getStateByBlockRoot(root)
+        .thenCompose(
+            maybeState -> {
+              if (maybeState.isPresent()) {
+                try {
+                  return SafeFuture.completedFuture(
+                      Optional.of(spec.processSlots(maybeState.get(), slot)));
+                } catch (SlotProcessingException | EpochProcessingException e) {
+                  LOG.error("Failed to compute state for block production at slot {}", slot, e);
+                }
+              }
+              return getStateAtSlotExact(slot);
+            });
+  }
+
   public SafeFuture<Optional<BeaconState>> getStateAtSlotExact(
       final UInt64 slot, final Bytes32 chainHead) {
     final Optional<Bytes32> recentBlockRoot =
