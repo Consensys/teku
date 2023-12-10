@@ -72,6 +72,10 @@ public class HttpClientExternalSignerFactory implements Supplier<HttpClient> {
   private void configureBasicAuthentication(
       final HttpClient.Builder builder, final String userInfo) {
     final List<String> authCredentials = Splitter.on(':').splitToList(userInfo);
+    if (authCredentials.size() != 2) {
+      throw new IllegalArgumentException(
+          "Invalid format for userInfo. It should be in the format 'username:password'.");
+    }
     final String username = authCredentials.get(0);
     final String password = authCredentials.get(1);
     builder.authenticator(
