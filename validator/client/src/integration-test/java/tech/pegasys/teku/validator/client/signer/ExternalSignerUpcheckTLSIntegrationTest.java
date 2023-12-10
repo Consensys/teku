@@ -15,111 +15,29 @@ package tech.pegasys.teku.validator.client.signer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
 
-import com.google.common.io.Resources;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.http.HttpClient;
-import java.nio.file.Path;
-import java.time.Duration;
-import java.util.List;
-import java.util.function.Supplier;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockserver.configuration.ConfigurationProperties;
-import org.mockserver.integration.ClientAndServer;
-import org.mockserver.junit.jupiter.MockServerExtension;
-import org.mockserver.model.HttpResponse;
-import tech.pegasys.teku.bls.BLSKeyPair;
-import tech.pegasys.teku.bls.BLSTestUtil;
-import tech.pegasys.teku.validator.api.ValidatorConfig;
-import tech.pegasys.teku.validator.client.loader.HttpClientExternalSignerFactory;
 
-@ExtendWith(MockServerExtension.class)
-public class ExternalSignerUpcheckTLSIntegrationTest {
-  private static final BLSKeyPair KEYPAIR = BLSTestUtil.randomKeyPair(1234);
-  private static final Duration TIMEOUT = Duration.ofMillis(500);
-  private static final Path TEKU_KEYSTORE;
-  private static final Path EXTERNAL_SIGNER_TRUSTSTORE;
-  private static final Path PASSWORD_FILE;
-  private static final Path TEKU_CLIENT_PEM;
-
-  static {
-    try {
-      // MockServer (representing external signer) CA certificate is imported from:
-      // https://github.com/mock-server/mockserver/blob/master/mockserver-core/src/main/resources/org/mockserver/socket/CertificateAuthorityCertificate.pem
-      EXTERNAL_SIGNER_TRUSTSTORE = Path.of(Resources.getResource("mockito_truststore.p12").toURI());
-      TEKU_KEYSTORE = Path.of(Resources.getResource("teku_client_keystore.p12").toURI());
-      PASSWORD_FILE = Path.of(Resources.getResource("pass.txt").toURI());
-      TEKU_CLIENT_PEM = Path.of(Resources.getResource("teku_client.pem").toURI());
-    } catch (final URISyntaxException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private ClientAndServer server;
-  private ExternalSignerUpcheck externalSignerUpcheck;
-
-  @BeforeAll
-  static void mTLSSetup() {
-    // Mock Server configuration for mutual authentication
-    ConfigurationProperties.tlsMutualAuthenticationRequired(true);
-    ConfigurationProperties.tlsMutualAuthenticationCertificateChain(TEKU_CLIENT_PEM.toString());
-  }
-
-  @BeforeEach
-  void setup(final ClientAndServer server) throws MalformedURLException {
-    this.server = server;
-    this.server.withSecure(true);
-
-    this.externalSignerUpcheck =
-        buildExternalSignerUpcheck(new URL("https://127.0.0.1:" + server.getLocalPort()));
-  }
-
-  private static ExternalSignerUpcheck buildExternalSignerUpcheck(final URL serverUrl) {
-    final ValidatorConfig config =
-        ValidatorConfig.builder()
-            .validatorExternalSignerPublicKeySources(List.of(KEYPAIR.getPublicKey().toString()))
-            .validatorExternalSignerUrl(serverUrl)
-            .validatorExternalSignerTimeout(TIMEOUT)
-            .validatorExternalSignerKeystore(TEKU_KEYSTORE)
-            .validatorExternalSignerKeystorePasswordFile(PASSWORD_FILE)
-            .validatorExternalSignerTruststore(EXTERNAL_SIGNER_TRUSTSTORE)
-            .validatorExternalSignerTruststorePasswordFile(PASSWORD_FILE)
-            .build();
-
-    final Supplier<HttpClient> externalSignerHttpClientFactory =
-        HttpClientExternalSignerFactory.create(config);
-
-    return new ExternalSignerUpcheck(
-        externalSignerHttpClientFactory.get(),
-        config.getValidatorExternalSignerUrl(),
-        config.getValidatorExternalSignerTimeout());
-  }
-
-  @AfterEach
-  void tearDown() {
-    server.reset();
-  }
+public class ExternalSignerUpcheckTLSIntegrationTest
+    extends AbstractSecureExternalSignerIntegrationTest {
 
   @Test
   void upcheckReturnsTrueWhenStatusCodeIs200() {
-    server
+    client
         .when(request().withSecure(true).withMethod("GET").withPath("/upcheck"))
-        .respond(HttpResponse.response().withStatusCode(200));
+        .respond(response().withStatusCode(200));
 
     assertThat(externalSignerUpcheck.upcheck()).isTrue();
   }
 
   @Test
   void upcheckReturnsFalseWhenStatusCodeIsNot200() {
-    server
+    client
         .when(request().withSecure(true).withMethod("GET").withPath("/upcheck"))
-        .respond(HttpResponse.response().withStatusCode(404));
+        .respond(response().withStatusCode(404));
 
     assertThat(externalSignerUpcheck.upcheck()).isFalse();
   }
@@ -127,7 +45,11 @@ public class ExternalSignerUpcheckTLSIntegrationTest {
   @Test
   void upcheckReturnsFalseWhenServerIsDown() throws MalformedURLException {
     final ExternalSignerUpcheck externalSignerUpcheck =
-        buildExternalSignerUpcheck(new URL("https://127.0.0.2:79"));
+        new ExternalSignerUpcheck(
+            externalSignerHttpClientFactory.get(),
+            // an unused port
+            new URL("https://127.0.0.1:79"),
+            validatorConfig.getValidatorExternalSignerTimeout());
     assertThat(externalSignerUpcheck.upcheck()).isFalse();
   }
 }

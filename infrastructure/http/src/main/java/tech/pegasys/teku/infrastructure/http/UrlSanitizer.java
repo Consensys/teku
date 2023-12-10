@@ -20,21 +20,24 @@ import java.net.URL;
 import org.apache.commons.lang3.StringUtils;
 
 public class UrlSanitizer {
+
   public static String sanitizePotentialUrl(final String possibleUrl) {
     try {
       final URI uri = new URI(possibleUrl);
-      return new URI(
-              uri.getScheme(),
-              null,
-              uri.getHost(),
-              uri.getPort(),
-              uri.getPath(),
-              uri.getQuery(),
-              uri.getFragment())
-          .toASCIIString();
-    } catch (URISyntaxException e) {
+      return sanitizeUri(uri).toASCIIString();
+    } catch (final URISyntaxException e) {
       // Not actually a URI so no need to sanitize
       return possibleUrl;
+    }
+  }
+
+  public static URL sanitizeUrl(final URL url) {
+    try {
+      final URI sanitizedUri = sanitizeUri(url.toURI());
+      return sanitizedUri.toURL();
+    } catch (final URISyntaxException | MalformedURLException e) {
+      // can't sanitize, so will just return the method argument
+      return url;
     }
   }
 
@@ -61,5 +64,16 @@ public class UrlSanitizer {
     } catch (URISyntaxException e) {
       return false;
     }
+  }
+
+  private static URI sanitizeUri(final URI uri) throws URISyntaxException {
+    return new URI(
+        uri.getScheme(),
+        null,
+        uri.getHost(),
+        uri.getPort(),
+        uri.getPath(),
+        uri.getQuery(),
+        uri.getFragment());
   }
 }

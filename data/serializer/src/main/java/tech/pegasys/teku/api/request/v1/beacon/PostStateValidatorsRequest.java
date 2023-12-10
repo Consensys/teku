@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,23 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.duties;
+package tech.pegasys.teku.api.request.v1.beacon;
 
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
 
-public interface ScheduledDuties {
+public class PostStateValidatorsRequest {
 
-  boolean requiresRecalculation(Bytes32 newDependentRoot);
+  @JsonProperty("ids")
+  public final List<String> ids;
 
-  SafeFuture<DutyResult> performProductionDuty(UInt64 slot);
-
-  String getProductionType();
-
-  SafeFuture<DutyResult> performAggregationDuty(UInt64 slot);
-
-  String getAggregationType();
-
-  int countDuties();
+  @JsonCreator
+  public PostStateValidatorsRequest(@JsonProperty("ids") final List<String> ids) {
+    this.ids = ids;
+  }
 }

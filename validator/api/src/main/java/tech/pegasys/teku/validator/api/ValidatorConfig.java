@@ -33,6 +33,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ValidatorConfig {
@@ -65,6 +66,7 @@ public class ValidatorConfig {
   private final List<String> validatorExternalSignerPublicKeySources;
   private final boolean validatorExternalSignerSlashingProtectionEnabled;
   private final URL validatorExternalSignerUrl;
+  private final Optional<String> validatorExternalSignerUserInfo;
   private final Duration validatorExternalSignerTimeout;
   private final Path validatorExternalSignerKeystore;
   private final Path validatorExternalSignerKeystorePasswordFile;
@@ -100,6 +102,7 @@ public class ValidatorConfig {
       final List<String> validatorKeys,
       final List<String> validatorExternalSignerPublicKeySources,
       final URL validatorExternalSignerUrl,
+      final Optional<String> validatorExternalSignerUserInfo,
       final Duration validatorExternalSignerTimeout,
       final Path validatorExternalSignerKeystore,
       final Path validatorExternalSignerKeystorePasswordFile,
@@ -133,6 +136,7 @@ public class ValidatorConfig {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
+    this.validatorExternalSignerUserInfo = validatorExternalSignerUserInfo;
     this.validatorExternalSignerTimeout = validatorExternalSignerTimeout;
     this.validatorExternalSignerKeystore = validatorExternalSignerKeystore;
     this.validatorExternalSignerKeystorePasswordFile = validatorExternalSignerKeystorePasswordFile;
@@ -190,6 +194,10 @@ public class ValidatorConfig {
 
   public URL getValidatorExternalSignerUrl() {
     return validatorExternalSignerUrl;
+  }
+
+  public Optional<String> getValidatorExternalSignerUserInfo() {
+    return validatorExternalSignerUserInfo;
   }
 
   public Duration getValidatorExternalSignerTimeout() {
@@ -316,6 +324,7 @@ public class ValidatorConfig {
     private List<String> validatorKeys = new ArrayList<>();
     private List<String> validatorExternalSignerPublicKeySources = new ArrayList<>();
     private URL validatorExternalSignerUrl;
+    private Optional<String> validatorExternalSignerUserInfo = Optional.empty();
     private int validatorExternalSignerConcurrentRequestLimit =
         DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT;
     private Duration validatorExternalSignerTimeout = DEFAULT_VALIDATOR_EXTERNAL_SIGNER_TIMEOUT;
@@ -371,8 +380,12 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder validatorExternalSignerUrl(URL validatorExternalSignerUrl) {
-      this.validatorExternalSignerUrl = validatorExternalSignerUrl;
+    public Builder validatorExternalSignerUrl(final URL validatorExternalSignerUrl) {
+      if (validatorExternalSignerUrl != null) {
+        this.validatorExternalSignerUrl = UrlSanitizer.sanitizeUrl(validatorExternalSignerUrl);
+        this.validatorExternalSignerUserInfo =
+            Optional.ofNullable(validatorExternalSignerUrl.getUserInfo());
+      }
       return this;
     }
 
@@ -582,6 +595,7 @@ public class ValidatorConfig {
           validatorKeys,
           validatorExternalSignerPublicKeySources,
           validatorExternalSignerUrl,
+          validatorExternalSignerUserInfo,
           validatorExternalSignerTimeout,
           validatorExternalSignerKeystore,
           validatorExternalSignerKeystorePasswordFile,
@@ -679,11 +693,13 @@ public class ValidatorConfig {
         return;
       }
 
-      if (validatorExternalSignerKeystore != null || validatorExternalSignerTruststore != null) {
+      if (validatorExternalSignerKeystore != null
+          || validatorExternalSignerTruststore != null
+          || validatorExternalSignerUserInfo.isPresent()) {
         if (!isURLSchemeHttps(validatorExternalSignerUrl)) {
           final String errorMessage =
               String.format(
-                  "Invalid configuration. --validators-external-signer-url (%s) must start with https because external signer keystore/truststore are defined",
+                  "Invalid configuration. --validators-external-signer-url (%s) must start with https because external signer keystore/truststore are defined or basic authentication is used",
                   validatorExternalSignerUrl);
           throw new InvalidConfigurationException(errorMessage);
         }
@@ -699,8 +715,7 @@ public class ValidatorConfig {
     }
 
     private static boolean isURLSchemeHttps(final URL url) {
-      final String protocol = url.getProtocol();
-      return protocol != null && protocol.equalsIgnoreCase("https");
+      return "https".equalsIgnoreCase(url.getProtocol());
     }
 
     private boolean onlyOneInitialized(final Object o1, final Object o2) {

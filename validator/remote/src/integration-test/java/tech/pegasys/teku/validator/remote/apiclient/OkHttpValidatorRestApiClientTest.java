@@ -18,9 +18,9 @@ import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.fail;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_METHOD_NOT_ALLOWED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -28,7 +28,6 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import okhttp3.HttpUrl;
@@ -42,31 +41,20 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
-import tech.pegasys.teku.api.response.v1.validator.GetNewBlindedBlockResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetSyncCommitteeContributionResponse;
-import tech.pegasys.teku.api.response.v2.validator.GetNewBlockResponseV2;
 import tech.pegasys.teku.api.schema.Attestation;
-import tech.pegasys.teku.api.schema.BLSSignature;
-import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.altair.SyncCommitteeContribution;
-import tech.pegasys.teku.api.schema.bellatrix.BlindedBlockBellatrix;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
-import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 
 class OkHttpValidatorRestApiClientTest {
@@ -143,15 +131,6 @@ class OkHttpValidatorRestApiClientTest {
   }
 
   @Test
-  void getValidators_WhenServerError_ThrowsRuntimeException() {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
-
-    assertThatThrownBy(() -> apiClient.getValidators(List.of("1")))
-        .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("Unexpected response from Beacon Node API");
-  }
-
-  @Test
   public void getValidators_WhenNoContent_ReturnsEmpty() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
@@ -173,198 +152,45 @@ class OkHttpValidatorRestApiClientTest {
   }
 
   @Test
-  public void createUnsignedBlock_MakesExpectedRequest() throws Exception {
-    final UInt64 slot = UInt64.ONE;
-    final BLSSignature blsSignature = schemaObjects.blsSignature();
-    final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
-
+  void postValidators_MakesExpectedRequest() throws Exception {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    apiClient.createUnsignedBlock(slot, blsSignature, graffiti, false);
+    apiClient.postValidators(List.of("1", "0x1234"));
 
-    RecordedRequest request = mockWebServer.takeRequest();
-
-    assertThat(request.getMethod()).isEqualTo("GET");
-    assertThat(request.getPath())
-        .contains(ValidatorApiMethod.GET_UNSIGNED_BLOCK_V2.getPath(Map.of("slot", "1")));
-    assertThat(request.getRequestUrl().queryParameter("randao_reveal"))
-        .isEqualTo(blsSignature.toHexString());
-    assertThat(request.getRequestUrl().queryParameter("graffiti"))
-        .isEqualTo(graffiti.get().toHexString());
+    final RecordedRequest request = mockWebServer.takeRequest();
+    assertThat(request.getMethod()).isEqualTo("POST");
+    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_VALIDATORS.getPath(emptyMap()));
+    assertThat(request.getBody().readUtf8()).isEqualTo("{\"ids\":[\"1\",\"0x1234\"]}");
   }
 
   @Test
-  public void createUnsignedBlock_WhenNoContent_ReturnsEmpty() {
-    final UInt64 slot = UInt64.ONE;
-    final BLSSignature blsSignature = schemaObjects.blsSignature();
-    final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
-
+  public void postValidators_WhenNoContent_ReturnsEmpty() {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
 
-    assertThat(apiClient.createUnsignedBlock(slot, blsSignature, graffiti, false)).isEmpty();
-  }
-
-  @Test
-  public void createUnsignedBlock_WhenBadRequest_ThrowsIllegalArgumentException() {
-    final UInt64 slot = UInt64.ONE;
-    final BLSSignature blsSignature = schemaObjects.blsSignature();
-    final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
-
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_BAD_REQUEST));
-
-    assertThatThrownBy(() -> apiClient.createUnsignedBlock(slot, blsSignature, graffiti, false))
-        .isInstanceOf(IllegalArgumentException.class);
-  }
-
-  @Test
-  public void createUnsignedBlock_WhenSuccess_ReturnsBeaconBlock() {
-    final UInt64 slot = UInt64.ONE;
-    final BLSSignature blsSignature = schemaObjects.blsSignature();
-    final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
-    final BeaconBlock expectedBeaconBlock = schemaObjects.beaconBlock();
-
-    mockWebServer.enqueue(
-        new MockResponse()
-            .setResponseCode(SC_OK)
-            .setBody(asJson(new GetNewBlockResponseV2(SpecMilestone.PHASE0, expectedBeaconBlock))));
-
-    Optional<BeaconBlock> beaconBlock =
-        apiClient.createUnsignedBlock(slot, blsSignature, graffiti, false);
-
-    assertThat(beaconBlock).isPresent();
-    assertThat(beaconBlock.get()).isEqualTo(expectedBeaconBlock);
-  }
-
-  @Test
-  public void createUnsignedBlocks_shouldUseBlindedBlocksIfEnabled() {
-    final Spec spec = TestSpecFactory.createMinimalBellatrix();
-    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-    final UInt64 slot = UInt64.ONE;
-    final BLSSignature blsSignature = schemaObjects.blsSignature();
-    final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
-    final tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock expectedBeaconBlock =
-        dataStructureUtil.randomBlindedBeaconBlock(slot);
-
-    mockWebServer.enqueue(
-        new MockResponse()
-            .setResponseCode(SC_OK)
-            .setBody(
-                asJson(
-                    new GetNewBlindedBlockResponse(
-                        SpecMilestone.BELLATRIX, new BlindedBlockBellatrix(expectedBeaconBlock)))));
-    apiClient = new OkHttpValidatorRestApiClient(mockWebServer.url("/"), okHttpClient);
-    Optional<BeaconBlock> maybeBlock =
-        apiClient.createUnsignedBlock(slot, blsSignature, graffiti, true);
-    assertThat(maybeBlock).isPresent();
-
-    final BlindedBlockBellatrix expectedBlock = new BlindedBlockBellatrix(expectedBeaconBlock);
-    final BlindedBlockBellatrix block = (BlindedBlockBellatrix) maybeBlock.get();
-
-    assertThat(block.asInternalBeaconBlock(spec))
-        .isEqualTo(expectedBlock.asInternalBeaconBlock(spec));
-  }
-
-  @Test
-  public void createUnsignedBlock_Altair_ReturnsBeaconBlock() {
-    final UInt64 slot = UInt64.ONE;
-    final BLSSignature blsSignature = schemaObjects.blsSignature();
-    final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
-    final BeaconBlock expectedBeaconBlock = schemaObjects.beaconBlockAltair();
-
-    mockWebServer.enqueue(
-        new MockResponse()
-            .setResponseCode(SC_OK)
-            .setBody(asJson(new GetNewBlockResponseV2(SpecMilestone.ALTAIR, expectedBeaconBlock))));
-
-    Optional<BeaconBlock> beaconBlock =
-        apiClient.createUnsignedBlock(slot, blsSignature, graffiti, false);
-
-    assertThat(beaconBlock).isPresent();
-    assertThat(beaconBlock.get()).isEqualTo(expectedBeaconBlock);
+    assertThat(apiClient.postValidators(List.of("1"))).isEmpty();
   }
 
   @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  public void sendSignedBlock_MakesExpectedRequest(final boolean isBlindedBlocksEnabled)
-      throws Exception {
-    final SchemaObjectsTestFixture schemaObjectsBellatrix =
-        new SchemaObjectsTestFixture(TestSpecFactory.createMinimalBellatrix());
-    final Bytes32 blockRoot = Bytes32.fromHexStringLenient("0x1234");
-    final SignedBeaconBlock signedBeaconBlock =
-        isBlindedBlocksEnabled
-            ? schemaObjectsBellatrix.signedBlindedBlock()
-            : schemaObjectsBellatrix.signedBeaconBlock();
-    apiClient = new OkHttpValidatorRestApiClient(mockWebServer.url("/"), okHttpClient);
+  @ValueSource(ints = {SC_NOT_FOUND, SC_METHOD_NOT_ALLOWED})
+  public void postValidators_WhenNotExisting_ThrowsException(final int responseCode) {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(responseCode));
 
-    // Block has been successfully broadcast, validated and imported
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(asJson(blockRoot)));
-
-    apiClient.sendSignedBlock(signedBeaconBlock);
-
-    RecordedRequest request = mockWebServer.takeRequest();
-
-    final ValidatorApiMethod expectedPath =
-        isBlindedBlocksEnabled
-            ? ValidatorApiMethod.SEND_SIGNED_BLINDED_BLOCK
-            : ValidatorApiMethod.SEND_SIGNED_BLOCK;
-    assertThat(request.getMethod()).isEqualTo("POST");
-    assertThat(request.getPath()).contains(expectedPath.getPath(emptyMap()));
-    assertThat(request.getBody().readString(StandardCharsets.UTF_8))
-        .isEqualTo(asJson(signedBeaconBlock));
+    assertThatThrownBy(() -> apiClient.postValidators(List.of("1")))
+        .isInstanceOf(PostStateValidatorsNotExistingException.class);
   }
 
   @Test
-  public void sendSignedBlock_WhenAccepted_DoesNotFailHandlingResponse() {
-    final SignedBeaconBlock signedBeaconBlock = schemaObjects.signedBeaconBlock();
+  public void postValidators_WhenSuccess_ReturnsResponse() {
+    final List<ValidatorResponse> expected =
+        List.of(schemaObjects.validatorResponse(), schemaObjects.validatorResponse());
+    final GetStateValidatorsResponse response = new GetStateValidatorsResponse(false, expected);
 
-    // Block has been successfully broadcast, but failed validation and has not been imported
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_ACCEPTED));
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(asJson(response)));
 
-    apiClient.sendSignedBlock(signedBeaconBlock);
-  }
+    Optional<List<ValidatorResponse>> result = apiClient.postValidators(List.of("1", "2"));
 
-  @Test
-  public void sendSignedBlock_WhenBadParameters_ThrowsIllegalArgumentException() {
-    final SignedBeaconBlock signedBeaconBlock = schemaObjects.signedBeaconBlock();
-
-    mockWebServer.enqueue(
-        new MockResponse()
-            .setResponseCode(SC_BAD_REQUEST)
-            .setBody("{\"code\":400,\"message\":\"Invalid block: missing signature\"}"));
-
-    assertThatThrownBy(() -> apiClient.sendSignedBlock(signedBeaconBlock))
-        .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageMatching(
-            "Invalid params response from Beacon Node API \\(url = .*, status = 400, message = Invalid block: missing signature\\)");
-  }
-
-  @Test
-  public void sendSignedBlock_WhenServiceUnavailable_ThrowsServiceNotAvailableResponse() {
-    final SignedBeaconBlock signedBeaconBlock = schemaObjects.signedBeaconBlock();
-
-    // node is syncing
-    mockWebServer.enqueue(
-        new MockResponse()
-            .setResponseCode(503)
-            .setBody(
-                "{\"code\":503,\"message\":\"Beacon node is currently syncing and not serving request on that endpoint\"}"));
-
-    assertThatThrownBy(() -> apiClient.sendSignedBlock(signedBeaconBlock))
-        .isInstanceOf(RemoteServiceNotAvailableException.class)
-        .hasMessageMatching(
-            "Server error from Beacon Node API \\(url = .*, status = 503, message = Beacon node is currently syncing and not serving request on that endpoint\\)");
-  }
-
-  @Test
-  public void sendSignedBlock_WhenServerError_ThrowsRuntimeException() {
-    final SignedBeaconBlock signedBeaconBlock = schemaObjects.signedBeaconBlock();
-
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_INTERNAL_SERVER_ERROR));
-
-    assertThatThrownBy(() -> apiClient.sendSignedBlock(signedBeaconBlock))
-        .isInstanceOf(RuntimeException.class)
-        .hasMessageMatching(
-            "Unexpected response from Beacon Node API \\(url = .*, status = 500, message = Server Error\\)");
+    assertThat(result).isPresent();
+    assertThat(result.get()).usingRecursiveComparison().isEqualTo(expected);
   }
 
   @Test
