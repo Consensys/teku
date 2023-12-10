@@ -15,8 +15,12 @@ package tech.pegasys.teku.beacon.pow;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -27,6 +31,8 @@ import tech.pegasys.teku.ethereum.pow.api.schema.LoadDepositSnapshotResult;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.ssz.sos.SszDeserializeException;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class DepositSnapshotFileLoader {
@@ -78,11 +84,27 @@ public class DepositSnapshotFileLoader {
 
   private DepositTreeSnapshot loadFromUrl(final String path) throws IOException {
     final Bytes snapshotData =
-        ResourceLoader.urlOrFile("application/octet-stream")
+        ResourceLoader.urlOrFile("application/octet-stream, application/json")
             .loadBytes(path)
             .orElseThrow(
                 () -> new FileNotFoundException(String.format("File '%s' not found", path)));
 
+    try {
+      return parseSszDepositSnapshotTreeData(snapshotData);
+    } catch (final SszDeserializeException e) {
+      return parseJsonDepositSnapshotTreeData(snapshotData);
+    }
+  }
+
+  private static DepositTreeSnapshot parseSszDepositSnapshotTreeData(final Bytes snapshotData) {
     return DepositTreeSnapshot.fromBytes(snapshotData);
+  }
+
+  private static DepositTreeSnapshot parseJsonDepositSnapshotTreeData(final Bytes snapshotData)
+      throws JsonProcessingException {
+    final String json = new String(snapshotData.toArray(), StandardCharsets.UTF_8);
+    final JsonNode jsonNode = new ObjectMapper().readTree(json);
+    return JsonUtil.parse(
+        jsonNode.get("data").toString(), DepositTreeSnapshot.getJsonTypeDefinition());
   }
 }
