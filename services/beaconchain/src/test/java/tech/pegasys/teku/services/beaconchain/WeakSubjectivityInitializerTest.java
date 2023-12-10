@@ -20,6 +20,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
@@ -31,8 +33,12 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
@@ -42,6 +48,7 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityCalculator;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class WeakSubjectivityInitializerTest {
+
   private final StorageQueryChannel queryChannel = mock(StorageQueryChannel.class);
   private final StorageUpdateChannel updateChannel = mock(StorageUpdateChannel.class);
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
@@ -222,7 +229,8 @@ public class WeakSubjectivityInitializerTest {
             () -> initializer.validateInitialAnchor(anchor, currentSlot, spec, Optional.empty()))
         .isInstanceOf(IllegalStateException.class)
         .hasMessageContaining(
-            "The provided initial state is too recent. Please check that the initial state corresponds to a finalized checkpoint.");
+            "The provided initial state is too recent. Please check that the initial state corresponds to a finalized"
+                + " checkpoint.");
   }
 
   @Test
@@ -293,5 +301,50 @@ public class WeakSubjectivityInitializerTest {
     // Should not throw because weak subjectivity calculator is empty so rule is not enforced
     initializer.validateInitialAnchor(
         anchor, spec.computeStartSlotAtEpoch(currentEpoch), spec, Optional.empty());
+  }
+
+  @Test
+  public void validateAnchorIsWithinWeakSubjectivityPeriod_withEmptySlots()
+      throws SlotProcessingException, EpochProcessingException {
+    final UInt64 startSlotAtBoundary = spec.computeStartSlotAtEpoch(UInt64.ONE);
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
+    chainBuilder.generateGenesis();
+    // Skip blocks until next checkpoint
+    final SignedBlockAndState blockAndState =
+        chainBuilder.generateNextBlock(startSlotAtBoundary.intValue());
+    final AnchorPoint anchorPoint = AnchorPoint.fromInitialBlockAndState(spec, blockAndState);
+
+    final Spec specSpy = spy(spec);
+    initializer.validateAnchorIsWithinWeakSubjectivityPeriod(
+        anchorPoint, startSlotAtBoundary, specSpy, createWSCalculator());
+
+    // Verify we are rolling the state forward until the next checkpoint boundary
+    verify(specSpy).processSlots(any(), eq(anchorPoint.getCheckpoint().getEpochStartSlot(spec)));
+  }
+
+  @Test
+  public void validateAnchorIsWithinWeakSubjectivityPeriod_noEmptySlots()
+      throws SlotProcessingException, EpochProcessingException {
+    final UInt64 startSlotAtBoundary = spec.computeStartSlotAtEpoch(UInt64.ONE);
+    final ChainBuilder chainBuilder = ChainBuilder.create(spec);
+    // Generate blocks until next checkpoint
+    SignedBlockAndState blockAndState = chainBuilder.generateGenesis();
+    for (int i = 0; i < spec.getSlotsPerEpoch(UInt64.ZERO); i++) {
+      blockAndState = chainBuilder.generateNextBlock();
+    }
+    final AnchorPoint anchorPoint = AnchorPoint.fromInitialBlockAndState(spec, blockAndState);
+
+    final Spec specSpy = spy(spec);
+    initializer.validateAnchorIsWithinWeakSubjectivityPeriod(
+        anchorPoint, startSlotAtBoundary, specSpy, createWSCalculator());
+
+    // Verify we did not need to roll forward any slots
+    verify(specSpy, times(0)).processSlots(any(), any());
+  }
+
+  private WeakSubjectivityCalculator createWSCalculator() {
+    final WeakSubjectivityConfig wsConfig =
+        WeakSubjectivityConfig.builder().specProvider(spec).build();
+    return WeakSubjectivityCalculator.create(wsConfig);
   }
 }
