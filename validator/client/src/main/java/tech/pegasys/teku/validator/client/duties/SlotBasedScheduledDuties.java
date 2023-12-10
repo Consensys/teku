@@ -17,13 +17,15 @@ import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.client.Validator;
 
 public class SlotBasedScheduledDuties<P extends Duty, A extends Duty> implements ScheduledDuties {
-
+  private static final Logger LOG = LogManager.getLogger();
   protected final NavigableMap<UInt64, P> productionDuties = new TreeMap<>();
   protected final NavigableMap<UInt64, A> aggregationDuties = new TreeMap<>();
 
@@ -107,7 +109,15 @@ public class SlotBasedScheduledDuties<P extends Duty, A extends Duty> implements
   }
 
   @Override
-  public boolean requiresRecalculation(final Bytes32 newHeadDependentRoot) {
-    return !getDependentRoot().equals(newHeadDependentRoot);
+  public boolean requiresRecalculation(final Bytes32 newDependentRoot) {
+    final boolean requiresRecalculation = !getDependentRoot().equals(newDependentRoot);
+    if (requiresRecalculation) {
+      LOG.debug(
+          "{} Duties require recalculation, old dependent root {}, new dependent root {}",
+          this::getProductionType,
+          this::getDependentRoot,
+          () -> newDependentRoot);
+    }
+    return requiresRecalculation;
   }
 }

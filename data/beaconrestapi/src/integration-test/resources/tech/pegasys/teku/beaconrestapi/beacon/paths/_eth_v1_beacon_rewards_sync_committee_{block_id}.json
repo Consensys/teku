@@ -15,6 +15,7 @@
       }
     } ],
     "requestBody" : {
+      "required": false,
       "content" : {
         "application/json" : {
           "schema" : {

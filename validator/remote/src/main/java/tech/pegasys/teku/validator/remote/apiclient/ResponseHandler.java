@@ -64,6 +64,13 @@ public class ResponseHandler<T> {
     return this;
   }
 
+  public ResponseHandler<T> withHandler(final Handler<T> handler, final int... responseCodes) {
+    for (final int responseCode : responseCodes) {
+      handlers.put(responseCode, handler);
+    }
+    return this;
+  }
+
   public Optional<T> handleResponse(final Request request, final Response response)
       throws IOException {
     return handlers

@@ -87,6 +87,7 @@ import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
+import tech.pegasys.teku.validator.remote.apiclient.PostStateValidatorsNotExistingException;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
@@ -160,7 +161,64 @@ class RemoteValidatorApiHandlerTest {
   }
 
   @Test
+  void getValidatorIndices_MakesSingleRequestUsingPost() {
+    final BLSPublicKey key1 = dataStructureUtil.randomPublicKey();
+    final BLSPublicKey key2 = dataStructureUtil.randomPublicKey();
+    final BLSPublicKey key3 = dataStructureUtil.randomPublicKey();
+    final List<String> expectedValidatorIds =
+        List.of(
+            key1.toBytesCompressed().toHexString(),
+            key2.toBytesCompressed().toHexString(),
+            key3.toBytesCompressed().toHexString());
+    when(apiClient.postValidators(expectedValidatorIds))
+        .thenReturn(Optional.of(List.of(validatorResponse(1, key1), validatorResponse(2, key2))));
+
+    final SafeFuture<Map<BLSPublicKey, Integer>> future =
+        apiHandler.getValidatorIndices(List.of(key1, key2, key3));
+
+    asyncRunner.executeQueuedActions();
+    assertThat(future).isCompleted();
+    assertThat(safeJoin(future)).containsOnly(entry(key1, 1), entry(key2, 2));
+    verify(apiClient).postValidators(expectedValidatorIds);
+  }
+
+  @Test
+  void getValidatorIndices_DoesNotAttemptPostAgainIfNotExisting() {
+    final BLSPublicKey key1 = dataStructureUtil.randomPublicKey();
+    final BLSPublicKey key2 = dataStructureUtil.randomPublicKey();
+    final BLSPublicKey key3 = dataStructureUtil.randomPublicKey();
+    final List<String> expectedValidatorIds =
+        List.of(
+            key1.toBytesCompressed().toHexString(),
+            key2.toBytesCompressed().toHexString(),
+            key3.toBytesCompressed().toHexString());
+
+    // simulate POST not existing
+    when(apiClient.postValidators(any())).thenThrow(PostStateValidatorsNotExistingException.class);
+    when(apiClient.getValidators(expectedValidatorIds))
+        .thenReturn(Optional.of(List.of(validatorResponse(1, key1), validatorResponse(2, key2))));
+
+    // call method twice
+    final SafeFuture<Map<BLSPublicKey, Integer>> future =
+        apiHandler.getValidatorIndices(List.of(key1, key2, key3));
+    final SafeFuture<Map<BLSPublicKey, Integer>> future1 =
+        apiHandler.getValidatorIndices(List.of(key1, key2, key3));
+
+    asyncRunner.executeQueuedActions();
+    assertThat(future).isCompleted();
+    assertThat(future1).isCompleted();
+    assertThat(safeJoin(future)).containsOnly(entry(key1, 1), entry(key2, 2));
+    assertThat(safeJoin(future1)).containsOnly(entry(key1, 1), entry(key2, 2));
+    // POST only called once
+    verify(apiClient, times(1)).postValidators(expectedValidatorIds);
+    // GET called twice
+    verify(apiClient, times(2)).getValidators(expectedValidatorIds);
+  }
+
+  @Test
   void getValidatorIndices_WithSmallNumberOfPublicKeys_RequestsSingleBatch() {
+    // simulate POST not existing
+    when(apiClient.postValidators(any())).thenThrow(PostStateValidatorsNotExistingException.class);
     final BLSPublicKey key1 = dataStructureUtil.randomPublicKey();
     final BLSPublicKey key2 = dataStructureUtil.randomPublicKey();
     final BLSPublicKey key3 = dataStructureUtil.randomPublicKey();
@@ -183,6 +241,8 @@ class RemoteValidatorApiHandlerTest {
 
   @Test
   void getValidatorIndices_WithLargeNumberOfPublicKeys_CombinesMultipleBatches() {
+    // simulate POST not existing
+    when(apiClient.postValidators(any())).thenThrow(PostStateValidatorsNotExistingException.class);
     // Need to ensure the URL length limit isn't exceeded, so send requests in batches
     final List<BLSPublicKey> allKeys =
         IntStream.range(0, MAX_PUBLIC_KEY_BATCH_SIZE * 3 - 2)

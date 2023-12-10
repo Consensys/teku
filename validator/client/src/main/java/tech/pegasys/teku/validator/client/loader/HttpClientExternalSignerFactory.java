@@ -13,10 +13,13 @@
 
 package tech.pegasys.teku.validator.client.loader;
 
+import com.google.common.base.Splitter;
 import com.google.common.base.Suppliers;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.Authenticator;
+import java.net.PasswordAuthentication;
 import java.net.http.HttpClient;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,6 +27,7 @@ import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import java.util.function.Supplier;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -50,6 +54,9 @@ public class HttpClientExternalSignerFactory implements Supplier<HttpClient> {
   public HttpClient get() {
     final HttpClient.Builder builder = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1);
     if (isTLSEnabled()) {
+      validatorConfig
+          .getValidatorExternalSignerUserInfo()
+          .ifPresent(userInfo -> configureBasicAuthentication(builder, userInfo));
       builder.sslContext(
           getSSLContext(
               validatorConfig.getValidatorExternalSignerKeystorePasswordFilePair(),
@@ -59,8 +66,25 @@ public class HttpClientExternalSignerFactory implements Supplier<HttpClient> {
   }
 
   private boolean isTLSEnabled() {
-    final String protocol = validatorConfig.getValidatorExternalSignerUrl().getProtocol();
-    return protocol != null && protocol.equalsIgnoreCase("https");
+    return "https".equalsIgnoreCase(validatorConfig.getValidatorExternalSignerUrl().getProtocol());
+  }
+
+  private void configureBasicAuthentication(
+      final HttpClient.Builder builder, final String userInfo) {
+    final List<String> authCredentials = Splitter.on(':').splitToList(userInfo);
+    if (authCredentials.size() != 2) {
+      throw new IllegalArgumentException(
+          "Invalid format for userInfo. It should be in the format 'username:password'.");
+    }
+    final String username = authCredentials.get(0);
+    final String password = authCredentials.get(1);
+    builder.authenticator(
+        new Authenticator() {
+          @Override
+          protected PasswordAuthentication getPasswordAuthentication() {
+            return new PasswordAuthentication(username, password.toCharArray());
+          }
+        });
   }
 
   private SSLContext getSSLContext(
