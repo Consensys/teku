@@ -89,10 +89,10 @@ public class SingleMerkleProofTestExecutor implements TestExecutor {
             OBJECT_SSZ_FILE,
             testDefinition.getSpec().getGenesisSchemaDefinitions().getBeaconBlockBodySchema());
 
-    switch (proofType) {
-      case "blob_kzg_commitment_merkle_proof" -> runBlobKzgCommitmentMerkleProofTest(
-          testDefinition, data, beaconBlockBody);
-      default -> throw new RuntimeException("Unknown proof type " + proofType);
+    if (proofType.startsWith("blob_kzg_commitment_merkle_proof")) {
+      runBlobKzgCommitmentMerkleProofTest(testDefinition, data, beaconBlockBody);
+    } else {
+      throw new RuntimeException("Unknown proof type " + proofType);
     }
   }
 
