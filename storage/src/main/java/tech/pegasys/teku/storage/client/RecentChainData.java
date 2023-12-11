@@ -528,7 +528,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   public Optional<BlobSidecar> getRecentlyValidatedBlobSidecar(
       final Bytes32 blockRoot, final UInt64 index) {
-    return validatedBlobSidecarProvider.getBlobSidecars(blockRoot, index);
+    return validatedBlobSidecarProvider.getBlobSidecar(blockRoot, index);
   }
 
   public SafeFuture<Optional<BeaconBlock>> retrieveBlockByRoot(final Bytes32 root) {

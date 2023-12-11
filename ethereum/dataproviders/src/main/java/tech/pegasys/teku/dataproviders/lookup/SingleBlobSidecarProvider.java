@@ -21,5 +21,5 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 public interface SingleBlobSidecarProvider {
   SingleBlobSidecarProvider NOOP = (blockRoot, index) -> Optional.empty();
 
-  Optional<BlobSidecar> getBlobSidecars(Bytes32 blockRoot, UInt64 index);
+  Optional<BlobSidecar> getBlobSidecar(Bytes32 blockRoot, UInt64 index);
 }
