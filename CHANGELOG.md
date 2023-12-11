@@ -22,6 +22,7 @@ the [releases page](https://github.com/Consensys/teku/releases).
 - Added `--exit-when-no-validator-keys-enabled` command line option.
 - Updated Gnosis chain bootnodes.
 - Support Basic authentication for external signer
+- When initializing with the `--checkpoint-sync-url` option, the deposit tree snapshot will also be downloaded, rather than relying on older data packaged in the release.
 
 ### Bug Fixes
 - Fixed bugs when validator statuses were not updated and builder registrations were not sent in some cases
