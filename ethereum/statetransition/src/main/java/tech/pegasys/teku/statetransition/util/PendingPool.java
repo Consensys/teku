@@ -97,6 +97,7 @@ public class PendingPool<T> extends AbstractIgnoringFutureHistoricalSlot {
 
     final Bytes32 itemRoot = hashTreeRootFunction.apply(item);
     final Collection<Bytes32> requiredRoots = requiredBlockRootsFunction.apply(item);
+    final ArrayList<Bytes32> newRequiredRoots = new ArrayList<>();
 
     requiredRoots.forEach(
         requiredRoot ->
@@ -106,11 +107,14 @@ public class PendingPool<T> extends AbstractIgnoringFutureHistoricalSlot {
                     requiredRoot,
                     (key) -> {
                       final Set<Bytes32> dependants = new HashSet<>();
-                      requiredBlockRootSubscribers.forEach(
-                          c -> c.onRequiredBlockRoot(requiredRoot));
+                      newRequiredRoots.add(requiredRoot);
                       return dependants;
                     })
                 .add(itemRoot));
+
+    newRequiredRoots.forEach(
+        requiredRoot ->
+            requiredBlockRootSubscribers.forEach(s -> s.onRequiredBlockRoot(requiredRoot)));
 
     // Index item by root
     if (pendingItems.putIfAbsent(itemRoot, item) == null) {
