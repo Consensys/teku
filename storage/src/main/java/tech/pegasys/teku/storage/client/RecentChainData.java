@@ -104,8 +104,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private volatile Optional<ChainHead> chainHead = Optional.empty();
   private volatile UInt64 genesisTime;
 
-  private final SingleBlockProvider recentBlockProvider;
-  private final SingleBlobSidecarProvider recentBlobSidecarsProvider;
+  private final SingleBlockProvider validatedBlockProvider;
+  private final SingleBlobSidecarProvider validatedBlobSidecarProvider;
 
   private final BlockTimelinessTracker blockTimelinessTracker;
 
@@ -117,8 +117,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final StoreConfig storeConfig,
       final TimeProvider timeProvider,
       final BlockProvider blockProvider,
-      final SingleBlockProvider recentBlockProvider,
-      final SingleBlobSidecarProvider recentBlobSidecarsProvider,
+      final SingleBlockProvider validatedBlockProvider,
+      final SingleBlobSidecarProvider validatedBlobSidecarProvider,
       final StateAndBlockSummaryProvider stateProvider,
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final StorageUpdateChannel storageUpdateChannel,
@@ -132,8 +132,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     this.storeConfig = storeConfig;
     this.blockProvider = blockProvider;
     this.stateProvider = stateProvider;
-    this.recentBlockProvider = recentBlockProvider;
-    this.recentBlobSidecarsProvider = recentBlobSidecarsProvider;
+    this.validatedBlockProvider = validatedBlockProvider;
+    this.validatedBlobSidecarProvider = validatedBlobSidecarProvider;
     this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
     this.voteUpdateChannel = voteUpdateChannel;
     this.chainHeadChannel = chainHeadChannel;
@@ -528,7 +528,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   public Optional<BlobSidecar> getRecentlyValidatedBlobSidecar(
       final Bytes32 blockRoot, final UInt64 index) {
-    return recentBlobSidecarsProvider.getBlobSidecars(blockRoot, index);
+    return validatedBlobSidecarProvider.getBlobSidecars(blockRoot, index);
   }
 
   public SafeFuture<Optional<BeaconBlock>> retrieveBlockByRoot(final Bytes32 root) {
@@ -546,7 +546,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   }
 
   public Optional<SignedBeaconBlock> getRecentlyValidatedSignedBlockByRoot(final Bytes32 root) {
-    return recentBlockProvider.getBlock(root);
+    return validatedBlockProvider.getBlock(root);
   }
 
   public SafeFuture<Optional<BeaconState>> retrieveBlockState(final Bytes32 blockRoot) {
