@@ -21,23 +21,29 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
+import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
-import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
 
-public class GetStateRoot extends AbstractGetSimpleDataFromState {
+public class GetStateRoot extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/root";
+  private final ChainDataProvider chainDataProvider;
 
-  private static final SerializableTypeDefinition<StateAndMetaData> RESPONSE_TYPE =
-      SerializableTypeDefinition.object(StateAndMetaData.class)
+  private static final SerializableTypeDefinition<ObjectAndMetaData<Bytes32>> RESPONSE_TYPE =
+      SerializableTypeDefinition.<ObjectAndMetaData<Bytes32>>object()
           .name("GetStateRootResponse")
           .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
           .withField(FINALIZED, BOOLEAN_TYPE, ObjectAndMetaData::isFinalized)
-          .withField(
-              "data", ROOT_TYPE, stateAndMetaData -> stateAndMetaData.getData().hashTreeRoot())
+          .withField("data", ROOT_TYPE, ObjectAndMetaData::getData)
           .build();
 
   public GetStateRoot(final DataProvider dataProvider) {
@@ -55,7 +61,19 @@ public class GetStateRoot extends AbstractGetSimpleDataFromState {
             .pathParam(PARAMETER_STATE_ID)
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .withNotFoundResponse()
-            .build(),
-        chainDataProvider);
+            .build());
+    this.chainDataProvider = chainDataProvider;
+  }
+
+  @Override
+  public void handleRequest(RestApiRequest request) throws JsonProcessingException {
+    final SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> future =
+        chainDataProvider.getStateRoot(request.getPathParameter(PARAMETER_STATE_ID));
+    request.respondAsync(
+        future.thenApply(
+            maybeRootAndMetaData ->
+                maybeRootAndMetaData
+                    .map(AsyncApiResponse::respondOk)
+                    .orElse(AsyncApiResponse.respondNotFound())));
   }
 }

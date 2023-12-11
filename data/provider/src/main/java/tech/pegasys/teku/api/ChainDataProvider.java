@@ -51,6 +51,7 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.api.rewards.EpochAttestationRewardsCalculator;
 import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.Fork;
+import tech.pegasys.teku.api.staterootselector.StateRootSelectorFactory;
 import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -84,6 +85,7 @@ public class ChainDataProvider {
   private final BlockSelectorFactory blockSelectorFactory;
   private final BlockRootSelectorFactory blockRootSelectorFactory;
   private final StateSelectorFactory stateSelectorFactory;
+  private final StateRootSelectorFactory stateRootSelectorFactory;
   private final BlobSidecarSelectorFactory blobSidecarSelectorFactory;
   private final Spec spec;
   private final CombinedChainDataClient combinedChainDataClient;
@@ -103,6 +105,7 @@ public class ChainDataProvider {
         new BlockSelectorFactory(spec, combinedChainDataClient),
         new BlockRootSelectorFactory(spec, combinedChainDataClient),
         new StateSelectorFactory(spec, combinedChainDataClient),
+        new StateRootSelectorFactory(spec, combinedChainDataClient),
         new BlobSidecarSelectorFactory(combinedChainDataClient),
         rewardCalculator);
   }
@@ -115,6 +118,7 @@ public class ChainDataProvider {
       final BlockSelectorFactory blockSelectorFactory,
       final BlockRootSelectorFactory blockRootSelectorFactory,
       final StateSelectorFactory stateSelectorFactory,
+      final StateRootSelectorFactory stateRootSelectorFactory,
       final BlobSidecarSelectorFactory blobSidecarSelectorFactory,
       final RewardCalculator rewardCalculator) {
     this.spec = spec;
@@ -124,6 +128,7 @@ public class ChainDataProvider {
     this.blockSelectorFactory = blockSelectorFactory;
     this.blockRootSelectorFactory = blockRootSelectorFactory;
     this.stateSelectorFactory = stateSelectorFactory;
+    this.stateRootSelectorFactory = stateRootSelectorFactory;
     this.blobSidecarSelectorFactory = blobSidecarSelectorFactory;
     this.rewardCalculator = rewardCalculator;
   }
@@ -198,6 +203,10 @@ public class ChainDataProvider {
 
   public SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> getBlockRoot(final String blockIdParam) {
     return blockRootSelectorFactory.createSelectorForBlockId(blockIdParam).getBlockRoot();
+  }
+
+  public SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> getStateRoot(final String blockIdParam) {
+    return stateRootSelectorFactory.createSelectorForBlockId(blockIdParam).getStateRoot();
   }
 
   public SafeFuture<Optional<ObjectAndMetaData<List<Attestation>>>> getBlockAttestations(

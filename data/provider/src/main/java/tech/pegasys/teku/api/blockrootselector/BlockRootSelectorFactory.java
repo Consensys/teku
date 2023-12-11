@@ -30,7 +30,7 @@ public class BlockRootSelectorFactory extends AbstractSelectorFactory<BlockRootS
 
   private final Spec spec;
 
-  public BlockRootSelectorFactory(final Spec spec, CombinedChainDataClient client) {
+  public BlockRootSelectorFactory(final Spec spec, final CombinedChainDataClient client) {
     super(client);
     this.spec = spec;
   }

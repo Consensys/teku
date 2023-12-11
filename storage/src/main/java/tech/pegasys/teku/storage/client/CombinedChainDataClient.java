@@ -629,6 +629,14 @@ public class CombinedChainDataClient {
     return Optional.of(getStore().getLatestFinalizedBlockSlot());
   }
 
+  public Optional<UInt64> getFinalizedStateSlot() {
+    if (recentChainData.isPreGenesis()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(getStore().getLatestFinalized().getState().getSlot());
+  }
+
   public Optional<SignedBeaconBlock> getFinalizedBlock() {
     if (recentChainData.isPreGenesis()) {
       return Optional.empty();
@@ -642,6 +650,22 @@ public class CombinedChainDataClient {
       return Optional.empty();
     }
     return Optional.of(getStore().getLatestFinalized().getRoot());
+  }
+
+  public Optional<BeaconState> getFinalizedState() {
+    if (recentChainData.isPreGenesis()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(getStore().getLatestFinalized().getState());
+  }
+
+  public Optional<Bytes32> getFinalizedStateRoot() {
+    if (recentChainData.isPreGenesis()) {
+      return Optional.empty();
+    }
+
+    return Optional.of(getStore().getLatestFinalized().getStateRoot());
   }
 
   public Optional<AnchorPoint> getLatestFinalized() {

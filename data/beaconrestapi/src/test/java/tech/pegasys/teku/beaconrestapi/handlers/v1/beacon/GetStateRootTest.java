@@ -22,11 +22,12 @@ import static tech.pegasys.teku.infrastructure.restapi.MetadataTestUtil.verifyMe
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.IOException;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.metadata.StateAndMetaData;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class GetStateRootTest extends AbstractMigratedBeaconHandlerWithChainDataProviderTest {
@@ -42,12 +43,11 @@ public class GetStateRootTest extends AbstractMigratedBeaconHandlerWithChainData
   @Test
   public void shouldReturnRootInfo() throws Exception {
     final BeaconState state = recentChainData.getBestState().orElseThrow().get();
-
     handler.handleRequest(request);
-
     assertThat(request.getResponseCode()).isEqualTo(SC_OK);
-    StateAndMetaData expectedBody =
-        new StateAndMetaData(state, spec.getGenesisSpec().getMilestone(), false, true, true);
+    ObjectAndMetaData<Bytes32> expectedBody =
+        new ObjectAndMetaData<>(
+            state.hashTreeRoot(), spec.getGenesisSpec().getMilestone(), false, true, true);
     assertThat(request.getResponseBody()).isEqualTo(expectedBody);
   }
 
@@ -63,9 +63,9 @@ public class GetStateRootTest extends AbstractMigratedBeaconHandlerWithChainData
 
   @Test
   void metadata_shouldHandle200() throws IOException {
-    final StateAndMetaData responseData =
-        new StateAndMetaData(
-            dataStructureUtil.randomBeaconState(),
+    final ObjectAndMetaData<Bytes32> responseData =
+        new ObjectAndMetaData<>(
+            dataStructureUtil.randomBytes32(),
             spec.getGenesisSpec().getMilestone(),
             false,
             true,
@@ -74,7 +74,7 @@ public class GetStateRootTest extends AbstractMigratedBeaconHandlerWithChainData
     String expected =
         String.format(
             "{\"execution_optimistic\":false,\"finalized\":false,\"data\":{\"root\":\"%s\"}}",
-            responseData.getData().hashTreeRoot());
+            responseData.getData());
     assertThat(data).isEqualTo(expected);
   }
 }
