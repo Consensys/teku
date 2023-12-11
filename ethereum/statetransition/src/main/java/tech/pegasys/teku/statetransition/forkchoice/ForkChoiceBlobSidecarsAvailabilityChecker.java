@@ -38,6 +38,7 @@ import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -143,7 +144,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
   }
 
   private BlobSidecarsAndValidationResult validateBatch(final List<BlobSidecar> blobSidecars) {
-    final BeaconBlock block = blockBlobSidecarsTracker.getBlock().orElseThrow();
+    final BeaconBlock block = blockBlobSidecarsTracker.getBlock().orElseThrow().getMessage();
     final SlotAndBlockRoot slotAndBlockRoot = blockBlobSidecarsTracker.getSlotAndBlockRoot();
 
     final MiscHelpers miscHelpers = spec.atSlot(slotAndBlockRoot.getSlot()).miscHelpers();
@@ -367,7 +368,12 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
     return Suppliers.memoize(
         () ->
             BeaconBlockBodyDeneb.required(
-                    availabilityChecker.blockBlobSidecarsTracker.getBlock().orElseThrow().getBody())
+                    availabilityChecker
+                        .blockBlobSidecarsTracker
+                        .getBlock()
+                        .flatMap(SignedBeaconBlock::getBeaconBlock)
+                        .map(BeaconBlock::getBody)
+                        .orElseThrow())
                 .getBlobKzgCommitments()
                 .stream()
                 .map(SszKZGCommitment::getKZGCommitment)

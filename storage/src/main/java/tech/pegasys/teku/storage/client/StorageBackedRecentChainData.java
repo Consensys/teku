@@ -23,6 +23,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
+import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
+import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -51,6 +53,8 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final MetricsSystem metricsSystem,
       final StoreConfig storeConfig,
       final TimeProvider timeProvider,
+      final SingleBlockProvider validatedBlockProvider,
+      final SingleBlobSidecarProvider validatedBlobSidecarProvider,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
@@ -64,6 +68,8 @@ public class StorageBackedRecentChainData extends RecentChainData {
         storeConfig,
         timeProvider,
         storageQueryChannel::getHotBlocksByRoot,
+        validatedBlockProvider,
+        validatedBlobSidecarProvider,
         storageQueryChannel::getHotStateAndBlockSummaryByBlockRoot,
         storageQueryChannel::getEarliestAvailableBlobSidecarSlot,
         storageUpdateChannel,
@@ -83,6 +89,8 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final StoreConfig storeConfig,
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
+      final SingleBlockProvider validatedBlockProvider,
+      final SingleBlobSidecarProvider validatedBlobSidecarProvider,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
@@ -96,6 +104,8 @@ public class StorageBackedRecentChainData extends RecentChainData {
             metricsSystem,
             storeConfig,
             timeProvider,
+            validatedBlockProvider,
+            validatedBlobSidecarProvider,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
@@ -113,6 +123,8 @@ public class StorageBackedRecentChainData extends RecentChainData {
       final MetricsSystem metricsSystem,
       final StoreConfig storeConfig,
       final TimeProvider timeProvider,
+      final SingleBlockProvider validatedBlockProvider,
+      final SingleBlobSidecarProvider validatedBlobSidecarProvider,
       final StorageQueryChannel storageQueryChannel,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
@@ -126,6 +138,8 @@ public class StorageBackedRecentChainData extends RecentChainData {
             metricsSystem,
             storeConfig,
             timeProvider,
+            validatedBlockProvider,
+            validatedBlobSidecarProvider,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,

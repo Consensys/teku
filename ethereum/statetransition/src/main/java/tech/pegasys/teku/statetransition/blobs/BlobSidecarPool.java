@@ -50,8 +50,18 @@ public interface BlobSidecarPool extends SlotEventsChannel {
         }
 
         @Override
+        public Optional<BlobSidecar> getBlobSidecar(final Bytes32 blockRoot, final UInt64 index) {
+          return Optional.empty();
+        }
+
+        @Override
         public boolean containsBlock(final Bytes32 blockRoot) {
           return false;
+        }
+
+        @Override
+        public Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot) {
+          return Optional.empty();
         }
 
         @Override
@@ -101,7 +111,11 @@ public interface BlobSidecarPool extends SlotEventsChannel {
 
   boolean containsBlobSidecar(BlobIdentifier blobIdentifier);
 
+  Optional<BlobSidecar> getBlobSidecar(Bytes32 blockRoot, UInt64 index);
+
   boolean containsBlock(Bytes32 blockRoot);
+
+  Optional<SignedBeaconBlock> getBlock(Bytes32 blockRoot);
 
   Set<BlobIdentifier> getAllRequiredBlobSidecars();
 
