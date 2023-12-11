@@ -89,6 +89,7 @@ public enum SszObjectType {
   ExecutionPayload(bellatrixSchemas(SchemaDefinitionsBellatrix::getExecutionPayloadSchema)),
   ExecutionPayloadHeader(
       bellatrixSchemas(SchemaDefinitionsBellatrix::getExecutionPayloadHeaderSchema)),
+  BuilderBid(bellatrixSchemas(SchemaDefinitionsBellatrix::getBuilderBidSchema)),
   Withdrawal(capellaSchemas(SchemaDefinitionsCapella::getWithdrawalSchema)),
   BlsToExecutionChange(capellaSchemas(SchemaDefinitionsCapella::getBlsToExecutionChangeSchema)),
   SignedBlsToExecutionChange(
