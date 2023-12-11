@@ -120,6 +120,18 @@ public class MetricsOptions {
       MetricsConfig.DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_ENABLED;
 
   @Option(
+      names = {"--Xmetrics-block-production-timing-tracking-warning-threshold"},
+      hidden = true,
+      showDefaultValue = Visibility.ALWAYS,
+      paramLabel = "<INTEGER>",
+      description =
+          "The time (in ms) at which block production is to be considered 'slow'. If set to 100, block production taking at least 100ms would raise a warning.",
+      fallbackValue = "true",
+      arity = "0..1")
+  private int blockProductionPerformanceWarningThreshold =
+      MetricsConfig.DEFAULT_BLOCK_PRODUCTION_PERFORMANCE_WARNING_THRESHOLD;
+
+  @Option(
       names = {"--Xmetrics-blob-sidecars-storage-enabled"},
       hidden = true,
       showDefaultValue = Visibility.ALWAYS,
@@ -144,7 +156,9 @@ public class MetricsOptions {
                 .blockPerformanceEnabled(blockPerformanceEnabled)
                 .tickPerformanceEnabled(tickPerformanceEnabled)
                 .blobSidecarsStorageCountersEnabled(blobSidecarsStorageCountersEnabled)
-                .blockProductionPerformanceEnabled(blockProductionPerformanceEnabled));
+                .blockProductionPerformanceEnabled(blockProductionPerformanceEnabled)
+                .blockProductionPerformanceWarningThreshold(
+                    blockProductionPerformanceWarningThreshold));
   }
 
   private URL parseMetricsEndpointUrl() {

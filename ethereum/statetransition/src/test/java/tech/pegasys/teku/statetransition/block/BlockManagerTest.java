@@ -640,6 +640,8 @@ public class BlockManagerTest {
     // import invalid block, which should fail to import and be marked invalid
     assertImportBlockWithResult(invalidBlock, FailureReason.FAILED_STATE_TRANSITION);
 
+    reset(blobSidecarPool);
+
     // Gossip same invalid block, must reject with no actual validation
     assertValidateAndImportBlockRejectWithoutValidation(invalidBlock);
 
@@ -1151,6 +1153,7 @@ public class BlockManagerTest {
     assertThat(blockManager.validateAndImportBlock(block, Optional.empty()))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
     verify(blockValidator, never()).validateGossip(eq(block));
+    verify(blobSidecarPool).removeAllForBlock(block.getRoot());
   }
 
   private void assertImportBlockSuccessfully(final SignedBeaconBlock block) {

@@ -31,7 +31,6 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
@@ -46,7 +45,7 @@ public class BlockBlobSidecarsTracker {
   private final SlotAndBlockRoot slotAndBlockRoot;
   private final UInt64 maxBlobsPerBlock;
 
-  private final AtomicReference<Optional<BeaconBlock>> block =
+  private final AtomicReference<Optional<SignedBeaconBlock>> block =
       new AtomicReference<>(Optional.empty());
 
   private final NavigableMap<UInt64, BlobSidecar> blobSidecars = new ConcurrentSkipListMap<>();
@@ -88,7 +87,7 @@ public class BlockBlobSidecarsTracker {
     return newCompletionFuture;
   }
 
-  public Optional<BeaconBlock> getBlock() {
+  public Optional<SignedBeaconBlock> getBlock() {
     return block.get();
   }
 
@@ -96,6 +95,10 @@ public class BlockBlobSidecarsTracker {
     return Optional.ofNullable(blobSidecars.get(blobIdentifier.getIndex()))
         .map(blobSidecar -> blobSidecar.getBlockRoot().equals(blobIdentifier.getBlockRoot()))
         .orElse(false);
+  }
+
+  public Optional<BlobSidecar> getBlobSidecar(final UInt64 index) {
+    return Optional.ofNullable(blobSidecars.get(index));
   }
 
   public Stream<BlobIdentifier> getMissingBlobSidecars() {
@@ -165,7 +168,7 @@ public class BlockBlobSidecarsTracker {
 
   public boolean setBlock(final SignedBeaconBlock block) {
     checkArgument(block.getSlotAndBlockRoot().equals(slotAndBlockRoot), "Wrong block");
-    final Optional<BeaconBlock> oldBlock = this.block.getAndSet(block.getBeaconBlock());
+    final Optional<SignedBeaconBlock> oldBlock = this.block.getAndSet(Optional.of(block));
     if (oldBlock.isPresent()) {
       return false;
     }
@@ -227,7 +230,11 @@ public class BlockBlobSidecarsTracker {
   private Optional<Integer> getBlockKzgCommitmentsCount() {
     return block
         .get()
-        .map(b -> BeaconBlockBodyDeneb.required(b.getBody()).getBlobKzgCommitments().size());
+        .map(
+            b ->
+                BeaconBlockBodyDeneb.required(b.getMessage().getBody())
+                    .getBlobKzgCommitments()
+                    .size());
   }
 
   /**

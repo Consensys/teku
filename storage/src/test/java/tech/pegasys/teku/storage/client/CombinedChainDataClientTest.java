@@ -64,6 +64,7 @@ class CombinedChainDataClientTest {
   final SignedBeaconBlock firstBlock = dataStructureUtil.randomSignedBeaconBlock(1);
   final SignedBeaconBlock secondBlock = dataStructureUtil.randomSignedBeaconBlock(1);
   final BlobSidecar sidecar = dataStructureUtil.randomBlobSidecar();
+  final BlobSidecar sidecar2 = dataStructureUtil.randomBlobSidecar();
 
   @BeforeEach
   void setUp() {
@@ -231,11 +232,17 @@ class CombinedChainDataClientTest {
             sidecar.getSlot(), sidecar.getBlockRoot(), sidecar.getIndex());
     setupGetBlobSidecar(key, sidecar);
     setupGetSlotForBlockRoot(sidecar.getBlockRoot(), sidecar.getSlot());
+    setupGetRecentlyValidatedBlobSidecar(sidecar2.getBlockRoot(), sidecar2.getIndex(), sidecar2);
 
     final Optional<BlobSidecar> result =
         SafeFutureAssert.safeJoin(
             client.getBlobSidecarByBlockRootAndIndex(sidecar.getBlockRoot(), sidecar.getIndex()));
     assertThat(result).hasValue(sidecar);
+
+    final Optional<BlobSidecar> result2 =
+        SafeFutureAssert.safeJoin(
+            client.getBlobSidecarByBlockRootAndIndex(sidecar2.getBlockRoot(), sidecar2.getIndex()));
+    assertThat(result2).hasValue(sidecar2);
 
     final Bytes32 blockRoot = setupGetBlockByBlockRoot(sidecar.getSlot().plus(1));
     final Optional<BlobSidecar> incorrectResult =
@@ -265,6 +272,21 @@ class CombinedChainDataClientTest {
               final Bytes32 argRoot = args.getArgument(0);
               if (argRoot.equals(blockRoot)) {
                 return Optional.of(slot);
+              } else {
+                return Optional.empty();
+              }
+            });
+  }
+
+  private void setupGetRecentlyValidatedBlobSidecar(
+      final Bytes32 blockRoot, final UInt64 index, final BlobSidecar result) {
+    when(recentChainData.getRecentlyValidatedBlobSidecar(any(), any()))
+        .thenAnswer(
+            args -> {
+              final Bytes32 blockRootArg = args.getArgument(0);
+              final UInt64 indexArg = args.getArgument(1);
+              if (blockRootArg.equals(blockRoot) && indexArg.equals(index)) {
+                return Optional.of(result);
               } else {
                 return Optional.empty();
               }

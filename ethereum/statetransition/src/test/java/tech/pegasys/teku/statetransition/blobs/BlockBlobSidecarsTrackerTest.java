@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
@@ -78,7 +79,7 @@ public class BlockBlobSidecarsTrackerTest {
         .isNotCompleted();
     assertThat(blockBlobSidecarsTracker.getMissingBlobSidecars())
         .containsExactlyInAnyOrderElementsOf(blobIdentifiersForBlock);
-    assertThat(blockBlobSidecarsTracker.getBlock()).isEqualTo(block.getBeaconBlock());
+    assertThat(blockBlobSidecarsTracker.getBlock()).isEqualTo(Optional.of(block));
     assertThat(blockBlobSidecarsTracker.getBlobSidecars()).isEmpty();
   }
 
@@ -96,7 +97,7 @@ public class BlockBlobSidecarsTrackerTest {
         new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
     blockBlobSidecarsTracker.setBlock(block);
     blockBlobSidecarsTracker.setBlock(block);
-    assertThat(blockBlobSidecarsTracker.getBlock()).isEqualTo(block.getBeaconBlock());
+    assertThat(blockBlobSidecarsTracker.getBlock()).isEqualTo(Optional.of(block));
   }
 
   @Test
@@ -179,7 +180,7 @@ public class BlockBlobSidecarsTrackerTest {
         .containsExactlyInAnyOrderEntriesOf(added);
 
     blockBlobSidecarsTracker.setBlock(block);
-    assertThat(blockBlobSidecarsTracker.getBlock()).isEqualTo(block.getBeaconBlock());
+    assertThat(blockBlobSidecarsTracker.getBlock()).isEqualTo(Optional.of(block));
 
     // now we know the block and we know about missing blobs
     final List<BlobIdentifier> stillMissing =
@@ -233,7 +234,7 @@ public class BlockBlobSidecarsTrackerTest {
     SafeFutureAssert.assertThatSafeFuture(completionFuture).isNotCompleted();
     assertThat(blockBlobSidecarsTracker.getBlobSidecars())
         .containsExactlyInAnyOrderEntriesOf(added);
-    assertThat(blockBlobSidecarsTracker.getBlock()).isEqualTo(block.getBeaconBlock());
+    assertThat(blockBlobSidecarsTracker.getBlock()).isEqualTo(Optional.of(block));
   }
 
   @Test
@@ -250,7 +251,7 @@ public class BlockBlobSidecarsTrackerTest {
         new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
     blockBlobSidecarsTracker.setBlock(block);
     blockBlobSidecarsTracker.setBlock(block);
-    assertThat(blockBlobSidecarsTracker.getBlock()).isEqualTo(block.getBeaconBlock());
+    assertThat(blockBlobSidecarsTracker.getBlock()).isEqualTo(Optional.of(block));
   }
 
   @Test

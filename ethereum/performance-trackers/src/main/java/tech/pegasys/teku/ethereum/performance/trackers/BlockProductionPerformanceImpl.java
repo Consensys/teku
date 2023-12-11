@@ -23,9 +23,12 @@ public class BlockProductionPerformanceImpl implements BlockProductionPerformanc
   private final PerformanceTracker performanceTracker;
   private final UInt64 slot;
   private UInt64 slotTime = UInt64.ZERO;
+  private final int lateThreshold;
 
-  public BlockProductionPerformanceImpl(final TimeProvider timeProvider, final UInt64 slot) {
+  public BlockProductionPerformanceImpl(
+      final TimeProvider timeProvider, final UInt64 slot, final int lateThreshold) {
     this.performanceTracker = new PerformanceTracker(timeProvider);
+    this.lateThreshold = lateThreshold;
     this.slot = slot;
     performanceTracker.addEvent("start");
   }
@@ -42,7 +45,7 @@ public class BlockProductionPerformanceImpl implements BlockProductionPerformanc
       return;
     }
     final UInt64 completionTime = performanceTracker.addEvent(COMPLETE_LABEL);
-    final boolean isLateEvent = completionTime.minusMinZero(slotTime).isGreaterThan(LATE_EVENT_MS);
+    final boolean isLateEvent = completionTime.minusMinZero(slotTime).isGreaterThan(lateThreshold);
     performanceTracker.report(
         slotTime,
         isLateEvent,

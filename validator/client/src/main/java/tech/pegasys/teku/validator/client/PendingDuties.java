@@ -157,14 +157,14 @@ class PendingDuties {
     return scheduledDuties.join();
   }
 
-  public synchronized void onHeadUpdate(final Bytes32 newHeadDependentRoot) {
+  public synchronized void onHeadUpdate(final Bytes32 dependentRoot) {
     getCurrentDuties()
         .ifPresentOrElse(
             duties -> {
-              if (duties.requiresRecalculation(newHeadDependentRoot)) {
+              if (duties.requiresRecalculation(dependentRoot)) {
                 recalculate();
               }
             },
-            () -> pendingHeadUpdate = Optional.of(newHeadDependentRoot));
+            () -> pendingHeadUpdate = Optional.of(dependentRoot));
   }
 }

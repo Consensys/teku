@@ -283,7 +283,7 @@ public class EventLogger {
       final UInt64 slot, final UInt64 totalProcessingDuration, final String timings) {
     final String slowBlockProductionLog =
         String.format(
-            "Slow Block Production Event   *** Slot: %s %s total: %sms",
+            "Slow Block Production *** Slot: %s %s total: %sms",
             slot, timings, totalProcessingDuration);
     warn(slowBlockProductionLog, Color.YELLOW);
   }

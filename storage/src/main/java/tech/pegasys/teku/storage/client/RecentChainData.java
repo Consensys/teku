@@ -31,6 +31,8 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
+import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
+import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -102,6 +104,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private volatile Optional<ChainHead> chainHead = Optional.empty();
   private volatile UInt64 genesisTime;
 
+  private final SingleBlockProvider validatedBlockProvider;
+  private final SingleBlobSidecarProvider validatedBlobSidecarProvider;
+
   private final BlockTimelinessTracker blockTimelinessTracker;
 
   private final ValidatorIsConnectedProvider validatorIsConnectedProvider;
@@ -112,6 +117,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final StoreConfig storeConfig,
       final TimeProvider timeProvider,
       final BlockProvider blockProvider,
+      final SingleBlockProvider validatedBlockProvider,
+      final SingleBlobSidecarProvider validatedBlobSidecarProvider,
       final StateAndBlockSummaryProvider stateProvider,
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final StorageUpdateChannel storageUpdateChannel,
@@ -125,6 +132,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     this.storeConfig = storeConfig;
     this.blockProvider = blockProvider;
     this.stateProvider = stateProvider;
+    this.validatedBlockProvider = validatedBlockProvider;
+    this.validatedBlobSidecarProvider = validatedBlobSidecarProvider;
     this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
     this.voteUpdateChannel = voteUpdateChannel;
     this.chainHeadChannel = chainHeadChannel;
@@ -517,6 +526,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .flatMap(s -> store.getBlobSidecarsIfAvailable(slotAndBlockRoot));
   }
 
+  public Optional<BlobSidecar> getRecentlyValidatedBlobSidecar(
+      final Bytes32 blockRoot, final UInt64 index) {
+    return validatedBlobSidecarProvider.getBlobSidecar(blockRoot, index);
+  }
+
   public SafeFuture<Optional<BeaconBlock>> retrieveBlockByRoot(final Bytes32 root) {
     if (store == null) {
       return EmptyStoreResults.EMPTY_BLOCK_FUTURE;
@@ -529,6 +543,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       return EmptyStoreResults.EMPTY_SIGNED_BLOCK_FUTURE;
     }
     return store.retrieveSignedBlock(root);
+  }
+
+  public Optional<SignedBeaconBlock> getRecentlyValidatedSignedBlockByRoot(final Bytes32 root) {
+    return validatedBlockProvider.getBlock(root);
   }
 
   public SafeFuture<Optional<BeaconState>> retrieveBlockState(final Bytes32 blockRoot) {

@@ -169,7 +169,6 @@ public class WeakSubjectivityInitializer {
       throw new IllegalStateException(
           "Cannot sync outside of weak subjectivity period. Consider re-syncing your node using --checkpoint-sync-url or use --ignore-weak-subjectivity-period-enabled to ignore this check.");
     }
-    ;
   }
 
   public void validateInitialAnchor(

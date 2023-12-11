@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,23 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.duties;
+package tech.pegasys.teku.dataproviders.lookup;
 
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 
-public interface ScheduledDuties {
+public interface SingleBlobSidecarProvider {
+  SingleBlobSidecarProvider NOOP = (blockRoot, index) -> Optional.empty();
 
-  boolean requiresRecalculation(Bytes32 newDependentRoot);
-
-  SafeFuture<DutyResult> performProductionDuty(UInt64 slot);
-
-  String getProductionType();
-
-  SafeFuture<DutyResult> performAggregationDuty(UInt64 slot);
-
-  String getAggregationType();
-
-  int countDuties();
+  Optional<BlobSidecar> getBlobSidecar(Bytes32 blockRoot, UInt64 index);
 }

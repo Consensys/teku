@@ -29,7 +29,8 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class DepositSnapshotFileLoaderTest {
-  private static final String SNAPSHOT_RESOURCE = "snapshot.ssz";
+  private static final String SNAPSHOT_BUNDLED_RESOURCE = "deposit_tree_snapshot_bundled.ssz";
+  private static final String SNAPSHOT_BEACON_API_RESOURCE = "deposit_tree_snapshot_beaconAPI.json";
 
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
@@ -41,7 +42,7 @@ public class DepositSnapshotFileLoaderTest {
   public void setup() {
     this.notFoundResource = dataStructureUtil.randomBytes32().toHexString();
     this.depositSnapshotLoader =
-        new DepositSnapshotFileLoader(Optional.of(getResourceFilePath(SNAPSHOT_RESOURCE)));
+        new DepositSnapshotFileLoader(Optional.of(getResourceFilePath(SNAPSHOT_BUNDLED_RESOURCE)));
   }
 
   @Test
@@ -63,6 +64,30 @@ public class DepositSnapshotFileLoaderTest {
     final int deposits = 16646;
     final int blockNumber = 1033803;
     final LoadDepositSnapshotResult result = depositSnapshotLoader.loadDepositSnapshot();
+    assertWith(
+        result,
+        snapshotResult -> {
+          assertThat(snapshotResult.getDepositTreeSnapshot().isPresent()).isTrue();
+          assertThat(snapshotResult.getDepositTreeSnapshot().get().getDepositCount())
+              .isEqualTo(deposits);
+          assertThat(snapshotResult.getReplayDepositsResult().getLastProcessedDepositIndex())
+              .contains(BigInteger.valueOf(deposits - 1));
+          assertThat(snapshotResult.getReplayDepositsResult().getLastProcessedBlockNumber())
+              .isEqualTo(blockNumber);
+        });
+  }
+
+  @Test
+  public void shouldFallbackToJsonDeserialization() {
+    // From deposit_tree_snapshot_beaconAPI.json file
+    final int deposits = 1106572;
+    final int blockNumber = 18754822;
+
+    depositSnapshotLoader =
+        new DepositSnapshotFileLoader(
+            Optional.of(getResourceFilePath(SNAPSHOT_BEACON_API_RESOURCE)));
+    final LoadDepositSnapshotResult result = depositSnapshotLoader.loadDepositSnapshot();
+
     assertWith(
         result,
         snapshotResult -> {
