@@ -14,7 +14,7 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.node;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PEER_ID_PARAMETER;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers.PEER_DATA_TYPE;
+import static tech.pegasys.teku.beaconrestapi.handlers.v1.node.GetPeers.getPeerDataType;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CACHE_NONE;
@@ -35,12 +35,6 @@ import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 public class GetPeerById extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/node/peers/{peer_id}";
 
-  private static final SerializableTypeDefinition<Eth2Peer> PEERS_BY_ID_RESPONSE_TYPE =
-      SerializableTypeDefinition.object(Eth2Peer.class)
-          .name("GetPeerResponse")
-          .withField("data", PEER_DATA_TYPE, Function.identity())
-          .build();
-
   private final NetworkDataProvider network;
 
   public GetPeerById(final DataProvider provider) {
@@ -55,10 +49,18 @@ public class GetPeerById extends RestApiEndpoint {
             .description("Retrieves data about the given peer.")
             .pathParam(PEER_ID_PARAMETER)
             .tags(TAG_NODE)
-            .response(SC_OK, "Request successful", PEERS_BY_ID_RESPONSE_TYPE)
+            .response(SC_OK, "Request successful", getResponse(network))
             .withNotFoundResponse()
             .build());
     this.network = network;
+  }
+
+  private static SerializableTypeDefinition<Eth2Peer> getResponse(
+      final NetworkDataProvider network) {
+    return SerializableTypeDefinition.object(Eth2Peer.class)
+        .name("GetPeerResponse")
+        .withField("data", getPeerDataType(network), Function.identity())
+        .build();
   }
 
   @Override
