@@ -94,7 +94,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final MergeTransitionBlockValidator transitionBlockValidator;
   private final boolean forkChoiceUpdateHeadOnBlockImportEnabled;
-  private final boolean forkChoiceProposerBoostUniquenessEnabled;
   private final AttestationStateSelector attestationStateSelector;
   private final DeferredAttestations deferredAttestations = new DeferredAttestations();
 
@@ -114,7 +113,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final TickProcessor tickProcessor,
       final MergeTransitionBlockValidator transitionBlockValidator,
       final boolean forkChoiceUpdateHeadOnBlockImportEnabled,
-      final boolean forkChoiceProposerBoostUniquenessEnabled,
       final boolean forkChoiceLateBlockReorgEnabled,
       final MetricsSystem metricsSystem) {
     this.spec = spec;
@@ -128,7 +126,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         new AttestationStateSelector(spec, recentChainData, metricsSystem);
     this.tickProcessor = tickProcessor;
     this.forkChoiceUpdateHeadOnBlockImportEnabled = forkChoiceUpdateHeadOnBlockImportEnabled;
-    this.forkChoiceProposerBoostUniquenessEnabled = forkChoiceProposerBoostUniquenessEnabled;
     this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
     LOG.debug("forkChoiceLateBlockReorgEnabled is set to {}", forkChoiceLateBlockReorgEnabled);
 
@@ -158,7 +155,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         new ForkChoiceStateProvider(forkChoiceExecutor, recentChainData),
         new TickProcessor(spec, recentChainData),
         transitionBlockValidator,
-        true,
         true,
         false,
         metricsSystem);
@@ -636,10 +632,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       return false;
     }
     // is_first_block
-    if (forkChoiceProposerBoostUniquenessEnabled) {
-      return transaction.getProposerBoostRoot().isEmpty();
-    }
-    return true;
+    return transaction.getProposerBoostRoot().isEmpty();
   }
 
   /**
