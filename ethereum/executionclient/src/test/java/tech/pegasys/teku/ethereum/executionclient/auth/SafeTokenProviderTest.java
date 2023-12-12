@@ -78,12 +78,13 @@ class SafeTokenProviderTest {
 
     final UInt64 timeInMillis = UInt64.valueOf(System.currentTimeMillis());
     final Optional<Token> token = safeTokenProvider.token(timeInMillis);
+    assertThat(token).isPresent();
 
     final Claims payload =
         Jwts.parser()
             .verifyWith(jwtSecretKey)
             .build()
-            .parseSignedClaims(token.orElseThrow().getJwtToken())
+            .parseSignedClaims(token.get().getJwtToken())
             .getPayload();
 
     assertThat(payload.get("id")).isEqualTo(idClaim);
@@ -101,13 +102,13 @@ class SafeTokenProviderTest {
       final Optional<Token> optionalToken,
       final UInt64 instantInMillis) {
     Assertions.assertThat(optionalToken).isPresent();
-    final Claims payload =
+    final long issuedAtInSeconds =
         Jwts.parser()
             .verifyWith(jwtSecretKey)
             .build()
             .parseSignedClaims(optionalToken.get().getJwtToken())
-            .getPayload();
-    final long issuedAtInSeconds = payload.get(Claims.ISSUED_AT, Long.class);
+            .getPayload()
+            .get(Claims.ISSUED_AT, Long.class);
     assertThat(instantInMillis.plus(TimeUnit.SECONDS.toMillis(TOLERANCE_IN_SECONDS)))
         .isGreaterThan(UInt64.valueOf(TimeUnit.SECONDS.toMillis(issuedAtInSeconds)));
     assertThat(instantInMillis.minus(TimeUnit.SECONDS.toMillis(TOLERANCE_IN_SECONDS)))
