@@ -37,7 +37,7 @@ public class StateRootSelectorFactory extends AbstractSelectorFactory<StateRootS
 
   @Override
   public StateRootSelector stateRootSelector(final Bytes32 stateRoot) {
-    return () -> client.getStateByBlockRoot(stateRoot).thenApply(this::fromState);
+    return () -> client.getStateByStateRoot(stateRoot).thenApply(this::fromState);
   }
 
   @Override
@@ -101,11 +101,12 @@ public class StateRootSelectorFactory extends AbstractSelectorFactory<StateRootS
   private SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> forSlot(
       final ChainHead head, final UInt64 slot) {
     return client
-        .getStateAtSlotExact(slot)
+        .getStateRootAtSlotExact(slot)
         .thenApply(
-            maybeBeaconState ->
-                maybeBeaconState.map(
-                    beaconState -> lookupCanonicalStateRootData(beaconState, head.isOptimistic())));
+            maybeStateRoot ->
+                maybeStateRoot.map(
+                    stateRoot ->
+                        lookupCanonicalStateRootData(stateRoot, slot, head.isOptimistic())));
   }
 
   private SafeFuture<Optional<ObjectAndMetaData<Bytes32>>> fromChainHead(final ChainHead head) {
@@ -145,11 +146,12 @@ public class StateRootSelectorFactory extends AbstractSelectorFactory<StateRootS
 
   private ObjectAndMetaData<Bytes32> lookupCanonicalStateRootData(
       final BeaconState beaconState, final boolean isOptimistic) {
-    return lookupStateRootData(
-        beaconState.hashTreeRoot(),
-        beaconState.getSlot(),
-        isOptimistic,
-        true,
-        client.isFinalized(beaconState.getSlot()));
+    return lookupCanonicalStateRootData(
+        beaconState.hashTreeRoot(), beaconState.getSlot(), isOptimistic);
+  }
+
+  private ObjectAndMetaData<Bytes32> lookupCanonicalStateRootData(
+      final Bytes32 stateRoot, final UInt64 slot, final boolean isOptimistic) {
+    return lookupStateRootData(stateRoot, slot, isOptimistic, true, client.isFinalized(slot));
   }
 }

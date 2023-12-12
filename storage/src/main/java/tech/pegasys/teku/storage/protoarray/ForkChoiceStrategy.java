@@ -181,6 +181,19 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     }
   }
 
+  @Override
+  public Optional<Bytes32> getStateRootAtSlot(final UInt64 slot) {
+    protoArrayLock.readLock().lock();
+    try {
+      return protoArray.getNodes().stream()
+          .filter(protoNode -> protoNode.getBlockSlot().equals(slot))
+          .map(ProtoNode::getStateRoot)
+          .findFirst();
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
   public ForkChoiceState getForkChoiceState(
       final UInt64 currentEpoch,
       final Checkpoint justifiedCheckpoint,

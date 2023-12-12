@@ -39,6 +39,8 @@ public interface ReadOnlyForkChoiceStrategy {
 
   List<ProtoNodeData> getChainHeads(boolean includeNonViableHeads);
 
+  Optional<Bytes32> getStateRootAtSlot(final UInt64 slot);
+
   Optional<Bytes32> getOptimisticallySyncedTransitionBlockRoot(Bytes32 head);
 
   List<ProtoNodeData> getBlockData();

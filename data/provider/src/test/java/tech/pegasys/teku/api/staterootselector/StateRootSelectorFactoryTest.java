@@ -128,7 +128,7 @@ public class StateRootSelectorFactoryTest {
   @Test
   public void stateRootSelector_shouldGetStateRootByRoot()
       throws ExecutionException, InterruptedException {
-    when(client.getStateByBlockRoot(any()))
+    when(client.getStateByStateRoot(any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(STATE)));
     final SignedBlockAndState head =
         DATA_STRUCTURE_UTIL.randomSignedBlockAndState(
@@ -141,7 +141,7 @@ public class StateRootSelectorFactoryTest {
     when(client.isFinalized(STATE.getSlot())).thenReturn(false);
     final Optional<ObjectAndMetaData<Bytes32>> maybeBlockRootAndMetaData =
         stateRootSelectorFactory.stateRootSelector(STATE.hashTreeRoot()).getStateRoot().get();
-    verify(client).getStateByBlockRoot(STATE.hashTreeRoot());
+    verify(client).getStateByStateRoot(STATE.hashTreeRoot());
     verify(client).getChainHead();
     verify(client)
         .isCanonicalBlock(
@@ -157,13 +157,13 @@ public class StateRootSelectorFactoryTest {
     final SignedBlockAndState head = DATA_STRUCTURE_UTIL.randomSignedBlockAndState(100);
     ChainHead chainHead = ChainHead.create(head);
     when(client.getChainHead()).thenReturn(Optional.of(chainHead));
-    when(client.getStateAtSlotExact(STATE.getSlot()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(STATE)));
+    when(client.getStateRootAtSlotExact(STATE.getSlot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(STATE.hashTreeRoot())));
     when(client.isFinalized(STATE.getSlot())).thenReturn(false);
     final Optional<ObjectAndMetaData<Bytes32>> maybeBlockRootAndMetaData =
         stateRootSelectorFactory.slotSelector(STATE.getSlot()).getStateRoot().get();
     verify(client).getChainHead();
-    verify(client).getStateAtSlotExact(STATE.getSlot());
+    verify(client).getStateRootAtSlotExact(STATE.getSlot());
     AssertionsForClassTypes.assertThat(maybeBlockRootAndMetaData)
         .contains(withMetaData(STATE.hashTreeRoot(), false, true, false));
   }

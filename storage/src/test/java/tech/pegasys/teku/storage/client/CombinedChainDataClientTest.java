@@ -16,6 +16,9 @@ package tech.pegasys.teku.storage.client;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
@@ -32,6 +35,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
@@ -40,6 +44,7 @@ import tech.pegasys.teku.spec.datastructures.util.SlotAndBlockRootAndBlobIndex;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
+import tech.pegasys.teku.storage.store.UpdatableStore;
 
 /** Note: Most tests should be added to the integration-test directory */
 class CombinedChainDataClientTest {
@@ -182,6 +187,102 @@ class CombinedChainDataClientTest {
         SafeFutureAssert.safeJoin(
             client.getBlobSidecarByBlockRootAndIndex(blockRoot, sidecar.getIndex()));
     assertThat(incorrectResult).isEmpty();
+  }
+
+  @Test
+  void getBlockRootAtExactSlot_shouldReturnEmptyWhenChainDataUnavailable() {
+    when(recentChainData.isPreGenesis()).thenReturn(true);
+    when(recentChainData.isPreForkChoice()).thenReturn(true);
+    final SafeFuture<Optional<Bytes32>> blockRootFuture =
+        client.getBlockRootAtSlotExact(dataStructureUtil.randomSlot());
+    assertThat(blockRootFuture).isCompletedWithValue(Optional.empty());
+    verify(recentChainData, never()).getBlockRootInEffectBySlot(any());
+    verifyNoInteractions(historicalChainData);
+  }
+
+  @Test
+  void getBlockRootAtExactSlot_shouldUseRecentChainData() {
+    when(recentChainData.isPreGenesis()).thenReturn(false);
+    when(recentChainData.isPreForkChoice()).thenReturn(false);
+    final SlotAndBlockRoot slotAndBlockRoot =
+        dataStructureUtil.randomSlotAndBlockRoot(UInt64.valueOf(100));
+    when(recentChainData.getBlockRootInEffectBySlot(slotAndBlockRoot.getSlot()))
+        .thenReturn(Optional.of(slotAndBlockRoot.getBlockRoot()));
+    final SafeFuture<Optional<Bytes32>> blockRootFuture =
+        client.getBlockRootAtSlotExact(slotAndBlockRoot.getSlot());
+    assertThat(blockRootFuture).isCompletedWithValue(Optional.of(slotAndBlockRoot.getBlockRoot()));
+    verify(recentChainData).getBlockRootInEffectBySlot(slotAndBlockRoot.getSlot());
+    verifyNoInteractions(historicalChainData);
+  }
+
+  @Test
+  void getBlockRootAtExactSlot_shouldFallbackToHistoricalChainData() {
+    when(recentChainData.isPreGenesis()).thenReturn(false);
+    when(recentChainData.isPreForkChoice()).thenReturn(false);
+    final SignedBeaconBlock signedBeaconBlock =
+        dataStructureUtil.randomSignedBeaconBlock(UInt64.valueOf(100));
+    when(recentChainData.getBlockRootInEffectBySlot(signedBeaconBlock.getSlot()))
+        .thenReturn(Optional.empty());
+    when(historicalChainData.getFinalizedBlockAtSlot(signedBeaconBlock.getSlot()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(signedBeaconBlock)));
+    final SafeFuture<Optional<Bytes32>> blockRootFuture =
+        client.getBlockRootAtSlotExact(signedBeaconBlock.getSlot());
+    assertThat(blockRootFuture).isCompletedWithValue(Optional.of(signedBeaconBlock.getRoot()));
+    verify(recentChainData).getBlockRootInEffectBySlot(signedBeaconBlock.getSlot());
+    verify(historicalChainData).getFinalizedBlockAtSlot(signedBeaconBlock.getSlot());
+  }
+
+  @Test
+  void getStateRootAtExactSlot_shouldReturnEmptyWhenChainDataUnavailable() {
+    when(recentChainData.isPreGenesis()).thenReturn(true);
+    when(recentChainData.isPreForkChoice()).thenReturn(true);
+    final SafeFuture<Optional<Bytes32>> stateRoot =
+        client.getStateRootAtSlotExact(dataStructureUtil.randomSlot());
+    assertThat(stateRoot).isCompletedWithValue(Optional.empty());
+    verify(recentChainData, never()).getBlockRootInEffectBySlot(any());
+    verifyNoInteractions(historicalChainData);
+  }
+
+  @Test
+  void getStateRootAtExactSlot_shouldUseRecentChainData() {
+    when(recentChainData.isPreGenesis()).thenReturn(false);
+    when(recentChainData.isPreForkChoice()).thenReturn(false);
+    final SlotAndBlockRoot slotAndBlockRoot =
+        dataStructureUtil.randomSlotAndBlockRoot(UInt64.valueOf(100));
+    when(forkChoiceStrategy.getStateRootAtSlot(slotAndBlockRoot.getSlot()))
+        .thenReturn(Optional.of(slotAndBlockRoot.getBlockRoot()));
+    final SafeFuture<Optional<Bytes32>> stateRootFuture =
+        client.getStateRootAtSlotExact(slotAndBlockRoot.getSlot());
+    assertThat(stateRootFuture).isCompletedWithValue(Optional.of(slotAndBlockRoot.getBlockRoot()));
+    verify(recentChainData).getForkChoiceStrategy();
+    verify(forkChoiceStrategy).getStateRootAtSlot(slotAndBlockRoot.getSlot());
+    verifyNoInteractions(historicalChainData);
+  }
+
+  @Test
+  void getStateRootAtExactSlot_shouldUseHistoricalChainData() {
+    when(recentChainData.isPreGenesis()).thenReturn(false);
+    when(recentChainData.isPreForkChoice()).thenReturn(false);
+    final SlotAndBlockRoot slotAndBlockRoot =
+        dataStructureUtil.randomSlotAndBlockRoot(UInt64.valueOf(100));
+    when(forkChoiceStrategy.getStateRootAtSlot(slotAndBlockRoot.getSlot()))
+        .thenReturn(Optional.empty());
+    when(recentChainData.getBlockRootInEffectBySlot(slotAndBlockRoot.getSlot()))
+        .thenReturn(Optional.of(slotAndBlockRoot.getBlockRoot()));
+    final UpdatableStore updatableStoreMock = mock(UpdatableStore.class);
+    final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(100));
+    when(updatableStoreMock.retrieveStateAtSlot(slotAndBlockRoot))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
+    when(recentChainData.getStore()).thenReturn(updatableStoreMock);
+    final SafeFuture<Optional<Bytes32>> stateRootFuture =
+        client.getStateRootAtSlotExact(slotAndBlockRoot.getSlot());
+    assertThat(stateRootFuture).isCompletedWithValue(Optional.of(state.hashTreeRoot()));
+    verify(recentChainData).getForkChoiceStrategy();
+    verify(forkChoiceStrategy).getStateRootAtSlot(slotAndBlockRoot.getSlot());
+    verify(recentChainData).getBlockRootInEffectBySlot(slotAndBlockRoot.getSlot());
+    verify(recentChainData).getStore();
+    verify(updatableStoreMock).retrieveStateAtSlot(slotAndBlockRoot);
+    verifyNoInteractions(historicalChainData);
   }
 
   private void setupGetBlobSidecar(

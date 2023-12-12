@@ -62,6 +62,9 @@ public class CombinedChainDataClient {
   private static final SafeFuture<Optional<SignedBeaconBlock>> BLOCK_NOT_AVAILABLE =
       completedFuture(Optional.empty());
 
+  private static final SafeFuture<Optional<Bytes32>> ROOT_NOT_AVAILABLE =
+      completedFuture(Optional.empty());
+
   private final RecentChainData recentChainData;
   private final StorageQueryChannel historicalChainData;
   private final Spec spec;
@@ -102,7 +105,7 @@ public class CombinedChainDataClient {
 
   public SafeFuture<Optional<Bytes32>> getBlockRootAtSlotExact(final UInt64 slot) {
     if (!isChainDataFullyAvailable()) {
-      return SafeFuture.completedFuture(Optional.empty());
+      return ROOT_NOT_AVAILABLE;
     }
     final Optional<Bytes32> recentRoot = recentChainData.getBlockRootInEffectBySlot(slot);
     if (recentRoot.isPresent()) {
@@ -236,6 +239,21 @@ public class CombinedChainDataClient {
       final Stream<SlotAndBlockRootAndBlobIndex> keys) {
     return SafeFuture.collectAll(keys.map(this::getAllBlobSidecarByKey))
         .thenApply(blobSidecars -> blobSidecars.stream().flatMap(Optional::stream).toList());
+  }
+
+  public SafeFuture<Optional<Bytes32>> getStateRootAtSlotExact(final UInt64 slot) {
+    if (!isChainDataFullyAvailable()) {
+      return ROOT_NOT_AVAILABLE;
+    }
+    final Optional<ReadOnlyForkChoiceStrategy> forkStrategy =
+        recentChainData.getForkChoiceStrategy();
+    if (forkStrategy.isPresent()) {
+      final Optional<Bytes32> maybeStateRoot = forkStrategy.get().getStateRootAtSlot(slot);
+      if (maybeStateRoot.isPresent()) {
+        return SafeFuture.completedFuture(maybeStateRoot);
+      }
+    }
+    return getStateAtSlotExact(slot).thenApply(state -> state.map(BeaconState::hashTreeRoot));
   }
 
   public SafeFuture<Optional<BeaconState>> getStateAtSlotExact(final UInt64 slot) {

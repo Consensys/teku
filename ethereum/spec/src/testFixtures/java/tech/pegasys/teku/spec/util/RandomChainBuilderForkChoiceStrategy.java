@@ -98,6 +98,11 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
         .orElse(Collections.emptyList());
   }
 
+  @Override
+  public Optional<Bytes32> getStateRootAtSlot(UInt64 slot) {
+    return chainBuilder.getBlockAndState(slot).map(SignedBlockAndState::getStateRoot);
+  }
+
   private static ProtoNodeData asProtoNodeData(final SignedBlockAndState blockAndState) {
     return new ProtoNodeData(
         blockAndState.getSlot(),

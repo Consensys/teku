@@ -177,6 +177,10 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     return blockStates.get(blockRoot);
   }
 
+  private Optional<BeaconState> getBlockState(final UInt64 slot) {
+    return blockStates.values().stream().filter(state -> state.getSlot().equals(slot)).findFirst();
+  }
+
   private Optional<BeaconState> getCheckpointState(final Checkpoint checkpoint) {
     return Optional.ofNullable(checkpointStates.get(checkpoint));
   }
@@ -430,6 +434,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
                 headsByRoot.remove(block.getParentRoot());
               });
       return new ArrayList<>(headsByRoot.values());
+    }
+
+    @Override
+    public Optional<Bytes32> getStateRootAtSlot(UInt64 slot) {
+      return getBlockState(slot).map(BeaconState::hashTreeRoot);
     }
 
     @Override
