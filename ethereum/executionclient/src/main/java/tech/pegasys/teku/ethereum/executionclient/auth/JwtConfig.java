@@ -32,21 +32,30 @@ public class JwtConfig {
   public static final long EXPIRES_IN_SECONDS = TOLERANCE_IN_SECONDS - 2;
 
   private final SecretKey key;
+  private final Optional<String> secretId;
 
-  public JwtConfig(final SecretKey key) {
+  public JwtConfig(final SecretKey key, final Optional<String> secretId) {
     this.key = key;
+    this.secretId = secretId;
   }
 
   public SecretKey getKey() {
     return key;
   }
 
+  public Optional<String> getSecretId() {
+    return secretId;
+  }
+
   public static Optional<JwtConfig> createIfNeeded(
-      final boolean needed, final Optional<String> jwtSecretFile, final Path beaconDataDirectory) {
+      final boolean needed,
+      final Optional<String> jwtSecretFile,
+      final Optional<String> jwtSecretId,
+      final Path beaconDataDirectory) {
     if (needed) {
       final JwtSecretKeyLoader keyLoader =
           new JwtSecretKeyLoader(jwtSecretFile, beaconDataDirectory);
-      return Optional.of(new JwtConfig(keyLoader.getSecretKey()));
+      return Optional.of(new JwtConfig(keyLoader.getSecretKey(), jwtSecretId));
     } else {
       return Optional.empty();
     }

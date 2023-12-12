@@ -48,6 +48,14 @@ public class ExecutionLayerOptions {
   private String engineJwtSecretFile = null;
 
   @Option(
+      names = {"--ee-jwt-secret-id"},
+      paramLabel = "<STRING>",
+      description =
+          "A unique identifier for the consensus layer client which will be added in the JWT payload",
+      arity = "1")
+  private String engineJwtSecretId = null;
+
+  @Option(
       names = {"--builder-endpoint"},
       paramLabel = "<NETWORK>",
       description = "URL for an external Builder node (optional).",
@@ -143,6 +151,7 @@ public class ExecutionLayerOptions {
         b ->
             b.engineEndpoint(executionEngineEndpoint)
                 .engineJwtSecretFile(engineJwtSecretFile)
+                .engineJwtSecretId(engineJwtSecretId)
                 .builderEndpoint(builderEndpoint)
                 .isBuilderCircuitBreakerEnabled(builderCircuitBreakerEnabled)
                 .builderCircuitBreakerWindow(builderCircuitBreakerWindow)

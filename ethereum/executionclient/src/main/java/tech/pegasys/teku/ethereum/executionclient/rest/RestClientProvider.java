@@ -44,6 +44,7 @@ public interface RestClientProvider {
       final Duration timeout,
       final boolean jwtSupported,
       final Optional<String> jwtSecretFile,
+      final Optional<String> jwtSecretId,
       final Path beaconDataDirectory,
       final TimeProvider timeProvider) {
     if (endpoint.startsWith(PREVIOUS_STUB_ENDPOINT_PREFIX)) {
@@ -53,7 +54,7 @@ public interface RestClientProvider {
       return STUB;
     } else {
       final Optional<JwtConfig> jwtConfig =
-          JwtConfig.createIfNeeded(jwtSupported, jwtSecretFile, beaconDataDirectory);
+          JwtConfig.createIfNeeded(jwtSupported, jwtSecretFile, jwtSecretId, beaconDataDirectory);
       return new OkHttpRestClientProvider(endpoint, timeout, jwtConfig, timeProvider);
     }
   }

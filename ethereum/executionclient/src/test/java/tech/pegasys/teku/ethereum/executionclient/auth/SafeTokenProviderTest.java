@@ -34,7 +34,8 @@ class SafeTokenProviderTest {
   @BeforeEach
   void setUp() {
     jwtSecretKey = JwtTestHelper.generateJwtSecret();
-    safeTokenProvider = new SafeTokenProvider(new TokenProvider(new JwtConfig(jwtSecretKey)));
+    safeTokenProvider =
+        new SafeTokenProvider(new TokenProvider(new JwtConfig(jwtSecretKey, Optional.empty())));
   }
 
   @Test
@@ -68,6 +69,26 @@ class SafeTokenProviderTest {
     Assertions.assertThat(originalToken).isEqualTo(updatedToken);
   }
 
+  @Test
+  void testGetToken_addsIdClaimWhenConfigured() {
+    final String idClaim = "foobar";
+
+    safeTokenProvider =
+        new SafeTokenProvider(new TokenProvider(new JwtConfig(jwtSecretKey, Optional.of(idClaim))));
+
+    final UInt64 timeInMillis = UInt64.valueOf(System.currentTimeMillis());
+    final Optional<Token> token = safeTokenProvider.token(timeInMillis);
+
+    final Claims payload =
+        Jwts.parser()
+            .verifyWith(jwtSecretKey)
+            .build()
+            .parseSignedClaims(token.orElseThrow().getJwtToken())
+            .getPayload();
+
+    assertThat(payload.get("id")).isEqualTo(idClaim);
+  }
+
   public static void validateTokenAtInstant(
       final Optional<Token> optionalToken, final UInt64 instantInMillis) {
     Assertions.assertThat(optionalToken).isPresent();
@@ -80,13 +101,13 @@ class SafeTokenProviderTest {
       final Optional<Token> optionalToken,
       final UInt64 instantInMillis) {
     Assertions.assertThat(optionalToken).isPresent();
-    final long issuedAtInSeconds =
+    final Claims payload =
         Jwts.parser()
             .verifyWith(jwtSecretKey)
             .build()
             .parseSignedClaims(optionalToken.get().getJwtToken())
-            .getPayload()
-            .get(Claims.ISSUED_AT, Long.class);
+            .getPayload();
+    final long issuedAtInSeconds = payload.get(Claims.ISSUED_AT, Long.class);
     assertThat(instantInMillis.plus(TimeUnit.SECONDS.toMillis(TOLERANCE_IN_SECONDS)))
         .isGreaterThan(UInt64.valueOf(TimeUnit.SECONDS.toMillis(issuedAtInSeconds)));
     assertThat(instantInMillis.minus(TimeUnit.SECONDS.toMillis(TOLERANCE_IN_SECONDS)))

@@ -54,6 +54,7 @@ public interface ExecutionWeb3jClientProvider {
       final Duration timeout,
       final boolean jwtSupported,
       final Optional<String> jwtSecretFile,
+      final Optional<String> jwtSecretId,
       final Path beaconDataDirectory,
       final TimeProvider timeProvider,
       final ExecutionClientEventsChannel executionClientEventsPublisher) {
@@ -64,7 +65,7 @@ public interface ExecutionWeb3jClientProvider {
       return STUB;
     } else {
       final Optional<JwtConfig> jwtConfig =
-          JwtConfig.createIfNeeded(jwtSupported, jwtSecretFile, beaconDataDirectory);
+          JwtConfig.createIfNeeded(jwtSupported, jwtSecretFile, jwtSecretId, beaconDataDirectory);
       return new DefaultExecutionWeb3jClientProvider(
           endpoint, timeout, jwtConfig, timeProvider, executionClientEventsPublisher);
     }
