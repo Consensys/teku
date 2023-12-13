@@ -48,8 +48,8 @@ public class LocalSlashingProtector implements SlashingProtector {
       boolean localSlashingProtectionSynchronizedModeEnabled) {
     this.dataAccessor = dataAccessor;
     this.slashingProtectionBaseDir = slashingProtectionBaseDir;
-    this.localSlashingProtectionSynchronizedModeEnabled = false;
-    //        localSlashingProtectionSynchronizedModeEnabled;
+    this.localSlashingProtectionSynchronizedModeEnabled =
+        localSlashingProtectionSynchronizedModeEnabled;
     if (!localSlashingProtectionSynchronizedModeEnabled) {
       LOG.info("Local slashing protection running with local locks enabled");
     }
