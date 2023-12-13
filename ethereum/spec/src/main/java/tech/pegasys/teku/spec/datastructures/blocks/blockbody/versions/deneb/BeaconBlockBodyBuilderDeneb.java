@@ -64,8 +64,7 @@ public class BeaconBlockBodyBuilderDeneb extends BeaconBlockBodyBuilderCapella {
       checkState(
           blindedSchema != null, "blindedSchema must be set blinded body has been requested");
     } else {
-      checkState(
-          schema != null, "schema must be set if non blinded body has been requested");
+      checkState(schema != null, "schema must be set if non blinded body has been requested");
     }
   }
 

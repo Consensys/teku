@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBuilderBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapellaImpl;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderCapellaImpl;
@@ -45,6 +46,16 @@ public class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatr
     this.blindedSchema = blindedSchema;
   }
 
+  @Override
+  protected BeaconBlockBodySchema<?> getSchema() {
+    return schema;
+  }
+
+  π
+  protected BeaconBlockBodySchema<?> getBlindedSchema() {
+    return blindedSchema;
+  }
+
   protected SszList<SignedBlsToExecutionChange> getBlsToExecutionChanges() {
     return blsToExecutionChanges;
   }
@@ -59,17 +70,6 @@ public class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatr
       final SszList<SignedBlsToExecutionChange> blsToExecutionChanges) {
     this.blsToExecutionChanges = blsToExecutionChanges;
     return this;
-  }
-
-  @Override
-  protected void validateSchema() {
-    if (isBlinded()) {
-      checkState(
-              blindedSchema != null, "blindedSchema must be set blinded body has been requested");
-    } else {
-      checkState(
-              schema != null, "schema must be set if non blinded body has been requested");
-    }
   }
 
   @Override

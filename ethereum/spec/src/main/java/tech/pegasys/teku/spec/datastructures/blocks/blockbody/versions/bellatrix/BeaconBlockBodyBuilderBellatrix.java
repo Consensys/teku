@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyBuilderAltair;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -42,6 +43,15 @@ public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltai
       final BlindedBeaconBlockBodySchemaBellatrixImpl blindedSchema) {
     this.schema = schema;
     this.blindedSchema = blindedSchema;
+  }
+
+  @Override
+  protected BeaconBlockBodySchema<?> getSchema() {
+    return schema;
+  }
+
+  protected BeaconBlockBodySchema<?> getBlindedSchema() {
+    return blindedSchema;
   }
 
   @Override
@@ -72,10 +82,9 @@ public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltai
   protected void validateSchema() {
     if (isBlinded()) {
       checkState(
-              blindedSchema != null, "blindedSchema must be set blinded body has been requested");
+          blindedSchema != null, "blindedSchema must be set blinded body has been requested");
     } else {
-      checkState(
-              schema != null, "schema must be set if non blinded body has been requested");
+      checkState(schema != null, "schema must be set if non blinded body has been requested");
     }
   }
 
