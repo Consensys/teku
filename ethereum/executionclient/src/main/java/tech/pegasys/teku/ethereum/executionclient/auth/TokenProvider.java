@@ -39,7 +39,7 @@ public class TokenProvider {
 
     // https://github.com/ethereum/execution-apis/blob/main/src/engine/authentication.md#jwt-claims
     jwtBuilder.issuedAt(Date.from(Instant.ofEpochMilli(instantInMillis.longValue())));
-    jwtConfig.getSecretId().ifPresent(secretId -> jwtBuilder.claim("id", secretId));
+    jwtConfig.getClaimId().ifPresent(claimId -> jwtBuilder.claim("id", claimId));
 
     final String jwtToken = jwtBuilder.compact();
     return Optional.of(new Token(jwtToken, expiry));

@@ -71,23 +71,23 @@ class SafeTokenProviderTest {
 
   @Test
   void testGetToken_addsIdClaimWhenConfigured() {
-    final String idClaim = "foobar";
+    final String claimId = "foobar";
 
     safeTokenProvider =
-        new SafeTokenProvider(new TokenProvider(new JwtConfig(jwtSecretKey, Optional.of(idClaim))));
+        new SafeTokenProvider(new TokenProvider(new JwtConfig(jwtSecretKey, Optional.of(claimId))));
 
     final UInt64 timeInMillis = UInt64.valueOf(System.currentTimeMillis());
     final Optional<Token> token = safeTokenProvider.token(timeInMillis);
     assertThat(token).isPresent();
 
-    final Claims payload =
+    final Claims claims =
         Jwts.parser()
             .verifyWith(jwtSecretKey)
             .build()
             .parseSignedClaims(token.get().getJwtToken())
             .getPayload();
 
-    assertThat(payload.get("id")).isEqualTo(idClaim);
+    assertThat(claims.get("id")).isEqualTo(claimId);
   }
 
   public static void validateTokenAtInstant(

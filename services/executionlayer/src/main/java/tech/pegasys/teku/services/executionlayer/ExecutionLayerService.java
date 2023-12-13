@@ -71,7 +71,7 @@ public class ExecutionLayerService extends Service {
             EL_ENGINE_BLOCK_EXECUTION_TIMEOUT,
             true,
             config.getEngineJwtSecretFile(),
-            config.getEngineJwtSecretId(),
+            config.getEngineJwtClaimId(),
             beaconDataDirectory,
             timeProvider,
             executionClientEventsPublisher);

@@ -48,12 +48,12 @@ public class ExecutionLayerOptions {
   private String engineJwtSecretFile = null;
 
   @Option(
-      names = {"--ee-jwt-secret-id"},
+      names = {"--ee-jwt-claim-id"},
       paramLabel = "<STRING>",
       description =
-          "A unique identifier for the consensus layer client which will be added in the JWT payload",
+          "A unique identifier for the consensus layer client. This identifier will be added to the JWT claims as an 'id' claim.",
       arity = "1")
-  private String engineJwtSecretId = null;
+  private String engineJwtClaimId = null;
 
   @Option(
       names = {"--builder-endpoint"},
@@ -151,7 +151,7 @@ public class ExecutionLayerOptions {
         b ->
             b.engineEndpoint(executionEngineEndpoint)
                 .engineJwtSecretFile(engineJwtSecretFile)
-                .engineJwtSecretId(engineJwtSecretId)
+                .engineJwtClaimId(engineJwtClaimId)
                 .builderEndpoint(builderEndpoint)
                 .isBuilderCircuitBreakerEnabled(builderCircuitBreakerEnabled)
                 .builderCircuitBreakerWindow(builderCircuitBreakerWindow)

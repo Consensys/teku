@@ -42,7 +42,7 @@ public class ExecutionLayerConfiguration {
   private final Spec spec;
   private final Optional<String> engineEndpoint;
   private final Optional<String> engineJwtSecretFile;
-  private final Optional<String> engineJwtSecretId;
+  private final Optional<String> engineJwtClaimId;
   private final Optional<String> builderEndpoint;
   private final boolean isBuilderCircuitBreakerEnabled;
   private final int builderCircuitBreakerWindow;
@@ -57,7 +57,7 @@ public class ExecutionLayerConfiguration {
       final Spec spec,
       final Optional<String> engineEndpoint,
       final Optional<String> engineJwtSecretFile,
-      final Optional<String> engineJwtSecretId,
+      final Optional<String> engineJwtClaimId,
       final Optional<String> builderEndpoint,
       final boolean isBuilderCircuitBreakerEnabled,
       final int builderCircuitBreakerWindow,
@@ -70,7 +70,7 @@ public class ExecutionLayerConfiguration {
     this.spec = spec;
     this.engineEndpoint = engineEndpoint;
     this.engineJwtSecretFile = engineJwtSecretFile;
-    this.engineJwtSecretId = engineJwtSecretId;
+    this.engineJwtClaimId = engineJwtClaimId;
     this.builderEndpoint = builderEndpoint;
     this.isBuilderCircuitBreakerEnabled = isBuilderCircuitBreakerEnabled;
     this.builderCircuitBreakerWindow = builderCircuitBreakerWindow;
@@ -106,8 +106,8 @@ public class ExecutionLayerConfiguration {
     return engineJwtSecretFile;
   }
 
-  public Optional<String> getEngineJwtSecretId() {
-    return engineJwtSecretId;
+  public Optional<String> getEngineJwtClaimId() {
+    return engineJwtClaimId;
   }
 
   public Optional<String> getBuilderEndpoint() {
@@ -150,7 +150,7 @@ public class ExecutionLayerConfiguration {
     private Spec spec;
     private Optional<String> engineEndpoint = Optional.empty();
     private Optional<String> engineJwtSecretFile = Optional.empty();
-    private Optional<String> engineJwtSecretId = Optional.empty();
+    private Optional<String> engineJwtClaimId = Optional.empty();
     private Optional<String> builderEndpoint = Optional.empty();
     private boolean isBuilderCircuitBreakerEnabled = DEFAULT_BUILDER_CIRCUIT_BREAKER_ENABLED;
     private int builderCircuitBreakerWindow = DEFAULT_BUILDER_CIRCUIT_BREAKER_WINDOW;
@@ -190,7 +190,7 @@ public class ExecutionLayerConfiguration {
           spec,
           engineEndpoint,
           engineJwtSecretFile,
-          engineJwtSecretId,
+          engineJwtClaimId,
           builderEndpoint,
           isBuilderCircuitBreakerEnabled,
           builderCircuitBreakerWindow,
@@ -217,8 +217,8 @@ public class ExecutionLayerConfiguration {
       return this;
     }
 
-    public Builder engineJwtSecretId(final String jwtSecretId) {
-      this.engineJwtSecretId = Optional.ofNullable(jwtSecretId).filter(StringUtils::isNotBlank);
+    public Builder engineJwtClaimId(final String jwtClaimId) {
+      this.engineJwtClaimId = Optional.ofNullable(jwtClaimId).filter(StringUtils::isNotBlank);
       return this;
     }
 
