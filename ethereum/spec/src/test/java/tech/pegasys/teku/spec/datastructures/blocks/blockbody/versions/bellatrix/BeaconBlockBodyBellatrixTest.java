@@ -60,14 +60,13 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
   @SuppressWarnings("unchecked")
   void builderShouldFailWhenOverridingBlindedSchemaWithANullSchema() {
     BeaconBlockBodyBuilderBellatrix beaconBlockBodyBuilderBellatrix =
-        new BeaconBlockBodyBuilderBellatrix();
+        new BeaconBlockBodyBuilderBellatrix(
+            null, mock(BlindedBeaconBlockBodySchemaBellatrixImpl.class));
     Exception exception =
         assertThrows(
             IllegalStateException.class,
             () ->
                 beaconBlockBodyBuilderBellatrix
-                    .blindedSchema(mock(BlindedBeaconBlockBodySchemaBellatrixImpl.class))
-                    .schema((BeaconBlockBodySchemaBellatrixImpl) null)
                     .randaoReveal(mock(BLSSignature.class))
                     .eth1Data(mock(Eth1Data.class))
                     .graffiti(mock(Bytes32.class))
@@ -77,21 +76,21 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
                     .deposits(mock(SszList.class))
                     .voluntaryExits(mock(SszList.class))
                     .build());
-    assertEquals(exception.getMessage(), "schema must be set with no blindedSchema");
+    assertEquals(
+        exception.getMessage(),
+        "executionPayload or executionPayloadHeader must be set before interacting with the builder");
   }
 
   @Test
   @SuppressWarnings("unchecked")
   void builderShouldFailWhenOverridingSchemaWithANullBlindedSchema() {
     BeaconBlockBodyBuilderBellatrix beaconBlockBodyBuilderBellatrix =
-        new BeaconBlockBodyBuilderBellatrix();
+        new BeaconBlockBodyBuilderBellatrix(mock(BeaconBlockBodySchemaBellatrixImpl.class), null);
     Exception exception =
         assertThrows(
             IllegalStateException.class,
             () ->
                 beaconBlockBodyBuilderBellatrix
-                    .schema(mock(BeaconBlockBodySchemaBellatrixImpl.class))
-                    .blindedSchema(null)
                     .randaoReveal(mock(BLSSignature.class))
                     .eth1Data(mock(Eth1Data.class))
                     .graffiti(mock(Bytes32.class))
@@ -101,7 +100,9 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
                     .deposits(mock(SszList.class))
                     .voluntaryExits(mock(SszList.class))
                     .build());
-    assertEquals(exception.getMessage(), "blindedSchema must be set with no schema");
+    assertEquals(
+        exception.getMessage(),
+        "executionPayload or executionPayloadHeader must be set before interacting with the builder");
   }
 
   @Override

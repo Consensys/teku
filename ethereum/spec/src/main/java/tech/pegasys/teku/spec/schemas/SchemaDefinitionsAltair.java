@@ -22,8 +22,9 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyBuilderAltair;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltairImpl;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientHeaderSchema;
@@ -42,7 +43,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.M
 
 public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   private final BeaconStateSchemaAltair beaconStateSchema;
-  private final BeaconBlockBodySchemaAltair<?> beaconBlockBodySchema;
+  private final BeaconBlockBodySchemaAltairImpl beaconBlockBodySchema;
   private final BeaconBlockSchema beaconBlockSchema;
   private final SignedBeaconBlockSchema signedBeaconBlockSchema;
   private final SyncCommitteeContributionSchema syncCommitteeContributionSchema;
@@ -138,6 +139,11 @@ public class SchemaDefinitionsAltair extends AbstractSchemaDefinitions {
   @Override
   public SignedBlockContainerSchema<SignedBlockContainer> getSignedBlindedBlockContainerSchema() {
     return getSignedBlindedBeaconBlockSchema().castTypeToSignedBlockContainer();
+  }
+
+  @Override
+  public BeaconBlockBodyBuilder createBeaconBlockBodyBuilder() {
+    return new BeaconBlockBodyBuilderAltair(beaconBlockBodySchema);
   }
 
   @Override

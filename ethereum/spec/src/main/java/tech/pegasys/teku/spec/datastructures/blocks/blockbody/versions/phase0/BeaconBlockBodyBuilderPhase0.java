@@ -36,7 +36,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class BeaconBlockBodyBuilderPhase0 implements BeaconBlockBodyBuilder {
-  private BeaconBlockBodySchemaPhase0 schema;
+  private final BeaconBlockBodySchemaPhase0 schema;
   protected BLSSignature randaoReveal;
   protected Eth1Data eth1Data;
   protected Bytes32 graffiti;
@@ -45,6 +45,14 @@ public class BeaconBlockBodyBuilderPhase0 implements BeaconBlockBodyBuilder {
   protected SszList<AttesterSlashing> attesterSlashings;
   protected SszList<Deposit> deposits;
   protected SszList<SignedVoluntaryExit> voluntaryExits;
+
+  public BeaconBlockBodyBuilderPhase0() {
+    this.schema = null;
+  }
+
+  public BeaconBlockBodyBuilderPhase0(final BeaconBlockBodySchemaPhase0 schema) {
+    this.schema = schema;
+  }
 
   @Override
   public BeaconBlockBodyBuilder randaoReveal(final BLSSignature randaoReveal) {
@@ -93,11 +101,6 @@ public class BeaconBlockBodyBuilderPhase0 implements BeaconBlockBodyBuilder {
   @Override
   public BeaconBlockBodyBuilder voluntaryExits(final SszList<SignedVoluntaryExit> voluntaryExits) {
     this.voluntaryExits = voluntaryExits;
-    return this;
-  }
-
-  public BeaconBlockBodyBuilderPhase0 schema(final BeaconBlockBodySchemaPhase0 schema) {
-    this.schema = schema;
     return this;
   }
 

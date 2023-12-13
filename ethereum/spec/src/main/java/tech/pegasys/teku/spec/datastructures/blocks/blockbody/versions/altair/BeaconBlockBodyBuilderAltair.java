@@ -24,12 +24,15 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class BeaconBlockBodyBuilderAltair extends BeaconBlockBodyBuilderPhase0 {
 
-  private BeaconBlockBodySchemaAltairImpl schema;
+  private final BeaconBlockBodySchemaAltairImpl schema;
   protected SyncAggregate syncAggregate;
 
-  public BeaconBlockBodyBuilderAltair schema(final BeaconBlockBodySchemaAltairImpl schema) {
+  public BeaconBlockBodyBuilderAltair() {
+    this.schema = null;
+  }
+
+  public BeaconBlockBodyBuilderAltair(final BeaconBlockBodySchemaAltairImpl schema) {
     this.schema = schema;
-    return this;
   }
 
   @Override

@@ -52,7 +52,6 @@ public class BlockProposalUtil {
       final BeaconState blockSlotState,
       final Bytes32 parentBlockSigningRoot,
       final Consumer<BeaconBlockBodyBuilder> bodyBuilder,
-      final Optional<Boolean> blinded,
       final BlockProductionPerformance blockProductionPerformance) {
     checkArgument(
         blockSlotState.getSlot().equals(newSlot),
@@ -61,28 +60,24 @@ public class BlockProposalUtil {
         blockSlotState.getSlot());
 
     // Create block body
-    final SafeFuture<? extends BeaconBlockBody> beaconBlockBody;
-    final BeaconBlockSchema beaconBlockSchema;
-
-    if (blinded.orElse(ValidatorsUtil.DEFAULT_PRODUCE_BLINDED_BLOCK)) {
-      beaconBlockBody = createBlindedBeaconBlockBody(bodyBuilder);
-      beaconBlockSchema = schemaDefinitions.getBlindedBeaconBlockSchema();
-    } else {
-      beaconBlockBody = createBeaconBlockBody(bodyBuilder);
-      beaconBlockSchema = schemaDefinitions.getBeaconBlockSchema();
-    }
+    final SafeFuture<? extends BeaconBlockBody> beaconBlockBody = createBlockBody(bodyBuilder);
 
     // Create initial block with some stubs
     final Bytes32 tmpStateRoot = Bytes32.ZERO;
     final SafeFuture<BeaconBlock> newBlock =
         beaconBlockBody.thenApply(
-            body ->
-                beaconBlockSchema.create(
-                    newSlot,
-                    UInt64.valueOf(proposerIndex),
-                    parentBlockSigningRoot,
-                    tmpStateRoot,
-                    body));
+            body -> {
+              final BeaconBlockSchema beaconBlockSchema =
+                  body.isBlinded()
+                      ? schemaDefinitions.getBlindedBeaconBlockSchema()
+                      : schemaDefinitions.getBeaconBlockSchema();
+              return beaconBlockSchema.create(
+                  newSlot,
+                  UInt64.valueOf(proposerIndex),
+                  parentBlockSigningRoot,
+                  tmpStateRoot,
+                  body);
+            });
 
     return newBlock
         .thenApplyChecked(
@@ -117,13 +112,10 @@ public class BlockProposalUtil {
             });
   }
 
-  private SafeFuture<? extends BeaconBlockBody> createBeaconBlockBody(
-      final Consumer<BeaconBlockBodyBuilder> bodyBuilder) {
-    return schemaDefinitions.getBeaconBlockBodySchema().createBlockBody(bodyBuilder);
-  }
-
-  private SafeFuture<? extends BeaconBlockBody> createBlindedBeaconBlockBody(
-      final Consumer<BeaconBlockBodyBuilder> bodyBuilder) {
-    return schemaDefinitions.getBlindedBeaconBlockBodySchema().createBlockBody(bodyBuilder);
+  private SafeFuture<? extends BeaconBlockBody> createBlockBody(
+      final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
+    final BeaconBlockBodyBuilder builder = schemaDefinitions.createBeaconBlockBodyBuilder();
+    builderConsumer.accept(builder);
+    return builder.build();
   }
 }
