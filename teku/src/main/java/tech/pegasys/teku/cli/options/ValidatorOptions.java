@@ -154,9 +154,9 @@ public class ValidatorOptions {
       DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED;
 
   @Option(
-      names = {"--Xstop-vc-when-validator-slashed"},
+      names = {"--stop-vc-when-validator-slashed"},
       paramLabel = "<BOOLEAN>",
-      description = "Enable stopping the Vc when a validator is slashed",
+      description = "Enable stopping the VC when a validator is slashed",
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "0..1",
       fallbackValue = "true")
