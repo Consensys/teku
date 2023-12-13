@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.ethereum.executionclient.auth.JwtTestHelper.generateJwtSecret;
 
 import com.google.common.net.HttpHeaders;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import org.web3j.protocol.websocket.WebSocketClient;
@@ -31,7 +32,7 @@ public class JwtAuthWebsocketHelperTest {
 
   @Test
   public void shouldSetTimedAuthHeader() {
-    JwtConfig jwtConfig = new JwtConfig(generateJwtSecret());
+    JwtConfig jwtConfig = new JwtConfig(generateJwtSecret(), Optional.empty());
     TokenProvider tokenProvider = new TokenProvider(jwtConfig);
     WebSocketClient webSocketClient = mock(WebSocketClient.class);
     final JwtAuthWebsocketHelper jwtAuthWebsocketHelper =
