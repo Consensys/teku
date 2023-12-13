@@ -16,7 +16,6 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatri
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
-import java.util.Optional;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -29,7 +28,6 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltair {
   private final BeaconBlockBodySchemaBellatrixImpl schema;
   private final BlindedBeaconBlockBodySchemaBellatrixImpl blindedSchema;
-  protected Optional<Boolean> blinded = Optional.empty();
   protected SafeFuture<ExecutionPayload> executionPayload;
   protected SafeFuture<ExecutionPayloadHeader> executionPayloadHeader;
 
@@ -52,9 +50,6 @@ public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltai
 
   @Override
   public BeaconBlockBodyBuilder executionPayload(SafeFuture<ExecutionPayload> executionPayload) {
-    checkState(blinded.isEmpty(), "execution payload or header has been already set");
-
-    blinded = Optional.of(false);
     this.executionPayload = executionPayload;
     return this;
   }
@@ -62,9 +57,6 @@ public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltai
   @Override
   public BeaconBlockBodyBuilder executionPayloadHeader(
       SafeFuture<ExecutionPayloadHeader> executionPayloadHeader) {
-    checkState(blinded.isEmpty(), "execution payload or header has been already set");
-
-    blinded = Optional.of(true);
     this.executionPayloadHeader = executionPayloadHeader;
     return this;
   }
@@ -78,11 +70,16 @@ public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltai
     }
   }
 
+  @Override
+  protected void validate() {
+    super.validate();
+    checkState(
+        executionPayload != null ^ executionPayloadHeader != null,
+        "only and only one of executionPayload or executionPayloadHeader must be set");
+  }
+
   protected Boolean isBlinded() {
-    return blinded.orElseThrow(
-        () ->
-            new IllegalStateException(
-                "executionPayload or executionPayloadHeader must be set before interacting with the builder"));
+    return executionPayloadHeader != null;
   }
 
   @Override

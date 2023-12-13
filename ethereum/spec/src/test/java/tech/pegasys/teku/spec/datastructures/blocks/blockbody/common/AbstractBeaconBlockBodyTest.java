@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -57,6 +58,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
   protected SszList<SignedVoluntaryExit> voluntaryExits;
 
   protected T defaultBlockBody;
+  protected BlindedBeaconBlockBodyBellatrix defaultBlindedBlockBody;
   protected BeaconBlockBodySchema<?> blockBodySchema;
 
   protected void setUpBaseClass(final SpecMilestone milestone, Runnable additionalSetup) {
@@ -90,14 +92,22 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
     additionalSetup.run();
 
     defaultBlockBody = safeJoin(createDefaultBlockBody());
+    defaultBlindedBlockBody = safeJoin(createDefaultBlindedBlockBody());
     blockBodySchema = defaultBlockBody.getSchema();
   }
 
   protected SafeFuture<T> createBlockBody() {
-    return createBlockBody(createContentProvider());
+    return createBlockBody(createContentProvider(false));
+  }
+
+  protected SafeFuture<? extends BlindedBeaconBlockBodyBellatrix> createBlindedBlockBody() {
+    return createBlindedBlockBody(createContentProvider(true));
   }
 
   protected abstract SafeFuture<T> createBlockBody(
+      final Consumer<BeaconBlockBodyBuilder> contentProvider);
+
+  protected abstract SafeFuture<BlindedBeaconBlockBodyBellatrix> createBlindedBlockBody(
       final Consumer<BeaconBlockBodyBuilder> contentProvider);
 
   @SuppressWarnings("unchecked")
@@ -106,8 +116,18 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
         spec.getGenesisSchemaDefinitions().getBeaconBlockBodySchema();
   }
 
+  protected BeaconBlockBodyBuilder createBeaconBlockBodyBuilder() {
+    return spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
+        .getSchemaDefinitions()
+        .createBeaconBlockBodyBuilder();
+  }
+
   protected SafeFuture<T> createDefaultBlockBody() {
     return createBlockBody();
+  }
+
+  protected SafeFuture<? extends BlindedBeaconBlockBodyBellatrix> createDefaultBlindedBlockBody() {
+    return createBlindedBlockBody();
   }
 
   @Test
@@ -188,7 +208,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
     assertEquals(defaultBlockBody, newBeaconBlockBody);
   }
 
-  protected Consumer<BeaconBlockBodyBuilder> createContentProvider() {
+  protected Consumer<BeaconBlockBodyBuilder> createContentProvider(boolean blinded) {
     return builder ->
         builder
             .randaoReveal(randaoReveal)
