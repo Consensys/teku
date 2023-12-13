@@ -70,7 +70,7 @@ class SafeTokenProviderTest {
   }
 
   @Test
-  void testGetToken_addsIdClaimWhenConfigured() {
+  void testGetToken_addsIdToClaimsWhenConfigured() {
     final String claimId = "foobar";
 
     safeTokenProvider =
