@@ -401,7 +401,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                 .getSpec()
                 .forMilestone(SpecMilestone.DENEB)
                 .getConfig());
-    // not overriden in spec however
+    // not overridden in spec however
     assertThat(specConfigDeneb.getEpochsStoreBlobs()).isEqualTo(4096);
   }
 
