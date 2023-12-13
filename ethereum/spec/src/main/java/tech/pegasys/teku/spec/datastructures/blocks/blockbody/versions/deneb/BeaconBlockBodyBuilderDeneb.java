@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 
 import org.apache.commons.lang3.tuple.Pair;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -61,11 +60,9 @@ public class BeaconBlockBodyBuilderDeneb extends BeaconBlockBodyBuilderCapella {
   @Override
   protected void validateSchema() {
     if (isBlinded()) {
-      checkState(
-          blindedSchema != null, "blindedSchema must be set blinded body has been requested");
+      checkNotNull(blindedSchema, "blindedSchema must be set when blinded body has been requested");
     } else {
-      checkState(
-          schema != null, "schema must be set if non blinded body has been requested");
+      checkNotNull(schema, "schema must be set if when non blinded body has been requested");
     }
   }
 

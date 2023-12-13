@@ -14,7 +14,6 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -64,11 +63,9 @@ public class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatr
   @Override
   protected void validateSchema() {
     if (isBlinded()) {
-      checkState(
-              blindedSchema != null, "blindedSchema must be set blinded body has been requested");
+      checkNotNull(blindedSchema, "blindedSchema must be set when blinded body has been requested");
     } else {
-      checkState(
-              schema != null, "schema must be set if non blinded body has been requested");
+      checkNotNull(schema, "schema must be set if when non blinded body has been requested");
     }
   }
 

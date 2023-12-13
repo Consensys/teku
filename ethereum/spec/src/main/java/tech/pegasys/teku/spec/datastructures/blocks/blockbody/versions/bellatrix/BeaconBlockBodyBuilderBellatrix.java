@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import java.util.Optional;
@@ -71,11 +72,9 @@ public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltai
   @Override
   protected void validateSchema() {
     if (isBlinded()) {
-      checkState(
-              blindedSchema != null, "blindedSchema must be set blinded body has been requested");
+      checkNotNull(blindedSchema, "blindedSchema must be set when blinded body has been requested");
     } else {
-      checkState(
-              schema != null, "schema must be set if non blinded body has been requested");
+      checkNotNull(schema, "schema must be set if when non blinded body has been requested");
     }
   }
 
