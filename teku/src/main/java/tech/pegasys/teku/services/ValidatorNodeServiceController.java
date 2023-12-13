@@ -16,14 +16,24 @@ package tech.pegasys.teku.services;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
-import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionShutDown;
+import tech.pegasys.teku.validator.client.slashingriskactions.DoppelgangerDetectionShutDown;
+import tech.pegasys.teku.validator.client.slashingriskactions.SlashedValidatorAlert;
+import tech.pegasys.teku.validator.client.slashingriskactions.SlashedValidatorShutDown;
+import tech.pegasys.teku.validator.client.slashingriskactions.SlashingRiskDetectionAction;
 
 public class ValidatorNodeServiceController extends ServiceController {
 
   public ValidatorNodeServiceController(
       final TekuConfiguration tekuConfig, final ServiceConfig serviceConfig) {
+    final SlashingRiskDetectionAction validatorSlashedAction =
+        tekuConfig.validatorClient().getValidatorConfig().isStopWhenValidatorSlashedEnabled()
+            ? new SlashedValidatorShutDown()
+            : new SlashedValidatorAlert();
     this.services.add(
         ValidatorClientService.create(
-            serviceConfig, tekuConfig.validatorClient(), new DoppelgangerDetectionShutDown()));
+            serviceConfig,
+            tekuConfig.validatorClient(),
+            new DoppelgangerDetectionShutDown(),
+            validatorSlashedAction));
   }
 }

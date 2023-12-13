@@ -24,11 +24,11 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.validator.client.KeyManager;
-import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
 import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.restapi.ValidatorTypes;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostRemoteKeysRequest;
+import tech.pegasys.teku.validator.client.slashingriskactions.SlashingRiskDetectionAction;
 
 public class PostRemoteKeys extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/remotekeys";
@@ -37,12 +37,12 @@ public class PostRemoteKeys extends RestApiEndpoint {
   private final KeyManager keyManager;
 
   private final Optional<DoppelgangerDetector> maybeDoppelgangerDetector;
-  private final DoppelgangerDetectionAction doppelgangerDetectionAction;
+  private final SlashingRiskDetectionAction doppelgangerDetectionAction;
 
   public PostRemoteKeys(
       final KeyManager keyManager,
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
-      final DoppelgangerDetectionAction doppelgangerDetectionAction) {
+      final SlashingRiskDetectionAction doppelgangerDetectionAction) {
     super(
         EndpointMetadata.post(ROUTE)
             .operationId("ImportRemoteKeys")

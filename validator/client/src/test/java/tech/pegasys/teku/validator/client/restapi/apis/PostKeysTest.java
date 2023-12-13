@@ -30,14 +30,14 @@ import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.validator.client.OwnedKeyManager;
-import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeysRequest;
+import tech.pegasys.teku.validator.client.slashingriskactions.SlashingRiskDetectionAction;
 
 public class PostKeysTest {
   private final OwnedKeyManager keyManager = mock(OwnedKeyManager.class);
   private final RestApiRequest request = mock(RestApiRequest.class);
-  private final DoppelgangerDetectionAction doppelgangerDetectionAction =
-      mock(DoppelgangerDetectionAction.class);
+  private final SlashingRiskDetectionAction doppelgangerDetectionAction =
+      mock(SlashingRiskDetectionAction.class);
 
   @Test
   void shouldRespondBadRequestIfPasswordsAndKeystoresMisMatch(@TempDir final Path tempDir)

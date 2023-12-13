@@ -14,8 +14,13 @@
 package tech.pegasys.teku.validator.client;
 
 import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -23,22 +28,25 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
+import tech.pegasys.teku.validator.client.slashingriskactions.SlashingRiskDetectionAction;
 
 public class ValidatorTimingActions implements ValidatorTimingChannel {
   private final ValidatorIndexProvider validatorIndexProvider;
   private final Collection<ValidatorTimingChannel> delegates;
   private final Spec spec;
-
   private final SettableGauge validatorCurrentEpoch;
+  private final SlashingRiskDetectionAction validatorSlashedAction;
 
   public ValidatorTimingActions(
       final ValidatorIndexProvider validatorIndexProvider,
       final Collection<ValidatorTimingChannel> delegates,
       final Spec spec,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      SlashingRiskDetectionAction validatorSlashedAction) {
     this.validatorIndexProvider = validatorIndexProvider;
     this.delegates = delegates;
     this.spec = spec;
+    this.validatorSlashedAction = validatorSlashedAction;
 
     this.validatorCurrentEpoch =
         SettableGauge.create(
@@ -97,8 +105,24 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
   }
 
   @Override
-  public void onAttesterSlashing(final AttesterSlashing attesterSlashing) {}
+  public void onAttesterSlashing(final AttesterSlashing attesterSlashing) {
+    delegates.forEach(delegates -> delegates.onAttesterSlashing(attesterSlashing));
+    final Set<UInt64> slashedIndices = attesterSlashing.getIntersectingValidatorIndices();
+    final List<BLSPublicKey> slashedPublicKeys =
+        slashedIndices.stream()
+            .map(slashedIndex -> validatorIndexProvider.getPublicKey(slashedIndex.intValue()))
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .collect(Collectors.toList());
+    validatorSlashedAction.perform(slashedPublicKeys);
+  }
 
   @Override
-  public void onProposerSlashing(final ProposerSlashing proposerSlashing) {}
+  public void onProposerSlashing(final ProposerSlashing proposerSlashing) {
+    delegates.forEach(delegates -> delegates.onProposerSlashing(proposerSlashing));
+    final UInt64 slashedIndex = proposerSlashing.getHeader1().getMessage().getProposerIndex();
+    validatorIndexProvider
+        .getPublicKey(slashedIndex.intValue())
+        .ifPresent(validatorSlashedAction::perform);
+  }
 }

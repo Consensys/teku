@@ -23,7 +23,10 @@ import tech.pegasys.teku.services.chainstorage.StorageService;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerService;
 import tech.pegasys.teku.services.powchain.PowchainService;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
-import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionShutDown;
+import tech.pegasys.teku.validator.client.slashingriskactions.DoppelgangerDetectionShutDown;
+import tech.pegasys.teku.validator.client.slashingriskactions.SlashedValidatorAlert;
+import tech.pegasys.teku.validator.client.slashingriskactions.SlashedValidatorShutDown;
+import tech.pegasys.teku.validator.client.slashingriskactions.SlashingRiskDetectionAction;
 
 public class BeaconNodeServiceController extends ServiceController {
 
@@ -52,9 +55,16 @@ public class BeaconNodeServiceController extends ServiceController {
             tekuConfig.discovery().isDiscoveryEnabled()));
     powchainService(tekuConfig, serviceConfig, maybeExecutionWeb3jClientProvider)
         .ifPresent(services::add);
+    final SlashingRiskDetectionAction validatorSlashedAction =
+        tekuConfig.validatorClient().getValidatorConfig().isStopWhenValidatorSlashedEnabled()
+            ? new SlashedValidatorShutDown()
+            : new SlashedValidatorAlert();
     services.add(
         ValidatorClientService.create(
-            serviceConfig, tekuConfig.validatorClient(), new DoppelgangerDetectionShutDown()));
+            serviceConfig,
+            tekuConfig.validatorClient(),
+            new DoppelgangerDetectionShutDown(),
+            validatorSlashedAction));
   }
 
   private Optional<PowchainService> powchainService(
