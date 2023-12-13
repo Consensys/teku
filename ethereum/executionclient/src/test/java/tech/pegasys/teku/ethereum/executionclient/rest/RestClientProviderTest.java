@@ -39,6 +39,7 @@ class RestClientProviderTest {
             TIMEOUT,
             false,
             Optional.empty(),
+            Optional.empty(),
             tempDir,
             STUB_TIME_PROVIDER);
 
@@ -55,6 +56,7 @@ class RestClientProviderTest {
             "http://127.0.0.1:28545",
             TIMEOUT,
             false,
+            Optional.empty(),
             Optional.empty(),
             tempDir,
             STUB_TIME_PROVIDER);
