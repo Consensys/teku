@@ -18,12 +18,12 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.data.SlashingProtectionImporter;
-import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
 import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteRemoteKeysResponse;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
+import tech.pegasys.teku.validator.client.slashingriskactions.SlashingRiskDetectionAction;
 
 public interface KeyManager {
   List<Validator> getLocalValidatorKeys();
@@ -42,10 +42,10 @@ public interface KeyManager {
       final List<String> passwords,
       final Optional<SlashingProtectionImporter> slashingProtectionImporter,
       final Optional<DoppelgangerDetector> doppelgangerDetector,
-      final DoppelgangerDetectionAction doppelgangerDetectionAction);
+      final SlashingRiskDetectionAction doppelgangerDetectionAction);
 
   List<PostKeyResult> importExternalValidators(
       final List<ExternalValidator> validators,
       final Optional<DoppelgangerDetector> doppelgangerDetector,
-      final DoppelgangerDetectionAction doppelgangerDetectionAction);
+      final SlashingRiskDetectionAction doppelgangerDetectionAction);
 }

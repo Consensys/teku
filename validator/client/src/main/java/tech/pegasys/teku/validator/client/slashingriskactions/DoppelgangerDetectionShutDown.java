@@ -11,12 +11,24 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.doppelganger;
+package tech.pegasys.teku.validator.client.slashingriskactions;
+
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.bls.BLSPublicKey;
 
-public interface DoppelgangerDetectionAction {
+public class DoppelgangerDetectionShutDown implements SlashingRiskDetectionAction {
 
-  void perform(final List<BLSPublicKey> doppelgangers);
+  @Override
+  public void perform(final List<BLSPublicKey> pubKeys) {
+    if (!pubKeys.isEmpty()) {
+      STATUS_LOG.exitOnDoppelgangerDetected(
+          pubKeys.stream()
+              .map(BLSPublicKey::toAbbreviatedString)
+              .collect(Collectors.joining(", ")));
+      System.exit(1);
+    }
+  }
 }

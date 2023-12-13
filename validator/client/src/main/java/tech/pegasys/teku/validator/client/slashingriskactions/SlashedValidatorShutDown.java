@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,21 +11,27 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.doppelganger;
-
-import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+package tech.pegasys.teku.validator.client.slashingriskactions;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSPublicKey;
 
-public class DoppelgangerDetectionShutDown implements DoppelgangerDetectionAction {
+public class SlashedValidatorShutDown implements SlashingRiskDetectionAction {
+
+  private static final Logger LOG = LogManager.getLogger();
+
   @Override
-  public void perform(final List<BLSPublicKey> doppelgangers) {
-    STATUS_LOG.exitOnDoppelgangerDetected(
-        doppelgangers.stream()
-            .map(BLSPublicKey::toAbbreviatedString)
-            .collect(Collectors.joining(", ")));
-    System.exit(1);
+  public void perform(List<BLSPublicKey> pubKeys) {
+    if (!pubKeys.isEmpty()) {
+      LOG.info(
+          "Validator(s) with public key(s) {} have been slashed. Shutting down...",
+          pubKeys.stream()
+              .map(BLSPublicKey::toAbbreviatedString)
+              .collect(Collectors.joining(", ")));
+      System.exit(1);
+    }
   }
 }

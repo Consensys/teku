@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_VALIDATOR_EXECUTOR_THREADS;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_DOPPELGANGER_DETECTION_ENABLED;
+import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_STOP_WHEN_VALIDATOR_SLASHED_ENABLED;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED;
 
 import java.nio.file.Path;
@@ -152,6 +153,15 @@ public class ValidatorOptions {
   private boolean isLocalSlashingProtectionSynchronizedEnabled =
       DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED;
 
+  @Option(
+      names = {"--Xstop-vc-when-validator-slashed"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable stopping the Vc when a validator is slashed",
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean stopWhenValidatorSlashedEnabled = DEFAULT_STOP_WHEN_VALIDATOR_SLASHED_ENABLED;
+
   public void configure(TekuConfiguration.Builder builder) {
     builder.validator(
         config ->
@@ -170,7 +180,8 @@ public class ValidatorOptions {
                 .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled)
                 .executorThreads(executorThreads)
                 .blockV3enabled(blockV3Enabled)
-                .exitWhenNoValidatorKeysEnabled(exitWhenNoValidatorKeysEnabled));
+                .exitWhenNoValidatorKeysEnabled(exitWhenNoValidatorKeysEnabled)
+                .stopWhenValidatorSlashedEnabled(stopWhenValidatorSlashedEnabled));
     validatorProposerOptions.configure(builder);
     validatorKeysOptions.configure(builder);
   }

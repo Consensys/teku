@@ -33,7 +33,6 @@ import tech.pegasys.teku.data.SlashingProtectionIncrementalExporter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
-import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
 import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
@@ -43,6 +42,7 @@ import tech.pegasys.teku.validator.client.restapi.apis.schema.DeletionStatus;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ImportStatus;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
+import tech.pegasys.teku.validator.client.slashingriskactions.SlashingRiskDetectionAction;
 
 public class OwnedKeyManager implements KeyManager {
   private static final String EXPORT_FAILED =
@@ -227,7 +227,7 @@ public class OwnedKeyManager implements KeyManager {
       final List<String> passwords,
       final Optional<SlashingProtectionImporter> slashingProtectionImporter,
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
-      final DoppelgangerDetectionAction doppelgangerDetectionAction) {
+      final SlashingRiskDetectionAction doppelgangerDetectionAction) {
     final List<LocalValidatorImportResult> importResults = new ArrayList<>();
     boolean reloadRequired;
 
@@ -262,7 +262,7 @@ public class OwnedKeyManager implements KeyManager {
   }
 
   private void handleValidatorsDoppelgangers(
-      final DoppelgangerDetectionAction doppelgangerDetectionAction,
+      final SlashingRiskDetectionAction doppelgangerDetectionAction,
       final List<LocalValidatorImportResult> importResults,
       final Map<UInt64, BLSPublicKey> doppelgangers) {
     final List<BLSPublicKey> doppelgangerList = new ArrayList<>(doppelgangers.values());
@@ -382,7 +382,7 @@ public class OwnedKeyManager implements KeyManager {
   public List<PostKeyResult> importExternalValidators(
       final List<ExternalValidator> validators,
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
-      final DoppelgangerDetectionAction doppelgangerDetectionAction) {
+      final SlashingRiskDetectionAction doppelgangerDetectionAction) {
     final List<ExternalValidatorImportResult> importResults = new ArrayList<>();
     boolean reloadRequired = false;
 
@@ -448,7 +448,7 @@ public class OwnedKeyManager implements KeyManager {
   }
 
   private void handleExternalValidatorDoppelgangers(
-      final DoppelgangerDetectionAction doppelgangerDetectionAction,
+      final SlashingRiskDetectionAction doppelgangerDetectionAction,
       final List<ExternalValidatorImportResult> importResults,
       final Map<UInt64, BLSPublicKey> doppelgangers) {
     final List<BLSPublicKey> doppelgangerList = new ArrayList<>(doppelgangers.values());
