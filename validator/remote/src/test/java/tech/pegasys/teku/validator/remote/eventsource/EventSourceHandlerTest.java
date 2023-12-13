@@ -25,11 +25,16 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
@@ -72,6 +77,42 @@ class EventSourceHandlerTest {
         .onHeadUpdate(
             eq(slot), eq(previousDutyDependentRoot), eq(currentDutyDependentRoot), eq(blockRoot));
     verify(validatorTimingChannel).onAttestationCreationDue(slot);
+    verifyNoMoreInteractions(validatorTimingChannel);
+  }
+
+  @Test
+  void onMessage_shouldHandleAttesterSlashingEvent() throws Exception {
+    final IndexedAttestation indexedAttestation1 = dataStructureUtil.randomIndexedAttestation();
+    final IndexedAttestation indexedAttestation2 = dataStructureUtil.randomIndexedAttestation();
+    final AttesterSlashing.AttesterSlashingSchema attesterSlashingSchema =
+        spec.getGenesisSchemaDefinitions().getAttesterSlashingSchema();
+    final AttesterSlashing attesterSlashing =
+        attesterSlashingSchema.create(indexedAttestation1, indexedAttestation2);
+
+    handler.onMessage(
+        EventType.attester_slashing.name(),
+        new MessageEvent(
+            JsonUtil.serialize(attesterSlashing, attesterSlashingSchema.getJsonTypeDefinition())));
+
+    verify(validatorTimingChannel).onAttesterSlashing(eq(attesterSlashing));
+    verifyNoMoreInteractions(validatorTimingChannel);
+  }
+
+  @Test
+  void onMessage_shouldHandleProposerSlashingEvent() throws Exception {
+    final SignedBeaconBlockHeader blockHeader1 = dataStructureUtil.randomSignedBeaconBlockHeader();
+    final SignedBeaconBlockHeader blockHeader2 = dataStructureUtil.randomSignedBeaconBlockHeader();
+
+    final ProposerSlashing proposerSlashing = new ProposerSlashing(blockHeader1, blockHeader2);
+
+    handler.onMessage(
+        EventType.proposer_slashing.name(),
+        new MessageEvent(
+            JsonUtil.serialize(
+                proposerSlashing,
+                new ProposerSlashing.ProposerSlashingSchema().getJsonTypeDefinition())));
+
+    verify(validatorTimingChannel).onProposerSlashing(eq(proposerSlashing));
     verifyNoMoreInteractions(validatorTimingChannel);
   }
 
