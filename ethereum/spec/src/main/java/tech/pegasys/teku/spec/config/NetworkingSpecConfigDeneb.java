@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.config;
 /**
  * Networking constants
  *
- * <p>These constants are unified among forks and are not overriden, new constant name is used if
+ * <p>These constants are unified among forks and are not overridden, new constant name is used if
  * it's changed in the new fork
  */
 public interface NetworkingSpecConfigDeneb extends NetworkingSpecConfig {

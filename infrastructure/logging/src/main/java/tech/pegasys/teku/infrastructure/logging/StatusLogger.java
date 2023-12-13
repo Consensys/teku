@@ -72,10 +72,10 @@ public class StatusLogger {
 
   public void warnDenebEpochsStoreBlobsParameterSet(
       final String epochsStoreBlobs,
-      final boolean isOverriden,
+      final boolean isOverridden,
       final String specValue,
       final Integer maxEpochsStoreBlobs) {
-    if (isOverriden) {
+    if (isOverridden) {
       final boolean isMax = String.valueOf(maxEpochsStoreBlobs).equals(epochsStoreBlobs);
       log.warn(
           print(

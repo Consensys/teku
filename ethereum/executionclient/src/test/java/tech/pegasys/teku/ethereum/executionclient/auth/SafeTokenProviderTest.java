@@ -34,7 +34,8 @@ class SafeTokenProviderTest {
   @BeforeEach
   void setUp() {
     jwtSecretKey = JwtTestHelper.generateJwtSecret();
-    safeTokenProvider = new SafeTokenProvider(new TokenProvider(new JwtConfig(jwtSecretKey)));
+    safeTokenProvider =
+        new SafeTokenProvider(new TokenProvider(new JwtConfig(jwtSecretKey, Optional.empty())));
   }
 
   @Test
@@ -66,6 +67,27 @@ class SafeTokenProviderTest {
     validateJwtTokenAtInstant(jwtSecretKey, updatedToken, timeInMillis);
 
     Assertions.assertThat(originalToken).isEqualTo(updatedToken);
+  }
+
+  @Test
+  void testGetToken_addsIdToClaimsWhenConfigured() {
+    final String claimId = "foobar";
+
+    safeTokenProvider =
+        new SafeTokenProvider(new TokenProvider(new JwtConfig(jwtSecretKey, Optional.of(claimId))));
+
+    final UInt64 timeInMillis = UInt64.valueOf(System.currentTimeMillis());
+    final Optional<Token> token = safeTokenProvider.token(timeInMillis);
+    assertThat(token).isPresent();
+
+    final Claims claims =
+        Jwts.parser()
+            .verifyWith(jwtSecretKey)
+            .build()
+            .parseSignedClaims(token.get().getJwtToken())
+            .getPayload();
+
+    assertThat(claims.get("id")).isEqualTo(claimId);
   }
 
   public static void validateTokenAtInstant(
