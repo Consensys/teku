@@ -99,8 +99,7 @@ public class GetPeers extends RestApiEndpoint {
         .withOptionalField(
             "enr",
             string(
-                "Ethereum node record. Not currently populated. "
-                    + "[Read more](https://eips.ethereum.org/EIPS/eip-778)",
+                "Ethereum node record. " + "[Read more](https://eips.ethereum.org/EIPS/eip-778)",
                 "enr:-IS4QHCYrYZbAKWCBRlAy5zzaDZXJBGkcnh4MHcBFZntXNFrdvJjX04jRzjzCBOonrk"
                     + "Tfj499SZuOh8R33Ls8RRcy5wBgmlkgnY0gmlwhH8AAAGJc2VjcDI1NmsxoQPKY0yuDUmstAHYp"
                     + "Ma2_oxVtw0RW_QAdpzBQA8yWM0xOIN1ZHCCdl8"),
