@@ -246,11 +246,29 @@ public class EventSubscriptionManagerTest {
   }
 
   @Test
+  void shouldNotGetAttesterSlashingIfNotSubscribed() {
+    when(req.getQueryString()).thenReturn("&topics=head");
+    manager.registerClient(client1);
+
+    triggerAttesterSlashingEvent();
+    assertThat(outputStream.countEvents()).isEqualTo(0);
+  }
+
+  @Test
   void shouldPropagateProposerSlashing() throws IOException {
     when(req.getQueryString()).thenReturn("&topics=proposer_slashing");
     manager.registerClient(client1);
     triggerProposerSlashingEvent();
     checkEvent("proposer_slashing", new ProposerSlashingEvent(sampleProposerSlashing));
+  }
+
+  @Test
+  void shouldNotGetProposerSlashingIfNotSubscribed() {
+    when(req.getQueryString()).thenReturn("&topics=head");
+    manager.registerClient(client1);
+
+    triggerProposerSlashingEvent();
+    assertThat(outputStream.countEvents()).isEqualTo(0);
   }
 
   @Test
