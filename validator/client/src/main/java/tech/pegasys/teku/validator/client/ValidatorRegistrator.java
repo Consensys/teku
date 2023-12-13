@@ -123,14 +123,10 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   public void onAttestationAggregationDue(final UInt64 slot) {}
 
   @Override
-  public void onAttesterSlashing(final AttesterSlashing attesterSlashing) {
-    // TODO remove validator
-  }
+  public void onAttesterSlashing(final AttesterSlashing attesterSlashing) {}
 
   @Override
-  public void onProposerSlashing(final ProposerSlashing proposerSlashing) {
-    // TODO remove validator
-  }
+  public void onProposerSlashing(final ProposerSlashing proposerSlashing) {}
 
   public void onUpdatedValidatorStatuses(
       final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
