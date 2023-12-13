@@ -20,6 +20,8 @@ import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
+import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
+import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
@@ -54,6 +56,8 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
         storeConfig,
         timeProvider,
         BlockProvider.NOOP,
+        SingleBlockProvider.NOOP,
+        SingleBlobSidecarProvider.NOOP,
         StateAndBlockSummaryProvider.NOOP,
         EarliestBlobSidecarSlotProvider.NOOP,
         storageUpdateChannel,

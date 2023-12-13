@@ -17,6 +17,8 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
 import tech.pegasys.teku.beacon.pow.api.TrackingEth1EventsChannel;
+import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
+import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
@@ -105,6 +107,8 @@ public class StorageSystem implements AutoCloseable {
             metricsSystem,
             storeConfig,
             timeProvider,
+            SingleBlockProvider.NOOP,
+            SingleBlobSidecarProvider.NOOP,
             chainStorageServer,
             chainStorageServer,
             chainStorageServer,
