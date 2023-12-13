@@ -130,10 +130,12 @@ public interface ReadOnlyStore extends TimeProvider {
       Checkpoint checkpoint, BeaconState latestStateAtEpoch);
 
   // implements is_head_weak from fork-choice Consensus Spec
-  boolean isHeadWeak(BeaconState justifiedState, Bytes32 root);
+  boolean isHeadWeak(Bytes32 root);
 
   // implements is_parent_strong from fork-choice Consensus Spec
-  boolean isParentStrong(BeaconState justifiedState, Bytes32 parentRoot);
+  boolean isParentStrong(Bytes32 parentRoot);
+
+  void computeBalanceThresholds(final BeaconState justifiedState);
 
   // implements is_ffg_competitive from Consensus Spec
   Optional<Boolean> isFfgCompetitive(final Bytes32 headRoot, final Bytes32 parentRoot);

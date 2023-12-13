@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
@@ -646,6 +645,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   // implements get_proposer_head from Consensus Spec
   public Bytes32 getProposerHead(final Bytes32 headRoot, final UInt64 slot) {
+    LOG.debug("start getProposerHead");
     // if proposer boost is still active, don't attempt to override head
     final boolean isProposerBoostActive =
         store.getProposerBoostRoot().map(root -> !root.equals(headRoot)).orElse(false);
@@ -654,6 +654,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         spec.atSlot(slot).getForkChoiceUtil().isFinalizationOk(store, slot);
     final boolean isProposingOnTime = isProposingOnTime(slot);
     final boolean isHeadLate = isBlockLate(headRoot);
+    LOG.debug("before getBlock");
     final Optional<SignedBeaconBlock> maybeHead = store.getBlockIfAvailable(headRoot);
 
     // to return parent root, we need all of (isHeadLate, isShufflingStable, isFfgCompetitive,
@@ -700,28 +701,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       return headRoot;
     }
 
-    final SafeFuture<Optional<BeaconState>> future =
-        store.retrieveCheckpointState(store.getJustifiedCheckpoint());
-    try {
-      final Optional<BeaconState> maybeJustifiedState = future.join();
-      // to make further checks, we would need the justified state, return headRoot if we don't have
-      // it.
-      if (maybeJustifiedState.isEmpty()) {
-        LOG.debug("getProposerHead - return headRoot - maybeJustifiedState.isEmpty true");
-        return headRoot;
-      }
-      final boolean isHeadWeak = store.isHeadWeak(maybeJustifiedState.get(), headRoot);
-      final boolean isParentStrong =
-          store.isParentStrong(maybeJustifiedState.get(), head.getParentRoot());
-      // finally, the parent must be strong, and the current head must be weak.
-      if (isHeadWeak && isParentStrong) {
-        LOG.debug("getProposerHead - return parentRoot - isHeadWeak true && isParentStrong true");
-        return head.getParentRoot();
-      }
-    } catch (Exception exception) {
-      if (!(exception instanceof CancellationException)) {
-        LOG.error("Failed to get justified checkpoint", exception);
-      }
+    final boolean isHeadWeak = store.isHeadWeak(headRoot);
+    final boolean isParentStrong = store.isParentStrong(head.getParentRoot());
+    // finally, the parent must be strong, and the current head must be weak.
+    if (isHeadWeak && isParentStrong) {
+      LOG.debug("getProposerHead - return parentRoot - isHeadWeak true && isParentStrong true");
+      return head.getParentRoot();
     }
 
     LOG.debug("getProposerHead - return headRoot");
@@ -777,22 +762,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     final boolean isHeadWeak;
     final boolean isParentStrong;
     if (currentSlot.isGreaterThan(head.getSlot())) {
-      try {
-        final SafeFuture<Optional<BeaconState>> future =
-            store.retrieveCheckpointState(store.getJustifiedCheckpoint());
-        final Optional<BeaconState> maybeJustifiedState = future.join();
-        isHeadWeak =
-            maybeJustifiedState.map(state -> store.isHeadWeak(state, headRoot)).orElse(true);
-        isParentStrong =
-            maybeJustifiedState
-                .map(beaconState -> store.isParentStrong(beaconState, head.getParentRoot()))
-                .orElse(true);
-      } catch (Exception exception) {
-        if (!(exception instanceof CancellationException)) {
-          LOG.error("Failed to get justified checkpoint", exception);
-        }
-        return false;
-      }
+      isHeadWeak = store.isHeadWeak(headRoot);
+      isParentStrong = store.isParentStrong(head.getParentRoot());
     } else {
       isHeadWeak = true;
       isParentStrong = true;
@@ -809,9 +780,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     }
 
     // Only suppress the fork choice update if we are confident that we will propose the next block.
+    LOG.debug("Need parent state");
     final Optional<BeaconState> maybeParentState =
         store.getBlockStateIfAvailable(head.getParentRoot());
     if (maybeParentState.isEmpty()) {
+      LOG.debug("shouldOverrideForkChoice could not retrieve parent state from cache");
       return false;
     }
     try {

@@ -100,7 +100,8 @@ class StoreTest extends AbstractStoreTest {
     processChainHeadWithMockForkChoiceStrategy(
         (store, blockAndState) -> {
           final Bytes32 root = blockAndState.getRoot();
-          assertThat(store.isHeadWeak(justifiedState(store), root)).isFalse();
+          store.computeBalanceThresholds(justifiedState(store));
+          assertThat(store.isHeadWeak(root)).isFalse();
         });
   }
 
@@ -110,8 +111,8 @@ class StoreTest extends AbstractStoreTest {
         (store, blockAndState) -> {
           final Bytes32 root = blockAndState.getRoot();
           setProtoNodeDataForBlock(blockAndState, UInt64.valueOf("2400000001"), UInt64.MAX_VALUE);
-
-          assertThat(store.isHeadWeak(justifiedState(store), root)).isFalse();
+          store.computeBalanceThresholds(justifiedState(store));
+          assertThat(store.isHeadWeak(root)).isFalse();
         });
   }
 
@@ -121,8 +122,8 @@ class StoreTest extends AbstractStoreTest {
         (store, blockAndState) -> {
           final Bytes32 root = blockAndState.getRoot();
           setProtoNodeDataForBlock(blockAndState, UInt64.valueOf("2399999999"), UInt64.MAX_VALUE);
-
-          assertThat(store.isHeadWeak(justifiedState(store), root)).isTrue();
+          store.computeBalanceThresholds(justifiedState(store));
+          assertThat(store.isHeadWeak(root)).isTrue();
         });
   }
 
@@ -132,8 +133,8 @@ class StoreTest extends AbstractStoreTest {
         (store, blockAndState) -> {
           final Bytes32 root = blockAndState.getRoot();
           setProtoNodeDataForBlock(blockAndState, UInt64.valueOf("1000000000"), UInt64.MAX_VALUE);
-
-          assertThat(store.isHeadWeak(justifiedState(store), root)).isTrue();
+          store.computeBalanceThresholds(justifiedState(store));
+          assertThat(store.isHeadWeak(root)).isTrue();
         });
   }
 
@@ -142,7 +143,8 @@ class StoreTest extends AbstractStoreTest {
     processChainHeadWithMockForkChoiceStrategy(
         (store, blockAndState) -> {
           final Bytes32 root = blockAndState.getBlock().getParentRoot();
-          assertThat(store.isParentStrong(justifiedState(store), root)).isFalse();
+          store.computeBalanceThresholds(justifiedState(store));
+          assertThat(store.isParentStrong(root)).isFalse();
         });
   }
 
@@ -152,7 +154,8 @@ class StoreTest extends AbstractStoreTest {
         (store, blockAndState) -> {
           final Bytes32 root = blockAndState.getBlock().getParentRoot();
           setProtoNodeDataForBlock(blockAndState, UInt64.ZERO, UInt64.valueOf("19200000001"));
-          assertThat(store.isParentStrong(justifiedState(store), root)).isTrue();
+          store.computeBalanceThresholds(justifiedState(store));
+          assertThat(store.isParentStrong(root)).isTrue();
         });
   }
 
@@ -162,7 +165,8 @@ class StoreTest extends AbstractStoreTest {
         (store, blockAndState) -> {
           final Bytes32 root = blockAndState.getBlock().getParentRoot();
           setProtoNodeDataForBlock(blockAndState, UInt64.ZERO, UInt64.valueOf("19200000000"));
-          assertThat(store.isParentStrong(justifiedState(store), root)).isFalse();
+          store.computeBalanceThresholds(justifiedState(store));
+          assertThat(store.isParentStrong(root)).isFalse();
         });
   }
 
@@ -172,7 +176,8 @@ class StoreTest extends AbstractStoreTest {
         (store, blockAndState) -> {
           final Bytes32 root = blockAndState.getBlock().getParentRoot();
           setProtoNodeDataForBlock(blockAndState, UInt64.ZERO, UInt64.ZERO);
-          assertThat(store.isParentStrong(justifiedState(store), root)).isFalse();
+          store.computeBalanceThresholds(justifiedState(store));
+          assertThat(store.isParentStrong(root)).isFalse();
         });
   }
 

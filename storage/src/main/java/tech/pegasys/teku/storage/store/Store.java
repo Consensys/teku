@@ -115,6 +115,9 @@ class Store extends CacheableStore {
   private VoteTracker[] votes;
   private UInt64 highestVotedValidatorIndex;
 
+  private UInt64 reorgThreshold = UInt64.ZERO;
+  private UInt64 parentThreshold = UInt64.ZERO;
+
   private Store(
       final MetricsSystem metricsSystem,
       final Spec spec,
@@ -549,18 +552,12 @@ class Store extends CacheableStore {
   }
 
   @Override
-  public boolean isHeadWeak(final BeaconState justifiedState, final Bytes32 root) {
+  public boolean isHeadWeak(final Bytes32 root) {
     final Optional<ProtoNodeData> maybeBlockData = getBlockDataFromForkChoiceStrategy(root);
     return maybeBlockData
         .map(
             blockData -> {
               final UInt64 headWeight = blockData.getWeight();
-
-              final SpecVersion specVersion = spec.atSlot(justifiedState.getSlot());
-              final BeaconStateAccessors beaconStateAccessors = specVersion.beaconStateAccessors();
-              final UInt64 reorgThreshold =
-                  beaconStateAccessors.calculateCommitteeFraction(
-                      justifiedState, specVersion.getConfig().getReorgHeadWeightThreshold());
               final boolean result = headWeight.isLessThan(reorgThreshold);
 
               LOG.trace(
@@ -575,18 +572,24 @@ class Store extends CacheableStore {
   }
 
   @Override
-  public boolean isParentStrong(final BeaconState justifiedState, final Bytes32 parentRoot) {
+  public void computeBalanceThresholds(final BeaconState justifiedState) {
+    final SpecVersion specVersion = spec.atSlot(justifiedState.getSlot());
+    final BeaconStateAccessors beaconStateAccessors = specVersion.beaconStateAccessors();
+    reorgThreshold =
+        beaconStateAccessors.calculateCommitteeFraction(
+            justifiedState, specVersion.getConfig().getReorgHeadWeightThreshold());
+    parentThreshold =
+        beaconStateAccessors.calculateCommitteeFraction(
+            justifiedState, specVersion.getConfig().getReorgParentWeightThreshold());
+  }
+
+  @Override
+  public boolean isParentStrong(final Bytes32 parentRoot) {
     final Optional<ProtoNodeData> maybeBlockData = getBlockDataFromForkChoiceStrategy(parentRoot);
     return maybeBlockData
         .map(
             blockData -> {
               final UInt64 parentWeight = blockData.getWeight();
-
-              final SpecVersion specVersion = spec.atSlot(justifiedState.getSlot());
-              final BeaconStateAccessors beaconStateAccessors = specVersion.beaconStateAccessors();
-              final UInt64 parentThreshold =
-                  beaconStateAccessors.calculateCommitteeFraction(
-                      justifiedState, specVersion.getConfig().getReorgParentWeightThreshold());
               final boolean result = parentWeight.isGreaterThan(parentThreshold);
 
               LOG.debug(

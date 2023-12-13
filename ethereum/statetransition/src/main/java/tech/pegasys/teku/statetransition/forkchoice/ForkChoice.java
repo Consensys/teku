@@ -376,11 +376,12 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final BeaconState justifiedState,
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint) {
-    final VoteUpdater transaction = recentChainData.startVoteUpdate();
+    recentChainData.getStore().computeBalanceThresholds(justifiedState);
     final ReadOnlyForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
     final List<UInt64> justifiedEffectiveBalances =
         spec.getBeaconStateUtil(justifiedState.getSlot())
             .getEffectiveActiveUnslashedBalances(justifiedState);
+    final VoteUpdater transaction = recentChainData.startVoteUpdate();
 
     final Bytes32 headBlockRoot =
         transaction.applyForkChoiceScoreChanges(
