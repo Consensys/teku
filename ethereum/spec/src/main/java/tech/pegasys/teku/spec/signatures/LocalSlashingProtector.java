@@ -15,9 +15,12 @@ package tech.pegasys.teku.spec.signatures;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.signingrecord.ValidatorSigningRecord;
@@ -27,19 +30,66 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class LocalSlashingProtector implements SlashingProtector {
 
-  private final Map<BLSPublicKey, ValidatorSigningRecord> signingRecords = new HashMap<>();
-  private final Map<BLSPublicKey, Path> slashingProtectionPath = new HashMap<>();
+  private static final Logger LOG = LogManager.getLogger();
+
+  private final Map<BLSPublicKey, ValidatorSigningRecord> signingRecords =
+      new ConcurrentHashMap<>();
+  private final Map<BLSPublicKey, Path> slashingProtectionPath = new ConcurrentHashMap<>();
+  private final Map<BLSPublicKey, ReentrantLock> validatorLocks = new ConcurrentHashMap<>();
+
   private final SyncDataAccessor dataAccessor;
   private final Path slashingProtectionBaseDir;
 
+  private final boolean localSlashingProtectionSynchronizedModeEnabled;
+
   public LocalSlashingProtector(
-      final SyncDataAccessor dataAccessor, final Path slashingProtectionBaseDir) {
+      final SyncDataAccessor dataAccessor,
+      final Path slashingProtectionBaseDir,
+      boolean localSlashingProtectionSynchronizedModeEnabled) {
     this.dataAccessor = dataAccessor;
     this.slashingProtectionBaseDir = slashingProtectionBaseDir;
+    this.localSlashingProtectionSynchronizedModeEnabled = false;
+    //        localSlashingProtectionSynchronizedModeEnabled;
+    if (!localSlashingProtectionSynchronizedModeEnabled) {
+      LOG.info("Local slashing protection running with local locks enabled");
+    }
   }
 
   @Override
-  public synchronized SafeFuture<Boolean> maySignBlock(
+  public SafeFuture<Boolean> maySignBlock(
+      final BLSPublicKey validator, final Bytes32 genesisValidatorsRoot, final UInt64 slot) {
+    return localSlashingProtectionSynchronizedModeEnabled
+        ? maySignBlockSynchronized(validator, genesisValidatorsRoot, slot)
+        : maySignBlockWithLocking(validator, genesisValidatorsRoot, slot);
+  }
+
+  @Override
+  public SafeFuture<Boolean> maySignAttestation(
+      final BLSPublicKey validator,
+      final Bytes32 genesisValidatorsRoot,
+      final UInt64 sourceEpoch,
+      final UInt64 targetEpoch) {
+    return localSlashingProtectionSynchronizedModeEnabled
+        ? maySignAttestationSynchronized(validator, genesisValidatorsRoot, sourceEpoch, targetEpoch)
+        : maySignAttestationWithLocking(validator, genesisValidatorsRoot, sourceEpoch, targetEpoch);
+  }
+
+  private SafeFuture<Boolean> maySignBlockWithLocking(
+      BLSPublicKey validator, Bytes32 genesisValidatorsRoot, UInt64 slot) {
+    return SafeFuture.of(
+        () -> {
+          final ReentrantLock lock = acquireLock(validator);
+          try {
+            final ValidatorSigningRecord signingRecord =
+                loadOrCreateSigningRecord(validator, genesisValidatorsRoot);
+            return handleResult(validator, signingRecord.maySignBlock(genesisValidatorsRoot, slot));
+          } finally {
+            lock.unlock();
+          }
+        });
+  }
+
+  private synchronized SafeFuture<Boolean> maySignBlockSynchronized(
       final BLSPublicKey validator, final Bytes32 genesisValidatorsRoot, final UInt64 slot) {
     return SafeFuture.of(
         () -> {
@@ -49,8 +99,7 @@ public class LocalSlashingProtector implements SlashingProtector {
         });
   }
 
-  @Override
-  public synchronized SafeFuture<Boolean> maySignAttestation(
+  private synchronized SafeFuture<Boolean> maySignAttestationSynchronized(
       final BLSPublicKey validator,
       final Bytes32 genesisValidatorsRoot,
       final UInt64 sourceEpoch,
@@ -62,6 +111,26 @@ public class LocalSlashingProtector implements SlashingProtector {
           return handleResult(
               validator,
               signingRecord.maySignAttestation(genesisValidatorsRoot, sourceEpoch, targetEpoch));
+        });
+  }
+
+  private SafeFuture<Boolean> maySignAttestationWithLocking(
+      final BLSPublicKey validator,
+      final Bytes32 genesisValidatorsRoot,
+      final UInt64 sourceEpoch,
+      final UInt64 targetEpoch) {
+    return SafeFuture.of(
+        () -> {
+          final ReentrantLock lock = acquireLock(validator);
+          try {
+            final ValidatorSigningRecord signingRecord =
+                loadOrCreateSigningRecord(validator, genesisValidatorsRoot);
+            return handleResult(
+                validator,
+                signingRecord.maySignAttestation(genesisValidatorsRoot, sourceEpoch, targetEpoch));
+          } finally {
+            lock.unlock();
+          }
         });
   }
 
@@ -78,11 +147,11 @@ public class LocalSlashingProtector implements SlashingProtector {
   @Override
   public Optional<ValidatorSigningRecord> getSigningRecord(final BLSPublicKey validator)
       throws IOException {
-    ValidatorSigningRecord record = signingRecords.get(validator);
+    final ValidatorSigningRecord record = signingRecords.get(validator);
     if (record != null) {
       return Optional.of(record);
     }
-    Optional<ValidatorSigningRecord> loaded =
+    final Optional<ValidatorSigningRecord> loaded =
         dataAccessor.read(validatorRecordPath(validator)).map(ValidatorSigningRecord::fromBytes);
     loaded.ifPresent(signingRecord -> signingRecords.put(validator, signingRecord));
     return loaded;
@@ -90,13 +159,21 @@ public class LocalSlashingProtector implements SlashingProtector {
 
   private ValidatorSigningRecord loadOrCreateSigningRecord(
       final BLSPublicKey validator, final Bytes32 genesisValidatorsRoot) throws IOException {
-    Optional<ValidatorSigningRecord> record = getSigningRecord(validator);
+    final Optional<ValidatorSigningRecord> record = getSigningRecord(validator);
     return record.orElseGet(
         () -> {
-          ValidatorSigningRecord newRecord = new ValidatorSigningRecord(genesisValidatorsRoot);
+          final ValidatorSigningRecord newRecord =
+              new ValidatorSigningRecord(genesisValidatorsRoot);
           signingRecords.put(validator, newRecord);
           return newRecord;
         });
+  }
+
+  ReentrantLock acquireLock(final BLSPublicKey validator) {
+
+    final ReentrantLock lock = validatorLocks.computeIfAbsent(validator, __ -> new ReentrantLock());
+    lock.lock();
+    return lock;
   }
 
   private void writeSigningRecord(final BLSPublicKey validator, final ValidatorSigningRecord record)
