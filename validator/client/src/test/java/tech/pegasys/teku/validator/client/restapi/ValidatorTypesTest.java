@@ -132,7 +132,7 @@ class ValidatorTypesTest {
         List.of(
             DeleteKeyResult.success(),
             DeleteKeyResult.error("ERR"),
-            DeleteKeyResult.notActive(),
+            DeleteKeyResult.disabled(),
             DeleteKeyResult.notFound());
     final Map<String, Object> result =
         JsonTestUtil.parse(

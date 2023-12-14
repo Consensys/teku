@@ -15,7 +15,7 @@ package tech.pegasys.teku.validator.client.restapi.apis.schema;
 
 public enum DeletionStatus {
   DELETED("deleted"),
-  NOT_ACTIVE("not_active"),
+  DISABLED("disabled"),
   NOT_FOUND("not_found"),
   ERROR("error");
   private final String displayName;

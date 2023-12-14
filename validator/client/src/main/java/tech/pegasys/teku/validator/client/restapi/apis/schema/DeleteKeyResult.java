@@ -36,8 +36,8 @@ public class DeleteKeyResult {
     return new DeleteKeyResult(DeletionStatus.NOT_FOUND, Optional.empty());
   }
 
-  public static DeleteKeyResult notActive() {
-    return new DeleteKeyResult(DeletionStatus.NOT_ACTIVE, Optional.empty());
+  public static DeleteKeyResult disabled() {
+    return new DeleteKeyResult(DeletionStatus.DISABLED, Optional.empty());
   }
 
   public static DeleteKeyResult error(final String message) {
