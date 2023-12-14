@@ -170,7 +170,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     String str = getCommandLineOutput();
 
     final Pattern p = Pattern.compile("--[X][^ ]+");
-    Matcher matcher = p.matcher(str);
+    final Matcher matcher = p.matcher(str);
     final List<String> errors = new ArrayList<>();
     while (matcher.find()) {
       MatchResult current = matcher.toMatchResult();
@@ -191,7 +191,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     String str = getCommandLineOutput();
 
     final Pattern p = Pattern.compile("--[^X][^ ]+");
-    Matcher matcher = p.matcher(str);
+    final Matcher matcher = p.matcher(str);
     final List<String> errors = new ArrayList<>();
     while (matcher.find()) {
       MatchResult current = matcher.toMatchResult();
