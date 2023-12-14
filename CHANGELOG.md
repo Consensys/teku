@@ -16,3 +16,4 @@ the [releases page](https://github.com/Consensys/teku/releases).
 
 ### Bug Fixes
 - Fixed the command line help not displaying `--checkpoint-sync-url` as an option.
+- Fixed bug preventing node to startup when using `--exit-when-no-validator-keys-enabled` even with keys present
