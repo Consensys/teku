@@ -190,15 +190,15 @@ public class EnabledKeyManager implements KeyManager {
 
   @VisibleForTesting
   DeleteKeyResult deleteValidator(
-      final Validator activeValidator, final SlashingProtectionIncrementalExporter exporter) {
-    final Signer signer = activeValidator.getSigner();
+      final Validator enabledValidator, final SlashingProtectionIncrementalExporter exporter) {
+    final Signer signer = enabledValidator.getSigner();
     signer.delete();
-    LOG.info("Removed validator: {}", activeValidator.getPublicKey().toString());
+    LOG.info("Removed validator: {}", enabledValidator.getPublicKey().toString());
     final DeleteKeyResult deleteKeyResult =
-        validatorLoader.deleteLocalMutableValidator(activeValidator.getPublicKey());
+        validatorLoader.deleteLocalMutableValidator(enabledValidator.getPublicKey());
     if (deleteKeyResult.getStatus() == DeletionStatus.DELETED) {
       Optional<String> error =
-          exporter.addPublicKeyToExport(activeValidator.getPublicKey(), LOG::debug);
+          exporter.addPublicKeyToExport(enabledValidator.getPublicKey(), LOG::debug);
       if (error.isPresent()) {
         return DeleteKeyResult.error(error.get());
       }
@@ -206,11 +206,11 @@ public class EnabledKeyManager implements KeyManager {
     return deleteKeyResult;
   }
 
-  DeleteKeyResult deleteExternalValidator(final Validator activeValidator) {
-    final Signer signer = activeValidator.getSigner();
+  DeleteKeyResult deleteExternalValidator(final Validator enabledValidator) {
+    final Signer signer = enabledValidator.getSigner();
     signer.delete();
-    LOG.info("Removed remote validator: {}", activeValidator.getPublicKey().toString());
-    return validatorLoader.deleteExternalMutableValidator(activeValidator.getPublicKey());
+    LOG.info("Removed remote validator: {}", enabledValidator.getPublicKey().toString());
+    return validatorLoader.deleteExternalMutableValidator(enabledValidator.getPublicKey());
   }
 
   /**
