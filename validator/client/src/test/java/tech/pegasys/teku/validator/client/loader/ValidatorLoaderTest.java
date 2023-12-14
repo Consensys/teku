@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client.loader;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -47,6 +48,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.keystore.KeyStoreLoader;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
@@ -738,10 +740,45 @@ class ValidatorLoaderTest {
     assertThat(validators.hasNoValidators()).isTrue();
   }
 
+  @Test
+  void shouldThrowWhenAnyErrorOccurs(@TempDir Path tempDir) throws Exception {
+    writeKeystore(tempDir);
+    writeBadKeystore(tempDir);
+    final ValidatorConfig config =
+        ValidatorConfig.builder()
+            .validatorKeys(
+                List.of(tempDir.toAbsolutePath() + File.pathSeparator + tempDir.toAbsolutePath()))
+            .build();
+    final ValidatorLoader validatorLoader =
+        ValidatorLoader.create(
+            spec,
+            config,
+            disabledInteropConfig,
+            httpClientFactory,
+            slashingProtector,
+            slashingProtectionLogger,
+            publicKeyLoader,
+            asyncRunner,
+            metricsSystem,
+            Optional.empty());
+
+    assertThatThrownBy(validatorLoader::loadValidators)
+        .isExactlyInstanceOf(InvalidConfigurationException.class);
+    final OwnedValidators validators = validatorLoader.getOwnedValidators();
+
+    assertThat(validators.getValidatorCount()).isEqualTo(0);
+  }
+
   static void writeKeystore(final Path tempDir) throws Exception {
     final URL resource = Resources.getResource("pbkdf2TestVector.json");
     Files.copy(Path.of(resource.toURI()), tempDir.resolve("key.json"));
     Files.writeString(tempDir.resolve("key.txt"), "testpassword");
+  }
+
+  static void writeBadKeystore(final Path tempDir) throws Exception {
+    final URL resource = Resources.getResource("testKeystore.json");
+    Files.copy(Path.of(resource.toURI()), tempDir.resolve("key2.json"));
+    Files.writeString(tempDir.resolve("key2.txt"), "badpassword");
   }
 
   private void writeMutableKeystore(final DataDirLayout tempDir) throws Exception {
