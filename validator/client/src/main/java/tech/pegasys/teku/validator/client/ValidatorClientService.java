@@ -220,11 +220,7 @@ public class ValidatorClientService extends Service {
             () -> validatorClientService.initializeValidators(validatorApiChannel, asyncRunner))
         .thenCompose(
             __ -> {
-              if (validatorConfig.isExitWhenNoValidatorKeysEnabled()
-                  && validatorLoader.getOwnedValidators().getActiveValidators().isEmpty()) {
-                STATUS_LOG.exitOnNoValidatorKeys();
-                System.exit(2);
-              }
+              checkNoKeysLoaded(validatorConfig, validatorLoader);
 
               if (validatorConfig.isDoppelgangerDetectionEnabled()) {
                 validatorClientService.initializeDoppelgangerDetector(
@@ -274,11 +270,21 @@ public class ValidatorClientService extends Service {
               } else {
                 LOG.error("Error was encountered during validator client service start up.", error);
               }
+              checkNoKeysLoaded(validatorConfig, validatorLoader);
               return null;
             })
         .always(() -> LOG.trace("Finished starting validator client service."));
 
     return validatorClientService;
+  }
+
+  private static void checkNoKeysLoaded(
+      final ValidatorConfig validatorConfig, final ValidatorLoader validatorLoader) {
+    if (validatorConfig.isExitWhenNoValidatorKeysEnabled()
+        && validatorLoader.getOwnedValidators().getActiveValidators().isEmpty()) {
+      STATUS_LOG.exitOnNoValidatorKeys();
+      System.exit(2);
+    }
   }
 
   private void initializeDoppelgangerDetector(
