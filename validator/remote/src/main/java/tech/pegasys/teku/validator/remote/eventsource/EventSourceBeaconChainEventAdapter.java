@@ -128,7 +128,7 @@ public class EventSourceBeaconChainEventAdapter
   }
 
   private BackgroundEventSource createEventSource(final RemoteValidatorApiChannel beaconNodeApi) {
-    final HttpUrl eventSourceUrl = createHeadEventSourceUrl(beaconNodeApi.getEndpoint());
+    final HttpUrl eventSourceUrl = createEventStreamSourceUrl(beaconNodeApi.getEndpoint());
     final EventSource.Builder eventSourceBuilder =
         new EventSource.Builder(ConnectStrategy.http(eventSourceUrl).httpClient(okHttpClient))
             .retryDelayStrategy(
@@ -143,10 +143,16 @@ public class EventSourceBeaconChainEventAdapter
         .build();
   }
 
-  private HttpUrl createHeadEventSourceUrl(final HttpUrl endpoint) {
+  private HttpUrl createEventStreamSourceUrl(final HttpUrl endpoint) {
     final HttpUrl eventSourceUrl =
         endpoint.resolve(
-            ValidatorApiMethod.EVENTS.getPath(emptyMap()) + "?topics=" + EventType.head);
+            ValidatorApiMethod.EVENTS.getPath(emptyMap())
+                + "?topics="
+                + String.join(
+                    ",",
+                    EventType.head.name(),
+                    EventType.attester_slashing.name(),
+                    EventType.proposer_slashing.name()));
     return Preconditions.checkNotNull(eventSourceUrl);
   }
 
