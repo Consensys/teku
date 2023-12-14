@@ -78,7 +78,7 @@ public class UnstableOptionsCommand implements Runnable, CommandLine.IHelpComman
     final CommandSpec cs = CommandSpec.create();
     cs.usageMessage().showDefaultValues(true);
     options.stream()
-        .filter(option -> option.hidden() && option.names()[0].startsWith("--X"))
+        .filter(option -> option.hidden())
         .forEach(option -> cs.addOption(option.toBuilder().hidden(false).build()));
 
     if (cs.options().size() > 0) {
