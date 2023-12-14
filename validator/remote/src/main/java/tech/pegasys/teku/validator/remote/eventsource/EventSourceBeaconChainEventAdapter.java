@@ -22,6 +22,7 @@ import com.launchdarkly.eventsource.RetryDelayStrategy;
 import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import com.launchdarkly.eventsource.background.ConnectionErrorHandler.Action;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
@@ -128,7 +129,12 @@ public class EventSourceBeaconChainEventAdapter
   }
 
   private BackgroundEventSource createEventSource(final RemoteValidatorApiChannel beaconNodeApi) {
-    final HttpUrl eventSourceUrl = createEventStreamSourceUrl(beaconNodeApi.getEndpoint());
+    final HttpUrl eventSourceUrl =
+        createEventStreamSourceUrl(
+            beaconNodeApi.getEndpoint(),
+            EventType.head,
+            EventType.attester_slashing,
+            EventType.proposer_slashing);
     final EventSource.Builder eventSourceBuilder =
         new EventSource.Builder(ConnectStrategy.http(eventSourceUrl).httpClient(okHttpClient))
             .retryDelayStrategy(
@@ -143,16 +149,12 @@ public class EventSourceBeaconChainEventAdapter
         .build();
   }
 
-  private HttpUrl createEventStreamSourceUrl(final HttpUrl endpoint) {
+  private HttpUrl createEventStreamSourceUrl(final HttpUrl endpoint, EventType... eventTypes) {
     final HttpUrl eventSourceUrl =
         endpoint.resolve(
             ValidatorApiMethod.EVENTS.getPath(emptyMap())
                 + "?topics="
-                + String.join(
-                    ",",
-                    EventType.head.name(),
-                    EventType.attester_slashing.name(),
-                    EventType.proposer_slashing.name()));
+                + String.join(",", Arrays.stream(eventTypes).map(EventType::name).toList()));
     return Preconditions.checkNotNull(eventSourceUrl);
   }
 
