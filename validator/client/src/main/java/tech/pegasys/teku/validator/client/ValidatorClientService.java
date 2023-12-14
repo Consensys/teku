@@ -218,6 +218,13 @@ public class ValidatorClientService extends Service {
             () -> validatorClientService.initializeValidators(validatorApiChannel, asyncRunner))
         .thenCompose(
             __ -> {
+              if (validatorConfig.isExitWhenNoValidatorKeysEnabled()
+                  && validatorLoader.getOwnedValidators().getActiveValidators().isEmpty()) {
+                LOG.info(
+                    "No loaded validators when --exit-when-no-validator-keys-enabled option is true");
+                System.exit(2);
+              }
+
               if (validatorConfig.isDoppelgangerDetectionEnabled()) {
                 validatorClientService.initializeDoppelgangerDetector(
                     asyncRunner,
@@ -269,12 +276,6 @@ public class ValidatorClientService extends Service {
               return null;
             })
         .always(() -> LOG.trace("Finished starting validator client service."));
-
-    if (validatorConfig.isExitWhenNoValidatorKeysEnabled()
-        && validatorLoader.getOwnedValidators().getActiveValidators().size() == 0) {
-      throw new NoValidatorKeysStateException(
-          "No loaded validators when --exit-when-no-validator-keys-enabled option is true");
-    }
 
     return validatorClientService;
   }
