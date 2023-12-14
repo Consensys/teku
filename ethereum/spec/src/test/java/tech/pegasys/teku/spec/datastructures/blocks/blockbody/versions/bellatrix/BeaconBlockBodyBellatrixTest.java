@@ -105,7 +105,7 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
             null, mock(BlindedBeaconBlockBodySchemaBellatrixImpl.class));
     Exception exception =
         assertThrows(
-            IllegalStateException.class,
+            NullPointerException.class,
             () ->
                 beaconBlockBodyBuilderBellatrix
                     .randaoReveal(mock(BLSSignature.class))
@@ -116,10 +116,10 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
                     .attesterSlashings(mock(SszList.class))
                     .deposits(mock(SszList.class))
                     .voluntaryExits(mock(SszList.class))
+                    .executionPayload(mock(SafeFuture.class))
                     .build());
     assertEquals(
-        exception.getMessage(),
-        "executionPayload or executionPayloadHeader must be set before interacting with the builder");
+        exception.getMessage(), "schema must be set when non blinded body has been requested");
   }
 
   @Test
@@ -129,7 +129,7 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
         new BeaconBlockBodyBuilderBellatrix(mock(BeaconBlockBodySchemaBellatrixImpl.class), null);
     Exception exception =
         assertThrows(
-            IllegalStateException.class,
+            NullPointerException.class,
             () ->
                 beaconBlockBodyBuilderBellatrix
                     .randaoReveal(mock(BLSSignature.class))
@@ -140,10 +140,10 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
                     .attesterSlashings(mock(SszList.class))
                     .deposits(mock(SszList.class))
                     .voluntaryExits(mock(SszList.class))
+                    .executionPayloadHeader(mock(SafeFuture.class))
                     .build());
     assertEquals(
-        exception.getMessage(),
-        "executionPayload or executionPayloadHeader must be set before interacting with the builder");
+        exception.getMessage(), "blindedSchema must be set when blinded body has been requested");
   }
 
   @Override

@@ -113,7 +113,7 @@ public class BlockOperationSelectorFactory {
       final Optional<Boolean> requestedBlinded,
       final BlockProductionPerformance blockProductionPerformance) {
 
-    boolean blinded = requestedBlinded.orElse(ValidatorsUtil.DEFAULT_PRODUCE_BLINDED_BLOCK);
+    final boolean blinded = requestedBlinded.orElse(ValidatorsUtil.DEFAULT_PRODUCE_BLINDED_BLOCK);
 
     return bodyBuilder -> {
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);

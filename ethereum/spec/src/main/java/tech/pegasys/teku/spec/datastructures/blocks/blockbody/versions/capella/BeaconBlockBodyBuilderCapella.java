@@ -65,7 +65,7 @@ public class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatr
     if (isBlinded()) {
       checkNotNull(blindedSchema, "blindedSchema must be set when blinded body has been requested");
     } else {
-      checkNotNull(schema, "schema must be set if when non blinded body has been requested");
+      checkNotNull(schema, "schema must be set when non blinded body has been requested");
     }
   }
 
