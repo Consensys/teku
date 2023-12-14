@@ -133,7 +133,7 @@ class EnabledKeyManagerTest {
   }
 
   @Test
-  void shouldReturnDisabledIfSlashingProtectionFound() {
+  void shouldReturnNotActiveIfSlashingProtectionFound() {
     when(exporter.haveSlashingProtectionData(publicKey)).thenReturn(true);
 
     final DeleteKeyResult result =
