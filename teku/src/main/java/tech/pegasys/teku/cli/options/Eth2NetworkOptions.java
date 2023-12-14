@@ -60,7 +60,6 @@ public class Eth2NetworkOptions {
 
   @Option(
       names = {"--genesis-state"},
-      hidden = true,
       paramLabel = "<STRING>",
       description =
           "The genesis state. This value should be a file or URL pointing to an SSZ-encoded finalized checkpoint state.",
@@ -69,7 +68,6 @@ public class Eth2NetworkOptions {
 
   @Option(
       names = {"--checkpoint-sync-url"},
-      hidden = true,
       paramLabel = "<STRING>",
       description = "The Checkpointz server that will be used to bootstrap this node.",
       arity = "1")
