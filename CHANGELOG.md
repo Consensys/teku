@@ -15,3 +15,4 @@ the [releases page](https://github.com/Consensys/teku/releases).
 - Added `--ee-jwt-claim-id` command line option to provide `id` to the execution engine JWT claims
 
 ### Bug Fixes
+- Fixed the command line help not displaying `--checkpoint-sync-url` as an option.
