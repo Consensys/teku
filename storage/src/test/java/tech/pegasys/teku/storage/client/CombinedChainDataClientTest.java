@@ -140,6 +140,7 @@ class CombinedChainDataClientTest {
         dataStructureUtil.randomSignedBeaconBlock(2, parentBlockAndState.getRoot());
     when(recentChainData.getStore()).thenReturn(store);
     when(recentChainData.getBestBlockRoot()).thenReturn(Optional.of(headBlock.getRoot()));
+    when(recentChainData.getCurrentSlot()).thenReturn(Optional.of(proposalSlot));
     when(recentChainData.getProposerHead(headBlock.getRoot(), proposalSlot))
         .thenReturn(parentBlockAndState.getRoot());
     when(store.retrieveBlockState(parentBlockAndState.getRoot()))

@@ -45,25 +45,22 @@ public class BlockFactoryPhase0 implements BlockFactory {
   @Override
   public SafeFuture<BlockContainer> createUnsignedBlock(
       final BeaconState blockSlotState,
-      final UInt64 newSlot,
+      final UInt64 proposalSlot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti,
       final Optional<Boolean> blinded,
       final BlockProductionPerformance blockProductionPerformance) {
     checkArgument(
-        blockSlotState.getSlot().equals(newSlot),
+        blockSlotState.getSlot().equals(proposalSlot),
         "Block slot state for slot %s but should be for slot %s",
         blockSlotState.getSlot(),
-        newSlot);
+        proposalSlot);
 
-    // Process empty slots up to the one before the new block slot
-    final UInt64 slotBeforeBlock = newSlot.minus(UInt64.ONE);
-
-    final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, slotBeforeBlock);
+    final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, proposalSlot.decrement());
 
     return spec.createNewUnsignedBlock(
-            newSlot,
-            spec.getBeaconProposerIndex(blockSlotState, newSlot),
+            proposalSlot,
+            spec.getBeaconProposerIndex(blockSlotState, proposalSlot),
             blockSlotState,
             parentRoot,
             operationSelector.createSelector(

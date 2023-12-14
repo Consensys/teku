@@ -694,16 +694,21 @@ public class Spec {
 
   // Block Proposal
   public SafeFuture<BeaconBlockAndState> createNewUnsignedBlock(
-      final UInt64 newSlot,
+      final UInt64 proposalSlot,
       final int proposerIndex,
       final BeaconState blockSlotState,
       final Bytes32 parentBlockSigningRoot,
       final Consumer<BeaconBlockBodyBuilder> bodyBuilder,
       final Optional<Boolean> blinded) {
-    return atSlot(newSlot)
+    return atSlot(proposalSlot)
         .getBlockProposalUtil()
         .createNewUnsignedBlock(
-            newSlot, proposerIndex, blockSlotState, parentBlockSigningRoot, bodyBuilder, blinded);
+            proposalSlot,
+            proposerIndex,
+            blockSlotState,
+            parentBlockSigningRoot,
+            bodyBuilder,
+            blinded);
   }
 
   // Blind Block Utils

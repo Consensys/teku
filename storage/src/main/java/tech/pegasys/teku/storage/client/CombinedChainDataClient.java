@@ -253,17 +253,12 @@ public class CombinedChainDataClient {
     // otherwise we're looking for the parent slot
     return getStateByBlockRoot(root)
         .thenCompose(
-            maybeState -> {
-              if (maybeState.isPresent()) {
-                try {
-                  return SafeFuture.completedFuture(
-                      Optional.of(spec.processSlots(maybeState.get(), slot)));
-                } catch (SlotProcessingException | EpochProcessingException e) {
-                  LOG.error("Failed to compute state for block production at slot {}", slot, e);
-                }
-              }
-              return getStateAtSlotExact(slot);
-            });
+            maybeState ->
+                maybeState
+                    .map(
+                        beaconState ->
+                            SafeFuture.completedFuture(regenerateBeaconState(beaconState, slot)))
+                    .orElseGet(() -> getStateAtSlotExact(slot)));
   }
 
   public SafeFuture<Optional<BeaconState>> getStateAtSlotExact(

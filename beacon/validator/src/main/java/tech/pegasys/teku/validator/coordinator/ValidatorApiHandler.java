@@ -357,7 +357,9 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       return SafeFuture.completedFuture(Optional.empty());
     }
     final BeaconState blockSlotState = maybeBlockSlotState.get();
-    final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, slot.minus(1));
+    final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, slot.decrement());
+    LOG.debug("parent block {}:({})", parentRoot, slot);
+
     if (combinedChainDataClient.isOptimisticBlock(parentRoot)) {
       LOG.warn(
           "Unable to produce block at slot {} because parent has optimistically validated payload",

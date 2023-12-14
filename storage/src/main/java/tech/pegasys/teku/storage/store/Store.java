@@ -600,7 +600,7 @@ class Store extends CacheableStore {
                   result);
               return result;
             })
-        .orElse(false);
+        .orElse(true);
   }
 
   @Override

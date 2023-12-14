@@ -46,16 +46,16 @@ public class BlockProposalUtil {
   }
 
   public SafeFuture<BeaconBlockAndState> createNewUnsignedBlock(
-      final UInt64 newSlot,
+      final UInt64 proposalSlot,
       final int proposerIndex,
       final BeaconState blockSlotState,
       final Bytes32 parentBlockSigningRoot,
       final Consumer<BeaconBlockBodyBuilder> bodyBuilder,
       final Optional<Boolean> blinded) {
     checkArgument(
-        blockSlotState.getSlot().equals(newSlot),
+        blockSlotState.getSlot().equals(proposalSlot),
         "Block slot state from incorrect slot. Expected %s but got %s",
-        newSlot,
+        proposalSlot,
         blockSlotState.getSlot());
 
     // Create block body
@@ -76,7 +76,7 @@ public class BlockProposalUtil {
         beaconBlockBody.thenApply(
             body ->
                 beaconBlockSchema.create(
-                    newSlot,
+                    proposalSlot,
                     UInt64.valueOf(proposerIndex),
                     parentBlockSigningRoot,
                     tmpStateRoot,

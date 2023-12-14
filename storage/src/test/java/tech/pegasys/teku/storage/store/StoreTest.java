@@ -144,7 +144,7 @@ class StoreTest extends AbstractStoreTest {
         (store, blockAndState) -> {
           final Bytes32 root = blockAndState.getBlock().getParentRoot();
           store.computeBalanceThresholds(justifiedState(store));
-          assertThat(store.isParentStrong(root)).isFalse();
+          assertThat(store.isParentStrong(root)).isTrue();
         });
   }
 
