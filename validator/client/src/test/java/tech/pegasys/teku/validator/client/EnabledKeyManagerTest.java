@@ -138,7 +138,7 @@ class EnabledKeyManagerTest {
 
     final DeleteKeyResult result =
         keyManager.attemptToGetSlashingDataForDisabledValidator(publicKey, exporter);
-    assertThat(result.getStatus()).isEqualTo(DeletionStatus.DISABLED);
+    assertThat(result.getStatus()).isEqualTo(DeletionStatus.NOT_ACTIVE);
   }
 
   @Test

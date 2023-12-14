@@ -34,8 +34,8 @@ public class DeleteKeyResultTest {
 
   @Test
   void shouldProduceNotActiveResult() {
-    assertThat(DeleteKeyResult.disabled())
-        .isEqualTo(new DeleteKeyResult(DeletionStatus.DISABLED, Optional.empty()));
+    assertThat(DeleteKeyResult.notActive())
+        .isEqualTo(new DeleteKeyResult(DeletionStatus.NOT_ACTIVE, Optional.empty()));
   }
 
   @Test

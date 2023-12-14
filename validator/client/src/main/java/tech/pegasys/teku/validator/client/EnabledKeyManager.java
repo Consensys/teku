@@ -98,7 +98,8 @@ public class EnabledKeyManager implements KeyManager {
    * <p>- NOT_FOUND should only be returned if the key was not there, and we didn't have slashing
    * protection information
    *
-   * <p>- DISABLED indicates the key wasn't enabled, but we had slashing data
+   * <p>- NOT_ACTIVE indicates the key wasn't enabled, but we had slashing data, should not be
+   * confused with {@link tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus}
    *
    * <p>- DELETED indicates the key was found, and we have stopped using it and removed it.
    *
@@ -181,7 +182,7 @@ public class EnabledKeyManager implements KeyManager {
       final BLSPublicKey publicKey, final SlashingProtectionIncrementalExporter exporter) {
     if (exporter.haveSlashingProtectionData(publicKey)) {
       final Optional<String> error = exporter.addPublicKeyToExport(publicKey, LOG::debug);
-      return error.map(DeleteKeyResult::error).orElseGet(DeleteKeyResult::disabled);
+      return error.map(DeleteKeyResult::error).orElseGet(DeleteKeyResult::notActive);
     } else {
       return DeleteKeyResult.notFound();
     }
@@ -189,15 +190,15 @@ public class EnabledKeyManager implements KeyManager {
 
   @VisibleForTesting
   DeleteKeyResult deleteValidator(
-      final Validator enabledValidator, final SlashingProtectionIncrementalExporter exporter) {
-    final Signer signer = enabledValidator.getSigner();
+      final Validator activeValidator, final SlashingProtectionIncrementalExporter exporter) {
+    final Signer signer = activeValidator.getSigner();
     signer.delete();
-    LOG.info("Removed validator: {}", enabledValidator.getPublicKey().toString());
+    LOG.info("Removed validator: {}", activeValidator.getPublicKey().toString());
     final DeleteKeyResult deleteKeyResult =
-        validatorLoader.deleteLocalMutableValidator(enabledValidator.getPublicKey());
+        validatorLoader.deleteLocalMutableValidator(activeValidator.getPublicKey());
     if (deleteKeyResult.getStatus() == DeletionStatus.DELETED) {
       Optional<String> error =
-          exporter.addPublicKeyToExport(enabledValidator.getPublicKey(), LOG::debug);
+          exporter.addPublicKeyToExport(activeValidator.getPublicKey(), LOG::debug);
       if (error.isPresent()) {
         return DeleteKeyResult.error(error.get());
       }
@@ -205,11 +206,11 @@ public class EnabledKeyManager implements KeyManager {
     return deleteKeyResult;
   }
 
-  DeleteKeyResult deleteExternalValidator(final Validator enabledValidator) {
-    final Signer signer = enabledValidator.getSigner();
+  DeleteKeyResult deleteExternalValidator(final Validator activeValidator) {
+    final Signer signer = activeValidator.getSigner();
     signer.delete();
-    LOG.info("Removed remote validator: {}", enabledValidator.getPublicKey().toString());
-    return validatorLoader.deleteExternalMutableValidator(enabledValidator.getPublicKey());
+    LOG.info("Removed remote validator: {}", activeValidator.getPublicKey().toString());
+    return validatorLoader.deleteExternalMutableValidator(activeValidator.getPublicKey());
   }
 
   /**
