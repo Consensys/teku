@@ -22,7 +22,9 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldFailWithNoValidatorKeysWhenExitOptionEnabledOnBeaconNode() throws Exception {
-    TekuNode beaconNode = createTekuNode(config -> config.withExitWhenNoValidatorKeysEnabled(true));
+    TekuNode beaconNode =
+        createTekuNode(
+            config -> config.withExitWhenNoValidatorKeysEnabled(true).withInteropValidators(0, 0));
     beaconNode.startWithFailure(
         "No loaded validators when --exit-when-no-validator-keys-enabled option is true");
   }
@@ -32,7 +34,11 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
     TekuNode beaconNode = createTekuNode();
     TekuValidatorNode validatorClient =
         createValidatorNode(
-            config -> config.withBeaconNode(beaconNode).withExitWhenNoValidatorKeysEnabled(true));
+            config ->
+                config
+                    .withBeaconNode(beaconNode)
+                    .withExitWhenNoValidatorKeysEnabled(true)
+                    .withInteropModeDisabled());
     beaconNode.start();
     validatorClient.startWithFailure(
         "No loaded validators when --exit-when-no-validator-keys-enabled option is true");
