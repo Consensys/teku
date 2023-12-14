@@ -281,7 +281,7 @@ public class ValidatorClientService extends Service {
   private static void checkNoKeysLoaded(
       final ValidatorConfig validatorConfig, final ValidatorLoader validatorLoader) {
     if (validatorConfig.isExitWhenNoValidatorKeysEnabled()
-        && validatorLoader.getOwnedValidators().getActiveValidators().isEmpty()) {
+        && validatorLoader.getOwnedValidators().hasNoValidators()) {
       STATUS_LOG.exitOnNoValidatorKeys();
       System.exit(2);
     }
