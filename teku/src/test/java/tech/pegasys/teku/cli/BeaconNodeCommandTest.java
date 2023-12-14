@@ -44,9 +44,14 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.CompletionException;
+import java.util.regex.MatchResult;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -74,6 +79,7 @@ import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
 
 public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
+  private static final Logger LOG = LogManager.getLogger();
 
   private static final String LOG_FILE =
       LOG_FILE_PREFIX + LoggingConfig.DEFAULT_LOG_FILE_NAME_SUFFIX;
@@ -156,12 +162,45 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   void helpShouldNotShowUnsupportedOptions() {
+    // Any option starting with --X is marked as a developer option and should not be shown in the
+    // supported help
     final String[] args = {"--help"};
 
     beaconNodeCommand.parse(args);
     String str = getCommandLineOutput();
 
-    assertThat(str).doesNotContain("--X");
+    final Pattern p = Pattern.compile("--[X][^ ]+");
+    final Matcher matcher = p.matcher(str);
+    final List<String> errors = new ArrayList<>();
+    while (matcher.find()) {
+      MatchResult current = matcher.toMatchResult();
+      LOG.debug("found {} at position {}", current.group().trim(), current.start());
+      errors.add(current.group().trim());
+    }
+
+    assertThat(errors).describedAs("Found --X command arguments not marked as hidden").isEmpty();
+  }
+
+  @Test
+  void developerHelpShouldNotShowSupportedOptions() {
+    // Any option in developer help should be a --X option, and if they're not prefixed in this way
+    // there's likely a problem.
+    final String[] args = {"-X"};
+
+    beaconNodeCommand.parse(args);
+    String str = getCommandLineOutput();
+
+    final Pattern p = Pattern.compile("--[^X][^ ]+");
+    final Matcher matcher = p.matcher(str);
+    final List<String> errors = new ArrayList<>();
+    while (matcher.find()) {
+      MatchResult current = matcher.toMatchResult();
+      LOG.debug("found {} at position {}", current.group().trim(), current.start());
+      errors.add(current.group().trim());
+    }
+    assertThat(errors)
+        .describedAs("Found hidden command arguments not prefixed with --X")
+        .isEmpty();
   }
 
   @Test
