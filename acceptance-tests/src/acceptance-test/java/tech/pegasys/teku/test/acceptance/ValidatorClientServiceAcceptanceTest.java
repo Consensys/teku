@@ -24,7 +24,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldFailWithNoValidatorKeysWhenExitOptionEnabledOnBeaconNode() throws Exception {
-    TekuNode beaconNode =
+    final TekuNode beaconNode =
         createTekuNode(
             config -> config.withExitWhenNoValidatorKeysEnabled(true).withInteropValidators(0, 0));
     beaconNode.startWithFailure(
@@ -33,8 +33,8 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldFailWithNoValidatorKeysWhenExitOptionEnabledOnValidatorClient() throws Exception {
-    TekuNode beaconNode = createTekuNode();
-    TekuValidatorNode validatorClient =
+    final TekuNode beaconNode = createTekuNode();
+    final TekuValidatorNode validatorClient =
         createValidatorNode(
             config ->
                 config
@@ -49,7 +49,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldNotFailWithNoValidatorKeysWhenExitOptionDisabledOnBeaconNode() throws Exception {
-    TekuNode beaconNode =
+    final TekuNode beaconNode =
         createTekuNode(
             config -> config.withExitWhenNoValidatorKeysEnabled(false).withInteropValidators(0, 0));
     beaconNode.start();
@@ -61,8 +61,8 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldNotFailWithNoValidatorKeysWhenExitOptionDisabledOnValidatorClient() throws Exception {
-    TekuNode beaconNode = createTekuNode();
-    TekuValidatorNode validatorClient =
+    final TekuNode beaconNode = createTekuNode();
+    final TekuValidatorNode validatorClient =
         createValidatorNode(
             config ->
                 config
