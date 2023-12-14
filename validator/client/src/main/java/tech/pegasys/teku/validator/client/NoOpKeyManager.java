@@ -29,17 +29,17 @@ import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 public class NoOpKeyManager implements KeyManager {
 
   @Override
-  public List<Validator> getActiveValidatorKeys() {
+  public List<Validator> getEnabledValidatorKeys() {
     return Collections.emptyList();
   }
 
   @Override
-  public List<ExternalValidator> getActiveRemoteValidatorKeys() {
+  public List<ExternalValidator> getEnabledRemoteValidatorKeys() {
     return Collections.emptyList();
   }
 
   @Override
-  public Optional<Validator> getActiveValidatorByPublicKey(BLSPublicKey publicKey) {
+  public Optional<Validator> getEnabledValidatorByPublicKey(BLSPublicKey publicKey) {
     return Optional.empty();
   }
 

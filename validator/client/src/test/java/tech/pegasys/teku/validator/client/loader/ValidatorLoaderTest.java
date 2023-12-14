@@ -181,7 +181,7 @@ class ValidatorLoaderTest {
 
     validatorLoader.loadValidators();
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
-    verify(slashingProtectionLogger, times(1)).protectionSummary(validators.getActiveValidators());
+    verify(slashingProtectionLogger, times(1)).protectionSummary(validators.getEnabledValidators());
 
     assertThat(validators.getValidatorCount()).isEqualTo(1);
     final Validator validator = validators.getValidator(PUBLIC_KEY1).orElseThrow();

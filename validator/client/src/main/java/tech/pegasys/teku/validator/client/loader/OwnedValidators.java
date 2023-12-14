@@ -60,7 +60,7 @@ public class OwnedValidators {
     return Optional.ofNullable(validators.get(publicKey));
   }
 
-  public List<Validator> getActiveValidators() {
+  public List<Validator> getEnabledValidators() {
     return ImmutableList.copyOf(validators.values());
   }
 

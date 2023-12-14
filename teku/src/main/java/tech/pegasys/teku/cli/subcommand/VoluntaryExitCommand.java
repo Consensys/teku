@@ -338,20 +338,20 @@ public class VoluntaryExitCommand implements Callable<Integer> {
             dataDirLayout);
 
     validatorLoader.loadValidators();
-    final Map<BLSPublicKey, Validator> activeValidators =
-        validatorLoader.getOwnedValidators().getActiveValidators().stream()
+    final Map<BLSPublicKey, Validator> enabledValidators =
+        validatorLoader.getOwnedValidators().getEnabledValidators().stream()
             .collect(Collectors.toMap(Validator::getPublicKey, validator -> validator));
     if (maybePubKeysToExit.isPresent()) {
       validatorsMap = new HashMap<>();
       List<BLSPublicKey> pubKeysToExit = maybePubKeysToExit.get();
-      activeValidators.keySet().stream()
+      enabledValidators.keySet().stream()
           .filter(pubKeysToExit::contains)
           .forEach(
               validatorPubKey ->
                   validatorsMap.putIfAbsent(
-                      validatorPubKey, activeValidators.get(validatorPubKey)));
+                      validatorPubKey, enabledValidators.get(validatorPubKey)));
     } else {
-      validatorsMap = activeValidators;
+      validatorsMap = enabledValidators;
     }
 
     if (validatorsMap.isEmpty()) {

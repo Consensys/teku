@@ -46,7 +46,7 @@ import tech.pegasys.teku.infrastructure.json.exceptions.MissingRequestBodyExcept
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.validator.client.ActiveKeyManager;
+import tech.pegasys.teku.validator.client.EnabledKeyManager;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysRequest;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
@@ -54,7 +54,7 @@ import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse
 public class DeleteKeysTest {
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createMinimalAltair());
-  private final ActiveKeyManager keyManager = mock(ActiveKeyManager.class);
+  private final EnabledKeyManager keyManager = mock(EnabledKeyManager.class);
   private Path tempDir;
   private DeleteKeys handler;
 

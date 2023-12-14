@@ -470,7 +470,7 @@ class ValidatorRegistratorTest {
 
   private void setOwnedValidators(final Validator... validators) {
     final List<Validator> validatorsAsList = Arrays.stream(validators).collect(Collectors.toList());
-    when(ownedValidators.getActiveValidators()).thenReturn(validatorsAsList);
+    when(ownedValidators.getEnabledValidators()).thenReturn(validatorsAsList);
   }
 
   private void runRegistrationFlowForSlotWithSubscription(final UInt64 slot) {

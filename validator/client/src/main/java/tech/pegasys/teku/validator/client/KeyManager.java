@@ -26,11 +26,11 @@ import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
 public interface KeyManager {
-  List<Validator> getActiveValidatorKeys();
+  List<Validator> getEnabledValidatorKeys();
 
-  List<ExternalValidator> getActiveRemoteValidatorKeys();
+  List<ExternalValidator> getEnabledRemoteValidatorKeys();
 
-  Optional<Validator> getActiveValidatorByPublicKey(final BLSPublicKey publicKey);
+  Optional<Validator> getEnabledValidatorByPublicKey(final BLSPublicKey publicKey);
 
   DeleteKeysResponse deleteValidators(
       final List<BLSPublicKey> validators, final Path slashingProtectionPath);

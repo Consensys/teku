@@ -44,41 +44,41 @@ import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ImportStatus;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 
-public class ActiveKeyManager implements KeyManager {
+public class EnabledKeyManager implements KeyManager {
   private static final String EXPORT_FAILED =
       "{\"metadata\":{\"interchange_format_version\":\"5\"},\"data\":[]}";
   private static final Logger LOG = LogManager.getLogger();
   private final ValidatorLoader validatorLoader;
   private final ValidatorTimingChannel validatorTimingChannel;
 
-  public ActiveKeyManager(
+  public EnabledKeyManager(
       final ValidatorLoader validatorLoader, final ValidatorTimingChannel validatorTimingChannel) {
     this.validatorLoader = validatorLoader;
     this.validatorTimingChannel = validatorTimingChannel;
   }
 
   /**
-   * Get a listing of active validator keys
+   * Get a listing of enabled validator keys
    *
-   * @return a list of active validators
+   * @return a list of enabled validators
    */
   @Override
-  public List<Validator> getActiveValidatorKeys() {
-    return validatorLoader.getOwnedValidators().getActiveValidators().stream()
+  public List<Validator> getEnabledValidatorKeys() {
+    return validatorLoader.getOwnedValidators().getEnabledValidators().stream()
         .filter(validator -> validator.getSigner().isLocal())
         .toList();
   }
 
   @Override
-  public List<ExternalValidator> getActiveRemoteValidatorKeys() {
-    return validatorLoader.getOwnedValidators().getActiveValidators().stream()
+  public List<ExternalValidator> getEnabledRemoteValidatorKeys() {
+    return validatorLoader.getOwnedValidators().getEnabledValidators().stream()
         .filter(validator -> !validator.getSigner().isLocal())
         .map(ExternalValidator::create)
         .toList();
   }
 
   @Override
-  public Optional<Validator> getActiveValidatorByPublicKey(BLSPublicKey publicKey) {
+  public Optional<Validator> getEnabledValidatorByPublicKey(BLSPublicKey publicKey) {
     return validatorLoader.getOwnedValidators().getValidator(publicKey);
   }
 
@@ -89,8 +89,8 @@ public class ActiveKeyManager implements KeyManager {
    * order.
    *
    * <p>An individual deletion failure MUST NOT cancel the operation, but rather cause an error for
-   * that specific key Validator keys that are reported as deletionStatus.deleted MUST NOT be active
-   * once the result is returned.
+   * that specific key Validator keys that are reported as deletionStatus.deleted MUST NOT be
+   * enabled once the result is returned.
    *
    * <p>Each failure should result in a failure message for that specific key Slashing protection
    * data MUST be returned if we have the information
@@ -98,7 +98,8 @@ public class ActiveKeyManager implements KeyManager {
    * <p>- NOT_FOUND should only be returned if the key was not there, and we didn't have slashing
    * protection information
    *
-   * <p>- NOT_ACTIVE indicates the key wasn't active, but we had slashing data
+   * <p>- NOT_ACTIVE indicates the key wasn't enabled, but we had slashing data, should not be
+   * confused with {@link tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus}
    *
    * <p>- DELETED indicates the key was found, and we have stopped using it and removed it.
    *
@@ -143,7 +144,7 @@ public class ActiveKeyManager implements KeyManager {
       if (maybeValidator.isPresent()) {
         deletionResults.add(deleteValidator(maybeValidator.get(), exporter));
       } else {
-        deletionResults.add(attemptToGetSlashingDataForInactiveValidator(publicKey, exporter));
+        deletionResults.add(attemptToGetSlashingDataForDisabledValidator(publicKey, exporter));
       }
     }
     return deletionResults;
@@ -177,7 +178,7 @@ public class ActiveKeyManager implements KeyManager {
   }
 
   @VisibleForTesting
-  DeleteKeyResult attemptToGetSlashingDataForInactiveValidator(
+  DeleteKeyResult attemptToGetSlashingDataForDisabledValidator(
       final BLSPublicKey publicKey, final SlashingProtectionIncrementalExporter exporter) {
     if (exporter.haveSlashingProtectionData(publicKey)) {
       final Optional<String> error = exporter.addPublicKeyToExport(publicKey, LOG::debug);

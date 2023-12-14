@@ -36,30 +36,30 @@ import org.mockito.Mockito;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
-import tech.pegasys.teku.validator.client.ActiveKeyManager;
+import tech.pegasys.teku.validator.client.EnabledKeyManager;
 import tech.pegasys.teku.validator.client.Validator;
 
 class GetKeysTest {
-  private final ActiveKeyManager keyManager = Mockito.mock(ActiveKeyManager.class);
+  private final EnabledKeyManager keyManager = Mockito.mock(EnabledKeyManager.class);
   private final RestApiRequest request = mock(RestApiRequest.class);
   private final GetKeys handler = new GetKeys(keyManager);
 
   @Test
   void shouldListValidatorKeys() throws Exception {
-    final List<Validator> activeValidatorList = getValidatorList();
-    when(keyManager.getActiveValidatorKeys()).thenReturn(activeValidatorList);
+    final List<Validator> enabledValidatorList = getValidatorList();
+    when(keyManager.getEnabledValidatorKeys()).thenReturn(enabledValidatorList);
     handler.handleRequest(request);
 
-    verify(request).respondOk(activeValidatorList);
+    verify(request).respondOk(enabledValidatorList);
   }
 
   @Test
   void shouldListEmptyValidatorKeys() throws Exception {
-    final List<Validator> activeValidatorList = Collections.emptyList();
-    when(keyManager.getActiveValidatorKeys()).thenReturn(activeValidatorList);
+    final List<Validator> enabledValidatorList = Collections.emptyList();
+    when(keyManager.getEnabledValidatorKeys()).thenReturn(enabledValidatorList);
     handler.handleRequest(request);
 
-    verify(request).respondOk(activeValidatorList);
+    verify(request).respondOk(enabledValidatorList);
   }
 
   @Test

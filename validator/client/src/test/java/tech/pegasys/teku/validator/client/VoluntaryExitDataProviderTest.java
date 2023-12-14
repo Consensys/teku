@@ -68,7 +68,7 @@ class VoluntaryExitDataProviderTest {
     when(genesisDataProvider.getGenesisData()).thenReturn(SafeFuture.completedFuture(genesisData));
     when(validatorApiChannel.getValidatorIndices(any()))
         .thenReturn(SafeFuture.completedFuture(validatorIndices));
-    when(keyManager.getActiveValidatorByPublicKey(validator.getPublicKey()))
+    when(keyManager.getEnabledValidatorByPublicKey(validator.getPublicKey()))
         .thenReturn(Optional.of(validator));
     when(signer.signVoluntaryExit(any(), any()))
         .thenReturn(SafeFuture.completedFuture(volExitSignature));
@@ -90,7 +90,7 @@ class VoluntaryExitDataProviderTest {
   }
 
   @Test
-  void getSignedVoluntaryExit_exceptionWhenValidatorNotActive() {
+  void getSignedVoluntaryExit_exceptionWhenValidatorNotEnabled() {
     final SafeFuture<SignedVoluntaryExit> result =
         provider.getSignedVoluntaryExit(publicKey2, Optional.of(UInt64.valueOf(1234)));
     assertThatSafeFuture(result)
@@ -129,17 +129,17 @@ class VoluntaryExitDataProviderTest {
   @Test
   void createSignedVoluntaryExit_shouldReturnSignedVoluntaryExit() {
     final BLSSignature signature = dataStructureUtil.randomSignature();
-    final Validator activeValidator = getValidator(signature);
+    final Validator enabledValidator = getValidator(signature);
     final int validatorIndex = 0;
-    when(keyManager.getActiveValidatorByPublicKey(activeValidator.getPublicKey()))
-        .thenReturn(Optional.of(activeValidator));
+    when(keyManager.getEnabledValidatorByPublicKey(enabledValidator.getPublicKey()))
+        .thenReturn(Optional.of(enabledValidator));
 
     final UInt64 epoch = dataStructureUtil.randomEpoch();
     final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
 
     final SignedVoluntaryExit signedVoluntaryExit =
         provider.createSignedVoluntaryExit(
-            validatorIndex, activeValidator.getPublicKey(), epoch, forkInfo);
+            validatorIndex, enabledValidator.getPublicKey(), epoch, forkInfo);
 
     final SignedVoluntaryExit expected =
         new SignedVoluntaryExit(
@@ -149,7 +149,7 @@ class VoluntaryExitDataProviderTest {
 
   @Test
   void createSignedVoluntaryExit_throwsExceptionWhenValidatorNotInList() {
-    when(keyManager.getActiveValidatorKeys()).thenReturn(List.of());
+    when(keyManager.getEnabledValidatorKeys()).thenReturn(List.of());
     final UInt64 epoch = dataStructureUtil.randomEpoch();
     final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
 
@@ -163,7 +163,7 @@ class VoluntaryExitDataProviderTest {
 
   @Test
   void createExitForValidator_notFound() {
-    when(keyManager.getActiveValidatorByPublicKey(any())).thenReturn(Optional.empty());
+    when(keyManager.getEnabledValidatorByPublicKey(any())).thenReturn(Optional.empty());
     final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
     assertThat(
             provider.getExitForValidator(

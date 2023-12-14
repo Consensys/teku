@@ -101,7 +101,7 @@ public class VoluntaryExitDataProvider {
 
   Optional<SignedVoluntaryExit> getExitForValidator(
       final BLSPublicKey publicKey, final VoluntaryExit message, final ForkInfo forkInfo) {
-    final Optional<Validator> maybeValidator = keyManager.getActiveValidatorByPublicKey(publicKey);
+    final Optional<Validator> maybeValidator = keyManager.getEnabledValidatorByPublicKey(publicKey);
 
     if (maybeValidator.isPresent()) {
       final Validator validator = maybeValidator.get();
