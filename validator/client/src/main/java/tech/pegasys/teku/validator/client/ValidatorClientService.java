@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.client;
 
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+
 import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -220,8 +222,7 @@ public class ValidatorClientService extends Service {
             __ -> {
               if (validatorConfig.isExitWhenNoValidatorKeysEnabled()
                   && validatorLoader.getOwnedValidators().getActiveValidators().isEmpty()) {
-                LOG.info(
-                    "No loaded validators when --exit-when-no-validator-keys-enabled option is true");
+                STATUS_LOG.exitOnNoValidatorKeys();
                 System.exit(2);
               }
 
