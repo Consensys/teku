@@ -50,9 +50,9 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED = true;
   public static final boolean DEFAULT_VALIDATOR_CLIENT_USE_POST_VALIDATORS_ENDPOINT_ENABLED = true;
   public static final boolean DEFAULT_DOPPELGANGER_DETECTION_ENABLED = false;
-  public static final boolean DEFAULT_STOP_WHEN_VALIDATOR_SLASHED_ENABLED = false;
   public static final boolean DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED =
       true;
+  public static final boolean DEFAULT_STOP_VC_WHEN_VALIDATOR_SLASHED_ENABLED = false;
   public static final int DEFAULT_EXECUTOR_MAX_QUEUE_SIZE = 20_000;
   public static final Duration DEFAULT_VALIDATOR_EXTERNAL_SIGNER_TIMEOUT = Duration.ofSeconds(5);
   public static final int DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT = 32;
@@ -94,7 +94,7 @@ public class ValidatorConfig {
   private final boolean failoversPublishSignedDutiesEnabled;
   private final boolean blockV3Enabled;
   private final boolean exitWhenNoValidatorKeysEnabled;
-  private final boolean stopWhenValidatorSlashedEnabled;
+  private final boolean stopVcWhenValidatorSlashedEnabled;
   private final UInt64 builderRegistrationDefaultGasLimit;
   private final int builderRegistrationSendingBatchSize;
   private final Optional<UInt64> builderRegistrationTimestampOverride;
@@ -135,7 +135,7 @@ public class ValidatorConfig {
       final boolean failoversPublishSignedDutiesEnabled,
       final boolean blockV3Enabled,
       final boolean exitWhenNoValidatorKeysEnabled,
-      final boolean stopWhenValidatorSlashedEnabled,
+      final boolean stopVcWhenValidatorSlashedEnabled,
       final UInt64 builderRegistrationDefaultGasLimit,
       final int builderRegistrationSendingBatchSize,
       final Optional<UInt64> builderRegistrationTimestampOverride,
@@ -176,7 +176,7 @@ public class ValidatorConfig {
     this.failoversPublishSignedDutiesEnabled = failoversPublishSignedDutiesEnabled;
     this.blockV3Enabled = blockV3Enabled;
     this.exitWhenNoValidatorKeysEnabled = exitWhenNoValidatorKeysEnabled;
-    this.stopWhenValidatorSlashedEnabled = stopWhenValidatorSlashedEnabled;
+    this.stopVcWhenValidatorSlashedEnabled = stopVcWhenValidatorSlashedEnabled;
     this.builderRegistrationDefaultGasLimit = builderRegistrationDefaultGasLimit;
     this.builderRegistrationSendingBatchSize = builderRegistrationSendingBatchSize;
     this.builderRegistrationTimestampOverride = builderRegistrationTimestampOverride;
@@ -315,8 +315,8 @@ public class ValidatorConfig {
     return exitWhenNoValidatorKeysEnabled;
   }
 
-  public boolean isStopWhenValidatorSlashedEnabled() {
-    return stopWhenValidatorSlashedEnabled;
+  public boolean isStopVcWhenValidatorSlashedEnabled() {
+    return stopVcWhenValidatorSlashedEnabled;
   }
 
   public boolean isBuilderRegistrationDefaultEnabled() {
@@ -386,7 +386,8 @@ public class ValidatorConfig {
         DEFAULT_FAILOVERS_PUBLISH_SIGNED_DUTIES_ENABLED;
     private boolean blockV3Enabled = DEFAULT_BLOCK_V3_ENABLED;
     private boolean exitWhenNoValidatorKeysEnabled = DEFAULT_EXIT_WHEN_NO_VALIDATOR_KEYS_ENABLED;
-    private boolean stopWhenValidatorSlashedEnabled = DEFAULT_STOP_WHEN_VALIDATOR_SLASHED_ENABLED;
+    private boolean stopVcWhenValidatorSlashedEnabled =
+        DEFAULT_STOP_VC_WHEN_VALIDATOR_SLASHED_ENABLED;
     private UInt64 builderRegistrationDefaultGasLimit = DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT;
     private int builderRegistrationSendingBatchSize =
         DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
@@ -589,8 +590,9 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder stopWhenValidatorSlashedEnabled(final boolean stopWhenValidatorSlashedEnabled) {
-      this.stopWhenValidatorSlashedEnabled = stopWhenValidatorSlashedEnabled;
+    public Builder stopVcWhenValidatorSlashedEnabled(
+        final boolean stopVcWhenValidatorSlashedEnabled) {
+      this.stopVcWhenValidatorSlashedEnabled = stopVcWhenValidatorSlashedEnabled;
       return this;
     }
 
@@ -673,7 +675,7 @@ public class ValidatorConfig {
           failoversPublishSignedDutiesEnabled,
           blockV3Enabled,
           exitWhenNoValidatorKeysEnabled,
-          stopWhenValidatorSlashedEnabled,
+          stopVcWhenValidatorSlashedEnabled,
           builderRegistrationDefaultGasLimit,
           builderRegistrationSendingBatchSize,
           builderRegistrationTimestampOverride,

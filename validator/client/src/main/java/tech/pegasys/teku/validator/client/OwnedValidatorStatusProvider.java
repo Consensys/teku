@@ -115,19 +115,19 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
   }
 
   @Override
-  public void onBlockProductionDue(UInt64 slot) {}
+  public void onBlockProductionDue(final UInt64 slot) {}
 
   @Override
-  public void onAttestationCreationDue(UInt64 slot) {}
+  public void onAttestationCreationDue(final UInt64 slot) {}
 
   @Override
-  public void onAttestationAggregationDue(UInt64 slot) {}
+  public void onAttestationAggregationDue(final UInt64 slot) {}
 
   @Override
-  public void onAttesterSlashing(AttesterSlashing attesterSlashing) {}
+  public void onAttesterSlashing(final AttesterSlashing attesterSlashing) {}
 
   @Override
-  public void onProposerSlashing(ProposerSlashing proposerSlashing) {}
+  public void onProposerSlashing(final ProposerSlashing proposerSlashing) {}
 
   @Override
   public void subscribeValidatorStatusesUpdates(final ValidatorStatusSubscriber subscriber) {
