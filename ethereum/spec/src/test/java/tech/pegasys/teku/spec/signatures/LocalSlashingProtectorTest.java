@@ -100,6 +100,7 @@ class LocalSlashingProtectorTest {
   void cannotAccessSameValidatorConcurrently()
       throws ExecutionException, InterruptedException, TimeoutException {
     final AtomicBoolean releaseLock = new AtomicBoolean(false);
+
     final SafeFuture<Void> firstSigner =
         asyncRunner.runAsync(
             () -> {
@@ -115,6 +116,14 @@ class LocalSlashingProtectorTest {
               lock.unlock();
               LOG.debug("UNLOCK firstSigner");
             });
+
+    while (!slashingProtectionStorage.getLock(validator).isLocked()) {
+      Thread.sleep(10);
+    }
+    LOG.debug("firstSigner has the lock");
+
+    assertThat(slashingProtectionStorage.getLock(validator).hasQueuedThreads()).isFalse();
+
     final SafeFuture<Void> secondSigner =
         asyncRunner.runAsync(
             () -> {
@@ -123,13 +132,23 @@ class LocalSlashingProtectorTest {
               lock.unlock();
               LOG.debug("UNLOCK secondSigner");
             });
+
+    while (!slashingProtectionStorage.getLock(validator).hasQueuedThreads()) {
+      Thread.sleep(10);
+    }
+    LOG.debug("firstSigner waiting on acquire lock");
+
     assertThat(firstSigner).isNotCompleted();
     assertThat(secondSigner).isNotCompleted();
+
     releaseLock.set(true);
     firstSigner.get(50, TimeUnit.MILLISECONDS);
     assertThat(firstSigner).isCompleted();
     secondSigner.get(50, TimeUnit.MILLISECONDS);
     assertThat(secondSigner).isCompleted();
+
+    assertThat(slashingProtectionStorage.getLock(validator).hasQueuedThreads()).isFalse();
+    assertThat(slashingProtectionStorage.getLock(validator).isLocked()).isFalse();
   }
 
   @Test

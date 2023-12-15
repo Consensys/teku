@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.signatures;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
@@ -75,7 +76,7 @@ public class LocalSlashingProtector implements SlashingProtector {
   }
 
   private SafeFuture<Boolean> maySignBlockWithLocking(
-      BLSPublicKey validator, Bytes32 genesisValidatorsRoot, UInt64 slot) {
+      final BLSPublicKey validator, final Bytes32 genesisValidatorsRoot, final UInt64 slot) {
     return SafeFuture.of(
         () -> {
           final ReentrantLock lock = acquireLock(validator);
@@ -170,10 +171,14 @@ public class LocalSlashingProtector implements SlashingProtector {
   }
 
   ReentrantLock acquireLock(final BLSPublicKey validator) {
-
     final ReentrantLock lock = validatorLocks.computeIfAbsent(validator, __ -> new ReentrantLock());
     lock.lock();
     return lock;
+  }
+
+  @VisibleForTesting
+  ReentrantLock getLock(final BLSPublicKey validator) {
+    return validatorLocks.computeIfAbsent(validator, __ -> new ReentrantLock());
   }
 
   private void writeSigningRecord(final BLSPublicKey validator, final ValidatorSigningRecord record)
