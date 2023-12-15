@@ -94,4 +94,19 @@ public class BlockProductionPerformanceImpl implements BlockProductionPerformanc
   public void builderBidValidated() {
     performanceTracker.addEvent("builder_bid_validated");
   }
+
+  @Override
+  public void beaconBlockCreated() {
+    performanceTracker.addEvent("beacon_block_created");
+  }
+
+  @Override
+  public void stateTransition() {
+    performanceTracker.addEvent("state_transition");
+  }
+
+  @Override
+  public void stateHashing() {
+    performanceTracker.addEvent("state_hashing");
+  }
 }
