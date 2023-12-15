@@ -41,6 +41,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
@@ -119,6 +121,12 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
 
   @Override
   public void onAttestationAggregationDue(final UInt64 slot) {}
+
+  @Override
+  public void onAttesterSlashing(final AttesterSlashing attesterSlashing) {}
+
+  @Override
+  public void onProposerSlashing(final ProposerSlashing proposerSlashing) {}
 
   public void onUpdatedValidatorStatuses(
       final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,

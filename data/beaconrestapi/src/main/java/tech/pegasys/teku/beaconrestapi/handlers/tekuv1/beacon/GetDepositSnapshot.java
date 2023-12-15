@@ -15,7 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_TEKU;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Collections;
@@ -58,7 +58,7 @@ public class GetDepositSnapshot extends RestApiEndpoint {
             .description(
                 "Latest finalized DepositTreeSnapshot that could be used to reconstruct Deposit merkle tree. "
                     + "See EIP-4881 for details.")
-            .tags(TAG_TEKU)
+            .tags(TAG_BEACON)
             .response(
                 SC_OK,
                 "Request successful",
