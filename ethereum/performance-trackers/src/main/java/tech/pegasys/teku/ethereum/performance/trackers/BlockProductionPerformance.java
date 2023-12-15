@@ -19,11 +19,45 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 /**
  * This is high level flow, some steps are executed only if builder flow take place
  *
- * <p>start | | v v prepareOnTick prepareApplyDeferredAttestations | | ----- ------ | v
- * preparation_process_head | v retrieve_state (which set slotTime too) | v beaconBlockPrepared | |
- * v v engineGetPayload builderGetHeader (maybe) | | v v builderBidValidated (maybe) | v
- * beacon_block_created | v state_transition | v state_hashing | v complete
+ * <pre>
+ *        start
+ *    |              |
+ *    v              v
+ * prepareOnTick  prepareApplyDeferredAttestations
+ *    |              |
+ *    -----     ------
+ *           |
+ *           v
+ * preparation_process_head
+ *         |
+ *         v
+ *       retrieve_state
+ *    (which set slotTime too)
+ *         |
+ *         v
+ *    beaconBlockPrepared
+ *    |                  |
+ *    v                  v
+ * engineGetPayload   builderGetHeader (maybe)
+ *    |                 |
+ *    v                 v
+ *    builderBidValidated (maybe)
+ *            |
+ *            v
+ *    beacon_block_created
+ *            |
+ *            v
+ *    state_transition
+ *            |
+ *            v
+ *      state_hashing
+ *            |
+ *            v
+ *         complete
+ *
+ * </pre>
  */
+
 public interface BlockProductionPerformance {
   String COMPLETE_LABEL = "complete";
 
