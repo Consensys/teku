@@ -47,14 +47,14 @@ public class ValidatorTimingActionsTest {
   private final UInt64 secondSlashedIndex = UInt64.valueOf(54654);
   private final BLSPublicKey secondSlashedPublicKey = dataStructureUtil.randomPublicKey();
   private final StatusLogger statusLogger = mock(StatusLogger.class);
-  private final SlashingRiskDetectionAction slashedAttesterValidator =
-      new SlashedValidatorAlert(statusLogger);
+  private final Optional<SlashingRiskDetectionAction> maybeSlashedAttesterValidator =
+      Optional.of(new SlashedValidatorAlert(statusLogger));
 
   @Test
   public void shouldPrintAlertForSlashedAttestingValidators() {
     final ValidatorTimingActions validatorTimingActions =
         new ValidatorTimingActions(
-            validatorIndexProvider, delegates, spec, metricsSystem, slashedAttesterValidator);
+            validatorIndexProvider, delegates, spec, metricsSystem, maybeSlashedAttesterValidator);
     final AttesterSlashing attesterSlashing =
         dataStructureUtil.randomAttesterSlashing(
             dataStructureUtil.randomValidatorIndex(),
@@ -80,7 +80,7 @@ public class ValidatorTimingActionsTest {
   public void shouldPrintAlertForSlashedProposingValidator() {
     final ValidatorTimingActions validatorTimingActions =
         new ValidatorTimingActions(
-            validatorIndexProvider, delegates, spec, metricsSystem, slashedAttesterValidator);
+            validatorIndexProvider, delegates, spec, metricsSystem, maybeSlashedAttesterValidator);
     final ProposerSlashing proposerSlashing =
         dataStructureUtil.randomProposerSlashing(
             dataStructureUtil.randomValidatorIndex(), firstSlashedIndex);

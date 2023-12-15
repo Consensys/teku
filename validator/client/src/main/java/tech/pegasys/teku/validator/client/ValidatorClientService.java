@@ -95,7 +95,7 @@ public class ValidatorClientService extends Service {
   private ValidatorIndexProvider validatorIndexProvider;
   private Optional<DoppelgangerDetector> maybeDoppelgangerDetector = Optional.empty();
   private final SlashingRiskDetectionAction doppelgangerDetectionAction;
-  private final SlashingRiskDetectionAction validatorSlashedAction;
+  private final Optional<SlashingRiskDetectionAction> maybeValidatorSlashedAction;
   private Optional<RestApi> maybeValidatorRestApi = Optional.empty();
   private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
   private final Optional<ValidatorRegistrator> validatorRegistrator;
@@ -117,7 +117,7 @@ public class ValidatorClientService extends Service {
       final Spec spec,
       final MetricsSystem metricsSystem,
       final SlashingRiskDetectionAction doppelgangerDetectionAction,
-      final SlashingRiskDetectionAction validatorSlashedAction) {
+      final Optional<SlashingRiskDetectionAction> maybeValidatorSlashedAction) {
     this.eventChannels = eventChannels;
     this.validatorLoader = validatorLoader;
     this.beaconNodeApi = beaconNodeApi;
@@ -129,14 +129,14 @@ public class ValidatorClientService extends Service {
     this.spec = spec;
     this.metricsSystem = metricsSystem;
     this.doppelgangerDetectionAction = doppelgangerDetectionAction;
-    this.validatorSlashedAction = validatorSlashedAction;
+    this.maybeValidatorSlashedAction = maybeValidatorSlashedAction;
   }
 
   public static ValidatorClientService create(
       final ServiceConfig services,
       final ValidatorClientConfiguration config,
       final SlashingRiskDetectionAction doppelgangerDetectionAction,
-      final SlashingRiskDetectionAction validatorSlashingAction) {
+      final Optional<SlashingRiskDetectionAction> maybeValidatorSlashingAction) {
     final EventChannels eventChannels = services.getEventChannels();
     final ValidatorConfig validatorConfig = config.getValidatorConfig();
 
@@ -219,7 +219,7 @@ public class ValidatorClientService extends Service {
             config.getSpec(),
             services.getMetricsSystem(),
             doppelgangerDetectionAction,
-            validatorSlashingAction);
+            maybeValidatorSlashingAction);
 
     asyncRunner
         .runAsync(
@@ -573,7 +573,7 @@ public class ValidatorClientService extends Service {
                       validatorTimingChannels,
                       spec,
                       metricsSystem,
-                      validatorSlashedAction));
+                      maybeValidatorSlashedAction));
               validatorStatusProvider.start().ifExceptionGetsHereRaiseABug();
               return beaconNodeApi.subscribeToEvents();
             });

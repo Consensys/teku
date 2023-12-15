@@ -161,7 +161,8 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
             validatorTimingChannel,
             serviceConfig.getMetricsSystem(),
             validatorConfig.generateEarlyAttestations(),
-            spec);
+            spec,
+            validatorConfig.isStopWhenValidatorSlashedEnabled());
 
     eventChannels.subscribe(BeaconNodeReadinessChannel.class, beaconChainEventAdapter);
 
