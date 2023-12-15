@@ -168,37 +168,40 @@ public class NodeDataProvider {
             });
   }
 
-  public void subscribeToReceivedBlocks(ImportedBlockListener listener) {
+  public void subscribeToReceivedBlocks(final ImportedBlockListener listener) {
     blockManager.subscribeToReceivedBlocks(listener);
   }
 
-  public void subscribeToReceivedBlobSidecar(NewBlobSidecarSubscriber listener) {
+  public void subscribeToReceivedBlobSidecar(final NewBlobSidecarSubscriber listener) {
     blockBlobSidecarsTrackersPool.subscribeNewBlobSidecar(listener);
   }
 
-  public void subscribeToAttesterSlashing(OperationAddedSubscriber<AttesterSlashing> listener) {
+  public void subscribeToAttesterSlashing(
+      final OperationAddedSubscriber<AttesterSlashing> listener) {
     attesterSlashingPool.subscribeOperationAdded(listener);
   }
 
-  public void subscribeToProposerSlashing(OperationAddedSubscriber<ProposerSlashing> listener) {
+  public void subscribeToProposerSlashing(
+      final OperationAddedSubscriber<ProposerSlashing> listener) {
     proposerSlashingPool.subscribeOperationAdded(listener);
   }
 
-  public void subscribeToValidAttestations(ProcessedAttestationListener listener) {
+  public void subscribeToValidAttestations(final ProcessedAttestationListener listener) {
     attestationManager.subscribeToAllValidAttestations(listener);
   }
 
-  public void subscribeToNewVoluntaryExits(OperationAddedSubscriber<SignedVoluntaryExit> listener) {
+  public void subscribeToNewVoluntaryExits(
+      final OperationAddedSubscriber<SignedVoluntaryExit> listener) {
     voluntaryExitPool.subscribeOperationAdded(listener);
   }
 
   public void subscribeToNewBlsToExecutionChanges(
-      OperationAddedSubscriber<SignedBlsToExecutionChange> listener) {
+      final OperationAddedSubscriber<SignedBlsToExecutionChange> listener) {
     blsToExecutionChangePool.subscribeOperationAdded(listener);
   }
 
   public void subscribeToSyncCommitteeContributions(
-      OperationAddedSubscriber<SignedContributionAndProof> listener) {
+      final OperationAddedSubscriber<SignedContributionAndProof> listener) {
     syncCommitteeContributionPool.subscribeOperationAdded(listener);
   }
 
