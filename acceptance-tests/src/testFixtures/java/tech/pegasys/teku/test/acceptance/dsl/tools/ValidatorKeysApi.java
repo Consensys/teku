@@ -152,6 +152,13 @@ public class ValidatorKeysApi {
     checkReadOnly(data, false);
   }
 
+  public void assertLocalValidatorCount(final int expectedCount) throws IOException {
+    final JsonNode result = jsonProvider.getObjectMapper().readTree(getLocalValidatorListing());
+    final JsonNode data = result.get("data");
+    assertThat(data.isArray()).isTrue();
+    Assertions.assertThat(data.size()).isEqualTo(expectedCount);
+  }
+
   public void assertRemoteValidatorListing(final List<BLSPublicKey> expectedKeys)
       throws IOException {
     final JsonNode result = jsonProvider.getObjectMapper().readTree(getRemoteValidatorListing());

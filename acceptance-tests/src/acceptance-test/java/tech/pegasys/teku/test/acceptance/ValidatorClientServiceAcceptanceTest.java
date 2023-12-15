@@ -48,6 +48,47 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
   }
 
   @Test
+  void shouldNotFailWithValidatorKeysUnknownStatusWhenExitOptionEnabledOnBeaconNode()
+      throws Exception {
+    final TekuNode beaconNode =
+        createTekuNode(
+            // load interop keys outside genesis range
+            config ->
+                config
+                    .withExitWhenNoValidatorKeysEnabled(true)
+                    .withInteropNumberOfValidators(10)
+                    .withInteropValidators(20, 2));
+    beaconNode.start();
+
+    beaconNode.waitForEpochAtOrAbove(1);
+
+    beaconNode.stop();
+  }
+
+  @Test
+  void shouldNotFailWithValidatorKeysUnknownStatusWhenExitOptionEnabledOnValidatorClient()
+      throws Exception {
+    final TekuNode beaconNode = createTekuNode(config -> config.withInteropNumberOfValidators(10));
+    final TekuValidatorNode validatorClient =
+        createValidatorNode(
+            config ->
+                config
+                    .withBeaconNode(beaconNode)
+                    .withExitWhenNoValidatorKeysEnabled(true)
+                    .withValidatorApiEnabled()
+                    // load interop keys outside genesis range
+                    .withInteropValidators(20, 2));
+    beaconNode.start();
+    validatorClient.start();
+    beaconNode.waitForEpochAtOrAbove(1);
+
+    final ValidatorKeysApi api = validatorClient.getValidatorKeysApi();
+    api.assertLocalValidatorCount(2);
+    validatorClient.stop();
+    beaconNode.stop();
+  }
+
+  @Test
   void shouldNotFailWithNoValidatorKeysWhenExitOptionDisabledOnBeaconNode() throws Exception {
     final TekuNode beaconNode =
         createTekuNode(
