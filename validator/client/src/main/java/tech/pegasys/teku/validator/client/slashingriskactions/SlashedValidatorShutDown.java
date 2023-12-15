@@ -26,8 +26,8 @@ public class SlashedValidatorShutDown implements SlashingRiskDetectionAction {
   @Override
   public void perform(List<BLSPublicKey> pubKeys) {
     if (!pubKeys.isEmpty()) {
-      LOG.info(
-          "Validator(s) with public key(s) {} have been slashed. Shutting down...",
+      LOG.fatal(
+          "Validator(s) with public key(s) {} got slashed. Shutting down...",
           pubKeys.stream()
               .map(BLSPublicKey::toAbbreviatedString)
               .collect(Collectors.joining(", ")));

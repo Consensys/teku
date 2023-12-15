@@ -35,18 +35,18 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
   private final Collection<ValidatorTimingChannel> delegates;
   private final Spec spec;
   private final SettableGauge validatorCurrentEpoch;
-  private final SlashingRiskDetectionAction validatorSlashedAction;
+  private final Optional<SlashingRiskDetectionAction> maybeValidatorSlashedAction;
 
   public ValidatorTimingActions(
       final ValidatorIndexProvider validatorIndexProvider,
       final Collection<ValidatorTimingChannel> delegates,
       final Spec spec,
       final MetricsSystem metricsSystem,
-      SlashingRiskDetectionAction validatorSlashedAction) {
+      final Optional<SlashingRiskDetectionAction> maybeValidatorSlashedAction) {
     this.validatorIndexProvider = validatorIndexProvider;
     this.delegates = delegates;
     this.spec = spec;
-    this.validatorSlashedAction = validatorSlashedAction;
+    this.maybeValidatorSlashedAction = maybeValidatorSlashedAction;
 
     this.validatorCurrentEpoch =
         SettableGauge.create(
@@ -114,7 +114,8 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
             .filter(Optional::isPresent)
             .map(Optional::get)
             .collect(Collectors.toList());
-    validatorSlashedAction.perform(slashedPublicKeys);
+    maybeValidatorSlashedAction.ifPresent(
+        validatorSlashingAction -> validatorSlashingAction.perform(slashedPublicKeys));
   }
 
   @Override
@@ -123,6 +124,9 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
     final UInt64 slashedIndex = proposerSlashing.getHeader1().getMessage().getProposerIndex();
     validatorIndexProvider
         .getPublicKey(slashedIndex.intValue())
-        .ifPresent(validatorSlashedAction::perform);
+        .ifPresent(
+            slashedPubKey ->
+                maybeValidatorSlashedAction.ifPresent(
+                    validatorSlashingAction -> validatorSlashingAction.perform(slashedPubKey)));
   }
 }

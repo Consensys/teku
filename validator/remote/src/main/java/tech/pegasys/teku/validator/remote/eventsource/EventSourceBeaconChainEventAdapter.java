@@ -62,6 +62,7 @@ public class EventSourceBeaconChainEventAdapter
   private final ValidatorLogger validatorLogger;
   private final BeaconChainEventAdapter timeBasedEventAdapter;
   private final EventSourceHandler eventSourceHandler;
+  private final boolean validatorSlashingMonitoringEnabled;
 
   public EventSourceBeaconChainEventAdapter(
       final BeaconNodeReadinessManager beaconNodeReadinessManager,
@@ -73,7 +74,8 @@ public class EventSourceBeaconChainEventAdapter
       final ValidatorTimingChannel validatorTimingChannel,
       final MetricsSystem metricsSystem,
       final boolean generateEarlyAttestations,
-      final Spec spec) {
+      final Spec spec,
+      final boolean validatorSlashingMonitoringEnabled) {
     this.beaconNodeReadinessManager = beaconNodeReadinessManager;
     this.primaryBeaconNodeApi = primaryBeaconNodeApi;
     this.failoverBeaconNodeApis = failoverBeaconNodeApis;
@@ -83,6 +85,7 @@ public class EventSourceBeaconChainEventAdapter
     this.eventSourceHandler =
         new EventSourceHandler(
             validatorTimingChannel, metricsSystem, generateEarlyAttestations, spec);
+    this.validatorSlashingMonitoringEnabled = validatorSlashingMonitoringEnabled;
   }
 
   @Override
@@ -130,11 +133,13 @@ public class EventSourceBeaconChainEventAdapter
 
   private BackgroundEventSource createEventSource(final RemoteValidatorApiChannel beaconNodeApi) {
     final HttpUrl eventSourceUrl =
-        createEventStreamSourceUrl(
-            beaconNodeApi.getEndpoint(),
-            EventType.head,
-            EventType.attester_slashing,
-            EventType.proposer_slashing);
+        validatorSlashingMonitoringEnabled
+            ? createEventStreamSourceUrl(
+                beaconNodeApi.getEndpoint(),
+                EventType.head,
+                EventType.attester_slashing,
+                EventType.proposer_slashing)
+            : createEventStreamSourceUrl(beaconNodeApi.getEndpoint(), EventType.head);
     final EventSource.Builder eventSourceBuilder =
         new EventSource.Builder(ConnectStrategy.http(eventSourceUrl).httpClient(okHttpClient))
             .retryDelayStrategy(
