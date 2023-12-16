@@ -19,11 +19,9 @@ import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 
 public interface NewBlockBuildingSubscriber {
 
-  record NewBlockBuildingData(
+  void onNewBlockBuilding(
       UInt64 proposerIndex,
       UInt64 parentExecutionBlockNumber,
       Bytes32 parentExecutionBlockHash,
-      PayloadBuildingAttributes payloadAttributes) {}
-
-  void onNewBlockBuilding(NewBlockBuildingData newBlockBuildingData);
+      PayloadBuildingAttributes payloadAttributes);
 }

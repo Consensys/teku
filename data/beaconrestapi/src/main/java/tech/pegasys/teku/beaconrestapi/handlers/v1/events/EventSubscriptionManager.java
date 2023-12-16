@@ -50,7 +50,6 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
-import tech.pegasys.teku.statetransition.block.NewBlockBuildingSubscriber.NewBlockBuildingData;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -221,17 +220,21 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     }
   }
 
-  protected void onNewPayloadAttributes(final NewBlockBuildingData blockBuildingData) {
-    final PayloadBuildingAttributes payloadAttributes = blockBuildingData.payloadAttributes();
+  protected void onNewPayloadAttributes(
+      final UInt64 proposerIndex,
+      final UInt64 parentExecutionBlockNumber,
+      final Bytes32 parentExecutionBlockHash,
+      final PayloadBuildingAttributes payloadAttributes) {
+    final UInt64 proposerSlot = payloadAttributes.getBlockSlot();
     final PayloadAttributesData data =
         new PayloadAttributesData(
-            spec.atSlot(payloadAttributes.getBlockSlot()).getMilestone(),
+            spec.atSlot(proposerSlot).getMilestone(),
             new PayloadAttributesEvent.Data(
-                blockBuildingData.proposerIndex(),
-                payloadAttributes.getBlockSlot(),
+                proposerIndex,
+                proposerSlot,
                 payloadAttributes.getParentBeaconBlockRoot(),
-                blockBuildingData.parentExecutionBlockNumber(),
-                blockBuildingData.parentExecutionBlockHash(),
+                parentExecutionBlockNumber,
+                parentExecutionBlockHash,
                 payloadAttributes));
     final PayloadAttributesEvent payloadAttributesEvent = PayloadAttributesEvent.create(data);
     notifySubscribersOfEvent(EventType.payload_attributes, payloadAttributesEvent);

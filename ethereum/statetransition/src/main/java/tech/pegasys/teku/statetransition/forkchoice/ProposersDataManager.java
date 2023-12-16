@@ -42,7 +42,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatri
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.statetransition.block.NewBlockBuildingSubscriber;
-import tech.pegasys.teku.statetransition.block.NewBlockBuildingSubscriber.NewBlockBuildingData;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -230,14 +229,13 @@ public class ProposersDataManager implements SlotEventsChannel {
                             .map(BeaconStateBellatrix::getLatestExecutionPayloadHeader)
                             .map(ExecutionPayloadSummary::getBlockNumber)
                             .orElse(UInt64.ZERO);
-                    final NewBlockBuildingData newBlockBuildingData =
-                        new NewBlockBuildingData(
-                            payloadAttributes.getProposerIndex(),
-                            parentExecutionBlockNumber,
-                            parentExecutionBlockHash,
-                            payloadAttributes);
-                    newBlockBuildingSubscribers.deliver(
-                        NewBlockBuildingSubscriber::onNewBlockBuilding, newBlockBuildingData);
+                    newBlockBuildingSubscribers.forEach(
+                        subscriber ->
+                            subscriber.onNewBlockBuilding(
+                                payloadAttributes.getProposerIndex(),
+                                parentExecutionBlockNumber,
+                                parentExecutionBlockHash,
+                                payloadAttributes));
                   });
               return payloadBuildingAttributes;
             },

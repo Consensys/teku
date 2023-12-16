@@ -57,7 +57,6 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedCo
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.block.NewBlockBuildingSubscriber.NewBlockBuildingData;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ReorgContext;
 
@@ -425,11 +424,10 @@ public class EventSubscriptionManagerTest {
 
   private void triggerPayloadAttributesEvent() {
     manager.onNewPayloadAttributes(
-        new NewBlockBuildingData(
-            samplePayloadAttributesData.data().proposerIndex(),
-            samplePayloadAttributesData.data().parentExecutionBlockNumber(),
-            samplePayloadAttributesData.data().parentExecutionBlockHash(),
-            samplePayloadAttributesData.data().payloadAttributes()));
+        samplePayloadAttributesData.data().proposerIndex(),
+        samplePayloadAttributesData.data().parentExecutionBlockNumber(),
+        samplePayloadAttributesData.data().parentExecutionBlockHash(),
+        samplePayloadAttributesData.data().payloadAttributes());
     asyncRunner.executeQueuedActions();
   }
 
