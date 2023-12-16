@@ -95,8 +95,7 @@ public class ExecutionPayloadSchemaCapella
                 new TransactionSchema(specConfig), specConfig.getMaxTransactionsPerPayload())),
         namedSchema(
             WITHDRAWALS,
-            SszListSchema.create(
-                new WithdrawalSchema(), specConfig.getMaxWithdrawalsPerPayload())));
+            SszListSchema.create(Withdrawal.SSZ_SCHEMA, specConfig.getMaxWithdrawalsPerPayload())));
     this.defaultExecutionPayload = createFromBackingNode(getDefaultTree());
   }
 

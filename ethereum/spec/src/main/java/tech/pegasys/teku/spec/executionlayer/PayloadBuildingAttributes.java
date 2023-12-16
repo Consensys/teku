@@ -25,6 +25,8 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 
 public class PayloadBuildingAttributes {
+
+  private final UInt64 proposerIndex;
   private final UInt64 timestamp;
   private final Bytes32 prevRandao;
   private final Eth1Address feeRecipient;
@@ -35,6 +37,7 @@ public class PayloadBuildingAttributes {
   private final UInt64 blockSlot;
 
   public PayloadBuildingAttributes(
+      final UInt64 proposerIndex,
       final UInt64 timestamp,
       final Bytes32 prevRandao,
       final Eth1Address feeRecipient,
@@ -42,6 +45,7 @@ public class PayloadBuildingAttributes {
       final Optional<List<Withdrawal>> maybeWithdrawals,
       final Bytes32 parentBeaconBlockRoot,
       final UInt64 blockSlot) {
+    this.proposerIndex = proposerIndex;
     this.timestamp = timestamp;
     this.prevRandao = prevRandao;
     this.feeRecipient = feeRecipient;
@@ -49,6 +53,10 @@ public class PayloadBuildingAttributes {
     this.maybeWithdrawals = maybeWithdrawals;
     this.parentBeaconBlockRoot = parentBeaconBlockRoot;
     this.blockSlot = blockSlot;
+  }
+
+  public UInt64 getProposerIndex() {
+    return proposerIndex;
   }
 
   public UInt64 getTimestamp() {
@@ -93,7 +101,8 @@ public class PayloadBuildingAttributes {
       return false;
     }
     final PayloadBuildingAttributes that = (PayloadBuildingAttributes) o;
-    return Objects.equals(timestamp, that.timestamp)
+    return Objects.equals(proposerIndex, that.proposerIndex)
+        && Objects.equals(timestamp, that.timestamp)
         && Objects.equals(prevRandao, that.prevRandao)
         && Objects.equals(feeRecipient, that.feeRecipient)
         && Objects.equals(validatorRegistration, that.validatorRegistration)
@@ -105,6 +114,7 @@ public class PayloadBuildingAttributes {
   @Override
   public int hashCode() {
     return Objects.hash(
+        proposerIndex,
         timestamp,
         prevRandao,
         feeRecipient,
@@ -117,6 +127,7 @@ public class PayloadBuildingAttributes {
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
+        .add("proposerIndex", proposerIndex)
         .add("timestamp", timestamp)
         .add("prevRandao", prevRandao)
         .add("feeRecipient", feeRecipient)

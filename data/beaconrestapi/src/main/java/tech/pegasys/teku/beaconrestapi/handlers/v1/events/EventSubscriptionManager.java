@@ -32,6 +32,7 @@ import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.events.PayloadAttributesEvent.PayloadAttributesData;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
@@ -48,6 +49,8 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
+import tech.pegasys.teku.statetransition.block.NewBlockBuildingSubscriber.NewBlockBuildingData;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -93,6 +96,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     nodeDataProvider.subscribeToNewVoluntaryExits(this::onNewVoluntaryExit);
     nodeDataProvider.subscribeToSyncCommitteeContributions(this::onSyncCommitteeContribution);
     nodeDataProvider.subscribeToNewBlsToExecutionChanges(this::onNewBlsToExecutionChange);
+    nodeDataProvider.subscribeToNewBlockBuilding(this::onNewPayloadAttributes);
   }
 
   public void registerClient(final SseClient sseClient) {
@@ -215,6 +219,22 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
       notifySubscribersOfEvent(
           EventType.proposer_slashing, new ProposerSlashingEvent(proposerSlashing));
     }
+  }
+
+  protected void onNewPayloadAttributes(final NewBlockBuildingData blockBuildingData) {
+    final PayloadBuildingAttributes payloadAttributes = blockBuildingData.payloadAttributes();
+    final PayloadAttributesData data =
+        new PayloadAttributesData(
+            spec.atSlot(payloadAttributes.getBlockSlot()).getMilestone(),
+            new PayloadAttributesEvent.Data(
+                blockBuildingData.proposerIndex(),
+                payloadAttributes.getBlockSlot(),
+                payloadAttributes.getParentBeaconBlockRoot(),
+                blockBuildingData.parentExecutionBlockNumber(),
+                blockBuildingData.parentExecutionBlockHash(),
+                payloadAttributes));
+    final PayloadAttributesEvent payloadAttributesEvent = PayloadAttributesEvent.create(data);
+    notifySubscribersOfEvent(EventType.payload_attributes, payloadAttributesEvent);
   }
 
   @Override

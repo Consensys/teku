@@ -92,6 +92,7 @@ class BellatrixExecutionClientHandlerTest extends ExecutionHandlerClientTest {
     final PayloadBuildingAttributes attributes =
         new PayloadBuildingAttributes(
             dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomEth1Address(),
             Optional.empty(),

@@ -35,10 +35,14 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
+import tech.pegasys.teku.statetransition.block.NewBlockBuildingSubscriber;
+import tech.pegasys.teku.statetransition.block.NewBlockBuildingSubscriber.NewBlockBuildingData;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -57,7 +61,10 @@ public class ProposersDataManager implements SlotEventsChannel {
       new ConcurrentHashMap<>();
   private final Optional<Eth1Address> proposerDefaultFeeRecipient;
 
-  private final Subscribers<ProposersDataManagerSubscriber> subscribers = Subscribers.create(true);
+  private final Subscribers<ProposersDataManagerSubscriber> proposersDataChangesSubscribers =
+      Subscribers.create(true);
+  private final Subscribers<NewBlockBuildingSubscriber> newBlockBuildingSubscribers =
+      Subscribers.create(true);
 
   public ProposersDataManager(
       final EventThread eventThread,
@@ -83,12 +90,12 @@ public class ProposersDataManager implements SlotEventsChannel {
     this.executionLayerChannel = executionLayerChannel;
   }
 
-  public long subscribeToProposersDataChanges(ProposersDataManagerSubscriber subscriber) {
-    return subscribers.subscribe(subscriber);
+  public void subscribeToProposersDataChanges(final ProposersDataManagerSubscriber subscriber) {
+    proposersDataChangesSubscribers.subscribe(subscriber);
   }
 
-  public boolean unsubscribeToProposersDataChanges(long subscriberId) {
-    return subscribers.unsubscribe(subscriberId);
+  public void subscribeToNewBlockBuilding(final NewBlockBuildingSubscriber subscriber) {
+    newBlockBuildingSubscribers.subscribe(subscriber);
   }
 
   @Override
@@ -124,7 +131,8 @@ public class ProposersDataManager implements SlotEventsChannel {
   public void updatePreparedProposers(
       final Collection<BeaconPreparableProposer> preparedProposers, final UInt64 currentSlot) {
     updatePreparedProposerCache(preparedProposers, currentSlot);
-    subscribers.deliver(ProposersDataManagerSubscriber::onPreparedProposersUpdated);
+    proposersDataChangesSubscribers.deliver(
+        ProposersDataManagerSubscriber::onPreparedProposersUpdated);
   }
 
   public SafeFuture<Void> updateValidatorRegistrations(
@@ -179,7 +187,8 @@ public class ProposersDataManager implements SlotEventsChannel {
                             "validator index not found for public key {}",
                             signedValidatorRegistration.getMessage().getPublicKey())));
 
-    subscribers.deliver(ProposersDataManagerSubscriber::onValidatorRegistrationsUpdated);
+    proposersDataChangesSubscribers.deliver(
+        ProposersDataManagerSubscriber::onValidatorRegistrationsUpdated);
   }
 
   public SafeFuture<Optional<PayloadBuildingAttributes>> calculatePayloadBuildingAttributes(
@@ -206,9 +215,32 @@ public class ProposersDataManager implements SlotEventsChannel {
         forkChoiceUpdateData.getForkChoiceState().getHeadBlockRoot();
     return getStateInEpoch(epoch)
         .thenApplyAsync(
-            maybeState ->
-                calculatePayloadBuildingAttributes(
-                    currentHeadBlockRoot, blockSlot, epoch, maybeState, mandatory),
+            maybeState -> {
+              final Optional<PayloadBuildingAttributes> payloadBuildingAttributes =
+                  calculatePayloadBuildingAttributes(
+                      currentHeadBlockRoot, blockSlot, epoch, maybeState, mandatory);
+              payloadBuildingAttributes.ifPresent(
+                  payloadAttributes -> {
+                    final Bytes32 parentExecutionBlockHash =
+                        forkChoiceUpdateData.getForkChoiceState().getHeadExecutionBlockHash();
+                    // TODO: not sure about this
+                    final UInt64 parentExecutionBlockNumber =
+                        maybeState
+                            .flatMap(BeaconState::toVersionBellatrix)
+                            .map(BeaconStateBellatrix::getLatestExecutionPayloadHeader)
+                            .map(ExecutionPayloadSummary::getBlockNumber)
+                            .orElse(UInt64.ZERO);
+                    final NewBlockBuildingData newBlockBuildingData =
+                        new NewBlockBuildingData(
+                            payloadAttributes.getProposerIndex(),
+                            parentExecutionBlockNumber,
+                            parentExecutionBlockHash,
+                            payloadAttributes);
+                    newBlockBuildingSubscribers.deliver(
+                        NewBlockBuildingSubscriber::onNewBlockBuilding, newBlockBuildingData);
+                  });
+              return payloadBuildingAttributes;
+            },
             eventThread);
   }
 
@@ -230,6 +262,7 @@ public class ProposersDataManager implements SlotEventsChannel {
       // Proposer is not one of our validators. No need to propose a block.
       return Optional.empty();
     }
+
     final UInt64 timestamp = spec.computeTimeAtSlot(state, blockSlot);
     final Bytes32 random = spec.getRandaoMix(state, epoch);
     final Optional<SignedValidatorRegistration> validatorRegistration =
@@ -238,6 +271,7 @@ public class ProposersDataManager implements SlotEventsChannel {
 
     return Optional.of(
         new PayloadBuildingAttributes(
+            proposerIndex,
             timestamp,
             random,
             getFeeRecipient(proposerInfo, blockSlot),

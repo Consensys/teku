@@ -916,15 +916,20 @@ class ForkChoiceNotifierTest {
       final boolean doPrepare,
       final Optional<Eth1Address> overrideFeeRecipient,
       final Optional<SignedValidatorRegistration> validatorRegistration) {
-    final int block2Proposer = spec.getBeaconProposerIndex(headState, blockSlot);
+    final UInt64 proposerIndex = UInt64.valueOf(spec.getBeaconProposerIndex(headState, blockSlot));
     final PayloadBuildingAttributes payloadBuildingAttributes =
         getExpectedPayloadBuildingAttributes(
-            forkChoiceState, headState, blockSlot, overrideFeeRecipient, validatorRegistration);
+            proposerIndex,
+            forkChoiceState,
+            headState,
+            blockSlot,
+            overrideFeeRecipient,
+            validatorRegistration);
     if (doPrepare) {
       proposersDataManager.updatePreparedProposers(
           List.of(
               new BeaconPreparableProposer(
-                  UInt64.valueOf(block2Proposer), payloadBuildingAttributes.getFeeRecipient())),
+                  proposerIndex, payloadBuildingAttributes.getFeeRecipient())),
           recentChainData.getHeadSlot());
     }
     validatorRegistration.ifPresent(
@@ -942,30 +947,43 @@ class ForkChoiceNotifierTest {
       final BeaconState headState,
       final UInt64 blockSlot1,
       final UInt64 blockSlot2) {
-    final int block2Proposer1 = spec.getBeaconProposerIndex(headState, blockSlot1);
-    final int block2Proposer2 = spec.getBeaconProposerIndex(headState, blockSlot2);
+    final UInt64 proposerIndex1 =
+        UInt64.valueOf(spec.getBeaconProposerIndex(headState, blockSlot1));
+    final UInt64 proposerIndex2 =
+        UInt64.valueOf(spec.getBeaconProposerIndex(headState, blockSlot2));
     final PayloadBuildingAttributes payloadBuildingAttributes1 =
         getExpectedPayloadBuildingAttributes(
-            forkChoiceState, headState, blockSlot1, Optional.empty(), Optional.empty());
+            proposerIndex1,
+            forkChoiceState,
+            headState,
+            blockSlot1,
+            Optional.empty(),
+            Optional.empty());
     final PayloadBuildingAttributes payloadBuildingAttributes2 =
         getExpectedPayloadBuildingAttributes(
-            forkChoiceState, headState, blockSlot2, Optional.empty(), Optional.empty());
+            proposerIndex2,
+            forkChoiceState,
+            headState,
+            blockSlot2,
+            Optional.empty(),
+            Optional.empty());
 
-    if (block2Proposer1 == block2Proposer2) {
+    if (proposerIndex1.equals(proposerIndex2)) {
       throw new UnsupportedOperationException(
           "unsupported test scenario: with same proposer for different slots");
     }
     proposersDataManager.updatePreparedProposers(
         List.of(
             new BeaconPreparableProposer(
-                UInt64.valueOf(block2Proposer1), payloadBuildingAttributes1.getFeeRecipient()),
+                proposerIndex1, payloadBuildingAttributes1.getFeeRecipient()),
             new BeaconPreparableProposer(
-                UInt64.valueOf(block2Proposer2), payloadBuildingAttributes2.getFeeRecipient())),
+                proposerIndex2, payloadBuildingAttributes2.getFeeRecipient())),
         recentChainData.getHeadSlot());
     return List.of(payloadBuildingAttributes1, payloadBuildingAttributes2);
   }
 
   private PayloadBuildingAttributes getExpectedPayloadBuildingAttributes(
+      final UInt64 proposerIndex,
       final ForkChoiceState forkChoiceState,
       final BeaconState headState,
       final UInt64 blockSlot,
@@ -976,6 +994,7 @@ class ForkChoiceNotifierTest {
     final UInt64 timestamp = spec.computeTimeAtSlot(headState, blockSlot);
     final Bytes32 random = spec.getRandaoMix(headState, UInt64.ZERO);
     return new PayloadBuildingAttributes(
+        proposerIndex,
         timestamp,
         random,
         feeRecipient,

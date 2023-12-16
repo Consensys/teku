@@ -101,7 +101,7 @@ public class ExecutionPayloadSchemaDeneb
                 new TransactionSchema(specConfig), specConfig.getMaxTransactionsPerPayload())),
         namedSchema(
             WITHDRAWALS,
-            SszListSchema.create(new WithdrawalSchema(), specConfig.getMaxWithdrawalsPerPayload())),
+            SszListSchema.create(Withdrawal.SSZ_SCHEMA, specConfig.getMaxWithdrawalsPerPayload())),
         namedSchema(BLOB_GAS_USED, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(EXCESS_BLOB_GAS, SszPrimitiveSchemas.UINT64_SCHEMA));
     this.defaultExecutionPayload = createFromBackingNode(getDefaultTree());
