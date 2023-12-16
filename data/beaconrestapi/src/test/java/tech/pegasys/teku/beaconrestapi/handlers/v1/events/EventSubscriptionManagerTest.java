@@ -120,13 +120,7 @@ public class EventSubscriptionManagerTest {
   final PayloadAttributesData samplePayloadAttributesData =
       new PayloadAttributesData(
           SpecMilestone.DENEB,
-          new Data(
-              data.randomUInt64(),
-              samplePayloadAttributes.getProposalSlot(),
-              samplePayloadAttributes.getParentBeaconBlockRoot(),
-              data.randomUInt64(),
-              data.randomBytes32(),
-              samplePayloadAttributes));
+          new Data(data.randomUInt64(), data.randomBytes32(), samplePayloadAttributes));
 
   private final AsyncContext async = mock(AsyncContext.class);
   private final EventChannels channels = mock(EventChannels.class);
@@ -424,7 +418,6 @@ public class EventSubscriptionManagerTest {
 
   private void triggerPayloadAttributesEvent() {
     manager.onNewPayloadAttributes(
-        samplePayloadAttributesData.data().proposerIndex(),
         samplePayloadAttributesData.data().parentExecutionBlockNumber(),
         samplePayloadAttributesData.data().parentExecutionBlockHash(),
         samplePayloadAttributesData.data().payloadAttributes());

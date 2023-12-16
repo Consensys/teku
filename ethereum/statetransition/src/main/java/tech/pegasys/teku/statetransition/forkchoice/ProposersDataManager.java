@@ -220,8 +220,6 @@ public class ProposersDataManager implements SlotEventsChannel {
                       currentHeadBlockRoot, blockSlot, epoch, maybeState, mandatory);
               payloadBuildingAttributes.ifPresent(
                   payloadAttributes -> {
-                    final Bytes32 parentExecutionBlockHash =
-                        forkChoiceUpdateData.getForkChoiceState().getHeadExecutionBlockHash();
                     // TODO: not sure about this
                     final UInt64 parentExecutionBlockNumber =
                         maybeState
@@ -229,10 +227,11 @@ public class ProposersDataManager implements SlotEventsChannel {
                             .map(BeaconStateBellatrix::getLatestExecutionPayloadHeader)
                             .map(ExecutionPayloadSummary::getBlockNumber)
                             .orElse(UInt64.ZERO);
+                    final Bytes32 parentExecutionBlockHash =
+                        forkChoiceUpdateData.getForkChoiceState().getHeadExecutionBlockHash();
                     newBlockBuildingSubscribers.forEach(
                         subscriber ->
                             subscriber.onNewBlockBuilding(
-                                payloadAttributes.getProposerIndex(),
                                 parentExecutionBlockNumber,
                                 parentExecutionBlockHash,
                                 payloadAttributes));
