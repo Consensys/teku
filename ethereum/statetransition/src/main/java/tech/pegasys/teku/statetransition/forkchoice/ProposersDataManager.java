@@ -219,23 +219,9 @@ public class ProposersDataManager implements SlotEventsChannel {
                   calculatePayloadBuildingAttributes(
                       currentHeadBlockRoot, blockSlot, epoch, maybeState, mandatory);
               payloadBuildingAttributes.ifPresent(
-                  payloadAttributes -> {
-                    // TODO: not sure about this
-                    final UInt64 parentExecutionBlockNumber =
-                        maybeState
-                            .flatMap(BeaconState::toVersionBellatrix)
-                            .map(BeaconStateBellatrix::getLatestExecutionPayloadHeader)
-                            .map(ExecutionPayloadSummary::getBlockNumber)
-                            .orElse(UInt64.ZERO);
-                    final Bytes32 parentExecutionBlockHash =
-                        forkChoiceUpdateData.getForkChoiceState().getHeadExecutionBlockHash();
-                    newBlockBuildingSubscribers.forEach(
-                        subscriber ->
-                            subscriber.onNewBlockBuilding(
-                                parentExecutionBlockNumber,
-                                parentExecutionBlockHash,
-                                payloadAttributes));
-                  });
+                  payloadAttributes ->
+                      notifyNewBlockBuildingSubscribers(
+                          maybeState, forkChoiceUpdateData, payloadAttributes));
               return payloadBuildingAttributes;
             },
             eventThread);
@@ -276,6 +262,25 @@ public class ProposersDataManager implements SlotEventsChannel {
             validatorRegistration,
             spec.getExpectedWithdrawals(state),
             currentHeadBlockRoot));
+  }
+
+  private void notifyNewBlockBuildingSubscribers(
+      final Optional<BeaconState> maybeState,
+      final ForkChoiceUpdateData forkChoiceUpdateData,
+      final PayloadBuildingAttributes payloadAttributes) {
+    // TODO: more clean to get from ForkChoiceUpdateData but not available yet
+    final UInt64 parentExecutionBlockNumber =
+        maybeState
+            .flatMap(BeaconState::toVersionBellatrix)
+            .map(BeaconStateBellatrix::getLatestExecutionPayloadHeader)
+            .map(ExecutionPayloadSummary::getBlockNumber)
+            .orElse(UInt64.ZERO);
+    final Bytes32 parentExecutionBlockHash =
+        forkChoiceUpdateData.getForkChoiceState().getHeadExecutionBlockHash();
+    newBlockBuildingSubscribers.forEach(
+        subscriber ->
+            subscriber.onNewBlockBuilding(
+                parentExecutionBlockNumber, parentExecutionBlockHash, payloadAttributes));
   }
 
   // this function MUST return a fee recipient.
