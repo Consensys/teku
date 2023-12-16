@@ -225,13 +225,13 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
       final UInt64 parentExecutionBlockNumber,
       final Bytes32 parentExecutionBlockHash,
       final PayloadBuildingAttributes payloadAttributes) {
-    final UInt64 proposerSlot = payloadAttributes.getBlockSlot();
+    final UInt64 proposalSlot = payloadAttributes.getProposalSlot();
     final PayloadAttributesData data =
         new PayloadAttributesData(
-            spec.atSlot(proposerSlot).getMilestone(),
+            spec.atSlot(proposalSlot).getMilestone(),
             new PayloadAttributesEvent.Data(
                 proposerIndex,
-                proposerSlot,
+                proposalSlot,
                 payloadAttributes.getParentBeaconBlockRoot(),
                 parentExecutionBlockNumber,
                 parentExecutionBlockHash,

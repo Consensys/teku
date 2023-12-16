@@ -93,12 +93,12 @@ class BellatrixExecutionClientHandlerTest extends ExecutionHandlerClientTest {
         new PayloadBuildingAttributes(
             dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomEth1Address(),
             Optional.empty(),
             Optional.empty(),
-            dataStructureUtil.randomBytes32(),
-            dataStructureUtil.randomUInt64());
+            dataStructureUtil.randomBytes32());
     final Optional<PayloadAttributesV1> payloadAttributes =
         PayloadAttributesV1.fromInternalPayloadBuildingAttributes(Optional.of(attributes));
     final SafeFuture<Response<ForkChoiceUpdatedResult>> dummyResponse =

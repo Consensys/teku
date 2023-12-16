@@ -122,7 +122,7 @@ public class EventSubscriptionManagerTest {
           SpecMilestone.DENEB,
           new Data(
               data.randomUInt64(),
-              samplePayloadAttributes.getBlockSlot(),
+              samplePayloadAttributes.getProposalSlot(),
               samplePayloadAttributes.getParentBeaconBlockRoot(),
               data.randomUInt64(),
               data.randomBytes32(),

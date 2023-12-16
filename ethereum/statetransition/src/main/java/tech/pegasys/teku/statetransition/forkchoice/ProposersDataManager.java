@@ -270,13 +270,13 @@ public class ProposersDataManager implements SlotEventsChannel {
     return Optional.of(
         new PayloadBuildingAttributes(
             proposerIndex,
+            blockSlot,
             timestamp,
             random,
             getFeeRecipient(proposerInfo, blockSlot),
             validatorRegistration,
             spec.getExpectedWithdrawals(state),
-            currentHeadBlockRoot,
-            blockSlot));
+            currentHeadBlockRoot));
   }
 
   // this function MUST return a fee recipient.

@@ -995,13 +995,13 @@ class ForkChoiceNotifierTest {
     final Bytes32 random = spec.getRandaoMix(headState, UInt64.ZERO);
     return new PayloadBuildingAttributes(
         proposerIndex,
+        blockSlot,
         timestamp,
         random,
         feeRecipient,
         validatorRegistration,
         dataStructureUtil.randomWithdrawalList(),
-        forkChoiceState.getHeadBlockRoot(),
-        blockSlot);
+        forkChoiceState.getHeadBlockRoot());
   }
 
   private ForkChoiceState getCurrentForkChoiceState() {

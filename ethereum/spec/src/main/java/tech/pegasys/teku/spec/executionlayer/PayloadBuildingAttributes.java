@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdraw
 public class PayloadBuildingAttributes {
 
   private final UInt64 proposerIndex;
+  private final UInt64 proposalSlot;
   private final UInt64 timestamp;
   private final Bytes32 prevRandao;
   private final Eth1Address feeRecipient;
@@ -34,29 +35,31 @@ public class PayloadBuildingAttributes {
   private final Optional<List<Withdrawal>> maybeWithdrawals;
   private final Bytes32 parentBeaconBlockRoot;
 
-  private final UInt64 blockSlot;
-
   public PayloadBuildingAttributes(
       final UInt64 proposerIndex,
+      final UInt64 proposalSlot,
       final UInt64 timestamp,
       final Bytes32 prevRandao,
       final Eth1Address feeRecipient,
       final Optional<SignedValidatorRegistration> validatorRegistration,
       final Optional<List<Withdrawal>> maybeWithdrawals,
-      final Bytes32 parentBeaconBlockRoot,
-      final UInt64 blockSlot) {
+      final Bytes32 parentBeaconBlockRoot) {
     this.proposerIndex = proposerIndex;
+    this.proposalSlot = proposalSlot;
     this.timestamp = timestamp;
     this.prevRandao = prevRandao;
     this.feeRecipient = feeRecipient;
     this.validatorRegistration = validatorRegistration;
     this.maybeWithdrawals = maybeWithdrawals;
     this.parentBeaconBlockRoot = parentBeaconBlockRoot;
-    this.blockSlot = blockSlot;
   }
 
   public UInt64 getProposerIndex() {
     return proposerIndex;
+  }
+
+  public UInt64 getProposalSlot() {
+    return proposalSlot;
   }
 
   public UInt64 getTimestamp() {
@@ -69,10 +72,6 @@ public class PayloadBuildingAttributes {
 
   public Eth1Address getFeeRecipient() {
     return feeRecipient;
-  }
-
-  public UInt64 getBlockSlot() {
-    return blockSlot;
   }
 
   public Bytes32 getParentBeaconBlockRoot() {
@@ -102,12 +101,12 @@ public class PayloadBuildingAttributes {
     }
     final PayloadBuildingAttributes that = (PayloadBuildingAttributes) o;
     return Objects.equals(proposerIndex, that.proposerIndex)
+        && Objects.equals(proposalSlot, that.proposalSlot)
         && Objects.equals(timestamp, that.timestamp)
         && Objects.equals(prevRandao, that.prevRandao)
         && Objects.equals(feeRecipient, that.feeRecipient)
         && Objects.equals(validatorRegistration, that.validatorRegistration)
         && Objects.equals(maybeWithdrawals, that.maybeWithdrawals)
-        && Objects.equals(blockSlot, that.blockSlot)
         && Objects.equals(parentBeaconBlockRoot, that.parentBeaconBlockRoot);
   }
 
@@ -115,12 +114,12 @@ public class PayloadBuildingAttributes {
   public int hashCode() {
     return Objects.hash(
         proposerIndex,
+        proposalSlot,
         timestamp,
         prevRandao,
         feeRecipient,
         validatorRegistration,
         maybeWithdrawals,
-        blockSlot,
         parentBeaconBlockRoot);
   }
 
@@ -128,12 +127,12 @@ public class PayloadBuildingAttributes {
   public String toString() {
     return MoreObjects.toStringHelper(this)
         .add("proposerIndex", proposerIndex)
+        .add("proposalSlot", proposalSlot)
         .add("timestamp", timestamp)
         .add("prevRandao", prevRandao)
         .add("feeRecipient", feeRecipient)
         .add("validatorRegistration", validatorRegistration)
         .add("withdrawals", maybeWithdrawals)
-        .add("blockSlot", blockSlot)
         .add("parentBeaconBlockRoot", parentBeaconBlockRoot)
         .toString();
   }
