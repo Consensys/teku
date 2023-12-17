@@ -98,7 +98,7 @@ Include details about your configuration and environment:
   * **For Linux - What kernel are you running?** You can get the exact version by running `uname -a` in your terminal.
 * **Are you running in a virtual machine?** If so, which VM software are you using and which operating systems and versions are used for the host and the guest?
 * **Are you running in a docker container?** If so, what version of docker?
-* **Are you running in a a Cloud?** If so, which one, and what type/size of VM is it?
+* **Are you running in a Cloud?** If so, which one, and what type/size of VM is it?
 * **What version of Java are you running?** You can get the exact version by looking at the Teku logfile during startup.
 
 # Style Guides
