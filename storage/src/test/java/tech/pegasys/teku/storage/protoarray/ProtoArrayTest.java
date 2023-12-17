@@ -561,6 +561,7 @@ class ProtoArrayTest {
         dataStructureUtil.randomBytes32(),
         new BlockCheckpoints(
             GENESIS_CHECKPOINT, GENESIS_CHECKPOINT, GENESIS_CHECKPOINT, GENESIS_CHECKPOINT),
+        ZERO,
         executionBlockHash,
         true);
   }

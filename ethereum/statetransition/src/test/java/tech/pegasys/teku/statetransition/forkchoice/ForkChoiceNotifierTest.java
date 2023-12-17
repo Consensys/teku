@@ -254,7 +254,13 @@ class ForkChoiceNotifierTest {
 
     notifyForkChoiceUpdated(
         new ForkChoiceState(
-            Bytes32.ZERO, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO, false));
+            Bytes32.ZERO,
+            UInt64.ZERO,
+            UInt64.ZERO,
+            Bytes32.ZERO,
+            Bytes32.ZERO,
+            Bytes32.ZERO,
+            false));
 
     verifyNoInteractions(executionLayerChannel);
   }
@@ -650,7 +656,13 @@ class ForkChoiceNotifierTest {
     // onForkChoiceUpdated before calling onTerminalBlock, so it will initialize ZEROED
     final ForkChoiceState forkChoiceState =
         new ForkChoiceState(
-            Bytes32.ZERO, UInt64.ZERO, terminalBlockHash, Bytes32.ZERO, Bytes32.ZERO, false);
+            Bytes32.ZERO,
+            UInt64.ZERO,
+            UInt64.ZERO,
+            terminalBlockHash,
+            Bytes32.ZERO,
+            Bytes32.ZERO,
+            false);
 
     final PayloadBuildingAttributes payloadBuildingAttributes =
         withProposerForSlot(forkChoiceState, headState, blockSlot);
@@ -976,6 +988,8 @@ class ForkChoiceNotifierTest {
   private ForkChoiceState getCurrentForkChoiceState() {
     final UInt64 headBlockSlot = recentChainData.getHeadSlot();
     final Bytes32 headBlockRoot = recentChainData.getBestBlockRoot().orElseThrow();
+    final UInt64 headExecutionBlockNumber =
+        forkChoiceStrategy.executionBlockNumber(headBlockRoot).orElseThrow();
     final Bytes32 headExecutionHash =
         forkChoiceStrategy.executionBlockHash(headBlockRoot).orElseThrow();
     final Bytes32 finalizedRoot = recentChainData.getFinalizedCheckpoint().orElseThrow().getRoot();
@@ -985,6 +999,7 @@ class ForkChoiceNotifierTest {
     return new ForkChoiceState(
         headBlockRoot,
         headBlockSlot,
+        headExecutionBlockNumber,
         headExecutionHash,
         headExecutionHash,
         finalizedExecutionHash,

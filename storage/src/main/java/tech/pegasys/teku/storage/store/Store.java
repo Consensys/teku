@@ -337,6 +337,7 @@ class Store extends CacheableStore {
           block.getParentRoot(),
           block.getStateRoot(),
           block.getCheckpointEpochs().get(),
+          block.getExecutionBlockNumber().orElse(UInt64.ZERO),
           block.getExecutionBlockHash().orElse(Bytes32.ZERO),
           spec.isBlockProcessorOptimistic(block.getBlockSlot()));
     }

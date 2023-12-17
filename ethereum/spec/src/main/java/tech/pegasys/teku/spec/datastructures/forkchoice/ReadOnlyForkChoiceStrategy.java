@@ -25,6 +25,8 @@ public interface ReadOnlyForkChoiceStrategy {
 
   Optional<Bytes32> blockParentRoot(Bytes32 blockRoot);
 
+  Optional<UInt64> executionBlockNumber(Bytes32 blockRoot);
+
   Optional<Bytes32> executionBlockHash(Bytes32 blockRoot);
 
   Optional<Bytes32> getAncestor(Bytes32 blockRoot, UInt64 slot);

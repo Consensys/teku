@@ -85,6 +85,14 @@ public class BlockAndCheckpoints implements BeaconBlockSummary {
     return Optional.of(block);
   }
 
+  public Optional<UInt64> getExecutionBlockNumber() {
+    return block
+        .getMessage()
+        .getBody()
+        .getOptionalExecutionPayload()
+        .map(ExecutionPayload::getBlockNumber);
+  }
+
   public Optional<Bytes32> getExecutionBlockHash() {
     return block
         .getMessage()

@@ -59,6 +59,7 @@ public class ProtoArrayTestUtil {
             new Checkpoint(finalizedCheckpointEpoch, Bytes32.ZERO),
             new Checkpoint(justifiedCheckpointEpoch, Bytes32.ZERO),
             new Checkpoint(finalizedCheckpointEpoch, Bytes32.ZERO)),
+        ZERO,
         Bytes32.ZERO);
 
     return forkChoice;

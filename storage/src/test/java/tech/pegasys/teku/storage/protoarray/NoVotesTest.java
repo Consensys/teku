@@ -253,6 +253,7 @@ public class NoVotesTest {
             new Checkpoint(finalizedEpoch, Bytes32.ZERO),
             new Checkpoint(justifiedEpoch, Bytes32.ZERO),
             new Checkpoint(finalizedEpoch, Bytes32.ZERO)),
+        ZERO,
         executionBlockHash);
   }
 

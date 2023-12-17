@@ -189,6 +189,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
     try {
       final ProtoNode headNode =
           protoArray.findOptimisticHead(currentEpoch, justifiedCheckpoint, finalizedCheckpoint);
+      final UInt64 headExecutionBlockNumber = headNode.getExecutionBlockNumber();
       final Bytes32 headExecutionBlockHash = headNode.getExecutionBlockHash();
       final Bytes32 justifiedExecutionHash =
           protoArray
@@ -203,6 +204,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       return new ForkChoiceState(
           headNode.getBlockRoot(),
           headNode.getBlockSlot(),
+          headExecutionBlockNumber,
           headExecutionBlockHash,
           justifiedExecutionHash,
           finalizedExecutionHash,
@@ -277,10 +279,20 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   @Override
-  public Optional<Bytes32> executionBlockHash(final Bytes32 beaconBlockRoot) {
+  public Optional<UInt64> executionBlockNumber(final Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();
     try {
-      return getProtoNode(beaconBlockRoot).map(ProtoNode::getExecutionBlockHash);
+      return getProtoNode(blockRoot).map(ProtoNode::getExecutionBlockNumber);
+    } finally {
+      protoArrayLock.readLock().unlock();
+    }
+  }
+
+  @Override
+  public Optional<Bytes32> executionBlockHash(final Bytes32 blockRoot) {
+    protoArrayLock.readLock().lock();
+    try {
+      return getProtoNode(blockRoot).map(ProtoNode::getExecutionBlockHash);
     } finally {
       protoArrayLock.readLock().unlock();
     }
@@ -466,6 +478,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
                       block.getBlock().getParentRoot(),
                       block.getBlock().getStateRoot(),
                       block.getBlockCheckpoints(),
+                      block.getExecutionBlockNumber().orElse(UInt64.ZERO),
                       block.getExecutionBlockHash().orElse(Bytes32.ZERO)));
       removedBlockRoots.forEach((root, uInt64) -> protoArray.removeBlockRoot(root));
       pulledUpBlocks.forEach(protoArray::pullUpBlockCheckpoints);
@@ -514,6 +527,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       Bytes32 parentRoot,
       Bytes32 stateRoot,
       BlockCheckpoints checkpoints,
+      UInt64 executionBlockNumber,
       Bytes32 executionBlockHash) {
     protoArray.onBlock(
         blockSlot,
@@ -521,6 +535,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
         parentRoot,
         stateRoot,
         checkpoints,
+        executionBlockNumber,
         executionBlockHash,
         spec.isBlockProcessorOptimistic(blockSlot));
   }
