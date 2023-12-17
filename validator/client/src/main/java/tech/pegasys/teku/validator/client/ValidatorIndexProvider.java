@@ -108,7 +108,7 @@ public class ValidatorIndexProvider {
     return firstSuccessfulRequest.thenApply(
         __ ->
             IntArrayList.toList(
-                ownedValidators.getEnabledValidators().stream()
+                ownedValidators.getValidators().stream()
                     .map(Validator::getPublicKey)
                     .filter(validatorIndicesByPublicKey::containsKey)
                     .mapToInt(validatorIndicesByPublicKey::get)));
@@ -118,7 +118,7 @@ public class ValidatorIndexProvider {
     // Wait for at least one successful load of validator indices before attempting to read
     return firstSuccessfulRequest.thenApply(
         __ ->
-            ownedValidators.getEnabledValidators().stream()
+            ownedValidators.getValidators().stream()
                 .map(Validator::getPublicKey)
                 .filter(validatorIndicesByPublicKey::containsKey)
                 .collect(Collectors.toMap(Function.identity(), validatorIndicesByPublicKey::get)));

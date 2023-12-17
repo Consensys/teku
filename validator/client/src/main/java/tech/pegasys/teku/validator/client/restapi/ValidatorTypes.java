@@ -84,7 +84,7 @@ public class ValidatorTypes {
               PostKeysRequest::setSlashingProtection)
           .build();
 
-  public static final SerializableTypeDefinition<Validator> ENABLED_VALIDATOR =
+  public static final SerializableTypeDefinition<Validator> OWNED_VALIDATOR =
       SerializableTypeDefinition.object(Validator.class)
           .withField("validating_pubkey", PUBKEY_API_TYPE, Validator::getPublicKey)
           .withOptionalField(
@@ -100,7 +100,7 @@ public class ValidatorTypes {
   public static final SerializableTypeDefinition<List<Validator>> LIST_KEYS_RESPONSE_TYPE =
       SerializableTypeDefinition.<List<Validator>>object()
           .name("ListKeysResponse")
-          .withField("data", listOf(ENABLED_VALIDATOR), Function.identity())
+          .withField("data", listOf(OWNED_VALIDATOR), Function.identity())
           .build();
 
   public static final DeserializableTypeDefinition<URL> URL_TYPE =

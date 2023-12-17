@@ -68,7 +68,7 @@ class VoluntaryExitDataProviderTest {
     when(genesisDataProvider.getGenesisData()).thenReturn(SafeFuture.completedFuture(genesisData));
     when(validatorApiChannel.getValidatorIndices(any()))
         .thenReturn(SafeFuture.completedFuture(validatorIndices));
-    when(keyManager.getEnabledValidatorByPublicKey(validator.getPublicKey()))
+    when(keyManager.getValidatorByPublicKey(validator.getPublicKey()))
         .thenReturn(Optional.of(validator));
     when(signer.signVoluntaryExit(any(), any()))
         .thenReturn(SafeFuture.completedFuture(volExitSignature));
@@ -129,17 +129,17 @@ class VoluntaryExitDataProviderTest {
   @Test
   void createSignedVoluntaryExit_shouldReturnSignedVoluntaryExit() {
     final BLSSignature signature = dataStructureUtil.randomSignature();
-    final Validator enabledValidator = getValidator(signature);
+    final Validator ownedValidator = getValidator(signature);
     final int validatorIndex = 0;
-    when(keyManager.getEnabledValidatorByPublicKey(enabledValidator.getPublicKey()))
-        .thenReturn(Optional.of(enabledValidator));
+    when(keyManager.getValidatorByPublicKey(ownedValidator.getPublicKey()))
+        .thenReturn(Optional.of(ownedValidator));
 
     final UInt64 epoch = dataStructureUtil.randomEpoch();
     final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
 
     final SignedVoluntaryExit signedVoluntaryExit =
         provider.createSignedVoluntaryExit(
-            validatorIndex, enabledValidator.getPublicKey(), epoch, forkInfo);
+            validatorIndex, ownedValidator.getPublicKey(), epoch, forkInfo);
 
     final SignedVoluntaryExit expected =
         new SignedVoluntaryExit(
@@ -149,7 +149,7 @@ class VoluntaryExitDataProviderTest {
 
   @Test
   void createSignedVoluntaryExit_throwsExceptionWhenValidatorNotInList() {
-    when(keyManager.getEnabledValidatorKeys()).thenReturn(List.of());
+    when(keyManager.getLocalValidatorKeys()).thenReturn(List.of());
     final UInt64 epoch = dataStructureUtil.randomEpoch();
     final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
 
@@ -163,7 +163,7 @@ class VoluntaryExitDataProviderTest {
 
   @Test
   void createExitForValidator_notFound() {
-    when(keyManager.getEnabledValidatorByPublicKey(any())).thenReturn(Optional.empty());
+    when(keyManager.getValidatorByPublicKey(any())).thenReturn(Optional.empty());
     final ForkInfo forkInfo = dataStructureUtil.randomForkInfo();
     assertThat(
             provider.getExitForValidator(

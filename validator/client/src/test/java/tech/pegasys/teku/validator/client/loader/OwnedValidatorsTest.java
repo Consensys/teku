@@ -56,14 +56,14 @@ class OwnedValidatorsTest {
   }
 
   @Test
-  void shouldListEnabledValidatorsAsReadOnly() {
+  void shouldListOwnedValidatorsAsReadOnly() {
     final BLSPublicKey publicKey = dataStructureUtil.randomPublicKey();
     final Validator validator = new Validator(publicKey, NO_OP_SIGNER, Optional::empty);
 
-    assertThat(validators.getEnabledValidators()).isEmpty();
+    assertThat(validators.getValidators()).isEmpty();
     validators.addValidator(validator);
-    List<Validator> enabledValidatorList = validators.getEnabledValidators();
+    List<Validator> validatorList = validators.getValidators();
 
-    assertThat(enabledValidatorList).contains(validator);
+    assertThat(validatorList).contains(validator);
   }
 }
