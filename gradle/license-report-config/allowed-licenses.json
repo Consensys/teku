@@ -189,7 +189,7 @@
       "moduleLicense": "Apache License, Version 2.0"
     },
     {
-      "moduleName": "org.rocksdb:rocksdbjni",
+      "moduleName": "io.github.speedb-io:speedbjni",
       "moduleLicense": "Apache License, Version 2.0"
     },
     {
