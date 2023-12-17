@@ -14,16 +14,23 @@
 package tech.pegasys.teku.beaconrestapi.v1.validator;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
 import okhttp3.Response;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAttesterDuties;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.validator.api.AttesterDuties;
 
 public class PostAttesterDutiesIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
 
@@ -37,5 +44,42 @@ public class PostAttesterDutiesIntegrationTest extends AbstractDataBackedRestAPI
 
     assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
     assertThat(response.body().string()).contains("Array expected but got null");
+  }
+
+  @Test
+  void shouldGiveDecentErrorIfEmptyArray() throws IOException {
+    startRestAPIAtGenesis(SpecMilestone.ALTAIR);
+
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+
+    Response response =
+        post(
+            PostAttesterDuties.ROUTE.replace("{epoch}", "1"), jsonProvider.objectToJSON(List.of()));
+
+    assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
+    assertThat(response.body().string())
+        .contains("Provided array has less than 1 minimum required items");
+  }
+
+  @Test
+  void shouldBeOkWithCorrectInput() throws IOException {
+    startRestAPIAtGenesis(SpecMilestone.ALTAIR);
+
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+    when(validatorApiChannel.getAttestationDuties(any(), any()))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                Optional.of(new AttesterDuties(false, Bytes32.ZERO, List.of()))));
+
+    Response response =
+        post(
+            PostAttesterDuties.ROUTE.replace("{epoch}", "1"),
+            jsonProvider.objectToJSON(List.of(1)));
+
+    assertThat(response.code()).isEqualTo(SC_OK);
+    assertThat(response.body().string())
+        .contains(
+            "{\"dependent_root\":\"0x0000000000000000000000000000000000000000000000000000000000000000\","
+                + "\"execution_optimistic\":false,\"data\":[]}");
   }
 }

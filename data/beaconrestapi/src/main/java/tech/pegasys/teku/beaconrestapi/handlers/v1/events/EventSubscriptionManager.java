@@ -42,6 +42,8 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
@@ -85,6 +87,8 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     syncDataProvider.subscribeToSyncStateChanges(this::onSyncStateChange);
     nodeDataProvider.subscribeToReceivedBlocks(this::onNewBlock);
     nodeDataProvider.subscribeToReceivedBlobSidecar(this::onNewBlobSidecar);
+    nodeDataProvider.subscribeToAttesterSlashing(this::onNewAttesterSlashing);
+    nodeDataProvider.subscribeToProposerSlashing(this::onNewProposerSlashing);
     nodeDataProvider.subscribeToValidAttestations(this::onNewAttestation);
     nodeDataProvider.subscribeToNewVoluntaryExits(this::onNewVoluntaryExit);
     nodeDataProvider.subscribeToSyncCommitteeContributions(this::onSyncCommitteeContribution);
@@ -191,6 +195,26 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
   protected void onNewBlobSidecar(final BlobSidecar blobSidecar) {
     final BlobSidecarEvent blobSidecarEvent = BlobSidecarEvent.create(spec, blobSidecar);
     notifySubscribersOfEvent(EventType.blob_sidecar, blobSidecarEvent);
+  }
+
+  protected void onNewAttesterSlashing(
+      final AttesterSlashing attesterSlashing,
+      final InternalValidationResult result,
+      final boolean fromNetwork) {
+    if (result.isAccept()) {
+      notifySubscribersOfEvent(
+          EventType.attester_slashing, new AttesterSlashingEvent(attesterSlashing));
+    }
+  }
+
+  protected void onNewProposerSlashing(
+      final ProposerSlashing proposerSlashing,
+      final InternalValidationResult result,
+      final boolean fromNetwork) {
+    if (result.isAccept()) {
+      notifySubscribersOfEvent(
+          EventType.proposer_slashing, new ProposerSlashingEvent(proposerSlashing));
+    }
   }
 
   @Override

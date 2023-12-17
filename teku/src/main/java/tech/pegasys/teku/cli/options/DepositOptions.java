@@ -23,8 +23,6 @@ import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 
 public class DepositOptions {
 
-  @CommandLine.Spec CommandLine.Model.CommandSpec commandSpec;
-
   @Option(
       names = {"--eth1-endpoints", "--eth1-endpoint"},
       paramLabel = "<NETWORK>",
@@ -72,31 +70,15 @@ public class DepositOptions {
 
   public void configure(final TekuConfiguration.Builder builder) {
     builder.powchain(
-        b -> {
-          b.eth1Endpoints(eth1Endpoints)
-              .eth1LogsMaxBlockRange(eth1LogsMaxBlockRange)
-              .useMissingDepositEventLogging(useMissingDepositEventLogging);
-          handleDepositSnapshotOptions(b);
-        });
+        b ->
+            b.eth1Endpoints(eth1Endpoints)
+                .eth1LogsMaxBlockRange(eth1LogsMaxBlockRange)
+                .useMissingDepositEventLogging(useMissingDepositEventLogging)
+                .depositSnapshotPath(depositSnapshotPath)
+                .depositSnapshotEnabled(parseDepositSnapshotEnabled()));
   }
 
-  private void handleDepositSnapshotOptions(final PowchainConfiguration.Builder b) {
-    final String checkpointSyncUrlOption = "--checkpoint-sync-url";
-    CommandLine.ParseResult parseResult = commandSpec.commandLine().getParseResult();
-    final boolean depositSnapshotPathSet = parseResult.hasMatchedOption("--Xdeposit-snapshot");
-    final boolean depositSnapshotEnabledSet =
-        parseResult.hasMatchedOption("--deposit-snapshot-enabled");
-    final boolean checkpointSyncUrlSet = parseResult.hasMatchedOption(checkpointSyncUrlOption);
-
-    if (depositSnapshotEnabledSet && depositSnapshotEnabled) {
-      b.depositSnapshotPath(depositSnapshotPath).depositSnapshotEnabled(depositSnapshotEnabled);
-    } else if (depositSnapshotPathSet) {
-      b.depositSnapshotPath(depositSnapshotPath).depositSnapshotEnabled(false);
-    } else if (checkpointSyncUrlSet) {
-      final String checkpointSyncUrl = parseResult.matchedOptionValue(checkpointSyncUrlOption, "");
-      b.depositSnapshotPathFromCheckpointSyncUrl(checkpointSyncUrl).depositSnapshotEnabled(false);
-    } else {
-      b.depositSnapshotPath(depositSnapshotPath).depositSnapshotEnabled(depositSnapshotEnabled);
-    }
+  private boolean parseDepositSnapshotEnabled() {
+    return depositSnapshotEnabled;
   }
 }
