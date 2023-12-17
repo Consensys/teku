@@ -22,7 +22,6 @@ import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.networks.Eth2Network;
@@ -31,7 +30,6 @@ public class PowchainConfiguration {
   public static final int DEFAULT_ETH1_LOGS_MAX_BLOCK_RANGE = 10_000;
   public static final boolean DEFAULT_USE_MISSING_DEPOSIT_EVENT_LOGGING = false;
   public static final boolean DEFAULT_DEPOSIT_SNAPSHOT_ENABLED = true;
-  public static final String DEPOSIT_SNAPSHOT_URL_PATH = "/eth/v1/beacon/deposit_snapshot";
 
   private final Spec spec;
   private final List<String> eth1Endpoints;
@@ -180,15 +178,6 @@ public class PowchainConfiguration {
         this.depositSnapshotPath = Optional.of(depositSnapshotPath);
       }
       return this;
-    }
-
-    public Builder depositSnapshotPathFromCheckpointSyncUrl(final String checkpointSyncUrl) {
-      if (StringUtils.isNotBlank(checkpointSyncUrl)) {
-        this.depositSnapshotPath =
-            Optional.of(UrlSanitizer.appendPath(checkpointSyncUrl, DEPOSIT_SNAPSHOT_URL_PATH));
-        return this;
-      }
-      throw new IllegalStateException("checkpointSyncUrl cannot be null/empty");
     }
 
     public Builder setDepositSnapshotPathForNetwork(final Optional<Eth2Network> eth2Network) {

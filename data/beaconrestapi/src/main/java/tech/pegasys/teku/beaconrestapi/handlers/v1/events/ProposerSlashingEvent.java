@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,21 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.config;
+package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
-/**
- * Networking constants
- *
- * <p>These constants are unified among forks and are not overridden, new constant name is used if
- * it's changed in the new fork
- */
-public interface NetworkingSpecConfigDeneb extends NetworkingSpecConfig {
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 
-  int getMaxRequestBlocksDeneb();
-
-  int getMaxRequestBlobSidecars();
-
-  int getMinEpochsForBlobSidecarsRequests();
-
-  int getBlobSidecarSubnetCount();
+public class ProposerSlashingEvent extends Event<ProposerSlashing> {
+  ProposerSlashingEvent(ProposerSlashing proposerSlashing) {
+    super(proposerSlashing.getSchema().getJsonTypeDefinition(), proposerSlashing);
+  }
 }

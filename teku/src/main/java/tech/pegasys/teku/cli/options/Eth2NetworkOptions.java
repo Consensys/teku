@@ -60,7 +60,6 @@ public class Eth2NetworkOptions {
 
   @Option(
       names = {"--genesis-state"},
-      hidden = true,
       paramLabel = "<STRING>",
       description =
           "The genesis state. This value should be a file or URL pointing to an SSZ-encoded finalized checkpoint state.",
@@ -69,7 +68,6 @@ public class Eth2NetworkOptions {
 
   @Option(
       names = {"--checkpoint-sync-url"},
-      hidden = true,
       paramLabel = "<STRING>",
       description = "The Checkpointz server that will be used to bootstrap this node.",
       arity = "1")
@@ -231,18 +229,6 @@ public class Eth2NetworkOptions {
   private boolean forkChoiceUpdateHeadOnBlockImportEnabled =
       Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
 
-  // https://github.com/Consensys/teku/issues/7537
-  @Option(
-      names = {"--Xfork-choice-proposer-boost-uniqueness-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description = "Apply proposer boost to first block in case of equivocation.",
-      arity = "0..1",
-      fallbackValue = "true",
-      showDefaultValue = Visibility.ALWAYS,
-      hidden = true)
-  private boolean forkChoiceProposerBoostUniquenessEnabled =
-      Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED;
-
   @Option(
       names = {"--Xeth1-deposit-contract-deploy-block-override"},
       hidden = true,
@@ -338,7 +324,6 @@ public class Eth2NetworkOptions {
         .asyncBeaconChainMaxThreads(asyncBeaconChainMaxThreads)
         .asyncBeaconChainMaxQueue(asyncBeaconChainMaxQueue)
         .forkChoiceUpdateHeadOnBlockImportEnabled(forkChoiceUpdateHeadOnBlockImportEnabled)
-        .forkChoiceProposerBoostUniquenessEnabled(forkChoiceProposerBoostUniquenessEnabled)
         .forkChoiceLateBlockReorgEnabled(forkChoiceLateBlockReorgEnabled)
         .epochsStoreBlobs(epochsStoreBlobs);
   }

@@ -181,6 +181,14 @@ public class NodeDataProvider {
     blobSidecarPool.subscribeNewBlobSidecar(listener);
   }
 
+  public void subscribeToAttesterSlashing(OperationAddedSubscriber<AttesterSlashing> listener) {
+    attesterSlashingPool.subscribeOperationAdded(listener);
+  }
+
+  public void subscribeToProposerSlashing(OperationAddedSubscriber<ProposerSlashing> listener) {
+    proposerSlashingPool.subscribeOperationAdded(listener);
+  }
+
   public void subscribeToValidAttestations(ProcessedAttestationListener listener) {
     attestationManager.subscribeToAllValidAttestations(listener);
   }

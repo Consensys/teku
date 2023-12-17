@@ -13,28 +13,70 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import java.util.Collections;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
+import tech.pegasys.teku.test.acceptance.dsl.tools.ValidatorKeysApi;
 
 public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldFailWithNoValidatorKeysWhenExitOptionEnabledOnBeaconNode() throws Exception {
-    TekuNode beaconNode = createTekuNode(config -> config.withExitWhenNoValidatorKeysEnabled(true));
+    final TekuNode beaconNode =
+        createTekuNode(
+            config -> config.withExitWhenNoValidatorKeysEnabled(true).withInteropValidators(0, 0));
     beaconNode.startWithFailure(
         "No loaded validators when --exit-when-no-validator-keys-enabled option is true");
   }
 
   @Test
   void shouldFailWithNoValidatorKeysWhenExitOptionEnabledOnValidatorClient() throws Exception {
-    TekuNode beaconNode = createTekuNode();
-    TekuValidatorNode validatorClient =
+    final TekuNode beaconNode = createTekuNode();
+    final TekuValidatorNode validatorClient =
         createValidatorNode(
-            config -> config.withBeaconNode(beaconNode).withExitWhenNoValidatorKeysEnabled(true));
+            config ->
+                config
+                    .withBeaconNode(beaconNode)
+                    .withExitWhenNoValidatorKeysEnabled(true)
+                    .withInteropModeDisabled());
     beaconNode.start();
     validatorClient.startWithFailure(
         "No loaded validators when --exit-when-no-validator-keys-enabled option is true");
+    beaconNode.stop();
+  }
+
+  @Test
+  void shouldNotFailWithNoValidatorKeysWhenExitOptionDisabledOnBeaconNode() throws Exception {
+    final TekuNode beaconNode =
+        createTekuNode(
+            config -> config.withExitWhenNoValidatorKeysEnabled(false).withInteropValidators(0, 0));
+    beaconNode.start();
+
+    beaconNode.waitForEpochAtOrAbove(1);
+
+    beaconNode.stop();
+  }
+
+  @Test
+  void shouldNotFailWithNoValidatorKeysWhenExitOptionDisabledOnValidatorClient() throws Exception {
+    final TekuNode beaconNode = createTekuNode();
+    final TekuValidatorNode validatorClient =
+        createValidatorNode(
+            config ->
+                config
+                    .withBeaconNode(beaconNode)
+                    .withExitWhenNoValidatorKeysEnabled(false)
+                    .withValidatorApiEnabled()
+                    .withInteropModeDisabled());
+    beaconNode.start();
+    validatorClient.start();
+    beaconNode.waitForEpochAtOrAbove(1);
+
+    final ValidatorKeysApi api = validatorClient.getValidatorKeysApi();
+    api.assertLocalValidatorListing(Collections.emptyList());
+    validatorClient.stop();
+    beaconNode.stop();
   }
 }

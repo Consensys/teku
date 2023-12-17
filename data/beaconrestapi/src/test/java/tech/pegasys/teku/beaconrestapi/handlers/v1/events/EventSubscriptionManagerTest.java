@@ -46,6 +46,8 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
@@ -97,6 +99,15 @@ public class EventSubscriptionManagerTest {
       SignedBeaconBlock.create(data.randomSignedBeaconBlock(0));
   private final BlobSidecar sampleBlobSidecar = data.randomBlobSidecar();
   private final Attestation sampleAttestation = data.randomAttestation(0);
+
+  private final AttesterSlashing sampleAttesterSlashing =
+      spec.getGenesisSchemaDefinitions()
+          .getAttesterSlashingSchema()
+          .create(data.randomIndexedAttestation(), data.randomIndexedAttestation());
+
+  private final ProposerSlashing sampleProposerSlashing =
+      new ProposerSlashing(
+          data.randomSignedBeaconBlockHeader(), data.randomSignedBeaconBlockHeader());
   private final SignedVoluntaryExit sampleVoluntaryExit = data.randomSignedVoluntaryExit();
   private final SignedBlsToExecutionChange sampleBlsToExecutionChange =
       data.randomSignedBlsToExecutionChange();
@@ -227,6 +238,40 @@ public class EventSubscriptionManagerTest {
   }
 
   @Test
+  void shouldPropagateAttesterSlashing() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=attester_slashing");
+    manager.registerClient(client1);
+    triggerAttesterSlashingEvent();
+    checkEvent("attester_slashing", new AttesterSlashingEvent(sampleAttesterSlashing));
+  }
+
+  @Test
+  void shouldNotGetAttesterSlashingIfNotSubscribed() {
+    when(req.getQueryString()).thenReturn("&topics=head");
+    manager.registerClient(client1);
+
+    triggerAttesterSlashingEvent();
+    assertThat(outputStream.countEvents()).isEqualTo(0);
+  }
+
+  @Test
+  void shouldPropagateProposerSlashing() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=proposer_slashing");
+    manager.registerClient(client1);
+    triggerProposerSlashingEvent();
+    checkEvent("proposer_slashing", new ProposerSlashingEvent(sampleProposerSlashing));
+  }
+
+  @Test
+  void shouldNotGetProposerSlashingIfNotSubscribed() {
+    when(req.getQueryString()).thenReturn("&topics=head");
+    manager.registerClient(client1);
+
+    triggerProposerSlashingEvent();
+    assertThat(outputStream.countEvents()).isEqualTo(0);
+  }
+
+  @Test
   void shouldPropagateVoluntaryExit() throws IOException {
     when(req.getQueryString()).thenReturn("&topics=voluntary_exit");
     manager.registerClient(client1);
@@ -328,6 +373,16 @@ public class EventSubscriptionManagerTest {
 
   private void triggerAttestationEvent() {
     manager.onNewAttestation(ValidatableAttestation.from(spec, sampleAttestation));
+    asyncRunner.executeQueuedActions();
+  }
+
+  private void triggerAttesterSlashingEvent() {
+    manager.onNewAttesterSlashing(sampleAttesterSlashing, InternalValidationResult.ACCEPT, false);
+    asyncRunner.executeQueuedActions();
+  }
+
+  private void triggerProposerSlashingEvent() {
+    manager.onNewProposerSlashing(sampleProposerSlashing, InternalValidationResult.ACCEPT, false);
     asyncRunner.executeQueuedActions();
   }
 

@@ -27,8 +27,13 @@ import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 class EventSourceHandler implements BackgroundEventHandler {
@@ -44,10 +49,13 @@ class EventSourceHandler implements BackgroundEventHandler {
   private final Counter errorCounter;
   private final boolean generateEarlyAttestations;
 
+  private final Spec spec;
+
   public EventSourceHandler(
       final ValidatorTimingChannel validatorTimingChannel,
       final MetricsSystem metricsSystem,
-      final boolean generateEarlyAttestations) {
+      final boolean generateEarlyAttestations,
+      final Spec spec) {
     this.validatorTimingChannel = validatorTimingChannel;
     invalidEventCounter =
         metricsSystem.createCounter(
@@ -65,6 +73,7 @@ class EventSourceHandler implements BackgroundEventHandler {
     timeoutCounter = eventSourceMetrics.labels("timeout");
     errorCounter = eventSourceMetrics.labels("error");
     this.generateEarlyAttestations = generateEarlyAttestations;
+    this.spec = spec;
   }
 
   @Override
@@ -85,10 +94,12 @@ class EventSourceHandler implements BackgroundEventHandler {
   public void onMessage(final String event, final MessageEvent messageEvent) {
     LOG.trace("Received {} event from beacon node {}", event, messageEvent.getOrigin());
     try {
-      if (EventType.valueOf(event) == EventType.head) {
-        handleHeadEvent(messageEvent.getData());
-      } else {
-        LOG.warn("Received unexpected event type: " + event);
+      final EventType eventType = EventType.valueOf(event);
+      switch (eventType) {
+        case head -> handleHeadEvent(messageEvent.getData());
+        case attester_slashing -> handleAttesterSlashingEvent(messageEvent.getData());
+        case proposer_slashing -> handleProposerSlashingEvent(messageEvent.getData());
+        default -> LOG.warn("Received unexpected event type: " + event);
       }
     } catch (final IllegalArgumentException | JsonProcessingException e) {
       invalidEventCounter.inc();
@@ -110,6 +121,20 @@ class EventSourceHandler implements BackgroundEventHandler {
     if (generateEarlyAttestations) {
       validatorTimingChannel.onAttestationCreationDue(headEvent.slot);
     }
+  }
+
+  private void handleAttesterSlashingEvent(final String data) throws JsonProcessingException {
+    final DeserializableTypeDefinition<AttesterSlashing> attesterSlashingTypeDefinition =
+        spec.getGenesisSchemaDefinitions().getAttesterSlashingSchema().getJsonTypeDefinition();
+    final AttesterSlashing attesterSlashing = JsonUtil.parse(data, attesterSlashingTypeDefinition);
+    validatorTimingChannel.onAttesterSlashing(attesterSlashing);
+  }
+
+  private void handleProposerSlashingEvent(final String data) throws JsonProcessingException {
+    final DeserializableTypeDefinition<ProposerSlashing> proposerSlashingTypeDefinition =
+        new ProposerSlashing.ProposerSlashingSchema().getJsonTypeDefinition();
+    final ProposerSlashing proposerSlashing = JsonUtil.parse(data, proposerSlashingTypeDefinition);
+    validatorTimingChannel.onProposerSlashing(proposerSlashing);
   }
 
   @Override

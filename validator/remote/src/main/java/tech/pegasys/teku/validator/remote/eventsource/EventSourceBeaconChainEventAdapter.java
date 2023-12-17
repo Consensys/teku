@@ -34,6 +34,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
 import tech.pegasys.teku.validator.remote.BeaconNodeReadinessChannel;
@@ -70,7 +71,8 @@ public class EventSourceBeaconChainEventAdapter
       final BeaconChainEventAdapter timeBasedEventAdapter,
       final ValidatorTimingChannel validatorTimingChannel,
       final MetricsSystem metricsSystem,
-      final boolean generateEarlyAttestations) {
+      final boolean generateEarlyAttestations,
+      final Spec spec) {
     this.beaconNodeReadinessManager = beaconNodeReadinessManager;
     this.primaryBeaconNodeApi = primaryBeaconNodeApi;
     this.failoverBeaconNodeApis = failoverBeaconNodeApis;
@@ -78,7 +80,8 @@ public class EventSourceBeaconChainEventAdapter
     this.validatorLogger = validatorLogger;
     this.timeBasedEventAdapter = timeBasedEventAdapter;
     this.eventSourceHandler =
-        new EventSourceHandler(validatorTimingChannel, metricsSystem, generateEarlyAttestations);
+        new EventSourceHandler(
+            validatorTimingChannel, metricsSystem, generateEarlyAttestations, spec);
   }
 
   @Override

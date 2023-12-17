@@ -25,22 +25,29 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 class EventSourceHandlerTest {
-  private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createDefault());
+
+  final Spec spec = TestSpecFactory.createDefault();
+  private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final JsonProvider jsonProvider = new JsonProvider();
   private final ValidatorTimingChannel validatorTimingChannel = mock(ValidatorTimingChannel.class);
   final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private final EventSourceHandler handler =
-      new EventSourceHandler(validatorTimingChannel, metricsSystem, true);
+      new EventSourceHandler(validatorTimingChannel, metricsSystem, true, spec);
 
   @Test
   void onOpen_shouldNotifyOfPotentialMissedEvents() {
@@ -74,6 +81,42 @@ class EventSourceHandlerTest {
   }
 
   @Test
+  void onMessage_shouldHandleAttesterSlashingEvent() throws Exception {
+    final IndexedAttestation indexedAttestation1 = dataStructureUtil.randomIndexedAttestation();
+    final IndexedAttestation indexedAttestation2 = dataStructureUtil.randomIndexedAttestation();
+    final AttesterSlashing.AttesterSlashingSchema attesterSlashingSchema =
+        spec.getGenesisSchemaDefinitions().getAttesterSlashingSchema();
+    final AttesterSlashing attesterSlashing =
+        attesterSlashingSchema.create(indexedAttestation1, indexedAttestation2);
+
+    handler.onMessage(
+        EventType.attester_slashing.name(),
+        new MessageEvent(
+            JsonUtil.serialize(attesterSlashing, attesterSlashingSchema.getJsonTypeDefinition())));
+
+    verify(validatorTimingChannel).onAttesterSlashing(eq(attesterSlashing));
+    verifyNoMoreInteractions(validatorTimingChannel);
+  }
+
+  @Test
+  void onMessage_shouldHandleProposerSlashingEvent() throws Exception {
+    final SignedBeaconBlockHeader blockHeader1 = dataStructureUtil.randomSignedBeaconBlockHeader();
+    final SignedBeaconBlockHeader blockHeader2 = dataStructureUtil.randomSignedBeaconBlockHeader();
+
+    final ProposerSlashing proposerSlashing = new ProposerSlashing(blockHeader1, blockHeader2);
+
+    handler.onMessage(
+        EventType.proposer_slashing.name(),
+        new MessageEvent(
+            JsonUtil.serialize(
+                proposerSlashing,
+                new ProposerSlashing.ProposerSlashingSchema().getJsonTypeDefinition())));
+
+    verify(validatorTimingChannel).onProposerSlashing(eq(proposerSlashing));
+    verifyNoMoreInteractions(validatorTimingChannel);
+  }
+
+  @Test
   void onMessage_shouldHandleInvalidMessage() throws Exception {
     final UInt64 slot = UInt64.valueOf(134);
     final HeadEvent event =
@@ -102,7 +145,7 @@ class EventSourceHandlerTest {
   @Test
   void onHeadEvent_shouldNotGenerateEarlyAttestationsIfNotEnabled() throws Exception {
     final EventSourceHandler onTimeHandler =
-        new EventSourceHandler(validatorTimingChannel, metricsSystem, false);
+        new EventSourceHandler(validatorTimingChannel, metricsSystem, false, spec);
 
     final UInt64 slot = UInt64.valueOf(134);
     final Bytes32 blockRoot = dataStructureUtil.randomBytes32();

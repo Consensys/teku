@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.validator.client;
 
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+
 import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -218,6 +220,8 @@ public class ValidatorClientService extends Service {
             () -> validatorClientService.initializeValidators(validatorApiChannel, asyncRunner))
         .thenCompose(
             __ -> {
+              checkNoKeysLoaded(validatorConfig, validatorLoader);
+
               if (validatorConfig.isDoppelgangerDetectionEnabled()) {
                 validatorClientService.initializeDoppelgangerDetector(
                     asyncRunner,
@@ -266,17 +270,21 @@ public class ValidatorClientService extends Service {
               } else {
                 LOG.error("Error was encountered during validator client service start up.", error);
               }
+              checkNoKeysLoaded(validatorConfig, validatorLoader);
               return null;
             })
         .always(() -> LOG.trace("Finished starting validator client service."));
 
-    if (validatorConfig.isExitWhenNoValidatorKeysEnabled()
-        && validatorLoader.getOwnedValidators().getActiveValidators().size() == 0) {
-      throw new NoValidatorKeysStateException(
-          "No loaded validators when --exit-when-no-validator-keys-enabled option is true");
-    }
-
     return validatorClientService;
+  }
+
+  private static void checkNoKeysLoaded(
+      final ValidatorConfig validatorConfig, final ValidatorLoader validatorLoader) {
+    if (validatorConfig.isExitWhenNoValidatorKeysEnabled()
+        && validatorLoader.getOwnedValidators().hasNoValidators()) {
+      STATUS_LOG.exitOnNoValidatorKeys();
+      System.exit(2);
+    }
   }
 
   private void initializeDoppelgangerDetector(
@@ -372,7 +380,9 @@ public class ValidatorClientService extends Service {
     final Path slashingProtectionPath = getSlashingProtectionPath(services.getDataDirLayout());
     final SlashingProtector slashingProtector =
         new LocalSlashingProtector(
-            SyncDataAccessor.create(slashingProtectionPath), slashingProtectionPath);
+            SyncDataAccessor.create(slashingProtectionPath),
+            slashingProtectionPath,
+            config.getValidatorConfig().isLocalSlashingProtectionSynchronizedModeEnabled());
     final SlashingProtectionLogger slashingProtectionLogger =
         new SlashingProtectionLogger(
             slashingProtector, config.getSpec(), asyncRunner, ValidatorLogger.VALIDATOR_LOGGER);
