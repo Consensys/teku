@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -20,26 +21,21 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodyBuilderAltair;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltair {
-  private final BeaconBlockBodySchemaBellatrixImpl schema;
-  private final BlindedBeaconBlockBodySchemaBellatrixImpl blindedSchema;
   protected SafeFuture<ExecutionPayload> executionPayload;
   protected SafeFuture<ExecutionPayloadHeader> executionPayloadHeader;
-
-  public BeaconBlockBodyBuilderBellatrix() {
-    this.schema = null;
-    this.blindedSchema = null;
-  }
+  protected final BeaconBlockBodySchema<? extends BlindedBeaconBlockBodyBellatrix> blindedSchema;
 
   public BeaconBlockBodyBuilderBellatrix(
-      final BeaconBlockBodySchemaBellatrixImpl schema,
-      final BlindedBeaconBlockBodySchemaBellatrixImpl blindedSchema) {
-    this.schema = schema;
+      final BeaconBlockBodySchema<? extends BeaconBlockBodyBellatrix> schema,
+      final BeaconBlockBodySchema<? extends BlindedBeaconBlockBodyBellatrix> blindedSchema) {
+    super(schema);
     this.blindedSchema = blindedSchema;
   }
 
@@ -62,12 +58,22 @@ public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltai
   }
 
   @Override
-  protected void validateSchema() {
-    if (isBlinded()) {
-      checkNotNull(blindedSchema, "blindedSchema must be set when blinded body has been requested");
+  @SuppressWarnings("unchecked")
+  protected <T> T getAndValidateSchema(final boolean blinded, final Class<T> expectedSchemaType) {
+    final BeaconBlockBodySchema<?> schema;
+    if (blinded) {
+      schema = this.blindedSchema;
+      checkNotNull(schema, "Blinded schema must be specified");
     } else {
-      checkNotNull(schema, "schema must be set when non blinded body has been requested");
+      schema = this.schema;
+      checkNotNull(schema, "Schema must be specified");
     }
+    checkArgument(
+        expectedSchemaType == schema.getClass(),
+        String.format(
+            "Schema should be %s but was %s",
+            expectedSchemaType.getSimpleName(), schema.getClass().getSimpleName()));
+    return (T) schema;
   }
 
   @Override
@@ -86,10 +92,12 @@ public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltai
   public SafeFuture<BeaconBlockBody> build() {
     validate();
     if (isBlinded()) {
+      final BlindedBeaconBlockBodySchemaBellatrixImpl schema =
+          getAndValidateSchema(true, BlindedBeaconBlockBodySchemaBellatrixImpl.class);
       return executionPayloadHeader.thenApply(
           header ->
               new BlindedBeaconBlockBodyBellatrixImpl(
-                  blindedSchema,
+                  schema,
                   new SszSignature(randaoReveal),
                   eth1Data,
                   SszBytes32.of(graffiti),
@@ -101,6 +109,9 @@ public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltai
                   syncAggregate,
                   header.toVersionBellatrix().orElseThrow()));
     }
+
+    final BeaconBlockBodySchemaBellatrixImpl schema =
+        getAndValidateSchema(false, BeaconBlockBodySchemaBellatrixImpl.class);
     return executionPayload.thenApply(
         payload ->
             new BeaconBlockBodyBellatrixImpl(

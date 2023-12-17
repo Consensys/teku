@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -60,6 +61,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
   protected T defaultBlockBody;
   protected BlindedBeaconBlockBodyBellatrix defaultBlindedBlockBody;
   protected BeaconBlockBodySchema<?> blockBodySchema;
+  protected BeaconBlockBodySchema<? extends BlindedBeaconBlockBodyBellatrix> blindedBlockBodySchema;
 
   protected void setUpBaseClass(final SpecMilestone milestone, Runnable additionalSetup) {
     spec = TestSpecFactory.createMinimal(milestone);
@@ -94,6 +96,10 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
     defaultBlockBody = safeJoin(createDefaultBlockBody());
     defaultBlindedBlockBody = safeJoin(createDefaultBlindedBlockBody());
     blockBodySchema = defaultBlockBody.getSchema();
+    blindedBlockBodySchema =
+        Optional.ofNullable(defaultBlindedBlockBody)
+            .map(BlindedBeaconBlockBodyBellatrix::getSchema)
+            .orElse(null);
   }
 
   protected SafeFuture<T> createBlockBody() {

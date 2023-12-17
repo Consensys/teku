@@ -882,7 +882,7 @@ class BlockOperationSelectorFactoryTest {
     }
 
     @Override
-    public SafeFuture<BeaconBlockBody> build() {
+    public SafeFuture<? extends BeaconBlockBody> build() {
       return null;
     }
   }

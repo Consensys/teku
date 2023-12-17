@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyBuilderCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDenebImpl;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderDenebImpl;
@@ -29,20 +30,12 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class BeaconBlockBodyBuilderDeneb extends BeaconBlockBodyBuilderCapella {
 
-  private final BeaconBlockBodySchemaDenebImpl schema;
-  private final BlindedBeaconBlockBodySchemaDenebImpl blindedSchema;
   private SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments;
 
-  public BeaconBlockBodyBuilderDeneb() {
-    this.schema = null;
-    this.blindedSchema = null;
-  }
-
   public BeaconBlockBodyBuilderDeneb(
-      final BeaconBlockBodySchemaDenebImpl schema,
-      final BlindedBeaconBlockBodySchemaDenebImpl blindedSchema) {
-    this.schema = schema;
-    this.blindedSchema = blindedSchema;
+      final BeaconBlockBodySchema<? extends BeaconBlockBodyDeneb> schema,
+      final BeaconBlockBodySchema<? extends BlindedBeaconBlockBodyDeneb> blindedSchema) {
+    super(schema, blindedSchema);
   }
 
   @Override
@@ -58,15 +51,6 @@ public class BeaconBlockBodyBuilderDeneb extends BeaconBlockBodyBuilderCapella {
   }
 
   @Override
-  protected void validateSchema() {
-    if (isBlinded()) {
-      checkNotNull(blindedSchema, "blindedSchema must be set when blinded body has been requested");
-    } else {
-      checkNotNull(schema, "schema must be set when non blinded body has been requested");
-    }
-  }
-
-  @Override
   protected void validate() {
     super.validate();
     checkNotNull(blobKzgCommitments, "blobKzgCommitments must be specified");
@@ -76,13 +60,15 @@ public class BeaconBlockBodyBuilderDeneb extends BeaconBlockBodyBuilderCapella {
   public SafeFuture<BeaconBlockBody> build() {
     validate();
     if (isBlinded()) {
+      final BlindedBeaconBlockBodySchemaDenebImpl schema =
+          getAndValidateSchema(true, BlindedBeaconBlockBodySchemaDenebImpl.class);
       return executionPayloadHeader
           .thenCompose(
               header -> blobKzgCommitments.thenApply(commitments -> Pair.of(header, commitments)))
           .thenApply(
               headerWithCommitments ->
                   new BlindedBeaconBlockBodyDenebImpl(
-                      blindedSchema,
+                      schema,
                       new SszSignature(randaoReveal),
                       eth1Data,
                       SszBytes32.of(graffiti),
@@ -97,6 +83,9 @@ public class BeaconBlockBodyBuilderDeneb extends BeaconBlockBodyBuilderCapella {
                       getBlsToExecutionChanges(),
                       headerWithCommitments.getRight()));
     }
+
+    final BeaconBlockBodySchemaDenebImpl schema =
+        getAndValidateSchema(false, BeaconBlockBodySchemaDenebImpl.class);
     return executionPayload
         .thenCompose(
             payload -> blobKzgCommitments.thenApply(commitments -> Pair.of(payload, commitments)))

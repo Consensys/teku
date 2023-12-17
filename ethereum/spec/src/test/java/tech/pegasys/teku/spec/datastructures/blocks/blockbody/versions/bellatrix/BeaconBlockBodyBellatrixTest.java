@@ -29,6 +29,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
@@ -101,8 +102,7 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
   @SuppressWarnings("unchecked")
   void builderShouldFailWhenOverridingBlindedSchemaWithANullSchema() {
     BeaconBlockBodyBuilderBellatrix beaconBlockBodyBuilderBellatrix =
-        new BeaconBlockBodyBuilderBellatrix(
-            null, mock(BlindedBeaconBlockBodySchemaBellatrixImpl.class));
+        new BeaconBlockBodyBuilderBellatrix(null, blindedBlockBodySchema);
     Exception exception =
         assertThrows(
             NullPointerException.class,
@@ -117,16 +117,17 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
                     .deposits(mock(SszList.class))
                     .voluntaryExits(mock(SszList.class))
                     .executionPayload(mock(SafeFuture.class))
+                    .syncAggregate(mock(SyncAggregate.class))
                     .build());
-    assertEquals(
-        exception.getMessage(), "schema must be set when non blinded body has been requested");
+    assertEquals(exception.getMessage(), "Schema must be specified");
   }
 
   @Test
   @SuppressWarnings("unchecked")
   void builderShouldFailWhenOverridingSchemaWithANullBlindedSchema() {
     BeaconBlockBodyBuilderBellatrix beaconBlockBodyBuilderBellatrix =
-        new BeaconBlockBodyBuilderBellatrix(mock(BeaconBlockBodySchemaBellatrixImpl.class), null);
+        new BeaconBlockBodyBuilderBellatrix(
+            (BeaconBlockBodySchema<? extends BeaconBlockBodyBellatrix>) blockBodySchema, null);
     Exception exception =
         assertThrows(
             NullPointerException.class,
@@ -141,9 +142,9 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
                     .deposits(mock(SszList.class))
                     .voluntaryExits(mock(SszList.class))
                     .executionPayloadHeader(mock(SafeFuture.class))
+                    .syncAggregate(mock(SyncAggregate.class))
                     .build());
-    assertEquals(
-        exception.getMessage(), "blindedSchema must be set when blinded body has been requested");
+    assertEquals(exception.getMessage(), "Blinded schema must be specified");
   }
 
   @Override
