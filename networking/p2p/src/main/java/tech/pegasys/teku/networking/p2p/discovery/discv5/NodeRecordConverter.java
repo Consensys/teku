@@ -64,6 +64,7 @@ public class NodeRecordConverter {
     return new DiscoveryPeer(
         ((Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1)),
         address,
+        nodeRecord.asEnr(),
         enrForkId,
         persistentAttestationSubnets,
         syncCommitteeSubnets);

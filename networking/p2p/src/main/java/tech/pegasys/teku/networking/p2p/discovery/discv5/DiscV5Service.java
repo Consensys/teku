@@ -214,6 +214,7 @@ public class DiscV5Service extends Service implements DiscoveryService {
         new DiscoveryPeer(
             (Bytes) nodeRecord.get(EnrField.PKEY_SECP256K1),
             nodeRecord.getUdpAddress().get(),
+            nodeRecord.asEnr(),
             Optional.empty(),
             currentSchemaDefinitionsSupplier.getAttnetsENRFieldSchema().getDefault(),
             currentSchemaDefinitionsSupplier.getSyncnetsENRFieldSchema().getDefault());
