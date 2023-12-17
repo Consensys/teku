@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -13,19 +13,13 @@
 
 package tech.pegasys.teku.dataproviders.lookup;
 
-import java.util.Collections;
-import java.util.List;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 
-public interface BlobSidecarsProvider {
-  BlobSidecarsProvider NOOP = (block) -> SafeFuture.completedFuture(Collections.emptyList());
+@FunctionalInterface
+public interface SingleBlockProvider {
+  SingleBlockProvider NOOP = (root) -> Optional.empty();
 
-  default SafeFuture<List<BlobSidecar>> getBlobSidecars(final SignedBeaconBlock block) {
-    return getBlobSidecars(block.getSlotAndBlockRoot());
-  }
-
-  SafeFuture<List<BlobSidecar>> getBlobSidecars(SlotAndBlockRoot slotAndBlockRoot);
+  Optional<SignedBeaconBlock> getBlock(final Bytes32 blockRoot);
 }

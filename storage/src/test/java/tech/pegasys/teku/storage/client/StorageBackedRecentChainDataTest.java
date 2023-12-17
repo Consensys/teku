@@ -27,6 +27,8 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
+import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
+import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
@@ -81,6 +83,8 @@ public class StorageBackedRecentChainDataTest {
             storeConfig,
             asyncRunner,
             new SystemTimeProvider(),
+            SingleBlockProvider.NOOP,
+            SingleBlobSidecarProvider.NOOP,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
@@ -130,6 +134,8 @@ public class StorageBackedRecentChainDataTest {
             storeConfig,
             asyncRunner,
             new SystemTimeProvider(),
+            SingleBlockProvider.NOOP,
+            SingleBlobSidecarProvider.NOOP,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
@@ -182,6 +188,8 @@ public class StorageBackedRecentChainDataTest {
             StoreConfig.createDefault(),
             asyncRunner,
             new SystemTimeProvider(),
+            SingleBlockProvider.NOOP,
+            SingleBlobSidecarProvider.NOOP,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
@@ -230,6 +238,8 @@ public class StorageBackedRecentChainDataTest {
             StoreConfig.createDefault(),
             asyncRunner,
             new SystemTimeProvider(),
+            SingleBlockProvider.NOOP,
+            SingleBlobSidecarProvider.NOOP,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,

@@ -19,7 +19,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface ScheduledDuties {
 
-  boolean requiresRecalculation(Bytes32 newHeadDependentRoot);
+  boolean requiresRecalculation(Bytes32 newDependentRoot);
 
   SafeFuture<DutyResult> performProductionDuty(UInt64 slot);
 

@@ -1,0 +1,18 @@
+{
+  "data": {
+    "finalized": [
+      "0x8ba2e667c5fbe7666ff631bbe8fef23f10a9591d0ecbdf6ffe14c02c510b0b16",
+      "0xc3e847543de3fa849ba7f0e0fc9903027fc4dd4f4dc86a5ce204ab5af0847dd5",
+      "0x59612f909188dbe6a9a4a537b991cfbe843acf6e0cf5da5927c1f7cfef522edd",
+      "0xf455e7dae74453fbdb9888a7847862ca7f120419b76766557f325d15f3252d2f",
+      "0x80ca3f52135dda86aab4c473a0c67a3e362466f74702ee5585cba088657d49e8",
+      "0x89be2df72904c7baf0d4df9933c801a4d13fa008bd17b0de50a48c689d778ffc",
+      "0x6c84736312d3ac6019608a222e0c606b3acd6f61ccae7ef9c1d2ad7da3de801f",
+      "0x32101937fa9b68126ebfd88ecad666836fc6e37488fda70b722e1b33808277b9"
+    ],
+    "deposit_root": "0xf50343723e7ac18bf84339c835a944f6829c09ba7624ad18a3210ee70ab58932",
+    "deposit_count": "1106572",
+    "execution_block_hash": "0xaf17f4a62338f74919b89d64443f8bce715cf7e0ed7b917d3dabb09b63c89755",
+    "execution_block_height": "18754822"
+  }
+}

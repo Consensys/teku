@@ -155,4 +155,17 @@ public class ExecutionLayerOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThatThrownBy(config.executionLayer()::getEngineEndpoint)
         .isInstanceOf(InvalidConfigurationException.class);
   }
+
+  @Test
+  void shouldNotSetJwtClaimIdIfNotConfigured() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    assertThat(config.executionLayer().getEngineJwtClaimId()).isEmpty();
+  }
+
+  @Test
+  void shouldSetJwtClaimIdIfConfigured() {
+    final String[] args = {"--ee-jwt-claim-id", "foobar"};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.executionLayer().getEngineJwtClaimId()).hasValue("foobar");
+  }
 }

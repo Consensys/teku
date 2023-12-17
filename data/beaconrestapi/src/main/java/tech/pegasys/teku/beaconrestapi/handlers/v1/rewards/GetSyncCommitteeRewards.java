@@ -28,6 +28,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
@@ -80,6 +81,7 @@ public class GetSyncCommitteeRewards extends RestApiEndpoint {
                     + "or validator index. If no array is provided, return reward info for every committee member.")
             .tags(TAG_BEACON, TAG_REWARDS)
             .pathParam(PARAMETER_BLOCK_ID)
+            .optionalRequestBody()
             .requestBodyType(DeserializableTypeDefinition.listOf(STRING_TYPE))
             .response(SC_OK, "Request successful", RESPONSE_TYPE)
             .withNotFoundResponse()
@@ -90,11 +92,15 @@ public class GetSyncCommitteeRewards extends RestApiEndpoint {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    final List<String> requestBody = request.getRequestBody();
+    // Validator identifier might be the validator's public key or index. If empty we query all
+    // validators.
+    final Optional<List<String>> maybeList = request.getOptionalRequestBody();
+    final List<String> validatorIds = maybeList.orElse(List.of());
+
     request.respondAsync(
         chainDataProvider
             .getSyncCommitteeRewardsFromBlockId(
-                request.getPathParameter(PARAMETER_BLOCK_ID), new HashSet<>(requestBody))
+                request.getPathParameter(PARAMETER_BLOCK_ID), new HashSet<>(validatorIds))
             .thenApply(
                 result ->
                     result

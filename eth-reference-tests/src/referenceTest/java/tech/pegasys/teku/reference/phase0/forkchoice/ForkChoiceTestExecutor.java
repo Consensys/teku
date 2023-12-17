@@ -18,7 +18,6 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
-import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
 
 import com.google.common.collect.ImmutableMap;
@@ -92,9 +91,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           .put("fork_choice/on_merge_block", new ForkChoiceTestExecutor())
           .put("fork_choice/withholding", new ForkChoiceTestExecutor())
           .put("sync/optimistic", new ForkChoiceTestExecutor())
-          // TODO: following tests are related to late block reorgs.
-          //  Must be re-enabled once implementation #6595 is done
-          .put("fork_choice/should_override_forkchoice_update", IGNORE_TESTS)
+          .put("fork_choice/should_override_forkchoice_update", new ForkChoiceTestExecutor())
           .put("fork_choice/get_proposer_head", new ForkChoiceTestExecutor("basic_is_parent_root"))
           .build();
 
@@ -142,7 +139,6 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
             DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED,
-            DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
             storageSystem.getMetricsSystem());
     final ExecutionLayerChannelStub executionLayer =

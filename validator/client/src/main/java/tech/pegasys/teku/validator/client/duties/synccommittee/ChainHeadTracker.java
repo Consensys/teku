@@ -16,6 +16,8 @@ package tech.pegasys.teku.validator.client.duties.synccommittee;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 public class ChainHeadTracker implements ValidatorTimingChannel {
@@ -58,4 +60,10 @@ public class ChainHeadTracker implements ValidatorTimingChannel {
 
   @Override
   public void onAttestationAggregationDue(final UInt64 slot) {}
+
+  @Override
+  public void onAttesterSlashing(final AttesterSlashing attesterSlashing) {}
+
+  @Override
+  public void onProposerSlashing(final ProposerSlashing proposerSlashing) {}
 }

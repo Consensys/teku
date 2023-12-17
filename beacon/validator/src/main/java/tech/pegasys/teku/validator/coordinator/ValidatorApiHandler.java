@@ -47,10 +47,9 @@ import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
-import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanceImpl;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanceFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
@@ -114,7 +113,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
    */
   private static final int DUTY_EPOCH_TOLERANCE = 1;
 
-  private final TimeProvider timeProvider;
+  private final BlockProductionPerformanceFactory blockProductionPerformanceFactory;
   private final ChainDataProvider chainDataProvider;
   private final NodeDataProvider nodeDataProvider;
   private final CombinedChainDataClient combinedChainDataClient;
@@ -133,12 +132,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
   private final ProposersDataManager proposersDataManager;
   private final BlockPublisher blockPublisher;
-  private final boolean blockProductionPerformanceTrackingEnabled;
 
   private final AttesterDutiesGenerator attesterDutiesGenerator;
 
   public ValidatorApiHandler(
-      final TimeProvider timeProvider,
       final ChainDataProvider chainDataProvider,
       final NodeDataProvider nodeDataProvider,
       final CombinedChainDataClient combinedChainDataClient,
@@ -160,8 +157,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final SyncCommitteeMessagePool syncCommitteeMessagePool,
       final SyncCommitteeContributionPool syncCommitteeContributionPool,
       final SyncCommitteeSubscriptionManager syncCommitteeSubscriptionManager,
-      final boolean blockProductionPerformanceTrackingEnabled) {
-    this.timeProvider = timeProvider;
+      final BlockProductionPerformanceFactory blockProductionPerformanceFactory) {
+    this.blockProductionPerformanceFactory = blockProductionPerformanceFactory;
     this.chainDataProvider = chainDataProvider;
     this.nodeDataProvider = nodeDataProvider;
     this.combinedChainDataClient = combinedChainDataClient;
@@ -190,7 +187,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             performanceTracker,
             dutyMetrics);
     this.attesterDutiesGenerator = new AttesterDutiesGenerator(spec);
-    this.blockProductionPerformanceTrackingEnabled = blockProductionPerformanceTrackingEnabled;
   }
 
   @Override
@@ -323,9 +319,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       return NodeSyncingException.failedFuture();
     }
     final BlockProductionPerformance blockProductionPerformance =
-        blockProductionPerformanceTrackingEnabled
-            ? new BlockProductionPerformanceImpl(timeProvider, slot)
-            : BlockProductionPerformance.NOOP;
+        blockProductionPerformanceFactory.create(slot);
     return forkChoiceTrigger
         .prepareForBlockProduction(slot, blockProductionPerformance)
         .thenCompose(__ -> combinedChainDataClient.getStateAtSlotExact(slot))

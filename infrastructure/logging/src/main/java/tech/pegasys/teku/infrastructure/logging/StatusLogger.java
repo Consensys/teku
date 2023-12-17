@@ -72,10 +72,10 @@ public class StatusLogger {
 
   public void warnDenebEpochsStoreBlobsParameterSet(
       final String epochsStoreBlobs,
-      final boolean isOverriden,
+      final boolean isOverridden,
       final String specValue,
       final Integer maxEpochsStoreBlobs) {
-    if (isOverriden) {
+    if (isOverridden) {
       final boolean isMax = String.valueOf(maxEpochsStoreBlobs).equals(epochsStoreBlobs);
       log.warn(
           print(
@@ -235,6 +235,15 @@ public class StatusLogger {
         "Detected {} active validators doppelganger. The following keys have been ignored: {}",
         doppelgangerPublicKeys.size(),
         String.join(", ", doppelgangerPublicKeys));
+  }
+
+  public void exitOnDoppelgangerDetected(final String keys) {
+    log.fatal("Validator doppelganger detected. Public keys: {}. Shutting down...", keys);
+  }
+
+  public void exitOnNoValidatorKeys() {
+    log.fatal(
+        "No loaded validators when --exit-when-no-validator-keys-enabled option is true. Shutting down...");
   }
 
   public void beginInitializingChainData() {

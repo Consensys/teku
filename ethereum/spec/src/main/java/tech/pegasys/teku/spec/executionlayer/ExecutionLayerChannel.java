@@ -135,6 +135,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
    * @param state The beacon state
    * @param payloadValueResult A callback that will contain the payload execution value (local or
    *     builder, whichever payload is chosen)
+   * @param blockProductionPerformance The performance tracker
    */
   SafeFuture<HeaderWithFallbackData> builderGetHeader(
       ExecutionPayloadContext executionPayloadContext,

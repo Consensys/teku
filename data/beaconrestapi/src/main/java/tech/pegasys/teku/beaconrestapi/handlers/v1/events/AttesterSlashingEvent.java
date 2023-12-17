@@ -11,14 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client;
+package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
-public class NoValidatorKeysStateException extends IllegalStateException {
-  public NoValidatorKeysStateException(String message, Throwable cause) {
-    super(message, cause);
-  }
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 
-  public NoValidatorKeysStateException(String message) {
-    super(message);
+public class AttesterSlashingEvent extends Event<AttesterSlashing> {
+  AttesterSlashingEvent(AttesterSlashing attesterSlashing) {
+    super(attesterSlashing.getSchema().getJsonTypeDefinition(), attesterSlashing);
   }
 }
