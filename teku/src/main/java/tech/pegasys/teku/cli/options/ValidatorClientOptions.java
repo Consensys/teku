@@ -69,6 +69,7 @@ public class ValidatorClientOptions {
       paramLabel = "<BOOLEAN>",
       description = "Use the POST endpoint when getting validators from state",
       hidden = true,
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "0..1",
       fallbackValue = "true")
   private boolean validatorClientUsePostValidatorsEndpointEnabled =
