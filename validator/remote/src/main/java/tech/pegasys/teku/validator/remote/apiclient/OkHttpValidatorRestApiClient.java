@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.remote.apiclient;
 
 import static java.util.Collections.emptyMap;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_METHOD_NOT_ALLOWED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_AGGREGATE;
@@ -154,6 +155,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
                     (request, response) -> {
                       throw new PostStateValidatorsNotExistingException();
                     },
+                    SC_BAD_REQUEST,
                     SC_NOT_FOUND,
                     SC_METHOD_NOT_ALLOWED))
         .map(response -> response.data);
