@@ -67,7 +67,7 @@ public class ValidatorClientOptions {
   @CommandLine.Option(
       names = {"--Xuse-post-validators-endpoint-enabled"},
       paramLabel = "<BOOLEAN>",
-      description = "Use the POST endpoint when getting validators from state.",
+      description = "Use the POST endpoint when getting validators from state",
       hidden = true,
       arity = "0..1",
       fallbackValue = "true")
