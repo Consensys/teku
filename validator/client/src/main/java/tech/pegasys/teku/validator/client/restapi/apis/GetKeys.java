@@ -45,6 +45,6 @@ public class GetKeys extends RestApiEndpoint {
 
   @Override
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
-    request.respondOk(keyManager.getActiveValidatorKeys());
+    request.respondOk(keyManager.getLocalValidatorKeys());
   }
 }

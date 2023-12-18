@@ -182,7 +182,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   private List<Validator> getValidatorsRequiringRegistration(
       final Map<BLSPublicKey, ValidatorStatus> validatorStatuses) {
 
-    return ownedValidators.getActiveValidators().stream()
+    return ownedValidators.getValidators().stream()
         .filter(
             validator -> {
               // filtering out validators which don't have builder flow enabled
@@ -227,7 +227,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
         .alwaysRun(
             () -> {
               registrationInProgress.set(false);
-              cleanupCache(ownedValidators.getActiveValidators());
+              cleanupCache(ownedValidators.getValidators());
             });
   }
 

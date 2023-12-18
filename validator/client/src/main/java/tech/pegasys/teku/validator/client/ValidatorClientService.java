@@ -240,7 +240,7 @@ public class ValidatorClientService extends Service {
                     validatorApiChannel,
                     genesisDataProvider,
                     proposerConfigManager,
-                    new ActiveKeyManager(
+                    new OwnedKeyManager(
                         validatorLoader,
                         services.getEventChannels().getPublisher(ValidatorTimingChannel.class)),
                     services.getDataDirLayout(),
@@ -311,7 +311,7 @@ public class ValidatorClientService extends Service {
       final ValidatorApiChannel validatorApiChannel,
       final GenesisDataProvider genesisDataProvider,
       final Optional<ProposerConfigManager> proposerConfigManager,
-      final ActiveKeyManager activeKeyManager,
+      final OwnedKeyManager keyManager,
       final DataDirLayout dataDirLayout,
       final TimeProvider timeProvider,
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector) {
@@ -322,7 +322,7 @@ public class ValidatorClientService extends Service {
             validatorApiChannel,
             genesisDataProvider,
             proposerConfigManager,
-            activeKeyManager,
+            keyManager,
             dataDirLayout,
             timeProvider,
             maybeDoppelgangerDetector,

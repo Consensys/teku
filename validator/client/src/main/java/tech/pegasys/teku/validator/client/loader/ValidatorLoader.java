@@ -76,7 +76,7 @@ public class ValidatorLoader {
     validatorSources.forEach(source -> addValidatorsFromSource(validatorProviders, source));
     MultithreadedValidatorLoader.loadValidators(
         ownedValidators, validatorProviders, graffitiProvider);
-    slashingProtectionLogger.protectionSummary(ownedValidators.getActiveValidators());
+    slashingProtectionLogger.protectionSummary(ownedValidators.getValidators());
   }
 
   public DeleteKeyResult deleteLocalMutableValidator(final BLSPublicKey publicKey) {
