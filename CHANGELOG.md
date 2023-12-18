@@ -14,3 +14,4 @@ the [releases page](https://github.com/Consensys/teku/releases).
 ### Additions and Improvements
 
 ### Bug Fixes
+- Fix incompatibility between Teku validator client and Lighthouse beacon nodes

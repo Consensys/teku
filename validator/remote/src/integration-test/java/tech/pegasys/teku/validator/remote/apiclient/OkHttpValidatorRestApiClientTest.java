@@ -171,7 +171,7 @@ class OkHttpValidatorRestApiClientTest {
   }
 
   @ParameterizedTest
-  @ValueSource(ints = {SC_NOT_FOUND, SC_METHOD_NOT_ALLOWED})
+  @ValueSource(ints = {SC_BAD_REQUEST, SC_NOT_FOUND, SC_METHOD_NOT_ALLOWED})
   public void postValidators_WhenNotExisting_ThrowsException(final int responseCode) {
     mockWebServer.enqueue(new MockResponse().setResponseCode(responseCode));
 
