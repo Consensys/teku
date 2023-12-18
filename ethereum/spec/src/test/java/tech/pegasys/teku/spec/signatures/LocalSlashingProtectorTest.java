@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -170,15 +171,18 @@ class LocalSlashingProtectorTest {
               lock.unlock();
               LOG.debug("UNLOCK firstSigner");
             });
+    final CountDownLatch threadAcquired = new CountDownLatch(1);
     final SafeFuture<Void> secondSigner =
         asyncRunner.runAsync(
             () -> {
+              threadAcquired.countDown();
               final ReentrantLock lock =
                   slashingProtectionStorage.acquireLock(dataStructureUtil.randomPublicKey());
               LOG.debug("LOCKED secondSigner");
               lock.unlock();
               LOG.debug("UNLOCK secondSigner");
             });
+    threadAcquired.await();
     assertThat(firstSigner).isNotCompleted();
     secondSigner.get(50, TimeUnit.MILLISECONDS);
     assertThat(secondSigner).isCompleted();
