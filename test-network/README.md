@@ -27,4 +27,4 @@ Persistent Data
 
 The teku nodes store data and logs in `data/node<X>/`. It is safe to delete the entire `data` directory to start from scratch.
 
-Grafana stores it's data in `grafana/data` so changes made to dashboards are persisted across runs.
+Grafana stores its data in `grafana/data` so changes made to dashboards are persisted across runs.

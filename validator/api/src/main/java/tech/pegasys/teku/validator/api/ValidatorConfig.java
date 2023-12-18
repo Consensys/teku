@@ -49,6 +49,8 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_EXIT_WHEN_NO_VALIDATOR_KEYS_ENABLED = false;
   public static final boolean DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED = true;
   public static final boolean DEFAULT_DOPPELGANGER_DETECTION_ENABLED = false;
+  public static final boolean DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED =
+      true;
   public static final int DEFAULT_EXECUTOR_MAX_QUEUE_SIZE = 20_000;
   public static final Duration DEFAULT_VALIDATOR_EXTERNAL_SIGNER_TIMEOUT = Duration.ofSeconds(5);
   public static final int DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT = 32;
@@ -98,6 +100,8 @@ public class ValidatorConfig {
 
   private final int executorThreads;
 
+  private final boolean isLocalSlashingProtectionSynchronizedModeEnabled;
+
   private ValidatorConfig(
       final List<String> validatorKeys,
       final List<String> validatorExternalSignerPublicKeySources,
@@ -132,7 +136,8 @@ public class ValidatorConfig {
       final Optional<BLSPublicKey> builderRegistrationPublicKeyOverride,
       final int executorMaxQueueSize,
       final int executorThreads,
-      final Optional<String> sentryNodeConfigurationFile) {
+      final Optional<String> sentryNodeConfigurationFile,
+      boolean isLocalSlashingProtectionSynchronizedModeEnabled) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -170,6 +175,8 @@ public class ValidatorConfig {
     this.executorMaxQueueSize = executorMaxQueueSize;
     this.executorThreads = executorThreads;
     this.sentryNodeConfigurationFile = sentryNodeConfigurationFile;
+    this.isLocalSlashingProtectionSynchronizedModeEnabled =
+        isLocalSlashingProtectionSynchronizedModeEnabled;
   }
 
   public static Builder builder() {
@@ -320,6 +327,10 @@ public class ValidatorConfig {
     }
   }
 
+  public boolean isLocalSlashingProtectionSynchronizedModeEnabled() {
+    return isLocalSlashingProtectionSynchronizedModeEnabled;
+  }
+
   public static final class Builder {
     private List<String> validatorKeys = new ArrayList<>();
     private List<String> validatorExternalSignerPublicKeySources = new ArrayList<>();
@@ -365,6 +376,9 @@ public class ValidatorConfig {
     private Optional<String> sentryNodeConfigurationFile = Optional.empty();
 
     private int executorThreads = DEFAULT_VALIDATOR_EXECUTOR_THREADS;
+
+    private boolean isLocalSlashingProtectionSynchronizedModeEnabled =
+        DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED;
 
     private Builder() {}
 
@@ -585,6 +599,13 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder isLocalSlashingProtectionSynchronizedModeEnabled(
+        final boolean isLocalSlashingProtectionSynchronizedModeEnabled) {
+      this.isLocalSlashingProtectionSynchronizedModeEnabled =
+          isLocalSlashingProtectionSynchronizedModeEnabled;
+      return this;
+    }
+
     public ValidatorConfig build() {
       validateExternalSignerUrlAndPublicKeys();
       validateExternalSignerKeystoreAndPasswordFileConfig();
@@ -625,7 +646,8 @@ public class ValidatorConfig {
           builderRegistrationPublicKeyOverride,
           executorMaxQueueSize,
           executorThreads,
-          sentryNodeConfigurationFile);
+          sentryNodeConfigurationFile,
+          isLocalSlashingProtectionSynchronizedModeEnabled);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {
