@@ -12,6 +12,6 @@ the [releases page](https://github.com/Consensys/teku/releases).
 ### Breaking Changes
 
 ### Additions and Improvements
-- Fix incompatibility between Teku validator client and beacon nodes whose `/eth/v1/beacon/states/{state_id}/validators` POST endpoint is returning status code 400
 
 ### Bug Fixes
+- Fix incompatibility between Teku validator client and Lighthouse beacon nodes
