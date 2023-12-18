@@ -64,6 +64,16 @@ public class ValidatorClientOptions {
       fallbackValue = "true")
   private boolean validatorClientSszBlocksEnabled = DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED;
 
+  @CommandLine.Option(
+      names = {"--Xuse-post-validators-endpoint-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Use the POST endpoint when getting validators from state.",
+      hidden = true,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean validatorClientUsePostValidatorsEndpointEnabled =
+      ValidatorConfig.DEFAULT_VALIDATOR_CLIENT_USE_POST_VALIDATORS_ENDPOINT_ENABLED;
+
   public void configure(TekuConfiguration.Builder builder) {
     configureBeaconNodeApiEndpoints();
 
@@ -72,6 +82,8 @@ public class ValidatorClientOptions {
             config
                 .beaconNodeApiEndpoints(getBeaconNodeApiEndpoints())
                 .validatorClientUseSszBlocksEnabled(validatorClientSszBlocksEnabled)
+                .validatorClientUsePostValidatorsEndpointEnabled(
+                    validatorClientUsePostValidatorsEndpointEnabled)
                 .failoversSendSubnetSubscriptionsEnabled(failoversSendSubnetSubscriptionsEnabled)
                 .failoversPublishSignedDutiesEnabled(failoversPublishSignedDutiesEnabled)
                 .sentryNodeConfigurationFile(exclusiveParams.sentryConfigFile));

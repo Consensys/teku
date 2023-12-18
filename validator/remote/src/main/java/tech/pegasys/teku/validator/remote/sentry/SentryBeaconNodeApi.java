@@ -180,6 +180,7 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
         httpClient,
         spec,
         validatorConfig.isValidatorClientUseSszBlocksEnabled(),
+        validatorConfig.isValidatorClientUsePostValidatorsEndpointEnabled(),
         asyncRunner);
   }
 
@@ -198,6 +199,7 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
                         httpClient,
                         spec,
                         validatorConfig.isValidatorClientUseSszBlocksEnabled(),
+                        validatorConfig.isValidatorClientUsePostValidatorsEndpointEnabled(),
                         asyncRunner))
             .toList();
 
