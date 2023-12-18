@@ -48,6 +48,7 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_BLOCK_V3_ENABLED = false;
   public static final boolean DEFAULT_EXIT_WHEN_NO_VALIDATOR_KEYS_ENABLED = false;
   public static final boolean DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED = true;
+  public static final boolean DEFAULT_VALIDATOR_CLIENT_USE_POST_VALIDATORS_ENDPOINT_ENABLED = true;
   public static final boolean DEFAULT_DOPPELGANGER_DETECTION_ENABLED = false;
   public static final boolean DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED =
       true;
@@ -86,6 +87,7 @@ public class ValidatorConfig {
   private final boolean blindedBeaconBlocksEnabled;
   private final boolean builderRegistrationDefaultEnabled;
   private final boolean validatorClientUseSszBlocksEnabled;
+  private final boolean validatorClientUsePostValidatorsEndpointEnabled;
   private final boolean doppelgangerDetectionEnabled;
   private final boolean failoversSendSubnetSubscriptionsEnabled;
   private final boolean failoversPublishSignedDutiesEnabled;
@@ -125,6 +127,7 @@ public class ValidatorConfig {
       final boolean builderRegistrationDefaultEnabled,
       final boolean blindedBeaconBlocksEnabled,
       final boolean validatorClientUseSszBlocksEnabled,
+      final boolean validatorClientUsePostValidatorsEndpointEnabled,
       final boolean doppelgangerDetectionEnabled,
       final boolean failoversSendSubnetSubscriptionsEnabled,
       final boolean failoversPublishSignedDutiesEnabled,
@@ -163,6 +166,8 @@ public class ValidatorConfig {
     this.blindedBeaconBlocksEnabled = blindedBeaconBlocksEnabled;
     this.builderRegistrationDefaultEnabled = builderRegistrationDefaultEnabled;
     this.validatorClientUseSszBlocksEnabled = validatorClientUseSszBlocksEnabled;
+    this.validatorClientUsePostValidatorsEndpointEnabled =
+        validatorClientUsePostValidatorsEndpointEnabled;
     this.doppelgangerDetectionEnabled = doppelgangerDetectionEnabled;
     this.failoversSendSubnetSubscriptionsEnabled = failoversSendSubnetSubscriptionsEnabled;
     this.failoversPublishSignedDutiesEnabled = failoversPublishSignedDutiesEnabled;
@@ -282,6 +287,10 @@ public class ValidatorConfig {
     return validatorClientUseSszBlocksEnabled;
   }
 
+  public boolean isValidatorClientUsePostValidatorsEndpointEnabled() {
+    return validatorClientUsePostValidatorsEndpointEnabled;
+  }
+
   public boolean isDoppelgangerDetectionEnabled() {
     return doppelgangerDetectionEnabled;
   }
@@ -360,6 +369,8 @@ public class ValidatorConfig {
         DEFAULT_BUILDER_REGISTRATION_DEFAULT_ENABLED;
     private boolean blindedBlocksEnabled = DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
     private boolean validatorClientSszBlocksEnabled = DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED;
+    private boolean validatorClientUsePostValidatorsEndpointEnabled =
+        DEFAULT_VALIDATOR_CLIENT_USE_POST_VALIDATORS_ENDPOINT_ENABLED;
     private boolean doppelgangerDetectionEnabled = DEFAULT_DOPPELGANGER_DETECTION_ENABLED;
     private boolean failoversSendSubnetSubscriptionsEnabled =
         DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED;
@@ -525,6 +536,13 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder validatorClientUsePostValidatorsEndpointEnabled(
+        final boolean validatorClientUsePostValidatorsEndpointEnabled) {
+      this.validatorClientUsePostValidatorsEndpointEnabled =
+          validatorClientUsePostValidatorsEndpointEnabled;
+      return this;
+    }
+
     public Builder doppelgangerDetectionEnabled(final boolean doppelgangerDetectionEnabled) {
       this.doppelgangerDetectionEnabled = doppelgangerDetectionEnabled;
       return this;
@@ -635,6 +653,7 @@ public class ValidatorConfig {
           validatorsRegistrationDefaultEnabled,
           blindedBlocksEnabled,
           validatorClientSszBlocksEnabled,
+          validatorClientUsePostValidatorsEndpointEnabled,
           doppelgangerDetectionEnabled,
           failoversSendSubnetSubscriptionsEnabled,
           failoversPublishSignedDutiesEnabled,
