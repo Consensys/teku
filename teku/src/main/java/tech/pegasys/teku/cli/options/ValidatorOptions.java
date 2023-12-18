@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_VALIDATOR_EXECUTOR_THREADS;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_DOPPELGANGER_DETECTION_ENABLED;
+import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED;
 
 import java.nio.file.Path;
 import java.util.Optional;
@@ -140,6 +141,17 @@ public class ValidatorOptions {
   private boolean exitWhenNoValidatorKeysEnabled =
       ValidatorConfig.DEFAULT_EXIT_WHEN_NO_VALIDATOR_KEYS_ENABLED;
 
+  @Option(
+      names = {"--Xvalidator-is-local-slashing-protection-synchronized-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Restrict local signing to a single operation at a time.",
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      arity = "0..1",
+      hidden = true,
+      fallbackValue = "true")
+  private boolean isLocalSlashingProtectionSynchronizedEnabled =
+      DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED;
+
   public void configure(TekuConfiguration.Builder builder) {
     builder.validator(
         config ->
@@ -148,6 +160,8 @@ public class ValidatorOptions {
                 .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
                 .validatorExternalSignerSlashingProtectionEnabled(
                     validatorExternalSignerSlashingProtectionEnabled)
+                .isLocalSlashingProtectionSynchronizedModeEnabled(
+                    isLocalSlashingProtectionSynchronizedEnabled)
                 .graffitiProvider(
                     new FileBackedGraffitiProvider(
                         Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))

@@ -14,12 +14,14 @@
 package tech.pegasys.teku.infrastructure.json.types;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 
 public class DeserializableListTypeDefinition<T>
     extends DeserializableArrayTypeDefinition<T, List<T>> {
 
-  public DeserializableListTypeDefinition(final DeserializableTypeDefinition<T> itemType) {
-    super(itemType, Function.identity());
+  public DeserializableListTypeDefinition(
+      final DeserializableTypeDefinition<T> itemType, final Optional<Integer> minItems) {
+    super(itemType, Function.identity(), minItems);
   }
 }
