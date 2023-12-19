@@ -61,7 +61,7 @@ public class ForkChoiceUpdateData {
           new ForkChoiceState(
               forkChoiceState.getHeadBlockRoot(),
               forkChoiceState.getHeadBlockSlot(),
-              // no block number for the terminal block
+              // We don't have data for terminal block number
               UInt64.ZERO,
               terminalBlockHash.get(),
               Bytes32.ZERO,
