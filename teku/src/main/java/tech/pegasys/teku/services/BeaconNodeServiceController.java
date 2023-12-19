@@ -56,7 +56,7 @@ public class BeaconNodeServiceController extends ServiceController {
         .ifPresent(services::add);
 
     final Optional<SlashingRiskDetectionAction> maybeValidatorSlashedAction =
-        tekuConfig.validatorClient().getValidatorConfig().isStopVcWhenValidatorSlashedEnabled()
+        tekuConfig.validatorClient().getValidatorConfig().isValidatorSlashingProtectionEnabled()
             ? Optional.of(new SlashedValidatorShutDown())
             : Optional.empty();
 
