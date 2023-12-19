@@ -39,6 +39,8 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.Beaco
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -186,7 +188,8 @@ public class ProposersDataManager implements SlotEventsChannel {
       final UInt64 blockSlot,
       final boolean inSync,
       final ForkChoiceUpdateData forkChoiceUpdateData,
-      final boolean mandatory) {
+      final boolean mandatory,
+      final Optional<BeaconState> maybeState) {
     eventThread.checkOnEventThread();
     if (!inSync) {
       // We don't produce blocks while syncing so don't bother preparing the payload
@@ -204,11 +207,22 @@ public class ProposersDataManager implements SlotEventsChannel {
     final UInt64 epoch = spec.computeEpochAtSlot(blockSlot);
     final Bytes32 currentHeadBlockRoot =
         forkChoiceUpdateData.getForkChoiceState().getHeadBlockRoot();
+    if (maybeState.isPresent()) {
+      try {
+        final BeaconState preState = spec.processSlots(maybeState.get(), blockSlot);
+        return SafeFuture.completedFuture(
+            calculatePayloadBuildingAttributes(
+                currentHeadBlockRoot, blockSlot, epoch, Optional.of(preState), mandatory));
+      } catch (SlotProcessingException | EpochProcessingException e) {
+        LOG.error("Failed to process slots to get state current at blockSlot {}", blockSlot, e);
+      }
+    }
+
     return getStateInEpoch(epoch)
         .thenApplyAsync(
-            maybeState ->
+            maybeStateInEpoch ->
                 calculatePayloadBuildingAttributes(
-                    currentHeadBlockRoot, blockSlot, epoch, maybeState, mandatory),
+                    currentHeadBlockRoot, blockSlot, epoch, maybeStateInEpoch, mandatory),
             eventThread);
   }
 

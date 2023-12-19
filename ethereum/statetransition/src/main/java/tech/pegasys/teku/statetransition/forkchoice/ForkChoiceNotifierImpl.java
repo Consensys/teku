@@ -25,6 +25,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
@@ -177,7 +178,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
           .getForkChoiceStateAsync()
           .thenCombine(
               proposersDataManager.calculatePayloadBuildingAttributes(
-                  blockSlot, inSync, localForkChoiceUpdateData, true),
+                  blockSlot, inSync, localForkChoiceUpdateData, true, Optional.empty()),
               (forkChoiceState, payloadBuildingAttributes) -> {
                 forkChoiceUpdateData =
                     localForkChoiceUpdateData
@@ -213,7 +214,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElse(SpecConfig.GENESIS_SLOT);
 
     // Update payload attributes in case we now need to propose the next block
-    updatePayloadAttributes(currentSlot.plus(1));
+    updatePayloadAttributes(currentSlot.plus(1), Optional.empty());
   }
 
   private void internalForkChoiceUpdated(
@@ -229,7 +230,8 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
     final Optional<UInt64> attributesSlot =
         proposingSlot.or(() -> recentChainData.getCurrentSlot().map(UInt64::increment));
 
-    attributesSlot.ifPresent(this::updatePayloadAttributes);
+    attributesSlot.ifPresent(
+        slot -> updatePayloadAttributesWithForkChoiceState(slot, Optional.of(forkChoiceState)));
 
     sendForkChoiceUpdated();
   }
@@ -240,7 +242,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
     LOG.debug("internalAttestationsDue slot {}", slot);
 
     // Assume `slot` is empty and check if we need to prepare to propose in the next slot
-    updatePayloadAttributes(slot.plus(1));
+    updatePayloadAttributes(slot.plus(1), Optional.empty());
   }
 
   private void sendForkChoiceUpdated() {
@@ -254,14 +256,38 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
             forkChoiceUpdatedResult));
   }
 
-  private void updatePayloadAttributes(final UInt64 blockSlot) {
+  private void updatePayloadAttributesWithForkChoiceState(
+      final UInt64 blockSlot, final Optional<ForkChoiceState> maybeForkChoiceState) {
+    final SafeFuture<Optional<BeaconState>> maybeFutureState;
+    final Optional<Bytes32> maybeRoot = recentChainData.getBestBlockRoot();
+    if (maybeForkChoiceState.isPresent()
+        && maybeRoot.isPresent()
+        && !maybeRoot.get().equals(maybeForkChoiceState.get().getHeadBlockRoot())) {
+      // if we know the root we're building on isn't the head root, supply the state
+      maybeFutureState =
+          recentChainData.retrieveBlockState(maybeForkChoiceState.get().getHeadBlockRoot());
+    } else {
+      maybeFutureState = SafeFuture.completedFuture(Optional.empty());
+    }
+    maybeFutureState
+        .thenAccept(maybeState -> updatePayloadAttributes(blockSlot, maybeState))
+        .finish(
+            error ->
+                LOG.debug(
+                    "Failed to retrieve state to calculate payload attributes for slot {}",
+                    blockSlot,
+                    error));
+  }
+
+  private void updatePayloadAttributes(
+      final UInt64 blockSlot, final Optional<BeaconState> maybeState) {
     LOG.debug("updatePayloadAttributes blockSlot {}", blockSlot);
 
     forkChoiceUpdateData
         .withPayloadBuildingAttributesAsync(
             () ->
                 proposersDataManager.calculatePayloadBuildingAttributes(
-                    blockSlot, inSync, forkChoiceUpdateData, false),
+                    blockSlot, inSync, forkChoiceUpdateData, false, maybeState),
             eventThread)
         .thenAccept(
             newForkChoiceUpdateData -> {
