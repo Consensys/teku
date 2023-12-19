@@ -478,8 +478,8 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
                       block.getBlock().getParentRoot(),
                       block.getBlock().getStateRoot(),
                       block.getBlockCheckpoints(),
-                      block.getExecutionBlockNumber().orElse(UInt64.ZERO),
-                      block.getExecutionBlockHash().orElse(Bytes32.ZERO)));
+                      block.getExecutionBlockNumber().orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
+                      block.getExecutionBlockHash().orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH)));
       removedBlockRoots.forEach((root, uInt64) -> protoArray.removeBlockRoot(root));
       pulledUpBlocks.forEach(protoArray::pullUpBlockCheckpoints);
       protoArray.maybePrune(finalizedCheckpoint.getRoot());

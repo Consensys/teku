@@ -28,6 +28,9 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class ProtoNode {
 
+  public static final UInt64 NO_EXECUTION_BLOCK_NUMBER = UInt64.ZERO;
+  public static final Bytes32 NO_EXECUTION_BLOCK_HASH = Bytes32.ZERO;
+
   private final UInt64 blockSlot;
   private final Bytes32 stateRoot;
 
@@ -39,16 +42,16 @@ public class ProtoNode {
   /**
    * The block number from the execution payload.
    *
-   * <p>{@link UInt64#ZERO} if the block does not have an execution payload or uses the default
-   * payload.
+   * <p>{@link ProtoNode#NO_EXECUTION_BLOCK_NUMBER} if the block does not have an execution payload
+   * or uses the default payload.
    */
   private final UInt64 executionBlockNumber;
 
   /**
    * The block hash from the execution payload.
    *
-   * <p>{@link Bytes32#ZERO} if the block does not have an execution payload or uses the default
-   * payload.
+   * <p>{@link ProtoNode#NO_EXECUTION_BLOCK_HASH} if the block does not have an execution payload or
+   * uses the default payload.
    */
   private final Bytes32 executionBlockHash;
 

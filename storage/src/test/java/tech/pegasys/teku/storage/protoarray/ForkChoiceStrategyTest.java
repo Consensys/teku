@@ -94,8 +94,10 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
                     blockAndState.getParentRoot(),
                     blockAndState.getStateRoot(),
                     spec.calculateBlockCheckpoints(blockAndState.getState()),
-                    blockAndState.getExecutionBlockNumber().orElse(ZERO),
-                    blockAndState.getExecutionBlockHash().orElse(Bytes32.ZERO),
+                    blockAndState
+                        .getExecutionBlockNumber()
+                        .orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
+                    blockAndState.getExecutionBlockHash().orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
                     spec.isBlockProcessorOptimistic(blockAndState.getSlot())));
   }
 
@@ -234,8 +236,8 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
                     head.getRoot(),
                     head.getParentRoot(),
                     head.getStateRoot(),
-                    head.getExecutionBlockNumber().orElse(ZERO),
-                    head.getExecutionBlockHash().orElse(Bytes32.ZERO),
+                    head.getExecutionBlockNumber().orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
+                    head.getExecutionBlockHash().orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
                     ProtoNodeValidationStatus.VALID,
                     spec.calculateBlockCheckpoints(head.getState()),
                     ZERO)));

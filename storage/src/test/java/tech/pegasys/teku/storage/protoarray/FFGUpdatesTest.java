@@ -313,7 +313,7 @@ public class FFGUpdatesTest {
             new Checkpoint(finalizedEpoch, Bytes32.ZERO),
             new Checkpoint(justifiedEpoch, Bytes32.ZERO),
             new Checkpoint(finalizedEpoch, Bytes32.ZERO)),
-        ZERO,
+        ProtoNode.NO_EXECUTION_BLOCK_NUMBER,
         executionBlockHash);
   }
 
