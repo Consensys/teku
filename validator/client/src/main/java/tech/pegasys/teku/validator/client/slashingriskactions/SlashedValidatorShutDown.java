@@ -31,7 +31,7 @@ public class SlashedValidatorShutDown implements SlashingRiskDetectionAction {
           pubKeys.stream()
               .map(BLSPublicKey::toAbbreviatedString)
               .collect(Collectors.joining(", ")));
-      System.exit(1);
+      System.exit(2);
     }
   }
 }
