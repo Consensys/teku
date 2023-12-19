@@ -86,6 +86,7 @@ public class EndpointMetadata {
   private final Map<String, StringValueTypeDefinition<?>> requiredQueryParams;
   private final Map<String, StringValueTypeDefinition<?>> queryParams;
   private final Map<String, StringValueTypeDefinition<?>> queryListParams;
+  private final Map<String, StringValueTypeDefinition<?>> headers;
 
   private EndpointMetadata(
       final HandlerType method,
@@ -104,7 +105,8 @@ public class EndpointMetadata {
       final Map<String, StringValueTypeDefinition<?>> pathParams,
       final Map<String, StringValueTypeDefinition<?>> queryParams,
       final Map<String, StringValueTypeDefinition<?>> requiredQueryParams,
-      final Map<String, StringValueTypeDefinition<?>> queryListParams) {
+      final Map<String, StringValueTypeDefinition<?>> queryListParams,
+      final Map<String, StringValueTypeDefinition<?>> headers) {
     this.method = method;
     this.path = path;
     this.operationId = operationId;
@@ -122,6 +124,7 @@ public class EndpointMetadata {
     this.queryParams = queryParams;
     this.requiredQueryParams = requiredQueryParams;
     this.queryListParams = queryListParams;
+    this.headers = headers;
   }
 
   public static EndpointMetaDataBuilder get(final String path) {
@@ -257,6 +260,7 @@ public class EndpointMetadata {
     final String selectedType = selectContentType(openApiResponse, acceptHeader);
     final ResponseContentTypeDefinition<T> typeDefinition =
         (ResponseContentTypeDefinition<T>) openApiResponse.getType(selectedType);
+    // todo headers handled here?
     return new ResponseMetadata(selectedType, typeDefinition.getAdditionalHeaders(response));
   }
 
@@ -313,6 +317,8 @@ public class EndpointMetadata {
       writeParameters(gen, queryListParams, "query", false, true);
       gen.writeEndArray();
     }
+
+    // todo write headers
 
     if (!requestBodyTypes.isEmpty()) {
       gen.writeObjectFieldStart("requestBody");
@@ -423,6 +429,7 @@ public class EndpointMetadata {
     private final Map<String, StringValueTypeDefinition<?>> requiredQueryParams =
         new LinkedHashMap<>();
     private final Map<String, StringValueTypeDefinition<?>> queryListParams = new LinkedHashMap<>();
+    private final Map<String, StringValueTypeDefinition<?>> headers = new HashMap<>();
     private Optional<String> security = Optional.empty();
     private String defaultRequestType = ContentTypes.JSON;
     private final Map<String, RequestContentTypeDefinition<?>> requestBodyTypes = new HashMap<>();
@@ -481,6 +488,14 @@ public class EndpointMetadata {
         throw new IllegalStateException("Query parameters already contains " + param);
       }
       queryListParams.put(parameterMetadata.getName(), parameterMetadata.getType());
+      return this;
+    }
+
+    public EndpointMetaDataBuilder header(final ParameterMetadata<?> headerMetadata) {
+      if (pathParams.containsKey(headerMetadata.getName())) {
+        throw new IllegalStateException("Header already contains " + headerMetadata.getName());
+      }
+      pathParams.put(headerMetadata.getName(), headerMetadata.getType());
       return this;
     }
 
@@ -717,7 +732,8 @@ public class EndpointMetadata {
           pathParams,
           queryParams,
           requiredQueryParams,
-          queryListParams);
+          queryListParams,
+          headers);
     }
 
     public EndpointMetaDataBuilder tags(final String... tags) {
