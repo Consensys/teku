@@ -57,7 +57,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
  *
  * </pre>
  */
-
 public interface BlockProductionPerformance {
   String COMPLETE_LABEL = "complete";
 
