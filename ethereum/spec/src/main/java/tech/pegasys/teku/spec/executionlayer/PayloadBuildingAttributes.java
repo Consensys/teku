@@ -32,7 +32,7 @@ public class PayloadBuildingAttributes {
   private final Bytes32 prevRandao;
   private final Eth1Address feeRecipient;
   private final Optional<SignedValidatorRegistration> validatorRegistration;
-  private final Optional<List<Withdrawal>> maybeWithdrawals;
+  private final Optional<List<Withdrawal>> withdrawals;
   private final Bytes32 parentBeaconBlockRoot;
 
   public PayloadBuildingAttributes(
@@ -42,7 +42,7 @@ public class PayloadBuildingAttributes {
       final Bytes32 prevRandao,
       final Eth1Address feeRecipient,
       final Optional<SignedValidatorRegistration> validatorRegistration,
-      final Optional<List<Withdrawal>> maybeWithdrawals,
+      final Optional<List<Withdrawal>> withdrawals,
       final Bytes32 parentBeaconBlockRoot) {
     this.proposerIndex = proposerIndex;
     this.proposalSlot = proposalSlot;
@@ -50,7 +50,7 @@ public class PayloadBuildingAttributes {
     this.prevRandao = prevRandao;
     this.feeRecipient = feeRecipient;
     this.validatorRegistration = validatorRegistration;
-    this.maybeWithdrawals = maybeWithdrawals;
+    this.withdrawals = withdrawals;
     this.parentBeaconBlockRoot = parentBeaconBlockRoot;
   }
 
@@ -88,7 +88,7 @@ public class PayloadBuildingAttributes {
   }
 
   public Optional<List<Withdrawal>> getWithdrawals() {
-    return maybeWithdrawals;
+    return withdrawals;
   }
 
   @Override
@@ -106,7 +106,7 @@ public class PayloadBuildingAttributes {
         && Objects.equals(prevRandao, that.prevRandao)
         && Objects.equals(feeRecipient, that.feeRecipient)
         && Objects.equals(validatorRegistration, that.validatorRegistration)
-        && Objects.equals(maybeWithdrawals, that.maybeWithdrawals)
+        && Objects.equals(withdrawals, that.withdrawals)
         && Objects.equals(parentBeaconBlockRoot, that.parentBeaconBlockRoot);
   }
 
@@ -119,7 +119,7 @@ public class PayloadBuildingAttributes {
         prevRandao,
         feeRecipient,
         validatorRegistration,
-        maybeWithdrawals,
+        withdrawals,
         parentBeaconBlockRoot);
   }
 
@@ -132,7 +132,7 @@ public class PayloadBuildingAttributes {
         .add("prevRandao", prevRandao)
         .add("feeRecipient", feeRecipient)
         .add("validatorRegistration", validatorRegistration)
-        .add("withdrawals", maybeWithdrawals)
+        .add("withdrawals", withdrawals)
         .add("parentBeaconBlockRoot", parentBeaconBlockRoot)
         .toString();
   }
