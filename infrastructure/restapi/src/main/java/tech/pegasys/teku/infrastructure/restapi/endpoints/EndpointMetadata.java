@@ -309,16 +309,16 @@ public class EndpointMetadata {
     if (pathParams.size() > 0
         || queryParams.size() > 0
         || requiredQueryParams.size() > 0
-        || queryListParams.size() > 0) {
+        || queryListParams.size() > 0
+        || headers.size() > 0) {
       gen.writeArrayFieldStart("parameters");
       writeParameters(gen, pathParams, "path", true, false);
       writeParameters(gen, requiredQueryParams, "query", true, false);
       writeParameters(gen, queryParams, "query", false, false);
       writeParameters(gen, queryListParams, "query", false, true);
+      writeHeaders(gen, headers);
       gen.writeEndArray();
     }
-
-    // todo write headers
 
     if (!requestBodyTypes.isEmpty()) {
       gen.writeObjectFieldStart("requestBody");
@@ -380,6 +380,20 @@ public class EndpointMetadata {
       } else { // Handle regular parameter
         entry.getValue().serializeOpenApiTypeOrReference(gen);
       }
+      gen.writeEndObject();
+    }
+  }
+
+  private void writeHeaders(
+      final JsonGenerator gen, final Map<String, StringValueTypeDefinition<?>> fields)
+      throws IOException {
+    for (Map.Entry<String, StringValueTypeDefinition<?>> entry : fields.entrySet()) {
+      gen.writeStartObject();
+      gen.writeObjectField("name", entry.getKey());
+      gen.writeObjectField("required", true); // todo check all headers are required?
+      gen.writeObjectField("in", "header");
+      gen.writeFieldName("schema");
+      entry.getValue().serializeOpenApiTypeOrReference(gen);
       gen.writeEndObject();
     }
   }
