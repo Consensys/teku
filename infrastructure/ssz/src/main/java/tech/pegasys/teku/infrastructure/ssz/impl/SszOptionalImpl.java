@@ -74,6 +74,6 @@ public class SszOptionalImpl implements SszOptional {
 
   @Override
   public String toString() {
-    return "SszUnion{value=" + getValue() + '}';
+    return "SszOptional{value=" + getValue() + '}';
   }
 }

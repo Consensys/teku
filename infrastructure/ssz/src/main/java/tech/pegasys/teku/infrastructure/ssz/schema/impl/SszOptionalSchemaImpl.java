@@ -50,10 +50,8 @@ public abstract class SszOptionalSchemaImpl<SszOptionalT extends SszOptional>
   private static final byte IS_PRESENT_PREFIX = 1;
   private static final int PREFIX_SIZE_BYTES = 1;
 
-  private static LeafNode createLengthNode(boolean isPresent) {
-    return isPresent
-        ? LeafNode.create(Bytes.ofUnsignedLong(1, ByteOrder.LITTLE_ENDIAN))
-        : LeafNode.ZERO_LEAVES[8];
+  private static LeafNode createOptionalNode(boolean isPresent) {
+    return isPresent ? LeafNode.create(Bytes.of(IS_PRESENT_PREFIX)) : LeafNode.ZERO_LEAVES[1];
   }
 
   public static SszOptionalSchema<SszOptional> createGenericSchema(SszSchema<?> childSchema) {
@@ -72,7 +70,7 @@ public abstract class SszOptionalSchemaImpl<SszOptionalT extends SszOptional>
 
   public SszOptionalSchemaImpl(SszSchema<?> childSchema) {
     this.childSchema = childSchema;
-    defaultTree = createOptionalNode(childSchema.getDefaultTree(), false);
+    defaultTree = createOptionalNode(LeafNode.ZERO_LEAVES[0], false);
   }
 
   @SuppressWarnings("unchecked")
@@ -148,6 +146,11 @@ public abstract class SszOptionalSchemaImpl<SszOptionalT extends SszOptional>
 
   @Override
   public int sszSerializeTree(TreeNode node, SszWriter writer) {
+    TreeNode optionalNode = getOptionalNode(node);
+    boolean isPresent = getIsPresentFromOptionalNode(optionalNode);
+    if (!isPresent) {
+      return 0;
+    }
     writer.write(Bytes.of(IS_PRESENT_PREFIX));
     int valueSszLength = childSchema.sszSerializeTree(getValueNode(node), writer);
     return valueSszLength + PREFIX_SIZE_BYTES;
@@ -159,34 +162,34 @@ public abstract class SszOptionalSchemaImpl<SszOptionalT extends SszOptional>
       return getDefaultTree();
     }
     int isPresent = reader.read(1).get(0) & 0xFF;
-    if (isPresent > IS_PRESENT_PREFIX) {
+    if (isPresent != IS_PRESENT_PREFIX) {
       throw new SszDeserializeException(
-          "Invalid prefix " + isPresent + " for Optiona schema: " + this);
+          "Invalid prefix " + isPresent + " for Optional schema: " + this);
     }
     TreeNode valueNode = childSchema.sszDeserializeTree(reader);
-    return createOptionalNode(valueNode, isPresent == IS_PRESENT_PREFIX);
+    return createOptionalNode(valueNode, true);
   }
 
   public boolean getIsPresentFromOptionalNode(TreeNode optionalNode) {
     checkArgument(optionalNode instanceof LeafDataNode, "Invalid optional node");
     LeafDataNode dataNode = (LeafDataNode) optionalNode;
     Bytes bytes = dataNode.getData();
-    checkArgument(bytes.size() == PREFIX_SIZE_BYTES, "Invalid selector node");
+    checkArgument(bytes.size() == PREFIX_SIZE_BYTES, "Invalid optional node");
     int isPresent = bytes.get(0) & 0xFF;
     checkArgument(isPresent <= IS_PRESENT_PREFIX, "Incorrect optional prefix");
     return isPresent == IS_PRESENT_PREFIX;
   }
 
-  public TreeNode getValueNode(TreeNode optionalNode) {
-    return optionalNode.get(GIndexUtil.LEFT_CHILD_G_INDEX);
+  public TreeNode getValueNode(TreeNode node) {
+    return node.get(GIndexUtil.LEFT_CHILD_G_INDEX);
   }
 
-  private TreeNode getOptionalNode(TreeNode optionalNode) {
-    return optionalNode.get(GIndexUtil.RIGHT_CHILD_G_INDEX);
+  private TreeNode getOptionalNode(TreeNode node) {
+    return node.get(GIndexUtil.RIGHT_CHILD_G_INDEX);
   }
 
   private TreeNode createOptionalNode(TreeNode valueNode, boolean isPresent) {
-    return BranchNode.create(valueNode, createLengthNode(isPresent));
+    return BranchNode.create(valueNode, createOptionalNode(isPresent));
   }
 
   @Override
