@@ -290,6 +290,11 @@ public class TekuValidatorNode extends Node {
       return this;
     }
 
+    public TekuValidatorNode.Config withStopVcWhenValidatorSlashedEnabled() {
+      configMap.put("stop-vc-when-validator-slashed", true);
+      return this;
+    }
+
     public TekuValidatorNode.Config withSentryNodes(final SentryNodesConfig sentryNodesConfig) {
       final File sentryNodesConfigFile;
       try {
