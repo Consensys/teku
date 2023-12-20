@@ -60,14 +60,7 @@ public class VotesTest {
     // 8         0 <- justified and finalized
     //          /
     // 9       2
-    processBlock(
-        UInt64.valueOf(9),
-        getHash(2),
-        getHash(0),
-        Bytes32.ZERO,
-        ONE,
-        ONE,
-        ProtoNode.NO_EXECUTION_BLOCK_HASH);
+    processBlock(UInt64.valueOf(9), getHash(2), getHash(0), Bytes32.ZERO, ONE, ONE);
 
     // Ensure that the head is 2
     //
@@ -85,14 +78,7 @@ public class VotesTest {
     // 8         0
     //          / \
     // 9       2   1
-    processBlock(
-        UInt64.valueOf(9),
-        getHash(1),
-        getHash(0),
-        Bytes32.ZERO,
-        ONE,
-        ONE,
-        ProtoNode.NO_EXECUTION_BLOCK_HASH);
+    processBlock(UInt64.valueOf(9), getHash(1), getHash(0), Bytes32.ZERO, ONE, ONE);
 
     // Ensure that the head is still 2
     //
@@ -145,14 +131,7 @@ public class VotesTest {
     // 9       2   1
     //             |
     // 10          3
-    processBlock(
-        UInt64.valueOf(10),
-        getHash(3),
-        getHash(1),
-        Bytes32.ZERO,
-        ONE,
-        ONE,
-        ProtoNode.NO_EXECUTION_BLOCK_HASH);
+    processBlock(UInt64.valueOf(10), getHash(3), getHash(1), Bytes32.ZERO, ONE, ONE);
 
     // Ensure that the head is still 2
     //
@@ -220,14 +199,7 @@ public class VotesTest {
     // ------- epoch 2 begins ------
     //             |
     // 16          4
-    processBlock(
-        UInt64.valueOf(16),
-        getHash(4),
-        getHash(3),
-        Bytes32.ZERO,
-        ONE,
-        ONE,
-        ProtoNode.NO_EXECUTION_BLOCK_HASH);
+    processBlock(UInt64.valueOf(16), getHash(4), getHash(3), Bytes32.ZERO, ONE, ONE);
 
     // Ensure that the head is now 4
     //
@@ -259,13 +231,7 @@ public class VotesTest {
     //            /
     // 17        5 <- justified epoch = 2
     processBlock(
-        UInt64.valueOf(17),
-        getHash(5),
-        getHash(4),
-        Bytes32.ZERO,
-        unsigned(2),
-        unsigned(2),
-        ProtoNode.NO_EXECUTION_BLOCK_HASH);
+        UInt64.valueOf(17), getHash(5), getHash(4), Bytes32.ZERO, unsigned(2), unsigned(2));
 
     // Ensure that 5 is filtered out and the head stays at 4.
     //
@@ -299,13 +265,7 @@ public class VotesTest {
     //            / \
     // 17        5   6 <- justified epoch = 0
     processBlock(
-        UInt64.valueOf(17),
-        getHash(6),
-        getHash(4),
-        Bytes32.ZERO,
-        unsigned(1),
-        unsigned(1),
-        ProtoNode.NO_EXECUTION_BLOCK_HASH);
+        UInt64.valueOf(17), getHash(6), getHash(4), Bytes32.ZERO, unsigned(1), unsigned(1));
 
     // Move both votes to 5.
     //
@@ -344,29 +304,11 @@ public class VotesTest {
     //              /
     // 20          9
     processBlock(
-        UInt64.valueOf(18),
-        getHash(7),
-        getHash(5),
-        Bytes32.ZERO,
-        unsigned(2),
-        unsigned(2),
-        ProtoNode.NO_EXECUTION_BLOCK_HASH);
+        UInt64.valueOf(18), getHash(7), getHash(5), Bytes32.ZERO, unsigned(2), unsigned(2));
     processBlock(
-        UInt64.valueOf(19),
-        getHash(8),
-        getHash(7),
-        Bytes32.ZERO,
-        unsigned(2),
-        unsigned(2),
-        ProtoNode.NO_EXECUTION_BLOCK_HASH);
+        UInt64.valueOf(19), getHash(8), getHash(7), Bytes32.ZERO, unsigned(2), unsigned(2));
     processBlock(
-        UInt64.valueOf(20),
-        getHash(9),
-        getHash(8),
-        Bytes32.ZERO,
-        unsigned(2),
-        unsigned(2),
-        ProtoNode.NO_EXECUTION_BLOCK_HASH);
+        UInt64.valueOf(20), getHash(9), getHash(8), Bytes32.ZERO, unsigned(2), unsigned(2));
 
     // Ensure that 6 is the head, even though 5 has all the votes. This is testing to ensure
     // that 5 is filtered out due to a differing justified epoch.
@@ -459,13 +401,7 @@ public class VotesTest {
     //              / \
     // 20          9   10
     processBlock(
-        UInt64.valueOf(20),
-        getHash(10),
-        getHash(8),
-        Bytes32.ZERO,
-        unsigned(2),
-        unsigned(2),
-        ProtoNode.NO_EXECUTION_BLOCK_HASH);
+        UInt64.valueOf(20), getHash(10), getHash(8), Bytes32.ZERO, unsigned(2), unsigned(2));
 
     // Double-check the head is still 9
     assertThat(applyPendingVotes(checkpoint(2, 4), checkpoint(2, 5), balances))
@@ -648,13 +584,7 @@ public class VotesTest {
     //             |
     // 21         11
     processBlock(
-        UInt64.valueOf(21),
-        getHash(11),
-        getHash(9),
-        Bytes32.ZERO,
-        unsigned(2),
-        unsigned(2),
-        ProtoNode.NO_EXECUTION_BLOCK_HASH);
+        UInt64.valueOf(21), getHash(11), getHash(9), Bytes32.ZERO, unsigned(2), unsigned(2));
 
     // Ensure the head is now 11
     // 16             4
@@ -678,8 +608,7 @@ public class VotesTest {
       final Bytes32 parentRoot,
       final Bytes32 stateRoot,
       final UInt64 justifiedEpoch,
-      final UInt64 finalizedEpoch,
-      final Bytes32 executionBlockHash) {
+      final UInt64 finalizedEpoch) {
     forkChoice.processBlock(
         blockSlot,
         blockRoot,
@@ -691,7 +620,7 @@ public class VotesTest {
             new Checkpoint(justifiedEpoch, Bytes32.ZERO),
             new Checkpoint(finalizedEpoch, Bytes32.ZERO)),
         ProtoNode.NO_EXECUTION_BLOCK_NUMBER,
-        executionBlockHash);
+        ProtoNode.NO_EXECUTION_BLOCK_HASH);
   }
 
   private UInt64 unsigned(final int i) {
