@@ -77,6 +77,7 @@ import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
@@ -146,6 +147,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);
   protected final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
+  protected final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
   protected final Eth1DataProvider eth1DataProvider = mock(Eth1DataProvider.class);
 
   protected final ExecutionClientDataProvider executionClientDataProvider =
@@ -243,6 +245,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             .blsToExecutionChangePool(blsToExecutionChangePool)
             .syncCommitteeContributionPool(syncCommitteeContributionPool)
             .proposersDataManager(proposersDataManager)
+            .forkChoiceNotifier(forkChoiceNotifier)
             .executionLayerBlockProductionManager(executionLayerBlockProductionManager)
             .rewardCalculator(rewardCalculator)
             .build();
