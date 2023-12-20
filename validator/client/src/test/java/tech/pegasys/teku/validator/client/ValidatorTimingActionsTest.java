@@ -32,8 +32,8 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
-import tech.pegasys.teku.validator.client.slashingriskactions.SlashedValidatorAlert;
 import tech.pegasys.teku.validator.client.slashingriskactions.SlashingRiskDetectionAction;
+import tech.pegasys.teku.validator.client.validatorslashingprotection.SlashedValidatorAlert;
 
 public class ValidatorTimingActionsTest {
   private final Spec spec = TestSpecFactory.createDefault();

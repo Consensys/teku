@@ -13,24 +13,19 @@
 
 package tech.pegasys.teku.validator.client.slashingriskactions;
 
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSPublicKey;
 
 public class SlashedValidatorShutDown implements SlashingRiskDetectionAction {
 
-  private static final Logger LOG = LogManager.getLogger();
-
   @Override
   public void perform(List<BLSPublicKey> pubKeys) {
     if (!pubKeys.isEmpty()) {
-      LOG.fatal(
-          "Validator(s) with public key(s) {} got slashed. Shutting down...",
-          pubKeys.stream()
-              .map(BLSPublicKey::toAbbreviatedString)
-              .collect(Collectors.joining(", ")));
+      STATUS_LOG.validatorSlashedAlert(
+          pubKeys.stream().map(BLSPublicKey::toAbbreviatedString).collect(Collectors.toSet()));
       System.exit(2);
     }
   }

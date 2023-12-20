@@ -108,14 +108,16 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
   public void onAttesterSlashing(final AttesterSlashing attesterSlashing) {
     delegates.forEach(delegates -> delegates.onAttesterSlashing(attesterSlashing));
     final Set<UInt64> slashedIndices = attesterSlashing.getIntersectingValidatorIndices();
-    final List<BLSPublicKey> slashedPublicKeys =
-        slashedIndices.stream()
-            .map(slashedIndex -> validatorIndexProvider.getPublicKey(slashedIndex.intValue()))
-            .filter(Optional::isPresent)
-            .map(Optional::get)
-            .collect(Collectors.toList());
     maybeValidatorSlashedAction.ifPresent(
-        validatorSlashingAction -> validatorSlashingAction.perform(slashedPublicKeys));
+        validatorSlashingAction -> {
+          final List<BLSPublicKey> slashedPublicKeys =
+              slashedIndices.stream()
+                  .map(slashedIndex -> validatorIndexProvider.getPublicKey(slashedIndex.intValue()))
+                  .filter(Optional::isPresent)
+                  .map(Optional::get)
+                  .collect(Collectors.toList());
+          validatorSlashingAction.perform(slashedPublicKeys);
+        });
   }
 
   @Override
