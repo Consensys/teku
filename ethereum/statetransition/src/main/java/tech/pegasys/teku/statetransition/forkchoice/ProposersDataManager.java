@@ -35,11 +35,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.statetransition.block.NewBlockBuildingSubscriber;
 import tech.pegasys.teku.storage.client.ChainHead;
@@ -210,8 +209,8 @@ public class ProposersDataManager implements SlotEventsChannel {
       return SafeFuture.completedFuture(Optional.empty());
     }
     final UInt64 epoch = spec.computeEpochAtSlot(blockSlot);
-    final Bytes32 currentHeadBlockRoot =
-        forkChoiceUpdateData.getForkChoiceState().getHeadBlockRoot();
+    final ForkChoiceState forkChoiceState = forkChoiceUpdateData.getForkChoiceState();
+    final Bytes32 currentHeadBlockRoot = forkChoiceState.getHeadBlockRoot();
     return getStateInEpoch(epoch)
         .thenApplyAsync(
             maybeState -> {
@@ -220,8 +219,7 @@ public class ProposersDataManager implements SlotEventsChannel {
                       currentHeadBlockRoot, blockSlot, epoch, maybeState, mandatory);
               payloadBuildingAttributes.ifPresent(
                   payloadAttributes ->
-                      notifyNewBlockBuildingSubscribers(
-                          maybeState, forkChoiceUpdateData, payloadAttributes));
+                      notifyNewBlockBuildingSubscribers(forkChoiceState, payloadAttributes));
               return payloadBuildingAttributes;
             },
             eventThread);
@@ -265,18 +263,9 @@ public class ProposersDataManager implements SlotEventsChannel {
   }
 
   private void notifyNewBlockBuildingSubscribers(
-      final Optional<BeaconState> maybeState,
-      final ForkChoiceUpdateData forkChoiceUpdateData,
-      final PayloadBuildingAttributes payloadAttributes) {
-    // TODO: more clean to get from ForkChoiceUpdateData but not available yet
-    final UInt64 parentExecutionBlockNumber =
-        maybeState
-            .flatMap(BeaconState::toVersionBellatrix)
-            .map(BeaconStateBellatrix::getLatestExecutionPayloadHeader)
-            .map(ExecutionPayloadSummary::getBlockNumber)
-            .orElse(UInt64.ZERO);
-    final Bytes32 parentExecutionBlockHash =
-        forkChoiceUpdateData.getForkChoiceState().getHeadExecutionBlockHash();
+      final ForkChoiceState forkChoiceState, final PayloadBuildingAttributes payloadAttributes) {
+    final UInt64 parentExecutionBlockNumber = forkChoiceState.getHeadExecutionBlockNumber();
+    final Bytes32 parentExecutionBlockHash = forkChoiceState.getHeadExecutionBlockHash();
     newBlockBuildingSubscribers.forEach(
         subscriber ->
             subscriber.onNewBlockBuilding(
