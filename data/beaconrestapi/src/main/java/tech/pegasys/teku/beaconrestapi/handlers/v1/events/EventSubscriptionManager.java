@@ -50,6 +50,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
+import tech.pegasys.teku.statetransition.block.NewBlockBuildingSubscriber.NewBlockBuildingNotification;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -221,14 +222,16 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
   }
 
   protected void onNewPayloadAttributes(
-      final UInt64 parentExecutionBlockNumber,
-      final Bytes32 parentExecutionBlockHash,
-      final PayloadBuildingAttributes payloadAttributes) {
+      final NewBlockBuildingNotification newBlockBuildingNotification) {
+    final PayloadBuildingAttributes payloadAttributes =
+        newBlockBuildingNotification.payloadAttributes();
     final PayloadAttributesData data =
         new PayloadAttributesData(
             spec.atSlot(payloadAttributes.getProposalSlot()).getMilestone(),
             new PayloadAttributesEvent.Data(
-                parentExecutionBlockNumber, parentExecutionBlockHash, payloadAttributes));
+                newBlockBuildingNotification.parentExecutionBlockNumber(),
+                newBlockBuildingNotification.parentExecutionBlockHash(),
+                payloadAttributes));
     final PayloadAttributesEvent payloadAttributesEvent = PayloadAttributesEvent.create(data);
     notifySubscribersOfEvent(EventType.payload_attributes, payloadAttributesEvent);
   }

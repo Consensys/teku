@@ -422,7 +422,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
               this.recentChainData = client;
               if (recentChainData.isPreGenesis()) {
                 setupInitialState(client);
-                return SafeFuture.completedFuture(client);
               } else {
                 if (isUsingCustomInitialState()) {
                   STATUS_LOG.warnInitialStateIgnored();
@@ -430,8 +429,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 if (!isAllowSyncOutsideWeakSubjectivityPeriod()) {
                   validateWeakSubjectivityPeriod(client);
                 }
-                return SafeFuture.completedFuture(client);
               }
+              return SafeFuture.completedFuture(client);
             })
         // Init other services
         .thenRun(this::initAll)
@@ -716,6 +715,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .blsToExecutionChangePool(blsToExecutionChangePool)
             .syncCommitteeContributionPool(syncCommitteeContributionPool)
             .proposersDataManager(proposersDataManager)
+            .forkChoiceNotifier(forkChoiceNotifier)
             .rejectedExecutionSupplier(rejectedExecutionCountSupplier)
             .build();
   }

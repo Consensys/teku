@@ -40,7 +40,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
-import tech.pegasys.teku.statetransition.block.NewBlockBuildingSubscriber;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -60,8 +59,6 @@ public class ProposersDataManager implements SlotEventsChannel {
   private final Optional<Eth1Address> proposerDefaultFeeRecipient;
 
   private final Subscribers<ProposersDataManagerSubscriber> proposersDataChangesSubscribers =
-      Subscribers.create(true);
-  private final Subscribers<NewBlockBuildingSubscriber> newBlockBuildingSubscribers =
       Subscribers.create(true);
 
   public ProposersDataManager(
@@ -90,10 +87,6 @@ public class ProposersDataManager implements SlotEventsChannel {
 
   public void subscribeToProposersDataChanges(final ProposersDataManagerSubscriber subscriber) {
     proposersDataChangesSubscribers.subscribe(subscriber);
-  }
-
-  public void subscribeToNewBlockBuilding(final NewBlockBuildingSubscriber subscriber) {
-    newBlockBuildingSubscribers.subscribe(subscriber);
   }
 
   @Override
@@ -213,15 +206,9 @@ public class ProposersDataManager implements SlotEventsChannel {
     final Bytes32 currentHeadBlockRoot = forkChoiceState.getHeadBlockRoot();
     return getStateInEpoch(epoch)
         .thenApplyAsync(
-            maybeState -> {
-              final Optional<PayloadBuildingAttributes> payloadBuildingAttributes =
-                  calculatePayloadBuildingAttributes(
-                      currentHeadBlockRoot, blockSlot, epoch, maybeState, mandatory);
-              payloadBuildingAttributes.ifPresent(
-                  payloadAttributes ->
-                      notifyNewBlockBuildingSubscribers(forkChoiceState, payloadAttributes));
-              return payloadBuildingAttributes;
-            },
+            maybeState ->
+                calculatePayloadBuildingAttributes(
+                    currentHeadBlockRoot, blockSlot, epoch, maybeState, mandatory),
             eventThread);
   }
 
@@ -260,16 +247,6 @@ public class ProposersDataManager implements SlotEventsChannel {
             validatorRegistration,
             spec.getExpectedWithdrawals(state),
             currentHeadBlockRoot));
-  }
-
-  private void notifyNewBlockBuildingSubscribers(
-      final ForkChoiceState forkChoiceState, final PayloadBuildingAttributes payloadAttributes) {
-    final UInt64 parentExecutionBlockNumber = forkChoiceState.getHeadExecutionBlockNumber();
-    final Bytes32 parentExecutionBlockHash = forkChoiceState.getHeadExecutionBlockHash();
-    newBlockBuildingSubscribers.forEach(
-        subscriber ->
-            subscriber.onNewBlockBuilding(
-                parentExecutionBlockNumber, parentExecutionBlockHash, payloadAttributes));
   }
 
   // this function MUST return a fee recipient.
