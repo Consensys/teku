@@ -11,19 +11,16 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.slashingriskactions;
+package tech.pegasys.teku.validator.client.validatorslashingprotection;
 
 import java.util.List;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.validator.client.slashingriskactions.SlashingRiskDetectionAction;
 
 public class SlashedValidatorAlert implements SlashingRiskDetectionAction {
   private final StatusLogger statusLog;
-
-  public SlashedValidatorAlert() {
-    this.statusLog = StatusLogger.STATUS_LOG;
-  }
 
   public SlashedValidatorAlert(final StatusLogger statusLog) {
     this.statusLog = statusLog;

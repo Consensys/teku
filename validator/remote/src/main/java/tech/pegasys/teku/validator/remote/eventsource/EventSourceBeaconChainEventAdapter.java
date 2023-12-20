@@ -22,7 +22,7 @@ import com.launchdarkly.eventsource.RetryDelayStrategy;
 import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import com.launchdarkly.eventsource.background.ConnectionErrorHandler.Action;
 import java.time.Duration;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
@@ -132,14 +132,14 @@ public class EventSourceBeaconChainEventAdapter
   }
 
   private BackgroundEventSource createEventSource(final RemoteValidatorApiChannel beaconNodeApi) {
+    final List<EventType> eventTypes = new ArrayList<>();
+    eventTypes.add(EventType.head);
+    if (validatorSlashingProtectionEnabled) {
+      eventTypes.add(EventType.attester_slashing);
+      eventTypes.add(EventType.proposer_slashing);
+    }
     final HttpUrl eventSourceUrl =
-        validatorSlashingProtectionEnabled
-            ? createEventStreamSourceUrl(
-                beaconNodeApi.getEndpoint(),
-                EventType.head,
-                EventType.attester_slashing,
-                EventType.proposer_slashing)
-            : createEventStreamSourceUrl(beaconNodeApi.getEndpoint(), EventType.head);
+        createEventStreamSourceUrl(beaconNodeApi.getEndpoint(), eventTypes);
     final EventSource.Builder eventSourceBuilder =
         new EventSource.Builder(ConnectStrategy.http(eventSourceUrl).httpClient(okHttpClient))
             .retryDelayStrategy(
@@ -154,12 +154,13 @@ public class EventSourceBeaconChainEventAdapter
         .build();
   }
 
-  private HttpUrl createEventStreamSourceUrl(final HttpUrl endpoint, EventType... eventTypes) {
+  private HttpUrl createEventStreamSourceUrl(
+      final HttpUrl endpoint, final List<EventType> eventTypes) {
     final HttpUrl eventSourceUrl =
         endpoint.resolve(
             ValidatorApiMethod.EVENTS.getPath(emptyMap())
                 + "?topics="
-                + String.join(",", Arrays.stream(eventTypes).map(EventType::name).toList()));
+                + String.join(",", eventTypes.stream().map(EventType::name).toList()));
     return Preconditions.checkNotNull(eventSourceUrl);
   }
 
