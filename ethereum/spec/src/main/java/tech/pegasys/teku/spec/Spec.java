@@ -36,6 +36,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
@@ -699,11 +700,18 @@ public class Spec {
       final BeaconState blockSlotState,
       final Bytes32 parentBlockSigningRoot,
       final Consumer<BeaconBlockBodyBuilder> bodyBuilder,
-      final Optional<Boolean> blinded) {
+      final Optional<Boolean> blinded,
+      final BlockProductionPerformance blockProductionPerformance) {
     return atSlot(newSlot)
         .getBlockProposalUtil()
         .createNewUnsignedBlock(
-            newSlot, proposerIndex, blockSlotState, parentBlockSigningRoot, bodyBuilder, blinded);
+            newSlot,
+            proposerIndex,
+            blockSlotState,
+            parentBlockSigningRoot,
+            bodyBuilder,
+            blinded,
+            blockProductionPerformance);
   }
 
   // Blind Block Utils
