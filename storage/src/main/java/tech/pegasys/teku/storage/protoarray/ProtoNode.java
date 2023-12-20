@@ -28,6 +28,9 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 
 public class ProtoNode {
 
+  public static final UInt64 NO_EXECUTION_BLOCK_NUMBER = UInt64.ZERO;
+  public static final Bytes32 NO_EXECUTION_BLOCK_HASH = Bytes32.ZERO;
+
   private final UInt64 blockSlot;
   private final Bytes32 stateRoot;
 
@@ -37,10 +40,18 @@ public class ProtoNode {
   private BlockCheckpoints checkpoints;
 
   /**
+   * The block number from the execution payload.
+   *
+   * <p>{@link ProtoNode#NO_EXECUTION_BLOCK_NUMBER} if the block does not have an execution payload
+   * or uses the default payload.
+   */
+  private final UInt64 executionBlockNumber;
+
+  /**
    * The block hash from the execution payload.
    *
-   * <p>{@link Bytes32#ZERO} if the block does not have an execution payload or uses the default
-   * payload.
+   * <p>{@link ProtoNode#NO_EXECUTION_BLOCK_HASH} if the block does not have an execution payload or
+   * uses the default payload.
    */
   private final Bytes32 executionBlockHash;
 
@@ -58,6 +69,7 @@ public class ProtoNode {
       final Bytes32 parentRoot,
       final Optional<Integer> parentIndex,
       final BlockCheckpoints checkpoints,
+      final UInt64 executionBlockNumber,
       final Bytes32 executionBlockHash,
       final UInt64 weight,
       final Optional<Integer> bestChildIndex,
@@ -69,6 +81,7 @@ public class ProtoNode {
     this.parentRoot = parentRoot;
     this.parentIndex = parentIndex;
     this.checkpoints = checkpoints;
+    this.executionBlockNumber = executionBlockNumber;
     this.executionBlockHash = executionBlockHash;
     this.weight = weight;
     this.bestChildIndex = bestChildIndex;
@@ -136,6 +149,10 @@ public class ProtoNode {
     return checkpoints.getUnrealizedFinalizedCheckpoint();
   }
 
+  public UInt64 getExecutionBlockNumber() {
+    return executionBlockNumber;
+  }
+
   public Bytes32 getExecutionBlockHash() {
     return executionBlockHash;
   }
@@ -192,6 +209,7 @@ public class ProtoNode {
         blockRoot,
         parentRoot,
         stateRoot,
+        executionBlockNumber,
         executionBlockHash,
         validationStatus,
         checkpoints,
@@ -212,6 +230,7 @@ public class ProtoNode {
         && Objects.equals(blockRoot, protoNode.blockRoot)
         && Objects.equals(parentRoot, protoNode.parentRoot)
         && Objects.equals(checkpoints, protoNode.checkpoints)
+        && Objects.equals(executionBlockNumber, protoNode.executionBlockNumber)
         && Objects.equals(executionBlockHash, protoNode.executionBlockHash)
         && Objects.equals(weight, protoNode.weight)
         && Objects.equals(parentIndex, protoNode.parentIndex)
@@ -228,6 +247,7 @@ public class ProtoNode {
         blockRoot,
         parentRoot,
         checkpoints,
+        executionBlockNumber,
         executionBlockHash,
         weight,
         parentIndex,
@@ -247,6 +267,7 @@ public class ProtoNode {
         .add("finalizedCheckpoint", getFinalizedCheckpoint())
         .add("unrealizedJustifiedCheckpoint", getUnrealizedJustifiedCheckpoint())
         .add("unrealizedFinalizedCheckpoint", getUnrealizedFinalizedCheckpoint())
+        .add("executionBlockNumber", executionBlockNumber)
         .add("executionBlockHash", executionBlockHash)
         .add("weight", weight)
         .add("parentIndex", parentIndex)

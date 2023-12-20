@@ -174,6 +174,7 @@ public abstract class AbstractStoreTest {
                     genesis.getRoot(),
                     genesis.getParentRoot(),
                     genesis.getStateRoot(),
+                    genesis.getExecutionBlockNumber(),
                     genesis.getExecutionBlockHash(),
                     Optional.of(spec.calculateBlockCheckpoints(genesis.getState())))))
         .storeConfig(pruningOptions)

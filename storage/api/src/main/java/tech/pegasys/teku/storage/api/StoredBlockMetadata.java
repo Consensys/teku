@@ -19,15 +19,14 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 
 public class StoredBlockMetadata {
   private final UInt64 blockSlot;
   private final Bytes32 blockRoot;
   private final Bytes32 parentRoot;
   private final Bytes32 stateRoot;
+  private final Optional<UInt64> executionBlockNumber;
   private final Optional<Bytes32> executionBlockHash;
   private final Optional<BlockCheckpoints> checkpointEpochs;
 
@@ -36,29 +35,16 @@ public class StoredBlockMetadata {
       final Bytes32 blockRoot,
       final Bytes32 parentRoot,
       final Bytes32 stateRoot,
+      final Optional<UInt64> executionBlockNumber,
       final Optional<Bytes32> executionBlockHash,
       final Optional<BlockCheckpoints> checkpointEpochs) {
     this.blockSlot = blockSlot;
     this.blockRoot = blockRoot;
     this.parentRoot = parentRoot;
     this.stateRoot = stateRoot;
+    this.executionBlockNumber = executionBlockNumber;
     this.executionBlockHash = executionBlockHash;
     this.checkpointEpochs = checkpointEpochs;
-  }
-
-  public static StoredBlockMetadata fromBlockAndCheckpointEpochs(
-      final SignedBeaconBlock block, final BlockCheckpoints checkpointEpochs) {
-    return new StoredBlockMetadata(
-        block.getSlot(),
-        block.getRoot(),
-        block.getParentRoot(),
-        block.getStateRoot(),
-        block
-            .getMessage()
-            .getBody()
-            .getOptionalExecutionPayloadSummary()
-            .map(ExecutionPayloadSummary::getBlockHash),
-        Optional.of(checkpointEpochs));
   }
 
   public static StoredBlockMetadata fromBlockAndState(
@@ -69,6 +55,7 @@ public class StoredBlockMetadata {
         blockAndState.getRoot(),
         blockAndState.getParentRoot(),
         blockAndState.getStateRoot(),
+        blockAndState.getExecutionBlockNumber(),
         blockAndState.getExecutionBlockHash(),
         Optional.of(epochs));
   }
@@ -87,6 +74,10 @@ public class StoredBlockMetadata {
 
   public Bytes32 getStateRoot() {
     return stateRoot;
+  }
+
+  public Optional<UInt64> getExecutionBlockNumber() {
+    return executionBlockNumber;
   }
 
   public Optional<Bytes32> getExecutionBlockHash() {
@@ -110,11 +101,20 @@ public class StoredBlockMetadata {
         && Objects.equals(blockRoot, that.blockRoot)
         && Objects.equals(parentRoot, that.parentRoot)
         && Objects.equals(stateRoot, that.stateRoot)
+        && Objects.equals(executionBlockNumber, that.executionBlockNumber)
+        && Objects.equals(executionBlockHash, that.executionBlockHash)
         && Objects.equals(checkpointEpochs, that.checkpointEpochs);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(blockSlot, blockRoot, parentRoot, stateRoot, checkpointEpochs);
+    return Objects.hash(
+        blockSlot,
+        blockRoot,
+        parentRoot,
+        stateRoot,
+        executionBlockNumber,
+        executionBlockHash,
+        checkpointEpochs);
   }
 }
