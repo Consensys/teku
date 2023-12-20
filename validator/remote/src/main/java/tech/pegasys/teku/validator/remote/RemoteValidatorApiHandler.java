@@ -89,25 +89,26 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   static final int MAX_PUBLIC_KEY_BATCH_SIZE = 50;
   static final int MAX_RATE_LIMITING_RETRIES = 3;
 
-  private final AtomicBoolean usePostValidatorsEndpoint = new AtomicBoolean(true);
-
   private final HttpUrl endpoint;
   private final Spec spec;
   private final ValidatorRestApiClient apiClient;
   private final OkHttpValidatorTypeDefClient typeDefClient;
   private final AsyncRunner asyncRunner;
+  private final AtomicBoolean usePostValidatorsEndpoint;
 
   public RemoteValidatorApiHandler(
       final HttpUrl endpoint,
       final Spec spec,
       final ValidatorRestApiClient apiClient,
       final OkHttpValidatorTypeDefClient typeDefClient,
-      final AsyncRunner asyncRunner) {
+      final AsyncRunner asyncRunner,
+      final boolean usePostValidatorsEndpoint) {
     this.endpoint = endpoint;
     this.spec = spec;
     this.apiClient = apiClient;
     this.asyncRunner = asyncRunner;
     this.typeDefClient = typeDefClient;
+    this.usePostValidatorsEndpoint = new AtomicBoolean(usePostValidatorsEndpoint);
   }
 
   @Override
@@ -527,11 +528,13 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
       final OkHttpClient httpClient,
       final Spec spec,
       final boolean preferSszBlockEncoding,
+      final boolean usePostValidatorsEndpoint,
       final AsyncRunner asyncRunner) {
     final OkHttpValidatorRestApiClient apiClient =
         new OkHttpValidatorRestApiClient(endpoint, httpClient);
     final OkHttpValidatorTypeDefClient typeDefClient =
         new OkHttpValidatorTypeDefClient(httpClient, endpoint, spec, preferSszBlockEncoding);
-    return new RemoteValidatorApiHandler(endpoint, spec, apiClient, typeDefClient, asyncRunner);
+    return new RemoteValidatorApiHandler(
+        endpoint, spec, apiClient, typeDefClient, asyncRunner, usePostValidatorsEndpoint);
   }
 }

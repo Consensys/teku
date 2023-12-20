@@ -17,6 +17,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
@@ -37,7 +38,12 @@ public interface DeserializableTypeDefinition<TObject> extends SerializableTypeD
 
   static <TObject> DeserializableTypeDefinition<List<TObject>> listOf(
       final DeserializableTypeDefinition<TObject> itemType) {
-    return new DeserializableListTypeDefinition<>(itemType);
+    return new DeserializableListTypeDefinition<>(itemType, Optional.empty());
+  }
+
+  static <TObject> DeserializableTypeDefinition<List<TObject>> listOf(
+      final DeserializableTypeDefinition<TObject> itemType, final int minItems) {
+    return new DeserializableListTypeDefinition<>(itemType, Optional.of(minItems));
   }
 
   static DeserializableTypeDefinition<Map<String, String>> mapOfStrings() {

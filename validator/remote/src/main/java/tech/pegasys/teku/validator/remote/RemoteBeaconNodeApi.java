@@ -85,6 +85,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
             okHttpClient,
             spec,
             validatorConfig.isValidatorClientUseSszBlocksEnabled(),
+            validatorConfig.isValidatorClientUsePostValidatorsEndpointEnabled(),
             asyncRunner);
     final List<? extends RemoteValidatorApiChannel> failoverValidatorApis =
         failoverEndpoints.stream()
@@ -95,6 +96,7 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
                         okHttpClient,
                         spec,
                         validatorConfig.isValidatorClientUseSszBlocksEnabled(),
+                        validatorConfig.isValidatorClientUsePostValidatorsEndpointEnabled(),
                         asyncRunner))
             .toList();
 

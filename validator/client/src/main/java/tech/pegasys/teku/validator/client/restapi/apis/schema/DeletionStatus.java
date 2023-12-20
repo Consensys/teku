@@ -15,6 +15,10 @@ package tech.pegasys.teku.validator.client.restapi.apis.schema;
 
 public enum DeletionStatus {
   DELETED("deleted"),
+  /**
+   * Should not be confused with {@link tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus}.
+   * Means the key was managed but not managed anymore
+   */
   NOT_ACTIVE("not_active"),
   NOT_FOUND("not_found"),
   ERROR("error");

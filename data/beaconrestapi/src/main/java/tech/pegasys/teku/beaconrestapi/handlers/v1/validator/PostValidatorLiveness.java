@@ -76,7 +76,7 @@ public class PostValidatorLiveness extends RestApiEndpoint {
                     + " and based upon a subjective view of the network.")
             .tags(TAG_VALIDATOR)
             .pathParam(EPOCH_PARAMETER)
-            .requestBodyType(DeserializableTypeDefinition.listOf(UINT64_TYPE))
+            .requestBodyType(DeserializableTypeDefinition.listOf(UINT64_TYPE, 1))
             .response(SC_OK, "Successful Response", RESPONSE_TYPE)
             .withServiceUnavailableResponse()
             .build());

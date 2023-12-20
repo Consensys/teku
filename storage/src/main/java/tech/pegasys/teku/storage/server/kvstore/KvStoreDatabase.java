@@ -268,6 +268,8 @@ public class KvStoreDatabase implements Database {
           b -> {
             final Optional<BlockCheckpoints> checkpointEpochs =
                 dao.getHotBlockCheckpointEpochs(b.getRoot());
+            final Optional<ExecutionPayload> executionPayload =
+                b.getMessage().getBody().getOptionalExecutionPayload();
             blockInformation.put(
                 b.getRoot(),
                 new StoredBlockMetadata(
@@ -275,10 +277,8 @@ public class KvStoreDatabase implements Database {
                     b.getRoot(),
                     b.getParentRoot(),
                     b.getStateRoot(),
-                    b.getMessage()
-                        .getBody()
-                        .getOptionalExecutionPayload()
-                        .map(ExecutionPayload::getBlockHash),
+                    executionPayload.map(ExecutionPayload::getBlockNumber),
+                    executionPayload.map(ExecutionPayload::getBlockHash),
                     checkpointEpochs));
           });
     }
