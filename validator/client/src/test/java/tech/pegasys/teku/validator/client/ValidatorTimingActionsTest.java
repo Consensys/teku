@@ -133,7 +133,7 @@ public class ValidatorTimingActionsTest {
         dataStructureUtil.randomAttesterSlashing(
             dataStructureUtil.randomValidatorIndex(), dataStructureUtil.randomValidatorIndex());
     validatorTimingActions.onAttesterSlashing(attesterSlashing);
-    verifyNoInteractions(delegate);
+    verify(delegate).onAttesterSlashing(attesterSlashing);
     verifyNoInteractions(validatorIndexProvider);
     verifyNoInteractions(statusLogger);
   }
@@ -147,7 +147,7 @@ public class ValidatorTimingActionsTest {
         dataStructureUtil.randomProposerSlashing(
             dataStructureUtil.randomSlot(), dataStructureUtil.randomValidatorIndex());
     validatorTimingActions.onProposerSlashing(proposerSlashing);
-    verifyNoInteractions(delegate);
+    verify(delegate).onProposerSlashing(proposerSlashing);
     verifyNoInteractions(validatorIndexProvider);
     verifyNoInteractions(statusLogger);
   }
