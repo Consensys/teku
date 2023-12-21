@@ -1849,6 +1849,7 @@ public final class DataStructureUtil {
     return new ForkChoiceState(
         randomBytes32(),
         headBlockSlot,
+        randomUInt64(),
         randomBytes32(),
         randomBytes32(),
         finalizedBlockHash,

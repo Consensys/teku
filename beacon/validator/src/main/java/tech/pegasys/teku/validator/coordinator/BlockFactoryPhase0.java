@@ -72,7 +72,8 @@ public class BlockFactoryPhase0 implements BlockFactory {
                 randaoReveal,
                 optionalGraffiti,
                 blockProductionPerformance),
-            blinded)
+            blinded,
+            blockProductionPerformance)
         .thenApply(BeaconBlockAndState::getBlock);
   }
 

@@ -1107,6 +1107,8 @@ class ForkChoiceTest {
       final VerificationMode mode) {
     final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
         recentChainData.getForkChoiceStrategy().orElseThrow();
+    final UInt64 headExecutionBlockNumber =
+        forkChoiceStrategy.executionBlockNumber(blockAndState.getRoot()).orElseThrow();
     final Bytes32 headExecutionHash =
         forkChoiceStrategy.executionBlockHash(blockAndState.getRoot()).orElseThrow();
     final Bytes32 justifiedExecutionHash =
@@ -1122,6 +1124,7 @@ class ForkChoiceTest {
             new ForkChoiceState(
                 blockAndState.getRoot(),
                 blockAndState.getSlot(),
+                headExecutionBlockNumber,
                 headExecutionHash,
                 justifiedExecutionHash,
                 finalizedExecutionHash,

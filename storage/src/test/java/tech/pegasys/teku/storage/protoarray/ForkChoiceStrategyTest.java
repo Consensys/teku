@@ -28,7 +28,6 @@ import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
@@ -95,7 +94,10 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
                     blockAndState.getParentRoot(),
                     blockAndState.getStateRoot(),
                     spec.calculateBlockCheckpoints(blockAndState.getState()),
-                    blockAndState.getExecutionBlockHash().orElse(Bytes32.ZERO),
+                    blockAndState
+                        .getExecutionBlockNumber()
+                        .orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
+                    blockAndState.getExecutionBlockHash().orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
                     spec.isBlockProcessorOptimistic(blockAndState.getSlot())));
   }
 
@@ -152,6 +154,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
             anchor.getCheckpoint(),
             anchor.getCheckpoint(),
             anchor.getCheckpoint()),
+        ZERO,
         Bytes32.ZERO,
         false);
     final ForkChoiceStrategy forkChoiceStrategy = ForkChoiceStrategy.initialize(spec, protoArray);
@@ -233,7 +236,8 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
                     head.getRoot(),
                     head.getParentRoot(),
                     head.getStateRoot(),
-                    head.getExecutionBlockHash().orElse(Bytes32.ZERO),
+                    head.getExecutionBlockNumber().orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
+                    head.getExecutionBlockHash().orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
                     ProtoNodeValidationStatus.VALID,
                     spec.calculateBlockCheckpoints(head.getState()),
                     ZERO)));
@@ -333,7 +337,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
 
     // Check that all blocks prior to latest finalized have been pruned
     final List<SignedBlockAndState> allBlocks =
-        storageSystem.chainBuilder().streamBlocksAndStates().collect(Collectors.toList());
+        storageSystem.chainBuilder().streamBlocksAndStates().toList();
     for (SignedBlockAndState block : allBlocks) {
       if (block.getSlot().isLessThan(finalizedBlock.getSlot())) {
         assertThat(forkChoiceStrategy.contains(block.getRoot())).isFalse();
@@ -389,6 +393,38 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     transaction.commit();
 
     assertThat(bestHead).isEqualTo(block4.getRoot());
+  }
+
+  @Test
+  void executionBlockNumber_shouldBeEmptyForUnknownBlock() {
+    final StorageSystem storageSystem = initStorageSystem(TestSpecFactory.createMinimalBellatrix());
+    final ForkChoiceStrategy strategy = getProtoArray(storageSystem);
+    assertThat(strategy.executionBlockNumber(Bytes32.ZERO)).isEmpty();
+  }
+
+  @Test
+  void executionBlockNumber_shouldGetExecutionBlockNumberForKnownBlock() {
+    final StorageSystem storageSystem = initStorageSystem(TestSpecFactory.createMinimalBellatrix());
+    final SignedBlockAndState block1 =
+        storageSystem
+            .chainBuilder()
+            .generateBlockAtSlot(1, BlockOptions.create().setTransactions());
+    storageSystem.chainUpdater().saveBlock(block1);
+    assertThat(block1.getExecutionBlockNumber()).isNotEmpty();
+
+    final ReadOnlyForkChoiceStrategy strategy =
+        storageSystem.recentChainData().getForkChoiceStrategy().orElseThrow();
+    assertThat(strategy.executionBlockNumber(block1.getRoot()))
+        .isEqualTo(block1.getExecutionBlockNumber());
+
+    storageSystem.restarted();
+    assertThat(
+            storageSystem
+                .recentChainData()
+                .getForkChoiceStrategy()
+                .orElseThrow()
+                .executionBlockNumber(block1.getRoot()))
+        .isEqualTo(block1.getExecutionBlockNumber());
   }
 
   @Test
