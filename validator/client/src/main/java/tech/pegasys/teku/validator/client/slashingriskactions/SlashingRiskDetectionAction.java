@@ -18,9 +18,9 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 
 public interface SlashingRiskDetectionAction {
 
-  void perform(final List<BLSPublicKey> pubKeys);
+  void perform(List<BLSPublicKey> pubKeys);
 
-  default void perform(final BLSPublicKey pubKey) {
+  default void perform(BLSPublicKey pubKey) {
     perform(List.of(pubKey));
   }
 }
