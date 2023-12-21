@@ -28,7 +28,8 @@ public enum EventType {
   bls_to_execution_change,
   blob_sidecar,
   attester_slashing,
-  proposer_slashing;
+  proposer_slashing,
+  payload_attributes;
 
   public static List<EventType> getTopics(List<String> topics) {
     return topics.stream().map(EventType::valueOf).toList();

@@ -211,7 +211,7 @@ public class ForkChoiceUpdateData {
           buildingAttributes ->
               LOG.info(
                   "Calling local execution layer to start block production (block slot: {})",
-                  buildingAttributes.getBlockSlot()));
+                  buildingAttributes.getProposalSlot()));
     }
   }
 

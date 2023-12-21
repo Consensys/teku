@@ -124,13 +124,14 @@ public class CapellaExecutionClientHandlerTest extends ExecutionHandlerClientTes
     final PayloadBuildingAttributes attributes =
         new PayloadBuildingAttributes(
             dataStructureUtil.randomUInt64(),
+            // building block for Capella
+            capellaStartSlot.plus(1),
+            dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomEth1Address(),
             Optional.empty(),
             Optional.of(List.of()),
-            dataStructureUtil.randomBytes32(),
-            // building block for Capella
-            capellaStartSlot.plus(1));
+            dataStructureUtil.randomBytes32());
     final Optional<PayloadAttributesV2> payloadAttributes =
         PayloadAttributesV2.fromInternalPayloadBuildingAttributesV2(Optional.of(attributes));
     // headBlockSlot in ForkChoiceState is still in Bellatrix

@@ -21,35 +21,30 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.statetransition.block.NewBlockBuildingSubscriber;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 
 public class StubForkChoiceNotifier implements ForkChoiceNotifier {
 
-  private final Subscribers<ForkChoiceUpdatedResultSubscriber> subscribers =
+  private final Subscribers<ForkChoiceUpdatedResultSubscriber> forkChoiceUpdatedSubscribers =
       Subscribers.create(true);
-  private SafeFuture<Optional<ForkChoiceUpdatedResult>> forkChoiceUpdatedResultNotification =
+
+  private final SafeFuture<Optional<ForkChoiceUpdatedResult>> forkChoiceUpdatedResultNotification =
       SafeFuture.completedFuture(Optional.empty());
 
-  public void setForkChoiceUpdatedResult(
-      final Optional<ForkChoiceUpdatedResult> forkChoiceUpdatedResult) {
-    forkChoiceUpdatedResultNotification = SafeFuture.completedFuture(forkChoiceUpdatedResult);
-  }
-
   @Override
-  public long subscribeToForkChoiceUpdatedResult(
+  public void subscribeToForkChoiceUpdatedResult(
       final ForkChoiceUpdatedResultSubscriber subscriber) {
-    return subscribers.subscribe(subscriber);
+    forkChoiceUpdatedSubscribers.subscribe(subscriber);
   }
 
   @Override
-  public boolean unsubscribeFromForkChoiceUpdatedResult(final long subscriberId) {
-    return subscribers.unsubscribe(subscriberId);
-  }
+  public void subscribeToNewBlockBuilding(final NewBlockBuildingSubscriber subscriber) {}
 
   @Override
   public void onForkChoiceUpdated(
       final ForkChoiceState forkChoiceState, final Optional<UInt64> proposingSlot) {
-    subscribers.deliver(
+    forkChoiceUpdatedSubscribers.deliver(
         ForkChoiceUpdatedResultSubscriber::onForkChoiceUpdatedResult,
         new ForkChoiceUpdatedResultNotification(
             forkChoiceState, false, forkChoiceUpdatedResultNotification));
@@ -63,7 +58,7 @@ public class StubForkChoiceNotifier implements ForkChoiceNotifier {
 
   @Override
   public SafeFuture<Optional<ExecutionPayloadContext>> getPayloadId(
-      final Bytes32 parentBeaconBlockRoot, UInt64 blockSlot) {
+      final Bytes32 parentBeaconBlockRoot, final UInt64 blockSlot) {
     return null;
   }
 
@@ -71,7 +66,7 @@ public class StubForkChoiceNotifier implements ForkChoiceNotifier {
   public void onTerminalBlockReached(final Bytes32 executionBlockHash) {}
 
   @Override
-  public boolean validatorIsConnected(UInt64 validatorIndex, UInt64 currentSlot) {
+  public boolean validatorIsConnected(final UInt64 validatorIndex, final UInt64 currentSlot) {
     return true;
   }
 }
