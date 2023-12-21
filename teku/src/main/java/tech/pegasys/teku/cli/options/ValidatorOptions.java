@@ -157,7 +157,7 @@ public class ValidatorOptions {
       names = {"--stop-vc-when-validator-slashed-enabled"},
       paramLabel = "<BOOLEAN>",
       description =
-          "If an owned validator key is detected as slashed, the validator-client should terminate. In this case, the service should not be restarted",
+          "If an owned validator key is detected as slashed, the validator-client should terminate. In this case, the service should not be restarted.",
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "0..1",
       fallbackValue = "true")

@@ -122,13 +122,13 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
 
   @Override
   public void onProposerSlashing(final ProposerSlashing proposerSlashing) {
-    delegates.forEach(delegates -> delegates.onProposerSlashing(proposerSlashing));
-    final UInt64 slashedIndex = proposerSlashing.getHeader1().getMessage().getProposerIndex();
-    validatorIndexProvider
-        .getPublicKey(slashedIndex.intValue())
-        .ifPresent(
-            slashedPubKey ->
-                maybeValidatorSlashedAction.ifPresent(
-                    validatorSlashingAction -> validatorSlashingAction.perform(slashedPubKey)));
+    maybeValidatorSlashedAction.ifPresent(
+        validatorSlashedAction -> {
+          delegates.forEach(delegates -> delegates.onProposerSlashing(proposerSlashing));
+          final UInt64 slashedIndex = proposerSlashing.getHeader1().getMessage().getProposerIndex();
+          validatorIndexProvider
+              .getPublicKey(slashedIndex.intValue())
+              .ifPresent(slashedPubKey -> maybeValidatorSlashedAction.get().perform(slashedPubKey));
+        });
   }
 }
