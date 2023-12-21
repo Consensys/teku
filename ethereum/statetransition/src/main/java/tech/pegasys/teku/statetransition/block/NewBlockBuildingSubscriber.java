@@ -17,6 +17,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 
+@FunctionalInterface
 public interface NewBlockBuildingSubscriber {
 
   void onNewBlockBuilding(NewBlockBuildingNotification newBlockBuildingNotification);
