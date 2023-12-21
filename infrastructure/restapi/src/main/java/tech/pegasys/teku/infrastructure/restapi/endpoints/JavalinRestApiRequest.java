@@ -247,6 +247,24 @@ public class JavalinRestApiRequest implements RestApiRequest {
   }
 
   @Override
+  public <T> Optional<T> getOptionalHeader(final ParameterMetadata<T> parameterMetadata) {
+    if (!headerMap.containsKey(parameterMetadata.getName())) {
+      return Optional.empty();
+    }
+    try {
+      return Optional.of(
+          parameterMetadata
+              .getType()
+              .deserializeFromString(headerMap.get(parameterMetadata.getName())));
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Could not read optional header %s: %s",
+              parameterMetadata.getName(), e.getMessage()));
+    }
+  }
+
+  @Override
   public <T> T getHeader(final ParameterMetadata<T> parameterMetadata) {
     try {
       return parameterMetadata

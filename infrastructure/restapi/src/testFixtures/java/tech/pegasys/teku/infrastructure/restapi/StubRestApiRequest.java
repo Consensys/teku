@@ -236,6 +236,13 @@ public class StubRestApiRequest implements RestApiRequest {
   }
 
   @Override
+  public <T> Optional<T> getOptionalHeader(ParameterMetadata<T> parameterMetadata) {
+    final Optional<String> param = // todo check supposed to be same map as header method?
+        Optional.ofNullable(headers.get(parameterMetadata.getName()));
+    return param.map(p -> parameterMetadata.getType().deserializeFromString(p));
+  }
+
+  @Override
   public <T> T getHeader(ParameterMetadata<T> parameterMetadata) {
     assertThat(this.headers.containsKey(parameterMetadata.getName())).isTrue();
     final String param = headers.get(parameterMetadata.getName());
