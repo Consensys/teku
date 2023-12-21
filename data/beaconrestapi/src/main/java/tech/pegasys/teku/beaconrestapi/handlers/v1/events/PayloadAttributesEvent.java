@@ -55,21 +55,21 @@ public class PayloadAttributesEvent extends Event<PayloadAttributesData> {
   private static final SerializableTypeDefinition<PayloadAttributesEvent.Data> DATA_TYPE =
       SerializableTypeDefinition.object(PayloadAttributesEvent.Data.class)
           .name("PayloadAttributesEventData")
-          .withField(
-              "proposer_index", UINT64_TYPE, data -> data.payloadAttributes.getProposerIndex())
           .withField("proposal_slot", UINT64_TYPE, data -> data.payloadAttributes.getProposalSlot())
-          .withField(
-              "parent_block_number",
-              UINT64_TYPE,
-              PayloadAttributesEvent.Data::parentExecutionBlockNumber)
           .withField(
               "parent_block_root",
               BYTES32_TYPE,
               data -> data.payloadAttributes.getParentBeaconBlockRoot())
           .withField(
+              "parent_block_number",
+              UINT64_TYPE,
+              PayloadAttributesEvent.Data::parentExecutionBlockNumber)
+          .withField(
               "parent_block_hash",
               BYTES32_TYPE,
               PayloadAttributesEvent.Data::parentExecutionBlockHash)
+          .withField(
+              "proposer_index", UINT64_TYPE, data -> data.payloadAttributes.getProposerIndex())
           .withField(
               "payload_attributes",
               PAYLOAD_ATTRIBUTES_TYPE,
