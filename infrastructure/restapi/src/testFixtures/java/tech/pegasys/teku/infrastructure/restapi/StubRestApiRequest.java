@@ -236,6 +236,15 @@ public class StubRestApiRequest implements RestApiRequest {
   }
 
   @Override
+  public <T> T getHeader(ParameterMetadata<T> parameterMetadata) {
+    assertThat(this.headers.containsKey(parameterMetadata.getName())).isTrue();
+    final String param = headers.get(parameterMetadata.getName());
+    return parameterMetadata
+        .getType()
+        .deserializeFromString(param); // todo check supposed to be same map as header method?
+  }
+
+  @Override
   public void header(final String name, final String value) {
     headers.put(name, value);
   }
