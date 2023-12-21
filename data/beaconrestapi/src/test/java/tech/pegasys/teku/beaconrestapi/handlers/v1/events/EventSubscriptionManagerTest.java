@@ -36,6 +36,7 @@ import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.PayloadAttributesEvent.Data;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.events.PayloadAttributesEvent.PayloadAttributes;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.PayloadAttributesEvent.PayloadAttributesData;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
@@ -121,7 +122,18 @@ public class EventSubscriptionManagerTest {
   final PayloadAttributesData samplePayloadAttributesData =
       new PayloadAttributesData(
           SpecMilestone.DENEB,
-          new Data(data.randomUInt64(), data.randomBytes32(), samplePayloadAttributes));
+          new Data(
+              samplePayloadAttributes.getProposalSlot(),
+              samplePayloadAttributes.getParentBeaconBlockRoot(),
+              data.randomUInt64(),
+              data.randomBytes32(),
+              samplePayloadAttributes.getProposerIndex(),
+              new PayloadAttributes(
+                  samplePayloadAttributes.getTimestamp(),
+                  samplePayloadAttributes.getPrevRandao(),
+                  samplePayloadAttributes.getFeeRecipient(),
+                  samplePayloadAttributes.getWithdrawals(),
+                  Optional.of(samplePayloadAttributes.getParentBeaconBlockRoot()))));
 
   private final AsyncContext async = mock(AsyncContext.class);
   private final EventChannels channels = mock(EventChannels.class);
@@ -422,7 +434,7 @@ public class EventSubscriptionManagerTest {
         new NewBlockBuildingNotification(
             samplePayloadAttributesData.data().parentExecutionBlockNumber(),
             samplePayloadAttributesData.data().parentExecutionBlockHash(),
-            samplePayloadAttributesData.data().payloadAttributes()));
+            samplePayloadAttributes));
     asyncRunner.executeQueuedActions();
   }
 

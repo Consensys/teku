@@ -32,6 +32,7 @@ import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.events.PayloadAttributesEvent.PayloadAttributes;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.PayloadAttributesEvent.PayloadAttributesData;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
@@ -40,6 +41,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.ListQueryParameterUtil
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -225,13 +227,24 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
       final NewBlockBuildingNotification newBlockBuildingNotification) {
     final PayloadBuildingAttributes payloadAttributes =
         newBlockBuildingNotification.payloadAttributes();
+    final SpecMilestone milestone = spec.atSlot(payloadAttributes.getProposalSlot()).getMilestone();
     final PayloadAttributesData data =
         new PayloadAttributesData(
-            spec.atSlot(payloadAttributes.getProposalSlot()).getMilestone(),
+            milestone,
             new PayloadAttributesEvent.Data(
+                payloadAttributes.getProposalSlot(),
+                payloadAttributes.getParentBeaconBlockRoot(),
                 newBlockBuildingNotification.parentExecutionBlockNumber(),
                 newBlockBuildingNotification.parentExecutionBlockHash(),
-                payloadAttributes));
+                payloadAttributes.getProposerIndex(),
+                new PayloadAttributes(
+                    payloadAttributes.getTimestamp(),
+                    payloadAttributes.getPrevRandao(),
+                    payloadAttributes.getFeeRecipient(),
+                    payloadAttributes.getWithdrawals(),
+                    milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)
+                        ? Optional.of(payloadAttributes.getParentBeaconBlockRoot())
+                        : Optional.empty())));
     final PayloadAttributesEvent payloadAttributesEvent = PayloadAttributesEvent.create(data);
     notifySubscribersOfEvent(EventType.payload_attributes, payloadAttributesEvent);
   }

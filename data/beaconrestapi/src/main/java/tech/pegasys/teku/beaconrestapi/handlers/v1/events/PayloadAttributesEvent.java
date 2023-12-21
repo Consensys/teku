@@ -18,48 +18,41 @@ import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.MILESTONE_TYPE
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.PayloadAttributesEvent.PayloadAttributesData;
+import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.json.types.SerializableArrayTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
-import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 
 public class PayloadAttributesEvent extends Event<PayloadAttributesData> {
 
-  private static final SerializableTypeDefinition<PayloadBuildingAttributes>
-      PAYLOAD_ATTRIBUTES_TYPE =
-          SerializableTypeDefinition.object(PayloadBuildingAttributes.class)
-              .name("PayloadAttributes")
-              .withField("timestamp", UINT64_TYPE, PayloadBuildingAttributes::getTimestamp)
-              .withField("prev_randao", BYTES32_TYPE, PayloadBuildingAttributes::getPrevRandao)
-              .withField(
-                  "suggested_fee_recipient",
-                  ETH1ADDRESS_TYPE,
-                  PayloadBuildingAttributes::getFeeRecipient)
-              .withOptionalField(
-                  "withdrawals",
-                  new SerializableArrayTypeDefinition<>(
-                      Withdrawal.SSZ_SCHEMA.getJsonTypeDefinition()),
-                  PayloadBuildingAttributes::getWithdrawals)
-              .withOptionalField(
-                  "parent_beacon_block_root",
-                  BYTES32_TYPE,
-                  payloadAttributes ->
-                      Optional.ofNullable(payloadAttributes.getParentBeaconBlockRoot()))
-              .build();
+  private static final SerializableTypeDefinition<PayloadAttributes> PAYLOAD_ATTRIBUTES_TYPE =
+      SerializableTypeDefinition.object(PayloadAttributes.class)
+          .name("PayloadAttributes")
+          .withField("timestamp", UINT64_TYPE, PayloadAttributes::timestamp)
+          .withField("prev_randao", BYTES32_TYPE, PayloadAttributes::prevRandao)
+          .withField(
+              "suggested_fee_recipient", ETH1ADDRESS_TYPE, PayloadAttributes::suggestedFeeRecipient)
+          .withOptionalField(
+              "withdrawals",
+              new SerializableArrayTypeDefinition<>(Withdrawal.SSZ_SCHEMA.getJsonTypeDefinition()),
+              PayloadAttributes::withdrawals)
+          .withOptionalField(
+              "parent_beacon_block_root",
+              BYTES32_TYPE,
+              payloadAttributes -> payloadAttributes.parentBeaconBlockRoot)
+          .build();
 
   private static final SerializableTypeDefinition<PayloadAttributesEvent.Data> DATA_TYPE =
       SerializableTypeDefinition.object(PayloadAttributesEvent.Data.class)
           .name("PayloadAttributesEventData")
-          .withField("proposal_slot", UINT64_TYPE, data -> data.payloadAttributes.getProposalSlot())
-          .withField(
-              "parent_block_root",
-              BYTES32_TYPE,
-              data -> data.payloadAttributes.getParentBeaconBlockRoot())
+          .withField("proposal_slot", UINT64_TYPE, data -> data.proposalSlot)
+          .withField("parent_block_root", BYTES32_TYPE, data -> data.parentBlockRoot)
           .withField(
               "parent_block_number",
               UINT64_TYPE,
@@ -68,8 +61,7 @@ public class PayloadAttributesEvent extends Event<PayloadAttributesData> {
               "parent_block_hash",
               BYTES32_TYPE,
               PayloadAttributesEvent.Data::parentExecutionBlockHash)
-          .withField(
-              "proposer_index", UINT64_TYPE, data -> data.payloadAttributes.getProposerIndex())
+          .withField("proposer_index", UINT64_TYPE, data -> data.proposerIndex)
           .withField(
               "payload_attributes",
               PAYLOAD_ATTRIBUTES_TYPE,
@@ -91,9 +83,19 @@ public class PayloadAttributesEvent extends Event<PayloadAttributesData> {
   record PayloadAttributesData(SpecMilestone milestone, Data data) {}
 
   record Data(
+      UInt64 proposalSlot,
+      Bytes32 parentBlockRoot,
       UInt64 parentExecutionBlockNumber,
       Bytes32 parentExecutionBlockHash,
-      PayloadBuildingAttributes payloadAttributes) {}
+      UInt64 proposerIndex,
+      PayloadAttributes payloadAttributes) {}
+
+  record PayloadAttributes(
+      UInt64 timestamp,
+      Bytes32 prevRandao,
+      Eth1Address suggestedFeeRecipient,
+      Optional<List<Withdrawal>> withdrawals,
+      Optional<Bytes32> parentBeaconBlockRoot) {}
 
   static PayloadAttributesEvent create(final PayloadAttributesData data) {
     return new PayloadAttributesEvent(data);
