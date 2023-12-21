@@ -28,6 +28,8 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
+import tech.pegasys.teku.statetransition.block.NewBlockBuildingSubscriber.NewBlockBuildingNotification;
 
 public class PayloadAttributesEvent extends Event<PayloadAttributesData> {
 
@@ -97,7 +99,29 @@ public class PayloadAttributesEvent extends Event<PayloadAttributesData> {
       Optional<List<Withdrawal>> withdrawals,
       Optional<Bytes32> parentBeaconBlockRoot) {}
 
-  static PayloadAttributesEvent create(final PayloadAttributesData data) {
+  static PayloadAttributesEvent create(
+      final SpecMilestone milestone,
+      final NewBlockBuildingNotification newBlockBuildingNotification) {
+    final PayloadBuildingAttributes payloadAttributes =
+        newBlockBuildingNotification.payloadAttributes();
+    final PayloadAttributesData data =
+        new PayloadAttributesData(
+            milestone,
+            new PayloadAttributesEvent.Data(
+                payloadAttributes.getProposalSlot(),
+                payloadAttributes.getParentBeaconBlockRoot(),
+                newBlockBuildingNotification.parentExecutionBlockNumber(),
+                newBlockBuildingNotification.parentExecutionBlockHash(),
+                payloadAttributes.getProposerIndex(),
+                // based on PayloadAttributesV<N> as defined by the execution-apis specification
+                new PayloadAttributes(
+                    payloadAttributes.getTimestamp(),
+                    payloadAttributes.getPrevRandao(),
+                    payloadAttributes.getFeeRecipient(),
+                    payloadAttributes.getWithdrawals(),
+                    milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)
+                        ? Optional.of(payloadAttributes.getParentBeaconBlockRoot())
+                        : Optional.empty())));
     return new PayloadAttributesEvent(data);
   }
 }

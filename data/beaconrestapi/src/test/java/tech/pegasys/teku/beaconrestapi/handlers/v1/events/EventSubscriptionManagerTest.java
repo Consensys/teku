@@ -258,7 +258,14 @@ public class EventSubscriptionManagerTest {
     manager.registerClient(client1);
 
     triggerPayloadAttributesEvent();
-    checkEvent("payload_attributes", PayloadAttributesEvent.create(samplePayloadAttributesData));
+    final NewBlockBuildingNotification notification =
+        new NewBlockBuildingNotification(
+            samplePayloadAttributesData.data().parentExecutionBlockNumber(),
+            samplePayloadAttributesData.data().parentExecutionBlockHash(),
+            samplePayloadAttributes);
+    checkEvent(
+        "payload_attributes",
+        PayloadAttributesEvent.create(samplePayloadAttributesData.milestone(), notification));
   }
 
   @Test
