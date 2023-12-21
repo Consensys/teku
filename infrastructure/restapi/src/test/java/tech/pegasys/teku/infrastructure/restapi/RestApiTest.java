@@ -39,12 +39,14 @@ class RestApiTest {
 
   @Test
   void start_shouldThrowInvalidConfigurationExceptionWhenPortInUse() {
-    // When there is a port conflict, Javalin will throw a JavalinBindException that has a useful message including
+    // When there is a port conflict, Javalin will throw a JavalinBindException that has a useful
+    // message including
     // the port it failed to bind to. Here we are testing that we are forwarding the message from
     // JavalinBindException into our InvalidConfigurationException.
     final String javalinBindExceptionMessage = "Javalin msg with port";
     when(app.start())
-        .thenThrow(new JavalinBindException(javalinBindExceptionMessage, new BindException("ouch")));
+        .thenThrow(
+            new JavalinBindException(javalinBindExceptionMessage, new BindException("ouch")));
     assertThatThrownBy(restApi::start)
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessage(javalinBindExceptionMessage);
