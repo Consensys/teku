@@ -17,6 +17,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -52,7 +53,7 @@ public class ValidatorTimingActionsTest {
       Optional.of(new SlashedValidatorAlert(statusLogger));
 
   @Test
-  public void shouldPrintAlertForSlashedAttestingValidators() {
+  public void shouldPrintAlertForSlashedValidators_AttesterSlashing() {
     final ValidatorTimingActions validatorTimingActions =
         new ValidatorTimingActions(
             validatorIndexProvider, delegates, spec, metricsSystem, maybeSlashedValidatorAction);
@@ -68,6 +69,7 @@ public class ValidatorTimingActionsTest {
     when(validatorIndexProvider.getPublicKey(secondSlashedIndex.intValue()))
         .thenReturn(Optional.of(secondSlashedPublicKey));
     validatorTimingActions.onAttesterSlashing(attesterSlashing);
+    verify(delegate).onAttesterSlashing(attesterSlashing);
     verify(validatorIndexProvider).getPublicKey(firstSlashedIndex.intValue());
     verify(validatorIndexProvider).getPublicKey(secondSlashedIndex.intValue());
     verify(statusLogger)
@@ -78,32 +80,75 @@ public class ValidatorTimingActionsTest {
   }
 
   @Test
-  public void shouldPrintAlertForSlashedProposingValidator() {
+  public void shouldPrintAlertForSlashedValidators_ProposerSlashing() {
     final ValidatorTimingActions validatorTimingActions =
         new ValidatorTimingActions(
             validatorIndexProvider, delegates, spec, metricsSystem, maybeSlashedValidatorAction);
     final ProposerSlashing proposerSlashing =
-        dataStructureUtil.randomProposerSlashing(
-            dataStructureUtil.randomValidatorIndex(), firstSlashedIndex);
+        dataStructureUtil.randomProposerSlashing(dataStructureUtil.randomSlot(), firstSlashedIndex);
     when(validatorIndexProvider.getPublicKey(any())).thenReturn(Optional.empty());
     when(validatorIndexProvider.getPublicKey(firstSlashedIndex.intValue()))
         .thenReturn(Optional.of(firstSlashedPublicKey));
     validatorTimingActions.onProposerSlashing(proposerSlashing);
+    verify(delegate).onProposerSlashing(proposerSlashing);
     verify(validatorIndexProvider).getPublicKey(firstSlashedIndex.intValue());
     verify(statusLogger).validatorSlashedAlert(Set.of(firstSlashedPublicKey.toAbbreviatedString()));
   }
 
   @Test
-  public void shouldNotTriggerSlashingActionForNotOwnedValidator() {
+  public void shouldNotTriggerSlashingActionForNotOwnedValidator_AttesterSlashing() {
+    final ValidatorTimingActions validatorTimingActions =
+        new ValidatorTimingActions(
+            validatorIndexProvider, delegates, spec, metricsSystem, maybeSlashedValidatorAction);
+    final AttesterSlashing attesterSlashing =
+        dataStructureUtil.randomAttesterSlashing(firstSlashedIndex, secondSlashedIndex);
+    when(validatorIndexProvider.getPublicKey(any())).thenReturn(Optional.empty());
+    validatorTimingActions.onAttesterSlashing(attesterSlashing);
+    verify(delegate).onAttesterSlashing(attesterSlashing);
+    verify(validatorIndexProvider).getPublicKey(firstSlashedIndex.intValue());
+    verify(validatorIndexProvider).getPublicKey(secondSlashedIndex.intValue());
+    verify(statusLogger, never()).validatorSlashedAlert(any());
+  }
+
+  @Test
+  public void shouldNotTriggerSlashingActionForNotOwnedValidator_ProposerSlashing() {
     final ValidatorTimingActions validatorTimingActions =
         new ValidatorTimingActions(
             validatorIndexProvider, delegates, spec, metricsSystem, maybeSlashedValidatorAction);
     final ProposerSlashing proposerSlashing =
-        dataStructureUtil.randomProposerSlashing(
-            dataStructureUtil.randomValidatorIndex(), firstSlashedIndex);
+        dataStructureUtil.randomProposerSlashing(dataStructureUtil.randomSlot(), firstSlashedIndex);
     when(validatorIndexProvider.getPublicKey(any())).thenReturn(Optional.empty());
     validatorTimingActions.onProposerSlashing(proposerSlashing);
+    verify(delegate).onProposerSlashing(proposerSlashing);
     verify(validatorIndexProvider).getPublicKey(firstSlashedIndex.intValue());
     verify(statusLogger, never()).validatorSlashedAlert(any());
+  }
+
+  @Test
+  public void shouldNotTriggerValidatorSlashingActionWhenNotEnabled_AttesterSlashing() {
+    final ValidatorTimingActions validatorTimingActions =
+        new ValidatorTimingActions(
+            validatorIndexProvider, delegates, spec, metricsSystem, Optional.empty());
+    final AttesterSlashing attesterSlashing =
+        dataStructureUtil.randomAttesterSlashing(
+            dataStructureUtil.randomValidatorIndex(), dataStructureUtil.randomValidatorIndex());
+    validatorTimingActions.onAttesterSlashing(attesterSlashing);
+    verifyNoInteractions(delegate);
+    verifyNoInteractions(validatorIndexProvider);
+    verifyNoInteractions(statusLogger);
+  }
+
+  @Test
+  public void shouldNotTriggerValidatorSlashingActionWhenNotEnabled_ProposerSlashing() {
+    final ValidatorTimingActions validatorTimingActions =
+        new ValidatorTimingActions(
+            validatorIndexProvider, delegates, spec, metricsSystem, Optional.empty());
+    final ProposerSlashing proposerSlashing =
+        dataStructureUtil.randomProposerSlashing(
+            dataStructureUtil.randomSlot(), dataStructureUtil.randomValidatorIndex());
+    validatorTimingActions.onProposerSlashing(proposerSlashing);
+    verifyNoInteractions(delegate);
+    verifyNoInteractions(validatorIndexProvider);
+    verifyNoInteractions(statusLogger);
   }
 }
