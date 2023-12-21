@@ -86,6 +86,7 @@ public class EndpointMetadata {
   private final Map<String, StringValueTypeDefinition<?>> requiredQueryParams;
   private final Map<String, StringValueTypeDefinition<?>> queryParams;
   private final Map<String, StringValueTypeDefinition<?>> queryListParams;
+  private final Map<String, StringValueTypeDefinition<?>> requiredHeaders;
   private final Map<String, StringValueTypeDefinition<?>> headers;
 
   private EndpointMetadata(
@@ -106,6 +107,7 @@ public class EndpointMetadata {
       final Map<String, StringValueTypeDefinition<?>> queryParams,
       final Map<String, StringValueTypeDefinition<?>> requiredQueryParams,
       final Map<String, StringValueTypeDefinition<?>> queryListParams,
+      final Map<String, StringValueTypeDefinition<?>> requiredHeaders,
       final Map<String, StringValueTypeDefinition<?>> headers) {
     this.method = method;
     this.path = path;
@@ -124,6 +126,7 @@ public class EndpointMetadata {
     this.queryParams = queryParams;
     this.requiredQueryParams = requiredQueryParams;
     this.queryListParams = queryListParams;
+    this.requiredHeaders = requiredHeaders;
     this.headers = headers;
   }
 
@@ -310,13 +313,15 @@ public class EndpointMetadata {
         || queryParams.size() > 0
         || requiredQueryParams.size() > 0
         || queryListParams.size() > 0
+        || requiredHeaders.size() > 0
         || headers.size() > 0) {
       gen.writeArrayFieldStart("parameters");
       writeParameters(gen, pathParams, "path", true, false);
       writeParameters(gen, requiredQueryParams, "query", true, false);
       writeParameters(gen, queryParams, "query", false, false);
       writeParameters(gen, queryListParams, "query", false, true);
-      writeHeaders(gen, headers);
+      writeHeaders(gen, requiredHeaders, true);
+      writeHeaders(gen, headers, false);
       gen.writeEndArray();
     }
 
@@ -385,12 +390,16 @@ public class EndpointMetadata {
   }
 
   private void writeHeaders(
-      final JsonGenerator gen, final Map<String, StringValueTypeDefinition<?>> fields)
+      final JsonGenerator gen,
+      final Map<String, StringValueTypeDefinition<?>> fields,
+      final boolean isMandatoryField)
       throws IOException {
     for (Map.Entry<String, StringValueTypeDefinition<?>> entry : fields.entrySet()) {
       gen.writeStartObject();
       gen.writeObjectField("name", entry.getKey());
-      gen.writeObjectField("required", true); // todo check all headers are required?
+      if (isMandatoryField) {
+        gen.writeObjectField("required", true);
+      }
       gen.writeObjectField("in", "header");
       gen.writeFieldName("schema");
       entry.getValue().serializeOpenApiTypeOrReference(gen);
@@ -443,6 +452,7 @@ public class EndpointMetadata {
     private final Map<String, StringValueTypeDefinition<?>> requiredQueryParams =
         new LinkedHashMap<>();
     private final Map<String, StringValueTypeDefinition<?>> queryListParams = new LinkedHashMap<>();
+    private final Map<String, StringValueTypeDefinition<?>> requiredHeaders = new HashMap<>();
     private final Map<String, StringValueTypeDefinition<?>> headers = new HashMap<>();
     private Optional<String> security = Optional.empty();
     private String defaultRequestType = ContentTypes.JSON;
@@ -505,11 +515,19 @@ public class EndpointMetadata {
       return this;
     }
 
-    public EndpointMetaDataBuilder header(final ParameterMetadata<?> headerMetadata) {
-      if (pathParams.containsKey(headerMetadata.getName())) {
+    public EndpointMetaDataBuilder requiredHeader(final ParameterMetadata<?> headerMetadata) {
+      if (requiredHeaders.containsKey(headerMetadata.getName())) {
         throw new IllegalStateException("Header already contains " + headerMetadata.getName());
       }
-      pathParams.put(headerMetadata.getName(), headerMetadata.getType());
+      requiredHeaders.put(headerMetadata.getName(), headerMetadata.getType());
+      return this;
+    }
+
+    public EndpointMetaDataBuilder header(final ParameterMetadata<?> headerMetadata) {
+      if (headers.containsKey(headerMetadata.getName())) {
+        throw new IllegalStateException("Header already contains " + headerMetadata.getName());
+      }
+      headers.put(headerMetadata.getName(), headerMetadata.getType());
       return this;
     }
 
@@ -747,6 +765,7 @@ public class EndpointMetadata {
           queryParams,
           requiredQueryParams,
           queryListParams,
+          requiredHeaders,
           headers);
     }
 
