@@ -26,7 +26,7 @@ public class ValidatorNodeServiceController extends ServiceController {
   public ValidatorNodeServiceController(
       final TekuConfiguration tekuConfig, final ServiceConfig serviceConfig) {
     final Optional<SlashingRiskDetectionAction> maybeValidatorSlashedAction =
-        tekuConfig.validatorClient().getValidatorConfig().isValidatorSlashingProtectionEnabled()
+        tekuConfig.validatorClient().getValidatorConfig().isStopVcWhenValidatorSlashedEnabled()
             ? Optional.of(new SlashedValidatorShutDown())
             : Optional.empty();
     this.services.add(

@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.client;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -47,14 +48,14 @@ public class ValidatorTimingActionsTest {
   private final UInt64 secondSlashedIndex = UInt64.valueOf(54654);
   private final BLSPublicKey secondSlashedPublicKey = dataStructureUtil.randomPublicKey();
   private final StatusLogger statusLogger = mock(StatusLogger.class);
-  private final Optional<SlashingRiskDetectionAction> maybeSlashedAttesterValidator =
+  private final Optional<SlashingRiskDetectionAction> maybeSlashedValidatorAction =
       Optional.of(new SlashedValidatorAlert(statusLogger));
 
   @Test
   public void shouldPrintAlertForSlashedAttestingValidators() {
     final ValidatorTimingActions validatorTimingActions =
         new ValidatorTimingActions(
-            validatorIndexProvider, delegates, spec, metricsSystem, maybeSlashedAttesterValidator);
+            validatorIndexProvider, delegates, spec, metricsSystem, maybeSlashedValidatorAction);
     final AttesterSlashing attesterSlashing =
         dataStructureUtil.randomAttesterSlashing(
             dataStructureUtil.randomValidatorIndex(),
@@ -80,7 +81,7 @@ public class ValidatorTimingActionsTest {
   public void shouldPrintAlertForSlashedProposingValidator() {
     final ValidatorTimingActions validatorTimingActions =
         new ValidatorTimingActions(
-            validatorIndexProvider, delegates, spec, metricsSystem, maybeSlashedAttesterValidator);
+            validatorIndexProvider, delegates, spec, metricsSystem, maybeSlashedValidatorAction);
     final ProposerSlashing proposerSlashing =
         dataStructureUtil.randomProposerSlashing(
             dataStructureUtil.randomValidatorIndex(), firstSlashedIndex);
@@ -90,5 +91,19 @@ public class ValidatorTimingActionsTest {
     validatorTimingActions.onProposerSlashing(proposerSlashing);
     verify(validatorIndexProvider).getPublicKey(firstSlashedIndex.intValue());
     verify(statusLogger).validatorSlashedAlert(Set.of(firstSlashedPublicKey.toAbbreviatedString()));
+  }
+
+  @Test
+  public void shouldNotTriggerSlashingActionForNotOwnedValidator() {
+    final ValidatorTimingActions validatorTimingActions =
+        new ValidatorTimingActions(
+            validatorIndexProvider, delegates, spec, metricsSystem, maybeSlashedValidatorAction);
+    final ProposerSlashing proposerSlashing =
+        dataStructureUtil.randomProposerSlashing(
+            dataStructureUtil.randomValidatorIndex(), firstSlashedIndex);
+    when(validatorIndexProvider.getPublicKey(any())).thenReturn(Optional.empty());
+    validatorTimingActions.onProposerSlashing(proposerSlashing);
+    verify(validatorIndexProvider).getPublicKey(firstSlashedIndex.intValue());
+    verify(statusLogger, never()).validatorSlashedAlert(any());
   }
 }

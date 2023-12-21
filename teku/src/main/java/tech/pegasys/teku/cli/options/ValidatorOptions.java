@@ -15,8 +15,8 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_VALIDATOR_EXECUTOR_THREADS;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_DOPPELGANGER_DETECTION_ENABLED;
+import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_STOP_VC_WHEN_VALIDATOR_SLASHED_ENABLED;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED;
-import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_SLASHING_PROTECTION_ENABLED;
 
 import java.nio.file.Path;
 import java.util.Optional;
@@ -154,15 +154,14 @@ public class ValidatorOptions {
       DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED;
 
   @Option(
-      names = {"--validator-slashing-protection-enabled"},
+      names = {"--stop-vc-when-validator-slashed-enabled"},
       paramLabel = "<BOOLEAN>",
       description =
           "If an owned validator key is detected as slashed, the validator-client should terminate. In this case, the service should not be restarted",
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "0..1",
       fallbackValue = "true")
-  private boolean validatorSlashingProtectionEnabled =
-      DEFAULT_VALIDATOR_SLASHING_PROTECTION_ENABLED;
+  private boolean stopVcWhenValidatorSlashed = DEFAULT_STOP_VC_WHEN_VALIDATOR_SLASHED_ENABLED;
 
   public void configure(TekuConfiguration.Builder builder) {
     builder.validator(
@@ -183,7 +182,7 @@ public class ValidatorOptions {
                 .executorThreads(executorThreads)
                 .blockV3enabled(blockV3Enabled)
                 .exitWhenNoValidatorKeysEnabled(exitWhenNoValidatorKeysEnabled)
-                .validatorSlashingProtectionEnabled(validatorSlashingProtectionEnabled));
+                .stopVcWhenValidatorSlashedEnabled(stopVcWhenValidatorSlashed));
     validatorProposerOptions.configure(builder);
     validatorKeysOptions.configure(builder);
   }
