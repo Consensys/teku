@@ -106,9 +106,9 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
 
   @Override
   public void onAttesterSlashing(final AttesterSlashing attesterSlashing) {
+    delegates.forEach(delegates -> delegates.onAttesterSlashing(attesterSlashing));
     maybeValidatorSlashedAction.ifPresent(
         validatorSlashingAction -> {
-          delegates.forEach(delegates -> delegates.onAttesterSlashing(attesterSlashing));
           final Set<UInt64> slashedIndices = attesterSlashing.getIntersectingValidatorIndices();
           final List<BLSPublicKey> slashedPublicKeys =
               slashedIndices.stream()
@@ -122,9 +122,9 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
 
   @Override
   public void onProposerSlashing(final ProposerSlashing proposerSlashing) {
+    delegates.forEach(delegates -> delegates.onProposerSlashing(proposerSlashing));
     maybeValidatorSlashedAction.ifPresent(
         validatorSlashedAction -> {
-          delegates.forEach(delegates -> delegates.onProposerSlashing(proposerSlashing));
           final UInt64 slashedIndex = proposerSlashing.getHeader1().getMessage().getProposerIndex();
           validatorIndexProvider
               .getPublicKey(slashedIndex.intValue())
