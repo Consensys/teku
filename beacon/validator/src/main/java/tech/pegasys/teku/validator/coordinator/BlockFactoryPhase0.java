@@ -73,7 +73,7 @@ public class BlockFactoryPhase0 implements BlockFactory {
                 optionalGraffiti,
                 requestedBlinded,
                 blockProductionPerformance),
-                    blockProductionPerformance)
+            blockProductionPerformance)
         .thenApply(BeaconBlockAndState::getBlock);
   }
 

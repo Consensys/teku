@@ -704,7 +704,12 @@ public class Spec {
     return atSlot(newSlot)
         .getBlockProposalUtil()
         .createNewUnsignedBlock(
-            newSlot, proposerIndex, blockSlotState, parentBlockSigningRoot, bodyBuilder, blockProductionPerformance);
+            newSlot,
+            proposerIndex,
+            blockSlotState,
+            parentBlockSigningRoot,
+            bodyBuilder,
+            blockProductionPerformance);
   }
 
   // Blind Block Utils
