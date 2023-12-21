@@ -248,7 +248,7 @@ public class StatusLogger {
 
   public void validatorSlashedAlert(final Set<String> slashedValidatorPublicKeys) {
     log.fatal(
-        "Validator(s) with public key(s) {} got slashed",
+        "Validator(s) with public key(s) {} got slashed. Shutting down validator client...",
         String.join(", ", slashedValidatorPublicKeys));
   }
 
