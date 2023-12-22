@@ -16,7 +16,6 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllSupportedMilestones;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.slotBasedSelector;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
@@ -29,9 +28,7 @@ import java.util.Optional;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
@@ -39,19 +36,18 @@ import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
-public class PostBlock extends RestApiEndpoint {
+public class PostBlock extends AbstractPostBlock {
   public static final String ROUTE = "/eth/v1/beacon/blocks";
-
-  private final ValidatorDataProvider validatorDataProvider;
-  private final SyncDataProvider syncDataProvider;
 
   public PostBlock(
       final DataProvider dataProvider,
       final Spec spec,
       final SchemaDefinitionCache schemaDefinitionCache) {
-    super(createMetadata(spec, schemaDefinitionCache));
-    this.validatorDataProvider = dataProvider.getValidatorDataProvider();
-    this.syncDataProvider = dataProvider.getSyncDataProvider();
+    this(
+        dataProvider.getValidatorDataProvider(),
+        dataProvider.getSyncDataProvider(),
+        spec,
+        schemaDefinitionCache);
   }
 
   PostBlock(
@@ -59,9 +55,22 @@ public class PostBlock extends RestApiEndpoint {
       final SyncDataProvider syncDataProvider,
       final Spec spec,
       final SchemaDefinitionCache schemaDefinitionCache) {
-    super(createMetadata(spec, schemaDefinitionCache));
-    this.validatorDataProvider = validatorDataProvider;
-    this.syncDataProvider = syncDataProvider;
+    super(validatorDataProvider, syncDataProvider, createMetadata(spec, schemaDefinitionCache));
+  }
+
+  @Override
+  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
+    if (syncDataProvider.isSyncing()) {
+      request.respondError(SC_SERVICE_UNAVAILABLE, SERVICE_UNAVAILABLE);
+      return;
+    }
+
+    final SignedBlockContainer requestBody = request.getRequestBody();
+
+    request.respondAsync(
+        validatorDataProvider
+            .submitSignedBlock(requestBody, BroadcastValidationLevel.NOT_REQUIRED)
+            .thenApply(this::processSendSignedBlockResult));
   }
 
   private static EndpointMetadata createMetadata(
@@ -97,32 +106,5 @@ public class PostBlock extends RestApiEndpoint {
         .response(
             SC_SERVICE_UNAVAILABLE, "Beacon node is currently syncing.", HTTP_ERROR_RESPONSE_TYPE)
         .build();
-  }
-
-  @Override
-  public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
-    if (syncDataProvider.isSyncing()) {
-      request.respondError(SC_SERVICE_UNAVAILABLE, SERVICE_UNAVAILABLE);
-      return;
-    }
-
-    final SignedBlockContainer requestBody = request.getRequestBody();
-
-    request.respondAsync(
-        validatorDataProvider
-            .submitSignedBlock(requestBody, BroadcastValidationLevel.NOT_REQUIRED)
-            .thenApply(
-                result -> {
-                  if (result.isSuccessful()) {
-                    return AsyncApiResponse.respondWithCode(SC_OK);
-                  }
-                  if (result.isNotImportedDueToInternalError()) {
-                    return AsyncApiResponse.respondWithError(
-                        SC_INTERNAL_SERVER_ERROR,
-                        "An internal error occurred, check the server logs for more details.");
-                  } else {
-                    return AsyncApiResponse.respondWithCode(SC_ACCEPTED);
-                  }
-                }));
   }
 }
