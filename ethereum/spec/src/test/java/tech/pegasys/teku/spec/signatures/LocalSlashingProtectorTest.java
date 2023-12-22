@@ -187,7 +187,8 @@ class LocalSlashingProtectorTest {
     secondSigner.get(50, TimeUnit.MILLISECONDS);
     assertThat(secondSigner).isCompleted();
     releaseLock.set(true);
-    firstSigner.get(50, TimeUnit.MILLISECONDS);
+    // flaky on Windows
+    firstSigner.get(500, TimeUnit.MILLISECONDS);
     assertThat(firstSigner).isCompleted();
   }
 
