@@ -516,7 +516,8 @@ public class EndpointMetadata {
     }
 
     public EndpointMetaDataBuilder requiredHeader(final ParameterMetadata<?> headerMetadata) {
-      if (requiredHeaders.containsKey(headerMetadata.getName())) {
+      final String param = headerMetadata.getName();
+      if (requiredHeaders.containsKey(param) || headers.containsKey(param)) {
         throw new IllegalStateException("Header already contains " + headerMetadata.getName());
       }
       requiredHeaders.put(headerMetadata.getName(), headerMetadata.getType());
@@ -524,7 +525,8 @@ public class EndpointMetadata {
     }
 
     public EndpointMetaDataBuilder header(final ParameterMetadata<?> headerMetadata) {
-      if (headers.containsKey(headerMetadata.getName())) {
+      final String param = headerMetadata.getName();
+      if (requiredHeaders.containsKey(param) || headers.containsKey(param)) {
         throw new IllegalStateException("Header already contains " + headerMetadata.getName());
       }
       headers.put(headerMetadata.getName(), headerMetadata.getType());
