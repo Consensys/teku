@@ -64,6 +64,7 @@ import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.block.NewBlockBuildingSubscriber.NewBlockBuildingNotification;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -91,6 +92,7 @@ class ForkChoiceNotifierTest {
 
   private ForkChoiceNotifierImpl notifier;
   private ForkChoiceUpdatedResultNotification forkChoiceUpdatedResultNotification;
+  private NewBlockBuildingNotification newBlockBuildingNotification;
 
   @BeforeAll
   public static void initSession() {
@@ -135,6 +137,9 @@ class ForkChoiceNotifierTest {
     // store fcu notification
     notifier.subscribeToForkChoiceUpdatedResult(
         notification -> forkChoiceUpdatedResultNotification = notification);
+    // store new block building notification
+    notifier.subscribeToNewBlockBuilding(
+        notification -> newBlockBuildingNotification = notification);
     storageSystem
         .chainUpdater()
         .initializeGenesisWithPayload(false, dataStructureUtil.randomExecutionPayloadHeader());
@@ -177,6 +182,9 @@ class ForkChoiceNotifierTest {
     // store fcu notification
     notifier.subscribeToForkChoiceUpdatedResult(
         notification -> forkChoiceUpdatedResultNotification = notification);
+    // store new block building notification
+    notifier.subscribeToNewBlockBuilding(
+        notification -> newBlockBuildingNotification = notification);
     storageSystem.chainUpdater().initializeGenesis(false);
     storageSystem.chainUpdater().updateBestBlock(storageSystem.chainUpdater().advanceChain());
     forkChoiceStrategy = recentChainData.getForkChoiceStrategy().orElseThrow();
@@ -881,6 +889,15 @@ class ForkChoiceNotifierTest {
           new ExecutionPayloadContext(payloadId, forkChoiceState, payloadBuildingAttributes);
       assertThatSafeFuture(futureExecutionPayloadContext)
           .isCompletedWithOptionalContaining(executionPayloadContext);
+      // verify subscribers notified
+      assertThat(forkChoiceUpdatedResultNotification.getForkChoiceState())
+          .isEqualTo(forkChoiceState);
+      final NewBlockBuildingNotification expectedNotification =
+          new NewBlockBuildingNotification(
+              forkChoiceState.getHeadExecutionBlockNumber(),
+              forkChoiceState.getHeadExecutionBlockHash(),
+              payloadBuildingAttributes);
+      assertThat(newBlockBuildingNotification).isEqualTo(expectedNotification);
     }
   }
 
@@ -916,15 +933,20 @@ class ForkChoiceNotifierTest {
       final boolean doPrepare,
       final Optional<Eth1Address> overrideFeeRecipient,
       final Optional<SignedValidatorRegistration> validatorRegistration) {
-    final int block2Proposer = spec.getBeaconProposerIndex(headState, blockSlot);
+    final UInt64 proposerIndex = UInt64.valueOf(spec.getBeaconProposerIndex(headState, blockSlot));
     final PayloadBuildingAttributes payloadBuildingAttributes =
         getExpectedPayloadBuildingAttributes(
-            forkChoiceState, headState, blockSlot, overrideFeeRecipient, validatorRegistration);
+            proposerIndex,
+            forkChoiceState,
+            headState,
+            blockSlot,
+            overrideFeeRecipient,
+            validatorRegistration);
     if (doPrepare) {
       proposersDataManager.updatePreparedProposers(
           List.of(
               new BeaconPreparableProposer(
-                  UInt64.valueOf(block2Proposer), payloadBuildingAttributes.getFeeRecipient())),
+                  proposerIndex, payloadBuildingAttributes.getFeeRecipient())),
           recentChainData.getHeadSlot());
     }
     validatorRegistration.ifPresent(
@@ -942,30 +964,43 @@ class ForkChoiceNotifierTest {
       final BeaconState headState,
       final UInt64 blockSlot1,
       final UInt64 blockSlot2) {
-    final int block2Proposer1 = spec.getBeaconProposerIndex(headState, blockSlot1);
-    final int block2Proposer2 = spec.getBeaconProposerIndex(headState, blockSlot2);
+    final UInt64 proposerIndex1 =
+        UInt64.valueOf(spec.getBeaconProposerIndex(headState, blockSlot1));
+    final UInt64 proposerIndex2 =
+        UInt64.valueOf(spec.getBeaconProposerIndex(headState, blockSlot2));
     final PayloadBuildingAttributes payloadBuildingAttributes1 =
         getExpectedPayloadBuildingAttributes(
-            forkChoiceState, headState, blockSlot1, Optional.empty(), Optional.empty());
+            proposerIndex1,
+            forkChoiceState,
+            headState,
+            blockSlot1,
+            Optional.empty(),
+            Optional.empty());
     final PayloadBuildingAttributes payloadBuildingAttributes2 =
         getExpectedPayloadBuildingAttributes(
-            forkChoiceState, headState, blockSlot2, Optional.empty(), Optional.empty());
+            proposerIndex2,
+            forkChoiceState,
+            headState,
+            blockSlot2,
+            Optional.empty(),
+            Optional.empty());
 
-    if (block2Proposer1 == block2Proposer2) {
+    if (proposerIndex1.equals(proposerIndex2)) {
       throw new UnsupportedOperationException(
           "unsupported test scenario: with same proposer for different slots");
     }
     proposersDataManager.updatePreparedProposers(
         List.of(
             new BeaconPreparableProposer(
-                UInt64.valueOf(block2Proposer1), payloadBuildingAttributes1.getFeeRecipient()),
+                proposerIndex1, payloadBuildingAttributes1.getFeeRecipient()),
             new BeaconPreparableProposer(
-                UInt64.valueOf(block2Proposer2), payloadBuildingAttributes2.getFeeRecipient())),
+                proposerIndex2, payloadBuildingAttributes2.getFeeRecipient())),
         recentChainData.getHeadSlot());
     return List.of(payloadBuildingAttributes1, payloadBuildingAttributes2);
   }
 
   private PayloadBuildingAttributes getExpectedPayloadBuildingAttributes(
+      final UInt64 proposerIndex,
       final ForkChoiceState forkChoiceState,
       final BeaconState headState,
       final UInt64 blockSlot,
@@ -976,13 +1011,14 @@ class ForkChoiceNotifierTest {
     final UInt64 timestamp = spec.computeTimeAtSlot(headState, blockSlot);
     final Bytes32 random = spec.getRandaoMix(headState, UInt64.ZERO);
     return new PayloadBuildingAttributes(
+        proposerIndex,
+        blockSlot,
         timestamp,
         random,
         feeRecipient,
         validatorRegistration,
         dataStructureUtil.randomWithdrawalList(),
-        forkChoiceState.getHeadBlockRoot(),
-        blockSlot);
+        forkChoiceState.getHeadBlockRoot());
   }
 
   private ForkChoiceState getCurrentForkChoiceState() {

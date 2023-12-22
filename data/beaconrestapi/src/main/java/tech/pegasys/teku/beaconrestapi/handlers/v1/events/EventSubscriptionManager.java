@@ -39,6 +39,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.ListQueryParameterUtil
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -48,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.statetransition.block.NewBlockBuildingSubscriber.NewBlockBuildingNotification;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -93,6 +95,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     nodeDataProvider.subscribeToNewVoluntaryExits(this::onNewVoluntaryExit);
     nodeDataProvider.subscribeToSyncCommitteeContributions(this::onSyncCommitteeContribution);
     nodeDataProvider.subscribeToNewBlsToExecutionChanges(this::onNewBlsToExecutionChange);
+    nodeDataProvider.subscribeToNewBlockBuilding(this::onNewPayloadAttributes);
   }
 
   public void registerClient(final SseClient sseClient) {
@@ -215,6 +218,16 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
       notifySubscribersOfEvent(
           EventType.proposer_slashing, new ProposerSlashingEvent(proposerSlashing));
     }
+  }
+
+  protected void onNewPayloadAttributes(
+      final NewBlockBuildingNotification newBlockBuildingNotification) {
+    final SpecMilestone milestone =
+        spec.atSlot(newBlockBuildingNotification.payloadAttributes().getProposalSlot())
+            .getMilestone();
+    final PayloadAttributesEvent payloadAttributesEvent =
+        PayloadAttributesEvent.create(milestone, newBlockBuildingNotification);
+    notifySubscribersOfEvent(EventType.payload_attributes, payloadAttributesEvent);
   }
 
   @Override

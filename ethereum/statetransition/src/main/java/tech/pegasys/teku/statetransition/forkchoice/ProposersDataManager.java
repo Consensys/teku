@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -57,7 +58,8 @@ public class ProposersDataManager implements SlotEventsChannel {
       new ConcurrentHashMap<>();
   private final Optional<Eth1Address> proposerDefaultFeeRecipient;
 
-  private final Subscribers<ProposersDataManagerSubscriber> subscribers = Subscribers.create(true);
+  private final Subscribers<ProposersDataManagerSubscriber> proposersDataChangesSubscribers =
+      Subscribers.create(true);
 
   public ProposersDataManager(
       final EventThread eventThread,
@@ -83,12 +85,8 @@ public class ProposersDataManager implements SlotEventsChannel {
     this.executionLayerChannel = executionLayerChannel;
   }
 
-  public long subscribeToProposersDataChanges(ProposersDataManagerSubscriber subscriber) {
-    return subscribers.subscribe(subscriber);
-  }
-
-  public boolean unsubscribeToProposersDataChanges(long subscriberId) {
-    return subscribers.unsubscribe(subscriberId);
+  public void subscribeToProposersDataChanges(final ProposersDataManagerSubscriber subscriber) {
+    proposersDataChangesSubscribers.subscribe(subscriber);
   }
 
   @Override
@@ -124,7 +122,8 @@ public class ProposersDataManager implements SlotEventsChannel {
   public void updatePreparedProposers(
       final Collection<BeaconPreparableProposer> preparedProposers, final UInt64 currentSlot) {
     updatePreparedProposerCache(preparedProposers, currentSlot);
-    subscribers.deliver(ProposersDataManagerSubscriber::onPreparedProposersUpdated);
+    proposersDataChangesSubscribers.deliver(
+        ProposersDataManagerSubscriber::onPreparedProposersUpdated);
   }
 
   public SafeFuture<Void> updateValidatorRegistrations(
@@ -179,7 +178,8 @@ public class ProposersDataManager implements SlotEventsChannel {
                             "validator index not found for public key {}",
                             signedValidatorRegistration.getMessage().getPublicKey())));
 
-    subscribers.deliver(ProposersDataManagerSubscriber::onValidatorRegistrationsUpdated);
+    proposersDataChangesSubscribers.deliver(
+        ProposersDataManagerSubscriber::onValidatorRegistrationsUpdated);
   }
 
   public SafeFuture<Optional<PayloadBuildingAttributes>> calculatePayloadBuildingAttributes(
@@ -202,8 +202,8 @@ public class ProposersDataManager implements SlotEventsChannel {
       return SafeFuture.completedFuture(Optional.empty());
     }
     final UInt64 epoch = spec.computeEpochAtSlot(blockSlot);
-    final Bytes32 currentHeadBlockRoot =
-        forkChoiceUpdateData.getForkChoiceState().getHeadBlockRoot();
+    final ForkChoiceState forkChoiceState = forkChoiceUpdateData.getForkChoiceState();
+    final Bytes32 currentHeadBlockRoot = forkChoiceState.getHeadBlockRoot();
     return getStateInEpoch(epoch)
         .thenApplyAsync(
             maybeState ->
@@ -230,6 +230,7 @@ public class ProposersDataManager implements SlotEventsChannel {
       // Proposer is not one of our validators. No need to propose a block.
       return Optional.empty();
     }
+
     final UInt64 timestamp = spec.computeTimeAtSlot(state, blockSlot);
     final Bytes32 random = spec.getRandaoMix(state, epoch);
     final Optional<SignedValidatorRegistration> validatorRegistration =
@@ -238,13 +239,14 @@ public class ProposersDataManager implements SlotEventsChannel {
 
     return Optional.of(
         new PayloadBuildingAttributes(
+            proposerIndex,
+            blockSlot,
             timestamp,
             random,
             getFeeRecipient(proposerInfo, blockSlot),
             validatorRegistration,
             spec.getExpectedWithdrawals(state),
-            currentHeadBlockRoot,
-            blockSlot));
+            currentHeadBlockRoot));
   }
 
   // this function MUST return a fee recipient.

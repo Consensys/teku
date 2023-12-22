@@ -28,6 +28,9 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
+import tech.pegasys.teku.statetransition.block.NewBlockBuildingSubscriber;
+import tech.pegasys.teku.statetransition.block.NewBlockBuildingSubscriber.NewBlockBuildingNotification;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager.ProposersDataManagerSubscriber;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -43,7 +46,9 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
   private final Spec spec;
   private final TimeProvider timeProvider;
 
-  private final Subscribers<ForkChoiceUpdatedResultSubscriber> subscribers =
+  private final Subscribers<ForkChoiceUpdatedResultSubscriber> forkChoiceUpdatedSubscribers =
+      Subscribers.create(true);
+  private final Subscribers<NewBlockBuildingSubscriber> newBlockBuildingSubscribers =
       Subscribers.create(true);
 
   private ForkChoiceUpdateData forkChoiceUpdateData = new ForkChoiceUpdateData();
@@ -69,13 +74,13 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
   }
 
   @Override
-  public long subscribeToForkChoiceUpdatedResult(ForkChoiceUpdatedResultSubscriber subscriber) {
-    return subscribers.subscribe(subscriber);
+  public void subscribeToForkChoiceUpdatedResult(ForkChoiceUpdatedResultSubscriber subscriber) {
+    forkChoiceUpdatedSubscribers.subscribe(subscriber);
   }
 
   @Override
-  public boolean unsubscribeFromForkChoiceUpdatedResult(long subscriberId) {
-    return subscribers.unsubscribe(subscriberId);
+  public void subscribeToNewBlockBuilding(final NewBlockBuildingSubscriber subscriber) {
+    newBlockBuildingSubscribers.subscribe(subscriber);
   }
 
   @Override
@@ -185,6 +190,9 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
                         .withPayloadBuildingAttributes(payloadBuildingAttributes);
 
                 sendForkChoiceUpdated();
+                payloadBuildingAttributes.ifPresent(
+                    payloadAttributes ->
+                        notifyNewBlockBuildingSubscribers(forkChoiceState, payloadAttributes));
 
                 if (!forkChoiceUpdateData.isPayloadIdSuitable(parentExecutionHash, timestamp)) {
                   throw new IllegalStateException(
@@ -246,12 +254,22 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
   private void sendForkChoiceUpdated() {
     final SafeFuture<Optional<ForkChoiceUpdatedResult>> forkChoiceUpdatedResult =
         forkChoiceUpdateData.send(executionLayerChannel, timeProvider.getTimeInMillis());
-    subscribers.deliver(
+    forkChoiceUpdatedSubscribers.deliver(
         ForkChoiceUpdatedResultSubscriber::onForkChoiceUpdatedResult,
         new ForkChoiceUpdatedResultNotification(
             forkChoiceUpdateData.getForkChoiceState(),
             forkChoiceUpdateData.hasTerminalBlockHash(),
             forkChoiceUpdatedResult));
+  }
+
+  private void notifyNewBlockBuildingSubscribers(
+      final ForkChoiceState forkChoiceState, final PayloadBuildingAttributes payloadAttributes) {
+    newBlockBuildingSubscribers.deliver(
+        NewBlockBuildingSubscriber::onNewBlockBuilding,
+        new NewBlockBuildingNotification(
+            forkChoiceState.getHeadExecutionBlockNumber(),
+            forkChoiceState.getHeadExecutionBlockHash(),
+            payloadAttributes));
   }
 
   private void updatePayloadAttributes(final UInt64 blockSlot) {

@@ -196,13 +196,13 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         new ForkChoiceUpdatedResult(
             PayloadStatus.VALID,
             payloadBuildingAttributes.map(
-                payloadAttributes1 -> {
-                  Bytes8 payloadId =
+                payloadAttributes -> {
+                  final Bytes8 payloadId =
                       Bytes8.leftPad(Bytes.ofUnsignedInt(payloadIdCounter.incrementAndGet()));
                   payloadIdToHeadAndAttrsCache.invalidateWithNewValue(
                       payloadId,
                       new HeadAndAttributes(
-                          forkChoiceState.getHeadExecutionBlockHash(), payloadAttributes1));
+                          forkChoiceState.getHeadExecutionBlockHash(), payloadAttributes));
                   return payloadId;
                 }));
 

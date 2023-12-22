@@ -1795,14 +1795,15 @@ public final class DataStructureUtil {
       final boolean withValidatorRegistration) {
     return new PayloadBuildingAttributes(
         randomUInt64(),
+        randomUInt64(),
+        randomUInt64(),
         randomBytes32(),
         randomEth1Address(),
         withValidatorRegistration
             ? Optional.of(randomSignedValidatorRegistration())
             : Optional.empty(),
         randomWithdrawalList(),
-        randomBytes32(),
-        randomUInt64());
+        randomBytes32());
   }
 
   public BeaconPreparableProposer randomBeaconPreparableProposer() {
