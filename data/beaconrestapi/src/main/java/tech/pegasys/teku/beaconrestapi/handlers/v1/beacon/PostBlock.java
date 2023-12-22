@@ -112,17 +112,17 @@ public class PostBlock extends RestApiEndpoint {
         validatorDataProvider
             .submitSignedBlock(requestBody, BroadcastValidationLevel.NOT_REQUIRED)
             .thenApply(
-                result -> {
-                  if (result.isSuccessful()) {
-                    return AsyncApiResponse.respondWithCode(SC_OK);
-                  }
-                  if (result.isNotImportedDueToInternalError()) {
-                    return AsyncApiResponse.respondWithError(
-                        SC_INTERNAL_SERVER_ERROR,
-                        "An internal error occurred, check the server logs for more details.");
-                  } else {
-                    return AsyncApiResponse.respondWithCode(SC_ACCEPTED);
-                  }
-                }));
+                result ->
+                    result
+                        .getRejectionReason()
+                        .map(
+                            rejectionReason -> {
+                              if (result.isPublished()) {
+                                return AsyncApiResponse.respondWithCode(SC_ACCEPTED);
+                              }
+                              return AsyncApiResponse.respondWithError(
+                                  SC_INTERNAL_SERVER_ERROR, rejectionReason);
+                            })
+                        .orElse(AsyncApiResponse.respondWithCode(SC_OK))));
   }
 }

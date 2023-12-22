@@ -616,7 +616,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BroadcastValidationLevel broadcastValidationLevel) {
     return blockPublisher
         .sendSignedBlock(maybeBlindedBlockContainer, broadcastValidationLevel)
-        .exceptionally(ex -> SendSignedBlockResult.rejected(ex.getMessage()));
+        .exceptionally(
+            ex -> {
+              final String reason = getMessageOrSimpleName(ex);
+              return SendSignedBlockResult.rejected(reason);
+            });
   }
 
   @Override
