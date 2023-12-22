@@ -57,6 +57,7 @@ public class StubRestApiRequest implements RestApiRequest {
   private final Map<String, String> optionalQueryParameters = new HashMap<>();
   private final Map<String, List<String>> listQueryParameters = new HashMap<>();
   private final Map<Integer, String> contentTypeMap = new HashMap<>();
+  private final Map<String, String> contextHeaders = new HashMap<>();
   private final Map<String, String> headers = new HashMap<>();
 
   private final EndpointMetadata metadata;
@@ -237,8 +238,7 @@ public class StubRestApiRequest implements RestApiRequest {
 
   @Override
   public <T> Optional<T> getOptionalHeader(ParameterMetadata<T> parameterMetadata) {
-    final Optional<String> param = // todo check supposed to be same map as header method?
-        Optional.ofNullable(headers.get(parameterMetadata.getName()));
+    final Optional<String> param = Optional.ofNullable(headers.get(parameterMetadata.getName()));
     return param.map(p -> parameterMetadata.getType().deserializeFromString(p));
   }
 
@@ -246,14 +246,12 @@ public class StubRestApiRequest implements RestApiRequest {
   public <T> T getHeader(ParameterMetadata<T> parameterMetadata) {
     assertThat(this.headers.containsKey(parameterMetadata.getName())).isTrue();
     final String param = headers.get(parameterMetadata.getName());
-    return parameterMetadata
-        .getType()
-        .deserializeFromString(param); // todo check supposed to be same map as header method?
+    return parameterMetadata.getType().deserializeFromString(param);
   }
 
   @Override
   public void header(final String name, final String value) {
-    headers.put(name, value);
+    contextHeaders.put(name, value);
   }
 
   @Override
@@ -261,8 +259,8 @@ public class StubRestApiRequest implements RestApiRequest {
     throw new UnsupportedOperationException();
   }
 
-  public String getHeader(String name) {
-    return headers.get(name);
+  public String getContextHeader(String name) {
+    return contextHeaders.get(name);
   }
 
   public static Builder builder() {

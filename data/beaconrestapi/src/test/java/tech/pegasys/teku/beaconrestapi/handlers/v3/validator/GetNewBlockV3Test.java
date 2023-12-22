@@ -104,13 +104,13 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
 
     assertThat(request.getResponseCode()).isEqualTo(HttpStatusCodes.SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(blockContainerAndMetaData);
-    assertThat(request.getHeader(HEADER_CONSENSUS_VERSION))
+    assertThat(request.getContextHeader(HEADER_CONSENSUS_VERSION))
         .isEqualTo(Version.fromMilestone(blockContainerAndMetaData.specMilestone()).name());
-    assertThat(request.getHeader(HEADER_EXECUTION_PAYLOAD_BLINDED))
+    assertThat(request.getContextHeader(HEADER_EXECUTION_PAYLOAD_BLINDED))
         .isEqualTo(Boolean.toString(true));
-    assertThat(request.getHeader(HEADER_EXECUTION_PAYLOAD_VALUE))
+    assertThat(request.getContextHeader(HEADER_EXECUTION_PAYLOAD_VALUE))
         .isEqualTo(executionPayloadValue.toDecimalString());
-    assertThat(request.getHeader(HEADER_CONSENSUS_BLOCK_VALUE))
+    assertThat(request.getContextHeader(HEADER_CONSENSUS_BLOCK_VALUE))
         .isEqualTo(consensusBlockValue.toDecimalString());
   }
 
@@ -132,13 +132,13 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
 
     assertThat(request.getResponseCode()).isEqualTo(HttpStatusCodes.SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(blockContainerAndMetaData);
-    assertThat(request.getHeader(HEADER_CONSENSUS_VERSION))
+    assertThat(request.getContextHeader(HEADER_CONSENSUS_VERSION))
         .isEqualTo(Version.fromMilestone(blockContainerAndMetaData.specMilestone()).name());
-    assertThat(request.getHeader(HEADER_EXECUTION_PAYLOAD_BLINDED))
+    assertThat(request.getContextHeader(HEADER_EXECUTION_PAYLOAD_BLINDED))
         .isEqualTo(Boolean.toString(false));
-    assertThat(request.getHeader(HEADER_EXECUTION_PAYLOAD_VALUE))
+    assertThat(request.getContextHeader(HEADER_EXECUTION_PAYLOAD_VALUE))
         .isEqualTo(executionPayloadValue.toDecimalString());
-    assertThat(request.getHeader(HEADER_CONSENSUS_BLOCK_VALUE))
+    assertThat(request.getContextHeader(HEADER_CONSENSUS_BLOCK_VALUE))
         .isEqualTo(consensusBlockValue.toDecimalString());
   }
 
@@ -160,12 +160,12 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
 
     assertThat(request.getResponseCode()).isEqualTo(HttpStatusCodes.SC_OK);
     assertThat(request.getResponseBody()).isEqualTo(blockContainerAndMetaData);
-    assertThat(request.getHeader(HEADER_CONSENSUS_VERSION))
+    assertThat(request.getContextHeader(HEADER_CONSENSUS_VERSION))
         .isEqualTo(Version.fromMilestone(blockContainerAndMetaData.specMilestone()).name());
-    assertThat(request.getHeader(HEADER_EXECUTION_PAYLOAD_BLINDED)).isEqualTo("false");
-    assertThat(request.getHeader(HEADER_EXECUTION_PAYLOAD_VALUE))
+    assertThat(request.getContextHeader(HEADER_EXECUTION_PAYLOAD_BLINDED)).isEqualTo("false");
+    assertThat(request.getContextHeader(HEADER_EXECUTION_PAYLOAD_VALUE))
         .isEqualTo(executionPayloadValue.toDecimalString());
-    assertThat(request.getHeader(HEADER_CONSENSUS_BLOCK_VALUE))
+    assertThat(request.getContextHeader(HEADER_CONSENSUS_BLOCK_VALUE))
         .isEqualTo(consensusBlockValue.toDecimalString());
   }
 
@@ -230,9 +230,9 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
               consensusBlockValueWei);
 
       assertThat(request.getResponseBody()).isEqualTo(blockContainerAndMetaData);
-      assertThat(request.getHeader(HEADER_CONSENSUS_BLOCK_VALUE))
+      assertThat(request.getContextHeader(HEADER_CONSENSUS_BLOCK_VALUE))
           .isEqualTo(consensusBlockValueWei.toDecimalString());
-      assertThat(request.getHeader(HEADER_EXECUTION_PAYLOAD_VALUE))
+      assertThat(request.getContextHeader(HEADER_EXECUTION_PAYLOAD_VALUE))
           .isEqualTo(UInt256.ZERO.toDecimalString());
       assertThat(logCaptor.getWarnLogs())
           .containsExactly(
@@ -293,9 +293,9 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
               consensusBlockValueWei);
 
       assertThat(request.getResponseBody()).isEqualTo(blockContainerAndMetaData);
-      assertThat(request.getHeader(HEADER_CONSENSUS_BLOCK_VALUE))
+      assertThat(request.getContextHeader(HEADER_CONSENSUS_BLOCK_VALUE))
           .isEqualTo(consensusBlockValueWei.toDecimalString());
-      assertThat(request.getHeader(HEADER_EXECUTION_PAYLOAD_VALUE))
+      assertThat(request.getContextHeader(HEADER_EXECUTION_PAYLOAD_VALUE))
           .isEqualTo(UInt256.ZERO.toDecimalString());
       assertThat(logCaptor.getWarnLogs())
           .containsExactly("No execution payload value available for slot 1. Setting value to 0");
@@ -351,7 +351,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
               UInt256.ZERO);
 
       assertThat(request.getResponseBody()).isEqualTo(blockContainerAndMetaData);
-      assertThat(request.getHeader(HEADER_CONSENSUS_BLOCK_VALUE))
+      assertThat(request.getContextHeader(HEADER_CONSENSUS_BLOCK_VALUE))
           .isEqualTo(UInt256.ZERO.toDecimalString());
       assertThat(logCaptor.getWarnLogs())
           .containsExactly("Unable to calculate block rewards for slot 1. Setting value to 0");
@@ -404,7 +404,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
               UInt256.ZERO);
 
       assertThat(request.getResponseBody()).isEqualTo(blockContainerAndMetaData);
-      assertThat(request.getHeader(HEADER_CONSENSUS_BLOCK_VALUE))
+      assertThat(request.getContextHeader(HEADER_CONSENSUS_BLOCK_VALUE))
           .isEqualTo(UInt256.ZERO.toDecimalString());
       assertThat(logCaptor.getWarnLogs())
           .containsExactly("Unable to calculate block rewards for slot 1. Setting value to 0");
