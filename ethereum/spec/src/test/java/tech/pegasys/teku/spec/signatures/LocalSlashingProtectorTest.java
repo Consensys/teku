@@ -156,11 +156,9 @@ class LocalSlashingProtectorTest {
   void canAccessDifferentValidatorConcurrently()
       throws ExecutionException, InterruptedException, TimeoutException {
     final AtomicBoolean releaseLock = new AtomicBoolean(false);
-    final CountDownLatch threadsAcquired = new CountDownLatch(2);
     final SafeFuture<Void> firstSigner =
         asyncRunner.runAsync(
             () -> {
-              threadsAcquired.countDown();
               final ReentrantLock lock = slashingProtectionStorage.acquireLock(validator);
               LOG.debug("LOCKED firstSigner");
               do {
@@ -173,17 +171,18 @@ class LocalSlashingProtectorTest {
               lock.unlock();
               LOG.debug("UNLOCK firstSigner");
             });
+    final CountDownLatch threadAcquired = new CountDownLatch(1);
     final SafeFuture<Void> secondSigner =
         asyncRunner.runAsync(
             () -> {
-              threadsAcquired.countDown();
+              threadAcquired.countDown();
               final ReentrantLock lock =
                   slashingProtectionStorage.acquireLock(dataStructureUtil.randomPublicKey());
               LOG.debug("LOCKED secondSigner");
               lock.unlock();
               LOG.debug("UNLOCK secondSigner");
             });
-    threadsAcquired.await();
+    threadAcquired.await();
     assertThat(firstSigner).isNotCompleted();
     secondSigner.get(50, TimeUnit.MILLISECONDS);
     assertThat(secondSigner).isCompleted();
