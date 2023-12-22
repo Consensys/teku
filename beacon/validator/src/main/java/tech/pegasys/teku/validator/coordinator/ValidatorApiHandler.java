@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.coordinator;
 
 import static java.util.stream.Collectors.toMap;
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessageOrSimpleName;
+import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getRootCauseMessage;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 import static tech.pegasys.teku.infrastructure.metrics.Validator.DutyType.ATTESTATION_PRODUCTION;
 import static tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils.startTimer;
@@ -618,7 +619,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         .sendSignedBlock(maybeBlindedBlockContainer, broadcastValidationLevel)
         .exceptionally(
             ex -> {
-              final String reason = getMessageOrSimpleName(ex);
+              final String reason = getRootCauseMessage(ex);
               return SendSignedBlockResult.rejected(reason);
             });
   }
