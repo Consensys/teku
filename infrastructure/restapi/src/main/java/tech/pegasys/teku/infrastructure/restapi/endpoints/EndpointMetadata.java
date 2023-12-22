@@ -263,7 +263,6 @@ public class EndpointMetadata {
     final String selectedType = selectContentType(openApiResponse, acceptHeader);
     final ResponseContentTypeDefinition<T> typeDefinition =
         (ResponseContentTypeDefinition<T>) openApiResponse.getType(selectedType);
-    // todo headers handled here?
     return new ResponseMetadata(selectedType, typeDefinition.getAdditionalHeaders(response));
   }
 
