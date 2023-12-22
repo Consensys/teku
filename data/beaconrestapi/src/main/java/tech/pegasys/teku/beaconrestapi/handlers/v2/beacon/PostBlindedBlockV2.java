@@ -17,8 +17,6 @@ import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BROAD
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllSupportedMilestones;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.slotBasedSelector;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
@@ -31,9 +29,7 @@ import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.BroadcastValidationParameter;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
-import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
@@ -41,11 +37,8 @@ import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
-public class PostBlindedBlockV2 extends RestApiEndpoint {
+public class PostBlindedBlockV2 extends AbstractPostBlockV2 {
   public static final String ROUTE = "/eth/v2/beacon/blinded_blocks";
-
-  private final ValidatorDataProvider validatorDataProvider;
-  private final SyncDataProvider syncDataProvider;
 
   public PostBlindedBlockV2(
       final DataProvider dataProvider,
@@ -63,9 +56,7 @@ public class PostBlindedBlockV2 extends RestApiEndpoint {
       final SyncDataProvider syncDataProvider,
       final Spec spec,
       final SchemaDefinitionCache schemaDefinitionCache) {
-    super(getEndpointMetaData(spec, schemaDefinitionCache));
-    this.validatorDataProvider = validatorDataProvider;
-    this.syncDataProvider = syncDataProvider;
+    super(validatorDataProvider, syncDataProvider, createMetadata(spec, schemaDefinitionCache));
   }
 
   @Override
@@ -89,28 +80,10 @@ public class PostBlindedBlockV2 extends RestApiEndpoint {
     request.respondAsync(
         validatorDataProvider
             .submitSignedBlindedBlock(requestBody, broadcastValidationLevel)
-            .thenApply(
-                result -> {
-                  if (result.isSuccessful()) {
-                    return AsyncApiResponse.respondWithCode(SC_OK);
-                  }
-
-                  if (result.isRejectedDueToBroadcastValidationFailure()) {
-                    return AsyncApiResponse.respondWithError(
-                        SC_BAD_REQUEST, result.getRejectionReason().orElse(""));
-                  }
-
-                  if (result.isNotImportedDueToInternalError()) {
-                    return AsyncApiResponse.respondWithError(
-                        SC_INTERNAL_SERVER_ERROR,
-                        "An internal error occurred, check the server logs for more details.");
-                  }
-
-                  return AsyncApiResponse.respondWithCode(SC_ACCEPTED);
-                }));
+            .thenApply(this::processSendSignedBlockResult));
   }
 
-  private static EndpointMetadata getEndpointMetaData(
+  private static EndpointMetadata createMetadata(
       final Spec spec, final SchemaDefinitionCache schemaDefinitionCache) {
     return EndpointMetadata.post(ROUTE)
         .operationId("publishBlindedBlockV2")
