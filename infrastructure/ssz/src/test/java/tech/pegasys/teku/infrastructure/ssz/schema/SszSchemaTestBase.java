@@ -45,6 +45,10 @@ public abstract class SszSchemaTestBase extends SszTypeTestBase {
   @MethodSource("testSchemaArguments")
   @ParameterizedTest
   void sszDeserialize_tooLongSszShouldFailFastWithoutReadingWholeInput(SszSchema<SszData> schema) {
+    if (schema instanceof SszOptionalSchema<?>) {
+      // empty Optional couldn't pass this test
+      return;
+    }
     long maxSszLength = schema.getSszLengthBounds().getMaxBytes();
     // ignore too large and degenerative structs
     assumeThat(maxSszLength).isLessThan(32 * 1024 * 1024).isGreaterThan(0);

@@ -15,31 +15,33 @@ package tech.pegasys.teku.infrastructure.ssz.impl;
 
 import com.google.common.base.Objects;
 import com.google.common.base.Suppliers;
+import java.util.Optional;
 import java.util.function.Supplier;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszOptional;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszOptionalSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.SszOptionalSchemaImpl;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public class SszOptionalImpl implements SszOptional {
+public class SszOptionalImpl<T extends SszData> implements SszOptional<T> {
 
-  private final SszOptionalSchemaImpl<?> schema;
+  private final SszOptionalSchema<T, SszOptional<T>> schema;
   private final TreeNode backingNode;
-  private final Supplier<SszData> value = Suppliers.memoize(this::createValue);
+  private final Supplier<Optional<T>> value = Suppliers.memoize(this::createValue);
 
-  public SszOptionalImpl(SszOptionalSchemaImpl<?> schema, TreeNode backingNode) {
+  public SszOptionalImpl(SszOptionalSchema<T, SszOptional<T>> schema, TreeNode backingNode) {
     this.schema = schema;
     this.backingNode = backingNode;
   }
 
   @Override
-  public SszOptionalSchemaImpl<?> getSchema() {
+  public SszOptionalSchema<T, SszOptional<T>> getSchema() {
     return schema;
   }
 
   @Override
-  public SszData getValue() {
+  public Optional<T> getValue() {
     return value.get();
   }
 
@@ -48,10 +50,13 @@ public class SszOptionalImpl implements SszOptional {
     return backingNode;
   }
 
-  private SszData createValue() {
-    SszSchema<?> valueSchema = getSchema().getChildSchema();
+  private Optional<T> createValue() {
+    if (!getSchema().isPresent(getBackingNode())) {
+      return Optional.empty();
+    }
+    SszSchema<T> valueSchema = getSchema().getChildSchema();
     TreeNode valueNode = getSchema().getValueNode(getBackingNode());
-    return valueSchema.createFromBackingNode(valueNode);
+    return Optional.of(valueSchema.createFromBackingNode(valueNode));
   }
 
   @Override
@@ -59,10 +64,9 @@ public class SszOptionalImpl implements SszOptional {
     if (this == o) {
       return true;
     }
-    if (!(o instanceof SszOptional)) {
+    if (!(o instanceof SszOptional<?> sszOptional)) {
       return false;
     }
-    SszOptional sszOptional = (SszOptional) o;
     return Objects.equal(getSchema(), sszOptional.getSchema())
         && Objects.equal(hashTreeRoot(), sszOptional.hashTreeRoot());
   }

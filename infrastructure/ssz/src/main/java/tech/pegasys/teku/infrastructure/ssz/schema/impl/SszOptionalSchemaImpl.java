@@ -44,8 +44,8 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource.CompressedBranch
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeStore;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil;
 
-public abstract class SszOptionalSchemaImpl<SszOptionalT extends SszOptional>
-    implements SszOptionalSchema<SszOptionalT> {
+public abstract class SszOptionalSchemaImpl<ElementDataT extends SszData>
+    implements SszOptionalSchema<ElementDataT, SszOptional<ElementDataT>> {
 
   private static final byte IS_PRESENT_PREFIX = 1;
   private static final int PREFIX_SIZE_BYTES = 1;
@@ -53,66 +53,62 @@ public abstract class SszOptionalSchemaImpl<SszOptionalT extends SszOptional>
   private static LeafNode createOptionalNode(boolean isPresent) {
     return isPresent ? LeafNode.create(Bytes.of(IS_PRESENT_PREFIX)) : LeafNode.ZERO_LEAVES[1];
   }
-
-  public static SszOptionalSchema<SszOptional> createGenericSchema(SszSchema<?> childSchema) {
+// TODO:  I could override return type to SszOptionalSchemaImpl<ElementDataT> everywhere with cast
+  public static  <T extends SszData>  SszOptionalSchema<T, SszOptional<T>> createGenericSchema(SszSchema<T> childSchema) {
     return new SszOptionalSchemaImpl<>(childSchema) {
       @Override
-      public SszOptional createFromBackingNode(TreeNode node) {
-        return new SszOptionalImpl(this, node);
+      public SszOptional<T> createFromBackingNode(TreeNode node) {
+        return new SszOptionalImpl<T>(this, node);
       }
     };
   }
 
-  private final SszSchema<?> childSchema;
+  private final SszSchema<ElementDataT> childSchema;
   private final TreeNode defaultTree;
   private final Supplier<SszLengthBounds> lengthBounds =
       Suppliers.memoize(this::calcSszLengthBounds);
 
-  public SszOptionalSchemaImpl(SszSchema<?> childSchema) {
+  public SszOptionalSchemaImpl(SszSchema<ElementDataT> childSchema) {
     this.childSchema = childSchema;
     defaultTree = createOptionalNode(LeafNode.ZERO_LEAVES[0], false);
   }
 
+  // TODO
   @SuppressWarnings("unchecked")
   @Override
-  public DeserializableTypeDefinition<SszOptionalT> getJsonTypeDefinition() {
-    final DeserializableObjectTypeDefinitionBuilder<SszOptionalT, OptionalBuilder<SszOptionalT>>
+  public DeserializableTypeDefinition<SszOptional<ElementDataT>> getJsonTypeDefinition() {
+    final DeserializableObjectTypeDefinitionBuilder<SszOptional<ElementDataT>, OptionalBuilder<SszOptional<ElementDataT>>>
         builder = DeserializableTypeDefinition.object();
     builder.initializer(() -> new OptionalBuilder<>(this)).finisher(OptionalBuilder::build);
     builder.withOptionalField(
         "Optional[]", // FIXME
-        (DeserializableTypeDefinition<Object>) childSchema.getJsonTypeDefinition(),
+      ((SszSchema<Object>) childSchema).getJsonTypeDefinition(),
         value -> Optional.ofNullable(value.getValue()),
         (optionalBuilder, maybeValue) -> optionalBuilder.set(maybeValue));
     return builder.build();
   }
 
-  private static class OptionalBuilder<SszOptionalT extends SszOptional> {
-    private final SszOptionalSchema<SszOptionalT> schema;
+  private static class OptionalBuilder<T extends SszData> {
+    private final SszOptionalSchema<T, SszOptional<T>> schema;
 
-    private Optional<SszData> value;
+    private Optional<T> value;
 
-    private OptionalBuilder(final SszOptionalSchema<SszOptionalT> schema) {
+    private OptionalBuilder(final SszOptionalSchema<T, SszOptional<T>> schema) {
       this.schema = schema;
     }
 
     @SuppressWarnings("unchecked")
-    public void set(final Optional<?> maybeValue) {
-      maybeValue.ifPresent(
-          value -> {
-            checkArgument(this.value == null, "Cannot set null for SszOptional");
-            checkArgument(value instanceof SszData, "Got invalid value for SszOptional");
-            this.value = (Optional<SszData>) value;
-          });
+    public void set(final Optional<T> maybeValue) {
+      this.value = maybeValue;
     }
 
-    public SszOptionalT build() {
+    public SszOptional<T> build() {
       return schema.createFromValue(value);
     }
   }
 
   @Override
-  public SszSchema<?> getChildSchema() {
+  public SszSchema<ElementDataT> getChildSchema() {
     return childSchema;
   }
 
@@ -128,10 +124,11 @@ public abstract class SszOptionalSchemaImpl<SszOptionalT extends SszOptional>
 
   @Override
   @SuppressWarnings("unchecked")
-  public abstract SszOptionalT createFromBackingNode(TreeNode node);
+  public abstract SszOptional<ElementDataT> createFromBackingNode(TreeNode node);
+
 
   @Override
-  public SszOptionalT createFromValue(Optional<SszData> value) {
+  public SszOptional<ElementDataT> createFromValue(Optional<ElementDataT> value) {
     if (value.isEmpty()) {
       return createFromBackingNode(getDefaultTree());
     }
@@ -139,9 +136,10 @@ public abstract class SszOptionalSchemaImpl<SszOptionalT extends SszOptional>
     return createFromBackingNode(createOptionalNode(value.get().getBackingNode(), true));
   }
 
+
   @Override
   public int getSszVariablePartSize(TreeNode node) {
-    return childSchema.getSszSize(getValueNode(node));
+    return isPresent(node) ? childSchema.getSszSize(getValueNode(node)) + PREFIX_SIZE_BYTES : 0;
   }
 
   @Override
@@ -182,6 +180,10 @@ public abstract class SszOptionalSchemaImpl<SszOptionalT extends SszOptional>
 
   public TreeNode getValueNode(TreeNode node) {
     return node.get(GIndexUtil.LEFT_CHILD_G_INDEX);
+  }
+
+  public boolean isPresent(TreeNode node) {
+    return getIsPresentFromOptionalNode(getOptionalNode(node));
   }
 
   private TreeNode getOptionalNode(TreeNode node) {

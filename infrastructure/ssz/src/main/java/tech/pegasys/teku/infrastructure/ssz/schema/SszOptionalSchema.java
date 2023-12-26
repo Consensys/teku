@@ -17,17 +17,24 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszOptional;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.SszOptionalSchemaImpl;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public interface SszOptionalSchema<SszOptionalT extends SszOptional>
+// TODO: rename others to look like this
+public interface SszOptionalSchema<ElementDataT extends SszData, SszOptionalT extends SszOptional<ElementDataT>>
     extends SszSchema<SszOptionalT> {
 
-  static SszOptionalSchema<SszOptional> create(SszSchema<?> childSchema) {
+  static <T extends SszData> SszOptionalSchema<T, SszOptional<T>> create(SszSchema<T> childSchema) {
     return SszOptionalSchemaImpl.createGenericSchema(childSchema);
   }
 
-  SszSchema<?> getChildSchema();
+  SszSchema<ElementDataT> getChildSchema();
 
-  SszOptionalT createFromValue(Optional<SszData> value);
+  SszOptional<ElementDataT> createFromValue(Optional<ElementDataT> value);
+
+  boolean isPresent(TreeNode node);
+
+  // TODO should it be here?
+  TreeNode getValueNode(TreeNode node);
 
   @Override
   default boolean isFixedSize() {
