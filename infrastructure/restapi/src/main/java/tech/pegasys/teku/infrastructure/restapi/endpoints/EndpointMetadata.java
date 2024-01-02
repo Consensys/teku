@@ -514,7 +514,7 @@ public class EndpointMetadata {
       return this;
     }
 
-    public EndpointMetaDataBuilder requiredHeader(final ParameterMetadata<?> headerMetadata) {
+    public EndpointMetaDataBuilder headerRequired(final ParameterMetadata<?> headerMetadata) {
       final String param = headerMetadata.getName();
       if (requiredHeaders.containsKey(param) || headers.containsKey(param)) {
         throw new IllegalStateException("Header already contains " + headerMetadata.getName());
