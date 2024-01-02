@@ -16,3 +16,4 @@ the [releases page](https://github.com/Consensys/teku/releases).
 
 ### Bug Fixes
 - Fix incompatibility between Teku validator client and Lighthouse beacon nodes
+- Fix a block publishing endpoints issue where `202` status code could be returned but block hasn't been broadcast

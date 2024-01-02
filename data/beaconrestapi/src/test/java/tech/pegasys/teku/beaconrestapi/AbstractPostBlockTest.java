@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_ACCEPTED;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
 
@@ -121,6 +122,24 @@ public abstract class AbstractPostBlockTest extends AbstractMigratedBeaconHandle
 
     assertThat(request.getResponseCode()).isEqualTo(SC_ACCEPTED);
     assertThat(request.getResponseBody()).isNull();
+  }
+
+  @Test
+  void shouldReturnServerErrorIfUnexpectedErrorOccurs() throws Exception {
+    final SendSignedBlockResult failResult = SendSignedBlockResult.rejected("oopsy");
+    final SafeFuture<SendSignedBlockResult> validatorBlockResultSafeFuture =
+        SafeFuture.completedFuture(failResult);
+
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
+    request.setRequestBody(getRandomSignedBeaconBlock());
+
+    setupValidatorDataProviderSubmit(validatorBlockResultSafeFuture);
+
+    handler.handleRequest(request);
+
+    assertThat(request.getResponseCode()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
+    assertThat(request.getResponseBodyAsJson(handler))
+        .isEqualTo("{\"code\":500,\"message\":\"oopsy\"}");
   }
 
   protected void setupValidatorDataProviderSubmit(final SafeFuture<SendSignedBlockResult> future) {
