@@ -236,6 +236,11 @@ public class StubRestApiRequest implements RestApiRequest {
         .collect(Collectors.toList());
   }
 
+  public void setRequestHeader(final String parameter, final String value) {
+    assertThat(this.requestHeaders.containsKey(parameter)).isFalse();
+    this.requestHeaders.put(parameter, value);
+  }
+
   @Override
   public <T> Optional<T> getOptionalRequestHeader(ParameterMetadata<T> parameterMetadata) {
     final Optional<String> param =
