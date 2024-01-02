@@ -247,7 +247,7 @@ public class JavalinRestApiRequest implements RestApiRequest {
   }
 
   @Override
-  public <T> Optional<T> getOptionalHeader(final ParameterMetadata<T> parameterMetadata) {
+  public <T> Optional<T> getOptionalRequestHeader(final ParameterMetadata<T> parameterMetadata) {
     if (!headerMap.containsKey(parameterMetadata.getName())) {
       return Optional.empty();
     }
@@ -265,7 +265,7 @@ public class JavalinRestApiRequest implements RestApiRequest {
   }
 
   @Override
-  public <T> T getHeader(final ParameterMetadata<T> parameterMetadata) {
+  public <T> T getRequestHeaders(final ParameterMetadata<T> parameterMetadata) {
     try {
       return parameterMetadata
           .getType()

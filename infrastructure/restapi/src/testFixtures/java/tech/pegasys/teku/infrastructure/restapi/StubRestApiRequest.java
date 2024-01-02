@@ -57,8 +57,8 @@ public class StubRestApiRequest implements RestApiRequest {
   private final Map<String, String> optionalQueryParameters = new HashMap<>();
   private final Map<String, List<String>> listQueryParameters = new HashMap<>();
   private final Map<Integer, String> contentTypeMap = new HashMap<>();
-  private final Map<String, String> contextHeaders = new HashMap<>();
-  private final Map<String, String> headers = new HashMap<>();
+  private final Map<String, String> responseHeaders = new HashMap<>();
+  private final Map<String, String> requestHeaders = new HashMap<>();
 
   private final EndpointMetadata metadata;
 
@@ -237,30 +237,31 @@ public class StubRestApiRequest implements RestApiRequest {
   }
 
   @Override
-  public <T> Optional<T> getOptionalHeader(ParameterMetadata<T> parameterMetadata) {
-    final Optional<String> param = Optional.ofNullable(headers.get(parameterMetadata.getName()));
+  public <T> Optional<T> getOptionalRequestHeader(ParameterMetadata<T> parameterMetadata) {
+    final Optional<String> param =
+        Optional.ofNullable(requestHeaders.get(parameterMetadata.getName()));
     return param.map(p -> parameterMetadata.getType().deserializeFromString(p));
   }
 
   @Override
-  public <T> T getHeader(ParameterMetadata<T> parameterMetadata) {
-    assertThat(this.headers.containsKey(parameterMetadata.getName())).isTrue();
-    final String param = headers.get(parameterMetadata.getName());
+  public <T> T getRequestHeaders(ParameterMetadata<T> parameterMetadata) {
+    assertThat(this.requestHeaders.containsKey(parameterMetadata.getName())).isTrue();
+    final String param = requestHeaders.get(parameterMetadata.getName());
     return parameterMetadata.getType().deserializeFromString(param);
   }
 
   @Override
   public void header(final String name, final String value) {
-    contextHeaders.put(name, value);
+    responseHeaders.put(name, value);
+  }
+
+  public String getResponseHeaders(String name) {
+    return responseHeaders.get(name);
   }
 
   @Override
   public void startEventStream(Consumer<SseClient> clientConsumer) {
     throw new UnsupportedOperationException();
-  }
-
-  public String getContextHeader(String name) {
-    return contextHeaders.get(name);
   }
 
   public static Builder builder() {
