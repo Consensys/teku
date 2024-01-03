@@ -112,7 +112,19 @@ public class RestApiRequestTest {
     final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
     assertThatThrownBy(() -> request.getPathParameter(UINT8_PARAM))
         .isInstanceOf(IllegalArgumentException.class)
-        .hasMessageContaining("uint8");
+        .hasMessageContaining(UINT8_PARAM.getName());
+  }
+
+  @Test
+  void shouldGiveSensibleErrorMessageFromRequestHeader() {
+    when(context.headerMap()).thenReturn(Map.of("uint8", "-1"));
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
+    assertThatThrownBy(() -> request.getRequestHeader(UINT8_PARAM))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(UINT8_PARAM.getName());
+    assertThatThrownBy(() -> request.getOptionalRequestHeader(UINT8_PARAM))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(UINT8_PARAM.getName());
   }
 
   @Test
@@ -125,6 +137,14 @@ public class RestApiRequestTest {
   }
 
   @Test
+  void shouldDeserializeStringFromHeaders() {
+    when(context.headerMap()).thenReturn(Map.of("str", "byeWorld"));
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
+    assertThat(request.getRequestHeader(STR_PARAM)).isEqualTo("byeWorld");
+    assertThat(request.getOptionalRequestHeader(STR_PARAM)).isEqualTo(Optional.of("byeWorld"));
+  }
+
+  @Test
   void shouldDeserializeIntegerFromParameters() {
     when(context.pathParamMap()).thenReturn(Map.of("int", "1234"));
     when(context.queryParamMap()).thenReturn(Map.of("int", List.of("4321")));
@@ -134,12 +154,28 @@ public class RestApiRequestTest {
   }
 
   @Test
+  void shouldDeserializeIntegerFromHeaders() {
+    when(context.headerMap()).thenReturn(Map.of("int", "1234"));
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
+    assertThat(request.getRequestHeader(INT_PARAM)).isEqualTo(1234);
+    assertThat(request.getOptionalRequestHeader(INT_PARAM)).isEqualTo(Optional.of(1234));
+  }
+
+  @Test
   void shouldDeserializeBooleanFromParameters() {
     when(context.pathParamMap()).thenReturn(Map.of("bool", "true"));
     when(context.queryParamMap()).thenReturn(Map.of("bool", List.of("false")));
     final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
     assertThat(request.getPathParameter(BOOL_PARAM)).isEqualTo(true);
     assertThat(request.getQueryParameter(BOOL_PARAM)).isEqualTo(false);
+  }
+
+  @Test
+  void shouldDeserializeBooleanFromHeaders() {
+    when(context.headerMap()).thenReturn(Map.of("bool", "true"));
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
+    assertThat(request.getRequestHeader(BOOL_PARAM)).isEqualTo(true);
+    assertThat(request.getOptionalRequestHeader(BOOL_PARAM)).isEqualTo(Optional.of(true));
   }
 
   @ParameterizedTest
@@ -181,6 +217,15 @@ public class RestApiRequestTest {
     assertThat(request.getQueryParameter(BYTE_PARAM)).isEqualTo(value);
   }
 
+  @ParameterizedTest
+  @MethodSource("unsignedBytesToHex")
+  void shouldDeserializeByteFromHeaders(final byte value, final String stringValue) {
+    when(context.headerMap()).thenReturn(Map.of("byte", stringValue));
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
+    assertThat(request.getRequestHeader(BYTE_PARAM)).isEqualTo(value);
+    assertThat(request.getOptionalRequestHeader(BYTE_PARAM)).isEqualTo(Optional.of(value));
+  }
+
   static Stream<Arguments> unsignedBytesToHex() {
     return Stream.of(
         Arguments.of(Byte.MIN_VALUE, "0x80"),
@@ -198,6 +243,15 @@ public class RestApiRequestTest {
     final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
     assertThat(request.getPathParameter(UINT8_PARAM)).isEqualTo(value);
     assertThat(request.getQueryParameter(UINT8_PARAM)).isEqualTo(value);
+  }
+
+  @ParameterizedTest
+  @MethodSource("unsignedBytesToDecimal")
+  void shouldDeserializeUInt8FromHeaders(final byte value, final String stringValue) {
+    when(context.headerMap()).thenReturn(Map.of("uint8", stringValue));
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
+    assertThat(request.getRequestHeader(UINT8_PARAM)).isEqualTo(value);
+    assertThat(request.getOptionalRequestHeader(UINT8_PARAM)).isEqualTo(Optional.of(value));
   }
 
   static Stream<Arguments> unsignedBytesToDecimal() {
