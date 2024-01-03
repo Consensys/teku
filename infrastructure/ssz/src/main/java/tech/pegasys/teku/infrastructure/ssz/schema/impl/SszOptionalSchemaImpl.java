@@ -44,23 +44,26 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeSource.CompressedBranch
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNodeStore;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil;
 
+/**
+ * SszOptional schema according to the <a
+ * href="https://eips.ethereum.org/EIPS/eip-6475">EIP-6475</a>
+ */
 public abstract class SszOptionalSchemaImpl<ElementDataT extends SszData>
     implements SszOptionalSchema<ElementDataT, SszOptional<ElementDataT>> {
 
   private static final byte IS_PRESENT_PREFIX = 1;
   private static final int PREFIX_SIZE_BYTES = 1;
 
-  private static LeafNode createOptionalNode(boolean isPresent) {
+  private static LeafNode createOptionalNode(final boolean isPresent) {
     return isPresent ? LeafNode.create(Bytes.of(IS_PRESENT_PREFIX)) : LeafNode.ZERO_LEAVES[1];
   }
 
-  // TODO:  I could override return type to SszOptionalSchemaImpl<ElementDataT> everywhere with cast
-  public static <T extends SszData> SszOptionalSchema<T, SszOptional<T>> createGenericSchema(
-      SszSchema<T> childSchema) {
+  public static <T extends SszData> SszOptionalSchemaImpl<T> createGenericSchema(
+      final SszSchema<T> childSchema) {
     return new SszOptionalSchemaImpl<>(childSchema) {
       @Override
-      public SszOptional<T> createFromBackingNode(TreeNode node) {
-        return new SszOptionalImpl<T>(this, node);
+      public SszOptional<T> createFromBackingNode(final TreeNode node) {
+        return new SszOptionalImpl<>(this, node);
       }
     };
   }
@@ -70,13 +73,11 @@ public abstract class SszOptionalSchemaImpl<ElementDataT extends SszData>
   private final Supplier<SszLengthBounds> lengthBounds =
       Suppliers.memoize(this::calcSszLengthBounds);
 
-  public SszOptionalSchemaImpl(SszSchema<ElementDataT> childSchema) {
+  public SszOptionalSchemaImpl(final SszSchema<ElementDataT> childSchema) {
     this.childSchema = childSchema;
-    defaultTree = createOptionalNode(LeafNode.ZERO_LEAVES[0], false);
+    this.defaultTree = createOptionalNode(LeafNode.ZERO_LEAVES[0], false);
   }
 
-  // TODO
-  @SuppressWarnings("unchecked")
   @Override
   public DeserializableTypeDefinition<SszOptional<ElementDataT>> getJsonTypeDefinition() {
     final DeserializableObjectTypeDefinitionBuilder<
@@ -84,7 +85,9 @@ public abstract class SszOptionalSchemaImpl<ElementDataT extends SszData>
         builder = DeserializableTypeDefinition.object();
     builder.initializer(() -> new OptionalBuilder<>(this)).finisher(OptionalBuilder::build);
     builder.withOptionalField(
-        "Optional[]", // FIXME
+        "Optional["
+            + childSchema.getJsonTypeDefinition().getTypeName().map(String::toString).orElse("")
+            + "]",
         childSchema.getJsonTypeDefinition(),
         SszOptional::getValue,
         OptionalBuilder::set);
@@ -101,7 +104,6 @@ public abstract class SszOptionalSchemaImpl<ElementDataT extends SszData>
       this.schema = schema;
     }
 
-    @SuppressWarnings("unchecked")
     public void set(final Optional<ElementDataT> maybeValue) {
       this.value = maybeValue;
     }
@@ -127,11 +129,10 @@ public abstract class SszOptionalSchemaImpl<ElementDataT extends SszData>
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public abstract SszOptional<ElementDataT> createFromBackingNode(TreeNode node);
 
   @Override
-  public SszOptional<ElementDataT> createFromValue(Optional<ElementDataT> value) {
+  public SszOptional<ElementDataT> createFromValue(final Optional<ElementDataT> value) {
     if (value.isEmpty()) {
       return createFromBackingNode(getDefaultTree());
     }
@@ -140,70 +141,73 @@ public abstract class SszOptionalSchemaImpl<ElementDataT extends SszData>
   }
 
   @Override
-  public int getSszVariablePartSize(TreeNode node) {
+  public int getSszVariablePartSize(final TreeNode node) {
     return isPresent(node) ? childSchema.getSszSize(getValueNode(node)) + PREFIX_SIZE_BYTES : 0;
   }
 
   @Override
-  public int sszSerializeTree(TreeNode node, SszWriter writer) {
-    TreeNode optionalNode = getOptionalNode(node);
-    boolean isPresent = getIsPresentFromOptionalNode(optionalNode);
+  public int sszSerializeTree(final TreeNode node, final SszWriter writer) {
+    final TreeNode optionalNode = getOptionalNode(node);
+    final boolean isPresent = getIsPresentFromOptionalNode(optionalNode);
     if (!isPresent) {
       return 0;
     }
     writer.write(Bytes.of(IS_PRESENT_PREFIX));
-    int valueSszLength = childSchema.sszSerializeTree(getValueNode(node), writer);
+    final int valueSszLength = childSchema.sszSerializeTree(getValueNode(node), writer);
     return valueSszLength + PREFIX_SIZE_BYTES;
   }
 
   @Override
-  public TreeNode sszDeserializeTree(SszReader reader) throws SszDeserializeException {
+  public TreeNode sszDeserializeTree(final SszReader reader) throws SszDeserializeException {
     if (reader.getAvailableBytes() == 0) {
       return getDefaultTree();
     }
-    int isPresent = reader.read(1).get(0) & 0xFF;
+    final int isPresent = reader.read(1).get(0) & 0xFF;
     if (isPresent != IS_PRESENT_PREFIX) {
       throw new SszDeserializeException(
           "Invalid prefix " + isPresent + " for Optional schema: " + this);
     }
-    TreeNode valueNode = childSchema.sszDeserializeTree(reader);
+    final TreeNode valueNode = childSchema.sszDeserializeTree(reader);
     return createOptionalNode(valueNode, true);
   }
 
-  public boolean getIsPresentFromOptionalNode(TreeNode optionalNode) {
+  public boolean getIsPresentFromOptionalNode(final TreeNode optionalNode) {
     checkArgument(optionalNode instanceof LeafDataNode, "Invalid optional node");
-    LeafDataNode dataNode = (LeafDataNode) optionalNode;
-    Bytes bytes = dataNode.getData();
+    final LeafDataNode dataNode = (LeafDataNode) optionalNode;
+    final Bytes bytes = dataNode.getData();
     checkArgument(bytes.size() == PREFIX_SIZE_BYTES, "Invalid optional node");
-    int isPresent = bytes.get(0) & 0xFF;
+    final int isPresent = bytes.get(0) & 0xFF;
     checkArgument(isPresent <= IS_PRESENT_PREFIX, "Incorrect optional prefix");
     return isPresent == IS_PRESENT_PREFIX;
   }
 
   @Override
-  public TreeNode getValueNode(TreeNode node) {
+  public TreeNode getValueNode(final TreeNode node) {
     return node.get(GIndexUtil.LEFT_CHILD_G_INDEX);
   }
 
   @Override
-  public boolean isPresent(TreeNode node) {
+  public boolean isPresent(final TreeNode node) {
     return getIsPresentFromOptionalNode(getOptionalNode(node));
   }
 
-  private TreeNode getOptionalNode(TreeNode node) {
+  private TreeNode getOptionalNode(final TreeNode node) {
     return node.get(GIndexUtil.RIGHT_CHILD_G_INDEX);
   }
 
-  private TreeNode createOptionalNode(TreeNode valueNode, boolean isPresent) {
+  private TreeNode createOptionalNode(final TreeNode valueNode, final boolean isPresent) {
     return BranchNode.create(valueNode, createOptionalNode(isPresent));
   }
 
   @Override
   public void storeBackingNodes(
-      TreeNodeStore nodeStore, int maxBranchLevelsSkipped, long rootGIndex, TreeNode node) {
-    TreeNode optionalNode = getOptionalNode(node);
-    TreeNode valueNode = getValueNode(node);
-    boolean isPresent = getIsPresentFromOptionalNode(optionalNode);
+      final TreeNodeStore nodeStore,
+      final int maxBranchLevelsSkipped,
+      final long rootGIndex,
+      final TreeNode node) {
+    final TreeNode optionalNode = getOptionalNode(node);
+    final TreeNode valueNode = getValueNode(node);
+    final boolean isPresent = getIsPresentFromOptionalNode(optionalNode);
     if (!isPresent) {
       return;
     }
@@ -220,7 +224,8 @@ public abstract class SszOptionalSchemaImpl<ElementDataT extends SszData>
   }
 
   @Override
-  public TreeNode loadBackingNodes(TreeNodeSource nodeSource, Bytes32 rootHash, long rootGIndex) {
+  public TreeNode loadBackingNodes(
+      final TreeNodeSource nodeSource, final Bytes32 rootHash, final long rootGIndex) {
     if (TreeUtil.ZERO_TREES_BY_ROOT.containsKey(rootHash) || rootHash.equals(Bytes32.ZERO)) {
       return getDefaultTree();
     }
@@ -236,7 +241,7 @@ public abstract class SszOptionalSchemaImpl<ElementDataT extends SszData>
             .loadLeafNode(optionalHash, GIndexUtil.gIdxRightGIndex(rootGIndex))
             .getInt(0, ByteOrder.LITTLE_ENDIAN);
     checkState(isPresent <= IS_PRESENT_PREFIX, "Selector is out of bounds");
-    TreeNode valueNode =
+    final TreeNode valueNode =
         childSchema.loadBackingNodes(nodeSource, valueHash, GIndexUtil.gIdxLeftGIndex(rootGIndex));
     return createOptionalNode(valueNode, isPresent == IS_PRESENT_PREFIX);
   }
@@ -251,14 +256,14 @@ public abstract class SszOptionalSchemaImpl<ElementDataT extends SszData>
   }
 
   @Override
-  public boolean equals(Object o) {
+  public boolean equals(final Object o) {
     if (this == o) {
       return true;
     }
     if (!(o instanceof SszOptionalSchemaImpl)) {
       return false;
     }
-    SszOptionalSchemaImpl<?> that = (SszOptionalSchemaImpl<?>) o;
+    final SszOptionalSchemaImpl<?> that = (SszOptionalSchemaImpl<?>) o;
     return Objects.equal(childSchema, that.childSchema);
   }
 

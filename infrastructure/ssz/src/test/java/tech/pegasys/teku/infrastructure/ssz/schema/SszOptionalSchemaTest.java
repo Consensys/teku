@@ -394,7 +394,7 @@ public class SszOptionalSchemaTest extends SszSchemaTestBase {
             "56916900921779bd56b5211516c6a4ede7158df77d0ec4b1376aeca05db9606b"));
   }
 
-  public static class Foo extends AbstractSszImmutableContainer {
+  private static class Foo extends AbstractSszImmutableContainer {
 
     public static final SszContainerSchema<Foo> SSZ_SCHEMA =
         SszContainerSchema.create(
@@ -408,12 +408,12 @@ public class SszOptionalSchemaTest extends SszSchemaTestBase {
                     "value3", SszOptionalSchema.create(SszPrimitiveSchemas.UINT256_SCHEMA))),
             Foo::new);
 
-    private Foo(SszContainerSchema<Foo> type, TreeNode backingNode) {
+    private Foo(final SszContainerSchema<Foo> type, final TreeNode backingNode) {
       super(type, backingNode);
     }
   }
 
-  public static class ContainerWithOptionals extends AbstractSszImmutableContainer {
+  private static class ContainerWithOptionals extends AbstractSszImmutableContainer {
 
     public static final SszContainerSchema<ContainerWithOptionals> SSZ_SCHEMA =
         SszContainerSchema.create(
@@ -430,7 +430,7 @@ public class SszOptionalSchemaTest extends SszSchemaTestBase {
             ContainerWithOptionals::new);
 
     private ContainerWithOptionals(
-        SszContainerSchema<ContainerWithOptionals> type, TreeNode backingNode) {
+        final SszContainerSchema<ContainerWithOptionals> type, final TreeNode backingNode) {
       super(type, backingNode);
     }
   }

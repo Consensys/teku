@@ -19,12 +19,11 @@ import tech.pegasys.teku.infrastructure.ssz.SszOptional;
 import tech.pegasys.teku.infrastructure.ssz.schema.impl.SszOptionalSchemaImpl;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-// TODO: rename others to look like this
 public interface SszOptionalSchema<
         ElementDataT extends SszData, SszOptionalT extends SszOptional<ElementDataT>>
     extends SszSchema<SszOptionalT> {
 
-  static <T extends SszData> SszOptionalSchema<T, SszOptional<T>> create(SszSchema<T> childSchema) {
+  static <T extends SszData> SszOptionalSchemaImpl<T> create(final SszSchema<T> childSchema) {
     return SszOptionalSchemaImpl.createGenericSchema(childSchema);
   }
 
@@ -34,7 +33,6 @@ public interface SszOptionalSchema<
 
   boolean isPresent(TreeNode node);
 
-  // TODO should it be here?
   TreeNode getValueNode(TreeNode node);
 
   @Override

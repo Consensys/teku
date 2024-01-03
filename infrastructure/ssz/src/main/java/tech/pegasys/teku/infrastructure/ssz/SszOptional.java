@@ -16,12 +16,12 @@ package tech.pegasys.teku.infrastructure.ssz;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszOptionalSchema;
 
-public interface SszOptional<T extends SszData> extends SszData {
+public interface SszOptional<ElementDataT extends SszData> extends SszData {
 
-  Optional<T> getValue();
+  Optional<ElementDataT> getValue();
 
   @Override
-  SszOptionalSchema<T, SszOptional<T>> getSchema();
+  SszOptionalSchema<ElementDataT, SszOptional<ElementDataT>> getSchema();
 
   @Override
   default boolean isWritableSupported() {

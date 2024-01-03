@@ -33,7 +33,7 @@ public class SszOptionalTest implements SszDataTestBase {
   @Override
   @SuppressWarnings("unchecked")
   public Stream<SszOptional<?>> sszData() {
-    RandomSszDataGenerator randomGen = new RandomSszDataGenerator();
+    final RandomSszDataGenerator randomGen = new RandomSszDataGenerator();
     return SszOptionalSchemaTest.testOptionalSchemas()
         .map(
             optionalSchema ->
@@ -44,23 +44,25 @@ public class SszOptionalTest implements SszDataTestBase {
 
   @MethodSource("sszDataArguments")
   @ParameterizedTest
-  void getChildSchema_matchesDataSchema(SszOptional<?> data) {
-    SszSchema<?> expectedValueSchema = data.getSchema().getChildSchema();
+  void getChildSchema_matchesDataSchema(final SszOptional<?> data) {
+    final SszSchema<?> expectedValueSchema = data.getSchema().getChildSchema();
 
     assertThat(data.getValue().orElseThrow().getSchema()).isEqualTo(expectedValueSchema);
   }
 
   @Test
   void sszSerialize_emptyOptionalEqualsToZeroBytes() {
-    SszOptionalSchema<?, ?> schema = SszOptionalSchema.create(SszPrimitiveSchemas.BYTES32_SCHEMA);
-    SszOptional<?> sszOptional = schema.createFromValue(Optional.empty());
+    final SszOptionalSchema<?, ?> schema =
+        SszOptionalSchema.create(SszPrimitiveSchemas.BYTES32_SCHEMA);
+    final SszOptional<?> sszOptional = schema.createFromValue(Optional.empty());
     assertThat(sszOptional.sszSerialize()).isEqualTo(Bytes.EMPTY);
   }
 
   @Test
   void hashTreeRoot_empty() {
-    SszOptionalSchema<?, ?> schema = SszOptionalSchema.create(SszPrimitiveSchemas.BYTES32_SCHEMA);
-    SszOptional<?> sszOptional = schema.createFromValue(Optional.empty());
+    final SszOptionalSchema<?, ?> schema =
+        SszOptionalSchema.create(SszPrimitiveSchemas.BYTES32_SCHEMA);
+    final SszOptional<?> sszOptional = schema.createFromValue(Optional.empty());
 
     assertThat(sszOptional.hashTreeRoot())
         .isEqualTo(Hash.sha256(Bytes.concatenate(Bytes32.ZERO, Bytes32.ZERO)));

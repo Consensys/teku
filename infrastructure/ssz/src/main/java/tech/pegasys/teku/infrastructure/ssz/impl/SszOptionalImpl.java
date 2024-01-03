@@ -23,24 +23,27 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszOptionalSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
-public class SszOptionalImpl<T extends SszData> implements SszOptional<T> {
+/** SszOptional according to the <a href="https://eips.ethereum.org/EIPS/eip-6475">EIP-6475</a> */
+public class SszOptionalImpl<ElementDataT extends SszData> implements SszOptional<ElementDataT> {
 
-  private final SszOptionalSchema<T, SszOptional<T>> schema;
+  private final SszOptionalSchema<ElementDataT, SszOptional<ElementDataT>> schema;
   private final TreeNode backingNode;
-  private final Supplier<Optional<T>> value = Suppliers.memoize(this::createValue);
+  private final Supplier<Optional<ElementDataT>> value = Suppliers.memoize(this::createValue);
 
-  public SszOptionalImpl(SszOptionalSchema<T, SszOptional<T>> schema, TreeNode backingNode) {
+  public SszOptionalImpl(
+      final SszOptionalSchema<ElementDataT, SszOptional<ElementDataT>> schema,
+      final TreeNode backingNode) {
     this.schema = schema;
     this.backingNode = backingNode;
   }
 
   @Override
-  public SszOptionalSchema<T, SszOptional<T>> getSchema() {
+  public SszOptionalSchema<ElementDataT, SszOptional<ElementDataT>> getSchema() {
     return schema;
   }
 
   @Override
-  public Optional<T> getValue() {
+  public Optional<ElementDataT> getValue() {
     return value.get();
   }
 
@@ -49,12 +52,12 @@ public class SszOptionalImpl<T extends SszData> implements SszOptional<T> {
     return backingNode;
   }
 
-  private Optional<T> createValue() {
+  private Optional<ElementDataT> createValue() {
     if (!getSchema().isPresent(getBackingNode())) {
       return Optional.empty();
     }
-    SszSchema<T> valueSchema = getSchema().getChildSchema();
-    TreeNode valueNode = getSchema().getValueNode(getBackingNode());
+    final SszSchema<ElementDataT> valueSchema = getSchema().getChildSchema();
+    final TreeNode valueNode = getSchema().getValueNode(getBackingNode());
     return Optional.of(valueSchema.createFromBackingNode(valueNode));
   }
 
