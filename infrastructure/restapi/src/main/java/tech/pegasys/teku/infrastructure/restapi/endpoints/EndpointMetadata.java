@@ -319,8 +319,8 @@ public class EndpointMetadata {
       writeParameters(gen, requiredQueryParams, "query", true, false);
       writeParameters(gen, queryParams, "query", false, false);
       writeParameters(gen, queryListParams, "query", false, true);
-      writeHeaders(gen, requiredHeaders, true);
-      writeHeaders(gen, headers, false);
+      writeParameters(gen, requiredHeaders, "header", true, false);
+      writeParameters(gen, headers, "header", false, false);
       gen.writeEndArray();
     }
 
@@ -384,24 +384,6 @@ public class EndpointMetadata {
       } else { // Handle regular parameter
         entry.getValue().serializeOpenApiTypeOrReference(gen);
       }
-      gen.writeEndObject();
-    }
-  }
-
-  private void writeHeaders(
-      final JsonGenerator gen,
-      final Map<String, StringValueTypeDefinition<?>> fields,
-      final boolean isMandatoryField)
-      throws IOException {
-    for (Map.Entry<String, StringValueTypeDefinition<?>> entry : fields.entrySet()) {
-      gen.writeStartObject();
-      gen.writeObjectField("name", entry.getKey());
-      if (isMandatoryField) {
-        gen.writeObjectField("required", true);
-      }
-      gen.writeObjectField("in", "header");
-      gen.writeFieldName("schema");
-      entry.getValue().serializeOpenApiTypeOrReference(gen);
       gen.writeEndObject();
     }
   }
