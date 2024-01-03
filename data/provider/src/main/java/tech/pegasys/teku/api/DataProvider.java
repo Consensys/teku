@@ -30,6 +30,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.block.BlockManager;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
@@ -110,6 +111,7 @@ public class DataProvider {
     private OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
     private SyncCommitteeContributionPool syncCommitteeContributionPool;
     private ProposersDataManager proposersDataManager;
+    private ForkChoiceNotifier forkChoiceNotifier;
     private boolean isLivenessTrackingEnabled = true;
     private boolean acceptBlsToExecutionMessages =
         P2PConfig.DEFAULT_BLS_TO_EXECUTION_CHANGES_SUBNET_ENABLED;
@@ -220,6 +222,11 @@ public class DataProvider {
       return this;
     }
 
+    public Builder forkChoiceNotifier(final ForkChoiceNotifier forkChoiceNotifier) {
+      this.forkChoiceNotifier = forkChoiceNotifier;
+      return this;
+    }
+
     public Builder spec(final Spec spec) {
       this.spec = spec;
       return this;
@@ -242,6 +249,7 @@ public class DataProvider {
               isLivenessTrackingEnabled,
               activeValidatorChannel,
               proposersDataManager,
+              forkChoiceNotifier,
               acceptBlsToExecutionMessages);
       final ChainDataProvider chainDataProvider =
           new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculator);

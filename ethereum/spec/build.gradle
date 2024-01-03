@@ -13,6 +13,7 @@ dependencies {
     implementation 'org.apache.tuweni:tuweni-ssz'
     implementation 'org.apache.tuweni:tuweni-ssz'
     implementation 'org.apache.tuweni:tuweni-units'
+    implementation project(':ethereum:performance-trackers')
     implementation project(':ethereum:execution-types')
     implementation project(':ethereum:pow:api')
     implementation project(':ethereum:signingrecord')
@@ -44,6 +45,7 @@ dependencies {
     testFixturesImplementation 'org.hyperledger.besu:evm'
     testFixturesImplementation 'org.hyperledger.besu:plugin-api'
     testFixturesImplementation 'org.junit.jupiter:junit-jupiter-api'
+    testFixturesImplementation project(':ethereum:performance-trackers')
     testFixturesImplementation project(':ethereum:execution-types')
     testFixturesImplementation project(':infrastructure:async')
     testFixturesImplementation project(':infrastructure:bls')
@@ -70,4 +72,5 @@ dependencies {
     testImplementation testFixtures(project(':infrastructure:json'))
     testImplementation testFixtures(project(':infrastructure:kzg'))
     testImplementation testFixtures(project(':infrastructure:ssz'))
+    testImplementation testFixtures(project(':infrastructure:metrics'))
 }

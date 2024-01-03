@@ -75,7 +75,7 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
   }
 
   @Override
-  public boolean requiresRecalculation(final Bytes32 newHeadDependentRoot) {
+  public boolean requiresRecalculation(final Bytes32 newDependentRoot) {
     return false;
   }
 

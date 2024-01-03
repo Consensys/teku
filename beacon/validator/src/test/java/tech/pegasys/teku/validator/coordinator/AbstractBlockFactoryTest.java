@@ -33,6 +33,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -204,7 +205,12 @@ public abstract class AbstractBlockFactoryTest {
     final BlockContainer blockContainer =
         safeJoin(
             blockFactory.createUnsignedBlock(
-                blockSlotState, newSlot, randaoReveal, Optional.empty(), blinded));
+                blockSlotState,
+                newSlot,
+                randaoReveal,
+                Optional.empty(),
+                Optional.of(blinded),
+                BlockProductionPerformance.NOOP));
 
     final BeaconBlock block = blockContainer.getBlock();
 
@@ -408,7 +414,7 @@ public abstract class AbstractBlockFactoryTest {
 
   private void setupExecutionLayerBlockAndBlobsProduction() {
     // pre Deneb
-    when(executionLayer.initiateBlockProduction(any(), any(), eq(false)))
+    when(executionLayer.initiateBlockProduction(any(), any(), eq(false), any()))
         .thenAnswer(
             args -> {
               final ExecutionPayloadResult executionPayloadResult =
@@ -421,7 +427,7 @@ public abstract class AbstractBlockFactoryTest {
               cachedExecutionPayloadResult = executionPayloadResult;
               return executionPayloadResult;
             });
-    when(executionLayer.initiateBlockProduction(any(), any(), eq(true)))
+    when(executionLayer.initiateBlockProduction(any(), any(), eq(true), any()))
         .thenAnswer(
             args -> {
               final ExecutionPayloadResult executionPayloadResult =
@@ -437,7 +443,7 @@ public abstract class AbstractBlockFactoryTest {
               return executionPayloadResult;
             });
     // post Deneb
-    when(executionLayer.initiateBlockAndBlobsProduction(any(), any(), eq(false)))
+    when(executionLayer.initiateBlockAndBlobsProduction(any(), any(), eq(false), any()))
         .thenAnswer(
             args -> {
               final ExecutionPayloadResult executionPayloadResult =
@@ -450,7 +456,7 @@ public abstract class AbstractBlockFactoryTest {
               cachedExecutionPayloadResult = executionPayloadResult;
               return executionPayloadResult;
             });
-    when(executionLayer.initiateBlockAndBlobsProduction(any(), any(), eq(true)))
+    when(executionLayer.initiateBlockAndBlobsProduction(any(), any(), eq(true), any()))
         .thenAnswer(
             args -> {
               final ExecutionPayloadResult executionPayloadResult =

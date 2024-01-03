@@ -17,8 +17,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Throwables;
 import io.javalin.Javalin;
+import io.javalin.util.JavalinBindException;
 import java.io.IOException;
-import java.net.BindException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -55,12 +55,9 @@ public class RestApi extends Service {
       app.start();
       LOG.info("Listening on {}", app.jettyServer().server().getURI());
     } catch (final RuntimeException e) {
-      if (Throwables.getRootCause(e) instanceof BindException) {
-        throw new InvalidConfigurationException(
-            String.format(
-                "TCP Port %d is already in use. "
-                    + "You may need to stop another process or change the HTTP port for this process.",
-                app.port()));
+      if (e instanceof JavalinBindException) {
+        // The message in JavalinBindException has the port number in conflict
+        throw new InvalidConfigurationException(e.getMessage());
       } else if (e instanceof IllegalStateException
           || Throwables.getRootCause(e) instanceof IllegalStateException) {
         // IllegalStateException is a sign that something needed has failed to be initialised.

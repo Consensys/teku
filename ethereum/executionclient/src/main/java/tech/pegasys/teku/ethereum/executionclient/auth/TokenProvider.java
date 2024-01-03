@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.ethereum.executionclient.auth;
 
+import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.Jwts.SIG;
 import io.jsonwebtoken.jackson.io.JacksonSerializer;
@@ -33,12 +34,14 @@ public class TokenProvider {
     final long expiresInMillis = TimeUnit.SECONDS.toMillis(JwtConfig.EXPIRES_IN_SECONDS);
     final UInt64 expiry = instantInMillis.plus(expiresInMillis);
 
-    final String jwtToken =
-        Jwts.builder()
-            .issuedAt(Date.from(Instant.ofEpochMilli(instantInMillis.longValue())))
-            .signWith(jwtConfig.getKey(), SIG.HS256)
-            .json(new JacksonSerializer<>())
-            .compact();
+    final JwtBuilder jwtBuilder =
+        Jwts.builder().signWith(jwtConfig.getKey(), SIG.HS256).json(new JacksonSerializer<>());
+
+    // https://github.com/ethereum/execution-apis/blob/main/src/engine/authentication.md#jwt-claims
+    jwtBuilder.issuedAt(Date.from(Instant.ofEpochMilli(instantInMillis.longValue())));
+    jwtConfig.getClaimId().ifPresent(claimId -> jwtBuilder.claim("id", claimId));
+
+    final String jwtToken = jwtBuilder.compact();
     return Optional.of(new Token(jwtToken, expiry));
   }
 }

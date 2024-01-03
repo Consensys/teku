@@ -75,6 +75,7 @@ import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.protoarray.ProtoArray;
+import tech.pegasys.teku.storage.protoarray.ProtoNode;
 
 class Store extends CacheableStore {
   private static final Logger LOG = LogManager.getLogger();
@@ -337,7 +338,8 @@ class Store extends CacheableStore {
           block.getParentRoot(),
           block.getStateRoot(),
           block.getCheckpointEpochs().get(),
-          block.getExecutionBlockHash().orElse(Bytes32.ZERO),
+          block.getExecutionBlockNumber().orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
+          block.getExecutionBlockHash().orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
           spec.isBlockProcessorOptimistic(block.getBlockSlot()));
     }
     return protoArray;
@@ -417,7 +419,7 @@ class Store extends CacheableStore {
   }
 
   @Override
-  public UInt64 getTimeMillis() {
+  public UInt64 getTimeInMillis() {
     readLock.lock();
     try {
       return timeMillis;

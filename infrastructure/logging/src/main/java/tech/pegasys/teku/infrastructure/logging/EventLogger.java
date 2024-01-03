@@ -279,6 +279,15 @@ public class EventLogger {
     warn(slowTickLog, Color.YELLOW);
   }
 
+  public void slowBlockProductionEvent(
+      final UInt64 slot, final UInt64 totalProcessingDuration, final String timings) {
+    final String slowBlockProductionLog =
+        String.format(
+            "Slow Block Production *** Slot: %s %s total: %sms",
+            slot, timings, totalProcessingDuration);
+    warn(slowBlockProductionLog, Color.YELLOW);
+  }
+
   public void executionLayerStubEnabled() {
     error(
         "Execution Layer Stub has been enabled! This is UNSAFE! You WILL fail to produce blocks and may follow an invalid chain.",

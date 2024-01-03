@@ -28,6 +28,7 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,6 +39,7 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -108,6 +110,20 @@ public class TekuValidatorNode extends Node {
   }
 
   public void start() throws Exception {
+    setUpStart();
+    container.start();
+  }
+
+  public void startWithFailure(final String expectedError) throws Exception {
+    setUpStart();
+    container.waitingFor(
+        new LogMessageWaitStrategy()
+            .withRegEx(".*" + expectedError + ".*")
+            .withStartupTimeout(Duration.ofSeconds(10)));
+    container.start();
+  }
+
+  private void setUpStart() throws Exception {
     assertThat(started).isFalse();
     LOG.debug("Start validator node {}", nodeAlias);
     started = true;
@@ -118,7 +134,6 @@ public class TekuValidatorNode extends Node {
         (localFile, targetPath) ->
             container.withCopyFileToContainer(
                 MountableFile.forHostPath(localFile.getAbsolutePath()), targetPath));
-    container.start();
   }
 
   @Override
@@ -236,6 +251,12 @@ public class TekuValidatorNode extends Node {
 
     public TekuValidatorNode.Config withExternalSignerUrl(final String externalSignerUrl) {
       configMap.put("validators-external-signer-url", externalSignerUrl);
+      return this;
+    }
+
+    public TekuValidatorNode.Config withExitWhenNoValidatorKeysEnabled(
+        boolean exitWhenNoValidatorKeysEnabled) {
+      configMap.put("exit-when-no-validator-keys-enabled", exitWhenNoValidatorKeysEnabled);
       return this;
     }
 

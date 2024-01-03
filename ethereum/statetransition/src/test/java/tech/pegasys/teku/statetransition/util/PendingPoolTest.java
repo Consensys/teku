@@ -60,6 +60,25 @@ public class PendingPoolTest {
   }
 
   @Test
+  public void add_shouldDeferSubscribersCallToAvoidConcurrentModificationException() {
+    final SignedBeaconBlock block =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+
+    final SignedBeaconBlock block2 =
+        dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+
+    pendingPool.subscribeRequiredBlockRoot(
+        blockRoot -> {
+          if (blockRoot.equals(block.getParentRoot())) {
+            pendingPool.add(block2);
+          }
+        });
+    pendingPool.add(block);
+
+    assertThat(pendingPool.contains(block2)).isTrue();
+  }
+
+  @Test
   public void add_blockForCurrentSlot() {
     final SignedBeaconBlock block =
         dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());

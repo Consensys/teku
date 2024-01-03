@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -340,6 +341,33 @@ class ValidatorRegistratorTest {
   }
 
   @TestTemplate
+  void registers_whenStatusBecomeKnown() {
+    // Epoch 0: No validators, no statuses
+    setOwnedValidators();
+    this.validatorStatuses = Map.of();
+
+    runRegistrationFlowWithSubscription(0);
+    assertThat(validatorRegistrator.getNumberOfCachedRegistrations()).isEqualTo(0);
+    verify(validatorApiChannel, never()).registerValidators(any());
+
+    // Epoch 1: 1 validator, no statuses
+    setOwnedValidators(validator2);
+    this.validatorStatuses = Map.of();
+
+    runRegistrationFlowWithSubscription(1);
+    assertThat(validatorRegistrator.getNumberOfCachedRegistrations()).isEqualTo(0);
+    verify(validatorApiChannel, never()).registerValidators(any());
+
+    // Epoch 2: 1 validator, becomes active
+    this.validatorStatuses = Map.of(validator2.getPublicKey(), ValidatorStatus.active_ongoing);
+
+    runRegistrationFlowWithSubscription(2);
+    assertThat(validatorRegistrator.getNumberOfCachedRegistrations()).isEqualTo(1);
+    final List<List<SignedValidatorRegistration>> registrationCalls2 = captureRegistrationCalls(1);
+    verifyRegistrations(registrationCalls2.get(0), List.of(validator2));
+  }
+
+  @TestTemplate
   void noRegistrationsAreSentIfEmpty() {
     setOwnedValidators();
 
@@ -442,7 +470,7 @@ class ValidatorRegistratorTest {
 
   private void setOwnedValidators(final Validator... validators) {
     final List<Validator> validatorsAsList = Arrays.stream(validators).collect(Collectors.toList());
-    when(ownedValidators.getActiveValidators()).thenReturn(validatorsAsList);
+    when(ownedValidators.getValidators()).thenReturn(validatorsAsList);
   }
 
   private void runRegistrationFlowForSlotWithSubscription(final UInt64 slot) {

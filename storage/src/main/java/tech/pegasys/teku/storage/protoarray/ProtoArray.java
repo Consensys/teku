@@ -131,6 +131,7 @@ public class ProtoArray {
       Bytes32 parentRoot,
       Bytes32 stateRoot,
       BlockCheckpoints checkpoints,
+      UInt64 executionBlockNumber,
       Bytes32 executionBlockHash,
       boolean optimisticallyProcessed) {
     if (indices.contains(blockRoot)) {
@@ -147,6 +148,7 @@ public class ProtoArray {
             parentRoot,
             indices.get(parentRoot),
             checkpoints,
+            executionBlockNumber,
             executionBlockHash,
             UInt64.ZERO,
             Optional.empty(),

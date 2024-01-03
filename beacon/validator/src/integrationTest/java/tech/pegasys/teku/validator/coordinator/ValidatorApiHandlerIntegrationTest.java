@@ -29,9 +29,11 @@ import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.beacon.sync.events.SyncStateTracker;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanceFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
@@ -117,7 +119,8 @@ public class ValidatorApiHandlerIntegrationTest {
           proposersDataManager,
           syncCommitteeMessagePool,
           syncCommitteeContributionPool,
-          syncCommitteeSubscriptionManager);
+          syncCommitteeSubscriptionManager,
+          new BlockProductionPerformanceFactory(new SystemTimeProvider(), true, 0));
 
   @BeforeEach
   public void setup() {

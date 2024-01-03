@@ -52,6 +52,7 @@ import tech.pegasys.teku.beaconrestapi.JsonTypeDefinitionBeaconRestApi;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanceFactory;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
@@ -402,11 +403,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     storeConfig,
                     beaconAsyncRunner,
                     timeProvider,
+                    (blockRoot) -> blobSidecarPool.getBlock(blockRoot),
+                    (blockRoot, index) -> blobSidecarPool.getBlobSidecar(blockRoot, index),
                     storageQueryChannel,
                     storageUpdateChannel,
                     voteUpdateChannel,
                     eventChannels.getPublisher(FinalizedCheckpointChannel.class, beaconAsyncRunner),
                     coalescingChainHeadChannel,
+                    new ValidatorIsConnectedProviderImpl(forkChoiceNotifier),
                     spec))
         .thenCompose(
             client -> {
@@ -418,7 +422,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
               this.recentChainData = client;
               if (recentChainData.isPreGenesis()) {
                 setupInitialState(client);
-                return SafeFuture.completedFuture(client);
               } else {
                 if (isUsingCustomInitialState()) {
                   STATUS_LOG.warnInitialStateIgnored();
@@ -426,8 +429,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 if (!isAllowSyncOutsideWeakSubjectivityPeriod()) {
                   validateWeakSubjectivityPeriod(client);
                 }
-                return SafeFuture.completedFuture(client);
               }
+              return SafeFuture.completedFuture(client);
             })
         // Init other services
         .thenRun(this::initAll)
@@ -712,6 +715,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .blsToExecutionChangePool(blsToExecutionChangePool)
             .syncCommitteeContributionPool(syncCommitteeContributionPool)
             .proposersDataManager(proposersDataManager)
+            .forkChoiceNotifier(forkChoiceNotifier)
             .rejectedExecutionSupplier(rejectedExecutionCountSupplier)
             .build();
   }
@@ -756,7 +760,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             new TickProcessor(spec, recentChainData),
             new MergeTransitionBlockValidator(spec, recentChainData, executionLayer),
             beaconConfig.eth2NetworkConfig().isForkChoiceUpdateHeadOnBlockImportEnabled(),
-            beaconConfig.eth2NetworkConfig().isForkChoiceProposerBoostUniquenessEnabled(),
+            beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled(),
             metricsSystem);
     forkChoiceTrigger = new ForkChoiceTrigger(forkChoice);
   }
@@ -881,6 +885,12 @@ public class BeaconChainController extends Service implements BeaconChainControl
     } else {
       blobSidecarGossipChannel = BlobSidecarGossipChannel.NOOP;
     }
+    final BlockProductionPerformanceFactory blockProductionPerformanceFactory =
+        new BlockProductionPerformanceFactory(
+            timeProvider,
+            beaconConfig.getMetricsConfig().isBlockProductionPerformanceEnabled(),
+            beaconConfig.getMetricsConfig().getBlockProductionPerformanceWarningThreshold());
+
     final ValidatorApiHandler validatorApiHandler =
         new ValidatorApiHandler(
             new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculator),
@@ -903,7 +913,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             proposersDataManager,
             syncCommitteeMessagePool,
             syncCommitteeContributionPool,
-            syncCommitteeSubscriptionManager);
+            syncCommitteeSubscriptionManager,
+            blockProductionPerformanceFactory);
     eventChannels
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
         .subscribeMultithreaded(

@@ -77,6 +77,7 @@ public class StoreBuilder {
             anchor.getRoot(),
             anchor.getParentRoot(),
             anchor.getState().hashTreeRoot(),
+            anchor.getExecutionBlockNumber(),
             anchor.getExecutionBlockHash(),
             Optional.of(spec.calculateBlockCheckpoints(anchor.getState()))));
 

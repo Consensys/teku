@@ -10,13 +10,10 @@ the [releases page](https://github.com/Consensys/teku/releases).
 ## Unreleased Changes
 
 ### Breaking Changes
-- By default, Teku won't allow syncing from genesis, users should use `--checkpoint-sync-url` when starting a new node. It is possible to revert back to the previous behaviour using the flag `--ignore-weak-subjectivity-period-enabled`.
-- Teku will fail to start if the Validator API cannot read the password file used for authorization. Previously, if the Validator API was enabled but Teku couldn't read the password file, it would start but no request to the Validator API would be served. 
 
 ### Additions and Improvements
-- Support to new Beacon APIs `publishBlindedBlockV2` and `publishBlockV2` which introduce broadcast validation parameter. 
-- Added configuration attributes in support of honest validator late block reorg, which adds `REORG_HEAD_WEIGHT_THRESHOLD`, `REORG_PARENT_WEIGHT_THRESHOLD`, and  `REORG_MAX_EPOCHS_SINCE_FINALIZATION` to phase 0 configurations. Mainnet values have been added as defaults for configurations that have not explicitly listed them.
-- Added POST `/eth/v1/beacon/states/{state_id}/validators` beacon API.
-- Added POST `/eth/v1/beacon/states/{state_id}/validator_balances` beacon API.
+- Add `proposer_slashing`, `attester_slasing` and `payload_attibutes` (only when a loaded validator will be producing a block) events to the `/eth/v1/events` SSE stream
 
 ### Bug Fixes
+- Fix incompatibility between Teku validator client and Lighthouse beacon nodes
+- Fix a block publishing endpoints issue where `202` status code could be returned but block hasn't been broadcast

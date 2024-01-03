@@ -33,6 +33,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ValidatorConfig {
@@ -45,8 +46,12 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED = true;
   public static final boolean DEFAULT_FAILOVERS_PUBLISH_SIGNED_DUTIES_ENABLED = true;
   public static final boolean DEFAULT_BLOCK_V3_ENABLED = false;
+  public static final boolean DEFAULT_EXIT_WHEN_NO_VALIDATOR_KEYS_ENABLED = false;
   public static final boolean DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED = true;
+  public static final boolean DEFAULT_VALIDATOR_CLIENT_USE_POST_VALIDATORS_ENDPOINT_ENABLED = true;
   public static final boolean DEFAULT_DOPPELGANGER_DETECTION_ENABLED = false;
+  public static final boolean DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED =
+      true;
   public static final int DEFAULT_EXECUTOR_MAX_QUEUE_SIZE = 20_000;
   public static final Duration DEFAULT_VALIDATOR_EXTERNAL_SIGNER_TIMEOUT = Duration.ofSeconds(5);
   public static final int DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT = 32;
@@ -64,6 +69,7 @@ public class ValidatorConfig {
   private final List<String> validatorExternalSignerPublicKeySources;
   private final boolean validatorExternalSignerSlashingProtectionEnabled;
   private final URL validatorExternalSignerUrl;
+  private final Optional<String> validatorExternalSignerUserInfo;
   private final Duration validatorExternalSignerTimeout;
   private final Path validatorExternalSignerKeystore;
   private final Path validatorExternalSignerKeystorePasswordFile;
@@ -81,10 +87,12 @@ public class ValidatorConfig {
   private final boolean blindedBeaconBlocksEnabled;
   private final boolean builderRegistrationDefaultEnabled;
   private final boolean validatorClientUseSszBlocksEnabled;
+  private final boolean validatorClientUsePostValidatorsEndpointEnabled;
   private final boolean doppelgangerDetectionEnabled;
   private final boolean failoversSendSubnetSubscriptionsEnabled;
   private final boolean failoversPublishSignedDutiesEnabled;
   private final boolean blockV3Enabled;
+  private final boolean exitWhenNoValidatorKeysEnabled;
   private final UInt64 builderRegistrationDefaultGasLimit;
   private final int builderRegistrationSendingBatchSize;
   private final Optional<UInt64> builderRegistrationTimestampOverride;
@@ -94,10 +102,13 @@ public class ValidatorConfig {
 
   private final int executorThreads;
 
+  private final boolean isLocalSlashingProtectionSynchronizedModeEnabled;
+
   private ValidatorConfig(
       final List<String> validatorKeys,
       final List<String> validatorExternalSignerPublicKeySources,
       final URL validatorExternalSignerUrl,
+      final Optional<String> validatorExternalSignerUserInfo,
       final Duration validatorExternalSignerTimeout,
       final Path validatorExternalSignerKeystore,
       final Path validatorExternalSignerKeystorePasswordFile,
@@ -116,20 +127,24 @@ public class ValidatorConfig {
       final boolean builderRegistrationDefaultEnabled,
       final boolean blindedBeaconBlocksEnabled,
       final boolean validatorClientUseSszBlocksEnabled,
+      final boolean validatorClientUsePostValidatorsEndpointEnabled,
       final boolean doppelgangerDetectionEnabled,
       final boolean failoversSendSubnetSubscriptionsEnabled,
       final boolean failoversPublishSignedDutiesEnabled,
       final boolean blockV3Enabled,
+      final boolean exitWhenNoValidatorKeysEnabled,
       final UInt64 builderRegistrationDefaultGasLimit,
       final int builderRegistrationSendingBatchSize,
       final Optional<UInt64> builderRegistrationTimestampOverride,
       final Optional<BLSPublicKey> builderRegistrationPublicKeyOverride,
       final int executorMaxQueueSize,
       final int executorThreads,
-      final Optional<String> sentryNodeConfigurationFile) {
+      final Optional<String> sentryNodeConfigurationFile,
+      boolean isLocalSlashingProtectionSynchronizedModeEnabled) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
+    this.validatorExternalSignerUserInfo = validatorExternalSignerUserInfo;
     this.validatorExternalSignerTimeout = validatorExternalSignerTimeout;
     this.validatorExternalSignerKeystore = validatorExternalSignerKeystore;
     this.validatorExternalSignerKeystorePasswordFile = validatorExternalSignerKeystorePasswordFile;
@@ -151,10 +166,13 @@ public class ValidatorConfig {
     this.blindedBeaconBlocksEnabled = blindedBeaconBlocksEnabled;
     this.builderRegistrationDefaultEnabled = builderRegistrationDefaultEnabled;
     this.validatorClientUseSszBlocksEnabled = validatorClientUseSszBlocksEnabled;
+    this.validatorClientUsePostValidatorsEndpointEnabled =
+        validatorClientUsePostValidatorsEndpointEnabled;
     this.doppelgangerDetectionEnabled = doppelgangerDetectionEnabled;
     this.failoversSendSubnetSubscriptionsEnabled = failoversSendSubnetSubscriptionsEnabled;
     this.failoversPublishSignedDutiesEnabled = failoversPublishSignedDutiesEnabled;
     this.blockV3Enabled = blockV3Enabled;
+    this.exitWhenNoValidatorKeysEnabled = exitWhenNoValidatorKeysEnabled;
     this.builderRegistrationDefaultGasLimit = builderRegistrationDefaultGasLimit;
     this.builderRegistrationSendingBatchSize = builderRegistrationSendingBatchSize;
     this.builderRegistrationTimestampOverride = builderRegistrationTimestampOverride;
@@ -162,6 +180,8 @@ public class ValidatorConfig {
     this.executorMaxQueueSize = executorMaxQueueSize;
     this.executorThreads = executorThreads;
     this.sentryNodeConfigurationFile = sentryNodeConfigurationFile;
+    this.isLocalSlashingProtectionSynchronizedModeEnabled =
+        isLocalSlashingProtectionSynchronizedModeEnabled;
   }
 
   public static Builder builder() {
@@ -186,6 +206,10 @@ public class ValidatorConfig {
 
   public URL getValidatorExternalSignerUrl() {
     return validatorExternalSignerUrl;
+  }
+
+  public Optional<String> getValidatorExternalSignerUserInfo() {
+    return validatorExternalSignerUserInfo;
   }
 
   public Duration getValidatorExternalSignerTimeout() {
@@ -263,6 +287,10 @@ public class ValidatorConfig {
     return validatorClientUseSszBlocksEnabled;
   }
 
+  public boolean isValidatorClientUsePostValidatorsEndpointEnabled() {
+    return validatorClientUsePostValidatorsEndpointEnabled;
+  }
+
   public boolean isDoppelgangerDetectionEnabled() {
     return doppelgangerDetectionEnabled;
   }
@@ -277,6 +305,10 @@ public class ValidatorConfig {
 
   public boolean isBlockV3Enabled() {
     return blockV3Enabled;
+  }
+
+  public boolean isExitWhenNoValidatorKeysEnabled() {
+    return exitWhenNoValidatorKeysEnabled;
   }
 
   public boolean isBuilderRegistrationDefaultEnabled() {
@@ -304,10 +336,15 @@ public class ValidatorConfig {
     }
   }
 
+  public boolean isLocalSlashingProtectionSynchronizedModeEnabled() {
+    return isLocalSlashingProtectionSynchronizedModeEnabled;
+  }
+
   public static final class Builder {
     private List<String> validatorKeys = new ArrayList<>();
     private List<String> validatorExternalSignerPublicKeySources = new ArrayList<>();
     private URL validatorExternalSignerUrl;
+    private Optional<String> validatorExternalSignerUserInfo = Optional.empty();
     private int validatorExternalSignerConcurrentRequestLimit =
         DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT;
     private Duration validatorExternalSignerTimeout = DEFAULT_VALIDATOR_EXTERNAL_SIGNER_TIMEOUT;
@@ -332,12 +369,15 @@ public class ValidatorConfig {
         DEFAULT_BUILDER_REGISTRATION_DEFAULT_ENABLED;
     private boolean blindedBlocksEnabled = DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
     private boolean validatorClientSszBlocksEnabled = DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED;
+    private boolean validatorClientUsePostValidatorsEndpointEnabled =
+        DEFAULT_VALIDATOR_CLIENT_USE_POST_VALIDATORS_ENDPOINT_ENABLED;
     private boolean doppelgangerDetectionEnabled = DEFAULT_DOPPELGANGER_DETECTION_ENABLED;
     private boolean failoversSendSubnetSubscriptionsEnabled =
         DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED;
     private boolean failoversPublishSignedDutiesEnabled =
         DEFAULT_FAILOVERS_PUBLISH_SIGNED_DUTIES_ENABLED;
     private boolean blockV3Enabled = DEFAULT_BLOCK_V3_ENABLED;
+    private boolean exitWhenNoValidatorKeysEnabled = DEFAULT_EXIT_WHEN_NO_VALIDATOR_KEYS_ENABLED;
     private UInt64 builderRegistrationDefaultGasLimit = DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT;
     private int builderRegistrationSendingBatchSize =
         DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
@@ -347,6 +387,9 @@ public class ValidatorConfig {
     private Optional<String> sentryNodeConfigurationFile = Optional.empty();
 
     private int executorThreads = DEFAULT_VALIDATOR_EXECUTOR_THREADS;
+
+    private boolean isLocalSlashingProtectionSynchronizedModeEnabled =
+        DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED;
 
     private Builder() {}
 
@@ -362,8 +405,12 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder validatorExternalSignerUrl(URL validatorExternalSignerUrl) {
-      this.validatorExternalSignerUrl = validatorExternalSignerUrl;
+    public Builder validatorExternalSignerUrl(final URL validatorExternalSignerUrl) {
+      if (validatorExternalSignerUrl != null) {
+        this.validatorExternalSignerUrl = UrlSanitizer.sanitizeUrl(validatorExternalSignerUrl);
+        this.validatorExternalSignerUserInfo =
+            Optional.ofNullable(validatorExternalSignerUrl.getUserInfo());
+      }
       return this;
     }
 
@@ -489,6 +536,13 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder validatorClientUsePostValidatorsEndpointEnabled(
+        final boolean validatorClientUsePostValidatorsEndpointEnabled) {
+      this.validatorClientUsePostValidatorsEndpointEnabled =
+          validatorClientUsePostValidatorsEndpointEnabled;
+      return this;
+    }
+
     public Builder doppelgangerDetectionEnabled(final boolean doppelgangerDetectionEnabled) {
       this.doppelgangerDetectionEnabled = doppelgangerDetectionEnabled;
       return this;
@@ -518,6 +572,11 @@ public class ValidatorConfig {
 
     public Builder blockV3enabled(final boolean useBlockV3) {
       this.blockV3Enabled = useBlockV3;
+      return this;
+    }
+
+    public Builder exitWhenNoValidatorKeysEnabled(final boolean exitWhenNoValidatorKeysEnabled) {
+      this.exitWhenNoValidatorKeysEnabled = exitWhenNoValidatorKeysEnabled;
       return this;
     }
 
@@ -558,6 +617,13 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder isLocalSlashingProtectionSynchronizedModeEnabled(
+        final boolean isLocalSlashingProtectionSynchronizedModeEnabled) {
+      this.isLocalSlashingProtectionSynchronizedModeEnabled =
+          isLocalSlashingProtectionSynchronizedModeEnabled;
+      return this;
+    }
+
     public ValidatorConfig build() {
       validateExternalSignerUrlAndPublicKeys();
       validateExternalSignerKeystoreAndPasswordFileConfig();
@@ -568,6 +634,7 @@ public class ValidatorConfig {
           validatorKeys,
           validatorExternalSignerPublicKeySources,
           validatorExternalSignerUrl,
+          validatorExternalSignerUserInfo,
           validatorExternalSignerTimeout,
           validatorExternalSignerKeystore,
           validatorExternalSignerKeystorePasswordFile,
@@ -586,17 +653,20 @@ public class ValidatorConfig {
           validatorsRegistrationDefaultEnabled,
           blindedBlocksEnabled,
           validatorClientSszBlocksEnabled,
+          validatorClientUsePostValidatorsEndpointEnabled,
           doppelgangerDetectionEnabled,
           failoversSendSubnetSubscriptionsEnabled,
           failoversPublishSignedDutiesEnabled,
           blockV3Enabled,
+          exitWhenNoValidatorKeysEnabled,
           builderRegistrationDefaultGasLimit,
           builderRegistrationSendingBatchSize,
           builderRegistrationTimestampOverride,
           builderRegistrationPublicKeyOverride,
           executorMaxQueueSize,
           executorThreads,
-          sentryNodeConfigurationFile);
+          sentryNodeConfigurationFile,
+          isLocalSlashingProtectionSynchronizedModeEnabled);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {
@@ -664,11 +734,13 @@ public class ValidatorConfig {
         return;
       }
 
-      if (validatorExternalSignerKeystore != null || validatorExternalSignerTruststore != null) {
+      if (validatorExternalSignerKeystore != null
+          || validatorExternalSignerTruststore != null
+          || validatorExternalSignerUserInfo.isPresent()) {
         if (!isURLSchemeHttps(validatorExternalSignerUrl)) {
           final String errorMessage =
               String.format(
-                  "Invalid configuration. --validators-external-signer-url (%s) must start with https because external signer keystore/truststore are defined",
+                  "Invalid configuration. --validators-external-signer-url (%s) must start with https because external signer keystore/truststore are defined or basic authentication is used",
                   validatorExternalSignerUrl);
           throw new InvalidConfigurationException(errorMessage);
         }
@@ -684,8 +756,7 @@ public class ValidatorConfig {
     }
 
     private static boolean isURLSchemeHttps(final URL url) {
-      final String protocol = url.getProtocol();
-      return protocol != null && protocol.equalsIgnoreCase("https");
+      return "https".equalsIgnoreCase(url.getProtocol());
     }
 
     private boolean onlyOneInitialized(final Object o1, final Object o2) {

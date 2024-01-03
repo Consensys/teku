@@ -31,6 +31,8 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
+import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
+import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -57,6 +59,8 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -100,7 +104,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private volatile Optional<ChainHead> chainHead = Optional.empty();
   private volatile UInt64 genesisTime;
 
+  private final SingleBlockProvider validatedBlockProvider;
+  private final SingleBlobSidecarProvider validatedBlobSidecarProvider;
+
   private final BlockTimelinessTracker blockTimelinessTracker;
+
+  private final ValidatorIsConnectedProvider validatorIsConnectedProvider;
 
   RecentChainData(
       final AsyncRunner asyncRunner,
@@ -108,29 +117,35 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final StoreConfig storeConfig,
       final TimeProvider timeProvider,
       final BlockProvider blockProvider,
+      final SingleBlockProvider validatedBlockProvider,
+      final SingleBlobSidecarProvider validatedBlobSidecarProvider,
       final StateAndBlockSummaryProvider stateProvider,
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
+      final ValidatorIsConnectedProvider validatorIsConnectedProvider,
       final Spec spec) {
     this.asyncRunner = asyncRunner;
     this.metricsSystem = metricsSystem;
     this.storeConfig = storeConfig;
     this.blockProvider = blockProvider;
     this.stateProvider = stateProvider;
+    this.validatedBlockProvider = validatedBlockProvider;
+    this.validatedBlobSidecarProvider = validatedBlobSidecarProvider;
     this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
     this.voteUpdateChannel = voteUpdateChannel;
     this.chainHeadChannel = chainHeadChannel;
     this.storageUpdateChannel = storageUpdateChannel;
     this.finalizedCheckpointChannel = finalizedCheckpointChannel;
-    this.blockTimelinessTracker = new BlockTimelinessTracker(spec, this, timeProvider);
+    this.blockTimelinessTracker = new BlockTimelinessTracker(spec, this);
     reorgCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.BEACON,
             "reorgs_total",
             "Total occurrences of reorganizations of the chain");
+    this.validatorIsConnectedProvider = validatorIsConnectedProvider;
     this.spec = spec;
   }
 
@@ -511,6 +526,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .flatMap(s -> store.getBlobSidecarsIfAvailable(slotAndBlockRoot));
   }
 
+  public Optional<BlobSidecar> getRecentlyValidatedBlobSidecar(
+      final Bytes32 blockRoot, final UInt64 index) {
+    return validatedBlobSidecarProvider.getBlobSidecar(blockRoot, index);
+  }
+
   public SafeFuture<Optional<BeaconBlock>> retrieveBlockByRoot(final Bytes32 root) {
     if (store == null) {
       return EmptyStoreResults.EMPTY_BLOCK_FUTURE;
@@ -523,6 +543,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       return EmptyStoreResults.EMPTY_SIGNED_BLOCK_FUTURE;
     }
     return store.retrieveSignedBlock(root);
+  }
+
+  public Optional<SignedBeaconBlock> getRecentlyValidatedSignedBlockByRoot(final Bytes32 root) {
+    return validatedBlockProvider.getBlock(root);
   }
 
   public SafeFuture<Optional<BeaconState>> retrieveBlockState(final Bytes32 blockRoot) {
@@ -620,6 +644,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .orElse(Collections.emptyList());
   }
 
+  // implements get_proposer_head from Consensus Spec
   public Bytes32 getProposerHead(final Bytes32 headRoot, final UInt64 slot) {
     // if proposer boost is still active, don't attempt to override head
     final boolean isProposerBoostActive =
@@ -631,7 +656,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     final boolean isHeadLate = isBlockLate(headRoot);
     final Optional<SignedBeaconBlock> maybeHead = store.getBlockIfAvailable(headRoot);
 
-    // to return parent root, we need all of (isHeadLate, isShufflingStable, isFfgCompetetive,
+    // to return parent root, we need all of (isHeadLate, isShufflingStable, isFfgCompetitive,
     // isFinalizationOk, isProposingOnTime, isSingleSlotReorg, isHeadWeak, isParentStrong)
 
     // cheap checks of that list:
@@ -688,6 +713,93 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return headRoot;
   }
 
+  // implements should_override_forkchoice_update from Consensus-spec
+  //     return all([head_late, shuffling_stable, ffg_competitive, finalization_ok,
+  //                proposing_reorg_slot, single_slot_reorg,
+  //                head_weak, parent_strong])
+  public boolean shouldOverrideForkChoiceUpdate(final Bytes32 headRoot) {
+    final Optional<SignedBeaconBlock> maybeHead = store.getBlockIfAvailable(headRoot);
+    final Optional<UInt64> maybeCurrentSlot = getCurrentSlot();
+    final boolean isHeadLate = isBlockLate(headRoot);
+    if (maybeHead.isEmpty() || maybeCurrentSlot.isEmpty() || !isHeadLate) {
+      // ! isHeadLate, or we don't have data we need (currentSlot and the block in question)
+      return false;
+    }
+    final SignedBeaconBlock head = maybeHead.get();
+    final UInt64 currentSlot = maybeCurrentSlot.get();
+    final UInt64 proposalSlot = maybeHead.get().getSlot().increment();
+    final boolean isShufflingStable =
+        spec.atSlot(proposalSlot).getForkChoiceUtil().isShufflingStable(proposalSlot);
+
+    final boolean isFfgCompetitive =
+        store.isFfgCompetitive(headRoot, head.getParentRoot()).orElse(false);
+    final boolean isFinalizationOk =
+        spec.atSlot(proposalSlot).getForkChoiceUtil().isFinalizationOk(store, proposalSlot);
+    final Optional<UInt64> maybeParentSlot = getSlotForBlockRoot(head.getParentRoot());
+
+    if (!isShufflingStable || !isFfgCompetitive || !isFinalizationOk || maybeParentSlot.isEmpty()) {
+      // !shufflingStable or !ffgCompetetive or !finalizationOk, or parentSlot is not found
+      return false;
+    }
+
+    final boolean isParentSlotOk =
+        maybeParentSlot.map(uInt64 -> uInt64.increment().equals(head.getSlot())).orElse(false);
+    final boolean isProposingOnTime = isProposingOnTime(proposalSlot);
+    final boolean isCurrentTimeOk =
+        head.getSlot().equals(currentSlot)
+            || (currentSlot.equals(proposalSlot) && isProposingOnTime);
+    final boolean isHeadWeak;
+    final boolean isParentStrong;
+    if (currentSlot.isGreaterThan(head.getSlot())) {
+      try {
+        final SafeFuture<Optional<BeaconState>> future =
+            store.retrieveCheckpointState(store.getJustifiedCheckpoint());
+        final Optional<BeaconState> maybeJustifiedState = future.join();
+        isHeadWeak =
+            maybeJustifiedState.map(state -> store.isHeadWeak(state, headRoot)).orElse(true);
+        isParentStrong =
+            maybeJustifiedState
+                .map(beaconState -> store.isParentStrong(beaconState, head.getParentRoot()))
+                .orElse(true);
+      } catch (Exception exception) {
+        if (!(exception instanceof CancellationException)) {
+          LOG.error("Failed to get justified checkpoint", exception);
+        }
+        return false;
+      }
+    } else {
+      isHeadWeak = true;
+      isParentStrong = true;
+    }
+    final boolean isSingleSlotReorg = isParentSlotOk && isCurrentTimeOk;
+    if (!isSingleSlotReorg || !isHeadWeak || !isParentStrong) {
+      return false;
+    }
+
+    // Only suppress the fork choice update if we are confident that we will propose the next block.
+    final Optional<BeaconState> maybeParentState =
+        store.getBlockStateIfAvailable(head.getParentRoot());
+    if (maybeParentState.isEmpty()) {
+      return false;
+    }
+    try {
+      final BeaconState proposerPreState = spec.processSlots(maybeParentState.get(), proposalSlot);
+      final int proposerIndex = spec.getBeaconProposerIndex(proposerPreState, proposalSlot);
+      if (!validatorIsConnectedProvider.isValidatorConnected(proposerIndex, proposalSlot)) {
+        return false;
+      }
+    } catch (SlotProcessingException | EpochProcessingException e) {
+      LOG.trace("Failed to process", e);
+      return false;
+    }
+
+    return true;
+  }
+
+  public boolean validatorIsConnected(final int validatorIndex, final UInt64 slot) {
+    return validatorIsConnectedProvider.isValidatorConnected(validatorIndex, slot);
+  }
+
   public void setBlockTimelinessFromArrivalTime(
       final SignedBeaconBlock block, final UInt64 arrivalTime) {
     blockTimelinessTracker.setBlockTimelinessFromArrivalTime(block, arrivalTime);
@@ -700,5 +812,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   public boolean isProposingOnTime(final UInt64 slot) {
     return blockTimelinessTracker.isProposingOnTime(slot);
+  }
+
+  public void setBlockTimelinessIfEmpty(SignedBeaconBlock block) {
+    blockTimelinessTracker.setBlockTimelinessFromArrivalTime(block, store.getTimeInMillis());
   }
 }

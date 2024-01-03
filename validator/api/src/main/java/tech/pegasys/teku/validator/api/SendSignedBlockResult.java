@@ -57,20 +57,10 @@ public class SendSignedBlockResult {
     return published;
   }
 
-  public boolean isSuccessful() {
-    return rejectionReason.isEmpty();
-  }
-
   public boolean isRejectedDueToBroadcastValidationFailure() {
     return !published
         && rejectionReason.isPresent()
         && rejectionReason.get().startsWith(FailureReason.FAILED_BROADCAST_VALIDATION.name());
-  }
-
-  public boolean isNotImportedDueToInternalError() {
-    return published
-        && rejectionReason.isPresent()
-        && rejectionReason.get().startsWith(FailureReason.INTERNAL_ERROR.name());
   }
 
   @Override

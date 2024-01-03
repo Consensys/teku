@@ -34,7 +34,7 @@ public class ForkChoiceUpdateData {
   private static final Logger LOG = LogManager.getLogger();
   private static final ForkChoiceState DEFAULT_FORK_CHOICE_STATE =
       new ForkChoiceState(
-          Bytes32.ZERO, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO, false);
+          Bytes32.ZERO, UInt64.ZERO, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO, false);
 
   private final ForkChoiceState forkChoiceState;
   private final Optional<PayloadBuildingAttributes> payloadBuildingAttributes;
@@ -61,6 +61,8 @@ public class ForkChoiceUpdateData {
           new ForkChoiceState(
               forkChoiceState.getHeadBlockRoot(),
               forkChoiceState.getHeadBlockSlot(),
+              // We don't have data for terminal block number
+              UInt64.ZERO,
               terminalBlockHash.get(),
               Bytes32.ZERO,
               Bytes32.ZERO,
@@ -209,7 +211,7 @@ public class ForkChoiceUpdateData {
           buildingAttributes ->
               LOG.info(
                   "Calling local execution layer to start block production (block slot: {})",
-                  buildingAttributes.getBlockSlot()));
+                  buildingAttributes.getProposalSlot()));
     }
   }
 

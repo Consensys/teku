@@ -20,6 +20,8 @@ import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
+import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
+import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
@@ -46,6 +48,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
       final VoteUpdateChannel voteUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
+      final ValidatorIsConnectedProvider validatorIsConnectedProvider,
       final Spec spec) {
     super(
         asyncRunner,
@@ -53,12 +56,15 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
         storeConfig,
         timeProvider,
         BlockProvider.NOOP,
+        SingleBlockProvider.NOOP,
+        SingleBlobSidecarProvider.NOOP,
         StateAndBlockSummaryProvider.NOOP,
         EarliestBlobSidecarSlotProvider.NOOP,
         storageUpdateChannel,
         voteUpdateChannel,
         finalizedCheckpointChannel,
         chainHeadChannel,
+        validatorIsConnectedProvider,
         spec);
   }
 
@@ -86,6 +92,9 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
         new StubFinalizedCheckpointChannel();
     private ChainHeadChannel chainHeadChannel = new StubChainHeadChannel();
 
+    private ValidatorIsConnectedProvider validatorIsConnectedProvider =
+        ValidatorIsConnectedProvider.NOOP;
+
     public RecentChainData build() {
       return new MemoryOnlyRecentChainData(
           SYNC_RUNNER,
@@ -96,6 +105,7 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
           votes -> {},
           finalizedCheckpointChannel,
           chainHeadChannel,
+          validatorIsConnectedProvider,
           spec);
     }
 
@@ -114,6 +124,12 @@ public class MemoryOnlyRecentChainData extends RecentChainData {
     public Builder storageUpdateChannel(final StorageUpdateChannel storageUpdateChannel) {
       checkNotNull(storageUpdateChannel);
       this.storageUpdateChannel = storageUpdateChannel;
+      return this;
+    }
+
+    public Builder validatorIsConnectedProvider(
+        final ValidatorIsConnectedProvider validatorIsConnectedProvider) {
+      this.validatorIsConnectedProvider = validatorIsConnectedProvider;
       return this;
     }
 

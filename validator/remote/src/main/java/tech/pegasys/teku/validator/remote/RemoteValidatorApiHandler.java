@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import okhttp3.HttpUrl;
@@ -76,6 +77,7 @@ import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
+import tech.pegasys.teku.validator.remote.apiclient.PostStateValidatorsNotExistingException;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
@@ -83,6 +85,7 @@ import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
 public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
 
   private static final Logger LOG = LogManager.getLogger();
+
   static final int MAX_PUBLIC_KEY_BATCH_SIZE = 50;
   static final int MAX_RATE_LIMITING_RETRIES = 3;
 
@@ -91,18 +94,21 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   private final ValidatorRestApiClient apiClient;
   private final OkHttpValidatorTypeDefClient typeDefClient;
   private final AsyncRunner asyncRunner;
+  private final AtomicBoolean usePostValidatorsEndpoint;
 
   public RemoteValidatorApiHandler(
       final HttpUrl endpoint,
       final Spec spec,
       final ValidatorRestApiClient apiClient,
       final OkHttpValidatorTypeDefClient typeDefClient,
-      final AsyncRunner asyncRunner) {
+      final AsyncRunner asyncRunner,
+      final boolean usePostValidatorsEndpoint) {
     this.endpoint = endpoint;
     this.spec = spec;
     this.apiClient = apiClient;
     this.asyncRunner = asyncRunner;
     this.typeDefClient = typeDefClient;
+    this.usePostValidatorsEndpoint = new AtomicBoolean(usePostValidatorsEndpoint);
   }
 
   @Override
@@ -127,26 +133,54 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
       return SafeFuture.completedFuture(emptyMap());
     }
     return sendRequest(
-        () ->
-            makeBatchedValidatorRequest(publicKeys, ValidatorResponse::getIndex)
-                .orElse(emptyMap()));
+        () -> makeValidatorRequest(publicKeys, ValidatorResponse::getIndex).orElse(emptyMap()));
   }
 
   @Override
   public SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
-      Collection<BLSPublicKey> publicKeys) {
-    return sendRequest(() -> makeBatchedValidatorRequest(publicKeys, ValidatorResponse::getStatus));
+      final Collection<BLSPublicKey> publicKeys) {
+    return sendRequest(() -> makeValidatorRequest(publicKeys, ValidatorResponse::getStatus));
+  }
+
+  private <T> Optional<Map<BLSPublicKey, T>> makeValidatorRequest(
+      final Collection<BLSPublicKey> publicKeys,
+      final Function<ValidatorResponse, T> valueExtractor) {
+    if (usePostValidatorsEndpoint.get()) {
+      try {
+        return apiClient
+            .postValidators(convertPublicKeysToValidatorIds(publicKeys))
+            .map(responses -> convertToValidatorMap(responses, valueExtractor));
+      } catch (final PostStateValidatorsNotExistingException __) {
+        LOG.debug(
+            "POST method is not available for getting validators from state. Will use GET instead.");
+        usePostValidatorsEndpoint.set(false);
+        return makeBatchedValidatorRequest(publicKeys, valueExtractor);
+      }
+    } else {
+      return makeBatchedValidatorRequest(publicKeys, valueExtractor);
+    }
+  }
+
+  private List<String> convertPublicKeysToValidatorIds(final Collection<BLSPublicKey> publicKeys) {
+    return publicKeys.stream().map(BLSPublicKey::toHexString).toList();
+  }
+
+  private <T> Map<BLSPublicKey, T> convertToValidatorMap(
+      final List<ValidatorResponse> validatorResponses,
+      final Function<ValidatorResponse, T> valueExtractor) {
+    return validatorResponses.stream()
+        .collect(toMap(ValidatorResponse::getPublicKey, valueExtractor));
   }
 
   private <T> Optional<Map<BLSPublicKey, T>> makeBatchedValidatorRequest(
-      Collection<BLSPublicKey> publicKeysCollection,
-      Function<ValidatorResponse, T> valueExtractor) {
+      final Collection<BLSPublicKey> publicKeysCollection,
+      final Function<ValidatorResponse, T> valueExtractor) {
     final List<BLSPublicKey> publicKeys = new ArrayList<>(publicKeysCollection);
     final Map<BLSPublicKey, T> returnedObjects = new HashMap<>();
     for (int i = 0; i < publicKeys.size(); i += MAX_PUBLIC_KEY_BATCH_SIZE) {
       final List<BLSPublicKey> batch =
           publicKeys.subList(i, Math.min(publicKeys.size(), i + MAX_PUBLIC_KEY_BATCH_SIZE));
-      Optional<Map<BLSPublicKey, T>> validatorObjects =
+      final Optional<Map<BLSPublicKey, T>> validatorObjects =
           requestValidatorObject(batch, valueExtractor);
       if (validatorObjects.isEmpty()) {
         return Optional.empty();
@@ -159,15 +193,8 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   private <T> Optional<Map<BLSPublicKey, T>> requestValidatorObject(
       final List<BLSPublicKey> batch, Function<ValidatorResponse, T> valueExtractor) {
     return apiClient
-        .getValidators(batch.stream().map(key -> key.toBytesCompressed().toHexString()).toList())
+        .getValidators(convertPublicKeysToValidatorIds(batch))
         .map(responses -> convertToValidatorMap(responses, valueExtractor));
-  }
-
-  private <T> Map<BLSPublicKey, T> convertToValidatorMap(
-      final List<ValidatorResponse> validatorResponses,
-      Function<ValidatorResponse, T> valueExtractor) {
-    return validatorResponses.stream()
-        .collect(toMap(ValidatorResponse::getPublicKey, valueExtractor));
   }
 
   @Override
@@ -263,20 +290,16 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
                 .orElse(emptyList()));
   }
 
-  @Deprecated
   @Override
   public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final boolean blinded) {
-    return sendRequest(
-        () -> typeDefClient.createUnsignedBlock(slot, randaoReveal, graffiti, blinded));
-  }
-
-  @Override
-  public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
-      final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
+      final Optional<Boolean> blinded) {
+    if (blinded.isPresent()) {
+      return sendRequest(
+          () -> typeDefClient.createUnsignedBlock(slot, randaoReveal, graffiti, blinded.get()));
+    }
     return sendRequest(() -> typeDefClient.createUnsignedBlock(slot, randaoReveal, graffiti));
   }
 
@@ -505,11 +528,13 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
       final OkHttpClient httpClient,
       final Spec spec,
       final boolean preferSszBlockEncoding,
+      final boolean usePostValidatorsEndpoint,
       final AsyncRunner asyncRunner) {
     final OkHttpValidatorRestApiClient apiClient =
         new OkHttpValidatorRestApiClient(endpoint, httpClient);
     final OkHttpValidatorTypeDefClient typeDefClient =
         new OkHttpValidatorTypeDefClient(httpClient, endpoint, spec, preferSszBlockEncoding);
-    return new RemoteValidatorApiHandler(endpoint, spec, apiClient, typeDefClient, asyncRunner);
+    return new RemoteValidatorApiHandler(
+        endpoint, spec, apiClient, typeDefClient, asyncRunner, usePostValidatorsEndpoint);
   }
 }

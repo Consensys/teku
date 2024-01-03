@@ -37,7 +37,6 @@ import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockManager extends Service
@@ -154,10 +153,16 @@ public class BlockManager extends Service
         blockValidator.validateGossip(block);
     validationResult.thenAccept(
         result -> {
-          if (result.code().equals(ValidationResultCode.ACCEPT)
-              || result.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
-            doImportBlock(block, blockImportPerformance, BlockBroadcastValidator.NOOP)
+          switch (result.code()) {
+            case ACCEPT, SAVE_FOR_FUTURE -> doImportBlock(
+                    block, blockImportPerformance, BlockBroadcastValidator.NOOP)
                 .finish(err -> LOG.error("Failed to process received block.", err));
+
+              // block failed gossip validation, let's drop it from the pool, so it won't be served
+              // via RPC anymore. This should not be done on ignore result (i.e. duplicate blocks
+              // could cause an unwanted drop)
+            case REJECT -> blobSidecarPool.removeAllForBlock(block.getRoot());
+            case IGNORE -> {}
           }
         });
     return validationResult;

@@ -73,7 +73,7 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
             () -> {
               final UInt64 slot =
                   payloadBuildingAttributes
-                      .map(PayloadBuildingAttributes::getBlockSlot)
+                      .map(PayloadBuildingAttributes::getProposalSlot)
                       .orElse(forkChoiceState.getHeadBlockSlot());
               return spec.atSlot(slot).getMilestone();
             },

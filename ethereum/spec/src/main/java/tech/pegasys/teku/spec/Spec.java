@@ -36,6 +36,7 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
@@ -197,7 +198,7 @@ public class Spec {
   /**
    * Base networking constants
    *
-   * <p>These constants are unified among forks and are not overriden, new constant name is used if
+   * <p>These constants are unified among forks and are not overridden, new constant name is used if
    * it's changed in the new fork
    */
   public NetworkingSpecConfig getNetworkingConfig() {
@@ -693,30 +694,24 @@ public class Spec {
   }
 
   // Block Proposal
-  @Deprecated
   public SafeFuture<BeaconBlockAndState> createNewUnsignedBlock(
       final UInt64 newSlot,
       final int proposerIndex,
       final BeaconState blockSlotState,
       final Bytes32 parentBlockSigningRoot,
       final Consumer<BeaconBlockBodyBuilder> bodyBuilder,
-      final boolean blinded) {
+      final Optional<Boolean> blinded,
+      final BlockProductionPerformance blockProductionPerformance) {
     return atSlot(newSlot)
         .getBlockProposalUtil()
         .createNewUnsignedBlock(
-            newSlot, proposerIndex, blockSlotState, parentBlockSigningRoot, bodyBuilder, blinded);
-  }
-
-  public SafeFuture<BeaconBlockAndState> createNewUnsignedBlock(
-      final UInt64 newSlot,
-      final int proposerIndex,
-      final BeaconState blockSlotState,
-      final Bytes32 parentBlockSigningRoot,
-      final Consumer<BeaconBlockBodyBuilder> bodyBuilder) {
-    return atSlot(newSlot)
-        .getBlockProposalUtil()
-        .createNewUnsignedBlock(
-            newSlot, proposerIndex, blockSlotState, parentBlockSigningRoot, bodyBuilder);
+            newSlot,
+            proposerIndex,
+            blockSlotState,
+            parentBlockSigningRoot,
+            bodyBuilder,
+            blinded,
+            blockProductionPerformance);
   }
 
   // Blind Block Utils

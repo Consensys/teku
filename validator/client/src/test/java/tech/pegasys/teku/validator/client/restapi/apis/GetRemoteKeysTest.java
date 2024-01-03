@@ -40,12 +40,12 @@ import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.validator.client.ActiveKeyManager;
+import tech.pegasys.teku.validator.client.OwnedKeyManager;
 import tech.pegasys.teku.validator.client.Validator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
 
 class GetRemoteKeysTest {
-  private final ActiveKeyManager keyManager = mock(ActiveKeyManager.class);
+  private final OwnedKeyManager keyManager = mock(OwnedKeyManager.class);
   private final GetRemoteKeys handler = new GetRemoteKeys(keyManager);
   private final RestApiRequest request = mock(RestApiRequest.class);
   private final DataStructureUtil dataStructureUtil =
@@ -53,7 +53,7 @@ class GetRemoteKeysTest {
 
   @Test
   void shouldListValidatorKeys() throws Exception {
-    final List<ExternalValidator> activeRemoteValidatorList =
+    final List<ExternalValidator> remoteValidatorList =
         getValidatorList().stream()
             .map(
                 val ->
@@ -62,16 +62,16 @@ class GetRemoteKeysTest {
                         val.getSigner().getSigningServiceUrl(),
                         val.isReadOnly()))
             .collect(Collectors.toList());
-    when(keyManager.getActiveRemoteValidatorKeys()).thenReturn(activeRemoteValidatorList);
+    when(keyManager.getRemoteValidatorKeys()).thenReturn(remoteValidatorList);
     handler.handleRequest(request);
 
-    verify(request).respondOk(activeRemoteValidatorList);
+    verify(request).respondOk(remoteValidatorList);
   }
 
   @Test
   void shouldListEmptyValidatorKeys() throws Exception {
-    final List<ExternalValidator> activeRemoteValidatorList = Collections.emptyList();
-    when(keyManager.getActiveRemoteValidatorKeys()).thenReturn(activeRemoteValidatorList);
+    final List<ExternalValidator> remoteValidatorList = Collections.emptyList();
+    when(keyManager.getRemoteValidatorKeys()).thenReturn(remoteValidatorList);
     handler.handleRequest(request);
 
     verify(request).respondOk(Collections.emptyList());

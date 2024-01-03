@@ -26,10 +26,7 @@ import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.schema.Attestation;
-import tech.pegasys.teku.api.schema.BLSSignature;
-import tech.pegasys.teku.api.schema.BeaconBlock;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
-import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
 import tech.pegasys.teku.api.schema.SubnetSubscription;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
@@ -39,7 +36,6 @@ import tech.pegasys.teku.api.schema.altair.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
-import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 
 public interface ValidatorRestApiClient {
 
@@ -47,15 +43,12 @@ public interface ValidatorRestApiClient {
 
   Optional<List<ValidatorResponse>> getValidators(List<String> validatorIds);
 
+  Optional<List<ValidatorResponse>> postValidators(List<String> validatorIds);
+
   Optional<PostAttesterDutiesResponse> getAttestationDuties(
       final UInt64 epoch, final Collection<Integer> validatorIndices);
 
   Optional<GetProposerDutiesResponse> getProposerDuties(final UInt64 epoch);
-
-  Optional<BeaconBlock> createUnsignedBlock(
-      UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti, boolean blinded);
-
-  SendSignedBlockResult sendSignedBlock(SignedBeaconBlock beaconBlock);
 
   Optional<PostDataFailureResponse> sendSignedAttestations(List<Attestation> attestation);
 

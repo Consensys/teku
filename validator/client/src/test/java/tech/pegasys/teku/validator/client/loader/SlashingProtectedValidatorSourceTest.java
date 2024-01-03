@@ -19,6 +19,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -45,7 +46,8 @@ public class SlashingProtectedValidatorSourceTest {
   private final Path baseDir = Path.of("/data");
   private final SyncDataAccessor dataWriter = mock(SyncDataAccessor.class);
   private final SlashingProtector slashingProtector =
-      new LocalSlashingProtector(dataWriter, baseDir);
+      new LocalSlashingProtector(
+          dataWriter, baseDir, DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED);
   private final ValidatorSource validatorSource =
       new SlashingProtectedValidatorSource(delegate, slashingProtector);
 

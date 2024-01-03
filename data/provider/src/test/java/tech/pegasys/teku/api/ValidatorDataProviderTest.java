@@ -162,14 +162,15 @@ public class ValidatorDataProviderTest {
   void getUnsignedBeaconBlockAtSlot_PreDeneb_shouldCreateAnUnsignedBlock() {
     assumeThat(specMilestone).isLessThan(SpecMilestone.DENEB);
     when(combinedChainDataClient.getCurrentSlot()).thenReturn(ZERO);
-    when(validatorApiChannel.createUnsignedBlock(ONE, signatureInternal, Optional.empty(), false))
+    when(validatorApiChannel.createUnsignedBlock(
+            ONE, signatureInternal, Optional.empty(), Optional.of(false)))
         .thenReturn(completedFuture(Optional.of(blockInternal)));
 
     SafeFuture<? extends Optional<? extends SszData>> data =
         provider.getUnsignedBeaconBlockAtSlot(ONE, signatureInternal, Optional.empty());
 
     verify(validatorApiChannel)
-        .createUnsignedBlock(ONE, signatureInternal, Optional.empty(), false);
+        .createUnsignedBlock(ONE, signatureInternal, Optional.empty(), Optional.of(false));
 
     assertThat(data).isCompleted();
 
@@ -181,14 +182,15 @@ public class ValidatorDataProviderTest {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(SpecMilestone.DENEB);
     when(combinedChainDataClient.getCurrentSlot()).thenReturn(ZERO);
     blockContents = dataStructureUtil.randomBlockContents();
-    when(validatorApiChannel.createUnsignedBlock(ONE, signatureInternal, Optional.empty(), false))
+    when(validatorApiChannel.createUnsignedBlock(
+            ONE, signatureInternal, Optional.empty(), Optional.of(false)))
         .thenReturn(completedFuture(Optional.of(blockContents)));
 
     SafeFuture<? extends Optional<? extends SszData>> data =
         provider.getUnsignedBeaconBlockAtSlot(ONE, signatureInternal, Optional.empty());
 
     verify(validatorApiChannel)
-        .createUnsignedBlock(ONE, signatureInternal, Optional.empty(), false);
+        .createUnsignedBlock(ONE, signatureInternal, Optional.empty(), Optional.of(false));
 
     assertThat(data).isCompleted();
 

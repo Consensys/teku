@@ -43,6 +43,8 @@ import tech.pegasys.teku.spec.datastructures.state.Validator.ValidatorSchema;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 @SuppressWarnings("JavaCase")
 public enum SszObjectType {
@@ -86,7 +88,16 @@ public enum SszObjectType {
   HistoricalBatch(config(c -> new HistoricalBatchSchema(c.getSlotsPerHistoricalRoot()))),
   ExecutionPayload(bellatrixSchemas(SchemaDefinitionsBellatrix::getExecutionPayloadSchema)),
   ExecutionPayloadHeader(
-      bellatrixSchemas(SchemaDefinitionsBellatrix::getExecutionPayloadHeaderSchema));
+      bellatrixSchemas(SchemaDefinitionsBellatrix::getExecutionPayloadHeaderSchema)),
+  BuilderBid(bellatrixSchemas(SchemaDefinitionsBellatrix::getBuilderBidSchema)),
+  Withdrawal(capellaSchemas(SchemaDefinitionsCapella::getWithdrawalSchema)),
+  BlsToExecutionChange(capellaSchemas(SchemaDefinitionsCapella::getBlsToExecutionChangeSchema)),
+  SignedBlsToExecutionChange(
+      capellaSchemas(SchemaDefinitionsCapella::getSignedBlsToExecutionChangeSchema)),
+  BlobSidecar(denebSchemas(SchemaDefinitionsDeneb::getBlobSidecarSchema)),
+  BlobsBundle(denebSchemas(SchemaDefinitionsDeneb::getBlobsBundleSchema)),
+  ExecutionPayloadAndBlobsBundle(
+      denebSchemas(SchemaDefinitionsDeneb::getExecutionPayloadAndBlobsBundleSchema));
 
   private final Function<SpecVersion, SszSchema<?>> getSchema;
 
@@ -115,6 +126,16 @@ public enum SszObjectType {
   private static Function<SpecVersion, SszSchema<?>> bellatrixSchemas(
       final Function<SchemaDefinitionsBellatrix, SszSchema<?>> getter) {
     return spec -> getter.apply(SchemaDefinitionsBellatrix.required(spec.getSchemaDefinitions()));
+  }
+
+  private static Function<SpecVersion, SszSchema<?>> capellaSchemas(
+      final Function<SchemaDefinitionsCapella, SszSchema<?>> getter) {
+    return spec -> getter.apply(SchemaDefinitionsCapella.required(spec.getSchemaDefinitions()));
+  }
+
+  private static Function<SpecVersion, SszSchema<?>> denebSchemas(
+      final Function<SchemaDefinitionsDeneb, SszSchema<?>> getter) {
+    return spec -> getter.apply(SchemaDefinitionsDeneb.required(spec.getSchemaDefinitions()));
   }
 
   private static Function<SpecVersion, SszSchema<?>> config(

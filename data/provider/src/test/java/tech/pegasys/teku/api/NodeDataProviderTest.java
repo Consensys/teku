@@ -38,6 +38,7 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.block.BlockManager;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -55,6 +56,7 @@ public class NodeDataProviderTest {
   private final AttestationManager attestationManager = mock(AttestationManager.class);
   private final ActiveValidatorChannel validatorChannel = mock(ActiveValidatorChannel.class);
   private final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
+  private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
 
   private OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
 
@@ -85,6 +87,7 @@ public class NodeDataProviderTest {
             false,
             validatorChannel,
             proposersDataManager,
+            forkChoiceNotifier,
             true);
   }
 
@@ -133,6 +136,7 @@ public class NodeDataProviderTest {
             false,
             validatorChannel,
             proposersDataManager,
+            forkChoiceNotifier,
             false); // overriding provider with accept bls toggled off
 
     final SafeFuture<List<SubmitDataError>> future =

@@ -93,7 +93,6 @@ public class VoluntaryExitCommandTest {
     configureSuccessfulHeadResponse(mockBeaconServer);
     configureSuccessfulGenesisResponse(mockBeaconServer);
     configureSuccessfulValidatorResponses(mockBeaconServer);
-    configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
     originalSystemIn = System.in;
     originalSystemOut = System.out;
     originalSytstemErr = System.err;
@@ -129,8 +128,11 @@ public class VoluntaryExitCommandTest {
   @Test
   public void shouldExitAllLoadedValidators() {
     configureSuccessfulSpecResponse(mockBeaconServer);
+    configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
+
     final List<String> args = getCommandArguments(true, false, List.of());
     int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+
     assertThat(parseResult).isEqualTo(0);
     assertValidatorsExited(
         keyManagerPubKey1, keyManagerPubKey2, validatorPubKey1, validatorPubKey2);
@@ -140,8 +142,11 @@ public class VoluntaryExitCommandTest {
   public void shouldExitLoadedValidatorsUsingConfirmationMessage() {
     setUserInput("yes");
     configureSuccessfulSpecResponse(mockBeaconServer);
+    configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
+
     final List<String> args = getCommandArguments(true, true, List.of());
     int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+
     assertThat(parseResult).isEqualTo(0);
     assertValidatorsExited(
         keyManagerPubKey1, keyManagerPubKey2, validatorPubKey1, validatorPubKey2);
@@ -150,12 +155,13 @@ public class VoluntaryExitCommandTest {
   @Test
   public void shouldExitValidatorWithPubKeyFromKeyManagerOnly() {
     configureSuccessfulSpecResponse(mockBeaconServer);
+    configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
+
     final List<String> args =
         getCommandArguments(
             true,
             false,
             List.of("--validator-public-keys", keyManagerPubKey2 + "," + nonExistingKey));
-
     final int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
 
     assertThat(parseResult).isEqualTo(0);
@@ -166,13 +172,14 @@ public class VoluntaryExitCommandTest {
 
   @Test
   public void shouldAcceptNetworkOnCommandLine() {
+    configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
+
     // No beacon-api offered by spec, so would need to be loaded from local network option
     final List<String> args =
         getCommandArguments(
             true,
             false,
             List.of("--network", "minimal", "--validator-public-keys", validatorPubKey1));
-
     final int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
 
     assertThat(parseResult).isEqualTo(0);
@@ -181,27 +188,46 @@ public class VoluntaryExitCommandTest {
   }
 
   @Test
+  public void shouldReturnRejectedReasonWhenExitIsRejectedByBeaconNode() throws IOException {
+    configureRejectedVoluntaryExitResponse(mockBeaconServer);
+
+    final List<String> args =
+        getCommandArguments(
+            false,
+            false,
+            List.of("--network", "minimal", "--validator-public-keys", validatorPubKey1));
+
+    final int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+
+    assertThat(parseResult).isEqualTo(0);
+    assertThat(stdErr.toString(UTF_8))
+        .contains("Operation rejected reason"); // value from rejected-exit.json
+    assertValidatorsNotExited(validatorPubKey1);
+  }
+
+  @Test
   public void shouldFailToRunExitWithoutASpec() {
     // Network unset, no http service to fetch from
     final List<String> args =
         getCommandArguments(true, false, List.of("--validator-public-keys", validatorPubKey1));
-
     final int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
-    assertThat(parseResult).isEqualTo(1);
 
+    assertThat(parseResult).isEqualTo(1);
     assertThat(stdOut.toString(UTF_8)).contains("Loading network settings from");
   }
 
   @Test
   public void shouldExitValidatorWithPubKeyFromPathOnly() {
     configureSuccessfulSpecResponse(mockBeaconServer);
+    configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
+
     final List<String> args =
         getCommandArguments(
             true,
             false,
             List.of("--validator-public-keys", validatorPubKey1 + "," + nonExistingKey));
-
     int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
+
     assertThat(parseResult).isEqualTo(0);
     assertValidatorsExited(validatorPubKey1);
     assertValidatorsNotExited(
@@ -211,12 +237,13 @@ public class VoluntaryExitCommandTest {
   @Test
   public void shouldSkipKeyManagerKeys() {
     configureSuccessfulSpecResponse(mockBeaconServer);
+    configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
+
     final List<String> args =
         getCommandArguments(
             false,
             false,
             List.of("--validator-public-keys", validatorPubKey1 + "," + nonExistingKey));
-
     int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
 
     assertThat(parseResult).isEqualTo(0);
@@ -228,9 +255,9 @@ public class VoluntaryExitCommandTest {
   @Test
   void shouldNotWarn_NotWithdrawableIfCapellaEnabled() {
     configureSuccessfulSpecResponse(mockBeaconServer, TestSpecFactory.createMinimalCapella());
+
     final List<String> args = getCommandArguments(false, true, List.of());
     setUserInput("no");
-
     int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
 
     assertThat(parseResult).isEqualTo(1);
@@ -243,6 +270,7 @@ public class VoluntaryExitCommandTest {
   @Test
   void shouldExitFailureWithNoValidatorKeysFound() {
     configureSuccessfulSpecResponse(mockBeaconServer);
+
     final List<String> args = commandArgs.subList(0, 5);
     int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
 
@@ -253,6 +281,7 @@ public class VoluntaryExitCommandTest {
   @Test
   void shouldExitFailureFutureEpoch() {
     configureSuccessfulSpecResponse(mockBeaconServer);
+
     final List<String> args = getCommandArguments(false, true, List.of("--epoch=1024"));
     int parseResult = beaconNodeCommand.parse(args.toArray(new String[0]));
 
@@ -397,6 +426,19 @@ public class VoluntaryExitCommandTest {
     mockBeaconServer
         .when(request().withPath("/eth/v1/beacon/pool/voluntary_exits"))
         .respond(response().withStatusCode(200));
+  }
+
+  private void configureRejectedVoluntaryExitResponse(final ClientAndServer mockBeaconServer)
+      throws IOException {
+    final String rejectedExitResponseBody =
+        Resources.toString(
+            Resources.getResource(
+                "tech/pegasys/teku/cli/subcommand/voluntary-exit/rejected-exit.json"),
+            UTF_8);
+
+    mockBeaconServer
+        .when(request().withMethod("POST").withPath("/eth/v1/beacon/pool/voluntary_exits"))
+        .respond(response().withStatusCode(400).withBody(rejectedExitResponseBody));
   }
 
   private String getTestSpecResponse(final Spec spec) {

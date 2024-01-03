@@ -20,6 +20,8 @@ import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 
 public class ValidatorTimingActions implements ValidatorTimingChannel {
@@ -93,4 +95,10 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
   public void onAttestationAggregationDue(final UInt64 slot) {
     delegates.forEach(delegates -> delegates.onAttestationAggregationDue(slot));
   }
+
+  @Override
+  public void onAttesterSlashing(final AttesterSlashing attesterSlashing) {}
+
+  @Override
+  public void onProposerSlashing(final ProposerSlashing proposerSlashing) {}
 }

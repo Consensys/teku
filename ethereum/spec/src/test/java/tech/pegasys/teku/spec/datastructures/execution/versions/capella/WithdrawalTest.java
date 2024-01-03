@@ -27,7 +27,7 @@ class WithdrawalTest {
 
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createMinimal(SpecMilestone.CAPELLA));
-  private final WithdrawalSchema withdrawalSchema = new WithdrawalSchema();
+  private final WithdrawalSchema withdrawalSchema = Withdrawal.SSZ_SCHEMA;
 
   private final UInt64 index = dataStructureUtil.randomUInt64();
   private final UInt64 validatorIndex = dataStructureUtil.randomUInt64();

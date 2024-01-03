@@ -47,6 +47,10 @@ public class JavalinRestApiRequest implements RestApiRequest {
   @Override
   @SuppressWarnings({"TypeParameterUnusedInFormals"})
   public <T> T getRequestBody() throws JsonProcessingException {
+    if (!metadata.isRequiredRequestBody()) {
+      throw new RuntimeException(
+          "Optional request body configured, use getOptionalRequestBody() instead");
+    }
     return metadata.getRequestBody(context.bodyInputStream(), context.headerMap());
   }
 

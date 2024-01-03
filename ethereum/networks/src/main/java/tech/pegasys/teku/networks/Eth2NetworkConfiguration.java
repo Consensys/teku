@@ -50,6 +50,8 @@ public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
 
   public static final boolean DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED = false;
+
+  public static final boolean DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED = false;
   public static final boolean DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED = true;
 
   public static final int DEFAULT_ASYNC_P2P_MAX_THREADS = 10;
@@ -87,7 +89,6 @@ public class Eth2NetworkConfiguration {
   private final Optional<UInt64> eth1DepositContractDeployBlock;
   private final Optional<String> trustedSetup;
   private final boolean forkChoiceUpdateHeadOnBlockImportEnabled;
-  private final boolean forkChoiceProposerBoostUniquenessEnabled;
   private final Optional<Bytes32> terminalBlockHashOverride;
   private final Optional<UInt256> totalTerminalDifficultyOverride;
   private final Optional<UInt64> terminalBlockHashEpochOverride;
@@ -97,6 +98,7 @@ public class Eth2NetworkConfiguration {
   private final int asyncBeaconChainMaxThreads;
   private final int asyncBeaconChainMaxQueue;
   private final int asyncP2pMaxQueue;
+  private final boolean forkChoiceLateBlockReorgEnabled;
 
   private Eth2NetworkConfiguration(
       final Spec spec,
@@ -111,7 +113,6 @@ public class Eth2NetworkConfiguration {
       final Optional<UInt64> eth1DepositContractDeployBlock,
       final Optional<String> trustedSetup,
       final boolean forkChoiceUpdateHeadOnBlockImportEnabled,
-      final boolean forkChoiceProposerBoostUniquenessEnabled,
       final Optional<UInt64> altairForkEpoch,
       final Optional<UInt64> bellatrixForkEpoch,
       final Optional<UInt64> capellaForkEpoch,
@@ -124,7 +125,8 @@ public class Eth2NetworkConfiguration {
       final int asyncP2pMaxThreads,
       final int asyncP2pMaxQueue,
       final int asyncBeaconChainMaxThreads,
-      final int asyncBeaconChainMaxQueue) {
+      final int asyncBeaconChainMaxQueue,
+      final boolean forkChoiceLateBlockReorgEnabled) {
     this.spec = spec;
     this.constants = constants;
     this.initialState = initialState;
@@ -144,7 +146,6 @@ public class Eth2NetworkConfiguration {
     this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
     this.trustedSetup = trustedSetup;
     this.forkChoiceUpdateHeadOnBlockImportEnabled = forkChoiceUpdateHeadOnBlockImportEnabled;
-    this.forkChoiceProposerBoostUniquenessEnabled = forkChoiceProposerBoostUniquenessEnabled;
     this.terminalBlockHashOverride = terminalBlockHashOverride;
     this.totalTerminalDifficultyOverride = totalTerminalDifficultyOverride;
     this.terminalBlockHashEpochOverride = terminalBlockHashEpochOverride;
@@ -154,6 +155,7 @@ public class Eth2NetworkConfiguration {
     this.asyncP2pMaxQueue = asyncP2pMaxQueue;
     this.asyncBeaconChainMaxThreads = asyncBeaconChainMaxThreads;
     this.asyncBeaconChainMaxQueue = asyncBeaconChainMaxQueue;
+    this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
   }
 
   public static Eth2NetworkConfiguration.Builder builder(final String network) {
@@ -221,10 +223,6 @@ public class Eth2NetworkConfiguration {
     return forkChoiceUpdateHeadOnBlockImportEnabled;
   }
 
-  public boolean isForkChoiceProposerBoostUniquenessEnabled() {
-    return forkChoiceProposerBoostUniquenessEnabled;
-  }
-
   public Optional<UInt64> getForkEpoch(final SpecMilestone specMilestone) {
     return switch (specMilestone) {
       case ALTAIR -> altairForkEpoch;
@@ -271,6 +269,10 @@ public class Eth2NetworkConfiguration {
     return asyncBeaconChainMaxQueue;
   }
 
+  public boolean isForkChoiceLateBlockReorgEnabled() {
+    return forkChoiceLateBlockReorgEnabled;
+  }
+
   @Override
   public String toString() {
     return constants;
@@ -304,8 +306,7 @@ public class Eth2NetworkConfiguration {
     private Spec spec;
     private boolean forkChoiceUpdateHeadOnBlockImportEnabled =
         DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
-    private boolean forkChoiceProposerBoostUniquenessEnabled =
-        DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED;
+    private boolean forkChoiceLateBlockReorgEnabled = DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
 
     public void spec(Spec spec) {
       this.spec = spec;
@@ -367,7 +368,6 @@ public class Eth2NetworkConfiguration {
           eth1DepositContractDeployBlock,
           trustedSetup,
           forkChoiceUpdateHeadOnBlockImportEnabled,
-          forkChoiceProposerBoostUniquenessEnabled,
           altairForkEpoch,
           bellatrixForkEpoch,
           capellaForkEpoch,
@@ -380,7 +380,8 @@ public class Eth2NetworkConfiguration {
           asyncP2pMaxThreads,
           asyncP2pMaxQueue,
           asyncBeaconChainMaxThreads,
-          asyncBeaconChainMaxQueue);
+          asyncBeaconChainMaxQueue,
+          forkChoiceLateBlockReorgEnabled);
     }
 
     private void validateCommandLineParameters() {
@@ -535,12 +536,6 @@ public class Eth2NetworkConfiguration {
     public Builder forkChoiceUpdateHeadOnBlockImportEnabled(
         final boolean forkChoiceUpdateHeadOnBlockImportEnabled) {
       this.forkChoiceUpdateHeadOnBlockImportEnabled = forkChoiceUpdateHeadOnBlockImportEnabled;
-      return this;
-    }
-
-    public Builder forkChoiceProposerBoostUniquenessEnabled(
-        final boolean forkChoiceProposerBoostUniquenessEnabled) {
-      this.forkChoiceProposerBoostUniquenessEnabled = forkChoiceProposerBoostUniquenessEnabled;
       return this;
     }
 
@@ -761,7 +756,13 @@ public class Eth2NetworkConfiguration {
               "enr:-Ly4QPoChSQTleJROee1-k-4HOEgKqL9kLksE-tEiVqcY9kwF9V53aBg-MruD7Yx4Aks3LAeJpKXAS4ntMrIdqvQYc8Ch2F0dG5ldHOIAAAAAAAAAACEZXRoMpCCS-QxAgAAZP__________gmlkgnY0gmlwhGsWBHiJc2VjcDI1NmsxoQKwGQrwOSBJB_DtQOkFZVAY4YQfMAbUVxFpL5WgrzEddYhzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
               "enr:-Ly4QBbaKRSX4SncCOxTTL611Kxlz-zYFrIn-k_63jGIPK_wbvFghVUHJICPCxufgTX5h79jvgfPr-2hEEQEdziGQ5MCh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCCS-QxAgAAZP__________gmlkgnY0gmlwhAMazo6Jc2VjcDI1NmsxoQKt-kbM9isuWp8djhyEq6-4MLv1Sy7dOXeMOMdPgwu9LohzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
               "enr:-Ly4QKJ5BzgFyJ6BaTlGY0C8ROzl508U3GA6qxdG5Gn2hxdke6nQO187pYlLvhp82Dez4PQn436Fts1F0WAm-_5l2LACh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCCS-QxAgAAZP__________gmlkgnY0gmlwhA-YLVKJc2VjcDI1NmsxoQI8_Lvr6p_TkcAu8KorKacfUEnoOon0tdO0qWhriPdBP4hzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
-              "enr:-Ly4QJMtoiX2bPnVbiQOJCLbtUlqdqZk7kCJQln_W1bp1vOHcxWowE-iMXkKC4_uOb0o73wAW71WYi80Dlsg-7a5wiICh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCCS-QxAgAAZP__________gmlkgnY0gmlwhDbP3KmJc2VjcDI1NmsxoQNvcfKYUqcemLFlpKxl7JcQJwQ3L9unYL44gY2aEiRnI4hzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA");
+              "enr:-Ly4QJMtoiX2bPnVbiQOJCLbtUlqdqZk7kCJQln_W1bp1vOHcxWowE-iMXkKC4_uOb0o73wAW71WYi80Dlsg-7a5wiICh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCCS-QxAgAAZP__________gmlkgnY0gmlwhDbP3KmJc2VjcDI1NmsxoQNvcfKYUqcemLFlpKxl7JcQJwQ3L9unYL44gY2aEiRnI4hzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
+              "enr:-Ly4QIAhiTHk6JdVhCdiLwT83wAolUFo5J4nI5HrF7-zJO_QEw3cmEGxC1jvqNNUN64Vu-xxqDKSM528vKRNCehZAfEBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCCS-QxAgAAZP__________gmlkgnY0gmlwhEFtZ5SJc2VjcDI1NmsxoQJwgL5C-30E8RJmW8gCb7sfwWvvfre7wGcCeV4X1G2wJYhzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
+              "enr:-Ly4QDhEjlkf8fwO5uWAadexy88GXZneTuUCIPHhv98v8ZfXMtC0S1S_8soiT0CMEgoeLe9Db01dtkFQUnA9YcnYC_8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCCS-QxAgAAZP__________gmlkgnY0gmlwhEFtZ5WJc2VjcDI1NmsxoQMRSho89q2GKx_l2FZhR1RmnSiQr6o_9hfXfQUuW6bjMohzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
+              "enr:-Ly4QLKgv5M2D4DYJgo6s4NG_K4zu4sk5HOLCfGCdtgoezsbfRbfGpQ4iSd31M88ec3DHA5FWVbkgIas9EaJeXia0nwBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCCS-QxAgAAZP__________gmlkgnY0gmlwhI1eYRaJc2VjcDI1NmsxoQLpK_A47iNBkVjka9Mde1F-Kie-R0sq97MCNKCxt2HwOIhzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
+              "enr:-Ly4QF_0qvji6xqXrhQEhwJR1W9h5dXV7ZjVCN_NlosKxcgZW6emAfB_KXxEiPgKr_-CZG8CWvTiojEohG1ewF7P368Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCCS-QxAgAAZP__________gmlkgnY0gmlwhI1eYUqJc2VjcDI1NmsxoQIpNRUT6llrXqEbjkAodsZOyWv8fxQkyQtSvH4sg2D7n4hzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
+              "enr:-Ly4QCD5D99p36WafgTSxB6kY7D2V1ca71C49J4VWI2c8UZCCPYBvNRWiv0-HxOcbpuUdwPVhyWQCYm1yq2ZH0ukCbQBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCCS-QxAgAAZP__________gmlkgnY0gmlwhI1eYVSJc2VjcDI1NmsxoQJJMSV8iSZ8zvkgbi8cjIGEUVJeekLqT0LQha_co-siT4hzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
+              "enr:-KK4QKXJq1QOVWuJAGige4uaT8LRPQGCVRf3lH3pxjaVScMRUfFW1eiiaz8RwOAYvw33D4EX-uASGJ5QVqVCqwccxa-Bi4RldGgykCGm-DYDAABk__________-CaWSCdjSCaXCEM0QnzolzZWNwMjU2azGhAhNvrRkpuK4MWTf3WqiOXSOePL8Zc-wKVpZ9FQx_BDadg3RjcIIjKIN1ZHCCIyg");
     }
 
     public Builder applyChiadoNetworkDefaults() {
@@ -830,6 +831,11 @@ public class Eth2NetworkConfiguration {
       checkArgument(
           epochsStoreBlobsInt > 0, "Number of the epochs to store blobs for should be > 0");
       return Optional.of(epochsStoreBlobsInt);
+    }
+
+    public Builder forkChoiceLateBlockReorgEnabled(boolean forkChoiceLateBlockReorgEnabled) {
+      this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
+      return this;
     }
   }
 }

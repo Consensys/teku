@@ -21,6 +21,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
@@ -132,7 +133,8 @@ public class BlockProposalTestUtil {
                         kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments)));
               }
             },
-            false)
+            Optional.of(false),
+            BlockProductionPerformance.NOOP)
         .thenApply(
             newBlockAndState -> {
               // Sign block and set block signature

@@ -231,6 +231,7 @@ class StoreTest extends AbstractStoreTest {
             root,
             blockAndState.getParentRoot(),
             blockAndState.getStateRoot(),
+            UInt64.ZERO,
             Bytes32.random(),
             ProtoNodeValidationStatus.VALID,
             headCheckpoint,
@@ -241,6 +242,7 @@ class StoreTest extends AbstractStoreTest {
             parentRoot,
             Bytes32.random(),
             blockAndState.getStateRoot(),
+            UInt64.ZERO,
             Bytes32.random(),
             ProtoNodeValidationStatus.VALID,
             parentCheckpoint,
@@ -259,6 +261,7 @@ class StoreTest extends AbstractStoreTest {
             root,
             blockAndState.getParentRoot(),
             blockAndState.getStateRoot(),
+            UInt64.ZERO,
             Bytes32.random(),
             ProtoNodeValidationStatus.VALID,
             null,
@@ -269,6 +272,7 @@ class StoreTest extends AbstractStoreTest {
             parentRoot,
             Bytes32.random(),
             blockAndState.getStateRoot(),
+            UInt64.ZERO,
             Bytes32.random(),
             ProtoNodeValidationStatus.VALID,
             null,
@@ -528,7 +532,7 @@ class StoreTest extends AbstractStoreTest {
     chainBuilder.generateBlocksUpToSlot(epoch3Slot);
 
     final Checkpoint genesisCheckpoint = store.getFinalizedCheckpoint();
-    final UInt64 initialTimeMillis = store.getTimeMillis();
+    final UInt64 initialTimeMillis = store.getTimeInMillis();
     final UInt64 genesisTime = store.getGenesisTime();
 
     final Checkpoint checkpoint1 = chainBuilder.getCurrentCheckpointForEpoch(UInt64.valueOf(1));
@@ -567,7 +571,7 @@ class StoreTest extends AbstractStoreTest {
     assertThat(store.getFinalizedCheckpoint()).isEqualTo(genesisCheckpoint);
     // Check time
     assertThat(store.getTimeSeconds()).isEqualTo(millisToSeconds(initialTimeMillis));
-    assertThat(store.getTimeMillis()).isEqualTo(initialTimeMillis);
+    assertThat(store.getTimeInMillis()).isEqualTo(initialTimeMillis);
     assertThat(store.getGenesisTime()).isEqualTo(genesisTime);
 
     // Check that transaction is updated
@@ -583,7 +587,7 @@ class StoreTest extends AbstractStoreTest {
     assertThat(tx.getBestJustifiedCheckpoint()).isEqualTo(checkpoint3);
     // Check time
     assertThat(tx.getTimeSeconds()).isEqualTo(millisToSeconds(firstUpdateTimeMillis));
-    assertThat(tx.getTimeMillis()).isEqualTo(firstUpdateTimeMillis);
+    assertThat(tx.getTimeInMillis()).isEqualTo(firstUpdateTimeMillis);
     assertThat(tx.getGenesisTime()).isEqualTo(updatedGenesisTime);
 
     // Commit transaction
@@ -624,7 +628,7 @@ class StoreTest extends AbstractStoreTest {
     assertThat(finalizedCheckpointState).isCompleted();
     assertThat(safeJoin(finalizedCheckpointState).getCheckpoint()).isEqualTo(checkpoint1);
     // Check time
-    assertThat(store.getTimeMillis()).isEqualTo(expectedTimeMillis);
+    assertThat(store.getTimeInMillis()).isEqualTo(expectedTimeMillis);
     assertThat(store.getTimeSeconds()).isEqualTo(millisToSeconds(expectedTimeMillis));
     assertThat(store.getGenesisTime()).isEqualTo(updatedGenesisTime);
 
