@@ -85,9 +85,7 @@ public abstract class SszOptionalSchemaImpl<ElementDataT extends SszData>
         builder = DeserializableTypeDefinition.object();
     builder.initializer(() -> new OptionalBuilder<>(this)).finisher(OptionalBuilder::build);
     builder.withOptionalField(
-        "Optional["
-            + childSchema.getJsonTypeDefinition().getTypeName().map(String::toString).orElse("")
-            + "]",
+        "Optional[" + childSchema.getJsonTypeDefinition().getTypeName().orElse("") + "]",
         childSchema.getJsonTypeDefinition(),
         SszOptional::getValue,
         OptionalBuilder::set);
