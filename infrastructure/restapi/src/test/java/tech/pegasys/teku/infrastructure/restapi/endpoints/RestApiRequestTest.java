@@ -128,6 +128,16 @@ public class RestApiRequestTest {
   }
 
   @Test
+  void shouldGiveSensibleErrorMessageFromEmptyRequestHeader() {
+    when(context.headerMap()).thenReturn(Map.of());
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
+    assertThat(request.getOptionalRequestHeader(UINT8_PARAM)).isEmpty();
+    assertThatThrownBy(() -> request.getRequestHeader(UINT8_PARAM))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(UINT8_PARAM.getName());
+  }
+
+  @Test
   void shouldDeserializeStringFromParameters() {
     when(context.pathParamMap()).thenReturn(Map.of("str", "byeWorld"));
     when(context.queryParamMap()).thenReturn(Map.of("str", List.of("helloWorld")));
