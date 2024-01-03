@@ -21,7 +21,6 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszOptional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszOptionalSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
-import tech.pegasys.teku.infrastructure.ssz.schema.impl.SszOptionalSchemaImpl;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
 public class SszOptionalImpl<T extends SszData> implements SszOptional<T> {

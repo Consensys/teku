@@ -136,7 +136,7 @@ public class RandomSszDataGenerator {
     } else if (schema instanceof SszOptionalSchema) {
       return Stream.generate(
           () -> {
-            SszOptionalSchema<?> optionalSchema = (SszOptionalSchema<?>) schema;
+            SszOptionalSchema<SszData, ?> optionalSchema = (SszOptionalSchema<SszData, ?>) schema;
             boolean isPresent = random.nextBoolean();
             return (T)
                 optionalSchema.createFromValue(

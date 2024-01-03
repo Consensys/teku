@@ -45,7 +45,7 @@ public abstract class SszSchemaTestBase extends SszTypeTestBase {
   @MethodSource("testSchemaArguments")
   @ParameterizedTest
   void sszDeserialize_tooLongSszShouldFailFastWithoutReadingWholeInput(SszSchema<SszData> schema) {
-    if (schema instanceof SszOptionalSchema<?>) {
+    if (schema instanceof SszOptionalSchema<?, ?>) {
       // empty Optional couldn't pass this test
       return;
     }

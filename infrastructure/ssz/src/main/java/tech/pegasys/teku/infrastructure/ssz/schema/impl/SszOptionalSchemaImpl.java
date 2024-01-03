@@ -53,8 +53,10 @@ public abstract class SszOptionalSchemaImpl<ElementDataT extends SszData>
   private static LeafNode createOptionalNode(boolean isPresent) {
     return isPresent ? LeafNode.create(Bytes.of(IS_PRESENT_PREFIX)) : LeafNode.ZERO_LEAVES[1];
   }
-// TODO:  I could override return type to SszOptionalSchemaImpl<ElementDataT> everywhere with cast
-  public static  <T extends SszData>  SszOptionalSchema<T, SszOptional<T>> createGenericSchema(SszSchema<T> childSchema) {
+
+  // TODO:  I could override return type to SszOptionalSchemaImpl<ElementDataT> everywhere with cast
+  public static <T extends SszData> SszOptionalSchema<T, SszOptional<T>> createGenericSchema(
+      SszSchema<T> childSchema) {
     return new SszOptionalSchemaImpl<>(childSchema) {
       @Override
       public SszOptional<T> createFromBackingNode(TreeNode node) {
@@ -77,32 +79,34 @@ public abstract class SszOptionalSchemaImpl<ElementDataT extends SszData>
   @SuppressWarnings("unchecked")
   @Override
   public DeserializableTypeDefinition<SszOptional<ElementDataT>> getJsonTypeDefinition() {
-    final DeserializableObjectTypeDefinitionBuilder<SszOptional<ElementDataT>, OptionalBuilder<SszOptional<ElementDataT>>>
+    final DeserializableObjectTypeDefinitionBuilder<
+            SszOptional<ElementDataT>, OptionalBuilder<ElementDataT, SszOptional<ElementDataT>>>
         builder = DeserializableTypeDefinition.object();
     builder.initializer(() -> new OptionalBuilder<>(this)).finisher(OptionalBuilder::build);
     builder.withOptionalField(
         "Optional[]", // FIXME
-      ((SszSchema<Object>) childSchema).getJsonTypeDefinition(),
-        value -> Optional.ofNullable(value.getValue()),
-        (optionalBuilder, maybeValue) -> optionalBuilder.set(maybeValue));
+        childSchema.getJsonTypeDefinition(),
+        SszOptional::getValue,
+        OptionalBuilder::set);
     return builder.build();
   }
 
-  private static class OptionalBuilder<T extends SszData> {
-    private final SszOptionalSchema<T, SszOptional<T>> schema;
+  private static class OptionalBuilder<
+      ElementDataT extends SszData, SszOptionalT extends SszOptional<ElementDataT>> {
+    private final SszOptionalSchema<ElementDataT, SszOptionalT> schema;
 
-    private Optional<T> value;
+    private Optional<ElementDataT> value;
 
-    private OptionalBuilder(final SszOptionalSchema<T, SszOptional<T>> schema) {
+    private OptionalBuilder(final SszOptionalSchema<ElementDataT, SszOptionalT> schema) {
       this.schema = schema;
     }
 
     @SuppressWarnings("unchecked")
-    public void set(final Optional<T> maybeValue) {
+    public void set(final Optional<ElementDataT> maybeValue) {
       this.value = maybeValue;
     }
 
-    public SszOptional<T> build() {
+    public SszOptional<ElementDataT> build() {
       return schema.createFromValue(value);
     }
   }
@@ -126,7 +130,6 @@ public abstract class SszOptionalSchemaImpl<ElementDataT extends SszData>
   @SuppressWarnings("unchecked")
   public abstract SszOptional<ElementDataT> createFromBackingNode(TreeNode node);
 
-
   @Override
   public SszOptional<ElementDataT> createFromValue(Optional<ElementDataT> value) {
     if (value.isEmpty()) {
@@ -135,7 +138,6 @@ public abstract class SszOptionalSchemaImpl<ElementDataT extends SszData>
     checkArgument(getChildSchema().equals(value.get().getSchema()), "Incompatible value schema");
     return createFromBackingNode(createOptionalNode(value.get().getBackingNode(), true));
   }
-
 
   @Override
   public int getSszVariablePartSize(TreeNode node) {
@@ -178,10 +180,12 @@ public abstract class SszOptionalSchemaImpl<ElementDataT extends SszData>
     return isPresent == IS_PRESENT_PREFIX;
   }
 
+  @Override
   public TreeNode getValueNode(TreeNode node) {
     return node.get(GIndexUtil.LEFT_CHILD_G_INDEX);
   }
 
+  @Override
   public boolean isPresent(TreeNode node) {
     return getIsPresentFromOptionalNode(getOptionalNode(node));
   }
@@ -265,6 +269,6 @@ public abstract class SszOptionalSchemaImpl<ElementDataT extends SszData>
 
   @Override
   public String toString() {
-    return "Optional" + childSchema;
+    return "SszOptional[" + childSchema + "]";
   }
 }
