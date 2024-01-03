@@ -249,7 +249,7 @@ public class StubRestApiRequest implements RestApiRequest {
   }
 
   @Override
-  public <T> T getRequestHeaders(ParameterMetadata<T> parameterMetadata) {
+  public <T> T getRequestHeader(ParameterMetadata<T> parameterMetadata) {
     assertThat(this.requestHeaders.containsKey(parameterMetadata.getName())).isTrue();
     final String param = requestHeaders.get(parameterMetadata.getName());
     return parameterMetadata.getType().deserializeFromString(param);

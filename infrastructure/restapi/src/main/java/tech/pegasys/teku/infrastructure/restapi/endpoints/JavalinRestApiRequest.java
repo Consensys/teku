@@ -265,7 +265,7 @@ public class JavalinRestApiRequest implements RestApiRequest {
   }
 
   @Override
-  public <T> T getRequestHeaders(final ParameterMetadata<T> parameterMetadata) {
+  public <T> T getRequestHeader(final ParameterMetadata<T> parameterMetadata) {
     try {
       return parameterMetadata
           .getType()

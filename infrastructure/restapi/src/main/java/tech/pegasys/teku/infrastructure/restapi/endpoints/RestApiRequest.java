@@ -56,7 +56,7 @@ public interface RestApiRequest {
 
   <T> Optional<T> getOptionalRequestHeader(final ParameterMetadata<T> parameterMetadata);
 
-  <T> T getRequestHeaders(final ParameterMetadata<T> parameterMetadata);
+  <T> T getRequestHeader(final ParameterMetadata<T> parameterMetadata);
 
   void header(final String name, final String value);
 
