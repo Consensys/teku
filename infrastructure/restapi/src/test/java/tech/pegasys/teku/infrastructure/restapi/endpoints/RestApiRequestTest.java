@@ -274,6 +274,20 @@ public class RestApiRequestTest {
   }
 
   @Test
+  void shouldRetrieveCorrectHeader() {
+    when(context.headerMap())
+        .thenReturn(
+            Map.of(
+                INT_PARAM.getName(), "1234",
+                BOOL_PARAM.getName(), "true",
+                STR_PARAM.getName(), "helloWorld"));
+    final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
+    assertThat(request.getRequestHeader(INT_PARAM)).isEqualTo(1234);
+    assertThat(request.getOptionalRequestHeader(BOOL_PARAM)).isEqualTo(Optional.of(true));
+    assertThat(request.getRequestHeader(STR_PARAM)).isEqualTo("helloWorld");
+  }
+
+  @Test
   void shouldGetQueryParameterListTypeInteger() {
     when(context.queryParamMap()).thenReturn(Map.of("int", List.of("1", "2", "3")));
     final JavalinRestApiRequest request = new JavalinRestApiRequest(context, METADATA);
