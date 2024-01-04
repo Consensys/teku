@@ -78,7 +78,8 @@ public class LocalSlashingProtectorConcurrentAccess implements SlashingProtector
 
   @Override
   public Optional<ValidatorSigningRecord> getSigningRecord(final BLSPublicKey validator) {
-    final Optional<LocalSlashingProtectionRecord> record = Optional.ofNullable(records.get(validator));
+    final Optional<LocalSlashingProtectionRecord> record =
+        Optional.ofNullable(records.get(validator));
     if (record.isEmpty()) {
       // not loaded yet, just get from file if available, can create structure on use.
       return getValidatorSigningRecordFromFile(validator);
