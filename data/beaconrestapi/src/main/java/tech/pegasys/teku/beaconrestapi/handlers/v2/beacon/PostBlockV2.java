@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v2.beacon;
 
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ETH_CONSENSUS_VERSION_HEADER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_BROADCAST_VALIDATION;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.getSchemaDefinitionForAllSupportedMilestones;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.MilestoneDependentTypesUtil.slotBasedSelector;
@@ -102,6 +103,7 @@ public class PostBlockV2 extends AbstractPostBlockV2 {
             `broadcast_validation` query parameter.""")
         .tags(TAG_BEACON, TAG_VALIDATOR_REQUIRED)
         .queryParam(PARAMETER_BROADCAST_VALIDATION)
+        .headerRequired(ETH_CONSENSUS_VERSION_HEADER)
         .requestBodyType(
             getSchemaDefinitionForAllSupportedMilestones(
                 schemaDefinitionCache,

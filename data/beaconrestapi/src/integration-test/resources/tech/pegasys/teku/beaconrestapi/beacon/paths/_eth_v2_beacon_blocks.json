@@ -13,6 +13,14 @@
         "example" : "consensus_and_equivocation",
         "format" : "string"
       }
+    }, {
+      "name" : "Eth-Consensus-Version",
+      "required" : true,
+      "in" : "header",
+      "schema" : {
+        "type" : "string",
+        "description" : "Version of the block being submitted."
+      }
     } ],
     "requestBody" : {
       "content" : {
