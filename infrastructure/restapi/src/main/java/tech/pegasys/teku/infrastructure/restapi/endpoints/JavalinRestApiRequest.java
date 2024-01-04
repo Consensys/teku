@@ -43,6 +43,7 @@ public class JavalinRestApiRequest implements RestApiRequest {
   private final EndpointMetadata metadata;
   private final Map<String, String> pathParamMap;
   private final Map<String, List<String>> queryParamMap;
+  private final Map<String, String> headerMap;
 
   @Override
   @SuppressWarnings({"TypeParameterUnusedInFormals"})
@@ -78,6 +79,7 @@ public class JavalinRestApiRequest implements RestApiRequest {
     this.metadata = metadata;
     this.pathParamMap = context.pathParamMap();
     this.queryParamMap = context.queryParamMap();
+    this.headerMap = context.headerMap();
   }
 
   @Override
@@ -241,6 +243,37 @@ public class JavalinRestApiRequest implements RestApiRequest {
           String.format(
               "Could not read query list parameter %s: %s",
               parameterMetadata.getName(), e.getMessage()));
+    }
+  }
+
+  @Override
+  public <T> Optional<T> getOptionalRequestHeader(final ParameterMetadata<T> parameterMetadata) {
+    if (!headerMap.containsKey(parameterMetadata.getName())) {
+      return Optional.empty();
+    }
+    try {
+      return Optional.of(
+          parameterMetadata
+              .getType()
+              .deserializeFromString(headerMap.get(parameterMetadata.getName())));
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Could not read optional header %s: %s",
+              parameterMetadata.getName(), e.getMessage()));
+    }
+  }
+
+  @Override
+  public <T> T getRequestHeader(final ParameterMetadata<T> parameterMetadata) {
+    try {
+      return parameterMetadata
+          .getType()
+          .deserializeFromString(headerMap.get(parameterMetadata.getName()));
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Could not read header %s: %s", parameterMetadata.getName(), e.getMessage()));
     }
   }
 

@@ -57,7 +57,8 @@ public class StubRestApiRequest implements RestApiRequest {
   private final Map<String, String> optionalQueryParameters = new HashMap<>();
   private final Map<String, List<String>> listQueryParameters = new HashMap<>();
   private final Map<Integer, String> contentTypeMap = new HashMap<>();
-  private final Map<String, String> headers = new HashMap<>();
+  private final Map<String, String> responseHeaders = new HashMap<>();
+  private final Map<String, String> requestHeaders = new HashMap<>();
 
   private final EndpointMetadata metadata;
 
@@ -235,18 +236,37 @@ public class StubRestApiRequest implements RestApiRequest {
         .collect(Collectors.toList());
   }
 
+  public void setRequestHeader(final String parameter, final String value) {
+    assertThat(this.requestHeaders.containsKey(parameter)).isFalse();
+    this.requestHeaders.put(parameter, value);
+  }
+
+  @Override
+  public <T> Optional<T> getOptionalRequestHeader(ParameterMetadata<T> parameterMetadata) {
+    final Optional<String> param =
+        Optional.ofNullable(requestHeaders.get(parameterMetadata.getName()));
+    return param.map(p -> parameterMetadata.getType().deserializeFromString(p));
+  }
+
+  @Override
+  public <T> T getRequestHeader(ParameterMetadata<T> parameterMetadata) {
+    assertThat(this.requestHeaders.containsKey(parameterMetadata.getName())).isTrue();
+    final String param = requestHeaders.get(parameterMetadata.getName());
+    return parameterMetadata.getType().deserializeFromString(param);
+  }
+
   @Override
   public void header(final String name, final String value) {
-    headers.put(name, value);
+    responseHeaders.put(name, value);
+  }
+
+  public String getResponseHeaders(String name) {
+    return responseHeaders.get(name);
   }
 
   @Override
   public void startEventStream(Consumer<SseClient> clientConsumer) {
     throw new UnsupportedOperationException();
-  }
-
-  public String getHeader(String name) {
-    return headers.get(name);
   }
 
   public static Builder builder() {
