@@ -241,9 +241,9 @@ class EndpointMetadataTest {
   void header_cannotUseCertainNames(final String name) {
     final ParameterMetadata<String> parameterMetadata = new ParameterMetadata<>(name, STRING_TYPE);
     assertThatThrownBy(() -> validBuilder().header(parameterMetadata))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining(
-                    "Request headers cannot be named Content-Type, Accept, or Authorization");
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(
+            "Request headers cannot be named Content-Type, Accept, or Authorization");
   }
 
   @Test
