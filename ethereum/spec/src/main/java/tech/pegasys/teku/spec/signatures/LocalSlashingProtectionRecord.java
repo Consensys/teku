@@ -13,12 +13,11 @@
 
 package tech.pegasys.teku.spec.signatures;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.locks.ReentrantLock;
-
-import com.google.common.annotations.VisibleForTesting;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.signingrecord.ValidatorSigningRecord;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
