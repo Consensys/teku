@@ -23,7 +23,9 @@ public interface SszOptionalSchema<
         ElementDataT extends SszData, SszOptionalT extends SszOptional<ElementDataT>>
     extends SszSchema<SszOptionalT> {
 
-  static <T extends SszData> SszOptionalSchemaImpl<T> create(final SszSchema<T> childSchema) {
+  static <ElementDataT extends SszData>
+      SszOptionalSchema<ElementDataT, SszOptional<ElementDataT>> create(
+          final SszSchema<ElementDataT> childSchema) {
     return SszOptionalSchemaImpl.createGenericSchema(childSchema);
   }
 

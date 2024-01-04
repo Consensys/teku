@@ -48,34 +48,32 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeUtil;
  * SszOptional schema according to the <a
  * href="https://eips.ethereum.org/EIPS/eip-6475">EIP-6475</a>
  */
-public abstract class SszOptionalSchemaImpl<ElementDataT extends SszData>
+public class SszOptionalSchemaImpl<ElementDataT extends SszData>
     implements SszOptionalSchema<ElementDataT, SszOptional<ElementDataT>> {
 
   private static final byte IS_PRESENT_PREFIX = 1;
   private static final int PREFIX_SIZE_BYTES = 1;
+  private static final LeafNode EMPTY_OPTIONAL_LEAF = LeafNode.create(Bytes.of(0));
+  private static final LeafNode PRESENT_OPTIONAL_LEAF =
+      LeafNode.create(Bytes.of(IS_PRESENT_PREFIX));
+  private static final TreeNode DEFAULT_TREE = createTreeNode(LeafNode.EMPTY_LEAF, false);
 
   private static LeafNode createOptionalNode(final boolean isPresent) {
-    return isPresent ? LeafNode.create(Bytes.of(IS_PRESENT_PREFIX)) : LeafNode.ZERO_LEAVES[1];
+    return isPresent ? PRESENT_OPTIONAL_LEAF : EMPTY_OPTIONAL_LEAF;
   }
 
-  public static <T extends SszData> SszOptionalSchemaImpl<T> createGenericSchema(
-      final SszSchema<T> childSchema) {
-    return new SszOptionalSchemaImpl<>(childSchema) {
-      @Override
-      public SszOptional<T> createFromBackingNode(final TreeNode node) {
-        return new SszOptionalImpl<>(this, node);
-      }
-    };
+  public static <ElementDataT extends SszData>
+      SszOptionalSchema<ElementDataT, SszOptional<ElementDataT>> createGenericSchema(
+          final SszSchema<ElementDataT> childSchema) {
+    return new SszOptionalSchemaImpl<>(childSchema);
   }
 
   private final SszSchema<ElementDataT> childSchema;
-  private final TreeNode defaultTree;
   private final Supplier<SszLengthBounds> lengthBounds =
       Suppliers.memoize(this::calcSszLengthBounds);
 
   public SszOptionalSchemaImpl(final SszSchema<ElementDataT> childSchema) {
     this.childSchema = childSchema;
-    this.defaultTree = createOptionalNode(LeafNode.ZERO_LEAVES[0], false);
   }
 
   @Override
@@ -123,11 +121,13 @@ public abstract class SszOptionalSchemaImpl<ElementDataT extends SszData>
 
   @Override
   public TreeNode getDefaultTree() {
-    return defaultTree;
+    return DEFAULT_TREE;
   }
 
   @Override
-  public abstract SszOptional<ElementDataT> createFromBackingNode(TreeNode node);
+  public SszOptional<ElementDataT> createFromBackingNode(final TreeNode node) {
+    return new SszOptionalImpl<>(this, node);
+  }
 
   @Override
   public SszOptional<ElementDataT> createFromValue(final Optional<ElementDataT> value) {
@@ -135,7 +135,7 @@ public abstract class SszOptionalSchemaImpl<ElementDataT extends SszData>
       return createFromBackingNode(getDefaultTree());
     }
     checkArgument(getChildSchema().equals(value.get().getSchema()), "Incompatible value schema");
-    return createFromBackingNode(createOptionalNode(value.get().getBackingNode(), true));
+    return createFromBackingNode(createTreeNode(value.get().getBackingNode(), true));
   }
 
   @Override
@@ -166,7 +166,7 @@ public abstract class SszOptionalSchemaImpl<ElementDataT extends SszData>
           "Invalid prefix " + isPresent + " for Optional schema: " + this);
     }
     final TreeNode valueNode = childSchema.sszDeserializeTree(reader);
-    return createOptionalNode(valueNode, true);
+    return createTreeNode(valueNode, true);
   }
 
   public boolean getIsPresentFromOptionalNode(final TreeNode optionalNode) {
@@ -193,7 +193,7 @@ public abstract class SszOptionalSchemaImpl<ElementDataT extends SszData>
     return node.get(GIndexUtil.RIGHT_CHILD_G_INDEX);
   }
 
-  private TreeNode createOptionalNode(final TreeNode valueNode, final boolean isPresent) {
+  private static TreeNode createTreeNode(final TreeNode valueNode, final boolean isPresent) {
     return BranchNode.create(valueNode, createOptionalNode(isPresent));
   }
 
@@ -241,7 +241,7 @@ public abstract class SszOptionalSchemaImpl<ElementDataT extends SszData>
     checkState(isPresent <= IS_PRESENT_PREFIX, "Selector is out of bounds");
     final TreeNode valueNode =
         childSchema.loadBackingNodes(nodeSource, valueHash, GIndexUtil.gIdxLeftGIndex(rootGIndex));
-    return createOptionalNode(valueNode, isPresent == IS_PRESENT_PREFIX);
+    return createTreeNode(valueNode, isPresent == IS_PRESENT_PREFIX);
   }
 
   @Override
