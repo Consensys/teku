@@ -54,6 +54,10 @@ public interface RestApiRequest {
 
   <T> List<T> getQueryParameterList(final ParameterMetadata<T> parameterMetadata);
 
+  <T> Optional<T> getOptionalRequestHeader(final ParameterMetadata<T> parameterMetadata);
+
+  <T> T getRequestHeader(final ParameterMetadata<T> parameterMetadata);
+
   void header(final String name, final String value);
 
   void startEventStream(final Consumer<SseClient> clientConsumer);
