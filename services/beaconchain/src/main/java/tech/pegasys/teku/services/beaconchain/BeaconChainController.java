@@ -1280,7 +1280,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             metricsSystem,
             executionLayer,
             recentChainData,
-            getProposerDefaultFeeRecipient());
+            getProposerDefaultFeeRecipient(),
+            beaconConfig.eth2NetworkConfig().isForkChoiceUpdatedAlwaysSendPayloadAttributes());
     eventChannels.subscribe(SlotEventsChannel.class, proposersDataManager);
     forkChoiceNotifier =
         new ForkChoiceNotifierImpl(

@@ -64,7 +64,6 @@ import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.block.NewBlockBuildingSubscriber.NewBlockBuildingNotification;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -92,7 +91,6 @@ class ForkChoiceNotifierTest {
 
   private ForkChoiceNotifierImpl notifier;
   private ForkChoiceUpdatedResultNotification forkChoiceUpdatedResultNotification;
-  private NewBlockBuildingNotification newBlockBuildingNotification;
 
   @BeforeAll
   public static void initSession() {
@@ -123,7 +121,8 @@ class ForkChoiceNotifierTest {
                 metricsSystem,
                 executionLayerChannel,
                 recentChainData,
-                doNotInitializeWithDefaultFeeRecipient ? Optional.empty() : defaultFeeRecipient));
+                doNotInitializeWithDefaultFeeRecipient ? Optional.empty() : defaultFeeRecipient,
+                false));
     notifier =
         new ForkChoiceNotifierImpl(
             forkChoiceStateProvider,
@@ -137,9 +136,6 @@ class ForkChoiceNotifierTest {
     // store fcu notification
     notifier.subscribeToForkChoiceUpdatedResult(
         notification -> forkChoiceUpdatedResultNotification = notification);
-    // store new block building notification
-    notifier.subscribeToNewBlockBuilding(
-        notification -> newBlockBuildingNotification = notification);
     storageSystem
         .chainUpdater()
         .initializeGenesisWithPayload(false, dataStructureUtil.randomExecutionPayloadHeader());
@@ -168,7 +164,8 @@ class ForkChoiceNotifierTest {
                 metricsSystem,
                 executionLayerChannel,
                 recentChainData,
-                defaultFeeRecipient));
+                defaultFeeRecipient,
+                false));
     notifier =
         new ForkChoiceNotifierImpl(
             forkChoiceStateProvider,
@@ -182,9 +179,6 @@ class ForkChoiceNotifierTest {
     // store fcu notification
     notifier.subscribeToForkChoiceUpdatedResult(
         notification -> forkChoiceUpdatedResultNotification = notification);
-    // store new block building notification
-    notifier.subscribeToNewBlockBuilding(
-        notification -> newBlockBuildingNotification = notification);
     storageSystem.chainUpdater().initializeGenesis(false);
     storageSystem.chainUpdater().updateBestBlock(storageSystem.chainUpdater().advanceChain());
     forkChoiceStrategy = recentChainData.getForkChoiceStrategy().orElseThrow();
@@ -853,7 +847,7 @@ class ForkChoiceNotifierTest {
     forkChoiceUpdatedResultNotification = null;
     notifier.onForkChoiceUpdated(forkChoiceState, proposingSlot);
     assertThat(forkChoiceUpdatedResultNotification).isNotNull();
-    assertThat(forkChoiceUpdatedResultNotification.getForkChoiceUpdatedResult()).isCompleted();
+    assertThat(forkChoiceUpdatedResultNotification.forkChoiceUpdatedResult()).isCompleted();
   }
 
   private void validateGetPayloadIdOnTheFlyRetrieval(
@@ -890,14 +884,7 @@ class ForkChoiceNotifierTest {
       assertThatSafeFuture(futureExecutionPayloadContext)
           .isCompletedWithOptionalContaining(executionPayloadContext);
       // verify subscribers notified
-      assertThat(forkChoiceUpdatedResultNotification.getForkChoiceState())
-          .isEqualTo(forkChoiceState);
-      final NewBlockBuildingNotification expectedNotification =
-          new NewBlockBuildingNotification(
-              forkChoiceState.getHeadExecutionBlockNumber(),
-              forkChoiceState.getHeadExecutionBlockHash(),
-              payloadBuildingAttributes);
-      assertThat(newBlockBuildingNotification).isEqualTo(expectedNotification);
+      assertThat(forkChoiceUpdatedResultNotification.forkChoiceState()).isEqualTo(forkChoiceState);
     }
   }
 

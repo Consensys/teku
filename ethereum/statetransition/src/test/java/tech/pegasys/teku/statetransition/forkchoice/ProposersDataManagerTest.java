@@ -50,7 +50,8 @@ class ProposersDataManagerTest {
           metricsSystem,
           channel,
           recentChainData,
-          Optional.of(defaultAddress));
+          Optional.of(defaultAddress),
+          false);
 
   final List<BeaconPreparableProposer> proposers =
       List.of(

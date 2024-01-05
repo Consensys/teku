@@ -28,8 +28,8 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
-import tech.pegasys.teku.statetransition.block.NewBlockBuildingSubscriber.NewBlockBuildingNotification;
 
 public class PayloadAttributesEvent extends Event<PayloadAttributesData> {
 
@@ -99,19 +99,22 @@ public class PayloadAttributesEvent extends Event<PayloadAttributesData> {
       Optional<List<Withdrawal>> withdrawals,
       Optional<Bytes32> parentBeaconBlockRoot) {}
 
+  /**
+   * @param forkChoiceState The fork choice state before sending the fCu so can use it to get
+   *     parent_block_number and parent_block_hash
+   */
   static PayloadAttributesEvent create(
       final SpecMilestone milestone,
-      final NewBlockBuildingNotification newBlockBuildingNotification) {
-    final PayloadBuildingAttributes payloadAttributes =
-        newBlockBuildingNotification.payloadAttributes();
+      final PayloadBuildingAttributes payloadAttributes,
+      final ForkChoiceState forkChoiceState) {
     final PayloadAttributesData data =
         new PayloadAttributesData(
             milestone,
             new PayloadAttributesEvent.Data(
                 payloadAttributes.getProposalSlot(),
                 payloadAttributes.getParentBeaconBlockRoot(),
-                newBlockBuildingNotification.parentExecutionBlockNumber(),
-                newBlockBuildingNotification.parentExecutionBlockHash(),
+                forkChoiceState.getHeadExecutionBlockNumber(),
+                forkChoiceState.getHeadExecutionBlockHash(),
                 payloadAttributes.getProposerIndex(),
                 // based on PayloadAttributesV<N> as defined by the execution-apis specification
                 new PayloadAttributes(

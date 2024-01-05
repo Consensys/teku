@@ -50,13 +50,14 @@ public class ProposersDataManager implements SlotEventsChannel {
 
   private final Spec spec;
   private final EventThread eventThread;
-  private final RecentChainData recentChainData;
   private final ExecutionLayerChannel executionLayerChannel;
+  private final RecentChainData recentChainData;
   private final Map<UInt64, PreparedProposerInfo> preparedProposerInfoByValidatorIndex =
       new ConcurrentHashMap<>();
   private final Map<UInt64, RegisteredValidatorInfo> validatorRegistrationInfoByValidatorIndex =
       new ConcurrentHashMap<>();
   private final Optional<Eth1Address> proposerDefaultFeeRecipient;
+  private final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes;
 
   private final Subscribers<ProposersDataManagerSubscriber> proposersDataChangesSubscribers =
       Subscribers.create(true);
@@ -67,7 +68,8 @@ public class ProposersDataManager implements SlotEventsChannel {
       final MetricsSystem metricsSystem,
       final ExecutionLayerChannel executionLayerChannel,
       final RecentChainData recentChainData,
-      final Optional<Eth1Address> proposerDefaultFeeRecipient) {
+      final Optional<Eth1Address> proposerDefaultFeeRecipient,
+      final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes) {
     final LabelledGauge labelledGauge =
         metricsSystem.createLabelledGauge(
             TekuMetricCategory.BEACON,
@@ -80,9 +82,11 @@ public class ProposersDataManager implements SlotEventsChannel {
 
     this.spec = spec;
     this.eventThread = eventThread;
+    this.executionLayerChannel = executionLayerChannel;
     this.recentChainData = recentChainData;
     this.proposerDefaultFeeRecipient = proposerDefaultFeeRecipient;
-    this.executionLayerChannel = executionLayerChannel;
+    this.forkChoiceUpdatedAlwaysSendPayloadAttributes =
+        forkChoiceUpdatedAlwaysSendPayloadAttributes;
   }
 
   public void subscribeToProposersDataChanges(final ProposersDataManagerSubscriber subscriber) {
@@ -226,7 +230,7 @@ public class ProposersDataManager implements SlotEventsChannel {
     final UInt64 proposerIndex = UInt64.valueOf(spec.getBeaconProposerIndex(state, blockSlot));
     final PreparedProposerInfo proposerInfo =
         preparedProposerInfoByValidatorIndex.get(proposerIndex);
-    if (proposerInfo == null && !mandatory) {
+    if (proposerInfo == null && !mandatory && !forkChoiceUpdatedAlwaysSendPayloadAttributes) {
       // Proposer is not one of our validators. No need to propose a block.
       return Optional.empty();
     }
@@ -237,13 +241,15 @@ public class ProposersDataManager implements SlotEventsChannel {
         Optional.ofNullable(validatorRegistrationInfoByValidatorIndex.get(proposerIndex))
             .map(RegisteredValidatorInfo::getSignedValidatorRegistration);
 
+    Eth1Address feeRecipient = getFeeRecipient(proposerInfo, blockSlot);
+
     return Optional.of(
         new PayloadBuildingAttributes(
             proposerIndex,
             blockSlot,
             timestamp,
             random,
-            getFeeRecipient(proposerInfo, blockSlot),
+            feeRecipient,
             validatorRegistration,
             spec.getExpectedWithdrawals(state),
             currentHeadBlockRoot));
