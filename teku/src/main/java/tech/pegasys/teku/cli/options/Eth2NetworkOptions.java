@@ -337,7 +337,8 @@ public class Eth2NetworkOptions {
         .asyncBeaconChainMaxQueue(asyncBeaconChainMaxQueue)
         .forkChoiceUpdateHeadOnBlockImportEnabled(forkChoiceUpdateHeadOnBlockImportEnabled)
         .forkChoiceLateBlockReorgEnabled(forkChoiceLateBlockReorgEnabled)
-        .epochsStoreBlobs(epochsStoreBlobs);
+        .epochsStoreBlobs(epochsStoreBlobs)
+        .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes);
   }
 
   public String getNetwork() {
