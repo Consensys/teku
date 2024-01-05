@@ -22,9 +22,8 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_I
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COUNT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EPOCH_QUERY_DESCRIPTION;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.ETH_CONSENSUS_VERSION;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.ETH_CONSENSUS_VERSION_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.GRAFFITI;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID_DESCRIPTION;
@@ -238,7 +237,8 @@ public class BeaconRestApiTypes {
 
   public static final ParameterMetadata<String> ETH_CONSENSUS_VERSION_HEADER =
       new ParameterMetadata<>(
-          ETH_CONSENSUS_VERSION, STRING_TYPE.withDescription(ETH_CONSENSUS_VERSION_DESCRIPTION));
+          HEADER_CONSENSUS_VERSION,
+          STRING_TYPE.withDescription("Version of the block being submitted."));
 
   @SuppressWarnings("JavaCase")
   public enum BroadcastValidationParameter {
