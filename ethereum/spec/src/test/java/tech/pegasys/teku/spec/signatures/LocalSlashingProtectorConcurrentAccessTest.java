@@ -56,17 +56,20 @@ public class LocalSlashingProtectorConcurrentAccessTest extends LocalSlashingPro
               final LocalSlashingProtectionRecord entry =
                   slashingProtectionStorage.getOrCreateSigningRecord(
                       validator, GENESIS_VALIDATORS_ROOT);
-              entry.lock();
-              LOG.debug("LOCKED firstSigner");
-              do {
-                try {
-                  Thread.sleep(10);
-                } catch (InterruptedException e) {
-                  throw new RuntimeException(e);
-                }
-              } while (!releaseLock.get());
-              entry.unlock();
-              LOG.debug("UNLOCK firstSigner");
+              try {
+                entry.lock();
+                LOG.debug("LOCKED firstSigner");
+                do {
+                  try {
+                    Thread.sleep(10);
+                  } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                  }
+                } while (!releaseLock.get());
+              } finally {
+                entry.unlock();
+                LOG.debug("UNLOCK firstSigner");
+              }
             });
     final LocalSlashingProtectionRecord snoopEntry =
         slashingProtectionStorage.getOrCreateSigningRecord(validator, GENESIS_VALIDATORS_ROOT);
@@ -83,10 +86,13 @@ public class LocalSlashingProtectorConcurrentAccessTest extends LocalSlashingPro
               final LocalSlashingProtectionRecord entry =
                   slashingProtectionStorage.getOrCreateSigningRecord(
                       validator, GENESIS_VALIDATORS_ROOT);
-              entry.lock();
-              LOG.debug("LOCKED secondSigner");
-              entry.unlock();
-              LOG.debug("UNLOCK secondSigner");
+              try {
+                entry.lock();
+                LOG.debug("LOCKED secondSigner");
+              } finally {
+                entry.unlock();
+                LOG.debug("UNLOCK secondSigner");
+              }
             });
 
     while (!snoopEntry.getLock().hasQueuedThreads()) {
@@ -117,17 +123,20 @@ public class LocalSlashingProtectorConcurrentAccessTest extends LocalSlashingPro
               final LocalSlashingProtectionRecord entry =
                   slashingProtectionStorage.getOrCreateSigningRecord(
                       validator, GENESIS_VALIDATORS_ROOT);
-              entry.lock();
-              LOG.debug("LOCKED firstSigner");
-              do {
-                try {
-                  Thread.sleep(10);
-                } catch (InterruptedException e) {
-                  throw new RuntimeException(e);
-                }
-              } while (!releaseLock.get());
-              entry.unlock();
-              LOG.debug("UNLOCK firstSigner");
+              try {
+                entry.lock();
+                LOG.debug("LOCKED firstSigner");
+                do {
+                  try {
+                    Thread.sleep(10);
+                  } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                  }
+                } while (!releaseLock.get());
+              } finally {
+                entry.unlock();
+                LOG.debug("UNLOCK firstSigner");
+              }
             });
     final CountDownLatch threadAcquired = new CountDownLatch(1);
     final SafeFuture<Void> secondSigner =
@@ -137,10 +146,13 @@ public class LocalSlashingProtectorConcurrentAccessTest extends LocalSlashingPro
               final LocalSlashingProtectionRecord entry =
                   slashingProtectionStorage.getOrCreateSigningRecord(
                       dataStructureUtil.randomPublicKey(), GENESIS_VALIDATORS_ROOT);
-              entry.lock();
-              LOG.debug("LOCKED secondSigner");
-              entry.unlock();
-              LOG.debug("UNLOCK secondSigner");
+              try {
+                entry.lock();
+                LOG.debug("LOCKED secondSigner");
+              } finally {
+                entry.unlock();
+                LOG.debug("UNLOCK secondSigner");
+              }
             });
     threadAcquired.await();
     assertThat(firstSigner).isNotCompleted();
