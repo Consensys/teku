@@ -47,7 +47,9 @@ public class LocalSlashingProtectorConcurrentAccess implements SlashingProtector
       final BLSPublicKey validator, final Bytes32 genesisValidatorsRoot, final UInt64 slot) {
     return SafeFuture.of(
         () -> {
-          final LocalSlashingProtectionRecord entry = acquireLock(validator, genesisValidatorsRoot);
+          final LocalSlashingProtectionRecord entry =
+              getOrCreateSigningRecord(validator, genesisValidatorsRoot);
+          entry.lock();
           try {
             return entry.writeSigningRecord(
                 dataAccessor, entry.maySignBlock(genesisValidatorsRoot, slot));
@@ -65,7 +67,9 @@ public class LocalSlashingProtectorConcurrentAccess implements SlashingProtector
       final UInt64 targetEpoch) {
     return SafeFuture.of(
         () -> {
-          final LocalSlashingProtectionRecord entry = acquireLock(validator, genesisValidatorsRoot);
+          final LocalSlashingProtectionRecord entry =
+              getOrCreateSigningRecord(validator, genesisValidatorsRoot);
+          entry.lock();
           try {
             return entry.writeSigningRecord(
                 dataAccessor,
@@ -78,28 +82,25 @@ public class LocalSlashingProtectorConcurrentAccess implements SlashingProtector
 
   @Override
   public Optional<ValidatorSigningRecord> getSigningRecord(final BLSPublicKey validator) {
-    final Optional<LocalSlashingProtectionRecord> record =
+    final Optional<LocalSlashingProtectionRecord> maybeRecord =
         Optional.ofNullable(records.get(validator));
-    if (record.isEmpty()) {
+    if (maybeRecord.isEmpty()) {
       // not loaded yet, just get from file if available, can create structure on use.
       return getValidatorSigningRecordFromFile(validator);
     }
+    final LocalSlashingProtectionRecord record = maybeRecord.get();
     try {
-      // unlike other occasions, we're not creating if absent, so only lock if present
-      record.ifPresent(LocalSlashingProtectionRecord::lock);
-      return record.map(LocalSlashingProtectionRecord::getSigningRecord);
+      record.lock();
+      return Optional.of(record.getSigningRecord());
     } finally {
-      record.ifPresent(LocalSlashingProtectionRecord::unlock);
+      record.unlock();
     }
   }
 
-  LocalSlashingProtectionRecord acquireLock(
+  @VisibleForTesting
+  LocalSlashingProtectionRecord getOrCreateSigningRecord(
       final BLSPublicKey validator, final Bytes32 genesisValidatorsRoot) {
-    final LocalSlashingProtectionRecord entry =
-        records.computeIfAbsent(validator, __ -> addRecord(validator, genesisValidatorsRoot));
-    // essential that we take a lock here
-    entry.lock();
-    return entry;
+    return records.computeIfAbsent(validator, __ -> addRecord(validator, genesisValidatorsRoot));
   }
 
   private LocalSlashingProtectionRecord addRecord(
@@ -127,10 +128,5 @@ public class LocalSlashingProtectorConcurrentAccess implements SlashingProtector
       LOG.error("Failed to load validator signing record {}", publicKey, e);
       return Optional.empty();
     }
-  }
-
-  @VisibleForTesting
-  Optional<ReentrantLock> getLock(final BLSPublicKey validator) {
-    return Optional.ofNullable(records.get(validator)).map(LocalSlashingProtectionRecord::getLock);
   }
 }
