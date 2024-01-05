@@ -77,8 +77,8 @@ CHURN_LIMIT_QUOTIENT: 32
 
 # Fork choice
 # ---------------------------------------------------------------
-# 70%
-PROPOSER_SCORE_BOOST: 70
+# 40%
+PROPOSER_SCORE_BOOST: 40
 # 20%
 REORG_HEAD_WEIGHT_THRESHOLD: 20
 # 160%
