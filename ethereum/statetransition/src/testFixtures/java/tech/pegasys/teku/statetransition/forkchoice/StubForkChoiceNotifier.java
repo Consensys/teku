@@ -21,7 +21,6 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
-import tech.pegasys.teku.statetransition.block.NewBlockBuildingSubscriber;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 
 public class StubForkChoiceNotifier implements ForkChoiceNotifier {
@@ -39,15 +38,12 @@ public class StubForkChoiceNotifier implements ForkChoiceNotifier {
   }
 
   @Override
-  public void subscribeToNewBlockBuilding(final NewBlockBuildingSubscriber subscriber) {}
-
-  @Override
   public void onForkChoiceUpdated(
       final ForkChoiceState forkChoiceState, final Optional<UInt64> proposingSlot) {
     forkChoiceUpdatedSubscribers.deliver(
         ForkChoiceUpdatedResultSubscriber::onForkChoiceUpdatedResult,
         new ForkChoiceUpdatedResultNotification(
-            forkChoiceState, false, forkChoiceUpdatedResultNotification));
+            forkChoiceState, Optional.empty(), false, forkChoiceUpdatedResultNotification));
   }
 
   @Override

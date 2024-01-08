@@ -164,7 +164,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   public void onForkChoiceUpdatedResult(
       final ForkChoiceUpdatedResultNotification forkChoiceUpdatedResultNotification) {
     forkChoiceUpdatedResultNotification
-        .getForkChoiceUpdatedResult()
+        .forkChoiceUpdatedResult()
         .thenAccept(
             maybeForkChoiceUpdatedResult ->
                 maybeForkChoiceUpdatedResult.ifPresent(
@@ -174,14 +174,12 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                         LOG.error(
                             "Execution engine considers INVALID recently provided terminal block {}",
                             forkChoiceUpdatedResultNotification
-                                .getForkChoiceState()
+                                .forkChoiceState()
                                 .getHeadExecutionBlockHash());
                         return;
                       }
                       onExecutionPayloadResult(
-                          forkChoiceUpdatedResultNotification
-                              .getForkChoiceState()
-                              .getHeadBlockRoot(),
+                          forkChoiceUpdatedResultNotification.forkChoiceState().getHeadBlockRoot(),
                           forkChoiceUpdatedResult.getPayloadStatus());
                     }))
         .finish(

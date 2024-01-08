@@ -1036,7 +1036,10 @@ class ForkChoiceTest {
     try (LogCaptor logCaptor = LogCaptor.forClass(ForkChoice.class)) {
       forkChoice.onForkChoiceUpdatedResult(
           new ForkChoiceUpdatedResultNotification(
-              state, true, SafeFuture.completedFuture(Optional.ofNullable(result))));
+              state,
+              Optional.empty(),
+              true,
+              SafeFuture.completedFuture(Optional.ofNullable(result))));
       if (result.getPayloadStatus().hasInvalidStatus()) {
         final List<String> errorLogs = logCaptor.getErrorLogs();
         assertThat(errorLogs).singleElement().asString().contains("INVALID", "terminal");
@@ -1392,6 +1395,7 @@ class ForkChoiceTest {
       forkChoice.onForkChoiceUpdatedResult(
           new ForkChoiceUpdatedResultNotification(
               invocation.getArgument(0),
+              Optional.empty(),
               false,
               SafeFuture.completedFuture(Optional.ofNullable(result))));
       return null;

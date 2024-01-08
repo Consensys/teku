@@ -41,8 +41,8 @@ import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool.NewBlobSidecarSubscriber;
 import tech.pegasys.teku.statetransition.block.BlockManager;
-import tech.pegasys.teku.statetransition.block.NewBlockBuildingSubscriber;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber;
 import tech.pegasys.teku.statetransition.forkchoice.PreparedProposerInfo;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.forkchoice.RegisteredValidatorInfo;
@@ -212,8 +212,8 @@ public class NodeDataProvider {
     syncCommitteeContributionPool.subscribeOperationAdded(listener);
   }
 
-  public void subscribeToNewBlockBuilding(final NewBlockBuildingSubscriber listener) {
-    forkChoiceNotifier.subscribeToNewBlockBuilding(listener);
+  public void subscribeToForkChoiceUpdatedResult(final ForkChoiceUpdatedResultSubscriber listener) {
+    forkChoiceNotifier.subscribeToForkChoiceUpdatedResult(listener);
   }
 
   public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> getValidatorLiveness(
