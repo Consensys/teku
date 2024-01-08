@@ -38,6 +38,7 @@ import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.PayloadAttributesEvent.Data;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.PayloadAttributesEvent.PayloadAttributes;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.events.PayloadAttributesEvent.PayloadAttributesData;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
@@ -56,9 +57,12 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
+import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.block.NewBlockBuildingSubscriber.NewBlockBuildingNotification;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ReorgContext;
 
@@ -134,6 +138,22 @@ public class EventSubscriptionManagerTest {
                   samplePayloadAttributes.getFeeRecipient(),
                   samplePayloadAttributes.getWithdrawals(),
                   Optional.of(samplePayloadAttributes.getParentBeaconBlockRoot()))));
+  final ForkChoiceUpdatedResultNotification forkChoiceUpdatedResultNotification =
+      new ForkChoiceUpdatedResultNotification(
+          new ForkChoiceState(
+              data.randomBytes32(),
+              data.randomSlot(),
+              samplePayloadAttributesData.data().parentExecutionBlockNumber(),
+              samplePayloadAttributesData.data().parentExecutionBlockHash(),
+              data.randomBytes32(),
+              data.randomBytes32(),
+              false),
+          Optional.of(samplePayloadAttributes),
+          false,
+          SafeFuture.completedFuture(
+              Optional.of(
+                  new ForkChoiceUpdatedResult(
+                      PayloadStatus.VALID, Optional.of(data.randomBytes8())))));
 
   private final AsyncContext async = mock(AsyncContext.class);
   private final EventChannels channels = mock(EventChannels.class);
@@ -258,14 +278,12 @@ public class EventSubscriptionManagerTest {
     manager.registerClient(client1);
 
     triggerPayloadAttributesEvent();
-    final NewBlockBuildingNotification notification =
-        new NewBlockBuildingNotification(
-            samplePayloadAttributesData.data().parentExecutionBlockNumber(),
-            samplePayloadAttributesData.data().parentExecutionBlockHash(),
-            samplePayloadAttributes);
     checkEvent(
         "payload_attributes",
-        PayloadAttributesEvent.create(samplePayloadAttributesData.milestone(), notification));
+        PayloadAttributesEvent.create(
+            samplePayloadAttributesData.milestone(),
+            samplePayloadAttributes,
+            forkChoiceUpdatedResultNotification.forkChoiceState()));
   }
 
   @Test
@@ -437,11 +455,7 @@ public class EventSubscriptionManagerTest {
   }
 
   private void triggerPayloadAttributesEvent() {
-    manager.onNewPayloadAttributes(
-        new NewBlockBuildingNotification(
-            samplePayloadAttributesData.data().parentExecutionBlockNumber(),
-            samplePayloadAttributesData.data().parentExecutionBlockHash(),
-            samplePayloadAttributes));
+    manager.onForkChoiceUpdatedResult(forkChoiceUpdatedResultNotification);
     asyncRunner.executeQueuedActions();
   }
 

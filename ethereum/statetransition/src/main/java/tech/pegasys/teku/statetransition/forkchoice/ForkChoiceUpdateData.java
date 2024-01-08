@@ -152,6 +152,10 @@ public class ForkChoiceUpdateData {
     }
   }
 
+  public Optional<PayloadBuildingAttributes> getPayloadBuildingAttributes() {
+    return payloadBuildingAttributes;
+  }
+
   public SafeFuture<Optional<ExecutionPayloadContext>> getExecutionPayloadContext() {
     return executionPayloadContext;
   }
