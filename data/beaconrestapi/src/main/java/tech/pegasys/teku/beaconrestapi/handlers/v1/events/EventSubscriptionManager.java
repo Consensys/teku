@@ -33,6 +33,7 @@ import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ListQueryParameterUtils;
@@ -49,6 +50,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -225,27 +227,22 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
       final ForkChoiceUpdatedResultNotification forkChoiceUpdatedResultNotification) {
     final Optional<PayloadBuildingAttributes> maybePayloadAttributes =
         forkChoiceUpdatedResultNotification.payloadAttributes();
+    // no payload attributes
     if (maybePayloadAttributes.isEmpty()) {
       return;
     }
+    final SafeFuture<Optional<ForkChoiceUpdatedResult>> forkChoiceUpdatedResult =
+        forkChoiceUpdatedResultNotification.forkChoiceUpdatedResult();
+    // no fCu has been sent
+    if (forkChoiceUpdatedResult.isCompletedNormally() && forkChoiceUpdatedResult.join().isEmpty()) {
+      return;
+    }
     final PayloadBuildingAttributes payloadAttributes = maybePayloadAttributes.get();
-    forkChoiceUpdatedResultNotification
-        .forkChoiceUpdatedResult()
-        .thenAccept(
-            forkChoiceUpdatedResult -> {
-              if (forkChoiceUpdatedResult.isEmpty()) {
-                return;
-              }
-              final SpecMilestone milestone =
-                  spec.atSlot(payloadAttributes.getProposalSlot()).getMilestone();
-              final PayloadAttributesEvent payloadAttributesEvent =
-                  PayloadAttributesEvent.create(
-                      milestone,
-                      payloadAttributes,
-                      forkChoiceUpdatedResultNotification.forkChoiceState());
-              notifySubscribersOfEvent(EventType.payload_attributes, payloadAttributesEvent);
-            })
-        .ifExceptionGetsHereRaiseABug();
+    final SpecMilestone milestone = spec.atSlot(payloadAttributes.getProposalSlot()).getMilestone();
+    final PayloadAttributesEvent payloadAttributesEvent =
+        PayloadAttributesEvent.create(
+            milestone, payloadAttributes, forkChoiceUpdatedResultNotification.forkChoiceState());
+    notifySubscribersOfEvent(EventType.payload_attributes, payloadAttributesEvent);
   }
 
   @Override
