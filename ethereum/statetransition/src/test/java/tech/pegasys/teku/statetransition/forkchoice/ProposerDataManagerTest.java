@@ -60,8 +60,7 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
           metricsSystem,
           executionLayerChannel,
           recentChainData,
-          defaultFeeRecipient,
-          false);
+          defaultFeeRecipient);
 
   private final BeaconState state = dataStructureUtil.randomBeaconState();
 

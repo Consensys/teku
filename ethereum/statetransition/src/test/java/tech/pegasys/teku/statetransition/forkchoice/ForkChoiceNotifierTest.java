@@ -121,8 +121,7 @@ class ForkChoiceNotifierTest {
                 metricsSystem,
                 executionLayerChannel,
                 recentChainData,
-                doNotInitializeWithDefaultFeeRecipient ? Optional.empty() : defaultFeeRecipient,
-                false));
+                doNotInitializeWithDefaultFeeRecipient ? Optional.empty() : defaultFeeRecipient));
     notifier =
         new ForkChoiceNotifierImpl(
             forkChoiceStateProvider,
@@ -164,8 +163,7 @@ class ForkChoiceNotifierTest {
                 metricsSystem,
                 executionLayerChannel,
                 recentChainData,
-                defaultFeeRecipient,
-                false));
+                defaultFeeRecipient));
     notifier =
         new ForkChoiceNotifierImpl(
             forkChoiceStateProvider,
@@ -885,6 +883,8 @@ class ForkChoiceNotifierTest {
           .isCompletedWithOptionalContaining(executionPayloadContext);
       // verify subscribers notified
       assertThat(forkChoiceUpdatedResultNotification.forkChoiceState()).isEqualTo(forkChoiceState);
+      assertThat(forkChoiceUpdatedResultNotification.payloadAttributes())
+          .hasValue(payloadBuildingAttributes);
     }
   }
 

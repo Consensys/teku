@@ -57,7 +57,6 @@ public class ProposersDataManager implements SlotEventsChannel {
   private final Map<UInt64, RegisteredValidatorInfo> validatorRegistrationInfoByValidatorIndex =
       new ConcurrentHashMap<>();
   private final Optional<Eth1Address> proposerDefaultFeeRecipient;
-  private final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes;
 
   private final Subscribers<ProposersDataManagerSubscriber> proposersDataChangesSubscribers =
       Subscribers.create(true);
@@ -68,8 +67,7 @@ public class ProposersDataManager implements SlotEventsChannel {
       final MetricsSystem metricsSystem,
       final ExecutionLayerChannel executionLayerChannel,
       final RecentChainData recentChainData,
-      final Optional<Eth1Address> proposerDefaultFeeRecipient,
-      final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes) {
+      final Optional<Eth1Address> proposerDefaultFeeRecipient) {
     final LabelledGauge labelledGauge =
         metricsSystem.createLabelledGauge(
             TekuMetricCategory.BEACON,
@@ -85,8 +83,6 @@ public class ProposersDataManager implements SlotEventsChannel {
     this.executionLayerChannel = executionLayerChannel;
     this.recentChainData = recentChainData;
     this.proposerDefaultFeeRecipient = proposerDefaultFeeRecipient;
-    this.forkChoiceUpdatedAlwaysSendPayloadAttributes =
-        forkChoiceUpdatedAlwaysSendPayloadAttributes;
   }
 
   public void subscribeToProposersDataChanges(final ProposersDataManagerSubscriber subscriber) {
@@ -230,7 +226,7 @@ public class ProposersDataManager implements SlotEventsChannel {
     final UInt64 proposerIndex = UInt64.valueOf(spec.getBeaconProposerIndex(state, blockSlot));
     final PreparedProposerInfo proposerInfo =
         preparedProposerInfoByValidatorIndex.get(proposerIndex);
-    if (proposerInfo == null && !mandatory && !forkChoiceUpdatedAlwaysSendPayloadAttributes) {
+    if (proposerInfo == null && !mandatory) {
       // Proposer is not one of our validators. No need to propose a block.
       return Optional.empty();
     }
