@@ -237,7 +237,7 @@ public class ProposersDataManager implements SlotEventsChannel {
         Optional.ofNullable(validatorRegistrationInfoByValidatorIndex.get(proposerIndex))
             .map(RegisteredValidatorInfo::getSignedValidatorRegistration);
 
-    Eth1Address feeRecipient = getFeeRecipient(proposerInfo, blockSlot);
+    final Eth1Address feeRecipient = getFeeRecipient(proposerInfo, blockSlot);
 
     return Optional.of(
         new PayloadBuildingAttributes(
