@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
@@ -222,10 +223,19 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
 
   protected void onForkChoiceUpdatedResult(
       final ForkChoiceUpdatedResultNotification forkChoiceUpdatedResultNotification) {
+    final Optional<PayloadBuildingAttributes> maybePayloadAttributes =
+        forkChoiceUpdatedResultNotification.payloadAttributes();
+    if (maybePayloadAttributes.isEmpty()) {
+      return;
+    }
+    final PayloadBuildingAttributes payloadAttributes = maybePayloadAttributes.get();
     forkChoiceUpdatedResultNotification
-        .payloadAttributes()
-        .ifPresent(
-            payloadAttributes -> {
+        .forkChoiceUpdatedResult()
+        .thenAccept(
+            forkChoiceUpdatedResult -> {
+              if (forkChoiceUpdatedResult.isEmpty()) {
+                return;
+              }
               final SpecMilestone milestone =
                   spec.atSlot(payloadAttributes.getProposalSlot()).getMilestone();
               final PayloadAttributesEvent payloadAttributesEvent =
@@ -234,7 +244,8 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
                       payloadAttributes,
                       forkChoiceUpdatedResultNotification.forkChoiceState());
               notifySubscribersOfEvent(EventType.payload_attributes, payloadAttributesEvent);
-            });
+            })
+        .ifExceptionGetsHereRaiseABug();
   }
 
   @Override

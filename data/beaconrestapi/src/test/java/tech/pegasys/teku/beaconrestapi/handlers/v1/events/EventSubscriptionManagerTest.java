@@ -58,7 +58,9 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
+import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -148,7 +150,10 @@ public class EventSubscriptionManagerTest {
               false),
           Optional.of(samplePayloadAttributes),
           false,
-          SafeFuture.completedFuture(Optional.empty()));
+          SafeFuture.completedFuture(
+              Optional.of(
+                  new ForkChoiceUpdatedResult(
+                      PayloadStatus.VALID, Optional.of(data.randomBytes8())))));
 
   private final AsyncContext async = mock(AsyncContext.class);
   private final EventChannels channels = mock(EventChannels.class);
