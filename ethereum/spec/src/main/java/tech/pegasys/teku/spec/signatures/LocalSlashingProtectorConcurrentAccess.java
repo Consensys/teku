@@ -47,14 +47,14 @@ public class LocalSlashingProtectorConcurrentAccess implements SlashingProtector
       final BLSPublicKey validator, final Bytes32 genesisValidatorsRoot, final UInt64 slot) {
     return SafeFuture.of(
         () -> {
-          final LocalSlashingProtectionRecord entry =
+          final LocalSlashingProtectionRecord record =
               getOrCreateSigningRecord(validator, genesisValidatorsRoot);
-          entry.lock();
+          record.lock();
           try {
-            return entry.writeSigningRecord(
-                dataAccessor, entry.maySignBlock(genesisValidatorsRoot, slot));
+            return record.writeSigningRecord(
+                dataAccessor, record.maySignBlock(genesisValidatorsRoot, slot));
           } finally {
-            entry.unlock();
+            record.unlock();
           }
         });
   }
@@ -67,15 +67,15 @@ public class LocalSlashingProtectorConcurrentAccess implements SlashingProtector
       final UInt64 targetEpoch) {
     return SafeFuture.of(
         () -> {
-          final LocalSlashingProtectionRecord entry =
+          final LocalSlashingProtectionRecord record =
               getOrCreateSigningRecord(validator, genesisValidatorsRoot);
-          entry.lock();
+          record.lock();
           try {
-            return entry.writeSigningRecord(
+            return record.writeSigningRecord(
                 dataAccessor,
-                entry.maySignAttestation(genesisValidatorsRoot, sourceEpoch, targetEpoch));
+                record.maySignAttestation(genesisValidatorsRoot, sourceEpoch, targetEpoch));
           } finally {
-            entry.unlock();
+            record.unlock();
           }
         });
   }

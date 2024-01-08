@@ -53,11 +53,11 @@ public class LocalSlashingProtectorConcurrentAccessTest extends LocalSlashingPro
     final SafeFuture<Void> firstSigner =
         asyncRunner.runAsync(
             () -> {
-              final LocalSlashingProtectionRecord entry =
+              final LocalSlashingProtectionRecord record =
                   slashingProtectionStorage.getOrCreateSigningRecord(
                       validator, GENESIS_VALIDATORS_ROOT);
               try {
-                entry.lock();
+                record.lock();
                 LOG.debug("LOCKED firstSigner");
                 do {
                   try {
@@ -67,35 +67,35 @@ public class LocalSlashingProtectorConcurrentAccessTest extends LocalSlashingPro
                   }
                 } while (!releaseLock.get());
               } finally {
-                entry.unlock();
+                record.unlock();
                 LOG.debug("UNLOCK firstSigner");
               }
             });
-    final LocalSlashingProtectionRecord snoopEntry =
+    final LocalSlashingProtectionRecord snoopRecord =
         slashingProtectionStorage.getOrCreateSigningRecord(validator, GENESIS_VALIDATORS_ROOT);
-    while (!snoopEntry.getLock().isLocked()) {
+    while (!snoopRecord.getLock().isLocked()) {
       Thread.sleep(10);
     }
     LOG.debug("firstSigner has the lock");
 
-    assertThat(snoopEntry.getLock().hasQueuedThreads()).isFalse();
+    assertThat(snoopRecord.getLock().hasQueuedThreads()).isFalse();
 
     final SafeFuture<Void> secondSigner =
         asyncRunner.runAsync(
             () -> {
-              final LocalSlashingProtectionRecord entry =
+              final LocalSlashingProtectionRecord record =
                   slashingProtectionStorage.getOrCreateSigningRecord(
                       validator, GENESIS_VALIDATORS_ROOT);
               try {
-                entry.lock();
+                record.lock();
                 LOG.debug("LOCKED secondSigner");
               } finally {
-                entry.unlock();
+                record.unlock();
                 LOG.debug("UNLOCK secondSigner");
               }
             });
 
-    while (!snoopEntry.getLock().hasQueuedThreads()) {
+    while (!snoopRecord.getLock().hasQueuedThreads()) {
       Thread.sleep(10);
     }
     LOG.debug("firstSigner waiting on acquire lock");
@@ -109,8 +109,8 @@ public class LocalSlashingProtectorConcurrentAccessTest extends LocalSlashingPro
     secondSigner.get(50, TimeUnit.MILLISECONDS);
     assertThat(secondSigner).isCompleted();
 
-    assertThat(snoopEntry.getLock().hasQueuedThreads()).isFalse();
-    assertThat(snoopEntry.getLock().isLocked()).isFalse();
+    assertThat(snoopRecord.getLock().hasQueuedThreads()).isFalse();
+    assertThat(snoopRecord.getLock().isLocked()).isFalse();
   }
 
   @Test
@@ -120,11 +120,11 @@ public class LocalSlashingProtectorConcurrentAccessTest extends LocalSlashingPro
     final SafeFuture<Void> firstSigner =
         asyncRunner.runAsync(
             () -> {
-              final LocalSlashingProtectionRecord entry =
+              final LocalSlashingProtectionRecord record =
                   slashingProtectionStorage.getOrCreateSigningRecord(
                       validator, GENESIS_VALIDATORS_ROOT);
               try {
-                entry.lock();
+                record.lock();
                 LOG.debug("LOCKED firstSigner");
                 do {
                   try {
@@ -134,7 +134,7 @@ public class LocalSlashingProtectorConcurrentAccessTest extends LocalSlashingPro
                   }
                 } while (!releaseLock.get());
               } finally {
-                entry.unlock();
+                record.unlock();
                 LOG.debug("UNLOCK firstSigner");
               }
             });
@@ -143,14 +143,14 @@ public class LocalSlashingProtectorConcurrentAccessTest extends LocalSlashingPro
         asyncRunner.runAsync(
             () -> {
               threadAcquired.countDown();
-              final LocalSlashingProtectionRecord entry =
+              final LocalSlashingProtectionRecord record =
                   slashingProtectionStorage.getOrCreateSigningRecord(
                       dataStructureUtil.randomPublicKey(), GENESIS_VALIDATORS_ROOT);
               try {
-                entry.lock();
+                record.lock();
                 LOG.debug("LOCKED secondSigner");
               } finally {
-                entry.unlock();
+                record.unlock();
                 LOG.debug("UNLOCK secondSigner");
               }
             });
