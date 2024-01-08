@@ -684,6 +684,7 @@ public class Eth2NetworkConfiguration {
     public Builder applyPraterNetworkDefaults() {
       return applyTestnetDefaults()
           .constants(PRATER.configName())
+          .trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME)
           .startupTimeoutSeconds(120)
           .eth1DepositContractDeployBlock(4367322)
           .defaultInitialState(
