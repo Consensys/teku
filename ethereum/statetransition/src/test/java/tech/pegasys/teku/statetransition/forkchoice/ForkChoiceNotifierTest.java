@@ -32,6 +32,7 @@ import static tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdateData.
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -260,7 +261,9 @@ class ForkChoiceNotifierTest {
             Bytes32.ZERO,
             Bytes32.ZERO,
             Bytes32.ZERO,
-            false));
+            false),
+        Optional.empty(),
+        notification -> assertThat(notification).isNull());
 
     verifyNoInteractions(executionLayerChannel);
   }
@@ -842,10 +845,17 @@ class ForkChoiceNotifierTest {
 
   private void notifyForkChoiceUpdated(
       final ForkChoiceState forkChoiceState, final Optional<UInt64> proposingSlot) {
+    notifyForkChoiceUpdated(
+        forkChoiceState, proposingSlot, notification -> assertThat(notification).isNotNull());
+  }
+
+  private void notifyForkChoiceUpdated(
+      final ForkChoiceState forkChoiceState,
+      final Optional<UInt64> proposingSlot,
+      final Consumer<ForkChoiceUpdatedResultNotification> requirements) {
     forkChoiceUpdatedResultNotification = null;
     notifier.onForkChoiceUpdated(forkChoiceState, proposingSlot);
-    assertThat(forkChoiceUpdatedResultNotification).isNotNull();
-    assertThat(forkChoiceUpdatedResultNotification.forkChoiceUpdatedResult()).isCompleted();
+    requirements.accept(forkChoiceUpdatedResultNotification);
   }
 
   private void validateGetPayloadIdOnTheFlyRetrieval(

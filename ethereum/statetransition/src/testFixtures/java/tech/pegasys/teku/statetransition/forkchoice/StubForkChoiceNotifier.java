@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.spec.executionlayer.PayloadStatus;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 
 public class StubForkChoiceNotifier implements ForkChoiceNotifier {
@@ -28,8 +29,9 @@ public class StubForkChoiceNotifier implements ForkChoiceNotifier {
   private final Subscribers<ForkChoiceUpdatedResultSubscriber> forkChoiceUpdatedSubscribers =
       Subscribers.create(true);
 
-  private final SafeFuture<Optional<ForkChoiceUpdatedResult>> forkChoiceUpdatedResultNotification =
-      SafeFuture.completedFuture(Optional.empty());
+  private final SafeFuture<ForkChoiceUpdatedResult> forkChoiceUpdatedResult =
+      SafeFuture.completedFuture(
+          new ForkChoiceUpdatedResult(PayloadStatus.VALID, Optional.empty()));
 
   @Override
   public void subscribeToForkChoiceUpdatedResult(
@@ -43,7 +45,7 @@ public class StubForkChoiceNotifier implements ForkChoiceNotifier {
     forkChoiceUpdatedSubscribers.deliver(
         ForkChoiceUpdatedResultSubscriber::onForkChoiceUpdatedResult,
         new ForkChoiceUpdatedResultNotification(
-            forkChoiceState, Optional.empty(), false, forkChoiceUpdatedResultNotification));
+            forkChoiceState, Optional.empty(), false, forkChoiceUpdatedResult));
   }
 
   @Override
