@@ -63,9 +63,10 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
   @Test
   void equalsReturnsFalseWhenExecutionPayloadHeaderIsDifferent() {
     executionPayloadHeader = dataStructureUtil.randomExecutionPayloadHeader();
-    BlindedBeaconBlockBodyBellatrix testBeaconBlockBody = safeJoin(createBlindedBlockBody());
+    final BlindedBeaconBlockBodyBellatrix testBlindedBeaconBlockBody =
+        safeJoin(createBlindedBlockBody());
 
-    assertNotEquals(defaultBlindedBlockBody, testBeaconBlockBody);
+    assertNotEquals(defaultBlindedBlockBody, testBlindedBeaconBlockBody);
   }
 
   @Test
@@ -75,11 +76,12 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
             IllegalStateException.class,
             () ->
                 createBlockBody(
-                    createContentProvider(true)
+                    createContentProvider(false)
+                        // let's erase all payloads, so we can test as if they were not set
                         .andThen(b -> b.executionPayload(null).executionPayloadHeader(null))));
     assertEquals(
         exception.getMessage(),
-        "only and only one of executionPayload or executionPayloadHeader must be set");
+        "Exactly one of 'executionPayload' or 'executionPayloadHeader' must be set");
   }
 
   @Test
@@ -95,12 +97,12 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
                                 b.executionPayload(SafeFuture.completedFuture(executionPayload)))));
     assertEquals(
         exception.getMessage(),
-        "only and only one of executionPayload or executionPayloadHeader must be set");
+        "Exactly one of 'executionPayload' or 'executionPayloadHeader' must be set");
   }
 
   @Test
   @SuppressWarnings("unchecked")
-  void builderShouldFailWhenOverridingBlindedSchemaWithANullSchema() {
+  void builderShouldFailWhenBlindedSchemaIsSetAndFullPayloadIsSet() {
     BeaconBlockBodyBuilderBellatrix beaconBlockBodyBuilderBellatrix =
         new BeaconBlockBodyBuilderBellatrix(null, blindedBlockBodySchema);
     Exception exception =
@@ -124,7 +126,7 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
 
   @Test
   @SuppressWarnings("unchecked")
-  void builderShouldFailWhenOverridingSchemaWithANullBlindedSchema() {
+  void builderShouldFailWhenNonBlindedSchemaIsSetAndPayloadHeaderIsSet() {
     BeaconBlockBodyBuilderBellatrix beaconBlockBodyBuilderBellatrix =
         new BeaconBlockBodyBuilderBellatrix(
             (BeaconBlockBodySchema<? extends BeaconBlockBodyBellatrix>) blockBodySchema, null);
@@ -157,7 +159,7 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
 
   @Override
   protected SafeFuture<BlindedBeaconBlockBodyBellatrix> createBlindedBlockBody(
-      Consumer<BeaconBlockBodyBuilder> contentProvider) {
+      final Consumer<BeaconBlockBodyBuilder> contentProvider) {
     final BeaconBlockBodyBuilder bodyBuilder = createBeaconBlockBodyBuilder();
     contentProvider.accept(bodyBuilder);
     return bodyBuilder.build().thenApply(body -> body.toBlindedVersionBellatrix().orElseThrow());

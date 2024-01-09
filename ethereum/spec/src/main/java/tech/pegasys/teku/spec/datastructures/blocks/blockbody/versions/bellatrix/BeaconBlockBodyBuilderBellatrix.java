@@ -36,6 +36,7 @@ public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltai
       final BeaconBlockBodySchema<? extends BeaconBlockBodyBellatrix> schema,
       final BeaconBlockBodySchema<? extends BlindedBeaconBlockBodyBellatrix> blindedSchema) {
     super(schema);
+    checkState(schema != null || blindedSchema != null, "At least one schema must be specified");
     this.blindedSchema = blindedSchema;
   }
 
@@ -45,14 +46,15 @@ public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltai
   }
 
   @Override
-  public BeaconBlockBodyBuilder executionPayload(SafeFuture<ExecutionPayload> executionPayload) {
+  public BeaconBlockBodyBuilder executionPayload(
+      final SafeFuture<ExecutionPayload> executionPayload) {
     this.executionPayload = executionPayload;
     return this;
   }
 
   @Override
   public BeaconBlockBodyBuilder executionPayloadHeader(
-      SafeFuture<ExecutionPayloadHeader> executionPayloadHeader) {
+      final SafeFuture<ExecutionPayloadHeader> executionPayloadHeader) {
     this.executionPayloadHeader = executionPayloadHeader;
     return this;
   }
@@ -81,7 +83,7 @@ public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltai
     super.validate();
     checkState(
         executionPayload != null ^ executionPayloadHeader != null,
-        "only and only one of executionPayload or executionPayloadHeader must be set");
+        "Exactly one of 'executionPayload' or 'executionPayloadHeader' must be set");
   }
 
   protected Boolean isBlinded() {
