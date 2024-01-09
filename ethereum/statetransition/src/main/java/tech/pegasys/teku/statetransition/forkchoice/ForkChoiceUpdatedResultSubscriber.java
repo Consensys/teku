@@ -29,5 +29,5 @@ public interface ForkChoiceUpdatedResultSubscriber {
       ForkChoiceState forkChoiceState,
       Optional<PayloadBuildingAttributes> payloadAttributes,
       boolean isTerminalBlockCall,
-      SafeFuture<ForkChoiceUpdatedResult> forkChoiceUpdatedResult) {}
+      SafeFuture<ForkChoiceUpdatedResult> forkChoiceUpdatedResultFuture) {}
 }

@@ -164,7 +164,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   public void onForkChoiceUpdatedResult(
       final ForkChoiceUpdatedResultNotification forkChoiceUpdatedResultNotification) {
     forkChoiceUpdatedResultNotification
-        .forkChoiceUpdatedResult()
+        .forkChoiceUpdatedResultFuture()
         .thenAccept(
             forkChoiceUpdatedResult -> {
               if (forkChoiceUpdatedResultNotification.isTerminalBlockCall()

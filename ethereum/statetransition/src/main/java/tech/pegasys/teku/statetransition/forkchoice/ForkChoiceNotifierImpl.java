@@ -241,14 +241,14 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
     forkChoiceUpdateData
         .send(executionLayerChannel, timeProvider.getTimeInMillis())
         .ifPresent(
-            forkChoiceUpdatedResult ->
+            forkChoiceUpdatedResultFuture ->
                 forkChoiceUpdatedSubscribers.deliver(
                     ForkChoiceUpdatedResultSubscriber::onForkChoiceUpdatedResult,
                     new ForkChoiceUpdatedResultNotification(
                         forkChoiceUpdateData.getForkChoiceState(),
                         forkChoiceUpdateData.getPayloadBuildingAttributes(),
                         forkChoiceUpdateData.hasTerminalBlockHash(),
-                        forkChoiceUpdatedResult)));
+                        forkChoiceUpdatedResultFuture)));
   }
 
   private void updatePayloadAttributes(final UInt64 blockSlot) {
