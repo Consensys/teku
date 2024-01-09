@@ -1036,10 +1036,7 @@ class ForkChoiceTest {
     try (LogCaptor logCaptor = LogCaptor.forClass(ForkChoice.class)) {
       forkChoice.onForkChoiceUpdatedResult(
           new ForkChoiceUpdatedResultNotification(
-              state,
-              Optional.empty(),
-              true,
-              SafeFuture.completedFuture(Optional.ofNullable(result))));
+              state, Optional.empty(), true, SafeFuture.completedFuture(result)));
       if (result.getPayloadStatus().hasInvalidStatus()) {
         final List<String> errorLogs = logCaptor.getErrorLogs();
         assertThat(errorLogs).singleElement().asString().contains("INVALID", "terminal");
@@ -1376,10 +1373,9 @@ class ForkChoiceTest {
     }
     Stubber stubber = null;
     for (PayloadStatus status : statuses) {
-      ForkChoiceUpdatedResult result =
+      Optional<ForkChoiceUpdatedResult> result =
           Optional.ofNullable(status)
-              .map(payloadStatus -> new ForkChoiceUpdatedResult(payloadStatus, Optional.empty()))
-              .orElse(null);
+              .map(payloadStatus -> new ForkChoiceUpdatedResult(payloadStatus, Optional.empty()));
       Answer<Void> onForkChoiceUpdatedResultAnswer = getOnForkChoiceUpdatedResultAnswer(result);
       if (stubber == null) {
         stubber = doAnswer(onForkChoiceUpdatedResultAnswer);
@@ -1390,14 +1386,17 @@ class ForkChoiceTest {
     stubber.when(forkChoiceNotifier).onForkChoiceUpdated(any(), any());
   }
 
-  private Answer<Void> getOnForkChoiceUpdatedResultAnswer(ForkChoiceUpdatedResult result) {
+  private Answer<Void> getOnForkChoiceUpdatedResultAnswer(
+      Optional<ForkChoiceUpdatedResult> result) {
     return invocation -> {
-      forkChoice.onForkChoiceUpdatedResult(
-          new ForkChoiceUpdatedResultNotification(
-              invocation.getArgument(0),
-              Optional.empty(),
-              false,
-              SafeFuture.completedFuture(Optional.ofNullable(result))));
+      result.ifPresent(
+          forkChoiceUpdatedResult ->
+              forkChoice.onForkChoiceUpdatedResult(
+                  new ForkChoiceUpdatedResultNotification(
+                      invocation.getArgument(0),
+                      Optional.empty(),
+                      false,
+                      SafeFuture.completedFuture(forkChoiceUpdatedResult))));
       return null;
     };
   }

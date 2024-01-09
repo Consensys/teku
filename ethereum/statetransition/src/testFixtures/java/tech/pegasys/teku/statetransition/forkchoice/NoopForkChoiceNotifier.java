@@ -16,35 +16,19 @@ package tech.pegasys.teku.statetransition.forkchoice;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
-import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 
-public class StubForkChoiceNotifier implements ForkChoiceNotifier {
-
-  private final Subscribers<ForkChoiceUpdatedResultSubscriber> forkChoiceUpdatedSubscribers =
-      Subscribers.create(true);
-
-  private final SafeFuture<Optional<ForkChoiceUpdatedResult>> forkChoiceUpdatedResultNotification =
-      SafeFuture.completedFuture(Optional.empty());
+public class NoopForkChoiceNotifier implements ForkChoiceNotifier {
 
   @Override
   public void subscribeToForkChoiceUpdatedResult(
-      final ForkChoiceUpdatedResultSubscriber subscriber) {
-    forkChoiceUpdatedSubscribers.subscribe(subscriber);
-  }
+      final ForkChoiceUpdatedResultSubscriber subscriber) {}
 
   @Override
   public void onForkChoiceUpdated(
-      final ForkChoiceState forkChoiceState, final Optional<UInt64> proposingSlot) {
-    forkChoiceUpdatedSubscribers.deliver(
-        ForkChoiceUpdatedResultSubscriber::onForkChoiceUpdatedResult,
-        new ForkChoiceUpdatedResultNotification(
-            forkChoiceState, Optional.empty(), false, forkChoiceUpdatedResultNotification));
-  }
+      final ForkChoiceState forkChoiceState, final Optional<UInt64> proposingSlot) {}
 
   @Override
   public void onAttestationsDue(final UInt64 slot) {}

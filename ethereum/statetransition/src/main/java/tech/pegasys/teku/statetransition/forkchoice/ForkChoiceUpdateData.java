@@ -160,17 +160,17 @@ public class ForkChoiceUpdateData {
     return executionPayloadContext;
   }
 
-  public SafeFuture<Optional<ForkChoiceUpdatedResult>> send(
+  public Optional<SafeFuture<ForkChoiceUpdatedResult>> send(
       final ExecutionLayerChannel executionLayer, final UInt64 currentTimestamp) {
     if (!shouldBeSent(currentTimestamp)) {
-      return SafeFuture.completedFuture(Optional.empty());
+      return Optional.empty();
     }
     toBeSentAtTime = currentTimestamp.plus(RESEND_AFTER_MILLIS);
 
     if (forkChoiceState.getHeadExecutionBlockHash().isZero()) {
       LOG.debug("send - getHeadBlockHash is zero - returning empty");
       executionPayloadContext.complete(Optional.empty());
-      return SafeFuture.completedFuture(Optional.empty());
+      return Optional.empty();
     }
 
     logSendingForkChoiceUpdated();
@@ -193,7 +193,7 @@ public class ForkChoiceUpdateData {
                             payloadBuildingAttributes.orElseThrow())))
         .propagateTo(executionPayloadContext);
 
-    return forkChoiceUpdatedResult.thenApply(Optional::of);
+    return Optional.of(forkChoiceUpdatedResult);
   }
 
   private void logSendForkChoiceUpdatedComplete(Optional<Bytes8> payloadId) {
