@@ -266,8 +266,10 @@ class ForkChoiceNotifierTest {
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     final BeaconState headState = getHeadState();
     final UInt64 blockSlot = headState.getSlot().plus(1);
+    // not proposer but should still calculate payload attributes with the default fee recipient
     final PayloadBuildingAttributes payloadBuildingAttributes =
-        withProposerForSlot(forkChoiceState, headState, blockSlot);
+        withProposerForSlotButDoNotPrepare(
+            forkChoiceState, headState, blockSlot, defaultFeeRecipient);
 
     final int notTheNextProposer = spec.getBeaconProposerIndex(headState, blockSlot) + 1;
     proposersDataManager.updatePreparedProposers(
