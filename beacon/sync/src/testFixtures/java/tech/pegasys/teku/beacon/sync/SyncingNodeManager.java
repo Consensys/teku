@@ -64,7 +64,7 @@ import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
-import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
@@ -122,7 +122,7 @@ public class SyncingNodeManager {
             new InlineEventThread(),
             recentChainData,
             BlobSidecarManager.NOOP,
-            new StubForkChoiceNotifier(),
+            new NoopForkChoiceNotifier(),
             transitionBlockValidator,
             new StubMetricsSystem());
 

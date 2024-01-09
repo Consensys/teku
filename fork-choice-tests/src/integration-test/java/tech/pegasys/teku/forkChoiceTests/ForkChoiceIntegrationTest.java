@@ -55,7 +55,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
-import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -187,7 +187,7 @@ public class ForkChoiceIntegrationTest {
             forkChoiceExecutor,
             storageClient,
             BlobSidecarManager.NOOP,
-            new StubForkChoiceNotifier(),
+            new NoopForkChoiceNotifier(),
             transitionBlockValidator,
             new StubMetricsSystem());
 

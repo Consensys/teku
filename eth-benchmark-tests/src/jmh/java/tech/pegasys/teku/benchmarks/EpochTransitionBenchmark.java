@@ -59,7 +59,7 @@ import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
-import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
@@ -118,7 +118,7 @@ public class EpochTransitionBenchmark {
             new InlineEventThread(),
             recentChainData,
             BlobSidecarManager.NOOP,
-            new StubForkChoiceNotifier(),
+            new NoopForkChoiceNotifier(),
             transitionBlockValidator,
             metricsSystem);
     localChain = BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
