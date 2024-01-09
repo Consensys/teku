@@ -110,6 +110,12 @@ class ForkChoiceNotifierTest {
   }
 
   void setUp(final boolean doNotInitializeWithDefaultFeeRecipient) {
+    setUp(doNotInitializeWithDefaultFeeRecipient, false);
+  }
+
+  void setUp(
+      final boolean doNotInitializeWithDefaultFeeRecipient,
+      final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes) {
     // initialize post-merge by default
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     recentChainData = storageSystem.recentChainData();
@@ -122,7 +128,8 @@ class ForkChoiceNotifierTest {
                 metricsSystem,
                 executionLayerChannel,
                 recentChainData,
-                doNotInitializeWithDefaultFeeRecipient ? Optional.empty() : defaultFeeRecipient));
+                doNotInitializeWithDefaultFeeRecipient ? Optional.empty() : defaultFeeRecipient,
+                forkChoiceUpdatedAlwaysSendPayloadAttributes));
     notifier =
         new ForkChoiceNotifierImpl(
             forkChoiceStateProvider,
@@ -164,7 +171,8 @@ class ForkChoiceNotifierTest {
                 metricsSystem,
                 executionLayerChannel,
                 recentChainData,
-                defaultFeeRecipient));
+                defaultFeeRecipient,
+                false));
     notifier =
         new ForkChoiceNotifierImpl(
             forkChoiceStateProvider,
@@ -248,6 +256,35 @@ class ForkChoiceNotifierTest {
 
     notifyForkChoiceUpdated(forkChoiceState);
     verify(executionLayerChannel).engineForkChoiceUpdated(forkChoiceState, Optional.empty());
+  }
+
+  @Test
+  void
+      onForkChoiceUpdated_shouldSendNotificationWithPayloadBuildingAttributesIfConfiguredToAlwaysSendThem() {
+    setUp(false, true);
+
+    final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
+    final BeaconState headState = getHeadState();
+    final UInt64 blockSlot = headState.getSlot().plus(1);
+    final PayloadBuildingAttributes payloadBuildingAttributes =
+        withProposerForSlot(forkChoiceState, headState, blockSlot);
+
+    final int notTheNextProposer = spec.getBeaconProposerIndex(headState, blockSlot) + 1;
+    proposersDataManager.updatePreparedProposers(
+        List.of(
+            new BeaconPreparableProposer(
+                UInt64.valueOf(notTheNextProposer), dataStructureUtil.randomEth1Address())),
+        recentChainData.getHeadSlot());
+
+    notifyForkChoiceUpdated(
+        forkChoiceState,
+        Optional.of(blockSlot),
+        // verify notification is sent with payload attributes
+        forkChoiceUpdatedResultNotification ->
+            assertThat(forkChoiceUpdatedResultNotification.payloadAttributes())
+                .hasValue(payloadBuildingAttributes));
+    verify(executionLayerChannel)
+        .engineForkChoiceUpdated(forkChoiceState, Optional.of(payloadBuildingAttributes));
   }
 
   @Test
