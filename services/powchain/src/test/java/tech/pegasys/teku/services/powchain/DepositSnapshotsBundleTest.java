@@ -57,12 +57,12 @@ public class DepositSnapshotsBundleTest {
         .depositSnapshotEnabled(true)
         .setDepositSnapshotPathForNetwork(Optional.of(eth2Network));
     final PowchainConfiguration powchainConfiguration = powchainConfigBuilder.build();
-    assumeThat(powchainConfiguration.getDepositSnapshotPath())
+    assumeThat(powchainConfiguration.getCustomDepositSnapshotPath())
         .describedAs("No built-in snapshot for network %s", eth2Network)
         .isPresent();
 
     final DepositSnapshotFileLoader depositSnapshotLoader =
-        new DepositSnapshotFileLoader(powchainConfiguration.getDepositSnapshotPath());
+        new DepositSnapshotFileLoader(powchainConfiguration.getCustomDepositSnapshotPath());
     final DepositTreeSnapshot depositTreeSnapshot =
         depositSnapshotLoader.loadDepositSnapshot().getDepositTreeSnapshot().orElseThrow();
     final DepositTree depositTree = DepositTree.fromSnapshot(depositTreeSnapshot);
@@ -85,7 +85,8 @@ public class DepositSnapshotsBundleTest {
         .setDepositSnapshotPathForNetwork(Optional.of(eth2Network));
     final PowchainConfiguration powchainConfiguration = powchainConfigBuilder.build();
 
-    final String depositSnapshotPath = powchainConfiguration.getDepositSnapshotPath().orElseThrow();
+    final String depositSnapshotPath =
+        powchainConfiguration.getCustomDepositSnapshotPath().orElseThrow();
     final DepositSnapshotFileLoader depositSnapshotLoader =
         new DepositSnapshotFileLoader(Optional.of(depositSnapshotPath));
 

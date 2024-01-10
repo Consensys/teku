@@ -18,6 +18,7 @@ import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -106,5 +107,10 @@ public class DepositSnapshotFileLoader {
     final JsonNode jsonNode = new ObjectMapper().readTree(json);
     return JsonUtil.parse(
         jsonNode.get("data").toString(), DepositTreeSnapshot.getJsonTypeDefinition());
+  }
+
+  @VisibleForTesting
+  public Optional<String> getDepositSnapshotResource() {
+    return depositSnapshotResource;
   }
 }
