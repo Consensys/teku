@@ -52,7 +52,8 @@ public class Eth2NetworkConfiguration {
   public static final boolean DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED = false;
 
   public static final boolean DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED = false;
-  public static final boolean DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED = true;
+
+  public static final boolean DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES = false;
 
   public static final int DEFAULT_ASYNC_P2P_MAX_THREADS = 10;
 
@@ -99,6 +100,7 @@ public class Eth2NetworkConfiguration {
   private final int asyncBeaconChainMaxQueue;
   private final int asyncP2pMaxQueue;
   private final boolean forkChoiceLateBlockReorgEnabled;
+  private final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes;
 
   private Eth2NetworkConfiguration(
       final Spec spec,
@@ -126,7 +128,8 @@ public class Eth2NetworkConfiguration {
       final int asyncP2pMaxQueue,
       final int asyncBeaconChainMaxThreads,
       final int asyncBeaconChainMaxQueue,
-      final boolean forkChoiceLateBlockReorgEnabled) {
+      final boolean forkChoiceLateBlockReorgEnabled,
+      final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes) {
     this.spec = spec;
     this.constants = constants;
     this.initialState = initialState;
@@ -156,6 +159,8 @@ public class Eth2NetworkConfiguration {
     this.asyncBeaconChainMaxThreads = asyncBeaconChainMaxThreads;
     this.asyncBeaconChainMaxQueue = asyncBeaconChainMaxQueue;
     this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
+    this.forkChoiceUpdatedAlwaysSendPayloadAttributes =
+        forkChoiceUpdatedAlwaysSendPayloadAttributes;
   }
 
   public static Eth2NetworkConfiguration.Builder builder(final String network) {
@@ -273,6 +278,10 @@ public class Eth2NetworkConfiguration {
     return forkChoiceLateBlockReorgEnabled;
   }
 
+  public boolean isForkChoiceUpdatedAlwaysSendPayloadAttributes() {
+    return forkChoiceUpdatedAlwaysSendPayloadAttributes;
+  }
+
   @Override
   public String toString() {
     return constants;
@@ -307,6 +316,8 @@ public class Eth2NetworkConfiguration {
     private boolean forkChoiceUpdateHeadOnBlockImportEnabled =
         DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
     private boolean forkChoiceLateBlockReorgEnabled = DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
+    private boolean forkChoiceUpdatedAlwaysSendPayloadAttributes =
+        DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES;
 
     public void spec(Spec spec) {
       this.spec = spec;
@@ -381,7 +392,8 @@ public class Eth2NetworkConfiguration {
           asyncP2pMaxQueue,
           asyncBeaconChainMaxThreads,
           asyncBeaconChainMaxQueue,
-          forkChoiceLateBlockReorgEnabled);
+          forkChoiceLateBlockReorgEnabled,
+          forkChoiceUpdatedAlwaysSendPayloadAttributes);
     }
 
     private void validateCommandLineParameters() {
@@ -836,6 +848,13 @@ public class Eth2NetworkConfiguration {
 
     public Builder forkChoiceLateBlockReorgEnabled(boolean forkChoiceLateBlockReorgEnabled) {
       this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
+      return this;
+    }
+
+    public Builder forkChoiceUpdatedAlwaysSendPayloadAttributes(
+        boolean forkChoiceUpdatedAlwaysSendPayloadAttributes) {
+      this.forkChoiceUpdatedAlwaysSendPayloadAttributes =
+          forkChoiceUpdatedAlwaysSendPayloadAttributes;
       return this;
     }
   }
