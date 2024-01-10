@@ -18,9 +18,10 @@ import static tech.pegasys.teku.storage.server.StateStorageMode.NOT_SET;
 import static tech.pegasys.teku.storage.server.StateStorageMode.PRUNE;
 import static tech.pegasys.teku.storage.server.VersionedDatabaseFactory.STORAGE_MODE_PATH;
 
-import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -270,20 +271,19 @@ public class StorageConfiguration {
 
     private Optional<StateStorageMode> getStorageModeFromPersistedDatabase(
         final DataDirLayout dataDirLayout) {
-      Optional<StateStorageMode> maybePreviousStorage = Optional.empty();
-      if (dataDirLayout.getBeaconDataDirectory().toFile().exists()) {
-        try {
-          final File dbStorageModeFile =
-              dataDirLayout.getBeaconDataDirectory().resolve(STORAGE_MODE_PATH).toFile();
-          maybePreviousStorage =
-              Optional.of(
-                  StateStorageMode.valueOf(Files.readString(dbStorageModeFile.toPath()).trim()));
-          LOG.debug("Read previous storage mode as {}", maybePreviousStorage);
-        } catch (IOException ex) {
-          LOG.error("Failed to read storage mode from file", ex);
-        }
+      final Path dbStorageModeFile =
+          dataDirLayout.getBeaconDataDirectory().resolve(STORAGE_MODE_PATH);
+      if (!Files.exists(dbStorageModeFile)) {
+        return Optional.empty();
       }
-      return maybePreviousStorage;
+      try {
+        final StateStorageMode dbStorageMode =
+            StateStorageMode.valueOf(Files.readString(dbStorageModeFile).trim());
+        LOG.debug("Read previous storage mode as {}", dbStorageMode);
+        return Optional.of(dbStorageMode);
+      } catch (final IOException ex) {
+        throw new UncheckedIOException("Failed to read storage mode from file", ex);
+      }
     }
   }
 
