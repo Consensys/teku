@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.beacon.pow.DepositSnapshotFileLoader.DEFAULT_SNAPSHOT_RESOURCE_PATHS;
+import static tech.pegasys.teku.services.powchain.PowchainConfiguration.DEPOSIT_SNAPSHOT_URL_PATH;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -163,7 +164,7 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.powchain().isDepositSnapshotEnabled()).isTrue();
     assertThat(config.powchain().getCheckpointSyncDepositSnapshotUrl())
-        .hasValue("http://checkpoint-sync.com");
+        .hasValue("http://checkpoint-sync.com" + DEPOSIT_SNAPSHOT_URL_PATH);
   }
 
   @Test
