@@ -15,6 +15,6 @@ the [releases page](https://github.com/Consensys/teku/releases).
 
 - Added a hidden flag `--Xfork-choice-updated-always-send-payload-attributes` which would cause
 payload attributes to be calculated and sent with every fcU. This could be useful for builders
-consuming the `payload_attributes` SSE event.
+consuming the `payload_attributes` SSE events.
 
 ### Bug Fixes
