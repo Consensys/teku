@@ -35,17 +35,21 @@ public class PowchainConfiguration {
   private final List<String> eth1Endpoints;
   private final Eth1Address depositContract;
   private final Optional<UInt64> depositContractDeployBlock;
-  private final Optional<String> depositSnapshotPath;
+  private final Optional<String> customDepositSnapshotPath;
+  private final Optional<String> checkpointSyncDepositSnapshotUrl;
+  private final Optional<String> bundledDepositSnapshotPath;
+  private final boolean depositSnapshotEnabled;
   private final int eth1LogsMaxBlockRange;
   private final boolean useMissingDepositEventLogging;
-  private final boolean depositSnapshotEnabled;
 
   private PowchainConfiguration(
       final Spec spec,
       final List<String> eth1Endpoints,
       final Eth1Address depositContract,
       final Optional<UInt64> depositContractDeployBlock,
-      final Optional<String> depositSnapshotPath,
+      final Optional<String> customDepositSnapshotPath,
+      final Optional<String> checkpointSyncDepositSnapshotUrl,
+      final Optional<String> bundledDepositSnapshotPath,
       final int eth1LogsMaxBlockRange,
       final boolean useMissingDepositEventLogging,
       final boolean depositSnapshotEnabled) {
@@ -53,7 +57,9 @@ public class PowchainConfiguration {
     this.eth1Endpoints = eth1Endpoints;
     this.depositContract = depositContract;
     this.depositContractDeployBlock = depositContractDeployBlock;
-    this.depositSnapshotPath = depositSnapshotPath;
+    this.customDepositSnapshotPath = customDepositSnapshotPath;
+    this.checkpointSyncDepositSnapshotUrl = checkpointSyncDepositSnapshotUrl;
+    this.bundledDepositSnapshotPath = bundledDepositSnapshotPath;
     this.depositSnapshotEnabled = depositSnapshotEnabled;
     this.eth1LogsMaxBlockRange = eth1LogsMaxBlockRange;
     this.useMissingDepositEventLogging = useMissingDepositEventLogging;
@@ -83,8 +89,16 @@ public class PowchainConfiguration {
     return depositContractDeployBlock;
   }
 
-  public Optional<String> getDepositSnapshotPath() {
-    return depositSnapshotPath;
+  public Optional<String> getCustomDepositSnapshotPath() {
+    return customDepositSnapshotPath;
+  }
+
+  public Optional<String> getCheckpointSyncDepositSnapshotUrl() {
+    return checkpointSyncDepositSnapshotUrl;
+  }
+
+  public Optional<String> getBundledDepositSnapshotPath() {
+    return bundledDepositSnapshotPath;
   }
 
   public boolean isDepositSnapshotEnabled() {
@@ -104,7 +118,9 @@ public class PowchainConfiguration {
     private List<String> eth1Endpoints = new ArrayList<>();
     private Eth1Address depositContract;
     private Optional<UInt64> depositContractDeployBlock = Optional.empty();
-    private Optional<String> depositSnapshotPath = Optional.empty();
+    private Optional<String> customDepositSnapshotPath = Optional.empty();
+    private Optional<String> checkpointSyncDepositSnapshotUrl = Optional.empty();
+    private Optional<String> bundledDepositSnapshotPath = Optional.empty();
     private int eth1LogsMaxBlockRange = DEFAULT_ETH1_LOGS_MAX_BLOCK_RANGE;
     private boolean useMissingDepositEventLogging = DEFAULT_USE_MISSING_DEPOSIT_EVENT_LOGGING;
     private boolean depositSnapshotEnabled = DEFAULT_DEPOSIT_SNAPSHOT_ENABLED;
@@ -118,7 +134,9 @@ public class PowchainConfiguration {
           eth1Endpoints,
           depositContract,
           depositContractDeployBlock,
-          depositSnapshotPath,
+          customDepositSnapshotPath,
+          checkpointSyncDepositSnapshotUrl,
+          bundledDepositSnapshotPath,
           eth1LogsMaxBlockRange,
           useMissingDepositEventLogging,
           depositSnapshotEnabled);
@@ -173,9 +191,9 @@ public class PowchainConfiguration {
       return this;
     }
 
-    public Builder depositSnapshotPath(final String depositSnapshotPath) {
+    public Builder customDepositSnapshotPath(final String depositSnapshotPath) {
       if (StringUtils.isNotBlank(depositSnapshotPath)) {
-        this.depositSnapshotPath = Optional.of(depositSnapshotPath);
+        this.customDepositSnapshotPath = Optional.of(depositSnapshotPath);
       }
       return this;
     }
@@ -185,15 +203,18 @@ public class PowchainConfiguration {
       if (eth2Network.isPresent()
           && this.depositSnapshotEnabled
           && DEFAULT_SNAPSHOT_RESOURCE_PATHS.containsKey(eth2Network.get())) {
-        if (depositSnapshotPath.isPresent()) {
-          throw new InvalidConfigurationException(
-              "Use either custom deposit tree snapshot path or snapshot bundle");
-        }
-        this.depositSnapshotPath =
+        this.bundledDepositSnapshotPath =
             Optional.of(
                 PowchainConfiguration.class
                     .getResource(DEFAULT_SNAPSHOT_RESOURCE_PATHS.get(eth2Network.get()))
                     .toExternalForm());
+      }
+      return this;
+    }
+
+    public Builder checkpointSyncDepositSnapshotUrl(final String checkpointSyncUrlEndpoint) {
+      if (StringUtils.isNotBlank(checkpointSyncUrlEndpoint)) {
+        this.checkpointSyncDepositSnapshotUrl = Optional.of(checkpointSyncUrlEndpoint);
       }
       return this;
     }

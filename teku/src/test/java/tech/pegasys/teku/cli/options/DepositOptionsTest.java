@@ -14,7 +14,6 @@
 package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.beacon.pow.DepositSnapshotFileLoader.DEFAULT_SNAPSHOT_RESOURCE_PATHS;
 
 import java.util.List;
@@ -23,7 +22,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
@@ -120,7 +118,7 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
     final String[] args = {"--network=" + network, "--deposit-snapshot-enabled"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.powchain().isDepositSnapshotEnabled()).isTrue();
-    assertThat(config.powchain().getDepositSnapshotPath())
+    assertThat(config.powchain().getBundledDepositSnapshotPath())
         .contains(
             PowchainConfiguration.class
                 .getResource(
@@ -130,22 +128,52 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  public void shouldHaveDepositSnapshotEnabledByDefault() {
+    final String[] args = {};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.powchain().isDepositSnapshotEnabled()).isTrue();
+  }
+
+  @Test
   public void shouldIgnoreBundleSnapshotPathForNotSupportedNetwork() {
     final String[] args = {"--network=swift", "--deposit-snapshot-enabled"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.powchain().isDepositSnapshotEnabled()).isTrue();
-    assertThat(config.powchain().getDepositSnapshotPath()).isEmpty();
+    assertThat(config.powchain().getCustomDepositSnapshotPath()).isEmpty();
   }
 
   @Test
-  public void shouldThrowErrorIfSnapshotPathProvidedWithBundleSnapshot() {
-    assertThatThrownBy(
-            () ->
-                createConfigBuilder()
-                    .eth2NetworkConfig(b -> b.applyNetworkDefaults(Eth2Network.MAINNET))
-                    .powchain(b -> b.depositSnapshotEnabled(true).depositSnapshotPath("/some/path"))
-                    .build())
-        .isInstanceOf(InvalidConfigurationException.class)
-        .hasMessage("Use either custom deposit tree snapshot path or snapshot bundle");
+  public void shouldRespectDepositSnapshotFlagWhenDisabled() {
+    final String[] args = {"--deposit-snapshot-enabled", "false"};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.powchain().isDepositSnapshotEnabled()).isFalse();
+  }
+
+  @Test
+  public void shouldSetUseDepositSnapshotToFalseWhenCustomDepositSnapshotIsProvided() {
+    final String[] args = {"--Xdeposit-snapshot", "/foo/bar"};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.powchain().isDepositSnapshotEnabled()).isFalse();
+    assertThat(config.powchain().getCustomDepositSnapshotPath()).hasValue("/foo/bar");
+  }
+
+  @Test
+  public void shouldSetCheckpointSyncDepositSnapshotUrlWhenUsingCheckpointSyncUrl() {
+    final String[] args = {"--checkpoint-sync-url", "http://checkpoint-sync.com"};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.powchain().isDepositSnapshotEnabled()).isTrue();
+    assertThat(config.powchain().getCheckpointSyncDepositSnapshotUrl())
+        .hasValue("http://checkpoint-sync.com");
+  }
+
+  @Test
+  public void shouldThrowErrorIfUsingCustomSnapshotAndExplicitlyEnablingBundled() {
+    final String[] args = {"--Xdeposit-snapshot", "/foo/bar", "--deposit-snapshot-enabled"};
+
+    int parseResult = beaconNodeCommand.parse(args);
+    assertThat(parseResult).isEqualTo(2);
+
+    final String output = getCommandLineOutput();
+    assertThat(output).contains("Use either custom deposit tree snapshot path or snapshot bundle");
   }
 }

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.services.powchain;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -24,6 +25,8 @@ import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.beacon.pow.DepositSnapshotFileLoader;
+import tech.pegasys.teku.beacon.pow.Eth1DepositManager;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JClient;
@@ -46,9 +49,19 @@ public class PowchainServiceTest {
 
   @BeforeEach
   public void setup() {
+    when(serviceConfig.getTimeProvider()).thenReturn(mock(TimeProvider.class));
+    when(serviceConfig.getMetricsSystem()).thenReturn(mock(MetricsSystem.class));
     when(powConfig.isEnabled()).thenReturn(false);
     when(powConfig.getSpec()).thenReturn(spec);
+    when(powConfig.getDepositContract()).thenReturn(Eth1Address.ZERO);
     when(engineWeb3jClientProvider.getWeb3JClient()).thenReturn(web3JClient);
+
+    final EventChannels eventChannels = mock(EventChannels.class);
+    when(eventChannels.getPublisher(Eth1EventsChannel.class))
+        .thenReturn(mock(Eth1EventsChannel.class));
+    when(eventChannels.getPublisher(eq(Eth1DepositStorageChannel.class), any(AsyncRunner.class)))
+        .thenReturn(mock(Eth1DepositStorageChannel.class));
+    when(serviceConfig.getEventChannels()).thenReturn(eventChannels);
   }
 
   @Test
@@ -84,5 +97,53 @@ public class PowchainServiceTest {
             () ->
                 new PowchainService(
                     serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider)));
+  }
+
+  @Test
+  public void shouldUseCustomDepositSnapshotPathWhenPresent() {
+    when(powConfig.getCustomDepositSnapshotPath()).thenReturn(Optional.of("/foo/custom"));
+    when(powConfig.getBundledDepositSnapshotPath()).thenReturn(Optional.of("/foo/bundled"));
+
+    final PowchainService powchainService =
+        new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
+
+    // custom path takes precedence
+    verifyExpectedDepositSnapshotPath(powchainService, "/foo/custom");
+  }
+
+  @Test
+  public void shouldUseBundledDepositSnapshotPathWhenAvailableAndCustomPathNotPresent() {
+    when(powConfig.getCustomDepositSnapshotPath()).thenReturn(Optional.empty());
+    when(powConfig.getBundledDepositSnapshotPath()).thenReturn(Optional.of("/foo/bundled"));
+
+    final PowchainService powchainService =
+        new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
+
+    verifyExpectedDepositSnapshotPath(powchainService, "/foo/bundled");
+  }
+
+  @Test
+  public void shouldHaveNoDepositSnapshotPathWhenNoneIsAvailable() {
+    when(powConfig.getCustomDepositSnapshotPath()).thenReturn(Optional.empty());
+    when(powConfig.getBundledDepositSnapshotPath()).thenReturn(Optional.empty());
+
+    final PowchainService powchainService =
+        new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
+
+    assertThat(
+            powchainService
+                .getEth1DepositManager()
+                .getDepositSnapshotFileLoader()
+                .getDepositSnapshotResource())
+        .isEmpty();
+  }
+
+  private void verifyExpectedDepositSnapshotPath(
+      final PowchainService powchainService, final String expectedPath) {
+    final Eth1DepositManager eth1DepositManager = powchainService.getEth1DepositManager();
+    final DepositSnapshotFileLoader depositSnapshotFileLoader =
+        eth1DepositManager.getDepositSnapshotFileLoader();
+
+    assertThat(depositSnapshotFileLoader.getDepositSnapshotResource()).hasValue(expectedPath);
   }
 }

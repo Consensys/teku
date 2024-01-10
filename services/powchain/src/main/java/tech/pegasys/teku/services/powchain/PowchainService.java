@@ -16,6 +16,7 @@ package tech.pegasys.teku.services.powchain;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.beacon.pow.api.Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToCurrentTime;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -167,7 +168,8 @@ public class PowchainService extends Service {
     final Optional<UInt64> eth1DepositContractDeployBlock =
         powConfig.getDepositContractDeployBlock();
     final DepositSnapshotFileLoader depositSnapshotFileLoader =
-        new DepositSnapshotFileLoader(powConfig.getDepositSnapshotPath());
+        new DepositSnapshotFileLoader(
+            powConfig.getCustomDepositSnapshotPath().or(powConfig::getBundledDepositSnapshotPath));
     final StorageQueryChannel storageQueryChannel =
         serviceConfig.getEventChannels().getPublisher(CombinedStorageChannel.class, asyncRunner);
     final DepositSnapshotStorageLoader depositSnapshotStorageLoader =
@@ -229,5 +231,10 @@ public class PowchainService extends Service {
                 web3js.stream().map(web3j -> web3j::shutdown))
             .map(SafeFuture::fromRunnable)
             .toArray(SafeFuture[]::new));
+  }
+
+  @VisibleForTesting
+  Eth1DepositManager getEth1DepositManager() {
+    return eth1DepositManager;
   }
 }
