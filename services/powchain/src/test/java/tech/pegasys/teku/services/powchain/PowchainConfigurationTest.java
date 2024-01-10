@@ -37,7 +37,7 @@ class PowchainConfigurationTest {
     assertThat(config.getCustomDepositSnapshotPath()).contains("/tmp/foo");
     assertThat(config.getBundledDepositSnapshotPath())
         .asString()
-        .contains("/resources/tech/pegasys/teku/services/powchain/mainnet.ssz");
+        .contains("mainnet.ssz");
   }
 
   @Test
