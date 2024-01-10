@@ -35,9 +35,7 @@ class PowchainConfigurationTest {
             .build();
 
     assertThat(config.getCustomDepositSnapshotPath()).contains("/tmp/foo");
-    assertThat(config.getBundledDepositSnapshotPath())
-        .asString()
-        .contains("mainnet.ssz");
+    assertThat(config.getBundledDepositSnapshotPath()).asString().contains("mainnet.ssz");
   }
 
   @Test
