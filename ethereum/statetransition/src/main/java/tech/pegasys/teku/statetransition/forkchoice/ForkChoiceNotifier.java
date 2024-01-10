@@ -19,9 +19,9 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
-import tech.pegasys.teku.statetransition.block.NewBlockBuildingSubscriber;
 
 public interface ForkChoiceNotifier {
+
   void onForkChoiceUpdated(ForkChoiceState forkChoiceState, Optional<UInt64> proposingSlot);
 
   void onAttestationsDue(UInt64 slot);
@@ -36,6 +36,4 @@ public interface ForkChoiceNotifier {
   boolean validatorIsConnected(UInt64 validatorIndex, UInt64 currentSlot);
 
   void subscribeToForkChoiceUpdatedResult(ForkChoiceUpdatedResultSubscriber subscriber);
-
-  void subscribeToNewBlockBuilding(NewBlockBuildingSubscriber subscriber);
 }

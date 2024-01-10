@@ -44,6 +44,7 @@ import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.signatures.LocalSlashingProtector;
+import tech.pegasys.teku.spec.signatures.LocalSlashingProtectorConcurrentAccess;
 import tech.pegasys.teku.spec.signatures.SlashingProtector;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
@@ -379,10 +380,11 @@ public class ValidatorClientService extends Service {
       final AsyncRunner asyncRunner) {
     final Path slashingProtectionPath = getSlashingProtectionPath(services.getDataDirLayout());
     final SlashingProtector slashingProtector =
-        new LocalSlashingProtector(
-            SyncDataAccessor.create(slashingProtectionPath),
-            slashingProtectionPath,
-            config.getValidatorConfig().isLocalSlashingProtectionSynchronizedModeEnabled());
+        config.getValidatorConfig().isLocalSlashingProtectionSynchronizedModeEnabled()
+            ? new LocalSlashingProtector(
+                SyncDataAccessor.create(slashingProtectionPath), slashingProtectionPath)
+            : new LocalSlashingProtectorConcurrentAccess(
+                SyncDataAccessor.create(slashingProtectionPath), slashingProtectionPath);
     final SlashingProtectionLogger slashingProtectionLogger =
         new SlashingProtectionLogger(
             slashingProtector, config.getSpec(), asyncRunner, ValidatorLogger.VALIDATOR_LOGGER);

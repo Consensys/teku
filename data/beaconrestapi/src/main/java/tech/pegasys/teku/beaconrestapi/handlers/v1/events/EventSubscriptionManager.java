@@ -49,7 +49,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
-import tech.pegasys.teku.statetransition.block.NewBlockBuildingSubscriber.NewBlockBuildingNotification;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -95,7 +95,7 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     nodeDataProvider.subscribeToNewVoluntaryExits(this::onNewVoluntaryExit);
     nodeDataProvider.subscribeToSyncCommitteeContributions(this::onSyncCommitteeContribution);
     nodeDataProvider.subscribeToNewBlsToExecutionChanges(this::onNewBlsToExecutionChange);
-    nodeDataProvider.subscribeToNewBlockBuilding(this::onNewPayloadAttributes);
+    nodeDataProvider.subscribeToForkChoiceUpdatedResult(this::onForkChoiceUpdatedResult);
   }
 
   public void registerClient(final SseClient sseClient) {
@@ -220,14 +220,21 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     }
   }
 
-  protected void onNewPayloadAttributes(
-      final NewBlockBuildingNotification newBlockBuildingNotification) {
-    final SpecMilestone milestone =
-        spec.atSlot(newBlockBuildingNotification.payloadAttributes().getProposalSlot())
-            .getMilestone();
-    final PayloadAttributesEvent payloadAttributesEvent =
-        PayloadAttributesEvent.create(milestone, newBlockBuildingNotification);
-    notifySubscribersOfEvent(EventType.payload_attributes, payloadAttributesEvent);
+  protected void onForkChoiceUpdatedResult(
+      final ForkChoiceUpdatedResultNotification forkChoiceUpdatedResultNotification) {
+    forkChoiceUpdatedResultNotification
+        .payloadAttributes()
+        .ifPresent(
+            payloadAttributes -> {
+              final SpecMilestone milestone =
+                  spec.atSlot(payloadAttributes.getProposalSlot()).getMilestone();
+              final PayloadAttributesEvent payloadAttributesEvent =
+                  PayloadAttributesEvent.create(
+                      milestone,
+                      payloadAttributes,
+                      forkChoiceUpdatedResultNotification.forkChoiceState());
+              notifySubscribersOfEvent(EventType.payload_attributes, payloadAttributesEvent);
+            });
   }
 
   @Override

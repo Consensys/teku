@@ -497,21 +497,27 @@ public class EndpointMetadata {
     }
 
     public EndpointMetaDataBuilder headerRequired(final ParameterMetadata<?> headerMetadata) {
-      final String param = headerMetadata.getName();
-      if (requiredHeaders.containsKey(param) || headers.containsKey(param)) {
-        throw new IllegalStateException("Header already contains " + headerMetadata.getName());
-      }
+      checkRequestHeader(headerMetadata);
       requiredHeaders.put(headerMetadata.getName(), headerMetadata.getType());
       return this;
     }
 
     public EndpointMetaDataBuilder header(final ParameterMetadata<?> headerMetadata) {
+      checkRequestHeader(headerMetadata);
+      headers.put(headerMetadata.getName(), headerMetadata.getType());
+      return this;
+    }
+
+    private void checkRequestHeader(final ParameterMetadata<?> headerMetadata) {
       final String param = headerMetadata.getName();
       if (requiredHeaders.containsKey(param) || headers.containsKey(param)) {
         throw new IllegalStateException("Header already contains " + headerMetadata.getName());
+      } else if ("Content-Type".equalsIgnoreCase(param)
+          || "Accept".equalsIgnoreCase(param)
+          || "Authorization".equalsIgnoreCase(param)) {
+        throw new IllegalArgumentException(
+            "Request headers cannot be named Content-Type, Accept, or Authorization");
       }
-      headers.put(headerMetadata.getName(), headerMetadata.getType());
-      return this;
     }
 
     public EndpointMetaDataBuilder withBearerAuthSecurity() {

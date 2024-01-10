@@ -39,6 +39,8 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.infrastructure.http.ContentTypeNotSupportedException;
 import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
@@ -232,6 +234,16 @@ class EndpointMetadataTest {
                 .response(SC_OK, "Success", STRING_TYPE)
                 .build())
         .isInstanceOf(EndpointMetadata.class);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"Content-Type", "Accept", "Authorization"})
+  void header_cannotUseCertainNames(final String name) {
+    final ParameterMetadata<String> parameterMetadata = new ParameterMetadata<>(name, STRING_TYPE);
+    assertThatThrownBy(() -> validBuilder().header(parameterMetadata))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining(
+            "Request headers cannot be named Content-Type, Accept, or Authorization");
   }
 
   @Test

@@ -50,8 +50,8 @@ public class ProposersDataManager implements SlotEventsChannel {
 
   private final Spec spec;
   private final EventThread eventThread;
-  private final RecentChainData recentChainData;
   private final ExecutionLayerChannel executionLayerChannel;
+  private final RecentChainData recentChainData;
   private final Map<UInt64, PreparedProposerInfo> preparedProposerInfoByValidatorIndex =
       new ConcurrentHashMap<>();
   private final Map<UInt64, RegisteredValidatorInfo> validatorRegistrationInfoByValidatorIndex =
@@ -80,9 +80,9 @@ public class ProposersDataManager implements SlotEventsChannel {
 
     this.spec = spec;
     this.eventThread = eventThread;
+    this.executionLayerChannel = executionLayerChannel;
     this.recentChainData = recentChainData;
     this.proposerDefaultFeeRecipient = proposerDefaultFeeRecipient;
-    this.executionLayerChannel = executionLayerChannel;
   }
 
   public void subscribeToProposersDataChanges(final ProposersDataManagerSubscriber subscriber) {
@@ -237,13 +237,15 @@ public class ProposersDataManager implements SlotEventsChannel {
         Optional.ofNullable(validatorRegistrationInfoByValidatorIndex.get(proposerIndex))
             .map(RegisteredValidatorInfo::getSignedValidatorRegistration);
 
+    final Eth1Address feeRecipient = getFeeRecipient(proposerInfo, blockSlot);
+
     return Optional.of(
         new PayloadBuildingAttributes(
             proposerIndex,
             blockSlot,
             timestamp,
             random,
-            getFeeRecipient(proposerInfo, blockSlot),
+            feeRecipient,
             validatorRegistration,
             spec.getExpectedWithdrawals(state),
             currentHeadBlockRoot));

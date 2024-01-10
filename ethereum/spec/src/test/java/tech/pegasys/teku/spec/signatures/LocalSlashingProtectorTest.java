@@ -24,55 +24,35 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.ReentrantLock;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.signingrecord.ValidatorSigningRecord;
-import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
-import tech.pegasys.teku.infrastructure.async.MetricTrackingExecutorFactory;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
-import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class LocalSlashingProtectorTest {
-  private static final Logger LOG = LogManager.getLogger();
-  private static final Bytes32 GENESIS_VALIDATORS_ROOT = Bytes32.fromHexString("0x561234");
+  protected static final Bytes32 GENESIS_VALIDATORS_ROOT = Bytes32.fromHexString("0x561234");
+  protected final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createDefault());
+
+  protected final BLSPublicKey validator = dataStructureUtil.randomPublicKey();
+  protected final SyncDataAccessor dataWriter = mock(SyncDataAccessor.class);
+
+  protected final Path baseDir = Path.of("/data");
   private static final UInt64 ATTESTATION_TEST_BLOCK_SLOT = UInt64.valueOf(3);
   private static final UInt64 BLOCK_TEST_SOURCE_EPOCH = UInt64.valueOf(12);
   private static final UInt64 BLOCK_TEST_TARGET_EPOCH = UInt64.valueOf(15);
-  private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createDefault());
-
-  private final BLSPublicKey validator = dataStructureUtil.randomPublicKey();
-  private final SyncDataAccessor dataWriter = mock(SyncDataAccessor.class);
-
-  private final Path baseDir = Path.of("/data");
   private final Path signingRecordPath =
       baseDir.resolve(validator.toBytesCompressed().toUnprefixedHexString() + ".yml");
 
   private final LocalSlashingProtector slashingProtectionStorage =
-      new LocalSlashingProtector(dataWriter, baseDir, true);
-
-  private final AsyncRunnerFactory asyncRunnerFactory =
-      AsyncRunnerFactory.createDefault(new MetricTrackingExecutorFactory(new StubMetricsSystem()));
-
-  final AsyncRunner asyncRunner = asyncRunnerFactory.create("LocalSlashingProtectorTest", 3);
+      new LocalSlashingProtector(dataWriter, baseDir);
 
   @ParameterizedTest(name = "maySignBlock({0})")
   @MethodSource("blockCases")
@@ -89,107 +69,16 @@ class LocalSlashingProtectorTest {
     }
   }
 
+  protected SlashingProtector getSlashingProtector() {
+    return slashingProtectionStorage;
+  }
+
   static List<Arguments> blockCases() {
     return List.of(
         Arguments.of("noExistingRecord", Optional.empty(), UInt64.valueOf(1), true),
         Arguments.of("=", Optional.of(UInt64.valueOf(3)), UInt64.valueOf(3), false),
         Arguments.of("<", Optional.of(UInt64.valueOf(3)), UInt64.valueOf(2), false),
         Arguments.of(">", Optional.of(UInt64.valueOf(3)), UInt64.valueOf(4), true));
-  }
-
-  @Test
-  void cannotAccessSameValidatorConcurrently()
-      throws ExecutionException, InterruptedException, TimeoutException {
-    final AtomicBoolean releaseLock = new AtomicBoolean(false);
-
-    final SafeFuture<Void> firstSigner =
-        asyncRunner.runAsync(
-            () -> {
-              final ReentrantLock lock = slashingProtectionStorage.acquireLock(validator);
-              LOG.debug("LOCKED firstSigner");
-              do {
-                try {
-                  Thread.sleep(10);
-                } catch (InterruptedException e) {
-                  throw new RuntimeException(e);
-                }
-              } while (!releaseLock.get());
-              lock.unlock();
-              LOG.debug("UNLOCK firstSigner");
-            });
-
-    while (!slashingProtectionStorage.getLock(validator).isLocked()) {
-      Thread.sleep(10);
-    }
-    LOG.debug("firstSigner has the lock");
-
-    assertThat(slashingProtectionStorage.getLock(validator).hasQueuedThreads()).isFalse();
-
-    final SafeFuture<Void> secondSigner =
-        asyncRunner.runAsync(
-            () -> {
-              final ReentrantLock lock = slashingProtectionStorage.acquireLock(validator);
-              LOG.debug("LOCKED secondSigner");
-              lock.unlock();
-              LOG.debug("UNLOCK secondSigner");
-            });
-
-    while (!slashingProtectionStorage.getLock(validator).hasQueuedThreads()) {
-      Thread.sleep(10);
-    }
-    LOG.debug("firstSigner waiting on acquire lock");
-
-    assertThat(firstSigner).isNotCompleted();
-    assertThat(secondSigner).isNotCompleted();
-
-    releaseLock.set(true);
-    firstSigner.get(50, TimeUnit.MILLISECONDS);
-    assertThat(firstSigner).isCompleted();
-    secondSigner.get(50, TimeUnit.MILLISECONDS);
-    assertThat(secondSigner).isCompleted();
-
-    assertThat(slashingProtectionStorage.getLock(validator).hasQueuedThreads()).isFalse();
-    assertThat(slashingProtectionStorage.getLock(validator).isLocked()).isFalse();
-  }
-
-  @Test
-  void canAccessDifferentValidatorConcurrently()
-      throws ExecutionException, InterruptedException, TimeoutException {
-    final AtomicBoolean releaseLock = new AtomicBoolean(false);
-    final SafeFuture<Void> firstSigner =
-        asyncRunner.runAsync(
-            () -> {
-              final ReentrantLock lock = slashingProtectionStorage.acquireLock(validator);
-              LOG.debug("LOCKED firstSigner");
-              do {
-                try {
-                  Thread.sleep(10);
-                } catch (InterruptedException e) {
-                  throw new RuntimeException(e);
-                }
-              } while (!releaseLock.get());
-              lock.unlock();
-              LOG.debug("UNLOCK firstSigner");
-            });
-    final CountDownLatch threadAcquired = new CountDownLatch(1);
-    final SafeFuture<Void> secondSigner =
-        asyncRunner.runAsync(
-            () -> {
-              threadAcquired.countDown();
-              final ReentrantLock lock =
-                  slashingProtectionStorage.acquireLock(dataStructureUtil.randomPublicKey());
-              LOG.debug("LOCKED secondSigner");
-              lock.unlock();
-              LOG.debug("UNLOCK secondSigner");
-            });
-    threadAcquired.await();
-    assertThat(firstSigner).isNotCompleted();
-    secondSigner.get(50, TimeUnit.MILLISECONDS);
-    assertThat(secondSigner).isCompleted();
-    releaseLock.set(true);
-    // flaky on Windows
-    firstSigner.get(500, TimeUnit.MILLISECONDS);
-    assertThat(firstSigner).isCompleted();
   }
 
   @ParameterizedTest(name = "maySignAttestation({0})")
@@ -255,8 +144,8 @@ class LocalSlashingProtectorTest {
         .thenReturn(lastSignedAttestation.map(ValidatorSigningRecord::toBytes));
 
     assertThat(
-            slashingProtectionStorage.maySignAttestation(
-                validator, GENESIS_VALIDATORS_ROOT, sourceEpoch, targetEpoch))
+            getSlashingProtector()
+                .maySignAttestation(validator, GENESIS_VALIDATORS_ROOT, sourceEpoch, targetEpoch))
         .isCompletedWithValue(true);
 
     final ValidatorSigningRecord updatedRecord =
