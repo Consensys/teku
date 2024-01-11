@@ -162,14 +162,14 @@ public class Eth2NetworkConfigurationTest {
   @Test
   public void shouldNotHaveCustomInitialStateFlagWhenUsingPreConfiguredNetworks() {
     final Eth2NetworkConfiguration eth2NetworkConfig =
-        new Builder().applyNetworkDefaults(Eth2Network.MAINNET).build();
+        new Eth2NetworkConfiguration.Builder().applyNetworkDefaults(Eth2Network.MAINNET).build();
     assertThat(eth2NetworkConfig.getNetworkBoostrapConfig().isUsingCustomInitialState()).isFalse();
   }
 
   @Test
   public void shouldHaveCustomInitialStateFlagSetWhenSpecifyingInitialState() {
     final Eth2NetworkConfiguration eth2NetworkConfig =
-        new Builder()
+        new Eth2NetworkConfiguration.Builder()
             .applyNetworkDefaults(Eth2Network.MAINNET)
             .customInitialState("/foo/bar")
             .build();
@@ -181,7 +181,7 @@ public class Eth2NetworkConfigurationTest {
   public void shouldSetInitialStateAndGenesisStateWhenUsingCheckpointSyncUrl() {
     final String checkpointSyncUrl = "http://foo.com";
     final Eth2NetworkConfiguration eth2NetworkConfig =
-        new Builder()
+        new Eth2NetworkConfiguration.Builder()
             .applyNetworkDefaults(Eth2Network.MAINNET)
             .checkpointSyncUrl(checkpointSyncUrl)
             .build();
