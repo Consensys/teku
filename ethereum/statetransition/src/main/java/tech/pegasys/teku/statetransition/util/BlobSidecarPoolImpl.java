@@ -43,7 +43,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.Origin;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTracker;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackerFactory;
@@ -167,7 +167,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   }
 
   @Override
-  public synchronized void onNewBlobSidecar(final BlobSidecar blobSidecar, final Origin origin) {
+  public synchronized void onNewBlobSidecar(final BlobSidecar blobSidecar, final RemoteOrigin remoteOrigin) {
     if (recentChainData.containsBlock(blobSidecar.getBlockRoot())) {
       return;
     }
@@ -183,10 +183,10 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
 
     if (blobSidecarsTracker.add(blobSidecar)) {
       sizeGauge.set(++totalBlobSidecars, GAUGE_BLOB_SIDECARS_LABEL);
-      countBlobSidecar(origin);
+      countBlobSidecar(remoteOrigin);
       newBlobSidecarSubscribers.deliver(NewBlobSidecarSubscriber::onNewBlobSidecar, blobSidecar);
     } else {
-      countDuplicateBlobSidecar(origin);
+      countDuplicateBlobSidecar(remoteOrigin);
     }
 
     if (orderedBlobSidecarsTrackers.add(slotAndBlockRoot)) {
@@ -194,7 +194,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     }
   }
 
-  private void countBlobSidecar(final Origin origin) {
+  private void countBlobSidecar(final RemoteOrigin origin) {
     switch (origin) {
       case RPC -> blobSidecarPoolStats.labels(COUNTER_SIDECAR_TYPE, COUNTER_RPC_SUBTYPE).inc();
       case GOSSIP -> blobSidecarPoolStats
@@ -203,7 +203,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     }
   }
 
-  private void countDuplicateBlobSidecar(final Origin origin) {
+  private void countDuplicateBlobSidecar(final RemoteOrigin origin) {
     switch (origin) {
       case RPC -> blobSidecarPoolStats
           .labels(COUNTER_SIDECAR_TYPE, COUNTER_RPC_DUPLICATE_SUBTYPE)
@@ -216,7 +216,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
 
   @Override
   public synchronized void onNewBlock(
-      final SignedBeaconBlock block, final Optional<Origin> origin) {
+      final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
     if (block.getMessage().getBody().toVersionDeneb().isEmpty()) {
       return;
     }
@@ -226,7 +226,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     if (shouldIgnoreItemAtSlot(block.getSlot())) {
       return;
     }
-    internalOnNewBlock(block, origin);
+    internalOnNewBlock(block, remoteOrigin);
   }
 
   @Override
@@ -391,7 +391,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   }
 
   private BlockBlobSidecarsTracker internalOnNewBlock(
-      final SignedBeaconBlock block, final Optional<Origin> maybeOrigin) {
+      final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {
     final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
 
     final BlockBlobSidecarsTracker tracker =
@@ -399,17 +399,17 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
             slotAndBlockRoot,
             newTracker -> {
               newTracker.setBlock(block);
-              countBlock(maybeOrigin);
+              countBlock(remoteOrigin);
               onFirstSeen(slotAndBlockRoot);
             },
             existingTracker -> {
               if (!existingTracker.setBlock(block)) {
                 // block was already set
-                countDuplicateBlock(maybeOrigin);
+                countDuplicateBlock(remoteOrigin);
                 return;
               }
 
-              countBlock(maybeOrigin);
+              countBlock(remoteOrigin);
 
               if (existingTracker.isFetchTriggered()) {
                 // block has been set for the first time and we previously triggered fetching of
@@ -432,10 +432,10 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     return tracker;
   }
 
-  private void countBlock(final Optional<Origin> maybeOrigin) {
-    maybeOrigin.ifPresent(
-        origin -> {
-          switch (origin) {
+  private void countBlock(final Optional<RemoteOrigin> maybeRemoteOrigin) {
+    maybeRemoteOrigin.ifPresent(
+        remoteOrigin -> {
+          switch (remoteOrigin) {
             case RPC -> blobSidecarPoolStats.labels(COUNTER_BLOCK_TYPE, COUNTER_RPC_SUBTYPE).inc();
             case GOSSIP -> blobSidecarPoolStats
                 .labels(COUNTER_BLOCK_TYPE, COUNTER_GOSSIP_SUBTYPE)
@@ -444,10 +444,10 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
         });
   }
 
-  private void countDuplicateBlock(final Optional<Origin> maybeOrigin) {
-    maybeOrigin.ifPresent(
-        origin -> {
-          switch (origin) {
+  private void countDuplicateBlock(final Optional<RemoteOrigin> maybeRemoteOrigin) {
+    maybeRemoteOrigin.ifPresent(
+        remoteOrigin -> {
+          switch (remoteOrigin) {
             case RPC -> blobSidecarPoolStats
                 .labels(COUNTER_BLOCK_TYPE, COUNTER_RPC_DUPLICATE_SUBTYPE)
                 .inc();

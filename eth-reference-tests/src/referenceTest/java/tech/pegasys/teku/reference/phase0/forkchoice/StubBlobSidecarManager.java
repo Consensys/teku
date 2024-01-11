@@ -60,7 +60,7 @@ class StubBlobSidecarManager implements BlobSidecarManager {
   }
 
   @Override
-  public void prepareForBlockImport(final BlobSidecar blobSidecar, final Origin origin) {
+  public void prepareForBlockImport(final BlobSidecar blobSidecar, final RemoteOrigin origin) {
     // NOOP
   }
 

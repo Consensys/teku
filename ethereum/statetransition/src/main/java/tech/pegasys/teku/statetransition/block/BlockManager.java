@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.Origin;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
@@ -110,7 +110,7 @@ public class BlockManager extends Service
   public SafeFuture<BlockImportAndBroadcastValidationResults> importBlock(
       final SignedBeaconBlock block,
       final BroadcastValidationLevel broadcastValidationLevel,
-      final Optional<Origin> origin) {
+      final Optional<RemoteOrigin> origin) {
     LOG.trace("Preparing to import block: {}", block::toLogString);
 
     final BlockBroadcastValidator blockBroadcastValidator =
@@ -161,7 +161,7 @@ public class BlockManager extends Service
                     block,
                     blockImportPerformance,
                     BlockBroadcastValidator.NOOP,
-                    Optional.of(Origin.GOSSIP))
+                    Optional.of(RemoteOrigin.GOSSIP))
                 .finish(err -> LOG.error("Failed to process received block.", err));
 
               // block failed gossip validation, let's drop it from the pool, so it won't be served
@@ -218,7 +218,8 @@ public class BlockManager extends Service
   }
 
   private void importBlockIgnoringResult(final SignedBeaconBlock block) {
-    doImportBlock(block, Optional.empty(), BlockBroadcastValidator.NOOP, Optional.of(Origin.GOSSIP))
+    // we don't care about origin here because flow calls this function for retries only
+    doImportBlock(block, Optional.empty(), BlockBroadcastValidator.NOOP, Optional.empty())
         .ifExceptionGetsHereRaiseABug();
   }
 
@@ -226,7 +227,7 @@ public class BlockManager extends Service
       final SignedBeaconBlock block,
       final Optional<BlockImportPerformance> blockImportPerformance,
       final BlockBroadcastValidator blockBroadcastValidator,
-      final Optional<Origin> origin) {
+      final Optional<RemoteOrigin> origin) {
     return handleInvalidBlock(block)
         .or(() -> handleKnownBlock(block))
         .orElseGet(
@@ -279,7 +280,7 @@ public class BlockManager extends Service
       final SignedBeaconBlock block,
       final Optional<BlockImportPerformance> blockImportPerformance,
       final BlockBroadcastValidator blockBroadcastValidator,
-      final Optional<Origin> origin) {
+      final Optional<RemoteOrigin> origin) {
 
     onBlockValidated(block);
     blobSidecarPool.onNewBlock(block, origin);

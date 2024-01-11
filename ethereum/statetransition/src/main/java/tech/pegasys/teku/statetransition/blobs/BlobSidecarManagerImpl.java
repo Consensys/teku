@@ -93,7 +93,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
               futureBlobSidecars.add(blobSidecar);
               break;
             case ACCEPT:
-              prepareForBlockImport(blobSidecar, Origin.GOSSIP);
+              prepareForBlockImport(blobSidecar, RemoteOrigin.GOSSIP);
               break;
           }
         });
@@ -102,7 +102,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   }
 
   @Override
-  public void prepareForBlockImport(final BlobSidecar blobSidecar, final Origin origin) {
+  public void prepareForBlockImport(final BlobSidecar blobSidecar, final RemoteOrigin origin) {
     blobSidecarPool.onNewBlobSidecar(blobSidecar, origin);
     receivedBlobSidecarSubscribers.forEach(s -> s.onBlobSidecarReceived(blobSidecar));
   }

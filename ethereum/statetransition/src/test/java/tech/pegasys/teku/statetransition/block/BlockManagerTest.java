@@ -423,7 +423,7 @@ public class BlockManagerTest {
 
     // pool should get notified for new block and then should be notified to drop content due to
     // block import completion
-    verify(blobSidecarPool).onNewBlock(nextBlock);
+    verify(blobSidecarPool).onNewBlock(nextBlock, Optional.empty());
     verify(blobSidecarPool).removeAllForBlock(nextBlock.getRoot());
   }
 
@@ -439,7 +439,7 @@ public class BlockManagerTest {
     assertThat(futureBlocks.contains(nextBlock)).isTrue();
 
     // blob pool should be notified about new block only
-    verify(blobSidecarPool).onNewBlock(nextBlock);
+    verify(blobSidecarPool).onNewBlock(nextBlock, Optional.empty());
     verifyNoMoreInteractions(blobSidecarPool);
   }
 
