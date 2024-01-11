@@ -108,14 +108,16 @@ public class BlockManager extends Service
 
   @Override
   public SafeFuture<BlockImportAndBroadcastValidationResults> importBlock(
-      final SignedBeaconBlock block, final BroadcastValidationLevel broadcastValidationLevel) {
+      final SignedBeaconBlock block,
+      final BroadcastValidationLevel broadcastValidationLevel,
+      final Optional<Origin> origin) {
     LOG.trace("Preparing to import block: {}", block::toLogString);
 
     final BlockBroadcastValidator blockBroadcastValidator =
         blockValidator.initiateBroadcastValidation(block, broadcastValidationLevel);
 
     final SafeFuture<BlockImportResult> importResult =
-        doImportBlock(block, Optional.empty(), blockBroadcastValidator, Origin.LOCAL);
+        doImportBlock(block, Optional.empty(), blockBroadcastValidator, origin);
 
     // we want to intercept any early import exceptions happening before the consensus validation is
     // completed
@@ -156,7 +158,10 @@ public class BlockManager extends Service
         result -> {
           switch (result.code()) {
             case ACCEPT, SAVE_FOR_FUTURE -> doImportBlock(
-                    block, blockImportPerformance, BlockBroadcastValidator.NOOP, Origin.GOSSIP)
+                    block,
+                    blockImportPerformance,
+                    BlockBroadcastValidator.NOOP,
+                    Optional.of(Origin.GOSSIP))
                 .finish(err -> LOG.error("Failed to process received block.", err));
 
               // block failed gossip validation, let's drop it from the pool, so it won't be served
@@ -213,7 +218,7 @@ public class BlockManager extends Service
   }
 
   private void importBlockIgnoringResult(final SignedBeaconBlock block) {
-    doImportBlock(block, Optional.empty(), BlockBroadcastValidator.NOOP, Origin.GOSSIP)
+    doImportBlock(block, Optional.empty(), BlockBroadcastValidator.NOOP, Optional.of(Origin.GOSSIP))
         .ifExceptionGetsHereRaiseABug();
   }
 
@@ -221,7 +226,7 @@ public class BlockManager extends Service
       final SignedBeaconBlock block,
       final Optional<BlockImportPerformance> blockImportPerformance,
       final BlockBroadcastValidator blockBroadcastValidator,
-      final Origin origin) {
+      final Optional<Origin> origin) {
     return handleInvalidBlock(block)
         .or(() -> handleKnownBlock(block))
         .orElseGet(
@@ -274,7 +279,7 @@ public class BlockManager extends Service
       final SignedBeaconBlock block,
       final Optional<BlockImportPerformance> blockImportPerformance,
       final BlockBroadcastValidator blockBroadcastValidator,
-      final Origin origin) {
+      final Optional<Origin> origin) {
 
     onBlockValidated(block);
     blobSidecarPool.onNewBlock(block, origin);

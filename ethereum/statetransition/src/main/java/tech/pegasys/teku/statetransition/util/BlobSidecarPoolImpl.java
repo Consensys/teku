@@ -215,7 +215,8 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   }
 
   @Override
-  public synchronized void onNewBlock(final SignedBeaconBlock block, final Origin origin) {
+  public synchronized void onNewBlock(
+      final SignedBeaconBlock block, final Optional<Origin> origin) {
     if (block.getMessage().getBody().toVersionDeneb().isEmpty()) {
       return;
     }
@@ -225,7 +226,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     if (shouldIgnoreItemAtSlot(block.getSlot())) {
       return;
     }
-    internalOnNewBlock(block, Optional.of(origin));
+    internalOnNewBlock(block, origin);
   }
 
   @Override
