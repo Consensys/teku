@@ -622,24 +622,10 @@ public class ProtoArray {
       return false;
     }
 
-    // The voting source should be at the same height as the store's justified checkpoint
+    // The voting source should be at the same height as the store's justified checkpoint or
+    // not more than two epochs ago
     boolean correctJustified =
         doesCheckpointEpochMatch(node.getJustifiedCheckpoint(), justifiedCheckpoint);
-
-    // If this is a pulled-up block from the current epoch, also check that the unrealized
-    // justification is higher than the store's justified checkpoint, and the voting source is not
-    // more than two epochs ago.
-    if (!correctJustified
-        && !node.getUnrealizedJustifiedCheckpoint().equals(node.getJustifiedCheckpoint())) {
-      correctJustified =
-          node.getUnrealizedJustifiedCheckpoint()
-                  .getEpoch()
-                  .isGreaterThanOrEqualTo(justifiedCheckpoint.getEpoch())
-              && node.getJustifiedCheckpoint()
-                  .getEpoch()
-                  .plus(2)
-                  .isGreaterThanOrEqualTo(currentEpoch);
-    }
 
     final boolean correctFinalized =
         node.getFinalizedCheckpoint().getEpoch().equals(initialEpoch)
@@ -697,7 +683,8 @@ public class ProtoArray {
 
   private boolean doesCheckpointEpochMatch(final Checkpoint actual, final Checkpoint required) {
     return required.getEpoch().equals(initialEpoch)
-        || actual.getEpoch().equals(required.getEpoch());
+        || actual.getEpoch().equals(required.getEpoch())
+        || actual.getEpoch().plus(2).isGreaterThanOrEqualTo(currentEpoch);
   }
 
   public Checkpoint getJustifiedCheckpoint() {
