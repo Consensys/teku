@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
 
 class BeaconBlockBodyAltairTest extends AbstractBeaconBlockBodyTest<BeaconBlockBodyAltair> {
 
@@ -45,13 +46,25 @@ class BeaconBlockBodyAltairTest extends AbstractBeaconBlockBodyTest<BeaconBlockB
   @Override
   protected SafeFuture<BeaconBlockBodyAltair> createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> contentProvider) {
-    return getBlockBodySchema()
-        .createBlockBody(contentProvider)
-        .thenApply(body -> (BeaconBlockBodyAltair) body);
+    final BeaconBlockBodyBuilder bodyBuilder = createBeaconBlockBodyBuilder();
+    contentProvider.accept(bodyBuilder);
+    return bodyBuilder.build().thenApply(body -> body.toVersionAltair().orElseThrow());
   }
 
   @Override
-  protected Consumer<BeaconBlockBodyBuilder> createContentProvider() {
-    return super.createContentProvider().andThen(builder -> builder.syncAggregate(syncAggregate));
+  protected SafeFuture<BlindedBeaconBlockBodyBellatrix> createBlindedBlockBody(
+      Consumer<BeaconBlockBodyBuilder> contentProvider) {
+    return SafeFuture.completedFuture(null);
+  }
+
+  @Override
+  protected SafeFuture<BlindedBeaconBlockBodyBellatrix> createDefaultBlindedBlockBody() {
+    return SafeFuture.completedFuture(null);
+  }
+
+  @Override
+  protected Consumer<BeaconBlockBodyBuilder> createContentProvider(final boolean blinded) {
+    return super.createContentProvider(blinded)
+        .andThen(builder -> builder.syncAggregate(syncAggregate));
   }
 }

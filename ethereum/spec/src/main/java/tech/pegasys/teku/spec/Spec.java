@@ -700,7 +700,6 @@ public class Spec {
       final BeaconState blockSlotState,
       final Bytes32 parentBlockSigningRoot,
       final Consumer<BeaconBlockBodyBuilder> bodyBuilder,
-      final Optional<Boolean> blinded,
       final BlockProductionPerformance blockProductionPerformance) {
     return atSlot(newSlot)
         .getBlockProposalUtil()
@@ -710,7 +709,6 @@ public class Spec {
             blockSlotState,
             parentBlockSigningRoot,
             bodyBuilder,
-            blinded,
             blockProductionPerformance);
   }
 

@@ -53,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
+import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
@@ -109,7 +110,11 @@ public class BlockOperationSelectorFactory {
       final BeaconState blockSlotState,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti,
+      final Optional<Boolean> requestedBlinded,
       final BlockProductionPerformance blockProductionPerformance) {
+
+    final boolean blinded = requestedBlinded.orElse(ValidatorsUtil.DEFAULT_PRODUCE_BLINDED_BLOCK);
+
     return bodyBuilder -> {
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
 
@@ -171,7 +176,12 @@ public class BlockOperationSelectorFactory {
         final SchemaDefinitions schemaDefinitions =
             spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions();
         setExecutionData(
-            bodyBuilder, schemaDefinitions, parentRoot, blockSlotState, blockProductionPerformance);
+            bodyBuilder,
+            blinded,
+            schemaDefinitions,
+            parentRoot,
+            blockSlotState,
+            blockProductionPerformance);
       }
 
       blockProductionPerformance.beaconBlockPrepared();
@@ -180,6 +190,7 @@ public class BlockOperationSelectorFactory {
 
   private void setExecutionData(
       final BeaconBlockBodyBuilder bodyBuilder,
+      final boolean blinded,
       final SchemaDefinitions schemaDefinitions,
       final Bytes32 parentRoot,
       final BeaconState blockSlotState,
@@ -189,7 +200,7 @@ public class BlockOperationSelectorFactory {
 
     // Pre-Deneb: Execution Payload / Execution Payload Header
     if (!bodyBuilder.supportsKzgCommitments()) {
-      if (bodyBuilder.isBlinded()) {
+      if (blinded) {
         builderSetPayloadHeader(
             bodyBuilder,
             schemaDefinitions,
@@ -219,16 +230,17 @@ public class BlockOperationSelectorFactory {
                             new IllegalStateException(
                                 "Cannot provide kzg commitments before The Merge")),
                     blockSlotState,
-                    bodyBuilder.isBlinded(),
+                    blinded,
                     blockProductionPerformance));
-    builderSetPayloadPostMerge(bodyBuilder, executionPayloadResultFuture);
-    builderSetKzgCommitments(bodyBuilder, schemaDefinitions, executionPayloadResultFuture);
+    builderSetPayloadPostMerge(bodyBuilder, blinded, executionPayloadResultFuture);
+    builderSetKzgCommitments(bodyBuilder, blinded, schemaDefinitions, executionPayloadResultFuture);
   }
 
   private void builderSetPayloadPostMerge(
       final BeaconBlockBodyBuilder bodyBuilder,
+      final boolean blinded,
       final SafeFuture<ExecutionPayloadResult> executionPayloadResultFuture) {
-    if (bodyBuilder.isBlinded()) {
+    if (blinded) {
       bodyBuilder.executionPayloadHeader(
           executionPayloadResultFuture.thenCompose(
               executionPayloadResult ->
@@ -308,6 +320,7 @@ public class BlockOperationSelectorFactory {
 
   private void builderSetKzgCommitments(
       final BeaconBlockBodyBuilder bodyBuilder,
+      final boolean blinded,
       final SchemaDefinitions schemaDefinitions,
       final SafeFuture<ExecutionPayloadResult> executionPayloadResultFuture) {
     final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
@@ -315,7 +328,7 @@ public class BlockOperationSelectorFactory {
     final SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments =
         executionPayloadResultFuture.thenCompose(
             executionPayloadResult -> {
-              if (bodyBuilder.isBlinded()) {
+              if (blinded) {
                 return getBuilderBlobKzgCommitments(executionPayloadResult);
               } else {
                 return getExecutionBlobsBundle(executionPayloadResult)

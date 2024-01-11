@@ -131,7 +131,7 @@ public class BeaconBlockBodySchemaCapellaImpl
   @Override
   public SafeFuture<? extends BeaconBlockBody> createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
-    final BeaconBlockBodyBuilderCapella builder = new BeaconBlockBodyBuilderCapella().schema(this);
+    final BeaconBlockBodyBuilderCapella builder = new BeaconBlockBodyBuilderCapella(this, null);
     builderConsumer.accept(builder);
     return builder.build();
   }

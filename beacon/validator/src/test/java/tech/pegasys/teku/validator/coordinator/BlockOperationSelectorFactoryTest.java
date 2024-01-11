@@ -169,9 +169,6 @@ class BlockOperationSelectorFactoryTest {
   private final CapturingBeaconBlockBodyBuilder bodyBuilder =
       new CapturingBeaconBlockBodyBuilder(false);
 
-  private final CapturingBeaconBlockBodyBuilder blindedBodyBuilder =
-      new CapturingBeaconBlockBodyBuilder(true);
-
   private final BlockOperationSelectorFactory factory =
       new BlockOperationSelectorFactory(
           spec,
@@ -215,6 +212,7 @@ class BlockOperationSelectorFactoryTest {
             blockSlotState,
             dataStructureUtil.randomSignature(),
             Optional.empty(),
+            Optional.empty(),
             BlockProductionPerformance.NOOP)
         .accept(bodyBuilder);
 
@@ -249,6 +247,7 @@ class BlockOperationSelectorFactoryTest {
             parentRoot,
             blockSlotState,
             randaoReveal,
+            Optional.empty(),
             Optional.empty(),
             BlockProductionPerformance.NOOP)
         .accept(bodyBuilder);
@@ -327,6 +326,7 @@ class BlockOperationSelectorFactoryTest {
             blockSlotState,
             randaoReveal,
             Optional.empty(),
+            Optional.empty(),
             BlockProductionPerformance.NOOP)
         .accept(bodyBuilder);
 
@@ -353,6 +353,7 @@ class BlockOperationSelectorFactoryTest {
             blockSlotState,
             dataStructureUtil.randomSignature(),
             Optional.empty(),
+            Optional.of(false),
             BlockProductionPerformance.NOOP)
         .accept(bodyBuilder);
     assertThat(bodyBuilder.executionPayload).isEqualTo(defaultExecutionPayload);
@@ -368,9 +369,10 @@ class BlockOperationSelectorFactoryTest {
             blockSlotState,
             dataStructureUtil.randomSignature(),
             Optional.empty(),
+            Optional.of(true),
             BlockProductionPerformance.NOOP)
-        .accept(blindedBodyBuilder);
-    assertThat(blindedBodyBuilder.executionPayloadHeader)
+        .accept(bodyBuilder);
+    assertThat(bodyBuilder.executionPayloadHeader)
         .isEqualTo(executionPayloadHeaderOfDefaultPayload);
   }
 
@@ -394,6 +396,7 @@ class BlockOperationSelectorFactoryTest {
             blockSlotState,
             dataStructureUtil.randomSignature(),
             Optional.empty(),
+            Optional.of(false),
             BlockProductionPerformance.NOOP)
         .accept(bodyBuilder);
 
@@ -421,10 +424,11 @@ class BlockOperationSelectorFactoryTest {
             blockSlotState,
             dataStructureUtil.randomSignature(),
             Optional.empty(),
+            Optional.of(true),
             BlockProductionPerformance.NOOP)
-        .accept(blindedBodyBuilder);
+        .accept(bodyBuilder);
 
-    assertThat(blindedBodyBuilder.executionPayloadHeader).isEqualTo(randomExecutionPayloadHeader);
+    assertThat(bodyBuilder.executionPayloadHeader).isEqualTo(randomExecutionPayloadHeader);
   }
 
   @Test
@@ -447,6 +451,7 @@ class BlockOperationSelectorFactoryTest {
             blockSlotState,
             dataStructureUtil.randomSignature(),
             Optional.empty(),
+            Optional.of(false),
             BlockProductionPerformance.NOOP)
         .accept(bodyBuilder);
 
@@ -484,8 +489,7 @@ class BlockOperationSelectorFactoryTest {
     prepareBlockAndBlobsProduction(
         randomExecutionPayload, executionPayloadContext, blockSlotState, blobsBundle);
 
-    final CapturingBeaconBlockBodyBuilder bodyBuilder =
-        new CapturingBeaconBlockBodyBuilder(false, true);
+    final CapturingBeaconBlockBodyBuilder bodyBuilder = new CapturingBeaconBlockBodyBuilder(true);
 
     factory
         .createSelector(
@@ -493,6 +497,7 @@ class BlockOperationSelectorFactoryTest {
             blockSlotState,
             dataStructureUtil.randomSignature(),
             Optional.empty(),
+            Optional.of(false),
             BlockProductionPerformance.NOOP)
         .accept(bodyBuilder);
 
@@ -519,14 +524,14 @@ class BlockOperationSelectorFactoryTest {
     prepareBlindedBlockAndBlobsProduction(
         randomExecutionPayloadHeader, executionPayloadContext, blockSlotState, blobKzgCommitments);
 
-    final CapturingBeaconBlockBodyBuilder bodyBuilder =
-        new CapturingBeaconBlockBodyBuilder(true, true);
+    final CapturingBeaconBlockBodyBuilder bodyBuilder = new CapturingBeaconBlockBodyBuilder(true);
 
     factory
         .createSelector(
             parentRoot,
             blockSlotState,
             dataStructureUtil.randomSignature(),
+            Optional.empty(),
             Optional.empty(),
             BlockProductionPerformance.NOOP)
         .accept(bodyBuilder);
@@ -757,7 +762,6 @@ class BlockOperationSelectorFactoryTest {
 
   private static class CapturingBeaconBlockBodyBuilder implements BeaconBlockBodyBuilder {
 
-    private final boolean blinded;
     private final boolean supportsKzgCommitments;
 
     protected BLSSignature randaoReveal;
@@ -771,20 +775,8 @@ class BlockOperationSelectorFactoryTest {
     protected ExecutionPayloadHeader executionPayloadHeader;
     protected SszList<SszKZGCommitment> blobKzgCommitments;
 
-    public CapturingBeaconBlockBodyBuilder(final boolean blinded) {
-      this.blinded = blinded;
-      this.supportsKzgCommitments = false;
-    }
-
-    public CapturingBeaconBlockBodyBuilder(
-        final boolean blinded, final boolean supportsKzgCommitments) {
-      this.blinded = blinded;
+    public CapturingBeaconBlockBodyBuilder(final boolean supportsKzgCommitments) {
       this.supportsKzgCommitments = supportsKzgCommitments;
-    }
-
-    @Override
-    public Boolean isBlinded() {
-      return blinded;
     }
 
     @Override
@@ -890,7 +882,7 @@ class BlockOperationSelectorFactoryTest {
     }
 
     @Override
-    public SafeFuture<BeaconBlockBody> build() {
+    public SafeFuture<? extends BeaconBlockBody> build() {
       return null;
     }
   }
