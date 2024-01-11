@@ -62,20 +62,20 @@ public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltai
   @Override
   @SuppressWarnings("unchecked")
   protected <T> T getAndValidateSchema(final boolean blinded, final Class<T> expectedSchemaType) {
-    final BeaconBlockBodySchema<?> schema;
+    final BeaconBlockBodySchema<?> resolvedSchema;
     if (blinded) {
-      schema = this.blindedSchema;
-      checkNotNull(schema, "Blinded schema must be specified");
+      resolvedSchema = blindedSchema;
+      checkNotNull(resolvedSchema, "Blinded schema must be specified");
     } else {
-      schema = this.schema;
-      checkNotNull(schema, "Schema must be specified");
+      resolvedSchema = schema;
+      checkNotNull(resolvedSchema, "Schema must be specified");
     }
     checkArgument(
-        expectedSchemaType == schema.getClass(),
+        expectedSchemaType == resolvedSchema.getClass(),
         String.format(
             "Schema should be %s but was %s",
-            expectedSchemaType.getSimpleName(), schema.getClass().getSimpleName()));
-    return (T) schema;
+            expectedSchemaType.getSimpleName(), resolvedSchema.getClass().getSimpleName()));
+    return (T) resolvedSchema;
   }
 
   @Override

@@ -15,11 +15,12 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.common;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThatSafeFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -63,8 +64,11 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
   protected BeaconBlockBodySchema<?> blockBodySchema;
   protected BeaconBlockBodySchema<? extends BlindedBeaconBlockBodyBellatrix> blindedBlockBodySchema;
 
+  protected boolean supportsExecutionPayload;
+
   protected void setUpBaseClass(final SpecMilestone milestone, Runnable additionalSetup) {
     spec = TestSpecFactory.createMinimal(milestone);
+    supportsExecutionPayload = spec.isMilestoneSupported(SpecMilestone.BELLATRIX);
     dataStructureUtil = new DataStructureUtil(spec);
     BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpec(spec);
 
@@ -94,12 +98,10 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
     additionalSetup.run();
 
     defaultBlockBody = safeJoin(createDefaultBlockBody());
-    defaultBlindedBlockBody = safeJoin(createDefaultBlindedBlockBody());
+    defaultBlindedBlockBody =
+        supportsExecutionPayload ? safeJoin(createDefaultBlindedBlockBody()) : null;
     blockBodySchema = defaultBlockBody.getSchema();
-    blindedBlockBodySchema =
-        Optional.ofNullable(defaultBlindedBlockBody)
-            .map(BlindedBeaconBlockBodyBellatrix::getSchema)
-            .orElse(null);
+    blindedBlockBodySchema = supportsExecutionPayload ? defaultBlindedBlockBody.getSchema() : null;
   }
 
   protected SafeFuture<T> createBlockBody() {
@@ -212,6 +214,35 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
     BeaconBlockBody newBeaconBlockBody =
         getBlockBodySchema().sszDeserialize(defaultBlockBody.sszSerialize());
     assertEquals(defaultBlockBody, newBeaconBlockBody);
+  }
+
+  @Test
+  public void builderShouldCreateBlinded() {
+    assumeTrue(supportsExecutionPayload);
+    SafeFuture<? extends BeaconBlockBody> blockBody =
+        createBlindedBlockBody(createContentProvider(true));
+    assertThatSafeFuture(blockBody)
+        .isCompletedWithValueMatching(
+            beaconBlockBody ->
+                beaconBlockBody.getOptionalExecutionPayload().isEmpty()
+                    && beaconBlockBody.getOptionalExecutionPayloadHeader().isPresent());
+  }
+
+  @Test
+  public void builderShouldCreateUnblinded() {
+    assumeTrue(supportsExecutionPayload);
+    SafeFuture<? extends BeaconBlockBody> blockBody = createBlockBody(createContentProvider(false));
+    assertThatSafeFuture(blockBody)
+        .isCompletedWithValueMatching(
+            beaconBlockBody ->
+                beaconBlockBody.getOptionalExecutionPayloadHeader().isEmpty()
+                    && beaconBlockBody.getOptionalExecutionPayload().isPresent());
+  }
+
+  @Test
+  public void verifyExecutionPayloadSupport() {
+    assertEquals(
+        createBeaconBlockBodyBuilder().supportsExecutionPayload(), supportsExecutionPayload);
   }
 
   protected Consumer<BeaconBlockBodyBuilder> createContentProvider(boolean blinded) {

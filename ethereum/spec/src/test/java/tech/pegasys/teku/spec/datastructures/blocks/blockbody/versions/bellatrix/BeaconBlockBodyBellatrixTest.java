@@ -70,7 +70,7 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
   }
 
   @Test
-  public void builderShouldFailIfNotPassingPayload() {
+  public void builderShouldFailIfNotPassingPayloadNorPayloadHeader() {
     final Exception exception =
         assertThrows(
             IllegalStateException.class,
@@ -85,7 +85,7 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
   }
 
   @Test
-  public void builderShouldFailIfNotPassingPayloadAndPayloadHeader() {
+  public void builderShouldFailIfPassingPayloadAndPayloadHeader() {
     final Exception exception =
         assertThrows(
             IllegalStateException.class,
@@ -94,6 +94,8 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
                     createContentProvider(true)
                         .andThen(
                             b ->
+                                // payload header is already set because we requested a blinded
+                                // content
                                 b.executionPayload(SafeFuture.completedFuture(executionPayload)))));
     assertEquals(
         exception.getMessage(),
