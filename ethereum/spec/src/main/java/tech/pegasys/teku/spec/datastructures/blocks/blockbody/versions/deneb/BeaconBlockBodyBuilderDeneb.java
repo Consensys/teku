@@ -14,15 +14,14 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 
-import java.util.Optional;
 import org.apache.commons.lang3.tuple.Pair;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyBuilderCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDenebImpl;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderDenebImpl;
@@ -31,21 +30,12 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class BeaconBlockBodyBuilderDeneb extends BeaconBlockBodyBuilderCapella {
 
-  private BeaconBlockBodySchemaDenebImpl schema;
-  private BlindedBeaconBlockBodySchemaDenebImpl blindedSchema;
   private SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments;
 
-  public BeaconBlockBodyBuilderDeneb schema(final BeaconBlockBodySchemaDenebImpl schema) {
-    this.schema = schema;
-    this.blinded = Optional.of(false);
-    return this;
-  }
-
-  public BeaconBlockBodyBuilderDeneb blindedSchema(
-      final BlindedBeaconBlockBodySchemaDenebImpl blindedSchema) {
-    this.blindedSchema = blindedSchema;
-    this.blinded = Optional.of(true);
-    return this;
+  public BeaconBlockBodyBuilderDeneb(
+      final BeaconBlockBodySchema<? extends BeaconBlockBodyDeneb> schema,
+      final BeaconBlockBodySchema<? extends BlindedBeaconBlockBodyDeneb> blindedSchema) {
+    super(schema, blindedSchema);
   }
 
   @Override
@@ -61,41 +51,24 @@ public class BeaconBlockBodyBuilderDeneb extends BeaconBlockBodyBuilderCapella {
   }
 
   @Override
-  protected void validateSchema() {
-    if (isBlinded()) {
-      checkState(
-          blindedSchema != null && schema == null, "blindedSchema must be set with no schema");
-    } else {
-      checkState(
-          schema != null && blindedSchema == null, "schema must be set with no blindedSchema");
-    }
-  }
-
-  @Override
   protected void validate() {
     super.validate();
     checkNotNull(blobKzgCommitments, "blobKzgCommitments must be specified");
   }
 
   @Override
-  public Boolean isBlinded() {
-    return blinded.orElseThrow(
-        () ->
-            new IllegalStateException(
-                "schema or blindedSchema must be set before interacting with the builder"));
-  }
-
-  @Override
   public SafeFuture<BeaconBlockBody> build() {
     validate();
     if (isBlinded()) {
+      final BlindedBeaconBlockBodySchemaDenebImpl schema =
+          getAndValidateSchema(true, BlindedBeaconBlockBodySchemaDenebImpl.class);
       return executionPayloadHeader
           .thenCompose(
               header -> blobKzgCommitments.thenApply(commitments -> Pair.of(header, commitments)))
           .thenApply(
               headerWithCommitments ->
                   new BlindedBeaconBlockBodyDenebImpl(
-                      blindedSchema,
+                      schema,
                       new SszSignature(randaoReveal),
                       eth1Data,
                       SszBytes32.of(graffiti),
@@ -110,6 +83,9 @@ public class BeaconBlockBodyBuilderDeneb extends BeaconBlockBodyBuilderCapella {
                       getBlsToExecutionChanges(),
                       headerWithCommitments.getRight()));
     }
+
+    final BeaconBlockBodySchemaDenebImpl schema =
+        getAndValidateSchema(false, BeaconBlockBodySchemaDenebImpl.class);
     return executionPayload
         .thenCompose(
             payload -> blobKzgCommitments.thenApply(commitments -> Pair.of(payload, commitments)))

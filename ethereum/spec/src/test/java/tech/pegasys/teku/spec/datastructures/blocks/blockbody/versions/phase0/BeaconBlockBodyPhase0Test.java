@@ -19,6 +19,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
 
 public class BeaconBlockBodyPhase0Test extends AbstractBeaconBlockBodyTest<BeaconBlockBodyPhase0> {
 
@@ -30,8 +31,14 @@ public class BeaconBlockBodyPhase0Test extends AbstractBeaconBlockBodyTest<Beaco
   @Override
   protected SafeFuture<BeaconBlockBodyPhase0> createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> contentProvider) {
-    return getBlockBodySchema()
-        .createBlockBody(contentProvider)
-        .thenApply(block -> (BeaconBlockBodyPhase0) block);
+    final BeaconBlockBodyBuilder bodyBuilder = createBeaconBlockBodyBuilder();
+    contentProvider.accept(bodyBuilder);
+    return bodyBuilder.build().thenApply(body -> (BeaconBlockBodyPhase0) body);
+  }
+
+  @Override
+  protected SafeFuture<BlindedBeaconBlockBodyBellatrix> createBlindedBlockBody(
+      Consumer<BeaconBlockBodyBuilder> contentProvider) {
+    return SafeFuture.completedFuture(null);
   }
 }

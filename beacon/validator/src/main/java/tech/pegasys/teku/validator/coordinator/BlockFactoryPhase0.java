@@ -48,7 +48,7 @@ public class BlockFactoryPhase0 implements BlockFactory {
       final UInt64 newSlot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti,
-      final Optional<Boolean> blinded,
+      final Optional<Boolean> requestedBlinded,
       final BlockProductionPerformance blockProductionPerformance) {
     checkArgument(
         blockSlotState.getSlot().equals(newSlot),
@@ -71,8 +71,8 @@ public class BlockFactoryPhase0 implements BlockFactory {
                 blockSlotState,
                 randaoReveal,
                 optionalGraffiti,
+                requestedBlinded,
                 blockProductionPerformance),
-            blinded,
             blockProductionPerformance)
         .thenApply(BeaconBlockAndState::getBlock);
   }

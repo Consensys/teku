@@ -19,17 +19,16 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.phase0.BeaconBlockBodyBuilderPhase0;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class BeaconBlockBodyBuilderAltair extends BeaconBlockBodyBuilderPhase0 {
-
-  private BeaconBlockBodySchemaAltairImpl schema;
   protected SyncAggregate syncAggregate;
 
-  public BeaconBlockBodyBuilderAltair schema(final BeaconBlockBodySchemaAltairImpl schema) {
-    this.schema = schema;
-    return this;
+  public BeaconBlockBodyBuilderAltair(
+      final BeaconBlockBodySchema<? extends BeaconBlockBody> schema) {
+    super(schema);
   }
 
   @Override
@@ -44,11 +43,6 @@ public class BeaconBlockBodyBuilderAltair extends BeaconBlockBodyBuilderPhase0 {
   }
 
   @Override
-  protected void validateSchema() {
-    checkNotNull(schema, "schema must be specified");
-  }
-
-  @Override
   protected void validate() {
     super.validate();
     checkNotNull(syncAggregate, "syncAggregate must be specified");
@@ -57,6 +51,8 @@ public class BeaconBlockBodyBuilderAltair extends BeaconBlockBodyBuilderPhase0 {
   @Override
   public SafeFuture<BeaconBlockBody> build() {
     validate();
+    final BeaconBlockBodySchemaAltairImpl schema =
+        getAndValidateSchema(false, BeaconBlockBodySchemaAltairImpl.class);
 
     return SafeFuture.completedFuture(
         new BeaconBlockBodyAltairImpl(
