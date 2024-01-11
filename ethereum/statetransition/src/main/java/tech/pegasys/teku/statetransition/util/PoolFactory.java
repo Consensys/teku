@@ -16,6 +16,8 @@ package tech.pegasys.teku.statetransition.util;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Collections;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -38,6 +40,7 @@ public class PoolFactory {
 
   private final SettableLabelledGauge pendingPoolsSizeGauge;
   private final SettableLabelledGauge blobSidecarPoolSizeGauge;
+  private final LabelledMetric<Counter> blobSidecarPoolStats;
 
   public PoolFactory(final MetricsSystem metricsSystem) {
     this.pendingPoolsSizeGauge =
@@ -55,6 +58,14 @@ public class PoolFactory {
             "blobs_pool_size",
             "Number of items in blobs pool",
             "type");
+
+    this.blobSidecarPoolStats =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.BEACON,
+            "blobs_pool_stats",
+            "Blobs pool statistics",
+            "type",
+            "subtype");
   }
 
   public PendingPool<SignedBeaconBlock> createPendingPoolForBlocks(final Spec spec) {
@@ -120,6 +131,7 @@ public class PoolFactory {
       final int maxTrackers) {
     return new BlobSidecarPoolImpl(
         blobSidecarPoolSizeGauge,
+        blobSidecarPoolStats,
         spec,
         timeProvider,
         asyncRunner,
@@ -141,6 +153,7 @@ public class PoolFactory {
       final BlockBlobSidecarsTrackerFactory trackerFactory) {
     return new BlobSidecarPoolImpl(
         pendingPoolsSizeGauge,
+        blobSidecarPoolStats,
         spec,
         timeProvider,
         asyncRunner,

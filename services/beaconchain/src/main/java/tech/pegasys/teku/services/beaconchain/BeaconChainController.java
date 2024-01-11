@@ -118,6 +118,7 @@ import tech.pegasys.teku.statetransition.SimpleOperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.Origin;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManagerImpl;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.blobs.DataUnavailableBlockPool;
@@ -339,7 +340,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final RecentBlobSidecarsFetcher recentBlobSidecarsFetcher =
         syncService.getRecentBlobSidecarsFetcher();
     recentBlobSidecarsFetcher.subscribeBlobSidecarFetched(
-        (blobSidecar) -> blobSidecarManager.prepareForBlockImport(blobSidecar));
+        (blobSidecar) -> blobSidecarManager.prepareForBlockImport(blobSidecar, Origin.RPC));
     blobSidecarManager.subscribeToReceivedBlobSidecar(
         blobSidecar ->
             recentBlobSidecarsFetcher.cancelRecentBlobSidecarRequest(

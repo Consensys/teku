@@ -40,6 +40,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidationResult;
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.Origin;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.ReceivedBlobSidecarListener;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceBlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.util.BlobSidecarPoolImpl;
@@ -169,7 +170,7 @@ public class BlobSidecarManagerTest {
   @Test
   void prepareForBlockImport_shouldAddToPoolAndNotify() {
 
-    blobSidecarManager.prepareForBlockImport(blobSidecar);
+    blobSidecarManager.prepareForBlockImport(blobSidecar, Origin.GOSSIP);
 
     verify(receivedBlobSidecarListener).onBlobSidecarReceived(blobSidecar);
     verify(blobSidecarPool).onNewBlobSidecar(blobSidecar);
