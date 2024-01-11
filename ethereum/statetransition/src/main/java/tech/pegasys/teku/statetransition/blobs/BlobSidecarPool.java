@@ -33,10 +33,12 @@ public interface BlobSidecarPool extends SlotEventsChannel {
         public void onSlot(final UInt64 slot) {}
 
         @Override
-        public void onNewBlobSidecar(final BlobSidecar blobSidecar, final RemoteOrigin remoteOrigin) {}
+        public void onNewBlobSidecar(
+            final BlobSidecar blobSidecar, final RemoteOrigin remoteOrigin) {}
 
         @Override
-        public void onNewBlock(final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {}
+        public void onNewBlock(
+            final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {}
 
         @Override
         public void onCompletedBlockAndBlobSidecars(

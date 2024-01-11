@@ -167,7 +167,8 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   }
 
   @Override
-  public synchronized void onNewBlobSidecar(final BlobSidecar blobSidecar, final RemoteOrigin remoteOrigin) {
+  public synchronized void onNewBlobSidecar(
+      final BlobSidecar blobSidecar, final RemoteOrigin remoteOrigin) {
     if (recentChainData.containsBlock(blobSidecar.getBlockRoot())) {
       return;
     }

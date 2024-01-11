@@ -34,7 +34,8 @@ public interface BlobSidecarManager {
         }
 
         @Override
-        public void prepareForBlockImport(final BlobSidecar blobSidecar, final RemoteOrigin origin) {}
+        public void prepareForBlockImport(
+            final BlobSidecar blobSidecar, final RemoteOrigin remoteOrigin) {}
 
         @Override
         public void subscribeToReceivedBlobSidecar(

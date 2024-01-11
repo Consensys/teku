@@ -332,7 +332,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     recentBlocksFetcher.subscribeBlockFetched(
         (block) ->
             blockManager
-                .importBlock(block, BroadcastValidationLevel.NOT_REQUIRED, Optional.of(RemoteOrigin.RPC))
+                .importBlock(
+                    block, BroadcastValidationLevel.NOT_REQUIRED, Optional.of(RemoteOrigin.RPC))
                 .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult)
                 .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
     blockManager.subscribeToReceivedBlocks(
