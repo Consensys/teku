@@ -562,8 +562,8 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     assertThat(requiredBlockRootEvents).containsExactly(block.getRoot());
     assertThat(requiredBlobSidecarEvents).containsExactlyElementsOf(missingBlobs);
 
-    assertBlobSidecarsStats("block", "rpc_fetch", 1);
-    assertBlobSidecarsStats("blob_sidecar", "rpc_fetch", missingBlobs.size());
+    assertStats("block", "rpc_fetch", 1);
+    assertStats("blob_sidecar", "rpc_fetch", missingBlobs.size());
 
     assertThat(requiredBlockRootDroppedEvents).isEmpty();
     assertThat(requiredBlobSidecarDroppedEvents).isEmpty();
@@ -917,20 +917,20 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     // new from gossip
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar, RemoteOrigin.GOSSIP);
 
-    assertBlobSidecarsStats("blob_sidecar", "gossip", 1);
+    assertStats("blob_sidecar", "gossip", 1);
 
     // duplicate from gossip
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar, RemoteOrigin.GOSSIP);
 
-    assertBlobSidecarsStats("blob_sidecar", "gossip", 1);
-    assertBlobSidecarsStats("blob_sidecar", "gossip_duplicate", 1);
+    assertStats("blob_sidecar", "gossip", 1);
+    assertStats("blob_sidecar", "gossip_duplicate", 1);
 
     // duplicate from RPC
 
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar, RemoteOrigin.RPC);
 
-    assertBlobSidecarsStats("blob_sidecar", "gossip", 1);
-    assertBlobSidecarsStats("blob_sidecar", "rpc_duplicate", 1);
+    assertStats("blob_sidecar", "gossip", 1);
+    assertStats("blob_sidecar", "rpc_duplicate", 1);
 
     final BlobSidecar blobSidecar2 =
         dataStructureUtil
@@ -942,10 +942,10 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     // new from RPC
     blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar2, RemoteOrigin.RPC);
 
-    assertBlobSidecarsStats("blob_sidecar", "gossip", 1);
-    assertBlobSidecarsStats("blob_sidecar", "rpc", 1);
-    assertBlobSidecarsStats("blob_sidecar", "gossip_duplicate", 1);
-    assertBlobSidecarsStats("blob_sidecar", "rpc_duplicate", 1);
+    assertStats("blob_sidecar", "gossip", 1);
+    assertStats("blob_sidecar", "rpc", 1);
+    assertStats("blob_sidecar", "gossip_duplicate", 1);
+    assertStats("blob_sidecar", "rpc_duplicate", 1);
   }
 
   @Test
@@ -956,20 +956,20 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     // new from gossip
     blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.of(RemoteOrigin.GOSSIP));
 
-    assertBlobSidecarsStats("block", "gossip", 1);
+    assertStats("block", "gossip", 1);
 
     // duplicate from gossip
     blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.of(RemoteOrigin.GOSSIP));
 
-    assertBlobSidecarsStats("block", "gossip", 1);
-    assertBlobSidecarsStats("block", "gossip_duplicate", 1);
+    assertStats("block", "gossip", 1);
+    assertStats("block", "gossip_duplicate", 1);
 
     // duplicate from RPC
 
     blockBlobSidecarsTrackersPool.onNewBlock(block, Optional.of(RemoteOrigin.RPC));
 
-    assertBlobSidecarsStats("block", "gossip", 1);
-    assertBlobSidecarsStats("block", "rpc_duplicate", 1);
+    assertStats("block", "gossip", 1);
+    assertStats("block", "rpc_duplicate", 1);
 
     final SignedBeaconBlock block2 =
         dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue() + 1);
@@ -977,10 +977,10 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     // new from RPC
     blockBlobSidecarsTrackersPool.onNewBlock(block2, Optional.of(RemoteOrigin.RPC));
 
-    assertBlobSidecarsStats("block", "gossip", 1);
-    assertBlobSidecarsStats("block", "rpc", 1);
-    assertBlobSidecarsStats("block", "gossip_duplicate", 1);
-    assertBlobSidecarsStats("block", "rpc_duplicate", 1);
+    assertStats("block", "gossip", 1);
+    assertStats("block", "rpc", 1);
+    assertStats("block", "gossip_duplicate", 1);
+    assertStats("block", "rpc_duplicate", 1);
 
     // no origin is ignored
     final SignedBeaconBlock block3 =
@@ -988,10 +988,10 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     blockBlobSidecarsTrackersPool.onNewBlock(block2, Optional.empty());
     blockBlobSidecarsTrackersPool.onNewBlock(block3, Optional.empty());
 
-    assertBlobSidecarsStats("block", "gossip", 1);
-    assertBlobSidecarsStats("block", "rpc", 1);
-    assertBlobSidecarsStats("block", "gossip_duplicate", 1);
-    assertBlobSidecarsStats("block", "rpc_duplicate", 1);
+    assertStats("block", "gossip", 1);
+    assertStats("block", "rpc", 1);
+    assertStats("block", "gossip_duplicate", 1);
+    assertStats("block", "rpc_duplicate", 1);
 
     // should count even if tracker is already present but without block
     final SignedBeaconBlock block4 = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
@@ -1005,7 +1005,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
     blockBlobSidecarsTrackersPool.onNewBlock(block4, Optional.of(RemoteOrigin.GOSSIP));
 
-    assertBlobSidecarsStats("block", "gossip", 2);
+    assertStats("block", "gossip", 2);
   }
 
   private Checkpoint finalizedCheckpoint(SignedBeaconBlock block) {
@@ -1019,7 +1019,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     return new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
   }
 
-  private void assertBlobSidecarsStats(
+  private void assertStats(
       final String type, final String subType, final double count) {
     assertThat(getMetricsValues("block_blobs_trackers_pool_stats").get(List.of(type, subType)))
         .isEqualTo(count);
