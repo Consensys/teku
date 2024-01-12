@@ -123,7 +123,7 @@ public class SpecConfigBuilder {
   private Integer attestationSubnetExtraBits;
   private Integer attestationSubnetPrefixBits;
 
-  // added after Phase0, so add default values, or will be compatability issue
+  // added after Phase0, so add default values, or will be compatibility issue
   private Integer reorgMaxEpochsSinceFinalization = 2;
 
   private Integer reorgHeadWeightThreshold = 20;
