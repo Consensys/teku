@@ -41,7 +41,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -53,7 +53,8 @@ public abstract class AbstractSyncTest {
   protected final Eth2Peer peer = mock(Eth2Peer.class);
   protected final BlockImporter blockImporter = mock(BlockImporter.class);
   protected final BlobSidecarManager blobSidecarManager = mock(BlobSidecarManager.class);
-  protected final BlobSidecarPool blobSidecarPool = mock(BlobSidecarPool.class);
+  protected final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool =
+      mock(BlockBlobSidecarsTrackersPool.class);
   protected final RecentChainData recentChainData = mock(RecentChainData.class);
 
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);

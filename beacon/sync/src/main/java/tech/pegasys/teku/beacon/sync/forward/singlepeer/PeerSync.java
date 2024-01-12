@@ -39,7 +39,7 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -72,7 +72,7 @@ public class PeerSync {
   private final RecentChainData recentChainData;
   private final BlockImporter blockImporter;
   private final BlobSidecarManager blobSidecarManager;
-  private final BlobSidecarPool blobSidecarPool;
+  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
 
   private final AsyncRunner asyncRunner;
   private final Counter blockImportSuccessResult;
@@ -87,7 +87,7 @@ public class PeerSync {
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
       final BlobSidecarManager blobSidecarManager,
-      final BlobSidecarPool blobSidecarPool,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final int batchSize,
       final MetricsSystem metricsSystem) {
     this.spec = recentChainData.getSpec();
@@ -95,7 +95,7 @@ public class PeerSync {
     this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
     this.blobSidecarManager = blobSidecarManager;
-    this.blobSidecarPool = blobSidecarPool;
+    this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     final LabelledMetric<Counter> blockImportCounter =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
@@ -343,7 +343,8 @@ public class PeerSync {
     // Add blob sidecars to the pool in order for them to be available when the block is being
     // imported
     maybeBlobSidecars.ifPresent(
-        blobSidecars -> blobSidecarPool.onCompletedBlockAndBlobSidecars(block, blobSidecars));
+        blobSidecars ->
+            blockBlobSidecarsTrackersPool.onCompletedBlockAndBlobSidecars(block, blobSidecars));
 
     return blockImporter
         .importBlock(block)

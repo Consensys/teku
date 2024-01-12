@@ -40,7 +40,7 @@ import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -91,7 +91,7 @@ public class SyncManager extends Service {
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
       final BlobSidecarManager blobSidecarManager,
-      final BlobSidecarPool blobSidecarPool,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final MetricsSystem metricsSystem,
       final int batchSize,
       final Spec spec) {
@@ -101,7 +101,7 @@ public class SyncManager extends Service {
             recentChainData,
             blockImporter,
             blobSidecarManager,
-            blobSidecarPool,
+            blockBlobSidecarsTrackersPool,
             batchSize,
             metricsSystem);
     return new SyncManager(asyncRunner, network, recentChainData, peerSync, spec);

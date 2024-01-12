@@ -57,7 +57,7 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
@@ -151,7 +151,7 @@ public class SyncingNodeManager {
         new BlockManager(
             recentChainData,
             blockImporter,
-            BlobSidecarPool.NOOP,
+            BlockBlobSidecarsTrackersPool.NOOP,
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,
@@ -188,7 +188,7 @@ public class SyncingNodeManager {
             recentChainData,
             blockImporter,
             BlobSidecarManager.NOOP,
-            BlobSidecarPool.NOOP,
+            BlockBlobSidecarsTrackersPool.NOOP,
             new NoOpMetricsSystem(),
             SyncConfig.DEFAULT_FORWARD_SYNC_BATCH_SIZE,
             spec);
@@ -199,7 +199,11 @@ public class SyncingNodeManager {
 
     final RecentBlocksFetchService recentBlocksFetcher =
         RecentBlocksFetchService.create(
-            asyncRunner, pendingBlocks, BlobSidecarPool.NOOP, syncService, fetchBlockTaskFactory);
+            asyncRunner,
+            pendingBlocks,
+            BlockBlobSidecarsTrackersPool.NOOP,
+            syncService,
+            fetchBlockTaskFactory);
     recentBlocksFetcher.subscribeBlockFetched(
         block -> blockManager.importBlock(block, BroadcastValidationLevel.NOT_REQUIRED));
     blockManager.subscribeToReceivedBlocks(
