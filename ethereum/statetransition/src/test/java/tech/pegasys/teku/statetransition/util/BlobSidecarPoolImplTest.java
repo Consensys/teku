@@ -972,6 +972,20 @@ public class BlobSidecarPoolImplTest {
     assertBlobSidecarsStats("block", "rpc", 1);
     assertBlobSidecarsStats("block", "gossip_duplicate", 1);
     assertBlobSidecarsStats("block", "rpc_duplicate", 1);
+
+    // should count even if tracker is already present but without block
+    final SignedBeaconBlock block4 = dataStructureUtil.randomSignedBeaconBlock(currentSlot);
+    final BlobSidecar blobSidecar4 =
+        dataStructureUtil
+            .createRandomBlobSidecarBuilder()
+            .signedBeaconBlockHeader(block4.asHeader())
+            .build();
+
+    blobSidecarPool.onNewBlobSidecar(blobSidecar4, RemoteOrigin.RPC);
+
+    blobSidecarPool.onNewBlock(block4, Optional.of(RemoteOrigin.GOSSIP));
+
+    assertBlobSidecarsStats("block", "gossip", 2);
   }
 
   private Checkpoint finalizedCheckpoint(SignedBeaconBlock block) {
