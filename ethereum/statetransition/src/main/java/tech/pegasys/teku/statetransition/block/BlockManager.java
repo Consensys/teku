@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
@@ -107,14 +108,16 @@ public class BlockManager extends Service
 
   @Override
   public SafeFuture<BlockImportAndBroadcastValidationResults> importBlock(
-      final SignedBeaconBlock block, final BroadcastValidationLevel broadcastValidationLevel) {
+      final SignedBeaconBlock block,
+      final BroadcastValidationLevel broadcastValidationLevel,
+      final Optional<RemoteOrigin> origin) {
     LOG.trace("Preparing to import block: {}", block::toLogString);
 
     final BlockBroadcastValidator blockBroadcastValidator =
         blockValidator.initiateBroadcastValidation(block, broadcastValidationLevel);
 
     final SafeFuture<BlockImportResult> importResult =
-        doImportBlock(block, Optional.empty(), blockBroadcastValidator);
+        doImportBlock(block, Optional.empty(), blockBroadcastValidator, origin);
 
     // we want to intercept any early import exceptions happening before the consensus validation is
     // completed
@@ -155,7 +158,10 @@ public class BlockManager extends Service
         result -> {
           switch (result.code()) {
             case ACCEPT, SAVE_FOR_FUTURE -> doImportBlock(
-                    block, blockImportPerformance, BlockBroadcastValidator.NOOP)
+                    block,
+                    blockImportPerformance,
+                    BlockBroadcastValidator.NOOP,
+                    Optional.of(RemoteOrigin.GOSSIP))
                 .finish(err -> LOG.error("Failed to process received block.", err));
 
               // block failed gossip validation, let's drop it from the pool, so it won't be served
@@ -212,19 +218,21 @@ public class BlockManager extends Service
   }
 
   private void importBlockIgnoringResult(final SignedBeaconBlock block) {
-    doImportBlock(block, Optional.empty(), BlockBroadcastValidator.NOOP)
+    // we don't care about origin here because flow calls this function for retries only
+    doImportBlock(block, Optional.empty(), BlockBroadcastValidator.NOOP, Optional.empty())
         .ifExceptionGetsHereRaiseABug();
   }
 
   private SafeFuture<BlockImportResult> doImportBlock(
       final SignedBeaconBlock block,
       final Optional<BlockImportPerformance> blockImportPerformance,
-      final BlockBroadcastValidator blockBroadcastValidator) {
+      final BlockBroadcastValidator blockBroadcastValidator,
+      final Optional<RemoteOrigin> origin) {
     return handleInvalidBlock(block)
         .or(() -> handleKnownBlock(block))
         .orElseGet(
             () ->
-                handleBlockImport(block, blockImportPerformance, blockBroadcastValidator)
+                handleBlockImport(block, blockImportPerformance, blockBroadcastValidator, origin)
                     .thenPeek(
                         result -> lateBlockImportCheck(blockImportPerformance, block, result)))
         .thenPeek(
@@ -271,10 +279,11 @@ public class BlockManager extends Service
   private SafeFuture<BlockImportResult> handleBlockImport(
       final SignedBeaconBlock block,
       final Optional<BlockImportPerformance> blockImportPerformance,
-      final BlockBroadcastValidator blockBroadcastValidator) {
+      final BlockBroadcastValidator blockBroadcastValidator,
+      final Optional<RemoteOrigin> origin) {
 
     onBlockValidated(block);
-    blobSidecarPool.onNewBlock(block);
+    blobSidecarPool.onNewBlock(block, origin);
 
     return blockImporter
         .importBlock(block, blockImportPerformance, blockBroadcastValidator)

@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.blobs;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidati
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.ReceivedBlobSidecarListener;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceBlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.statetransition.util.BlobSidecarPoolImpl;
 import tech.pegasys.teku.statetransition.util.FutureItems;
@@ -92,7 +94,7 @@ public class BlobSidecarManagerTest {
             blobSidecarManager.validateAndPrepareForBlockImport(blobSidecar, Optional.empty()))
         .isCompletedWithValue(InternalValidationResult.ACCEPT);
 
-    verify(blobSidecarPool).onNewBlobSidecar(blobSidecar);
+    verify(blobSidecarPool).onNewBlobSidecar(blobSidecar, RemoteOrigin.GOSSIP);
     verify(receivedBlobSidecarListener).onBlobSidecarReceived(blobSidecar);
     verify(futureBlobSidecars, never()).add(blobSidecar);
 
@@ -108,7 +110,7 @@ public class BlobSidecarManagerTest {
             blobSidecarManager.validateAndPrepareForBlockImport(blobSidecar, Optional.empty()))
         .isCompletedWithValue(InternalValidationResult.SAVE_FOR_FUTURE);
 
-    verify(blobSidecarPool, never()).onNewBlobSidecar(blobSidecar);
+    verify(blobSidecarPool, never()).onNewBlobSidecar(eq(blobSidecar), any());
     verify(receivedBlobSidecarListener, never()).onBlobSidecarReceived(blobSidecar);
     verify(futureBlobSidecars).add(blobSidecar);
 
@@ -124,7 +126,7 @@ public class BlobSidecarManagerTest {
             blobSidecarManager.validateAndPrepareForBlockImport(blobSidecar, Optional.empty()))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
 
-    verify(blobSidecarPool, never()).onNewBlobSidecar(blobSidecar);
+    verify(blobSidecarPool, never()).onNewBlobSidecar(eq(blobSidecar), any());
     verify(receivedBlobSidecarListener, never()).onBlobSidecarReceived(blobSidecar);
     verify(futureBlobSidecars, never()).add(blobSidecar);
 
@@ -142,7 +144,7 @@ public class BlobSidecarManagerTest {
             blobSidecarManager.validateAndPrepareForBlockImport(blobSidecar, Optional.empty()))
         .isCompletedWithValue(InternalValidationResult.IGNORE);
 
-    verify(blobSidecarPool, never()).onNewBlobSidecar(blobSidecar);
+    verify(blobSidecarPool, never()).onNewBlobSidecar(eq(blobSidecar), any());
     verify(receivedBlobSidecarListener, never()).onBlobSidecarReceived(blobSidecar);
     verify(futureBlobSidecars, never()).add(blobSidecar);
 
@@ -159,7 +161,7 @@ public class BlobSidecarManagerTest {
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
 
     verify(blobSidecarValidator, never()).validate(any());
-    verify(blobSidecarPool, never()).onNewBlobSidecar(blobSidecar);
+    verify(blobSidecarPool, never()).onNewBlobSidecar(eq(blobSidecar), any());
     verify(receivedBlobSidecarListener, never()).onBlobSidecarReceived(blobSidecar);
     verify(futureBlobSidecars, never()).add(blobSidecar);
 
@@ -169,10 +171,10 @@ public class BlobSidecarManagerTest {
   @Test
   void prepareForBlockImport_shouldAddToPoolAndNotify() {
 
-    blobSidecarManager.prepareForBlockImport(blobSidecar);
+    blobSidecarManager.prepareForBlockImport(blobSidecar, RemoteOrigin.GOSSIP);
 
     verify(receivedBlobSidecarListener).onBlobSidecarReceived(blobSidecar);
-    verify(blobSidecarPool).onNewBlobSidecar(blobSidecar);
+    verify(blobSidecarPool).onNewBlobSidecar(blobSidecar, RemoteOrigin.GOSSIP);
   }
 
   @Test
@@ -186,7 +188,7 @@ public class BlobSidecarManagerTest {
     verify(blobSidecarPool).onSlot(UInt64.ONE);
     verify(futureBlobSidecars).onSlot(UInt64.ONE);
 
-    verify(blobSidecarPool).onNewBlobSidecar(futureBlobSidecarsList.get(0));
+    verify(blobSidecarPool).onNewBlobSidecar(futureBlobSidecarsList.get(0), RemoteOrigin.GOSSIP);
     verify(receivedBlobSidecarListener).onBlobSidecarReceived(futureBlobSidecarsList.get(0));
   }
 
