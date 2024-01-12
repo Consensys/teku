@@ -136,6 +136,22 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
+  void shouldUseDefaultAlwaysSendPayloadAttributesIfUnspecified() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    assertThat(config.eth2NetworkConfiguration().isForkChoiceUpdatedAlwaysSendPayloadAttributes())
+        .isEqualTo(false);
+  }
+
+  @Test
+  void shouldUseAlwaysSendPayloadAttributesIfSpecified() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments(
+            "--Xfork-choice-updated-always-send-payload-attributes", "true");
+    assertThat(config.eth2NetworkConfiguration().isForkChoiceUpdatedAlwaysSendPayloadAttributes())
+        .isEqualTo(true);
+  }
+
+  @Test
   void shouldMergeTransitionsOverrideBeEmptyByDefault() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     assertThat(config.eth2NetworkConfiguration().getTotalTerminalDifficultyOverride())

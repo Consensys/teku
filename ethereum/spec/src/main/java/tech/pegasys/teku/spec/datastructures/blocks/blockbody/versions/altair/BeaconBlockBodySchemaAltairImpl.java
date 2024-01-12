@@ -75,7 +75,7 @@ public class BeaconBlockBodySchemaAltairImpl
         syncAggregateSchema);
   }
 
-  public static BeaconBlockBodySchemaAltair<? extends BeaconBlockBodyAltair> create(
+  public static BeaconBlockBodySchemaAltairImpl create(
       final SpecConfig specConfig,
       final AttesterSlashingSchema attesterSlashingSchema,
       final String containerName) {
@@ -111,7 +111,7 @@ public class BeaconBlockBodySchemaAltairImpl
   @Override
   public SafeFuture<BeaconBlockBody> createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
-    final BeaconBlockBodyBuilderAltair builder = new BeaconBlockBodyBuilderAltair().schema(this);
+    final BeaconBlockBodyBuilderAltair builder = new BeaconBlockBodyBuilderAltair(this);
     builderConsumer.accept(builder);
     return builder.build();
   }

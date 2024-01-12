@@ -27,7 +27,6 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
-import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager.ProposersDataManagerSubscriber;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -239,15 +238,17 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
   }
 
   private void sendForkChoiceUpdated() {
-    final SafeFuture<Optional<ForkChoiceUpdatedResult>> forkChoiceUpdatedResult =
-        forkChoiceUpdateData.send(executionLayerChannel, timeProvider.getTimeInMillis());
-    forkChoiceUpdatedSubscribers.deliver(
-        ForkChoiceUpdatedResultSubscriber::onForkChoiceUpdatedResult,
-        new ForkChoiceUpdatedResultNotification(
-            forkChoiceUpdateData.getForkChoiceState(),
-            forkChoiceUpdateData.getPayloadBuildingAttributes(),
-            forkChoiceUpdateData.hasTerminalBlockHash(),
-            forkChoiceUpdatedResult));
+    forkChoiceUpdateData
+        .send(executionLayerChannel, timeProvider.getTimeInMillis())
+        .ifPresent(
+            forkChoiceUpdatedResultFuture ->
+                forkChoiceUpdatedSubscribers.deliver(
+                    ForkChoiceUpdatedResultSubscriber::onForkChoiceUpdatedResult,
+                    new ForkChoiceUpdatedResultNotification(
+                        forkChoiceUpdateData.getForkChoiceState(),
+                        forkChoiceUpdateData.getPayloadBuildingAttributes(),
+                        forkChoiceUpdateData.hasTerminalBlockHash(),
+                        forkChoiceUpdatedResultFuture)));
   }
 
   private void updatePayloadAttributes(final UInt64 blockSlot) {

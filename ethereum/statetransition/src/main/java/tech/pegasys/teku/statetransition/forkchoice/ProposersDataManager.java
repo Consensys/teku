@@ -57,6 +57,7 @@ public class ProposersDataManager implements SlotEventsChannel {
   private final Map<UInt64, RegisteredValidatorInfo> validatorRegistrationInfoByValidatorIndex =
       new ConcurrentHashMap<>();
   private final Optional<Eth1Address> proposerDefaultFeeRecipient;
+  private final boolean forkChoiceUpdatedAlwaysSendPayloadAttribute;
 
   private final Subscribers<ProposersDataManagerSubscriber> proposersDataChangesSubscribers =
       Subscribers.create(true);
@@ -67,7 +68,8 @@ public class ProposersDataManager implements SlotEventsChannel {
       final MetricsSystem metricsSystem,
       final ExecutionLayerChannel executionLayerChannel,
       final RecentChainData recentChainData,
-      final Optional<Eth1Address> proposerDefaultFeeRecipient) {
+      final Optional<Eth1Address> proposerDefaultFeeRecipient,
+      final boolean forkChoiceUpdatedAlwaysSendPayloadAttribute) {
     final LabelledGauge labelledGauge =
         metricsSystem.createLabelledGauge(
             TekuMetricCategory.BEACON,
@@ -83,6 +85,7 @@ public class ProposersDataManager implements SlotEventsChannel {
     this.executionLayerChannel = executionLayerChannel;
     this.recentChainData = recentChainData;
     this.proposerDefaultFeeRecipient = proposerDefaultFeeRecipient;
+    this.forkChoiceUpdatedAlwaysSendPayloadAttribute = forkChoiceUpdatedAlwaysSendPayloadAttribute;
   }
 
   public void subscribeToProposersDataChanges(final ProposersDataManagerSubscriber subscriber) {
@@ -212,6 +215,14 @@ public class ProposersDataManager implements SlotEventsChannel {
             eventThread);
   }
 
+  /**
+   * Calculate {@link PayloadBuildingAttributes} to be sent to EL if one of our configured
+   * validators is due to propose a block or forkChoiceUpdatedAlwaysSendPayloadAttribute is set to
+   * true
+   *
+   * @param mandatory force to calculate {@link PayloadBuildingAttributes} (used in rare cases,
+   *     where payloadId hasn't been retrieved from EL for the block slot)
+   */
   private Optional<PayloadBuildingAttributes> calculatePayloadBuildingAttributes(
       final Bytes32 currentHeadBlockRoot,
       final UInt64 blockSlot,
@@ -226,7 +237,8 @@ public class ProposersDataManager implements SlotEventsChannel {
     final UInt64 proposerIndex = UInt64.valueOf(spec.getBeaconProposerIndex(state, blockSlot));
     final PreparedProposerInfo proposerInfo =
         preparedProposerInfoByValidatorIndex.get(proposerIndex);
-    if (proposerInfo == null && !mandatory) {
+
+    if (proposerInfo == null && !(mandatory || forkChoiceUpdatedAlwaysSendPayloadAttribute)) {
       // Proposer is not one of our validators. No need to propose a block.
       return Optional.empty();
     }

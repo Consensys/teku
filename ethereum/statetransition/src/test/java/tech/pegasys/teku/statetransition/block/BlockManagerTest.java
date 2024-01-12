@@ -92,7 +92,7 @@ import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAnd
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
-import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
@@ -127,7 +127,7 @@ public class BlockManagerTest {
   private StorageSystem localChain;
   private RecentChainData localRecentChainData = mock(RecentChainData.class);
 
-  private final ForkChoiceNotifier forkChoiceNotifier = new StubForkChoiceNotifier();
+  private final ForkChoiceNotifier forkChoiceNotifier = new NoopForkChoiceNotifier();
   private MergeTransitionBlockValidator transitionBlockValidator;
   private final BlobSidecarManager blobSidecarManager = mock(BlobSidecarManager.class);
   private ForkChoice forkChoice;

@@ -32,6 +32,7 @@ import static tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdateData.
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -109,6 +110,12 @@ class ForkChoiceNotifierTest {
   }
 
   void setUp(final boolean doNotInitializeWithDefaultFeeRecipient) {
+    setUp(doNotInitializeWithDefaultFeeRecipient, false);
+  }
+
+  void setUp(
+      final boolean doNotInitializeWithDefaultFeeRecipient,
+      final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes) {
     // initialize post-merge by default
     storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
     recentChainData = storageSystem.recentChainData();
@@ -121,7 +128,8 @@ class ForkChoiceNotifierTest {
                 metricsSystem,
                 executionLayerChannel,
                 recentChainData,
-                doNotInitializeWithDefaultFeeRecipient ? Optional.empty() : defaultFeeRecipient));
+                doNotInitializeWithDefaultFeeRecipient ? Optional.empty() : defaultFeeRecipient,
+                forkChoiceUpdatedAlwaysSendPayloadAttributes));
     notifier =
         new ForkChoiceNotifierImpl(
             forkChoiceStateProvider,
@@ -163,7 +171,8 @@ class ForkChoiceNotifierTest {
                 metricsSystem,
                 executionLayerChannel,
                 recentChainData,
-                defaultFeeRecipient));
+                defaultFeeRecipient,
+                false));
     notifier =
         new ForkChoiceNotifierImpl(
             forkChoiceStateProvider,
@@ -250,6 +259,37 @@ class ForkChoiceNotifierTest {
   }
 
   @Test
+  void
+      onForkChoiceUpdated_shouldSendNotificationWithPayloadBuildingAttributesIfConfiguredToAlwaysSendThem() {
+    setUp(false, true);
+
+    final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
+    final BeaconState headState = getHeadState();
+    final UInt64 blockSlot = headState.getSlot().plus(1);
+    // not proposer but should still calculate payload attributes with the default fee recipient
+    final PayloadBuildingAttributes payloadBuildingAttributes =
+        withProposerForSlotButDoNotPrepare(
+            forkChoiceState, headState, blockSlot, defaultFeeRecipient);
+
+    final int notTheNextProposer = spec.getBeaconProposerIndex(headState, blockSlot) + 1;
+    proposersDataManager.updatePreparedProposers(
+        List.of(
+            new BeaconPreparableProposer(
+                UInt64.valueOf(notTheNextProposer), dataStructureUtil.randomEth1Address())),
+        recentChainData.getHeadSlot());
+
+    notifyForkChoiceUpdated(
+        forkChoiceState,
+        Optional.of(blockSlot),
+        // verify notification is sent with payload attributes
+        forkChoiceUpdatedResultNotification ->
+            assertThat(forkChoiceUpdatedResultNotification.payloadAttributes())
+                .hasValue(payloadBuildingAttributes));
+    verify(executionLayerChannel)
+        .engineForkChoiceUpdated(forkChoiceState, Optional.of(payloadBuildingAttributes));
+  }
+
+  @Test
   void onForkChoiceUpdated_shouldNotSendNotificationWhenHeadBlockHashIsZero() {
 
     notifyForkChoiceUpdated(
@@ -260,7 +300,9 @@ class ForkChoiceNotifierTest {
             Bytes32.ZERO,
             Bytes32.ZERO,
             Bytes32.ZERO,
-            false));
+            false),
+        Optional.empty(),
+        notification -> assertThat(notification).isNull());
 
     verifyNoInteractions(executionLayerChannel);
   }
@@ -842,10 +884,17 @@ class ForkChoiceNotifierTest {
 
   private void notifyForkChoiceUpdated(
       final ForkChoiceState forkChoiceState, final Optional<UInt64> proposingSlot) {
+    notifyForkChoiceUpdated(
+        forkChoiceState, proposingSlot, notification -> assertThat(notification).isNotNull());
+  }
+
+  private void notifyForkChoiceUpdated(
+      final ForkChoiceState forkChoiceState,
+      final Optional<UInt64> proposingSlot,
+      final Consumer<ForkChoiceUpdatedResultNotification> requirements) {
     forkChoiceUpdatedResultNotification = null;
     notifier.onForkChoiceUpdated(forkChoiceState, proposingSlot);
-    assertThat(forkChoiceUpdatedResultNotification).isNotNull();
-    assertThat(forkChoiceUpdatedResultNotification.forkChoiceUpdatedResult()).isCompleted();
+    requirements.accept(forkChoiceUpdatedResultNotification);
   }
 
   private void validateGetPayloadIdOnTheFlyRetrieval(

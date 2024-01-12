@@ -29,14 +29,17 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 
 class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlockBodyBellatrix> {
 
   protected SyncAggregate syncAggregate;
   protected ExecutionPayload executionPayload;
+  protected ExecutionPayloadHeader executionPayloadHeader;
 
   @BeforeEach
   void setup() {
@@ -45,6 +48,7 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
         () -> {
           syncAggregate = dataStructureUtil.randomSyncAggregate();
           executionPayload = dataStructureUtil.randomExecutionPayload();
+          executionPayloadHeader = dataStructureUtil.randomExecutionPayloadHeader();
         });
   }
 
@@ -57,41 +61,57 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
   }
 
   @Test
-  @SuppressWarnings("unchecked")
-  void builderShouldFailWhenOverridingBlindedSchemaWithANullSchema() {
-    BeaconBlockBodyBuilderBellatrix beaconBlockBodyBuilderBellatrix =
-        new BeaconBlockBodyBuilderBellatrix();
-    Exception exception =
+  void equalsReturnsFalseWhenExecutionPayloadHeaderIsDifferent() {
+    executionPayloadHeader = dataStructureUtil.randomExecutionPayloadHeader();
+    final BlindedBeaconBlockBodyBellatrix testBlindedBeaconBlockBody =
+        safeJoin(createBlindedBlockBody());
+
+    assertNotEquals(defaultBlindedBlockBody, testBlindedBeaconBlockBody);
+  }
+
+  @Test
+  public void builderShouldFailIfNotPassingPayloadNorPayloadHeader() {
+    final Exception exception =
         assertThrows(
             IllegalStateException.class,
             () ->
-                beaconBlockBodyBuilderBellatrix
-                    .blindedSchema(mock(BlindedBeaconBlockBodySchemaBellatrixImpl.class))
-                    .schema((BeaconBlockBodySchemaBellatrixImpl) null)
-                    .randaoReveal(mock(BLSSignature.class))
-                    .eth1Data(mock(Eth1Data.class))
-                    .graffiti(mock(Bytes32.class))
-                    .attestations(mock(SszList.class))
-                    .proposerSlashings(mock(SszList.class))
-                    .attesterSlashings(mock(SszList.class))
-                    .deposits(mock(SszList.class))
-                    .voluntaryExits(mock(SszList.class))
-                    .build());
-    assertEquals(exception.getMessage(), "schema must be set with no blindedSchema");
+                createBlockBody(
+                    createContentProvider(false)
+                        // let's erase all payloads, so we can test as if they were not set
+                        .andThen(b -> b.executionPayload(null).executionPayloadHeader(null))));
+    assertEquals(
+        exception.getMessage(),
+        "Exactly one of 'executionPayload' or 'executionPayloadHeader' must be set");
+  }
+
+  @Test
+  public void builderShouldFailIfPassingPayloadAndPayloadHeader() {
+    final Exception exception =
+        assertThrows(
+            IllegalStateException.class,
+            () ->
+                createBlockBody(
+                    createContentProvider(true)
+                        .andThen(
+                            b ->
+                                // payload header is already set because we requested a blinded
+                                // content
+                                b.executionPayload(SafeFuture.completedFuture(executionPayload)))));
+    assertEquals(
+        exception.getMessage(),
+        "Exactly one of 'executionPayload' or 'executionPayloadHeader' must be set");
   }
 
   @Test
   @SuppressWarnings("unchecked")
-  void builderShouldFailWhenOverridingSchemaWithANullBlindedSchema() {
+  void builderShouldFailWhenBlindedSchemaIsSetAndFullPayloadIsSet() {
     BeaconBlockBodyBuilderBellatrix beaconBlockBodyBuilderBellatrix =
-        new BeaconBlockBodyBuilderBellatrix();
+        new BeaconBlockBodyBuilderBellatrix(null, blindedBlockBodySchema);
     Exception exception =
         assertThrows(
-            IllegalStateException.class,
+            NullPointerException.class,
             () ->
                 beaconBlockBodyBuilderBellatrix
-                    .schema(mock(BeaconBlockBodySchemaBellatrixImpl.class))
-                    .blindedSchema(null)
                     .randaoReveal(mock(BLSSignature.class))
                     .eth1Data(mock(Eth1Data.class))
                     .graffiti(mock(Bytes32.class))
@@ -100,25 +120,64 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
                     .attesterSlashings(mock(SszList.class))
                     .deposits(mock(SszList.class))
                     .voluntaryExits(mock(SszList.class))
+                    .executionPayload(mock(SafeFuture.class))
+                    .syncAggregate(mock(SyncAggregate.class))
                     .build());
-    assertEquals(exception.getMessage(), "blindedSchema must be set with no schema");
+    assertEquals(exception.getMessage(), "Schema must be specified");
+  }
+
+  @Test
+  @SuppressWarnings("unchecked")
+  void builderShouldFailWhenNonBlindedSchemaIsSetAndPayloadHeaderIsSet() {
+    BeaconBlockBodyBuilderBellatrix beaconBlockBodyBuilderBellatrix =
+        new BeaconBlockBodyBuilderBellatrix(
+            (BeaconBlockBodySchema<? extends BeaconBlockBodyBellatrix>) blockBodySchema, null);
+    Exception exception =
+        assertThrows(
+            NullPointerException.class,
+            () ->
+                beaconBlockBodyBuilderBellatrix
+                    .randaoReveal(mock(BLSSignature.class))
+                    .eth1Data(mock(Eth1Data.class))
+                    .graffiti(mock(Bytes32.class))
+                    .attestations(mock(SszList.class))
+                    .proposerSlashings(mock(SszList.class))
+                    .attesterSlashings(mock(SszList.class))
+                    .deposits(mock(SszList.class))
+                    .voluntaryExits(mock(SszList.class))
+                    .executionPayloadHeader(mock(SafeFuture.class))
+                    .syncAggregate(mock(SyncAggregate.class))
+                    .build());
+    assertEquals(exception.getMessage(), "Blinded schema must be specified");
   }
 
   @Override
   protected SafeFuture<BeaconBlockBodyBellatrix> createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> contentProvider) {
-    return getBlockBodySchema()
-        .createBlockBody(contentProvider)
-        .thenApply(body -> (BeaconBlockBodyBellatrix) body);
+    final BeaconBlockBodyBuilder bodyBuilder = createBeaconBlockBodyBuilder();
+    contentProvider.accept(bodyBuilder);
+    return bodyBuilder.build().thenApply(body -> body.toVersionBellatrix().orElseThrow());
   }
 
   @Override
-  protected Consumer<BeaconBlockBodyBuilder> createContentProvider() {
-    return super.createContentProvider()
+  protected SafeFuture<BlindedBeaconBlockBodyBellatrix> createBlindedBlockBody(
+      final Consumer<BeaconBlockBodyBuilder> contentProvider) {
+    final BeaconBlockBodyBuilder bodyBuilder = createBeaconBlockBodyBuilder();
+    contentProvider.accept(bodyBuilder);
+    return bodyBuilder.build().thenApply(body -> body.toBlindedVersionBellatrix().orElseThrow());
+  }
+
+  @Override
+  protected Consumer<BeaconBlockBodyBuilder> createContentProvider(final boolean blinded) {
+    return super.createContentProvider(blinded)
         .andThen(
-            builder ->
-                builder
-                    .syncAggregate(syncAggregate)
-                    .executionPayload(SafeFuture.completedFuture(executionPayload)));
+            builder -> {
+              builder.syncAggregate(syncAggregate);
+              if (blinded) {
+                builder.executionPayloadHeader(SafeFuture.completedFuture(executionPayloadHeader));
+              } else {
+                builder.executionPayload(SafeFuture.completedFuture(executionPayload));
+              }
+            });
   }
 }
