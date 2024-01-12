@@ -1019,8 +1019,7 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
     return new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
   }
 
-  private void assertStats(
-      final String type, final String subType, final double count) {
+  private void assertStats(final String type, final String subType, final double count) {
     assertThat(getMetricsValues("block_blobs_trackers_pool_stats").get(List.of(type, subType)))
         .isEqualTo(count);
   }
