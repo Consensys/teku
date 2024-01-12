@@ -405,7 +405,7 @@ public class StoreTransactionTest extends AbstractStoreTest {
     // Added block should be included
     tx.putBlockAndState(forkBlock2, spec.calculateBlockCheckpoints(forkBlock2.getState()));
 
-    // Childrens are ordered by slot
+    // Children are ordered by slot
     assertThat(tx.getOrderedBlockRoots())
         .containsExactly(
             genesis.getRoot(),
