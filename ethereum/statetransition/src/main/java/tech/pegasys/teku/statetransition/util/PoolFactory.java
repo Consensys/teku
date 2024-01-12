@@ -152,7 +152,7 @@ public class PoolFactory {
       final int maxItems,
       final BlockBlobSidecarsTrackerFactory trackerFactory) {
     return new BlockBlobSidecarsTrackersPoolImpl(
-        pendingPoolsSizeGauge,
+        blockBlobSidecarsTrackersPoolSizeGauge,
         blockBlobSidecarsTrackersPoolStats,
         spec,
         timeProvider,

@@ -1021,19 +1021,23 @@ public class BlockBlobSidecarsTrackersPoolImplTest {
 
   private void assertBlobSidecarsStats(
       final String type, final String subType, final double count) {
-    assertThat(getMetricsValues("blobs_pool_stats").get(List.of(type, subType))).isEqualTo(count);
+    assertThat(getMetricsValues("block_blobs_trackers_pool_stats").get(List.of(type, subType)))
+        .isEqualTo(count);
   }
 
   private void assertBlobSidecarsCount(final int count) {
     assertThat(blockBlobSidecarsTrackersPool.getTotalBlobSidecars()).isEqualTo(count);
-    assertThat(getMetricsValues("pending_pool_size").get(List.of(GAUGE_BLOB_SIDECARS_LABEL)))
+    assertThat(
+            getMetricsValues("block_blobs_trackers_pool_size")
+                .get(List.of(GAUGE_BLOB_SIDECARS_LABEL)))
         .isEqualTo((double) count);
   }
 
   private void assertBlobSidecarsTrackersCount(final int count) {
     assertThat(blockBlobSidecarsTrackersPool.getTotalBlobSidecarsTrackers()).isEqualTo(count);
     assertThat(
-            getMetricsValues("pending_pool_size").get(List.of(GAUGE_BLOB_SIDECARS_TRACKERS_LABEL)))
+            getMetricsValues("block_blobs_trackers_pool_size")
+                .get(List.of(GAUGE_BLOB_SIDECARS_TRACKERS_LABEL)))
         .isEqualTo((double) count);
   }
 
