@@ -17,6 +17,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.InetAddresses.isInetAddress;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -34,11 +35,13 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
+import tech.pegasys.teku.networking.p2p.libp2p.LibP2PPrivateKeyLoader;
+import tech.pegasys.teku.storage.store.KeyValueStore;
 
 public class NetworkConfig {
 
   public interface PrivateKeySource {
-    Bytes getPrivateKeyBytes();
+    Bytes getOrGeneratePrivateKeyBytes(final KeyValueStore<String, Bytes> keyValueStore);
   }
 
   private static final Logger LOG = LogManager.getLogger();
@@ -281,7 +284,23 @@ public class NetworkConfig {
     }
 
     @Override
-    public Bytes getPrivateKeyBytes() {
+    public Bytes getOrGeneratePrivateKeyBytes(final KeyValueStore<String, Bytes> keyValueStore) {
+      try { // todo add testing
+        File file = new File(fileName);
+        if (!file.createNewFile()) {
+          return getPrivateKeyBytes();
+        }
+        final Bytes privateKeyBytes = LibP2PPrivateKeyLoader.generateNewPrivateKey(keyValueStore);
+        Files.write(file.toPath(), privateKeyBytes.toArray());
+        return privateKeyBytes;
+
+      } catch (IOException e) {
+        throw new RuntimeException(
+            "Not able to create or retrieve p2p private key file - " + fileName);
+      }
+    }
+
+    private Bytes getPrivateKeyBytes() {
       try {
         return Bytes.fromHexString(Files.readString(Paths.get(fileName)));
       } catch (IOException e) {

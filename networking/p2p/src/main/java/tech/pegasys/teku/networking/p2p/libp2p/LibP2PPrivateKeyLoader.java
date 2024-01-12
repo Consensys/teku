@@ -39,12 +39,12 @@ public class LibP2PPrivateKeyLoader implements LibP2PNetwork.PrivateKeyProvider 
   public PrivKey get() {
     final Bytes privKeyBytes =
         privateKeySource
-            .map(PrivateKeySource::getPrivateKeyBytes)
-            .orElseGet(this::generateNewPrivateKey);
+            .map(source -> source.getOrGeneratePrivateKeyBytes(keyValueStore))
+            .orElseGet(() -> generateNewPrivateKey(keyValueStore));
     return KeyKt.unmarshalPrivateKey(privKeyBytes.toArrayUnsafe());
   }
 
-  private Bytes generateNewPrivateKey() {
+  public static Bytes generateNewPrivateKey(final KeyValueStore<String, Bytes> keyValueStore) {
     final Bytes privateKey;
     final Optional<Bytes> generatedKeyBytes = keyValueStore.get(GENERATED_NODE_KEY_KEY);
     if (generatedKeyBytes.isEmpty()) {
