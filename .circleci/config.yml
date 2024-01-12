@@ -262,7 +262,7 @@ jobs:
               | sed 's@.*/src/test/java/@@' \
               | sed 's@/@.@g' \
               | sed 's/.\{5\}$//' \
-              | circleci tests split --split-by=timings --timings-type=classname)
+              | circleci tests run --command=">classnames.txt xargs echo" --verbose --split-by=timings --timings-type=classname)
             # Format the arguments to "./gradlew test"
             GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
             echo "Prepared arguments for Gradle: $GRADLE_ARGS"
@@ -292,7 +292,7 @@ jobs:
               | sed 's@.*/src/property-test/java/@@' \
               | sed 's@/@.@g' \
               | sed 's/.\{5\}$//' \
-              | circleci tests split --split-by=timings --timings-type=classname)
+              | circleci tests run --command=">classnames.txt xargs echo" --verbose --split-by=timings --timings-type=classname)
             # Format the arguments to "./gradlew test"
             GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
             echo "Prepared arguments for Gradle: $GRADLE_ARGS"
@@ -336,7 +336,7 @@ jobs:
               | sed 's@.*/src/acceptance-test/java/@@' \
               | sed 's@/@.@g' \
               | sed 's/.\{5\}$//' \
-              | circleci tests split --split-by=timings --timings-type=classname)
+              | circleci tests run --command=">classnames.txt xargs echo" --verbose --split-by=timings --timings-type=classname)
             # Format the arguments to "./gradlew test"
             GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
             echo "Prepared arguments for Gradle: $GRADLE_ARGS"
@@ -400,7 +400,7 @@ jobs:
               | sed 's@.*/src/referenceTest/generated_tests/@@' \
               | sed 's@/@.@g' \
               | sed 's/.\{5\}$//' \
-              | circleci tests split --split-by=timings --timings-type=classname)
+              | circleci tests run --command=">classnames.txt xargs echo" --verbose --split-by=timings --timings-type=classname)
             # Format the arguments to "./gradlew test"
             GRADLE_ARGS=$(echo $CLASSNAMES | awk '{for (i=1; i<=NF; i++) print "--tests",$i}')
             echo "Prepared arguments for Gradle: $GRADLE_ARGS"
