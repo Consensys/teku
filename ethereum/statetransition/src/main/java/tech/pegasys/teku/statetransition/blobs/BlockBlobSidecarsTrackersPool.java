@@ -25,10 +25,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 
-public interface BlobSidecarPool extends SlotEventsChannel {
+public interface BlockBlobSidecarsTrackersPool extends SlotEventsChannel {
 
-  BlobSidecarPool NOOP =
-      new BlobSidecarPool() {
+  BlockBlobSidecarsTrackersPool NOOP =
+      new BlockBlobSidecarsTrackersPool() {
         @Override
         public void onSlot(final UInt64 slot) {}
 

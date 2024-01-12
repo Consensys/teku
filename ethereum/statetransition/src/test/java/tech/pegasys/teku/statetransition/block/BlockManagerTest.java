@@ -87,7 +87,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidati
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
@@ -117,7 +117,8 @@ public class BlockManagerTest {
   private final UInt64 historicalBlockTolerance = UInt64.valueOf(5);
   private final UInt64 futureBlockTolerance = UInt64.valueOf(2);
   private final int maxPendingBlocks = 10;
-  private final BlobSidecarPool blobSidecarPool = mock(BlobSidecarPool.class);
+  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool =
+      mock(BlockBlobSidecarsTrackersPool.class);
   private PendingPool<SignedBeaconBlock> pendingBlocks;
   private final FutureItems<SignedBeaconBlock> futureBlocks =
       FutureItems.create(SignedBeaconBlock::getSlot, mock(SettableLabelledGauge.class), "blocks");
@@ -192,7 +193,7 @@ public class BlockManagerTest {
         new BlockManager(
             localRecentChainData,
             blockImporter,
-            blobSidecarPool,
+            blockBlobSidecarsTrackersPool,
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,
@@ -255,7 +256,7 @@ public class BlockManagerTest {
 
     safeJoinBlockImport(nextBlock);
     verify(subscriber).onBlockImported(nextBlock, false);
-    verify(blobSidecarPool).removeAllForBlock(nextBlock.getRoot());
+    verify(blockBlobSidecarsTrackersPool).removeAllForBlock(nextBlock.getRoot());
   }
 
   @Test
@@ -341,7 +342,7 @@ public class BlockManagerTest {
         new BlockManager(
             localRecentChainData,
             blockImporter,
-            blobSidecarPool,
+            blockBlobSidecarsTrackersPool,
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,
@@ -423,8 +424,8 @@ public class BlockManagerTest {
 
     // pool should get notified for new block and then should be notified to drop content due to
     // block import completion
-    verify(blobSidecarPool).onNewBlock(nextBlock, Optional.empty());
-    verify(blobSidecarPool).removeAllForBlock(nextBlock.getRoot());
+    verify(blockBlobSidecarsTrackersPool).onNewBlock(nextBlock, Optional.empty());
+    verify(blockBlobSidecarsTrackersPool).removeAllForBlock(nextBlock.getRoot());
   }
 
   @Test
@@ -439,8 +440,8 @@ public class BlockManagerTest {
     assertThat(futureBlocks.contains(nextBlock)).isTrue();
 
     // blob pool should be notified about new block only
-    verify(blobSidecarPool).onNewBlock(nextBlock, Optional.empty());
-    verifyNoMoreInteractions(blobSidecarPool);
+    verify(blockBlobSidecarsTrackersPool).onNewBlock(nextBlock, Optional.empty());
+    verifyNoMoreInteractions(blockBlobSidecarsTrackersPool);
   }
 
   @Test
@@ -497,7 +498,8 @@ public class BlockManagerTest {
     // verify blob sidecars pool get notified to drop content
     invalidBlockDescendants.forEach(
         invalidBlockDescendant ->
-            verify(blobSidecarPool).removeAllForBlock(invalidBlockDescendant.getRoot()));
+            verify(blockBlobSidecarsTrackersPool)
+                .removeAllForBlock(invalidBlockDescendant.getRoot()));
 
     // If any invalid block is again gossiped, it should be ignored
     invalidBlockDescendants.forEach(
@@ -640,7 +642,7 @@ public class BlockManagerTest {
     // import invalid block, which should fail to import and be marked invalid
     assertImportBlockWithResult(invalidBlock, FailureReason.FAILED_STATE_TRANSITION);
 
-    reset(blobSidecarPool);
+    reset(blockBlobSidecarsTrackersPool);
 
     // Gossip same invalid block, must reject with no actual validation
     assertValidateAndImportBlockRejectWithoutValidation(invalidBlock);
@@ -1000,7 +1002,7 @@ public class BlockManagerTest {
     assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
         .isCompletedWithValueMatching(Optional::isEmpty);
 
-    verify(blobSidecarPool).removeAllForBlock(block1.getRoot());
+    verify(blockBlobSidecarsTrackersPool).removeAllForBlock(block1.getRoot());
     assertThat(invalidBlockRoots).doesNotContainKeys(block1.getRoot());
 
     // if we receive a block building on top of block1, we should trigger unknown parent flow
@@ -1153,7 +1155,7 @@ public class BlockManagerTest {
     assertThat(blockManager.validateAndImportBlock(block, Optional.empty()))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
     verify(blockValidator, never()).validateGossip(eq(block));
-    verify(blobSidecarPool).removeAllForBlock(block.getRoot());
+    verify(blockBlobSidecarsTrackersPool).removeAllForBlock(block.getRoot());
   }
 
   private void assertImportBlockSuccessfully(final SignedBeaconBlock block) {
@@ -1180,7 +1182,7 @@ public class BlockManagerTest {
     return new BlockManager(
         localRecentChainData,
         blockImporter,
-        blobSidecarPool,
+        blockBlobSidecarsTrackersPool,
         pendingBlocks,
         futureBlocks,
         invalidBlockRoots,

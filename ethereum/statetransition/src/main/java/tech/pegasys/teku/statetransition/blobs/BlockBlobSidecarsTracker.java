@@ -57,7 +57,7 @@ public class BlockBlobSidecarsTracker {
 
   /**
    * {@link BlockBlobSidecarsTracker#add} and {@link BlockBlobSidecarsTracker#setBlock} methods are
-   * assumed to be called from BlobSidecarPool in a synchronized context
+   * assumed to be called from {@link BlockBlobSidecarsTrackersPool} in a synchronized context
    *
    * @param slotAndBlockRoot slot and block root to create tracker for
    * @param maxBlobsPerBlock max number of blobs per block for the slot

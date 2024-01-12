@@ -39,8 +39,8 @@ public class PoolFactory {
   private static final int DEFAULT_MAX_BLOCKS = 5000;
 
   private final SettableLabelledGauge pendingPoolsSizeGauge;
-  private final SettableLabelledGauge blobSidecarPoolSizeGauge;
-  private final LabelledMetric<Counter> blobSidecarPoolStats;
+  private final SettableLabelledGauge blockBlobSidecarsTrackersPoolSizeGauge;
+  private final LabelledMetric<Counter> blockBlobSidecarsTrackersPoolStats;
 
   public PoolFactory(final MetricsSystem metricsSystem) {
     this.pendingPoolsSizeGauge =
@@ -51,19 +51,19 @@ public class PoolFactory {
             "Number of items in pending pool",
             "type");
 
-    this.blobSidecarPoolSizeGauge =
+    this.blockBlobSidecarsTrackersPoolSizeGauge =
         SettableLabelledGauge.create(
             metricsSystem,
             TekuMetricCategory.BEACON,
-            "blobs_pool_size",
-            "Number of items in blobs pool",
+            "block_blobs_trackers_pool_size",
+            "Number of items in block-blobs trackers pool",
             "type");
 
-    this.blobSidecarPoolStats =
+    this.blockBlobSidecarsTrackersPoolStats =
         metricsSystem.createLabelledCounter(
             TekuMetricCategory.BEACON,
-            "blobs_pool_stats",
-            "Blobs pool statistics",
+            "block_blobs_trackers_pool_stats",
+            "Block-blobs trackers pool statistics",
             "type",
             "subtype");
   }
@@ -106,12 +106,12 @@ public class PoolFactory {
         ValidatableAttestation::getEarliestSlotForForkChoiceProcessing);
   }
 
-  public BlobSidecarPoolImpl createPoolForBlobSidecars(
+  public BlockBlobSidecarsTrackersPoolImpl createPoolForBlockBlobSidecarsTrackers(
       final Spec spec,
       final TimeProvider timeProvider,
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData) {
-    return createPoolForBlobSidecars(
+    return createPoolForBlockBlobSidecarsTrackers(
         spec,
         timeProvider,
         asyncRunner,
@@ -121,7 +121,7 @@ public class PoolFactory {
         DEFAULT_MAX_BLOCKS);
   }
 
-  public BlobSidecarPoolImpl createPoolForBlobSidecars(
+  public BlockBlobSidecarsTrackersPoolImpl createPoolForBlockBlobSidecarsTrackers(
       final Spec spec,
       final TimeProvider timeProvider,
       final AsyncRunner asyncRunner,
@@ -129,9 +129,9 @@ public class PoolFactory {
       final UInt64 historicalBlockTolerance,
       final UInt64 futureBlockTolerance,
       final int maxTrackers) {
-    return new BlobSidecarPoolImpl(
-        blobSidecarPoolSizeGauge,
-        blobSidecarPoolStats,
+    return new BlockBlobSidecarsTrackersPoolImpl(
+        blockBlobSidecarsTrackersPoolSizeGauge,
+        blockBlobSidecarsTrackersPoolStats,
         spec,
         timeProvider,
         asyncRunner,
@@ -142,7 +142,7 @@ public class PoolFactory {
   }
 
   @VisibleForTesting
-  BlobSidecarPoolImpl createPoolForBlobSidecars(
+  BlockBlobSidecarsTrackersPoolImpl createPoolForBlockBlobSidecarsTrackers(
       final Spec spec,
       final TimeProvider timeProvider,
       final AsyncRunner asyncRunner,
@@ -151,9 +151,9 @@ public class PoolFactory {
       final UInt64 futureBlockTolerance,
       final int maxItems,
       final BlockBlobSidecarsTrackerFactory trackerFactory) {
-    return new BlobSidecarPoolImpl(
+    return new BlockBlobSidecarsTrackersPoolImpl(
         pendingPoolsSizeGauge,
-        blobSidecarPoolStats,
+        blockBlobSidecarsTrackersPoolStats,
         spec,
         timeProvider,
         asyncRunner,
