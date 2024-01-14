@@ -41,7 +41,7 @@ import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 
 public class RecentBlocksFetchServiceTest {
@@ -52,7 +52,8 @@ public class RecentBlocksFetchServiceTest {
   @SuppressWarnings("unchecked")
   private final PendingPool<SignedBeaconBlock> pendingBlockPool = mock(PendingPool.class);
 
-  private final BlobSidecarPool blobSidecarPool = mock(BlobSidecarPool.class);
+  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool =
+      mock(BlockBlobSidecarsTrackersPool.class);
 
   private final FetchTaskFactory fetchTaskFactory = mock(FetchTaskFactory.class);
 
@@ -73,13 +74,13 @@ public class RecentBlocksFetchServiceTest {
         new RecentBlocksFetchService(
             asyncRunner,
             pendingBlockPool,
-            blobSidecarPool,
+            blockBlobSidecarsTrackersPool,
             forwardSync,
             fetchTaskFactory,
             maxConcurrentRequests);
 
     // blobs pool doesn't contain blocks by default
-    when(blobSidecarPool.containsBlock(any())).thenReturn(false);
+    when(blockBlobSidecarsTrackersPool.containsBlock(any())).thenReturn(false);
     lenient().when(fetchTaskFactory.createFetchBlockTask(any())).thenAnswer(this::createMockTask);
     recentBlocksFetcher.subscribeBlockFetched(importedBlocks::add);
   }
@@ -243,7 +244,7 @@ public class RecentBlocksFetchServiceTest {
   @Test
   void shouldNotFetchIfBlockIsWaitingForBlobs() {
     Bytes32 blockRoot = dataStructureUtil.randomBytes32();
-    when(blobSidecarPool.containsBlock(blockRoot)).thenReturn(true);
+    when(blockBlobSidecarsTrackersPool.containsBlock(blockRoot)).thenReturn(true);
 
     recentBlocksFetcher.requestRecentBlock(blockRoot);
     assertTaskCounts(0, 0, 0);

@@ -34,7 +34,8 @@ public interface BlobSidecarManager {
         }
 
         @Override
-        public void prepareForBlockImport(final BlobSidecar blobSidecar) {}
+        public void prepareForBlockImport(
+            final BlobSidecar blobSidecar, final RemoteOrigin remoteOrigin) {}
 
         @Override
         public void subscribeToReceivedBlobSidecar(
@@ -61,7 +62,7 @@ public interface BlobSidecarManager {
   SafeFuture<InternalValidationResult> validateAndPrepareForBlockImport(
       BlobSidecar blobSidecar, Optional<UInt64> arrivalTimestamp);
 
-  void prepareForBlockImport(BlobSidecar blobSidecar);
+  void prepareForBlockImport(BlobSidecar blobSidecar, RemoteOrigin origin);
 
   void subscribeToReceivedBlobSidecar(ReceivedBlobSidecarListener receivedBlobSidecarListener);
 
@@ -74,5 +75,10 @@ public interface BlobSidecarManager {
 
   interface ReceivedBlobSidecarListener {
     void onBlobSidecarReceived(BlobSidecar blobSidecar);
+  }
+
+  enum RemoteOrigin {
+    RPC,
+    GOSSIP
   }
 }
