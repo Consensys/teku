@@ -34,8 +34,13 @@ class PowchainConfigurationTest {
             .setDepositSnapshotPathForNetwork(Optional.of(Eth2Network.MAINNET))
             .build();
 
-    assertThat(config.getCustomDepositSnapshotPath()).contains("/tmp/foo");
-    assertThat(config.getBundledDepositSnapshotPath()).asString().contains("mainnet.ssz");
+    final DepositTreeSnapshotConfiguration depositTreeSnapshotConfiguration =
+        config.getDepositTreeSnapshotConfiguration();
+    assertThat(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath())
+        .contains("/tmp/foo");
+    assertThat(depositTreeSnapshotConfiguration.getBundledDepositSnapshotPath())
+        .asString()
+        .contains("mainnet.ssz");
   }
 
   @Test
@@ -46,7 +51,8 @@ class PowchainConfigurationTest {
             .setDepositSnapshotPathForNetwork(Optional.empty())
             .build();
 
-    assertThat(config.getBundledDepositSnapshotPath()).isEmpty();
+    assertThat(config.getDepositTreeSnapshotConfiguration().getBundledDepositSnapshotPath())
+        .isEmpty();
   }
 
   @Test
@@ -60,6 +66,7 @@ class PowchainConfigurationTest {
             .setDepositSnapshotPathForNetwork(Optional.of(Eth2Network.MAINNET))
             .build();
 
-    assertThat(config.getBundledDepositSnapshotPath()).isEmpty();
+    assertThat(config.getDepositTreeSnapshotConfiguration().getBundledDepositSnapshotPath())
+        .isEmpty();
   }
 }

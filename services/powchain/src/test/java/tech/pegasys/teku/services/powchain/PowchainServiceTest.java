@@ -42,6 +42,8 @@ import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 public class PowchainServiceTest {
   private final ServiceConfig serviceConfig = mock(ServiceConfig.class);
   private final PowchainConfiguration powConfig = mock(PowchainConfiguration.class);
+  private final DepositTreeSnapshotConfiguration depositTreeSnapshotConfiguration =
+      mock(DepositTreeSnapshotConfiguration.class);
   private final ExecutionWeb3jClientProvider engineWeb3jClientProvider =
       mock(ExecutionWeb3jClientProvider.class);
   private final Web3JClient web3JClient = mock(Web3JClient.class);
@@ -54,6 +56,8 @@ public class PowchainServiceTest {
     when(powConfig.isEnabled()).thenReturn(false);
     when(powConfig.getSpec()).thenReturn(spec);
     when(powConfig.getDepositContract()).thenReturn(Eth1Address.ZERO);
+    when(powConfig.getDepositTreeSnapshotConfiguration())
+        .thenReturn(depositTreeSnapshotConfiguration);
     when(engineWeb3jClientProvider.getWeb3JClient()).thenReturn(web3JClient);
 
     final EventChannels eventChannels = mock(EventChannels.class);
@@ -101,8 +105,10 @@ public class PowchainServiceTest {
 
   @Test
   public void shouldUseCustomDepositSnapshotPathWhenPresent() {
-    when(powConfig.getCustomDepositSnapshotPath()).thenReturn(Optional.of("/foo/custom"));
-    when(powConfig.getBundledDepositSnapshotPath()).thenReturn(Optional.of("/foo/bundled"));
+    when(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath())
+        .thenReturn(Optional.of("/foo/custom"));
+    when(depositTreeSnapshotConfiguration.getBundledDepositSnapshotPath())
+        .thenReturn(Optional.of("/foo/bundled"));
 
     final PowchainService powchainService =
         new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
@@ -113,8 +119,10 @@ public class PowchainServiceTest {
 
   @Test
   public void shouldUseBundledDepositSnapshotPathWhenAvailableAndCustomPathNotPresent() {
-    when(powConfig.getCustomDepositSnapshotPath()).thenReturn(Optional.empty());
-    when(powConfig.getBundledDepositSnapshotPath()).thenReturn(Optional.of("/foo/bundled"));
+    when(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath())
+        .thenReturn(Optional.empty());
+    when(depositTreeSnapshotConfiguration.getBundledDepositSnapshotPath())
+        .thenReturn(Optional.of("/foo/bundled"));
 
     final PowchainService powchainService =
         new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
@@ -124,8 +132,10 @@ public class PowchainServiceTest {
 
   @Test
   public void shouldHaveNoDepositSnapshotPathWhenNoneIsAvailable() {
-    when(powConfig.getCustomDepositSnapshotPath()).thenReturn(Optional.empty());
-    when(powConfig.getBundledDepositSnapshotPath()).thenReturn(Optional.empty());
+    when(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath())
+        .thenReturn(Optional.empty());
+    when(depositTreeSnapshotConfiguration.getBundledDepositSnapshotPath())
+        .thenReturn(Optional.empty());
 
     final PowchainService powchainService =
         new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));

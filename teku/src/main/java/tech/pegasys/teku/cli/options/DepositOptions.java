@@ -74,9 +74,6 @@ public class DepositOptions {
   public void configure(final TekuConfiguration.Builder builder) {
     final CommandLine.ParseResult parseResult = commandSpec.commandLine().getParseResult();
 
-    final String checkpointSyncUrlCliOption = "--checkpoint-sync-url";
-    final boolean checkpointSyncUrlSet = parseResult.hasMatchedOption(checkpointSyncUrlCliOption);
-
     if (parseResult.hasMatchedOption("--Xdeposit-snapshot")) {
       if (parseResult.hasMatchedOption("--deposit-snapshot-enabled")
           && parseResult.matchedOptionValue("--deposit-snapshot-enabled", Boolean.TRUE)) {
@@ -94,10 +91,6 @@ public class DepositOptions {
           b.useMissingDepositEventLogging(useMissingDepositEventLogging);
           b.customDepositSnapshotPath(depositSnapshotPath);
           b.depositSnapshotEnabled(depositSnapshotEnabled);
-          if (checkpointSyncUrlSet) {
-            b.checkpointSyncDepositSnapshotUrl(
-                parseResult.matchedOptionValue(checkpointSyncUrlCliOption, ""));
-          }
         });
   }
 }
