@@ -32,29 +32,28 @@ public class StateBoostrapConfig {
 
   public void setGenesisState(final String genesisState) {
     checkNotNull(genesisState);
-    this.genesisState = Optional.of(UrlSanitizer.sanitizePotentialUrl(genesisState));
+    this.genesisState = Optional.of(genesisState);
   }
 
   public void setInitialState(final String initialState) {
     checkNotNull(initialState);
-    this.initialState = Optional.of(UrlSanitizer.sanitizePotentialUrl(initialState));
+    this.initialState = Optional.of(initialState);
     this.isUsingCustomInitialState = false;
   }
 
   public void setCustomInitialState(final String initialState) {
     checkNotNull(initialState);
-    this.initialState = Optional.of(UrlSanitizer.sanitizePotentialUrl(initialState));
+    this.initialState = Optional.of(initialState);
     this.isUsingCustomInitialState = true;
   }
 
   public void setCheckpointSyncUrl(final String checkpointSyncUrl) {
     checkNotNull(checkpointSyncUrl);
-    final String sanitizedCheckpointSyncUrl = UrlSanitizer.sanitizePotentialUrl(checkpointSyncUrl);
-    this.checkpointSyncUrl = Optional.of(sanitizedCheckpointSyncUrl);
+    this.checkpointSyncUrl = Optional.of(checkpointSyncUrl);
     this.genesisState =
-        Optional.of(UrlSanitizer.appendPath(sanitizedCheckpointSyncUrl, GENESIS_STATE_URL_PATH));
+        Optional.of(UrlSanitizer.appendPath(checkpointSyncUrl, GENESIS_STATE_URL_PATH));
     this.initialState =
-        Optional.of(UrlSanitizer.appendPath(sanitizedCheckpointSyncUrl, FINALIZED_STATE_URL_PATH));
+        Optional.of(UrlSanitizer.appendPath(checkpointSyncUrl, FINALIZED_STATE_URL_PATH));
   }
 
   public void setAllowSyncOutsideWeakSubjectivityPeriod(

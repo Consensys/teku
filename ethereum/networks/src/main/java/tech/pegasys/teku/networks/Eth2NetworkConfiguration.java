@@ -179,14 +179,6 @@ public class Eth2NetworkConfiguration {
     return constants;
   }
 
-  public Optional<String> getInitialState() {
-    return stateBoostrapConfig.getInitialState();
-  }
-
-  public Optional<String> getGenesisState() {
-    return stateBoostrapConfig.getGenesisState();
-  }
-
   public StateBoostrapConfig getNetworkBoostrapConfig() {
     return stateBoostrapConfig;
   }
