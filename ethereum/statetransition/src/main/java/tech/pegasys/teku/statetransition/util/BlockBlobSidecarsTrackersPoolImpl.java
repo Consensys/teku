@@ -44,13 +44,13 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTracker;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackerFactory;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
-    implements BlobSidecarPool {
+public class BlockBlobSidecarsTrackersPoolImpl extends AbstractIgnoringFutureHistoricalSlot
+    implements BlockBlobSidecarsTrackersPool {
   private static final Logger LOG = LogManager.getLogger();
 
   static final String COUNTER_BLOCK_TYPE = "block";
@@ -71,7 +71,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
   static final UInt64 TARGET_WAIT_MILLIS = UInt64.valueOf(1000);
 
   private final SettableLabelledGauge sizeGauge;
-  private final LabelledMetric<Counter> blobSidecarPoolStats;
+  private final LabelledMetric<Counter> poolStatsCounters;
   private final Map<Bytes32, BlockBlobSidecarsTracker> blockBlobSidecarsTrackers = new HashMap<>();
   private final NavigableSet<SlotAndBlockRoot> orderedBlobSidecarsTrackers = new TreeSet<>();
   private final Spec spec;
@@ -97,9 +97,9 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
 
   private int totalBlobSidecars;
 
-  BlobSidecarPoolImpl(
+  BlockBlobSidecarsTrackersPoolImpl(
       final SettableLabelledGauge sizeGauge,
-      final LabelledMetric<Counter> blobSidecarPoolStats,
+      final LabelledMetric<Counter> poolStatsCounters,
       final Spec spec,
       final TimeProvider timeProvider,
       final AsyncRunner asyncRunner,
@@ -114,28 +114,16 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     this.recentChainData = recentChainData;
     this.maxTrackers = maxTrackers;
     this.sizeGauge = sizeGauge;
-    this.blobSidecarPoolStats = blobSidecarPoolStats;
+    this.poolStatsCounters = poolStatsCounters;
     this.trackerFactory = (slotAndBlockRoot) -> createTracker(spec, slotAndBlockRoot);
 
-    // Init the label so it appears in metrics immediately
-    sizeGauge.set(0, GAUGE_BLOB_SIDECARS_LABEL);
-    sizeGauge.set(0, GAUGE_BLOB_SIDECARS_TRACKERS_LABEL);
-
-    Stream.of(COUNTER_BLOCK_TYPE, COUNTER_SIDECAR_TYPE)
-        .forEach(
-            type -> {
-              blobSidecarPoolStats.labels(type, COUNTER_GOSSIP_SUBTYPE);
-              blobSidecarPoolStats.labels(type, COUNTER_RPC_SUBTYPE);
-              blobSidecarPoolStats.labels(type, COUNTER_GOSSIP_DUPLICATE_SUBTYPE);
-              blobSidecarPoolStats.labels(type, COUNTER_RPC_DUPLICATE_SUBTYPE);
-              blobSidecarPoolStats.labels(type, COUNTER_RPC_FETCH_SUBTYPE);
-            });
+    initMetrics(sizeGauge, poolStatsCounters);
   }
 
   @VisibleForTesting
-  BlobSidecarPoolImpl(
+  BlockBlobSidecarsTrackersPoolImpl(
       final SettableLabelledGauge sizeGauge,
-      final LabelledMetric<Counter> blobSidecarPoolStats,
+      final LabelledMetric<Counter> poolStatsCounters,
       final Spec spec,
       final TimeProvider timeProvider,
       final AsyncRunner asyncRunner,
@@ -151,12 +139,27 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     this.recentChainData = recentChainData;
     this.maxTrackers = maxTrackers;
     this.sizeGauge = sizeGauge;
-    this.blobSidecarPoolStats = blobSidecarPoolStats;
+    this.poolStatsCounters = poolStatsCounters;
     this.trackerFactory = trackerFactory;
 
+    initMetrics(sizeGauge, poolStatsCounters);
+  }
+
+  private static void initMetrics(
+      final SettableLabelledGauge sizeGauge, final LabelledMetric<Counter> poolStatsCounters) {
     // Init the label so it appears in metrics immediately
     sizeGauge.set(0, GAUGE_BLOB_SIDECARS_LABEL);
     sizeGauge.set(0, GAUGE_BLOB_SIDECARS_TRACKERS_LABEL);
+
+    Stream.of(COUNTER_BLOCK_TYPE, COUNTER_SIDECAR_TYPE)
+        .forEach(
+            type -> {
+              poolStatsCounters.labels(type, COUNTER_GOSSIP_SUBTYPE);
+              poolStatsCounters.labels(type, COUNTER_RPC_SUBTYPE);
+              poolStatsCounters.labels(type, COUNTER_GOSSIP_DUPLICATE_SUBTYPE);
+              poolStatsCounters.labels(type, COUNTER_RPC_DUPLICATE_SUBTYPE);
+              poolStatsCounters.labels(type, COUNTER_RPC_FETCH_SUBTYPE);
+            });
   }
 
   private static BlockBlobSidecarsTracker createTracker(
@@ -197,19 +200,17 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
 
   private void countBlobSidecar(final RemoteOrigin origin) {
     switch (origin) {
-      case RPC -> blobSidecarPoolStats.labels(COUNTER_SIDECAR_TYPE, COUNTER_RPC_SUBTYPE).inc();
-      case GOSSIP -> blobSidecarPoolStats
-          .labels(COUNTER_SIDECAR_TYPE, COUNTER_GOSSIP_SUBTYPE)
-          .inc();
+      case RPC -> poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_RPC_SUBTYPE).inc();
+      case GOSSIP -> poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_GOSSIP_SUBTYPE).inc();
     }
   }
 
   private void countDuplicateBlobSidecar(final RemoteOrigin origin) {
     switch (origin) {
-      case RPC -> blobSidecarPoolStats
+      case RPC -> poolStatsCounters
           .labels(COUNTER_SIDECAR_TYPE, COUNTER_RPC_DUPLICATE_SUBTYPE)
           .inc();
-      case GOSSIP -> blobSidecarPoolStats
+      case GOSSIP -> poolStatsCounters
           .labels(COUNTER_SIDECAR_TYPE, COUNTER_GOSSIP_DUPLICATE_SUBTYPE)
           .inc();
     }
@@ -437,8 +438,8 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     maybeRemoteOrigin.ifPresent(
         remoteOrigin -> {
           switch (remoteOrigin) {
-            case RPC -> blobSidecarPoolStats.labels(COUNTER_BLOCK_TYPE, COUNTER_RPC_SUBTYPE).inc();
-            case GOSSIP -> blobSidecarPoolStats
+            case RPC -> poolStatsCounters.labels(COUNTER_BLOCK_TYPE, COUNTER_RPC_SUBTYPE).inc();
+            case GOSSIP -> poolStatsCounters
                 .labels(COUNTER_BLOCK_TYPE, COUNTER_GOSSIP_SUBTYPE)
                 .inc();
           }
@@ -449,10 +450,10 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     maybeRemoteOrigin.ifPresent(
         remoteOrigin -> {
           switch (remoteOrigin) {
-            case RPC -> blobSidecarPoolStats
+            case RPC -> poolStatsCounters
                 .labels(COUNTER_BLOCK_TYPE, COUNTER_RPC_DUPLICATE_SUBTYPE)
                 .inc();
-            case GOSSIP -> blobSidecarPoolStats
+            case GOSSIP -> poolStatsCounters
                 .labels(COUNTER_BLOCK_TYPE, COUNTER_GOSSIP_DUPLICATE_SUBTYPE)
                 .inc();
           }
@@ -540,7 +541,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
     blockBlobSidecarsTracker.setFetchTriggered();
 
     if (blockBlobSidecarsTracker.getBlock().isEmpty()) {
-      blobSidecarPoolStats.labels(COUNTER_BLOCK_TYPE, COUNTER_RPC_FETCH_SUBTYPE).inc();
+      poolStatsCounters.labels(COUNTER_BLOCK_TYPE, COUNTER_RPC_FETCH_SUBTYPE).inc();
       requiredBlockRootSubscribers.deliver(
           RequiredBlockRootSubscriber::onRequiredBlockRoot,
           blockBlobSidecarsTracker.getSlotAndBlockRoot().getBlockRoot());
@@ -550,7 +551,7 @@ public class BlobSidecarPoolImpl extends AbstractIgnoringFutureHistoricalSlot
         .getMissingBlobSidecars()
         .forEach(
             blobIdentifier -> {
-              blobSidecarPoolStats.labels(COUNTER_SIDECAR_TYPE, COUNTER_RPC_FETCH_SUBTYPE).inc();
+              poolStatsCounters.labels(COUNTER_SIDECAR_TYPE, COUNTER_RPC_FETCH_SUBTYPE).inc();
               requiredBlobSidecarSubscribers.deliver(
                   RequiredBlobSidecarSubscriber::onRequiredBlobSidecar, blobIdentifier);
             });

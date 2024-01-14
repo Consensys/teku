@@ -79,7 +79,7 @@ import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
@@ -144,7 +144,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BlockFactory blockFactory,
       final BlockImportChannel blockImportChannel,
       final BlockGossipChannel blockGossipChannel,
-      final BlobSidecarPool blobSidecarPool,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final BlobSidecarGossipChannel blobSidecarGossipChannel,
       final AggregatingAttestationPool attestationPool,
       final AttestationManager attestationManager,
@@ -183,7 +183,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             blockFactory,
             blockImportChannel,
             blockGossipChannel,
-            blobSidecarPool,
+            blockBlobSidecarsTrackersPool,
             blobSidecarGossipChannel,
             performanceTracker,
             dutyMetrics);
