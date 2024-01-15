@@ -17,10 +17,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.PrivKey;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
+import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.PrivateKeySource;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;
 
@@ -61,6 +66,35 @@ public class LibP2PPrivateKeyLoaderTest {
         new LibP2PPrivateKeyLoader(store, Optional.of(privKeySource));
     assertThat(loader.get()).isEqualTo(privKey);
   }
+
+  @Test
+  void shouldCreateKeyAndSaveToFile(@TempDir Path tempDir) throws IOException {
+    final Path file = tempDir.resolve("file.txt");
+    final PrivateKeySource privKeySource = new NetworkConfig.FilePrivateKeySource(file.toString());
+    final LibP2PPrivateKeyLoader loader =
+        new LibP2PPrivateKeyLoader(store, Optional.of(privKeySource));
+
+    final PrivKey key = loader.get();
+    final Bytes generatedBytes = Bytes.fromHexString(Files.readString(file));
+    final PrivKey expectedKey = KeyKt.unmarshalPrivateKey(generatedBytes.toArrayUnsafe());
+    assertThat(key).isEqualTo(expectedKey);
+  }
+
+  @Test
+  void shouldGetKeyFromSavedFile(@TempDir Path tempDir) throws IOException {
+    final Path file = tempDir.resolve("file.txt");
+    final Bytes privateKey = Bytes.wrap(PrivateKeyGenerator.generate().bytes());
+    Files.writeString(file, privateKey.toHexString());
+
+    final PrivateKeySource privKeySource = new NetworkConfig.FilePrivateKeySource(file.toString());
+    final LibP2PPrivateKeyLoader loader =
+        new LibP2PPrivateKeyLoader(store, Optional.of(privKeySource));
+
+    final PrivKey expectedKey = KeyKt.unmarshalPrivateKey(privateKey.toArrayUnsafe());
+    assertThat(loader.get()).isEqualTo(expectedKey);
+  }
+
+  // todo test when get IO exception?
 
   private void assertRoundTrip(final PrivKey generatedPK) {
     final PrivKey reparsed = KeyKt.unmarshalPrivateKey(generatedPK.bytes());

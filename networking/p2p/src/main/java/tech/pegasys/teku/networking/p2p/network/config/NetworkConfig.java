@@ -285,17 +285,17 @@ public class NetworkConfig {
 
     @Override
     public Bytes getOrGeneratePrivateKeyBytes(final KeyValueStore<String, Bytes> keyValueStore) {
-      try { // todo add testing
+      try {
         File file = new File(fileName);
         if (!file.createNewFile()) {
           return getPrivateKeyBytes();
         }
         final Bytes privateKeyBytes = LibP2PPrivateKeyLoader.generateNewPrivateKey(keyValueStore);
-        Files.write(file.toPath(), privateKeyBytes.toArray());
+        Files.writeString(file.toPath(), privateKeyBytes.toHexString());
         return privateKeyBytes;
 
       } catch (IOException e) {
-        throw new RuntimeException(
+        throw new IllegalArgumentException(
             "Not able to create or retrieve p2p private key file - " + fileName);
       }
     }
