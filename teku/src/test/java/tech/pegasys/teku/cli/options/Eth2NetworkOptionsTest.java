@@ -118,16 +118,6 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"true", "false"})
-  void shouldSetFirstDescendentAsHead(final String value) {
-    final TekuConfiguration config =
-        getTekuConfigurationFromArguments(
-            "--Xfork-choice-update-head-on-block-import-enabled", value);
-    assertThat(config.eth2NetworkConfiguration().isForkChoiceUpdateHeadOnBlockImportEnabled())
-        .isEqualTo(Boolean.valueOf(value));
-  }
-
-  @ParameterizedTest
-  @ValueSource(strings = {"true", "false"})
   void shouldSetLateBlockImportEnabled(final String value) {
     final TekuConfiguration config =
         getTekuConfigurationFromArguments("--Xfork-choice-late-block-reorg-enabled", value);

@@ -49,8 +49,6 @@ public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
 
-  public static final boolean DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED = false;
-
   public static final boolean DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED = false;
 
   public static final boolean DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES = false;
@@ -89,7 +87,6 @@ public class Eth2NetworkConfiguration {
   private final Eth1Address eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
   private final Optional<String> trustedSetup;
-  private final boolean forkChoiceUpdateHeadOnBlockImportEnabled;
   private final Optional<Bytes32> terminalBlockHashOverride;
   private final Optional<UInt256> totalTerminalDifficultyOverride;
   private final Optional<UInt64> terminalBlockHashEpochOverride;
@@ -114,7 +111,6 @@ public class Eth2NetworkConfiguration {
       final Eth1Address eth1DepositContractAddress,
       final Optional<UInt64> eth1DepositContractDeployBlock,
       final Optional<String> trustedSetup,
-      final boolean forkChoiceUpdateHeadOnBlockImportEnabled,
       final Optional<UInt64> altairForkEpoch,
       final Optional<UInt64> bellatrixForkEpoch,
       final Optional<UInt64> capellaForkEpoch,
@@ -148,7 +144,6 @@ public class Eth2NetworkConfiguration {
             : eth1DepositContractAddress;
     this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
     this.trustedSetup = trustedSetup;
-    this.forkChoiceUpdateHeadOnBlockImportEnabled = forkChoiceUpdateHeadOnBlockImportEnabled;
     this.terminalBlockHashOverride = terminalBlockHashOverride;
     this.totalTerminalDifficultyOverride = totalTerminalDifficultyOverride;
     this.terminalBlockHashEpochOverride = terminalBlockHashEpochOverride;
@@ -222,10 +217,6 @@ public class Eth2NetworkConfiguration {
 
   public Optional<String> getTrustedSetup() {
     return trustedSetup;
-  }
-
-  public boolean isForkChoiceUpdateHeadOnBlockImportEnabled() {
-    return forkChoiceUpdateHeadOnBlockImportEnabled;
   }
 
   public Optional<UInt64> getForkEpoch(final SpecMilestone specMilestone) {
@@ -313,8 +304,6 @@ public class Eth2NetworkConfiguration {
     private int safeSlotsToImportOptimistically = DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
     private String epochsStoreBlobs;
     private Spec spec;
-    private boolean forkChoiceUpdateHeadOnBlockImportEnabled =
-        DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
     private boolean forkChoiceLateBlockReorgEnabled = DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
     private boolean forkChoiceUpdatedAlwaysSendPayloadAttributes =
         DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES;
@@ -378,7 +367,6 @@ public class Eth2NetworkConfiguration {
           eth1DepositContractAddress,
           eth1DepositContractDeployBlock,
           trustedSetup,
-          forkChoiceUpdateHeadOnBlockImportEnabled,
           altairForkEpoch,
           bellatrixForkEpoch,
           capellaForkEpoch,
@@ -542,12 +530,6 @@ public class Eth2NetworkConfiguration {
       this.trustedSetup =
           Optional.ofNullable(Eth2NetworkConfiguration.class.getResource(filename))
               .map(URL::toExternalForm);
-      return this;
-    }
-
-    public Builder forkChoiceUpdateHeadOnBlockImportEnabled(
-        final boolean forkChoiceUpdateHeadOnBlockImportEnabled) {
-      this.forkChoiceUpdateHeadOnBlockImportEnabled = forkChoiceUpdateHeadOnBlockImportEnabled;
       return this;
     }
 

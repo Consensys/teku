@@ -708,8 +708,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .blockBlobSidecarsTrackersPool(blockBlobSidecarsTrackersPool)
             .attestationManager(attestationManager)
             .isLivenessTrackingEnabled(getLivenessTrackingEnabled(beaconConfig))
-            .acceptBlsToExecutionMessages(
-                beaconConfig.p2pConfig().isBlsToExecutionChangesSubnetEnabled())
             .activeValidatorChannel(
                 eventChannels.getPublisher(ActiveValidatorChannel.class, beaconAsyncRunner))
             .attesterSlashingPool(attesterSlashingPool)
@@ -762,7 +760,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             forkChoiceStateProvider,
             new TickProcessor(spec, recentChainData),
             new MergeTransitionBlockValidator(spec, recentChainData, executionLayer),
-            beaconConfig.eth2NetworkConfig().isForkChoiceUpdateHeadOnBlockImportEnabled(),
             beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled(),
             metricsSystem);
     forkChoiceTrigger = new ForkChoiceTrigger(forkChoice);

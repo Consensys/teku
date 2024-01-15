@@ -276,21 +276,6 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void subscribeToBlsToExecutionChangesOption_shouldDefaultToTrue() {
-    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
-    final P2PConfig config = tekuConfiguration.p2p();
-    assertThat(config.isBlsToExecutionChangesSubnetEnabled()).isTrue();
-  }
-
-  @Test
-  public void subscribeToBlsToExecutionChangesOption_shouldOverrideDefault() {
-    final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--Xbls-to-execution-changes-subnet-enabled", "false");
-    final P2PConfig config = tekuConfiguration.p2p();
-    assertThat(config.isBlsToExecutionChangesSubnetEnabled()).isFalse();
-  }
-
-  @Test
   public void historicalSyncBatchSize_shouldBeSettable() {
     TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments("--Xp2p-historical-sync-batch-size", "10");

@@ -229,18 +229,6 @@ public class Eth2NetworkOptions {
       hidden = true)
   private Integer startupTimeoutSeconds;
 
-  // can be removed after investigating the consequences of not doing it anymore
-  @Option(
-      names = {"--Xfork-choice-update-head-on-block-import-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description = "Make the first descendent of head the new chain head.",
-      arity = "0..1",
-      fallbackValue = "true",
-      showDefaultValue = Visibility.ALWAYS,
-      hidden = true)
-  private boolean forkChoiceUpdateHeadOnBlockImportEnabled =
-      Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
-
   @Option(
       names = {"--Xeth1-deposit-contract-deploy-block-override"},
       hidden = true,
@@ -335,7 +323,6 @@ public class Eth2NetworkOptions {
         .asyncP2pMaxQueue(asyncP2pMaxQueue)
         .asyncBeaconChainMaxThreads(asyncBeaconChainMaxThreads)
         .asyncBeaconChainMaxQueue(asyncBeaconChainMaxQueue)
-        .forkChoiceUpdateHeadOnBlockImportEnabled(forkChoiceUpdateHeadOnBlockImportEnabled)
         .forkChoiceLateBlockReorgEnabled(forkChoiceLateBlockReorgEnabled)
         .epochsStoreBlobs(epochsStoreBlobs)
         .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes);
