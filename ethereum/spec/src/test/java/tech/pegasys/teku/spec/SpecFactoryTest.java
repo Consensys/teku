@@ -40,9 +40,9 @@ public class SpecFactoryTest {
   private static final Set<String> NON_BELLATRIX_NETWORKS = Set.of("swift", "less-swift");
 
   private static final Set<String> CAPELLA_NETWORKS =
-      Set.of("sepolia", "mainnet", "gnosis", "chiado", "lukso", "holesky");
+      Set.of("sepolia", "mainnet", "gnosis", "lukso", "holesky");
 
-  private static final Set<String> DENEB_NETWORKS = Set.of("prater");
+  private static final Set<String> DENEB_NETWORKS = Set.of("prater", "chiado");
 
   @Test
   public void defaultFactoryShouldScheduleBellatrixAndCapellaForMainNet() {
