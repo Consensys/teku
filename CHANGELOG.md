@@ -16,5 +16,6 @@ the [releases page](https://github.com/Consensys/teku/releases).
 - Added a hidden flag `--Xfork-choice-updated-always-send-payload-attributes` which would cause
 payload attributes to be calculated and sent with every fcU. This could be useful for builders
 consuming the `payload_attributes` SSE events.
+- Added Deneb (aka Dencun) configuration for Sepolia network for epoch 132608 (2024-01-30 22:51:12 UTC).
 
 ### Bug Fixes
