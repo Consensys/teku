@@ -80,7 +80,6 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.SimpleOperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
@@ -152,7 +151,6 @@ class BlockOperationSelectorFactoryTest {
   private final Bytes32 parentRoot = dataStructureUtil.randomBytes32();
   private final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
 
-  private final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
   private final ExecutionLayerBlockProductionManager executionLayer =
       mock(ExecutionLayerBlockProductionManager.class);
 
@@ -181,7 +179,6 @@ class BlockOperationSelectorFactoryTest {
           depositProvider,
           eth1DataCache,
           defaultGraffiti,
-          forkChoiceNotifier,
           executionLayer);
 
   @BeforeEach
@@ -198,8 +195,6 @@ class BlockOperationSelectorFactoryTest {
         .thenReturn(SafeFuture.completedFuture(ACCEPT));
     when(blsToExecutionChangeValidator.validateForGossip(any()))
         .thenReturn(SafeFuture.completedFuture(ACCEPT));
-    when(forkChoiceNotifier.getPayloadId(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.empty()));
   }
 
   @Test
@@ -209,6 +204,7 @@ class BlockOperationSelectorFactoryTest {
     factory
         .createSelector(
             parentRoot,
+            Optional.empty(),
             blockSlotState,
             dataStructureUtil.randomSignature(),
             Optional.empty(),
@@ -245,6 +241,7 @@ class BlockOperationSelectorFactoryTest {
     factory
         .createSelector(
             parentRoot,
+            Optional.empty(),
             blockSlotState,
             randaoReveal,
             Optional.empty(),
@@ -323,6 +320,7 @@ class BlockOperationSelectorFactoryTest {
     factory
         .createSelector(
             parentRoot,
+            Optional.empty(),
             blockSlotState,
             randaoReveal,
             Optional.empty(),
@@ -350,6 +348,7 @@ class BlockOperationSelectorFactoryTest {
     factory
         .createSelector(
             parentRoot,
+            Optional.empty(),
             blockSlotState,
             dataStructureUtil.randomSignature(),
             Optional.empty(),
@@ -366,6 +365,7 @@ class BlockOperationSelectorFactoryTest {
     factory
         .createSelector(
             parentRoot,
+            Optional.empty(),
             blockSlotState,
             dataStructureUtil.randomSignature(),
             Optional.empty(),
@@ -385,14 +385,13 @@ class BlockOperationSelectorFactoryTest {
         dataStructureUtil.randomPayloadExecutionContext(false);
     final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
 
-    when(forkChoiceNotifier.getPayloadId(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
     prepareBlockProductionWithPayload(
         randomExecutionPayload, executionPayloadContext, blockSlotState);
 
     factory
         .createSelector(
             parentRoot,
+            Optional.of(executionPayloadContext),
             blockSlotState,
             dataStructureUtil.randomSignature(),
             Optional.empty(),
@@ -413,14 +412,13 @@ class BlockOperationSelectorFactoryTest {
     final ExecutionPayloadHeader randomExecutionPayloadHeader =
         dataStructureUtil.randomExecutionPayloadHeader();
 
-    when(forkChoiceNotifier.getPayloadId(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
     prepareBlockProductionWithPayloadHeader(
         randomExecutionPayloadHeader, executionPayloadContext, blockSlotState);
 
     factory
         .createSelector(
             parentRoot,
+            Optional.of(executionPayloadContext),
             blockSlotState,
             dataStructureUtil.randomSignature(),
             Optional.empty(),
@@ -440,14 +438,13 @@ class BlockOperationSelectorFactoryTest {
         dataStructureUtil.randomPayloadExecutionContext(false);
     final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
 
-    when(forkChoiceNotifier.getPayloadId(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
     prepareBlockProductionWithPayload(
         randomExecutionPayload, executionPayloadContext, blockSlotState);
 
     factory
         .createSelector(
             parentRoot,
+            Optional.of(executionPayloadContext),
             blockSlotState,
             dataStructureUtil.randomSignature(),
             Optional.empty(),
@@ -481,9 +478,6 @@ class BlockOperationSelectorFactoryTest {
         dataStructureUtil.randomPayloadExecutionContext(false);
     final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
 
-    when(forkChoiceNotifier.getPayloadId(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
-
     final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
 
     prepareBlockAndBlobsProduction(
@@ -494,6 +488,7 @@ class BlockOperationSelectorFactoryTest {
     factory
         .createSelector(
             parentRoot,
+            Optional.of(executionPayloadContext),
             blockSlotState,
             dataStructureUtil.randomSignature(),
             Optional.empty(),
@@ -515,9 +510,6 @@ class BlockOperationSelectorFactoryTest {
     final ExecutionPayloadHeader randomExecutionPayloadHeader =
         dataStructureUtil.randomExecutionPayloadHeader();
 
-    when(forkChoiceNotifier.getPayloadId(any(), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
-
     final SszList<SszKZGCommitment> blobKzgCommitments =
         dataStructureUtil.randomBlobKzgCommitments();
 
@@ -529,6 +521,7 @@ class BlockOperationSelectorFactoryTest {
     factory
         .createSelector(
             parentRoot,
+            Optional.of(executionPayloadContext),
             blockSlotState,
             dataStructureUtil.randomSignature(),
             Optional.empty(),

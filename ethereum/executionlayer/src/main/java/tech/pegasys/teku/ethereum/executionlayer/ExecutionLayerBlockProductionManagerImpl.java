@@ -74,6 +74,7 @@ public class ExecutionLayerBlockProductionManagerImpl
       final boolean isBlind,
       final BlockProductionPerformance blockProductionPerformance) {
     final ExecutionPayloadResult result;
+
     if (!isBlind) {
       final SafeFuture<GetPayloadResponse> getPayloadResponseFuture =
           executionLayerChannel

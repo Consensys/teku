@@ -61,7 +61,6 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationForkChecker;
-import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 
 public class BlockOperationSelectorFactory {
@@ -75,7 +74,6 @@ public class BlockOperationSelectorFactory {
   private final DepositProvider depositProvider;
   private final Eth1DataCache eth1DataCache;
   private final Bytes32 graffiti;
-  private final ForkChoiceNotifier forkChoiceNotifier;
   private final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager;
 
   public BlockOperationSelectorFactory(
@@ -89,7 +87,6 @@ public class BlockOperationSelectorFactory {
       final DepositProvider depositProvider,
       final Eth1DataCache eth1DataCache,
       final Bytes32 graffiti,
-      final ForkChoiceNotifier forkChoiceNotifier,
       final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager) {
     this.spec = spec;
     this.attestationPool = attestationPool;
@@ -101,19 +98,17 @@ public class BlockOperationSelectorFactory {
     this.depositProvider = depositProvider;
     this.eth1DataCache = eth1DataCache;
     this.graffiti = graffiti;
-    this.forkChoiceNotifier = forkChoiceNotifier;
     this.executionLayerBlockProductionManager = executionLayerBlockProductionManager;
   }
 
   public Consumer<BeaconBlockBodyBuilder> createSelector(
       final Bytes32 parentRoot,
+      final Optional<ExecutionPayloadContext> executionPayloadContext,
       final BeaconState blockSlotState,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti,
       final Optional<Boolean> requestedBlinded,
       final BlockProductionPerformance blockProductionPerformance) {
-
-    final boolean blinded = requestedBlinded.orElse(ValidatorsUtil.DEFAULT_PRODUCE_BLINDED_BLOCK);
 
     return bodyBuilder -> {
       final Eth1Data eth1Data = eth1DataCache.getEth1Vote(blockSlotState);
@@ -175,11 +170,12 @@ public class BlockOperationSelectorFactory {
       if (bodyBuilder.supportsExecutionPayload()) {
         final SchemaDefinitions schemaDefinitions =
             spec.atSlot(blockSlotState.getSlot()).getSchemaDefinitions();
+
         setExecutionData(
+            executionPayloadContext,
             bodyBuilder,
-            blinded,
+            requestedBlinded,
             schemaDefinitions,
-            parentRoot,
             blockSlotState,
             blockProductionPerformance);
       }
@@ -189,15 +185,13 @@ public class BlockOperationSelectorFactory {
   }
 
   private void setExecutionData(
+      final Optional<ExecutionPayloadContext> executionPayloadContext,
       final BeaconBlockBodyBuilder bodyBuilder,
-      final boolean blinded,
+      final Optional<Boolean> requestedBlinded,
       final SchemaDefinitions schemaDefinitions,
-      final Bytes32 parentRoot,
       final BeaconState blockSlotState,
       final BlockProductionPerformance blockProductionPerformance) {
-    final SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContextFuture =
-        forkChoiceNotifier.getPayloadId(parentRoot, blockSlotState.getSlot());
-
+    final boolean blinded = requestedBlinded.orElse(ValidatorsUtil.DEFAULT_PRODUCE_BLINDED_BLOCK);
     // Pre-Deneb: Execution Payload / Execution Payload Header
     if (!bodyBuilder.supportsKzgCommitments()) {
       if (blinded) {
@@ -205,54 +199,47 @@ public class BlockOperationSelectorFactory {
             bodyBuilder,
             schemaDefinitions,
             blockSlotState,
-            executionPayloadContextFuture,
+            executionPayloadContext,
             blockProductionPerformance);
       } else {
         builderSetPayload(
             bodyBuilder,
             schemaDefinitions,
             blockSlotState,
-            executionPayloadContextFuture,
+            executionPayloadContext,
             blockProductionPerformance);
       }
       return;
     }
 
     // Post-Deneb: Execution Payload / Execution Payload Header + KZG Commitments
-    final SafeFuture<ExecutionPayloadResult> executionPayloadResultFuture =
-        executionPayloadContextFuture.thenApply(
-            executionPayloadContextOptional ->
-                executionLayerBlockProductionManager.initiateBlockAndBlobsProduction(
-                    // kzg commitments are supported: we should have already merged by now, so we
-                    // can safely assume we have an executionPayloadContext
-                    executionPayloadContextOptional.orElseThrow(
-                        () ->
-                            new IllegalStateException(
-                                "Cannot provide kzg commitments before The Merge")),
-                    blockSlotState,
-                    blinded,
-                    blockProductionPerformance));
-    builderSetPayloadPostMerge(bodyBuilder, blinded, executionPayloadResultFuture);
-    builderSetKzgCommitments(bodyBuilder, blinded, schemaDefinitions, executionPayloadResultFuture);
+    final ExecutionPayloadResult executionPayloadResult =
+        executionLayerBlockProductionManager.initiateBlockAndBlobsProduction(
+            // kzg commitments are supported: we should have already merged by now, so we
+            // can safely assume we have an executionPayloadContext
+            executionPayloadContext.orElseThrow(
+                () -> new IllegalStateException("Cannot provide kzg commitments before The Merge")),
+            blockSlotState,
+            blinded,
+            blockProductionPerformance);
+
+    builderSetPayloadPostMerge(bodyBuilder, blinded, executionPayloadResult);
+    builderSetKzgCommitments(bodyBuilder, blinded, schemaDefinitions, executionPayloadResult);
   }
 
   private void builderSetPayloadPostMerge(
       final BeaconBlockBodyBuilder bodyBuilder,
       final boolean blinded,
-      final SafeFuture<ExecutionPayloadResult> executionPayloadResultFuture) {
+      final ExecutionPayloadResult executionPayloadResult) {
     if (blinded) {
       bodyBuilder.executionPayloadHeader(
-          executionPayloadResultFuture.thenCompose(
-              executionPayloadResult ->
-                  executionPayloadResult
-                      .getHeaderWithFallbackDataFuture()
-                      .orElseThrow()
-                      .thenApply(HeaderWithFallbackData::getExecutionPayloadHeader)));
+          executionPayloadResult
+              .getHeaderWithFallbackDataFuture()
+              .orElseThrow()
+              .thenApply(HeaderWithFallbackData::getExecutionPayloadHeader));
     } else {
       bodyBuilder.executionPayload(
-          executionPayloadResultFuture.thenCompose(
-              executionPayloadResult ->
-                  executionPayloadResult.getExecutionPayloadFuture().orElseThrow()));
+          executionPayloadResult.getExecutionPayloadFuture().orElseThrow());
     }
   }
 
@@ -260,7 +247,7 @@ public class BlockOperationSelectorFactory {
       final BeaconBlockBodyBuilder bodyBuilder,
       final SchemaDefinitions schemaDefinitions,
       final BeaconState blockSlotState,
-      final SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContextFuture,
+      final Optional<ExecutionPayloadContext> executionPayloadContext,
       final BlockProductionPerformance blockProductionPerformance) {
     final Supplier<SafeFuture<ExecutionPayload>> preMergePayload =
         () ->
@@ -270,27 +257,22 @@ public class BlockOperationSelectorFactory {
                     .getDefault());
 
     bodyBuilder.executionPayload(
-        executionPayloadContextFuture.thenCompose(
-            executionPayloadContext ->
-                executionPayloadContext
-                    .map(
-                        payloadContext ->
-                            executionLayerBlockProductionManager
-                                .initiateBlockProduction(
-                                    payloadContext,
-                                    blockSlotState,
-                                    false,
-                                    blockProductionPerformance)
-                                .getExecutionPayloadFuture()
-                                .orElseThrow())
-                    .orElseGet(preMergePayload)));
+        executionPayloadContext
+            .map(
+                payloadContext ->
+                    executionLayerBlockProductionManager
+                        .initiateBlockProduction(
+                            payloadContext, blockSlotState, false, blockProductionPerformance)
+                        .getExecutionPayloadFuture()
+                        .orElseThrow())
+            .orElseGet(preMergePayload));
   }
 
   private void builderSetPayloadHeader(
       final BeaconBlockBodyBuilder bodyBuilder,
       final SchemaDefinitions schemaDefinitions,
       final BeaconState blockSlotState,
-      final SafeFuture<Optional<ExecutionPayloadContext>> executionPayloadContextFuture,
+      final Optional<ExecutionPayloadContext> executionPayloadContext,
       final BlockProductionPerformance blockProductionPerformance) {
     final Supplier<SafeFuture<ExecutionPayloadHeader>> preMergePayloadHeader =
         () ->
@@ -299,47 +281,39 @@ public class BlockOperationSelectorFactory {
                     .getExecutionPayloadHeaderSchema()
                     .getHeaderOfDefaultPayload());
 
+    if (executionPayloadContext.isEmpty()) {
+      bodyBuilder.executionPayloadHeader(preMergePayloadHeader.get());
+      return;
+    }
     bodyBuilder.executionPayloadHeader(
-        executionPayloadContextFuture.thenCompose(
-            executionPayloadContext -> {
-              if (executionPayloadContext.isEmpty()) {
-                return preMergePayloadHeader.get();
-              } else {
-                return executionLayerBlockProductionManager
-                    .initiateBlockProduction(
-                        executionPayloadContext.get(),
-                        blockSlotState,
-                        true,
-                        blockProductionPerformance)
-                    .getHeaderWithFallbackDataFuture()
-                    .orElseThrow()
-                    .thenApply(HeaderWithFallbackData::getExecutionPayloadHeader);
-              }
-            }));
+        executionLayerBlockProductionManager
+            .initiateBlockProduction(
+                executionPayloadContext.get(), blockSlotState, true, blockProductionPerformance)
+            .getHeaderWithFallbackDataFuture()
+            .orElseThrow()
+            .thenApply(HeaderWithFallbackData::getExecutionPayloadHeader));
   }
 
   private void builderSetKzgCommitments(
       final BeaconBlockBodyBuilder bodyBuilder,
       final boolean blinded,
       final SchemaDefinitions schemaDefinitions,
-      final SafeFuture<ExecutionPayloadResult> executionPayloadResultFuture) {
+      final ExecutionPayloadResult executionPayloadResult) {
+
+    if (blinded) {
+      bodyBuilder.blobKzgCommitments(getBuilderBlobKzgCommitments(executionPayloadResult));
+      return;
+    }
+
     final SchemaDefinitionsDeneb schemaDefinitionsDeneb =
         SchemaDefinitionsDeneb.required(schemaDefinitions);
-    final SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments =
-        executionPayloadResultFuture.thenCompose(
-            executionPayloadResult -> {
-              if (blinded) {
-                return getBuilderBlobKzgCommitments(executionPayloadResult);
-              } else {
-                return getExecutionBlobsBundle(executionPayloadResult)
-                    .thenApply(
-                        blobsBundle ->
-                            schemaDefinitionsDeneb
-                                .getBlobKzgCommitmentsSchema()
-                                .createFromBlobsBundle(blobsBundle));
-              }
-            });
-    bodyBuilder.blobKzgCommitments(blobKzgCommitments);
+    bodyBuilder.blobKzgCommitments(
+        getExecutionBlobsBundle(executionPayloadResult)
+            .thenApply(
+                blobsBundle ->
+                    schemaDefinitionsDeneb
+                        .getBlobKzgCommitmentsSchema()
+                        .createFromBlobsBundle(blobsBundle)));
   }
 
   public Consumer<SignedBeaconBlockUnblinder> createBlockUnblinderSelector() {

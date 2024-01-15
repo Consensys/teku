@@ -180,6 +180,7 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     final Bytes32 graffiti = dataStructureUtil.randomBytes32();
     return new BlockFactoryDeneb(
         spec,
+        forkChoiceNotifier,
         new BlockOperationSelectorFactory(
             spec,
             attestationsPool,
@@ -191,7 +192,6 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
             depositProvider,
             eth1DataCache,
             graffiti,
-            forkChoiceNotifier,
             executionLayer));
   }
 }

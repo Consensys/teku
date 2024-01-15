@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 
 public class MilestoneBasedBlockFactory implements BlockFactory {
 
@@ -39,23 +40,30 @@ public class MilestoneBasedBlockFactory implements BlockFactory {
   private final Spec spec;
 
   public MilestoneBasedBlockFactory(
-      final Spec spec, final BlockOperationSelectorFactory operationSelector) {
+      final Spec spec,
+      final ForkChoiceNotifier forkChoiceNotifier,
+      final BlockOperationSelectorFactory operationSelector) {
     this.spec = spec;
     final BlockFactoryPhase0 blockFactoryPhase0 = new BlockFactoryPhase0(spec, operationSelector);
 
     // Not needed for all milestones
+    final Supplier<BlockFactoryBellatrix> blockFactoryBellatrixSupplier =
+        Suppliers.memoize(
+            () -> new BlockFactoryBellatrix(spec, forkChoiceNotifier, operationSelector));
     final Supplier<BlockFactoryDeneb> blockFactoryDenebSupplier =
-        Suppliers.memoize(() -> new BlockFactoryDeneb(spec, operationSelector));
+        Suppliers.memoize(() -> new BlockFactoryDeneb(spec, forkChoiceNotifier, operationSelector));
 
     // Populate forks factories
     spec.getEnabledMilestones()
         .forEach(
             forkAndSpecMilestone -> {
               final SpecMilestone milestone = forkAndSpecMilestone.getSpecMilestone();
-              if (milestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
-                registeredFactories.put(milestone, blockFactoryDenebSupplier.get());
-              } else {
-                registeredFactories.put(milestone, blockFactoryPhase0);
+              switch (milestone) {
+                case PHASE0 -> registeredFactories.put(milestone, blockFactoryPhase0);
+                case BELLATRIX -> registeredFactories.put(
+                    milestone, blockFactoryBellatrixSupplier.get());
+                case DENEB -> registeredFactories.put(milestone, blockFactoryDenebSupplier.get());
+                default -> {}
               }
             });
   }
