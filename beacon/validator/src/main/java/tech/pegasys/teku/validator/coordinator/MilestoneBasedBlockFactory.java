@@ -59,11 +59,10 @@ public class MilestoneBasedBlockFactory implements BlockFactory {
             forkAndSpecMilestone -> {
               final SpecMilestone milestone = forkAndSpecMilestone.getSpecMilestone();
               switch (milestone) {
-                case PHASE0 -> registeredFactories.put(milestone, blockFactoryPhase0);
-                case BELLATRIX -> registeredFactories.put(
+                case PHASE0, ALTAIR -> registeredFactories.put(milestone, blockFactoryPhase0);
+                case BELLATRIX, CAPELLA -> registeredFactories.put(
                     milestone, blockFactoryBellatrixSupplier.get());
                 case DENEB -> registeredFactories.put(milestone, blockFactoryDenebSupplier.get());
-                default -> {}
               }
             });
   }
