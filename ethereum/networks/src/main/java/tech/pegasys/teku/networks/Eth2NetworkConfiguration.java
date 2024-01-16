@@ -730,6 +730,7 @@ public class Eth2NetworkConfiguration {
       return applyTestnetDefaults()
           .constants(SEPOLIA.configName())
           .startupTimeoutSeconds(120)
+          .trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME)
           .eth1DepositContractDeployBlock(1273020)
           .defaultInitialState(
               "https://github.com/eth-clients/merge-testnets/raw/9c873ab67b902aa676370a549129e5e91013afa3/sepolia/genesis.ssz")
