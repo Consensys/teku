@@ -23,10 +23,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBuilderBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrixImpl;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodySchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodySchemaBellatrixImpl;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
@@ -42,8 +42,8 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatri
 
 public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
   private final BeaconStateSchemaBellatrix beaconStateSchema;
-  private final BeaconBlockBodySchemaBellatrix<?> beaconBlockBodySchema;
-  private final BlindedBeaconBlockBodySchemaBellatrix<?> blindedBeaconBlockBodySchema;
+  private final BeaconBlockBodySchemaBellatrixImpl beaconBlockBodySchema;
+  private final BlindedBeaconBlockBodySchemaBellatrixImpl blindedBeaconBlockBodySchema;
   private final BeaconBlockSchema beaconBlockSchema;
   private final BeaconBlockSchema blindedBeaconBlockSchema;
   private final SignedBeaconBlockSchema signedBeaconBlockSchema;
@@ -141,6 +141,11 @@ public class SchemaDefinitionsBellatrix extends SchemaDefinitionsAltair {
   @Override
   public SignedBlockContainerSchema<SignedBlockContainer> getSignedBlindedBlockContainerSchema() {
     return getSignedBlindedBeaconBlockSchema().castTypeToSignedBlockContainer();
+  }
+
+  @Override
+  public BeaconBlockBodyBuilder createBeaconBlockBodyBuilder() {
+    return new BeaconBlockBodyBuilderBellatrix(beaconBlockBodySchema, blindedBeaconBlockBodySchema);
   }
 
   public ExecutionPayloadSchema<?> getExecutionPayloadSchema() {

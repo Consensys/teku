@@ -133,7 +133,6 @@ public class BlockProposalTestUtil {
                         kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments)));
               }
             },
-            Optional.of(false),
             BlockProductionPerformance.NOOP)
         .thenApply(
             newBlockAndState -> {

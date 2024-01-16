@@ -102,6 +102,18 @@ public class Eth2NetworkOptions {
       Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
 
   @Option(
+      names = {"--Xfork-choice-updated-always-send-payload-attributes"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Calculate and send payload attributes on every forkChoiceUpdated regardless if a connected validator is due to be a block proposer or not.",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private boolean forkChoiceUpdatedAlwaysSendPayloadAttributes =
+      Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES;
+
+  @Option(
       names = {"--Xnetwork-altair-fork-epoch"},
       hidden = true,
       paramLabel = "<epoch>",
@@ -325,7 +337,8 @@ public class Eth2NetworkOptions {
         .asyncBeaconChainMaxQueue(asyncBeaconChainMaxQueue)
         .forkChoiceUpdateHeadOnBlockImportEnabled(forkChoiceUpdateHeadOnBlockImportEnabled)
         .forkChoiceLateBlockReorgEnabled(forkChoiceLateBlockReorgEnabled)
-        .epochsStoreBlobs(epochsStoreBlobs);
+        .epochsStoreBlobs(epochsStoreBlobs)
+        .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes);
   }
 
   public String getNetwork() {

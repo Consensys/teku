@@ -141,7 +141,7 @@ public class BeaconBlockBodySchemaDenebImpl
   @Override
   public SafeFuture<? extends BeaconBlockBody> createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
-    final BeaconBlockBodyBuilderDeneb builder = new BeaconBlockBodyBuilderDeneb().schema(this);
+    final BeaconBlockBodyBuilderDeneb builder = new BeaconBlockBodyBuilderDeneb(this, null);
     builderConsumer.accept(builder);
     return builder.build();
   }

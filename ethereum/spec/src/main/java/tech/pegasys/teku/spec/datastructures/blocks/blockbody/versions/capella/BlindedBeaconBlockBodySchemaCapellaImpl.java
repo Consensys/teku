@@ -133,8 +133,7 @@ public class BlindedBeaconBlockBodySchemaCapellaImpl
   @Override
   public SafeFuture<BeaconBlockBody> createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
-    final BeaconBlockBodyBuilderCapella builder =
-        new BeaconBlockBodyBuilderCapella().blindedSchema(this);
+    final BeaconBlockBodyBuilderCapella builder = new BeaconBlockBodyBuilderCapella(null, this);
     builderConsumer.accept(builder);
     return builder.build();
   }

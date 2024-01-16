@@ -33,8 +33,8 @@ public interface BlockFactory {
       UInt64 newSlot,
       BLSSignature randaoReveal,
       Optional<Bytes32> optionalGraffiti,
-      final Optional<Boolean> blinded,
-      final BlockProductionPerformance blockProductionPerformance);
+      Optional<Boolean> requestedBlinded,
+      BlockProductionPerformance blockProductionPerformance);
 
   SafeFuture<SignedBeaconBlock> unblindSignedBlockIfBlinded(SignedBeaconBlock maybeBlindedBlock);
 

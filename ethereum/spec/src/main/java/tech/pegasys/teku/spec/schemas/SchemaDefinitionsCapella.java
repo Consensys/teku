@@ -23,10 +23,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyBuilderCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapellaImpl;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodySchemaCapellaImpl;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
@@ -57,8 +57,8 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
   private final ExecutionPayloadSchemaCapella executionPayloadSchemaCapella;
   private final ExecutionPayloadHeaderSchemaCapella executionPayloadHeaderSchemaCapella;
 
-  private final BeaconBlockBodySchemaCapella<?> beaconBlockBodySchema;
-  private final BlindedBeaconBlockBodySchemaCapella<?> blindedBeaconBlockBodySchema;
+  private final BeaconBlockBodySchemaCapellaImpl beaconBlockBodySchema;
+  private final BlindedBeaconBlockBodySchemaCapellaImpl blindedBeaconBlockBodySchema;
 
   private final BeaconBlockSchema beaconBlockSchema;
   private final BeaconBlockSchema blindedBeaconBlockSchema;
@@ -206,6 +206,11 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
   @Override
   public ExecutionPayloadHeaderSchema<?> getExecutionPayloadHeaderSchema() {
     return executionPayloadHeaderSchemaCapella;
+  }
+
+  @Override
+  public BeaconBlockBodyBuilder createBeaconBlockBodyBuilder() {
+    return new BeaconBlockBodyBuilderCapella(beaconBlockBodySchema, blindedBeaconBlockBodySchema);
   }
 
   public WithdrawalSchema getWithdrawalSchema() {

@@ -57,10 +57,6 @@ public interface BeaconBlockBodyBuilder {
     return false;
   }
 
-  default Boolean isBlinded() {
-    return false;
-  }
-
   BeaconBlockBodyBuilder executionPayload(SafeFuture<ExecutionPayload> executionPayload);
 
   BeaconBlockBodyBuilder executionPayloadHeader(

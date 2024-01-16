@@ -23,19 +23,22 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 
-public interface BlobSidecarPool extends SlotEventsChannel {
+public interface BlockBlobSidecarsTrackersPool extends SlotEventsChannel {
 
-  BlobSidecarPool NOOP =
-      new BlobSidecarPool() {
+  BlockBlobSidecarsTrackersPool NOOP =
+      new BlockBlobSidecarsTrackersPool() {
         @Override
         public void onSlot(final UInt64 slot) {}
 
         @Override
-        public void onNewBlobSidecar(final BlobSidecar blobSidecar) {}
+        public void onNewBlobSidecar(
+            final BlobSidecar blobSidecar, final RemoteOrigin remoteOrigin) {}
 
         @Override
-        public void onNewBlock(final SignedBeaconBlock block) {}
+        public void onNewBlock(
+            final SignedBeaconBlock block, final Optional<RemoteOrigin> remoteOrigin) {}
 
         @Override
         public void onCompletedBlockAndBlobSidecars(
@@ -101,9 +104,9 @@ public interface BlobSidecarPool extends SlotEventsChannel {
         public void subscribeNewBlobSidecar(NewBlobSidecarSubscriber newBlobSidecarSubscriber) {}
       };
 
-  void onNewBlobSidecar(BlobSidecar blobSidecar);
+  void onNewBlobSidecar(BlobSidecar blobSidecar, RemoteOrigin remoteOrigin);
 
-  void onNewBlock(SignedBeaconBlock block);
+  void onNewBlock(SignedBeaconBlock block, Optional<RemoteOrigin> remoteOrigin);
 
   void onCompletedBlockAndBlobSidecars(SignedBeaconBlock block, List<BlobSidecar> blobSidecars);
 

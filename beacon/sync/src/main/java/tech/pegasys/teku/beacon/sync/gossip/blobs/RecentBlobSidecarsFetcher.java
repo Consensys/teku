@@ -21,7 +21,7 @@ import tech.pegasys.teku.service.serviceutils.ServiceFacade;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 
 public interface RecentBlobSidecarsFetcher extends ServiceFacade {
 
@@ -55,14 +55,18 @@ public interface RecentBlobSidecarsFetcher extends ServiceFacade {
   static RecentBlobSidecarsFetcher create(
       final Spec spec,
       final AsyncRunner asyncRunner,
-      final BlobSidecarPool blobSidecarPool,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final ForwardSyncService forwardSyncService,
       final FetchTaskFactory fetchTaskFactory) {
     final RecentBlobSidecarsFetcher recentBlobSidecarsFetcher;
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       recentBlobSidecarsFetcher =
           RecentBlobSidecarsFetchService.create(
-              asyncRunner, blobSidecarPool, forwardSyncService, fetchTaskFactory, spec);
+              asyncRunner,
+              blockBlobSidecarsTrackersPool,
+              forwardSyncService,
+              fetchTaskFactory,
+              spec);
     } else {
       recentBlobSidecarsFetcher = RecentBlobSidecarsFetcher.NOOP;
     }
