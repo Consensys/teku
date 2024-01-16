@@ -463,7 +463,7 @@ public class Eth2NetworkConfiguration {
 
     public Builder ignoreWeakSubjectivityPeriodEnabled(
         boolean ignoreWeakSubjectivityPeriodEnabled) {
-      this.ignoreWeakSubjectivityPeriodEnabled(ignoreWeakSubjectivityPeriodEnabled);
+      this.allowSyncOutsideWeakSubjectivityPeriod = ignoreWeakSubjectivityPeriodEnabled;
       return this;
     }
 
