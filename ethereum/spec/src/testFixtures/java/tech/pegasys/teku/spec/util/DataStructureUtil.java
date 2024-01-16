@@ -50,6 +50,7 @@ import tech.pegasys.teku.ethereum.pow.api.DepositsFromBlockEvent;
 import tech.pegasys.teku.ethereum.pow.api.MinGenesisTimeBlockEvent;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.infrastructure.bytes.Bytes31;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
@@ -120,6 +121,11 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitness;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.IpaProof;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.StemStateDiff;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.SuffixStateDiff;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.VerkleProof;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
@@ -255,6 +261,10 @@ public final class DataStructureUtil {
 
   public Bytes20 randomBytes20() {
     return new Bytes20(randomBytes32().slice(0, 20));
+  }
+
+  public Bytes31 randomBytes31() {
+    return new Bytes31(randomBytes32().slice(0, 31));
   }
 
   public Bytes randomBytes256() {
@@ -569,6 +579,7 @@ public final class DataStructureUtil {
                     .blockHash(randomBytes32())
                     .transactionsRoot(randomBytes32())
                     .withdrawalsRoot(() -> withdrawalsRoot)
+                    .executionWitnessRoot(this::randomBytes32)
                     .blobGasUsed(this::randomUInt64)
                     .excessBlobGas(this::randomUInt64));
   }
@@ -679,10 +690,76 @@ public final class DataStructureUtil {
                       .blockHash(randomBytes32())
                       .transactions(randomExecutionPayloadTransactions())
                       .withdrawals(this::randomExecutionPayloadWithdrawals)
+                      .executionWitness(this::randomExecutionWitness)
                       .blobGasUsed(this::randomUInt64)
                       .excessBlobGas(this::randomUInt64);
               postRandomModifications.accept(executionPayloadBuilder);
             });
+  }
+
+  public ExecutionWitness randomExecutionWitness() {
+    final SchemaDefinitionsCapella schemaDefinitionsCapella =
+        SchemaDefinitionsCapella.required(
+            spec.forMilestone(SpecMilestone.CAPELLA).getSchemaDefinitions());
+    return schemaDefinitionsCapella
+        .getExecutionWitnessSchema()
+        .create(
+            List.of(randomStemStateDiff(5), randomStemStateDiff(2)), randomVerkleProof(6, 6, 3, 4));
+  }
+
+  private VerkleProof randomVerkleProof(
+      final int otherStems, final int present, final int commitments, final int proofs) {
+    final IpaProof ipaProof = randomIpaProof(proofs);
+    final SchemaDefinitionsCapella schemaDefinitionsCapella =
+        SchemaDefinitionsCapella.required(
+            spec.forMilestone(SpecMilestone.CAPELLA).getSchemaDefinitions());
+    return schemaDefinitionsCapella
+        .getVerkleProofSchema()
+        .create(
+            IntStream.range(0, otherStems).mapToObj(__ -> randomBytes31()).toList(),
+            IntStream.range(0, present).mapToObj(__ -> randomByte()).toList(),
+            IntStream.range(0, commitments).mapToObj(__ -> randomBytes32()).toList(),
+            randomBytes32(),
+            ipaProof);
+  }
+
+  private IpaProof randomIpaProof(final int proofs) {
+    final SchemaDefinitionsCapella schemaDefinitionsCapella =
+        SchemaDefinitionsCapella.required(
+            spec.forMilestone(SpecMilestone.CAPELLA).getSchemaDefinitions());
+    return schemaDefinitionsCapella
+        .getIpaProofSchema()
+        .create(
+            IntStream.range(0, proofs).mapToObj(__ -> randomBytes32()).toList(),
+            IntStream.range(0, proofs).mapToObj(__ -> randomBytes32()).toList(),
+            randomBytes32());
+  }
+
+  private StemStateDiff randomStemStateDiff(final int elements) {
+    final SchemaDefinitionsCapella schemaDefinitionsCapella =
+        SchemaDefinitionsCapella.required(
+            spec.forMilestone(SpecMilestone.CAPELLA).getSchemaDefinitions());
+    final List<SuffixStateDiff> suffixStateDiffList =
+        IntStream.range(0, elements).mapToObj(__ -> randomSuffixStateDiff()).toList();
+    return schemaDefinitionsCapella
+        .getStemStateDiffSchema()
+        .create(randomBytes31(), suffixStateDiffList);
+  }
+
+  private SuffixStateDiff randomSuffixStateDiff() {
+    final SchemaDefinitionsCapella schemaDefinitionsCapella =
+        SchemaDefinitionsCapella.required(
+            spec.forMilestone(SpecMilestone.CAPELLA).getSchemaDefinitions());
+    return schemaDefinitionsCapella
+        .getSuffixStateDiffSchema()
+        .create(
+            randomByte(), randomOptional(this::randomBytes32), randomOptional(this::randomBytes32));
+  }
+
+  private <T> Optional<T> randomOptional(final Supplier<T> elementSupplier) {
+    return new Random(nextSeed()).nextBoolean()
+        ? Optional.of(elementSupplier.get())
+        : Optional.empty();
   }
 
   public Transaction randomExecutionPayloadTransaction() {

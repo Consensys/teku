@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitnessSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 
@@ -34,6 +35,8 @@ public interface ExecutionPayloadSchema<T extends ExecutionPayload>
   SszListSchema<Withdrawal, ? extends SszList<Withdrawal>> getWithdrawalsSchemaRequired();
 
   WithdrawalSchema getWithdrawalSchemaRequired();
+
+  ExecutionWitnessSchema getExecutionWitnessSchemaRequired();
 
   LongList getBlindedNodeGeneralizedIndices();
 

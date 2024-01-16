@@ -19,8 +19,8 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container17;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema17;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container18;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema18;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -28,7 +28,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ExecutionPayloadHeaderDenebImpl
-    extends Container17<
+    extends Container18<
         ExecutionPayloadHeaderDenebImpl,
         SszBytes32,
         SszByteVector,
@@ -45,12 +45,13 @@ public class ExecutionPayloadHeaderDenebImpl
         SszBytes32,
         SszBytes32,
         SszBytes32,
+        SszBytes32,
         SszUInt64,
         SszUInt64>
     implements ExecutionPayloadHeaderDeneb {
 
   protected ExecutionPayloadHeaderDenebImpl(
-      ContainerSchema17<
+      ContainerSchema18<
               ExecutionPayloadHeaderDenebImpl,
               SszBytes32,
               SszByteVector,
@@ -64,6 +65,7 @@ public class ExecutionPayloadHeaderDenebImpl
               SszUInt64,
               SszByteList,
               SszUInt256,
+              SszBytes32,
               SszBytes32,
               SszBytes32,
               SszBytes32,
@@ -91,6 +93,7 @@ public class ExecutionPayloadHeaderDenebImpl
       SszBytes32 blockHash,
       SszBytes32 transactionsRoot,
       SszBytes32 withdrawalsRoot,
+      SszBytes32 executionWitnessRoot,
       SszUInt64 blobGasUsed,
       SszUInt64 excessBlobGas) {
     super(
@@ -110,6 +113,7 @@ public class ExecutionPayloadHeaderDenebImpl
         blockHash,
         transactionsRoot,
         withdrawalsRoot,
+        executionWitnessRoot,
         blobGasUsed,
         excessBlobGas);
   }
@@ -210,12 +214,17 @@ public class ExecutionPayloadHeaderDenebImpl
   }
 
   @Override
-  public UInt64 getBlobGasUsed() {
+  public Bytes32 getExecutionWitnessRoot() {
     return getField15().get();
   }
 
   @Override
-  public UInt64 getExcessBlobGas() {
+  public UInt64 getBlobGasUsed() {
     return getField16().get();
+  }
+
+  @Override
+  public UInt64 getExcessBlobGas() {
+    return getField17().get();
   }
 }

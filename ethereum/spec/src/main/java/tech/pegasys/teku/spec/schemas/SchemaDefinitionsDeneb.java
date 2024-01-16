@@ -85,11 +85,12 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
 
   public SchemaDefinitionsDeneb(final SpecConfigDeneb specConfig) {
     super(specConfig);
-    this.executionPayloadSchemaDeneb = new ExecutionPayloadSchemaDeneb(specConfig);
+    this.executionPayloadSchemaDeneb =
+        new ExecutionPayloadSchemaDeneb(specConfig, getExecutionWitnessSchema());
     final SignedBlsToExecutionChangeSchema signedBlsToExecutionChangeSchema =
         new SignedBlsToExecutionChangeSchema();
 
-    this.beaconStateSchema = BeaconStateSchemaDeneb.create(specConfig);
+    this.beaconStateSchema = BeaconStateSchemaDeneb.create(specConfig, getExecutionWitnessSchema());
     this.executionPayloadHeaderSchemaDeneb =
         beaconStateSchema.getLastExecutionPayloadHeaderSchema();
     this.blobKzgCommitmentsSchema = new BlobKzgCommitmentsSchema(specConfig);
@@ -99,6 +100,7 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
             getAttesterSlashingSchema(),
             signedBlsToExecutionChangeSchema,
             blobKzgCommitmentsSchema,
+            getExecutionWitnessSchema(),
             "BeaconBlockBodyDeneb");
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaDenebImpl.create(
@@ -106,6 +108,7 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
             getAttesterSlashingSchema(),
             signedBlsToExecutionChangeSchema,
             blobKzgCommitmentsSchema,
+            getExecutionWitnessSchema(),
             "BlindedBlockBodyDeneb");
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockDeneb");
     this.blindedBeaconBlockSchema =

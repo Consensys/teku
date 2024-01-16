@@ -81,6 +81,7 @@ public class ExecutionPayloadHeaderBuilderDeneb extends ExecutionPayloadHeaderBu
         SszBytes32.of(blockHash),
         SszBytes32.of(transactionsRoot),
         SszBytes32.of(withdrawalsRoot),
+        SszBytes32.of(executionWitnessRoot),
         SszUInt64.of(blobGasUsed),
         SszUInt64.of(excessBlobGas));
   }

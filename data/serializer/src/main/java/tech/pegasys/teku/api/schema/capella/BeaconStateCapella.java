@@ -179,7 +179,9 @@ public class BeaconStateCapella extends BeaconStateAltair {
                     .baseFeePerGas(instance.latestExecutionPayloadHeader.baseFeePerGas)
                     .blockHash(instance.latestExecutionPayloadHeader.blockHash)
                     .transactionsRoot(instance.latestExecutionPayloadHeader.transactionsRoot)
-                    .withdrawalsRoot(() -> instance.latestExecutionPayloadHeader.withdrawalsRoot)));
+                    .withdrawalsRoot(() -> instance.latestExecutionPayloadHeader.withdrawalsRoot)
+                    // TODO Verkle trees
+                    .executionWitnessRoot(() -> Bytes32.ZERO)));
 
     state.setNextWithdrawalIndex(instance.nextWithdrawalIndex);
     state.setNextWithdrawalValidatorIndex(instance.nextWithdrawalValidatorIndex);

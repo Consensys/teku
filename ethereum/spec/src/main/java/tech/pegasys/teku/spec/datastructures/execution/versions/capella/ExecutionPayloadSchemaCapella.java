@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.capella;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BASE_FEE_PER_GAS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_HASH;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_NUMBER;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXECUTION_WITNESS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXTRA_DATA;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.FEE_RECIPIENT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.GAS_LIMIT;
@@ -35,7 +36,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema15;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema16;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -50,9 +51,11 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitness;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitnessSchema;
 
 public class ExecutionPayloadSchemaCapella
-    extends ContainerSchema15<
+    extends ContainerSchema16<
         ExecutionPayloadCapellaImpl,
         SszBytes32,
         SszByteVector,
@@ -68,12 +71,14 @@ public class ExecutionPayloadSchemaCapella
         SszUInt256,
         SszBytes32,
         SszList<Transaction>,
-        SszList<Withdrawal>>
+        SszList<Withdrawal>,
+        ExecutionWitness>
     implements ExecutionPayloadSchema<ExecutionPayloadCapellaImpl> {
 
   private final ExecutionPayloadCapellaImpl defaultExecutionPayload;
 
-  public ExecutionPayloadSchemaCapella(final SpecConfigCapella specConfig) {
+  public ExecutionPayloadSchemaCapella(
+      final SpecConfigCapella specConfig, final ExecutionWitnessSchema executionWitnessSchema) {
     super(
         "ExecutionPayloadCapella",
         namedSchema(PARENT_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
@@ -95,7 +100,8 @@ public class ExecutionPayloadSchemaCapella
                 new TransactionSchema(specConfig), specConfig.getMaxTransactionsPerPayload())),
         namedSchema(
             WITHDRAWALS,
-            SszListSchema.create(Withdrawal.SSZ_SCHEMA, specConfig.getMaxWithdrawalsPerPayload())));
+            SszListSchema.create(Withdrawal.SSZ_SCHEMA, specConfig.getMaxWithdrawalsPerPayload())),
+        namedSchema(EXECUTION_WITNESS, executionWitnessSchema));
     this.defaultExecutionPayload = createFromBackingNode(getDefaultTree());
   }
 
@@ -117,6 +123,11 @@ public class ExecutionPayloadSchemaCapella
   @Override
   public WithdrawalSchema getWithdrawalSchemaRequired() {
     return getWithdrawalSchema();
+  }
+
+  @Override
+  public ExecutionWitnessSchema getExecutionWitnessSchemaRequired() {
+    return getExecutionWitnessSchema();
   }
 
   public WithdrawalSchema getWithdrawalSchema() {
@@ -157,5 +168,9 @@ public class ExecutionPayloadSchemaCapella
   @SuppressWarnings("unchecked")
   public SszListSchema<Withdrawal, ?> getWithdrawalsSchema() {
     return (SszListSchema<Withdrawal, ?>) getFieldSchema14();
+  }
+
+  public ExecutionWitnessSchema getExecutionWitnessSchema() {
+    return (ExecutionWitnessSchema) getFieldSchema15();
   }
 }

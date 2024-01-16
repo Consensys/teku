@@ -33,6 +33,11 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.versions.bellatrix.BuilderBidSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitnessSchema;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.IpaProofSchema;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.StemStateDiffSchema;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.SuffixStateDiffSchema;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.VerkleProofSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
@@ -70,14 +75,34 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
 
   private final HistoricalSummary.HistoricalSummarySchema historicalSummarySchema;
 
+  // Experimental implementation of Verkle Trees as of
+  // https://github.com/ethereum/consensus-specs/pull/3230
+  private final SuffixStateDiffSchema suffixStateDiffSchema;
+  private final StemStateDiffSchema stemStateDiffSchema;
+  private final IpaProofSchema ipaProofSchema;
+  private final VerkleProofSchema verkleProofSchema;
+  private final ExecutionWitnessSchema executionWitnessSchema;
+
   public SchemaDefinitionsCapella(final SpecConfigCapella specConfig) {
     super(specConfig);
-    this.executionPayloadSchemaCapella = new ExecutionPayloadSchemaCapella(specConfig);
+
+    this.suffixStateDiffSchema = SuffixStateDiffSchema.INSTANCE;
+    this.stemStateDiffSchema = new StemStateDiffSchema(specConfig.getVerkleWidth());
+    this.ipaProofSchema = new IpaProofSchema(specConfig.getIpaProofDepth());
+    this.verkleProofSchema =
+        new VerkleProofSchema(
+            ipaProofSchema, specConfig.getMaxStems(), specConfig.getMaxCommitmentsPerStem());
+    this.executionWitnessSchema =
+        new ExecutionWitnessSchema(
+            specConfig.getMaxStems(), stemStateDiffSchema, verkleProofSchema);
+
+    this.executionPayloadSchemaCapella =
+        new ExecutionPayloadSchemaCapella(specConfig, executionWitnessSchema);
     this.blsToExecutionChangeSchema = new BlsToExecutionChangeSchema();
     this.signedBlsToExecutionChangeSchema = new SignedBlsToExecutionChangeSchema();
     this.withdrawalSchema = Withdrawal.SSZ_SCHEMA;
 
-    this.beaconStateSchema = BeaconStateSchemaCapella.create(specConfig);
+    this.beaconStateSchema = BeaconStateSchemaCapella.create(specConfig, executionWitnessSchema);
     this.executionPayloadHeaderSchemaCapella =
         beaconStateSchema.getLastExecutionPayloadHeaderSchema();
     this.beaconBlockBodySchema =
@@ -85,12 +110,14 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
             specConfig,
             getAttesterSlashingSchema(),
             signedBlsToExecutionChangeSchema,
+            executionWitnessSchema,
             "BeaconBlockBodyCapella");
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaCapellaImpl.create(
             specConfig,
             getAttesterSlashingSchema(),
             signedBlsToExecutionChangeSchema,
+            executionWitnessSchema,
             "BlindedBlockBodyCapella");
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockCapella");
     this.blindedBeaconBlockSchema =
@@ -205,6 +232,26 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
   @Override
   public SignedBuilderBidSchema getSignedBuilderBidSchema() {
     return signedBuilderBidSchemaCapella;
+  }
+
+  public SuffixStateDiffSchema getSuffixStateDiffSchema() {
+    return suffixStateDiffSchema;
+  }
+
+  public StemStateDiffSchema getStemStateDiffSchema() {
+    return stemStateDiffSchema;
+  }
+
+  public IpaProofSchema getIpaProofSchema() {
+    return ipaProofSchema;
+  }
+
+  public VerkleProofSchema getVerkleProofSchema() {
+    return verkleProofSchema;
+  }
+
+  public ExecutionWitnessSchema getExecutionWitnessSchema() {
+    return executionWitnessSchema;
   }
 
   @Override

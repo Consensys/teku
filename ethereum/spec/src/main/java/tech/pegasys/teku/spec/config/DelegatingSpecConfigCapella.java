@@ -55,4 +55,24 @@ public class DelegatingSpecConfigCapella extends DelegatingSpecConfigBellatrix
   public int getMaxBlsToExecutionChanges() {
     return specConfigCapella.getMaxBlsToExecutionChanges();
   }
+
+  @Override
+  public int getMaxStems() {
+    return specConfigCapella.getMaxStems();
+  }
+
+  @Override
+  public int getMaxCommitmentsPerStem() {
+    return specConfigCapella.getMaxCommitmentsPerStem();
+  }
+
+  @Override
+  public int getVerkleWidth() {
+    return specConfigCapella.getVerkleWidth();
+  }
+
+  @Override
+  public int getIpaProofDepth() {
+    return specConfigCapella.getIpaProofDepth();
+  }
 }

@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdraw
 
 public class ExecutionPayloadV2 extends ExecutionPayloadV1 {
   public final List<WithdrawalV1> withdrawals;
+  public final Bytes executionWitness;
 
   public ExecutionPayloadV2(
       @JsonProperty("parentHash") Bytes32 parentHash,
@@ -49,7 +50,8 @@ public class ExecutionPayloadV2 extends ExecutionPayloadV1 {
       @JsonProperty("baseFeePerGas") UInt256 baseFeePerGas,
       @JsonProperty("blockHash") Bytes32 blockHash,
       @JsonProperty("transactions") List<Bytes> transactions,
-      @JsonProperty("withdrawals") List<WithdrawalV1> withdrawals) {
+      @JsonProperty("withdrawals") List<WithdrawalV1> withdrawals,
+      @JsonProperty("execution_witness") Bytes executionWitness) {
     super(
         parentHash,
         feeRecipient,
@@ -66,6 +68,7 @@ public class ExecutionPayloadV2 extends ExecutionPayloadV1 {
         blockHash,
         transactions);
     this.withdrawals = withdrawals;
+    this.executionWitness = executionWitness;
   }
 
   public static ExecutionPayloadV2 fromInternalExecutionPayload(ExecutionPayload executionPayload) {
@@ -85,7 +88,11 @@ public class ExecutionPayloadV2 extends ExecutionPayloadV1 {
         executionPayload.getBaseFeePerGas(),
         executionPayload.getBlockHash(),
         executionPayload.getTransactions().stream().map(SszByteListImpl::getBytes).toList(),
-        withdrawalsList);
+        withdrawalsList,
+        executionPayload
+            .toVersionCapella()
+            .map(capellaPayload -> capellaPayload.getExecutionWitness().sszSerialize())
+            .orElse(null));
   }
 
   @Override
@@ -99,7 +106,14 @@ public class ExecutionPayloadV2 extends ExecutionPayloadV1 {
                     .map(
                         withdrawalV1 ->
                             createInternalWithdrawal(withdrawalV1, executionPayloadSchema))
-                    .toList());
+                    .toList())
+        .executionWitness(
+            () -> {
+              checkNotNull(executionWitness, "execution witness not provided when required");
+              return executionPayloadSchema
+                  .getExecutionWitnessSchemaRequired()
+                  .sszDeserialize(executionWitness);
+            });
   }
 
   private Withdrawal createInternalWithdrawal(

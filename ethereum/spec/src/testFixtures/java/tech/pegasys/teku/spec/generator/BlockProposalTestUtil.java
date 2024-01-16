@@ -272,6 +272,7 @@ public class BlockProposalTestUtil {
                 .blockHash(dataStructureUtil.randomBytes32())
                 .transactions(transactions.orElse(Collections.emptyList()))
                 .withdrawals(List::of)
+                .executionWitness(dataStructureUtil::randomExecutionWitness)
                 .blobGasUsed(() -> UInt64.ZERO)
                 .excessBlobGas(() -> UInt64.ZERO));
   }

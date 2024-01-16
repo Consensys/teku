@@ -116,6 +116,8 @@ public class ExecutionPayloadHeaderDeneb extends ExecutionPayloadHeaderCapella {
                 .blockHash(blockHash)
                 .transactionsRoot(transactionsRoot)
                 .withdrawalsRoot(() -> withdrawalsRoot)
+                // TODO Verkle trees
+                .executionWitnessRoot(() -> Bytes32.ZERO)
                 .blobGasUsed(() -> blobGasUsed)
                 .excessBlobGas(() -> excessBlobGas));
   }

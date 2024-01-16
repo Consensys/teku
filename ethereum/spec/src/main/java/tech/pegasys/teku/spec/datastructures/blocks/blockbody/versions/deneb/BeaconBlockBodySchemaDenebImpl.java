@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFi
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitnessSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDenebImpl;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -99,6 +100,7 @@ public class BeaconBlockBodySchemaDenebImpl
       final AttesterSlashingSchema attesterSlashingSchema,
       final SignedBlsToExecutionChangeSchema blsToExecutionChangeSchema,
       final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema,
+      final ExecutionWitnessSchema executionWitnessSchema,
       final String containerName) {
     return new BeaconBlockBodySchemaDenebImpl(
         containerName,
@@ -126,7 +128,9 @@ public class BeaconBlockBodySchemaDenebImpl
         namedSchema(
             BlockBodyFields.SYNC_AGGREGATE,
             SyncAggregateSchema.create(specConfig.getSyncCommitteeSize())),
-        namedSchema(BlockBodyFields.EXECUTION_PAYLOAD, new ExecutionPayloadSchemaDeneb(specConfig)),
+        namedSchema(
+            BlockBodyFields.EXECUTION_PAYLOAD,
+            new ExecutionPayloadSchemaDeneb(specConfig, executionWitnessSchema)),
         namedSchema(
             BlockBodyFields.BLS_TO_EXECUTION_CHANGES,
             SszListSchema.create(

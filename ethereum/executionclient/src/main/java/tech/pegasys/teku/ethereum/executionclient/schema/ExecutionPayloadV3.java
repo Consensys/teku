@@ -57,6 +57,7 @@ public class ExecutionPayloadV3 extends ExecutionPayloadV2 {
       @JsonProperty("blockHash") Bytes32 blockHash,
       @JsonProperty("transactions") List<Bytes> transactions,
       @JsonProperty("withdrawals") List<WithdrawalV1> withdrawals,
+      @JsonProperty("execution_witness") Bytes executionWitness,
       @JsonProperty("blobGasUsed") UInt64 blobGasUsed,
       @JsonProperty("excessBlobGas") UInt64 excessBlobGas) {
     super(
@@ -74,7 +75,8 @@ public class ExecutionPayloadV3 extends ExecutionPayloadV2 {
         baseFeePerGas,
         blockHash,
         transactions,
-        withdrawals);
+        withdrawals,
+        executionWitness);
     this.blobGasUsed = blobGasUsed;
     this.excessBlobGas = excessBlobGas;
   }
@@ -99,6 +101,10 @@ public class ExecutionPayloadV3 extends ExecutionPayloadV2 {
         executionPayload.getBlockHash(),
         executionPayload.getTransactions().stream().map(SszByteListImpl::getBytes).toList(),
         withdrawalsList,
+        executionPayload
+            .toVersionDeneb()
+            .map(denebPayload -> denebPayload.getExecutionWitness().sszSerialize())
+            .orElse(null),
         executionPayload.toVersionDeneb().map(ExecutionPayloadDeneb::getBlobGasUsed).orElse(null),
         executionPayload
             .toVersionDeneb()
