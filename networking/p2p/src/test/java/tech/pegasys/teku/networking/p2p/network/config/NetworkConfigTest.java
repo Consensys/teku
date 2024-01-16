@@ -14,9 +14,12 @@
 package tech.pegasys.teku.networking.p2p.network.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.nio.file.Path;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 @SuppressWarnings("AddressSelection")
 class NetworkConfigTest {
@@ -55,6 +58,21 @@ class NetworkConfigTest {
     final String result = createConfig().getAdvertisedIp();
     assertThat(result).isNotEqualTo("::0");
     assertThat(result).isNotEqualTo("0.0.0.0");
+  }
+
+  @Test
+  void shouldThrowExceptionIfInvalidFileName(@TempDir Path tempDir) {
+    final NetworkConfig config =
+        NetworkConfig.builder()
+            .advertisedIp(advertisedIp)
+            .networkInterface(listenIp)
+            .privateKeyFile(tempDir + "/invalid file name!!\0")
+            .build();
+
+    assertThat(config.getPrivateKeySource()).isPresent();
+    assertThatThrownBy(() -> config.getPrivateKeySource().get().getOrGeneratePrivateKeyBytes())
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Not able to create or retrieve p2p private key file -");
   }
 
   private NetworkConfig createConfig() {

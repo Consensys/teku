@@ -94,8 +94,6 @@ public class LibP2PPrivateKeyLoaderTest {
     assertThat(loader.get()).isEqualTo(expectedKey);
   }
 
-  // todo test when get IO exception?
-
   private void assertRoundTrip(final PrivKey generatedPK) {
     final PrivKey reparsed = KeyKt.unmarshalPrivateKey(generatedPK.bytes());
     assertThat(reparsed).isEqualTo(generatedPK);
