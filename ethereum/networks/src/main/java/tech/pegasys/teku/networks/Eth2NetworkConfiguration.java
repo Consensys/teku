@@ -273,7 +273,11 @@ public class Eth2NetworkConfiguration {
   public static class Builder {
     private static final String EPOCHS_STORE_BLOBS_MAX_KEYWORD = "MAX";
     private String constants;
-    private StateBoostrapConfig stateBoostrapConfig = new StateBoostrapConfig();
+    private Optional<String> genesisState = Optional.empty();
+    private Optional<String> initialState = Optional.empty();
+    private Optional<String> checkpointSyncUrl = Optional.empty();
+    private boolean isUsingCustomInitialState = false;
+    private boolean allowSyncOutsideWeakSubjectivityPeriod = false;
     private int startupTargetPeerCount = DEFAULT_STARTUP_TARGET_PEER_COUNT;
     private int startupTimeoutSeconds = DEFAULT_STARTUP_TIMEOUT_SECONDS;
     private int asyncP2pMaxThreads = DEFAULT_ASYNC_P2P_MAX_THREADS;
@@ -350,7 +354,12 @@ public class Eth2NetworkConfiguration {
       return new Eth2NetworkConfiguration(
           spec,
           constants,
-          stateBoostrapConfig,
+          new StateBoostrapConfig(
+              genesisState,
+              initialState,
+              checkpointSyncUrl,
+              isUsingCustomInitialState,
+              allowSyncOutsideWeakSubjectivityPeriod),
           startupTargetPeerCount,
           startupTimeoutSeconds,
           discoveryBootnodes,
@@ -406,13 +415,14 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder checkpointSyncUrl(final String checkpointSyncUrl) {
-      this.stateBoostrapConfig.setCheckpointSyncUrl(checkpointSyncUrl);
+      this.checkpointSyncUrl = Optional.of(checkpointSyncUrl);
       return this;
     }
 
     /** Used when the user specifies the --initial-state option in the CLI. */
     public Builder customInitialState(final String initialState) {
-      this.stateBoostrapConfig.setCustomInitialState(initialState);
+      this.initialState = Optional.of(initialState);
+      this.isUsingCustomInitialState = true;
       return this;
     }
 
@@ -423,7 +433,7 @@ public class Eth2NetworkConfiguration {
      *     Beacon API debug state endpoint.
      */
     public Builder defaultInitialStateFromUrl(final String initialState) {
-      this.stateBoostrapConfig.setInitialState(initialState);
+      this.initialState = Optional.of(initialState);
       return this;
     }
 
@@ -435,19 +445,18 @@ public class Eth2NetworkConfiguration {
     public Builder defaultInitialStateFromClasspath(final String filename) {
       Optional.ofNullable(Eth2NetworkConfiguration.class.getResource(filename))
           .map(URL::toExternalForm)
-          .ifPresent(this.stateBoostrapConfig::setInitialState);
+          .ifPresent(path -> this.initialState = Optional.of(path));
       return this;
     }
 
     public Builder customGenesisState(final String genesisState) {
-      this.stateBoostrapConfig.setGenesisState(genesisState);
+      this.genesisState = Optional.of(genesisState);
       return this;
     }
 
     public Builder ignoreWeakSubjectivityPeriodEnabled(
         boolean ignoreWeakSubjectivityPeriodEnabled) {
-      this.stateBoostrapConfig.setAllowSyncOutsideWeakSubjectivityPeriod(
-          ignoreWeakSubjectivityPeriodEnabled);
+      this.ignoreWeakSubjectivityPeriodEnabled(ignoreWeakSubjectivityPeriodEnabled);
       return this;
     }
 
@@ -474,7 +483,7 @@ public class Eth2NetworkConfiguration {
     public Builder genesisStateFromClasspath(final String filename) {
       Optional.ofNullable(Eth2NetworkConfiguration.class.getResource(filename))
           .map(URL::toExternalForm)
-          .ifPresent(this.stateBoostrapConfig::setGenesisState);
+          .ifPresent(path -> this.genesisState = Optional.of(path));
       return this;
     }
 
@@ -616,7 +625,11 @@ public class Eth2NetworkConfiguration {
 
     private Builder reset() {
       constants = null;
-      stateBoostrapConfig = new StateBoostrapConfig();
+      genesisState = Optional.empty();
+      initialState = Optional.empty();
+      checkpointSyncUrl = Optional.empty();
+      isUsingCustomInitialState = false;
+      allowSyncOutsideWeakSubjectivityPeriod = false;
       startupTargetPeerCount = DEFAULT_STARTUP_TARGET_PEER_COUNT;
       startupTimeoutSeconds = DEFAULT_STARTUP_TIMEOUT_SECONDS;
       discoveryBootnodes = new ArrayList<>();

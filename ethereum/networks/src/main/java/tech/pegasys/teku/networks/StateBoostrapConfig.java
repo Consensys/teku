@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.networks;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 
@@ -22,42 +20,29 @@ public class StateBoostrapConfig {
   public static final String FINALIZED_STATE_URL_PATH = "eth/v2/debug/beacon/states/finalized";
   public static final String GENESIS_STATE_URL_PATH = "eth/v2/debug/beacon/states/genesis";
 
-  private Optional<String> genesisState = Optional.empty();
-  private Optional<String> initialState = Optional.empty();
-  private Optional<String> checkpointSyncUrl = Optional.empty();
-  private boolean isUsingCustomInitialState;
-  private boolean allowSyncOutsideWeakSubjectivityPeriod;
+  private final Optional<String> genesisState;
+  private final Optional<String> initialState;
+  private final Optional<String> checkpointSyncUrl;
+  private final boolean isUsingCustomInitialState;
+  private final boolean allowSyncOutsideWeakSubjectivityPeriod;
 
-  StateBoostrapConfig() {}
-
-  public void setGenesisState(final String genesisState) {
-    checkNotNull(genesisState);
-    this.genesisState = Optional.of(genesisState);
-  }
-
-  public void setInitialState(final String initialState) {
-    checkNotNull(initialState);
-    this.initialState = Optional.of(initialState);
-    this.isUsingCustomInitialState = false;
-  }
-
-  public void setCustomInitialState(final String initialState) {
-    checkNotNull(initialState);
-    this.initialState = Optional.of(initialState);
-    this.isUsingCustomInitialState = true;
-  }
-
-  public void setCheckpointSyncUrl(final String checkpointSyncUrl) {
-    checkNotNull(checkpointSyncUrl);
-    this.checkpointSyncUrl = Optional.of(checkpointSyncUrl);
-    this.genesisState =
-        Optional.of(UrlSanitizer.appendPath(checkpointSyncUrl, GENESIS_STATE_URL_PATH));
-    this.initialState =
-        Optional.of(UrlSanitizer.appendPath(checkpointSyncUrl, FINALIZED_STATE_URL_PATH));
-  }
-
-  public void setAllowSyncOutsideWeakSubjectivityPeriod(
+  public StateBoostrapConfig(
+      final Optional<String> genesisState,
+      final Optional<String> initialState,
+      final Optional<String> checkpointSyncUrl,
+      final boolean isUsingCustomInitialState,
       final boolean allowSyncOutsideWeakSubjectivityPeriod) {
+    this.checkpointSyncUrl = checkpointSyncUrl;
+    if (checkpointSyncUrl.isPresent()) {
+      this.genesisState =
+          Optional.of(UrlSanitizer.appendPath(checkpointSyncUrl.get(), GENESIS_STATE_URL_PATH));
+      this.initialState =
+          Optional.of(UrlSanitizer.appendPath(checkpointSyncUrl.get(), FINALIZED_STATE_URL_PATH));
+    } else {
+      this.genesisState = genesisState;
+      this.initialState = initialState;
+    }
+    this.isUsingCustomInitialState = isUsingCustomInitialState;
     this.allowSyncOutsideWeakSubjectivityPeriod = allowSyncOutsideWeakSubjectivityPeriod;
   }
 
