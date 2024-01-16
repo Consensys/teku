@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.networking.p2p.network.config;
 
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+
 import io.libp2p.core.crypto.KeyKt;
 import io.libp2p.core.crypto.KeyType;
 import io.libp2p.core.crypto.PrivKey;
@@ -39,6 +41,7 @@ public class FilePrivateKeySource implements PrivateKeySource {
       final PrivKey privKey = KeyKt.generateKeyPair(KeyType.SECP256K1).component1();
       final Bytes privateKeyBytes = Bytes.wrap(KeyKt.marshalPrivateKey(privKey));
       Files.writeString(file.toPath(), privateKeyBytes.toHexString());
+      STATUS_LOG.usingGeneratedP2pPrivateKey(fileName);
       return privateKeyBytes;
 
     } catch (IOException e) {

@@ -524,4 +524,8 @@ public class StatusLogger {
     final boolean useColor = level.compareTo(Level.INFO) < 0;
     log.log(level, useColor ? print(msg, color) : msg);
   }
+
+  public void usingGeneratedP2pPrivateKey(final String fileName) {
+    log.info("P2P private key has been generated and saved at " + fileName);
+  }
 }
