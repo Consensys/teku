@@ -15,8 +15,8 @@ package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static tech.pegasys.teku.networks.StateBoostrapConfig.FINALIZED_STATE_URL_PATH;
-import static tech.pegasys.teku.networks.StateBoostrapConfig.GENESIS_STATE_URL_PATH;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.FINALIZED_STATE_URL_PATH;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.GENESIS_STATE_URL_PATH;
 
 import java.math.BigInteger;
 import java.util.Optional;

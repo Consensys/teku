@@ -37,6 +37,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
@@ -65,6 +66,8 @@ public class Eth2NetworkConfiguration {
 
   public static final int DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE = DEFAULT_MAX_QUEUE_SIZE;
 
+  public static final String FINALIZED_STATE_URL_PATH = "eth/v2/debug/beacon/states/finalized";
+  public static final String GENESIS_STATE_URL_PATH = "eth/v2/debug/beacon/states/genesis";
   // 26 thousand years should be enough
   public static final Integer MAX_EPOCHS_STORE_BLOBS = Integer.MAX_VALUE;
 
@@ -416,6 +419,10 @@ public class Eth2NetworkConfiguration {
 
     public Builder checkpointSyncUrl(final String checkpointSyncUrl) {
       this.checkpointSyncUrl = Optional.of(checkpointSyncUrl);
+      this.genesisState =
+          Optional.of(UrlSanitizer.appendPath(checkpointSyncUrl, GENESIS_STATE_URL_PATH));
+      this.initialState =
+          Optional.of(UrlSanitizer.appendPath(checkpointSyncUrl, FINALIZED_STATE_URL_PATH));
       return this;
     }
 

@@ -14,8 +14,8 @@
 package tech.pegasys.teku.networks;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
-import static tech.pegasys.teku.networks.StateBoostrapConfig.FINALIZED_STATE_URL_PATH;
-import static tech.pegasys.teku.networks.StateBoostrapConfig.GENESIS_STATE_URL_PATH;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.FINALIZED_STATE_URL_PATH;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.GENESIS_STATE_URL_PATH;
 
 import java.net.URL;
 import java.util.List;

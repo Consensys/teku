@@ -14,7 +14,7 @@
 package tech.pegasys.teku.services.beaconchain;
 
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
-import static tech.pegasys.teku.networks.StateBoostrapConfig.FINALIZED_STATE_URL_PATH;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.FINALIZED_STATE_URL_PATH;
 
 import java.io.IOException;
 import java.util.Objects;

@@ -14,12 +14,8 @@
 package tech.pegasys.teku.networks;
 
 import java.util.Optional;
-import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 
 public class StateBoostrapConfig {
-  public static final String FINALIZED_STATE_URL_PATH = "eth/v2/debug/beacon/states/finalized";
-  public static final String GENESIS_STATE_URL_PATH = "eth/v2/debug/beacon/states/genesis";
-
   private final Optional<String> genesisState;
   private final Optional<String> initialState;
   private final Optional<String> checkpointSyncUrl;
@@ -33,15 +29,8 @@ public class StateBoostrapConfig {
       final boolean isUsingCustomInitialState,
       final boolean allowSyncOutsideWeakSubjectivityPeriod) {
     this.checkpointSyncUrl = checkpointSyncUrl;
-    if (checkpointSyncUrl.isPresent()) {
-      this.genesisState =
-          Optional.of(UrlSanitizer.appendPath(checkpointSyncUrl.get(), GENESIS_STATE_URL_PATH));
-      this.initialState =
-          Optional.of(UrlSanitizer.appendPath(checkpointSyncUrl.get(), FINALIZED_STATE_URL_PATH));
-    } else {
-      this.genesisState = genesisState;
-      this.initialState = initialState;
-    }
+    this.genesisState = genesisState;
+    this.initialState = initialState;
     this.isUsingCustomInitialState = isUsingCustomInitialState;
     this.allowSyncOutsideWeakSubjectivityPeriod = allowSyncOutsideWeakSubjectivityPeriod;
   }
