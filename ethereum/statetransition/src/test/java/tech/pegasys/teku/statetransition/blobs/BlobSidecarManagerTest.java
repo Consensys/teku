@@ -15,6 +15,7 @@ package tech.pegasys.teku.statetransition.blobs;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -41,8 +42,9 @@ import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidati
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.ReceivedBlobSidecarListener;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceBlobSidecarsAvailabilityChecker;
-import tech.pegasys.teku.statetransition.util.BlobSidecarPoolImpl;
+import tech.pegasys.teku.statetransition.util.BlockBlobSidecarsTrackersPoolImpl;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.validation.BlobSidecarGossipValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -57,7 +59,8 @@ public class BlobSidecarManagerTest {
   private final BlobSidecarGossipValidator blobSidecarValidator =
       mock(BlobSidecarGossipValidator.class);
   private final KZG kzg = mock(KZG.class);
-  private final BlobSidecarPoolImpl blobSidecarPool = mock(BlobSidecarPoolImpl.class);
+  private final BlockBlobSidecarsTrackersPoolImpl blockBlobSidecarsTrackersPool =
+      mock(BlockBlobSidecarsTrackersPoolImpl.class);
   private final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots = new HashMap<>();
 
   @SuppressWarnings("unchecked")
@@ -68,7 +71,7 @@ public class BlobSidecarManagerTest {
           spec,
           asyncRunner,
           recentChainData,
-          blobSidecarPool,
+          blockBlobSidecarsTrackersPool,
           blobSidecarValidator,
           kzg,
           futureBlobSidecars,
@@ -92,7 +95,7 @@ public class BlobSidecarManagerTest {
             blobSidecarManager.validateAndPrepareForBlockImport(blobSidecar, Optional.empty()))
         .isCompletedWithValue(InternalValidationResult.ACCEPT);
 
-    verify(blobSidecarPool).onNewBlobSidecar(blobSidecar);
+    verify(blockBlobSidecarsTrackersPool).onNewBlobSidecar(blobSidecar, RemoteOrigin.GOSSIP);
     verify(receivedBlobSidecarListener).onBlobSidecarReceived(blobSidecar);
     verify(futureBlobSidecars, never()).add(blobSidecar);
 
@@ -108,7 +111,7 @@ public class BlobSidecarManagerTest {
             blobSidecarManager.validateAndPrepareForBlockImport(blobSidecar, Optional.empty()))
         .isCompletedWithValue(InternalValidationResult.SAVE_FOR_FUTURE);
 
-    verify(blobSidecarPool, never()).onNewBlobSidecar(blobSidecar);
+    verify(blockBlobSidecarsTrackersPool, never()).onNewBlobSidecar(eq(blobSidecar), any());
     verify(receivedBlobSidecarListener, never()).onBlobSidecarReceived(blobSidecar);
     verify(futureBlobSidecars).add(blobSidecar);
 
@@ -124,7 +127,7 @@ public class BlobSidecarManagerTest {
             blobSidecarManager.validateAndPrepareForBlockImport(blobSidecar, Optional.empty()))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
 
-    verify(blobSidecarPool, never()).onNewBlobSidecar(blobSidecar);
+    verify(blockBlobSidecarsTrackersPool, never()).onNewBlobSidecar(eq(blobSidecar), any());
     verify(receivedBlobSidecarListener, never()).onBlobSidecarReceived(blobSidecar);
     verify(futureBlobSidecars, never()).add(blobSidecar);
 
@@ -142,7 +145,7 @@ public class BlobSidecarManagerTest {
             blobSidecarManager.validateAndPrepareForBlockImport(blobSidecar, Optional.empty()))
         .isCompletedWithValue(InternalValidationResult.IGNORE);
 
-    verify(blobSidecarPool, never()).onNewBlobSidecar(blobSidecar);
+    verify(blockBlobSidecarsTrackersPool, never()).onNewBlobSidecar(eq(blobSidecar), any());
     verify(receivedBlobSidecarListener, never()).onBlobSidecarReceived(blobSidecar);
     verify(futureBlobSidecars, never()).add(blobSidecar);
 
@@ -159,7 +162,7 @@ public class BlobSidecarManagerTest {
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
 
     verify(blobSidecarValidator, never()).validate(any());
-    verify(blobSidecarPool, never()).onNewBlobSidecar(blobSidecar);
+    verify(blockBlobSidecarsTrackersPool, never()).onNewBlobSidecar(eq(blobSidecar), any());
     verify(receivedBlobSidecarListener, never()).onBlobSidecarReceived(blobSidecar);
     verify(futureBlobSidecars, never()).add(blobSidecar);
 
@@ -169,10 +172,10 @@ public class BlobSidecarManagerTest {
   @Test
   void prepareForBlockImport_shouldAddToPoolAndNotify() {
 
-    blobSidecarManager.prepareForBlockImport(blobSidecar);
+    blobSidecarManager.prepareForBlockImport(blobSidecar, RemoteOrigin.GOSSIP);
 
     verify(receivedBlobSidecarListener).onBlobSidecarReceived(blobSidecar);
-    verify(blobSidecarPool).onNewBlobSidecar(blobSidecar);
+    verify(blockBlobSidecarsTrackersPool).onNewBlobSidecar(blobSidecar, RemoteOrigin.GOSSIP);
   }
 
   @Test
@@ -183,10 +186,11 @@ public class BlobSidecarManagerTest {
 
     blobSidecarManager.onSlot(UInt64.ONE);
 
-    verify(blobSidecarPool).onSlot(UInt64.ONE);
+    verify(blockBlobSidecarsTrackersPool).onSlot(UInt64.ONE);
     verify(futureBlobSidecars).onSlot(UInt64.ONE);
 
-    verify(blobSidecarPool).onNewBlobSidecar(futureBlobSidecarsList.get(0));
+    verify(blockBlobSidecarsTrackersPool)
+        .onNewBlobSidecar(futureBlobSidecarsList.get(0), RemoteOrigin.GOSSIP);
     verify(receivedBlobSidecarListener).onBlobSidecarReceived(futureBlobSidecarsList.get(0));
   }
 
@@ -218,7 +222,7 @@ public class BlobSidecarManagerTest {
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker = mock(BlockBlobSidecarsTracker.class);
     when(blockBlobSidecarsTracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
 
-    when(blobSidecarPool.getOrCreateBlockBlobSidecarsTracker(block))
+    when(blockBlobSidecarsTrackersPool.getOrCreateBlockBlobSidecarsTracker(block))
         .thenReturn(blockBlobSidecarsTracker);
 
     assertThat(blobSidecarManager.createAvailabilityChecker(block))
@@ -238,6 +242,6 @@ public class BlobSidecarManagerTest {
     assertThat(blobSidecarManager.createAvailabilityCheckerAndValidateImmediately(block, List.of()))
         .isInstanceOf(BlobSidecarsAndValidationResult.class);
 
-    verifyNoInteractions(blobSidecarPool);
+    verifyNoInteractions(blockBlobSidecarsTrackersPool);
   }
 }

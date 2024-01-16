@@ -20,7 +20,7 @@ import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
@@ -29,7 +29,7 @@ import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
 public class BlockPublisherDeneb extends AbstractBlockPublisher {
 
-  private final BlobSidecarPool blobSidecarPool;
+  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   private final BlockGossipChannel blockGossipChannel;
   private final BlobSidecarGossipChannel blobSidecarGossipChannel;
 
@@ -37,12 +37,12 @@ public class BlockPublisherDeneb extends AbstractBlockPublisher {
       final BlockFactory blockFactory,
       final BlockImportChannel blockImportChannel,
       final BlockGossipChannel blockGossipChannel,
-      final BlobSidecarPool blobSidecarPool,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final BlobSidecarGossipChannel blobSidecarGossipChannel,
       final PerformanceTracker performanceTracker,
       final DutyMetrics dutyMetrics) {
     super(blockFactory, blockImportChannel, performanceTracker, dutyMetrics);
-    this.blobSidecarPool = blobSidecarPool;
+    this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     this.blockGossipChannel = blockGossipChannel;
     this.blobSidecarGossipChannel = blobSidecarGossipChannel;
   }
@@ -53,7 +53,7 @@ public class BlockPublisherDeneb extends AbstractBlockPublisher {
       final List<BlobSidecar> blobSidecars,
       final BroadcastValidationLevel broadcastValidationLevel) {
     // provide blobs for the block before importing it
-    blobSidecarPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
+    blockBlobSidecarsTrackersPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
     return blockImportChannel.importBlock(block, broadcastValidationLevel);
   }
 

@@ -43,7 +43,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 
 class RecentBlobSidecarsFetchServiceTest {
 
@@ -51,7 +51,8 @@ class RecentBlobSidecarsFetchServiceTest {
 
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
-  private final BlobSidecarPool blobSidecarPool = mock(BlobSidecarPool.class);
+  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool =
+      mock(BlockBlobSidecarsTrackersPool.class);
 
   private final FetchTaskFactory fetchTaskFactory = mock(FetchTaskFactory.class);
 
@@ -71,7 +72,11 @@ class RecentBlobSidecarsFetchServiceTest {
   public void setup() {
     recentBlobSidecarsFetcher =
         new RecentBlobSidecarsFetchService(
-            asyncRunner, blobSidecarPool, forwardSync, fetchTaskFactory, maxConcurrentRequests);
+            asyncRunner,
+            blockBlobSidecarsTrackersPool,
+            forwardSync,
+            fetchTaskFactory,
+            maxConcurrentRequests);
 
     lenient()
         .when(fetchTaskFactory.createFetchBlobSidecarTask(any()))
@@ -118,7 +123,7 @@ class RecentBlobSidecarsFetchServiceTest {
   @Test
   public void ignoreKnownBlobSidecar() {
     final BlobIdentifier blobIdentifier = dataStructureUtil.randomBlobIdentifier();
-    when(blobSidecarPool.containsBlobSidecar(blobIdentifier)).thenReturn(true);
+    when(blockBlobSidecarsTrackersPool.containsBlobSidecar(blobIdentifier)).thenReturn(true);
     recentBlobSidecarsFetcher.requestRecentBlobSidecar(blobIdentifier);
 
     assertTaskCounts(0, 0, 0);
@@ -242,7 +247,8 @@ class RecentBlobSidecarsFetchServiceTest {
   void shouldRequestRemainingRequiredBlobSidecarsWhenForwardSyncCompletes() {
     final Set<BlobIdentifier> requiredBlobIdentifiers =
         new HashSet<>(dataStructureUtil.randomBlobIdentifiers(2));
-    when(blobSidecarPool.getAllRequiredBlobSidecars()).thenReturn(requiredBlobIdentifiers);
+    when(blockBlobSidecarsTrackersPool.getAllRequiredBlobSidecars())
+        .thenReturn(requiredBlobIdentifiers);
 
     final ArgumentCaptor<SyncSubscriber> syncListenerCaptor =
         ArgumentCaptor.forClass(SyncSubscriber.class);

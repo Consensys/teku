@@ -38,8 +38,8 @@ import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool.NewBlobSidecarSubscriber;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool.NewBlobSidecarSubscriber;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber;
@@ -60,7 +60,7 @@ public class NodeDataProvider {
   private final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
   private final BlockManager blockManager;
-  private final BlobSidecarPool blobSidecarPool;
+  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   private final AttestationManager attestationManager;
   private final ActiveValidatorChannel activeValidatorChannel;
   private final boolean isLivenessTrackingEnabled;
@@ -76,7 +76,7 @@ public class NodeDataProvider {
       final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool,
       final SyncCommitteeContributionPool syncCommitteeContributionPool,
       final BlockManager blockManager,
-      final BlobSidecarPool blobSidecarPool,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final AttestationManager attestationManager,
       final boolean isLivenessTrackingEnabled,
       final ActiveValidatorChannel activeValidatorChannel,
@@ -90,7 +90,7 @@ public class NodeDataProvider {
     this.blsToExecutionChangePool = blsToExecutionChangePool;
     this.syncCommitteeContributionPool = syncCommitteeContributionPool;
     this.blockManager = blockManager;
-    this.blobSidecarPool = blobSidecarPool;
+    this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     this.attestationManager = attestationManager;
     this.activeValidatorChannel = activeValidatorChannel;
     this.isLivenessTrackingEnabled = isLivenessTrackingEnabled;
@@ -183,7 +183,7 @@ public class NodeDataProvider {
   }
 
   public void subscribeToReceivedBlobSidecar(NewBlobSidecarSubscriber listener) {
-    blobSidecarPool.subscribeNewBlobSidecar(listener);
+    blockBlobSidecarsTrackersPool.subscribeNewBlobSidecar(listener);
   }
 
   public void subscribeToAttesterSlashing(OperationAddedSubscriber<AttesterSlashing> listener) {

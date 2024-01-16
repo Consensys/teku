@@ -30,22 +30,22 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 
 public class BatchImporter {
   private static final Logger LOG = LogManager.getLogger();
 
   private final BlockImporter blockImporter;
-  private final BlobSidecarPool blobSidecarPool;
+  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   private final AsyncRunner asyncRunner;
 
   public BatchImporter(
       final BlockImporter blockImporter,
-      final BlobSidecarPool blobSidecarPool,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final AsyncRunner asyncRunner) {
     this.blockImporter = blockImporter;
-    this.blobSidecarPool = blobSidecarPool;
+    this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     this.asyncRunner = asyncRunner;
   }
 
@@ -116,7 +116,7 @@ public class BatchImporter {
         blockRoot);
     // Add blob sidecars to the pool in order for them to be available when the block is being
     // imported
-    blobSidecarPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
+    blockBlobSidecarsTrackersPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
     return importBlock(block, source);
   }
 
