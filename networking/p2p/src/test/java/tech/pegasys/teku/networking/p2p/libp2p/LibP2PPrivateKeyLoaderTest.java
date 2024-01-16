@@ -60,7 +60,7 @@ public class LibP2PPrivateKeyLoaderTest {
     // check that user supplied private key file has precedence over generated file
     final PrivKey privKey = PrivateKeyGenerator.generate();
     final Bytes privKeyBytes = Bytes.wrap(privKey.bytes());
-    PrivateKeySource privKeySource = (keyValueStore) -> privKeyBytes;
+    PrivateKeySource privKeySource = () -> privKeyBytes;
 
     final LibP2PPrivateKeyLoader loader =
         new LibP2PPrivateKeyLoader(store, Optional.of(privKeySource));

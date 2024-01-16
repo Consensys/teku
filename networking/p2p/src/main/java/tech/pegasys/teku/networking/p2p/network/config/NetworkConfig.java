@@ -36,12 +36,11 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
 import tech.pegasys.teku.networking.p2p.libp2p.LibP2PPrivateKeyLoader;
-import tech.pegasys.teku.storage.store.KeyValueStore;
 
 public class NetworkConfig {
 
   public interface PrivateKeySource {
-    Bytes getOrGeneratePrivateKeyBytes(final KeyValueStore<String, Bytes> keyValueStore);
+    Bytes getOrGeneratePrivateKeyBytes();
   }
 
   private static final Logger LOG = LogManager.getLogger();
@@ -284,13 +283,13 @@ public class NetworkConfig {
     }
 
     @Override
-    public Bytes getOrGeneratePrivateKeyBytes(final KeyValueStore<String, Bytes> keyValueStore) {
+    public Bytes getOrGeneratePrivateKeyBytes() {
       try {
         File file = new File(fileName);
         if (!file.createNewFile()) {
-          return getPrivateKeyBytes();
+          return getPrivateKeyBytesFromFile();
         }
-        final Bytes privateKeyBytes = LibP2PPrivateKeyLoader.generateNewPrivateKey(keyValueStore);
+        final Bytes privateKeyBytes = LibP2PPrivateKeyLoader.generateNewPrivateKey();
         Files.writeString(file.toPath(), privateKeyBytes.toHexString());
         return privateKeyBytes;
 
@@ -300,7 +299,7 @@ public class NetworkConfig {
       }
     }
 
-    private Bytes getPrivateKeyBytes() {
+    private Bytes getPrivateKeyBytesFromFile() {
       try {
         return Bytes.fromHexString(Files.readString(Paths.get(fileName)));
       } catch (IOException e) {
