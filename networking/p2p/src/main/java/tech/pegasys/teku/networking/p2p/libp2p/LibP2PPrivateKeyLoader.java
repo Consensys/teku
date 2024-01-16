@@ -48,7 +48,8 @@ public class LibP2PPrivateKeyLoader implements LibP2PNetwork.PrivateKeyProvider 
     final Bytes privateKey;
     final Optional<Bytes> generatedKeyBytes = keyValueStore.get(GENERATED_NODE_KEY_KEY);
     if (generatedKeyBytes.isEmpty()) {
-      privateKey = generateNewPrivateKey();
+      final PrivKey privKey = KeyKt.generateKeyPair(KeyType.SECP256K1).component1();
+      privateKey = Bytes.wrap(KeyKt.marshalPrivateKey(privKey));
       keyValueStore.put(GENERATED_NODE_KEY_KEY, privateKey);
       STATUS_LOG.usingGeneratedP2pPrivateKey(GENERATED_NODE_KEY_KEY, true);
     } else {
@@ -56,10 +57,5 @@ public class LibP2PPrivateKeyLoader implements LibP2PNetwork.PrivateKeyProvider 
       STATUS_LOG.usingGeneratedP2pPrivateKey(GENERATED_NODE_KEY_KEY, false);
     }
     return privateKey;
-  }
-
-  public static Bytes generateNewPrivateKey() {
-    final PrivKey privKey = KeyKt.generateKeyPair(KeyType.SECP256K1).component1();
-    return Bytes.wrap(KeyKt.marshalPrivateKey(privKey));
   }
 }

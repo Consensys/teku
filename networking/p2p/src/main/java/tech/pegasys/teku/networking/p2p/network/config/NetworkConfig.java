@@ -17,6 +17,9 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.InetAddresses.isInetAddress;
 
 import com.google.common.annotations.VisibleForTesting;
+import io.libp2p.core.crypto.KeyKt;
+import io.libp2p.core.crypto.KeyType;
+import io.libp2p.core.crypto.PrivKey;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -35,7 +38,6 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
-import tech.pegasys.teku.networking.p2p.libp2p.LibP2PPrivateKeyLoader;
 
 public class NetworkConfig {
 
@@ -289,7 +291,8 @@ public class NetworkConfig {
         if (!file.createNewFile()) {
           return getPrivateKeyBytesFromFile();
         }
-        final Bytes privateKeyBytes = LibP2PPrivateKeyLoader.generateNewPrivateKey();
+        final PrivKey privKey = KeyKt.generateKeyPair(KeyType.SECP256K1).component1();
+        final Bytes privateKeyBytes = Bytes.wrap(KeyKt.marshalPrivateKey(privKey));
         Files.writeString(file.toPath(), privateKeyBytes.toHexString());
         return privateKeyBytes;
 
