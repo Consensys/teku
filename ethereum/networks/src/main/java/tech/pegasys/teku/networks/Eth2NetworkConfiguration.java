@@ -349,6 +349,11 @@ public class Eth2NetworkConfiguration {
                       });
                 });
       }
+      if (spec.getForkSchedule().getSupportedMilestones().contains(SpecMilestone.DENEB)
+          && trustedSetup.isEmpty()) {
+        throw new InvalidConfigurationException(
+            "Trusted Setup was not configured but deneb fork epoch has been set, cannot start with supplied configuration.");
+      }
       // if the deposit contract was not set, default from constants
       if (eth1DepositContractAddress == null) {
         eth1DepositContractAddress(spec.getGenesisSpec().getConfig().getDepositContractAddress());
@@ -729,6 +734,7 @@ public class Eth2NetworkConfiguration {
       return applyTestnetDefaults()
           .constants(SEPOLIA.configName())
           .startupTimeoutSeconds(120)
+          .trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME)
           .eth1DepositContractDeployBlock(1273020)
           .defaultInitialStateFromUrl(
               "https://github.com/eth-clients/merge-testnets/raw/9c873ab67b902aa676370a549129e5e91013afa3/sepolia/genesis.ssz")
@@ -812,6 +818,7 @@ public class Eth2NetworkConfiguration {
       return applyTestnetDefaults()
           .constants(HOLESKY.configName())
           .startupTimeoutSeconds(120)
+          .trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME)
           .eth1DepositContractDeployBlock(0)
           .defaultInitialStateFromUrl(
               "https://checkpoint-sync.holesky.ethpandaops.io/eth/v2/debug/beacon/states/finalized")

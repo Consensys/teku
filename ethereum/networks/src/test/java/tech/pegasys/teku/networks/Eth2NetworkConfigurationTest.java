@@ -137,6 +137,12 @@ public class Eth2NetworkConfigurationTest {
         Arguments.of(Eth2Network.MAINNET, (NetworkDefinition) b -> b.applyMainnetNetworkDefaults()),
         Arguments.of(Eth2Network.MINIMAL, (NetworkDefinition) b -> b.applyMinimalNetworkDefaults()),
         Arguments.of(Eth2Network.PRATER, (NetworkDefinition) b -> b.applyPraterNetworkDefaults()),
+        Arguments.of(
+            Eth2Network.HOLESKY,
+            (NetworkDefinition) b -> b.applyNetworkDefaults(Eth2Network.HOLESKY)),
+        Arguments.of(
+            Eth2Network.SEPOLIA,
+            (NetworkDefinition) b -> b.applyNetworkDefaults(Eth2Network.SEPOLIA)),
         Arguments.of(Eth2Network.SWIFT, (NetworkDefinition) b -> b.applySwiftNetworkDefaults()),
         Arguments.of(
             Eth2Network.LESS_SWIFT, (NetworkDefinition) b -> b.applyLessSwiftNetworkDefaults()),
