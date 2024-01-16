@@ -797,6 +797,7 @@ public class Eth2NetworkConfiguration {
           .defaultInitialStateFromClasspath("chiado-genesis.ssz")
           .genesisStateFromClasspath("chiado-genesis.ssz")
           .startupTimeoutSeconds(120)
+          .trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME)
           .eth1DepositContractDeployBlock(155435)
           .discoveryBootnodes(
               // chiado-lighthouse-0
