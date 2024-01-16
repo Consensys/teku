@@ -20,7 +20,7 @@ import io.libp2p.core.crypto.KeyType;
 import io.libp2p.core.crypto.PrivKey;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.PrivateKeySource;
+import tech.pegasys.teku.networking.p2p.network.config.PrivateKeySource;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 
 public class LibP2PPrivateKeyLoader implements LibP2PNetwork.PrivateKeyProvider {

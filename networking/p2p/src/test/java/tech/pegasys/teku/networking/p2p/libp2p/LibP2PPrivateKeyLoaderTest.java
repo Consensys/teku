@@ -25,8 +25,8 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
-import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
-import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.PrivateKeySource;
+import tech.pegasys.teku.networking.p2p.network.config.FilePrivateKeySource;
+import tech.pegasys.teku.networking.p2p.network.config.PrivateKeySource;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;
 
 public class LibP2PPrivateKeyLoaderTest {
@@ -70,7 +70,7 @@ public class LibP2PPrivateKeyLoaderTest {
   @Test
   void shouldCreateKeyAndSaveToFile(@TempDir Path tempDir) throws IOException {
     final Path file = tempDir.resolve("file.txt");
-    final PrivateKeySource privKeySource = new NetworkConfig.FilePrivateKeySource(file.toString());
+    final PrivateKeySource privKeySource = new FilePrivateKeySource(file.toString());
     final LibP2PPrivateKeyLoader loader =
         new LibP2PPrivateKeyLoader(store, Optional.of(privKeySource));
 
@@ -86,7 +86,7 @@ public class LibP2PPrivateKeyLoaderTest {
     final Bytes privateKey = Bytes.wrap(PrivateKeyGenerator.generate().bytes());
     Files.writeString(file, privateKey.toHexString());
 
-    final PrivateKeySource privKeySource = new NetworkConfig.FilePrivateKeySource(file.toString());
+    final PrivateKeySource privKeySource = new FilePrivateKeySource(file.toString());
     final LibP2PPrivateKeyLoader loader =
         new LibP2PPrivateKeyLoader(store, Optional.of(privKeySource));
 

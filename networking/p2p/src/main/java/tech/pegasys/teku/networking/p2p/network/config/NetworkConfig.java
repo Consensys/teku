@@ -16,34 +16,21 @@ package tech.pegasys.teku.networking.p2p.network.config;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.net.InetAddresses.isInetAddress;
 
-import com.google.common.annotations.VisibleForTesting;
-import io.libp2p.core.crypto.KeyKt;
-import io.libp2p.core.crypto.KeyType;
-import io.libp2p.core.crypto.PrivKey;
-import java.io.File;
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
 
 public class NetworkConfig {
-
-  public interface PrivateKeySource {
-    Bytes getOrGeneratePrivateKeyBytes();
-  }
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -273,45 +260,6 @@ public class NetworkConfig {
     public Builder yamuxEnabled(final boolean yamuxEnabled) {
       this.yamuxEnabled = yamuxEnabled;
       return this;
-    }
-  }
-
-  @VisibleForTesting
-  public static class FilePrivateKeySource implements PrivateKeySource {
-    private final String fileName;
-
-    public FilePrivateKeySource(String fileName) {
-      this.fileName = fileName;
-    }
-
-    @Override
-    public Bytes getOrGeneratePrivateKeyBytes() {
-      try {
-        File file = new File(fileName);
-        if (!file.createNewFile()) {
-          return getPrivateKeyBytesFromFile();
-        }
-        final PrivKey privKey = KeyKt.generateKeyPair(KeyType.SECP256K1).component1();
-        final Bytes privateKeyBytes = Bytes.wrap(KeyKt.marshalPrivateKey(privKey));
-        Files.writeString(file.toPath(), privateKeyBytes.toHexString());
-        return privateKeyBytes;
-
-      } catch (IOException e) {
-        throw new IllegalArgumentException(
-            "Not able to create or retrieve p2p private key file - " + fileName);
-      }
-    }
-
-    private Bytes getPrivateKeyBytesFromFile() {
-      try {
-        return Bytes.fromHexString(Files.readString(Paths.get(fileName)));
-      } catch (IOException e) {
-        throw new RuntimeException("p2p private key file not found - " + fileName);
-      }
-    }
-
-    public String getFileName() {
-      return fileName;
     }
   }
 }
