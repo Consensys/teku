@@ -16,6 +16,8 @@ package tech.pegasys.teku.services.powchain;
 import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.beacon.pow.api.Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToCurrentTime;
 
+import com.google.common.annotations.VisibleForTesting;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -167,12 +169,15 @@ public class PowchainService extends Service {
 
     final Optional<UInt64> eth1DepositContractDeployBlock =
         powConfig.getDepositContractDeployBlock();
+    final DepositTreeSnapshotConfiguration depositTreeSnapshotConfiguration =
+        powConfig.getDepositTreeSnapshotConfiguration();
     final DepositSnapshotFileLoader depositSnapshotFileLoader =
-        new DepositSnapshotFileLoader(powConfig.getDepositSnapshotPath());
+        createDepositSnapshotFileLoader(depositTreeSnapshotConfiguration);
     final StorageQueryChannel storageQueryChannel =
         serviceConfig.getEventChannels().getPublisher(CombinedStorageChannel.class, asyncRunner);
     final DepositSnapshotStorageLoader depositSnapshotStorageLoader =
-        new DepositSnapshotStorageLoader(powConfig.isDepositSnapshotEnabled(), storageQueryChannel);
+        new DepositSnapshotStorageLoader(
+            depositTreeSnapshotConfiguration.isDepositSnapshotEnabled(), storageQueryChannel);
 
     eth1DepositManager =
         new Eth1DepositManager(
@@ -183,11 +188,27 @@ public class PowchainService extends Service {
             eth1DepositStorageChannel,
             depositSnapshotFileLoader,
             depositSnapshotStorageLoader,
-            powConfig.isDepositSnapshotEnabled(),
+            depositTreeSnapshotConfiguration.isDepositSnapshotEnabled(),
             depositProcessingController,
             new MinimumGenesisTimeBlockFinder(config, eth1Provider, eth1DepositContractDeployBlock),
             eth1DepositContractDeployBlock,
             headTracker);
+  }
+
+  private DepositSnapshotFileLoader createDepositSnapshotFileLoader(
+      final DepositTreeSnapshotConfiguration depositTreeSnapshotConfiguration) {
+    final List<String> sources = new ArrayList<>();
+
+    if (depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath().isPresent()) {
+      sources.add(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath().get());
+    } else {
+      depositTreeSnapshotConfiguration
+          .getCheckpointSyncDepositSnapshotUrl()
+          .ifPresent(sources::add);
+      depositTreeSnapshotConfiguration.getBundledDepositSnapshotPath().ifPresent(sources::add);
+    }
+
+    return new DepositSnapshotFileLoader(sources);
   }
 
   private List<Web3j> createWeb3js(final PowchainConfiguration config) {
@@ -230,5 +251,10 @@ public class PowchainService extends Service {
                 web3js.stream().map(web3j -> web3j::shutdown))
             .map(SafeFuture::fromRunnable)
             .toArray(SafeFuture[]::new));
+  }
+
+  @VisibleForTesting
+  Eth1DepositManager getEth1DepositManager() {
+    return eth1DepositManager;
   }
 }

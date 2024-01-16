@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.services.powchain;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -24,6 +25,8 @@ import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.beacon.pow.DepositSnapshotFileLoader;
+import tech.pegasys.teku.beacon.pow.Eth1DepositManager;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JClient;
@@ -39,6 +42,8 @@ import tech.pegasys.teku.storage.api.Eth1DepositStorageChannel;
 public class PowchainServiceTest {
   private final ServiceConfig serviceConfig = mock(ServiceConfig.class);
   private final PowchainConfiguration powConfig = mock(PowchainConfiguration.class);
+  private final DepositTreeSnapshotConfiguration depositTreeSnapshotConfiguration =
+      mock(DepositTreeSnapshotConfiguration.class);
   private final ExecutionWeb3jClientProvider engineWeb3jClientProvider =
       mock(ExecutionWeb3jClientProvider.class);
   private final Web3JClient web3JClient = mock(Web3JClient.class);
@@ -46,9 +51,21 @@ public class PowchainServiceTest {
 
   @BeforeEach
   public void setup() {
+    when(serviceConfig.getTimeProvider()).thenReturn(mock(TimeProvider.class));
+    when(serviceConfig.getMetricsSystem()).thenReturn(mock(MetricsSystem.class));
     when(powConfig.isEnabled()).thenReturn(false);
     when(powConfig.getSpec()).thenReturn(spec);
+    when(powConfig.getDepositContract()).thenReturn(Eth1Address.ZERO);
+    when(powConfig.getDepositTreeSnapshotConfiguration())
+        .thenReturn(depositTreeSnapshotConfiguration);
     when(engineWeb3jClientProvider.getWeb3JClient()).thenReturn(web3JClient);
+
+    final EventChannels eventChannels = mock(EventChannels.class);
+    when(eventChannels.getPublisher(Eth1EventsChannel.class))
+        .thenReturn(mock(Eth1EventsChannel.class));
+    when(eventChannels.getPublisher(eq(Eth1DepositStorageChannel.class), any(AsyncRunner.class)))
+        .thenReturn(mock(Eth1DepositStorageChannel.class));
+    when(serviceConfig.getEventChannels()).thenReturn(eventChannels);
   }
 
   @Test
@@ -85,4 +102,76 @@ public class PowchainServiceTest {
                 new PowchainService(
                     serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider)));
   }
+
+  @Test
+  public void shouldUseCustomDepositSnapshotPathWhenPresent() {
+    when(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath())
+        .thenReturn(Optional.of("/foo/custom"));
+    when(depositTreeSnapshotConfiguration.getBundledDepositSnapshotPath())
+        .thenReturn(Optional.of("/foo/bundled"));
+
+    final PowchainService powchainService =
+        new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
+
+    // custom path takes precedence
+    verifyExpectedDepositSnapshotPath(powchainService, "/foo/custom");
+  }
+
+  @Test
+  public void shouldUseBundledDepositSnapshotPathWhenAvailableAndCustomPathNotPresent() {
+    when(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath())
+        .thenReturn(Optional.empty());
+    when(depositTreeSnapshotConfiguration.getBundledDepositSnapshotPath())
+        .thenReturn(Optional.of("/foo/bundled"));
+
+    final PowchainService powchainService =
+        new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
+
+    verifyExpectedDepositSnapshotPath(powchainService, "/foo/bundled");
+  }
+
+  @Test
+  public void shouldUseCheckpointSyncAndBundledDepositSnapshotPath() {
+    when(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath())
+        .thenReturn(Optional.empty());
+    when(depositTreeSnapshotConfiguration.getCheckpointSyncDepositSnapshotUrl())
+        .thenReturn(Optional.of("/foo/checkpoint"));
+    when(depositTreeSnapshotConfiguration.getBundledDepositSnapshotPath())
+        .thenReturn(Optional.of("/foo/bundled"));
+
+    final PowchainService powchainService =
+        new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
+
+    verifyExpectedDepositSnapshotPath(powchainService, "/foo/checkpoint", "/foo/bundled");
+  }
+
+  @Test
+  public void shouldHaveNoDepositSnapshotPathWhenNoneIsAvailable() {
+    when(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath())
+        .thenReturn(Optional.empty());
+    when(depositTreeSnapshotConfiguration.getBundledDepositSnapshotPath())
+        .thenReturn(Optional.empty());
+
+    final PowchainService powchainService =
+        new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
+
+    assertThat(
+            powchainService
+                .getEth1DepositManager()
+                .getDepositSnapshotFileLoader()
+                .getDepositSnapshotResources())
+        .isEmpty();
+  }
+
+  private void verifyExpectedDepositSnapshotPath(
+      final PowchainService powchainService, final String... expectedPaths) {
+    final Eth1DepositManager eth1DepositManager = powchainService.getEth1DepositManager();
+    final DepositSnapshotFileLoader depositSnapshotFileLoader =
+        eth1DepositManager.getDepositSnapshotFileLoader();
+
+    assertThat(depositSnapshotFileLoader.getDepositSnapshotResources())
+        .containsExactly(expectedPaths);
+  }
+
+  // TODO-lucas checkpoint sync + bundled
 }

@@ -16,6 +16,7 @@ package tech.pegasys.teku.services.powchain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import okhttp3.ConnectionPool;
@@ -57,12 +58,20 @@ public class DepositSnapshotsBundleTest {
         .depositSnapshotEnabled(true)
         .setDepositSnapshotPathForNetwork(Optional.of(eth2Network));
     final PowchainConfiguration powchainConfiguration = powchainConfigBuilder.build();
-    assumeThat(powchainConfiguration.getDepositSnapshotPath())
+    assumeThat(
+            powchainConfiguration
+                .getDepositTreeSnapshotConfiguration()
+                .getCustomDepositSnapshotPath())
         .describedAs("No built-in snapshot for network %s", eth2Network)
         .isPresent();
 
     final DepositSnapshotFileLoader depositSnapshotLoader =
-        new DepositSnapshotFileLoader(powchainConfiguration.getDepositSnapshotPath());
+        new DepositSnapshotFileLoader(
+            List.of(
+                powchainConfiguration
+                    .getDepositTreeSnapshotConfiguration()
+                    .getCustomDepositSnapshotPath()
+                    .get()));
     final DepositTreeSnapshot depositTreeSnapshot =
         depositSnapshotLoader.loadDepositSnapshot().getDepositTreeSnapshot().orElseThrow();
     final DepositTree depositTree = DepositTree.fromSnapshot(depositTreeSnapshot);
@@ -85,9 +94,13 @@ public class DepositSnapshotsBundleTest {
         .setDepositSnapshotPathForNetwork(Optional.of(eth2Network));
     final PowchainConfiguration powchainConfiguration = powchainConfigBuilder.build();
 
-    final String depositSnapshotPath = powchainConfiguration.getDepositSnapshotPath().orElseThrow();
+    final String depositSnapshotPath =
+        powchainConfiguration
+            .getDepositTreeSnapshotConfiguration()
+            .getCustomDepositSnapshotPath()
+            .orElseThrow();
     final DepositSnapshotFileLoader depositSnapshotLoader =
-        new DepositSnapshotFileLoader(Optional.of(depositSnapshotPath));
+        new DepositSnapshotFileLoader(List.of(depositSnapshotPath));
 
     // Snapshot
     final DepositTreeSnapshot depositTreeSnapshot =
