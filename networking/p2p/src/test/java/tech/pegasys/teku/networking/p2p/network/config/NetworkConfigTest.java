@@ -75,6 +75,21 @@ class NetworkConfigTest {
         .hasMessageContaining("Not able to create or retrieve p2p private key file -");
   }
 
+  @Test
+  void shouldThrowExceptionIfProvideDirectory(@TempDir Path tempDir) {
+    final NetworkConfig config =
+        NetworkConfig.builder()
+            .advertisedIp(advertisedIp)
+            .networkInterface(listenIp)
+            .privateKeyFile(tempDir.toString()) // directory provided instead of file
+            .build();
+
+    assertThat(config.getPrivateKeySource()).isPresent();
+    assertThatThrownBy(() -> config.getPrivateKeySource().get().getOrGeneratePrivateKeyBytes())
+        .isInstanceOf(RuntimeException.class)
+        .hasMessageContaining("p2p private key file not found -");
+  }
+
   private NetworkConfig createConfig() {
     return NetworkConfig.builder().advertisedIp(advertisedIp).networkInterface(listenIp).build();
   }
