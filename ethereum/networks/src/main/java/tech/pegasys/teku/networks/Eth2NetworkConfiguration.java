@@ -644,7 +644,7 @@ public class Eth2NetworkConfiguration {
       initialState = Optional.empty();
       checkpointSyncUrl = Optional.empty();
       isUsingCustomInitialState = false;
-      allowSyncOutsideWeakSubjectivityPeriod = false;
+      allowSyncOutsideWeakSubjectivityPeriod = DEFAULT_ALLOW_SYNC_OUTSIDE_WEAK_SUBJECTIVITY_PERIOD;
       startupTargetPeerCount = DEFAULT_STARTUP_TARGET_PEER_COUNT;
       startupTimeoutSeconds = DEFAULT_STARTUP_TIMEOUT_SECONDS;
       discoveryBootnodes = new ArrayList<>();
