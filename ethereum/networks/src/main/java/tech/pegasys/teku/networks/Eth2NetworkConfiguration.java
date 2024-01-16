@@ -55,6 +55,8 @@ public class Eth2NetworkConfiguration {
 
   public static final boolean DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES = false;
 
+  public static final boolean DEFAULT_ALLOW_SYNC_OUTSIDE_WEAK_SUBJECTIVITY_PERIOD = false;
+
   public static final int DEFAULT_ASYNC_P2P_MAX_THREADS = 10;
 
   public static final int DEFAULT_ASYNC_P2P_MAX_QUEUE = DEFAULT_MAX_QUEUE_SIZE;
@@ -280,7 +282,8 @@ public class Eth2NetworkConfiguration {
     private Optional<String> initialState = Optional.empty();
     private Optional<String> checkpointSyncUrl = Optional.empty();
     private boolean isUsingCustomInitialState = false;
-    private boolean allowSyncOutsideWeakSubjectivityPeriod = false;
+    private boolean allowSyncOutsideWeakSubjectivityPeriod =
+        DEFAULT_ALLOW_SYNC_OUTSIDE_WEAK_SUBJECTIVITY_PERIOD;
     private int startupTargetPeerCount = DEFAULT_STARTUP_TARGET_PEER_COUNT;
     private int startupTimeoutSeconds = DEFAULT_STARTUP_TIMEOUT_SECONDS;
     private int asyncP2pMaxThreads = DEFAULT_ASYNC_P2P_MAX_THREADS;
