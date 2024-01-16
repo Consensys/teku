@@ -70,7 +70,8 @@ class NetworkConfigTest {
             .build();
 
     assertThat(config.getPrivateKeySource()).isPresent();
-    assertThatThrownBy(() -> config.getPrivateKeySource().get().getOrGeneratePrivateKeyBytes())
+    final NetworkConfig.PrivateKeySource source = config.getPrivateKeySource().get();
+    assertThatThrownBy(source::getOrGeneratePrivateKeyBytes)
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Not able to create or retrieve p2p private key file -");
   }
