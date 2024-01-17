@@ -57,6 +57,21 @@ class NetworkConfigTest {
     assertThat(result).isNotEqualTo("0.0.0.0");
   }
 
+  @Test
+  void checkPrivateKeySourceCreatedCorrectly() {
+    final NetworkConfig config =
+        NetworkConfig.builder()
+            .advertisedIp(advertisedIp)
+            .networkInterface(listenIp)
+            .privateKeyFile("file.txt")
+            .build();
+    final Optional<PrivateKeySource> source = config.getPrivateKeySource();
+    final PrivateKeySource expected = new FilePrivateKeySource("file.txt");
+
+    assertThat(source).isPresent();
+    assertThat(source).contains(expected);
+  }
+
   private NetworkConfig createConfig() {
     return NetworkConfig.builder().advertisedIp(advertisedIp).networkInterface(listenIp).build();
   }
