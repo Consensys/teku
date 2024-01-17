@@ -22,16 +22,16 @@ import com.google.common.annotations.VisibleForTesting;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.schema.LoadDepositSnapshotResult;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
@@ -51,44 +51,49 @@ public class DepositSnapshotFileLoader {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final List<String> depositSnapshotResources = new ArrayList<>();
+  private final LinkedHashMap<String, Boolean> depositSnapshotResources;
 
-  private final Function<String, Optional<DepositTreeSnapshot>> depositSnapshotLoaderFunction;
-
-  public DepositSnapshotFileLoader(final List<String> depositSnapshotResources) {
-    this.depositSnapshotResources.addAll(depositSnapshotResources);
-    this.depositSnapshotLoaderFunction = this::maybeLoadDepositSnapshot;
-  }
-
-  @VisibleForTesting
-  DepositSnapshotFileLoader(
-      final List<String> depositSnapshotResources,
-      final Function<String, Optional<DepositTreeSnapshot>> depositSnapshotLoaderFunction) {
-    this.depositSnapshotResources.addAll(depositSnapshotResources);
-    this.depositSnapshotLoaderFunction = depositSnapshotLoaderFunction;
+  @SuppressWarnings("NonApiType")
+  private DepositSnapshotFileLoader(final LinkedHashMap<String, Boolean> resources) {
+    this.depositSnapshotResources = resources;
   }
 
   public LoadDepositSnapshotResult loadDepositSnapshot() {
-    Optional<DepositTreeSnapshot> depositTreeSnapshot = Optional.empty();
-    for (int i = 0; i < depositSnapshotResources.size(); i++) {
-      depositTreeSnapshot = depositSnapshotLoaderFunction.apply(depositSnapshotResources.get(i));
+    for (final Entry<String, Boolean> resourceEntry : depositSnapshotResources.entrySet()) {
+      final String depositSnapshotResourceUrl = resourceEntry.getKey();
+      final String sanitizedUrl = UrlSanitizer.sanitizePotentialUrl(depositSnapshotResourceUrl);
+      final Boolean isRequired = resourceEntry.getValue();
+
+      try {
+        final Optional<DepositTreeSnapshot> depositTreeSnapshot =
+            maybeLoadDepositSnapshot(depositSnapshotResourceUrl);
+        if (depositTreeSnapshot.isPresent()) {
+          return LoadDepositSnapshotResult.create(depositTreeSnapshot);
+        } else if (isRequired) {
+          throw new InvalidConfigurationException(
+              "Failed to load deposit tree snapshot from " + sanitizedUrl);
+        }
+      } catch (final Exception e) {
+        LOG.warn("Failed to load deposit tree snapshot from " + sanitizedUrl, e);
+
+        if (isRequired) {
+          throw new InvalidConfigurationException(
+              "Failed to load deposit tree snapshot from " + sanitizedUrl + ": " + e.getMessage());
+        }
+      }
     }
-    return LoadDepositSnapshotResult.create(depositTreeSnapshot);
+
+    return LoadDepositSnapshotResult.empty();
   }
 
   private Optional<DepositTreeSnapshot> maybeLoadDepositSnapshot(
-      final String depositSnapshotResourceUrl) {
+      final String depositSnapshotResourceUrl) throws IOException {
     final String sanitizedUrl = UrlSanitizer.sanitizePotentialUrl(depositSnapshotResourceUrl);
-    try {
-      STATUS_LOG.loadingDepositSnapshotResource(sanitizedUrl);
-      final DepositTreeSnapshot depositSnapshot = loadFromUrl(depositSnapshotResourceUrl);
-      STATUS_LOG.onDepositSnapshot(
-          depositSnapshot.getDepositCount(), depositSnapshot.getExecutionBlockHash());
-      return Optional.of(depositSnapshot);
-    } catch (final IOException e) {
-      LOG.warn("Failed to load deposit tree snapshot from " + sanitizedUrl, e);
-      return Optional.empty();
-    }
+    STATUS_LOG.loadingDepositSnapshotResource(sanitizedUrl);
+    final DepositTreeSnapshot depositSnapshot = loadFromUrl(depositSnapshotResourceUrl);
+    STATUS_LOG.onDepositSnapshot(
+        depositSnapshot.getDepositCount(), depositSnapshot.getExecutionBlockHash());
+    return Optional.of(depositSnapshot);
   }
 
   private DepositTreeSnapshot loadFromUrl(final String path) throws IOException {
@@ -118,7 +123,25 @@ public class DepositSnapshotFileLoader {
   }
 
   @VisibleForTesting
-  public List<String> getDepositSnapshotResources() {
+  public Map<String, Boolean> getDepositSnapshotResources() {
     return depositSnapshotResources;
+  }
+
+  public static class Builder {
+    private final LinkedHashMap<String, Boolean> resources = new LinkedHashMap<>();
+
+    public Builder addRequiredResource(final String resource) {
+      this.resources.put(resource, true);
+      return this;
+    }
+
+    public Builder addOptionalResource(final String resource) {
+      this.resources.put(resource, false);
+      return this;
+    }
+
+    public DepositSnapshotFileLoader build() {
+      return new DepositSnapshotFileLoader(resources);
+    }
   }
 }

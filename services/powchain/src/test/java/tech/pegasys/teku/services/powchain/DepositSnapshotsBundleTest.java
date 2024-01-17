@@ -16,7 +16,6 @@ package tech.pegasys.teku.services.powchain;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 import okhttp3.ConnectionPool;
@@ -66,12 +65,14 @@ public class DepositSnapshotsBundleTest {
         .isPresent();
 
     final DepositSnapshotFileLoader depositSnapshotLoader =
-        new DepositSnapshotFileLoader(
-            List.of(
+        new DepositSnapshotFileLoader.Builder()
+            .addRequiredResource(
                 powchainConfiguration
                     .getDepositTreeSnapshotConfiguration()
                     .getCustomDepositSnapshotPath()
-                    .get()));
+                    .get())
+            .build();
+
     final DepositTreeSnapshot depositTreeSnapshot =
         depositSnapshotLoader.loadDepositSnapshot().getDepositTreeSnapshot().orElseThrow();
     final DepositTree depositTree = DepositTree.fromSnapshot(depositTreeSnapshot);
@@ -100,7 +101,7 @@ public class DepositSnapshotsBundleTest {
             .getCustomDepositSnapshotPath()
             .orElseThrow();
     final DepositSnapshotFileLoader depositSnapshotLoader =
-        new DepositSnapshotFileLoader(List.of(depositSnapshotPath));
+        new DepositSnapshotFileLoader.Builder().addRequiredResource(depositSnapshotPath).build();
 
     // Snapshot
     final DepositTreeSnapshot depositTreeSnapshot =

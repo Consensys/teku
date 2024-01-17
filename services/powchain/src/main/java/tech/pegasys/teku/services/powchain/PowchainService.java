@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static tech.pegasys.teku.beacon.pow.api.Eth1DataCachePeriodCalculator.calculateEth1DataCacheDurationPriorToCurrentTime;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -34,6 +33,7 @@ import tech.pegasys.teku.beacon.pow.DepositEventsAccessor;
 import tech.pegasys.teku.beacon.pow.DepositFetcher;
 import tech.pegasys.teku.beacon.pow.DepositProcessingController;
 import tech.pegasys.teku.beacon.pow.DepositSnapshotFileLoader;
+import tech.pegasys.teku.beacon.pow.DepositSnapshotFileLoader.Builder;
 import tech.pegasys.teku.beacon.pow.DepositSnapshotStorageLoader;
 import tech.pegasys.teku.beacon.pow.Eth1BlockFetcher;
 import tech.pegasys.teku.beacon.pow.Eth1DepositManager;
@@ -197,18 +197,21 @@ public class PowchainService extends Service {
 
   private DepositSnapshotFileLoader createDepositSnapshotFileLoader(
       final DepositTreeSnapshotConfiguration depositTreeSnapshotConfiguration) {
-    final List<String> sources = new ArrayList<>();
+    final DepositSnapshotFileLoader.Builder depositSnapshotFileLoaderBuilder = new Builder();
 
     if (depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath().isPresent()) {
-      sources.add(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath().get());
+      depositSnapshotFileLoaderBuilder.addRequiredResource(
+          depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath().get());
     } else {
       depositTreeSnapshotConfiguration
           .getCheckpointSyncDepositSnapshotUrl()
-          .ifPresent(sources::add);
-      depositTreeSnapshotConfiguration.getBundledDepositSnapshotPath().ifPresent(sources::add);
+          .ifPresent(depositSnapshotFileLoaderBuilder::addOptionalResource);
+      depositTreeSnapshotConfiguration
+          .getBundledDepositSnapshotPath()
+          .ifPresent(depositSnapshotFileLoaderBuilder::addRequiredResource);
     }
 
-    return new DepositSnapshotFileLoader(sources);
+    return depositSnapshotFileLoaderBuilder.build();
   }
 
   private List<Web3j> createWeb3js(final PowchainConfiguration config) {

@@ -33,6 +33,10 @@ public class LoadDepositSnapshotResult implements Comparable<LoadDepositSnapshot
     this.replayDepositsResult = replayDepositsResult;
   }
 
+  public static LoadDepositSnapshotResult empty() {
+    return LoadDepositSnapshotResult.EMPTY;
+  }
+
   public static LoadDepositSnapshotResult create(
       final Optional<DepositTreeSnapshot> depositTreeSnapshot) {
     if (depositTreeSnapshot.isEmpty() || depositTreeSnapshot.get().getDepositCount() == 0) {
