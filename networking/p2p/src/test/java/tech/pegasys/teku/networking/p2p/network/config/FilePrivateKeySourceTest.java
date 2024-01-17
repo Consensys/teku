@@ -14,6 +14,7 @@
 package tech.pegasys.teku.networking.p2p.network.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -28,8 +29,8 @@ class FilePrivateKeySourceTest {
   @Test
   void shouldCreateKeyAndSaveToFile(@TempDir Path tempDir) throws IOException {
     final Path file = tempDir.resolve("file.txt");
-    final PrivateKeySource privKeySource = new FilePrivateKeySource(file.toString());
-    final Bytes generatedBytes = privKeySource.getOrGeneratePrivateKeyBytes();
+    final PrivateKeySource privateKeySource = new FilePrivateKeySource(file.toString());
+    final Bytes generatedBytes = privateKeySource.getOrGeneratePrivateKeyBytes();
     final Bytes savedBytes = Bytes.fromHexString(Files.readString(file));
 
     assertThat(generatedBytes).isEqualTo(savedBytes);
@@ -40,8 +41,25 @@ class FilePrivateKeySourceTest {
     final Path file = tempDir.resolve("file.txt");
     final Bytes privateKey = Bytes.wrap(PrivateKeyGenerator.generate().bytes());
     Files.writeString(file, privateKey.toHexString());
-    final PrivateKeySource privKeySource = new FilePrivateKeySource(file.toString());
+    final PrivateKeySource privateKeySource = new FilePrivateKeySource(file.toString());
 
-    assertThat(privKeySource.getOrGeneratePrivateKeyBytes()).isEqualTo(privateKey);
+    assertThat(privateKeySource.getOrGeneratePrivateKeyBytes()).isEqualTo(privateKey);
+  }
+
+  @Test
+  void shouldThrowExceptionIfInvalidFileName(@TempDir Path tempDir) {
+    final PrivateKeySource privateKeySource =
+        new FilePrivateKeySource(tempDir + "/invalid file name!!\0");
+    assertThatThrownBy(privateKeySource::getOrGeneratePrivateKeyBytes)
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Not able to create or retrieve p2p private key file -");
+  }
+
+  @Test
+  void shouldThrowExceptionIfProvideDirectory(@TempDir Path tempDir) {
+    final PrivateKeySource privateKeySource = new FilePrivateKeySource(tempDir.toString());
+    assertThatThrownBy(privateKeySource::getOrGeneratePrivateKeyBytes)
+        .isInstanceOf(RuntimeException.class)
+        .hasMessageContaining("p2p private key file not found -");
   }
 }
