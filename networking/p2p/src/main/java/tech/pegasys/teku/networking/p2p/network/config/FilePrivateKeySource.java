@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 
 public class FilePrivateKeySource implements PrivateKeySource {
@@ -60,5 +61,22 @@ public class FilePrivateKeySource implements PrivateKeySource {
 
   public String getFileName() {
     return fileName;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    FilePrivateKeySource that = (FilePrivateKeySource) o;
+    return Objects.equals(fileName, that.fileName);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(fileName);
   }
 }
