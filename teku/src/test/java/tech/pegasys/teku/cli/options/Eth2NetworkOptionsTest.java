@@ -155,7 +155,8 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   void minimalNetwork_shouldMergeTransitionsOverrideBeEmptyByDefault() {
     final TekuConfiguration config = getTekuConfigurationFromArguments("--network", "minimal");
-    assertThat(config.eth2NetworkConfiguration().getGenesisState()).isEqualTo(Optional.empty());
+    assertThat(config.eth2NetworkConfiguration().getNetworkBoostrapConfig().getGenesisState())
+        .isEqualTo(Optional.empty());
   }
 
   @Test
@@ -239,7 +240,7 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         "https://221EMZ2YSdriVVdXx:5058f100c7@eth2-beacon-mainnet.infura.io/eth/v1/debug/beacon/states/finalized";
     final TekuConfiguration config =
         getTekuConfigurationFromArguments("--genesis-state", genesisState);
-    assertThat(config.eth2NetworkConfiguration().getGenesisState())
+    assertThat(config.eth2NetworkConfiguration().getNetworkBoostrapConfig().getGenesisState())
         .isEqualTo(Optional.of(genesisState));
     assertThat(
             createConfigBuilder()
@@ -258,9 +259,9 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
     final Eth2NetworkConfiguration networkConfiguration = config.eth2NetworkConfiguration();
 
-    assertThat(networkConfiguration.getGenesisState())
+    assertThat(networkConfiguration.getNetworkBoostrapConfig().getGenesisState())
         .hasValue("http://foo:9000/" + GENESIS_STATE_URL_PATH);
-    assertThat(networkConfiguration.getInitialState())
+    assertThat(networkConfiguration.getNetworkBoostrapConfig().getInitialState())
         .hasValue("http://foo:9000/" + FINALIZED_STATE_URL_PATH);
   }
 }

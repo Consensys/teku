@@ -13,24 +13,38 @@
 
 package tech.pegasys.teku.networks;
 
+import java.util.Optional;
+
 public class StateBoostrapConfig {
-  private boolean isUsingCustomInitialState;
-  private boolean isUsingCheckpointSync;
-  private boolean allowSyncOutsideWeakSubjectivityPeriod;
+  private final Optional<String> genesisState;
+  private final Optional<String> initialState;
+  private final Optional<String> checkpointSyncUrl;
+  private final boolean isUsingCustomInitialState;
+  private final boolean allowSyncOutsideWeakSubjectivityPeriod;
 
-  StateBoostrapConfig() {}
-
-  public void setUsingCustomInitialState(final boolean usingCustomInitialState) {
-    isUsingCustomInitialState = usingCustomInitialState;
-  }
-
-  public void setUsingCheckpointSync(final boolean usingCheckpointSync) {
-    isUsingCheckpointSync = usingCheckpointSync;
-  }
-
-  public void setAllowSyncOutsideWeakSubjectivityPeriod(
+  public StateBoostrapConfig(
+      final Optional<String> genesisState,
+      final Optional<String> initialState,
+      final Optional<String> checkpointSyncUrl,
+      final boolean isUsingCustomInitialState,
       final boolean allowSyncOutsideWeakSubjectivityPeriod) {
+    this.checkpointSyncUrl = checkpointSyncUrl;
+    this.genesisState = genesisState;
+    this.initialState = initialState;
+    this.isUsingCustomInitialState = isUsingCustomInitialState;
     this.allowSyncOutsideWeakSubjectivityPeriod = allowSyncOutsideWeakSubjectivityPeriod;
+  }
+
+  public Optional<String> getGenesisState() {
+    return genesisState;
+  }
+
+  public Optional<String> getInitialState() {
+    return initialState;
+  }
+
+  public Optional<String> getCheckpointSyncUrl() {
+    return checkpointSyncUrl;
   }
 
   public boolean isUsingCustomInitialState() {
@@ -38,7 +52,7 @@ public class StateBoostrapConfig {
   }
 
   public boolean isUsingCheckpointSync() {
-    return isUsingCheckpointSync;
+    return checkpointSyncUrl.isPresent();
   }
 
   public boolean isAllowSyncOutsideWeakSubjectivityPeriod() {

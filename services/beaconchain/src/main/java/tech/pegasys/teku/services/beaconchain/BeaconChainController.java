@@ -1196,7 +1196,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected SyncServiceFactory createSyncServiceFactory() {
     return new DefaultSyncServiceFactory(
         beaconConfig.syncConfig(),
-        beaconConfig.eth2NetworkConfig().getGenesisState(),
+        beaconConfig.eth2NetworkConfig().getNetworkBoostrapConfig().getGenesisState(),
         metricsSystem,
         asyncRunnerFactory,
         beaconAsyncRunner,
@@ -1315,7 +1315,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     final Optional<AnchorPoint> initialAnchor =
         tryLoadingAnchorPointFromInitialState(networkConfiguration)
-            .or(() -> attemptToLoadAnchorPoint(networkConfiguration.getGenesisState()));
+            .or(
+                () ->
+                    attemptToLoadAnchorPoint(
+                        networkConfiguration.getNetworkBoostrapConfig().getGenesisState()));
 
     /*
      If flag to allow sync outside of weak subjectivity period has been set, we pass an instance of
@@ -1359,7 +1362,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
     Optional<AnchorPoint> initialAnchor = Optional.empty();
 
     try {
-      initialAnchor = attemptToLoadAnchorPoint(networkConfiguration.getInitialState());
+      initialAnchor =
+          attemptToLoadAnchorPoint(
+              networkConfiguration.getNetworkBoostrapConfig().getInitialState());
     } catch (final InvalidConfigurationException e) {
       final StateBoostrapConfig stateBoostrapConfig =
           networkConfiguration.getNetworkBoostrapConfig();
