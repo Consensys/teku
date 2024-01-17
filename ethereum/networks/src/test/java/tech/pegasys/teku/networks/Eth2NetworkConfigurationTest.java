@@ -14,6 +14,8 @@
 package tech.pegasys.teku.networks;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.FINALIZED_STATE_URL_PATH;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.GENESIS_STATE_URL_PATH;
 
 import java.net.URL;
 import java.util.List;
@@ -41,6 +43,7 @@ public class Eth2NetworkConfigurationTest {
 
     assertThat(networkConfig.getConstants()).isEqualTo(network.configName());
     assertThat(networkConfigBuilder.build()).usingRecursiveComparison().isEqualTo(networkConfig);
+    assertThat(networkConfig.getNetworkBoostrapConfig().isUsingCustomInitialState()).isFalse();
   }
 
   @Test
@@ -159,5 +162,40 @@ public class Eth2NetworkConfigurationTest {
   @FunctionalInterface
   private interface NetworkDefinition {
     Eth2NetworkConfiguration.Builder configure(Eth2NetworkConfiguration.Builder builder);
+  }
+
+  @Test
+  public void shouldNotHaveCustomInitialStateFlagWhenUsingPreConfiguredNetworks() {
+    final Eth2NetworkConfiguration eth2NetworkConfig =
+        new Eth2NetworkConfiguration.Builder().applyNetworkDefaults(Eth2Network.MAINNET).build();
+    assertThat(eth2NetworkConfig.getNetworkBoostrapConfig().isUsingCustomInitialState()).isFalse();
+  }
+
+  @Test
+  public void shouldHaveCustomInitialStateFlagSetWhenSpecifyingInitialState() {
+    final Eth2NetworkConfiguration eth2NetworkConfig =
+        new Eth2NetworkConfiguration.Builder()
+            .applyNetworkDefaults(Eth2Network.MAINNET)
+            .customInitialState("/foo/bar")
+            .build();
+    assertThat(eth2NetworkConfig.getNetworkBoostrapConfig().getInitialState()).hasValue("/foo/bar");
+    assertThat(eth2NetworkConfig.getNetworkBoostrapConfig().isUsingCustomInitialState()).isTrue();
+  }
+
+  @Test
+  public void shouldSetInitialStateAndGenesisStateWhenUsingCheckpointSyncUrl() {
+    final String checkpointSyncUrl = "http://foo.com";
+    final Eth2NetworkConfiguration eth2NetworkConfig =
+        new Eth2NetworkConfiguration.Builder()
+            .applyNetworkDefaults(Eth2Network.MAINNET)
+            .checkpointSyncUrl(checkpointSyncUrl)
+            .build();
+
+    final StateBoostrapConfig networkBoostrapConfig = eth2NetworkConfig.getNetworkBoostrapConfig();
+    assertThat(networkBoostrapConfig.getInitialState())
+        .contains(checkpointSyncUrl + "/" + FINALIZED_STATE_URL_PATH);
+    assertThat(networkBoostrapConfig.getGenesisState())
+        .contains(checkpointSyncUrl + "/" + GENESIS_STATE_URL_PATH);
+    assertThat(networkBoostrapConfig.isUsingCustomInitialState()).isFalse();
   }
 }
