@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.ssz.sos.SszField;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitnessSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
@@ -43,18 +44,22 @@ public class BeaconStateSchemaCapella
   public static final int HISTORICAL_SUMMARIES_INDEX = 27;
 
   @VisibleForTesting
-  BeaconStateSchemaCapella(final SpecConfig specConfig) {
-    super("BeaconStateCapella", getUniqueFields(specConfig), specConfig);
+  BeaconStateSchemaCapella(
+      final SpecConfig specConfig, final ExecutionWitnessSchema executionWitnessSchema) {
+    super("BeaconStateCapella", getUniqueFields(specConfig, executionWitnessSchema), specConfig);
   }
 
-  private static List<SszField> getUniqueFields(final SpecConfig specConfig) {
+  private static List<SszField> getUniqueFields(
+      final SpecConfig specConfig, final ExecutionWitnessSchema executionWitnessSchema) {
     final HistoricalSummary.HistoricalSummarySchema historicalSummarySchema =
         new HistoricalSummary.HistoricalSummarySchema();
     final SszField latestExecutionPayloadHeaderField =
         new SszField(
             LATEST_EXECUTION_PAYLOAD_HEADER_FIELD_INDEX,
             BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER,
-            () -> new ExecutionPayloadHeaderSchemaCapella(SpecConfigCapella.required(specConfig)));
+            () ->
+                new ExecutionPayloadHeaderSchemaCapella(
+                    SpecConfigCapella.required(specConfig), executionWitnessSchema));
     final SszField nextWithdrawalIndexField =
         new SszField(
             NEXT_WITHDRAWAL_INDEX,
@@ -126,8 +131,9 @@ public class BeaconStateSchemaCapella
     return new MutableBeaconStateCapellaImpl(createEmptyBeaconStateImpl(), true);
   }
 
-  public static BeaconStateSchemaCapella create(final SpecConfig specConfig) {
-    return new BeaconStateSchemaCapella(specConfig);
+  public static BeaconStateSchemaCapella create(
+      final SpecConfig specConfig, final ExecutionWitnessSchema executionWitnessSchema) {
+    return new BeaconStateSchemaCapella(specConfig, executionWitnessSchema);
   }
 
   public static BeaconStateSchemaCapella required(final BeaconStateSchema<?, ?> schema) {

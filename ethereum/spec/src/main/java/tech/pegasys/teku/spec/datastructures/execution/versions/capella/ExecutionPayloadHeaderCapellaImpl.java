@@ -19,8 +19,8 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container15;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema15;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container16;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema16;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -28,7 +28,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ExecutionPayloadHeaderCapellaImpl
-    extends Container15<
+    extends Container16<
         ExecutionPayloadHeaderCapellaImpl,
         SszBytes32,
         SszByteVector,
@@ -44,11 +44,12 @@ public class ExecutionPayloadHeaderCapellaImpl
         SszUInt256,
         SszBytes32,
         SszBytes32,
+        SszBytes32,
         SszBytes32>
     implements ExecutionPayloadHeaderCapella {
 
   protected ExecutionPayloadHeaderCapellaImpl(
-      ContainerSchema15<
+      ContainerSchema16<
               ExecutionPayloadHeaderCapellaImpl,
               SszBytes32,
               SszByteVector,
@@ -62,6 +63,7 @@ public class ExecutionPayloadHeaderCapellaImpl
               SszUInt64,
               SszByteList,
               SszUInt256,
+              SszBytes32,
               SszBytes32,
               SszBytes32,
               SszBytes32>
@@ -86,7 +88,8 @@ public class ExecutionPayloadHeaderCapellaImpl
       SszUInt256 baseFeePerGas,
       SszBytes32 blockHash,
       SszBytes32 transactionsRoot,
-      SszBytes32 withdrawalsRoot) {
+      SszBytes32 withdrawalsRoot,
+      SszBytes32 executionWitnessRoot) {
     super(
         schema,
         parentHash,
@@ -103,7 +106,8 @@ public class ExecutionPayloadHeaderCapellaImpl
         baseFeePerGas,
         blockHash,
         transactionsRoot,
-        withdrawalsRoot);
+        withdrawalsRoot,
+        executionWitnessRoot);
   }
 
   @Override
@@ -199,5 +203,10 @@ public class ExecutionPayloadHeaderCapellaImpl
   @Override
   public Bytes32 getWithdrawalsRoot() {
     return getField14().get();
+  }
+
+  @Override
+  public Bytes32 getExecutionWitnessRoot() {
+    return getField15().get();
   }
 }

@@ -20,6 +20,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitness;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 
 public interface ExecutionPayloadBuilder {
@@ -52,6 +53,8 @@ public interface ExecutionPayloadBuilder {
   ExecutionPayloadBuilder transactions(List<Bytes> transactions);
 
   ExecutionPayloadBuilder withdrawals(Supplier<List<Withdrawal>> withdrawalsSupplier);
+
+  ExecutionPayloadBuilder executionWitness(Supplier<ExecutionWitness> executionWitnessSupplier);
 
   ExecutionPayloadBuilder blobGasUsed(Supplier<UInt64> blobGasUsedSupplier);
 

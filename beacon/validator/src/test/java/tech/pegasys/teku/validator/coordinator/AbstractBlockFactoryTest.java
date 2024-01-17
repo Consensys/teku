@@ -368,7 +368,8 @@ public abstract class AbstractBlockFactoryTest {
                             state, beaconStateAccessors.getCurrentEpoch(state)))
                     .timestamp(
                         miscHelpers.computeTimeAtSlot(state.getGenesisTime(), state.getSlot()))
-                    .withdrawals(Collections::emptyList));
+                    .withdrawals(Collections::emptyList)
+                    .executionWitness(dataStructureUtil::randomExecutionWitness));
     executionPayloadHeader =
         SchemaDefinitionsBellatrix.required(spec.getGenesisSpec().getSchemaDefinitions())
             .getExecutionPayloadHeaderSchema()

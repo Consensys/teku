@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitness;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 
 public class ExecutionPayloadBuilderBellatrix implements ExecutionPayloadBuilder {
@@ -139,6 +140,12 @@ public class ExecutionPayloadBuilderBellatrix implements ExecutionPayloadBuilder
 
   @Override
   public ExecutionPayloadBuilder withdrawals(final Supplier<List<Withdrawal>> withdrawalsSupplier) {
+    return this;
+  }
+
+  @Override
+  public ExecutionPayloadBuilder executionWitness(
+      final Supplier<ExecutionWitness> executionWitnessSupplier) {
     return this;
   }
 

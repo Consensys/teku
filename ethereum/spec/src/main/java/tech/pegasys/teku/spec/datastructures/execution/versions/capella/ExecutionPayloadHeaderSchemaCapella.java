@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.capella;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BASE_FEE_PER_GAS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_HASH;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_NUMBER;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXECUTION_WITNESS_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXTRA_DATA;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.FEE_RECIPIENT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.GAS_LIMIT;
@@ -34,7 +35,7 @@ import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema15;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema16;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -47,9 +48,10 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitnessSchema;
 
 public class ExecutionPayloadHeaderSchemaCapella
-    extends ContainerSchema15<
+    extends ContainerSchema16<
         ExecutionPayloadHeaderCapellaImpl,
         SszBytes32,
         SszByteVector,
@@ -65,13 +67,15 @@ public class ExecutionPayloadHeaderSchemaCapella
         SszUInt256,
         SszBytes32,
         SszBytes32,
+        SszBytes32,
         SszBytes32>
     implements ExecutionPayloadHeaderSchema<ExecutionPayloadHeaderCapellaImpl> {
 
   private final ExecutionPayloadHeaderCapellaImpl defaultExecutionPayloadHeader;
   private final ExecutionPayloadHeaderCapellaImpl executionPayloadHeaderOfDefaultPayload;
 
-  public ExecutionPayloadHeaderSchemaCapella(final SpecConfigCapella specConfig) {
+  public ExecutionPayloadHeaderSchemaCapella(
+      final SpecConfigCapella specConfig, final ExecutionWitnessSchema executionWitnessSchema) {
     super(
         "ExecutionPayloadHeaderCapella",
         namedSchema(PARENT_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
@@ -88,10 +92,11 @@ public class ExecutionPayloadHeaderSchemaCapella
         namedSchema(BASE_FEE_PER_GAS, SszPrimitiveSchemas.UINT256_SCHEMA),
         namedSchema(BLOCK_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(TRANSACTIONS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
-        namedSchema(WITHDRAWALS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA));
+        namedSchema(WITHDRAWALS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
+        namedSchema(EXECUTION_WITNESS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA));
 
     final ExecutionPayloadCapellaImpl defaultExecutionPayload =
-        new ExecutionPayloadSchemaCapella(specConfig).getDefault();
+        new ExecutionPayloadSchemaCapella(specConfig, executionWitnessSchema).getDefault();
 
     this.executionPayloadHeaderOfDefaultPayload =
         createFromExecutionPayload(defaultExecutionPayload);
@@ -117,7 +122,8 @@ public class ExecutionPayloadHeaderSchemaCapella
         SszUInt256.of(executionPayload.getBaseFeePerGas()),
         SszBytes32.of(executionPayload.getBlockHash()),
         SszBytes32.of(executionPayload.getTransactions().hashTreeRoot()),
-        SszBytes32.of(executionPayload.getWithdrawals().hashTreeRoot()));
+        SszBytes32.of(executionPayload.getWithdrawals().hashTreeRoot()),
+        SszBytes32.of(executionPayload.getExecutionWitness().hashTreeRoot()));
   }
 
   public SszByteListSchema<?> getExtraDataSchema() {
@@ -176,6 +182,7 @@ public class ExecutionPayloadHeaderSchemaCapella
         SszUInt256.of(executionPayload.getBaseFeePerGas()),
         SszBytes32.of(executionPayload.getBlockHash()),
         SszBytes32.of(executionPayload.getTransactions().hashTreeRoot()),
-        SszBytes32.of(executionPayload.getWithdrawals().hashTreeRoot()));
+        SszBytes32.of(executionPayload.getWithdrawals().hashTreeRoot()),
+        SszBytes32.of(executionPayload.getExecutionWitness().hashTreeRoot()));
   }
 }

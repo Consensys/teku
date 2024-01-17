@@ -89,7 +89,8 @@ public class CapellaStateUpgrade implements StateUpgrade<BeaconStateCapella> {
                                   .baseFeePerGas(bellatrixHeader.getBaseFeePerGas())
                                   .blockHash(bellatrixHeader.getBlockHash())
                                   .transactionsRoot(bellatrixHeader.getTransactionsRoot())
-                                  .withdrawalsRoot(() -> Bytes32.ZERO));
+                                  .withdrawalsRoot(() -> Bytes32.ZERO)
+                                  .executionWitnessRoot(() -> Bytes32.ZERO));
 
               state.setLatestExecutionPayloadHeader(upgradedExecutionPayloadHeader);
 

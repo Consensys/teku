@@ -15,8 +15,6 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella
 
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconStateTest;
 
 public class BeaconStateCapellaTest
@@ -24,12 +22,6 @@ public class BeaconStateCapellaTest
   @Override
   protected Spec createSpec() {
     return TestSpecFactory.createMinimalCapella();
-  }
-
-  @Override
-  protected BeaconStateSchema<BeaconStateCapella, MutableBeaconStateCapella> getSchema(
-      final SpecConfig specConfig) {
-    return BeaconStateSchemaCapella.create(specConfig);
   }
 
   @Override

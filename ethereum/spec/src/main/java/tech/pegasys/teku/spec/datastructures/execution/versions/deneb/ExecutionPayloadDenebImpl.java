@@ -22,18 +22,19 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container17;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema17;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container18;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema18;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitness;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 
 public class ExecutionPayloadDenebImpl
-    extends Container17<
+    extends Container18<
         ExecutionPayloadDenebImpl,
         SszBytes32,
         SszByteVector,
@@ -50,12 +51,13 @@ public class ExecutionPayloadDenebImpl
         SszBytes32,
         SszList<Transaction>,
         SszList<Withdrawal>,
+        ExecutionWitness,
         SszUInt64,
         SszUInt64>
     implements ExecutionPayloadDeneb {
 
   public ExecutionPayloadDenebImpl(
-      ContainerSchema17<
+      ContainerSchema18<
               ExecutionPayloadDenebImpl,
               SszBytes32,
               SszByteVector,
@@ -72,6 +74,7 @@ public class ExecutionPayloadDenebImpl
               SszBytes32,
               SszList<Transaction>,
               SszList<Withdrawal>,
+              ExecutionWitness,
               SszUInt64,
               SszUInt64>
           schema,
@@ -96,6 +99,7 @@ public class ExecutionPayloadDenebImpl
       SszBytes32 blockHash,
       SszList<Transaction> transactions,
       SszList<Withdrawal> withdrawals,
+      ExecutionWitness executionWitness,
       SszUInt64 blobGasUsed,
       SszUInt64 excessBlobGas) {
     super(
@@ -115,6 +119,7 @@ public class ExecutionPayloadDenebImpl
         blockHash,
         transactions,
         withdrawals,
+        executionWitness,
         blobGasUsed,
         excessBlobGas);
   }
@@ -215,13 +220,18 @@ public class ExecutionPayloadDenebImpl
   }
 
   @Override
+  public ExecutionWitness getExecutionWitness() {
+    return getField15();
+  }
+
+  @Override
   public UInt64 getBlobGasUsed() {
-    return getField15().get();
+    return getField16().get();
   }
 
   @Override
   public UInt64 getExcessBlobGas() {
-    return getField16().get();
+    return getField17().get();
   }
 
   @Override

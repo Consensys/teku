@@ -64,6 +64,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.BlobsUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
@@ -263,6 +264,26 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                         .baseFeePerGas(UInt256.ONE)
                         .blockHash(Bytes32.random())
                         .transactions(transactions)
+                        .executionWitness(
+                            () -> {
+                              final SchemaDefinitionsCapella schemaDefinitionsCapella =
+                                  SchemaDefinitionsCapella.required(
+                                      spec.atSlot(slot).getSchemaDefinitions());
+                              return schemaDefinitionsCapella
+                                  .getExecutionWitnessSchema()
+                                  .create(
+                                      List.of(),
+                                      schemaDefinitionsCapella
+                                          .getVerkleProofSchema()
+                                          .create(
+                                              List.of(),
+                                              List.of(),
+                                              List.of(),
+                                              Bytes32.ZERO,
+                                              schemaDefinitionsCapella
+                                                  .getIpaProofSchema()
+                                                  .create(List.of(), List.of(), Bytes32.ZERO)));
+                            })
                         .withdrawals(() -> payloadAttributes.getWithdrawals().orElse(List.of()))
                         .blobGasUsed(() -> UInt64.ZERO)
                         .excessBlobGas(() -> UInt64.ZERO));

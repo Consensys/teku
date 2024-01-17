@@ -90,6 +90,7 @@ public class DenebStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
                                   .blockHash(capellaHeader.getBlockHash())
                                   .transactionsRoot(capellaHeader.getTransactionsRoot())
                                   .withdrawalsRoot(capellaHeader::getWithdrawalsRoot)
+                                  .executionWitnessRoot(capellaHeader::getExecutionWitnessRoot)
                                   .blobGasUsed(() -> UInt64.ZERO)
                                   .excessBlobGas(() -> UInt64.ZERO));
 

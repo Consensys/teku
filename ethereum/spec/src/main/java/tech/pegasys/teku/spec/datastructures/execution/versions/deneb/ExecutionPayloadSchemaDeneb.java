@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_HASH;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_NUMBER;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXCESS_BLOB_GAS;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXECUTION_WITNESS;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXTRA_DATA;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.FEE_RECIPIENT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.GAS_LIMIT;
@@ -37,7 +38,7 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema17;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema18;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -52,11 +53,13 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitness;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitnessSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 
 public class ExecutionPayloadSchemaDeneb
-    extends ContainerSchema17<
+    extends ContainerSchema18<
         ExecutionPayloadDenebImpl,
         SszBytes32,
         SszByteVector,
@@ -73,13 +76,15 @@ public class ExecutionPayloadSchemaDeneb
         SszBytes32,
         SszList<Transaction>,
         SszList<Withdrawal>,
+        ExecutionWitness,
         SszUInt64,
         SszUInt64>
     implements ExecutionPayloadSchema<ExecutionPayloadDenebImpl> {
 
   private final ExecutionPayloadDenebImpl defaultExecutionPayload;
 
-  public ExecutionPayloadSchemaDeneb(final SpecConfigDeneb specConfig) {
+  public ExecutionPayloadSchemaDeneb(
+      final SpecConfigDeneb specConfig, final ExecutionWitnessSchema executionWitnessSchema) {
     super(
         "ExecutionPayloadDeneb",
         namedSchema(PARENT_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
@@ -102,6 +107,7 @@ public class ExecutionPayloadSchemaDeneb
         namedSchema(
             WITHDRAWALS,
             SszListSchema.create(Withdrawal.SSZ_SCHEMA, specConfig.getMaxWithdrawalsPerPayload())),
+        namedSchema(EXECUTION_WITNESS, executionWitnessSchema),
         namedSchema(BLOB_GAS_USED, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(EXCESS_BLOB_GAS, SszPrimitiveSchemas.UINT64_SCHEMA));
     this.defaultExecutionPayload = createFromBackingNode(getDefaultTree());
@@ -125,6 +131,11 @@ public class ExecutionPayloadSchemaDeneb
   @Override
   public WithdrawalSchema getWithdrawalSchemaRequired() {
     return getWithdrawalSchema();
+  }
+
+  @Override
+  public ExecutionWitnessSchema getExecutionWitnessSchemaRequired() {
+    return getExecutionWitnessSchema();
   }
 
   public WithdrawalSchema getWithdrawalSchema() {
@@ -163,5 +174,9 @@ public class ExecutionPayloadSchemaDeneb
   @SuppressWarnings("unchecked")
   public SszListSchema<Withdrawal, ?> getWithdrawalsSchema() {
     return (SszListSchema<Withdrawal, ?>) getChildSchema(getFieldIndex(WITHDRAWALS));
+  }
+
+  public ExecutionWitnessSchema getExecutionWitnessSchema() {
+    return (ExecutionWitnessSchema) getFieldSchema15();
   }
 }

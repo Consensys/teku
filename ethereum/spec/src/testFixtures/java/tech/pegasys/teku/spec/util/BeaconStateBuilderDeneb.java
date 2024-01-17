@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.MutableBeaconStateDeneb;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class BeaconStateBuilderDeneb
     extends AbstractBeaconStateBuilder<
@@ -51,7 +52,11 @@ public class BeaconStateBuilderDeneb
 
   @Override
   protected BeaconStateDeneb getEmptyState() {
-    return BeaconStateSchemaDeneb.create(spec.getConfig()).createEmpty();
+    return BeaconStateSchemaDeneb.create(
+            spec.getConfig(),
+            SchemaDefinitionsDeneb.required(spec.getSchemaDefinitions())
+                .getExecutionWitnessSchema())
+        .createEmpty();
   }
 
   @Override

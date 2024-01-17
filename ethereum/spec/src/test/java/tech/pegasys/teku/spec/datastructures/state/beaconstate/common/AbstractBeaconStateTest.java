@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
@@ -34,11 +33,11 @@ public abstract class AbstractBeaconStateTest<
 
   protected abstract Spec createSpec();
 
-  private final SpecConfig genesisConfig = spec.getGenesisSpecConfig();
-  private final BeaconStateSchema<T, TMutable> schema = getSchema(genesisConfig);
-  protected DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  @SuppressWarnings("unchecked")
+  private final BeaconStateSchema<T, TMutable> schema =
+      (BeaconStateSchema<T, TMutable>) spec.getGenesisSchemaDefinitions().getBeaconStateSchema();
 
-  protected abstract BeaconStateSchema<T, TMutable> getSchema(final SpecConfig specConfig);
+  protected DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
 
   protected abstract T randomState();
 

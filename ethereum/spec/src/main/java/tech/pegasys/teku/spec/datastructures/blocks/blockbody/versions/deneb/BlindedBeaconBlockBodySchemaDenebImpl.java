@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBui
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitnessSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderDenebImpl;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -98,6 +99,7 @@ public class BlindedBeaconBlockBodySchemaDenebImpl
       final AttesterSlashingSchema attesterSlashingSchema,
       final SignedBlsToExecutionChangeSchema signedBlsToExecutionChangeSchema,
       final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema,
+      final ExecutionWitnessSchema executionWitnessSchema,
       final String containerName) {
     return new BlindedBeaconBlockBodySchemaDenebImpl(
         containerName,
@@ -127,7 +129,7 @@ public class BlindedBeaconBlockBodySchemaDenebImpl
             SyncAggregateSchema.create(specConfig.getSyncCommitteeSize())),
         namedSchema(
             BlockBodyFields.EXECUTION_PAYLOAD_HEADER,
-            new ExecutionPayloadHeaderSchemaDeneb(specConfig)),
+            new ExecutionPayloadHeaderSchemaDeneb(specConfig, executionWitnessSchema)),
         namedSchema(
             BlockBodyFields.BLS_TO_EXECUTION_CHANGES,
             SszListSchema.create(

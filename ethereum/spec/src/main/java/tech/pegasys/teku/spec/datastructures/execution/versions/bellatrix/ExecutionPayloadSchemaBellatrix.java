@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitnessSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 
@@ -110,6 +111,11 @@ public class ExecutionPayloadSchemaBellatrix
   @Override
   public WithdrawalSchema getWithdrawalSchemaRequired() {
     throw new IllegalStateException("Attempted to get a withdrawal schema from bellatrix");
+  }
+
+  @Override
+  public ExecutionWitnessSchema getExecutionWitnessSchemaRequired() {
+    throw new IllegalStateException("Attempted to get an execution witness schema from bellatrix");
   }
 
   @Override

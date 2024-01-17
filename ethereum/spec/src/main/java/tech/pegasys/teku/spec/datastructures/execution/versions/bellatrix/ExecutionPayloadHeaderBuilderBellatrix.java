@@ -152,6 +152,12 @@ public class ExecutionPayloadHeaderBuilderBellatrix implements ExecutionPayloadH
     return this;
   }
 
+  @Override
+  public ExecutionPayloadHeaderBuilder executionWitnessRoot(
+      final Supplier<Bytes32> executionWitnessRootSupplier) {
+    return this;
+  }
+
   protected void validateSchema() {
     checkNotNull(schema, "schema must be specified");
   }

@@ -82,6 +82,7 @@ public class ExecutionPayloadBuilderDeneb extends ExecutionPayloadBuilderCapella
             .map(schema.getTransactionSchema()::fromBytes)
             .collect(schema.getTransactionsSchema().collector()),
         schema.getWithdrawalsSchema().createFromElements(withdrawals),
+        executionWitness,
         SszUInt64.of(blobGasUsed),
         SszUInt64.of(excessBlobGas));
   }

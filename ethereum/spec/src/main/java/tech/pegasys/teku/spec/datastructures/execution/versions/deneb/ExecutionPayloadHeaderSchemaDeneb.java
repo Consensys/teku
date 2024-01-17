@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFi
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_HASH;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.BLOCK_NUMBER;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXCESS_BLOB_GAS;
+import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXECUTION_WITNESS_ROOT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.EXTRA_DATA;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.FEE_RECIPIENT;
 import static tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadFields.GAS_LIMIT;
@@ -36,7 +37,7 @@ import java.util.function.Consumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema17;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema18;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -49,9 +50,10 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitnessSchema;
 
 public class ExecutionPayloadHeaderSchemaDeneb
-    extends ContainerSchema17<
+    extends ContainerSchema18<
         ExecutionPayloadHeaderDenebImpl,
         SszBytes32,
         SszByteVector,
@@ -68,6 +70,7 @@ public class ExecutionPayloadHeaderSchemaDeneb
         SszBytes32,
         SszBytes32,
         SszBytes32,
+        SszBytes32,
         SszUInt64,
         SszUInt64>
     implements ExecutionPayloadHeaderSchema<ExecutionPayloadHeaderDenebImpl> {
@@ -75,7 +78,8 @@ public class ExecutionPayloadHeaderSchemaDeneb
   private final ExecutionPayloadHeaderDenebImpl defaultExecutionPayloadHeader;
   private final ExecutionPayloadHeaderDenebImpl executionPayloadHeaderOfDefaultPayload;
 
-  public ExecutionPayloadHeaderSchemaDeneb(final SpecConfigDeneb specConfig) {
+  public ExecutionPayloadHeaderSchemaDeneb(
+      final SpecConfigDeneb specConfig, final ExecutionWitnessSchema executionWitnessSchema) {
     super(
         "ExecutionPayloadHeaderDeneb",
         namedSchema(PARENT_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
@@ -93,11 +97,12 @@ public class ExecutionPayloadHeaderSchemaDeneb
         namedSchema(BLOCK_HASH, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(TRANSACTIONS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(WITHDRAWALS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
+        namedSchema(EXECUTION_WITNESS_ROOT, SszPrimitiveSchemas.BYTES32_SCHEMA),
         namedSchema(BLOB_GAS_USED, SszPrimitiveSchemas.UINT64_SCHEMA),
         namedSchema(EXCESS_BLOB_GAS, SszPrimitiveSchemas.UINT64_SCHEMA));
 
     final ExecutionPayloadDenebImpl defaultExecutionPayload =
-        new ExecutionPayloadSchemaDeneb(specConfig).getDefault();
+        new ExecutionPayloadSchemaDeneb(specConfig, executionWitnessSchema).getDefault();
 
     this.executionPayloadHeaderOfDefaultPayload =
         createFromExecutionPayload(defaultExecutionPayload);
@@ -161,6 +166,7 @@ public class ExecutionPayloadHeaderSchemaDeneb
         SszBytes32.of(executionPayload.getBlockHash()),
         SszBytes32.of(executionPayload.getTransactions().hashTreeRoot()),
         SszBytes32.of(executionPayload.getWithdrawals().hashTreeRoot()),
+        SszBytes32.of(executionPayload.getExecutionWitness().hashTreeRoot()),
         SszUInt64.of(executionPayload.getBlobGasUsed()),
         SszUInt64.of(executionPayload.getExcessBlobGas()));
   }
