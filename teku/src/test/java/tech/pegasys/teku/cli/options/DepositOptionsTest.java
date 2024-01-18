@@ -180,13 +180,14 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void shouldThrowErrorIfUsingCustomSnapshotAndExplicitlyEnablingBundled() {
-    final String[] args = {"--Xdeposit-snapshot", "/foo/bar", "--deposit-snapshot-enabled"};
+  public void shouldDisableBundledDepositSnapshotWhenUsingCustomDepositSnapshotPath() {
+    final String[] args = {"--Xdeposit-snapshot", "/foo/bar"};
 
-    int parseResult = beaconNodeCommand.parse(args);
-    assertThat(parseResult).isEqualTo(2);
-
-    final String output = getCommandLineOutput();
-    assertThat(output).contains("Use either custom deposit tree snapshot path or snapshot bundle");
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    final DepositTreeSnapshotConfiguration depositTreeSnapshotConfiguration =
+        config.powchain().getDepositTreeSnapshotConfiguration();
+    assertThat(depositTreeSnapshotConfiguration.isDepositSnapshotEnabled()).isFalse();
+    assertThat(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath())
+        .hasValue("/foo/bar");
   }
 }

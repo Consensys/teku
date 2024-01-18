@@ -19,7 +19,6 @@ import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 
 public class DepositOptions {
@@ -69,21 +68,7 @@ public class DepositOptions {
       fallbackValue = "true")
   private boolean depositSnapshotEnabled = PowchainConfiguration.DEFAULT_DEPOSIT_SNAPSHOT_ENABLED;
 
-  @CommandLine.Spec CommandLine.Model.CommandSpec commandSpec;
-
   public void configure(final TekuConfiguration.Builder builder) {
-    final CommandLine.ParseResult parseResult = commandSpec.commandLine().getParseResult();
-
-    if (parseResult.hasMatchedOption("--Xdeposit-snapshot")) {
-      if (parseResult.hasMatchedOption("--deposit-snapshot-enabled")
-          && parseResult.matchedOptionValue("--deposit-snapshot-enabled", Boolean.TRUE)) {
-        throw new InvalidConfigurationException(
-            "Use either custom deposit tree snapshot path or snapshot bundle");
-      }
-
-      depositSnapshotEnabled = false;
-    }
-
     builder.powchain(
         b -> {
           b.eth1Endpoints(eth1Endpoints);

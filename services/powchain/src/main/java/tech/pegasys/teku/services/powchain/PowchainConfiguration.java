@@ -110,6 +110,10 @@ public class PowchainConfiguration {
 
     public PowchainConfiguration build() {
       validate();
+
+      boolean isBundledSnapshotEnabled =
+          this.depositSnapshotEnabled && this.customDepositSnapshotPath.isEmpty();
+
       return new PowchainConfiguration(
           spec,
           eth1Endpoints,
@@ -119,7 +123,7 @@ public class PowchainConfiguration {
               customDepositSnapshotPath,
               checkpointSyncDepositSnapshotUrl,
               bundledDepositSnapshotPath,
-              depositSnapshotEnabled),
+              isBundledSnapshotEnabled),
           eth1LogsMaxBlockRange,
           useMissingDepositEventLogging);
     }
