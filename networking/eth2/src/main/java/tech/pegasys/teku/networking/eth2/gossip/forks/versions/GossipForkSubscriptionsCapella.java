@@ -17,7 +17,6 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.SignedBlsToExecutionChangeGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
@@ -38,7 +37,6 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipForkSubscriptionsCapella extends GossipForkSubscriptionsBellatrix {
 
-  private final boolean blsToExecutionChangesSubnetEnabled;
   private final OperationProcessor<SignedBlsToExecutionChange>
       signedBlsToExecutionChangeOperationProcessor;
   private Optional<SignedBlsToExecutionChangeGossipManager>
@@ -47,7 +45,6 @@ public class GossipForkSubscriptionsCapella extends GossipForkSubscriptionsBella
   public GossipForkSubscriptionsCapella(
       final Fork fork,
       final Spec spec,
-      final P2PConfig p2PConfig,
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final DiscoveryNetwork<?> discoveryNetwork,
@@ -82,31 +79,28 @@ public class GossipForkSubscriptionsCapella extends GossipForkSubscriptionsBella
         signedContributionAndProofOperationProcessor,
         syncCommitteeMessageOperationProcessor);
 
-    this.blsToExecutionChangesSubnetEnabled = p2PConfig.isBlsToExecutionChangesSubnetEnabled();
     this.signedBlsToExecutionChangeOperationProcessor =
         signedBlsToExecutionChangeOperationProcessor;
   }
 
   void addSignedBlsToExecutionChangeGossipManager(final ForkInfo forkInfo) {
-    if (blsToExecutionChangesSubnetEnabled) {
-      final SchemaDefinitionsCapella schemaDefinitions =
-          SchemaDefinitionsCapella.required(
-              spec.atEpoch(getActivationEpoch()).getSchemaDefinitions());
+    final SchemaDefinitionsCapella schemaDefinitions =
+        SchemaDefinitionsCapella.required(
+            spec.atEpoch(getActivationEpoch()).getSchemaDefinitions());
 
-      final SignedBlsToExecutionChangeGossipManager gossipManager =
-          new SignedBlsToExecutionChangeGossipManager(
-              recentChainData,
-              schemaDefinitions,
-              asyncRunner,
-              discoveryNetwork,
-              gossipEncoding,
-              forkInfo,
-              signedBlsToExecutionChangeOperationProcessor,
-              spec.getNetworkingConfig());
+    final SignedBlsToExecutionChangeGossipManager gossipManager =
+        new SignedBlsToExecutionChangeGossipManager(
+            recentChainData,
+            schemaDefinitions,
+            asyncRunner,
+            discoveryNetwork,
+            gossipEncoding,
+            forkInfo,
+            signedBlsToExecutionChangeOperationProcessor,
+            spec.getNetworkingConfig());
 
-      addGossipManager(gossipManager);
-      this.signedBlsToExecutionChangeGossipManager = Optional.of(gossipManager);
-    }
+    addGossipManager(gossipManager);
+    this.signedBlsToExecutionChangeGossipManager = Optional.of(gossipManager);
   }
 
   @Override
@@ -119,11 +113,6 @@ public class GossipForkSubscriptionsCapella extends GossipForkSubscriptionsBella
   public void publishSignedBlsToExecutionChangeMessage(final SignedBlsToExecutionChange message) {
     signedBlsToExecutionChangeGossipManager.ifPresent(
         gossipManager -> gossipManager.publish(message));
-  }
-
-  @VisibleForTesting
-  Optional<SignedBlsToExecutionChangeGossipManager> getSignedBlsToExecutionChangeGossipManager() {
-    return signedBlsToExecutionChangeGossipManager;
   }
 
   @VisibleForTesting
