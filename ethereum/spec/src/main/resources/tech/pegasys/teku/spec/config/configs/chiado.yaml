@@ -54,7 +54,7 @@ DENEB_FORK_EPOCH: 516608 # Wed Jan 31 2024 18:15:40 GMT+0000
 SECONDS_PER_SLOT: 5
 # 6 (estimate from xDai mainnet)
 SECONDS_PER_ETH1_BLOCK: 6
-# 2**8 (= 256) epochs ~27 hours
+# 2**8 (= 256) epochs ~5.7 hours
 MIN_VALIDATOR_WITHDRAWABILITY_DELAY: 256
 # 2**8 (= 256) epochs ~5.7 hours
 SHARD_COMMITTEE_PERIOD: 256
