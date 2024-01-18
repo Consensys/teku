@@ -223,7 +223,7 @@ public class TekuConfiguration {
       eth2NetworkConfiguration
           .getNetworkBoostrapConfig()
           .getCheckpointSyncUrl()
-          .map(powchainConfigBuilder::checkpointSyncDepositSnapshotUrl);
+          .ifPresent(powchainConfigBuilder::checkpointSyncDepositSnapshotUrl);
       p2pConfigBuilder.discovery(
           b -> b.bootnodesDefault(eth2NetworkConfiguration.getDiscoveryBootnodes()));
       restApiBuilder.eth1DepositContractAddressDefault(depositContractAddress);

@@ -33,7 +33,6 @@ import tech.pegasys.teku.beacon.pow.DepositEventsAccessor;
 import tech.pegasys.teku.beacon.pow.DepositFetcher;
 import tech.pegasys.teku.beacon.pow.DepositProcessingController;
 import tech.pegasys.teku.beacon.pow.DepositSnapshotFileLoader;
-import tech.pegasys.teku.beacon.pow.DepositSnapshotFileLoader.Builder;
 import tech.pegasys.teku.beacon.pow.DepositSnapshotStorageLoader;
 import tech.pegasys.teku.beacon.pow.Eth1BlockFetcher;
 import tech.pegasys.teku.beacon.pow.Eth1DepositManager;
@@ -197,7 +196,8 @@ public class PowchainService extends Service {
 
   private DepositSnapshotFileLoader createDepositSnapshotFileLoader(
       final DepositTreeSnapshotConfiguration depositTreeSnapshotConfiguration) {
-    final DepositSnapshotFileLoader.Builder depositSnapshotFileLoaderBuilder = new Builder();
+    final DepositSnapshotFileLoader.Builder depositSnapshotFileLoaderBuilder =
+        new DepositSnapshotFileLoader.Builder();
 
     if (depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath().isPresent()) {
       depositSnapshotFileLoaderBuilder.addRequiredResource(
