@@ -66,7 +66,6 @@ public class NodeDataProvider {
   private final boolean isLivenessTrackingEnabled;
   private final ProposersDataManager proposersDataManager;
   private final ForkChoiceNotifier forkChoiceNotifier;
-  private final boolean acceptBlsToExecutionMessages;
 
   public NodeDataProvider(
       final AggregatingAttestationPool attestationPool,
@@ -81,8 +80,7 @@ public class NodeDataProvider {
       final boolean isLivenessTrackingEnabled,
       final ActiveValidatorChannel activeValidatorChannel,
       final ProposersDataManager proposersDataManager,
-      final ForkChoiceNotifier forkChoiceNotifier,
-      final boolean acceptBlsToExecutionMessages) {
+      final ForkChoiceNotifier forkChoiceNotifier) {
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingsPool;
     this.proposerSlashingPool = proposerSlashingPool;
@@ -96,7 +94,6 @@ public class NodeDataProvider {
     this.isLivenessTrackingEnabled = isLivenessTrackingEnabled;
     this.proposersDataManager = proposersDataManager;
     this.forkChoiceNotifier = forkChoiceNotifier;
-    this.acceptBlsToExecutionMessages = acceptBlsToExecutionMessages;
   }
 
   public List<Attestation> getAttestations(
@@ -138,13 +135,6 @@ public class NodeDataProvider {
 
   public SafeFuture<List<SubmitDataError>> postBlsToExecutionChanges(
       final List<SignedBlsToExecutionChange> blsToExecutionChanges) {
-    if (!acceptBlsToExecutionMessages) {
-      return SafeFuture.failedFuture(
-          new BadRequestException(
-              "Beacon node is not subscribed to the bls_to_execution_changes subnet. This behaviour can be changed "
-                  + "with the CLI option --Xbls-to-execution-changes-subnet-enabled"));
-    }
-
     final List<SafeFuture<Optional<SubmitDataError>>> maybeFutureErrors = new ArrayList<>();
 
     for (int i = 0; i < blsToExecutionChanges.size(); i++) {
