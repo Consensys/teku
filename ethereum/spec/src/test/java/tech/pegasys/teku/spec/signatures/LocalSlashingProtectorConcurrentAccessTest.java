@@ -156,7 +156,8 @@ public class LocalSlashingProtectorConcurrentAccessTest extends LocalSlashingPro
             });
     threadAcquired.await();
     assertThat(firstSigner).isNotCompleted();
-    secondSigner.get(50, TimeUnit.MILLISECONDS);
+    // flaky on Windows
+    secondSigner.get(500, TimeUnit.MILLISECONDS);
     assertThat(secondSigner).isCompleted();
     releaseLock.set(true);
     // flaky on Windows

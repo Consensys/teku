@@ -19,5 +19,6 @@ consuming the `payload_attributes` SSE events.
 - Added Deneb (aka Dencun) configuration for Sepolia network for epoch 132608 (2024-01-30 22:51:12 UTC).
 - Added Deneb (aka Dencun) configuration for Chiado network for epoch 516608 (2024-01-31 18:15:40 UTC).
 - Added Deneb (aka Dencun) configuration for Holesky network for epoch 29696 (2024-02-07 11:34:24 UTC).
+- Generate key at `—p2p-private-key-file` path if specified file doesn't exist.
 
 ### Bug Fixes
