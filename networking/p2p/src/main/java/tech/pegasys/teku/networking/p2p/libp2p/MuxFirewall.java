@@ -179,7 +179,7 @@ public class MuxFirewall implements ChannelVisitor<Connection> {
               yamuxFrame.getType() == YamuxType.DATA
                   || yamuxFrame.getType() == YamuxType.WINDOW_UPDATE;
           return isDataOrWindowUpdate
-              && (yamuxFlags.contains(YamuxFlag.SYN) || (yamuxFlags.contains(YamuxFlag.ACK)));
+              && (yamuxFlags.contains(YamuxFlag.SYN) || yamuxFlags.contains(YamuxFlag.ACK));
         }
 
         @Override
