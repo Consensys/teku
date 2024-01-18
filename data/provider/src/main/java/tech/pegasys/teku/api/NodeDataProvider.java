@@ -168,7 +168,7 @@ public class NodeDataProvider {
             });
   }
 
-  public void subscribeToReceivedBlocks(final ImportedBlockListener listener) {
+  public void subscribeToReceivedBlocks(ImportedBlockListener listener) {
     blockManager.subscribeToReceivedBlocks(listener);
   }
 

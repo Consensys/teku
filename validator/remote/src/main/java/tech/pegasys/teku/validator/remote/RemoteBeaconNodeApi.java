@@ -149,8 +149,8 @@ public class RemoteBeaconNodeApi implements BeaconNodeApi {
             validatorTimingChannel,
             metricsSystem,
             validatorConfig.generateEarlyAttestations(),
-            spec,
-            validatorConfig.isStopVcWhenValidatorSlashedEnabled());
+            validatorConfig.isStopVcWhenValidatorSlashedEnabled(),
+            spec);
 
     eventChannels.subscribe(BeaconNodeReadinessChannel.class, beaconChainEventAdapter);
 

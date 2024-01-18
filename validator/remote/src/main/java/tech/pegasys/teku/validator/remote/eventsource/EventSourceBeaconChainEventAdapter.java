@@ -74,8 +74,8 @@ public class EventSourceBeaconChainEventAdapter
       final ValidatorTimingChannel validatorTimingChannel,
       final MetricsSystem metricsSystem,
       final boolean generateEarlyAttestations,
-      final Spec spec,
-      final boolean stopVcWhenValidatorSlashedEnabled) {
+      final boolean stopVcWhenValidatorSlashedEnabled,
+      final Spec spec) {
     this.beaconNodeReadinessManager = beaconNodeReadinessManager;
     this.primaryBeaconNodeApi = primaryBeaconNodeApi;
     this.failoverBeaconNodeApis = failoverBeaconNodeApis;
