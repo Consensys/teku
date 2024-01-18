@@ -21,12 +21,13 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beacon.pow.DepositSnapshotFileLoader;
+import tech.pegasys.teku.beacon.pow.DepositSnapshotFileLoader.DepositSnapshotResource;
 import tech.pegasys.teku.beacon.pow.Eth1DepositManager;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.ethereum.executionclient.web3j.ExecutionWeb3jClientProvider;
@@ -114,9 +115,8 @@ public class PowchainServiceTest {
     final PowchainService powchainService =
         new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
 
-    // custom path takes precedence and is the only one used
-    //    verifyExpectedDepositSnapshotPath(powchainService, "/foo/custom");
-    verifyExpectedRequiredDepositSnapshotPathResource(powchainService, "/foo/custom");
+    verifyExpectedOrderOfDepositSnapshotPathResources(
+        powchainService, List.of(new DepositSnapshotResource("/foo/custom", true)));
   }
 
   @Test
@@ -129,7 +129,8 @@ public class PowchainServiceTest {
     final PowchainService powchainService =
         new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
 
-    verifyExpectedRequiredDepositSnapshotPathResource(powchainService, "/foo/bundled");
+    verifyExpectedOrderOfDepositSnapshotPathResources(
+        powchainService, List.of(new DepositSnapshotResource("/foo/bundled", true)));
   }
 
   @Test
@@ -144,10 +145,11 @@ public class PowchainServiceTest {
     final PowchainService powchainService =
         new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
 
-    verifyExpectedOptionalDepositSnapshotPathResource(powchainService, "/foo/checkpoint");
-    verifyExpectedRequiredDepositSnapshotPathResource(powchainService, "/foo/bundled");
     verifyExpectedOrderOfDepositSnapshotPathResources(
-        powchainService, "/foo/checkpoint", "/foo/bundled");
+        powchainService,
+        List.of(
+            new DepositSnapshotResource("/foo/checkpoint", false),
+            new DepositSnapshotResource("/foo/bundled", true)));
   }
 
   @Test
@@ -168,42 +170,13 @@ public class PowchainServiceTest {
         .isEmpty();
   }
 
-  private void verifyExpectedRequiredDepositSnapshotPathResource(
-      final PowchainService powchainService, final String... expectedPaths) {
-    final Eth1DepositManager eth1DepositManager = powchainService.getEth1DepositManager();
-    final DepositSnapshotFileLoader depositSnapshotFileLoader =
-        eth1DepositManager.getDepositSnapshotFileLoader();
-
-    assertThat(
-            Arrays.stream(expectedPaths)
-                .allMatch(
-                    s ->
-                        depositSnapshotFileLoader.getDepositSnapshotResources().containsKey(s)
-                            && depositSnapshotFileLoader.getDepositSnapshotResources().get(s)))
-        .isTrue();
-  }
-
-  private void verifyExpectedOptionalDepositSnapshotPathResource(
-      final PowchainService powchainService, final String... expectedPaths) {
-    final Eth1DepositManager eth1DepositManager = powchainService.getEth1DepositManager();
-    final DepositSnapshotFileLoader depositSnapshotFileLoader =
-        eth1DepositManager.getDepositSnapshotFileLoader();
-
-    assertThat(
-            Arrays.stream(expectedPaths)
-                .allMatch(
-                    s ->
-                        depositSnapshotFileLoader.getDepositSnapshotResources().containsKey(s)
-                            && !depositSnapshotFileLoader.getDepositSnapshotResources().get(s)))
-        .isTrue();
-  }
-
   private void verifyExpectedOrderOfDepositSnapshotPathResources(
-      final PowchainService powchainService, final String... expectedPathsInOrder) {
+      final PowchainService powchainService,
+      final List<DepositSnapshotResource> expectedResources) {
     final Eth1DepositManager eth1DepositManager = powchainService.getEth1DepositManager();
     final DepositSnapshotFileLoader depositSnapshotFileLoader =
         eth1DepositManager.getDepositSnapshotFileLoader();
-    assertThat(depositSnapshotFileLoader.getDepositSnapshotResources().keySet().toArray())
-        .isEqualTo(expectedPathsInOrder);
+    assertThat(depositSnapshotFileLoader.getDepositSnapshotResources())
+        .isEqualTo(expectedResources);
   }
 }

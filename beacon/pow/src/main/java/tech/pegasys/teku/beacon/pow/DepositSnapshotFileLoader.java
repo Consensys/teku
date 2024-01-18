@@ -22,9 +22,9 @@ import com.google.common.annotations.VisibleForTesting;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,6 +40,8 @@ import tech.pegasys.teku.spec.networks.Eth2Network;
 
 public class DepositSnapshotFileLoader {
 
+  public record DepositSnapshotResource(String resource, boolean required) {}
+
   public static final Map<Eth2Network, String> DEFAULT_SNAPSHOT_RESOURCE_PATHS =
       Map.of(
           Eth2Network.GNOSIS, "gnosis.ssz",
@@ -51,18 +53,17 @@ public class DepositSnapshotFileLoader {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final LinkedHashMap<String, Boolean> depositSnapshotResources;
+  private final List<DepositSnapshotResource> depositSnapshotResources;
 
-  @SuppressWarnings("NonApiType")
-  private DepositSnapshotFileLoader(final LinkedHashMap<String, Boolean> resources) {
+  private DepositSnapshotFileLoader(final List<DepositSnapshotResource> resources) {
     this.depositSnapshotResources = resources;
   }
 
   public LoadDepositSnapshotResult loadDepositSnapshot() {
-    for (final Entry<String, Boolean> resourceEntry : depositSnapshotResources.entrySet()) {
-      final String depositSnapshotResourceUrl = resourceEntry.getKey();
+    for (final DepositSnapshotResource resource : depositSnapshotResources) {
+      final String depositSnapshotResourceUrl = resource.resource;
       final String sanitizedUrl = UrlSanitizer.sanitizePotentialUrl(depositSnapshotResourceUrl);
-      final Boolean isRequired = resourceEntry.getValue();
+      final boolean isRequired = resource.required;
 
       try {
         final Optional<DepositTreeSnapshot> depositTreeSnapshot =
@@ -123,20 +124,20 @@ public class DepositSnapshotFileLoader {
   }
 
   @VisibleForTesting
-  public Map<String, Boolean> getDepositSnapshotResources() {
+  public List<DepositSnapshotResource> getDepositSnapshotResources() {
     return depositSnapshotResources;
   }
 
   public static class Builder {
-    private final LinkedHashMap<String, Boolean> resources = new LinkedHashMap<>();
+    private final List<DepositSnapshotResource> resources = new ArrayList<>();
 
     public Builder addRequiredResource(final String resource) {
-      this.resources.put(resource, true);
+      this.resources.add(new DepositSnapshotResource(resource, true));
       return this;
     }
 
     public Builder addOptionalResource(final String resource) {
-      this.resources.put(resource, false);
+      this.resources.add(new DepositSnapshotResource(resource, false));
       return this;
     }
 
