@@ -14,12 +14,10 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb;
 
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
@@ -56,25 +54,25 @@ class BeaconBlockBodyDenebTest extends AbstractBeaconBlockBodyTest<BeaconBlockBo
   @Test
   void equalsReturnsFalseWhenBlobKzgCommitmentsIsDifferent() {
     blobKzgCommitments = dataStructureUtil.randomBlobKzgCommitments();
-    BeaconBlockBodyAltair testBeaconBlockBody = safeJoin(createBlockBody());
+    final BeaconBlockBodyAltair testBeaconBlockBody = createBlockBody();
 
     assertNotEquals(defaultBlockBody, testBeaconBlockBody);
   }
 
   @Override
-  protected SafeFuture<BeaconBlockBodyDeneb> createBlockBody(
+  protected BeaconBlockBodyDeneb createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> contentProvider) {
     final BeaconBlockBodyBuilder bodyBuilder = createBeaconBlockBodyBuilder();
     contentProvider.accept(bodyBuilder);
-    return bodyBuilder.build().thenApply(body -> body.toVersionDeneb().orElseThrow());
+    return bodyBuilder.build().toVersionDeneb().orElseThrow();
   }
 
   @Override
-  protected SafeFuture<BlindedBeaconBlockBodyBellatrix> createBlindedBlockBody(
+  protected BlindedBeaconBlockBodyBellatrix createBlindedBlockBody(
       Consumer<BeaconBlockBodyBuilder> contentProvider) {
     final BeaconBlockBodyBuilder bodyBuilder = createBeaconBlockBodyBuilder();
     contentProvider.accept(bodyBuilder);
-    return bodyBuilder.build().thenApply(body -> body.toBlindedVersionDeneb().orElseThrow());
+    return bodyBuilder.build().toBlindedVersionDeneb().orElseThrow();
   }
 
   @Override
@@ -85,11 +83,11 @@ class BeaconBlockBodyDenebTest extends AbstractBeaconBlockBodyTest<BeaconBlockBo
               builder
                   .syncAggregate(syncAggregate)
                   .blsToExecutionChanges(blsToExecutionChanges)
-                  .blobKzgCommitments(SafeFuture.completedFuture(blobKzgCommitments));
+                  .blobKzgCommitments(blobKzgCommitments);
               if (blinded) {
-                builder.executionPayloadHeader(SafeFuture.completedFuture(executionPayloadHeader));
+                builder.executionPayloadHeader(executionPayloadHeader);
               } else {
-                builder.executionPayload(SafeFuture.completedFuture(executionPayload));
+                builder.executionPayload(executionPayload);
               }
             });
   }

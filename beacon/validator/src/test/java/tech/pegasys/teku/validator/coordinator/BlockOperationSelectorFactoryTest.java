@@ -206,15 +206,16 @@ class BlockOperationSelectorFactoryTest {
   void shouldNotSelectOperationsWhenNoneAreAvailable() {
     final UInt64 slot = UInt64.ONE;
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
-    factory
-        .createSelector(
-            parentRoot,
-            blockSlotState,
-            dataStructureUtil.randomSignature(),
-            Optional.empty(),
-            Optional.empty(),
-            BlockProductionPerformance.NOOP)
-        .accept(bodyBuilder);
+    safeJoin(
+        factory
+            .createSelector(
+                parentRoot,
+                blockSlotState,
+                dataStructureUtil.randomSignature(),
+                Optional.empty(),
+                Optional.empty(),
+                BlockProductionPerformance.NOOP)
+            .apply(bodyBuilder));
 
     assertThat(bodyBuilder.proposerSlashings).isEmpty();
     assertThat(bodyBuilder.attesterSlashings).isEmpty();
@@ -242,15 +243,16 @@ class BlockOperationSelectorFactoryTest {
     assertThat(contributionPool.addLocal(contribution)).isCompletedWithValue(ACCEPT);
     addToPool(blsToExecutionChangePool, blsToExecutionChange);
 
-    factory
-        .createSelector(
-            parentRoot,
-            blockSlotState,
-            randaoReveal,
-            Optional.empty(),
-            Optional.empty(),
-            BlockProductionPerformance.NOOP)
-        .accept(bodyBuilder);
+    safeJoin(
+        factory
+            .createSelector(
+                parentRoot,
+                blockSlotState,
+                randaoReveal,
+                Optional.empty(),
+                Optional.empty(),
+                BlockProductionPerformance.NOOP)
+            .apply(bodyBuilder));
 
     assertThat(bodyBuilder.randaoReveal).isEqualTo(randaoReveal);
     assertThat(bodyBuilder.graffiti).isEqualTo(defaultGraffiti);
@@ -320,15 +322,16 @@ class BlockOperationSelectorFactoryTest {
             blockSlotState, blsToExecutionChange2))
         .thenReturn(Optional.of(BlsToExecutionChangeInvalidReason.invalidValidatorIndex()));
 
-    factory
-        .createSelector(
-            parentRoot,
-            blockSlotState,
-            randaoReveal,
-            Optional.empty(),
-            Optional.empty(),
-            BlockProductionPerformance.NOOP)
-        .accept(bodyBuilder);
+    safeJoin(
+        factory
+            .createSelector(
+                parentRoot,
+                blockSlotState,
+                randaoReveal,
+                Optional.empty(),
+                Optional.empty(),
+                BlockProductionPerformance.NOOP)
+            .apply(bodyBuilder));
 
     assertThat(bodyBuilder.randaoReveal).isEqualTo(randaoReveal);
     assertThat(bodyBuilder.graffiti).isEqualTo(defaultGraffiti);
@@ -347,15 +350,16 @@ class BlockOperationSelectorFactoryTest {
   void shouldIncludeDefaultExecutionPayload() {
     final UInt64 slot = UInt64.ONE;
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconStatePreMerge(slot);
-    factory
-        .createSelector(
-            parentRoot,
-            blockSlotState,
-            dataStructureUtil.randomSignature(),
-            Optional.empty(),
-            Optional.of(false),
-            BlockProductionPerformance.NOOP)
-        .accept(bodyBuilder);
+    safeJoin(
+        factory
+            .createSelector(
+                parentRoot,
+                blockSlotState,
+                dataStructureUtil.randomSignature(),
+                Optional.empty(),
+                Optional.of(false),
+                BlockProductionPerformance.NOOP)
+            .apply(bodyBuilder));
     assertThat(bodyBuilder.executionPayload).isEqualTo(defaultExecutionPayload);
   }
 
@@ -363,15 +367,16 @@ class BlockOperationSelectorFactoryTest {
   void shouldIncludeExecutionPayloadHeaderOfDefaultPayload() {
     final UInt64 slot = UInt64.ONE;
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconStatePreMerge(slot);
-    factory
-        .createSelector(
-            parentRoot,
-            blockSlotState,
-            dataStructureUtil.randomSignature(),
-            Optional.empty(),
-            Optional.of(true),
-            BlockProductionPerformance.NOOP)
-        .accept(bodyBuilder);
+    safeJoin(
+        factory
+            .createSelector(
+                parentRoot,
+                blockSlotState,
+                dataStructureUtil.randomSignature(),
+                Optional.empty(),
+                Optional.of(true),
+                BlockProductionPerformance.NOOP)
+            .apply(bodyBuilder));
     assertThat(bodyBuilder.executionPayloadHeader)
         .isEqualTo(executionPayloadHeaderOfDefaultPayload);
   }
@@ -390,15 +395,16 @@ class BlockOperationSelectorFactoryTest {
     prepareBlockProductionWithPayload(
         randomExecutionPayload, executionPayloadContext, blockSlotState);
 
-    factory
-        .createSelector(
-            parentRoot,
-            blockSlotState,
-            dataStructureUtil.randomSignature(),
-            Optional.empty(),
-            Optional.of(false),
-            BlockProductionPerformance.NOOP)
-        .accept(bodyBuilder);
+    safeJoin(
+        factory
+            .createSelector(
+                parentRoot,
+                blockSlotState,
+                dataStructureUtil.randomSignature(),
+                Optional.empty(),
+                Optional.of(false),
+                BlockProductionPerformance.NOOP)
+            .apply(bodyBuilder));
 
     assertThat(bodyBuilder.executionPayload).isEqualTo(randomExecutionPayload);
   }
@@ -418,15 +424,16 @@ class BlockOperationSelectorFactoryTest {
     prepareBlockProductionWithPayloadHeader(
         randomExecutionPayloadHeader, executionPayloadContext, blockSlotState);
 
-    factory
-        .createSelector(
-            parentRoot,
-            blockSlotState,
-            dataStructureUtil.randomSignature(),
-            Optional.empty(),
-            Optional.of(true),
-            BlockProductionPerformance.NOOP)
-        .accept(bodyBuilder);
+    safeJoin(
+        factory
+            .createSelector(
+                parentRoot,
+                blockSlotState,
+                dataStructureUtil.randomSignature(),
+                Optional.empty(),
+                Optional.of(true),
+                BlockProductionPerformance.NOOP)
+            .apply(bodyBuilder));
 
     assertThat(bodyBuilder.executionPayloadHeader).isEqualTo(randomExecutionPayloadHeader);
   }
@@ -445,15 +452,16 @@ class BlockOperationSelectorFactoryTest {
     prepareBlockProductionWithPayload(
         randomExecutionPayload, executionPayloadContext, blockSlotState);
 
-    factory
-        .createSelector(
-            parentRoot,
-            blockSlotState,
-            dataStructureUtil.randomSignature(),
-            Optional.empty(),
-            Optional.of(false),
-            BlockProductionPerformance.NOOP)
-        .accept(bodyBuilder);
+    safeJoin(
+        factory
+            .createSelector(
+                parentRoot,
+                blockSlotState,
+                dataStructureUtil.randomSignature(),
+                Optional.empty(),
+                Optional.of(false),
+                BlockProductionPerformance.NOOP)
+            .apply(bodyBuilder));
 
     assertThat(bodyBuilder.executionPayload).isEqualTo(randomExecutionPayload);
   }
@@ -491,15 +499,16 @@ class BlockOperationSelectorFactoryTest {
 
     final CapturingBeaconBlockBodyBuilder bodyBuilder = new CapturingBeaconBlockBodyBuilder(true);
 
-    factory
-        .createSelector(
-            parentRoot,
-            blockSlotState,
-            dataStructureUtil.randomSignature(),
-            Optional.empty(),
-            Optional.of(false),
-            BlockProductionPerformance.NOOP)
-        .accept(bodyBuilder);
+    safeJoin(
+        factory
+            .createSelector(
+                parentRoot,
+                blockSlotState,
+                dataStructureUtil.randomSignature(),
+                Optional.empty(),
+                Optional.of(false),
+                BlockProductionPerformance.NOOP)
+            .apply(bodyBuilder));
 
     assertThat(bodyBuilder.blobKzgCommitments)
         .map(SszKZGCommitment::getKZGCommitment)
@@ -526,15 +535,16 @@ class BlockOperationSelectorFactoryTest {
 
     final CapturingBeaconBlockBodyBuilder bodyBuilder = new CapturingBeaconBlockBodyBuilder(true);
 
-    factory
-        .createSelector(
-            parentRoot,
-            blockSlotState,
-            dataStructureUtil.randomSignature(),
-            Optional.empty(),
-            Optional.empty(),
-            BlockProductionPerformance.NOOP)
-        .accept(bodyBuilder);
+    safeJoin(
+        factory
+            .createSelector(
+                parentRoot,
+                blockSlotState,
+                dataStructureUtil.randomSignature(),
+                Optional.empty(),
+                Optional.empty(),
+                BlockProductionPerformance.NOOP)
+            .apply(bodyBuilder));
 
     assertThat(bodyBuilder.blobKzgCommitments).hasSameElementsAs(blobKzgCommitments);
   }
@@ -834,16 +844,15 @@ class BlockOperationSelectorFactoryTest {
     }
 
     @Override
-    public BeaconBlockBodyBuilder executionPayload(
-        final SafeFuture<ExecutionPayload> executionPayload) {
-      this.executionPayload = safeJoin(executionPayload);
+    public BeaconBlockBodyBuilder executionPayload(final ExecutionPayload executionPayload) {
+      this.executionPayload = executionPayload;
       return this;
     }
 
     @Override
     public BeaconBlockBodyBuilder executionPayloadHeader(
-        final SafeFuture<ExecutionPayloadHeader> executionPayloadHeader) {
-      this.executionPayloadHeader = safeJoin(executionPayloadHeader);
+        final ExecutionPayloadHeader executionPayloadHeader) {
+      this.executionPayloadHeader = executionPayloadHeader;
       return this;
     }
 
@@ -876,13 +885,13 @@ class BlockOperationSelectorFactoryTest {
 
     @Override
     public BeaconBlockBodyBuilder blobKzgCommitments(
-        final SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments) {
-      this.blobKzgCommitments = safeJoin(blobKzgCommitments);
+        final SszList<SszKZGCommitment> blobKzgCommitments) {
+      this.blobKzgCommitments = blobKzgCommitments;
       return this;
     }
 
     @Override
-    public SafeFuture<? extends BeaconBlockBody> build() {
+    public BeaconBlockBody build() {
       return null;
     }
   }
