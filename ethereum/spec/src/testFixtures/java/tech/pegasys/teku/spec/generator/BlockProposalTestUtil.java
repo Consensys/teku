@@ -116,11 +116,10 @@ public class BlockProposalTestUtil {
               }
               if (builder.supportsExecutionPayload()) {
                 builder.executionPayload(
-                    SafeFuture.completedFuture(
-                        executionPayload.orElseGet(
-                            () ->
-                                createExecutionPayload(
-                                    newSlot, blockSlotState, transactions, terminalBlock))));
+                    executionPayload.orElseGet(
+                        () ->
+                            createExecutionPayload(
+                                newSlot, blockSlotState, transactions, terminalBlock)));
               }
               if (builder.supportsBlsToExecutionChanges()) {
                 builder.blsToExecutionChanges(
@@ -129,9 +128,9 @@ public class BlockProposalTestUtil {
               }
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(
-                    SafeFuture.completedFuture(
-                        kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments)));
+                    kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
               }
+              return SafeFuture.COMPLETE;
             },
             BlockProductionPerformance.NOOP)
         .thenApply(
@@ -192,11 +191,8 @@ public class BlockProposalTestUtil {
               }
               if (builder.supportsExecutionPayload()) {
                 builder.executionPayload(
-                    SafeFuture.completedFuture(
-                        executionPayload.orElseGet(
-                            () ->
-                                createExecutionPayload(
-                                    newSlot, state, transactions, terminalBlock))));
+                    executionPayload.orElseGet(
+                        () -> createExecutionPayload(newSlot, state, transactions, terminalBlock)));
               }
               if (builder.supportsBlsToExecutionChanges()) {
                 builder.blsToExecutionChanges(
@@ -205,9 +201,9 @@ public class BlockProposalTestUtil {
               }
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(
-                    SafeFuture.completedFuture(
-                        kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments)));
+                    kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
               }
+              return SafeFuture.COMPLETE;
             })
         .thenApply(
             blockBody -> {

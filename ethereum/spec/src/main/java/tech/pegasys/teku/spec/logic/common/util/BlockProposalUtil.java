@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.logic.common.util;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
-import java.util.function.Consumer;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
@@ -51,7 +51,7 @@ public class BlockProposalUtil {
       final int proposerIndex,
       final BeaconState blockSlotState,
       final Bytes32 parentBlockSigningRoot,
-      final Consumer<BeaconBlockBodyBuilder> bodyBuilder,
+      final Function<BeaconBlockBodyBuilder, SafeFuture<Void>> bodyBuilder,
       final BlockProductionPerformance blockProductionPerformance) {
     checkArgument(
         blockSlotState.getSlot().equals(newSlot),
@@ -113,9 +113,8 @@ public class BlockProposalUtil {
   }
 
   private SafeFuture<? extends BeaconBlockBody> createBlockBody(
-      final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
+      final Function<BeaconBlockBodyBuilder, SafeFuture<Void>> bodyBuilder) {
     final BeaconBlockBodyBuilder builder = schemaDefinitions.createBeaconBlockBodyBuilder();
-    builderConsumer.accept(builder);
-    return builder.build();
+    return bodyBuilder.apply(builder).thenApply(__ -> builder.build());
   }
 }

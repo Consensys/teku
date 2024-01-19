@@ -122,11 +122,12 @@ public class BeaconBlockBuilder {
                 builder.syncAggregate(syncAggregate);
               }
               if (builder.supportsExecutionPayload()) {
-                builder.executionPayload(SafeFuture.completedFuture(executionPayload));
+                builder.executionPayload(executionPayload);
               }
               if (builder.supportsBlsToExecutionChanges()) {
                 builder.blsToExecutionChanges(blsToExecutionChanges);
               }
+              return SafeFuture.COMPLETE;
             })
         .thenApply(
             blockBody ->
