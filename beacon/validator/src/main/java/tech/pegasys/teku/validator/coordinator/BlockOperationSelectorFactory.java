@@ -201,14 +201,18 @@ public class BlockOperationSelectorFactory {
       final BeaconState blockSlotState,
       final BlockProductionPerformance blockProductionPerformance) {
 
-    // we can do builder flow if a non-blinded flow was requested, and we have a validator has a
-    // registration to builder infrastructure
+    // if blinded flow is explicitly requested, we should try to use it
+    // otherwise, we should use it only if we have a validator registration
     final boolean shouldTryBuilderFlow =
-        !requestedBlinded.orElse(false)
-            && executionPayloadContext
+        requestedBlinded.orElse(true)
+            || executionPayloadContext
                 .map(ExecutionPayloadContext::isValidatorRegistrationPresent)
                 .orElse(false);
-    final boolean setUnblindedContentIfPossible = requestedBlinded.isEmpty();
+
+    // we should try to return unblinded content only if we try the builder flow with no explicit
+    // request
+    final boolean setUnblindedContentIfPossible =
+        shouldTryBuilderFlow && requestedBlinded.isEmpty();
 
     // Pre-Deneb: Execution Payload / Execution Payload Header
     if (!bodyBuilder.supportsKzgCommitments()) {
