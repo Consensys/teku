@@ -15,9 +15,9 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.deneb;
 
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderCapella;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderElectra;
 
-public interface ExecutionPayloadHeaderDeneb extends ExecutionPayloadHeaderCapella {
+public interface ExecutionPayloadHeaderDeneb extends ExecutionPayloadHeaderElectra {
 
   UInt64 getBlobGasUsed();
 

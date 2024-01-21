@@ -147,7 +147,7 @@ public class GetMetadataIntegrationTest extends AbstractRpcMethodIntegrationTest
   private static Class<?> milestoneToMetadataClass(final SpecMilestone milestone) {
     return switch (milestone) {
       case PHASE0 -> MetadataMessagePhase0.class;
-      case ALTAIR, BELLATRIX, CAPELLA, DENEB -> MetadataMessageAltair.class;
+      case ALTAIR, BELLATRIX, CAPELLA, ELECTRA, DENEB -> MetadataMessageAltair.class;
     };
   }
 }

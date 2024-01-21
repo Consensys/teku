@@ -22,18 +22,17 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container16;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema16;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container15;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema15;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
-import tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitness;
 
 public class ExecutionPayloadCapellaImpl
-    extends Container16<
+    extends Container15<
         ExecutionPayloadCapellaImpl,
         SszBytes32,
         SszByteVector,
@@ -49,12 +48,11 @@ public class ExecutionPayloadCapellaImpl
         SszUInt256,
         SszBytes32,
         SszList<Transaction>,
-        SszList<Withdrawal>,
-        ExecutionWitness>
+        SszList<Withdrawal>>
     implements ExecutionPayloadCapella {
 
   public ExecutionPayloadCapellaImpl(
-      ContainerSchema16<
+      ContainerSchema15<
               ExecutionPayloadCapellaImpl,
               SszBytes32,
               SszByteVector,
@@ -70,8 +68,7 @@ public class ExecutionPayloadCapellaImpl
               SszUInt256,
               SszBytes32,
               SszList<Transaction>,
-              SszList<Withdrawal>,
-              ExecutionWitness>
+              SszList<Withdrawal>>
           schema,
       TreeNode backingNode) {
     super(schema, backingNode);
@@ -93,8 +90,7 @@ public class ExecutionPayloadCapellaImpl
       SszUInt256 baseFeePerGas,
       SszBytes32 blockHash,
       SszList<Transaction> transactions,
-      SszList<Withdrawal> withdrawals,
-      ExecutionWitness executionWitness) {
+      SszList<Withdrawal> withdrawals) {
     super(
         schema,
         parentHash,
@@ -111,8 +107,7 @@ public class ExecutionPayloadCapellaImpl
         baseFeePerGas,
         blockHash,
         transactions,
-        withdrawals,
-        executionWitness);
+        withdrawals);
   }
 
   @Override
@@ -208,11 +203,6 @@ public class ExecutionPayloadCapellaImpl
   @Override
   public SszList<Withdrawal> getWithdrawals() {
     return getField14();
-  }
-
-  @Override
-  public ExecutionWitness getExecutionWitness() {
-    return getField15();
   }
 
   // List<TreeNode> generalisedIndex order

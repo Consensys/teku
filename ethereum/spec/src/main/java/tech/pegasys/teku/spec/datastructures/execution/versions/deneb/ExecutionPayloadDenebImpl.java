@@ -236,6 +236,9 @@ public class ExecutionPayloadDenebImpl
 
   @Override
   public List<TreeNode> getUnblindedTreeNodes() {
-    return List.of(getTransactions().getBackingNode(), getWithdrawals().getBackingNode());
+    return List.of(
+        getTransactions().getBackingNode(),
+        getWithdrawals().getBackingNode(),
+        getExecutionWitness().getBackingNode());
   }
 }

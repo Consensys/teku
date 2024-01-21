@@ -90,8 +90,8 @@ public class ExecutionPayloadV2 extends ExecutionPayloadV1 {
         executionPayload.getTransactions().stream().map(SszByteListImpl::getBytes).toList(),
         withdrawalsList,
         executionPayload
-            .toVersionCapella()
-            .map(capellaPayload -> capellaPayload.getExecutionWitness().sszSerialize())
+            .toVersionElectra()
+            .map(electraPayload -> electraPayload.getExecutionWitness().sszSerialize())
             .orElse(null));
   }
 

@@ -36,6 +36,11 @@ import tech.pegasys.teku.api.schema.deneb.BeaconBlockDeneb;
 import tech.pegasys.teku.api.schema.deneb.BeaconStateDeneb;
 import tech.pegasys.teku.api.schema.deneb.BlindedBeaconBlockBodyDeneb;
 import tech.pegasys.teku.api.schema.deneb.BlindedBlockDeneb;
+import tech.pegasys.teku.api.schema.electra.BeaconBlockBodyElectra;
+import tech.pegasys.teku.api.schema.electra.BeaconBlockElectra;
+import tech.pegasys.teku.api.schema.electra.BeaconStateElectra;
+import tech.pegasys.teku.api.schema.electra.BlindedBeaconBlockBodyElectra;
+import tech.pegasys.teku.api.schema.electra.BlindedBlockElectra;
 import tech.pegasys.teku.api.schema.phase0.BeaconBlockPhase0;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -111,6 +116,13 @@ public class SchemaObjectProvider {
             block.getParentRoot(),
             block.getStateRoot(),
             getBlindedBlockBodyCapella(block.getBody()));
+      case ELECTRA:
+        return new BlindedBlockElectra(
+            block.getSlot(),
+            block.getProposerIndex(),
+            block.getParentRoot(),
+            block.getStateRoot(),
+            getBlindedBlockBodyElectra(block.getBody()));
       case DENEB:
         return new BlindedBlockDeneb(
             block.getSlot(),
@@ -155,6 +167,13 @@ public class SchemaObjectProvider {
             block.getParentRoot(),
             block.getStateRoot(),
             getBeaconBlockBodyCapella(block.getBody()));
+      case ELECTRA:
+        return new BeaconBlockElectra(
+            block.getSlot(),
+            block.getProposerIndex(),
+            block.getParentRoot(),
+            block.getStateRoot(),
+            getBeaconBlockBodyElectra(block.getBody()));
       case DENEB:
         return new BeaconBlockDeneb(
             block.getSlot(),
@@ -188,6 +207,13 @@ public class SchemaObjectProvider {
             .BeaconBlockBodyCapella.required(body));
   }
 
+  private BeaconBlockBodyElectra getBeaconBlockBodyElectra(
+      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
+    return new BeaconBlockBodyElectra(
+        tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra
+            .BeaconBlockBodyElectra.required(body));
+  }
+
   private BeaconBlockBodyDeneb getBeaconBlockBodyDeneb(
       final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
     return new BeaconBlockBodyDeneb(
@@ -209,6 +235,13 @@ public class SchemaObjectProvider {
             .BlindedBeaconBlockBodyCapella.required(body));
   }
 
+  private BlindedBeaconBlockBodyElectra getBlindedBlockBodyElectra(
+      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
+    return new BlindedBeaconBlockBodyElectra(
+        tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra
+            .BlindedBeaconBlockBodyElectra.required(body));
+  }
+
   private BlindedBeaconBlockBodyDeneb getBlindedBlockBodyDeneb(
       final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
     return new BlindedBeaconBlockBodyDeneb(
@@ -228,6 +261,8 @@ public class SchemaObjectProvider {
         return new BeaconStateBellatrix(state);
       case CAPELLA:
         return new BeaconStateCapella(state);
+      case ELECTRA:
+        return new BeaconStateElectra(state);
       case DENEB:
         return new BeaconStateDeneb(state);
       default:

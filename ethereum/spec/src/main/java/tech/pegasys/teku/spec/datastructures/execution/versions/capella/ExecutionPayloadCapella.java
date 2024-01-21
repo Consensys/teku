@@ -17,7 +17,6 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitness;
 
 public interface ExecutionPayloadCapella extends ExecutionPayload {
 
@@ -32,8 +31,6 @@ public interface ExecutionPayloadCapella extends ExecutionPayload {
   }
 
   SszList<Withdrawal> getWithdrawals();
-
-  ExecutionWitness getExecutionWitness();
 
   @Override
   default Optional<SszList<Withdrawal>> getOptionalWithdrawals() {

@@ -190,6 +190,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public final class DataStructureUtil {
 
@@ -698,10 +699,10 @@ public final class DataStructureUtil {
   }
 
   public ExecutionWitness randomExecutionWitness() {
-    final SchemaDefinitionsCapella schemaDefinitionsCapella =
-        SchemaDefinitionsCapella.required(
-            spec.forMilestone(SpecMilestone.CAPELLA).getSchemaDefinitions());
-    return schemaDefinitionsCapella
+    final SchemaDefinitionsElectra schemaDefinitionsElectra =
+        SchemaDefinitionsElectra.required(
+            spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions());
+    return schemaDefinitionsElectra
         .getExecutionWitnessSchema()
         .create(
             List.of(randomStemStateDiff(5), randomStemStateDiff(2)), randomVerkleProof(6, 6, 3, 4));
@@ -710,10 +711,10 @@ public final class DataStructureUtil {
   private VerkleProof randomVerkleProof(
       final int otherStems, final int present, final int commitments, final int proofs) {
     final IpaProof ipaProof = randomIpaProof(proofs);
-    final SchemaDefinitionsCapella schemaDefinitionsCapella =
-        SchemaDefinitionsCapella.required(
-            spec.forMilestone(SpecMilestone.CAPELLA).getSchemaDefinitions());
-    return schemaDefinitionsCapella
+    final SchemaDefinitionsElectra schemaDefinitionsElectra =
+        SchemaDefinitionsElectra.required(
+            spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions());
+    return schemaDefinitionsElectra
         .getVerkleProofSchema()
         .create(
             IntStream.range(0, otherStems).mapToObj(__ -> randomBytes31()).toList(),
@@ -724,10 +725,10 @@ public final class DataStructureUtil {
   }
 
   private IpaProof randomIpaProof(final int proofs) {
-    final SchemaDefinitionsCapella schemaDefinitionsCapella =
-        SchemaDefinitionsCapella.required(
-            spec.forMilestone(SpecMilestone.CAPELLA).getSchemaDefinitions());
-    return schemaDefinitionsCapella
+    final SchemaDefinitionsElectra schemaDefinitionsElectra =
+        SchemaDefinitionsElectra.required(
+            spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions());
+    return schemaDefinitionsElectra
         .getIpaProofSchema()
         .create(
             IntStream.range(0, proofs).mapToObj(__ -> randomBytes32()).toList(),
@@ -736,21 +737,21 @@ public final class DataStructureUtil {
   }
 
   private StemStateDiff randomStemStateDiff(final int elements) {
-    final SchemaDefinitionsCapella schemaDefinitionsCapella =
-        SchemaDefinitionsCapella.required(
-            spec.forMilestone(SpecMilestone.CAPELLA).getSchemaDefinitions());
+    final SchemaDefinitionsElectra schemaDefinitionsElectra =
+        SchemaDefinitionsElectra.required(
+            spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions());
     final List<SuffixStateDiff> suffixStateDiffList =
         IntStream.range(0, elements).mapToObj(__ -> randomSuffixStateDiff()).toList();
-    return schemaDefinitionsCapella
+    return schemaDefinitionsElectra
         .getStemStateDiffSchema()
         .create(randomBytes31(), suffixStateDiffList);
   }
 
   private SuffixStateDiff randomSuffixStateDiff() {
-    final SchemaDefinitionsCapella schemaDefinitionsCapella =
-        SchemaDefinitionsCapella.required(
-            spec.forMilestone(SpecMilestone.CAPELLA).getSchemaDefinitions());
-    return schemaDefinitionsCapella
+    final SchemaDefinitionsElectra schemaDefinitionsElectra =
+        SchemaDefinitionsElectra.required(
+            spec.forMilestone(SpecMilestone.ELECTRA).getSchemaDefinitions());
+    return schemaDefinitionsElectra
         .getSuffixStateDiffSchema()
         .create(
             randomByte(), randomOptional(this::randomBytes32), randomOptional(this::randomBytes32));
@@ -1958,6 +1959,7 @@ public final class DataStructureUtil {
       case ALTAIR -> stateBuilderAltair(validatorCount, numItemsInSszLists);
       case BELLATRIX -> stateBuilderBellatrix(validatorCount, numItemsInSszLists);
       case CAPELLA -> stateBuilderCapella(validatorCount, numItemsInSszLists);
+      case ELECTRA -> throw new RuntimeException("not implemented");
       case DENEB -> stateBuilderDeneb(validatorCount, numItemsInSszLists);
     };
   }

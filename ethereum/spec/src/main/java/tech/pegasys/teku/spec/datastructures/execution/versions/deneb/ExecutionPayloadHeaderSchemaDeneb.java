@@ -118,7 +118,8 @@ public class ExecutionPayloadHeaderSchemaDeneb
   public LongList getBlindedNodeGeneralizedIndices() {
     return LongList.of(
         getChildGeneralizedIndex(getFieldIndex(TRANSACTIONS_ROOT)),
-        getChildGeneralizedIndex(getFieldIndex(WITHDRAWALS_ROOT)));
+        getChildGeneralizedIndex(getFieldIndex(WITHDRAWALS_ROOT)),
+        getChildGeneralizedIndex(getFieldIndex(EXECUTION_WITNESS_ROOT)));
   }
 
   @Override

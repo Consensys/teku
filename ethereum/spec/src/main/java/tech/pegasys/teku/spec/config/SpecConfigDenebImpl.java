@@ -18,7 +18,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements SpecConfigDeneb {
+public class SpecConfigDenebImpl extends DelegatingSpecConfigElectra implements SpecConfigDeneb {
 
   private final Bytes4 denebForkVersion;
   private final UInt64 denebForkEpoch;
@@ -35,7 +35,7 @@ public class SpecConfigDenebImpl extends DelegatingSpecConfigCapella implements 
   private final Optional<Integer> maybeEpochsStoreBlobs;
 
   public SpecConfigDenebImpl(
-      final SpecConfigCapella specConfig,
+      final SpecConfigElectra specConfig,
       final Bytes4 denebForkVersion,
       final UInt64 denebForkEpoch,
       final int maxPerEpochActivationChurnLimit,

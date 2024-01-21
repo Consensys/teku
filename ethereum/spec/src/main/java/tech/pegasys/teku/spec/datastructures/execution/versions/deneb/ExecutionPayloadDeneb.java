@@ -17,9 +17,9 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
 
-public interface ExecutionPayloadDeneb extends ExecutionPayload, ExecutionPayloadCapella {
+public interface ExecutionPayloadDeneb extends ExecutionPayloadElectra {
 
   static ExecutionPayloadDeneb required(final ExecutionPayload payload) {
     return payload

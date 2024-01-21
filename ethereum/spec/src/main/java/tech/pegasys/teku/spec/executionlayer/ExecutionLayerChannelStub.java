@@ -64,8 +64,8 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.BlobsUtil;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private static final Logger LOG = LogManager.getLogger();
@@ -266,21 +266,21 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                         .transactions(transactions)
                         .executionWitness(
                             () -> {
-                              final SchemaDefinitionsCapella schemaDefinitionsCapella =
-                                  SchemaDefinitionsCapella.required(
+                              final SchemaDefinitionsElectra schemaDefinitionsElectra =
+                                  SchemaDefinitionsElectra.required(
                                       spec.atSlot(slot).getSchemaDefinitions());
-                              return schemaDefinitionsCapella
+                              return schemaDefinitionsElectra
                                   .getExecutionWitnessSchema()
                                   .create(
                                       List.of(),
-                                      schemaDefinitionsCapella
+                                      schemaDefinitionsElectra
                                           .getVerkleProofSchema()
                                           .create(
                                               List.of(),
                                               List.of(),
                                               List.of(),
                                               Bytes32.ZERO,
-                                              schemaDefinitionsCapella
+                                              schemaDefinitionsElectra
                                                   .getIpaProofSchema()
                                                   .create(List.of(), List.of(), Bytes32.ZERO)));
                             })

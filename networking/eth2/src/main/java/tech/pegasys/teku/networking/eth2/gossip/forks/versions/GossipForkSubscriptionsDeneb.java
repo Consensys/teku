@@ -34,7 +34,7 @@ import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella {
+public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsElectra {
 
   private final OperationProcessor<BlobSidecar> blobSidecarProcessor;
 

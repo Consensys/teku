@@ -35,10 +35,10 @@ public class SpecConfigDenebTest {
 
   @Test
   public void equals_sameRandomValues() {
-    SpecConfigCapella specConfigCapella =
-        SpecConfigLoader.loadConfig("mainnet").toVersionCapella().orElseThrow();
-    SpecConfigDeneb configA = createRandomDenebConfig(specConfigCapella, 1);
-    SpecConfigDeneb configB = createRandomDenebConfig(specConfigCapella, 1);
+    SpecConfigElectra specConfigElectra =
+        SpecConfigLoader.loadConfig("mainnet").toVersionElectra().orElseThrow();
+    SpecConfigDeneb configA = createRandomDenebConfig(specConfigElectra, 1);
+    SpecConfigDeneb configB = createRandomDenebConfig(specConfigElectra, 1);
 
     assertThat(configA).isEqualTo(configB);
     assertThat(configA.hashCode()).isEqualTo(configB.hashCode());
@@ -46,10 +46,10 @@ public class SpecConfigDenebTest {
 
   @Test
   public void equals_differentRandomValues() {
-    SpecConfigCapella specConfigCapella =
-        SpecConfigLoader.loadConfig("mainnet").toVersionCapella().orElseThrow();
-    SpecConfigDeneb configA = createRandomDenebConfig(specConfigCapella, 1);
-    SpecConfigDeneb configB = createRandomDenebConfig(specConfigCapella, 2);
+    SpecConfigElectra specConfigElectra =
+        SpecConfigLoader.loadConfig("mainnet").toVersionElectra().orElseThrow();
+    SpecConfigDeneb configA = createRandomDenebConfig(specConfigElectra, 1);
+    SpecConfigDeneb configB = createRandomDenebConfig(specConfigElectra, 2);
 
     assertThat(configA).isNotEqualTo(configB);
     assertThat(configA.hashCode()).isNotEqualTo(configB.hashCode());
@@ -57,32 +57,32 @@ public class SpecConfigDenebTest {
 
   @Test
   public void equals_capellaConfigDiffer() {
-    SpecConfigCapella capellaA =
-        SpecConfigLoader.loadConfig("mainnet").toVersionCapella().orElseThrow();
-    SpecConfigCapella capellaB =
+    SpecConfigElectra electraA =
+        SpecConfigLoader.loadConfig("mainnet").toVersionElectra().orElseThrow();
+    SpecConfigElectra electraB =
         SpecConfigLoader.loadConfig(
                 "mainnet",
                 b ->
                     b.capellaBuilder(
                         cb ->
                             cb.maxWithdrawalsPerPayload(
-                                capellaA.getMaxWithdrawalsPerPayload() + 4)))
-            .toVersionCapella()
+                                electraA.getMaxWithdrawalsPerPayload() + 4)))
+            .toVersionElectra()
             .orElseThrow();
 
-    SpecConfigDeneb configA = createRandomDenebConfig(capellaA, 1);
-    SpecConfigDeneb configB = createRandomDenebConfig(capellaB, 1);
+    SpecConfigDeneb configA = createRandomDenebConfig(electraA, 1);
+    SpecConfigDeneb configB = createRandomDenebConfig(electraB, 1);
 
     assertThat(configA).isNotEqualTo(configB);
     assertThat(configA.hashCode()).isNotEqualTo(configB.hashCode());
   }
 
   private SpecConfigDeneb createRandomDenebConfig(
-      final SpecConfigCapella capellaConfig, final int seed) {
+      final SpecConfigElectra electraConfig, final int seed) {
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(seed, spec);
 
     return new SpecConfigDenebImpl(
-        capellaConfig,
+        electraConfig,
         dataStructureUtil.randomBytes4(),
         dataStructureUtil.randomUInt64(),
         dataStructureUtil.randomPositiveInt(),

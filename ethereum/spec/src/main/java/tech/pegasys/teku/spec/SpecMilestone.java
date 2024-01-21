@@ -26,12 +26,14 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 
 public enum SpecMilestone {
   PHASE0,
   ALTAIR,
   BELLATRIX,
   CAPELLA,
+  ELECTRA,
   DENEB;
 
   /**
@@ -111,6 +113,8 @@ public enum SpecMilestone {
         return specConfig.toVersionBellatrix().map(SpecConfigBellatrix::getBellatrixForkVersion);
       case CAPELLA:
         return specConfig.toVersionCapella().map(SpecConfigCapella::getCapellaForkVersion);
+      case ELECTRA:
+        return specConfig.toVersionElectra().map(SpecConfigElectra::getElectraForkVersion);
       case DENEB:
         return specConfig.toVersionDeneb().map(SpecConfigDeneb::getDenebForkVersion);
       default:
@@ -130,6 +134,8 @@ public enum SpecMilestone {
         return specConfig.toVersionBellatrix().map(SpecConfigBellatrix::getBellatrixForkEpoch);
       case CAPELLA:
         return specConfig.toVersionCapella().map(SpecConfigCapella::getCapellaForkEpoch);
+      case ELECTRA:
+        return specConfig.toVersionElectra().map(SpecConfigElectra::getElectraForkEpoch);
       case DENEB:
         return specConfig.toVersionDeneb().map(SpecConfigDeneb::getDenebForkEpoch);
       default:

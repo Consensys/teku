@@ -23,26 +23,26 @@ import tech.pegasys.teku.infrastructure.ssz.SszDataAssert;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.config.SpecConfigCapella;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class ExecutionWitnessTest {
-  private final Spec spec = TestSpecFactory.createMinimalCapella();
-  private final SpecConfigCapella specConfigCapella =
-      SpecConfigCapella.required(spec.forMilestone(SpecMilestone.CAPELLA).getConfig());
+  private final Spec spec = TestSpecFactory.createMinimalElectra();
+  private final SpecConfigElectra specConfigElectra =
+      SpecConfigElectra.required(spec.forMilestone(SpecMilestone.ELECTRA).getConfig());
   private final SuffixStateDiffSchema suffixStateDiffSchema = SuffixStateDiffSchema.INSTANCE;
   private final StemStateDiffSchema stemStateDiffSchema =
-      new StemStateDiffSchema(specConfigCapella.getVerkleWidth());
+      new StemStateDiffSchema(specConfigElectra.getVerkleWidth());
   private final IpaProofSchema ipaProofSchema =
-      new IpaProofSchema(specConfigCapella.getIpaProofDepth());
+      new IpaProofSchema(specConfigElectra.getIpaProofDepth());
   private final VerkleProofSchema verkleProofSchema =
       new VerkleProofSchema(
           ipaProofSchema,
-          specConfigCapella.getMaxStems(),
-          specConfigCapella.getMaxCommitmentsPerStem());
+          specConfigElectra.getMaxStems(),
+          specConfigElectra.getMaxCommitmentsPerStem());
   private final ExecutionWitnessSchema executionWitnessSchema =
       new ExecutionWitnessSchema(
-          specConfigCapella.getMaxStems(), stemStateDiffSchema, verkleProofSchema);
+          specConfigElectra.getMaxStems(), stemStateDiffSchema, verkleProofSchema);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final SuffixStateDiff suffixStateDiff1 =
       suffixStateDiffSchema.create(

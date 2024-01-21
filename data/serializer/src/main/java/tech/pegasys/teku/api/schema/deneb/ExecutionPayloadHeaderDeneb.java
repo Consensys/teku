@@ -21,13 +21,14 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import tech.pegasys.teku.api.schema.capella.ExecutionPayloadHeaderCapella;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderElectra;
 
-public class ExecutionPayloadHeaderDeneb extends ExecutionPayloadHeaderCapella {
+public class ExecutionPayloadHeaderDeneb
+    extends tech.pegasys.teku.api.schema.electra.ExecutionPayloadHeaderElectra {
 
   @JsonProperty("blob_gas_used")
   public final UInt64 blobGasUsed;
@@ -52,6 +53,7 @@ public class ExecutionPayloadHeaderDeneb extends ExecutionPayloadHeaderCapella {
       @JsonProperty("block_hash") final Bytes32 blockHash,
       @JsonProperty("transactions_root") final Bytes32 transactionsRoot,
       @JsonProperty("withdrawals_root") final Bytes32 withdrawalsRoot,
+      @JsonProperty("execution_witness_root") final Bytes32 executionWitnessRoot,
       @JsonProperty("blob_gas_used") final UInt64 blobGasUsed,
       @JsonProperty("excess_blob_gas") final UInt64 excessBlobGas) {
     super(
@@ -69,7 +71,8 @@ public class ExecutionPayloadHeaderDeneb extends ExecutionPayloadHeaderCapella {
         baseFeePerGas,
         blockHash,
         transactionsRoot,
-        withdrawalsRoot);
+        withdrawalsRoot,
+        executionWitnessRoot);
     this.blobGasUsed = blobGasUsed;
     this.excessBlobGas = excessBlobGas;
   }
@@ -90,7 +93,11 @@ public class ExecutionPayloadHeaderDeneb extends ExecutionPayloadHeaderCapella {
         executionPayloadHeader.getBaseFeePerGas(),
         executionPayloadHeader.getBlockHash(),
         executionPayloadHeader.getTransactionsRoot(),
-        executionPayloadHeader.getOptionalWithdrawalsRoot().orElseThrow());
+        executionPayloadHeader.getOptionalWithdrawalsRoot().orElseThrow(),
+        executionPayloadHeader
+            .toVersionElectra()
+            .map(ExecutionPayloadHeaderElectra::getExecutionWitnessRoot)
+            .orElse(null));
     this.blobGasUsed = executionPayloadHeader.toVersionDeneb().orElseThrow().getBlobGasUsed();
     this.excessBlobGas = executionPayloadHeader.toVersionDeneb().orElseThrow().getExcessBlobGas();
   }
@@ -116,8 +123,7 @@ public class ExecutionPayloadHeaderDeneb extends ExecutionPayloadHeaderCapella {
                 .blockHash(blockHash)
                 .transactionsRoot(transactionsRoot)
                 .withdrawalsRoot(() -> withdrawalsRoot)
-                // TODO Verkle trees
-                .executionWitnessRoot(() -> Bytes32.ZERO)
+                .executionWitnessRoot(() -> executionWitnessRoot)
                 .blobGasUsed(() -> blobGasUsed)
                 .excessBlobGas(() -> excessBlobGas));
   }
@@ -166,6 +172,7 @@ public class ExecutionPayloadHeaderDeneb extends ExecutionPayloadHeaderCapella {
         .add("blockHash", blockHash)
         .add("transactionsRoot", transactionsRoot)
         .add("withdrawalsRoot", withdrawalsRoot)
+        .add("executionWitnessRoot", executionWitnessRoot)
         .add("blobGasUsed", blobGasUsed)
         .add("excessBlobGas", excessBlobGas)
         .toString();

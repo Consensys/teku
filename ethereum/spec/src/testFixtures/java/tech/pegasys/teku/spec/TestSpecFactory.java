@@ -21,6 +21,7 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.networks.Eth2Network;
@@ -43,6 +44,7 @@ public class TestSpecFactory {
       case ALTAIR -> createMinimalAltair();
       case BELLATRIX -> createMinimalBellatrix();
       case CAPELLA -> createMinimalCapella();
+      case ELECTRA -> createMinimalElectra();
       case DENEB -> createMinimalDeneb();
     };
   }
@@ -53,6 +55,7 @@ public class TestSpecFactory {
       case ALTAIR -> createMainnetAltair();
       case BELLATRIX -> createMainnetBellatrix();
       case CAPELLA -> createMainnetCapella();
+      case ELECTRA -> createMainnetElectra();
       case DENEB -> createMainnetDeneb();
     };
   }
@@ -88,6 +91,11 @@ public class TestSpecFactory {
   public static Spec createMinimalCapella() {
     final SpecConfigCapella specConfig = getCapellaSpecConfig(Eth2Network.MINIMAL);
     return create(specConfig, SpecMilestone.CAPELLA);
+  }
+
+  public static Spec createMinimalElectra() {
+    final SpecConfigElectra specConfig = getElectraSpecConfig(Eth2Network.MINIMAL);
+    return create(specConfig, SpecMilestone.ELECTRA);
   }
 
   public static Spec createMinimalDeneb() {
@@ -167,6 +175,11 @@ public class TestSpecFactory {
     return create(specConfig, SpecMilestone.CAPELLA);
   }
 
+  public static Spec createMainnetElectra() {
+    final SpecConfigElectra specConfig = getElectraSpecConfig(Eth2Network.MAINNET);
+    return create(specConfig, SpecMilestone.ELECTRA);
+  }
+
   public static Spec createMainnetDeneb() {
     final SpecConfigBellatrix specConfig = getDenebSpecConfig(Eth2Network.MAINNET);
     return create(specConfig, SpecMilestone.DENEB);
@@ -218,11 +231,18 @@ public class TestSpecFactory {
                   .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
                   .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
                   .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO));
+          case ELECTRA -> builder ->
+              builder
+                  .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                  .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
+                  .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
+                  .electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO));
           case DENEB -> builder ->
               builder
                   .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
                   .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
                   .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
+                  .electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO))
                   .denebBuilder(d -> d.denebForkEpoch(UInt64.ZERO));
         };
     return create(
@@ -299,6 +319,37 @@ public class TestSpecFactory {
                   .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
                   .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
                   .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO));
+              configAdapter.accept(builder);
+            }));
+  }
+
+  private static SpecConfigElectra getElectraSpecConfig(final Eth2Network network) {
+    return getElectraSpecConfig(network, UInt64.ZERO);
+  }
+
+  private static SpecConfigElectra getElectraSpecConfig(
+      final Eth2Network network, final UInt64 electraForkEpoch) {
+    return getElectraSpecConfig(
+        network,
+        builder ->
+            builder
+                .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
+                .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
+                .electraBuilder(e -> e.electraForkEpoch(electraForkEpoch)));
+  }
+
+  private static SpecConfigElectra getElectraSpecConfig(
+      final Eth2Network network, final Consumer<SpecConfigBuilder> configAdapter) {
+    return SpecConfigElectra.required(
+        SpecConfigLoader.loadConfig(
+            network.configName(),
+            builder -> {
+              builder
+                  .altairBuilder(a -> a.altairForkEpoch(UInt64.ZERO))
+                  .bellatrixBuilder(b -> b.bellatrixForkEpoch(UInt64.ZERO))
+                  .capellaBuilder(c -> c.capellaForkEpoch(UInt64.ZERO))
+                  .electraBuilder(e -> e.electraForkEpoch(UInt64.ZERO));
               configAdapter.accept(builder);
             }));
   }

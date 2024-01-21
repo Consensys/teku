@@ -68,6 +68,9 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
                 case CAPELLA:
                   methodsByMilestone.put(milestone, capellaSupportedMethods());
                   break;
+                case ELECTRA:
+                  methodsByMilestone.put(milestone, electraSupportedMethods());
+                  break;
                 case DENEB:
                   methodsByMilestone.put(milestone, denebSupportedMethods());
                   break;
@@ -86,6 +89,16 @@ public class MilestoneBasedEngineJsonRpcMethodsResolver implements EngineJsonRpc
   }
 
   private Map<EngineApiMethod, EngineJsonRpcMethod<?>> capellaSupportedMethods() {
+    final Map<EngineApiMethod, EngineJsonRpcMethod<?>> methods = new HashMap<>();
+
+    methods.put(ENGINE_NEW_PAYLOAD, new EngineNewPayloadV2(executionEngineClient));
+    methods.put(ENGINE_GET_PAYLOAD, new EngineGetPayloadV2(executionEngineClient, spec));
+    methods.put(ENGINE_FORK_CHOICE_UPDATED, new EngineForkChoiceUpdatedV2(executionEngineClient));
+
+    return methods;
+  }
+
+  private Map<EngineApiMethod, EngineJsonRpcMethod<?>> electraSupportedMethods() {
     final Map<EngineApiMethod, EngineJsonRpcMethod<?>> methods = new HashMap<>();
 
     methods.put(ENGINE_NEW_PAYLOAD, new EngineNewPayloadV2(executionEngineClient));

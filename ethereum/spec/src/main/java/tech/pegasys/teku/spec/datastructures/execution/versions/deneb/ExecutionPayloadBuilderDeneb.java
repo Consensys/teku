@@ -23,9 +23,9 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadBuilderCapella;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadBuilderElectra;
 
-public class ExecutionPayloadBuilderDeneb extends ExecutionPayloadBuilderCapella {
+public class ExecutionPayloadBuilderDeneb extends ExecutionPayloadBuilderElectra {
   private ExecutionPayloadSchemaDeneb schema;
 
   protected UInt64 blobGasUsed;

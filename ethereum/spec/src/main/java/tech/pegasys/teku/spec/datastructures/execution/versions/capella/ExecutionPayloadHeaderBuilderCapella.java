@@ -28,7 +28,6 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.Execut
 public class ExecutionPayloadHeaderBuilderCapella extends ExecutionPayloadHeaderBuilderBellatrix {
   private ExecutionPayloadHeaderSchemaCapella schema;
   protected Bytes32 withdrawalsRoot;
-  protected Bytes32 executionWitnessRoot;
 
   public ExecutionPayloadHeaderBuilderCapella schema(
       final ExecutionPayloadHeaderSchemaCapella schema) {
@@ -44,13 +43,6 @@ public class ExecutionPayloadHeaderBuilderCapella extends ExecutionPayloadHeader
   }
 
   @Override
-  public ExecutionPayloadHeaderBuilder executionWitnessRoot(
-      final Supplier<Bytes32> executionWitnessRootSupplier) {
-    this.executionWitnessRoot = executionWitnessRootSupplier.get();
-    return this;
-  }
-
-  @Override
   protected void validateSchema() {
     checkNotNull(schema, "schema must be specified");
   }
@@ -59,7 +51,6 @@ public class ExecutionPayloadHeaderBuilderCapella extends ExecutionPayloadHeader
   protected void validate() {
     super.validate();
     checkNotNull(withdrawalsRoot, "withdrawalsRoot must be specified");
-    checkNotNull(executionWitnessRoot, "executionWitnessRoot must be specified");
   }
 
   @Override
@@ -81,7 +72,6 @@ public class ExecutionPayloadHeaderBuilderCapella extends ExecutionPayloadHeader
         SszUInt256.of(baseFeePerGas),
         SszBytes32.of(blockHash),
         SszBytes32.of(transactionsRoot),
-        SszBytes32.of(withdrawalsRoot),
-        SszBytes32.of(executionWitnessRoot));
+        SszBytes32.of(withdrawalsRoot));
   }
 }

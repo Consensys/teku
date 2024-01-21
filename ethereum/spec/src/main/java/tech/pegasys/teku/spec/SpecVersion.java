@@ -19,18 +19,21 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.logic.DelegatingSpecLogic;
 import tech.pegasys.teku.spec.logic.SpecLogic;
 import tech.pegasys.teku.spec.logic.versions.altair.SpecLogicAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.SpecLogicBellatrix;
 import tech.pegasys.teku.spec.logic.versions.capella.SpecLogicCapella;
 import tech.pegasys.teku.spec.logic.versions.deneb.SpecLogicDeneb;
+import tech.pegasys.teku.spec.logic.versions.electra.SpecLogicElectra;
 import tech.pegasys.teku.spec.logic.versions.phase0.SpecLogicPhase0;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsPhase0;
 
 public class SpecVersion extends DelegatingSpecLogic {
@@ -56,6 +59,7 @@ public class SpecVersion extends DelegatingSpecLogic {
       case ALTAIR -> specConfig.toVersionAltair().map(SpecVersion::createAltair);
       case BELLATRIX -> specConfig.toVersionBellatrix().map(SpecVersion::createBellatrix);
       case CAPELLA -> specConfig.toVersionCapella().map(SpecVersion::createCapella);
+      case ELECTRA -> specConfig.toVersionElectra().map(SpecVersion::createElectra);
       case DENEB -> specConfig.toVersionDeneb().map(SpecVersion::createDeneb);
     };
   }
@@ -82,6 +86,12 @@ public class SpecVersion extends DelegatingSpecLogic {
     final SchemaDefinitionsCapella schemaDefinitions = new SchemaDefinitionsCapella(specConfig);
     final SpecLogicCapella specLogic = SpecLogicCapella.create(specConfig, schemaDefinitions);
     return new SpecVersion(SpecMilestone.CAPELLA, specConfig, schemaDefinitions, specLogic);
+  }
+
+  static SpecVersion createElectra(final SpecConfigElectra specConfig) {
+    final SchemaDefinitionsElectra schemaDefinitions = new SchemaDefinitionsElectra(specConfig);
+    final SpecLogicElectra specLogic = SpecLogicElectra.create(specConfig, schemaDefinitions);
+    return new SpecVersion(SpecMilestone.ELECTRA, specConfig, schemaDefinitions, specLogic);
   }
 
   static SpecVersion createDeneb(final SpecConfigDeneb specConfig) {

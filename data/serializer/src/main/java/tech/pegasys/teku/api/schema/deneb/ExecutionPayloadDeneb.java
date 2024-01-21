@@ -22,15 +22,15 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
-import tech.pegasys.teku.api.schema.ExecutionPayload;
-import tech.pegasys.teku.api.schema.capella.ExecutionPayloadCapella;
 import tech.pegasys.teku.api.schema.capella.Withdrawal;
+import tech.pegasys.teku.api.schema.electra.ExecutionPayloadElectra;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 
-public class ExecutionPayloadDeneb extends ExecutionPayloadCapella implements ExecutionPayload {
+public class ExecutionPayloadDeneb extends ExecutionPayloadElectra {
 
   @JsonProperty("blob_gas_used")
   public final UInt64 blobGasUsed;
@@ -55,6 +55,7 @@ public class ExecutionPayloadDeneb extends ExecutionPayloadCapella implements Ex
       @JsonProperty("block_hash") final Bytes32 blockHash,
       @JsonProperty("transactions") final List<Bytes> transactions,
       @JsonProperty("withdrawals") final List<Withdrawal> withdrawals,
+      @JsonProperty("execution_witness") final Bytes executionWitness,
       @JsonProperty("blob_gas_used") final UInt64 blobGasUsed,
       @JsonProperty("excess_blob_gas") final UInt64 excessBlobGas) {
     super(
@@ -72,13 +73,13 @@ public class ExecutionPayloadDeneb extends ExecutionPayloadCapella implements Ex
         baseFeePerGas,
         blockHash,
         transactions,
-        withdrawals);
+        withdrawals,
+        executionWitness);
     this.blobGasUsed = blobGasUsed;
     this.excessBlobGas = excessBlobGas;
   }
 
-  public ExecutionPayloadDeneb(
-      final tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload executionPayload) {
+  public ExecutionPayloadDeneb(final ExecutionPayload executionPayload) {
     super(executionPayload);
     this.blobGasUsed = executionPayload.toVersionDeneb().orElseThrow().getBlobGasUsed();
     this.excessBlobGas = executionPayload.toVersionDeneb().orElseThrow().getExcessBlobGas();
@@ -137,6 +138,7 @@ public class ExecutionPayloadDeneb extends ExecutionPayloadCapella implements Ex
         .add("blockHash", blockHash)
         .add("transactions", transactions)
         .add("withdrawals", withdrawals)
+        .add("executionWitness", executionWitness)
         .add("blobGasUsed", blobGasUsed)
         .add("excessBlobGas", excessBlobGas)
         .toString();

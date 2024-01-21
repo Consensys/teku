@@ -106,6 +106,11 @@ public interface SchemaDefinitions {
   }
 
   @NonSchema
+  default Optional<SchemaDefinitionsElectra> toVersionElectra() {
+    return Optional.empty();
+  }
+
+  @NonSchema
   default Optional<SchemaDefinitionsDeneb> toVersionDeneb() {
     return Optional.empty();
   }

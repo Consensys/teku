@@ -31,7 +31,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFi
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
-import tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitnessSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapellaImpl;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -94,7 +93,6 @@ public class BeaconBlockBodySchemaCapellaImpl
       final SpecConfigCapella specConfig,
       final AttesterSlashingSchema attesterSlashingSchema,
       final SignedBlsToExecutionChangeSchema blsToExecutionChangeSchema,
-      final ExecutionWitnessSchema executionWitnessSchema,
       final String containerName) {
     return new BeaconBlockBodySchemaCapellaImpl(
         containerName,
@@ -123,8 +121,7 @@ public class BeaconBlockBodySchemaCapellaImpl
             BlockBodyFields.SYNC_AGGREGATE,
             SyncAggregateSchema.create(specConfig.getSyncCommitteeSize())),
         namedSchema(
-            BlockBodyFields.EXECUTION_PAYLOAD,
-            new ExecutionPayloadSchemaCapella(specConfig, executionWitnessSchema)),
+            BlockBodyFields.EXECUTION_PAYLOAD, new ExecutionPayloadSchemaCapella(specConfig)),
         namedSchema(
             BlockBodyFields.BLS_TO_EXECUTION_CHANGES,
             SszListSchema.create(

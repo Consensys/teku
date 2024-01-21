@@ -146,7 +146,8 @@ public class ExecutionPayloadSchemaDeneb
   public LongList getBlindedNodeGeneralizedIndices() {
     return LongList.of(
         getChildGeneralizedIndex(getFieldIndex(TRANSACTIONS)),
-        getChildGeneralizedIndex(getFieldIndex(WITHDRAWALS)));
+        getChildGeneralizedIndex(getFieldIndex(WITHDRAWALS)),
+        getChildGeneralizedIndex(getFieldIndex(EXECUTION_WITNESS)));
   }
 
   @Override

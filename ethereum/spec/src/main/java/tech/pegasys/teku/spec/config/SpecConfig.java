@@ -179,6 +179,10 @@ public interface SpecConfig extends NetworkingSpecConfig {
     return Optional.empty();
   }
 
+  default Optional<SpecConfigElectra> toVersionElectra() {
+    return Optional.empty();
+  }
+
   default Optional<SpecConfigDeneb> toVersionDeneb() {
     return Optional.empty();
   }

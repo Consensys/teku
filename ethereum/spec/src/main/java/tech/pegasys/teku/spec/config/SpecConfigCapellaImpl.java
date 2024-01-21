@@ -28,32 +28,19 @@ public class SpecConfigCapellaImpl extends DelegatingSpecConfigBellatrix
   private final int maxWithdrawalsPerPayload;
   private final int maxValidatorsPerWithdrawalSweep;
 
-  private final int maxStems;
-  private final int maxCommitmentsPerStem;
-  private final int verkleWidth;
-  private final int ipaProofDepth;
-
   public SpecConfigCapellaImpl(
       final SpecConfigBellatrix specConfig,
       final Bytes4 capellaForkVersion,
       final UInt64 capellaForkEpoch,
       final int maxBlsToExecutionChanges,
       final int maxWithdrawalsPerPayload,
-      final int maxValidatorsPerWithdrawalSweep,
-      final int maxStems,
-      final int maxCommitmentsPerStem,
-      final int verkleWidth,
-      final int ipaProofDepth) {
+      final int maxValidatorsPerWithdrawalSweep) {
     super(specConfig);
     this.capellaForkVersion = capellaForkVersion;
     this.capellaForkEpoch = capellaForkEpoch;
     this.maxBlsToExecutionChanges = maxBlsToExecutionChanges;
     this.maxWithdrawalsPerPayload = maxWithdrawalsPerPayload;
     this.maxValidatorsPerWithdrawalSweep = maxValidatorsPerWithdrawalSweep;
-    this.maxStems = maxStems;
-    this.maxCommitmentsPerStem = maxCommitmentsPerStem;
-    this.verkleWidth = verkleWidth;
-    this.ipaProofDepth = ipaProofDepth;
   }
 
   @Override
@@ -80,11 +67,7 @@ public class SpecConfigCapellaImpl extends DelegatingSpecConfigBellatrix
         && Objects.equals(capellaForkEpoch, that.capellaForkEpoch)
         && maxBlsToExecutionChanges == that.maxBlsToExecutionChanges
         && maxWithdrawalsPerPayload == that.maxWithdrawalsPerPayload
-        && maxValidatorsPerWithdrawalSweep == that.maxValidatorsPerWithdrawalSweep
-        && maxStems == that.maxStems
-        && maxCommitmentsPerStem == that.maxCommitmentsPerStem
-        && verkleWidth == that.verkleWidth
-        && ipaProofDepth == that.ipaProofDepth;
+        && maxValidatorsPerWithdrawalSweep == that.maxValidatorsPerWithdrawalSweep;
   }
 
   @Override
@@ -95,11 +78,7 @@ public class SpecConfigCapellaImpl extends DelegatingSpecConfigBellatrix
         capellaForkEpoch,
         maxBlsToExecutionChanges,
         maxWithdrawalsPerPayload,
-        maxValidatorsPerWithdrawalSweep,
-        maxStems,
-        maxCommitmentsPerStem,
-        verkleWidth,
-        ipaProofDepth);
+        maxValidatorsPerWithdrawalSweep);
   }
 
   @Override
@@ -115,26 +94,6 @@ public class SpecConfigCapellaImpl extends DelegatingSpecConfigBellatrix
   @Override
   public int getMaxValidatorsPerWithdrawalSweep() {
     return maxValidatorsPerWithdrawalSweep;
-  }
-
-  @Override
-  public int getMaxStems() {
-    return maxStems;
-  }
-
-  @Override
-  public int getMaxCommitmentsPerStem() {
-    return maxCommitmentsPerStem;
-  }
-
-  @Override
-  public int getVerkleWidth() {
-    return verkleWidth;
-  }
-
-  @Override
-  public int getIpaProofDepth() {
-    return ipaProofDepth;
   }
 
   @Override

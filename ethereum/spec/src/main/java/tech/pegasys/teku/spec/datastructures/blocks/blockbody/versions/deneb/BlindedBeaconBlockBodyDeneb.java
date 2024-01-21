@@ -16,10 +16,10 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodyCapella;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodyElectra;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
-public interface BlindedBeaconBlockBodyDeneb extends BlindedBeaconBlockBodyCapella {
+public interface BlindedBeaconBlockBodyDeneb extends BlindedBeaconBlockBodyElectra {
   static BlindedBeaconBlockBodyDeneb required(final BeaconBlockBody body) {
     return body.toBlindedVersionDeneb()
         .orElseThrow(

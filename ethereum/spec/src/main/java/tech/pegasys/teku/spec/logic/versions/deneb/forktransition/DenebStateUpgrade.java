@@ -16,12 +16,12 @@ package tech.pegasys.teku.spec.logic.versions.deneb.forktransition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
-import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderCapella;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderElectra;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateCapella;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateDeneb;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.logic.common.forktransition.StateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -44,7 +44,7 @@ public class DenebStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
   @Override
   public BeaconStateDeneb upgrade(final BeaconState preState) {
     final UInt64 epoch = beaconStateAccessors.getCurrentEpoch(preState);
-    final BeaconStateCapella preStateCapella = BeaconStateCapella.required(preState);
+    final BeaconStateElectra preStateElectra = BeaconStateElectra.required(preState);
     return schemaDefinitions
         .getBeaconStateSchema()
         .createEmpty()
@@ -52,11 +52,11 @@ public class DenebStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
             state -> {
               BeaconStateFields.copyCommonFieldsFromSource(state, preState);
 
-              state.setCurrentEpochParticipation(preStateCapella.getCurrentEpochParticipation());
-              state.setPreviousEpochParticipation(preStateCapella.getPreviousEpochParticipation());
-              state.setCurrentSyncCommittee(preStateCapella.getCurrentSyncCommittee());
-              state.setNextSyncCommittee(preStateCapella.getNextSyncCommittee());
-              state.setInactivityScores(preStateCapella.getInactivityScores());
+              state.setCurrentEpochParticipation(preStateElectra.getCurrentEpochParticipation());
+              state.setPreviousEpochParticipation(preStateElectra.getPreviousEpochParticipation());
+              state.setCurrentSyncCommittee(preStateElectra.getCurrentSyncCommittee());
+              state.setNextSyncCommittee(preStateElectra.getNextSyncCommittee());
+              state.setInactivityScores(preStateElectra.getInactivityScores());
 
               state.setFork(
                   new Fork(
@@ -64,10 +64,10 @@ public class DenebStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
                       specConfig.getDenebForkVersion(),
                       epoch));
 
-              final ExecutionPayloadHeaderCapella capellaHeader =
-                  preStateCapella
+              final ExecutionPayloadHeaderElectra electraHeader =
+                  preStateElectra
                       .getLatestExecutionPayloadHeader()
-                      .toVersionCapella()
+                      .toVersionElectra()
                       .orElseThrow();
               final ExecutionPayloadHeader upgradedExecutionPayloadHeader =
                   schemaDefinitions
@@ -75,31 +75,31 @@ public class DenebStateUpgrade implements StateUpgrade<BeaconStateDeneb> {
                       .createExecutionPayloadHeader(
                           builder ->
                               builder
-                                  .parentHash(capellaHeader.getParentHash())
-                                  .feeRecipient(capellaHeader.getFeeRecipient())
-                                  .stateRoot(capellaHeader.getStateRoot())
-                                  .receiptsRoot(capellaHeader.getReceiptsRoot())
-                                  .logsBloom(capellaHeader.getLogsBloom())
-                                  .prevRandao(capellaHeader.getPrevRandao())
-                                  .blockNumber(capellaHeader.getBlockNumber())
-                                  .gasLimit(capellaHeader.getGasLimit())
-                                  .gasUsed(capellaHeader.getGasUsed())
-                                  .timestamp(capellaHeader.getTimestamp())
-                                  .extraData(capellaHeader.getExtraData())
-                                  .baseFeePerGas(capellaHeader.getBaseFeePerGas())
-                                  .blockHash(capellaHeader.getBlockHash())
-                                  .transactionsRoot(capellaHeader.getTransactionsRoot())
-                                  .withdrawalsRoot(capellaHeader::getWithdrawalsRoot)
-                                  .executionWitnessRoot(capellaHeader::getExecutionWitnessRoot)
+                                  .parentHash(electraHeader.getParentHash())
+                                  .feeRecipient(electraHeader.getFeeRecipient())
+                                  .stateRoot(electraHeader.getStateRoot())
+                                  .receiptsRoot(electraHeader.getReceiptsRoot())
+                                  .logsBloom(electraHeader.getLogsBloom())
+                                  .prevRandao(electraHeader.getPrevRandao())
+                                  .blockNumber(electraHeader.getBlockNumber())
+                                  .gasLimit(electraHeader.getGasLimit())
+                                  .gasUsed(electraHeader.getGasUsed())
+                                  .timestamp(electraHeader.getTimestamp())
+                                  .extraData(electraHeader.getExtraData())
+                                  .baseFeePerGas(electraHeader.getBaseFeePerGas())
+                                  .blockHash(electraHeader.getBlockHash())
+                                  .transactionsRoot(electraHeader.getTransactionsRoot())
+                                  .withdrawalsRoot(electraHeader::getWithdrawalsRoot)
+                                  .executionWitnessRoot(electraHeader::getExecutionWitnessRoot)
                                   .blobGasUsed(() -> UInt64.ZERO)
                                   .excessBlobGas(() -> UInt64.ZERO));
 
               state.setLatestExecutionPayloadHeader(upgradedExecutionPayloadHeader);
 
               state.setNextWithdrawalValidatorIndex(
-                  preStateCapella.getNextWithdrawalValidatorIndex());
-              state.setNextWithdrawalIndex(preStateCapella.getNextWithdrawalIndex());
-              state.setHistoricalSummaries(preStateCapella.getHistoricalSummaries());
+                  preStateElectra.getNextWithdrawalValidatorIndex());
+              state.setNextWithdrawalIndex(preStateElectra.getNextWithdrawalIndex());
+              state.setHistoricalSummaries(preStateElectra.getHistoricalSummaries());
             });
   }
 }

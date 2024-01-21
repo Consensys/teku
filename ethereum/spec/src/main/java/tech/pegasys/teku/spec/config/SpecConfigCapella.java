@@ -41,16 +41,4 @@ public interface SpecConfigCapella extends SpecConfigBellatrix {
   int getMaxWithdrawalsPerPayload();
 
   int getMaxValidatorsPerWithdrawalSweep();
-
-  /**
-   * Experimental feature: `Verkle trees` as of
-   * https://github.com/ethereum/consensus-specs/pull/3230/
-   */
-  int getMaxStems();
-
-  int getMaxCommitmentsPerStem();
-
-  int getVerkleWidth();
-
-  int getIpaProofDepth();
 }

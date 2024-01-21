@@ -1,0 +1,203 @@
+/*
+ * Copyright Consensys Software Inc., 2022
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra;
+
+import it.unimi.dsi.fastutil.longs.LongList;
+import java.util.function.Consumer;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema11;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
+import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.tree.GIndexUtil;
+import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
+import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.BlockBodyFields;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregateSchema;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitnessSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderElectraImpl;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.Attestation.AttestationSchema;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing.AttesterSlashingSchema;
+import tech.pegasys.teku.spec.datastructures.operations.Deposit;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
+import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
+import tech.pegasys.teku.spec.datastructures.type.SszSignature;
+import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
+
+public class BlindedBeaconBlockBodySchemaElectraImpl
+    extends ContainerSchema11<
+        BlindedBeaconBlockBodyElectraImpl,
+        SszSignature,
+        Eth1Data,
+        SszBytes32,
+        SszList<ProposerSlashing>,
+        SszList<AttesterSlashing>,
+        SszList<Attestation>,
+        SszList<Deposit>,
+        SszList<SignedVoluntaryExit>,
+        SyncAggregate,
+        ExecutionPayloadHeaderElectraImpl,
+        SszList<SignedBlsToExecutionChange>>
+    implements BlindedBeaconBlockBodySchemaElectra<BlindedBeaconBlockBodyElectraImpl> {
+
+  private BlindedBeaconBlockBodySchemaElectraImpl(
+      final String containerName,
+      NamedSchema<SszSignature> randaoReveal,
+      NamedSchema<Eth1Data> eth1Data,
+      NamedSchema<SszBytes32> graffiti,
+      NamedSchema<SszList<ProposerSlashing>> proposerSlashings,
+      NamedSchema<SszList<AttesterSlashing>> attesterSlashings,
+      NamedSchema<SszList<Attestation>> attestations,
+      NamedSchema<SszList<Deposit>> deposits,
+      NamedSchema<SszList<SignedVoluntaryExit>> voluntaryExits,
+      NamedSchema<SyncAggregate> syncAggregate,
+      NamedSchema<ExecutionPayloadHeaderElectraImpl> executionPayloadHeader,
+      NamedSchema<SszList<SignedBlsToExecutionChange>> blsToExecutionChanges) {
+    super(
+        containerName,
+        randaoReveal,
+        eth1Data,
+        graffiti,
+        proposerSlashings,
+        attesterSlashings,
+        attestations,
+        deposits,
+        voluntaryExits,
+        syncAggregate,
+        executionPayloadHeader,
+        blsToExecutionChanges);
+  }
+
+  public static BlindedBeaconBlockBodySchemaElectraImpl create(
+      final SpecConfigElectra specConfig,
+      final AttesterSlashingSchema attesterSlashingSchema,
+      final SignedBlsToExecutionChangeSchema signedBlsToExecutionChangeSchema,
+      final ExecutionWitnessSchema executionWitnessSchema,
+      final String containerName) {
+    return new BlindedBeaconBlockBodySchemaElectraImpl(
+        containerName,
+        namedSchema(BlockBodyFields.RANDAO_REVEAL, SszSignatureSchema.INSTANCE),
+        namedSchema(BlockBodyFields.ETH1_DATA, Eth1Data.SSZ_SCHEMA),
+        namedSchema(BlockBodyFields.GRAFFITI, SszPrimitiveSchemas.BYTES32_SCHEMA),
+        namedSchema(
+            BlockBodyFields.PROPOSER_SLASHINGS,
+            SszListSchema.create(
+                ProposerSlashing.SSZ_SCHEMA, specConfig.getMaxProposerSlashings())),
+        namedSchema(
+            BlockBodyFields.ATTESTER_SLASHINGS,
+            SszListSchema.create(attesterSlashingSchema, specConfig.getMaxAttesterSlashings())),
+        namedSchema(
+            BlockBodyFields.ATTESTATIONS,
+            SszListSchema.create(
+                new AttestationSchema(specConfig), specConfig.getMaxAttestations())),
+        namedSchema(
+            BlockBodyFields.DEPOSITS,
+            SszListSchema.create(Deposit.SSZ_SCHEMA, specConfig.getMaxDeposits())),
+        namedSchema(
+            BlockBodyFields.VOLUNTARY_EXITS,
+            SszListSchema.create(
+                SignedVoluntaryExit.SSZ_SCHEMA, specConfig.getMaxVoluntaryExits())),
+        namedSchema(
+            BlockBodyFields.SYNC_AGGREGATE,
+            SyncAggregateSchema.create(specConfig.getSyncCommitteeSize())),
+        namedSchema(
+            BlockBodyFields.EXECUTION_PAYLOAD_HEADER,
+            new ExecutionPayloadHeaderSchemaElectra(specConfig, executionWitnessSchema)),
+        namedSchema(
+            BlockBodyFields.BLS_TO_EXECUTION_CHANGES,
+            SszListSchema.create(
+                signedBlsToExecutionChangeSchema, specConfig.getMaxBlsToExecutionChanges())));
+  }
+
+  @Override
+  public SafeFuture<BeaconBlockBody> createBlockBody(
+      final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
+    final BeaconBlockBodyBuilderElectra builder = new BeaconBlockBodyBuilderElectra(null, this);
+    builderConsumer.accept(builder);
+    return builder.build();
+  }
+
+  @Override
+  public BlindedBeaconBlockBodyElectraImpl createEmpty() {
+    return new BlindedBeaconBlockBodyElectraImpl(this);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public SszListSchema<ProposerSlashing, ?> getProposerSlashingsSchema() {
+    return (SszListSchema<ProposerSlashing, ?>) getFieldSchema3();
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public SszListSchema<AttesterSlashing, ?> getAttesterSlashingsSchema() {
+    return (SszListSchema<AttesterSlashing, ?>) getFieldSchema4();
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public SszListSchema<Attestation, ?> getAttestationsSchema() {
+    return (SszListSchema<Attestation, ?>) getFieldSchema5();
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public SszListSchema<Deposit, ?> getDepositsSchema() {
+    return (SszListSchema<Deposit, ?>) getFieldSchema6();
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public SszListSchema<SignedVoluntaryExit, ?> getVoluntaryExitsSchema() {
+    return (SszListSchema<SignedVoluntaryExit, ?>) getFieldSchema7();
+  }
+
+  @Override
+  public SyncAggregateSchema getSyncAggregateSchema() {
+    return (SyncAggregateSchema) getFieldSchema8();
+  }
+
+  @Override
+  public BlindedBeaconBlockBodyElectraImpl createFromBackingNode(TreeNode node) {
+    return new BlindedBeaconBlockBodyElectraImpl(this, node);
+  }
+
+  @Override
+  public ExecutionPayloadHeaderSchemaElectra getExecutionPayloadHeaderSchema() {
+    return (ExecutionPayloadHeaderSchemaElectra) getFieldSchema9();
+  }
+
+  @SuppressWarnings("unchecked")
+  @Override
+  public SszListSchema<SignedBlsToExecutionChange, ?> getBlsToExecutionChanges() {
+    return (SszListSchema<SignedBlsToExecutionChange, ?>) getFieldSchema10();
+  }
+
+  @Override
+  public LongList getBlindedNodeGeneralizedIndices() {
+    return GIndexUtil.gIdxComposeAll(
+        getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.EXECUTION_PAYLOAD_HEADER)),
+        getExecutionPayloadHeaderSchema().getBlindedNodeGeneralizedIndices());
+  }
+}

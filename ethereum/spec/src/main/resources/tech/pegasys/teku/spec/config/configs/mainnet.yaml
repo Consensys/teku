@@ -56,7 +56,9 @@ EIP6110_FORK_EPOCH: 18446744073709551615
 # WHISK
 WHISK_FORK_VERSION: 0x06000000  # temporary stub
 WHISK_FORK_EPOCH: 18446744073709551615
-
+# Electra
+ELECTRA_FORK_VERSION: 0x07000000  # Verkle trees experimental
+ELECTRA_FORK_EPOCH: 18446744073709551615
 
 # Time parameters
 # ---------------------------------------------------------------

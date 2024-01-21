@@ -17,11 +17,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodySchemaCapella;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BlindedBeaconBlockBodySchemaElectra;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 public interface BlindedBeaconBlockBodySchemaDeneb<T extends BlindedBeaconBlockBodyDeneb>
-    extends BlindedBeaconBlockBodySchemaCapella<T> {
+    extends BlindedBeaconBlockBodySchemaElectra<T> {
 
   static BlindedBeaconBlockBodySchemaDeneb<?> required(final BeaconBlockBodySchema<?> schema) {
     checkArgument(

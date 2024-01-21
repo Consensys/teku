@@ -35,11 +35,6 @@ public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, Sp
   private Integer maxWithdrawalsPerPayload;
   private Integer maxValidatorsPerWithdrawalSweep;
 
-  private Integer maxStems;
-  private Integer maxCommitmentsPerStem;
-  private Integer verkleWidth;
-  private Integer ipaProofDepth;
-
   CapellaBuilder() {}
 
   @Override
@@ -50,11 +45,7 @@ public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, Sp
         capellaForkEpoch,
         maxBlsToExecutionChanges,
         maxWithdrawalsPerPayload,
-        maxValidatorsPerWithdrawalSweep,
-        maxStems,
-        maxCommitmentsPerStem,
-        verkleWidth,
-        ipaProofDepth);
+        maxValidatorsPerWithdrawalSweep);
   }
 
   public CapellaBuilder capellaForkEpoch(final UInt64 capellaForkEpoch) {
@@ -82,26 +73,6 @@ public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, Sp
   public CapellaBuilder maxValidatorsPerWithdrawalsSweep(
       final Integer maxValidatorsPerWithdrawalSweep) {
     this.maxValidatorsPerWithdrawalSweep = maxValidatorsPerWithdrawalSweep;
-    return this;
-  }
-
-  public CapellaBuilder maxStems(final Integer maxStems) {
-    this.maxStems = maxStems;
-    return this;
-  }
-
-  public CapellaBuilder maxCommitmentsPerStem(final Integer maxCommitmentsPerStem) {
-    this.maxCommitmentsPerStem = maxCommitmentsPerStem;
-    return this;
-  }
-
-  public CapellaBuilder verkleWidth(final Integer verkleWidth) {
-    this.verkleWidth = verkleWidth;
-    return this;
-  }
-
-  public CapellaBuilder ipaProofDepth(final Integer ipaProofDepth) {
-    this.ipaProofDepth = ipaProofDepth;
     return this;
   }
 
@@ -135,10 +106,6 @@ public class CapellaBuilder implements ForkConfigBuilder<SpecConfigBellatrix, Sp
     constants.put("maxBlsToExecutionChanges", maxBlsToExecutionChanges);
     constants.put("maxWithdrawalsPerPayload", maxWithdrawalsPerPayload);
     constants.put("maxValidatorsPerWithdrawalSweep", maxValidatorsPerWithdrawalSweep);
-    constants.put("maxStems", maxStems);
-    constants.put("maxCommitmentsPerStem", maxCommitmentsPerStem);
-    constants.put("verkleWidth", verkleWidth);
-    constants.put("ipaProofDepth", ipaProofDepth);
 
     return constants;
   }

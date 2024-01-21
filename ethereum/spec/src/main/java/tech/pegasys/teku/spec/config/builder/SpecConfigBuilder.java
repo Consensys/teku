@@ -134,6 +134,7 @@ public class SpecConfigBuilder {
       BuilderChain.create(new AltairBuilder())
           .appendBuilder(new BellatrixBuilder())
           .appendBuilder(new CapellaBuilder())
+          .appendBuilder(new ElectraBuilder())
           .appendBuilder(new DenebBuilder());
 
   public SpecConfig build() {
@@ -718,6 +719,11 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder capellaBuilder(final Consumer<CapellaBuilder> consumer) {
     builderChain.withBuilder(CapellaBuilder.class, consumer);
+    return this;
+  }
+
+  public SpecConfigBuilder electraBuilder(final Consumer<ElectraBuilder> consumer) {
+    builderChain.withBuilder(ElectraBuilder.class, consumer);
     return this;
   }
 

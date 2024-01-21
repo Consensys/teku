@@ -16,9 +16,9 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb;
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateCapella;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 
-public interface BeaconStateDeneb extends BeaconStateCapella {
+public interface BeaconStateDeneb extends BeaconStateElectra {
   static BeaconStateDeneb required(final BeaconState state) {
     return state
         .toVersionDeneb()
@@ -29,8 +29,8 @@ public interface BeaconStateDeneb extends BeaconStateCapella {
   }
 
   static void describeCustomDenebFields(
-      MoreObjects.ToStringHelper stringBuilder, BeaconStateCapella state) {
-    BeaconStateCapella.describeCustomCapellaFields(stringBuilder, state);
+      MoreObjects.ToStringHelper stringBuilder, BeaconStateElectra state) {
+    BeaconStateElectra.describeCustomElectraFields(stringBuilder, state);
     // no new fields
   }
 

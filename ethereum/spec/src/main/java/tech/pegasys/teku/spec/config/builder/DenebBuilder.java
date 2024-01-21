@@ -23,11 +23,11 @@ import java.util.function.BiConsumer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.config.SpecConfigDenebImpl;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 
-public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecConfigDeneb> {
+public class DenebBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecConfigDeneb> {
 
   private Bytes4 denebForkVersion;
   private UInt64 denebForkEpoch;
@@ -46,7 +46,7 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigCapella, SpecCo
   DenebBuilder() {}
 
   @Override
-  public SpecConfigDeneb build(final SpecConfigCapella specConfig) {
+  public SpecConfigDeneb build(final SpecConfigElectra specConfig) {
     return new SpecConfigDenebImpl(
         specConfig,
         denebForkVersion,

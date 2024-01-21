@@ -23,13 +23,11 @@ import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
-import tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitness;
 import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.ExecutionPayloadBuilderBellatrix;
 
 public class ExecutionPayloadBuilderCapella extends ExecutionPayloadBuilderBellatrix {
   private ExecutionPayloadSchemaCapella schema;
   protected List<Withdrawal> withdrawals;
-  protected ExecutionWitness executionWitness;
 
   public ExecutionPayloadBuilderCapella schema(final ExecutionPayloadSchemaCapella schema) {
     this.schema = schema;
@@ -39,13 +37,6 @@ public class ExecutionPayloadBuilderCapella extends ExecutionPayloadBuilderBella
   @Override
   public ExecutionPayloadBuilder withdrawals(final Supplier<List<Withdrawal>> withdrawalsSupplier) {
     this.withdrawals = withdrawalsSupplier.get();
-    return this;
-  }
-
-  @Override
-  public ExecutionPayloadBuilder executionWitness(
-      final Supplier<ExecutionWitness> executionWitnessSupplier) {
-    this.executionWitness = executionWitnessSupplier.get();
     return this;
   }
 
@@ -81,7 +72,6 @@ public class ExecutionPayloadBuilderCapella extends ExecutionPayloadBuilderBella
         transactions.stream()
             .map(schema.getTransactionSchema()::fromBytes)
             .collect(schema.getTransactionsSchema().collector()),
-        schema.getWithdrawalsSchema().createFromElements(withdrawals),
-        executionWitness);
+        schema.getWithdrawalsSchema().createFromElements(withdrawals));
   }
 }

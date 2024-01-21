@@ -19,7 +19,7 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
-public interface SpecConfigDeneb extends SpecConfigCapella, NetworkingSpecConfigDeneb {
+public interface SpecConfigDeneb extends SpecConfigElectra, NetworkingSpecConfigDeneb {
   BigInteger BLS_MODULUS =
       new BigInteger(
           "52435875175126190479447740508185965837690552500527637822603658699938581184513");

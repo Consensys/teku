@@ -54,7 +54,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.Be
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.MutableBeaconStateDeneb;
 
-public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
+public class SchemaDefinitionsDeneb extends SchemaDefinitionsElectra {
 
   private final BeaconStateSchemaDeneb beaconStateSchema;
 

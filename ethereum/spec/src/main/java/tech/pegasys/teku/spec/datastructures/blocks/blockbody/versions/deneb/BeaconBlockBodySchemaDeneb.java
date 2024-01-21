@@ -18,11 +18,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 
 public interface BeaconBlockBodySchemaDeneb<T extends BeaconBlockBodyDeneb>
-    extends BeaconBlockBodySchemaCapella<T> {
+    extends BeaconBlockBodySchemaElectra<T> {
 
   static BeaconBlockBodySchemaDeneb<?> required(final BeaconBlockBodySchema<?> schema) {
     checkArgument(

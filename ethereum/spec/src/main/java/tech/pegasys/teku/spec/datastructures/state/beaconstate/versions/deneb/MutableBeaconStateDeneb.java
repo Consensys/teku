@@ -15,9 +15,9 @@ package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb;
 
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.MutableBeaconStateCapella;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 
-public interface MutableBeaconStateDeneb extends MutableBeaconStateCapella, BeaconStateDeneb {
+public interface MutableBeaconStateDeneb extends MutableBeaconStateElectra, BeaconStateDeneb {
   static MutableBeaconStateDeneb required(final MutableBeaconState state) {
     return state
         .toMutableVersionDeneb()
