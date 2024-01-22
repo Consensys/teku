@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.execution;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
@@ -33,6 +35,9 @@ public class ExecutionPayloadResult {
       final Optional<SafeFuture<Optional<BlobsBundle>>> blobsBundleFuture,
       final Optional<SafeFuture<HeaderWithFallbackData>> headerWithFallbackDataFuture,
       final Optional<SafeFuture<UInt256>> executionPayloadValueFuture) {
+    checkArgument(
+        executionPayloadFuture.isPresent() != headerWithFallbackDataFuture.isPresent(),
+        "Either executionPayloadFuture or headerWithFallbackDataFuture must be present");
     this.executionPayloadContext = executionPayloadContext;
     this.executionPayloadFuture = executionPayloadFuture;
     this.blobsBundleFuture = blobsBundleFuture;

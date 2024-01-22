@@ -450,29 +450,30 @@ public class BlockOperationSelectorFactory {
                     new IllegalStateException(
                         "ExecutionPayloadResult hasn't been cached for slot " + slot));
 
-    // we try to get the BlobsBundle from the local flow first, if it's not available we try to get
-    // from the fallback data the builder flow
-    final SafeFuture<Optional<BlobsBundle>> blobsBundleFuture =
-        executionPayloadResult
-            .getBlobsBundleFuture()
-            .orElse(getBlobsBundleFromFallbackData(executionPayloadResult, slot));
+    final SafeFuture<Optional<BlobsBundle>> blobsBundleFuture;
+    if (executionPayloadResult.getExecutionPayloadFuture().isPresent()) {
+      // we performed a local flow, so the bundle must be in getBlobsBundleFuture
+      blobsBundleFuture =
+          executionPayloadResult
+              .getBlobsBundleFuture()
+              .orElseThrow(() -> executionBlobsBundleIsNotAvailableException(slot));
+    } else {
+      // we performed a builder flow, so the bundle must be in getHeaderWithFallbackDataFuture
+      blobsBundleFuture =
+          executionPayloadResult
+              .getHeaderWithFallbackDataFuture()
+              .orElseThrow(() -> executionBlobsBundleIsNotAvailableException(slot))
+              .thenApply(
+                  headerWithFallbackData ->
+                      headerWithFallbackData
+                          .getFallbackData()
+                          .orElseThrow(() -> executionBlobsBundleIsNotAvailableException(slot))
+                          .getBlobsBundle());
+    }
 
     return blobsBundleFuture.thenApply(
         blobsBundle ->
             blobsBundle.orElseThrow(() -> executionBlobsBundleIsNotAvailableException(slot)));
-  }
-
-  private SafeFuture<Optional<BlobsBundle>> getBlobsBundleFromFallbackData(
-      final ExecutionPayloadResult executionPayloadResult, final UInt64 slot) {
-    return executionPayloadResult
-        .getHeaderWithFallbackDataFuture()
-        .orElseThrow(() -> executionBlobsBundleIsNotAvailableException(slot))
-        .thenApply(
-            headerWithFallbackData ->
-                headerWithFallbackData
-                    .getFallbackData()
-                    .orElseThrow(() -> executionBlobsBundleIsNotAvailableException(slot))
-                    .getBlobsBundle());
   }
 
   private IllegalStateException executionBlobsBundleIsNotAvailableException() {
