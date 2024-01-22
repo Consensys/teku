@@ -59,8 +59,6 @@ public class ExecutionLayerManagerStub extends ExecutionLayerChannelStub
       final BlockProductionPerformance blockProductionPerformance) {
     boolean builderCircuitBreakerEngaged = builderCircuitBreaker.isEngaged(state);
     LOG.info("Builder Circuit Breaker isEngaged: " + builderCircuitBreakerEngaged);
-    super.builderGetHeader(
-        executionPayloadContext, state, payloadValueResult, blockProductionPerformance);
 
     return super.builderGetHeader(
             executionPayloadContext, state, payloadValueResult, blockProductionPerformance)
