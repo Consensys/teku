@@ -569,8 +569,9 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     assertThat(forkChoiceState.getHeadBlockRoot()).isEqualTo(currentJustified.getRoot());
     // The current head block itself is fully validated
     assertThat(protoArray.isFullyValidated(currentJustified.getRoot())).isTrue();
-    // But we consider the chain head optimistic because of the updated justified checkpoint
-    assertThat(forkChoiceState.isHeadOptimistic()).isTrue();
+    // the head is only optimistic if the EL wasn't available, the selected head here should not be
+    // seen as optimistic
+    assertThat(forkChoiceState.isHeadOptimistic()).isFalse();
   }
 
   private StorageSystem initStorageSystem() {

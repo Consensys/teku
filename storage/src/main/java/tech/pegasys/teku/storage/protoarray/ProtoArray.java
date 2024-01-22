@@ -622,29 +622,14 @@ public class ProtoArray {
       return false;
     }
 
-    // The voting source should be at the same height as the store's justified checkpoint
-    boolean correctJustified =
-        doesCheckpointEpochMatch(node.getJustifiedCheckpoint(), justifiedCheckpoint);
-
-    // If this is a pulled-up block from the current epoch, also check that the unrealized
-    // justification is higher than the store's justified checkpoint, and the voting source is not
-    // more than two epochs ago.
-    if (!correctJustified
-        && !node.getUnrealizedJustifiedCheckpoint().equals(node.getJustifiedCheckpoint())) {
-      correctJustified =
-          node.getUnrealizedJustifiedCheckpoint()
-                  .getEpoch()
-                  .isGreaterThanOrEqualTo(justifiedCheckpoint.getEpoch())
-              && node.getJustifiedCheckpoint()
-                  .getEpoch()
-                  .plus(2)
-                  .isGreaterThanOrEqualTo(currentEpoch);
+    // The voting source should be either at the same height as the store's justified checkpoint or
+    // not more than two epochs ago
+    if (!isVotingSourceWithinAcceptableRange(node.getJustifiedCheckpoint(), justifiedCheckpoint)) {
+      return false;
     }
 
-    final boolean correctFinalized =
-        node.getFinalizedCheckpoint().getEpoch().equals(initialEpoch)
-            || isFinalizedRootOrDescendant(node);
-    return correctJustified && correctFinalized;
+    return node.getFinalizedCheckpoint().getEpoch().equals(initialEpoch)
+        || isFinalizedRootOrDescendant(node);
   }
 
   private boolean isFinalizedRootOrDescendant(final ProtoNode node) {
@@ -695,9 +680,11 @@ public class ProtoArray {
     return node != null && requiredRoot.equals(node.getBlockRoot());
   }
 
-  private boolean doesCheckpointEpochMatch(final Checkpoint actual, final Checkpoint required) {
-    return required.getEpoch().equals(initialEpoch)
-        || actual.getEpoch().equals(required.getEpoch());
+  private boolean isVotingSourceWithinAcceptableRange(
+      final Checkpoint nodeJustifiedCheckpoint, final Checkpoint currentJustifiedCheckpoint) {
+    return currentJustifiedCheckpoint.getEpoch().equals(initialEpoch)
+        || nodeJustifiedCheckpoint.getEpoch().equals(currentJustifiedCheckpoint.getEpoch())
+        || nodeJustifiedCheckpoint.getEpoch().plus(2).isGreaterThanOrEqualTo(currentEpoch);
   }
 
   public Checkpoint getJustifiedCheckpoint() {
