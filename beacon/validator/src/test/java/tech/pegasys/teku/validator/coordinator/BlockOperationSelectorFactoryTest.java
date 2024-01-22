@@ -56,6 +56,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
+import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -439,7 +441,7 @@ class BlockOperationSelectorFactoryTest {
   }
 
   @Test
-  void shouldIncludeExecutionPayloadIfNoBlindedBlockRequested() {
+  void shouldIncludeExecutionPayloadIfUnblindedBlockRequested() {
     final UInt64 slot = UInt64.ONE;
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
 
@@ -464,6 +466,97 @@ class BlockOperationSelectorFactoryTest {
             .apply(bodyBuilder));
 
     assertThat(bodyBuilder.executionPayload).isEqualTo(randomExecutionPayload);
+  }
+
+  @Test
+  void shouldIncludeExecutionPayloadIfRequestedBlindedIsEmpty() {
+    final UInt64 slot = UInt64.ONE;
+    final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
+
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.randomPayloadExecutionContext(false, false);
+    final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
+
+    when(forkChoiceNotifier.getPayloadId(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
+    prepareBlockProductionWithPayload(
+        randomExecutionPayload, executionPayloadContext, blockSlotState);
+
+    safeJoin(
+        factory
+            .createSelector(
+                parentRoot,
+                blockSlotState,
+                dataStructureUtil.randomSignature(),
+                Optional.empty(),
+                Optional.empty(),
+                BlockProductionPerformance.NOOP)
+            .apply(bodyBuilder));
+
+    assertThat(bodyBuilder.executionPayload).isEqualTo(randomExecutionPayload);
+  }
+
+  @Test
+  void shouldIncludeExecutionPayloadIfRequestedBlindedIsEmptyAndBuilderFlowFallsBack() {
+    final UInt64 slot = UInt64.ONE;
+    final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
+
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.randomPayloadExecutionContext(false, true);
+    final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
+
+    when(forkChoiceNotifier.getPayloadId(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
+    prepareBlindedBlockProductionWithFallBack(
+        randomExecutionPayload, executionPayloadContext, blockSlotState);
+
+    safeJoin(
+        factory
+            .createSelector(
+                parentRoot,
+                blockSlotState,
+                dataStructureUtil.randomSignature(),
+                Optional.empty(),
+                Optional.empty(),
+                BlockProductionPerformance.NOOP)
+            .apply(bodyBuilder));
+
+    assertThat(bodyBuilder.executionPayload).isEqualTo(randomExecutionPayload);
+  }
+
+  @Test
+  void
+      shouldIncludeExecutionPayloadAndCommitmentsIfRequestedBlindedIsEmptyAndBuilderFlowFallsBack() {
+    final UInt64 slot = UInt64.ONE;
+    final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(slot);
+
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.randomPayloadExecutionContext(false, true);
+    final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
+    final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
+
+    final CapturingBeaconBlockBodyBuilder bodyBuilder = new CapturingBeaconBlockBodyBuilder(true);
+
+    when(forkChoiceNotifier.getPayloadId(any(), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
+    prepareBlindedBlockAndBlobsProductionWithFallBack(
+        randomExecutionPayload, executionPayloadContext, blockSlotState, blobsBundle);
+
+    safeJoin(
+        factory
+            .createSelector(
+                parentRoot,
+                blockSlotState,
+                dataStructureUtil.randomSignature(),
+                Optional.empty(),
+                Optional.empty(),
+                BlockProductionPerformance.NOOP)
+            .apply(bodyBuilder));
+
+    assertThat(bodyBuilder.executionPayload).isEqualTo(randomExecutionPayload);
+    assertThat(bodyBuilder.blobKzgCommitments)
+        .map(SszKZGCommitment::getKZGCommitment)
+        .hasSameElementsAs(blobsBundle.getCommitments());
   }
 
   @Test
@@ -542,7 +635,7 @@ class BlockOperationSelectorFactoryTest {
                 blockSlotState,
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
-                Optional.empty(),
+                Optional.of(true),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
 
@@ -704,6 +797,30 @@ class BlockOperationSelectorFactoryTest {
                 Optional.empty()));
   }
 
+  private void prepareBlindedBlockProductionWithFallBack(
+      final ExecutionPayload executionPayload,
+      final ExecutionPayloadContext executionPayloadContext,
+      final BeaconState blockSlotState) {
+    final HeaderWithFallbackData headerWithFallbackData =
+        HeaderWithFallbackData.create(
+            dataStructureUtil.randomExecutionPayloadHeader(),
+            Optional.empty(),
+            new FallbackData(
+                executionPayload,
+                Optional.empty(),
+                FallbackReason.SHOULD_OVERRIDE_BUILDER_FLAG_IS_TRUE));
+
+    when(executionLayer.initiateBlockProduction(
+            executionPayloadContext, blockSlotState, true, BlockProductionPerformance.NOOP))
+        .thenReturn(
+            new ExecutionPayloadResult(
+                executionPayloadContext,
+                Optional.empty(),
+                Optional.empty(),
+                Optional.of(SafeFuture.completedFuture(headerWithFallbackData)),
+                Optional.empty()));
+  }
+
   private void prepareBlockAndBlobsProduction(
       final ExecutionPayload executionPayload,
       final ExecutionPayloadContext executionPayloadContext,
@@ -727,6 +844,31 @@ class BlockOperationSelectorFactoryTest {
       final SszList<SszKZGCommitment> blobKzgCommitments) {
     final HeaderWithFallbackData headerWithFallbackData =
         HeaderWithFallbackData.create(executionPayloadHeader, Optional.of(blobKzgCommitments));
+    when(executionLayer.initiateBlockAndBlobsProduction(
+            executionPayloadContext, blockSlotState, true, BlockProductionPerformance.NOOP))
+        .thenReturn(
+            new ExecutionPayloadResult(
+                executionPayloadContext,
+                Optional.empty(),
+                Optional.empty(),
+                Optional.of(SafeFuture.completedFuture(headerWithFallbackData)),
+                Optional.empty()));
+  }
+
+  private void prepareBlindedBlockAndBlobsProductionWithFallBack(
+      final ExecutionPayload executionPayload,
+      final ExecutionPayloadContext executionPayloadContext,
+      final BeaconState blockSlotState,
+      final BlobsBundle blobsBundle) {
+    final HeaderWithFallbackData headerWithFallbackData =
+        HeaderWithFallbackData.create(
+            dataStructureUtil.randomExecutionPayloadHeader(),
+            Optional.of(dataStructureUtil.randomBlobKzgCommitments()),
+            new FallbackData(
+                executionPayload,
+                Optional.of(blobsBundle),
+                FallbackReason.SHOULD_OVERRIDE_BUILDER_FLAG_IS_TRUE));
+
     when(executionLayer.initiateBlockAndBlobsProduction(
             executionPayloadContext, blockSlotState, true, BlockProductionPerformance.NOOP))
         .thenReturn(
