@@ -5,5 +5,7 @@ dependencies {
     implementation project(':infrastructure:restapi')
     implementation project(':infrastructure:http')
 
+    implementation project(':validator:api')
+
     testImplementation testFixtures(project(':ethereum:spec'))
 }

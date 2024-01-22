@@ -13,9 +13,14 @@
 
 package tech.pegasys.teku.ethereum.json.types;
 
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.PUBLIC_KEY_TYPE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES4_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.listOf;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -28,6 +33,8 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
+import tech.pegasys.teku.validator.api.ProposerDuties;
+import tech.pegasys.teku.validator.api.ProposerDuty;
 
 public class SharedApiTypes {
 
@@ -53,6 +60,47 @@ public class SharedApiTypes {
                   BYTES4_TYPE,
                   GetGenesisApiData::getGenesisForkVersion,
                   GetGenesisApiDataBuilder::genesisForkVersion)
+              .build());
+
+  private static final DeserializableTypeDefinition<ProposerDuty> PROPOSER_DUTY_TYPE =
+      DeserializableTypeDefinition.object(
+              ProposerDuty.class, ProposerDuty.ProposerDutyBuilder.class)
+          .withField(
+              "pubkey",
+              PUBLIC_KEY_TYPE,
+              ProposerDuty::getPublicKey,
+              ProposerDuty.ProposerDutyBuilder::publicKey)
+          .withField(
+              "validator_index",
+              INTEGER_TYPE,
+              ProposerDuty::getValidatorIndex,
+              ProposerDuty.ProposerDutyBuilder::validatorIndex)
+          .withField(
+              "slot", UINT64_TYPE, ProposerDuty::getSlot, ProposerDuty.ProposerDutyBuilder::slot)
+          .build();
+
+  public static final DeserializableTypeDefinition<ProposerDuties> GET_PROPOSER_DUTIES_TYPE =
+      withDataWrapper(
+          "GetProposerDutiesResponse",
+          DeserializableTypeDefinition.object(
+                  ProposerDuties.class, ProposerDuties.ProposerDutiesBuilder.class)
+              .initializer(ProposerDuties.ProposerDutiesBuilder::new)
+              .finisher(ProposerDuties.ProposerDutiesBuilder::build)
+              .withField(
+                  "dependent_root",
+                  BYTES32_TYPE,
+                  ProposerDuties::getDependentRoot,
+                  ProposerDuties.ProposerDutiesBuilder::dependentRoot)
+              .withField(
+                  EXECUTION_OPTIMISTIC,
+                  BOOLEAN_TYPE,
+                  ProposerDuties::isExecutionOptimistic,
+                  ProposerDuties.ProposerDutiesBuilder::executionOptimistic)
+              .withField(
+                  "data",
+                  listOf(PROPOSER_DUTY_TYPE),
+                  ProposerDuties::getDuties,
+                  ProposerDuties.ProposerDutiesBuilder::duties)
               .build());
 
   public static final StringValueTypeDefinition<BLSPublicKey> PUBKEY_API_TYPE =

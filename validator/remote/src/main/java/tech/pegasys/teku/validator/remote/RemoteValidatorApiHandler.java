@@ -238,16 +238,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
-    return sendRequest(
-        () ->
-            apiClient
-                .getProposerDuties(epoch)
-                .map(
-                    response ->
-                        new ProposerDuties(
-                            response.dependentRoot,
-                            response.data.stream().map(this::mapToProposerDuties).toList(),
-                            response.executionOptimistic)));
+    return sendRequest(() -> typeDefClient.getProposerDuties(epoch));
   }
 
   private ProposerDuty mapToProposerDuties(
