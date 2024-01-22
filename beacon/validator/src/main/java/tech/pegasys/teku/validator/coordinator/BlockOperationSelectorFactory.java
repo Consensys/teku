@@ -442,17 +442,37 @@ public class BlockOperationSelectorFactory {
   }
 
   private SafeFuture<BlobsBundle> getCachedExecutionBlobsBundle(final UInt64 slot) {
-    return executionLayerBlockProductionManager
-        .getCachedPayloadResult(slot)
-        .orElseThrow(
-            () ->
-                new IllegalStateException(
-                    "ExecutionPayloadResult hasn't been cached for slot " + slot))
-        .getBlobsBundleFuture()
+    final ExecutionPayloadResult executionPayloadResult =
+        executionLayerBlockProductionManager
+            .getCachedPayloadResult(slot)
+            .orElseThrow(
+                () ->
+                    new IllegalStateException(
+                        "ExecutionPayloadResult hasn't been cached for slot " + slot));
+
+    // we try to get the BlobsBundle from the local flow first, if it's not available we try to get
+    // from the fallback data the builder flow
+    final SafeFuture<Optional<BlobsBundle>> blobsBundleFuture =
+        executionPayloadResult
+            .getBlobsBundleFuture()
+            .orElse(getBlobsBundleFromFallbackData(executionPayloadResult, slot));
+
+    return blobsBundleFuture.thenApply(
+        blobsBundle ->
+            blobsBundle.orElseThrow(() -> executionBlobsBundleIsNotAvailableException(slot)));
+  }
+
+  private SafeFuture<Optional<BlobsBundle>> getBlobsBundleFromFallbackData(
+      final ExecutionPayloadResult executionPayloadResult, final UInt64 slot) {
+    return executionPayloadResult
+        .getHeaderWithFallbackDataFuture()
         .orElseThrow(() -> executionBlobsBundleIsNotAvailableException(slot))
         .thenApply(
-            blobsBundle ->
-                blobsBundle.orElseThrow(() -> executionBlobsBundleIsNotAvailableException(slot)));
+            headerWithFallbackData ->
+                headerWithFallbackData
+                    .getFallbackData()
+                    .orElseThrow(() -> executionBlobsBundleIsNotAvailableException(slot))
+                    .getBlobsBundle());
   }
 
   private IllegalStateException executionBlobsBundleIsNotAvailableException() {
