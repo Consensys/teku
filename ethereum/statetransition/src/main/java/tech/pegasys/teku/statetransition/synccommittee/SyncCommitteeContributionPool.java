@@ -51,7 +51,7 @@ public class SyncCommitteeContributionPool implements SlotEventsChannel {
   }
 
   public void subscribeOperationAdded(
-      final OperationAddedSubscriber<SignedContributionAndProof> subscriber) {
+      OperationAddedSubscriber<SignedContributionAndProof> subscriber) {
     subscribers.subscribe(subscriber);
   }
 

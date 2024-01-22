@@ -172,7 +172,7 @@ public class NodeDataProvider {
     blockManager.subscribeToReceivedBlocks(listener);
   }
 
-  public void subscribeToReceivedBlobSidecar(final NewBlobSidecarSubscriber listener) {
+  public void subscribeToReceivedBlobSidecar(NewBlobSidecarSubscriber listener) {
     blockBlobSidecarsTrackersPool.subscribeNewBlobSidecar(listener);
   }
 
@@ -186,22 +186,21 @@ public class NodeDataProvider {
     proposerSlashingPool.subscribeOperationAdded(listener);
   }
 
-  public void subscribeToValidAttestations(final ProcessedAttestationListener listener) {
+  public void subscribeToValidAttestations(ProcessedAttestationListener listener) {
     attestationManager.subscribeToAllValidAttestations(listener);
   }
 
-  public void subscribeToNewVoluntaryExits(
-      final OperationAddedSubscriber<SignedVoluntaryExit> listener) {
+  public void subscribeToNewVoluntaryExits(OperationAddedSubscriber<SignedVoluntaryExit> listener) {
     voluntaryExitPool.subscribeOperationAdded(listener);
   }
 
   public void subscribeToNewBlsToExecutionChanges(
-      final OperationAddedSubscriber<SignedBlsToExecutionChange> listener) {
+      OperationAddedSubscriber<SignedBlsToExecutionChange> listener) {
     blsToExecutionChangePool.subscribeOperationAdded(listener);
   }
 
   public void subscribeToSyncCommitteeContributions(
-      final OperationAddedSubscriber<SignedContributionAndProof> listener) {
+      OperationAddedSubscriber<SignedContributionAndProof> listener) {
     syncCommitteeContributionPool.subscribeOperationAdded(listener);
   }
 
