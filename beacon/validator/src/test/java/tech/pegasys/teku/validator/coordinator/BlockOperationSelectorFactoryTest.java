@@ -643,7 +643,7 @@ class BlockOperationSelectorFactoryTest {
   }
 
   @Test
-  void shouldGetBlobsBundleForBlock() {
+  void shouldGetBlobsBundleForLocallyProducedBlocks() {
     final BeaconBlock block = dataStructureUtil.randomBeaconBlock();
 
     final BlobsBundle expectedBlobsBundle = dataStructureUtil.randomBlobsBundle();
@@ -651,6 +651,25 @@ class BlockOperationSelectorFactoryTest {
     // the BlobsBundle is stored in the ExecutionPayloadResult
     prepareCachedPayloadResult(
         block.getSlot(),
+        dataStructureUtil.randomExecutionPayload(),
+        dataStructureUtil.randomPayloadExecutionContext(false),
+        expectedBlobsBundle);
+
+    final BlobsBundle blobsBundle = safeJoin(factory.createBlobsBundleSelector().apply(block));
+
+    assertThat(blobsBundle).isEqualTo(expectedBlobsBundle);
+  }
+
+  @Test
+  void shouldGetBlobsBundleForLocallyProducedBlocksViaFallback() {
+    final BeaconBlock block = dataStructureUtil.randomBeaconBlock();
+
+    final BlobsBundle expectedBlobsBundle = dataStructureUtil.randomBlobsBundle();
+
+    // the BlobsBundle is stored in the header with fallback
+    prepareCachedPayloadHeaderWithFallbackResult(
+        block.getSlot(),
+        dataStructureUtil.randomExecutionPayloadHeader(),
         dataStructureUtil.randomExecutionPayload(),
         dataStructureUtil.randomPayloadExecutionContext(false),
         expectedBlobsBundle);
@@ -893,6 +912,37 @@ class BlockOperationSelectorFactoryTest {
                     Optional.of(SafeFuture.completedFuture(executionPayload)),
                     Optional.of(SafeFuture.completedFuture(Optional.of(blobsBundle))),
                     Optional.empty(),
+                    Optional.empty())));
+  }
+
+  private void prepareCachedPayloadHeaderWithFallbackResult(
+      final UInt64 slot,
+      final ExecutionPayloadHeader executionPayloadHeader,
+      final ExecutionPayload executionPayload,
+      final ExecutionPayloadContext executionPayloadContext,
+      final BlobsBundle blobsBundle) {
+
+    final SszList<SszKZGCommitment> sszKZGCommitments =
+        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
+            .getBlobKzgCommitmentsSchema()
+            .createFromBlobsBundle(blobsBundle);
+
+    when(executionLayer.getCachedPayloadResult(slot))
+        .thenReturn(
+            Optional.of(
+                new ExecutionPayloadResult(
+                    executionPayloadContext,
+                    Optional.empty(),
+                    Optional.empty(),
+                    Optional.of(
+                        SafeFuture.completedFuture(
+                            HeaderWithFallbackData.create(
+                                executionPayloadHeader,
+                                Optional.of(sszKZGCommitments),
+                                new FallbackData(
+                                    executionPayload,
+                                    Optional.of(blobsBundle),
+                                    FallbackReason.SHOULD_OVERRIDE_BUILDER_FLAG_IS_TRUE)))),
                     Optional.empty())));
   }
 
