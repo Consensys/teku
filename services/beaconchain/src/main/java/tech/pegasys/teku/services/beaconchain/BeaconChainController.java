@@ -1126,7 +1126,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 eventChannels,
                 eventAsyncRunner,
                 timeProvider,
-                executionClientDataProvider,
                 spec));
 
     if (getLivenessTrackingEnabled(beaconConfig)) {
