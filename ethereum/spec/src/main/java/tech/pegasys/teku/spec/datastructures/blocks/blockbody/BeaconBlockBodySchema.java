@@ -32,7 +32,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 
 public interface BeaconBlockBodySchema<T extends BeaconBlockBody> extends SszContainerSchema<T> {
   SafeFuture<? extends BeaconBlockBody> createBlockBody(
-      final Function<BeaconBlockBodyBuilder, SafeFuture<Void>> bodyBuilder);
+      Function<BeaconBlockBodyBuilder, SafeFuture<Void>> bodyBuilder);
 
   BeaconBlockBody createEmpty();
 
