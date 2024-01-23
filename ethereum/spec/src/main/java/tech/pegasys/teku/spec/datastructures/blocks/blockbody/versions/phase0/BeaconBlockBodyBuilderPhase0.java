@@ -109,14 +109,14 @@ public class BeaconBlockBodyBuilderPhase0 implements BeaconBlockBodyBuilder {
   }
 
   @Override
-  public BeaconBlockBodyBuilder executionPayload(ExecutionPayload executionPayload) {
+  public BeaconBlockBodyBuilder executionPayload(final ExecutionPayload executionPayload) {
     // No execution payload in phase 0
     return this;
   }
 
   @Override
   public BeaconBlockBodyBuilder executionPayloadHeader(
-      ExecutionPayloadHeader executionPayloadHeader) {
+      final ExecutionPayloadHeader executionPayloadHeader) {
     // No execution payload in phase 0
     return this;
   }

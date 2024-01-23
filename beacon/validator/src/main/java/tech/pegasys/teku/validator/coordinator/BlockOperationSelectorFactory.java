@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
+import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -211,15 +212,17 @@ public class BlockOperationSelectorFactory {
                     .map(ExecutionPayloadContext::isValidatorRegistrationPresent)
                     .orElse(false));
 
-    // we should try to return unblinded content only if we try the builder flow with no explicit
-    // request
-    final boolean setUnblindedContentIfPossible = requestedBlinded.isEmpty();
+    // we should try to return unblinded content only if no explicit "blindness" has been requested
+    // and builder flow fallbacks to local
+    final Function<HeaderWithFallbackData, Boolean> setUnblindedContentIfBuilderFallbacks =
+        headerWithFallbackData ->
+            headerWithFallbackData.getFallbackData().isPresent() && requestedBlinded.isEmpty();
 
     // Pre-Deneb: Execution Payload / Execution Payload Header
     if (!bodyBuilder.supportsKzgCommitments()) {
       if (shouldTryBuilderFlow) {
         return builderSetPayloadHeader(
-            setUnblindedContentIfPossible,
+            setUnblindedContentIfBuilderFallbacks,
             bodyBuilder,
             schemaDefinitions,
             blockSlotState,
@@ -248,18 +251,22 @@ public class BlockOperationSelectorFactory {
 
     return SafeFuture.allOf(
         builderSetPayloadPostMerge(
-            bodyBuilder, setUnblindedContentIfPossible, executionPayloadResult),
+            bodyBuilder, setUnblindedContentIfBuilderFallbacks, executionPayloadResult),
         builderSetKzgCommitments(
-            bodyBuilder, setUnblindedContentIfPossible, schemaDefinitions, executionPayloadResult));
+            bodyBuilder,
+            setUnblindedContentIfBuilderFallbacks,
+            schemaDefinitions,
+            executionPayloadResult));
   }
 
   private SafeFuture<Void> builderSetPayloadPostMerge(
       final BeaconBlockBodyBuilder bodyBuilder,
-      final boolean setUnblindedPayloadIfPossible,
+      final Function<HeaderWithFallbackData, Boolean> setUnblindedContentIfBuilderFallbacks,
       final ExecutionPayloadResult executionPayloadResult) {
 
-    if (executionPayloadResult.getExecutionPayloadFuture().isPresent()) {
-      // local flow
+    final boolean isLocalFlow = executionPayloadResult.getExecutionPayloadFuture().isPresent();
+
+    if (isLocalFlow) {
       return executionPayloadResult
           .getExecutionPayloadFuture()
           .get()
@@ -272,10 +279,9 @@ public class BlockOperationSelectorFactory {
         .orElseThrow()
         .thenAccept(
             headerWithFallbackData -> {
-              if (setUnblindedPayloadIfPossible
-                  && headerWithFallbackData.getFallbackData().isPresent()) {
+              if (setUnblindedContentIfBuilderFallbacks.apply(headerWithFallbackData)) {
                 bodyBuilder.executionPayload(
-                    headerWithFallbackData.getFallbackData().get().getExecutionPayload());
+                    headerWithFallbackData.getFallbackData().orElseThrow().getExecutionPayload());
               } else {
                 bodyBuilder.executionPayloadHeader(
                     headerWithFallbackData.getExecutionPayloadHeader());
@@ -306,7 +312,7 @@ public class BlockOperationSelectorFactory {
   }
 
   private SafeFuture<Void> builderSetPayloadHeader(
-      final boolean setUnblindedPayloadIfPossible,
+      final Function<HeaderWithFallbackData, Boolean> setUnblindedContentIfBuilderFallbacks,
       final BeaconBlockBodyBuilder bodyBuilder,
       final SchemaDefinitions schemaDefinitions,
       final BeaconState blockSlotState,
@@ -328,10 +334,9 @@ public class BlockOperationSelectorFactory {
         .orElseThrow()
         .thenAccept(
             headerWithFallbackData -> {
-              if (setUnblindedPayloadIfPossible
-                  && headerWithFallbackData.getFallbackData().isPresent()) {
+              if (setUnblindedContentIfBuilderFallbacks.apply(headerWithFallbackData)) {
                 bodyBuilder.executionPayload(
-                    headerWithFallbackData.getFallbackData().get().getExecutionPayload());
+                    headerWithFallbackData.getFallbackData().orElseThrow().getExecutionPayload());
                 return;
               }
               bodyBuilder.executionPayloadHeader(
@@ -341,7 +346,7 @@ public class BlockOperationSelectorFactory {
 
   private SafeFuture<Void> builderSetKzgCommitments(
       final BeaconBlockBodyBuilder bodyBuilder,
-      final boolean setUnblindedPayloadIfPossible,
+      final Function<HeaderWithFallbackData, Boolean> setUnblindedContentIfBuilderFallbacks,
       final SchemaDefinitions schemaDefinitions,
       final ExecutionPayloadResult executionPayloadResult) {
     final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema =
@@ -356,7 +361,7 @@ public class BlockOperationSelectorFactory {
 
     // builder flow
     return getBuilderBlobKzgCommitments(
-            blobKzgCommitmentsSchema, executionPayloadResult, setUnblindedPayloadIfPossible)
+            blobKzgCommitmentsSchema, executionPayloadResult, setUnblindedContentIfBuilderFallbacks)
         .thenAccept(bodyBuilder::blobKzgCommitments);
   }
 
@@ -487,17 +492,20 @@ public class BlockOperationSelectorFactory {
   private SafeFuture<SszList<SszKZGCommitment>> getBuilderBlobKzgCommitments(
       final BlobKzgCommitmentsSchema blobKzgCommitmentsSchema,
       final ExecutionPayloadResult executionPayloadResult,
-      final boolean setUnblindedPayloadIfPossible) {
+      final Function<HeaderWithFallbackData, Boolean> setUnblindedContentIfBuilderFallbacks) {
 
     return executionPayloadResult
         .getHeaderWithFallbackDataFuture()
         .orElseThrow()
         .thenApply(
             headerWithFallbackData -> {
-              if (setUnblindedPayloadIfPossible
-                  && headerWithFallbackData.getFallbackData().isPresent()) {
+              if (setUnblindedContentIfBuilderFallbacks.apply(headerWithFallbackData)) {
                 return blobKzgCommitmentsSchema.createFromBlobsBundle(
-                    headerWithFallbackData.getFallbackData().get().getBlobsBundle().orElseThrow());
+                    headerWithFallbackData
+                        .getFallbackData()
+                        .orElseThrow()
+                        .getBlobsBundle()
+                        .orElseThrow());
               }
               return headerWithFallbackData
                   .getBlobKzgCommitments()
