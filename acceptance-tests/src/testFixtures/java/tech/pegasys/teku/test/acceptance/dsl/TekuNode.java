@@ -303,11 +303,9 @@ public class TekuNode extends Node {
       final Bytes32 parentRoot,
       final Bytes32 stateRoot,
       final Bytes32 bodyRoot,
-      final BLSSecretKey secretKey,
-      final String network)
+      final BLSSecretKey secretKey)
       throws IOException {
 
-    final Spec spec = SpecFactory.create(network);
     final Fork fork = spec.getForkSchedule().getFork(spec.computeEpochAtSlot(slot));
     final Bytes32 genesisValidatorRoot = fetchGenesis().getGenesisValidatorsRoot();
     final ForkInfo forkInfo = new ForkInfo(fork, genesisValidatorRoot);

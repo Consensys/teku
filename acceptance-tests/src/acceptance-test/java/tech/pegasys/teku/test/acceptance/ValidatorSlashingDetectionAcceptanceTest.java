@@ -85,8 +85,7 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
         beaconBlockHeader.getParentRoot(),
         beaconBlockHeader.getStateRoot(),
         beaconBlockHeader.getBodyRoot(),
-        validatorKeyPair.getSecretKey(),
-        network);
+        validatorKeyPair.getSecretKey());
 
     secondValidatorClient.waitForLogMessageContaining(
         String.format(
