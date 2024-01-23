@@ -624,7 +624,8 @@ public class ProtoArray {
 
     // The voting source should be either at the same height as the store's justified checkpoint or
     // not more than two epochs ago
-    if (!isVotingSourceWithinAcceptableRange(node.getJustifiedCheckpoint(), justifiedCheckpoint)) {
+    if (!isVotingSourceWithinAcceptableRange(
+        node.getJustifiedCheckpoint().getEpoch(), justifiedCheckpoint.getEpoch())) {
       return false;
     }
 
@@ -681,10 +682,10 @@ public class ProtoArray {
   }
 
   private boolean isVotingSourceWithinAcceptableRange(
-      final Checkpoint nodeJustifiedCheckpoint, final Checkpoint currentJustifiedCheckpoint) {
-    return currentJustifiedCheckpoint.getEpoch().equals(initialEpoch)
-        || nodeJustifiedCheckpoint.getEpoch().equals(currentJustifiedCheckpoint.getEpoch())
-        || nodeJustifiedCheckpoint.getEpoch().plus(2).isGreaterThanOrEqualTo(currentEpoch);
+      final UInt64 nodeJustifiedEpoch, final UInt64 currentJustifiedEpoch) {
+    return currentJustifiedEpoch.equals(initialEpoch)
+        || nodeJustifiedEpoch.equals(currentJustifiedEpoch)
+        || nodeJustifiedEpoch.plus(2).isGreaterThanOrEqualTo(currentEpoch);
   }
 
   public Checkpoint getJustifiedCheckpoint() {
