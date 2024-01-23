@@ -28,7 +28,7 @@ public class DoppelgangerDetectionShutDown implements SlashingRiskDetectionActio
           pubKeys.stream()
               .map(BLSPublicKey::toAbbreviatedString)
               .collect(Collectors.joining(", ")));
-      System.exit(2);
+      shutDown();
     }
   }
 }

@@ -13,24 +13,14 @@
 
 package tech.pegasys.teku.validator.client.validatorslashingprotection;
 
-import java.util.List;
-import java.util.stream.Collectors;
-import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
-import tech.pegasys.teku.validator.client.slashingriskactions.SlashingRiskDetectionAction;
+import tech.pegasys.teku.validator.client.slashingriskactions.SlashedValidatorShutDown;
 
-public class SlashedValidatorAlert implements SlashingRiskDetectionAction {
-  private final StatusLogger statusLog;
-
+public class SlashedValidatorAlert extends SlashedValidatorShutDown {
   public SlashedValidatorAlert(final StatusLogger statusLog) {
-    this.statusLog = statusLog;
+    super(statusLog);
   }
 
   @Override
-  public void perform(List<BLSPublicKey> pubKeys) {
-    if (!pubKeys.isEmpty()) {
-      statusLog.validatorSlashedAlert(
-          pubKeys.stream().map(BLSPublicKey::toAbbreviatedString).collect(Collectors.toSet()));
-    }
-  }
+  public void shutDown() {}
 }

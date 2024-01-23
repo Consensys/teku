@@ -23,4 +23,8 @@ public interface SlashingRiskDetectionAction {
   default void perform(BLSPublicKey pubKey) {
     perform(List.of(pubKey));
   }
+
+  default void shutDown() {
+    System.exit(2);
+  }
 }

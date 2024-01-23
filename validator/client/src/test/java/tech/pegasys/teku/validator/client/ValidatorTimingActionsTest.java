@@ -74,9 +74,7 @@ public class ValidatorTimingActionsTest {
     verify(validatorIndexProvider).getPublicKey(secondSlashedIndex.intValue());
     verify(statusLogger)
         .validatorSlashedAlert(
-            Set.of(
-                firstSlashedPublicKey.toAbbreviatedString(),
-                secondSlashedPublicKey.toAbbreviatedString()));
+            Set.of(firstSlashedPublicKey.toHexString(), secondSlashedPublicKey.toHexString()));
   }
 
   @Test
@@ -92,7 +90,7 @@ public class ValidatorTimingActionsTest {
     validatorTimingActions.onProposerSlashing(proposerSlashing);
     verify(delegate).onProposerSlashing(proposerSlashing);
     verify(validatorIndexProvider).getPublicKey(firstSlashedIndex.intValue());
-    verify(statusLogger).validatorSlashedAlert(Set.of(firstSlashedPublicKey.toAbbreviatedString()));
+    verify(statusLogger).validatorSlashedAlert(Set.of(firstSlashedPublicKey.toHexString()));
   }
 
   @Test
