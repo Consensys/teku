@@ -35,7 +35,7 @@ public class SlashedValidatorShutDown implements SlashingRiskDetectionAction {
     if (!pubKeys.isEmpty()) {
       statusLog.validatorSlashedAlert(
           pubKeys.stream().map(BLSPublicKey::toHexString).collect(Collectors.toSet()));
-      shutDown();
+      shutdown();
     }
   }
 }

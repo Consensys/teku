@@ -62,7 +62,7 @@ public class EventSourceBeaconChainEventAdapter
   private final ValidatorLogger validatorLogger;
   private final BeaconChainEventAdapter timeBasedEventAdapter;
   private final EventSourceHandler eventSourceHandler;
-  private final boolean stopVcWhenValidatorSlashedEnabled;
+  private final boolean shutdownWhenValidatorSlashedEnabled;
 
   public EventSourceBeaconChainEventAdapter(
       final BeaconNodeReadinessManager beaconNodeReadinessManager,
@@ -74,7 +74,7 @@ public class EventSourceBeaconChainEventAdapter
       final ValidatorTimingChannel validatorTimingChannel,
       final MetricsSystem metricsSystem,
       final boolean generateEarlyAttestations,
-      final boolean stopVcWhenValidatorSlashedEnabled,
+      final boolean shutdownWhenValidatorSlashedEnabled,
       final Spec spec) {
     this.beaconNodeReadinessManager = beaconNodeReadinessManager;
     this.primaryBeaconNodeApi = primaryBeaconNodeApi;
@@ -85,7 +85,7 @@ public class EventSourceBeaconChainEventAdapter
     this.eventSourceHandler =
         new EventSourceHandler(
             validatorTimingChannel, metricsSystem, generateEarlyAttestations, spec);
-    this.stopVcWhenValidatorSlashedEnabled = stopVcWhenValidatorSlashedEnabled;
+    this.shutdownWhenValidatorSlashedEnabled = shutdownWhenValidatorSlashedEnabled;
   }
 
   @Override
@@ -134,7 +134,7 @@ public class EventSourceBeaconChainEventAdapter
   private BackgroundEventSource createEventSource(final RemoteValidatorApiChannel beaconNodeApi) {
     final List<EventType> eventTypes = new ArrayList<>();
     eventTypes.add(EventType.head);
-    if (stopVcWhenValidatorSlashedEnabled) {
+    if (shutdownWhenValidatorSlashedEnabled) {
       eventTypes.add(EventType.attester_slashing);
       eventTypes.add(EventType.proposer_slashing);
     }

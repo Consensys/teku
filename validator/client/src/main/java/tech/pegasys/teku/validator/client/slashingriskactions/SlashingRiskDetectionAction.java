@@ -24,7 +24,7 @@ public interface SlashingRiskDetectionAction {
     perform(List.of(pubKey));
   }
 
-  default void shutDown() {
+  default void shutdown() {
     System.exit(2);
   }
 }

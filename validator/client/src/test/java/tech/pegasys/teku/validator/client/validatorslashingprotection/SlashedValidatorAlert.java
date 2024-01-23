@@ -22,5 +22,5 @@ public class SlashedValidatorAlert extends SlashedValidatorShutDown {
   }
 
   @Override
-  public void shutDown() {}
+  public void shutdown() {}
 }
