@@ -110,15 +110,15 @@ public class BlindedBeaconBlockBodyCapella extends BeaconBlockBodyAltair {
 
     return super.asInternalBeaconBlockBody(
         spec,
-        (builder) -> {
+        builder -> {
           builder.executionPayloadHeader(
-              SafeFuture.completedFuture(
-                  executionPayloadHeader.asInternalExecutionPayloadHeader(
-                      executionPayloadHeaderSchema)));
+              executionPayloadHeader.asInternalExecutionPayloadHeader(
+                  executionPayloadHeaderSchema));
           builder.blsToExecutionChanges(
               this.blsToExecutionChanges.stream()
                   .map(b -> b.asInternalSignedBlsToExecutionChange(spec))
                   .collect(blsToExecutionChangesSchema.collector()));
+          return SafeFuture.COMPLETE;
         });
   }
 }

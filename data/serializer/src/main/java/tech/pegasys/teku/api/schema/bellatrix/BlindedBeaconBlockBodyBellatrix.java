@@ -102,10 +102,11 @@ public class BlindedBeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
 
     return super.asInternalBeaconBlockBody(
         spec,
-        (builder) ->
-            builder.executionPayloadHeader(
-                SafeFuture.completedFuture(
-                    executionPayloadHeader.asInternalExecutionPayloadHeader(
-                        executionPayloadHeaderSchema))));
+        builder -> {
+          builder.executionPayloadHeader(
+              executionPayloadHeader.asInternalExecutionPayloadHeader(
+                  executionPayloadHeaderSchema));
+          return SafeFuture.COMPLETE;
+        });
   }
 }

@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -60,44 +59,41 @@ public class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatr
   }
 
   @Override
-  public SafeFuture<BeaconBlockBody> build() {
+  public BeaconBlockBody build() {
     validate();
     if (isBlinded()) {
       final BlindedBeaconBlockBodySchemaCapellaImpl schema =
           getAndValidateSchema(true, BlindedBeaconBlockBodySchemaCapellaImpl.class);
-      return executionPayloadHeader.thenApply(
-          header ->
-              new BlindedBeaconBlockBodyCapellaImpl(
-                  schema,
-                  new SszSignature(randaoReveal),
-                  eth1Data,
-                  SszBytes32.of(graffiti),
-                  proposerSlashings,
-                  attesterSlashings,
-                  attestations,
-                  deposits,
-                  voluntaryExits,
-                  syncAggregate,
-                  (ExecutionPayloadHeaderCapellaImpl) header.toVersionCapella().orElseThrow(),
-                  blsToExecutionChanges));
+      return new BlindedBeaconBlockBodyCapellaImpl(
+          schema,
+          new SszSignature(randaoReveal),
+          eth1Data,
+          SszBytes32.of(graffiti),
+          proposerSlashings,
+          attesterSlashings,
+          attestations,
+          deposits,
+          voluntaryExits,
+          syncAggregate,
+          (ExecutionPayloadHeaderCapellaImpl)
+              executionPayloadHeader.toVersionCapella().orElseThrow(),
+          blsToExecutionChanges);
     }
 
     final BeaconBlockBodySchemaCapellaImpl schema =
         getAndValidateSchema(false, BeaconBlockBodySchemaCapellaImpl.class);
-    return executionPayload.thenApply(
-        payload ->
-            new BeaconBlockBodyCapellaImpl(
-                schema,
-                new SszSignature(randaoReveal),
-                eth1Data,
-                SszBytes32.of(graffiti),
-                proposerSlashings,
-                attesterSlashings,
-                attestations,
-                deposits,
-                voluntaryExits,
-                syncAggregate,
-                (ExecutionPayloadCapellaImpl) payload.toVersionCapella().orElseThrow(),
-                blsToExecutionChanges));
+    return new BeaconBlockBodyCapellaImpl(
+        schema,
+        new SszSignature(randaoReveal),
+        eth1Data,
+        SszBytes32.of(graffiti),
+        proposerSlashings,
+        attesterSlashings,
+        attestations,
+        deposits,
+        voluntaryExits,
+        syncAggregate,
+        (ExecutionPayloadCapellaImpl) executionPayload.toVersionCapella().orElseThrow(),
+        blsToExecutionChanges);
   }
 }
