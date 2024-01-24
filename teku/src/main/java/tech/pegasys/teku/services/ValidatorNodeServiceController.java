@@ -16,7 +16,7 @@ package tech.pegasys.teku.services;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.service.serviceutils.ServiceConfig;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
-import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionShutDown;
+import tech.pegasys.teku.validator.client.slashingriskactions.DoppelgangerDetectionShutDown;
 
 public class ValidatorNodeServiceController extends ServiceController {
 

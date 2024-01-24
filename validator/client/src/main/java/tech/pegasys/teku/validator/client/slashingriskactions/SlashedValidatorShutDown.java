@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,28 +11,31 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.doppelganger;
+package tech.pegasys.teku.validator.client.slashingriskactions;
 
 import java.util.List;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 
-public class DoppelgangerDetectionAlert implements DoppelgangerDetectionAction {
+public class SlashedValidatorShutDown implements SlashingRiskAction {
 
   private final StatusLogger statusLog;
 
-  public DoppelgangerDetectionAlert() {
+  public SlashedValidatorShutDown() {
     this(StatusLogger.STATUS_LOG);
   }
 
-  public DoppelgangerDetectionAlert(final StatusLogger statusLog) {
+  public SlashedValidatorShutDown(final StatusLogger statusLog) {
     this.statusLog = statusLog;
   }
 
   @Override
-  public void perform(final List<BLSPublicKey> doppelgangers) {
-    statusLog.doppelgangerDetectionAlert(
-        doppelgangers.stream().map(BLSPublicKey::toAbbreviatedString).collect(Collectors.toSet()));
+  public void perform(List<BLSPublicKey> pubKeys) {
+    if (!pubKeys.isEmpty()) {
+      statusLog.validatorSlashedAlert(
+          pubKeys.stream().map(BLSPublicKey::toHexString).collect(Collectors.toSet()));
+      shutdown();
+    }
   }
 }
