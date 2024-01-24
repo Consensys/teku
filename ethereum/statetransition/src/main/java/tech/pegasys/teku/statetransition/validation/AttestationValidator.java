@@ -105,12 +105,10 @@ public class AttestationValidator {
             .performSlotInclusionGossipValidation(attestation, genesisTime, currentTimeMillis);
 
     if (slotInclusionGossipValidationResult.isPresent()) {
-      switch (slotInclusionGossipValidationResult.get()) {
-        case IGNORE:
-          return completedFuture(InternalValidationResultWithState.ignore());
-        case SAVE_FOR_FUTURE:
-          return completedFuture(InternalValidationResultWithState.saveForFuture());
-      }
+      return switch (slotInclusionGossipValidationResult.get()) {
+        case IGNORE -> completedFuture(InternalValidationResultWithState.ignore());
+        case SAVE_FOR_FUTURE -> completedFuture(InternalValidationResultWithState.saveForFuture());
+      };
     }
 
     // The block being voted for (attestation.data.beacon_block_root) passes validation.
@@ -151,9 +149,7 @@ public class AttestationValidator {
                         attestation.getData().getIndex(), receivedOnSubnetId.getAsInt()));
               }
 
-              // The check below is not specified in the Eth2 networking spec, yet an attestation
-              // with aggregation bits size greater/less than the committee size is invalid. So we
-              // reject those attestations at the networking layer.
+              // [REJECT] The number of aggregation bits matches the committee size
               final IntList committee =
                   spec.getBeaconCommittee(state, data.getSlot(), data.getIndex());
               if (committee.size() != attestation.getAggregationBits().size()) {
