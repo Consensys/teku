@@ -56,7 +56,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
-import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
 import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
@@ -65,6 +64,7 @@ import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeletionStatus;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
+import tech.pegasys.teku.validator.client.slashingriskactions.SlashingRiskAction;
 
 class OwnedKeyManagerTest {
 
@@ -79,8 +79,7 @@ class OwnedKeyManagerTest {
   private final ValidatorTimingChannel channel = mock(ValidatorTimingChannel.class);
   private final OwnedKeyManager keyManager = new OwnedKeyManager(validatorLoader, channel);
   private final DoppelgangerDetector doppelgangerDetector = mock(DoppelgangerDetector.class);
-  private final DoppelgangerDetectionAction doppelgangerDetectionAction =
-      mock(DoppelgangerDetectionAction.class);
+  private final SlashingRiskAction doppelgangerDetectionAction = mock(SlashingRiskAction.class);
   private final BLSPublicKey doppelgangerPublicKey =
       BLSPublicKey.fromSSZBytes(
           Bytes.fromHexString(
