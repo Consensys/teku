@@ -141,6 +141,17 @@ public class AggregateAttestationValidator {
 
               final BeaconState state = maybeState.get();
 
+              // [REJECT] The aggregate attestation has participants
+              final IntList attestingIndices =
+                  spec.getAttestingIndices(
+                      state, aggregate.getData(), aggregate.getAggregationBits());
+
+              if (attestingIndices.isEmpty()) {
+                return SafeFuture.completedFuture(
+                    reject(
+                        "Rejecting aggregate attestation because it does not have participants"));
+              }
+
               final Optional<BLSPublicKey> aggregatorPublicKey =
                   spec.getValidatorPubKey(state, aggregateAndProof.getIndex());
               if (aggregatorPublicKey.isEmpty()) {
