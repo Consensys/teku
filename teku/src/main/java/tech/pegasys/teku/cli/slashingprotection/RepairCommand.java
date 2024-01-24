@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.cli.slashingprotection;
 
+import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.FATAL_EXIT_CODE;
+import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.SUCCESS_EXIT_CODE;
+
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -133,7 +136,7 @@ public class RepairCommand implements Runnable {
       return computedSlot;
     }
     SUB_COMMAND_LOG.exit(
-        1,
+        FATAL_EXIT_CODE,
         "Could not compute epoch, please supply an epoch to use for updating slashing protection.");
     throw new IllegalStateException("Should not have got past System.exit.");
   }
@@ -163,7 +166,7 @@ public class RepairCommand implements Runnable {
 
     if (!confirmation.equalsIgnoreCase("yes")) {
       SUB_COMMAND_LOG.display("Operation cancelled.");
-      System.exit(1);
+      System.exit(SUCCESS_EXIT_CODE);
     }
   }
 }

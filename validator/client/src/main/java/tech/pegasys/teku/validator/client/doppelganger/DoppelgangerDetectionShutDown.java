@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client.doppelganger;
 
+import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.FATAL_EXIT_CODE;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import java.util.List;
@@ -26,6 +27,6 @@ public class DoppelgangerDetectionShutDown implements DoppelgangerDetectionActio
         doppelgangers.stream()
             .map(BLSPublicKey::toAbbreviatedString)
             .collect(Collectors.joining(", ")));
-    System.exit(1);
+    System.exit(FATAL_EXIT_CODE);
   }
 }

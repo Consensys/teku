@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.util;
 
+import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.FATAL_EXIT_CODE;
+
 import java.nio.file.Path;
 import tech.pegasys.teku.cli.options.ValidatorClientDataOptions;
 import tech.pegasys.teku.infrastructure.logging.SubCommandLogger;
@@ -24,7 +26,7 @@ public class SlashingProtectionCommandUtils {
       final SubCommandLogger subCommandLogger, final Path slashProtectionPath) {
     if (!slashProtectionPath.toFile().exists() || !slashProtectionPath.toFile().isDirectory()) {
       subCommandLogger.exit(
-          1,
+          FATAL_EXIT_CODE,
           "Unable to locate the path containing slashing protection data. Expected "
               + slashProtectionPath
               + " to be a directory containing slashing protection yml files.");

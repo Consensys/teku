@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.cli.subcommand;
 
+import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.FATAL_EXIT_CODE;
+import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.SUCCESS_EXIT_CODE;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -122,14 +125,14 @@ public class MigrateDatabaseCommand implements Runnable {
     // validate output format
     final Optional<DatabaseVersion> maybeOutputVersion = DatabaseVersion.fromString(toDbVersion);
     if (maybeOutputVersion.isEmpty()) {
-      SUB_COMMAND_LOG.exit(2, "Invalid database version specified: " + toDbVersion);
+      SUB_COMMAND_LOG.exit(FATAL_EXIT_CODE, "Invalid database version specified: " + toDbVersion);
     }
     // validate there is no old database instance present
     // If a previous migrate-data was run, the 'beacon' would have been renamed to 'beacon.old'
     // and advice given to the user to cleanup 'beacon.old' manually.
     if (Files.isDirectory(dataPath.resolve("beacon.old"))) {
       SUB_COMMAND_LOG.exit(
-          1,
+          FATAL_EXIT_CODE,
           "There is an existing folder in "
               + dataPath.resolve("beacon.old").toFile()
               + ", review this folder and remove before continuing.");
@@ -164,7 +167,7 @@ public class MigrateDatabaseCommand implements Runnable {
       SUB_COMMAND_LOG.display(
           "There is a partially created database at: " + dbMigrater.getNewBeaconFolderPath());
       SUB_COMMAND_LOG.display("This is not in use and could be cleaned up.");
-      System.exit(1);
+      System.exit(FATAL_EXIT_CODE);
     }
   }
 
@@ -184,7 +187,7 @@ public class MigrateDatabaseCommand implements Runnable {
     SUB_COMMAND_LOG.display("");
     if (!confirmYes("Proceed with database migration (yes/no)?")) {
       SUB_COMMAND_LOG.display("Operation cancelled.");
-      System.exit(0);
+      System.exit(SUCCESS_EXIT_CODE);
     }
     return sourceDatabaseVersion;
   }
@@ -206,7 +209,8 @@ public class MigrateDatabaseCommand implements Runnable {
         dataDirLayout.getBeaconDataDirectory().toAbsolutePath().toFile();
     if (!currentDatabasePath.isDirectory()) {
       SUB_COMMAND_LOG.exit(
-          1, "Could not locate the existing database to migrate from: " + currentDatabasePath);
+          FATAL_EXIT_CODE,
+          "Could not locate the existing database to migrate from: " + currentDatabasePath);
     }
     try {
       final String versionValue =
@@ -215,11 +219,12 @@ public class MigrateDatabaseCommand implements Runnable {
           DatabaseVersion.fromString(versionValue)
               .orElseThrow(() -> new IOException("Could not read db.version file"));
       if (currentDatabaseVersion.equals(databaseVersion)) {
-        SUB_COMMAND_LOG.exit(0, "The specified database is already the requested version");
+        SUB_COMMAND_LOG.exit(
+            SUCCESS_EXIT_CODE, "The specified database is already the requested version");
       }
       return currentDatabaseVersion;
     } catch (IOException e) {
-      SUB_COMMAND_LOG.exit(1, "Could not read db.version file");
+      SUB_COMMAND_LOG.exit(FATAL_EXIT_CODE, "Could not read db.version file");
       // NOT REACHED
       return DatabaseVersion.DEFAULT_VERSION;
     }

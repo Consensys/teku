@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.slashingprotection;
 
+import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.FATAL_EXIT_CODE;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
@@ -69,13 +71,14 @@ public class ExportCommand implements Runnable {
     if (!errors.isEmpty()) {
       errors.forEach((key, error) -> SUB_COMMAND_LOG.display("ERROR: " + error));
       SUB_COMMAND_LOG.exit(
-          1, "There were errors reading from slashing protection files, cannot complete.");
+          FATAL_EXIT_CODE,
+          "There were errors reading from slashing protection files, cannot complete.");
     }
     try {
       SUB_COMMAND_LOG.display("Writing slashing protection data to: " + toFileName);
       slashingProtectionExporter.saveToFile(toFileName, SUB_COMMAND_LOG::display);
     } catch (IOException e) {
-      SUB_COMMAND_LOG.exit(1, "Failed to export slashing protection data.", e);
+      SUB_COMMAND_LOG.exit(FATAL_EXIT_CODE, "Failed to export slashing protection data.", e);
     }
   }
 }

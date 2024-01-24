@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.cli.slashingprotection;
 
+import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.FATAL_EXIT_CODE;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -65,11 +67,12 @@ public class ImportCommand implements Runnable {
     try {
       SUB_COMMAND_LOG.display("Reading slashing protection data from: " + importFile);
       final Optional<String> errorCondition = importer.initialise(importFile);
-      errorCondition.ifPresent(s -> SUB_COMMAND_LOG.exit(1, s));
+      errorCondition.ifPresent(s -> SUB_COMMAND_LOG.exit(FATAL_EXIT_CODE, s));
     } catch (IOException e) {
       String cause = e.getCause() != null ? e.getCause().getMessage() : e.getMessage();
       SUB_COMMAND_LOG.exit(
-          1, String.format("Failed to read from import file: %s. %s", importFile, cause));
+          FATAL_EXIT_CODE,
+          String.format("Failed to read from import file: %s. %s", importFile, cause));
     }
 
     SUB_COMMAND_LOG.display("Writing slashing protection data to: " + slashProtectionPath);
@@ -78,17 +81,19 @@ public class ImportCommand implements Runnable {
 
   private void verifyImportFileExists(final File importFile) {
     if (!importFile.exists() || !importFile.isFile() || !importFile.canRead()) {
-      SUB_COMMAND_LOG.exit(1, "Cannot open " + importFile.toString() + " for reading.");
+      SUB_COMMAND_LOG.exit(
+          FATAL_EXIT_CODE, "Cannot open " + importFile.toString() + " for reading.");
     }
   }
 
   private void prepareOutputPath(final File outputPath) {
     if (!outputPath.exists() && !outputPath.mkdirs()) {
       SUB_COMMAND_LOG.exit(
-          1, "Failed to create path to store slashing protection data " + outputPath);
+          FATAL_EXIT_CODE, "Failed to create path to store slashing protection data " + outputPath);
     }
     if (!outputPath.isDirectory() || !outputPath.canWrite()) {
-      SUB_COMMAND_LOG.exit(1, "Path " + outputPath + " is not a directory or can't be written to.");
+      SUB_COMMAND_LOG.exit(
+          FATAL_EXIT_CODE, "Path " + outputPath + " is not a directory or can't be written to.");
     }
   }
 }

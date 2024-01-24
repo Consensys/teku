@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.client;
 
+import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.FATAL_EXIT_CODE;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
 import java.net.http.HttpClient;
@@ -284,7 +285,7 @@ public class ValidatorClientService extends Service {
     if (validatorConfig.isExitWhenNoValidatorKeysEnabled()
         && validatorLoader.getOwnedValidators().hasNoValidators()) {
       STATUS_LOG.exitOnNoValidatorKeys();
-      System.exit(2);
+      System.exit(FATAL_EXIT_CODE);
     }
   }
 
