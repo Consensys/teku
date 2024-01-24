@@ -119,7 +119,11 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
   public void shouldSetDefaultBundleSnapshotPathForSupportedNetwork(final String network) {
     final String[] args = {"--network=" + network, "--deposit-snapshot-enabled"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
-    assertThat(config.powchain().getDepositTreeSnapshotConfiguration().isDepositSnapshotEnabled())
+    assertThat(
+            config
+                .powchain()
+                .getDepositTreeSnapshotConfiguration()
+                .isBundledDepositSnapshotEnabled())
         .isTrue();
     assertThat(
             config.powchain().getDepositTreeSnapshotConfiguration().getBundledDepositSnapshotPath())
@@ -135,7 +139,11 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
   public void shouldHaveDepositSnapshotEnabledByDefault() {
     final String[] args = {};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
-    assertThat(config.powchain().getDepositTreeSnapshotConfiguration().isDepositSnapshotEnabled())
+    assertThat(
+            config
+                .powchain()
+                .getDepositTreeSnapshotConfiguration()
+                .isBundledDepositSnapshotEnabled())
         .isTrue();
   }
 
@@ -145,7 +153,7 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     final DepositTreeSnapshotConfiguration depositTreeSnapshotConfiguration =
         config.powchain().getDepositTreeSnapshotConfiguration();
-    assertThat(depositTreeSnapshotConfiguration.isDepositSnapshotEnabled()).isTrue();
+    assertThat(depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()).isTrue();
     assertThat(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath()).isEmpty();
   }
 
@@ -153,7 +161,11 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
   public void shouldRespectDepositSnapshotFlagWhenDisabled() {
     final String[] args = {"--deposit-snapshot-enabled", "false"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
-    assertThat(config.powchain().getDepositTreeSnapshotConfiguration().isDepositSnapshotEnabled())
+    assertThat(
+            config
+                .powchain()
+                .getDepositTreeSnapshotConfiguration()
+                .isBundledDepositSnapshotEnabled())
         .isFalse();
   }
 
@@ -163,7 +175,7 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     final DepositTreeSnapshotConfiguration depositTreeSnapshotConfiguration =
         config.powchain().getDepositTreeSnapshotConfiguration();
-    assertThat(depositTreeSnapshotConfiguration.isDepositSnapshotEnabled()).isFalse();
+    assertThat(depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()).isFalse();
     assertThat(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath())
         .hasValue("/foo/bar");
   }
@@ -174,7 +186,7 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     final DepositTreeSnapshotConfiguration depositTreeSnapshotConfiguration =
         config.powchain().getDepositTreeSnapshotConfiguration();
-    assertThat(depositTreeSnapshotConfiguration.isDepositSnapshotEnabled()).isTrue();
+    assertThat(depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()).isTrue();
     assertThat(depositTreeSnapshotConfiguration.getCheckpointSyncDepositSnapshotUrl())
         .hasValue("http://checkpoint-sync.com" + DEPOSIT_SNAPSHOT_URL_PATH);
   }
@@ -186,7 +198,7 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     final DepositTreeSnapshotConfiguration depositTreeSnapshotConfiguration =
         config.powchain().getDepositTreeSnapshotConfiguration();
-    assertThat(depositTreeSnapshotConfiguration.isDepositSnapshotEnabled()).isFalse();
+    assertThat(depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()).isFalse();
     assertThat(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath())
         .hasValue("/foo/bar");
   }

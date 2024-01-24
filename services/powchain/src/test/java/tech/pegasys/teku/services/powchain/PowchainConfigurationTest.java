@@ -68,5 +68,7 @@ class PowchainConfigurationTest {
 
     assertThat(config.getDepositTreeSnapshotConfiguration().getBundledDepositSnapshotPath())
         .isEmpty();
+    assertThat(config.getDepositTreeSnapshotConfiguration().isBundledDepositSnapshotEnabled())
+        .isFalse();
   }
 }

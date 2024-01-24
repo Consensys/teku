@@ -19,17 +19,17 @@ public class DepositTreeSnapshotConfiguration {
   private final Optional<String> customDepositSnapshotPath;
   private final Optional<String> checkpointSyncDepositSnapshotUrl;
   private final Optional<String> bundledDepositSnapshotPath;
-  private final boolean depositSnapshotEnabled;
+  private final boolean isBundledDepositSnapshotEnabled;
 
   DepositTreeSnapshotConfiguration(
       final Optional<String> customDepositSnapshotPath,
       final Optional<String> checkpointSyncDepositSnapshotUrl,
       final Optional<String> bundledDepositSnapshotPath,
-      final boolean depositSnapshotEnabled) {
+      final boolean isBundledDepositSnapshotEnabled) {
     this.customDepositSnapshotPath = customDepositSnapshotPath;
     this.checkpointSyncDepositSnapshotUrl = checkpointSyncDepositSnapshotUrl;
     this.bundledDepositSnapshotPath = bundledDepositSnapshotPath;
-    this.depositSnapshotEnabled = depositSnapshotEnabled;
+    this.isBundledDepositSnapshotEnabled = isBundledDepositSnapshotEnabled;
   }
 
   public Optional<String> getCustomDepositSnapshotPath() {
@@ -44,7 +44,7 @@ public class DepositTreeSnapshotConfiguration {
     return bundledDepositSnapshotPath;
   }
 
-  public boolean isDepositSnapshotEnabled() {
-    return depositSnapshotEnabled;
+  public boolean isBundledDepositSnapshotEnabled() {
+    return isBundledDepositSnapshotEnabled;
   }
 }
