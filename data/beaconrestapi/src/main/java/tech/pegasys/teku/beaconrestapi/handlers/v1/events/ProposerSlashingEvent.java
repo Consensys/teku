@@ -16,7 +16,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 
 public class ProposerSlashingEvent extends Event<ProposerSlashing> {
-  ProposerSlashingEvent(ProposerSlashing proposerSlashing) {
+  ProposerSlashingEvent(final ProposerSlashing proposerSlashing) {
     super(proposerSlashing.getSchema().getJsonTypeDefinition(), proposerSlashing);
   }
 }
