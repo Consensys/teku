@@ -695,8 +695,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     if (!isFfgCompetitive || !isSingleSlotReorg) {
       LOG.debug(
           "getProposerHead - return headRoot - isFfgCompetitive {}, isSingleSlotReorg {}",
-          () -> isFfgCompetitive,
-          () -> isSingleSlotReorg);
+          isFfgCompetitive,
+          isSingleSlotReorg);
       return headRoot;
     }
 
@@ -737,10 +737,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       // !shufflingStable or !ffgCompetetive or !finalizationOk, or parentSlot is not found
       LOG.debug(
           "shouldOverrideForkChoiceUpdate isShufflingStable {}, isFfgCompetitive {}, isFinalizationOk {}, maybeParentSlot {}",
-          () -> isShufflingStable,
-          () -> isFfgCompetitive,
-          () -> isFinalizationOk,
-          () -> maybeParentSlot);
+          isShufflingStable,
+          isFfgCompetitive,
+          isFinalizationOk,
+          maybeParentSlot);
       return false;
     }
 
@@ -763,9 +763,9 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     if (!isSingleSlotReorg || !isHeadWeak || !isParentStrong) {
       LOG.debug(
           "shouldOverrideForkChoiceUpdate isSingleSlotReorg {}, isHeadWeak {}, isParentStrong {}",
-          () -> isSingleSlotReorg,
-          () -> isHeadWeak,
-          () -> isParentStrong);
+          isSingleSlotReorg,
+          isHeadWeak,
+          isParentStrong);
       return false;
     }
 
@@ -780,9 +780,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final int proposerIndex = spec.getBeaconProposerIndex(proposerPreState, proposalSlot);
       if (!validatorIsConnectedProvider.isValidatorConnected(proposerIndex, proposalSlot)) {
         LOG.debug(
-            "shouldOverrideForkChoiceUpdate isValidatorConnected({}) {}, ",
-            () -> proposerIndex,
-            () -> false);
+            "shouldOverrideForkChoiceUpdate isValidatorConnected({}) {}, ", proposerIndex, false);
         return false;
       }
     } catch (SlotProcessingException | EpochProcessingException e) {
