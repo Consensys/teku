@@ -82,7 +82,7 @@ public class DepositSnapshotFileLoaderTest {
   }
 
   @Test
-  public void shouldTryAllAvailableResources() {
+  public void shouldTryAllAvailableResourcesUntilFirstNonEmptyFound() {
     final String validResourcePath = getResourceFilePath(SNAPSHOT_BEACON_API_RESOURCE);
     depositSnapshotLoader =
         new DepositSnapshotFileLoader.Builder()
