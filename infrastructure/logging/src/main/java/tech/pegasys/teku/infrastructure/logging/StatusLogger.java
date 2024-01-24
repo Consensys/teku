@@ -246,6 +246,12 @@ public class StatusLogger {
         "No loaded validators when --exit-when-no-validator-keys-enabled option is true. Shutting down...");
   }
 
+  public void validatorSlashedAlert(final Set<String> slashedValidatorPublicKeys) {
+    log.fatal(
+        "Validator(s) with public key(s) {} got slashed. Shutting down...",
+        String.join(", ", slashedValidatorPublicKeys));
+  }
+
   public void beginInitializingChainData() {
     log.info("Initializing storage");
   }
