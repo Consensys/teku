@@ -193,7 +193,7 @@ public class SpecConfigReader {
             setter -> {
               final String constantKey = camelToSnakeCase(setter.getName());
               final Object rawValue = unprocessedConfig.get(constantKey);
-              invokeSetter(setter, configBuilder::capellaBuilder, constantKey, rawValue);
+              invokeSetter(setter, configBuilder::electraBuilder, constantKey, rawValue);
               unprocessedConfig.remove(constantKey);
             });
 

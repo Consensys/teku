@@ -46,7 +46,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 
-public class SchemaDefinitionsElectra extends SchemaDefinitionsBellatrix {
+public class SchemaDefinitionsElectra extends SchemaDefinitionsCapella {
 
   private final BeaconStateSchemaElectra beaconStateSchema;
 
