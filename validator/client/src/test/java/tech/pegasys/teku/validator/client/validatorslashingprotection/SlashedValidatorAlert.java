@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,20 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.slashingriskactions;
+package tech.pegasys.teku.validator.client.validatorslashingprotection;
 
-import java.util.List;
-import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.validator.client.slashingriskactions.SlashedValidatorShutDown;
 
-public interface SlashingRiskAction {
+public class SlashedValidatorAlert extends SlashedValidatorShutDown {
 
-  void perform(final List<BLSPublicKey> doppelgangers);
-
-  default void perform(BLSPublicKey pubKey) {
-    perform(List.of(pubKey));
+  public SlashedValidatorAlert(final StatusLogger statusLog) {
+    super(statusLog);
   }
 
-  default void shutdown() {
-    System.exit(2);
-  }
+  @Override
+  public void shutdown() {}
 }
