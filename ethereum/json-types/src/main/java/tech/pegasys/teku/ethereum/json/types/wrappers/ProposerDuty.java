@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.api;
+package tech.pegasys.teku.ethereum.json.types.wrappers;
 
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
@@ -67,5 +67,30 @@ public class ProposerDuty {
         .add("validatorIndex", validatorIndex)
         .add("slot", slot)
         .toString();
+  }
+
+  public static final class ProposerDutyBuilder {
+    private BLSPublicKey publicKey;
+    private int validatorIndex;
+    private UInt64 slot;
+
+    public ProposerDutyBuilder publicKey(BLSPublicKey publicKey) {
+      this.publicKey = publicKey;
+      return this;
+    }
+
+    public ProposerDutyBuilder validatorIndex(int validatorIndex) {
+      this.validatorIndex = validatorIndex;
+      return this;
+    }
+
+    public ProposerDutyBuilder slot(UInt64 slot) {
+      this.slot = slot;
+      return this;
+    }
+
+    public ProposerDuty build() {
+      return new ProposerDuty(publicKey, validatorIndex, slot);
+    }
   }
 }

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.api;
+package tech.pegasys.teku.ethereum.json.types.wrappers;
 
 import com.google.common.base.MoreObjects;
 import java.util.List;
@@ -68,5 +68,30 @@ public class ProposerDuties {
         .add("dependentRoot", dependentRoot)
         .add("duties", duties)
         .toString();
+  }
+
+  public static final class ProposerDutiesBuilder {
+    private Bytes32 dependentRoot;
+    private boolean executionOptimistic;
+    private List<ProposerDuty> duties;
+
+    public ProposerDutiesBuilder dependentRoot(Bytes32 dependentRoot) {
+      this.dependentRoot = dependentRoot;
+      return this;
+    }
+
+    public ProposerDutiesBuilder executionOptimistic(boolean executionOptimistic) {
+      this.executionOptimistic = executionOptimistic;
+      return this;
+    }
+
+    public ProposerDutiesBuilder duties(List<ProposerDuty> duties) {
+      this.duties = duties;
+      return this;
+    }
+
+    public ProposerDuties build() {
+      return new ProposerDuties(dependentRoot, duties, executionOptimistic);
+    }
   }
 }
