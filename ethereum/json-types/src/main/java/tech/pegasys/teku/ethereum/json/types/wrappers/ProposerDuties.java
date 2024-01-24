@@ -13,42 +13,12 @@
 
 package tech.pegasys.teku.ethereum.json.types.wrappers;
 
-import static tech.pegasys.teku.ethereum.json.types.wrappers.ProposerDutyBuilder.PROPOSER_DUTY_TYPE;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.listOf;
-
 import com.google.common.base.MoreObjects;
 import java.util.List;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class ProposerDuties {
-  public static final DeserializableTypeDefinition<ProposerDuties> PROPOSER_DUTIES_TYPE =
-      DeserializableTypeDefinition.object(
-              ProposerDuties.class, ProposerDuties.ProposerDutiesBuilder.class)
-          .name("GetProposerDutiesResponse")
-          .initializer(ProposerDuties.ProposerDutiesBuilder::new)
-          .finisher(ProposerDuties.ProposerDutiesBuilder::build)
-          .withField(
-              "dependent_root",
-              BYTES32_TYPE,
-              ProposerDuties::getDependentRoot,
-              ProposerDuties.ProposerDutiesBuilder::dependentRoot)
-          .withField(
-              EXECUTION_OPTIMISTIC,
-              BOOLEAN_TYPE,
-              ProposerDuties::isExecutionOptimistic,
-              ProposerDuties.ProposerDutiesBuilder::executionOptimistic)
-          .withField(
-              "data",
-              listOf(PROPOSER_DUTY_TYPE),
-              ProposerDuties::getDuties,
-              ProposerDuties.ProposerDutiesBuilder::duties)
-          .build();
-
   private final Bytes32 dependentRoot;
   private final boolean executionOptimistic;
   private final List<ProposerDuty> duties;
@@ -97,30 +67,5 @@ public class ProposerDuties {
         .add("dependentRoot", dependentRoot)
         .add("duties", duties)
         .toString();
-  }
-
-  public static final class ProposerDutiesBuilder {
-    private Bytes32 dependentRoot;
-    private boolean executionOptimistic;
-    private List<ProposerDuty> duties;
-
-    public ProposerDutiesBuilder dependentRoot(Bytes32 dependentRoot) {
-      this.dependentRoot = dependentRoot;
-      return this;
-    }
-
-    public ProposerDutiesBuilder executionOptimistic(boolean executionOptimistic) {
-      this.executionOptimistic = executionOptimistic;
-      return this;
-    }
-
-    public ProposerDutiesBuilder duties(List<ProposerDuty> duties) {
-      this.duties = duties;
-      return this;
-    }
-
-    public ProposerDuties build() {
-      return new ProposerDuties(dependentRoot, duties, executionOptimistic);
-    }
   }
 }
