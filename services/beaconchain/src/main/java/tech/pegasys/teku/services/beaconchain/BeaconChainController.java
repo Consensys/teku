@@ -181,6 +181,7 @@ import tech.pegasys.teku.storage.store.StoreConfig;
 import tech.pegasys.teku.validator.api.InteropConfig;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
+import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.BlockOperationSelectorFactory;
@@ -643,6 +644,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 .reversed());
     blockImporter.subscribeToVerifiedBlockAttesterSlashings(attesterSlashingPool::removeAll);
     attesterSlashingPool.subscribeOperationAdded(forkChoice::onAttesterSlashing);
+    if (beaconConfig.validatorConfig().isShutdownWhenValidatorSlashedEnabled()) {
+      final ValidatorTimingChannel validatorTimingChannel =
+          eventChannels.getPublisher(ValidatorTimingChannel.class);
+      attesterSlashingPool.subscribeOperationAdded(
+          (operation, validationStatus, fromNetwork) ->
+              validatorTimingChannel.onAttesterSlashing(operation));
+    }
   }
 
   protected void initProposerSlashingPool() {
@@ -655,6 +663,13 @@ public class BeaconChainController extends Service implements BeaconChainControl
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getProposerSlashingsSchema),
             validator);
     blockImporter.subscribeToVerifiedBlockProposerSlashings(proposerSlashingPool::removeAll);
+    if (beaconConfig.validatorConfig().isShutdownWhenValidatorSlashedEnabled()) {
+      final ValidatorTimingChannel validatorTimingChannel =
+          eventChannels.getPublisher(ValidatorTimingChannel.class);
+      proposerSlashingPool.subscribeOperationAdded(
+          (operation, validationStatus, fromNetwork) ->
+              validatorTimingChannel.onProposerSlashing(operation));
+    }
   }
 
   protected void initVoluntaryExitPool() {
