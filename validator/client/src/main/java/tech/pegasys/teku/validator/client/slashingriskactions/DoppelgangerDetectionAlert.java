@@ -11,22 +11,28 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.doppelganger;
-
-import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.FATAL_EXIT_CODE;
-import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+package tech.pegasys.teku.validator.client.slashingriskactions;
 
 import java.util.List;
 import java.util.stream.Collectors;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 
-public class DoppelgangerDetectionShutDown implements DoppelgangerDetectionAction {
+public class DoppelgangerDetectionAlert implements SlashingRiskAction {
+
+  private final StatusLogger statusLog;
+
+  public DoppelgangerDetectionAlert() {
+    this(StatusLogger.STATUS_LOG);
+  }
+
+  public DoppelgangerDetectionAlert(final StatusLogger statusLog) {
+    this.statusLog = statusLog;
+  }
+
   @Override
   public void perform(final List<BLSPublicKey> doppelgangers) {
-    STATUS_LOG.exitOnDoppelgangerDetected(
-        doppelgangers.stream()
-            .map(BLSPublicKey::toAbbreviatedString)
-            .collect(Collectors.joining(", ")));
-    System.exit(FATAL_EXIT_CODE);
+    statusLog.doppelgangerDetectionAlert(
+        doppelgangers.stream().map(BLSPublicKey::toAbbreviatedString).collect(Collectors.toSet()));
   }
 }

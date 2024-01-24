@@ -32,16 +32,15 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.validator.client.OwnedKeyManager;
-import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostRemoteKeysRequest;
+import tech.pegasys.teku.validator.client.slashingriskactions.SlashingRiskAction;
 
 public class PostRemoteKeysTest {
   private final OwnedKeyManager keyManager = mock(OwnedKeyManager.class);
   private final RestApiRequest request = mock(RestApiRequest.class);
-  private final DoppelgangerDetectionAction doppelgangerDetectionAction =
-      mock(DoppelgangerDetectionAction.class);
+  private final SlashingRiskAction doppelgangerDetectionAction = mock(SlashingRiskAction.class);
   final PostRemoteKeys handler =
       new PostRemoteKeys(keyManager, Optional.empty(), doppelgangerDetectionAction);
 
