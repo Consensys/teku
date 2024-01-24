@@ -126,6 +126,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final InlineEventThread eventThread = new InlineEventThread();
     final KZG kzg = KzgRetriever.getKzgWithLoadedTrustedSetup(spec, testDefinition.getConfigName());
     final StubBlobSidecarManager blobSidecarManager = new StubBlobSidecarManager(kzg);
+    // forkChoiceLateBlockReorgEnabled is true here always because this is the reference test
+    // executor
     final ForkChoice forkChoice =
         new ForkChoice(
             spec,
