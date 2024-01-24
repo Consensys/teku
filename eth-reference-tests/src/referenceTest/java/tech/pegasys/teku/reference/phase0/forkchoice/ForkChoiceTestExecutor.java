@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
-import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
 
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
@@ -137,7 +136,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
-            DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
+            true,
             storageSystem.getMetricsSystem());
     final ExecutionLayerChannelStub executionLayer =
         new ExecutionLayerChannelStub(spec, false, Optional.empty());
