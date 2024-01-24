@@ -111,7 +111,7 @@ public class PowchainConfiguration {
     public PowchainConfiguration build() {
       validate();
 
-      boolean isBundledSnapshotEnabled =
+      final boolean isBundledSnapshotEnabled =
           this.depositSnapshotEnabled && this.customDepositSnapshotPath.isEmpty();
 
       return new PowchainConfiguration(

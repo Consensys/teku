@@ -84,6 +84,10 @@ public class DepositSnapshotFileLoaderTest {
   @Test
   public void shouldTryAllAvailableResourcesUntilFirstNonEmptyFound() {
     final String validResourcePath = getResourceFilePath(SNAPSHOT_BEACON_API_RESOURCE);
+    // assertion values from SNAPSHOT_BEACON_API_RESOURCE
+    final int deposits = 1106572;
+    final int blockNumber = 18754822;
+
     depositSnapshotLoader =
         new DepositSnapshotFileLoader.Builder()
             .addOptionalResource("/foo/empty")
@@ -92,6 +96,17 @@ public class DepositSnapshotFileLoaderTest {
 
     final LoadDepositSnapshotResult result = depositSnapshotLoader.loadDepositSnapshot();
     assertThat(result.getDepositTreeSnapshot()).isPresent();
+    assertWith(
+        result,
+        snapshotResult -> {
+          assertThat(snapshotResult.getDepositTreeSnapshot().isPresent()).isTrue();
+          assertThat(snapshotResult.getDepositTreeSnapshot().get().getDepositCount())
+              .isEqualTo(deposits);
+          assertThat(snapshotResult.getReplayDepositsResult().getLastProcessedDepositIndex())
+              .contains(BigInteger.valueOf(deposits - 1));
+          assertThat(snapshotResult.getReplayDepositsResult().getLastProcessedBlockNumber())
+              .isEqualTo(blockNumber);
+        });
   }
 
   @Test

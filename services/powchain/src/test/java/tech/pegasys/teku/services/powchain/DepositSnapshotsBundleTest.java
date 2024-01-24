@@ -60,7 +60,7 @@ public class DepositSnapshotsBundleTest {
     assumeThat(
             powchainConfiguration
                 .getDepositTreeSnapshotConfiguration()
-                .getCustomDepositSnapshotPath())
+                .getBundledDepositSnapshotPath())
         .describedAs("No built-in snapshot for network %s", eth2Network)
         .isPresent();
 
@@ -69,7 +69,7 @@ public class DepositSnapshotsBundleTest {
             .addRequiredResource(
                 powchainConfiguration
                     .getDepositTreeSnapshotConfiguration()
-                    .getCustomDepositSnapshotPath()
+                    .getBundledDepositSnapshotPath()
                     .get())
             .build();
 
@@ -98,7 +98,7 @@ public class DepositSnapshotsBundleTest {
     final String depositSnapshotPath =
         powchainConfiguration
             .getDepositTreeSnapshotConfiguration()
-            .getCustomDepositSnapshotPath()
+            .getBundledDepositSnapshotPath()
             .orElseThrow();
     final DepositSnapshotFileLoader depositSnapshotLoader =
         new DepositSnapshotFileLoader.Builder().addRequiredResource(depositSnapshotPath).build();
