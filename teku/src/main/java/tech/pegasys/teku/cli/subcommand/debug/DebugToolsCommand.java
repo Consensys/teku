@@ -45,9 +45,9 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 import tech.pegasys.teku.validator.client.KeyManager;
 import tech.pegasys.teku.validator.client.NoOpKeyManager;
-import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAlert;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApi;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
+import tech.pegasys.teku.validator.client.slashingriskactions.DoppelgangerDetectionAlert;
 
 @Command(
     name = "debug-tools",
