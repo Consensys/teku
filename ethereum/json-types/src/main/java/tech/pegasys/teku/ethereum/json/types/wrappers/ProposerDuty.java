@@ -13,12 +13,36 @@
 
 package tech.pegasys.teku.ethereum.json.types.wrappers;
 
+import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.PUBLIC_KEY_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
+
 import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ProposerDuty {
+  public static final DeserializableTypeDefinition<ProposerDuty> PROPOSER_DUTY_TYPE =
+      DeserializableTypeDefinition.object(
+              ProposerDuty.class, ProposerDuty.ProposerDutyBuilder.class)
+          .initializer(ProposerDuty.ProposerDutyBuilder::new)
+          .finisher(ProposerDuty.ProposerDutyBuilder::build)
+          .withField(
+              "pubkey",
+              PUBLIC_KEY_TYPE,
+              ProposerDuty::getPublicKey,
+              ProposerDuty.ProposerDutyBuilder::publicKey)
+          .withField(
+              "validator_index",
+              INTEGER_TYPE,
+              ProposerDuty::getValidatorIndex,
+              ProposerDuty.ProposerDutyBuilder::validatorIndex)
+          .withField(
+              "slot", UINT64_TYPE, ProposerDuty::getSlot, ProposerDuty.ProposerDutyBuilder::slot)
+          .build();
+
   private final BLSPublicKey publicKey;
   private final int validatorIndex;
   private final UInt64 slot;

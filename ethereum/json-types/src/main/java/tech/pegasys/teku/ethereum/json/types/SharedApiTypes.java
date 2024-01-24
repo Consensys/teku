@@ -13,14 +13,10 @@
 
 package tech.pegasys.teku.ethereum.json.types;
 
-import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.PUBLIC_KEY_TYPE;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
+import static tech.pegasys.teku.ethereum.json.types.wrappers.ProposerDuties.PROPOSER_DUTIES_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES4_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.listOf;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -29,7 +25,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.json.types.wrappers.GetGenesisApiData;
 import tech.pegasys.teku.ethereum.json.types.wrappers.GetGenesisApiData.GetGenesisApiDataBuilder;
 import tech.pegasys.teku.ethereum.json.types.wrappers.ProposerDuties;
-import tech.pegasys.teku.ethereum.json.types.wrappers.ProposerDuty;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableObjectTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
@@ -61,48 +56,6 @@ public class SharedApiTypes {
                   GetGenesisApiData::getGenesisForkVersion,
                   GetGenesisApiDataBuilder::genesisForkVersion)
               .build());
-
-  private static final DeserializableTypeDefinition<ProposerDuty> PROPOSER_DUTY_TYPE =
-      DeserializableTypeDefinition.object(
-              ProposerDuty.class, ProposerDuty.ProposerDutyBuilder.class)
-          .initializer(ProposerDuty.ProposerDutyBuilder::new)
-          .finisher(ProposerDuty.ProposerDutyBuilder::build)
-          .withField(
-              "pubkey",
-              PUBLIC_KEY_TYPE,
-              ProposerDuty::getPublicKey,
-              ProposerDuty.ProposerDutyBuilder::publicKey)
-          .withField(
-              "validator_index",
-              INTEGER_TYPE,
-              ProposerDuty::getValidatorIndex,
-              ProposerDuty.ProposerDutyBuilder::validatorIndex)
-          .withField(
-              "slot", UINT64_TYPE, ProposerDuty::getSlot, ProposerDuty.ProposerDutyBuilder::slot)
-          .build();
-
-  public static final DeserializableTypeDefinition<ProposerDuties> PROPOSER_DUTIES_TYPE =
-      DeserializableTypeDefinition.object(
-              ProposerDuties.class, ProposerDuties.ProposerDutiesBuilder.class)
-          .name("GetProposerDutiesResponse")
-          .initializer(ProposerDuties.ProposerDutiesBuilder::new)
-          .finisher(ProposerDuties.ProposerDutiesBuilder::build)
-          .withField(
-              "dependent_root",
-              BYTES32_TYPE,
-              ProposerDuties::getDependentRoot,
-              ProposerDuties.ProposerDutiesBuilder::dependentRoot)
-          .withField(
-              EXECUTION_OPTIMISTIC,
-              BOOLEAN_TYPE,
-              ProposerDuties::isExecutionOptimistic,
-              ProposerDuties.ProposerDutiesBuilder::executionOptimistic)
-          .withField(
-              "data",
-              listOf(PROPOSER_DUTY_TYPE),
-              ProposerDuties::getDuties,
-              ProposerDuties.ProposerDutiesBuilder::duties)
-          .build();
 
   public static final DeserializableTypeDefinition<ProposerDuties>
       GET_PROPOSER_DUTIES_REQUEST_RESPONSE =
