@@ -153,6 +153,20 @@ public class PowchainServiceTest {
   }
 
   @Test
+  public void shouldUseCustomDepositSnapshotPathEvenWhenCheckpointSyncIsPresent() {
+    when(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath())
+        .thenReturn(Optional.of("/foo/custom"));
+    when(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath())
+        .thenReturn(Optional.of("/foo/chackpoint"));
+
+    final PowchainService powchainService =
+        new PowchainService(serviceConfig, powConfig, Optional.of(engineWeb3jClientProvider));
+
+    verifyExpectedOrderOfDepositSnapshotPathResources(
+        powchainService, List.of(new DepositSnapshotResource("/foo/custom", true)));
+  }
+
+  @Test
   public void shouldHaveNoDepositSnapshotPathWhenNoneIsAvailable() {
     when(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath())
         .thenReturn(Optional.empty());
