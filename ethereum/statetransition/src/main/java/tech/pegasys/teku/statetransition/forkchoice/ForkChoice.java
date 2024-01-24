@@ -347,6 +347,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final BeaconState justifiedState,
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint) {
+    if (forkChoiceLateBlockReorgEnabled) {
+      recentChainData.getStore().computeBalanceThresholds(justifiedState);
+    }
     final VoteUpdater transaction = recentChainData.startVoteUpdate();
     final ReadOnlyForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
     final List<UInt64> justifiedEffectiveBalances =
