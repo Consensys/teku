@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.ethereum.json.types.wrappers;
 
-import static tech.pegasys.teku.ethereum.json.types.wrappers.ProposerDuty.PROPOSER_DUTY_TYPE;
+import static tech.pegasys.teku.ethereum.json.types.wrappers.ProposerDutyBuilder.PROPOSER_DUTY_TYPE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
