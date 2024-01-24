@@ -145,7 +145,6 @@ public class AggregateAttestationValidator {
               final IntList attestingIndices =
                   spec.getAttestingIndices(
                       state, aggregate.getData(), aggregate.getAggregationBits());
-
               if (attestingIndices.isEmpty()) {
                 return SafeFuture.completedFuture(
                     reject(
