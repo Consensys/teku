@@ -1113,7 +1113,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final Eth1DataProvider eth1DataProvider = new Eth1DataProvider(eth1DataCache, depositProvider);
 
     final ExecutionClientDataProvider executionClientDataProvider =
-        new ExecutionClientDataProvider();
+        dataProvider.getExecutionClientDataProvider();
+
     eventChannels.subscribe(ExecutionClientEventsChannel.class, executionClientDataProvider);
 
     beaconRestAPI =
@@ -1125,7 +1126,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 eventChannels,
                 eventAsyncRunner,
                 timeProvider,
-                executionClientDataProvider,
                 spec));
 
     if (getLivenessTrackingEnabled(beaconConfig)) {
