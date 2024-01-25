@@ -75,8 +75,12 @@ import tech.pegasys.teku.api.response.v1.node.SyncingResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.response.v1.validator.ValidatorLiveness;
 import tech.pegasys.teku.api.response.v2.beacon.GetBlockResponseV2;
+import tech.pegasys.teku.api.schema.AttestationData;
+import tech.pegasys.teku.api.schema.AttesterSlashing;
 import tech.pegasys.teku.api.schema.BLSSignature;
 import tech.pegasys.teku.api.schema.BeaconBlockHeader;
+import tech.pegasys.teku.api.schema.Checkpoint;
+import tech.pegasys.teku.api.schema.IndexedAttestation;
 import tech.pegasys.teku.api.schema.ProposerSlashing;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.api.schema.SignedBeaconBlockHeader;
@@ -118,6 +122,7 @@ public class TekuNode extends Node {
   private static final Logger LOG = LogManager.getLogger();
   public static final String LOCAL_VALIDATOR_LIVENESS_URL = "/eth/v1/validator/liveness/{epoch}";
   public static final String POST_PROPOSER_SLASHING_URL = "/eth/v1/beacon/pool/proposer_slashings";
+  public static final String POST_ATTESTER_SLASHING_URL = "/eth/v1/beacon/pool/attester_slashings";
   private final Config config;
   private final Spec spec;
   private Optional<EventStreamListener> maybeEventStreamListener = Optional.empty();
@@ -328,6 +333,56 @@ public class TekuNode extends Node {
     final String body = JSON_PROVIDER.objectToJSON(proposerSlashing);
 
     return httpClient.post(getRestApiUrl(), POST_PROPOSER_SLASHING_URL, body);
+  }
+
+  public String postAttesterSlashing(
+      final UInt64 slashingSlot,
+      final UInt64 slashedIndex,
+      final BLSSecretKey slashedValidatorSecretKey)
+      throws IOException {
+
+    final Fork fork = spec.getForkSchedule().getFork(spec.computeEpochAtSlot(slashingSlot));
+    final Bytes32 genesisValidatorRoot = fetchGenesis().getGenesisValidatorsRoot();
+    final ForkInfo forkInfo = new ForkInfo(fork, genesisValidatorRoot);
+    final SigningRootUtil signingRootUtil = new SigningRootUtil(spec);
+
+    final AttestationData attestationData1 =
+        new AttestationData(
+            slashingSlot,
+            slashedIndex,
+            Bytes32.random(),
+            new Checkpoint(UInt64.valueOf(1), Bytes32.random()),
+            new Checkpoint(UInt64.valueOf(2), Bytes32.random()));
+    final BLSSignature blsSignature1 =
+        new BLSSignature(
+            BLS.sign(
+                slashedValidatorSecretKey,
+                signingRootUtil.signingRootForSignAttestationData(
+                    attestationData1.asInternalAttestationData(), forkInfo)));
+    final IndexedAttestation indexedAttestation1 =
+        new IndexedAttestation(List.of(slashedIndex), attestationData1, blsSignature1);
+
+    final AttestationData attestationData2 =
+        new AttestationData(
+            slashingSlot,
+            slashedIndex,
+            Bytes32.random(),
+            new Checkpoint(UInt64.valueOf(1), Bytes32.random()),
+            new Checkpoint(UInt64.valueOf(2), Bytes32.random()));
+    final BLSSignature blsSignature2 =
+        new BLSSignature(
+            BLS.sign(
+                slashedValidatorSecretKey,
+                signingRootUtil.signingRootForSignAttestationData(
+                    attestationData2.asInternalAttestationData(), forkInfo)));
+    final IndexedAttestation indexedAttestation2 =
+        new IndexedAttestation(List.of(slashedIndex), attestationData2, blsSignature2);
+
+    final AttesterSlashing attesterSlashing =
+        new AttesterSlashing(indexedAttestation1, indexedAttestation2);
+    final String body = JSON_PROVIDER.objectToJSON(attesterSlashing);
+
+    return httpClient.post(getRestApiUrl(), POST_ATTESTER_SLASHING_URL, body);
   }
 
   public void submitBlsToExecutionChange(

@@ -13,9 +13,14 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import java.io.IOException;
 import java.util.List;
-import org.junit.jupiter.api.Test;
+import java.util.stream.Stream;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSSecretKey;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
@@ -28,8 +33,19 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
   private final String network = "swift";
 
-  @Test
-  void shouldShutDownWhenOwnedValidatorSlashed_SingleProcess_SinglePeer() throws Exception {
+  private enum SlashingEventType {
+    PROPOSER_SLASHING,
+    ATTESTER_SLASHING;
+  }
+
+  public static Stream<Arguments> getSlashingEventTypes() {
+    return Stream.of(SlashingEventType.values()).map(Arguments::of);
+  }
+
+  @ParameterizedTest
+  @MethodSource("getSlashingEventTypes")
+  void shouldShutDownWhenOwnedValidatorSlashed_SingleProcess_SinglePeer(
+      final SlashingEventType slashingEventType) throws Exception {
 
     final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
     final UInt64 altairEpoch = UInt64.valueOf(100);
@@ -51,10 +67,12 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, slashedValidatorIndex + 1);
     final BLSKeyPair slashedValidatorKeyPair = blsKeyPairs.get(slashedValidatorIndex);
 
-    tekuNode.postProposerSlashing(
+    postSlashing(
         UInt64.valueOf(3),
         UInt64.valueOf(slashedValidatorIndex),
-        slashedValidatorKeyPair.getSecretKey());
+        slashedValidatorKeyPair.getSecretKey(),
+        tekuNode,
+        slashingEventType);
 
     tekuNode.waitForLogMessageContaining(
         String.format(
@@ -62,8 +80,10 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
             slashedValidatorKeyPair.getPublicKey().toHexString()));
   }
 
-  @Test
-  void shouldShutDownWhenOwnedValidatorSlashed_StandAloneVC_SinglePeer() throws Exception {
+  @ParameterizedTest
+  @MethodSource("getSlashingEventTypes")
+  void shouldShutDownWhenOwnedValidatorSlashed_StandAloneVC_SinglePeer(
+      final SlashingEventType slashingEventType) throws Exception {
 
     final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
     final UInt64 altairEpoch = UInt64.valueOf(100);
@@ -90,10 +110,12 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, slashedValidatorIndex + 1);
     final BLSKeyPair slashedValidatorKeyPair = blsKeyPairs.get(slashedValidatorIndex);
 
-    beaconNode.postProposerSlashing(
+    postSlashing(
         UInt64.valueOf(3),
         UInt64.valueOf(slashedValidatorIndex),
-        slashedValidatorKeyPair.getSecretKey());
+        slashedValidatorKeyPair.getSecretKey(),
+        beaconNode,
+        slashingEventType);
 
     validatorClient.waitForLogMessageContaining(
         String.format(
@@ -101,8 +123,10 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
             slashedValidatorKeyPair.getPublicKey().toHexString()));
   }
 
-  @Test
-  void shouldShutDownWhenOwnedValidatorSlashed_SingleProcess_MultiplePeers() throws Exception {
+  @ParameterizedTest
+  @MethodSource("getSlashingEventTypes")
+  void shouldShutDownWhenOwnedValidatorSlashed_SingleProcess_MultiplePeers(
+      final SlashingEventType slashingEventType) throws Exception {
 
     final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
     final UInt64 altairEpoch = UInt64.valueOf(100);
@@ -136,10 +160,12 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 34 + 1);
     final BLSKeyPair slashedValidatorKeyPair = blsKeyPairs.get(slashedValidatorIndex);
 
-    firstTekuNode.postProposerSlashing(
+    postSlashing(
         UInt64.valueOf(3),
         UInt64.valueOf(slashedValidatorIndex),
-        slashedValidatorKeyPair.getSecretKey());
+        slashedValidatorKeyPair.getSecretKey(),
+        firstTekuNode,
+        slashingEventType);
 
     secondTekuNode.waitForLogMessageContaining(
         String.format(
@@ -149,8 +175,10 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
     firstTekuNode.stop();
   }
 
-  @Test
-  void shouldShutDownWhenOwnedValidatorSlashed_StandAloneVC_MultiplePeers() throws Exception {
+  @ParameterizedTest
+  @MethodSource("getSlashingEventTypes")
+  void shouldShutDownWhenOwnedValidatorSlashed_StandAloneVC_MultiplePeers(
+      final SlashingEventType slashingEventType) throws Exception {
 
     final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
     final UInt64 altairEpoch = UInt64.valueOf(100);
@@ -194,10 +222,12 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 34 + 1);
     final BLSKeyPair slashedValidatorKeyPair = blsKeyPairs.get(slashedValidatorIndex);
 
-    firstTekuNode.postProposerSlashing(
+    postSlashing(
         UInt64.valueOf(3),
         UInt64.valueOf(slashedValidatorIndex),
-        slashedValidatorKeyPair.getSecretKey());
+        slashedValidatorKeyPair.getSecretKey(),
+        firstTekuNode,
+        slashingEventType);
 
     secondValidatorClient.waitForLogMessageContaining(
         String.format(
@@ -210,5 +240,20 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
 
   private TekuNode.Config configureNode(final TekuNode.Config node, final int genesisTime) {
     return node.withNetwork(network).withGenesisTime(genesisTime).withRealNetwork();
+  }
+
+  private void postSlashing(
+      final UInt64 slashingSlot,
+      final UInt64 slashedIndex,
+      final BLSSecretKey slashedValidatorSecretKey,
+      final TekuNode tekuNode,
+      final SlashingEventType slashingEventType)
+      throws IOException {
+    switch (slashingEventType) {
+      case ATTESTER_SLASHING -> tekuNode.postAttesterSlashing(
+          slashingSlot, slashedIndex, slashedValidatorSecretKey);
+      case PROPOSER_SLASHING -> tekuNode.postProposerSlashing(
+          slashingSlot, slashedIndex, slashedValidatorSecretKey);
+    }
   }
 }
