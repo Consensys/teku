@@ -14,8 +14,8 @@
 package tech.pegasys.teku.infrastructure.exceptions;
 
 /**
- * Constants to be used as a parameter for {@link System#exit(int)} to perform shutdown of Teku or
- * an exit from a command
+ * Constants to be used as a parameter for {@link System#exit(int)} to perform shutdown of the Teku,
+ * not for use in commands
  */
 public class ExitConstants {
   public static final int SUCCESS_EXIT_CODE = 0;
