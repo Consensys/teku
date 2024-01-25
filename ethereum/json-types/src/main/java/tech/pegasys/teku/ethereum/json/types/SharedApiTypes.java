@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.ethereum.json.types;
 
-import static tech.pegasys.teku.ethereum.json.types.wrappers.ProposerDutiesBuilder.PROPOSER_DUTIES_TYPE;
+import static tech.pegasys.teku.ethereum.json.types.validator.ProposerDutiesBuilder.PROPOSER_DUTIES_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES4_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
@@ -22,9 +22,9 @@ import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.ethereum.json.types.wrappers.GetGenesisApiData;
-import tech.pegasys.teku.ethereum.json.types.wrappers.GetGenesisApiData.GetGenesisApiDataBuilder;
-import tech.pegasys.teku.ethereum.json.types.wrappers.ProposerDuties;
+import tech.pegasys.teku.ethereum.json.types.beacon.GetGenesisApiData;
+import tech.pegasys.teku.ethereum.json.types.beacon.GetGenesisApiData.GetGenesisApiDataBuilder;
+import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableObjectTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;

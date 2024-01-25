@@ -11,9 +11,9 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.ethereum.json.types.wrappers;
+package tech.pegasys.teku.ethereum.json.types.validator;
 
-import static tech.pegasys.teku.ethereum.json.types.wrappers.ProposerDutyBuilder.PROPOSER_DUTY_TYPE;
+import static tech.pegasys.teku.ethereum.json.types.validator.ProposerDutyBuilder.PROPOSER_DUTY_TYPE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;

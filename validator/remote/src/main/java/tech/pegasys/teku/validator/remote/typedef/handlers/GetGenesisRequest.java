@@ -19,7 +19,7 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GE
 import java.util.Optional;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
-import tech.pegasys.teku.ethereum.json.types.wrappers.GetGenesisApiData;
+import tech.pegasys.teku.ethereum.json.types.beacon.GetGenesisApiData;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class GetGenesisRequest extends AbstractTypeDefRequest {
