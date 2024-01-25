@@ -95,6 +95,8 @@ public class ValidatorClientService extends Service {
   private ValidatorIndexProvider validatorIndexProvider;
   private Optional<DoppelgangerDetector> maybeDoppelgangerDetector = Optional.empty();
   private final SlashingRiskAction doppelgangerDetectionAction;
+
+  private final Optional<SlashingRiskAction> maybeValidatorSlashedAction;
   private Optional<RestApi> maybeValidatorRestApi = Optional.empty();
   private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
   private final Optional<ValidatorRegistrator> validatorRegistrator;
@@ -115,7 +117,8 @@ public class ValidatorClientService extends Service {
       final Optional<ValidatorRegistrator> validatorRegistrator,
       final Spec spec,
       final MetricsSystem metricsSystem,
-      final SlashingRiskAction doppelgangerDetectionAction) {
+      final SlashingRiskAction doppelgangerDetectionAction,
+      final Optional<SlashingRiskAction> maybeValidatorSlashedAction) {
     this.eventChannels = eventChannels;
     this.validatorLoader = validatorLoader;
     this.beaconNodeApi = beaconNodeApi;
@@ -127,12 +130,14 @@ public class ValidatorClientService extends Service {
     this.spec = spec;
     this.metricsSystem = metricsSystem;
     this.doppelgangerDetectionAction = doppelgangerDetectionAction;
+    this.maybeValidatorSlashedAction = maybeValidatorSlashedAction;
   }
 
   public static ValidatorClientService create(
       final ServiceConfig services,
       final ValidatorClientConfiguration config,
-      final SlashingRiskAction doppelgangerDetectionAction) {
+      final SlashingRiskAction doppelgangerDetectionAction,
+      final Optional<SlashingRiskAction> maybeValidatorSlashedAction) {
     final EventChannels eventChannels = services.getEventChannels();
     final ValidatorConfig validatorConfig = config.getValidatorConfig();
 
@@ -214,7 +219,8 @@ public class ValidatorClientService extends Service {
             validatorRegistrator,
             config.getSpec(),
             services.getMetricsSystem(),
-            doppelgangerDetectionAction);
+            doppelgangerDetectionAction,
+            maybeValidatorSlashedAction);
 
     asyncRunner
         .runAsync(
@@ -564,7 +570,11 @@ public class ValidatorClientService extends Service {
               eventChannels.subscribe(
                   ValidatorTimingChannel.class,
                   new ValidatorTimingActions(
-                      validatorIndexProvider, validatorTimingChannels, spec, metricsSystem));
+                      validatorIndexProvider,
+                      validatorTimingChannels,
+                      spec,
+                      metricsSystem,
+                      maybeValidatorSlashedAction));
               validatorStatusProvider.start().ifExceptionGetsHereRaiseABug();
               return beaconNodeApi.subscribeToEvents();
             });
