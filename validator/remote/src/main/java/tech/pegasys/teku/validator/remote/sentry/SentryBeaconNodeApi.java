@@ -160,7 +160,8 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
                 spec),
             validatorTimingChannel,
             serviceConfig.getMetricsSystem(),
-            validatorConfig.generateEarlyAttestations());
+            validatorConfig.generateEarlyAttestations(),
+            spec);
 
     eventChannels.subscribe(BeaconNodeReadinessChannel.class, beaconChainEventAdapter);
 
@@ -179,6 +180,7 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
         httpClient,
         spec,
         validatorConfig.isValidatorClientUseSszBlocksEnabled(),
+        validatorConfig.isValidatorClientUsePostValidatorsEndpointEnabled(),
         asyncRunner);
   }
 
@@ -197,6 +199,7 @@ public class SentryBeaconNodeApi implements BeaconNodeApi {
                         httpClient,
                         spec,
                         validatorConfig.isValidatorClientUseSszBlocksEnabled(),
+                        validatorConfig.isValidatorClientUsePostValidatorsEndpointEnabled(),
                         asyncRunner))
             .toList();
 

@@ -20,7 +20,7 @@ import io.libp2p.core.crypto.KeyType;
 import io.libp2p.core.crypto.PrivKey;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
-import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.PrivateKeySource;
+import tech.pegasys.teku.networking.p2p.network.config.PrivateKeySource;
 import tech.pegasys.teku.storage.store.KeyValueStore;
 
 public class LibP2PPrivateKeyLoader implements LibP2PNetwork.PrivateKeyProvider {
@@ -39,12 +39,12 @@ public class LibP2PPrivateKeyLoader implements LibP2PNetwork.PrivateKeyProvider 
   public PrivKey get() {
     final Bytes privKeyBytes =
         privateKeySource
-            .map(PrivateKeySource::getPrivateKeyBytes)
-            .orElseGet(this::generateNewPrivateKey);
+            .map(PrivateKeySource::getOrGeneratePrivateKeyBytes)
+            .orElseGet(() -> generateAndSaveNewPrivateKey(keyValueStore));
     return KeyKt.unmarshalPrivateKey(privKeyBytes.toArrayUnsafe());
   }
 
-  private Bytes generateNewPrivateKey() {
+  private Bytes generateAndSaveNewPrivateKey(final KeyValueStore<String, Bytes> keyValueStore) {
     final Bytes privateKey;
     final Optional<Bytes> generatedKeyBytes = keyValueStore.get(GENERATED_NODE_KEY_KEY);
     if (generatedKeyBytes.isEmpty()) {

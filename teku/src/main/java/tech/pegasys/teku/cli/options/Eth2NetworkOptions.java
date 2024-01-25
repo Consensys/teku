@@ -60,7 +60,6 @@ public class Eth2NetworkOptions {
 
   @Option(
       names = {"--genesis-state"},
-      hidden = true,
       paramLabel = "<STRING>",
       description =
           "The genesis state. This value should be a file or URL pointing to an SSZ-encoded finalized checkpoint state.",
@@ -69,7 +68,6 @@ public class Eth2NetworkOptions {
 
   @Option(
       names = {"--checkpoint-sync-url"},
-      hidden = true,
       paramLabel = "<STRING>",
       description = "The Checkpointz server that will be used to bootstrap this node.",
       arity = "1")
@@ -102,6 +100,18 @@ public class Eth2NetworkOptions {
       hidden = true)
   private boolean forkChoiceLateBlockReorgEnabled =
       Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
+
+  @Option(
+      names = {"--Xfork-choice-updated-always-send-payload-attributes"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Calculate and send payload attributes on every forkChoiceUpdated regardless if a connected validator is due to be a block proposer or not.",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private boolean forkChoiceUpdatedAlwaysSendPayloadAttributes =
+      Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES;
 
   @Option(
       names = {"--Xnetwork-altair-fork-epoch"},
@@ -219,42 +229,6 @@ public class Eth2NetworkOptions {
       hidden = true)
   private Integer startupTimeoutSeconds;
 
-  // can be removed after investigating the consequences of not doing it anymore
-  @Option(
-      names = {"--Xfork-choice-update-head-on-block-import-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description = "Make the first descendent of head the new chain head.",
-      arity = "0..1",
-      fallbackValue = "true",
-      showDefaultValue = Visibility.ALWAYS,
-      hidden = true)
-  private boolean forkChoiceUpdateHeadOnBlockImportEnabled =
-      Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
-
-  // https://github.com/Consensys/teku/issues/7537
-  @Option(
-      names = {"--Xfork-choice-proposer-boost-uniqueness-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description = "Apply proposer boost to first block in case of equivocation.",
-      arity = "0..1",
-      fallbackValue = "true",
-      showDefaultValue = Visibility.ALWAYS,
-      hidden = true)
-  private boolean forkChoiceProposerBoostUniquenessEnabled =
-      Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED;
-
-  @Option(
-      names = {"--Xfork-choice-validator-is-proposer-always-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description =
-          "When considering late block reorg, override validator-is-proposer check to be always true.",
-      arity = "0..1",
-      fallbackValue = "true",
-      showDefaultValue = Visibility.ALWAYS,
-      hidden = true)
-  private boolean forkChoiceValidatorIsProposerAlwaysEnabled =
-      Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_VALIDATOR_IS_PROPOSER_ALWAYS_ENABLED;
-
   @Option(
       names = {"--Xeth1-deposit-contract-deploy-block-override"},
       hidden = true,
@@ -349,11 +323,9 @@ public class Eth2NetworkOptions {
         .asyncP2pMaxQueue(asyncP2pMaxQueue)
         .asyncBeaconChainMaxThreads(asyncBeaconChainMaxThreads)
         .asyncBeaconChainMaxQueue(asyncBeaconChainMaxQueue)
-        .forkChoiceUpdateHeadOnBlockImportEnabled(forkChoiceUpdateHeadOnBlockImportEnabled)
-        .forkChoiceProposerBoostUniquenessEnabled(forkChoiceProposerBoostUniquenessEnabled)
         .forkChoiceLateBlockReorgEnabled(forkChoiceLateBlockReorgEnabled)
-        .forkChoiceValidatorIsProposerAlwaysEnabled(forkChoiceValidatorIsProposerAlwaysEnabled)
-        .epochsStoreBlobs(epochsStoreBlobs);
+        .epochsStoreBlobs(epochsStoreBlobs)
+        .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes);
   }
 
   public String getNetwork() {

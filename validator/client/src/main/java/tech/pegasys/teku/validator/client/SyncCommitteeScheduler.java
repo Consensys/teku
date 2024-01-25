@@ -22,6 +22,8 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.client.duties.synccommittee.SyncCommitteeScheduledDuties;
@@ -183,6 +185,12 @@ public class SyncCommitteeScheduler implements ValidatorTimingChannel {
 
   @Override
   public void onBlockProductionDue(final UInt64 slot) {}
+
+  @Override
+  public void onAttesterSlashing(final AttesterSlashing attesterSlashing) {}
+
+  @Override
+  public void onProposerSlashing(final ProposerSlashing proposerSlashing) {}
 
   private class SyncCommitteePeriod {
     private Optional<PendingDuties> duties = Optional.empty();

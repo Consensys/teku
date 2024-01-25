@@ -75,6 +75,7 @@ import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.VoteUpdateChannel;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 import tech.pegasys.teku.storage.protoarray.ProtoArray;
+import tech.pegasys.teku.storage.protoarray.ProtoNode;
 
 class Store extends CacheableStore {
   private static final Logger LOG = LogManager.getLogger();
@@ -340,7 +341,8 @@ class Store extends CacheableStore {
           block.getParentRoot(),
           block.getStateRoot(),
           block.getCheckpointEpochs().get(),
-          block.getExecutionBlockHash().orElse(Bytes32.ZERO),
+          block.getExecutionBlockNumber().orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
+          block.getExecutionBlockHash().orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
           spec.isBlockProcessorOptimistic(block.getBlockSlot()));
     }
     return protoArray;
@@ -558,6 +560,7 @@ class Store extends CacheableStore {
         .map(
             blockData -> {
               final UInt64 headWeight = blockData.getWeight();
+
               final boolean result = headWeight.isLessThan(reorgThreshold);
 
               LOG.trace(
@@ -569,18 +572,6 @@ class Store extends CacheableStore {
               return result;
             })
         .orElse(false);
-  }
-
-  @Override
-  public void computeBalanceThresholds(final BeaconState justifiedState) {
-    final SpecVersion specVersion = spec.atSlot(justifiedState.getSlot());
-    final BeaconStateAccessors beaconStateAccessors = specVersion.beaconStateAccessors();
-    reorgThreshold =
-        beaconStateAccessors.calculateCommitteeFraction(
-            justifiedState, specVersion.getConfig().getReorgHeadWeightThreshold());
-    parentThreshold =
-        beaconStateAccessors.calculateCommitteeFraction(
-            justifiedState, specVersion.getConfig().getReorgParentWeightThreshold());
   }
 
   @Override
@@ -601,6 +592,18 @@ class Store extends CacheableStore {
               return result;
             })
         .orElse(true);
+  }
+
+  @Override
+  public void computeBalanceThresholds(final BeaconState justifiedState) {
+    final SpecVersion specVersion = spec.atSlot(justifiedState.getSlot());
+    final BeaconStateAccessors beaconStateAccessors = specVersion.beaconStateAccessors();
+    reorgThreshold =
+        beaconStateAccessors.calculateCommitteeFraction(
+            justifiedState, specVersion.getConfig().getReorgHeadWeightThreshold());
+    parentThreshold =
+        beaconStateAccessors.calculateCommitteeFraction(
+            justifiedState, specVersion.getConfig().getReorgParentWeightThreshold());
   }
 
   @Override

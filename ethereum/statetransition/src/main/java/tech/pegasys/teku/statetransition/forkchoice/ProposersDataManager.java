@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
@@ -51,15 +52,17 @@ public class ProposersDataManager implements SlotEventsChannel {
 
   private final Spec spec;
   private final EventThread eventThread;
-  private final RecentChainData recentChainData;
   private final ExecutionLayerChannel executionLayerChannel;
+  private final RecentChainData recentChainData;
   private final Map<UInt64, PreparedProposerInfo> preparedProposerInfoByValidatorIndex =
       new ConcurrentHashMap<>();
   private final Map<UInt64, RegisteredValidatorInfo> validatorRegistrationInfoByValidatorIndex =
       new ConcurrentHashMap<>();
   private final Optional<Eth1Address> proposerDefaultFeeRecipient;
+  private final boolean forkChoiceUpdatedAlwaysSendPayloadAttribute;
 
-  private final Subscribers<ProposersDataManagerSubscriber> subscribers = Subscribers.create(true);
+  private final Subscribers<ProposersDataManagerSubscriber> proposersDataChangesSubscribers =
+      Subscribers.create(true);
 
   public ProposersDataManager(
       final EventThread eventThread,
@@ -67,7 +70,8 @@ public class ProposersDataManager implements SlotEventsChannel {
       final MetricsSystem metricsSystem,
       final ExecutionLayerChannel executionLayerChannel,
       final RecentChainData recentChainData,
-      final Optional<Eth1Address> proposerDefaultFeeRecipient) {
+      final Optional<Eth1Address> proposerDefaultFeeRecipient,
+      final boolean forkChoiceUpdatedAlwaysSendPayloadAttribute) {
     final LabelledGauge labelledGauge =
         metricsSystem.createLabelledGauge(
             TekuMetricCategory.BEACON,
@@ -80,17 +84,14 @@ public class ProposersDataManager implements SlotEventsChannel {
 
     this.spec = spec;
     this.eventThread = eventThread;
+    this.executionLayerChannel = executionLayerChannel;
     this.recentChainData = recentChainData;
     this.proposerDefaultFeeRecipient = proposerDefaultFeeRecipient;
-    this.executionLayerChannel = executionLayerChannel;
+    this.forkChoiceUpdatedAlwaysSendPayloadAttribute = forkChoiceUpdatedAlwaysSendPayloadAttribute;
   }
 
-  public long subscribeToProposersDataChanges(ProposersDataManagerSubscriber subscriber) {
-    return subscribers.subscribe(subscriber);
-  }
-
-  public boolean unsubscribeToProposersDataChanges(long subscriberId) {
-    return subscribers.unsubscribe(subscriberId);
+  public void subscribeToProposersDataChanges(final ProposersDataManagerSubscriber subscriber) {
+    proposersDataChangesSubscribers.subscribe(subscriber);
   }
 
   @Override
@@ -126,7 +127,8 @@ public class ProposersDataManager implements SlotEventsChannel {
   public void updatePreparedProposers(
       final Collection<BeaconPreparableProposer> preparedProposers, final UInt64 currentSlot) {
     updatePreparedProposerCache(preparedProposers, currentSlot);
-    subscribers.deliver(ProposersDataManagerSubscriber::onPreparedProposersUpdated);
+    proposersDataChangesSubscribers.deliver(
+        ProposersDataManagerSubscriber::onPreparedProposersUpdated);
   }
 
   public SafeFuture<Void> updateValidatorRegistrations(
@@ -181,7 +183,8 @@ public class ProposersDataManager implements SlotEventsChannel {
                             "validator index not found for public key {}",
                             signedValidatorRegistration.getMessage().getPublicKey())));
 
-    subscribers.deliver(ProposersDataManagerSubscriber::onValidatorRegistrationsUpdated);
+    proposersDataChangesSubscribers.deliver(
+        ProposersDataManagerSubscriber::onValidatorRegistrationsUpdated);
   }
 
   public SafeFuture<Optional<PayloadBuildingAttributes>> calculatePayloadBuildingAttributes(
@@ -205,19 +208,18 @@ public class ProposersDataManager implements SlotEventsChannel {
       return SafeFuture.completedFuture(Optional.empty());
     }
     final UInt64 epoch = spec.computeEpochAtSlot(blockSlot);
-    final Bytes32 currentHeadBlockRoot =
-        forkChoiceUpdateData.getForkChoiceState().getHeadBlockRoot();
+    final ForkChoiceState forkChoiceState = forkChoiceUpdateData.getForkChoiceState();
+    final Bytes32 currentHeadBlockRoot = forkChoiceState.getHeadBlockRoot();
     if (maybeState.isPresent()) {
       try {
         final BeaconState preState = spec.processSlots(maybeState.get(), blockSlot);
         return SafeFuture.completedFuture(
-            calculatePayloadBuildingAttributes(
-                currentHeadBlockRoot, blockSlot, epoch, Optional.of(preState), mandatory));
+                calculatePayloadBuildingAttributes(
+                        currentHeadBlockRoot, blockSlot, epoch, Optional.of(preState), mandatory));
       } catch (SlotProcessingException | EpochProcessingException e) {
         LOG.error("Failed to process slots to get state current at blockSlot {}", blockSlot, e);
       }
     }
-
     return getStateInEpoch(epoch)
         .thenApplyAsync(
             maybeStateInEpoch ->
@@ -226,6 +228,14 @@ public class ProposersDataManager implements SlotEventsChannel {
             eventThread);
   }
 
+  /**
+   * Calculate {@link PayloadBuildingAttributes} to be sent to EL if one of our configured
+   * validators is due to propose a block or forkChoiceUpdatedAlwaysSendPayloadAttribute is set to
+   * true
+   *
+   * @param mandatory force to calculate {@link PayloadBuildingAttributes} (used in rare cases,
+   *     where payloadId hasn't been retrieved from EL for the block slot)
+   */
   private Optional<PayloadBuildingAttributes> calculatePayloadBuildingAttributes(
       final Bytes32 currentHeadBlockRoot,
       final UInt64 blockSlot,
@@ -240,25 +250,30 @@ public class ProposersDataManager implements SlotEventsChannel {
     final UInt64 proposerIndex = UInt64.valueOf(spec.getBeaconProposerIndex(state, blockSlot));
     final PreparedProposerInfo proposerInfo =
         preparedProposerInfoByValidatorIndex.get(proposerIndex);
-    if (proposerInfo == null && !mandatory) {
+
+    if (proposerInfo == null && !(mandatory || forkChoiceUpdatedAlwaysSendPayloadAttribute)) {
       // Proposer is not one of our validators. No need to propose a block.
       return Optional.empty();
     }
+
     final UInt64 timestamp = spec.computeTimeAtSlot(state, blockSlot);
     final Bytes32 random = spec.getRandaoMix(state, epoch);
     final Optional<SignedValidatorRegistration> validatorRegistration =
         Optional.ofNullable(validatorRegistrationInfoByValidatorIndex.get(proposerIndex))
             .map(RegisteredValidatorInfo::getSignedValidatorRegistration);
 
+    final Eth1Address feeRecipient = getFeeRecipient(proposerInfo, blockSlot);
+
     return Optional.of(
         new PayloadBuildingAttributes(
+            proposerIndex,
+            blockSlot,
             timestamp,
             random,
-            getFeeRecipient(proposerInfo, blockSlot),
+            feeRecipient,
             validatorRegistration,
             spec.getExpectedWithdrawals(state),
-            currentHeadBlockRoot,
-            blockSlot));
+            currentHeadBlockRoot));
   }
 
   // this function MUST return a fee recipient.

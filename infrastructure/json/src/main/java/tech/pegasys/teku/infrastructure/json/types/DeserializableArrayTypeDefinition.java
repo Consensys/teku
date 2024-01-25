@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 
 public class DeserializableArrayTypeDefinition<ItemT, CollectionT extends Iterable<ItemT>>
@@ -28,6 +29,7 @@ public class DeserializableArrayTypeDefinition<ItemT, CollectionT extends Iterab
 
   private final DeserializableTypeDefinition<ItemT> itemType;
   private final Function<List<ItemT>, CollectionT> createFromList;
+  private final Optional<Integer> minItems;
 
   public DeserializableArrayTypeDefinition(
       final DeserializableTypeDefinition<ItemT> itemType,
@@ -35,6 +37,17 @@ public class DeserializableArrayTypeDefinition<ItemT, CollectionT extends Iterab
     super(itemType);
     this.itemType = itemType;
     this.createFromList = createFromList;
+    this.minItems = Optional.empty();
+  }
+
+  public DeserializableArrayTypeDefinition(
+      final DeserializableTypeDefinition<ItemT> itemType,
+      final Function<List<ItemT>, CollectionT> createFromList,
+      final Optional<Integer> minItems) {
+    super(itemType);
+    this.itemType = itemType;
+    this.createFromList = createFromList;
+    this.minItems = minItems;
   }
 
   public DeserializableArrayTypeDefinition(
@@ -44,6 +57,7 @@ public class DeserializableArrayTypeDefinition<ItemT, CollectionT extends Iterab
     super(itemType, description);
     this.itemType = itemType;
     this.createFromList = createFromList;
+    this.minItems = Optional.empty();
   }
 
   @Override
@@ -55,6 +69,12 @@ public class DeserializableArrayTypeDefinition<ItemT, CollectionT extends Iterab
     final List<ItemT> result = new ArrayList<>();
     while (parser.nextToken() != JsonToken.END_ARRAY) {
       result.add(itemType.deserialize(parser));
+    }
+    if (minItems.isPresent() && result.size() < minItems.get()) {
+      throw MismatchedInputException.from(
+          parser,
+          String.class,
+          String.format("Provided array has less than %s minimum required items", minItems.get()));
     }
     return createFromList.apply(result);
   }

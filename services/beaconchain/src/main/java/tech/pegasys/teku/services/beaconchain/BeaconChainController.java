@@ -118,8 +118,9 @@ import tech.pegasys.teku.statetransition.SimpleOperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManagerImpl;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.blobs.DataUnavailableBlockPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
@@ -253,7 +254,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile WeakSubjectivityValidator weakSubjectivityValidator;
   protected volatile PerformanceTracker performanceTracker;
   protected volatile PendingPool<SignedBeaconBlock> pendingBlocks;
-  protected volatile BlobSidecarPool blobSidecarPool;
+  protected volatile BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   protected volatile Map<Bytes32, BlockImportResult> invalidBlockRoots;
   protected volatile CoalescingChainHeadChannel coalescingChainHeadChannel;
   protected volatile ActiveValidatorTracker activeValidatorTracker;
@@ -332,7 +333,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     recentBlocksFetcher.subscribeBlockFetched(
         (block) ->
             blockManager
-                .importBlock(block, BroadcastValidationLevel.NOT_REQUIRED)
+                .importBlock(
+                    block, BroadcastValidationLevel.NOT_REQUIRED, Optional.of(RemoteOrigin.RPC))
                 .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult)
                 .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
     blockManager.subscribeToReceivedBlocks(
@@ -340,7 +342,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final RecentBlobSidecarsFetcher recentBlobSidecarsFetcher =
         syncService.getRecentBlobSidecarsFetcher();
     recentBlobSidecarsFetcher.subscribeBlobSidecarFetched(
-        (blobSidecar) -> blobSidecarManager.prepareForBlockImport(blobSidecar));
+        (blobSidecar) -> blobSidecarManager.prepareForBlockImport(blobSidecar, RemoteOrigin.RPC));
     blobSidecarManager.subscribeToReceivedBlobSidecar(
         blobSidecar ->
             recentBlobSidecarsFetcher.cancelRecentBlobSidecarRequest(
@@ -409,8 +411,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     storeConfig,
                     beaconAsyncRunner,
                     timeProvider,
-                    (blockRoot) -> blobSidecarPool.getBlock(blockRoot),
-                    (blockRoot, index) -> blobSidecarPool.getBlobSidecar(blockRoot, index),
+                    (blockRoot) -> blockBlobSidecarsTrackersPool.getBlock(blockRoot),
+                    (blockRoot, index) ->
+                        blockBlobSidecarsTrackersPool.getBlobSidecar(blockRoot, index),
                     storageQueryChannel,
                     storageUpdateChannel,
                     voteUpdateChannel,
@@ -428,7 +431,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
               this.recentChainData = client;
               if (recentChainData.isPreGenesis()) {
                 setupInitialState(client);
-                return SafeFuture.completedFuture(client);
               } else {
                 if (isUsingCustomInitialState()) {
                   STATUS_LOG.warnInitialStateIgnored();
@@ -436,8 +438,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 if (!isAllowSyncOutsideWeakSubjectivityPeriod()) {
                   validateWeakSubjectivityPeriod(client);
                 }
-                return SafeFuture.completedFuture(client);
               }
+              return SafeFuture.completedFuture(client);
             })
         // Init other services
         .thenRun(this::initAll)
@@ -477,7 +479,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initGossipValidationHelper();
     initBlockPoolsAndCaches();
     initKzg();
-    initBlobSidecarPool();
+    initBlockBlobSidecarsTrackersPool();
     initBlobSidecarManager();
     initForkChoiceStateProvider();
     initForkChoiceNotifier();
@@ -530,7 +532,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               .orElseThrow(
                   () ->
                       new InvalidConfigurationException(
-                          "Trusted setup should be specified when Deneb is enabled"));
+                          "Trusted setup should be configured when Deneb is enabled"));
       kzg.loadTrustedSetup(trustedSetupFile);
     } else {
       kzg = KZG.NOOP;
@@ -554,7 +556,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
               spec,
               beaconAsyncRunner,
               recentChainData,
-              blobSidecarPool,
+              blockBlobSidecarsTrackersPool,
               blobSidecarValidator,
               kzg,
               futureBlobSidecars,
@@ -589,14 +591,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
     invalidBlockRoots = LimitedMap.createSynchronizedLRU(500);
   }
 
-  protected void initBlobSidecarPool() {
-    LOG.debug("BeaconChainController.initBlobSidecarPool()");
+  protected void initBlockBlobSidecarsTrackersPool() {
+    LOG.debug("BeaconChainController.initBlockBlobSidecarsTrackersPool()");
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
-      blobSidecarPool =
-          poolFactory.createPoolForBlobSidecars(
+      blockBlobSidecarsTrackersPool =
+          poolFactory.createPoolForBlockBlobSidecarsTrackers(
               spec, timeProvider, beaconAsyncRunner, recentChainData);
     } else {
-      blobSidecarPool = BlobSidecarPool.NOOP;
+      blockBlobSidecarsTrackersPool = BlockBlobSidecarsTrackersPool.NOOP;
     }
   }
 
@@ -709,11 +711,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 eventChannels.getPublisher(ValidatorApiChannel.class, beaconAsyncRunner))
             .attestationPool(attestationPool)
             .blockManager(blockManager)
-            .blobSidecarPool(blobSidecarPool)
+            .blockBlobSidecarsTrackersPool(blockBlobSidecarsTrackersPool)
             .attestationManager(attestationManager)
             .isLivenessTrackingEnabled(getLivenessTrackingEnabled(beaconConfig))
-            .acceptBlsToExecutionMessages(
-                beaconConfig.p2pConfig().isBlsToExecutionChangesSubnetEnabled())
             .activeValidatorChannel(
                 eventChannels.getPublisher(ActiveValidatorChannel.class, beaconAsyncRunner))
             .attesterSlashingPool(attesterSlashingPool)
@@ -722,6 +722,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .blsToExecutionChangePool(blsToExecutionChangePool)
             .syncCommitteeContributionPool(syncCommitteeContributionPool)
             .proposersDataManager(proposersDataManager)
+            .forkChoiceNotifier(forkChoiceNotifier)
             .rejectedExecutionSupplier(rejectedExecutionCountSupplier)
             .build();
   }
@@ -765,8 +766,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             forkChoiceStateProvider,
             new TickProcessor(spec, recentChainData),
             new MergeTransitionBlockValidator(spec, recentChainData, executionLayer),
-            beaconConfig.eth2NetworkConfig().isForkChoiceUpdateHeadOnBlockImportEnabled(),
-            beaconConfig.eth2NetworkConfig().isForkChoiceProposerBoostUniquenessEnabled(),
             beaconConfig.eth2NetworkConfig().isForkChoiceLateBlockReorgEnabled(),
             metricsSystem);
     forkChoiceTrigger = new ForkChoiceTrigger(forkChoice);
@@ -907,7 +906,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blockFactory,
             blockImportChannel,
             blockGossipChannel,
-            blobSidecarPool,
+            blockBlobSidecarsTrackersPool,
             blobSidecarGossipChannel,
             attestationPool,
             attestationManager,
@@ -1171,7 +1170,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         new BlockManager(
             recentChainData,
             blockImporter,
-            blobSidecarPool,
+            blockBlobSidecarsTrackersPool,
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,
@@ -1188,7 +1187,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       final DataUnavailableBlockPool dataUnavailableBlockPool =
-          new DataUnavailableBlockPool(blockManager, blobSidecarPool, beaconAsyncRunner);
+          new DataUnavailableBlockPool(
+              blockManager, blockBlobSidecarsTrackersPool, beaconAsyncRunner);
       blockManager.subscribeDataUnavailable(dataUnavailableBlockPool::addDataUnavailableBlock);
 
       this.dataUnavailableBlockPool = Optional.of(dataUnavailableBlockPool);
@@ -1202,7 +1202,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected SyncServiceFactory createSyncServiceFactory() {
     return new DefaultSyncServiceFactory(
         beaconConfig.syncConfig(),
-        beaconConfig.eth2NetworkConfig().getGenesisState(),
+        beaconConfig.eth2NetworkConfig().getNetworkBoostrapConfig().getGenesisState(),
         metricsSystem,
         asyncRunnerFactory,
         beaconAsyncRunner,
@@ -1214,7 +1214,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
         blockImporter,
         blobSidecarManager,
         pendingBlocks,
-        blobSidecarPool,
+        blockBlobSidecarsTrackersPool,
         beaconConfig.eth2NetworkConfig().getStartupTargetPeerCount(),
         signatureVerificationService,
         Duration.ofSeconds(beaconConfig.eth2NetworkConfig().getStartupTimeoutSeconds()),
@@ -1287,7 +1287,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             metricsSystem,
             executionLayer,
             recentChainData,
-            getProposerDefaultFeeRecipient());
+            getProposerDefaultFeeRecipient(),
+            beaconConfig.eth2NetworkConfig().isForkChoiceUpdatedAlwaysSendPayloadAttributes());
     eventChannels.subscribe(SlotEventsChannel.class, proposersDataManager);
     forkChoiceNotifier =
         new ForkChoiceNotifierImpl(
@@ -1320,7 +1321,10 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
     final Optional<AnchorPoint> initialAnchor =
         tryLoadingAnchorPointFromInitialState(networkConfiguration)
-            .or(() -> attemptToLoadAnchorPoint(networkConfiguration.getGenesisState()));
+            .or(
+                () ->
+                    attemptToLoadAnchorPoint(
+                        networkConfiguration.getNetworkBoostrapConfig().getGenesisState()));
 
     /*
      If flag to allow sync outside of weak subjectivity period has been set, we pass an instance of
@@ -1364,7 +1368,9 @@ public class BeaconChainController extends Service implements BeaconChainControl
     Optional<AnchorPoint> initialAnchor = Optional.empty();
 
     try {
-      initialAnchor = attemptToLoadAnchorPoint(networkConfiguration.getInitialState());
+      initialAnchor =
+          attemptToLoadAnchorPoint(
+              networkConfiguration.getNetworkBoostrapConfig().getInitialState());
     } catch (final InvalidConfigurationException e) {
       final StateBoostrapConfig stateBoostrapConfig =
           networkConfiguration.getNetworkBoostrapConfig();

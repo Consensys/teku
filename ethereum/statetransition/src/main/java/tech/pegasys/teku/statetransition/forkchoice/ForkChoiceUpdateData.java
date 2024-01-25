@@ -34,7 +34,7 @@ public class ForkChoiceUpdateData {
   private static final Logger LOG = LogManager.getLogger();
   private static final ForkChoiceState DEFAULT_FORK_CHOICE_STATE =
       new ForkChoiceState(
-          Bytes32.ZERO, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO, false);
+          Bytes32.ZERO, UInt64.ZERO, UInt64.ZERO, Bytes32.ZERO, Bytes32.ZERO, Bytes32.ZERO, false);
 
   private final ForkChoiceState forkChoiceState;
   private final Optional<PayloadBuildingAttributes> payloadBuildingAttributes;
@@ -61,6 +61,8 @@ public class ForkChoiceUpdateData {
           new ForkChoiceState(
               forkChoiceState.getHeadBlockRoot(),
               forkChoiceState.getHeadBlockSlot(),
+              // We don't have data for terminal block number
+              UInt64.ZERO,
               terminalBlockHash.get(),
               Bytes32.ZERO,
               Bytes32.ZERO,
@@ -150,21 +152,25 @@ public class ForkChoiceUpdateData {
     }
   }
 
+  public Optional<PayloadBuildingAttributes> getPayloadBuildingAttributes() {
+    return payloadBuildingAttributes;
+  }
+
   public SafeFuture<Optional<ExecutionPayloadContext>> getExecutionPayloadContext() {
     return executionPayloadContext;
   }
 
-  public SafeFuture<Optional<ForkChoiceUpdatedResult>> send(
+  public Optional<SafeFuture<ForkChoiceUpdatedResult>> send(
       final ExecutionLayerChannel executionLayer, final UInt64 currentTimestamp) {
     if (!shouldBeSent(currentTimestamp)) {
-      return SafeFuture.completedFuture(Optional.empty());
+      return Optional.empty();
     }
     toBeSentAtTime = currentTimestamp.plus(RESEND_AFTER_MILLIS);
 
     if (forkChoiceState.getHeadExecutionBlockHash().isZero()) {
       LOG.debug("send - getHeadBlockHash is zero - returning empty");
       executionPayloadContext.complete(Optional.empty());
-      return SafeFuture.completedFuture(Optional.empty());
+      return Optional.empty();
     }
 
     logSendingForkChoiceUpdated();
@@ -187,7 +193,7 @@ public class ForkChoiceUpdateData {
                             payloadBuildingAttributes.orElseThrow())))
         .propagateTo(executionPayloadContext);
 
-    return forkChoiceUpdatedResult.thenApply(Optional::of);
+    return Optional.of(forkChoiceUpdatedResult);
   }
 
   private void logSendForkChoiceUpdatedComplete(Optional<Bytes8> payloadId) {
@@ -209,7 +215,7 @@ public class ForkChoiceUpdateData {
           buildingAttributes ->
               LOG.info(
                   "Calling local execution layer to start block production (block slot: {})",
-                  buildingAttributes.getBlockSlot()));
+                  buildingAttributes.getProposalSlot()));
     }
   }
 

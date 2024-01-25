@@ -14,15 +14,12 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 
-import java.util.Optional;
-import org.apache.commons.lang3.tuple.Pair;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyBuilderCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDenebImpl;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderDenebImpl;
@@ -31,21 +28,12 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class BeaconBlockBodyBuilderDeneb extends BeaconBlockBodyBuilderCapella {
 
-  private BeaconBlockBodySchemaDenebImpl schema;
-  private BlindedBeaconBlockBodySchemaDenebImpl blindedSchema;
-  private SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments;
+  private SszList<SszKZGCommitment> blobKzgCommitments;
 
-  public BeaconBlockBodyBuilderDeneb schema(final BeaconBlockBodySchemaDenebImpl schema) {
-    this.schema = schema;
-    this.blinded = Optional.of(false);
-    return this;
-  }
-
-  public BeaconBlockBodyBuilderDeneb blindedSchema(
-      final BlindedBeaconBlockBodySchemaDenebImpl blindedSchema) {
-    this.blindedSchema = blindedSchema;
-    this.blinded = Optional.of(true);
-    return this;
+  public BeaconBlockBodyBuilderDeneb(
+      final BeaconBlockBodySchema<? extends BeaconBlockBodyDeneb> schema,
+      final BeaconBlockBodySchema<? extends BlindedBeaconBlockBodyDeneb> blindedSchema) {
+    super(schema, blindedSchema);
   }
 
   @Override
@@ -55,20 +43,9 @@ public class BeaconBlockBodyBuilderDeneb extends BeaconBlockBodyBuilderCapella {
 
   @Override
   public BeaconBlockBodyBuilder blobKzgCommitments(
-      final SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments) {
+      final SszList<SszKZGCommitment> blobKzgCommitments) {
     this.blobKzgCommitments = blobKzgCommitments;
     return this;
-  }
-
-  @Override
-  protected void validateSchema() {
-    if (isBlinded()) {
-      checkState(
-          blindedSchema != null && schema == null, "blindedSchema must be set with no schema");
-    } else {
-      checkState(
-          schema != null && blindedSchema == null, "schema must be set with no blindedSchema");
-    }
   }
 
   @Override
@@ -78,57 +55,42 @@ public class BeaconBlockBodyBuilderDeneb extends BeaconBlockBodyBuilderCapella {
   }
 
   @Override
-  public Boolean isBlinded() {
-    return blinded.orElseThrow(
-        () ->
-            new IllegalStateException(
-                "schema or blindedSchema must be set before interacting with the builder"));
-  }
-
-  @Override
-  public SafeFuture<BeaconBlockBody> build() {
+  public BeaconBlockBody build() {
     validate();
     if (isBlinded()) {
-      return executionPayloadHeader
-          .thenCompose(
-              header -> blobKzgCommitments.thenApply(commitments -> Pair.of(header, commitments)))
-          .thenApply(
-              headerWithCommitments ->
-                  new BlindedBeaconBlockBodyDenebImpl(
-                      blindedSchema,
-                      new SszSignature(randaoReveal),
-                      eth1Data,
-                      SszBytes32.of(graffiti),
-                      proposerSlashings,
-                      attesterSlashings,
-                      attestations,
-                      deposits,
-                      voluntaryExits,
-                      syncAggregate,
-                      (ExecutionPayloadHeaderDenebImpl)
-                          headerWithCommitments.getLeft().toVersionDeneb().orElseThrow(),
-                      getBlsToExecutionChanges(),
-                      headerWithCommitments.getRight()));
+      final BlindedBeaconBlockBodySchemaDenebImpl schema =
+          getAndValidateSchema(true, BlindedBeaconBlockBodySchemaDenebImpl.class);
+      return new BlindedBeaconBlockBodyDenebImpl(
+          schema,
+          new SszSignature(randaoReveal),
+          eth1Data,
+          SszBytes32.of(graffiti),
+          proposerSlashings,
+          attesterSlashings,
+          attestations,
+          deposits,
+          voluntaryExits,
+          syncAggregate,
+          (ExecutionPayloadHeaderDenebImpl) executionPayloadHeader.toVersionDeneb().orElseThrow(),
+          getBlsToExecutionChanges(),
+          blobKzgCommitments);
     }
-    return executionPayload
-        .thenCompose(
-            payload -> blobKzgCommitments.thenApply(commitments -> Pair.of(payload, commitments)))
-        .thenApply(
-            payloadWithCommitments ->
-                new BeaconBlockBodyDenebImpl(
-                    schema,
-                    new SszSignature(randaoReveal),
-                    eth1Data,
-                    SszBytes32.of(graffiti),
-                    proposerSlashings,
-                    attesterSlashings,
-                    attestations,
-                    deposits,
-                    voluntaryExits,
-                    syncAggregate,
-                    (ExecutionPayloadDenebImpl)
-                        payloadWithCommitments.getLeft().toVersionDeneb().orElseThrow(),
-                    getBlsToExecutionChanges(),
-                    payloadWithCommitments.getRight()));
+
+    final BeaconBlockBodySchemaDenebImpl schema =
+        getAndValidateSchema(false, BeaconBlockBodySchemaDenebImpl.class);
+    return new BeaconBlockBodyDenebImpl(
+        schema,
+        new SszSignature(randaoReveal),
+        eth1Data,
+        SszBytes32.of(graffiti),
+        proposerSlashings,
+        attesterSlashings,
+        attestations,
+        deposits,
+        voluntaryExits,
+        syncAggregate,
+        (ExecutionPayloadDenebImpl) executionPayload.toVersionDeneb().orElseThrow(),
+        getBlsToExecutionChanges(),
+        blobKzgCommitments);
   }
 }

@@ -38,9 +38,11 @@ import tech.pegasys.teku.statetransition.OperationAddedSubscriber;
 import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool.NewBlobSidecarSubscriber;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool.NewBlobSidecarSubscriber;
 import tech.pegasys.teku.statetransition.block.BlockManager;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber;
 import tech.pegasys.teku.statetransition.forkchoice.PreparedProposerInfo;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.forkchoice.RegisteredValidatorInfo;
@@ -58,12 +60,12 @@ public class NodeDataProvider {
   private final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
   private final BlockManager blockManager;
-  private final BlobSidecarPool blobSidecarPool;
+  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   private final AttestationManager attestationManager;
   private final ActiveValidatorChannel activeValidatorChannel;
   private final boolean isLivenessTrackingEnabled;
   private final ProposersDataManager proposersDataManager;
-  private final boolean acceptBlsToExecutionMessages;
+  private final ForkChoiceNotifier forkChoiceNotifier;
 
   public NodeDataProvider(
       final AggregatingAttestationPool attestationPool,
@@ -73,12 +75,12 @@ public class NodeDataProvider {
       final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool,
       final SyncCommitteeContributionPool syncCommitteeContributionPool,
       final BlockManager blockManager,
-      final BlobSidecarPool blobSidecarPool,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final AttestationManager attestationManager,
       final boolean isLivenessTrackingEnabled,
       final ActiveValidatorChannel activeValidatorChannel,
       final ProposersDataManager proposersDataManager,
-      final boolean acceptBlsToExecutionMessages) {
+      final ForkChoiceNotifier forkChoiceNotifier) {
     this.attestationPool = attestationPool;
     this.attesterSlashingPool = attesterSlashingsPool;
     this.proposerSlashingPool = proposerSlashingPool;
@@ -86,12 +88,12 @@ public class NodeDataProvider {
     this.blsToExecutionChangePool = blsToExecutionChangePool;
     this.syncCommitteeContributionPool = syncCommitteeContributionPool;
     this.blockManager = blockManager;
-    this.blobSidecarPool = blobSidecarPool;
+    this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     this.attestationManager = attestationManager;
     this.activeValidatorChannel = activeValidatorChannel;
     this.isLivenessTrackingEnabled = isLivenessTrackingEnabled;
     this.proposersDataManager = proposersDataManager;
-    this.acceptBlsToExecutionMessages = acceptBlsToExecutionMessages;
+    this.forkChoiceNotifier = forkChoiceNotifier;
   }
 
   public List<Attestation> getAttestations(
@@ -133,13 +135,6 @@ public class NodeDataProvider {
 
   public SafeFuture<List<SubmitDataError>> postBlsToExecutionChanges(
       final List<SignedBlsToExecutionChange> blsToExecutionChanges) {
-    if (!acceptBlsToExecutionMessages) {
-      return SafeFuture.failedFuture(
-          new BadRequestException(
-              "Beacon node is not subscribed to the bls_to_execution_changes subnet. This behaviour can be changed "
-                  + "with the CLI option --Xbls-to-execution-changes-subnet-enabled"));
-    }
-
     final List<SafeFuture<Optional<SubmitDataError>>> maybeFutureErrors = new ArrayList<>();
 
     for (int i = 0; i < blsToExecutionChanges.size(); i++) {
@@ -178,7 +173,15 @@ public class NodeDataProvider {
   }
 
   public void subscribeToReceivedBlobSidecar(NewBlobSidecarSubscriber listener) {
-    blobSidecarPool.subscribeNewBlobSidecar(listener);
+    blockBlobSidecarsTrackersPool.subscribeNewBlobSidecar(listener);
+  }
+
+  public void subscribeToAttesterSlashing(OperationAddedSubscriber<AttesterSlashing> listener) {
+    attesterSlashingPool.subscribeOperationAdded(listener);
+  }
+
+  public void subscribeToProposerSlashing(OperationAddedSubscriber<ProposerSlashing> listener) {
+    proposerSlashingPool.subscribeOperationAdded(listener);
   }
 
   public void subscribeToValidAttestations(ProcessedAttestationListener listener) {
@@ -197,6 +200,10 @@ public class NodeDataProvider {
   public void subscribeToSyncCommitteeContributions(
       OperationAddedSubscriber<SignedContributionAndProof> listener) {
     syncCommitteeContributionPool.subscribeOperationAdded(listener);
+  }
+
+  public void subscribeToForkChoiceUpdatedResult(final ForkChoiceUpdatedResultSubscriber listener) {
+    forkChoiceNotifier.subscribeToForkChoiceUpdatedResult(listener);
   }
 
   public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> getValidatorLiveness(

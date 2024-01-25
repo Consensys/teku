@@ -17,9 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
-import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
-import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED;
-import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
 
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
@@ -70,7 +67,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
-import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
 import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -129,19 +126,19 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final InlineEventThread eventThread = new InlineEventThread();
     final KZG kzg = KzgRetriever.getKzgWithLoadedTrustedSetup(spec, testDefinition.getConfigName());
     final StubBlobSidecarManager blobSidecarManager = new StubBlobSidecarManager(kzg);
+    // forkChoiceLateBlockReorgEnabled is true here always because this is the reference test
+    // executor
     final ForkChoice forkChoice =
         new ForkChoice(
             spec,
             eventThread,
             recentChainData,
             blobSidecarManager,
-            new StubForkChoiceNotifier(),
+            new NoopForkChoiceNotifier(),
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
-            DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED,
-            DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED,
-            DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
+            true,
             storageSystem.getMetricsSystem());
     final ExecutionLayerChannelStub executionLayer =
         new ExecutionLayerChannelStub(spec, false, Optional.empty());

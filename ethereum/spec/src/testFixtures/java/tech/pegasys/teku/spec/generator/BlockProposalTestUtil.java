@@ -21,6 +21,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
@@ -115,11 +116,10 @@ public class BlockProposalTestUtil {
               }
               if (builder.supportsExecutionPayload()) {
                 builder.executionPayload(
-                    SafeFuture.completedFuture(
-                        executionPayload.orElseGet(
-                            () ->
-                                createExecutionPayload(
-                                    newSlot, blockSlotState, transactions, terminalBlock))));
+                    executionPayload.orElseGet(
+                        () ->
+                            createExecutionPayload(
+                                newSlot, blockSlotState, transactions, terminalBlock)));
               }
               if (builder.supportsBlsToExecutionChanges()) {
                 builder.blsToExecutionChanges(
@@ -128,11 +128,11 @@ public class BlockProposalTestUtil {
               }
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(
-                    SafeFuture.completedFuture(
-                        kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments)));
+                    kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
               }
+              return SafeFuture.COMPLETE;
             },
-            Optional.of(false))
+            BlockProductionPerformance.NOOP)
         .thenApply(
             newBlockAndState -> {
               // Sign block and set block signature
@@ -191,11 +191,8 @@ public class BlockProposalTestUtil {
               }
               if (builder.supportsExecutionPayload()) {
                 builder.executionPayload(
-                    SafeFuture.completedFuture(
-                        executionPayload.orElseGet(
-                            () ->
-                                createExecutionPayload(
-                                    newSlot, state, transactions, terminalBlock))));
+                    executionPayload.orElseGet(
+                        () -> createExecutionPayload(newSlot, state, transactions, terminalBlock)));
               }
               if (builder.supportsBlsToExecutionChanges()) {
                 builder.blsToExecutionChanges(
@@ -204,9 +201,9 @@ public class BlockProposalTestUtil {
               }
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(
-                    SafeFuture.completedFuture(
-                        kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments)));
+                    kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
               }
+              return SafeFuture.COMPLETE;
             })
         .thenApply(
             blockBody -> {

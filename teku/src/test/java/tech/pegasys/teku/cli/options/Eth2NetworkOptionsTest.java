@@ -118,21 +118,27 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"true", "false"})
-  void shouldSetFirstDescendentAsHead(final String value) {
-    final TekuConfiguration config =
-        getTekuConfigurationFromArguments(
-            "--Xfork-choice-update-head-on-block-import-enabled", value);
-    assertThat(config.eth2NetworkConfiguration().isForkChoiceUpdateHeadOnBlockImportEnabled())
-        .isEqualTo(Boolean.valueOf(value));
-  }
-
-  @ParameterizedTest
-  @ValueSource(strings = {"true", "false"})
   void shouldSetLateBlockImportEnabled(final String value) {
     final TekuConfiguration config =
         getTekuConfigurationFromArguments("--Xfork-choice-late-block-reorg-enabled", value);
     assertThat(config.eth2NetworkConfiguration().isForkChoiceLateBlockReorgEnabled())
         .isEqualTo(Boolean.valueOf(value));
+  }
+
+  @Test
+  void shouldUseDefaultAlwaysSendPayloadAttributesIfUnspecified() {
+    final TekuConfiguration config = getTekuConfigurationFromArguments();
+    assertThat(config.eth2NetworkConfiguration().isForkChoiceUpdatedAlwaysSendPayloadAttributes())
+        .isEqualTo(false);
+  }
+
+  @Test
+  void shouldUseAlwaysSendPayloadAttributesIfSpecified() {
+    final TekuConfiguration config =
+        getTekuConfigurationFromArguments(
+            "--Xfork-choice-updated-always-send-payload-attributes", "true");
+    assertThat(config.eth2NetworkConfiguration().isForkChoiceUpdatedAlwaysSendPayloadAttributes())
+        .isEqualTo(true);
   }
 
   @Test
@@ -149,7 +155,8 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
   void minimalNetwork_shouldMergeTransitionsOverrideBeEmptyByDefault() {
     final TekuConfiguration config = getTekuConfigurationFromArguments("--network", "minimal");
-    assertThat(config.eth2NetworkConfiguration().getGenesisState()).isEqualTo(Optional.empty());
+    assertThat(config.eth2NetworkConfiguration().getNetworkBoostrapConfig().getGenesisState())
+        .isEqualTo(Optional.empty());
   }
 
   @Test
@@ -233,7 +240,7 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         "https://221EMZ2YSdriVVdXx:5058f100c7@eth2-beacon-mainnet.infura.io/eth/v1/debug/beacon/states/finalized";
     final TekuConfiguration config =
         getTekuConfigurationFromArguments("--genesis-state", genesisState);
-    assertThat(config.eth2NetworkConfiguration().getGenesisState())
+    assertThat(config.eth2NetworkConfiguration().getNetworkBoostrapConfig().getGenesisState())
         .isEqualTo(Optional.of(genesisState));
     assertThat(
             createConfigBuilder()
@@ -252,9 +259,9 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
     final Eth2NetworkConfiguration networkConfiguration = config.eth2NetworkConfiguration();
 
-    assertThat(networkConfiguration.getGenesisState())
+    assertThat(networkConfiguration.getNetworkBoostrapConfig().getGenesisState())
         .hasValue("http://foo:9000/" + GENESIS_STATE_URL_PATH);
-    assertThat(networkConfiguration.getInitialState())
+    assertThat(networkConfiguration.getNetworkBoostrapConfig().getInitialState())
         .hasValue("http://foo:9000/" + FINALIZED_STATE_URL_PATH);
   }
 }

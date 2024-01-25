@@ -22,6 +22,7 @@ public class ForkChoiceState {
   private final Bytes32 headBlockRoot;
   private final UInt64 headBlockSlot;
 
+  private final UInt64 headExecutionBlockNumber;
   private final Bytes32 headExecutionBlockHash;
   private final Bytes32 safeExecutionBlockHash;
   private final Bytes32 finalizedExecutionBlockHash;
@@ -30,12 +31,14 @@ public class ForkChoiceState {
   public ForkChoiceState(
       final Bytes32 headBlockRoot,
       final UInt64 headBlockSlot,
+      final UInt64 headExecutionBlockNumber,
       final Bytes32 headExecutionBlockHash,
       final Bytes32 safeExecutionBlockHash,
       final Bytes32 finalizedExecutionBlockHash,
       final boolean isHeadOptimistic) {
     this.headBlockRoot = headBlockRoot;
     this.headBlockSlot = headBlockSlot;
+    this.headExecutionBlockNumber = headExecutionBlockNumber;
     this.headExecutionBlockHash = headExecutionBlockHash;
     this.safeExecutionBlockHash = safeExecutionBlockHash;
     this.finalizedExecutionBlockHash = finalizedExecutionBlockHash;
@@ -48,6 +51,10 @@ public class ForkChoiceState {
 
   public UInt64 getHeadBlockSlot() {
     return headBlockSlot;
+  }
+
+  public UInt64 getHeadExecutionBlockNumber() {
+    return headExecutionBlockNumber;
   }
 
   public Bytes32 getHeadExecutionBlockHash() {
@@ -71,6 +78,7 @@ public class ForkChoiceState {
     return MoreObjects.toStringHelper(this)
         .add("headBlockRoot", headBlockRoot)
         .add("headBlockSlot", headBlockSlot)
+        .add("headExecutionBlockNumber", headExecutionBlockNumber)
         .add("headExecutionBlockHash", headExecutionBlockHash)
         .add("safeExecutionBlockHash", safeExecutionBlockHash)
         .add("finalizedExecutionBlockHash", finalizedExecutionBlockHash)
@@ -90,6 +98,7 @@ public class ForkChoiceState {
     return isHeadOptimistic == that.isHeadOptimistic
         && Objects.equals(headBlockRoot, that.headBlockRoot)
         && Objects.equals(headBlockSlot, that.headBlockSlot)
+        && Objects.equals(headExecutionBlockNumber, that.headExecutionBlockNumber)
         && Objects.equals(headExecutionBlockHash, that.headExecutionBlockHash)
         && Objects.equals(safeExecutionBlockHash, that.safeExecutionBlockHash)
         && Objects.equals(finalizedExecutionBlockHash, that.finalizedExecutionBlockHash);
@@ -100,6 +109,7 @@ public class ForkChoiceState {
     return Objects.hash(
         headBlockRoot,
         headBlockSlot,
+        headExecutionBlockNumber,
         headExecutionBlockHash,
         safeExecutionBlockHash,
         finalizedExecutionBlockHash,

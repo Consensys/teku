@@ -48,7 +48,7 @@ public class BlockFactoryPhase0 implements BlockFactory {
       final UInt64 proposalSlot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti,
-      final Optional<Boolean> blinded,
+      final Optional<Boolean> requestedBlinded,
       final BlockProductionPerformance blockProductionPerformance) {
     checkArgument(
         blockSlotState.getSlot().equals(proposalSlot),
@@ -56,7 +56,10 @@ public class BlockFactoryPhase0 implements BlockFactory {
         blockSlotState.getSlot(),
         proposalSlot);
 
-    final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, proposalSlot.decrement());
+    // Process empty slots up to the one before the new block slot
+    final UInt64 slotBeforeBlock = proposalSlot.minus(UInt64.ONE);
+
+    final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, slotBeforeBlock);
 
     return spec.createNewUnsignedBlock(
             proposalSlot,
@@ -68,8 +71,9 @@ public class BlockFactoryPhase0 implements BlockFactory {
                 blockSlotState,
                 randaoReveal,
                 optionalGraffiti,
+                requestedBlinded,
                 blockProductionPerformance),
-            blinded)
+            blockProductionPerformance)
         .thenApply(BeaconBlockAndState::getBlock);
   }
 

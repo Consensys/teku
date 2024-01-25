@@ -56,7 +56,6 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
-import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
 import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
@@ -65,8 +64,9 @@ import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeletionStatus;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
+import tech.pegasys.teku.validator.client.slashingriskactions.SlashingRiskAction;
 
-class ActiveKeyManagerTest {
+class OwnedKeyManagerTest {
 
   private final DataStructureUtil dataStructureUtil =
       new DataStructureUtil(TestSpecFactory.createMinimalAltair());
@@ -77,10 +77,9 @@ class ActiveKeyManagerTest {
       mock(SlashingProtectionIncrementalExporter.class);
   private final Signer signer = mock(Signer.class);
   private final ValidatorTimingChannel channel = mock(ValidatorTimingChannel.class);
-  private final ActiveKeyManager keyManager = new ActiveKeyManager(validatorLoader, channel);
+  private final OwnedKeyManager keyManager = new OwnedKeyManager(validatorLoader, channel);
   private final DoppelgangerDetector doppelgangerDetector = mock(DoppelgangerDetector.class);
-  private final DoppelgangerDetectionAction doppelgangerDetectionAction =
-      mock(DoppelgangerDetectionAction.class);
+  private final SlashingRiskAction doppelgangerDetectionAction = mock(SlashingRiskAction.class);
   private final BLSPublicKey doppelgangerPublicKey =
       BLSPublicKey.fromSSZBytes(
           Bytes.fromHexString(
@@ -91,14 +90,14 @@ class ActiveKeyManagerTest {
           Bytes.fromHexString(
               "0x9612d7a727c9d0a22e185a1c768478dfe919cada9266988cb32359c11f2b7b27f4ae4040902382ae2910c15e2b420d07"));
 
-  private final LogCaptor logCaptor = LogCaptor.forClass(ActiveKeyManager.class);
+  private final LogCaptor logCaptor = LogCaptor.forClass(OwnedKeyManager.class);
 
   @Test
   void shouldReturnNotFoundIfSlashingProtectionNotFound() {
     when(exporter.haveSlashingProtectionData(publicKey)).thenReturn(false);
 
     final DeleteKeyResult result =
-        keyManager.attemptToGetSlashingDataForInactiveValidator(publicKey, exporter);
+        keyManager.attemptToGetSlashingDataForDisabledValidator(publicKey, exporter);
     assertThat(result.getStatus()).isEqualTo(DeletionStatus.NOT_FOUND);
   }
 
@@ -137,22 +136,22 @@ class ActiveKeyManagerTest {
     when(exporter.haveSlashingProtectionData(publicKey)).thenReturn(true);
 
     final DeleteKeyResult result =
-        keyManager.attemptToGetSlashingDataForInactiveValidator(publicKey, exporter);
+        keyManager.attemptToGetSlashingDataForDisabledValidator(publicKey, exporter);
     assertThat(result.getStatus()).isEqualTo(DeletionStatus.NOT_ACTIVE);
   }
 
   @Test
   void deleteValidator_shouldStopAndDeleteValidator() {
-    final Validator activeValidator = mock(Validator.class);
+    final Validator validator = mock(Validator.class);
 
-    when(activeValidator.getPublicKey()).thenReturn(publicKey);
-    when(activeValidator.isReadOnly()).thenReturn(false);
-    when(activeValidator.getSigner()).thenReturn(signer);
+    when(validator.getPublicKey()).thenReturn(publicKey);
+    when(validator.isReadOnly()).thenReturn(false);
+    when(validator.getSigner()).thenReturn(signer);
     when(exporter.addPublicKeyToExport(eq(publicKey), any())).thenReturn(Optional.empty());
     when(validatorLoader.deleteLocalMutableValidator(publicKey))
         .thenReturn(DeleteKeyResult.success());
 
-    final DeleteKeyResult result = keyManager.deleteValidator(activeValidator, exporter);
+    final DeleteKeyResult result = keyManager.deleteLocalValidator(validator, exporter);
     verify(signer).delete();
     verify(validatorLoader).deleteLocalMutableValidator(publicKey);
     assertThat(result.getStatus()).isEqualTo(DeletionStatus.DELETED);
@@ -167,15 +166,15 @@ class ActiveKeyManagerTest {
         tempDir.resolve(publicKey.toBytesCompressed().toUnprefixedHexString() + ".yml"));
     final SlashingProtectionIncrementalExporter exporter =
         new SlashingProtectionIncrementalExporter(tempDir);
-    final Validator activeValidator = mock(Validator.class);
+    final Validator validator = mock(Validator.class);
 
-    when(activeValidator.getPublicKey()).thenReturn(publicKey);
-    when(activeValidator.isReadOnly()).thenReturn(false);
-    when(activeValidator.getSigner()).thenReturn(signer);
+    when(validator.getPublicKey()).thenReturn(publicKey);
+    when(validator.isReadOnly()).thenReturn(false);
+    when(validator.getSigner()).thenReturn(signer);
     when(validatorLoader.deleteLocalMutableValidator(publicKey))
         .thenReturn(DeleteKeyResult.success());
 
-    final DeleteKeyResult result = keyManager.deleteValidator(activeValidator, exporter);
+    final DeleteKeyResult result = keyManager.deleteLocalValidator(validator, exporter);
     verify(signer).delete();
     verify(validatorLoader).deleteLocalMutableValidator(publicKey);
     assertThat(result.getStatus()).isEqualTo(DeletionStatus.ERROR);
@@ -185,13 +184,13 @@ class ActiveKeyManagerTest {
 
   @Test
   void deleteValidators_shouldStopAndDeleteValidator(@TempDir final Path tempDir) {
-    final Validator activeValidator = mock(Validator.class);
+    final Validator validator = mock(Validator.class);
 
-    when(activeValidator.getPublicKey()).thenReturn(publicKey);
-    when(activeValidator.isReadOnly()).thenReturn(false);
-    when(activeValidator.getSigner()).thenReturn(signer);
+    when(validator.getPublicKey()).thenReturn(publicKey);
+    when(validator.isReadOnly()).thenReturn(false);
+    when(validator.getSigner()).thenReturn(signer);
     when(validatorLoader.getOwnedValidators())
-        .thenReturn(new OwnedValidators(Map.of(publicKey, activeValidator)));
+        .thenReturn(new OwnedValidators(Map.of(publicKey, validator)));
     when(exporter.addPublicKeyToExport(eq(publicKey), any())).thenReturn(Optional.empty());
     when(validatorLoader.deleteLocalMutableValidator(publicKey))
         .thenReturn(DeleteKeyResult.success());
@@ -208,12 +207,12 @@ class ActiveKeyManagerTest {
 
   @Test
   void deleteValidators_shouldRejectRequestToDeleteReadOnlyValidator(@TempDir final Path tempDir) {
-    final Validator activeValidator = mock(Validator.class);
+    final Validator validator = mock(Validator.class);
 
-    when(activeValidator.isReadOnly()).thenReturn(true);
+    when(validator.isReadOnly()).thenReturn(true);
     when(validatorLoader.getOwnedValidators())
-        .thenReturn(new OwnedValidators(Map.of(publicKey, activeValidator)));
-    when(activeValidator.getPublicKey()).thenReturn(publicKey);
+        .thenReturn(new OwnedValidators(Map.of(publicKey, validator)));
+    when(validator.getPublicKey()).thenReturn(publicKey);
 
     final DeleteKeysResponse response = keyManager.deleteValidators(List.of(publicKey), tempDir);
     assertThat(response.getData()).hasSize(1);
@@ -224,27 +223,27 @@ class ActiveKeyManagerTest {
   }
 
   @Test
-  void shouldReturnActiveValidatorsList() {
-    final List<Validator> validatorsList = generateActiveValidatorsList();
-    when(ownedValidators.getActiveValidators()).thenReturn(validatorsList);
+  void shouldReturnLocalValidatorsList() {
+    final List<Validator> validatorsList = generateLocalValidatorsList();
+    when(ownedValidators.getValidators()).thenReturn(validatorsList);
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
-    final List<Validator> activeValidatorList = keyManager.getActiveValidatorKeys();
+    final List<Validator> localValidatorList = keyManager.getLocalValidatorKeys();
 
-    assertThat(activeValidatorList).isEqualTo(validatorsList);
+    assertThat(localValidatorList).isEqualTo(validatorsList);
     verify(channel, never()).onValidatorsAdded();
   }
 
   @Test
   void shouldReturnEmptyKeyList() {
     final List<Validator> validatorsList = Collections.emptyList();
-    when(ownedValidators.getActiveValidators()).thenReturn(validatorsList);
+    when(ownedValidators.getValidators()).thenReturn(validatorsList);
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
-    final List<Validator> activeValidatorList = keyManager.getActiveValidatorKeys();
+    final List<Validator> localValidatorList = keyManager.getLocalValidatorKeys();
 
-    assertThat(activeValidatorList).isEmpty();
+    assertThat(localValidatorList).isEmpty();
   }
 
-  private List<Validator> generateActiveValidatorsList() {
+  private List<Validator> generateLocalValidatorsList() {
     final BLSKeyPair keyPair1 = BLSTestUtil.randomKeyPair(1);
     final BLSKeyPair keyPair2 = BLSTestUtil.randomKeyPair(2);
     final Validator validator1 =
@@ -255,7 +254,7 @@ class ActiveKeyManagerTest {
   }
 
   @Test
-  void shouldReturnActiveRemoteValidatorsList() throws MalformedURLException {
+  void shouldReturnRemoteValidatorsList() throws MalformedURLException {
     final BLSKeyPair keyPair1 = BLSTestUtil.randomKeyPair(1);
     final BLSKeyPair keyPair2 = BLSTestUtil.randomKeyPair(2);
     final BLSKeyPair keyPair3 = BLSTestUtil.randomKeyPair(3);
@@ -265,11 +264,11 @@ class ActiveKeyManagerTest {
         new Validator(keyPair2.getPublicKey(), NO_OP_REMOTE_SIGNER, Optional::empty, false);
     final Validator validator3 =
         new Validator(keyPair3.getPublicKey(), NO_OP_SIGNER, Optional::empty, false);
-    List<Validator> activeValidators = Arrays.asList(validator1, validator2, validator3);
+    List<Validator> localValidators = Arrays.asList(validator1, validator2, validator3);
 
-    when(ownedValidators.getActiveValidators()).thenReturn(activeValidators);
+    when(ownedValidators.getValidators()).thenReturn(localValidators);
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
-    final List<ExternalValidator> result = keyManager.getActiveRemoteValidatorKeys();
+    final List<ExternalValidator> result = keyManager.getRemoteValidatorKeys();
 
     List<ExternalValidator> externalValidators =
         Arrays.asList(
@@ -283,11 +282,11 @@ class ActiveKeyManagerTest {
   @Test
   void shouldReturnEmptyRemoteKeyList() {
     final List<Validator> validatorsList = Collections.emptyList();
-    when(ownedValidators.getActiveValidators()).thenReturn(validatorsList);
+    when(ownedValidators.getValidators()).thenReturn(validatorsList);
     when(validatorLoader.getOwnedValidators()).thenReturn(ownedValidators);
-    final List<ExternalValidator> activeValidatorList = keyManager.getActiveRemoteValidatorKeys();
+    final List<ExternalValidator> remoteValidatorList = keyManager.getRemoteValidatorKeys();
 
-    assertThat(activeValidatorList).isEmpty();
+    assertThat(remoteValidatorList).isEmpty();
   }
 
   @Test

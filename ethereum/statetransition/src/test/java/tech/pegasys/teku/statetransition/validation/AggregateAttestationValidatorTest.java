@@ -27,6 +27,8 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.stream.IntStream;
+import org.apache.commons.lang3.ArrayUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -322,6 +324,23 @@ class AggregateAttestationValidatorTest {
   }
 
   @Test
+  void shouldRejectAggregateAttestationWithNoParticipants() {
+    disableSignatureVerification();
+    final StateAndBlockSummary chainHead = storageSystem.getChainHead();
+    final SignedAggregateAndProof validAggregate = generator.validAggregateAndProof(chainHead);
+    final AttestationData attestationData = validAggregate.getMessage().getAggregate().getData();
+    // all aggregation bits are set to 0b0 (no participants)
+    final ValidatableAttestation attestation =
+        createValidAggregate(ONE, attestationData, false, false, false);
+
+    final InternalValidationResult validationResult = safeJoin(validator.validate(attestation));
+
+    assertThat(validationResult.isReject()).isTrue();
+    assertThat(validationResult.getDescription())
+        .hasValue("Rejecting aggregate attestation because it does not have participants");
+  }
+
+  @Test
   void shouldIgnoreAggregateWhenAlreadySeenAllAttestingValidators() {
     disableSignatureVerification();
     final StateAndBlockSummary chainHead = storageSystem.getChainHead();
@@ -380,16 +399,24 @@ class AggregateAttestationValidatorTest {
   private ValidatableAttestation createValidAggregate(
       final UInt64 validatorIndex,
       final AttestationData attestationData,
-      final Boolean... aggregationBits) {
-    final SszBitlist aggregateBits =
+      final Boolean... aggregationBitsPrefix) {
+    final BeaconState state = storageSystem.getChainHead().getState();
+    final int committeeSize =
+        spec.getBeaconCommittee(state, attestationData.getSlot(), attestationData.getIndex())
+            .size();
+    // fill rest of the aggregation bits with 0b0
+    final boolean[] aggregationBits = new boolean[committeeSize];
+    IntStream.range(0, Math.min(aggregationBitsPrefix.length, committeeSize))
+        .forEach(idx -> aggregationBits[idx] = aggregationBitsPrefix[idx]);
+    final SszBitlist sszAggregationBits =
         aggregateAndProofSchema
             .getAttestationSchema()
             .getAggregationBitsSchema()
-            .of(aggregationBits);
+            .of(ArrayUtils.toObject(aggregationBits));
     final Attestation attestation =
         aggregateAndProofSchema
             .getAttestationSchema()
-            .create(aggregateBits, attestationData, BLSSignature.empty());
+            .create(sszAggregationBits, attestationData, BLSSignature.empty());
     final SignedAggregateAndProof signedAggregate =
         signedAggregateAndProofSchema.create(
             aggregateAndProofSchema.create(validatorIndex, attestation, BLSSignature.empty()),

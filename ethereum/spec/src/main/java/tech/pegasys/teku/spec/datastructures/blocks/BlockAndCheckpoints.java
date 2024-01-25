@@ -85,12 +85,12 @@ public class BlockAndCheckpoints implements BeaconBlockSummary {
     return Optional.of(block);
   }
 
+  public Optional<UInt64> getExecutionBlockNumber() {
+    return getExecutionPayload().map(ExecutionPayload::getBlockNumber);
+  }
+
   public Optional<Bytes32> getExecutionBlockHash() {
-    return block
-        .getMessage()
-        .getBody()
-        .getOptionalExecutionPayload()
-        .map(ExecutionPayload::getBlockHash);
+    return getExecutionPayload().map(ExecutionPayload::getBlockHash);
   }
 
   @Override
@@ -117,5 +117,9 @@ public class BlockAndCheckpoints implements BeaconBlockSummary {
         .add("block", block)
         .add("blockCheckpoints", blockCheckpoints)
         .toString();
+  }
+
+  private Optional<ExecutionPayload> getExecutionPayload() {
+    return block.getMessage().getBody().getOptionalExecutionPayload();
   }
 }

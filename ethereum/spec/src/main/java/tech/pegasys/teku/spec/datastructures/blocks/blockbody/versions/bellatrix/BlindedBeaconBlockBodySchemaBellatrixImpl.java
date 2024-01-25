@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix;
 
 import it.unimi.dsi.fastutil.longs.LongList;
-import java.util.function.Consumer;
+import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema10;
@@ -119,11 +119,9 @@ public class BlindedBeaconBlockBodySchemaBellatrixImpl
 
   @Override
   public SafeFuture<BeaconBlockBody> createBlockBody(
-      final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
-    final BeaconBlockBodyBuilderBellatrix builder =
-        new BeaconBlockBodyBuilderBellatrix().blindedSchema(this);
-    builderConsumer.accept(builder);
-    return builder.build();
+      final Function<BeaconBlockBodyBuilder, SafeFuture<Void>> bodyBuilder) {
+    final BeaconBlockBodyBuilderBellatrix builder = new BeaconBlockBodyBuilderBellatrix(null, this);
+    return bodyBuilder.apply(builder).thenApply(__ -> builder.build());
   }
 
   @Override

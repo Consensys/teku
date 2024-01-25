@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2023
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,14 +11,10 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client;
+package tech.pegasys.teku.networking.p2p.network.config;
 
-public class NoValidatorKeysStateException extends IllegalStateException {
-  public NoValidatorKeysStateException(String message, Throwable cause) {
-    super(message, cause);
-  }
+import org.apache.tuweni.bytes.Bytes;
 
-  public NoValidatorKeysStateException(String message) {
-    super(message);
-  }
+public interface PrivateKeySource {
+  Bytes getOrGeneratePrivateKeyBytes();
 }

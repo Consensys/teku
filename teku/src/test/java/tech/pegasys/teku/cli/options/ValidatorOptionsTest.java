@@ -218,4 +218,20 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
             .getValidatorConfig();
     assertThat(config.isExitWhenNoValidatorKeysEnabled()).isTrue();
   }
+
+  @Test
+  public void shouldDefaultFalseShutdownWhenValidatorSlashedEnabled() {
+    final ValidatorConfig config =
+        getTekuConfigurationFromArguments().validatorClient().getValidatorConfig();
+    assertThat(config.isShutdownWhenValidatorSlashedEnabled()).isFalse();
+  }
+
+  @Test
+  public void shouldSetShutdownWhenValidatorSlashedEnabled() {
+    final ValidatorConfig config =
+        getTekuConfigurationFromArguments("--Xshut-down-when-validator-slashed-enabled=true")
+            .validatorClient()
+            .getValidatorConfig();
+    assertThat(config.isShutdownWhenValidatorSlashedEnabled()).isTrue();
+  }
 }

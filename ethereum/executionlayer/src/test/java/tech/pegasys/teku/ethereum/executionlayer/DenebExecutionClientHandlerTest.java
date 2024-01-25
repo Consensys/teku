@@ -110,12 +110,13 @@ public class DenebExecutionClientHandlerTest extends ExecutionHandlerClientTest 
     final PayloadBuildingAttributes attributes =
         new PayloadBuildingAttributes(
             dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomUInt64(),
+            dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomBytes32(),
             dataStructureUtil.randomEth1Address(),
             Optional.empty(),
             Optional.of(List.of()),
-            dataStructureUtil.randomBytes32(),
-            dataStructureUtil.randomUInt64());
+            dataStructureUtil.randomBytes32());
     final Optional<PayloadAttributesV3> payloadAttributes =
         PayloadAttributesV3.fromInternalPayloadBuildingAttributesV3(Optional.of(attributes));
     final SafeFuture<Response<ForkChoiceUpdatedResult>> dummyResponse =

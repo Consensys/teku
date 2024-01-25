@@ -41,10 +41,11 @@ public class DataUnavailableBlockPoolTest {
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
   private final BlockManager blockManager = mock(BlockManager.class);
-  private final BlobSidecarPool blobSidecarPool = mock(BlobSidecarPool.class);
+  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool =
+      mock(BlockBlobSidecarsTrackersPool.class);
 
   private final DataUnavailableBlockPool dataUnavailableBlockPool =
-      new DataUnavailableBlockPool(blockManager, blobSidecarPool, asyncRunner);
+      new DataUnavailableBlockPool(blockManager, blockBlobSidecarsTrackersPool, asyncRunner);
 
   private final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock();
   private final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock();
@@ -58,9 +59,9 @@ public class DataUnavailableBlockPoolTest {
   @BeforeEach
   void setUp() {
     dataUnavailableBlockPool.onSyncingStatusChanged(true);
-    when(blobSidecarPool.getBlockBlobSidecarsTracker(block1))
+    when(blockBlobSidecarsTrackersPool.getBlockBlobSidecarsTracker(block1))
         .thenReturn(Optional.of(block1Tracker));
-    when(blobSidecarPool.getBlockBlobSidecarsTracker(block2))
+    when(blockBlobSidecarsTrackersPool.getBlockBlobSidecarsTracker(block2))
         .thenReturn(Optional.of(block2Tracker));
 
     when(blockManager.importBlock(block1, NOT_REQUIRED))
@@ -81,7 +82,7 @@ public class DataUnavailableBlockPoolTest {
 
     assertThat(asyncRunner.hasDelayedActions()).isFalse();
 
-    verifyNoInteractions(blobSidecarPool);
+    verifyNoInteractions(blockBlobSidecarsTrackersPool);
     verifyNoInteractions(blockManager);
   }
 

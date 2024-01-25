@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
@@ -57,14 +56,9 @@ public interface BeaconBlockBodyBuilder {
     return false;
   }
 
-  default Boolean isBlinded() {
-    return false;
-  }
+  BeaconBlockBodyBuilder executionPayload(ExecutionPayload executionPayload);
 
-  BeaconBlockBodyBuilder executionPayload(SafeFuture<ExecutionPayload> executionPayload);
-
-  BeaconBlockBodyBuilder executionPayloadHeader(
-      SafeFuture<ExecutionPayloadHeader> executionPayloadHeader);
+  BeaconBlockBodyBuilder executionPayloadHeader(ExecutionPayloadHeader executionPayloadHeader);
 
   default Boolean supportsBlsToExecutionChanges() {
     return false;
@@ -77,8 +71,7 @@ public interface BeaconBlockBodyBuilder {
     return false;
   }
 
-  BeaconBlockBodyBuilder blobKzgCommitments(
-      SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments);
+  BeaconBlockBodyBuilder blobKzgCommitments(SszList<SszKZGCommitment> blobKzgCommitments);
 
-  SafeFuture<? extends BeaconBlockBody> build();
+  BeaconBlockBody build();
 }

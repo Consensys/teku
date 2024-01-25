@@ -98,7 +98,7 @@ public class PostAttesterDuties extends RestApiEndpoint {
                     + "`get_block_root_at_slot(state, compute_start_slot_at_epoch(epoch - 1) - 1)` "
                     + "or the genesis block root in the case of underflow.")
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
-            .requestBodyType(DeserializableTypeDefinition.listOf(INTEGER_TYPE))
+            .requestBodyType(DeserializableTypeDefinition.listOf(INTEGER_TYPE, 1))
             .pathParam(EPOCH_PARAMETER)
             .response(SC_OK, "Success response", RESPONSE_TYPE)
             .withServiceUnavailableResponse()

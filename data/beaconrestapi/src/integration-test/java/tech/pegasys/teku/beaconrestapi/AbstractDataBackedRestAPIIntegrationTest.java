@@ -74,12 +74,13 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
+import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
-import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validation.SignedBlsToExecutionChangeValidator;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
@@ -146,6 +147,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);
   protected final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
+  protected final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
   protected final Eth1DataProvider eth1DataProvider = mock(Eth1DataProvider.class);
 
   protected final ExecutionClientDataProvider executionClientDataProvider =
@@ -202,7 +204,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
                 new InlineEventThread(),
                 recentChainData,
                 BlobSidecarManager.NOOP,
-                new StubForkChoiceNotifier(),
+                new NoopForkChoiceNotifier(),
                 new MergeTransitionBlockValidator(
                     spec, recentChainData, ExecutionLayerChannel.NOOP),
                 storageSystem.getMetricsSystem());
@@ -233,7 +235,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             .syncService(syncService)
             .validatorApiChannel(validatorApiChannel)
             .blockManager(blockManager)
-            .blobSidecarPool(BlobSidecarPool.NOOP)
+            .blockBlobSidecarsTrackersPool(BlockBlobSidecarsTrackersPool.NOOP)
             .attestationManager(attestationManager)
             .activeValidatorChannel(activeValidatorChannel)
             .attestationPool(attestationPool)
@@ -243,6 +245,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             .blsToExecutionChangePool(blsToExecutionChangePool)
             .syncCommitteeContributionPool(syncCommitteeContributionPool)
             .proposersDataManager(proposersDataManager)
+            .forkChoiceNotifier(forkChoiceNotifier)
             .executionLayerBlockProductionManager(executionLayerBlockProductionManager)
             .rewardCalculator(rewardCalculator)
             .build();

@@ -26,6 +26,7 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
   private final Bytes32 root;
   private final Bytes32 parentRoot;
   private final Bytes32 stateRoot;
+  private final UInt64 executionBlockNumber;
   private final Bytes32 executionBlockHash;
   private final ProtoNodeValidationStatus validationStatus;
   private final BlockCheckpoints checkpoints;
@@ -36,6 +37,7 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
       final Bytes32 root,
       final Bytes32 parentRoot,
       final Bytes32 stateRoot,
+      final UInt64 executionBlockNumber,
       final Bytes32 executionBlockHash,
       final ProtoNodeValidationStatus validationStatus,
       final BlockCheckpoints checkpoints,
@@ -44,6 +46,7 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
     this.root = root;
     this.parentRoot = parentRoot;
     this.stateRoot = stateRoot;
+    this.executionBlockNumber = executionBlockNumber;
     this.executionBlockHash = executionBlockHash;
     this.validationStatus = validationStatus;
     this.checkpoints = checkpoints;
@@ -68,6 +71,10 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
   @Override
   public Bytes32 getStateRoot() {
     return stateRoot;
+  }
+
+  public UInt64 getExecutionBlockNumber() {
+    return executionBlockNumber;
   }
 
   public Bytes32 getExecutionBlockHash() {
@@ -103,6 +110,7 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
         && Objects.equals(root, that.root)
         && Objects.equals(parentRoot, that.parentRoot)
         && Objects.equals(stateRoot, that.stateRoot)
+        && Objects.equals(executionBlockNumber, that.executionBlockNumber)
         && Objects.equals(executionBlockHash, that.executionBlockHash)
         && validationStatus == that.validationStatus
         && Objects.equals(checkpoints, that.checkpoints)
@@ -116,6 +124,7 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
         root,
         parentRoot,
         stateRoot,
+        executionBlockNumber,
         executionBlockHash,
         validationStatus,
         checkpoints,
@@ -129,6 +138,7 @@ public class ProtoNodeData implements MinimalBeaconBlockSummary {
         .add("root", root)
         .add("parentRoot", parentRoot)
         .add("stateRoot", stateRoot)
+        .add("executionBlockNumber", executionBlockNumber)
         .add("executionBlockHash", executionBlockHash)
         .add("validationStatus", validationStatus)
         .add("checkpoints", checkpoints)

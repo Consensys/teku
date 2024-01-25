@@ -98,7 +98,7 @@ public class PeerSyncTest extends AbstractSyncTest {
             recentChainData,
             blockImporter,
             blobSidecarManager,
-            blobSidecarPool,
+            blockBlobSidecarsTrackersPool,
             FORWARD_SYNC_BATCH_SIZE.intValue(),
             new NoOpMetricsSystem());
   }
@@ -557,7 +557,7 @@ public class PeerSyncTest extends AbstractSyncTest {
       if (!blobSidecarsBySlot.containsKey(slot)) {
         Assertions.fail("Blob sidecars for slot %s is missing", slot);
       }
-      verify(blobSidecarPool)
+      verify(blockBlobSidecarsTrackersPool)
           .onCompletedBlockAndBlobSidecars(any(), eq(blobSidecarsBySlot.get(slot)));
     }
   }

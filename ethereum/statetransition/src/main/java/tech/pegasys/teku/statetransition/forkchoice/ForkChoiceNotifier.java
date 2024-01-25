@@ -21,6 +21,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 
 public interface ForkChoiceNotifier {
+
   void onForkChoiceUpdated(ForkChoiceState forkChoiceState, Optional<UInt64> proposingSlot);
 
   void onAttestationsDue(UInt64 slot);
@@ -34,7 +35,5 @@ public interface ForkChoiceNotifier {
 
   boolean validatorIsConnected(UInt64 validatorIndex, UInt64 currentSlot);
 
-  long subscribeToForkChoiceUpdatedResult(ForkChoiceUpdatedResultSubscriber subscriber);
-
-  boolean unsubscribeFromForkChoiceUpdatedResult(long subscriberId);
+  void subscribeToForkChoiceUpdatedResult(ForkChoiceUpdatedResultSubscriber subscriber);
 }

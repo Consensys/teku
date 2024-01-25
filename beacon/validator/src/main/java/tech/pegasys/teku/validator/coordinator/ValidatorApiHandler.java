@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.coordinator;
 
 import static java.util.stream.Collectors.toMap;
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessageOrSimpleName;
+import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getRootCauseMessage;
 import static tech.pegasys.teku.infrastructure.logging.ValidatorLogger.VALIDATOR_LOGGER;
 import static tech.pegasys.teku.infrastructure.metrics.Validator.DutyType.ATTESTATION_PRODUCTION;
 import static tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils.startTimer;
@@ -78,7 +79,7 @@ import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
@@ -143,7 +144,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BlockFactory blockFactory,
       final BlockImportChannel blockImportChannel,
       final BlockGossipChannel blockGossipChannel,
-      final BlobSidecarPool blobSidecarPool,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final BlobSidecarGossipChannel blobSidecarGossipChannel,
       final AggregatingAttestationPool attestationPool,
       final AttestationManager attestationManager,
@@ -182,7 +183,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             blockFactory,
             blockImportChannel,
             blockGossipChannel,
-            blobSidecarPool,
+            blockBlobSidecarsTrackersPool,
             blobSidecarGossipChannel,
             performanceTracker,
             dutyMetrics);
@@ -621,7 +622,11 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BroadcastValidationLevel broadcastValidationLevel) {
     return blockPublisher
         .sendSignedBlock(maybeBlindedBlockContainer, broadcastValidationLevel)
-        .exceptionally(ex -> SendSignedBlockResult.rejected(ex.getMessage()));
+        .exceptionally(
+            ex -> {
+              final String reason = getRootCauseMessage(ex);
+              return SendSignedBlockResult.rejected(reason);
+            });
   }
 
   @Override

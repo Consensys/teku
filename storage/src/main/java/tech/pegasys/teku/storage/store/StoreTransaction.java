@@ -452,17 +452,17 @@ class StoreTransaction implements UpdatableStore.StoreTransaction {
   }
 
   @Override
-  public boolean isHeadWeak(Bytes32 root) {
+  public boolean isHeadWeak(final Bytes32 root) {
     return store.isHeadWeak(root);
   }
 
   @Override
-  public boolean isParentStrong(Bytes32 parentRoot) {
+  public boolean isParentStrong(final Bytes32 parentRoot) {
     return store.isParentStrong(parentRoot);
   }
 
   @Override
-  public void computeBalanceThresholds(BeaconState justifiedState) {
+  public void computeBalanceThresholds(final BeaconState justifiedState) {
     store.computeBalanceThresholds(justifiedState);
   }
 

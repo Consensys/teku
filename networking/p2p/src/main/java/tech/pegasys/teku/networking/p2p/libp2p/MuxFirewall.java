@@ -19,7 +19,7 @@ import io.libp2p.core.Connection;
 import io.libp2p.etc.util.netty.mux.MuxId;
 import io.libp2p.mux.mplex.MplexFlag;
 import io.libp2p.mux.mplex.MplexFrame;
-import io.libp2p.mux.yamux.YamuxFlags;
+import io.libp2p.mux.yamux.YamuxFlag;
 import io.libp2p.mux.yamux.YamuxFrame;
 import io.libp2p.mux.yamux.YamuxType;
 import io.netty.channel.ChannelDuplexHandler;
@@ -166,7 +166,7 @@ public class MuxFirewall implements ChannelVisitor<Connection> {
     if (msg instanceof YamuxFrame yamuxFrame) {
       return new MuxFrame() {
 
-        private final int yamuxFlags = yamuxFrame.getFlags();
+        private final Set<YamuxFlag> yamuxFlags = yamuxFrame.getFlags();
 
         @Override
         public MuxId getId() {
@@ -179,17 +179,17 @@ public class MuxFirewall implements ChannelVisitor<Connection> {
               yamuxFrame.getType() == YamuxType.DATA
                   || yamuxFrame.getType() == YamuxType.WINDOW_UPDATE;
           return isDataOrWindowUpdate
-              && (yamuxFlags == YamuxFlags.SYN || yamuxFlags == YamuxFlags.ACK);
+              && (yamuxFlags.contains(YamuxFlag.SYN) || yamuxFlags.contains(YamuxFlag.ACK));
         }
 
         @Override
         public boolean indicatesStreamClosing() {
-          return yamuxFlags == YamuxFlags.FIN;
+          return yamuxFlags.contains(YamuxFlag.FIN);
         }
 
         @Override
         public boolean indicatesStreamResetting() {
-          return yamuxFlags == YamuxFlags.RST;
+          return yamuxFlags.contains(YamuxFlag.RST);
         }
       };
     }

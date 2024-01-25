@@ -41,7 +41,7 @@ public class DataUnavailableBlockPool {
   private final Queue<SignedBeaconBlock> awaitingDataAvailabilityQueue =
       new ArrayBlockingQueue<>(10);
   private final BlockManager blockManager;
-  private final BlobSidecarPool blobSidecarPool;
+  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   private final AsyncRunner asyncRunner;
 
   private Optional<Cancellable> delayedRetryTask = Optional.empty();
@@ -50,10 +50,10 @@ public class DataUnavailableBlockPool {
 
   public DataUnavailableBlockPool(
       final BlockManager blockManager,
-      final BlobSidecarPool blobSidecarPool,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final AsyncRunner asyncRunner) {
     this.blockManager = blockManager;
-    this.blobSidecarPool = blobSidecarPool;
+    this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     this.asyncRunner = asyncRunner;
   }
 
@@ -130,7 +130,7 @@ public class DataUnavailableBlockPool {
   }
 
   private boolean isBlockTrackerCompleted(final SignedBeaconBlock block) {
-    return blobSidecarPool
+    return blockBlobSidecarsTrackersPool
         .getBlockBlobSidecarsTracker(block)
         .map(BlockBlobSidecarsTracker::isCompleted)
         .orElse(false);

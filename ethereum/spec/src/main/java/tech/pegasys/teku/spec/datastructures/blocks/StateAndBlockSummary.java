@@ -21,7 +21,10 @@ import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 
 public class StateAndBlockSummary implements BeaconBlockSummary {
   protected final BeaconState state;
@@ -88,10 +91,12 @@ public class StateAndBlockSummary implements BeaconBlockSummary {
     return blockSummary.getRoot();
   }
 
+  public Optional<UInt64> getExecutionBlockNumber() {
+    return getLatestExecutionPayloadHeader().map(ExecutionPayloadHeader::getBlockNumber);
+  }
+
   public Optional<Bytes32> getExecutionBlockHash() {
-    return state
-        .toVersionBellatrix()
-        .map(state -> state.getLatestExecutionPayloadHeader().getBlockHash());
+    return getLatestExecutionPayloadHeader().map(ExecutionPayloadSummary::getBlockHash);
   }
 
   @Override
@@ -124,5 +129,9 @@ public class StateAndBlockSummary implements BeaconBlockSummary {
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this).add("blockSummary", blockSummary).toString();
+  }
+
+  private Optional<ExecutionPayloadHeader> getLatestExecutionPayloadHeader() {
+    return state.toVersionBellatrix().map(BeaconStateBellatrix::getLatestExecutionPayloadHeader);
   }
 }

@@ -110,7 +110,7 @@ import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceTrigger;
@@ -147,7 +147,8 @@ class ValidatorApiHandlerTest {
   private final ActiveValidatorTracker activeValidatorTracker = mock(ActiveValidatorTracker.class);
   private final BlockImportChannel blockImportChannel = mock(BlockImportChannel.class);
   private final BlockGossipChannel blockGossipChannel = mock(BlockGossipChannel.class);
-  private final BlobSidecarPool blobSidecarPool = mock(BlobSidecarPool.class);
+  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool =
+      mock(BlockBlobSidecarsTrackersPool.class);
   private final BlobSidecarGossipChannel blobSidecarGossipChannel =
       mock(BlobSidecarGossipChannel.class);
   private final DefaultPerformanceTracker performanceTracker =
@@ -199,7 +200,7 @@ class ValidatorApiHandlerTest {
             blockFactory,
             blockImportChannel,
             blockGossipChannel,
-            blobSidecarPool,
+            blockBlobSidecarsTrackersPool,
             blobSidecarGossipChannel,
             attestationPool,
             attestationManager,
@@ -453,7 +454,7 @@ class ValidatorApiHandlerTest {
             blockFactory,
             blockImportChannel,
             blockGossipChannel,
-            blobSidecarPool,
+            blockBlobSidecarsTrackersPool,
             blobSidecarGossipChannel,
             attestationPool,
             attestationManager,
@@ -879,7 +880,7 @@ class ValidatorApiHandlerTest {
     verify(blobSidecarGossipChannel).publishBlobSidecars(blobSidecarsCaptor1.capture());
     assertThat(BlobSidecarSummary.fromBlobSidecars(blobSidecarsCaptor1.getValue()))
         .isEqualTo(expectedBlobSidecars);
-    verify(blobSidecarPool)
+    verify(blockBlobSidecarsTrackersPool)
         .onCompletedBlockAndBlobSidecars(eq(block), blobSidecarsCaptor2.capture());
     assertThat(BlobSidecarSummary.fromBlobSidecars(blobSidecarsCaptor2.getValue()))
         .isEqualTo(expectedBlobSidecars);
@@ -905,7 +906,7 @@ class ValidatorApiHandlerTest {
     verify(blobSidecarGossipChannel).publishBlobSidecars(blobSidecarsCaptor1.capture());
     assertThat(BlobSidecarSummary.fromBlobSidecars(blobSidecarsCaptor1.getValue()))
         .isEqualTo(expectedBlobSidecars);
-    verify(blobSidecarPool)
+    verify(blockBlobSidecarsTrackersPool)
         .onCompletedBlockAndBlobSidecars(eq(block), blobSidecarsCaptor2.capture());
     assertThat(BlobSidecarSummary.fromBlobSidecars(blobSidecarsCaptor2.getValue()))
         .isEqualTo(expectedBlobSidecars);
@@ -933,7 +934,7 @@ class ValidatorApiHandlerTest {
     verify(blobSidecarGossipChannel).publishBlobSidecars(blobSidecarsCaptor1.capture());
     assertThat(BlobSidecarSummary.fromBlobSidecars(blobSidecarsCaptor1.getValue()))
         .isEqualTo(expectedBlobSidecars);
-    verify(blobSidecarPool)
+    verify(blockBlobSidecarsTrackersPool)
         .onCompletedBlockAndBlobSidecars(eq(block), blobSidecarsCaptor2.capture());
     assertThat(BlobSidecarSummary.fromBlobSidecars(blobSidecarsCaptor2.getValue()))
         .isEqualTo(expectedBlobSidecars);
@@ -953,7 +954,7 @@ class ValidatorApiHandlerTest {
         validatorApiHandler.sendSignedBlock(block, NOT_REQUIRED);
     safeJoin(result);
 
-    verify(blobSidecarPool).onCompletedBlockAndBlobSidecars(block, List.of());
+    verify(blockBlobSidecarsTrackersPool).onCompletedBlockAndBlobSidecars(block, List.of());
     verify(blobSidecarGossipChannel).publishBlobSidecars(List.of());
     verify(blockGossipChannel).publishBlock(block);
     verify(blockImportChannel).importBlock(block, NOT_REQUIRED);
@@ -1273,7 +1274,7 @@ class ValidatorApiHandlerTest {
             blockFactory,
             blockImportChannel,
             blockGossipChannel,
-            blobSidecarPool,
+            blockBlobSidecarsTrackersPool,
             blobSidecarGossipChannel,
             attestationPool,
             attestationManager,

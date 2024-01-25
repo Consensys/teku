@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2023
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,12 +11,12 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.client.doppelganger;
+package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
-import java.util.List;
-import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 
-public interface DoppelgangerDetectionAction {
-
-  void perform(final List<BLSPublicKey> doppelgangers);
+public class AttesterSlashingEvent extends Event<AttesterSlashing> {
+  AttesterSlashingEvent(AttesterSlashing attesterSlashing) {
+    super(attesterSlashing.getSchema().getJsonTypeDefinition(), attesterSlashing);
+  }
 }

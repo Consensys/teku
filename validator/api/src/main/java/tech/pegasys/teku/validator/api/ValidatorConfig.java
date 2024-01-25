@@ -48,7 +48,11 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_BLOCK_V3_ENABLED = false;
   public static final boolean DEFAULT_EXIT_WHEN_NO_VALIDATOR_KEYS_ENABLED = false;
   public static final boolean DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED = true;
+  public static final boolean DEFAULT_VALIDATOR_CLIENT_USE_POST_VALIDATORS_ENDPOINT_ENABLED = true;
   public static final boolean DEFAULT_DOPPELGANGER_DETECTION_ENABLED = false;
+  public static final boolean DEFAULT_SHUTDOWN_WHEN_VALIDATOR_SLASHED_ENABLED = false;
+  public static final boolean DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED =
+      true;
   public static final int DEFAULT_EXECUTOR_MAX_QUEUE_SIZE = 20_000;
   public static final Duration DEFAULT_VALIDATOR_EXTERNAL_SIGNER_TIMEOUT = Duration.ofSeconds(5);
   public static final int DEFAULT_VALIDATOR_EXTERNAL_SIGNER_CONCURRENT_REQUEST_LIMIT = 32;
@@ -84,11 +88,13 @@ public class ValidatorConfig {
   private final boolean blindedBeaconBlocksEnabled;
   private final boolean builderRegistrationDefaultEnabled;
   private final boolean validatorClientUseSszBlocksEnabled;
+  private final boolean validatorClientUsePostValidatorsEndpointEnabled;
   private final boolean doppelgangerDetectionEnabled;
   private final boolean failoversSendSubnetSubscriptionsEnabled;
   private final boolean failoversPublishSignedDutiesEnabled;
   private final boolean blockV3Enabled;
   private final boolean exitWhenNoValidatorKeysEnabled;
+  private final boolean shutdownWhenValidatorSlashedEnabled;
   private final UInt64 builderRegistrationDefaultGasLimit;
   private final int builderRegistrationSendingBatchSize;
   private final Optional<UInt64> builderRegistrationTimestampOverride;
@@ -97,6 +103,8 @@ public class ValidatorConfig {
   private final Optional<String> sentryNodeConfigurationFile;
 
   private final int executorThreads;
+
+  private final boolean isLocalSlashingProtectionSynchronizedModeEnabled;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -121,18 +129,21 @@ public class ValidatorConfig {
       final boolean builderRegistrationDefaultEnabled,
       final boolean blindedBeaconBlocksEnabled,
       final boolean validatorClientUseSszBlocksEnabled,
+      final boolean validatorClientUsePostValidatorsEndpointEnabled,
       final boolean doppelgangerDetectionEnabled,
       final boolean failoversSendSubnetSubscriptionsEnabled,
       final boolean failoversPublishSignedDutiesEnabled,
       final boolean blockV3Enabled,
       final boolean exitWhenNoValidatorKeysEnabled,
+      final boolean shutdownWhenValidatorSlashedEnabled,
       final UInt64 builderRegistrationDefaultGasLimit,
       final int builderRegistrationSendingBatchSize,
       final Optional<UInt64> builderRegistrationTimestampOverride,
       final Optional<BLSPublicKey> builderRegistrationPublicKeyOverride,
       final int executorMaxQueueSize,
       final int executorThreads,
-      final Optional<String> sentryNodeConfigurationFile) {
+      final Optional<String> sentryNodeConfigurationFile,
+      boolean isLocalSlashingProtectionSynchronizedModeEnabled) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -158,11 +169,14 @@ public class ValidatorConfig {
     this.blindedBeaconBlocksEnabled = blindedBeaconBlocksEnabled;
     this.builderRegistrationDefaultEnabled = builderRegistrationDefaultEnabled;
     this.validatorClientUseSszBlocksEnabled = validatorClientUseSszBlocksEnabled;
+    this.validatorClientUsePostValidatorsEndpointEnabled =
+        validatorClientUsePostValidatorsEndpointEnabled;
     this.doppelgangerDetectionEnabled = doppelgangerDetectionEnabled;
     this.failoversSendSubnetSubscriptionsEnabled = failoversSendSubnetSubscriptionsEnabled;
     this.failoversPublishSignedDutiesEnabled = failoversPublishSignedDutiesEnabled;
     this.blockV3Enabled = blockV3Enabled;
     this.exitWhenNoValidatorKeysEnabled = exitWhenNoValidatorKeysEnabled;
+    this.shutdownWhenValidatorSlashedEnabled = shutdownWhenValidatorSlashedEnabled;
     this.builderRegistrationDefaultGasLimit = builderRegistrationDefaultGasLimit;
     this.builderRegistrationSendingBatchSize = builderRegistrationSendingBatchSize;
     this.builderRegistrationTimestampOverride = builderRegistrationTimestampOverride;
@@ -170,6 +184,8 @@ public class ValidatorConfig {
     this.executorMaxQueueSize = executorMaxQueueSize;
     this.executorThreads = executorThreads;
     this.sentryNodeConfigurationFile = sentryNodeConfigurationFile;
+    this.isLocalSlashingProtectionSynchronizedModeEnabled =
+        isLocalSlashingProtectionSynchronizedModeEnabled;
   }
 
   public static Builder builder() {
@@ -275,6 +291,10 @@ public class ValidatorConfig {
     return validatorClientUseSszBlocksEnabled;
   }
 
+  public boolean isValidatorClientUsePostValidatorsEndpointEnabled() {
+    return validatorClientUsePostValidatorsEndpointEnabled;
+  }
+
   public boolean isDoppelgangerDetectionEnabled() {
     return doppelgangerDetectionEnabled;
   }
@@ -293,6 +313,10 @@ public class ValidatorConfig {
 
   public boolean isExitWhenNoValidatorKeysEnabled() {
     return exitWhenNoValidatorKeysEnabled;
+  }
+
+  public boolean isShutdownWhenValidatorSlashedEnabled() {
+    return shutdownWhenValidatorSlashedEnabled;
   }
 
   public boolean isBuilderRegistrationDefaultEnabled() {
@@ -318,6 +342,10 @@ public class ValidatorConfig {
       throw new InvalidConfigurationException(
           "Invalid configuration. --validators-proposer-default-fee-recipient or --validators-proposer-config must be specified when Bellatrix milestone is active");
     }
+  }
+
+  public boolean isLocalSlashingProtectionSynchronizedModeEnabled() {
+    return isLocalSlashingProtectionSynchronizedModeEnabled;
   }
 
   public static final class Builder {
@@ -349,6 +377,8 @@ public class ValidatorConfig {
         DEFAULT_BUILDER_REGISTRATION_DEFAULT_ENABLED;
     private boolean blindedBlocksEnabled = DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED;
     private boolean validatorClientSszBlocksEnabled = DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED;
+    private boolean validatorClientUsePostValidatorsEndpointEnabled =
+        DEFAULT_VALIDATOR_CLIENT_USE_POST_VALIDATORS_ENDPOINT_ENABLED;
     private boolean doppelgangerDetectionEnabled = DEFAULT_DOPPELGANGER_DETECTION_ENABLED;
     private boolean failoversSendSubnetSubscriptionsEnabled =
         DEFAULT_FAILOVERS_SEND_SUBNET_SUBSCRIPTIONS_ENABLED;
@@ -356,6 +386,8 @@ public class ValidatorConfig {
         DEFAULT_FAILOVERS_PUBLISH_SIGNED_DUTIES_ENABLED;
     private boolean blockV3Enabled = DEFAULT_BLOCK_V3_ENABLED;
     private boolean exitWhenNoValidatorKeysEnabled = DEFAULT_EXIT_WHEN_NO_VALIDATOR_KEYS_ENABLED;
+    private boolean shutdownWhenValidatorSlashedEnabled =
+        DEFAULT_SHUTDOWN_WHEN_VALIDATOR_SLASHED_ENABLED;
     private UInt64 builderRegistrationDefaultGasLimit = DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT;
     private int builderRegistrationSendingBatchSize =
         DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE;
@@ -365,6 +397,9 @@ public class ValidatorConfig {
     private Optional<String> sentryNodeConfigurationFile = Optional.empty();
 
     private int executorThreads = DEFAULT_VALIDATOR_EXECUTOR_THREADS;
+
+    private boolean isLocalSlashingProtectionSynchronizedModeEnabled =
+        DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED;
 
     private Builder() {}
 
@@ -511,6 +546,13 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder validatorClientUsePostValidatorsEndpointEnabled(
+        final boolean validatorClientUsePostValidatorsEndpointEnabled) {
+      this.validatorClientUsePostValidatorsEndpointEnabled =
+          validatorClientUsePostValidatorsEndpointEnabled;
+      return this;
+    }
+
     public Builder doppelgangerDetectionEnabled(final boolean doppelgangerDetectionEnabled) {
       this.doppelgangerDetectionEnabled = doppelgangerDetectionEnabled;
       return this;
@@ -545,6 +587,12 @@ public class ValidatorConfig {
 
     public Builder exitWhenNoValidatorKeysEnabled(final boolean exitWhenNoValidatorKeysEnabled) {
       this.exitWhenNoValidatorKeysEnabled = exitWhenNoValidatorKeysEnabled;
+      return this;
+    }
+
+    public Builder shutdownWhenValidatorSlashedEnabled(
+        final boolean shutdownWhenValidatorSlashedEnabled) {
+      this.shutdownWhenValidatorSlashedEnabled = shutdownWhenValidatorSlashedEnabled;
       return this;
     }
 
@@ -585,6 +633,13 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder isLocalSlashingProtectionSynchronizedModeEnabled(
+        final boolean isLocalSlashingProtectionSynchronizedModeEnabled) {
+      this.isLocalSlashingProtectionSynchronizedModeEnabled =
+          isLocalSlashingProtectionSynchronizedModeEnabled;
+      return this;
+    }
+
     public ValidatorConfig build() {
       validateExternalSignerUrlAndPublicKeys();
       validateExternalSignerKeystoreAndPasswordFileConfig();
@@ -614,18 +669,21 @@ public class ValidatorConfig {
           validatorsRegistrationDefaultEnabled,
           blindedBlocksEnabled,
           validatorClientSszBlocksEnabled,
+          validatorClientUsePostValidatorsEndpointEnabled,
           doppelgangerDetectionEnabled,
           failoversSendSubnetSubscriptionsEnabled,
           failoversPublishSignedDutiesEnabled,
           blockV3Enabled,
           exitWhenNoValidatorKeysEnabled,
+          shutdownWhenValidatorSlashedEnabled,
           builderRegistrationDefaultGasLimit,
           builderRegistrationSendingBatchSize,
           builderRegistrationTimestampOverride,
           builderRegistrationPublicKeyOverride,
           executorMaxQueueSize,
           executorThreads,
-          sentryNodeConfigurationFile);
+          sentryNodeConfigurationFile,
+          isLocalSlashingProtectionSynchronizedModeEnabled);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {

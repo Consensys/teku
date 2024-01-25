@@ -90,8 +90,7 @@ public class BeaconNodeDataOptions extends ValidatorClientDataOptions {
       description = "",
       arity = "0..1",
       fallbackValue = "true",
-      showDefaultValue = Visibility.ALWAYS,
-      hidden = true)
+      showDefaultValue = Visibility.ALWAYS)
   private Boolean reconstructHistoricStates =
       SyncConfig.DEFAULT_RECONSTRUCT_HISTORIC_STATES_ENABLED;
 

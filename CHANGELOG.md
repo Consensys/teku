@@ -12,6 +12,5 @@ the [releases page](https://github.com/Consensys/teku/releases).
 ### Breaking Changes
 
 ### Additions and Improvements
-- Added `--ee-jwt-claim-id` command line option to provide `id` to the execution engine JWT claims
 
 ### Bug Fixes

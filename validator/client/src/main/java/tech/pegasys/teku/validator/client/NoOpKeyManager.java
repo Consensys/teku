@@ -19,27 +19,27 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.data.SlashingProtectionImporter;
-import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
 import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteKeysResponse;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.DeleteRemoteKeysResponse;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.ExternalValidator;
 import tech.pegasys.teku.validator.client.restapi.apis.schema.PostKeyResult;
+import tech.pegasys.teku.validator.client.slashingriskactions.SlashingRiskAction;
 
 public class NoOpKeyManager implements KeyManager {
 
   @Override
-  public List<Validator> getActiveValidatorKeys() {
+  public List<Validator> getLocalValidatorKeys() {
     return Collections.emptyList();
   }
 
   @Override
-  public List<ExternalValidator> getActiveRemoteValidatorKeys() {
+  public List<ExternalValidator> getRemoteValidatorKeys() {
     return Collections.emptyList();
   }
 
   @Override
-  public Optional<Validator> getActiveValidatorByPublicKey(BLSPublicKey publicKey) {
+  public Optional<Validator> getValidatorByPublicKey(BLSPublicKey publicKey) {
     return Optional.empty();
   }
 
@@ -60,7 +60,7 @@ public class NoOpKeyManager implements KeyManager {
       final List<String> passwords,
       final Optional<SlashingProtectionImporter> slashingProtectionImporter,
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
-      final DoppelgangerDetectionAction doppelgangerDetectionAction) {
+      final SlashingRiskAction doppelgangerDetectionAction) {
     return Collections.emptyList();
   }
 
@@ -68,7 +68,7 @@ public class NoOpKeyManager implements KeyManager {
   public List<PostKeyResult> importExternalValidators(
       List<ExternalValidator> validators,
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
-      final DoppelgangerDetectionAction doppelgangerDetectionAction) {
+      final SlashingRiskAction doppelgangerDetectionAction) {
     return Collections.emptyList();
   }
 }

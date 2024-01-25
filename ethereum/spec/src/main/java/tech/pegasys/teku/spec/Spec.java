@@ -30,12 +30,14 @@ import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
@@ -698,8 +700,8 @@ public class Spec {
       final int proposerIndex,
       final BeaconState blockSlotState,
       final Bytes32 parentBlockSigningRoot,
-      final Consumer<BeaconBlockBodyBuilder> bodyBuilder,
-      final Optional<Boolean> blinded) {
+      final Function<BeaconBlockBodyBuilder, SafeFuture<Void>> bodyBuilder,
+      final BlockProductionPerformance blockProductionPerformance) {
     return atSlot(proposalSlot)
         .getBlockProposalUtil()
         .createNewUnsignedBlock(
@@ -708,7 +710,7 @@ public class Spec {
             blockSlotState,
             parentBlockSigningRoot,
             bodyBuilder,
-            blinded);
+            blockProductionPerformance);
   }
 
   // Blind Block Utils

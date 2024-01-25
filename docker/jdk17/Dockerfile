@@ -46,8 +46,8 @@ ARG VCS_REF
 ARG VERSION
 LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.name="Teku" \
-      org.label-schema.description="Ethereum 2.0 Beacon Chain Client" \
-      org.label-schema.url="https://consensys.net/knowledge-base/ethereum-2/teku/" \
+      org.label-schema.description="Ethereum Consensus Client" \
+      org.label-schema.url="https://docs.teku.consensys.io/" \
       org.label-schema.vcs-ref=$VCS_REF \
       org.label-schema.vcs-url="https://github.com/Consensys/teku.git" \
       org.label-schema.vendor="Consensys" \

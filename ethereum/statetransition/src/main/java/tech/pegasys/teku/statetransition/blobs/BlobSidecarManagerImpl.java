@@ -41,7 +41,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   private final RecentChainData recentChainData;
   private final BlobSidecarGossipValidator validator;
   private final KZG kzg;
-  private final BlobSidecarPool blobSidecarPool;
+  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   private final FutureItems<BlobSidecar> futureBlobSidecars;
   private final Map<Bytes32, InternalValidationResult> invalidBlobSidecarRoots;
 
@@ -52,7 +52,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
       final Spec spec,
       final AsyncRunner asyncRunner,
       final RecentChainData recentChainData,
-      final BlobSidecarPool blobSidecarPool,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final BlobSidecarGossipValidator validator,
       final KZG kzg,
       final FutureItems<BlobSidecar> futureBlobSidecars,
@@ -62,7 +62,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
     this.recentChainData = recentChainData;
     this.validator = validator;
     this.kzg = kzg;
-    this.blobSidecarPool = blobSidecarPool;
+    this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     this.futureBlobSidecars = futureBlobSidecars;
     this.invalidBlobSidecarRoots = invalidBlobSidecarRoots;
   }
@@ -93,7 +93,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
               futureBlobSidecars.add(blobSidecar);
               break;
             case ACCEPT:
-              prepareForBlockImport(blobSidecar);
+              prepareForBlockImport(blobSidecar, RemoteOrigin.GOSSIP);
               break;
           }
         });
@@ -102,8 +102,8 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
   }
 
   @Override
-  public void prepareForBlockImport(final BlobSidecar blobSidecar) {
-    blobSidecarPool.onNewBlobSidecar(blobSidecar);
+  public void prepareForBlockImport(final BlobSidecar blobSidecar, final RemoteOrigin origin) {
+    blockBlobSidecarsTrackersPool.onNewBlobSidecar(blobSidecar, origin);
     receivedBlobSidecarSubscribers.forEach(s -> s.onBlobSidecarReceived(blobSidecar));
   }
 
@@ -126,7 +126,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
     }
 
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
-        blobSidecarPool.getOrCreateBlockBlobSidecarsTracker(block);
+        blockBlobSidecarsTrackersPool.getOrCreateBlockBlobSidecarsTracker(block);
 
     return new ForkChoiceBlobSidecarsAvailabilityChecker(
         spec, asyncRunner, recentChainData, blockBlobSidecarsTracker, kzg);
@@ -153,7 +153,7 @@ public class BlobSidecarManagerImpl implements BlobSidecarManager, SlotEventsCha
 
   @Override
   public void onSlot(final UInt64 slot) {
-    blobSidecarPool.onSlot(slot);
+    blockBlobSidecarsTrackersPool.onSlot(slot);
 
     futureBlobSidecars.onSlot(slot);
     futureBlobSidecars

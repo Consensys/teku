@@ -26,8 +26,8 @@ import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
+import tech.pegasys.teku.networking.p2p.network.config.FilePrivateKeySource;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
-import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.FilePrivateKeySource;
 
 public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
@@ -273,21 +273,6 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(createConfigBuilder().discovery(b -> b.minPeers(0).maxPeers(0)).build())
         .usingRecursiveComparison()
         .isEqualTo(tekuConfiguration);
-  }
-
-  @Test
-  public void subscribeToBlsToExecutionChangesOption_shouldDefaultToTrue() {
-    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
-    final P2PConfig config = tekuConfiguration.p2p();
-    assertThat(config.isBlsToExecutionChangesSubnetEnabled()).isTrue();
-  }
-
-  @Test
-  public void subscribeToBlsToExecutionChangesOption_shouldOverrideDefault() {
-    final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--Xbls-to-execution-changes-subnet-enabled", "false");
-    final P2PConfig config = tekuConfiguration.p2p();
-    assertThat(config.isBlsToExecutionChangesSubnetEnabled()).isFalse();
   }
 
   @Test

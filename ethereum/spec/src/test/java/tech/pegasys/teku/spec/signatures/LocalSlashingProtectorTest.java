@@ -37,17 +37,17 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class LocalSlashingProtectorTest {
-  private static final Bytes32 GENESIS_VALIDATORS_ROOT = Bytes32.fromHexString("0x561234");
+  protected static final Bytes32 GENESIS_VALIDATORS_ROOT = Bytes32.fromHexString("0x561234");
+  protected final DataStructureUtil dataStructureUtil =
+      new DataStructureUtil(TestSpecFactory.createDefault());
+
+  protected final BLSPublicKey validator = dataStructureUtil.randomPublicKey();
+  protected final SyncDataAccessor dataWriter = mock(SyncDataAccessor.class);
+
+  protected final Path baseDir = Path.of("/data");
   private static final UInt64 ATTESTATION_TEST_BLOCK_SLOT = UInt64.valueOf(3);
   private static final UInt64 BLOCK_TEST_SOURCE_EPOCH = UInt64.valueOf(12);
   private static final UInt64 BLOCK_TEST_TARGET_EPOCH = UInt64.valueOf(15);
-  private final DataStructureUtil dataStructureUtil =
-      new DataStructureUtil(TestSpecFactory.createDefault());
-
-  private final BLSPublicKey validator = dataStructureUtil.randomPublicKey();
-  private final SyncDataAccessor dataWriter = mock(SyncDataAccessor.class);
-
-  private final Path baseDir = Path.of("/data");
   private final Path signingRecordPath =
       baseDir.resolve(validator.toBytesCompressed().toUnprefixedHexString() + ".yml");
 
@@ -67,6 +67,10 @@ class LocalSlashingProtectorTest {
     } else {
       assertBlockSigningDisallowed(lastSignedRecord, slot);
     }
+  }
+
+  protected SlashingProtector getSlashingProtector() {
+    return slashingProtectionStorage;
   }
 
   static List<Arguments> blockCases() {
@@ -140,8 +144,8 @@ class LocalSlashingProtectorTest {
         .thenReturn(lastSignedAttestation.map(ValidatorSigningRecord::toBytes));
 
     assertThat(
-            slashingProtectionStorage.maySignAttestation(
-                validator, GENESIS_VALIDATORS_ROOT, sourceEpoch, targetEpoch))
+            getSlashingProtector()
+                .maySignAttestation(validator, GENESIS_VALIDATORS_ROOT, sourceEpoch, targetEpoch))
         .isCompletedWithValue(true);
 
     final ValidatorSigningRecord updatedRecord =

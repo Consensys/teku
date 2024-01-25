@@ -33,8 +33,6 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
-import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED;
-import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
 import static tech.pegasys.teku.statetransition.forkchoice.ForkChoice.BLOCK_CREATION_TOLERANCE_MS;
 
 import java.util.List;
@@ -165,8 +163,6 @@ class ForkChoiceTest {
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
-            DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED,
-            DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
             metricsSystem);
 
@@ -422,8 +418,6 @@ class ForkChoiceTest {
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
-            DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED,
-            DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED,
             DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
             metricsSystem);
 
@@ -1039,7 +1033,7 @@ class ForkChoiceTest {
     try (LogCaptor logCaptor = LogCaptor.forClass(ForkChoice.class)) {
       forkChoice.onForkChoiceUpdatedResult(
           new ForkChoiceUpdatedResultNotification(
-              state, true, SafeFuture.completedFuture(Optional.ofNullable(result))));
+              state, Optional.empty(), true, SafeFuture.completedFuture(result)));
       if (result.getPayloadStatus().hasInvalidStatus()) {
         final List<String> errorLogs = logCaptor.getErrorLogs();
         assertThat(errorLogs).singleElement().asString().contains("INVALID", "terminal");
@@ -1110,6 +1104,8 @@ class ForkChoiceTest {
       final VerificationMode mode) {
     final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
         recentChainData.getForkChoiceStrategy().orElseThrow();
+    final UInt64 headExecutionBlockNumber =
+        forkChoiceStrategy.executionBlockNumber(blockAndState.getRoot()).orElseThrow();
     final Bytes32 headExecutionHash =
         forkChoiceStrategy.executionBlockHash(blockAndState.getRoot()).orElseThrow();
     final Bytes32 justifiedExecutionHash =
@@ -1125,6 +1121,7 @@ class ForkChoiceTest {
             new ForkChoiceState(
                 blockAndState.getRoot(),
                 blockAndState.getSlot(),
+                headExecutionBlockNumber,
                 headExecutionHash,
                 justifiedExecutionHash,
                 finalizedExecutionHash,
@@ -1373,10 +1370,9 @@ class ForkChoiceTest {
     }
     Stubber stubber = null;
     for (PayloadStatus status : statuses) {
-      ForkChoiceUpdatedResult result =
+      Optional<ForkChoiceUpdatedResult> result =
           Optional.ofNullable(status)
-              .map(payloadStatus -> new ForkChoiceUpdatedResult(payloadStatus, Optional.empty()))
-              .orElse(null);
+              .map(payloadStatus -> new ForkChoiceUpdatedResult(payloadStatus, Optional.empty()));
       Answer<Void> onForkChoiceUpdatedResultAnswer = getOnForkChoiceUpdatedResultAnswer(result);
       if (stubber == null) {
         stubber = doAnswer(onForkChoiceUpdatedResultAnswer);
@@ -1387,13 +1383,17 @@ class ForkChoiceTest {
     stubber.when(forkChoiceNotifier).onForkChoiceUpdated(any(), any());
   }
 
-  private Answer<Void> getOnForkChoiceUpdatedResultAnswer(ForkChoiceUpdatedResult result) {
+  private Answer<Void> getOnForkChoiceUpdatedResultAnswer(
+      Optional<ForkChoiceUpdatedResult> result) {
     return invocation -> {
-      forkChoice.onForkChoiceUpdatedResult(
-          new ForkChoiceUpdatedResultNotification(
-              invocation.getArgument(0),
-              false,
-              SafeFuture.completedFuture(Optional.ofNullable(result))));
+      result.ifPresent(
+          forkChoiceUpdatedResult ->
+              forkChoice.onForkChoiceUpdatedResult(
+                  new ForkChoiceUpdatedResultNotification(
+                      invocation.getArgument(0),
+                      Optional.empty(),
+                      false,
+                      SafeFuture.completedFuture(forkChoiceUpdatedResult))));
       return null;
     };
   }

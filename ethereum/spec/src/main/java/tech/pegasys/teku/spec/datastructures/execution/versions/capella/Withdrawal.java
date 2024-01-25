@@ -37,6 +37,8 @@ public class Withdrawal
         SszUInt64.of(amount));
   }
 
+  public static final WithdrawalSchema SSZ_SCHEMA = new WithdrawalSchema();
+
   Withdrawal(final WithdrawalSchema type, final TreeNode backingNode) {
     super(type, backingNode);
   }

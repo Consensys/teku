@@ -247,12 +247,12 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
   }
 
   @Override
-  public boolean isHeadWeak(Bytes32 root) {
+  public boolean isHeadWeak(final Bytes32 root) {
     return false;
   }
 
   @Override
-  public boolean isParentStrong(Bytes32 parentRoot) {
+  public boolean isParentStrong(final Bytes32 parentRoot) {
     return false;
   }
 
@@ -384,6 +384,11 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
     }
 
     @Override
+    public Optional<UInt64> executionBlockNumber(final Bytes32 blockRoot) {
+      throw new UnsupportedOperationException("Not implemented");
+    }
+
+    @Override
     public Optional<Bytes32> executionBlockHash(final Bytes32 blockRoot) {
       throw new UnsupportedOperationException("Not implemented");
     }
@@ -414,6 +419,8 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
           .forEach(
               root -> {
                 final SignedBeaconBlock block = blocks.get(root);
+                final Optional<ExecutionPayload> executionPayload =
+                    block.getMessage().getBody().getOptionalExecutionPayload();
                 headsByRoot.put(
                     root,
                     new ProtoNodeData(
@@ -421,12 +428,8 @@ public class TestStoreImpl implements MutableStore, VoteUpdater {
                         root,
                         block.getParentRoot(),
                         block.getStateRoot(),
-                        block
-                            .getMessage()
-                            .getBody()
-                            .getOptionalExecutionPayload()
-                            .map(ExecutionPayload::getBlockHash)
-                            .orElse(Bytes32.ZERO),
+                        executionPayload.map(ExecutionPayload::getBlockNumber).orElse(UInt64.ZERO),
+                        executionPayload.map(ExecutionPayload::getBlockHash).orElse(Bytes32.ZERO),
                         ProtoNodeValidationStatus.VALID,
                         blockCheckpoints.get(root),
                         UInt64.ZERO));

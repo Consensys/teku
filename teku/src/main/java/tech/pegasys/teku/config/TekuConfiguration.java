@@ -254,7 +254,7 @@ public class TekuConfiguration {
 
       // Check for invalid config settings
       if (syncConfig.isReconstructHistoricStatesEnabled()
-          && eth2NetworkConfiguration.getGenesisState().isEmpty()) {
+          && eth2NetworkConfiguration.getNetworkBoostrapConfig().getGenesisState().isEmpty()) {
         throw new InvalidConfigurationException(
             "Genesis state required when reconstructing historic states");
       }

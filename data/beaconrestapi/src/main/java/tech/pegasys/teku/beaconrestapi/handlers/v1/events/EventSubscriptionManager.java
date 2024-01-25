@@ -39,13 +39,17 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.ListQueryParameterUtil
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -85,10 +89,13 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     syncDataProvider.subscribeToSyncStateChanges(this::onSyncStateChange);
     nodeDataProvider.subscribeToReceivedBlocks(this::onNewBlock);
     nodeDataProvider.subscribeToReceivedBlobSidecar(this::onNewBlobSidecar);
+    nodeDataProvider.subscribeToAttesterSlashing(this::onNewAttesterSlashing);
+    nodeDataProvider.subscribeToProposerSlashing(this::onNewProposerSlashing);
     nodeDataProvider.subscribeToValidAttestations(this::onNewAttestation);
     nodeDataProvider.subscribeToNewVoluntaryExits(this::onNewVoluntaryExit);
     nodeDataProvider.subscribeToSyncCommitteeContributions(this::onSyncCommitteeContribution);
     nodeDataProvider.subscribeToNewBlsToExecutionChanges(this::onNewBlsToExecutionChange);
+    nodeDataProvider.subscribeToForkChoiceUpdatedResult(this::onForkChoiceUpdatedResult);
   }
 
   public void registerClient(final SseClient sseClient) {
@@ -191,6 +198,43 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
   protected void onNewBlobSidecar(final BlobSidecar blobSidecar) {
     final BlobSidecarEvent blobSidecarEvent = BlobSidecarEvent.create(spec, blobSidecar);
     notifySubscribersOfEvent(EventType.blob_sidecar, blobSidecarEvent);
+  }
+
+  protected void onNewAttesterSlashing(
+      final AttesterSlashing attesterSlashing,
+      final InternalValidationResult result,
+      final boolean fromNetwork) {
+    if (result.isAccept()) {
+      notifySubscribersOfEvent(
+          EventType.attester_slashing, new AttesterSlashingEvent(attesterSlashing));
+    }
+  }
+
+  protected void onNewProposerSlashing(
+      final ProposerSlashing proposerSlashing,
+      final InternalValidationResult result,
+      final boolean fromNetwork) {
+    if (result.isAccept()) {
+      notifySubscribersOfEvent(
+          EventType.proposer_slashing, new ProposerSlashingEvent(proposerSlashing));
+    }
+  }
+
+  protected void onForkChoiceUpdatedResult(
+      final ForkChoiceUpdatedResultNotification forkChoiceUpdatedResultNotification) {
+    forkChoiceUpdatedResultNotification
+        .payloadAttributes()
+        .ifPresent(
+            payloadAttributes -> {
+              final SpecMilestone milestone =
+                  spec.atSlot(payloadAttributes.getProposalSlot()).getMilestone();
+              final PayloadAttributesEvent payloadAttributesEvent =
+                  PayloadAttributesEvent.create(
+                      milestone,
+                      payloadAttributes,
+                      forkChoiceUpdatedResultNotification.forkChoiceState());
+              notifySubscribersOfEvent(EventType.payload_attributes, payloadAttributesEvent);
+            });
   }
 
   @Override

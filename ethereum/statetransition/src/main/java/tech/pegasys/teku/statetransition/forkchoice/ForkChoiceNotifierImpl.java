@@ -28,7 +28,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
-import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager.ProposersDataManagerSubscriber;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -44,7 +43,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
   private final Spec spec;
   private final TimeProvider timeProvider;
 
-  private final Subscribers<ForkChoiceUpdatedResultSubscriber> subscribers =
+  private final Subscribers<ForkChoiceUpdatedResultSubscriber> forkChoiceUpdatedSubscribers =
       Subscribers.create(true);
 
   private ForkChoiceUpdateData forkChoiceUpdateData = new ForkChoiceUpdateData();
@@ -70,13 +69,8 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
   }
 
   @Override
-  public long subscribeToForkChoiceUpdatedResult(ForkChoiceUpdatedResultSubscriber subscriber) {
-    return subscribers.subscribe(subscriber);
-  }
-
-  @Override
-  public boolean unsubscribeFromForkChoiceUpdatedResult(long subscriberId) {
-    return subscribers.unsubscribe(subscriberId);
+  public void subscribeToForkChoiceUpdatedResult(ForkChoiceUpdatedResultSubscriber subscriber) {
+    forkChoiceUpdatedSubscribers.subscribe(subscriber);
   }
 
   @Override
@@ -246,14 +240,17 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
   }
 
   private void sendForkChoiceUpdated() {
-    final SafeFuture<Optional<ForkChoiceUpdatedResult>> forkChoiceUpdatedResult =
-        forkChoiceUpdateData.send(executionLayerChannel, timeProvider.getTimeInMillis());
-    subscribers.deliver(
-        ForkChoiceUpdatedResultSubscriber::onForkChoiceUpdatedResult,
-        new ForkChoiceUpdatedResultNotification(
-            forkChoiceUpdateData.getForkChoiceState(),
-            forkChoiceUpdateData.hasTerminalBlockHash(),
-            forkChoiceUpdatedResult));
+    forkChoiceUpdateData
+        .send(executionLayerChannel, timeProvider.getTimeInMillis())
+        .ifPresent(
+            forkChoiceUpdatedResultFuture ->
+                forkChoiceUpdatedSubscribers.deliver(
+                    ForkChoiceUpdatedResultSubscriber::onForkChoiceUpdatedResult,
+                    new ForkChoiceUpdatedResultNotification(
+                        forkChoiceUpdateData.getForkChoiceState(),
+                        forkChoiceUpdateData.getPayloadBuildingAttributes(),
+                        forkChoiceUpdateData.hasTerminalBlockHash(),
+                        forkChoiceUpdatedResultFuture)));
   }
 
   private void updatePayloadAttributesWithForkChoiceState(

@@ -56,11 +56,9 @@ public class FFGUpdatesTest {
     //            2 <- just: 1, fin: 0
     //            |
     //            3 <- just: 2, fin: 1
-    processBlock(ONE, getHash(1), getHash(0), Bytes32.ZERO, unsigned(0), unsigned(0), Bytes32.ZERO);
-    processBlock(
-        unsigned(2), getHash(2), getHash(1), Bytes32.ZERO, unsigned(1), unsigned(0), Bytes32.ZERO);
-    processBlock(
-        unsigned(3), getHash(3), getHash(2), Bytes32.ZERO, unsigned(2), unsigned(1), Bytes32.ZERO);
+    processBlock(ONE, getHash(1), getHash(0), Bytes32.ZERO, unsigned(0), unsigned(0));
+    processBlock(unsigned(2), getHash(2), getHash(1), Bytes32.ZERO, unsigned(1), unsigned(0));
+    processBlock(unsigned(3), getHash(3), getHash(2), Bytes32.ZERO, unsigned(2), unsigned(1));
 
     // Ensure that with justified epoch 0 we find 3
     //
@@ -121,28 +119,18 @@ public class FFGUpdatesTest {
     //  just: 2, fin: 0 -> 9  10 <- just: 2, fin: 0
 
     //  Left branch
-    processBlock(
-        unsigned(1), getHash(1), getHash(0), Bytes32.ZERO, unsigned(0), unsigned(0), Bytes32.ZERO);
-    processBlock(
-        unsigned(2), getHash(3), getHash(1), Bytes32.ZERO, unsigned(1), unsigned(0), Bytes32.ZERO);
-    processBlock(
-        unsigned(3), getHash(5), getHash(3), Bytes32.ZERO, unsigned(1), unsigned(0), Bytes32.ZERO);
-    processBlock(
-        unsigned(4), getHash(7), getHash(5), Bytes32.ZERO, unsigned(1), unsigned(0), Bytes32.ZERO);
-    processBlock(
-        unsigned(4), getHash(9), getHash(7), Bytes32.ZERO, unsigned(2), unsigned(0), Bytes32.ZERO);
+    processBlock(unsigned(1), getHash(1), getHash(0), Bytes32.ZERO, unsigned(0), unsigned(0));
+    processBlock(unsigned(2), getHash(3), getHash(1), Bytes32.ZERO, unsigned(1), unsigned(0));
+    processBlock(unsigned(3), getHash(5), getHash(3), Bytes32.ZERO, unsigned(1), unsigned(0));
+    processBlock(unsigned(4), getHash(7), getHash(5), Bytes32.ZERO, unsigned(1), unsigned(0));
+    processBlock(unsigned(4), getHash(9), getHash(7), Bytes32.ZERO, unsigned(2), unsigned(0));
 
     //  Right branch
-    processBlock(
-        unsigned(1), getHash(2), getHash(0), Bytes32.ZERO, unsigned(0), unsigned(0), Bytes32.ZERO);
-    processBlock(
-        unsigned(2), getHash(4), getHash(2), Bytes32.ZERO, unsigned(0), unsigned(0), Bytes32.ZERO);
-    processBlock(
-        unsigned(3), getHash(6), getHash(4), Bytes32.ZERO, unsigned(0), unsigned(0), Bytes32.ZERO);
-    processBlock(
-        unsigned(4), getHash(8), getHash(6), Bytes32.ZERO, unsigned(1), unsigned(0), Bytes32.ZERO);
-    processBlock(
-        unsigned(4), getHash(10), getHash(8), Bytes32.ZERO, unsigned(2), unsigned(0), Bytes32.ZERO);
+    processBlock(unsigned(1), getHash(2), getHash(0), Bytes32.ZERO, unsigned(0), unsigned(0));
+    processBlock(unsigned(2), getHash(4), getHash(2), Bytes32.ZERO, unsigned(0), unsigned(0));
+    processBlock(unsigned(3), getHash(6), getHash(4), Bytes32.ZERO, unsigned(0), unsigned(0));
+    processBlock(unsigned(4), getHash(8), getHash(6), Bytes32.ZERO, unsigned(1), unsigned(0));
+    processBlock(unsigned(4), getHash(10), getHash(8), Bytes32.ZERO, unsigned(2), unsigned(0));
 
     // Ensure that if we start at 0 we find 10 (just: 0, fin: 0).
     //
@@ -301,8 +289,7 @@ public class FFGUpdatesTest {
       final Bytes32 parentRoot,
       final Bytes32 stateRoot,
       final UInt64 justifiedEpoch,
-      final UInt64 finalizedEpoch,
-      final Bytes32 executionBlockHash) {
+      final UInt64 finalizedEpoch) {
     forkChoice.processBlock(
         blockSlot,
         blockRoot,
@@ -313,7 +300,8 @@ public class FFGUpdatesTest {
             new Checkpoint(finalizedEpoch, Bytes32.ZERO),
             new Checkpoint(justifiedEpoch, Bytes32.ZERO),
             new Checkpoint(finalizedEpoch, Bytes32.ZERO)),
-        executionBlockHash);
+        ProtoNode.NO_EXECUTION_BLOCK_NUMBER,
+        ProtoNode.NO_EXECUTION_BLOCK_HASH);
   }
 
   private UInt64 unsigned(final int i) {
