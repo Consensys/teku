@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
-import static tech.pegasys.teku.ethereum.json.types.SharedApiTypes.GET_GENESIS_API_DATA_TYPE;
+import static tech.pegasys.teku.ethereum.json.types.beacon.GetGenesisApiDataBuilder.GET_GENESIS_API_DATA_TYPE;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_GENESIS;
 
 import java.util.Optional;

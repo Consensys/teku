@@ -13,18 +13,10 @@
 
 package tech.pegasys.teku.ethereum.json.types;
 
-import static tech.pegasys.teku.ethereum.json.types.validator.ProposerDutiesBuilder.PROPOSER_DUTIES_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES4_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
-
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.ethereum.json.types.beacon.GetGenesisApiData;
-import tech.pegasys.teku.ethereum.json.types.beacon.GetGenesisApiData.GetGenesisApiDataBuilder;
-import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableObjectTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
@@ -32,35 +24,6 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 
 public class SharedApiTypes {
-
-  public static final DeserializableTypeDefinition<GetGenesisApiData> GET_GENESIS_API_DATA_TYPE =
-      withDataWrapper(
-          "GetGenesisResponse",
-          DeserializableTypeDefinition.object(
-                  GetGenesisApiData.class, GetGenesisApiDataBuilder.class)
-              .initializer(GetGenesisApiDataBuilder::new)
-              .finisher(GetGenesisApiDataBuilder::build)
-              .withField(
-                  "genesis_time",
-                  UINT64_TYPE,
-                  GetGenesisApiData::getGenesisTime,
-                  GetGenesisApiDataBuilder::genesisTime)
-              .withField(
-                  "genesis_validators_root",
-                  BYTES32_TYPE,
-                  GetGenesisApiData::getGenesisValidatorsRoot,
-                  GetGenesisApiDataBuilder::genesisValidatorsRoot)
-              .withField(
-                  "genesis_fork_version",
-                  BYTES4_TYPE,
-                  GetGenesisApiData::getGenesisForkVersion,
-                  GetGenesisApiDataBuilder::genesisForkVersion)
-              .build());
-
-  public static final DeserializableTypeDefinition<ProposerDuties>
-      GET_PROPOSER_DUTIES_REQUEST_RESPONSE =
-          withDataWrapper("GetProposerDutiesRequestResponse", PROPOSER_DUTIES_TYPE);
-
   public static final StringValueTypeDefinition<BLSPublicKey> PUBKEY_API_TYPE =
       DeserializableTypeDefinition.string(BLSPublicKey.class)
           .name("Pubkey")

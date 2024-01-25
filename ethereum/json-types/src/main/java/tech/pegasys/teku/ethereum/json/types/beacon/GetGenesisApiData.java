@@ -20,7 +20,6 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class GetGenesisApiData {
-
   private final UInt64 genesisTime;
   private final Bytes32 genesisValidatorsRoot;
   private final Bytes4 genesisForkVersion;
@@ -72,31 +71,5 @@ public class GetGenesisApiData {
         .add("genesisValidatorsRoot", genesisValidatorsRoot)
         .add("genesisForkVersion", genesisForkVersion)
         .toString();
-  }
-
-  public static final class GetGenesisApiDataBuilder {
-
-    private UInt64 genesisTime;
-    private Bytes32 genesisValidatorsRoot;
-    private Bytes4 genesisForkVersion;
-
-    public GetGenesisApiDataBuilder genesisTime(UInt64 genesisTime) {
-      this.genesisTime = genesisTime;
-      return this;
-    }
-
-    public GetGenesisApiDataBuilder genesisValidatorsRoot(Bytes32 genesisValidatorsRoot) {
-      this.genesisValidatorsRoot = genesisValidatorsRoot;
-      return this;
-    }
-
-    public GetGenesisApiDataBuilder genesisForkVersion(Bytes4 genesisForkVersion) {
-      this.genesisForkVersion = genesisForkVersion;
-      return this;
-    }
-
-    public GetGenesisApiData build() {
-      return new GetGenesisApiData(genesisTime, genesisValidatorsRoot, genesisForkVersion);
-    }
   }
 }
