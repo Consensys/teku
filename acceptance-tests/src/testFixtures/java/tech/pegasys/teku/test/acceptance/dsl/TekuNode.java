@@ -938,6 +938,11 @@ public class TekuNode extends Node {
       return this;
     }
 
+    public Config withStopVcWhenValidatorSlashedEnabled() {
+      configMap.put("Xshut-down-when-validator-slashed-enabled", true);
+      return this;
+    }
+
     public Config withExitWhenNoValidatorKeysEnabled(boolean exitWhenNoValidatorKeysEnabled) {
       configMap.put("exit-when-no-validator-keys-enabled", exitWhenNoValidatorKeysEnabled);
       return this;

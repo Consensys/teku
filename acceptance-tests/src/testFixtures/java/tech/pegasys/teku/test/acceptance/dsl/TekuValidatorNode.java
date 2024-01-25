@@ -291,7 +291,7 @@ public class TekuValidatorNode extends Node {
     }
 
     public TekuValidatorNode.Config withStopVcWhenValidatorSlashedEnabled() {
-      configMap.put("--Xshut-down-when-validator-slashed-enabled", true);
+      configMap.put("Xshut-down-when-validator-slashed-enabled", true);
       return this;
     }
 

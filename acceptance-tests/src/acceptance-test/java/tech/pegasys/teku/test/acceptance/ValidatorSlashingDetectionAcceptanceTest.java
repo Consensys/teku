@@ -31,7 +31,149 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
   private final String network = "swift";
 
   @Test
-  void shouldShutDownVC() throws Exception {
+  void shouldShutDownWhenOwnedValidatorSlashed_SingleProcess_SinglePeer() throws Exception {
+
+    final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
+    final UInt64 altairEpoch = UInt64.valueOf(100);
+
+    final TekuNode tekuNode =
+        createTekuNode(
+            config ->
+                configureNode(config, genesisTime)
+                    .withAltairEpoch(altairEpoch)
+                    .withStopVcWhenValidatorSlashedEnabled()
+                    .withInteropValidators(0, 32));
+
+    tekuNode.start();
+
+    tekuNode.waitForEpochAtOrAbove(2);
+
+    final GetBlockHeaderResponse blockHeaderResponse = tekuNode.getBlockHeader("3");
+    final BeaconBlockHeader beaconBlockHeader =
+        blockHeaderResponse.data.header.message.asInternalBeaconBlockHeader();
+
+    final int validatorIndex = beaconBlockHeader.getProposerIndex().intValue();
+    final List<BLSKeyPair> blsKeyPairs =
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorIndex + 1);
+    final BLSKeyPair validatorKeyPair = blsKeyPairs.get(validatorIndex);
+
+    tekuNode.postProposerSlashing(
+        beaconBlockHeader.getSlot(),
+        beaconBlockHeader.getProposerIndex(),
+        beaconBlockHeader.getParentRoot(),
+        beaconBlockHeader.getStateRoot(),
+        beaconBlockHeader.getBodyRoot(),
+        validatorKeyPair.getSecretKey());
+
+    tekuNode.waitForLogMessageContaining(
+        String.format(
+            "Validator(s) with public key(s) %s got slashed. Shutting down...",
+            validatorKeyPair.getPublicKey().toHexString()));
+  }
+
+  @Test
+  void shouldShutDownWhenOwnedValidatorSlashed_StandAloneVC_SinglePeer() throws Exception {
+
+    final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
+    final UInt64 altairEpoch = UInt64.valueOf(100);
+
+    final TekuNode beaconNode =
+        createTekuNode(config -> configureNode(config, genesisTime).withAltairEpoch(altairEpoch));
+
+    final TekuValidatorNode validatorClient =
+        createValidatorNode(
+            config ->
+                config
+                    .withNetwork("auto")
+                    .withStopVcWhenValidatorSlashedEnabled()
+                    .withInteropValidators(0, 32)
+                    .withBeaconNode(beaconNode));
+
+    beaconNode.start();
+    validatorClient.start();
+
+    beaconNode.waitForEpochAtOrAbove(2);
+
+    final GetBlockHeaderResponse blockHeaderResponse = beaconNode.getBlockHeader("3");
+    final BeaconBlockHeader beaconBlockHeader =
+        blockHeaderResponse.data.header.message.asInternalBeaconBlockHeader();
+
+    final int validatorIndex = beaconBlockHeader.getProposerIndex().intValue();
+    final List<BLSKeyPair> blsKeyPairs =
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorIndex + 1);
+    final BLSKeyPair validatorKeyPair = blsKeyPairs.get(validatorIndex);
+
+    beaconNode.postProposerSlashing(
+        beaconBlockHeader.getSlot(),
+        beaconBlockHeader.getProposerIndex(),
+        beaconBlockHeader.getParentRoot(),
+        beaconBlockHeader.getStateRoot(),
+        beaconBlockHeader.getBodyRoot(),
+        validatorKeyPair.getSecretKey());
+
+    validatorClient.waitForLogMessageContaining(
+        String.format(
+            "Validator(s) with public key(s) %s got slashed. Shutting down...",
+            validatorKeyPair.getPublicKey().toHexString()));
+  }
+
+  @Test
+  void shouldShutDownWhenOwnedValidatorSlashed_SingleProcess_MultiplePeers() throws Exception {
+
+    final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
+    final UInt64 altairEpoch = UInt64.valueOf(100);
+
+    final TekuNode firstTekuNode =
+        createTekuNode(
+            config ->
+                configureNode(config, genesisTime)
+                    .withAltairEpoch(altairEpoch)
+                    .withInteropValidators(0, 32));
+
+    firstTekuNode.start();
+
+    firstTekuNode.waitForEpochAtOrAbove(1);
+
+    final TekuNode secondTekuNode =
+        createTekuNode(
+            config ->
+                configureNode(config, genesisTime)
+                    .withAltairEpoch(altairEpoch)
+                    .withStopVcWhenValidatorSlashedEnabled()
+                    .withInteropValidators(32, 32)
+                    .withPeers(firstTekuNode));
+
+    secondTekuNode.start();
+
+    firstTekuNode.waitForEpochAtOrAbove(2);
+
+    final GetBlockHeaderResponse blockHeaderResponse = firstTekuNode.getBlockHeader("3");
+    final BeaconBlockHeader beaconBlockHeader =
+        blockHeaderResponse.data.header.message.asInternalBeaconBlockHeader();
+
+    final int slashedValidatorIndex = 34;
+    final List<BLSKeyPair> blsKeyPairs =
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 34 + 1);
+    final BLSKeyPair validatorKeyPair = blsKeyPairs.get(slashedValidatorIndex);
+
+    firstTekuNode.postProposerSlashing(
+        beaconBlockHeader.getSlot(),
+        UInt64.valueOf(slashedValidatorIndex),
+        beaconBlockHeader.getParentRoot(),
+        beaconBlockHeader.getStateRoot(),
+        beaconBlockHeader.getBodyRoot(),
+        validatorKeyPair.getSecretKey());
+
+    secondTekuNode.waitForLogMessageContaining(
+        String.format(
+            "Validator(s) with public key(s) %s got slashed. Shutting down...",
+            validatorKeyPair.getPublicKey().toHexString()));
+
+    firstTekuNode.stop();
+  }
+
+  @Test
+  void shouldShutDownWhenOwnedValidatorSlashed_StandAloneVC_MultiplePeers() throws Exception {
 
     final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
     final UInt64 altairEpoch = UInt64.valueOf(100);
@@ -68,20 +210,20 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
 
     secondValidatorClient.start();
 
-    firstTekuNode.waitForEpochAtOrAbove(4);
+    firstTekuNode.waitForEpochAtOrAbove(2);
 
     final GetBlockHeaderResponse blockHeaderResponse = firstTekuNode.getBlockHeader("3");
     final BeaconBlockHeader beaconBlockHeader =
         blockHeaderResponse.data.header.message.asInternalBeaconBlockHeader();
 
-    final int validatorIndex = beaconBlockHeader.getProposerIndex().intValue();
+    final int slashedValidatorIndex = 34;
     final List<BLSKeyPair> blsKeyPairs =
-        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, validatorIndex + 1);
-    final BLSKeyPair validatorKeyPair = blsKeyPairs.get(validatorIndex);
+        new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 34 + 1);
+    final BLSKeyPair validatorKeyPair = blsKeyPairs.get(slashedValidatorIndex);
 
     firstTekuNode.postProposerSlashing(
         beaconBlockHeader.getSlot(),
-        beaconBlockHeader.getProposerIndex(),
+        UInt64.valueOf(slashedValidatorIndex),
         beaconBlockHeader.getParentRoot(),
         beaconBlockHeader.getStateRoot(),
         beaconBlockHeader.getBodyRoot(),
@@ -89,10 +231,11 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
 
     secondValidatorClient.waitForLogMessageContaining(
         String.format(
-            "Validator(s) with public key(s) %s got slashed. Shutting down validator client...",
-            validatorKeyPair.getPublicKey().toAbbreviatedString()));
+            "Validator(s) with public key(s) %s got slashed. Shutting down...",
+            validatorKeyPair.getPublicKey().toHexString()));
 
-    firstTekuNode.stop();
+    secondBeaconNode.stop();
+    secondValidatorClient.stop();
   }
 
   private TekuNode.Config configureNode(final TekuNode.Config node, final int genesisTime) {
