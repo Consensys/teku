@@ -67,7 +67,6 @@ import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.api.response.v1.HeadEvent;
 import tech.pegasys.teku.api.response.v1.beacon.FinalityCheckpointsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
-import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeaderResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetBlockRootResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateFinalityCheckpointsResponse;
@@ -118,9 +117,7 @@ public class TekuNode extends Node {
 
   private static final Logger LOG = LogManager.getLogger();
   public static final String LOCAL_VALIDATOR_LIVENESS_URL = "/eth/v1/validator/liveness/{epoch}";
-
   public static final String POST_PROPOSER_SLASHING_URL = "/eth/v1/beacon/pool/proposer_slashings";
-  public static final String GET_BLOCK_HEADER_URL = "/eth/v1/beacon/headers/{block_id}";
   private final Config config;
   private final Spec spec;
   private Optional<EventStreamListener> maybeEventStreamListener = Optional.empty();
@@ -299,13 +296,7 @@ public class TekuNode extends Node {
   }
 
   public String postProposerSlashing(
-      final UInt64 slot,
-      final UInt64 index,
-      final Bytes32 parentRoot,
-      final Bytes32 stateRoot,
-      final Bytes32 bodyRoot,
-      final BLSSecretKey secretKey)
-      throws IOException {
+      final UInt64 slot, final UInt64 index, final BLSSecretKey secretKey) throws IOException {
 
     final Fork fork = spec.getForkSchedule().getFork(spec.computeEpochAtSlot(slot));
     final Bytes32 genesisValidatorRoot = fetchGenesis().getGenesisValidatorsRoot();
@@ -313,7 +304,7 @@ public class TekuNode extends Node {
     final SigningRootUtil signingRootUtil = new SigningRootUtil(spec);
 
     final BeaconBlockHeader beaconBlockHeader1 =
-        new BeaconBlockHeader(slot, index, parentRoot, stateRoot, bodyRoot);
+        new BeaconBlockHeader(slot, index, Bytes32.random(), Bytes32.random(), Bytes32.random());
 
     final Bytes blockHeaderSigningRoot1 =
         signingRootUtil.signingRootForSignBlockHeader(
@@ -324,7 +315,7 @@ public class TekuNode extends Node {
         new SignedBeaconBlockHeader(beaconBlockHeader1, blsSignature1);
 
     final BeaconBlockHeader beaconBlockHeader2 =
-        new BeaconBlockHeader(slot, index, parentRoot, stateRoot, Bytes32.ZERO);
+        new BeaconBlockHeader(slot, index, Bytes32.random(), Bytes32.random(), Bytes32.random());
     final Bytes blockHeaderSigningRoot2 =
         signingRootUtil.signingRootForSignBlockHeader(
             beaconBlockHeader2.asInternalBeaconBlockHeader(), forkInfo);
@@ -337,11 +328,6 @@ public class TekuNode extends Node {
     final String body = JSON_PROVIDER.objectToJSON(proposerSlashing);
 
     return httpClient.post(getRestApiUrl(), POST_PROPOSER_SLASHING_URL, body);
-  }
-
-  public GetBlockHeaderResponse getBlockHeader(final String blockId) throws IOException {
-    final String response = httpClient.get(getRestApiUrl(), getBlockHeaderUrl(blockId));
-    return JSON_PROVIDER.jsonToObject(response, GetBlockHeaderResponse.class);
   }
 
   public void submitBlsToExecutionChange(
@@ -426,10 +412,6 @@ public class TekuNode extends Node {
 
   private String getValidatorLivenessUrl(final UInt64 epoch) {
     return LOCAL_VALIDATOR_LIVENESS_URL.replace("{epoch}", epoch.toString());
-  }
-
-  private String getBlockHeaderUrl(final String blockId) {
-    return GET_BLOCK_HEADER_URL.replace("{block_id}", blockId);
   }
 
   public void waitForGenesisTime(final UInt64 expectedGenesisTime) {

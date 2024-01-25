@@ -15,11 +15,9 @@ package tech.pegasys.teku.test.acceptance;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.beacon.GetBlockHeaderResponse;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
@@ -48,21 +46,14 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
 
     tekuNode.waitForEpochAtOrAbove(2);
 
-    final GetBlockHeaderResponse blockHeaderResponse = tekuNode.getBlockHeader("3");
-    final BeaconBlockHeader beaconBlockHeader =
-        blockHeaderResponse.data.header.message.asInternalBeaconBlockHeader();
-
-    final int slashedValidatorIndex = beaconBlockHeader.getProposerIndex().intValue();
+    final int slashedValidatorIndex = 3;
     final List<BLSKeyPair> blsKeyPairs =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, slashedValidatorIndex + 1);
     final BLSKeyPair slashedValidatorKeyPair = blsKeyPairs.get(slashedValidatorIndex);
 
     tekuNode.postProposerSlashing(
-        beaconBlockHeader.getSlot(),
+        UInt64.valueOf(3),
         UInt64.valueOf(slashedValidatorIndex),
-        beaconBlockHeader.getParentRoot(),
-        beaconBlockHeader.getStateRoot(),
-        beaconBlockHeader.getBodyRoot(),
         slashedValidatorKeyPair.getSecretKey());
 
     tekuNode.waitForLogMessageContaining(
@@ -94,21 +85,14 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
 
     beaconNode.waitForEpochAtOrAbove(2);
 
-    final GetBlockHeaderResponse blockHeaderResponse = beaconNode.getBlockHeader("3");
-    final BeaconBlockHeader beaconBlockHeader =
-        blockHeaderResponse.data.header.message.asInternalBeaconBlockHeader();
-
-    final int slashedValidatorIndex = beaconBlockHeader.getProposerIndex().intValue();
+    final int slashedValidatorIndex = 3;
     final List<BLSKeyPair> blsKeyPairs =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, slashedValidatorIndex + 1);
     final BLSKeyPair slashedValidatorKeyPair = blsKeyPairs.get(slashedValidatorIndex);
 
     beaconNode.postProposerSlashing(
-        beaconBlockHeader.getSlot(),
+        UInt64.valueOf(3),
         UInt64.valueOf(slashedValidatorIndex),
-        beaconBlockHeader.getParentRoot(),
-        beaconBlockHeader.getStateRoot(),
-        beaconBlockHeader.getBodyRoot(),
         slashedValidatorKeyPair.getSecretKey());
 
     validatorClient.waitForLogMessageContaining(
@@ -147,21 +131,14 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
 
     firstTekuNode.waitForEpochAtOrAbove(2);
 
-    final GetBlockHeaderResponse blockHeaderResponse = firstTekuNode.getBlockHeader("3");
-    final BeaconBlockHeader beaconBlockHeader =
-        blockHeaderResponse.data.header.message.asInternalBeaconBlockHeader();
-
     final int slashedValidatorIndex = 34;
     final List<BLSKeyPair> blsKeyPairs =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 34 + 1);
     final BLSKeyPair slashedValidatorKeyPair = blsKeyPairs.get(slashedValidatorIndex);
 
     firstTekuNode.postProposerSlashing(
-        beaconBlockHeader.getSlot(),
+        UInt64.valueOf(3),
         UInt64.valueOf(slashedValidatorIndex),
-        beaconBlockHeader.getParentRoot(),
-        beaconBlockHeader.getStateRoot(),
-        beaconBlockHeader.getBodyRoot(),
         slashedValidatorKeyPair.getSecretKey());
 
     secondTekuNode.waitForLogMessageContaining(
@@ -212,21 +189,14 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
 
     firstTekuNode.waitForEpochAtOrAbove(3);
 
-    final GetBlockHeaderResponse blockHeaderResponse = firstTekuNode.getBlockHeader("3");
-    final BeaconBlockHeader beaconBlockHeader =
-        blockHeaderResponse.data.header.message.asInternalBeaconBlockHeader();
-
     final int slashedValidatorIndex = 34;
     final List<BLSKeyPair> blsKeyPairs =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, 34 + 1);
     final BLSKeyPair slashedValidatorKeyPair = blsKeyPairs.get(slashedValidatorIndex);
 
     firstTekuNode.postProposerSlashing(
-        beaconBlockHeader.getSlot(),
+        UInt64.valueOf(3),
         UInt64.valueOf(slashedValidatorIndex),
-        beaconBlockHeader.getParentRoot(),
-        beaconBlockHeader.getStateRoot(),
-        beaconBlockHeader.getBodyRoot(),
         slashedValidatorKeyPair.getSecretKey());
 
     secondValidatorClient.waitForLogMessageContaining(
