@@ -13,13 +13,13 @@
 
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
-import static tech.pegasys.teku.ethereum.json.types.SharedApiTypes.GET_GENESIS_API_DATA_TYPE;
+import static tech.pegasys.teku.ethereum.json.types.beacon.GetGenesisApiDataBuilder.GET_GENESIS_API_DATA_TYPE;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_GENESIS;
 
 import java.util.Optional;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
-import tech.pegasys.teku.ethereum.json.types.wrappers.GetGenesisApiData;
+import tech.pegasys.teku.ethereum.json.types.beacon.GetGenesisApiData;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class GetGenesisRequest extends AbstractTypeDefRequest {

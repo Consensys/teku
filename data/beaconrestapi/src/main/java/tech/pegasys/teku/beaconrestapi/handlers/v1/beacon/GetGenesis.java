@@ -13,7 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
-import static tech.pegasys.teku.ethereum.json.types.SharedApiTypes.GET_GENESIS_API_DATA_TYPE;
+import static tech.pegasys.teku.ethereum.json.types.beacon.GetGenesisApiDataBuilder.GET_GENESIS_API_DATA_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
@@ -23,7 +23,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.ethereum.json.types.wrappers.GetGenesisApiData;
+import tech.pegasys.teku.ethereum.json.types.beacon.GetGenesisApiData;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
