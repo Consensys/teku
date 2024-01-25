@@ -290,6 +290,7 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
       protoArrayLock.readLock().unlock();
     }
   }
+
   @Override
   public Optional<UInt64> executionBlockNumber(final Bytes32 blockRoot) {
     protoArrayLock.readLock().lock();

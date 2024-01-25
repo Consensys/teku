@@ -72,7 +72,7 @@ public class BlockProposalUtil {
                       ? schemaDefinitions.getBlindedBeaconBlockSchema()
                       : schemaDefinitions.getBeaconBlockSchema();
               return beaconBlockSchema.create(
-                  newSlot,
+                  proposalSlot,
                   UInt64.valueOf(proposerIndex),
                   parentBlockSigningRoot,
                   tmpStateRoot,

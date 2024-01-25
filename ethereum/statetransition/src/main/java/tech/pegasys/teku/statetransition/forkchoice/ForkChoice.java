@@ -758,7 +758,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   private void notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
       final Optional<UInt64> proposingSlot) {
-    final ForkChoiceState forkChoiceState = forkChoiceStateProvider.getForkChoiceStateSync();
+    final ForkChoiceState forkChoiceState = forkChoiceStateProvider.getForkChoiceStateSync(false);
 
     notifyForkChoiceUpdated(forkChoiceState, proposingSlot);
 

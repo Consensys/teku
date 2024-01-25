@@ -214,8 +214,8 @@ public class ProposersDataManager implements SlotEventsChannel {
       try {
         final BeaconState preState = spec.processSlots(maybeState.get(), blockSlot);
         return SafeFuture.completedFuture(
-                calculatePayloadBuildingAttributes(
-                        currentHeadBlockRoot, blockSlot, epoch, Optional.of(preState), mandatory));
+            calculatePayloadBuildingAttributes(
+                currentHeadBlockRoot, blockSlot, epoch, Optional.of(preState), mandatory));
       } catch (SlotProcessingException | EpochProcessingException e) {
         LOG.error("Failed to process slots to get state current at blockSlot {}", blockSlot, e);
       }
