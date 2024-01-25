@@ -30,7 +30,7 @@ public interface BlockFactory {
 
   SafeFuture<BlockContainer> createUnsignedBlock(
       BeaconState blockSlotState,
-      UInt64 newSlot,
+      UInt64 proposalSlot,
       BLSSignature randaoReveal,
       Optional<Bytes32> optionalGraffiti,
       Optional<Boolean> requestedBlinded,

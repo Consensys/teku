@@ -45,14 +45,14 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
   @Override
   public SafeFuture<BlockContainer> createUnsignedBlock(
       final BeaconState blockSlotState,
-      final UInt64 newSlot,
+      final UInt64 proposalSlot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti,
       final Optional<Boolean> requestedBlinded,
       final BlockProductionPerformance blockProductionPerformance) {
     return super.createUnsignedBlock(
             blockSlotState,
-            newSlot,
+            proposalSlot,
             randaoReveal,
             optionalGraffiti,
             requestedBlinded,

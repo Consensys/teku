@@ -11,34 +11,37 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.api;
+package tech.pegasys.teku.ethereum.json.types.validator;
 
 import com.google.common.base.MoreObjects;
+import java.util.List;
 import java.util.Objects;
-import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import org.apache.tuweni.bytes.Bytes32;
 
-public class ProposerDuty {
-  private final BLSPublicKey publicKey;
-  private final int validatorIndex;
-  private final UInt64 slot;
+public class ProposerDuties {
+  private final Bytes32 dependentRoot;
+  private final boolean executionOptimistic;
+  private final List<ProposerDuty> duties;
 
-  public ProposerDuty(final BLSPublicKey publicKey, final int validatorIndex, final UInt64 slot) {
-    this.publicKey = publicKey;
-    this.validatorIndex = validatorIndex;
-    this.slot = slot;
+  public ProposerDuties(
+      final Bytes32 dependentRoot,
+      final List<ProposerDuty> duties,
+      final boolean executionOptimistic) {
+    this.dependentRoot = dependentRoot;
+    this.executionOptimistic = executionOptimistic;
+    this.duties = duties;
   }
 
-  public BLSPublicKey getPublicKey() {
-    return publicKey;
+  public Bytes32 getDependentRoot() {
+    return dependentRoot;
   }
 
-  public int getValidatorIndex() {
-    return validatorIndex;
+  public boolean isExecutionOptimistic() {
+    return executionOptimistic;
   }
 
-  public UInt64 getSlot() {
-    return slot;
+  public List<ProposerDuty> getDuties() {
+    return duties;
   }
 
   @Override
@@ -49,23 +52,20 @@ public class ProposerDuty {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final ProposerDuty that = (ProposerDuty) o;
-    return validatorIndex == that.validatorIndex
-        && Objects.equals(publicKey, that.publicKey)
-        && Objects.equals(slot, that.slot);
+    final ProposerDuties that = (ProposerDuties) o;
+    return Objects.equals(dependentRoot, that.dependentRoot) && Objects.equals(duties, that.duties);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(publicKey, validatorIndex, slot);
+    return Objects.hash(dependentRoot, duties);
   }
 
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-        .add("publicKey", publicKey)
-        .add("validatorIndex", validatorIndex)
-        .add("slot", slot)
+        .add("dependentRoot", dependentRoot)
+        .add("duties", duties)
         .toString();
   }
 }
