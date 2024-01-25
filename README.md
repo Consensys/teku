@@ -1,8 +1,8 @@
 # teku
 
  [![Build Status](https://circleci.com/gh/Consensys/teku.svg?style=svg)](https://circleci.com/gh/Consensys/workflows/teku)
- [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/Consensys/teku/blob/master/LICENSE)
- [![GitHub release (latest by date)](https://img.shields.io/github/v/release/Consensys/teku)](https://github.com/Consensys/teku/releases/latest)
+ [![License](https://img.shields.io/github/license/Consensys/teku.svg?logo=apache)](https://github.com/Consensys/teku/blob/master/LICENSE)
+ [![Documentation](https://img.shields.io/badge/docs-readme-blue?logo=docusaurus&logoColor=white)](https://docs.teku.consensys.io/)
  [![Discord](https://img.shields.io/badge/Chat-on%20Discord-%235865F2?logo=discord&logoColor=white)](https://discord.gg/7hPv2T6)
  [![Twitter Follow](https://img.shields.io/twitter/follow/Teku_Consensys)](https://twitter.com/Teku_Consensys)
  [![GitPOAP Badge](https://public-api.gitpoap.io/v1/repo/ConsenSys/teku/badge)](https://www.gitpoap.io/gh/ConsenSys/teku)
