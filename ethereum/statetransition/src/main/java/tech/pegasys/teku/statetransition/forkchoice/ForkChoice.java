@@ -29,6 +29,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
@@ -36,6 +38,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -100,6 +103,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final boolean forkChoiceLateBlockReorgEnabled;
   private Optional<Boolean> optimisticSyncing = Optional.empty();
 
+  private final LabelledMetric<Counter> getProposerHeadSelectedCounter;
+
   public ForkChoice(
       final Spec spec,
       final EventThread forkChoiceExecutor,
@@ -123,7 +128,12 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.tickProcessor = tickProcessor;
     this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
     LOG.debug("forkChoiceLateBlockReorgEnabled is set to {}", forkChoiceLateBlockReorgEnabled);
-
+    getProposerHeadSelectedCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.BEACON,
+            "get_proposer_head_selection_total",
+            "when late_block_reorg is enabled, counts based on the proposer parent being based on fork choice, head, or parent of head.",
+            "selected_source");
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
     forkChoiceNotifier.subscribeToForkChoiceUpdatedResult(this);
   }
@@ -347,6 +357,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final BeaconState justifiedState,
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint) {
+    if (forkChoiceLateBlockReorgEnabled) {
+      recentChainData.getStore().computeBalanceThresholds(justifiedState);
+    }
     final VoteUpdater transaction = recentChainData.startVoteUpdate();
     final ReadOnlyForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
     final List<UInt64> justifiedEffectiveBalances =
@@ -748,6 +761,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final ForkChoiceState forkChoiceState = forkChoiceStateProvider.getForkChoiceStateSync();
 
     forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState, proposingSlot);
+    getProposerHeadSelectedCounter.labels("fork_choice").inc();
 
     if (optimisticSyncing
         .map(oldValue -> !oldValue.equals(forkChoiceState.isHeadOptimistic()))

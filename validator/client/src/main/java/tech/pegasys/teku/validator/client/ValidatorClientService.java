@@ -51,8 +51,6 @@ import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
-import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
-import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAlert;
 import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.BlockDutyFactory;
@@ -72,6 +70,8 @@ import tech.pegasys.teku.validator.client.restapi.ValidatorRestApi;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
 import tech.pegasys.teku.validator.client.signer.BlockContainerSigner;
 import tech.pegasys.teku.validator.client.signer.MilestoneBasedBlockContainerSigner;
+import tech.pegasys.teku.validator.client.slashingriskactions.DoppelgangerDetectionAlert;
+import tech.pegasys.teku.validator.client.slashingriskactions.SlashingRiskAction;
 import tech.pegasys.teku.validator.eventadapter.InProcessBeaconNodeApi;
 import tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi;
 import tech.pegasys.teku.validator.remote.sentry.SentryBeaconNodeApi;
@@ -94,7 +94,7 @@ public class ValidatorClientService extends Service {
   private final ValidatorStatusProvider validatorStatusProvider;
   private ValidatorIndexProvider validatorIndexProvider;
   private Optional<DoppelgangerDetector> maybeDoppelgangerDetector = Optional.empty();
-  private final DoppelgangerDetectionAction doppelgangerDetectionAction;
+  private final SlashingRiskAction doppelgangerDetectionAction;
   private Optional<RestApi> maybeValidatorRestApi = Optional.empty();
   private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
   private final Optional<ValidatorRegistrator> validatorRegistrator;
@@ -115,7 +115,7 @@ public class ValidatorClientService extends Service {
       final Optional<ValidatorRegistrator> validatorRegistrator,
       final Spec spec,
       final MetricsSystem metricsSystem,
-      final DoppelgangerDetectionAction doppelgangerDetectionAction) {
+      final SlashingRiskAction doppelgangerDetectionAction) {
     this.eventChannels = eventChannels;
     this.validatorLoader = validatorLoader;
     this.beaconNodeApi = beaconNodeApi;
@@ -132,7 +132,7 @@ public class ValidatorClientService extends Service {
   public static ValidatorClientService create(
       final ServiceConfig services,
       final ValidatorClientConfiguration config,
-      final DoppelgangerDetectionAction doppelgangerDetectionAction) {
+      final SlashingRiskAction doppelgangerDetectionAction) {
     final EventChannels eventChannels = services.getEventChannels();
     final ValidatorConfig validatorConfig = config.getValidatorConfig();
 

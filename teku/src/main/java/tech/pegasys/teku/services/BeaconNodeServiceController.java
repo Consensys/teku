@@ -23,7 +23,7 @@ import tech.pegasys.teku.services.chainstorage.StorageService;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerService;
 import tech.pegasys.teku.services.powchain.PowchainService;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
-import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionShutDown;
+import tech.pegasys.teku.validator.client.slashingriskactions.DoppelgangerDetectionShutDown;
 
 public class BeaconNodeServiceController extends ServiceController {
 
