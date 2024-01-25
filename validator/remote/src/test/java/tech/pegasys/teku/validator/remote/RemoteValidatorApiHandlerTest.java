@@ -51,7 +51,6 @@ import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
-import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.response.v1.validator.ValidatorLiveness;
@@ -362,10 +361,10 @@ class RemoteValidatorApiHandlerTest {
 
   @Test
   public void getProposerDuties_WhenNoneFound_ReturnsEmpty() {
-    when(apiClient.getProposerDuties(any()))
+    when(typeDefClient.getProposerDuties(any()))
         .thenReturn(
             Optional.of(
-                new GetProposerDutiesResponse(
+                new ProposerDuties(
                     Bytes32.fromHexString("0x1234"), Collections.emptyList(), false)));
 
     SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(UInt64.ONE);
@@ -377,23 +376,21 @@ class RemoteValidatorApiHandlerTest {
   public void getProposerDuties_WhenFound_ReturnsDuties() {
     final BLSPublicKey blsPublicKey = dataStructureUtil.randomPublicKey();
     final int validatorIndex = 472;
-    final tech.pegasys.teku.api.response.v1.validator.ProposerDuty schemaValidatorDuties =
-        new tech.pegasys.teku.api.response.v1.validator.ProposerDuty(
-            new BLSPubKey(blsPublicKey), validatorIndex, UInt64.ZERO);
+    final ProposerDuty schemaValidatorDuties =
+        new ProposerDuty(blsPublicKey, validatorIndex, UInt64.ZERO);
     final ProposerDuty expectedValidatorDuties =
         new ProposerDuty(blsPublicKey, validatorIndex, UInt64.ZERO);
-    final GetProposerDutiesResponse response =
-        new GetProposerDutiesResponse(
-            Bytes32.fromHexString("0x1234"), List.of(schemaValidatorDuties), false);
+    final ProposerDuties response =
+        new ProposerDuties(Bytes32.fromHexString("0x1234"), List.of(schemaValidatorDuties), false);
 
-    when(apiClient.getProposerDuties(UInt64.ONE)).thenReturn(Optional.of(response));
+    when(typeDefClient.getProposerDuties(UInt64.ONE)).thenReturn(Optional.of(response));
 
     SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(UInt64.ONE);
 
     ProposerDuties validatorDuties = unwrapToValue(future);
 
     assertThat(validatorDuties.getDuties().get(0)).isEqualTo(expectedValidatorDuties);
-    assertThat(validatorDuties.getDependentRoot()).isEqualTo(response.dependentRoot);
+    assertThat(validatorDuties.getDependentRoot()).isEqualTo(response.getDependentRoot());
   }
 
   @Test
