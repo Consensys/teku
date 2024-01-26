@@ -549,7 +549,7 @@ public class ExecutionBuilderModule {
       final Optional<UInt64> requestedBuilderBoostFactor) {
     final boolean isDefaultComparison;
     final Optional<?> actualComparisonFactor;
-    final Optional<String> comparisonFactorSource;
+    final String comparisonFactorSource;
 
     if (requestedBuilderBoostFactor.isPresent()) {
       // If the requestedBuilderBoostFactor is set,
@@ -557,29 +557,30 @@ public class ExecutionBuilderModule {
       isDefaultComparison =
           requestedBuilderBoostFactor.get().equals(UInt64.valueOf(HUNDRED_PERCENT));
       actualComparisonFactor = requestedBuilderBoostFactor;
-      comparisonFactorSource = Optional.of("VC");
+      comparisonFactorSource = "VC";
     } else if (builderBidCompareFactor.isPresent()) {
       isDefaultComparison = builderBidCompareFactor.get() == HUNDRED_PERCENT;
       actualComparisonFactor = builderBidCompareFactor;
-      comparisonFactorSource = Optional.of("BN");
+      comparisonFactorSource = "BN";
     } else {
       isDefaultComparison = true;
       actualComparisonFactor = Optional.empty();
-      comparisonFactorSource = Optional.empty();
+      comparisonFactorSource = "DEFAULT";
     }
 
     if (isDefaultComparison) {
       LOG.info(
-          "Local execution payload ({} ETH) is chosen over builder bid ({} ETH).",
+          "Local execution payload ({} ETH) is chosen over builder bid ({} ETH, compare factor MAX_PROFIT, compare factor source {}).",
           weiToEth(localPayloadValue),
-          weiToEth(builderBidValue));
+          weiToEth(builderBidValue),
+          comparisonFactorSource);
     } else {
       LOG.info(
           "Local execution payload ({} ETH) is chosen over builder bid ({} ETH, compare factor {}%, compare factor source {}).",
           weiToEth(localPayloadValue),
           weiToEth(builderBidValue),
           actualComparisonFactor.get(),
-          comparisonFactorSource.get());
+          comparisonFactorSource);
     }
   }
 }
