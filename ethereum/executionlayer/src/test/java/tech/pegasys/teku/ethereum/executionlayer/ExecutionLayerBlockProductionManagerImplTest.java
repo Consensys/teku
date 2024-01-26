@@ -23,6 +23,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.ethereum.executionlayer.ExecutionBuilderModule.BUILDER_BOOST_FACTOR_MAX_PROFIT;
 
 import java.util.Optional;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -558,7 +559,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
             ? new BuilderBidValidatorImpl(spec, eventLogger)
             : BuilderBidValidator.NOOP,
         builderCircuitBreaker,
-        Optional.of(100),
+            BUILDER_BOOST_FACTOR_MAX_PROFIT,
         true);
   }
 

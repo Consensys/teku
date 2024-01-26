@@ -16,10 +16,12 @@ package tech.pegasys.teku.services.executionlayer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
+import static tech.pegasys.teku.ethereum.executionlayer.ExecutionBuilderModule.BUILDER_BOOST_FACTOR_PREFER_BUILDER;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.BUILDER_ALWAYS_KEYWORD;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 
@@ -65,19 +67,23 @@ public class ExecutionLayerConfigurationTest {
   public void shouldParseBuilderBidCompareFactor() {
     final ExecutionLayerConfiguration.Builder builder1 =
         configBuilder.specProvider(bellatrixSpec).builderBidCompareFactor("50");
-    assertThat(builder1.build().getBuilderBidCompareFactor()).contains(50);
+    assertThat(builder1.build().getBuilderBidCompareFactor())
+        .isEqualByComparingTo(UInt64.valueOf(50));
     final ExecutionLayerConfiguration.Builder builder2 =
         configBuilder.specProvider(bellatrixSpec).builderBidCompareFactor("50%");
-    assertThat(builder2.build().getBuilderBidCompareFactor()).contains(50);
+    assertThat(builder2.build().getBuilderBidCompareFactor())
+        .isEqualByComparingTo(UInt64.valueOf(50));
     final ExecutionLayerConfiguration.Builder builder3 =
         configBuilder.specProvider(bellatrixSpec).builderBidCompareFactor("Builder_ALWAYS");
-    assertThat(builder3.build().getBuilderBidCompareFactor()).isEmpty();
+    assertThat(builder3.build().getBuilderBidCompareFactor())
+        .isEqualByComparingTo(BUILDER_BOOST_FACTOR_PREFER_BUILDER);
   }
 
   @Test
   public void shouldHaveCorrectDefaultBuilderBidCompareFactor() {
     final ExecutionLayerConfiguration.Builder builder1 = configBuilder.specProvider(bellatrixSpec);
-    assertThat(builder1.build().getBuilderBidCompareFactor()).contains(100);
+    assertThat(builder1.build().getBuilderBidCompareFactor())
+        .isEqualByComparingTo(UInt64.valueOf(50));
   }
 
   @Test

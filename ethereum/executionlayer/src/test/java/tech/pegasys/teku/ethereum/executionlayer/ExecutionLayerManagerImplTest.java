@@ -22,6 +22,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.ethereum.executionlayer.ExecutionBuilderModule.BUILDER_BOOST_FACTOR_MAX_PROFIT;
+import static tech.pegasys.teku.ethereum.executionlayer.ExecutionBuilderModule.BUILDER_BOOST_FACTOR_PREFER_BUILDER;
 
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -345,7 +347,7 @@ class ExecutionLayerManagerImplTest {
   public void
       builderGetHeaderGetPayload_shouldReturnEnginePayloadWhenValueLowerButBetterWithFactor() {
     // Setup requires local payload to have at lest 50% value of builder's to win
-    executionLayerManager = createExecutionLayerChannelImpl(true, false, Optional.of(50));
+    executionLayerManager = createExecutionLayerChannelImpl(true, false, UInt64.valueOf(50));
     setBuilderOnline();
 
     final ExecutionPayloadContext executionPayloadContext =
@@ -392,7 +394,7 @@ class ExecutionLayerManagerImplTest {
   @Test
   public void builderGetHeaderGetPayload_shouldReturnBuilderPayloadWhenBuilderWonLocal() {
     // Setup requires local payload to have at lest 50% value of builder's to win
-    executionLayerManager = createExecutionLayerChannelImpl(true, false, Optional.of(50));
+    executionLayerManager = createExecutionLayerChannelImpl(true, false, UInt64.valueOf(50));
     setBuilderOnline();
 
     final ExecutionPayloadContext executionPayloadContext =
@@ -424,7 +426,7 @@ class ExecutionLayerManagerImplTest {
   @Test
   public void builderGetHeaderGetPayload_shouldGivePriorityToRequestedBuilderBoostFactor() {
     // Beacon node setup requires local payload to have at lest 50% value of builder's to win
-    executionLayerManager = createExecutionLayerChannelImpl(true, false, Optional.of(50));
+    executionLayerManager = createExecutionLayerChannelImpl(true, false, UInt64.valueOf(50));
     setBuilderOnline();
 
     final ExecutionPayloadContext executionPayloadContext =
@@ -474,7 +476,8 @@ class ExecutionLayerManagerImplTest {
   public void
       builderGetHeaderGetPayload_shouldReturnBuilderPayloadWhenBuilderFactorIsAlwaysBuilder() {
     // Setup will always ignore local payload in favor of Builder bid
-    executionLayerManager = createExecutionLayerChannelImpl(true, false, Optional.empty());
+    executionLayerManager =
+        createExecutionLayerChannelImpl(true, false, BUILDER_BOOST_FACTOR_PREFER_BUILDER);
     setBuilderOnline();
 
     final ExecutionPayloadContext executionPayloadContext =
@@ -508,7 +511,8 @@ class ExecutionLayerManagerImplTest {
   public void
       builderGetHeaderGetPayload_shouldReturnLocalPayloadWhenBuilderFactorIsAlwaysBuilderAndBidValidationFails() {
     // Setup will always ignore local payload in favor of Builder bid
-    executionLayerManager = createExecutionLayerChannelImpl(true, true, Optional.empty());
+    executionLayerManager =
+        createExecutionLayerChannelImpl(true, true, BUILDER_BOOST_FACTOR_PREFER_BUILDER);
     setBuilderOnline();
 
     final ExecutionPayloadContext executionPayloadContext =
@@ -1157,13 +1161,13 @@ class ExecutionLayerManagerImplTest {
   private ExecutionLayerManagerImpl createExecutionLayerChannelImpl(
       final boolean builderEnabled, final boolean builderValidatorEnabled) {
     return createExecutionLayerChannelImpl(
-        builderEnabled, builderValidatorEnabled, Optional.of(100));
+        builderEnabled, builderValidatorEnabled, BUILDER_BOOST_FACTOR_MAX_PROFIT);
   }
 
   private ExecutionLayerManagerImpl createExecutionLayerChannelImpl(
       final boolean builderEnabled,
       final boolean builderValidatorEnabled,
-      final Optional<Integer> builderBidCompareFactor) {
+      final UInt64 builderBidCompareFactor) {
     when(builderCircuitBreaker.isEngaged(any())).thenReturn(false);
     return ExecutionLayerManagerImpl.create(
         eventLogger,

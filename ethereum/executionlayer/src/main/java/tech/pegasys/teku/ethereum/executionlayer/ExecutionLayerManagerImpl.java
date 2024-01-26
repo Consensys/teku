@@ -79,7 +79,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final MetricsSystem metricsSystem,
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
-      final Optional<Integer> builderBidCompareFactor,
+      final UInt64 builderBidCompareFactor,
       final boolean useShouldOverrideBuilderFlag) {
     final LabelledMetric<Counter> executionPayloadSourceCounter =
         metricsSystem.createLabelledCounter(
@@ -146,7 +146,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
       final LabelledMetric<Counter> executionPayloadSourceCounter,
-      final Optional<Integer> builderBidCompareFactor,
+      final UInt64 builderBidCompareFactor,
       final boolean useShouldOverrideBuilderFlag) {
     this.executionClientHandler = executionClientHandler;
     this.spec = spec;
