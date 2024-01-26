@@ -223,7 +223,7 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
     final BLSKeyPair slashedValidatorKeyPair = blsKeyPairs.get(slashedValidatorIndex);
 
     postSlashing(
-        UInt64.valueOf(3),
+        UInt64.valueOf(60),
         UInt64.valueOf(slashedValidatorIndex),
         slashedValidatorKeyPair.getSecretKey(),
         firstTekuNode,
