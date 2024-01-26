@@ -547,28 +547,28 @@ public class ExecutionBuilderModule {
       final UInt256 builderBidValue,
       final UInt256 localPayloadValue,
       final Optional<UInt64> requestedBuilderBoostFactor) {
-    final boolean isDefaultComparisonVC;
+    final boolean isDefaultComparison;
     final Optional<?> actualComparisonFactor;
     final Optional<String> comparisonFactorSource;
 
     if (requestedBuilderBoostFactor.isPresent()) {
       // If the requestedBuilderBoostFactor is set,
       // we always use it over builderBidCompareFactor to determine whether the local payload wins
-      isDefaultComparisonVC =
+      isDefaultComparison =
           requestedBuilderBoostFactor.get().equals(UInt64.valueOf(HUNDRED_PERCENT));
       actualComparisonFactor = requestedBuilderBoostFactor;
       comparisonFactorSource = Optional.of("VC");
     } else if (builderBidCompareFactor.isPresent()) {
-      isDefaultComparisonVC = builderBidCompareFactor.get() == HUNDRED_PERCENT;
+      isDefaultComparison = builderBidCompareFactor.get() == HUNDRED_PERCENT;
       actualComparisonFactor = builderBidCompareFactor;
       comparisonFactorSource = Optional.of("BN");
     } else {
-      isDefaultComparisonVC = true;
+      isDefaultComparison = true;
       actualComparisonFactor = Optional.empty();
       comparisonFactorSource = Optional.empty();
     }
 
-    if (isDefaultComparisonVC) {
+    if (isDefaultComparison) {
       LOG.info(
           "Local execution payload ({} ETH) is chosen over builder bid ({} ETH).",
           weiToEth(localPayloadValue),
