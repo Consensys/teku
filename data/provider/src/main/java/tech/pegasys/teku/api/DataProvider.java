@@ -45,6 +45,7 @@ public class DataProvider {
   private final ValidatorDataProvider validatorDataProvider;
   private final NodeDataProvider nodeDataProvider;
   private final ConfigProvider configProvider;
+  private final ExecutionClientDataProvider executionClientDataProvider;
 
   private DataProvider(
       final ConfigProvider configProvider,
@@ -52,13 +53,15 @@ public class DataProvider {
       final NodeDataProvider nodeDataProvider,
       final ChainDataProvider chainDataProvider,
       final SyncDataProvider syncDataProvider,
-      final ValidatorDataProvider validatorDataProvider) {
+      final ValidatorDataProvider validatorDataProvider,
+      final ExecutionClientDataProvider executionClientDataProvider) {
     this.configProvider = configProvider;
     this.networkDataProvider = networkDataProvider;
     this.nodeDataProvider = nodeDataProvider;
     this.chainDataProvider = chainDataProvider;
     this.syncDataProvider = syncDataProvider;
     this.validatorDataProvider = validatorDataProvider;
+    this.executionClientDataProvider = executionClientDataProvider;
   }
 
   public ConfigProvider getConfigProvider() {
@@ -83,6 +86,10 @@ public class DataProvider {
 
   public NodeDataProvider getNodeDataProvider() {
     return nodeDataProvider;
+  }
+
+  public ExecutionClientDataProvider getExecutionClientDataProvider() {
+    return executionClientDataProvider;
   }
 
   public static DataProvider.Builder builder() {
@@ -254,19 +261,23 @@ public class DataProvider {
               combinedChainDataClient,
               executionLayerBlockProductionManager,
               rewardCalculator);
+      final ExecutionClientDataProvider executionClientDataProvider =
+          new ExecutionClientDataProvider();
 
       checkNotNull(configProvider, "Expect config Provider");
       checkNotNull(networkDataProvider, "Expect Network Data Provider");
       checkNotNull(chainDataProvider, "Expect Chain Data Provider");
       checkNotNull(syncDataProvider, "Expect Sync Data Provider");
       checkNotNull(validatorDataProvider, "Expect Validator Data Provider");
+      checkNotNull(executionClientDataProvider, "Expect Execution Client Data Provider");
       return new DataProvider(
           configProvider,
           networkDataProvider,
           nodeDataProvider,
           chainDataProvider,
           syncDataProvider,
-          validatorDataProvider);
+          validatorDataProvider,
+          executionClientDataProvider);
     }
 
     public Builder rejectedExecutionSupplier(final IntSupplier rejectedExecutionCountSupplier) {

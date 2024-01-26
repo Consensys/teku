@@ -22,6 +22,10 @@ public interface SlashingRiskAction {
 
   void perform(final List<BLSPublicKey> doppelgangers);
 
+  default void perform(BLSPublicKey pubKey) {
+    perform(List.of(pubKey));
+  }
+
   default void shutdown() {
     System.exit(FATAL_EXIT_CODE);
   }

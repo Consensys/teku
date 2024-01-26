@@ -156,6 +156,23 @@ class ValidatorIndexProviderTest {
     assertThat(result).isCompletedWithValue(IntList.of(1));
   }
 
+  @Test
+  void shouldGetPublicKeyByIndex() {
+    final BLSPublicKey key2 = dataStructureUtil.randomPublicKey();
+    final BLSPublicKey key3 = dataStructureUtil.randomPublicKey();
+    final OwnedValidators validators = ownedValidatorsWithKeys(key1, key2, key3);
+    final ValidatorIndexProvider provider =
+        new ValidatorIndexProvider(validators, validatorApiChannel, asyncRunner);
+
+    when(validatorApiChannel.getValidatorIndices(validators.getPublicKeys()))
+        .thenReturn(SafeFuture.completedFuture(Map.of(key1, 1, key2, 20, key3, 300)));
+    provider.lookupValidators();
+    assertThat(provider.getPublicKey(1)).contains(key1);
+    assertThat(provider.getPublicKey(20)).contains(key2);
+    assertThat(provider.getPublicKey(300)).contains(key3);
+    assertThat(provider.getPublicKey(400)).isEmpty();
+  }
+
   private OwnedValidators ownedValidatorsWithKeys(final BLSPublicKey... keys) {
     final Map<BLSPublicKey, Validator> validators = new HashMap<>();
     for (BLSPublicKey key : keys) {
