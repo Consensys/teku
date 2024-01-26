@@ -303,7 +303,7 @@ public class ExecutionLayerConfiguration {
       final UInt64 builderBidCompareFactorUint64;
       try {
         builderBidCompareFactorUint64 = UInt64.valueOf(Integer.parseInt(builderBidCompareFactor));
-      } catch (final NumberFormatException | ArithmeticException ex) {
+      } catch (final IllegalArgumentException ex) {
         throw new InvalidConfigurationException(
             "Expecting a number >= 0, percentage or "
                 + BUILDER_ALWAYS_KEYWORD

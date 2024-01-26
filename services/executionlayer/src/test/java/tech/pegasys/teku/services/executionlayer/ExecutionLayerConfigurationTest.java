@@ -16,6 +16,7 @@ package tech.pegasys.teku.services.executionlayer;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
+import static tech.pegasys.teku.ethereum.executionlayer.ExecutionBuilderModule.BUILDER_BOOST_FACTOR_MAX_PROFIT;
 import static tech.pegasys.teku.ethereum.executionlayer.ExecutionBuilderModule.BUILDER_BOOST_FACTOR_PREFER_BUILDER;
 import static tech.pegasys.teku.services.executionlayer.ExecutionLayerConfiguration.BUILDER_ALWAYS_KEYWORD;
 
@@ -45,9 +46,12 @@ public class ExecutionLayerConfigurationTest {
     final ExecutionLayerConfiguration.Builder builder =
         configBuilder.specProvider(bellatrixSpec).builderBidCompareFactor("-100");
 
-    assertThatExceptionOfType(IllegalArgumentException.class)
+    assertThatExceptionOfType(InvalidConfigurationException.class)
         .isThrownBy(builder::build)
-        .withMessageContaining("Builder bid compare factor percentage should be >= 0");
+        .withMessageContaining(
+            "Expecting a number >= 0, percentage or "
+                + BUILDER_ALWAYS_KEYWORD
+                + " keyword for Builder bid compare factor");
   }
 
   @Test
@@ -58,7 +62,7 @@ public class ExecutionLayerConfigurationTest {
     assertThatExceptionOfType(InvalidConfigurationException.class)
         .isThrownBy(builder::build)
         .withMessageContaining(
-            "Expecting number, percentage or "
+            "Expecting a number >= 0, percentage or "
                 + BUILDER_ALWAYS_KEYWORD
                 + " keyword for Builder bid compare factor");
   }
@@ -83,7 +87,7 @@ public class ExecutionLayerConfigurationTest {
   public void shouldHaveCorrectDefaultBuilderBidCompareFactor() {
     final ExecutionLayerConfiguration.Builder builder1 = configBuilder.specProvider(bellatrixSpec);
     assertThat(builder1.build().getBuilderBidCompareFactor())
-        .isEqualByComparingTo(UInt64.valueOf(50));
+        .isEqualByComparingTo(BUILDER_BOOST_FACTOR_MAX_PROFIT);
   }
 
   @Test
