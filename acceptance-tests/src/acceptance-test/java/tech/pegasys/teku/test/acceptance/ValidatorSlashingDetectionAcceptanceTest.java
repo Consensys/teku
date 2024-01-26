@@ -218,7 +218,7 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
 
     secondValidatorClient.start();
 
-    firstTekuNode.waitForEpochAtOrAbove(3);
+    firstTekuNode.waitForEpochAtOrAbove(2);
 
     final int slashedValidatorIndex = 34;
     final List<BLSKeyPair> blsKeyPairs =
@@ -226,7 +226,7 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
     final BLSKeyPair slashedValidatorKeyPair = blsKeyPairs.get(slashedValidatorIndex);
 
     postSlashing(
-        UInt64.valueOf(3),
+        UInt64.valueOf(60),
         UInt64.valueOf(slashedValidatorIndex),
         slashedValidatorKeyPair.getSecretKey(),
         firstTekuNode,
