@@ -559,7 +559,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
             ? new BuilderBidValidatorImpl(spec, eventLogger)
             : BuilderBidValidator.NOOP,
         builderCircuitBreaker,
-            BUILDER_BOOST_FACTOR_MAX_PROFIT,
+        BUILDER_BOOST_FACTOR_MAX_PROFIT,
         true);
   }
 
