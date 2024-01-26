@@ -422,6 +422,55 @@ class ExecutionLayerManagerImplTest {
   }
 
   @Test
+  public void builderGetHeaderGetPayload_shouldGivePriorityToRequestedProposerBoostFactor() {
+    // Beacon node setup requires local payload to have at lest 50% value of builder's to win
+    executionLayerManager = createExecutionLayerChannelImpl(true, false, Optional.of(50));
+    setBuilderOnline();
+
+    final ExecutionPayloadContext executionPayloadContext =
+        dataStructureUtil.randomPayloadExecutionContext(false, true);
+    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+    final BeaconState state = dataStructureUtil.randomBeaconState(slot);
+
+    final UInt256 builderValue =
+        prepareBuilderGetHeaderResponse(
+                executionPayloadContext, false, builderExecutionPayloadValue)
+            .getValue();
+    // we prepare a local value that will lose over builder with 50% factor
+    final UInt256 localValueOverride = builderValue.multiply(49).divide(100);
+    final ExecutionPayload localExecutionPayload =
+        prepareEngineGetPayloadResponse(executionPayloadContext, localValueOverride, slot)
+            .getExecutionPayload();
+
+    // we expect result from the local engine
+    final ExecutionPayloadHeader expectedHeader =
+        spec.getGenesisSpec()
+            .getSchemaDefinitions()
+            .toVersionBellatrix()
+            .orElseThrow()
+            .getExecutionPayloadHeaderSchema()
+            .createFromExecutionPayload(localExecutionPayload);
+
+    // we expect local engine header as result
+    final HeaderWithFallbackData expectedResult =
+        HeaderWithFallbackData.create(
+            expectedHeader,
+            new FallbackData(localExecutionPayload, FallbackReason.LOCAL_BLOCK_VALUE_WON));
+    final SafeFuture<UInt256> blockValueResult = new SafeFuture<>();
+    // we set the requestedProposerBoostFactor to 48% so that the local value will win
+    assertThat(
+            executionLayerManager.builderGetHeader(
+                executionPayloadContext,
+                state,
+                blockValueResult,
+                Optional.of(UInt64.valueOf(48)),
+                BlockProductionPerformance.NOOP))
+        .isCompletedWithValue(expectedResult);
+    assertThat(blockValueResult).isCompletedWithValue(localValueOverride);
+    verifyFallbackToLocalEL(slot, executionPayloadContext, expectedResult);
+  }
+
+  @Test
   public void
       builderGetHeaderGetPayload_shouldReturnBuilderPayloadWhenBuilderFactorIsAlwaysBuilder() {
     // Setup will always ignore local payload in favor of Builder bid
