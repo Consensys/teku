@@ -85,7 +85,8 @@ public interface ValidatorApiChannel extends ChannelInterface {
             UInt64 slot,
             BLSSignature randaoReveal,
             Optional<Bytes32> graffiti,
-            Optional<Boolean> requestedBlinded) {
+            Optional<Boolean> requestedBlinded,
+            Optional<UInt64> requestedBuilderBoostFactor) {
           return SafeFuture.completedFuture(Optional.empty());
         }
 
@@ -200,7 +201,8 @@ public interface ValidatorApiChannel extends ChannelInterface {
       UInt64 slot,
       BLSSignature randaoReveal,
       Optional<Bytes32> graffiti,
-      Optional<Boolean> requestedBlinded);
+      Optional<Boolean> requestedBlinded,
+      Optional<UInt64> requestedBuilderBoostFactor);
 
   SafeFuture<Optional<AttestationData>> createAttestationData(UInt64 slot, int committeeIndex);
 

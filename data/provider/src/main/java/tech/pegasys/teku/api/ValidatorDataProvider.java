@@ -115,16 +115,21 @@ public class ValidatorDataProvider {
       final UInt64 slot,
       final BLSSignature randao,
       final Optional<Bytes32> graffiti,
-      final boolean isBlinded) {
+      final boolean isBlinded,
+      final Optional<UInt64> requestedBuilderBoostFactor) {
     checkBlockProducingParameters(slot, randao);
-    return validatorApiChannel.createUnsignedBlock(slot, randao, graffiti, Optional.of(isBlinded));
+    return validatorApiChannel.createUnsignedBlock(
+        slot, randao, graffiti, Optional.of(isBlinded), requestedBuilderBoostFactor);
   }
 
   public SafeFuture<Optional<BlockContainerAndMetaData<BlockContainer>>> produceBlock(
-      final UInt64 slot, final BLSSignature randao, final Optional<Bytes32> graffiti) {
+      final UInt64 slot,
+      final BLSSignature randao,
+      final Optional<Bytes32> graffiti,
+      final Optional<UInt64> requestedBuilderBoostFactor) {
     checkBlockProducingParameters(slot, randao);
     return validatorApiChannel
-        .createUnsignedBlock(slot, randao, graffiti, Optional.empty())
+        .createUnsignedBlock(slot, randao, graffiti, Optional.empty(), requestedBuilderBoostFactor)
         .thenCompose(this::lookUpBlockValues);
   }
 
@@ -230,7 +235,11 @@ public class ValidatorDataProvider {
       throw new IllegalArgumentException(NO_RANDAO_PROVIDED);
     }
     return getUnsignedBeaconBlockAtSlot(
-        slot, BLSSignature.fromBytesCompressed(randao.toSSZBytes()), graffiti, false);
+        slot,
+        BLSSignature.fromBytesCompressed(randao.toSSZBytes()),
+        graffiti,
+        false,
+        Optional.empty());
   }
 
   public SpecMilestone getMilestoneAtSlot(final UInt64 slot) {

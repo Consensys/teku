@@ -15,10 +15,13 @@ package tech.pegasys.teku.validator.remote.typedef.handlers;
 
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.BUILDER_BOOST_FACTOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CONSENSUS_BLOCK_VALUE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_PAYLOAD_BLINDED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_PAYLOAD_VALUE;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.GRAFFITI;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RANDAO_REVEAL;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT256_TYPE;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_UNSIGNED_BLOCK_V3;
@@ -101,11 +104,15 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
   }
 
   public Optional<BlockContainer> createUnsignedBlock(
-      final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
+      final BLSSignature randaoReveal,
+      final Optional<Bytes32> graffiti,
+      final Optional<UInt64> requestedBuilderBoostFactor) {
     final Map<String, String> queryParams = new HashMap<>();
-    queryParams.put("randao_reveal", randaoReveal.toString());
+    queryParams.put(RANDAO_REVEAL, randaoReveal.toString());
     final Map<String, String> headers = new HashMap<>();
-    graffiti.ifPresent(bytes32 -> queryParams.put("graffiti", bytes32.toHexString()));
+    graffiti.ifPresent(bytes32 -> queryParams.put(GRAFFITI, bytes32.toHexString()));
+    requestedBuilderBoostFactor.ifPresent(
+        builderBoostFactor -> queryParams.put(BUILDER_BOOST_FACTOR, builderBoostFactor.toString()));
 
     if (this.preferSszBlockEncoding) {
       // application/octet-stream is preferred, but will accept application/json

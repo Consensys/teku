@@ -113,10 +113,14 @@ public class BlockProductionDuty implements Duty {
       final BLSSignature randaoReveal) {
     if (blockV3Enabled) {
       return validatorApiChannel.createUnsignedBlock(
-          slot, randaoReveal, validator.getGraffiti(), Optional.empty());
+          slot, randaoReveal, validator.getGraffiti(), Optional.empty(), Optional.empty());
     } else {
       return validatorApiChannel.createUnsignedBlock(
-          slot, randaoReveal, validator.getGraffiti(), Optional.of(useBlindedBlock));
+          slot,
+          randaoReveal,
+          validator.getGraffiti(),
+          Optional.of(useBlindedBlock),
+          Optional.empty());
     }
   }
 
