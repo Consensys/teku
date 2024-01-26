@@ -295,10 +295,12 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<Boolean> blinded) {
-    if (blinded.isPresent()) {
+      final Optional<Boolean> requestedBlinded) {
+    if (requestedBlinded.isPresent()) {
       return sendRequest(
-          () -> typeDefClient.createUnsignedBlock(slot, randaoReveal, graffiti, blinded.get()));
+          () ->
+              typeDefClient.createUnsignedBlock(
+                  slot, randaoReveal, graffiti, requestedBlinded.get()));
     }
     return sendRequest(() -> typeDefClient.createUnsignedBlock(slot, randaoReveal, graffiti));
   }

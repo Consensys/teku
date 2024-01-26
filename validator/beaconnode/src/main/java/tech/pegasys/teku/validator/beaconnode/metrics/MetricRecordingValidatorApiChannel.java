@@ -130,9 +130,9 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
       final UInt64 slot,
       final BLSSignature randaoReveal,
       Optional<Bytes32> graffiti,
-      final Optional<Boolean> blinded) {
+      final Optional<Boolean> requestedBlinded) {
     return countOptionalDataRequest(
-        delegate.createUnsignedBlock(slot, randaoReveal, graffiti, blinded),
+        delegate.createUnsignedBlock(slot, randaoReveal, graffiti, requestedBlinded),
         BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD);
   }
 

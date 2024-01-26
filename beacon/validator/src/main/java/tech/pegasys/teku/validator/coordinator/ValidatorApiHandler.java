@@ -313,7 +313,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<Boolean> blinded) {
+      final Optional<Boolean> requestedBlinded) {
     LOG.info("Creating unsigned block for slot {}", slot);
     performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(slot));
     if (isSyncActive()) {
@@ -338,7 +338,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                     slot,
                     randaoReveal,
                     graffiti,
-                    blinded,
+                    requestedBlinded,
+                    Optional.empty(),
                     blockSlotState,
                     blockProductionPerformance))
         .alwaysRun(blockProductionPerformance::complete);
@@ -348,7 +349,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<Boolean> blinded,
+      final Optional<Boolean> requestedBlinded,
+      final Optional<UInt64> requestedProposerBoostFactor,
       final Optional<BeaconState> maybeBlockSlotState,
       final BlockProductionPerformance blockProductionPerformance) {
     if (maybeBlockSlotState.isEmpty()) {
@@ -364,7 +366,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     }
     return blockFactory
         .createUnsignedBlock(
-            blockSlotState, slot, randaoReveal, graffiti, blinded, blockProductionPerformance)
+            blockSlotState,
+            slot,
+            randaoReveal,
+            graffiti,
+            requestedBlinded,
+            requestedProposerBoostFactor,
+            blockProductionPerformance)
         .thenApply(Optional::of);
   }
 
