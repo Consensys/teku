@@ -547,40 +547,46 @@ public class ExecutionBuilderModule {
       final UInt256 builderBidValue,
       final UInt256 localPayloadValue,
       final Optional<UInt64> requestedBuilderBoostFactor) {
-    final boolean isDefaultComparison;
-    final Optional<?> actualComparisonFactor;
+    final Optional<String> actualComparisonFactorString;
     final String comparisonFactorSource;
 
     if (requestedBuilderBoostFactor.isPresent()) {
       // If the requestedBuilderBoostFactor is set,
       // we always use it over builderBidCompareFactor to determine whether the local payload wins
-      isDefaultComparison =
-          requestedBuilderBoostFactor.get().equals(UInt64.valueOf(HUNDRED_PERCENT));
-      actualComparisonFactor = requestedBuilderBoostFactor;
+      if (requestedBuilderBoostFactor.get().equals(UInt64.valueOf(HUNDRED_PERCENT))) {
+        actualComparisonFactorString = Optional.of("MAX_PROFIT");
+      } else if (requestedBuilderBoostFactor
+          .get()
+          .equals(VC_BUILDER_BOOST_FACTOR_PREFER_EXECUTION)) {
+        actualComparisonFactorString = Optional.of("PREFER_EXECUTION");
+      } else if (requestedBuilderBoostFactor.get().equals(VC_BUILDER_BOOST_FACTOR_PREFER_BUILDER)) {
+        actualComparisonFactorString = Optional.of("PREFER_BUILDER");
+      } else {
+        actualComparisonFactorString = requestedBuilderBoostFactor.map(Object::toString);
+      }
       comparisonFactorSource = "VC";
     } else if (builderBidCompareFactor.isPresent()) {
-      isDefaultComparison = builderBidCompareFactor.get() == HUNDRED_PERCENT;
-      actualComparisonFactor = builderBidCompareFactor;
+      if (builderBidCompareFactor.get().equals(HUNDRED_PERCENT)) {
+        actualComparisonFactorString = Optional.of("MAX_PROFIT");
+      } else if (builderBidCompareFactor
+          .get()
+          .equals(VC_BUILDER_BOOST_FACTOR_PREFER_EXECUTION.intValue())) {
+        actualComparisonFactorString = Optional.of("PREFER_EXECUTION");
+      } else {
+        actualComparisonFactorString = builderBidCompareFactor.map(Object::toString);
+      }
       comparisonFactorSource = "BN";
     } else {
-      isDefaultComparison = true;
-      actualComparisonFactor = Optional.empty();
-      comparisonFactorSource = "DEFAULT";
+      // in BN configuration, an empty builderBidCompareFactor means always builder
+      actualComparisonFactorString = Optional.of("BUILDER_ALWAYS");
+      comparisonFactorSource = "BN";
     }
 
-    if (isDefaultComparison) {
-      LOG.info(
-          "Local execution payload ({} ETH) is chosen over builder bid ({} ETH, compare factor MAX_PROFIT, compare factor source {}).",
-          weiToEth(localPayloadValue),
-          weiToEth(builderBidValue),
-          comparisonFactorSource);
-    } else {
-      LOG.info(
-          "Local execution payload ({} ETH) is chosen over builder bid ({} ETH, compare factor {}%, compare factor source {}).",
-          weiToEth(localPayloadValue),
-          weiToEth(builderBidValue),
-          actualComparisonFactor.get(),
-          comparisonFactorSource);
-    }
+    LOG.info(
+        "Local execution payload ({} ETH) is chosen over builder bid ({} ETH, compare factor {}%, compare factor source {}).",
+        weiToEth(localPayloadValue),
+        weiToEth(builderBidValue),
+        actualComparisonFactorString,
+        comparisonFactorSource);
   }
 }
