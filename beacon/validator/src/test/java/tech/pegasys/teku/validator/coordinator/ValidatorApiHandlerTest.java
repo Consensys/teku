@@ -529,6 +529,7 @@ class ValidatorApiHandlerTest {
             randaoReveal,
             Optional.empty(),
             Optional.of(false),
+            Optional.empty(),
             BlockProductionPerformance.NOOP))
         .thenReturn(SafeFuture.completedFuture(createdBlock));
 
@@ -543,6 +544,7 @@ class ValidatorApiHandlerTest {
             randaoReveal,
             Optional.empty(),
             Optional.of(false),
+            Optional.empty(),
             BlockProductionPerformance.NOOP);
     assertThat(result).isCompletedWithValue(Optional.of(createdBlock));
   }
