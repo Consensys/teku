@@ -553,7 +553,7 @@ public class ExecutionBuilderModule {
 
     if (requestedBuilderBoostFactor.isPresent()) {
       // If the requestedBuilderBoostFactor is set,
-      // we always use it to determine whether the local payload wins
+      // we always use it over builderBidCompareFactor to determine whether the local payload wins
       isDefaultComparisonVC =
           requestedBuilderBoostFactor.get().equals(UInt64.valueOf(HUNDRED_PERCENT));
       actualComparisonFactor = requestedBuilderBoostFactor;
