@@ -422,7 +422,7 @@ class ExecutionLayerManagerImplTest {
   }
 
   @Test
-  public void builderGetHeaderGetPayload_shouldGivePriorityToRequestedProposerBoostFactor() {
+  public void builderGetHeaderGetPayload_shouldGivePriorityToRequestedBuilderBoostFactor() {
     // Beacon node setup requires local payload to have at lest 50% value of builder's to win
     executionLayerManager = createExecutionLayerChannelImpl(true, false, Optional.of(50));
     setBuilderOnline();
@@ -457,7 +457,7 @@ class ExecutionLayerManagerImplTest {
             expectedHeader,
             new FallbackData(localExecutionPayload, FallbackReason.LOCAL_BLOCK_VALUE_WON));
     final SafeFuture<UInt256> blockValueResult = new SafeFuture<>();
-    // we set the requestedProposerBoostFactor to 48% so that the local value will win
+    // we set the requestedBuilderBoostFactor to 48% so that the local value will win
     assertThat(
             executionLayerManager.builderGetHeader(
                 executionPayloadContext,

@@ -131,7 +131,7 @@ public class ExecutionBuilderModule {
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
       final SafeFuture<UInt256> payloadValueResult,
-      final Optional<UInt64> requestedProposerBoostFactor,
+      final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
 
     final SafeFuture<GetPayloadResponse> localGetPayloadResponse =
@@ -212,9 +212,8 @@ public class ExecutionBuilderModule {
                 logReceivedBuilderBid(signedBuilderBid.getMessage());
 
                 if (isLocalPayloadValueWinning(
-                    builderBidValue, localBlockValue, requestedProposerBoostFactor)) {
-                  logLocalPayloadWin(
-                      builderBidValue, localBlockValue, requestedProposerBoostFactor);
+                    builderBidValue, localBlockValue, requestedBuilderBoostFactor)) {
+                  logLocalPayloadWin(builderBidValue, localBlockValue, requestedBuilderBoostFactor);
                   return getResultFromLocalGetPayloadResponse(
                       localGetPayloadResponse,
                       slot,
@@ -247,22 +246,22 @@ public class ExecutionBuilderModule {
   private boolean isLocalPayloadValueWinning(
       final UInt256 builderBidValue,
       final UInt256 localPayloadValue,
-      final Optional<UInt64> requestedProposerBoostFactor) {
-    if (requestedProposerBoostFactor.isPresent()) {
-      final UInt64 proposerBoostFactor = requestedProposerBoostFactor.get();
+      final Optional<UInt64> requestedBuilderBoostFactor) {
+    if (requestedBuilderBoostFactor.isPresent()) {
+      final UInt64 builderBoostFactor = requestedBuilderBoostFactor.get();
 
-      LOG.debug("Using requestedProposerBoostFactor " + proposerBoostFactor);
+      LOG.debug("Using requestedBuilderBoostFactor " + builderBoostFactor);
 
-      if (proposerBoostFactor.equals(VC_BUILDER_BOOST_FACTOR_PREFER_EXECUTION)) {
+      if (builderBoostFactor.equals(VC_BUILDER_BOOST_FACTOR_PREFER_EXECUTION)) {
         return true;
       }
 
-      if (proposerBoostFactor.equals(VC_BUILDER_BOOST_FACTOR_PREFER_BUILDER)) {
+      if (builderBoostFactor.equals(VC_BUILDER_BOOST_FACTOR_PREFER_BUILDER)) {
         return false;
       }
 
       return builderBidValue
-          .multiply(UInt256.valueOf(proposerBoostFactor.longValue()))
+          .multiply(UInt256.valueOf(builderBoostFactor.longValue()))
           .lessOrEqualThan(localPayloadValue.multiply(HUNDRED_PERCENT));
     }
 
@@ -547,17 +546,17 @@ public class ExecutionBuilderModule {
   private void logLocalPayloadWin(
       final UInt256 builderBidValue,
       final UInt256 localPayloadValue,
-      final Optional<UInt64> requestedProposerBoostFactor) {
+      final Optional<UInt64> requestedBuilderBoostFactor) {
     final boolean isDefaultComparisonVC;
     final Optional<?> actualComparisonFactor;
     final Optional<String> comparisonFactorSource;
 
-    if (requestedProposerBoostFactor.isPresent()) {
-      // If the requestedProposerBoostFactor is set, we always use it to determine whether the local
-      // payload wins
+    if (requestedBuilderBoostFactor.isPresent()) {
+      // If the requestedBuilderBoostFactor is set,
+      // we always use it to determine whether the local payload wins
       isDefaultComparisonVC =
-          requestedProposerBoostFactor.get().equals(UInt64.valueOf(HUNDRED_PERCENT));
-      actualComparisonFactor = requestedProposerBoostFactor;
+          requestedBuilderBoostFactor.get().equals(UInt64.valueOf(HUNDRED_PERCENT));
+      actualComparisonFactor = requestedBuilderBoostFactor;
       comparisonFactorSource = Optional.of("VC");
     } else if (builderBidCompareFactor.isPresent()) {
       isDefaultComparisonVC = builderBidCompareFactor.get() == HUNDRED_PERCENT;

@@ -42,7 +42,7 @@ public interface ExecutionLayerBlockProductionManager {
             final ExecutionPayloadContext context,
             final BeaconState blockSlotState,
             final boolean isBlind,
-            final Optional<UInt64> requestedProposerBoostFactor,
+            final Optional<UInt64> requestedBuilderBoostFactor,
             final BlockProductionPerformance blockProductionPerformance) {
           return null;
         }
@@ -52,7 +52,7 @@ public interface ExecutionLayerBlockProductionManager {
             final ExecutionPayloadContext context,
             final BeaconState blockSlotState,
             final boolean isBlind,
-            final Optional<UInt64> requestedProposerBoostFactor,
+            final Optional<UInt64> requestedBuilderBoostFactor,
             final BlockProductionPerformance blockProductionPerformance) {
           return null;
         }
@@ -75,7 +75,7 @@ public interface ExecutionLayerBlockProductionManager {
    * @param context Payload context
    * @param blockSlotState pre state
    * @param isBlind Block type. Use blind for builder building
-   * @param requestedProposerBoostFactor The proposer boost factor requested by vc
+   * @param requestedBuilderBoostFactor The proposer boost factor requested by vc
    * @param blockProductionPerformance Block production performance tracker
    * @return Container with filled Payload or Payload Header futures
    */
@@ -83,7 +83,7 @@ public interface ExecutionLayerBlockProductionManager {
       ExecutionPayloadContext context,
       BeaconState blockSlotState,
       boolean isBlind,
-      Optional<UInt64> requestedProposerBoostFactor,
+      Optional<UInt64> requestedBuilderBoostFactor,
       BlockProductionPerformance blockProductionPerformance);
 
   /**
@@ -93,7 +93,7 @@ public interface ExecutionLayerBlockProductionManager {
    * @param context Payload context
    * @param blockSlotState pre state
    * @param isBlind Block type. Use blind for builder building
-   * @param requestedProposerBoostFactor The proposer boost factor requested by vc
+   * @param requestedBuilderBoostFactor The proposer boost factor requested by vc
    * @param blockProductionPerformance Block production performance tracker
    * @return Container with filled Payload or Payload Header futures
    */
@@ -101,7 +101,7 @@ public interface ExecutionLayerBlockProductionManager {
       ExecutionPayloadContext context,
       BeaconState blockSlotState,
       boolean isBlind,
-      Optional<UInt64> requestedProposerBoostFactor,
+      Optional<UInt64> requestedBuilderBoostFactor,
       BlockProductionPerformance blockProductionPerformance);
 
   /**

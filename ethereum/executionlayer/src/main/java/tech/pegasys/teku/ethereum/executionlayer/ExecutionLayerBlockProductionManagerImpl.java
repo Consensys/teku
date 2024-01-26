@@ -72,7 +72,7 @@ public class ExecutionLayerBlockProductionManagerImpl
       final ExecutionPayloadContext context,
       final BeaconState blockSlotState,
       final boolean isBlind,
-      final Optional<UInt64> requestedProposerBoostFactor,
+      final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
     final ExecutionPayloadResult result;
     if (!isBlind) {
@@ -94,7 +94,7 @@ public class ExecutionLayerBlockProductionManagerImpl
     } else {
       result =
           builderGetHeader(
-              context, blockSlotState, requestedProposerBoostFactor, blockProductionPerformance);
+              context, blockSlotState, requestedBuilderBoostFactor, blockProductionPerformance);
     }
     executionResultCache.put(blockSlotState.getSlot(), result);
     return result;
@@ -105,7 +105,7 @@ public class ExecutionLayerBlockProductionManagerImpl
       final ExecutionPayloadContext context,
       final BeaconState blockSlotState,
       final boolean isBlind,
-      final Optional<UInt64> requestedProposerBoostFactor,
+      final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
     final ExecutionPayloadResult result;
     if (!isBlind) {
@@ -129,7 +129,7 @@ public class ExecutionLayerBlockProductionManagerImpl
     } else {
       result =
           builderGetHeader(
-              context, blockSlotState, requestedProposerBoostFactor, blockProductionPerformance);
+              context, blockSlotState, requestedBuilderBoostFactor, blockProductionPerformance);
     }
     executionResultCache.put(blockSlotState.getSlot(), result);
     return result;
@@ -151,7 +151,7 @@ public class ExecutionLayerBlockProductionManagerImpl
   private ExecutionPayloadResult builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
-      final Optional<UInt64> requestedProposerBoostFactor,
+      final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
 
     final SafeFuture<UInt256> executionPayloadValueFuture = new SafeFuture<>();
@@ -162,7 +162,7 @@ public class ExecutionLayerBlockProductionManagerImpl
                 executionPayloadContext,
                 state,
                 executionPayloadValueFuture,
-                requestedProposerBoostFactor,
+                requestedBuilderBoostFactor,
                 blockProductionPerformance)
             .whenException(executionPayloadValueFuture::completeExceptionally);
 

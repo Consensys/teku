@@ -49,7 +49,7 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti,
       final Optional<Boolean> requestedBlinded,
-      final Optional<UInt64> requestedProposerBoostFactor,
+      final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
     return super.createUnsignedBlock(
             blockSlotState,
@@ -57,7 +57,7 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
             randaoReveal,
             optionalGraffiti,
             requestedBlinded,
-            requestedProposerBoostFactor,
+            requestedBuilderBoostFactor,
             blockProductionPerformance)
         .thenApply(BlockContainer::getBlock)
         .thenCompose(

@@ -49,7 +49,7 @@ public class BlockFactoryPhase0 implements BlockFactory {
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti,
       final Optional<Boolean> requestedBlinded,
-      final Optional<UInt64> requestedProposerBoostFactor,
+      final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
     checkArgument(
         blockSlotState.getSlot().equals(proposalSlot),
@@ -73,7 +73,7 @@ public class BlockFactoryPhase0 implements BlockFactory {
                 randaoReveal,
                 optionalGraffiti,
                 requestedBlinded,
-                requestedProposerBoostFactor,
+                requestedBuilderBoostFactor,
                 blockProductionPerformance),
             blockProductionPerformance)
         .thenApply(BeaconBlockAndState::getBlock);

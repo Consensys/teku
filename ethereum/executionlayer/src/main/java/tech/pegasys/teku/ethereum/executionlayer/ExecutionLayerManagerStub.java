@@ -56,7 +56,7 @@ public class ExecutionLayerManagerStub extends ExecutionLayerChannelStub
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
       final SafeFuture<UInt256> payloadValueResult,
-      final Optional<UInt64> requestedProposerBoostFactor,
+      final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
     boolean builderCircuitBreakerEngaged = builderCircuitBreaker.isEngaged(state);
     LOG.info("Builder Circuit Breaker isEngaged: " + builderCircuitBreakerEngaged);
@@ -65,7 +65,7 @@ public class ExecutionLayerManagerStub extends ExecutionLayerChannelStub
             executionPayloadContext,
             state,
             payloadValueResult,
-            requestedProposerBoostFactor,
+            requestedBuilderBoostFactor,
             blockProductionPerformance)
         .thenCompose(
             headerWithFallbackData -> {

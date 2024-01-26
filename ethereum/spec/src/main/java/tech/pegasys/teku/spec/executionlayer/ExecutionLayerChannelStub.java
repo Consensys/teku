@@ -323,7 +323,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
       final SafeFuture<UInt256> payloadValueResult,
-      final Optional<UInt64> requestedProposerBoostFactor,
+      final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
     final UInt64 slot = state.getSlot();
     LOG.info(

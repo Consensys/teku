@@ -88,7 +88,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
             final ExecutionPayloadContext executionPayloadContext,
             final BeaconState state,
             final SafeFuture<UInt256> payloadValueResult,
-            final Optional<UInt64> requestedProposerBoostFactor,
+            final Optional<UInt64> requestedBuilderBoostFactor,
             final BlockProductionPerformance blockProductionPerformance) {
           payloadValueResult.complete(null);
           return SafeFuture.completedFuture(null);
@@ -142,6 +142,6 @@ public interface ExecutionLayerChannel extends ChannelInterface {
       ExecutionPayloadContext executionPayloadContext,
       BeaconState state,
       SafeFuture<UInt256> payloadValueResult,
-      Optional<UInt64> requestedProposerBoostFactor,
+      Optional<UInt64> requestedBuilderBoostFactor,
       BlockProductionPerformance blockProductionPerformance);
 }

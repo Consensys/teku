@@ -350,7 +350,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
       final Optional<Boolean> requestedBlinded,
-      final Optional<UInt64> requestedProposerBoostFactor,
+      final Optional<UInt64> requestedBuilderBoostFactor,
       final Optional<BeaconState> maybeBlockSlotState,
       final BlockProductionPerformance blockProductionPerformance) {
     if (maybeBlockSlotState.isEmpty()) {
@@ -371,7 +371,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
             randaoReveal,
             graffiti,
             requestedBlinded,
-            requestedProposerBoostFactor,
+            requestedBuilderBoostFactor,
             blockProductionPerformance)
         .thenApply(Optional::of);
   }
