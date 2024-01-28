@@ -40,6 +40,10 @@ public class ForkChoiceTrigger {
     return forkChoice.prepareForBlockProduction(slot, blockProductionPerformance);
   }
 
+  public boolean isForkChoiceOverrideLateBlockEnabled() {
+    return forkChoice.isForkChoiceLateBlockReorgEnabled();
+  }
+
   public SafeFuture<Void> prepareForAttestationProduction(final UInt64 slot) {
     return forkChoiceRatchet.ensureForkChoiceCompleteForSlot(slot);
   }
