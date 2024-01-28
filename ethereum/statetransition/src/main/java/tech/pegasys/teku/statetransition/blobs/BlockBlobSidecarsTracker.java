@@ -153,8 +153,8 @@ public class BlockBlobSidecarsTracker {
           debugTimings -> debugTimings.put(blobSidecar.getIndex(), System.currentTimeMillis()));
       checkCompletion();
     } else {
-      LOG.warn(
-          "Multiple BlobSidecars with index {} for {} detected.",
+      LOG.debug(
+          "Attempt to add already added BlobSidecar with index {} for {} detected.",
           blobSidecar.getIndex(),
           slotAndBlockRoot.toLogString());
     }

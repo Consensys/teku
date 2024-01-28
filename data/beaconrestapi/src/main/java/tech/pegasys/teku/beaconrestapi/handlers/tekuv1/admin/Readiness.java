@@ -42,14 +42,13 @@ public class Readiness extends RestApiEndpoint {
 
   private final ExecutionClientDataProvider executionClientDataProvider;
 
-  public Readiness(
-      final DataProvider provider, final ExecutionClientDataProvider executionClientDataProvider) {
+  public Readiness(final DataProvider provider) {
     this(
         provider.getSyncDataProvider(),
         provider.getChainDataProvider(),
         provider.getNetworkDataProvider(),
         provider.getNodeDataProvider(),
-        executionClientDataProvider);
+        provider.getExecutionClientDataProvider());
   }
 
   Readiness(

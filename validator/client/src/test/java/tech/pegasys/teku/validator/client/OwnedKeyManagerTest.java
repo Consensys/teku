@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.client;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -391,7 +392,7 @@ class OwnedKeyManagerTest {
     verify(validatorLoader, times(1))
         .addValidator(any(), eq(doppelgangerPassword), eq(doppelgangerPublicKey));
     verify(doppelgangerDetector).performDoppelgangerDetection(Set.of(doppelgangerPublicKey));
-    verify(doppelgangerDetectionAction, never()).perform(any());
+    verify(doppelgangerDetectionAction, never()).perform(anyList());
     logCaptor.assertErrorLog(
         String.format(
             "Failed to perform doppelganger detection for public keys %s",
@@ -485,7 +486,7 @@ class OwnedKeyManagerTest {
 
     verify(channel).onValidatorsAdded();
     verify(doppelgangerDetector).performDoppelgangerDetection(Set.of(doppelgangerPublicKey));
-    verify(doppelgangerDetectionAction, never()).perform(any());
+    verify(doppelgangerDetectionAction, never()).perform(anyList());
     verify(validatorLoader, times(1)).addExternalValidator(signerUrl, doppelgangerPublicKey);
     logCaptor.assertErrorLog(
         String.format(

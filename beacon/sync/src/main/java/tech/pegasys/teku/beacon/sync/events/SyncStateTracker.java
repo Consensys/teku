@@ -20,7 +20,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.beacon.sync.forward.ForwardSync;
-import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
@@ -33,7 +32,7 @@ import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
 
 public class SyncStateTracker extends Service
-    implements SyncStateProvider, OptimisticHeadSubscriber, ExecutionClientEventsChannel {
+    implements SyncStateProvider, OptimisticHeadSubscriber {
   private static final Logger LOG = LogManager.getLogger();
   private final AsyncRunner asyncRunner;
   private final ForwardSync syncService;
@@ -50,8 +49,6 @@ public class SyncStateTracker extends Service
   private long peerConnectedSubscriptionId;
   private long syncSubscriptionId;
   private boolean headIsOptimistic = false;
-
-  private boolean executionLayerIsAvailable = true;
 
   private volatile SyncState currentState;
 
@@ -133,9 +130,7 @@ public class SyncStateTracker extends Service
 
   private void updateCurrentState() {
     final SyncState previousState = currentState;
-    if (!executionLayerIsAvailable) {
-      currentState = SyncState.EL_OFFLINE;
-    } else if (headIsOptimistic) {
+    if (headIsOptimistic) {
       currentState = syncActive ? SyncState.OPTIMISTIC_SYNCING : SyncState.AWAITING_EL;
     } else if (syncActive) {
       currentState = SyncState.SYNCING;
@@ -240,11 +235,5 @@ public class SyncStateTracker extends Service
       LOG.debug("Target peer count ({}) was reached", startupTargetPeerCount);
       markStartupComplete();
     }
-  }
-
-  @Override
-  public void onAvailabilityUpdated(boolean isAvailable) {
-    this.executionLayerIsAvailable = isAvailable;
-    updateCurrentState();
   }
 }
