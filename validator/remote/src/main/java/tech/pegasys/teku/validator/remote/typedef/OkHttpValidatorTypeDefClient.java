@@ -20,6 +20,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAttestationDataRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetGenesisRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.GetProposerDutiesRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetSyncingStatusRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.ProduceBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.RegisterValidatorsRequest;
@@ -50,6 +52,7 @@ public class OkHttpValidatorTypeDefClient {
   private final boolean preferSszBlockEncoding;
   private final GetSyncingStatusRequest getSyncingStatusRequest;
   private final GetGenesisRequest getGenesisRequest;
+  private final GetProposerDutiesRequest getProposerDutiesRequest;
   private final SendSignedBlockRequest sendSignedBlockRequest;
   private final RegisterValidatorsRequest registerValidatorsRequest;
   private final CreateAttestationDataRequest createAttestationDataRequest;
@@ -65,6 +68,7 @@ public class OkHttpValidatorTypeDefClient {
     this.preferSszBlockEncoding = preferSszBlockEncoding;
     this.getSyncingStatusRequest = new GetSyncingStatusRequest(okHttpClient, baseEndpoint);
     this.getGenesisRequest = new GetGenesisRequest(okHttpClient, baseEndpoint);
+    this.getProposerDutiesRequest = new GetProposerDutiesRequest(baseEndpoint, okHttpClient);
     this.sendSignedBlockRequest =
         new SendSignedBlockRequest(spec, baseEndpoint, okHttpClient, preferSszBlockEncoding);
     this.registerValidatorsRequest =
@@ -83,6 +87,10 @@ public class OkHttpValidatorTypeDefClient {
         .map(
             response ->
                 new GenesisData(response.getGenesisTime(), response.getGenesisValidatorsRoot()));
+  }
+
+  public Optional<ProposerDuties> getProposerDuties(final UInt64 epoch) {
+    return getProposerDutiesRequest.getProposerDuties(epoch);
   }
 
   public SendSignedBlockResult sendSignedBlock(final SignedBlockContainer blockContainer) {
