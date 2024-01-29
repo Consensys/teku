@@ -44,6 +44,9 @@ import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
+import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class DepositsFetcherTest {
 
@@ -53,6 +56,7 @@ public class DepositsFetcherTest {
   private final DepositEventsAccessor depositEventsAccessor = mock(DepositEventsAccessor.class);
   private final Eth1BlockFetcher eth1BlockFetcher = mock(Eth1BlockFetcher.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
+  private final TimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(UInt64.ZERO);
 
   private final DepositFetcher depositFetcher =
       new DepositFetcher(
@@ -61,7 +65,8 @@ public class DepositsFetcherTest {
           depositEventsAccessor,
           eth1BlockFetcher,
           asyncRunner,
-          MAX_BLOCK_RANGE);
+          MAX_BLOCK_RANGE,
+          timeProvider);
 
   @Test
   void depositsInConsecutiveBlocks() {

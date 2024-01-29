@@ -43,6 +43,9 @@ import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.ethereum.pow.api.InvalidDepositEventsException;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.infrastructure.time.Throttler;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.Constants;
 
@@ -50,12 +53,17 @@ public class DepositFetcher {
 
   private static final Logger LOG = LogManager.getLogger();
 
+  // Used to log once every 30 seconds (throttlingPeriod = 30)
+  private final Throttler<StatusLogger> statusLogThrottler =
+      new Throttler<>(STATUS_LOG, UInt64.valueOf(30));
+
   private final Eth1Provider eth1Provider;
   private final Eth1EventsChannel eth1EventsChannel;
   private final DepositEventsAccessor depositEventsAccessor;
   private final Eth1BlockFetcher eth1BlockFetcher;
   private final AsyncRunner asyncRunner;
   private final int maxBlockRange;
+  private final TimeProvider timeProvider;
 
   public DepositFetcher(
       final Eth1Provider eth1Provider,
@@ -63,13 +71,15 @@ public class DepositFetcher {
       final DepositEventsAccessor depositEventsAccessor,
       final Eth1BlockFetcher eth1BlockFetcher,
       final AsyncRunner asyncRunner,
-      final int maxBlockRange) {
+      final int maxBlockRange,
+      final TimeProvider timeProvider) {
     this.eth1Provider = eth1Provider;
     this.eth1EventsChannel = eth1EventsChannel;
     this.depositEventsAccessor = depositEventsAccessor;
     this.eth1BlockFetcher = eth1BlockFetcher;
     this.asyncRunner = asyncRunner;
     this.maxBlockRange = maxBlockRange;
+    this.timeProvider = timeProvider;
   }
 
   // Inclusive on both sides
@@ -107,9 +117,14 @@ public class DepositFetcher {
 
               final Throwable rootCause = Throwables.getRootCause(err);
               if (rootCause instanceof InvalidDepositEventsException) {
-                STATUS_LOG.eth1DepositEventsFailure(rootCause);
+                statusLogThrottler.invoke(
+                    timeProvider.getTimeInSeconds(),
+                    statusLog -> statusLog.eth1DepositEventsFailure(rootCause));
               } else if (Eth1RequestException.shouldTryWithSmallerRange(err)) {
-                STATUS_LOG.eth1FetchDepositsRequiresSmallerRange(fetchState.batchSize);
+                statusLogThrottler.invoke(
+                    timeProvider.getTimeInSeconds(),
+                    statusLog ->
+                        statusLog.eth1FetchDepositsRequiresSmallerRange(fetchState.batchSize));
                 fetchState.reduceBatchSize();
               }
 
