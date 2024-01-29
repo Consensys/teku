@@ -1773,9 +1773,18 @@ public final class DataStructureUtil {
       final Bytes32 finalizedBlockHash,
       final boolean optimisticHead,
       final boolean withValidatorRegistration) {
+    return randomPayloadExecutionContext(
+        randomUInt64(), finalizedBlockHash, optimisticHead, withValidatorRegistration);
+  }
+
+  public ExecutionPayloadContext randomPayloadExecutionContext(
+      final UInt64 slot,
+      final Bytes32 finalizedBlockHash,
+      final boolean optimisticHead,
+      final boolean withValidatorRegistration) {
     return new ExecutionPayloadContext(
         randomBytes8(),
-        randomForkChoiceState(randomUInt64(), finalizedBlockHash, optimisticHead),
+        randomForkChoiceState(slot, finalizedBlockHash, optimisticHead),
         randomPayloadBuildingAttributes(withValidatorRegistration));
   }
 

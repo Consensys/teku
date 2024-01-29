@@ -103,10 +103,10 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<Boolean> blinded) {
+      final Optional<Boolean> requestedBlinded) {
     return blockHandlerChannel
         .orElse(dutiesProviderChannel)
-        .createUnsignedBlock(slot, randaoReveal, graffiti, blinded);
+        .createUnsignedBlock(slot, randaoReveal, graffiti, requestedBlinded);
   }
 
   @Override

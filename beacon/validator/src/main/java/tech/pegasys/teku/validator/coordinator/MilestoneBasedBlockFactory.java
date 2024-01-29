@@ -67,6 +67,7 @@ public class MilestoneBasedBlockFactory implements BlockFactory {
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti,
       final Optional<Boolean> requestedBlinded,
+      final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
     final SpecMilestone milestone = getMilestone(proposalSlot);
     return registeredFactories
@@ -77,6 +78,7 @@ public class MilestoneBasedBlockFactory implements BlockFactory {
             randaoReveal,
             optionalGraffiti,
             requestedBlinded,
+            requestedBuilderBoostFactor,
             blockProductionPerformance);
   }
 

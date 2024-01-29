@@ -85,7 +85,7 @@ public interface ValidatorApiChannel extends ChannelInterface {
             UInt64 slot,
             BLSSignature randaoReveal,
             Optional<Bytes32> graffiti,
-            Optional<Boolean> blinded) {
+            Optional<Boolean> requestedBlinded) {
           return SafeFuture.completedFuture(Optional.empty());
         }
 
@@ -193,13 +193,14 @@ public interface ValidatorApiChannel extends ChannelInterface {
   SafeFuture<Optional<ProposerDuties>> getProposerDuties(UInt64 epoch);
 
   /**
-   * @param blinded can be removed once block creation V2 APIs are removed in favour of V3 only
+   * @param requestedBlinded can be removed once block creation V2 APIs are removed in favour of V3
+   *     only
    */
   SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
       UInt64 slot,
       BLSSignature randaoReveal,
       Optional<Bytes32> graffiti,
-      Optional<Boolean> blinded);
+      Optional<Boolean> requestedBlinded);
 
   SafeFuture<Optional<AttestationData>> createAttestationData(UInt64 slot, int committeeIndex);
 

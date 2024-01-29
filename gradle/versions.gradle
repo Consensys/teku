@@ -128,6 +128,7 @@ dependencyManagement {
       entry 'core'
       entry 'abi'
       entry 'crypto'
+      entry 'utils'
     }
 
     dependency 'org.xerial.snappy:snappy-java:1.1.10.5'
@@ -170,6 +171,5 @@ dependencyManagement {
     }
 
     dependency 'net.jqwik:jqwik:1.8.2'
-    dependency 'io.github.hakky54:logcaptor:2.9.1'
   }
 }
