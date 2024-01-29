@@ -212,28 +212,9 @@ public class ExecutionBuilderModule {
 
                 logReceivedBuilderBid(signedBuilderBid.getMessage());
 
-                // we give precedence to the requestedBuilderBoostFactor over the BN configured
-                // builderBidCompareFactor
-                final UInt64 actualBuilderBoostFactor;
-                final boolean isRequestedBuilderBoostFactor;
-                if (requestedBuilderBoostFactor.isPresent()) {
-                  actualBuilderBoostFactor = requestedBuilderBoostFactor.get();
-                  isRequestedBuilderBoostFactor = true;
-                } else {
-                  actualBuilderBoostFactor = builderBidCompareFactor;
-                  isRequestedBuilderBoostFactor = false;
-                }
-
                 final boolean localPayloadValueWon =
-                    isLocalPayloadValueWinning(
-                        builderBidValue, localBlockValue, actualBuilderBoostFactor);
-
-                logPayloadValueComparisonDetails(
-                    localPayloadValueWon,
-                    builderBidValue,
-                    localBlockValue,
-                    isRequestedBuilderBoostFactor,
-                    actualBuilderBoostFactor);
+                    calculateIfLocalPayloadWinsAndLog(
+                        requestedBuilderBoostFactor, localBlockValue, builderBidValue);
 
                 if (localPayloadValueWon) {
                   return getResultFromLocalGetPayloadResponse(
@@ -262,6 +243,37 @@ public class ExecutionBuilderModule {
               return getResultFromLocalGetPayloadResponse(
                   localGetPayloadResponse, slot, FallbackReason.BUILDER_ERROR, payloadValueResult);
             });
+  }
+
+  private boolean calculateIfLocalPayloadWinsAndLog(
+      final Optional<UInt64> requestedBuilderBoostFactor,
+      final UInt256 localBlockValue,
+      final UInt256 builderBidValue) {
+    final UInt64 actualBuilderBoostFactor;
+    final boolean isRequestedBuilderBoostFactor;
+
+    // we give precedence to the requestedBuilderBoostFactor over the BN configured
+    // builderBidCompareFactor
+
+    if (requestedBuilderBoostFactor.isPresent()) {
+      actualBuilderBoostFactor = requestedBuilderBoostFactor.get();
+      isRequestedBuilderBoostFactor = true;
+    } else {
+      actualBuilderBoostFactor = builderBidCompareFactor;
+      isRequestedBuilderBoostFactor = false;
+    }
+
+    final boolean localPayloadValueWon =
+        isLocalPayloadValueWinning(builderBidValue, localBlockValue, actualBuilderBoostFactor);
+
+    logPayloadValueComparisonDetails(
+        localPayloadValueWon,
+        builderBidValue,
+        localBlockValue,
+        isRequestedBuilderBoostFactor,
+        actualBuilderBoostFactor);
+
+    return localPayloadValueWon;
   }
 
   /** 1 ETH is 10^18 wei, Uint256 max is more than 10^77 */
