@@ -576,7 +576,9 @@ public class ExecutionBuilderModule {
     final String actualComparisonFactorString;
     final String comparisonFactorSource = isRequestedBuilderBoostFactor ? "VC" : "BN";
 
-    if (actualBuilderBoostFactor.equals(BUILDER_BOOST_FACTOR_PREFER_EXECUTION)) {
+    if (actualBuilderBoostFactor.equals(BUILDER_BOOST_FACTOR_MAX_PROFIT)) {
+      actualComparisonFactorString = "MAX_PROFIT";
+    } else if (actualBuilderBoostFactor.equals(BUILDER_BOOST_FACTOR_PREFER_EXECUTION)) {
       actualComparisonFactorString = "PREFER_EXECUTION";
     } else if (actualBuilderBoostFactor.equals(BUILDER_BOOST_FACTOR_PREFER_BUILDER)) {
       actualComparisonFactorString = "PREFER_BUILDER";
