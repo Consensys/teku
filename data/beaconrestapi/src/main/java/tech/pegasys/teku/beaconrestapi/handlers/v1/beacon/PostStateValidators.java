@@ -15,6 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter.getApplicableValidatorStatuses;
+import static tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData.STATE_VALIDATORS_RESPONSE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
@@ -71,7 +72,7 @@ public class PostStateValidators extends RestApiEndpoint {
             .pathParam(PARAMETER_STATE_ID)
             .requestBodyType(REQUEST_TYPE)
             .tags(TAG_BEACON)
-            .response(SC_OK, "Request successful", GetStateValidators.RESPONSE_TYPE)
+            .response(SC_OK, "Request successful", STATE_VALIDATORS_RESPONSE_TYPE)
             .withNotFoundResponse()
             .build());
     this.chainDataProvider = provider;
