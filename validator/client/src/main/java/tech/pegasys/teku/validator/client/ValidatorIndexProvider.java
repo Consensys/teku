@@ -21,6 +21,7 @@ import it.unimi.dsi.fastutil.ints.IntCollection;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -97,6 +98,13 @@ public class ValidatorIndexProvider {
                   .map(entry -> entry.getKey().toString() + "=" + entry.getValue())
                   .collect(joining(", ")));
     }
+  }
+
+  public Optional<BLSPublicKey> getPublicKey(final Integer index) {
+    return validatorIndicesByPublicKey.entrySet().stream()
+        .filter(entry -> entry.getValue().equals(index))
+        .findFirst()
+        .map(Map.Entry::getKey);
   }
 
   public boolean containsPublicKey(BLSPublicKey publicKey) {

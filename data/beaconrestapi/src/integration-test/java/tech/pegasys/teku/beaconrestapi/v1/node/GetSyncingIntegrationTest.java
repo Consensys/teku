@@ -49,7 +49,6 @@ public class GetSyncingIntegrationTest extends AbstractDataBackedRestAPIIntegrat
     startRestAPIAtGenesis();
     when(syncService.getSyncStatus()).thenReturn(getSyncStatus(false, 6, 11, 16));
     when(syncService.getCurrentSyncState()).thenReturn(SyncState.IN_SYNC);
-    when(executionClientDataProvider.isExecutionClientAvailable()).thenReturn(true);
 
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_OK);
@@ -64,7 +63,9 @@ public class GetSyncingIntegrationTest extends AbstractDataBackedRestAPIIntegrat
   public void shouldGetSyncStatusWhenElOffline() throws IOException {
     startRestAPIAtGenesis();
     when(syncService.getSyncStatus()).thenReturn(getSyncStatus(false, 1, 10, 15));
-    when(syncService.getCurrentSyncState()).thenReturn(SyncState.EL_OFFLINE);
+    when(syncService.getCurrentSyncState()).thenReturn(SyncState.SYNCING);
+    // update EL availability
+    dataProvider.getExecutionClientDataProvider().onAvailabilityUpdated(false);
 
     final Response response = get();
     assertThat(response.code()).isEqualTo(SC_OK);

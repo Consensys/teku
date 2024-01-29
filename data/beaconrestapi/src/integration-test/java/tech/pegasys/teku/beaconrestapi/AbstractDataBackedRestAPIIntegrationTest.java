@@ -40,7 +40,6 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.junit.jupiter.api.AfterEach;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.ExecutionClientDataProvider;
 import tech.pegasys.teku.api.RewardCalculator;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
@@ -150,9 +149,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
   protected final Eth1DataProvider eth1DataProvider = mock(Eth1DataProvider.class);
 
-  protected final ExecutionClientDataProvider executionClientDataProvider =
-      mock(ExecutionClientDataProvider.class);
-
   private StorageSystem storageSystem;
 
   protected RecentChainData recentChainData;
@@ -258,7 +254,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             eventChannels,
             asyncRunner,
             StubTimeProvider.withTimeInMillis(1000),
-            executionClientDataProvider,
             spec);
     assertThat(beaconRestApi.start()).isCompleted();
     client = new OkHttpClient.Builder().readTimeout(0, TimeUnit.SECONDS).build();
