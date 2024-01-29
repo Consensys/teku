@@ -13,8 +13,9 @@
 
 package tech.pegasys.teku.services.executionlayer;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
+import static tech.pegasys.teku.ethereum.executionlayer.ExecutionBuilderModule.BUILDER_BOOST_FACTOR_MAX_PROFIT;
+import static tech.pegasys.teku.ethereum.executionlayer.ExecutionBuilderModule.BUILDER_BOOST_FACTOR_PREFER_BUILDER;
 import static tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel.STUB_ENDPOINT_PREFIX;
 
 import java.util.Optional;
@@ -22,6 +23,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 
@@ -33,7 +35,7 @@ public class ExecutionLayerConfiguration {
   public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS = 5;
   public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS = 3;
   public static final int BUILDER_CIRCUIT_BREAKER_WINDOW_HARD_CAP = 64;
-  public static final int DEFAULT_BUILDER_BID_COMPARE_FACTOR = 100;
+  public static final UInt64 DEFAULT_BUILDER_BID_COMPARE_FACTOR = BUILDER_BOOST_FACTOR_MAX_PROFIT;
   public static final boolean DEFAULT_BUILDER_SET_USER_AGENT_HEADER = true;
   public static final boolean DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG = true;
   public static final boolean DEFAULT_EXCHANGE_CAPABILITIES_MONITORING_ENABLED = true;
@@ -48,7 +50,7 @@ public class ExecutionLayerConfiguration {
   private final int builderCircuitBreakerWindow;
   private final int builderCircuitBreakerAllowedFaults;
   private final int builderCircuitBreakerAllowedConsecutiveFaults;
-  private final Optional<Integer> builderBidCompareFactor;
+  private final UInt64 builderBidCompareFactor;
   private final boolean builderSetUserAgentHeader;
   private final boolean useShouldOverrideBuilderFlag;
   private final boolean exchangeCapabilitiesMonitoringEnabled;
@@ -63,7 +65,7 @@ public class ExecutionLayerConfiguration {
       final int builderCircuitBreakerWindow,
       final int builderCircuitBreakerAllowedFaults,
       final int builderCircuitBreakerAllowedConsecutiveFaults,
-      final Optional<Integer> builderBidCompareFactor,
+      final UInt64 builderBidCompareFactor,
       final boolean builderSetUserAgentHeader,
       final boolean useShouldOverrideBuilderFlag,
       final boolean exchangeCapabilitiesMonitoringEnabled) {
@@ -130,7 +132,7 @@ public class ExecutionLayerConfiguration {
     return builderCircuitBreakerAllowedConsecutiveFaults;
   }
 
-  public Optional<Integer> getBuilderBidCompareFactor() {
+  public UInt64 getBuilderBidCompareFactor() {
     return builderBidCompareFactor;
   }
 
@@ -157,7 +159,7 @@ public class ExecutionLayerConfiguration {
     private int builderCircuitBreakerAllowedFaults = DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS;
     private int builderCircuitBreakerAllowedConsecutiveFaults =
         DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS;
-    private String builderBidCompareFactor = Integer.toString(DEFAULT_BUILDER_BID_COMPARE_FACTOR);
+    private String builderBidCompareFactor = DEFAULT_BUILDER_BID_COMPARE_FACTOR.toString();
     private boolean builderSetUserAgentHeader = DEFAULT_BUILDER_SET_USER_AGENT_HEADER;
     private boolean useShouldOverrideBuilderFlag = DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG;
     private boolean exchangeCapabilitiesMonitoringEnabled =
@@ -168,21 +170,21 @@ public class ExecutionLayerConfiguration {
     public ExecutionLayerConfiguration build() {
       validateStubEndpoints();
       validateBuilderCircuitBreaker();
-      final Optional<Integer> builderBidCompareFactor = validateAndParseBuilderBidCompareFactor();
+      final UInt64 builderBidCompareFactor = validateAndParseBuilderBidCompareFactor();
 
       if (builderEndpoint.isPresent()) {
-        if (builderBidCompareFactor.isEmpty()) {
+        if (builderBidCompareFactor.equals(BUILDER_BOOST_FACTOR_PREFER_BUILDER)) {
           LOG.info(
               "During block production, a valid builder bid will always be chosen over locally produced payload.");
         } else {
           final String additionalHint =
-              builderBidCompareFactor.get() == DEFAULT_BUILDER_BID_COMPARE_FACTOR
+              builderBidCompareFactor.equals(DEFAULT_BUILDER_BID_COMPARE_FACTOR)
                   ? " Can be configured via --builder-bid-compare-factor"
                   : "";
           LOG.info(
               "During block production, locally produced payload will be chosen when its value is equal or greater than {}% of the builder bid value."
                   + additionalHint,
-              builderBidCompareFactor.get());
+              builderBidCompareFactor);
         }
       }
 
@@ -290,26 +292,24 @@ public class ExecutionLayerConfiguration {
       }
     }
 
-    private Optional<Integer> validateAndParseBuilderBidCompareFactor() {
+    private UInt64 validateAndParseBuilderBidCompareFactor() {
       if (builderBidCompareFactor.equalsIgnoreCase(BUILDER_ALWAYS_KEYWORD)) {
-        return Optional.empty();
+        return BUILDER_BOOST_FACTOR_PREFER_BUILDER;
       }
       if (builderBidCompareFactor.endsWith("%")) {
         builderBidCompareFactor =
             builderBidCompareFactor.substring(0, builderBidCompareFactor.length() - 1);
       }
-      final int builderBidCompareFactorInt;
+      final UInt64 builderBidCompareFactorUint64;
       try {
-        builderBidCompareFactorInt = Integer.parseInt(builderBidCompareFactor);
-      } catch (final NumberFormatException ex) {
+        builderBidCompareFactorUint64 = UInt64.valueOf(builderBidCompareFactor);
+      } catch (final IllegalArgumentException ex) {
         throw new InvalidConfigurationException(
-            "Expecting number, percentage or "
+            "Expecting a number >= 0, percentage or "
                 + BUILDER_ALWAYS_KEYWORD
                 + " keyword for Builder bid compare factor");
       }
-      checkArgument(
-          builderBidCompareFactorInt >= 0, "Builder bid compare factor percentage should be >= 0");
-      return Optional.of(builderBidCompareFactorInt);
+      return builderBidCompareFactorUint64;
     }
   }
 }
