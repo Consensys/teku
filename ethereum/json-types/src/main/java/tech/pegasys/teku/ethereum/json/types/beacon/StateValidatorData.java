@@ -11,18 +11,36 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.migrated;
+package tech.pegasys.teku.ethereum.json.types.beacon;
+
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class StateValidatorData {
+  private static final DeserializableTypeDefinition<ValidatorStatus> STATUS_TYPE =
+      DeserializableTypeDefinition.enumOf(ValidatorStatus.class);
+
+  public static final SerializableTypeDefinition<StateValidatorData> STATE_VALIDATOR_DATA_TYPE =
+      SerializableTypeDefinition.object(StateValidatorData.class)
+          .withField("index", UINT64_TYPE, StateValidatorData::getIndex)
+          .withField("balance", UINT64_TYPE, StateValidatorData::getBalance)
+          .withField("status", STATUS_TYPE, StateValidatorData::getStatus)
+          .withField(
+              "validator",
+              Validator.SSZ_SCHEMA.getJsonTypeDefinition(),
+              StateValidatorData::getValidator)
+          .build();
+
   private final UInt64 index;
   private final UInt64 balance;
   private final ValidatorStatus status;
