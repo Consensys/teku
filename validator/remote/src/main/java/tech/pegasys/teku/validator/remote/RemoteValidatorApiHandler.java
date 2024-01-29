@@ -46,7 +46,6 @@ import tech.pegasys.teku.api.schema.altair.ContributionAndProof;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
-import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuty;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
@@ -238,24 +237,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
-    return sendRequest(
-        () ->
-            apiClient
-                .getProposerDuties(epoch)
-                .map(
-                    response ->
-                        new ProposerDuties(
-                            response.dependentRoot,
-                            response.data.stream().map(this::mapToProposerDuties).toList(),
-                            response.executionOptimistic)));
-  }
-
-  private ProposerDuty mapToProposerDuties(
-      final tech.pegasys.teku.api.response.v1.validator.ProposerDuty proposerDuty) {
-    return new ProposerDuty(
-        proposerDuty.pubkey.asBLSPublicKey(),
-        proposerDuty.validatorIndex.intValue(),
-        proposerDuty.slot);
+    return sendRequest(() -> typeDefClient.getProposerDuties(epoch));
   }
 
   private AttesterDuty mapToApiAttesterDuties(
