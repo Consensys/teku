@@ -216,6 +216,7 @@ class BlockOperationSelectorFactoryTest {
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
                 Optional.empty(),
+                Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
 
@@ -251,6 +252,7 @@ class BlockOperationSelectorFactoryTest {
                 parentRoot,
                 blockSlotState,
                 randaoReveal,
+                Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)
@@ -332,6 +334,7 @@ class BlockOperationSelectorFactoryTest {
                 randaoReveal,
                 Optional.empty(),
                 Optional.empty(),
+                Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
 
@@ -360,6 +363,7 @@ class BlockOperationSelectorFactoryTest {
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
                 Optional.of(false),
+                Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
     assertThat(bodyBuilder.executionPayload).isEqualTo(defaultExecutionPayload);
@@ -377,6 +381,7 @@ class BlockOperationSelectorFactoryTest {
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
                 Optional.of(true),
+                Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
     assertThat(bodyBuilder.executionPayloadHeader)
@@ -405,6 +410,7 @@ class BlockOperationSelectorFactoryTest {
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
                 Optional.of(false),
+                Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
 
@@ -434,6 +440,7 @@ class BlockOperationSelectorFactoryTest {
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
                 Optional.of(true),
+                Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
 
@@ -462,6 +469,7 @@ class BlockOperationSelectorFactoryTest {
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
                 Optional.of(false),
+                Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
 
@@ -490,6 +498,7 @@ class BlockOperationSelectorFactoryTest {
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
                 Optional.empty(),
+                Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
 
@@ -516,6 +525,7 @@ class BlockOperationSelectorFactoryTest {
                 parentRoot,
                 blockSlotState,
                 dataStructureUtil.randomSignature(),
+                Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)
@@ -548,6 +558,7 @@ class BlockOperationSelectorFactoryTest {
                 parentRoot,
                 blockSlotState,
                 dataStructureUtil.randomSignature(),
+                Optional.empty(),
                 Optional.empty(),
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)
@@ -600,6 +611,7 @@ class BlockOperationSelectorFactoryTest {
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
                 Optional.of(false),
+                Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
 
@@ -636,6 +648,7 @@ class BlockOperationSelectorFactoryTest {
                 dataStructureUtil.randomSignature(),
                 Optional.empty(),
                 Optional.of(true),
+                Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
 
@@ -789,7 +802,11 @@ class BlockOperationSelectorFactoryTest {
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState blockSlotState) {
     when(executionLayer.initiateBlockProduction(
-            executionPayloadContext, blockSlotState, false, BlockProductionPerformance.NOOP))
+            executionPayloadContext,
+            blockSlotState,
+            false,
+            Optional.empty(),
+            BlockProductionPerformance.NOOP))
         .thenReturn(
             new ExecutionPayloadResult(
                 executionPayloadContext,
@@ -804,7 +821,11 @@ class BlockOperationSelectorFactoryTest {
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState blockSlotState) {
     when(executionLayer.initiateBlockProduction(
-            executionPayloadContext, blockSlotState, true, BlockProductionPerformance.NOOP))
+            executionPayloadContext,
+            blockSlotState,
+            true,
+            Optional.empty(),
+            BlockProductionPerformance.NOOP))
         .thenReturn(
             new ExecutionPayloadResult(
                 executionPayloadContext,
@@ -830,7 +851,11 @@ class BlockOperationSelectorFactoryTest {
                 FallbackReason.SHOULD_OVERRIDE_BUILDER_FLAG_IS_TRUE));
 
     when(executionLayer.initiateBlockProduction(
-            executionPayloadContext, blockSlotState, true, BlockProductionPerformance.NOOP))
+            executionPayloadContext,
+            blockSlotState,
+            true,
+            Optional.empty(),
+            BlockProductionPerformance.NOOP))
         .thenReturn(
             new ExecutionPayloadResult(
                 executionPayloadContext,
@@ -846,7 +871,11 @@ class BlockOperationSelectorFactoryTest {
       final BeaconState blockSlotState,
       final BlobsBundle blobsBundle) {
     when(executionLayer.initiateBlockAndBlobsProduction(
-            executionPayloadContext, blockSlotState, false, BlockProductionPerformance.NOOP))
+            executionPayloadContext,
+            blockSlotState,
+            false,
+            Optional.empty(),
+            BlockProductionPerformance.NOOP))
         .thenReturn(
             new ExecutionPayloadResult(
                 executionPayloadContext,
@@ -864,7 +893,11 @@ class BlockOperationSelectorFactoryTest {
     final HeaderWithFallbackData headerWithFallbackData =
         HeaderWithFallbackData.create(executionPayloadHeader, Optional.of(blobKzgCommitments));
     when(executionLayer.initiateBlockAndBlobsProduction(
-            executionPayloadContext, blockSlotState, true, BlockProductionPerformance.NOOP))
+            executionPayloadContext,
+            blockSlotState,
+            true,
+            Optional.empty(),
+            BlockProductionPerformance.NOOP))
         .thenReturn(
             new ExecutionPayloadResult(
                 executionPayloadContext,
@@ -889,7 +922,11 @@ class BlockOperationSelectorFactoryTest {
                 FallbackReason.SHOULD_OVERRIDE_BUILDER_FLAG_IS_TRUE));
 
     when(executionLayer.initiateBlockAndBlobsProduction(
-            executionPayloadContext, blockSlotState, true, BlockProductionPerformance.NOOP))
+            executionPayloadContext,
+            blockSlotState,
+            true,
+            Optional.empty(),
+            BlockProductionPerformance.NOOP))
         .thenReturn(
             new ExecutionPayloadResult(
                 executionPayloadContext,

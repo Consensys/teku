@@ -65,7 +65,7 @@ public class PowchainService extends Service {
   private final Eth1HeadTracker headTracker;
   private final List<Web3j> web3js;
   private final OkHttpClient okHttpClient;
-  private Eth1Providers eth1Providers;
+  private final Eth1Providers eth1Providers;
 
   public PowchainService(
       final ServiceConfig serviceConfig,
@@ -149,7 +149,8 @@ public class PowchainService extends Service {
             depositEventsAccessor,
             eth1BlockFetcher,
             asyncRunner,
-            powConfig.getEth1LogsMaxBlockRange());
+            powConfig.getEth1LogsMaxBlockRange(),
+            serviceConfig.getTimeProvider());
 
     headTracker =
         new TimeBasedEth1HeadTracker(

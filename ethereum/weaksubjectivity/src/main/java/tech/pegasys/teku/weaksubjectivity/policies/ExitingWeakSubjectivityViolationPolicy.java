@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.weaksubjectivity.policies;
 
+import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.FATAL_EXIT_CODE;
+
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -38,6 +40,6 @@ class ExitingWeakSubjectivityViolationPolicy implements WeakSubjectivityViolatio
   }
 
   private void exitClient() {
-    System.exit(2);
+    System.exit(FATAL_EXIT_CODE);
   }
 }
