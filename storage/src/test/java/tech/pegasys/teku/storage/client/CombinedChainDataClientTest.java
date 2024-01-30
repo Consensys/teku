@@ -16,6 +16,8 @@ package tech.pegasys.teku.storage.client;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
@@ -33,6 +35,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CommitteeAssignment;
@@ -156,50 +159,65 @@ class CombinedChainDataClientTest {
     final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(2));
     final Optional<Bytes32> recentBlockRoot =
         Optional.of(spec.getBlockRootAtSlot(state, UInt64.ONE));
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(UInt64.ONE, recentBlockRoot.get());
     when(recentChainData.getBlockRootInEffectBySlot(UInt64.ONE)).thenReturn(recentBlockRoot);
     when(recentChainData.getStore()).thenReturn(store);
-    when(store.retrieveStateAtSlot(any()))
+    when(store.retrieveStateAtSlot(slotAndBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
     final SafeFuture<Optional<BeaconState>> future =
         client.getStateForBlockProduction(UInt64.ONE, false);
     assertThat(future.get()).contains(state);
+    // getStateAtSlotExact
+    verify(recentChainData).getBlockRootInEffectBySlot(UInt64.ONE);
+    verify(store).retrieveStateAtSlot(slotAndBlockRoot);
   }
 
   @Test
-  void getStateForBlockProduction_whenEnabeldAndHaveNoBestBlockRoot()
+  void getStateForBlockProduction_whenEnabledAndHaveNoBestBlockRoot()
       throws ExecutionException, InterruptedException {
     final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(2));
     final Optional<Bytes32> recentBlockRoot =
         Optional.of(spec.getBlockRootAtSlot(state, UInt64.ONE));
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(UInt64.ONE, recentBlockRoot.get());
     when(recentChainData.getStore()).thenReturn(store);
 
     when(recentChainData.getBestBlockRoot()).thenReturn(Optional.empty());
     when(recentChainData.getBlockRootInEffectBySlot(UInt64.ONE)).thenReturn(recentBlockRoot);
-    when(store.retrieveStateAtSlot(any()))
+    when(store.retrieveStateAtSlot(slotAndBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
 
     final SafeFuture<Optional<BeaconState>> future =
         client.getStateForBlockProduction(UInt64.ONE, true);
     assertThat(future.get()).contains(state);
+    // getStateAtSlotExact
+    verify(recentChainData).getBlockRootInEffectBySlot(UInt64.ONE);
+    verify(store).retrieveStateAtSlot(slotAndBlockRoot);
   }
 
   @Test
-  void getStateForBlockProduction_whenEnabeldAndBestBlockRootMatches()
+  void getStateForBlockProduction_whenEnabledAndBestBlockRootMatches()
       throws ExecutionException, InterruptedException {
     final BeaconState state = dataStructureUtil.randomBeaconState(UInt64.valueOf(2));
     final Optional<Bytes32> recentBlockRoot =
         Optional.of(spec.getBlockRootAtSlot(state, UInt64.ONE));
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(UInt64.ONE, recentBlockRoot.get());
     when(recentChainData.getStore()).thenReturn(store);
 
     when(recentChainData.getBestBlockRoot()).thenReturn(recentBlockRoot);
     when(recentChainData.getProposerHead(any(), any())).thenReturn(recentBlockRoot.get());
     when(recentChainData.getBlockRootInEffectBySlot(UInt64.ONE)).thenReturn(recentBlockRoot);
-    when(store.retrieveStateAtSlot(any()))
+    when(store.retrieveStateAtSlot(slotAndBlockRoot))
         .thenReturn(SafeFuture.completedFuture(Optional.of(state)));
 
     final SafeFuture<Optional<BeaconState>> future =
         client.getStateForBlockProduction(UInt64.ONE, true);
     assertThat(future.get()).contains(state);
+    // getStateAtSlotExact
+    verify(recentChainData).getBlockRootInEffectBySlot(UInt64.ONE);
+    verify(store).retrieveStateAtSlot(slotAndBlockRoot);
   }
 
   @Test
@@ -210,6 +228,8 @@ class CombinedChainDataClientTest {
     final BeaconState proposerState = dataStructureUtil.randomBeaconState(UInt64.ONE);
     final Optional<Bytes32> recentBlockRoot =
         Optional.of(spec.getBlockRootAtSlot(state, UInt64.ONE));
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(UInt64.ONE, recentBlockRoot.get());
     when(recentChainData.getStore()).thenReturn(store);
 
     when(recentChainData.getBestBlockRoot()).thenReturn(recentBlockRoot);
@@ -221,6 +241,8 @@ class CombinedChainDataClientTest {
     final SafeFuture<Optional<BeaconState>> future =
         client.getStateForBlockProduction(UInt64.ONE, true);
     assertThat(future.get()).contains(proposerState);
+    verify(store).retrieveBlockState(proposerHead);
+    verify(store, never()).retrieveStateAtSlot(slotAndBlockRoot);
   }
 
   @Test
