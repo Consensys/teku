@@ -487,6 +487,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initAttestationPool();
     initAttesterSlashingPool();
     initProposerSlashingPool();
+    initSlashingProtection();
     initVoluntaryExitPool();
     initSignedBlsToExecutionChangePool();
     initEth1DataCache();
@@ -644,13 +645,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 .reversed());
     blockImporter.subscribeToVerifiedBlockAttesterSlashings(attesterSlashingPool::removeAll);
     attesterSlashingPool.subscribeOperationAdded(forkChoice::onAttesterSlashing);
-    if (beaconConfig.validatorConfig().isShutdownWhenValidatorSlashedEnabled()) {
-      final ValidatorTimingChannel validatorTimingChannel =
-          eventChannels.getPublisher(ValidatorTimingChannel.class);
-      attesterSlashingPool.subscribeOperationAdded(
-          (operation, validationStatus, fromNetwork) ->
-              validatorTimingChannel.onAttesterSlashing(operation));
-    }
   }
 
   protected void initProposerSlashingPool() {
@@ -663,9 +657,15 @@ public class BeaconChainController extends Service implements BeaconChainControl
             beaconBlockSchemaSupplier.andThen(BeaconBlockBodySchema::getProposerSlashingsSchema),
             validator);
     blockImporter.subscribeToVerifiedBlockProposerSlashings(proposerSlashingPool::removeAll);
+  }
+
+  protected void initSlashingProtection() {
     if (beaconConfig.validatorConfig().isShutdownWhenValidatorSlashedEnabled()) {
       final ValidatorTimingChannel validatorTimingChannel =
           eventChannels.getPublisher(ValidatorTimingChannel.class);
+      attesterSlashingPool.subscribeOperationAdded(
+          (operation, validationStatus, fromNetwork) ->
+              validatorTimingChannel.onAttesterSlashing(operation));
       proposerSlashingPool.subscribeOperationAdded(
           (operation, validationStatus, fromNetwork) ->
               validatorTimingChannel.onProposerSlashing(operation));
