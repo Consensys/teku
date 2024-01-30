@@ -55,6 +55,18 @@ public class ValidatorTimingActionsTest {
   private final Optional<SlashingRiskAction> maybeSlashedValidatorAction =
       Optional.of(new SlashedValidatorAlert(statusLogger));
 
+  private final BLSPublicKey key1 = dataStructureUtil.randomPublicKey();
+  private final BLSPublicKey key2 = dataStructureUtil.randomPublicKey();
+  private final BLSPublicKey key3 = dataStructureUtil.randomPublicKey();
+  private final BLSPublicKey key4 = dataStructureUtil.randomPublicKey();
+
+  private final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses =
+      Map.ofEntries(
+          Map.entry(key1, ValidatorStatus.active_slashed),
+          Map.entry(key2, ValidatorStatus.exited_slashed),
+          Map.entry(key3, ValidatorStatus.active_ongoing),
+          Map.entry(key4, ValidatorStatus.exited_slashed));
+
   @Test
   public void shouldTriggerSlashingActionForSlashedValidators_AttesterSlashing() {
     final ValidatorTimingActions validatorTimingActions =
@@ -158,16 +170,6 @@ public class ValidatorTimingActionsTest {
     final ValidatorTimingActions validatorTimingActions =
         new ValidatorTimingActions(
             validatorIndexProvider, delegates, spec, metricsSystem, maybeSlashedValidatorAction);
-    final BLSPublicKey key1 = dataStructureUtil.randomPublicKey();
-    final BLSPublicKey key2 = dataStructureUtil.randomPublicKey();
-    final BLSPublicKey key3 = dataStructureUtil.randomPublicKey();
-    final BLSPublicKey key4 = dataStructureUtil.randomPublicKey();
-    final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses =
-        Map.ofEntries(
-            Map.entry(key1, ValidatorStatus.active_slashed),
-            Map.entry(key2, ValidatorStatus.exited_slashed),
-            Map.entry(key3, ValidatorStatus.active_ongoing),
-            Map.entry(key4, ValidatorStatus.exited_slashed));
     when(validatorIndexProvider.containsPublicKey(key1)).thenReturn(true);
     when(validatorIndexProvider.containsPublicKey(key2)).thenReturn(true);
     when(validatorIndexProvider.containsPublicKey(key4)).thenReturn(false);
@@ -181,20 +183,25 @@ public class ValidatorTimingActionsTest {
   }
 
   @Test
-  public void shouldNotTriggerSlashingActionForSlashedValidators_ValidatorStatusesUpdate() {
+  public void shouldNotTriggerSlashingActionForNotOwnedSlashedValidators_ValidatorStatusesUpdate() {
+    final ValidatorTimingActions validatorTimingActions =
+        new ValidatorTimingActions(
+            validatorIndexProvider, delegates, spec, metricsSystem, maybeSlashedValidatorAction);
+    when(validatorIndexProvider.containsPublicKey(any())).thenReturn(false);
+    validatorTimingActions.onUpdatedValidatorStatuses(newValidatorStatuses, true);
+    verify(delegate).onUpdatedValidatorStatuses(newValidatorStatuses, true);
+    verify(validatorIndexProvider).containsPublicKey(key1);
+    verify(validatorIndexProvider).containsPublicKey(key2);
+    verify(validatorIndexProvider).containsPublicKey(key4);
+    verifyNoMoreInteractions(validatorIndexProvider);
+    verifyNoInteractions(statusLogger);
+  }
+
+  @Test
+  public void shouldNotTriggerSlashingActionWhenNotEnabled_ValidatorStatusesUpdate() {
     final ValidatorTimingActions validatorTimingActions =
         new ValidatorTimingActions(
             validatorIndexProvider, delegates, spec, metricsSystem, Optional.empty());
-    final BLSPublicKey key1 = dataStructureUtil.randomPublicKey();
-    final BLSPublicKey key2 = dataStructureUtil.randomPublicKey();
-    final BLSPublicKey key3 = dataStructureUtil.randomPublicKey();
-    final BLSPublicKey key4 = dataStructureUtil.randomPublicKey();
-    final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses =
-        Map.ofEntries(
-            Map.entry(key1, ValidatorStatus.active_slashed),
-            Map.entry(key2, ValidatorStatus.exited_slashed),
-            Map.entry(key3, ValidatorStatus.active_ongoing),
-            Map.entry(key4, ValidatorStatus.exited_slashed));
     validatorTimingActions.onUpdatedValidatorStatuses(newValidatorStatuses, true);
     verifyNoInteractions(validatorIndexProvider);
     verifyNoInteractions(statusLogger);
