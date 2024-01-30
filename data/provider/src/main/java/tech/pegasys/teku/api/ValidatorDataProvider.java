@@ -229,19 +229,6 @@ public class ValidatorDataProvider {
     }
   }
 
-  public SafeFuture<Optional<BlockContainer>> getUnsignedBeaconBlockAtSlot(
-      UInt64 slot, BLSSignature randao, Optional<Bytes32> graffiti) {
-    if (randao == null) {
-      throw new IllegalArgumentException(NO_RANDAO_PROVIDED);
-    }
-    return getUnsignedBeaconBlockAtSlot(
-        slot,
-        BLSSignature.fromBytesCompressed(randao.toSSZBytes()),
-        graffiti,
-        false,
-        Optional.empty());
-  }
-
   public SpecMilestone getMilestoneAtSlot(final UInt64 slot) {
     return spec.atSlot(slot).getMilestone();
   }
