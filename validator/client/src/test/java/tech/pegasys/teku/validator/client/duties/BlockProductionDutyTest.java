@@ -25,7 +25,6 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.failedFuture;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
-import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import java.util.List;
@@ -540,7 +539,7 @@ class BlockProductionDutyTest {
     when(signer.createRandaoReveal(spec.computeEpochAtSlot(CAPELLA_SLOT), fork))
         .thenReturn(completedFuture(randaoReveal));
     when(validatorApiChannel.createUnsignedBlock(
-            CAPELLA_SLOT, randaoReveal, Optional.of(graffiti), Optional.empty(), Optional.of(ONE)))
+            CAPELLA_SLOT, randaoReveal, Optional.of(graffiti), Optional.empty(), Optional.empty()))
         .thenReturn(completedFuture(Optional.of(unsignedBlock)));
     when(signer.signBlock(unsignedBlock, fork)).thenReturn(completedFuture(blockSignature));
     final SignedBeaconBlock signedBlock =
@@ -551,7 +550,7 @@ class BlockProductionDutyTest {
     performAndReportDuty();
     verify(validatorApiChannel)
         .createUnsignedBlock(
-            CAPELLA_SLOT, randaoReveal, Optional.of(graffiti), Optional.empty(), Optional.of(ONE));
+            CAPELLA_SLOT, randaoReveal, Optional.of(graffiti), Optional.empty(), Optional.empty());
 
     verify(validatorApiChannel).sendSignedBlock(signedBlock, BroadcastValidationLevel.NOT_REQUIRED);
     verify(validatorLogger)
