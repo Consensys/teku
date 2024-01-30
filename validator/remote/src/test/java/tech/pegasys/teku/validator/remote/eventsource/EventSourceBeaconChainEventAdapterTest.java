@@ -1,0 +1,102 @@
+/*
+ * Copyright Consensys Software Inc., 2024
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
+ * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations under the License.
+ */
+
+package tech.pegasys.teku.validator.remote.eventsource;
+
+import static java.util.Collections.emptyMap;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.stream.Stream;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import tech.pegasys.teku.api.response.v1.EventType;
+import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
+import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
+import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
+import tech.pegasys.teku.validator.remote.BeaconNodeReadinessManager;
+import tech.pegasys.teku.validator.remote.RemoteValidatorApiChannel;
+import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
+
+public class EventSourceBeaconChainEventAdapterTest {
+
+  @SuppressWarnings("unchecked")
+  private final LabelledMetric<Counter> labelledMetricMock =
+      (LabelledMetric<Counter>) mock(LabelledMetric.class);
+
+  final MetricsSystem metricsSystemMock = mock(MetricsSystem.class);
+  final HttpUrl httpUrlMock = mock(HttpUrl.class);
+  final URI uriMock = mock(URI.class);
+  final RemoteValidatorApiChannel beaconApiMock = mock(RemoteValidatorApiChannel.class);
+
+  @BeforeEach
+  public void setUp() {
+    when(metricsSystemMock.createLabelledCounter(any(), any(), any(), any()))
+        .thenReturn(labelledMetricMock);
+    when(httpUrlMock.resolve(any())).thenReturn(httpUrlMock);
+    when(uriMock.getScheme()).thenReturn("http");
+    when(httpUrlMock.uri()).thenReturn(uriMock);
+    when(beaconApiMock.getEndpoint()).thenReturn(httpUrlMock);
+  }
+
+  @ParameterizedTest(name = "subscribe_to_slashing_events: {0}")
+  @ValueSource(strings = {"true", "false"})
+  public void shouldSubscribeToSlashingEvents(final boolean shutdownWhenValidatorSlashedEnabled) {
+    final EventSourceBeaconChainEventAdapter eventSourceBeaconChainEventAdapter =
+        initEventSourceBeaconChainEventAdapter(shutdownWhenValidatorSlashedEnabled);
+    eventSourceBeaconChainEventAdapter.createEventSource(beaconApiMock);
+    verifyEventSourceSubscriptionUrl(httpUrlMock, shutdownWhenValidatorSlashedEnabled);
+  }
+
+  @NotNull
+  private EventSourceBeaconChainEventAdapter initEventSourceBeaconChainEventAdapter(
+      final boolean shutdownWhenValidatorSlashedEnabled) {
+    return new EventSourceBeaconChainEventAdapter(
+        mock(BeaconNodeReadinessManager.class),
+        mock(RemoteValidatorApiChannel.class),
+        new ArrayList<>(),
+        mock(OkHttpClient.class),
+        mock(ValidatorLogger.class),
+        mock(BeaconChainEventAdapter.class),
+        mock(ValidatorTimingChannel.class),
+        metricsSystemMock,
+        true,
+        shutdownWhenValidatorSlashedEnabled,
+        mock(Spec.class));
+  }
+
+  public void verifyEventSourceSubscriptionUrl(
+      final HttpUrl endpoint, final boolean shutdownWhenValidatorSlashedEnabled) {
+    Stream<EventType> eventTypes =
+        shutdownWhenValidatorSlashedEnabled
+            ? Stream.of(EventType.head, EventType.attester_slashing, EventType.proposer_slashing)
+            : Stream.of(EventType.head);
+    verify(endpoint)
+        .resolve(
+            ValidatorApiMethod.EVENTS.getPath(emptyMap())
+                + "?topics="
+                + String.join(",", eventTypes.map(EventType::name).toList()));
+  }
+}

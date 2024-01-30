@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.remote.eventsource;
 
 import static java.util.Collections.emptyMap;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.launchdarkly.eventsource.ConnectStrategy;
 import com.launchdarkly.eventsource.EventSource;
@@ -132,7 +133,8 @@ public class EventSourceBeaconChainEventAdapter
     }
   }
 
-  private BackgroundEventSource createEventSource(final RemoteValidatorApiChannel beaconNodeApi) {
+  @VisibleForTesting
+  BackgroundEventSource createEventSource(final RemoteValidatorApiChannel beaconNodeApi) {
 
     final List<EventType> eventTypes = new ArrayList<>();
     eventTypes.add(EventType.head);
