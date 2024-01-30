@@ -22,6 +22,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.ethereum.executionclient.schema.verkle.ExecutionWitness;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.impl.SszByteListImpl;
@@ -29,11 +30,13 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitnessSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
 
 public class ExecutionPayloadV2 extends ExecutionPayloadV1 {
   public final List<WithdrawalV1> withdrawals;
-  public final Bytes executionWitness;
+  public final ExecutionWitness executionWitness;
 
   public ExecutionPayloadV2(
       @JsonProperty("parentHash") Bytes32 parentHash,
@@ -51,7 +54,7 @@ public class ExecutionPayloadV2 extends ExecutionPayloadV1 {
       @JsonProperty("blockHash") Bytes32 blockHash,
       @JsonProperty("transactions") List<Bytes> transactions,
       @JsonProperty("withdrawals") List<WithdrawalV1> withdrawals,
-      @JsonProperty("execution_witness") Bytes executionWitness) {
+      @JsonProperty("execution_witness") ExecutionWitness executionWitness) {
     super(
         parentHash,
         feeRecipient,
@@ -71,8 +74,13 @@ public class ExecutionPayloadV2 extends ExecutionPayloadV1 {
     this.executionWitness = executionWitness;
   }
 
-  public static ExecutionPayloadV2 fromInternalExecutionPayload(ExecutionPayload executionPayload) {
-    List<WithdrawalV1> withdrawalsList = getWithdrawals(executionPayload.getOptionalWithdrawals());
+  public static ExecutionPayloadV2 fromInternalExecutionPayload(
+      final ExecutionPayload executionPayload) {
+    final List<WithdrawalV1> withdrawalsList =
+        getWithdrawals(executionPayload.getOptionalWithdrawals());
+    final ExecutionWitness executionWitness =
+        getExecutionWitness(
+            executionPayload.toVersionElectra().map(ExecutionPayloadElectra::getExecutionWitness));
     return new ExecutionPayloadV2(
         executionPayload.getParentHash(),
         executionPayload.getFeeRecipient(),
@@ -89,10 +97,7 @@ public class ExecutionPayloadV2 extends ExecutionPayloadV1 {
         executionPayload.getBlockHash(),
         executionPayload.getTransactions().stream().map(SszByteListImpl::getBytes).toList(),
         withdrawalsList,
-        executionPayload
-            .toVersionElectra()
-            .map(electraPayload -> electraPayload.getExecutionWitness().sszSerialize())
-            .orElse(null));
+        executionWitness);
   }
 
   @Override
@@ -110,9 +115,7 @@ public class ExecutionPayloadV2 extends ExecutionPayloadV1 {
         .executionWitness(
             () -> {
               checkNotNull(executionWitness, "execution witness not provided when required");
-              return executionPayloadSchema
-                  .getExecutionWitnessSchemaRequired()
-                  .sszDeserialize(executionWitness);
+              return createInternalExecutionWitness(executionWitness, executionPayloadSchema);
             });
   }
 
@@ -140,5 +143,24 @@ public class ExecutionPayloadV2 extends ExecutionPayloadV1 {
           new WithdrawalV1(w.getIndex(), w.getValidatorIndex(), w.getAddress(), w.getAmount()));
     }
     return withdrawals;
+  }
+
+  public static ExecutionWitness getExecutionWitness(
+      final Optional<tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitness>
+          maybeExecutionWitness) {
+    if (maybeExecutionWitness.isEmpty()) {
+      return null;
+    }
+
+    return new ExecutionWitness(maybeExecutionWitness.get());
+  }
+
+  private tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitness
+      createInternalExecutionWitness(
+          final ExecutionWitness executionWitness,
+          ExecutionPayloadSchema<?> executionPayloadSchema) {
+    final ExecutionWitnessSchema executionWitnessSchema =
+        executionPayloadSchema.getExecutionWitnessSchemaRequired();
+    return executionWitness.asInternalExecutionWitness(executionWitnessSchema);
   }
 }

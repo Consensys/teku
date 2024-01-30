@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.ethereum.executionclient.schema.verkle.ExecutionWitness;
 import tech.pegasys.teku.ethereum.executionclient.serialization.UInt64AsHexDeserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.UInt64AsHexSerializer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
 
 public class ExecutionPayloadV3 extends ExecutionPayloadV2 {
   @JsonSerialize(using = UInt64AsHexSerializer.class)
@@ -57,7 +59,7 @@ public class ExecutionPayloadV3 extends ExecutionPayloadV2 {
       @JsonProperty("blockHash") Bytes32 blockHash,
       @JsonProperty("transactions") List<Bytes> transactions,
       @JsonProperty("withdrawals") List<WithdrawalV1> withdrawals,
-      @JsonProperty("execution_witness") Bytes executionWitness,
+      @JsonProperty("execution_witness") ExecutionWitness executionWitness,
       @JsonProperty("blobGasUsed") UInt64 blobGasUsed,
       @JsonProperty("excessBlobGas") UInt64 excessBlobGas) {
     super(
@@ -85,6 +87,9 @@ public class ExecutionPayloadV3 extends ExecutionPayloadV2 {
       final ExecutionPayload executionPayload) {
     final List<WithdrawalV1> withdrawalsList =
         getWithdrawals(executionPayload.getOptionalWithdrawals());
+    final ExecutionWitness executionWitness =
+        getExecutionWitness(
+            executionPayload.toVersionElectra().map(ExecutionPayloadElectra::getExecutionWitness));
     return new ExecutionPayloadV3(
         executionPayload.getParentHash(),
         executionPayload.getFeeRecipient(),
@@ -101,10 +106,7 @@ public class ExecutionPayloadV3 extends ExecutionPayloadV2 {
         executionPayload.getBlockHash(),
         executionPayload.getTransactions().stream().map(SszByteListImpl::getBytes).toList(),
         withdrawalsList,
-        executionPayload
-            .toVersionDeneb()
-            .map(denebPayload -> denebPayload.getExecutionWitness().sszSerialize())
-            .orElse(null),
+        executionWitness,
         executionPayload.toVersionDeneb().map(ExecutionPayloadDeneb::getBlobGasUsed).orElse(null),
         executionPayload
             .toVersionDeneb()

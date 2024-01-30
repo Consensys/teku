@@ -39,6 +39,7 @@ public class VerkleProofSchema
   static final SszFieldName FIELD_OTHER_STEMS = () -> "other_stems";
   static final SszFieldName FIELD_DEPTH_EXTENSION_PRESENT = () -> "depth_extension_present";
   static final SszFieldName FIELD_COMMITMENTS_BY_PATH = () -> "commitments_by_path";
+  static final SszFieldName FIELD_IPA_PROOF = () -> "ipa_proof";
 
   public VerkleProofSchema(
       final IpaProofSchema ipaProofSchema, final int maxStems, final int maxCommitmentsPerStem) {
@@ -55,7 +56,7 @@ public class VerkleProofSchema
             SszListSchema.create(
                 SszPrimitiveSchemas.BYTES32_SCHEMA, (long) maxStems * maxCommitmentsPerStem)),
         namedSchema("d", SszPrimitiveSchemas.BYTES32_SCHEMA),
-        namedSchema("ipa_proof", ipaProofSchema));
+        namedSchema(FIELD_IPA_PROOF, ipaProofSchema));
   }
 
   @SuppressWarnings("unchecked")
@@ -74,6 +75,10 @@ public class VerkleProofSchema
   public SszListSchema<SszBytes32, SszList<SszBytes32>> getCommitmentsByPathSchema() {
     return (SszListSchema<SszBytes32, SszList<SszBytes32>>)
         getChildSchema(getFieldIndex(FIELD_COMMITMENTS_BY_PATH));
+  }
+
+  public IpaProofSchema getIpaProofSchema() {
+    return (IpaProofSchema) getChildSchema(getFieldIndex(FIELD_IPA_PROOF));
   }
 
   public VerkleProof create(

@@ -24,6 +24,7 @@ public class ExecutionWitnessSchema
     extends ContainerSchema2<ExecutionWitness, SszList<StemStateDiff>, VerkleProof> {
 
   static final SszFieldName FIELD_STATE_DIFF = () -> "state_diff";
+  static final SszFieldName FIELD_VERKLE_PROOF = () -> "verkle_proof";
 
   public ExecutionWitnessSchema(
       final int maxStems,
@@ -33,13 +34,17 @@ public class ExecutionWitnessSchema
         "ExecutionWitness",
         // TODO: only valid if list is sorted by stems
         namedSchema(FIELD_STATE_DIFF, SszListSchema.create(stemStateDiffSchema, maxStems)),
-        namedSchema("verkle_proof", verkleProofSchema));
+        namedSchema(FIELD_VERKLE_PROOF, verkleProofSchema));
   }
 
   @SuppressWarnings("unchecked")
   public SszListSchema<StemStateDiff, SszList<StemStateDiff>> getStateDiffSchema() {
     return (SszListSchema<StemStateDiff, SszList<StemStateDiff>>)
         getChildSchema(getFieldIndex(FIELD_STATE_DIFF));
+  }
+
+  public VerkleProofSchema getVerkleProofSchema() {
+    return (VerkleProofSchema) getChildSchema(getFieldIndex(FIELD_VERKLE_PROOF));
   }
 
   public ExecutionWitness create(

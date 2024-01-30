@@ -40,8 +40,6 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes20Deserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes20Serializer;
-import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes31Deserializer;
-import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes31Serializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes32Deserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes8Deserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.BytesSerializer;
@@ -50,7 +48,6 @@ import tech.pegasys.teku.ethereum.executionclient.serialization.UInt256AsHexSeri
 import tech.pegasys.teku.ethereum.executionclient.serialization.UInt64AsHexDeserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.UInt64AsHexSerializer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
-import tech.pegasys.teku.infrastructure.bytes.Bytes31;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -101,21 +98,6 @@ public class SchemaSerializationTests {
     Bytes20 result = deserializer.deserialize(parser, objectMapper.getDeserializationContext());
 
     assertThat(originalBytes20).isEqualTo(result);
-  }
-
-  @TestTemplate
-  void shouldSerializeDeserializeBytes31() throws IOException {
-    final Bytes31 originalBytes31 = dataStructureUtil.randomBytes31();
-
-    new Bytes31Serializer().serialize(originalBytes31, jsonGenerator, serializerProvider);
-    jsonGenerator.flush();
-
-    final JsonParser parser = prepareDeserializationContext(jsonWriter.toString());
-    final Bytes31Deserializer deserializer = new Bytes31Deserializer();
-    final Bytes31 result =
-        deserializer.deserialize(parser, objectMapper.getDeserializationContext());
-
-    assertThat(originalBytes31).isEqualTo(result);
   }
 
   @TestTemplate
