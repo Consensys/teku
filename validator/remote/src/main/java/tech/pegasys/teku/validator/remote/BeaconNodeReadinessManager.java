@@ -125,6 +125,11 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
       final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
       final boolean possibleMissingEvents) {}
 
+  @Override
+  public void onUpdatedValidatorStatuses(
+      final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
+      final boolean possibleMissingEvents) {}
+
   private SafeFuture<Void> performReadinessCheckAgainstAllNodes() {
     // no readiness check needed when no failovers are configured
     if (failoverBeaconNodeApis.isEmpty()) {
