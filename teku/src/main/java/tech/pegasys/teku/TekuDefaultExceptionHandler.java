@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku;
 
+import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.ERROR_EXIT_CODE;
+import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.FATAL_EXIT_CODE;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -73,15 +76,15 @@ public final class TekuDefaultExceptionHandler
     if (fatalServiceError.isPresent()) {
       final String failedService = fatalServiceError.get().getService();
       statusLog.fatalError(failedService, exception);
-      System.exit(2);
+      System.exit(FATAL_EXIT_CODE);
     } else if (ExceptionUtil.getCause(exception, DatabaseStorageException.class)
         .filter(DatabaseStorageException::isUnrecoverable)
         .isPresent()) {
       statusLog.fatalError(subscriberDescription, exception);
-      System.exit(2);
+      System.exit(FATAL_EXIT_CODE);
     } else if (exception instanceof OutOfMemoryError) {
       statusLog.fatalError(subscriberDescription, exception);
-      System.exit(2);
+      System.exit(ERROR_EXIT_CODE);
     } else if (exception instanceof ShuttingDownException) {
       LOG.debug("Shutting down", exception);
     } else if (isExpectedNettyError(exception)) {
