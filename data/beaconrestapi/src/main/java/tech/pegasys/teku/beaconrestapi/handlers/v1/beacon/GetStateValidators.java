@@ -16,14 +16,10 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.ID_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.STATUS_PARAMETER;
-import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidator.STATE_VALIDATOR_DATA_TYPE;
 import static tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter.getApplicableValidatorStatuses;
+import static tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData.STATE_VALIDATORS_RESPONSE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_BEACON;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
@@ -31,10 +27,9 @@ import java.util.Optional;
 import java.util.Set;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.migrated.StateValidatorData;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
@@ -43,16 +38,6 @@ import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 public class GetStateValidators extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/beacon/states/{state_id}/validators";
-
-  static final SerializableTypeDefinition<ObjectAndMetaData<List<StateValidatorData>>>
-      RESPONSE_TYPE =
-          SerializableTypeDefinition.<ObjectAndMetaData<List<StateValidatorData>>>object()
-              .name("GetStateValidatorsResponse")
-              .withField(
-                  EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
-              .withField(FINALIZED, BOOLEAN_TYPE, ObjectAndMetaData::isFinalized)
-              .withField("data", listOf(STATE_VALIDATOR_DATA_TYPE), ObjectAndMetaData::getData)
-              .build();
 
   private final ChainDataProvider chainDataProvider;
 
@@ -71,7 +56,7 @@ public class GetStateValidators extends RestApiEndpoint {
             .queryListParam(ID_PARAMETER)
             .queryListParam(STATUS_PARAMETER)
             .tags(TAG_BEACON)
-            .response(SC_OK, "Request successful", RESPONSE_TYPE)
+            .response(SC_OK, "Request successful", STATE_VALIDATORS_RESPONSE_TYPE)
             .withNotFoundResponse()
             .build());
     this.chainDataProvider = provider;

@@ -263,6 +263,7 @@ public class DepositRangeReductionTest {
         depositEventsAccessor,
         eth1BlockFetcher,
         asyncRunner,
-        MAX_BLOCK_RANGE);
+        MAX_BLOCK_RANGE,
+        timeProvider);
   }
 }

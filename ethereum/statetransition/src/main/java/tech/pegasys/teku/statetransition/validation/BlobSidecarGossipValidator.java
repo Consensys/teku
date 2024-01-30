@@ -136,7 +136,7 @@ public class BlobSidecarGossipValidator {
 
     /*
      * [IGNORE] The sidecar is from a slot greater than the latest finalized slot -- i.e. validate that
-     * `block_header.slot > compute_start_slot_at_epoch(state.finalized_checkpoint.epoch)`
+     * `block_header.slot > compute_start_slot_at_epoch(store.finalized_checkpoint.epoch)`
      */
     if (gossipValidationHelper.isSlotFinalized(blockHeader.getSlot())) {
       LOG.trace("BlobSidecar is too old (slot already finalized)");
