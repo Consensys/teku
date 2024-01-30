@@ -568,14 +568,16 @@ public class ValidatorClientService extends Service {
             })
         .thenCompose(
             __ -> {
-              eventChannels.subscribe(
-                  ValidatorTimingChannel.class,
+              final ValidatorTimingActions validatorTimingActions =
                   new ValidatorTimingActions(
                       validatorIndexProvider,
                       validatorTimingChannels,
                       spec,
                       metricsSystem,
-                      maybeValidatorSlashedAction));
+                      maybeValidatorSlashedAction);
+              eventChannels.subscribe(ValidatorTimingChannel.class, validatorTimingActions);
+              validatorStatusProvider.subscribeValidatorStatusesUpdates(
+                  validatorTimingActions::onUpdatedValidatorStatuses);
               validatorStatusProvider.start().ifExceptionGetsHereRaiseABug();
               return beaconNodeApi.subscribeToEvents();
             });

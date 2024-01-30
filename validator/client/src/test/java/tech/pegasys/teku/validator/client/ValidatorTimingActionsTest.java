@@ -18,13 +18,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.logging.StatusLogger;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -53,7 +56,7 @@ public class ValidatorTimingActionsTest {
       Optional.of(new SlashedValidatorAlert(statusLogger));
 
   @Test
-  public void shouldPrintAlertForSlashedValidators_AttesterSlashing() {
+  public void shouldTriggerSlashingActionForSlashedValidators_AttesterSlashing() {
     final ValidatorTimingActions validatorTimingActions =
         new ValidatorTimingActions(
             validatorIndexProvider, delegates, spec, metricsSystem, maybeSlashedValidatorAction);
@@ -78,7 +81,7 @@ public class ValidatorTimingActionsTest {
   }
 
   @Test
-  public void shouldPrintAlertForSlashedValidators_ProposerSlashing() {
+  public void shouldTriggerSlashingActionForSlashedValidators_ProposerSlashing() {
     final ValidatorTimingActions validatorTimingActions =
         new ValidatorTimingActions(
             validatorIndexProvider, delegates, spec, metricsSystem, maybeSlashedValidatorAction);
@@ -146,6 +149,53 @@ public class ValidatorTimingActionsTest {
             dataStructureUtil.randomSlot(), dataStructureUtil.randomValidatorIndex());
     validatorTimingActions.onProposerSlashing(proposerSlashing);
     verify(delegate).onProposerSlashing(proposerSlashing);
+    verifyNoInteractions(validatorIndexProvider);
+    verifyNoInteractions(statusLogger);
+  }
+
+  @Test
+  public void shouldTriggerSlashingActionForSlashedValidators_ValidatorStatusesUpdate() {
+    final ValidatorTimingActions validatorTimingActions =
+        new ValidatorTimingActions(
+            validatorIndexProvider, delegates, spec, metricsSystem, maybeSlashedValidatorAction);
+    final BLSPublicKey key1 = dataStructureUtil.randomPublicKey();
+    final BLSPublicKey key2 = dataStructureUtil.randomPublicKey();
+    final BLSPublicKey key3 = dataStructureUtil.randomPublicKey();
+    final BLSPublicKey key4 = dataStructureUtil.randomPublicKey();
+    final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses =
+        Map.ofEntries(
+            Map.entry(key1, ValidatorStatus.active_slashed),
+            Map.entry(key2, ValidatorStatus.exited_slashed),
+            Map.entry(key3, ValidatorStatus.active_ongoing),
+            Map.entry(key4, ValidatorStatus.exited_slashed));
+    when(validatorIndexProvider.containsPublicKey(key1)).thenReturn(true);
+    when(validatorIndexProvider.containsPublicKey(key2)).thenReturn(true);
+    when(validatorIndexProvider.containsPublicKey(key4)).thenReturn(false);
+    validatorTimingActions.onUpdatedValidatorStatuses(newValidatorStatuses, true);
+    verify(delegate).onUpdatedValidatorStatuses(newValidatorStatuses, true);
+    verify(validatorIndexProvider).containsPublicKey(key1);
+    verify(validatorIndexProvider).containsPublicKey(key2);
+    verify(validatorIndexProvider).containsPublicKey(key4);
+    verifyNoMoreInteractions(validatorIndexProvider);
+    verify(statusLogger).validatorSlashedAlert(Set.of(key1.toHexString(), key2.toHexString()));
+  }
+
+  @Test
+  public void shouldNotTriggerSlashingActionForSlashedValidators_ValidatorStatusesUpdate() {
+    final ValidatorTimingActions validatorTimingActions =
+        new ValidatorTimingActions(
+            validatorIndexProvider, delegates, spec, metricsSystem, Optional.empty());
+    final BLSPublicKey key1 = dataStructureUtil.randomPublicKey();
+    final BLSPublicKey key2 = dataStructureUtil.randomPublicKey();
+    final BLSPublicKey key3 = dataStructureUtil.randomPublicKey();
+    final BLSPublicKey key4 = dataStructureUtil.randomPublicKey();
+    final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses =
+        Map.ofEntries(
+            Map.entry(key1, ValidatorStatus.active_slashed),
+            Map.entry(key2, ValidatorStatus.exited_slashed),
+            Map.entry(key3, ValidatorStatus.active_ongoing),
+            Map.entry(key4, ValidatorStatus.exited_slashed));
+    validatorTimingActions.onUpdatedValidatorStatuses(newValidatorStatuses, true);
     verifyNoInteractions(validatorIndexProvider);
     verifyNoInteractions(statusLogger);
   }
