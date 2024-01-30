@@ -503,7 +503,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     initAttestationPool();
     initAttesterSlashingPool();
     initProposerSlashingPool();
-    initSlashingProtection();
     initVoluntaryExitPool();
     initSignedBlsToExecutionChangePool();
     initEth1DataCache();
@@ -676,7 +675,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     blockImporter.subscribeToVerifiedBlockProposerSlashings(proposerSlashingPool::removeAll);
   }
 
-  protected void initSlashingProtection() {
+  protected void initSlashingEventsSubscriptions() {
     if (beaconConfig.validatorConfig().isShutdownWhenValidatorSlashedEnabled()) {
       final ValidatorTimingChannel validatorTimingChannel =
           eventChannels.getPublisher(ValidatorTimingChannel.class);
