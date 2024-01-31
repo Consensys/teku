@@ -110,7 +110,8 @@ public class ValidatorDataProvider {
     return combinedChainDataClient.isStoreAvailable();
   }
 
-  @Deprecated
+  @Deprecated // This method is used within the blockV1 and blockV2 flow. It will be deprecated in
+  // the future.
   public SafeFuture<Optional<BlockContainer>> getUnsignedBeaconBlockAtSlot(
       final UInt64 slot,
       final BLSSignature randao,

@@ -214,13 +214,18 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = dataStructureUtil.randomSignature();
     RecordedRequest recordedRequest;
 
+    // here we are testing that the request is sent with the correct parameters, so we don't bother
+    // creating an actual block. We just return a 404 which will cause the request to throw
+
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
 
+    // no optional parameters
     assertThatThrownBy(
         () -> request.createUnsignedBlock(signature, Optional.empty(), Optional.empty()));
 
     recordedRequest = mockWebServer.takeRequest();
 
+    // the request should not contain any optional parameters
     assertThat(recordedRequest.getRequestUrl().queryParameterNames())
         .doesNotContain("graffiti", "builder_boost_factor");
     assertThat(recordedRequest.getRequestUrl().queryParameter("randao_reveal"))
@@ -228,6 +233,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
 
+    // with all parameters
     assertThatThrownBy(
         () ->
             request.createUnsignedBlock(
@@ -235,6 +241,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     recordedRequest = mockWebServer.takeRequest();
 
+    // the request should contain all optional parameters
     assertThat(recordedRequest.getRequestUrl().queryParameter("randao_reveal"))
         .isEqualTo(signature.toString());
     assertThat(recordedRequest.getRequestUrl().queryParameter("graffiti"))

@@ -340,7 +340,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                     randaoReveal,
                     graffiti,
                     requestedBlinded,
-                    Optional.empty(),
+                    requestedBuilderBoostFactor,
                     blockSlotState,
                     blockProductionPerformance))
         .alwaysRun(blockProductionPerformance::complete);
