@@ -54,7 +54,8 @@ public abstract class AbstractGetNewBlockTest extends AbstractMigratedBeaconHand
     final BeaconBlock randomBeaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
     doReturn(SafeFuture.completedFuture(Optional.of(randomBeaconBlock)))
         .when(validatorDataProvider)
-        .getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty(), isBlindedBlocks());
+        .getUnsignedBeaconBlockAtSlot(
+            ONE, signature, Optional.empty(), isBlindedBlocks(), Optional.empty());
 
     handler.handleRequest(request);
 
@@ -73,7 +74,8 @@ public abstract class AbstractGetNewBlockTest extends AbstractMigratedBeaconHand
     final BeaconBlock blindedBeaconBLock = dataStructureUtil.randomBlindedBeaconBlock(ONE);
     doReturn(SafeFuture.completedFuture(Optional.of(blindedBeaconBLock)))
         .when(validatorDataProvider)
-        .getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty(), isBlindedBlocks());
+        .getUnsignedBeaconBlockAtSlot(
+            ONE, signature, Optional.empty(), isBlindedBlocks(), Optional.empty());
 
     handler.handleRequest(request);
 
@@ -87,7 +89,8 @@ public abstract class AbstractGetNewBlockTest extends AbstractMigratedBeaconHand
     final BlockContents blockContents = dataStructureUtil.randomBlockContents(ONE);
     doReturn(SafeFuture.completedFuture(Optional.of(blockContents)))
         .when(validatorDataProvider)
-        .getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty(), isBlindedBlocks());
+        .getUnsignedBeaconBlockAtSlot(
+            ONE, signature, Optional.empty(), isBlindedBlocks(), Optional.empty());
 
     handler.handleRequest(request);
 
@@ -99,7 +102,8 @@ public abstract class AbstractGetNewBlockTest extends AbstractMigratedBeaconHand
 
     doReturn(SafeFuture.completedFuture(Optional.empty()))
         .when(validatorDataProvider)
-        .getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty(), isBlindedBlocks());
+        .getUnsignedBeaconBlockAtSlot(
+            ONE, signature, Optional.empty(), isBlindedBlocks(), Optional.empty());
 
     handler.handleRequest(request);
     assertThat(request.getResponseError()).containsInstanceOf(ChainDataUnavailableException.class);
