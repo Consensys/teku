@@ -108,6 +108,7 @@ public class BlockOperationSelectorFactory {
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti,
       final Optional<Boolean> requestedBlinded,
+      final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
 
     return bodyBuilder -> {
@@ -181,6 +182,7 @@ public class BlockOperationSelectorFactory {
                             executionPayloadContext,
                             bodyBuilder,
                             requestedBlinded,
+                            requestedBuilderBoostFactor,
                             schemaDefinitions,
                             blockSlotState,
                             blockProductionPerformance));
@@ -198,6 +200,7 @@ public class BlockOperationSelectorFactory {
       final Optional<ExecutionPayloadContext> executionPayloadContext,
       final BeaconBlockBodyBuilder bodyBuilder,
       final Optional<Boolean> requestedBlinded,
+      final Optional<UInt64> requestedBuilderBoostFactor,
       final SchemaDefinitions schemaDefinitions,
       final BeaconState blockSlotState,
       final BlockProductionPerformance blockProductionPerformance) {
@@ -227,6 +230,7 @@ public class BlockOperationSelectorFactory {
             schemaDefinitions,
             blockSlotState,
             executionPayloadContext,
+            requestedBuilderBoostFactor,
             blockProductionPerformance);
       } else {
         return builderSetPayload(
@@ -247,6 +251,7 @@ public class BlockOperationSelectorFactory {
                 () -> new IllegalStateException("Cannot provide kzg commitments before The Merge")),
             blockSlotState,
             shouldTryBuilderFlow,
+            requestedBuilderBoostFactor,
             blockProductionPerformance);
 
     return SafeFuture.allOf(
@@ -305,7 +310,11 @@ public class BlockOperationSelectorFactory {
     }
     return executionLayerBlockProductionManager
         .initiateBlockProduction(
-            executionPayloadContext.get(), blockSlotState, false, blockProductionPerformance)
+            executionPayloadContext.get(),
+            blockSlotState,
+            false,
+            Optional.empty(),
+            blockProductionPerformance)
         .getExecutionPayloadFuture()
         .orElseThrow()
         .thenAccept(bodyBuilder::executionPayload);
@@ -317,6 +326,7 @@ public class BlockOperationSelectorFactory {
       final SchemaDefinitions schemaDefinitions,
       final BeaconState blockSlotState,
       final Optional<ExecutionPayloadContext> executionPayloadContext,
+      final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
     if (executionPayloadContext.isEmpty()) {
       // preMergePayloadHeader
@@ -329,7 +339,11 @@ public class BlockOperationSelectorFactory {
 
     return executionLayerBlockProductionManager
         .initiateBlockProduction(
-            executionPayloadContext.get(), blockSlotState, true, blockProductionPerformance)
+            executionPayloadContext.get(),
+            blockSlotState,
+            true,
+            requestedBuilderBoostFactor,
+            blockProductionPerformance)
         .getHeaderWithFallbackDataFuture()
         .orElseThrow()
         .thenAccept(

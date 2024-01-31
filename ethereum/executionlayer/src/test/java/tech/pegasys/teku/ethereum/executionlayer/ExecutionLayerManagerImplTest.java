@@ -22,6 +22,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.ethereum.executionlayer.ExecutionBuilderModule.BUILDER_BOOST_FACTOR_MAX_PROFIT;
+import static tech.pegasys.teku.ethereum.executionlayer.ExecutionBuilderModule.BUILDER_BOOST_FACTOR_PREFER_BUILDER;
 
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -216,7 +218,11 @@ class ExecutionLayerManagerImplTest {
     // we expect result from the builder
     assertThat(
             executionLayerManager.builderGetHeader(
-                executionPayloadContext, state, blockValueResult, BlockProductionPerformance.NOOP))
+                executionPayloadContext,
+                state,
+                blockValueResult,
+                Optional.empty(),
+                BlockProductionPerformance.NOOP))
         .isCompletedWithValue(HeaderWithFallbackData.create(header));
     assertThat(blockValueResult).isCompletedWithValue(builderExecutionPayloadValue);
 
@@ -262,7 +268,11 @@ class ExecutionLayerManagerImplTest {
     // we expect result from the builder
     assertThat(
             executionLayerManager.builderGetHeader(
-                executionPayloadContext, state, blockValueResult, BlockProductionPerformance.NOOP))
+                executionPayloadContext,
+                state,
+                blockValueResult,
+                Optional.empty(),
+                BlockProductionPerformance.NOOP))
         .isCompletedWithValue(HeaderWithFallbackData.create(header));
     assertThat(blockValueResult).isCompletedWithValue(builderExecutionPayloadValue);
 
@@ -323,119 +333,22 @@ class ExecutionLayerManagerImplTest {
     final SafeFuture<UInt256> blockValueResult = new SafeFuture<>();
     assertThat(
             executionLayerManager.builderGetHeader(
-                executionPayloadContext, state, blockValueResult, BlockProductionPerformance.NOOP))
+                executionPayloadContext,
+                state,
+                blockValueResult,
+                Optional.empty(),
+                BlockProductionPerformance.NOOP))
         .isCompletedWithValue(expectedResult);
     assertThat(blockValueResult).isCompletedWithValue(localValueOverride);
     verifyFallbackToLocalEL(slot, executionPayloadContext, expectedResult);
-  }
-
-  @Test
-  public void
-      builderGetHeaderGetPayload_shouldReturnEnginePayloadWhenValueLowerButBetterWithFactor() {
-    // Setup requires local payload to have at lest 50% value of builder's to win
-    executionLayerManager = createExecutionLayerChannelImpl(true, false, Optional.of(50));
-    setBuilderOnline();
-
-    final ExecutionPayloadContext executionPayloadContext =
-        dataStructureUtil.randomPayloadExecutionContext(false, true);
-    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
-    final BeaconState state = dataStructureUtil.randomBeaconState(slot);
-
-    final UInt256 builderValue =
-        prepareBuilderGetHeaderResponse(
-                executionPayloadContext, false, builderExecutionPayloadValue)
-            .getValue();
-    final UInt256 localValueOverride = builderValue.multiply(51).divide(100);
-    final ExecutionPayload localExecutionPayload =
-        prepareEngineGetPayloadResponse(executionPayloadContext, localValueOverride, slot)
-            .getExecutionPayload();
-
-    // we expect result from the local engine
-    final ExecutionPayloadHeader expectedHeader =
-        spec.getGenesisSpec()
-            .getSchemaDefinitions()
-            .toVersionBellatrix()
-            .orElseThrow()
-            .getExecutionPayloadHeaderSchema()
-            .createFromExecutionPayload(localExecutionPayload);
-
-    // we expect local engine header as result
-    final HeaderWithFallbackData expectedResult =
-        HeaderWithFallbackData.create(
-            expectedHeader,
-            new FallbackData(localExecutionPayload, FallbackReason.LOCAL_BLOCK_VALUE_WON));
-    final SafeFuture<UInt256> blockValueResult = new SafeFuture<>();
-    assertThat(
-            executionLayerManager.builderGetHeader(
-                executionPayloadContext, state, blockValueResult, BlockProductionPerformance.NOOP))
-        .isCompletedWithValue(expectedResult);
-    assertThat(blockValueResult).isCompletedWithValue(localValueOverride);
-    verifyFallbackToLocalEL(slot, executionPayloadContext, expectedResult);
-  }
-
-  @Test
-  public void builderGetHeaderGetPayload_shouldReturnBuilderPayloadWhenBuilderWonLocal() {
-    // Setup requires local payload to have at lest 50% value of builder's to win
-    executionLayerManager = createExecutionLayerChannelImpl(true, false, Optional.of(50));
-    setBuilderOnline();
-
-    final ExecutionPayloadContext executionPayloadContext =
-        dataStructureUtil.randomPayloadExecutionContext(false, true);
-    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
-    final BeaconState state = dataStructureUtil.randomBeaconState(slot);
-
-    final BuilderBid builderBid =
-        prepareBuilderGetHeaderResponse(
-            executionPayloadContext, false, builderExecutionPayloadValue);
-    prepareEngineGetPayloadResponse(
-        executionPayloadContext, builderBid.getValue().multiply(49).divide(100), slot);
-
-    // we expect result from the builder
-    final ExecutionPayloadHeader builderHeader = builderBid.getHeader();
-    final HeaderWithFallbackData expectedResult = HeaderWithFallbackData.create(builderHeader);
-    final SafeFuture<UInt256> blockValueResult = new SafeFuture<>();
-    assertThat(
-            executionLayerManager.builderGetHeader(
-                executionPayloadContext, state, blockValueResult, BlockProductionPerformance.NOOP))
-        .isCompletedWithValue(expectedResult);
-    assertThat(blockValueResult).isCompletedWithValue(builderExecutionPayloadValue);
-  }
-
-  @Test
-  public void
-      builderGetHeaderGetPayload_shouldReturnBuilderPayloadWhenBuilderFactorIsAlwaysBuilder() {
-    // Setup will always ignore local payload in favor of Builder bid
-    executionLayerManager = createExecutionLayerChannelImpl(true, false, Optional.empty());
-    setBuilderOnline();
-
-    final ExecutionPayloadContext executionPayloadContext =
-        dataStructureUtil.randomPayloadExecutionContext(false, true);
-    final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
-    final BeaconState state = dataStructureUtil.randomBeaconState(slot);
-
-    final BuilderBid builderBid =
-        prepareBuilderGetHeaderResponse(
-            executionPayloadContext, false, builderExecutionPayloadValue);
-    prepareEngineGetPayloadResponse(
-        // something tasty, but we should ignore it
-        executionPayloadContext, builderBid.getValue().multiply(100), slot);
-
-    // we expect result from the builder
-    final ExecutionPayloadHeader builderHeader = builderBid.getHeader();
-    final HeaderWithFallbackData expectedResult = HeaderWithFallbackData.create(builderHeader);
-    final SafeFuture<UInt256> blockValueResult = new SafeFuture<>();
-    assertThat(
-            executionLayerManager.builderGetHeader(
-                executionPayloadContext, state, blockValueResult, BlockProductionPerformance.NOOP))
-        .isCompletedWithValue(expectedResult);
-    assertThat(blockValueResult).isCompletedWithValue(builderExecutionPayloadValue);
   }
 
   @Test
   public void
       builderGetHeaderGetPayload_shouldReturnLocalPayloadWhenBuilderFactorIsAlwaysBuilderAndBidValidationFails() {
     // Setup will always ignore local payload in favor of Builder bid
-    executionLayerManager = createExecutionLayerChannelImpl(true, true, Optional.empty());
+    executionLayerManager =
+        createExecutionLayerChannelImpl(true, true, BUILDER_BOOST_FACTOR_PREFER_BUILDER);
     setBuilderOnline();
 
     final ExecutionPayloadContext executionPayloadContext =
@@ -463,7 +376,11 @@ class ExecutionLayerManagerImplTest {
     final SafeFuture<UInt256> blockValueResult = new SafeFuture<>();
     assertThat(
             executionLayerManager.builderGetHeader(
-                executionPayloadContext, state, blockValueResult, BlockProductionPerformance.NOOP))
+                executionPayloadContext,
+                state,
+                blockValueResult,
+                Optional.empty(),
+                BlockProductionPerformance.NOOP))
         .isCompletedWithValue(expectedResult);
     assertThat(blockValueResult).isCompletedWithValue(localExecutionPayloadValue);
 
@@ -499,7 +416,11 @@ class ExecutionLayerManagerImplTest {
     final SafeFuture<UInt256> blockValueResult = new SafeFuture<>();
     assertThat(
             executionLayerManager.builderGetHeader(
-                executionPayloadContext, state, blockValueResult, BlockProductionPerformance.NOOP))
+                executionPayloadContext,
+                state,
+                blockValueResult,
+                Optional.empty(),
+                BlockProductionPerformance.NOOP))
         .isCompletedWithValue(expectedResult);
     assertThat(blockValueResult).isCompletedWithValue(localExecutionPayloadValue);
 
@@ -577,7 +498,11 @@ class ExecutionLayerManagerImplTest {
     final SafeFuture<UInt256> blockValueResult = new SafeFuture<>();
     assertThat(
             executionLayerManager.builderGetHeader(
-                executionPayloadContext, state, blockValueResult, BlockProductionPerformance.NOOP))
+                executionPayloadContext,
+                state,
+                blockValueResult,
+                Optional.empty(),
+                BlockProductionPerformance.NOOP))
         .isCompletedWithValue(expectedResult);
     assertThat(blockValueResult).isCompletedWithValue(localExecutionPayloadValue);
     verifyFallbackToLocalEL(slot, executionPayloadContext, expectedResult);
@@ -614,7 +539,11 @@ class ExecutionLayerManagerImplTest {
     final SafeFuture<UInt256> blockValueResult = new SafeFuture<>();
     assertThat(
             executionLayerManager.builderGetHeader(
-                executionPayloadContext, state, blockValueResult, BlockProductionPerformance.NOOP))
+                executionPayloadContext,
+                state,
+                blockValueResult,
+                Optional.empty(),
+                BlockProductionPerformance.NOOP))
         .isCompletedWithValue(expectedResult);
     assertThat(blockValueResult).isCompletedWithValue(localExecutionPayloadValue);
 
@@ -649,7 +578,11 @@ class ExecutionLayerManagerImplTest {
     final SafeFuture<UInt256> blockValueResult = new SafeFuture<>();
     assertThat(
             executionLayerManager.builderGetHeader(
-                executionPayloadContext, state, blockValueResult, BlockProductionPerformance.NOOP))
+                executionPayloadContext,
+                state,
+                blockValueResult,
+                Optional.empty(),
+                BlockProductionPerformance.NOOP))
         .isCompletedWithValue(expectedResult);
     assertThat(blockValueResult).isCompletedWithValue(localExecutionPayloadValue);
 
@@ -687,7 +620,11 @@ class ExecutionLayerManagerImplTest {
     final SafeFuture<UInt256> blockValueResult = new SafeFuture<>();
     assertThat(
             executionLayerManager.builderGetHeader(
-                executionPayloadContext, state, blockValueResult, BlockProductionPerformance.NOOP))
+                executionPayloadContext,
+                state,
+                blockValueResult,
+                Optional.empty(),
+                BlockProductionPerformance.NOOP))
         .isCompletedWithValue(expectedResult);
     assertThat(blockValueResult).isCompletedWithValue(localExecutionPayloadValue);
 
@@ -723,7 +660,11 @@ class ExecutionLayerManagerImplTest {
     final SafeFuture<UInt256> blockValueResult = new SafeFuture<>();
     assertThat(
             executionLayerManager.builderGetHeader(
-                executionPayloadContext, state, blockValueResult, BlockProductionPerformance.NOOP))
+                executionPayloadContext,
+                state,
+                blockValueResult,
+                Optional.empty(),
+                BlockProductionPerformance.NOOP))
         .isCompletedWithValue(expectedResult);
     assertThat(blockValueResult).isCompletedWithValue(localExecutionPayloadValue);
 
@@ -761,7 +702,11 @@ class ExecutionLayerManagerImplTest {
     final SafeFuture<UInt256> blockValueResult = new SafeFuture<>();
     assertThat(
             executionLayerManager.builderGetHeader(
-                executionPayloadContext, state, blockValueResult, BlockProductionPerformance.NOOP))
+                executionPayloadContext,
+                state,
+                blockValueResult,
+                Optional.empty(),
+                BlockProductionPerformance.NOOP))
         .isCompletedWithValue(expectedResult);
     assertThat(blockValueResult).isCompletedWithValue(localExecutionPayloadValue);
 
@@ -799,7 +744,11 @@ class ExecutionLayerManagerImplTest {
     final SafeFuture<UInt256> blockValueResult = new SafeFuture<>();
     assertThat(
             executionLayerManager.builderGetHeader(
-                executionPayloadContext, state, blockValueResult, BlockProductionPerformance.NOOP))
+                executionPayloadContext,
+                state,
+                blockValueResult,
+                Optional.empty(),
+                BlockProductionPerformance.NOOP))
         .isCompletedWithValue(expectedResult);
     assertThat(blockValueResult).isCompletedWithValue(localExecutionPayloadValue);
 
@@ -835,7 +784,11 @@ class ExecutionLayerManagerImplTest {
     final SafeFuture<UInt256> blockValueResult = new SafeFuture<>();
     assertThat(
             executionLayerManager.builderGetHeader(
-                executionPayloadContext, state, blockValueResult, BlockProductionPerformance.NOOP))
+                executionPayloadContext,
+                state,
+                blockValueResult,
+                Optional.empty(),
+                BlockProductionPerformance.NOOP))
         .isCompletedWithValue(expectedResult);
     assertThat(blockValueResult).isCompletedWithValue(localExecutionPayloadValue);
 
@@ -860,6 +813,7 @@ class ExecutionLayerManagerImplTest {
                           executionPayloadContext,
                           state,
                           SafeFuture.completedFuture(localExecutionPayloadValue),
+                          Optional.empty(),
                           BlockProductionPerformance.NOOP))
                   .isCompleted();
             });
@@ -1043,13 +997,13 @@ class ExecutionLayerManagerImplTest {
   private ExecutionLayerManagerImpl createExecutionLayerChannelImpl(
       final boolean builderEnabled, final boolean builderValidatorEnabled) {
     return createExecutionLayerChannelImpl(
-        builderEnabled, builderValidatorEnabled, Optional.of(100));
+        builderEnabled, builderValidatorEnabled, BUILDER_BOOST_FACTOR_MAX_PROFIT);
   }
 
   private ExecutionLayerManagerImpl createExecutionLayerChannelImpl(
       final boolean builderEnabled,
       final boolean builderValidatorEnabled,
-      final Optional<Integer> builderBidCompareFactor) {
+      final UInt64 builderBidCompareFactor) {
     when(builderCircuitBreaker.isEngaged(any())).thenReturn(false);
     return ExecutionLayerManagerImpl.create(
         eventLogger,

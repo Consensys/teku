@@ -45,6 +45,7 @@ import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse
 import tech.pegasys.teku.api.schema.altair.ContributionAndProof;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
@@ -68,8 +69,6 @@ import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
-import tech.pegasys.teku.validator.api.ProposerDuties;
-import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
@@ -238,24 +237,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
-    return sendRequest(
-        () ->
-            apiClient
-                .getProposerDuties(epoch)
-                .map(
-                    response ->
-                        new ProposerDuties(
-                            response.dependentRoot,
-                            response.data.stream().map(this::mapToProposerDuties).toList(),
-                            response.executionOptimistic)));
-  }
-
-  private ProposerDuty mapToProposerDuties(
-      final tech.pegasys.teku.api.response.v1.validator.ProposerDuty proposerDuty) {
-    return new ProposerDuty(
-        proposerDuty.pubkey.asBLSPublicKey(),
-        proposerDuty.validatorIndex.intValue(),
-        proposerDuty.slot);
+    return sendRequest(() -> typeDefClient.getProposerDuties(epoch));
   }
 
   private AttesterDuty mapToApiAttesterDuties(
@@ -295,10 +277,12 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<Boolean> blinded) {
-    if (blinded.isPresent()) {
+      final Optional<Boolean> requestedBlinded) {
+    if (requestedBlinded.isPresent()) {
       return sendRequest(
-          () -> typeDefClient.createUnsignedBlock(slot, randaoReveal, graffiti, blinded.get()));
+          () ->
+              typeDefClient.createUnsignedBlock(
+                  slot, randaoReveal, graffiti, requestedBlinded.get()));
     }
     return sendRequest(() -> typeDefClient.createUnsignedBlock(slot, randaoReveal, graffiti));
   }

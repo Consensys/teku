@@ -242,8 +242,11 @@ public class CombinedChainDataClient {
 
   public SafeFuture<Optional<BeaconState>> getStateForBlockProduction(
       final UInt64 slot, final boolean isForkChoiceLateBlockReorgEnabled) {
+    if (!isForkChoiceLateBlockReorgEnabled) {
+      return getStateAtSlotExact(slot);
+    }
     final Optional<Bytes32> headRoot = getBestBlockRoot();
-    if (headRoot.isEmpty() || !isForkChoiceLateBlockReorgEnabled) {
+    if (headRoot.isEmpty()) {
       return getStateAtSlotExact(slot);
     }
     final Bytes32 root = recentChainData.getProposerHead(headRoot.get(), slot);

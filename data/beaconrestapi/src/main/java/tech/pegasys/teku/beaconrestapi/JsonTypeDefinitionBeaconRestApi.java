@@ -20,7 +20,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.ExecutionClientDataProvider;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.beaconrestapi.addon.CapellaRestApiBuilderAddon;
@@ -133,18 +132,10 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
-      final ExecutionClientDataProvider executionClientDataProvider,
       final Spec spec) {
     restApi =
         create(
-            config,
-            dataProvider,
-            eth1DataProvider,
-            eventChannels,
-            asyncRunner,
-            timeProvider,
-            executionClientDataProvider,
-            spec);
+            config, dataProvider, eth1DataProvider, eventChannels, asyncRunner, timeProvider, spec);
   }
 
   @Override
@@ -169,7 +160,6 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
-      final ExecutionClientDataProvider executionClientDataProvider,
       final Spec spec) {
     final SchemaDefinitionCache schemaCache = new SchemaDefinitionCache(spec);
     RestApiBuilder builder =
@@ -299,7 +289,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new PutLogLevel())
             .endpoint(new GetStateByBlockRoot(dataProvider, spec))
             .endpoint(new Liveness(dataProvider))
-            .endpoint(new Readiness(dataProvider, executionClientDataProvider))
+            .endpoint(new Readiness(dataProvider))
             .endpoint(new GetAllBlocksAtSlot(dataProvider, schemaCache))
             .endpoint(new GetPeersScore(dataProvider))
             .endpoint(new GetProposersData(dataProvider))

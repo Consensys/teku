@@ -59,6 +59,10 @@ public class ExecutionBuilderModule {
   private static final Logger LOG = LogManager.getLogger();
   private static final int HUNDRED_PERCENT = 100;
 
+  public static final UInt64 BUILDER_BOOST_FACTOR_MAX_PROFIT = UInt64.valueOf(HUNDRED_PERCENT);
+  public static final UInt64 BUILDER_BOOST_FACTOR_PREFER_EXECUTION = UInt64.ZERO;
+  public static final UInt64 BUILDER_BOOST_FACTOR_PREFER_BUILDER = UInt64.MAX_VALUE;
+
   private final Spec spec;
   private final AtomicBoolean latestBuilderAvailability;
   private final ExecutionLayerManagerImpl executionLayerManager;
@@ -66,7 +70,7 @@ public class ExecutionBuilderModule {
   private final BuilderCircuitBreaker builderCircuitBreaker;
   private final Optional<BuilderClient> builderClient;
   private final EventLogger eventLogger;
-  private final Optional<Integer> builderBidCompareFactor;
+  private final UInt64 builderBidCompareFactor;
   private final boolean useShouldOverrideBuilderFlag;
 
   public ExecutionBuilderModule(
@@ -76,7 +80,7 @@ public class ExecutionBuilderModule {
       final BuilderCircuitBreaker builderCircuitBreaker,
       final Optional<BuilderClient> builderClient,
       final EventLogger eventLogger,
-      final Optional<Integer> builderBidCompareFactor,
+      final UInt64 builderBidCompareFactor,
       final boolean useShouldOverrideBuilderFlag) {
     this.spec = spec;
     this.latestBuilderAvailability = new AtomicBoolean(builderClient.isPresent());
@@ -128,6 +132,7 @@ public class ExecutionBuilderModule {
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
       final SafeFuture<UInt256> payloadValueResult,
+      final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
 
     final SafeFuture<GetPayloadResponse> localGetPayloadResponse =
@@ -207,8 +212,11 @@ public class ExecutionBuilderModule {
 
                 logReceivedBuilderBid(signedBuilderBid.getMessage());
 
-                if (isLocalPayloadValueWinning(builderBidValue, localBlockValue)) {
-                  logLocalPayloadWin(builderBidValue, localBlockValue);
+                final boolean localPayloadValueWon =
+                    calculateIfLocalPayloadWinsAndLog(
+                        requestedBuilderBoostFactor, localBlockValue, builderBidValue);
+
+                if (localPayloadValueWon) {
                   return getResultFromLocalGetPayloadResponse(
                       localGetPayloadResponse,
                       slot,
@@ -237,13 +245,54 @@ public class ExecutionBuilderModule {
             });
   }
 
+  private boolean calculateIfLocalPayloadWinsAndLog(
+      final Optional<UInt64> requestedBuilderBoostFactor,
+      final UInt256 localBlockValue,
+      final UInt256 builderBidValue) {
+    final UInt64 actualBuilderBoostFactor;
+    final boolean isRequestedBuilderBoostFactor;
+
+    // we give precedence to the requestedBuilderBoostFactor over the BN configured
+    // builderBidCompareFactor
+
+    if (requestedBuilderBoostFactor.isPresent()) {
+      actualBuilderBoostFactor = requestedBuilderBoostFactor.get();
+      isRequestedBuilderBoostFactor = true;
+    } else {
+      actualBuilderBoostFactor = builderBidCompareFactor;
+      isRequestedBuilderBoostFactor = false;
+    }
+
+    final boolean localPayloadValueWon =
+        isLocalPayloadValueWinning(builderBidValue, localBlockValue, actualBuilderBoostFactor);
+
+    logPayloadValueComparisonDetails(
+        localPayloadValueWon,
+        builderBidValue,
+        localBlockValue,
+        isRequestedBuilderBoostFactor,
+        actualBuilderBoostFactor);
+
+    return localPayloadValueWon;
+  }
+
   /** 1 ETH is 10^18 wei, Uint256 max is more than 10^77 */
   private boolean isLocalPayloadValueWinning(
-      final UInt256 builderBidValue, final UInt256 localPayloadValue) {
-    return builderBidCompareFactor.isPresent()
-        && builderBidValue
-            .multiply(builderBidCompareFactor.get())
-            .lessOrEqualThan(localPayloadValue.multiply(HUNDRED_PERCENT));
+      final UInt256 builderBidValue,
+      final UInt256 localPayloadValue,
+      final UInt64 builderBoostFactor) {
+
+    if (builderBoostFactor.equals(BUILDER_BOOST_FACTOR_PREFER_EXECUTION)) {
+      return true;
+    }
+
+    if (builderBoostFactor.equals(BUILDER_BOOST_FACTOR_PREFER_BUILDER)) {
+      return false;
+    }
+
+    return builderBidValue
+        .multiply(UInt256.valueOf(builderBoostFactor.longValue()))
+        .lessOrEqualThan(localPayloadValue.multiply(HUNDRED_PERCENT));
   }
 
   private SafeFuture<HeaderWithFallbackData> getResultFromSignedBuilderBid(
@@ -518,16 +567,49 @@ public class ExecutionBuilderModule {
         blobsLog);
   }
 
-  private void logLocalPayloadWin(final UInt256 builderBidValue, final UInt256 localPayloadValue) {
-    if (builderBidCompareFactor.isEmpty() || builderBidCompareFactor.get() == HUNDRED_PERCENT) {
-      LOG.info(
-          "Local execution payload ({} ETH) is chosen over builder bid ({} ETH).",
-          weiToEth(localPayloadValue),
-          weiToEth(builderBidValue));
+  private void logPayloadValueComparisonDetails(
+      final boolean localPayloadValueWon,
+      final UInt256 builderBidValue,
+      final UInt256 localPayloadValue,
+      final boolean isRequestedBuilderBoostFactor,
+      final UInt64 actualBuilderBoostFactor) {
+    final String actualComparisonFactorString;
+    final String comparisonFactorSource = isRequestedBuilderBoostFactor ? "VC" : "BN";
+
+    if (actualBuilderBoostFactor.equals(BUILDER_BOOST_FACTOR_MAX_PROFIT)) {
+      actualComparisonFactorString = "MAX_PROFIT";
+    } else if (actualBuilderBoostFactor.equals(BUILDER_BOOST_FACTOR_PREFER_EXECUTION)) {
+      actualComparisonFactorString = "PREFER_EXECUTION";
+    } else if (actualBuilderBoostFactor.equals(BUILDER_BOOST_FACTOR_PREFER_BUILDER)) {
+      actualComparisonFactorString = "PREFER_BUILDER";
     } else {
-      LOG.info(
-          "Local execution payload ({} ETH) is chosen over builder bid ({} ETH, compare factor {}%).",
-          weiToEth(localPayloadValue), weiToEth(builderBidValue), builderBidCompareFactor.get());
+      actualComparisonFactorString = actualBuilderBoostFactor + "%";
     }
+
+    final String winningSideText;
+    final String winningSideValue;
+    final String losingSideText;
+    final String losingSideValue;
+
+    if (localPayloadValueWon) {
+      winningSideText = "Local execution payload";
+      winningSideValue = weiToEth(localPayloadValue);
+      losingSideText = "builder bid";
+      losingSideValue = weiToEth(builderBidValue);
+    } else {
+      winningSideText = "Builder bid";
+      winningSideValue = weiToEth(builderBidValue);
+      losingSideText = "local execution payload";
+      losingSideValue = weiToEth(localPayloadValue);
+    }
+
+    LOG.info(
+        "{} ({} ETH) is chosen over {} ({} ETH) - builder compare factor: {}, source: {}.",
+        winningSideText,
+        winningSideValue,
+        losingSideText,
+        losingSideValue,
+        actualComparisonFactorString,
+        comparisonFactorSource);
   }
 }

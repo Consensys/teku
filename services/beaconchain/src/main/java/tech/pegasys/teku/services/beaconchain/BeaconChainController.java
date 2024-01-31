@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
+import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.FATAL_EXIT_CODE;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.BEACON;
@@ -361,7 +362,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 final String errorWhilePerformingDescription =
                     "starting P2P services on port " + this.p2pNetwork.getListenPort() + ".";
                 STATUS_LOG.fatalError(errorWhilePerformingDescription, rootCause);
-                System.exit(1);
+                System.exit(FATAL_EXIT_CODE);
               } else {
                 Thread.currentThread()
                     .getUncaughtExceptionHandler()
@@ -1119,7 +1120,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final Eth1DataProvider eth1DataProvider = new Eth1DataProvider(eth1DataCache, depositProvider);
 
     final ExecutionClientDataProvider executionClientDataProvider =
-        new ExecutionClientDataProvider();
+        dataProvider.getExecutionClientDataProvider();
+
     eventChannels.subscribe(ExecutionClientEventsChannel.class, executionClientDataProvider);
 
     beaconRestAPI =
@@ -1131,7 +1133,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 eventChannels,
                 eventAsyncRunner,
                 timeProvider,
-                executionClientDataProvider,
                 spec));
 
     if (getLivenessTrackingEnabled(beaconConfig)) {
