@@ -23,6 +23,8 @@ import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -128,9 +130,12 @@ public class ValidatorDataProvider {
       final Optional<Bytes32> graffiti,
       final Optional<UInt64> requestedBuilderBoostFactor) {
     checkBlockProducingParameters(slot, randao);
+    final AtomicLong blockValuesTimer = new AtomicLong();
     return validatorApiChannel
         .createUnsignedBlock(slot, randao, graffiti, Optional.empty(), requestedBuilderBoostFactor)
-        .thenCompose(this::lookUpBlockValues);
+            .thenPeek(__ -> blockValuesTimer.set(System.currentTimeMillis()))
+        .thenCompose(this::lookUpBlockValues)
+            .thenPeek(__ -> LOG.info("Block values lookup took {} ms", System.currentTimeMillis() - blockValuesTimer.get()));
   }
 
   private SafeFuture<Optional<BlockContainerAndMetaData<BlockContainer>>> lookUpBlockValues(
