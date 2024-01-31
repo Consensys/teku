@@ -504,7 +504,7 @@ class ValidatorApiHandlerTest {
   public void createUnsignedBlock_shouldFailWhenParentBlockIsOptimistic() {
     final UInt64 newSlot = UInt64.valueOf(25);
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(newSlot);
-    when(chainDataClient.getStateAtSlotExact(newSlot))
+    when(chainDataClient.getStateForBlockProduction(newSlot, false))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
     final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, newSlot.minus(1));
     when(chainDataClient.isOptimisticBlock(parentRoot)).thenReturn(true);
@@ -529,7 +529,7 @@ class ValidatorApiHandlerTest {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BeaconBlock createdBlock = dataStructureUtil.randomBeaconBlock(newSlot.longValue());
 
-    when(chainDataClient.getStateAtSlotExact(newSlot))
+    when(chainDataClient.getStateForBlockProduction(newSlot, false))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
     when(blockFactory.createUnsignedBlock(
             blockSlotState,
