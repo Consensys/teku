@@ -21,7 +21,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import org.jetbrains.annotations.NotNull;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
@@ -133,7 +132,7 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
           final UInt64 slashedIndex = proposerSlashing.getHeader1().getMessage().getProposerIndex();
           validatorIndexProvider
               .getPublicKey(slashedIndex.intValue())
-              .ifPresent(slashedPubKey -> maybeValidatorSlashedAction.get().perform(slashedPubKey));
+              .ifPresent(validatorSlashedAction::perform);
         });
   }
 
@@ -146,12 +145,9 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
             delegates.onUpdatedValidatorStatuses(newValidatorStatuses, possibleMissingEvents));
     maybeValidatorSlashedAction.ifPresent(
         validatorSlashedAction ->
-            maybeValidatorSlashedAction
-                .get()
-                .perform(getSlashedOwnedValidatorsPubKeys(newValidatorStatuses)));
+            validatorSlashedAction.perform(getSlashedOwnedValidatorsPubKeys(newValidatorStatuses)));
   }
 
-  @NotNull
   private List<BLSPublicKey> getSlashedOwnedValidatorsPubKeys(
       Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses) {
     return newValidatorStatuses.entrySet().stream()
