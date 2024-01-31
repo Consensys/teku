@@ -150,11 +150,13 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<Boolean> requestedBlinded) {
+      final Optional<Boolean> requestedBlinded,
+      final Optional<UInt64> requestedBuilderBoostFactor) {
     final ValidatorApiChannelRequest<Optional<BlockContainer>> request =
         apiChannel ->
             apiChannel
-                .createUnsignedBlock(slot, randaoReveal, graffiti, requestedBlinded)
+                .createUnsignedBlock(
+                    slot, randaoReveal, graffiti, requestedBlinded, requestedBuilderBoostFactor)
                 .thenPeek(
                     blockContainer -> {
                       if (!failoverDelegates.isEmpty()

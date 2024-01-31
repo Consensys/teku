@@ -490,7 +490,11 @@ class ValidatorApiHandlerTest {
     nodeIsSyncing();
     final SafeFuture<Optional<BlockContainer>> result =
         validatorApiHandler.createUnsignedBlock(
-            ONE, dataStructureUtil.randomSignature(), Optional.empty(), Optional.of(false));
+            ONE,
+            dataStructureUtil.randomSignature(),
+            Optional.empty(),
+            Optional.of(false),
+            Optional.of(ONE));
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -507,7 +511,11 @@ class ValidatorApiHandlerTest {
 
     final SafeFuture<Optional<BlockContainer>> result =
         validatorApiHandler.createUnsignedBlock(
-            newSlot, dataStructureUtil.randomSignature(), Optional.empty(), Optional.of(false));
+            newSlot,
+            dataStructureUtil.randomSignature(),
+            Optional.empty(),
+            Optional.of(false),
+            Optional.of(ONE));
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -529,13 +537,16 @@ class ValidatorApiHandlerTest {
             randaoReveal,
             Optional.empty(),
             Optional.of(false),
-            Optional.empty(),
+            Optional.of(ONE),
             BlockProductionPerformance.NOOP))
         .thenReturn(SafeFuture.completedFuture(createdBlock));
 
+    // even if passing a non-empty reqestedBlinded and requestedBuilderBoostFactor isn't a valid
+    // combination,
+    // we still want to check that all parameters are passed down the line to the block factory
     final SafeFuture<Optional<BlockContainer>> result =
         validatorApiHandler.createUnsignedBlock(
-            newSlot, randaoReveal, Optional.empty(), Optional.of(false));
+            newSlot, randaoReveal, Optional.empty(), Optional.of(false), Optional.of(ONE));
 
     verify(blockFactory)
         .createUnsignedBlock(
@@ -544,7 +555,7 @@ class ValidatorApiHandlerTest {
             randaoReveal,
             Optional.empty(),
             Optional.of(false),
-            Optional.empty(),
+            Optional.of(ONE),
             BlockProductionPerformance.NOOP);
     assertThat(result).isCompletedWithValue(Optional.of(createdBlock));
   }
