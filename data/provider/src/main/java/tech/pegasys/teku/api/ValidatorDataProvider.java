@@ -110,21 +110,27 @@ public class ValidatorDataProvider {
     return combinedChainDataClient.isStoreAvailable();
   }
 
-  @Deprecated
+  @Deprecated // This method is used within the blockV1 and blockV2 flow. It will be deprecated in
+  // the future.
   public SafeFuture<Optional<BlockContainer>> getUnsignedBeaconBlockAtSlot(
       final UInt64 slot,
       final BLSSignature randao,
       final Optional<Bytes32> graffiti,
-      final boolean isBlinded) {
+      final boolean isBlinded,
+      final Optional<UInt64> requestedBuilderBoostFactor) {
     checkBlockProducingParameters(slot, randao);
-    return validatorApiChannel.createUnsignedBlock(slot, randao, graffiti, Optional.of(isBlinded));
+    return validatorApiChannel.createUnsignedBlock(
+        slot, randao, graffiti, Optional.of(isBlinded), requestedBuilderBoostFactor);
   }
 
   public SafeFuture<Optional<BlockContainerAndMetaData<BlockContainer>>> produceBlock(
-      final UInt64 slot, final BLSSignature randao, final Optional<Bytes32> graffiti) {
+      final UInt64 slot,
+      final BLSSignature randao,
+      final Optional<Bytes32> graffiti,
+      final Optional<UInt64> requestedBuilderBoostFactor) {
     checkBlockProducingParameters(slot, randao);
     return validatorApiChannel
-        .createUnsignedBlock(slot, randao, graffiti, Optional.empty())
+        .createUnsignedBlock(slot, randao, graffiti, Optional.empty(), requestedBuilderBoostFactor)
         .thenCompose(this::lookUpBlockValues);
   }
 
@@ -222,15 +228,6 @@ public class ValidatorDataProvider {
     if (currentSlot.isGreaterThan(slot)) {
       throw new IllegalArgumentException(CANNOT_PRODUCE_HISTORIC_BLOCK);
     }
-  }
-
-  public SafeFuture<Optional<BlockContainer>> getUnsignedBeaconBlockAtSlot(
-      UInt64 slot, BLSSignature randao, Optional<Bytes32> graffiti) {
-    if (randao == null) {
-      throw new IllegalArgumentException(NO_RANDAO_PROVIDED);
-    }
-    return getUnsignedBeaconBlockAtSlot(
-        slot, BLSSignature.fromBytesCompressed(randao.toSSZBytes()), graffiti, false);
   }
 
   public SpecMilestone getMilestoneAtSlot(final UInt64 slot) {

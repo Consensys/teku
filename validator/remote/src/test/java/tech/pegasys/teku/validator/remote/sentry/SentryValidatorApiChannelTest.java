@@ -18,6 +18,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import java.util.Collections;
@@ -123,14 +124,15 @@ class SentryValidatorApiChannelTest {
   @Test
   void createUnsignedBlockShouldUseBlockHandlerChannelWhenAvailable() {
     sentryValidatorApiChannel.createUnsignedBlock(
-        UInt64.ZERO, BLSSignature.empty(), Optional.empty(), Optional.of(false));
+        UInt64.ZERO, BLSSignature.empty(), Optional.empty(), Optional.of(false), Optional.of(ONE));
 
     verify(blockHandlerChannel)
         .createUnsignedBlock(
             eq(UInt64.ZERO),
             eq(BLSSignature.empty()),
             eq(Optional.empty()),
-            eq(Optional.of(false)));
+            eq(Optional.of(false)),
+            eq(Optional.of(ONE)));
     verifyNoInteractions(dutiesProviderChannel);
     verifyNoInteractions(attestationPublisherChannel);
   }
@@ -142,14 +144,15 @@ class SentryValidatorApiChannelTest {
             dutiesProviderChannel, Optional.empty(), Optional.of(attestationPublisherChannel));
 
     sentryValidatorApiChannel.createUnsignedBlock(
-        UInt64.ZERO, BLSSignature.empty(), Optional.empty(), Optional.of(false));
+        UInt64.ZERO, BLSSignature.empty(), Optional.empty(), Optional.of(false), Optional.of(ONE));
 
     verify(dutiesProviderChannel)
         .createUnsignedBlock(
             eq(UInt64.ZERO),
             eq(BLSSignature.empty()),
             eq(Optional.empty()),
-            eq(Optional.of(false)));
+            eq(Optional.of(false)),
+            eq(Optional.of(ONE)));
     verifyNoInteractions(blockHandlerChannel);
     verifyNoInteractions(attestationPublisherChannel);
   }
