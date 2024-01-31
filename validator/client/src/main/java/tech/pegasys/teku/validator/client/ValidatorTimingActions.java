@@ -149,7 +149,7 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
   }
 
   private List<BLSPublicKey> getSlashedOwnedValidatorsPubKeys(
-      Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses) {
+      final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses) {
     return newValidatorStatuses.entrySet().stream()
         .filter(
             validatorStatusEntry ->
