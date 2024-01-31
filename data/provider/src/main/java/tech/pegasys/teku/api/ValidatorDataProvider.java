@@ -24,7 +24,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -133,9 +132,13 @@ public class ValidatorDataProvider {
     final AtomicLong blockValuesTimer = new AtomicLong();
     return validatorApiChannel
         .createUnsignedBlock(slot, randao, graffiti, Optional.empty(), requestedBuilderBoostFactor)
-            .thenPeek(__ -> blockValuesTimer.set(System.currentTimeMillis()))
+        .thenPeek(__ -> blockValuesTimer.set(System.currentTimeMillis()))
         .thenCompose(this::lookUpBlockValues)
-            .thenPeek(__ -> LOG.info("Block values lookup took {} ms", System.currentTimeMillis() - blockValuesTimer.get()));
+        .thenPeek(
+            __ ->
+                LOG.info(
+                    "Block values lookup took {} ms",
+                    System.currentTimeMillis() - blockValuesTimer.get()));
   }
 
   private SafeFuture<Optional<BlockContainerAndMetaData<BlockContainer>>> lookUpBlockValues(
