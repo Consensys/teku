@@ -27,7 +27,6 @@ import okhttp3.OkHttpClient;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -70,7 +69,6 @@ public class EventSourceBeaconChainEventAdapterTest {
     verifyEventSourceSubscriptionUrl(httpUrlMock, shutdownWhenValidatorSlashedEnabled);
   }
 
-  @NotNull
   private EventSourceBeaconChainEventAdapter initEventSourceBeaconChainEventAdapter(
       final boolean shutdownWhenValidatorSlashedEnabled) {
     return new EventSourceBeaconChainEventAdapter(
