@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.ReceivedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -87,7 +88,19 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     eventChannels.subscribe(ChainHeadChannel.class, this);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, this);
     syncDataProvider.subscribeToSyncStateChanges(this::onSyncStateChange);
-    nodeDataProvider.subscribeToReceivedBlocks(this::onNewBlock);
+    nodeDataProvider.subscribeToReceivedBlocks(
+        new ReceivedBlockListener() {
+          @Override
+          public void onBlockValidated(final SignedBeaconBlock block) {
+            onNewBlockGossip(block);
+          }
+
+          @Override
+          public void onBlockImported(
+              final SignedBeaconBlock block, final boolean executionOptimistic) {
+            onNewBlock(block, executionOptimistic);
+          }
+        });
     nodeDataProvider.subscribeToReceivedBlobSidecar(this::onNewBlobSidecar);
     nodeDataProvider.subscribeToAttesterSlashing(this::onNewAttesterSlashing);
     nodeDataProvider.subscribeToProposerSlashing(this::onNewProposerSlashing);
@@ -193,6 +206,11 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
   protected void onNewBlock(final SignedBeaconBlock block, final boolean executionOptimistic) {
     final BlockEvent blockEvent = new BlockEvent(block, executionOptimistic);
     notifySubscribersOfEvent(EventType.block, blockEvent);
+  }
+
+  protected void onNewBlockGossip(final SignedBeaconBlock block) {
+    final BlockGossipEvent blockGossipEvent = new BlockGossipEvent(block);
+    notifySubscribersOfEvent(EventType.block_gossip, blockGossipEvent);
   }
 
   protected void onNewBlobSidecar(final BlobSidecar blobSidecar) {

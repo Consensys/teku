@@ -13,7 +13,8 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
-@FunctionalInterface
-public interface ImportedBlockListener {
+public interface ReceivedBlockListener {
+  void onBlockValidated(SignedBeaconBlock block);
+
   void onBlockImported(SignedBeaconBlock block, boolean executionOptimistic);
 }

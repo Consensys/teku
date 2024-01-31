@@ -27,7 +27,7 @@ import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
-import tech.pegasys.teku.spec.datastructures.blocks.ImportedBlockListener;
+import tech.pegasys.teku.spec.datastructures.blocks.ReceivedBlockListener;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -168,7 +168,7 @@ public class NodeDataProvider {
             });
   }
 
-  public void subscribeToReceivedBlocks(ImportedBlockListener listener) {
+  public void subscribeToReceivedBlocks(ReceivedBlockListener listener) {
     blockManager.subscribeToReceivedBlocks(listener);
   }
 

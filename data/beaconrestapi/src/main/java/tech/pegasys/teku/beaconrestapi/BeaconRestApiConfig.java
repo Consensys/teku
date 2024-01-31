@@ -25,8 +25,6 @@ import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
 
 public class BeaconRestApiConfig {
-  public static final Boolean DEFAULT_BEACON_EVENTS_BLOCK_NOTIFY_WHEN_VALIDATED_ENABLED = false;
-  public static final Boolean DEFAULT_BEACON_EVENTS_BLOCK_NOTIFY_WHEN_IMPORTED_ENABLED = true;
   private static final Logger LOG = LogManager.getLogger();
 
   public static final int DEFAULT_REST_API_PORT = 5051;
@@ -52,8 +50,6 @@ public class BeaconRestApiConfig {
   private final int maxUrlLength;
   private final int maxPendingEvents;
   private final Optional<Integer> validatorThreads;
-  private final boolean beaconEventsBlockNotifyWhenValidatedEnabled;
-  private final boolean beaconEventsBlockNotifyWhenImportedEnabled;
 
   private BeaconRestApiConfig(
       final int restApiPort,
@@ -67,9 +63,7 @@ public class BeaconRestApiConfig {
       final int maxUrlLength,
       final int maxPendingEvents,
       final Optional<Integer> validatorThreads,
-      final boolean beaconLivenessTrackingEnabled,
-      final boolean beaconEventsBlockNotifyWhenValidatedEnabled,
-      final boolean beaconEventsBlockNotifyWhenImportedEnabled) {
+      final boolean beaconLivenessTrackingEnabled) {
     this.restApiPort = restApiPort;
     this.restApiDocsEnabled = restApiDocsEnabled;
     this.restApiEnabled = restApiEnabled;
@@ -82,8 +76,6 @@ public class BeaconRestApiConfig {
     this.maxPendingEvents = maxPendingEvents;
     this.validatorThreads = validatorThreads;
     this.beaconLivenessTrackingEnabled = beaconLivenessTrackingEnabled;
-    this.beaconEventsBlockNotifyWhenValidatedEnabled = beaconEventsBlockNotifyWhenValidatedEnabled;
-    this.beaconEventsBlockNotifyWhenImportedEnabled = beaconEventsBlockNotifyWhenImportedEnabled;
   }
 
   public int getRestApiPort() {
@@ -104,14 +96,6 @@ public class BeaconRestApiConfig {
 
   public boolean isBeaconLivenessTrackingEnabled() {
     return beaconLivenessTrackingEnabled;
-  }
-
-  public boolean isBeaconEventsBlockNotifyWhenValidatedEnabled() {
-    return beaconEventsBlockNotifyWhenValidatedEnabled;
-  }
-
-  public boolean isBeaconEventsBlockNotifyWhenImportedEnabled() {
-    return beaconEventsBlockNotifyWhenImportedEnabled;
   }
 
   public String getRestApiInterface() {
@@ -171,10 +155,6 @@ public class BeaconRestApiConfig {
     private int maxUrlLength = DEFAULT_MAX_URL_LENGTH;
     private Optional<Integer> validatorThreads = Optional.empty();
     private Eth1Address eth1DepositContractAddress;
-    private boolean beaconEventsBlockNotifyWhenValidatedEnabled =
-        DEFAULT_BEACON_EVENTS_BLOCK_NOTIFY_WHEN_VALIDATED_ENABLED;
-    private boolean defaultBeaconEventsBlockNotifyWhenImportedEnabled =
-        DEFAULT_BEACON_EVENTS_BLOCK_NOTIFY_WHEN_IMPORTED_ENABLED;
 
     private BeaconRestApiConfigBuilder() {}
 
@@ -281,27 +261,11 @@ public class BeaconRestApiConfig {
           maxUrlLength,
           maxPendingEvents,
           validatorThreads,
-          beaconLivenessTrackingEnabled,
-          beaconEventsBlockNotifyWhenValidatedEnabled,
-          defaultBeaconEventsBlockNotifyWhenImportedEnabled);
+          beaconLivenessTrackingEnabled);
     }
 
     public BeaconRestApiConfigBuilder maxUrlLength(final int maxUrlLength) {
       this.maxUrlLength = maxUrlLength;
-      return this;
-    }
-
-    public BeaconRestApiConfigBuilder beaconEventsBlockNotifyWhenValidatedEnabled(
-        final boolean beaconEventsBlockNotifyWhenValidatedEnabled) {
-      this.beaconEventsBlockNotifyWhenValidatedEnabled =
-          beaconEventsBlockNotifyWhenValidatedEnabled;
-      return this;
-    }
-
-    public BeaconRestApiConfigBuilder beaconEventsBlockNotifyWhenImportedEnabled(
-        final boolean defaultBeaconEventsBlockNotifyWhenImportedEnabled) {
-      this.defaultBeaconEventsBlockNotifyWhenImportedEnabled =
-          defaultBeaconEventsBlockNotifyWhenImportedEnabled;
       return this;
     }
   }
