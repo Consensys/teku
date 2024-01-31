@@ -99,9 +99,10 @@ public class OkHttpValidatorTypeDefClient {
     return getProposerDutiesRequest.getProposerDuties(epoch);
   }
 
-  public Optional<ObjectAndMetaData<List<StateValidatorData>>> getStateValidators(
-      final List<String> validatorIds) {
-    return getStateValidatorsRequest.getStateValidators(validatorIds);
+  public Optional<List<StateValidatorData>> getStateValidators(final List<String> validatorIds) {
+    return getStateValidatorsRequest
+        .getStateValidators(validatorIds)
+        .map(ObjectAndMetaData::getData);
   }
 
   public SendSignedBlockResult sendSignedBlock(final SignedBlockContainer blockContainer) {
