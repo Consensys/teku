@@ -253,7 +253,7 @@ public class ValidatorDataProviderTest {
             ONE, signatureInternal, Optional.empty(), Optional.empty(), Optional.of(ONE)))
         .thenReturn(completedFuture(Optional.of(blockInternal)));
 
-    SafeFuture<? extends Optional<? extends BlockContainerAndMetaData<? extends SszData>>> data =
+    SafeFuture<? extends Optional<? extends BlockContainerAndMetaData>> data =
         provider.produceBlock(ONE, signatureInternal, Optional.empty(), Optional.of(ONE));
 
     verify(validatorApiChannel)

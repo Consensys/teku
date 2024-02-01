@@ -24,10 +24,10 @@ import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
@@ -97,7 +97,7 @@ public class OkHttpValidatorTypeDefClient {
   }
 
   @Deprecated
-  public Optional<BlockContainer> createUnsignedBlock(
+  public Optional<BlockContainerAndMetaData> createUnsignedBlock(
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
@@ -115,7 +115,7 @@ public class OkHttpValidatorTypeDefClient {
     }
   }
 
-  public Optional<BlockContainer> createUnsignedBlock(
+  public Optional<BlockContainerAndMetaData> createUnsignedBlock(
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
@@ -123,8 +123,9 @@ public class OkHttpValidatorTypeDefClient {
     final ProduceBlockRequest produceBlockRequest =
         new ProduceBlockRequest(baseEndpoint, okHttpClient, spec, slot, preferSszBlockEncoding);
     try {
-      return produceBlockRequest.createUnsignedBlock(
-          randaoReveal, graffiti, requestedBuilderBoostFactor);
+      return produceBlockRequest
+          .createUnsignedBlock(randaoReveal, graffiti, requestedBuilderBoostFactor)
+          .map(container -> BlockContainerAndMetaData.fromBlockContainer(container, spec));
     } catch (final BlockProductionV3FailedException ex) {
       LOG.warn("Produce Block V3 request failed at slot {}. Retrying with Block V2", slot);
 

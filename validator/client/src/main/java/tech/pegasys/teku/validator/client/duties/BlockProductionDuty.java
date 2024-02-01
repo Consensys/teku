@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -91,6 +92,9 @@ public class BlockProductionDuty implements Duty {
             signature ->
                 validatorDutyMetrics.record(
                     () -> createUnsignedBlock(signature), this, ValidatorDutyMetricsSteps.CREATE))
+        .thenApply(
+            blockContainerAndMetaData ->
+                blockContainerAndMetaData.map(BlockContainerAndMetaData::blockContainer))
         .thenCompose(this::validateBlock)
         .thenCompose(
             blockContainer ->
@@ -109,7 +113,7 @@ public class BlockProductionDuty implements Duty {
     return validator.getSigner().createRandaoReveal(spec.computeEpochAtSlot(slot), forkInfo);
   }
 
-  private SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
+  private SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
       final BLSSignature randaoReveal) {
     if (blockV3Enabled) {
       return validatorApiChannel.createUnsignedBlock(

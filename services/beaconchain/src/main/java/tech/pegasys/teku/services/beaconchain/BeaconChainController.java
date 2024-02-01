@@ -698,7 +698,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .spec(spec)
             .recentChainData(recentChainData)
             .combinedChainDataClient(combinedChainDataClient)
-            .executionLayerBlockProductionManager(executionLayerBlockProductionManager)
             .rewardCalculator(rewardCalculator)
             .p2pNetwork(p2pNetwork)
             .syncService(syncService)

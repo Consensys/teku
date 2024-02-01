@@ -33,6 +33,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
+import static tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData.fromBlockContainer;
 import static tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel.NOT_REQUIRED;
 import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason.DOES_NOT_DESCEND_FROM_LATEST_FINALIZED;
 
@@ -86,14 +87,13 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -488,7 +488,7 @@ class ValidatorApiHandlerTest {
   @Test
   public void createUnsignedBlock_shouldFailWhenNodeIsSyncing() {
     nodeIsSyncing();
-    final SafeFuture<Optional<BlockContainer>> result =
+    final SafeFuture<Optional<BlockContainerAndMetaData>> result =
         validatorApiHandler.createUnsignedBlock(
             ONE,
             dataStructureUtil.randomSignature(),
@@ -509,7 +509,7 @@ class ValidatorApiHandlerTest {
     final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, newSlot.minus(1));
     when(chainDataClient.isOptimisticBlock(parentRoot)).thenReturn(true);
 
-    final SafeFuture<Optional<BlockContainer>> result =
+    final SafeFuture<Optional<BlockContainerAndMetaData>> result =
         validatorApiHandler.createUnsignedBlock(
             newSlot,
             dataStructureUtil.randomSignature(),
@@ -527,7 +527,8 @@ class ValidatorApiHandlerTest {
     final UInt64 newSlot = UInt64.valueOf(25);
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(newSlot);
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
-    final BeaconBlock createdBlock = dataStructureUtil.randomBeaconBlock(newSlot.longValue());
+    final BlockContainerAndMetaData createdBlock =
+        fromBlockContainer(dataStructureUtil.randomBeaconBlock(newSlot.longValue()), spec);
 
     when(chainDataClient.getStateForBlockProduction(newSlot, false))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
@@ -544,7 +545,7 @@ class ValidatorApiHandlerTest {
     // even if passing a non-empty reqestedBlinded and requestedBuilderBoostFactor isn't a valid
     // combination,
     // we still want to check that all parameters are passed down the line to the block factory
-    final SafeFuture<Optional<BlockContainer>> result =
+    final SafeFuture<Optional<BlockContainerAndMetaData>> result =
         validatorApiHandler.createUnsignedBlock(
             newSlot, randaoReveal, Optional.empty(), Optional.of(false), Optional.of(ONE));
 

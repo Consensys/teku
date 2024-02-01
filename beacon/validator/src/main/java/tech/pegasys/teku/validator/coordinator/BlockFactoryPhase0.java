@@ -24,14 +24,11 @@ import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanc
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.constants.EthConstants;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 
 public class BlockFactoryPhase0 implements BlockFactory {
 
@@ -45,7 +42,7 @@ public class BlockFactoryPhase0 implements BlockFactory {
   }
 
   @Override
-  public SafeFuture<BlockContainer> createUnsignedBlock(
+  public SafeFuture<BlockContainerAndMetaData> createUnsignedBlock(
       final BeaconState blockSlotState,
       final UInt64 proposalSlot,
       final BLSSignature randaoReveal,
@@ -78,16 +75,9 @@ public class BlockFactoryPhase0 implements BlockFactory {
                 requestedBuilderBoostFactor,
                 blockProductionPerformance),
             blockProductionPerformance)
-        .thenPeek(
-            beaconBlockAndState ->
-                System.out.println(
-                    "block rewards: "
-                        + EthConstants.GWEI_TO_WEI.multiply(
-                            BeaconStateCache.getStateTransitionCaches(
-                                    beaconBlockAndState.getState())
-                                .getLastBlockRewards()
-                                .longValue())))
-        .thenApply(BeaconBlockAndState::getBlock);
+        .thenApply(
+            blockAndState ->
+                BlockContainerAndMetaData.fromBeaconBlockAndState(blockAndState, spec));
   }
 
   @Override

@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 import tech.pegasys.teku.validator.remote.typedef.BlindedBlockEndpointNotAvailableException;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
@@ -96,7 +97,7 @@ public class CreateBlockRequest extends AbstractTypeDefRequest {
             : responseHandler;
   }
 
-  public Optional<BlockContainer> createUnsignedBlock(
+  public Optional<BlockContainerAndMetaData> createUnsignedBlock(
       final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
     final Map<String, String> queryParams = new HashMap<>();
     queryParams.put("randao_reveal", randaoReveal.toString());
@@ -108,7 +109,10 @@ public class CreateBlockRequest extends AbstractTypeDefRequest {
       headers.put("Accept", "application/octet-stream;q=0.9, application/json;q=0.4");
     }
     return get(apiMethod, Map.of("slot", slot.toString()), queryParams, headers, responseHandler)
-        .map(GetBlockResponse::getData);
+        .map(
+            getBlockResponse ->
+                BlockContainerAndMetaData.fromBlockContainer(
+                    getBlockResponse.getData(), getBlockResponse.getSpecMilestone()));
   }
 
   private Optional<GetBlockResponse> handleBlockContainerResult(
