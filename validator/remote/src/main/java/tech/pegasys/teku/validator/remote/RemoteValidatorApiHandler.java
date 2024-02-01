@@ -45,6 +45,7 @@ import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse
 import tech.pegasys.teku.api.schema.altair.ContributionAndProof;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
@@ -132,23 +133,30 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
       return SafeFuture.completedFuture(emptyMap());
     }
     return sendRequest(
-        () -> makeValidatorRequest(publicKeys, ValidatorResponse::getIndex).orElse(emptyMap()));
+        () ->
+            makeValidatorRequest(
+                    publicKeys, StateValidatorData::getIntegerIndex, ValidatorResponse::getIndex)
+                .orElse(emptyMap()));
   }
 
   @Override
   public SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
       final Collection<BLSPublicKey> publicKeys) {
-    return sendRequest(() -> makeValidatorRequest(publicKeys, ValidatorResponse::getStatus));
+    return sendRequest(
+        () ->
+            makeValidatorRequest(
+                publicKeys, StateValidatorData::getStatus, ValidatorResponse::getStatus));
   }
 
   private <T> Optional<Map<BLSPublicKey, T>> makeValidatorRequest(
       final Collection<BLSPublicKey> publicKeys,
-      final Function<ValidatorResponse, T> valueExtractor) {
+      final Function<StateValidatorData, T> valueExtractor,
+      final Function<ValidatorResponse, T> validatorResponseExtractor) {
     if (usePostValidatorsEndpoint.get()) {
       try {
         return apiClient
             .postValidators(convertPublicKeysToValidatorIds(publicKeys))
-            .map(responses -> convertToValidatorMap(responses, valueExtractor));
+            .map(responses -> convertToValidatorMap(responses, validatorResponseExtractor));
       } catch (final PostStateValidatorsNotExistingException __) {
         LOG.debug(
             "POST method is not available for getting validators from state. Will use GET instead.");
@@ -173,7 +181,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
 
   private <T> Optional<Map<BLSPublicKey, T>> makeBatchedValidatorRequest(
       final Collection<BLSPublicKey> publicKeysCollection,
-      final Function<ValidatorResponse, T> valueExtractor) {
+      final Function<StateValidatorData, T> valueExtractor) {
     final List<BLSPublicKey> publicKeys = new ArrayList<>(publicKeysCollection);
     final Map<BLSPublicKey, T> returnedObjects = new HashMap<>();
     for (int i = 0; i < publicKeys.size(); i += MAX_PUBLIC_KEY_BATCH_SIZE) {
@@ -190,10 +198,16 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   }
 
   private <T> Optional<Map<BLSPublicKey, T>> requestValidatorObject(
-      final List<BLSPublicKey> batch, Function<ValidatorResponse, T> valueExtractor) {
-    return apiClient
-        .getValidators(convertPublicKeysToValidatorIds(batch))
-        .map(responses -> convertToValidatorMap(responses, valueExtractor));
+      final List<BLSPublicKey> batch, Function<StateValidatorData, T> valueExtractor) {
+    return typeDefClient
+        .getStateValidators(convertPublicKeysToValidatorIds(batch))
+        .map(responses -> convertToValidatorMapTypeDef(responses, valueExtractor));
+  }
+
+  private <T> Map<BLSPublicKey, T> convertToValidatorMapTypeDef( // change name
+      final List<StateValidatorData> validatorData,
+      final Function<StateValidatorData, T> valueExtractor) {
+    return validatorData.stream().collect(toMap(StateValidatorData::getPublicKey, valueExtractor));
   }
 
   @Override

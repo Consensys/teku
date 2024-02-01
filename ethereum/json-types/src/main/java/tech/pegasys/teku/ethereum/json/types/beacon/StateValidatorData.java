@@ -63,6 +63,10 @@ public class StateValidatorData {
     return index;
   }
 
+  public Integer getIntegerIndex() {
+    return index.intValue();
+  }
+
   public UInt64 getBalance() {
     return balance;
   }
