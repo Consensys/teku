@@ -23,7 +23,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.EpochTransitionCaches;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.util.AttestationUtil;
@@ -72,7 +72,7 @@ public abstract class AbstractValidatorStatusFactory implements ValidatorStatusF
 
   private TotalBalances createTotalBalances(
       final BeaconState state, final List<ValidatorStatus> statuses) {
-    final TransitionCaches transitionCaches = BeaconStateCache.getTransitionCaches(state);
+    final EpochTransitionCaches transitionCaches = BeaconStateCache.getEpochTransitionCaches(state);
     final ProgressiveTotalBalancesUpdates progressiveTotalBalances =
         transitionCaches.getProgressiveTotalBalances();
 

@@ -30,26 +30,31 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconStat
 public abstract class AbstractBeaconState<TMutable extends MutableBeaconState>
     extends SszContainerImpl implements BeaconState, BeaconStateCache {
 
-  private final TransitionCaches transitionCaches;
+  private final EpochTransitionCaches epochTransitionCaches;
+  private final StateTransitionCaches stateTransitionCaches;
 
   protected AbstractBeaconState(final BeaconStateSchema<?, ?> schema) {
     super(schema);
-    transitionCaches = TransitionCaches.createNewEmpty();
+    epochTransitionCaches = EpochTransitionCaches.createNewEmpty();
+    stateTransitionCaches = StateTransitionCaches.createNewEmpty();
   }
 
   protected AbstractBeaconState(
-      SszCompositeSchema<?> type,
-      TreeNode backingNode,
-      IntCache<SszData> cache,
-      TransitionCaches transitionCaches) {
+      final SszCompositeSchema<?> type,
+      final TreeNode backingNode,
+      final IntCache<SszData> cache,
+      final EpochTransitionCaches epochTransitionCaches,
+      final StateTransitionCaches stateTransitionCaches) {
     super(type, backingNode, cache);
-    this.transitionCaches = transitionCaches;
+    this.epochTransitionCaches = epochTransitionCaches;
+    this.stateTransitionCaches = stateTransitionCaches;
   }
 
   protected AbstractBeaconState(
       AbstractSszContainerSchema<? extends SszContainer> type, TreeNode backingNode) {
     super(type, backingNode);
-    transitionCaches = TransitionCaches.createNewEmpty();
+    epochTransitionCaches = EpochTransitionCaches.createNewEmpty();
+    stateTransitionCaches = StateTransitionCaches.createNewEmpty();
   }
 
   @Override
@@ -76,8 +81,13 @@ public abstract class AbstractBeaconState<TMutable extends MutableBeaconState>
   }
 
   @Override
-  public TransitionCaches getTransitionCaches() {
-    return transitionCaches;
+  public EpochTransitionCaches getEpochTransitionCaches() {
+    return epochTransitionCaches;
+  }
+
+  @Override
+  public StateTransitionCaches getStateTransitionCaches() {
+    return stateTransitionCaches;
   }
 
   @Override

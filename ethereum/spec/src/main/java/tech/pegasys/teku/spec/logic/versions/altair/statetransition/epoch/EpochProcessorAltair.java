@@ -26,7 +26,7 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.EpochTransitionCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.MutableBeaconStateAltair;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
@@ -137,7 +137,7 @@ public class EpochProcessorAltair extends AbstractEpochProcessor {
   @Override
   public void initProgressiveTotalBalancesIfRequired(
       final BeaconState state, final TotalBalances totalBalances) {
-    final TransitionCaches transitionCaches = BeaconStateCache.getTransitionCaches(state);
+    final EpochTransitionCaches transitionCaches = BeaconStateCache.getEpochTransitionCaches(state);
     if (!(transitionCaches.getProgressiveTotalBalances()
         instanceof ProgressiveTotalBalancesAltair)) {
       transitionCaches.setProgressiveTotalBalances(

@@ -105,7 +105,7 @@ public class SyncCommitteeUtil {
         epoch,
         state.getSlot());
     final BeaconStateAltair altairState = BeaconStateAltair.required(state);
-    return BeaconStateCache.getTransitionCaches(altairState)
+    return BeaconStateCache.getEpochTransitionCaches(altairState)
         .getSyncCommitteeCache()
         .get(
             syncCommitteePeriod,

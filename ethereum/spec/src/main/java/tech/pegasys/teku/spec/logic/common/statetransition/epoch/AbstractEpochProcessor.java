@@ -37,7 +37,7 @@ import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.EpochTransitionCaches;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators.ValidatorExitContext;
@@ -106,7 +106,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
 
     updateTransitionCaches(state, currentEpoch, totalBalances);
 
-    final TransitionCaches transitionCaches = BeaconStateCache.getTransitionCaches(state);
+    final EpochTransitionCaches transitionCaches = BeaconStateCache.getEpochTransitionCaches(state);
     final ProgressiveTotalBalancesUpdates progressiveTotalBalances =
         transitionCaches.getProgressiveTotalBalances();
     progressiveTotalBalances.onEpochTransition(validatorStatuses.getStatuses());
@@ -133,7 +133,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
       final MutableBeaconState state,
       final UInt64 currentEpoch,
       final TotalBalances totalBalances) {
-    final TransitionCaches transitionCaches = BeaconStateCache.getTransitionCaches(state);
+    final EpochTransitionCaches transitionCaches = BeaconStateCache.getEpochTransitionCaches(state);
     transitionCaches.setLatestTotalBalances(totalBalances);
     transitionCaches
         .getTotalActiveBalance()
@@ -155,7 +155,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     }
 
     final TotalBalances totalBalances =
-        BeaconStateCache.getTransitionCaches(preState)
+        BeaconStateCache.getEpochTransitionCaches(preState)
             .getProgressiveTotalBalances()
             .getTotalBalances(specConfig)
             .orElseGet(
@@ -455,7 +455,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
         final Validator validator = validators.get(index);
         final UInt64 newEffectiveBalance =
             balance.minus(balance.mod(effectiveBalanceIncrement)).min(maxEffectiveBalance);
-        BeaconStateCache.getTransitionCaches(state)
+        BeaconStateCache.getEpochTransitionCaches(state)
             .getProgressiveTotalBalances()
             .onEffectiveBalanceChange(status, newEffectiveBalance);
         validators.set(index, validator.withEffectiveBalance(newEffectiveBalance));

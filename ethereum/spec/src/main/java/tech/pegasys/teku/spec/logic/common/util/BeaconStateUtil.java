@@ -138,7 +138,7 @@ public class BeaconStateUtil {
   }
 
   public List<UInt64> getEffectiveActiveUnslashedBalances(final BeaconState state) {
-    return BeaconStateCache.getTransitionCaches(state)
+    return BeaconStateCache.getEpochTransitionCaches(state)
         .getEffectiveBalances()
         .get(
             beaconStateAccessors.getCurrentEpoch(state),
@@ -163,7 +163,7 @@ public class BeaconStateUtil {
 
   public UInt64 getAttestersTotalEffectiveBalance(final BeaconState state, final UInt64 slot) {
     beaconStateAccessors.validateStateForCommitteeQuery(state, slot);
-    return BeaconStateCache.getTransitionCaches(state)
+    return BeaconStateCache.getEpochTransitionCaches(state)
         .getAttestersTotalBalance()
         .get(
             slot,

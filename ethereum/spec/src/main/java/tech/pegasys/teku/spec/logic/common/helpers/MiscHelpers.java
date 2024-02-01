@@ -185,7 +185,7 @@ public class MiscHelpers {
       checkArgument(fromIndex < indexCount, "CommitteeUtil.getShuffledIndex1");
       checkArgument(toIndex <= indexCount, "CommitteeUtil.getShuffledIndex1");
     }
-    return BeaconStateCache.getTransitionCaches(state)
+    return BeaconStateCache.getEpochTransitionCaches(state)
         .getCommitteeShuffle()
         .get(seed, s -> shuffleList(indices, s))
         .subList(fromIndex, toIndex);

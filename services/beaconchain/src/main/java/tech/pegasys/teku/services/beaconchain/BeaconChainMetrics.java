@@ -227,7 +227,7 @@ public class BeaconChainMetrics implements SlotEventsChannel {
 
   private void updateMetrics(final StateAndBlockSummary head) {
     final BeaconState state = head.getState();
-    BeaconStateCache.getTransitionCaches(state)
+    BeaconStateCache.getEpochTransitionCaches(state)
         .getLatestTotalBalances()
         .ifPresent(
             totalBalances -> {

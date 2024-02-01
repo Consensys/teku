@@ -53,7 +53,7 @@ public class ValidatorsUtil {
   }
 
   public Optional<Integer> getValidatorIndex(BeaconState state, BLSPublicKey publicKey) {
-    return BeaconStateCache.getTransitionCaches(state)
+    return BeaconStateCache.getEpochTransitionCaches(state)
         .getValidatorIndexCache()
         .getValidatorIndex(state, publicKey);
   }

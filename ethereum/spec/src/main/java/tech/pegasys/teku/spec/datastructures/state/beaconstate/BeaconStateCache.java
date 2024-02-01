@@ -13,15 +13,24 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate;
 
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.EpochTransitionCaches;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.StateTransitionCaches;
 
 public interface BeaconStateCache {
 
-  static TransitionCaches getTransitionCaches(BeaconState state) {
+  static EpochTransitionCaches getEpochTransitionCaches(BeaconState state) {
     return state instanceof BeaconStateCache
-        ? ((BeaconStateCache) state).getTransitionCaches()
-        : TransitionCaches.getNoOp();
+        ? ((BeaconStateCache) state).getEpochTransitionCaches()
+        : EpochTransitionCaches.getNoOp();
   }
 
-  TransitionCaches getTransitionCaches();
+  static StateTransitionCaches getStateTransitionCaches(BeaconState state) {
+    return state instanceof BeaconStateCache
+        ? ((BeaconStateCache) state).getStateTransitionCaches()
+        : StateTransitionCaches.getNoOp();
+  }
+
+  EpochTransitionCaches getEpochTransitionCaches();
+
+  StateTransitionCaches getStateTransitionCaches();
 }

@@ -55,7 +55,7 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
   }
 
   public UInt64 getBaseRewardPerIncrement(final BeaconState state) {
-    return BeaconStateCache.getTransitionCaches(state)
+    return BeaconStateCache.getEpochTransitionCaches(state)
         .getBaseRewardPerIncrement()
         .get(
             getCurrentEpoch(state),

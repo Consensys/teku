@@ -152,6 +152,7 @@ public class ValidatorDataProvider {
       final Optional<BlockContainer> maybeBlockContainer,
       final UInt256 executionPayloadValue,
       final UInt256 consensusBlockValue) {
+    System.out.println("block rewards: " + consensusBlockValue);
     return maybeBlockContainer.map(
         blockContainer ->
             new BlockContainerAndMetaData<>(

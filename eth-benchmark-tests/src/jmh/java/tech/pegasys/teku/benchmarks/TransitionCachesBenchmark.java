@@ -33,7 +33,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.collections.TekuPair;
 import tech.pegasys.teku.infrastructure.collections.cache.Cache;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.EpochTransitionCaches;
 
 @Fork(1)
 @State(Scope.Thread)
@@ -48,7 +48,7 @@ public class TransitionCachesBenchmark {
 
   long counter;
 
-  private final TransitionCaches fullCache = TransitionCaches.createNewEmpty();
+  private final EpochTransitionCaches fullCache = EpochTransitionCaches.createNewEmpty();
 
   @Setup(Level.Trial)
   public void init() {

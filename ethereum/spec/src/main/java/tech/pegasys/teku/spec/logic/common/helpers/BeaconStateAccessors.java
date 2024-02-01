@@ -79,7 +79,7 @@ public abstract class BeaconStateAccessors {
       return Optional.empty();
     }
     return Optional.of(
-        BeaconStateCache.getTransitionCaches(state)
+        BeaconStateCache.getEpochTransitionCaches(state)
             .getValidatorsPubKeys()
             .get(
                 validatorIndex,
@@ -87,7 +87,7 @@ public abstract class BeaconStateAccessors {
                   BLSPublicKey pubKey = state.getValidators().get(i.intValue()).getPublicKey();
 
                   // eagerly pre-cache pubKey => validatorIndex mapping
-                  BeaconStateCache.getTransitionCaches(state)
+                  BeaconStateCache.getEpochTransitionCaches(state)
                       .getValidatorIndexCache()
                       .invalidateWithNewValue(pubKey, i.intValue());
                   return pubKey;
@@ -109,7 +109,7 @@ public abstract class BeaconStateAccessors {
         "Cannot get active validator indices from an epoch beyond the seed lookahead period. Requested epoch %s from state in epoch %s",
         epoch,
         stateEpoch);
-    return BeaconStateCache.getTransitionCaches(state)
+    return BeaconStateCache.getEpochTransitionCaches(state)
         .getActiveValidators()
         .get(
             epoch,
@@ -140,7 +140,7 @@ public abstract class BeaconStateAccessors {
   }
 
   public UInt64 getTotalActiveBalance(BeaconState state) {
-    return BeaconStateCache.getTransitionCaches(state)
+    return BeaconStateCache.getEpochTransitionCaches(state)
         .getTotalActiveBalance()
         .get(
             getCurrentEpoch(state),
@@ -210,7 +210,7 @@ public abstract class BeaconStateAccessors {
 
   public int getBeaconProposerIndex(BeaconState state, UInt64 requestedSlot) {
     validateStateCanCalculateProposerIndexAtSlot(state, requestedSlot);
-    return BeaconStateCache.getTransitionCaches(state)
+    return BeaconStateCache.getEpochTransitionCaches(state)
         .getBeaconProposerIndex()
         .get(
             requestedSlot,
@@ -288,7 +288,7 @@ public abstract class BeaconStateAccessors {
     // Make sure state is within range of the slot being queried
     validateStateForCommitteeQuery(state, slot);
 
-    return BeaconStateCache.getTransitionCaches(state)
+    return BeaconStateCache.getEpochTransitionCaches(state)
         .getBeaconCommittee()
         .get(
             TekuPair.of(slot, index),

@@ -29,7 +29,7 @@ import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.Progress
 import tech.pegasys.teku.spec.logic.common.statetransition.epoch.status.TotalBalances;
 
 /** The container class for all transition caches. */
-public class TransitionCaches {
+public class EpochTransitionCaches {
 
   private static final int MAX_ACTIVE_VALIDATORS_CACHE = 8;
   private static final int MAX_BEACON_PROPOSER_INDEX_CACHE = 1;
@@ -40,8 +40,8 @@ public class TransitionCaches {
   private static final int MAX_SYNC_COMMITTEE_CACHE = 2;
   public static final int MAX_BASE_REWARD_PER_INCREMENT_CACHE = 1;
 
-  private static final TransitionCaches NO_OP_INSTANCE =
-      new TransitionCaches(
+  private static final EpochTransitionCaches NO_OP_INSTANCE =
+      new EpochTransitionCaches(
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
           NoOpCache.getNoOpCache(),
@@ -56,18 +56,18 @@ public class TransitionCaches {
           ProgressiveTotalBalancesUpdates.NOOP) {
 
         @Override
-        public TransitionCaches copy() {
+        public EpochTransitionCaches copy() {
           return this;
         }
       };
 
   /** Creates new instance with clean caches */
-  public static TransitionCaches createNewEmpty() {
-    return new TransitionCaches();
+  public static EpochTransitionCaches createNewEmpty() {
+    return new EpochTransitionCaches();
   }
 
   /** Returns the instance which doesn't cache anything */
-  public static TransitionCaches getNoOp() {
+  public static EpochTransitionCaches getNoOp() {
     return NO_OP_INSTANCE;
   }
 
@@ -87,7 +87,7 @@ public class TransitionCaches {
   private volatile Optional<TotalBalances> latestTotalBalances = Optional.empty();
   private volatile ProgressiveTotalBalancesUpdates progressiveTotalBalances;
 
-  private TransitionCaches() {
+  private EpochTransitionCaches() {
     activeValidators = LRUCache.create(MAX_ACTIVE_VALIDATORS_CACHE);
     beaconProposerIndex = LRUCache.create(MAX_BEACON_PROPOSER_INDEX_CACHE);
     beaconCommittee = LRUCache.create(MAX_BEACON_COMMITTEE_CACHE);
@@ -102,7 +102,7 @@ public class TransitionCaches {
     progressiveTotalBalances = ProgressiveTotalBalancesUpdates.NOOP;
   }
 
-  private TransitionCaches(
+  private EpochTransitionCaches(
       Cache<UInt64, IntList> activeValidators,
       Cache<UInt64, Integer> beaconProposerIndex,
       Cache<TekuPair<UInt64, UInt64>, IntList> beaconCommittee,
@@ -215,8 +215,8 @@ public class TransitionCaches {
    * Makes an independent copy which contains all the data in this instance Modifications to
    * returned caches shouldn't affect caches from this instance
    */
-  public TransitionCaches copy() {
-    return new TransitionCaches(
+  public EpochTransitionCaches copy() {
+    return new EpochTransitionCaches(
         activeValidators.copy(),
         beaconProposerIndex.copy(),
         beaconCommittee.copy(),

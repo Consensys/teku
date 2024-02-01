@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 
 public class BeaconStateMutators {
@@ -37,6 +38,19 @@ public class BeaconStateMutators {
     this.specConfig = specConfig;
     this.miscHelpers = miscHelpers;
     this.beaconStateAccessors = beaconStateAccessors;
+  }
+
+  /**
+   * this is the same as {@link #increaseBalance(MutableBeaconState, int, UInt64)} but in addition
+   * it updates the lastBlockRewardCache to keep track of the total rewards for the last block
+   *
+   * @param state
+   * @param proposerIndex
+   * @param delta
+   */
+  public void increaseProposerBalance(MutableBeaconState state, int proposerIndex, UInt64 delta) {
+    increaseBalance(state, proposerIndex, delta);
+    BeaconStateCache.getStateTransitionCaches(state).increaseLastBlockRewards(delta);
   }
 
   /**
@@ -229,7 +243,7 @@ public class BeaconStateMutators {
     UInt64 whistleblowerReward =
         validator.getEffectiveBalance().dividedBy(specConfig.getWhistleblowerRewardQuotient());
     UInt64 proposerReward = calculateProposerReward(whistleblowerReward);
-    increaseBalance(state, proposerIndex, proposerReward);
+    increaseProposerBalance(state, proposerIndex, proposerReward);
     increaseBalance(state, whistleblowerIndex, whistleblowerReward.minus(proposerReward));
   }
 

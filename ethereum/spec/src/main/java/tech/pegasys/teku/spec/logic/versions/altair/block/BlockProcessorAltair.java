@@ -142,7 +142,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
     maybeProposerReward.ifPresent(
         proposerReward -> {
           final int proposerIndex = beaconStateAccessors.getBeaconProposerIndex(state);
-          beaconStateMutators.increaseBalance(state, proposerIndex, proposerReward);
+          beaconStateMutators.increaseProposerBalance(state, proposerIndex, proposerReward);
         });
   }
 
@@ -190,7 +190,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
             SszByte.of(
                 miscHelpersAltair.addFlags(previousParticipationFlags, newParticipationFlags)));
 
-        BeaconStateCache.getTransitionCaches(state)
+        BeaconStateCache.getEpochTransitionCaches(state)
             .getProgressiveTotalBalances()
             .onAttestation(
                 state.getValidators().get(index),
@@ -254,7 +254,7 @@ public class BlockProcessorAltair extends AbstractBlockProcessor {
       if (aggregate.getSyncCommitteeBits().getBit(i)) {
         participantPubkeys.add(publicKey);
         beaconStateMutators.increaseBalance(state, validatorIndex, participantReward);
-        beaconStateMutators.increaseBalance(state, proposerIndex, proposerReward);
+        beaconStateMutators.increaseProposerBalance(state, proposerIndex, proposerReward);
       } else {
         beaconStateMutators.decreaseBalance(state, validatorIndex, participantReward);
       }

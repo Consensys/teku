@@ -29,7 +29,8 @@ public abstract class AbstractMutableBeaconState<
         T extends SszContainerImpl & BeaconState & BeaconStateCache>
     extends SszMutableContainerImpl implements MutableBeaconState, BeaconStateCache {
 
-  private final TransitionCaches transitionCaches;
+  private final EpochTransitionCaches epochTransitionCaches;
+  private final StateTransitionCaches stateTransitionCaches;
   private final boolean builder;
 
   protected AbstractMutableBeaconState(T backingImmutableView) {
@@ -38,8 +39,12 @@ public abstract class AbstractMutableBeaconState<
 
   protected AbstractMutableBeaconState(T backingImmutableView, boolean builder) {
     super(backingImmutableView);
-    this.transitionCaches =
-        builder ? TransitionCaches.getNoOp() : backingImmutableView.getTransitionCaches().copy();
+    this.epochTransitionCaches =
+        builder
+            ? EpochTransitionCaches.getNoOp()
+            : backingImmutableView.getEpochTransitionCaches().copy();
+    this.stateTransitionCaches =
+        builder ? StateTransitionCaches.getNoOp() : StateTransitionCaches.createNewEmpty();
     this.builder = builder;
   }
 
@@ -51,15 +56,26 @@ public abstract class AbstractMutableBeaconState<
   @Override
   protected T createImmutableSszComposite(TreeNode backingNode, IntCache<SszData> viewCache) {
     return createImmutableBeaconState(
-        backingNode, viewCache, builder ? TransitionCaches.createNewEmpty() : transitionCaches);
+        backingNode,
+        viewCache,
+        builder ? EpochTransitionCaches.createNewEmpty() : epochTransitionCaches,
+        builder ? StateTransitionCaches.getNoOp() : stateTransitionCaches);
   }
 
   protected abstract T createImmutableBeaconState(
-      TreeNode backingNode, IntCache<SszData> viewCache, TransitionCaches transitionCache);
+      TreeNode backingNode,
+      IntCache<SszData> viewCache,
+      EpochTransitionCaches epochTransitionCaches,
+      StateTransitionCaches stateTransitionCaches);
 
   @Override
-  public TransitionCaches getTransitionCaches() {
-    return transitionCaches;
+  public EpochTransitionCaches getEpochTransitionCaches() {
+    return epochTransitionCaches;
+  }
+
+  @Override
+  public StateTransitionCaches getStateTransitionCaches() {
+    return stateTransitionCaches;
   }
 
   @Override

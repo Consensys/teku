@@ -190,7 +190,7 @@ public class OperationsTestExecutor<T extends SszData> implements TestExecutor {
 
   private void assertTotalBalances(final Spec spec, final BeaconState state) {
     final Optional<TotalBalances> maybeProgressiveBalances =
-        BeaconStateCache.getTransitionCaches(state)
+        BeaconStateCache.getEpochTransitionCaches(state)
             .getProgressiveTotalBalances()
             .getTotalBalances(spec.getSpecConfig(state.getSlot()));
     assertThat(maybeProgressiveBalances).isPresent();

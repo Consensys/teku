@@ -52,7 +52,7 @@ public class BeaconStateMutatorsAltair extends BeaconStateMutators {
       final int slashedIndex,
       final Supplier<ValidatorExitContext> validatorExitContextSupplier) {
     super.slashValidator(state, slashedIndex, validatorExitContextSupplier);
-    BeaconStateCache.getTransitionCaches(state)
+    BeaconStateCache.getEpochTransitionCaches(state)
         .getProgressiveTotalBalances()
         .onSlashing(state, slashedIndex);
   }
