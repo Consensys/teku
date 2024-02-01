@@ -277,7 +277,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                                           .getVerkleProofSchema()
                                           .create(
                                               List.of(),
-                                              List.of(),
+                                              Bytes.EMPTY,
                                               List.of(),
                                               Bytes32.ZERO,
                                               schemaDefinitionsElectra

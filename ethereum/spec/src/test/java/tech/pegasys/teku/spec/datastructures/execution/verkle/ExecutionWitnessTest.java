@@ -75,7 +75,7 @@ class ExecutionWitnessTest {
   private final VerkleProof verkleProof =
       verkleProofSchema.create(
           List.of(dataStructureUtil.randomBytes31(), dataStructureUtil.randomBytes31()),
-          List.of((byte) 16, (byte) 17),
+          Bytes.fromHexString("0A45"),
           List.of(dataStructureUtil.randomBytes32(), dataStructureUtil.randomBytes32()),
           dataStructureUtil.randomBytes32(),
           ipaProof);

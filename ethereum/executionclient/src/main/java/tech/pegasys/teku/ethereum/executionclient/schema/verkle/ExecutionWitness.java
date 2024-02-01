@@ -20,15 +20,15 @@ import tech.pegasys.teku.spec.datastructures.execution.verkle.StemStateDiffSchem
 
 public class ExecutionWitness {
 
-  @JsonProperty("state_diff")
+  @JsonProperty("stateDiff")
   private final List<StemStateDiff> stateDiff;
 
-  @JsonProperty("verkle_proof")
+  @JsonProperty("verkleProof")
   private final VerkleProof verkleProof;
 
   public ExecutionWitness(
-      @JsonProperty("state_diff") final List<StemStateDiff> stateDiff,
-      @JsonProperty("verkle_proof") final VerkleProof verkleProof) {
+      @JsonProperty("stateDiff") final List<StemStateDiff> stateDiff,
+      @JsonProperty("verkleProof") final VerkleProof verkleProof) {
     this.stateDiff = stateDiff;
     this.verkleProof = verkleProof;
   }

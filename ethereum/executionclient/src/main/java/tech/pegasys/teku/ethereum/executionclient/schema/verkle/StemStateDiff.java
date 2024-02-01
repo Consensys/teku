@@ -30,12 +30,12 @@ public class StemStateDiff {
   @JsonProperty("stem")
   private final Bytes31 stem;
 
-  @JsonProperty("suffix_diffs")
+  @JsonProperty("suffixDiffs")
   private final List<SuffixStateDiff> suffixDiffs;
 
   public StemStateDiff(
       @JsonProperty("stem") final Bytes31 stem,
-      @JsonProperty("suffix_diffs") final List<SuffixStateDiff> suffixDiffs) {
+      @JsonProperty("suffixDiffs") final List<SuffixStateDiff> suffixDiffs) {
     this.stem = stem;
     this.suffixDiffs = suffixDiffs;
   }

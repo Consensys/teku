@@ -36,13 +36,13 @@ public class IpaProof {
 
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = Bytes32Deserializer.class)
-  @JsonProperty("final_evaluation")
+  @JsonProperty("finalEvaluation")
   private final Bytes32 finalEvaluation;
 
   public IpaProof(
       @JsonProperty("cl") final List<Bytes32> cl,
       @JsonProperty("cr") final List<Bytes32> cr,
-      @JsonProperty("final_evaluation") final Bytes32 finalEvaluation) {
+      @JsonProperty("finalEvaluation") final Bytes32 finalEvaluation) {
     this.cl = cl;
     this.cr = cr;
     this.finalEvaluation = finalEvaluation;

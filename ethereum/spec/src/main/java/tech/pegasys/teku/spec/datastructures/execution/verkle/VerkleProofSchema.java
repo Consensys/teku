@@ -14,16 +14,18 @@
 package tech.pegasys.teku.spec.datastructures.execution.verkle;
 
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.bytes.Bytes31;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema5;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszPrimitiveSchemas;
+import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteListSchema;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
@@ -31,7 +33,7 @@ public class VerkleProofSchema
     extends ContainerSchema5<
         VerkleProof,
         SszList<SszByteVector>,
-        SszList<SszByte>,
+        SszByteList,
         SszList<SszBytes32>,
         SszBytes32,
         IpaProof> {
@@ -48,9 +50,7 @@ public class VerkleProofSchema
         namedSchema(
             FIELD_OTHER_STEMS,
             SszListSchema.create(SszByteVectorSchema.create(Bytes31.SIZE), maxStems)),
-        namedSchema(
-            FIELD_DEPTH_EXTENSION_PRESENT,
-            SszListSchema.create(SszPrimitiveSchemas.BYTE_SCHEMA, maxStems)),
+        namedSchema(FIELD_DEPTH_EXTENSION_PRESENT, SszByteListSchema.create(maxStems)),
         namedSchema(
             FIELD_COMMITMENTS_BY_PATH,
             SszListSchema.create(
@@ -65,10 +65,8 @@ public class VerkleProofSchema
         getChildSchema(getFieldIndex(FIELD_OTHER_STEMS));
   }
 
-  @SuppressWarnings("unchecked")
-  public SszListSchema<SszByte, SszList<SszByte>> getDepthExtensionPresentSchema() {
-    return (SszListSchema<SszByte, SszList<SszByte>>)
-        getChildSchema(getFieldIndex(FIELD_DEPTH_EXTENSION_PRESENT));
+  public SszByteListSchema<?> getDepthExtensionPresentSchema() {
+    return (SszByteListSchema<?>) getChildSchema(getFieldIndex(FIELD_DEPTH_EXTENSION_PRESENT));
   }
 
   @SuppressWarnings("unchecked")
@@ -83,7 +81,7 @@ public class VerkleProofSchema
 
   public VerkleProof create(
       final List<Bytes31> otherStems,
-      final List<Byte> depthExtensionPresent,
+      final Bytes depthExtensionPresent,
       final List<Bytes32> commitmentsByPath,
       final Bytes32 d,
       final IpaProof ipaProof) {

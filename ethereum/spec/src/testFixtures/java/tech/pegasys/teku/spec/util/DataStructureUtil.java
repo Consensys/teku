@@ -718,7 +718,7 @@ public final class DataStructureUtil {
         .getVerkleProofSchema()
         .create(
             IntStream.range(0, otherStems).mapToObj(__ -> randomBytes31()).toList(),
-            IntStream.range(0, present).mapToObj(__ -> randomByte()).toList(),
+            randomBytes(present),
             IntStream.range(0, commitments).mapToObj(__ -> randomBytes32()).toList(),
             randomBytes32(),
             ipaProof);

@@ -14,12 +14,13 @@
 package tech.pegasys.teku.spec.datastructures.execution.verkle;
 
 import java.util.List;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.bytes.Bytes31;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container5;
-import tech.pegasys.teku.infrastructure.ssz.primitive.SszByte;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 
@@ -27,7 +28,7 @@ public class VerkleProof
     extends Container5<
         VerkleProof,
         SszList<SszByteVector>,
-        SszList<SszByte>,
+        SszByteList,
         SszList<SszBytes32>,
         SszBytes32,
         IpaProof> {
@@ -39,14 +40,14 @@ public class VerkleProof
   public VerkleProof(
       final VerkleProofSchema schema,
       final List<SszByteVector> otherStems,
-      final List<SszByte> depthExtensionPresent,
+      final SszByteList depthExtensionPresent,
       final List<SszBytes32> commitmentsByPath,
       final SszBytes32 d,
       final IpaProof ipaProof) {
     super(
         schema,
         schema.getOtherStemsSchema().createFromElements(otherStems),
-        schema.getDepthExtensionPresentSchema().createFromElements(depthExtensionPresent),
+        depthExtensionPresent,
         schema.getCommitmentsByPathSchema().createFromElements(commitmentsByPath),
         d,
         ipaProof);
@@ -55,7 +56,7 @@ public class VerkleProof
   public VerkleProof(
       final VerkleProofSchema schema,
       final List<Bytes31> otherStems,
-      final List<Byte> depthExtensionPresent,
+      final Bytes depthExtensionPresent,
       final List<Bytes32> commitmentsByPath,
       final Bytes32 d,
       final IpaProof ipaProof) {
@@ -64,7 +65,7 @@ public class VerkleProof
         otherStems.stream()
             .map(bytes31 -> SszByteVector.fromBytes(bytes31.getWrappedBytes()))
             .toList(),
-        depthExtensionPresent.stream().map(SszByte::of).toList(),
+        schema.getDepthExtensionPresentSchema().fromBytes(depthExtensionPresent),
         commitmentsByPath.stream().map(SszBytes32::of).toList(),
         SszBytes32.of(d),
         ipaProof);
@@ -74,8 +75,8 @@ public class VerkleProof
     return getField0().stream().map(sszBytes -> new Bytes31(sszBytes.getBytes())).toList();
   }
 
-  public List<Byte> getDepthExtensionPresent() {
-    return getField1().stream().map(SszByte::get).toList();
+  public Bytes getDepthExtensionPresent() {
+    return getField1().getBytes();
   }
 
   public List<Bytes32> getCommitmentsByPath() {

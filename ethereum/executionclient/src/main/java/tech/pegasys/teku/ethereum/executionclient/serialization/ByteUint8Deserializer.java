@@ -17,12 +17,11 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import java.io.IOException;
-import org.apache.tuweni.bytes.Bytes;
 
-public class ByteDeserializer extends JsonDeserializer<Byte> {
+public class ByteUint8Deserializer extends JsonDeserializer<Byte> {
 
   @Override
   public Byte deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
-    return Bytes.fromHexString(p.getValueAsString()).get(0);
+    return (byte) p.getIntValue();
   }
 }

@@ -18,33 +18,33 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.ethereum.executionclient.serialization.ByteDeserializer;
-import tech.pegasys.teku.ethereum.executionclient.serialization.ByteSerializer;
+import tech.pegasys.teku.ethereum.executionclient.serialization.ByteUInt8Serializer;
+import tech.pegasys.teku.ethereum.executionclient.serialization.ByteUint8Deserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes32Deserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.BytesSerializer;
 import tech.pegasys.teku.spec.datastructures.execution.verkle.SuffixStateDiffSchema;
 
 public class SuffixStateDiff {
 
-  @JsonSerialize(using = ByteSerializer.class)
-  @JsonDeserialize(using = ByteDeserializer.class)
+  @JsonSerialize(using = ByteUInt8Serializer.class)
+  @JsonDeserialize(using = ByteUint8Deserializer.class)
   @JsonProperty("suffix")
   private final Byte suffix;
 
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = Bytes32Deserializer.class)
-  @JsonProperty("current_value")
+  @JsonProperty("currentValue")
   private final Bytes32 currentValue;
 
   @JsonSerialize(using = BytesSerializer.class)
   @JsonDeserialize(using = Bytes32Deserializer.class)
-  @JsonProperty("new_value")
+  @JsonProperty("newValue")
   private final Bytes32 newValue;
 
   public SuffixStateDiff(
       @JsonProperty("suffix") final Byte suffix,
-      @JsonProperty("current_value") Bytes32 currentValue,
-      @JsonProperty("new_value") Bytes32 newValue) {
+      @JsonProperty("currentValue") Bytes32 currentValue,
+      @JsonProperty("newValue") Bytes32 newValue) {
     this.suffix = suffix;
     this.currentValue = currentValue;
     this.newValue = newValue;

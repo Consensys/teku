@@ -17,13 +17,11 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import java.io.IOException;
-import java.util.Locale;
-import org.apache.tuweni.bytes.Bytes;
 
-public class ByteSerializer extends JsonSerializer<Byte> {
+public class ByteUInt8Serializer extends JsonSerializer<Byte> {
   @Override
   public void serialize(Byte value, JsonGenerator gen, SerializerProvider provider)
       throws IOException {
-    gen.writeString(Bytes.wrap(new byte[] {value}).toHexString().toLowerCase(Locale.ROOT));
+    gen.writeNumber(Byte.toUnsignedInt(value));
   }
 }
