@@ -44,7 +44,9 @@ public abstract class AbstractMutableBeaconState<
             ? EpochTransitionCaches.getNoOp()
             : backingImmutableView.getEpochTransitionCaches().copy();
     this.stateTransitionCaches =
-        builder ? StateTransitionCaches.getNoOp() : StateTransitionCaches.createNewEmpty();
+        builder
+            ? StateTransitionCaches.getNoOp()
+            : backingImmutableView.getStateTransitionCaches().copy();
     this.builder = builder;
   }
 

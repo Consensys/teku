@@ -59,6 +59,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateAccessors;
@@ -319,9 +320,10 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
     return preState.updated(
-        state ->
-            processBlock(
-                state, block, indexedAttestationCache, signatureVerifier, payloadExecutor));
+        state -> {
+          processBlock(state, block, indexedAttestationCache, signatureVerifier, payloadExecutor);
+          BeaconStateCache.getStateTransitionCaches(state).onBlockProcessed();
+        });
   }
 
   protected void processBlock(

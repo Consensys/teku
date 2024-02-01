@@ -50,7 +50,6 @@ import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
@@ -218,18 +217,12 @@ public class ExecutionBuilderModule {
                         requestedBuilderBoostFactor, localBlockValue, builderBidValue);
 
                 if (localPayloadValueWon) {
-                  BeaconStateCache.getStateTransitionCaches(state)
-                      .setLastBlockExecutionValue(localBlockValue);
-
                   return getResultFromLocalGetPayloadResponse(
                       localGetPayloadResponse,
                       slot,
                       FallbackReason.LOCAL_BLOCK_VALUE_WON,
                       payloadValueResult);
                 }
-
-                BeaconStateCache.getStateTransitionCaches(state)
-                    .setLastBlockExecutionValue(builderBidValue);
 
                 final Optional<ExecutionPayload> localExecutionPayload =
                     maybeLocalGetPayloadResponse.map(GetPayloadResponse::getExecutionPayload);

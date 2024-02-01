@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
@@ -255,6 +256,15 @@ public class BlockOperationSelectorFactory {
             blockProductionPerformance);
 
     return SafeFuture.allOf(
+        executionPayloadResult
+            .getExecutionPayloadValueFuture()
+            .map(
+                futureValue ->
+                    futureValue.thenAccept(
+                        value ->
+                            BeaconStateCache.getStateTransitionCaches(blockSlotState)
+                                .setLastBlockExecutionValue(value)))
+            .orElse(SafeFuture.COMPLETE),
         builderSetPayloadPostMerge(
             bodyBuilder, setUnblindedContentIfBuilderFallbacks, executionPayloadResult),
         builderSetKzgCommitments(

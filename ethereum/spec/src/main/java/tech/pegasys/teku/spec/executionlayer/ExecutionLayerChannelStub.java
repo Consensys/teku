@@ -290,9 +290,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
             .map(
                 blobsBundle -> {
                   LOG.info("getPayload: blobsBundle: {}", blobsBundle.toBriefString());
-                  return new GetPayloadResponse(executionPayload, UInt256.ZERO, blobsBundle, false);
+                  return new GetPayloadResponse(
+                      executionPayload, UInt256.valueOf(42), blobsBundle, false);
                 })
-            .orElse(new GetPayloadResponse(executionPayload));
+            .orElse(new GetPayloadResponse(executionPayload, UInt256.valueOf(43)));
 
     return SafeFuture.completedFuture(getPayloadResponse);
   }
