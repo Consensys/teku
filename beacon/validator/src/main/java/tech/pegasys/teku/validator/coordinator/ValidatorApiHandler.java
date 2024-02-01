@@ -313,7 +313,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<Boolean> requestedBlinded) {
+      final Optional<Boolean> requestedBlinded,
+      final Optional<UInt64> requestedBuilderBoostFactor) {
     LOG.info("Creating unsigned block for slot {}", slot);
     performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(slot));
     if (isSyncActive()) {
@@ -342,7 +343,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                     randaoReveal,
                     graffiti,
                     requestedBlinded,
-                    Optional.empty(),
+                    requestedBuilderBoostFactor,
                     blockSlotState,
                     blockProductionPerformance))
         .alwaysRun(blockProductionPerformance::complete);
@@ -362,7 +363,6 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     final BeaconState blockSlotState = maybeBlockSlotState.get();
     final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, slot.decrement());
     LOG.debug("parent block {}:({})", parentRoot, slot);
-
     if (combinedChainDataClient.isOptimisticBlock(parentRoot)) {
       LOG.warn(
           "Unable to produce block at slot {} because parent has optimistically validated payload",

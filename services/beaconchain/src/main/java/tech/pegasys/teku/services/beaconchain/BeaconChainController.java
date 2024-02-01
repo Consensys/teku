@@ -399,10 +399,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     storageUpdateChannel = combinedStorageChannel;
     final VoteUpdateChannel voteUpdateChannel = eventChannels.getPublisher(VoteUpdateChannel.class);
 
-    ValidatorIsConnectedProvider validatorIsConnectedProvider =
-        beaconConfig.eth2NetworkConfig().isForkChoiceValidatorIsProposerAlwaysEnabled()
-            ? ValidatorIsConnectedProvider.NOOP
-            : new ValidatorIsConnectedProviderImpl(() -> forkChoiceNotifier);
+    final ValidatorIsConnectedProvider validatorIsConnectedProvider =
+        new ValidatorIsConnectedProviderImpl(() -> forkChoiceNotifier);
     // Init other services
     return initWeakSubjectivity(storageQueryChannel, storageUpdateChannel)
         .thenCompose(

@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v3.validator;
 
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.BUILDER_BOOST_FACTOR_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.GRAFFITI_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.RANDAO_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SKIP_RANDAO_VERIFICATION_PARAMETER;
@@ -94,6 +95,7 @@ public class GetNewBlockV3 extends RestApiEndpoint {
         .queryParamRequired(RANDAO_PARAMETER)
         .queryParam(GRAFFITI_PARAMETER)
         .queryParam(SKIP_RANDAO_VERIFICATION_PARAMETER)
+        .queryParam(BUILDER_BOOST_FACTOR_PARAMETER)
         .response(
             SC_OK,
             "Request successful",
@@ -108,8 +110,10 @@ public class GetNewBlockV3 extends RestApiEndpoint {
         request.getPathParameter(SLOT_PARAMETER.withDescription(SLOT_PATH_DESCRIPTION));
     final BLSSignature randao = request.getQueryParameter(RANDAO_PARAMETER);
     final Optional<Bytes32> graffiti = request.getOptionalQueryParameter(GRAFFITI_PARAMETER);
+    final Optional<UInt64> requestedBuilderBoostFactor =
+        request.getOptionalQueryParameter(BUILDER_BOOST_FACTOR_PARAMETER);
     final SafeFuture<Optional<BlockContainerAndMetaData<BlockContainer>>> result =
-        validatorDataProvider.produceBlock(slot, randao, graffiti);
+        validatorDataProvider.produceBlock(slot, randao, graffiti, requestedBuilderBoostFactor);
     request.respondAsync(
         result.thenApply(
             maybeBlock ->

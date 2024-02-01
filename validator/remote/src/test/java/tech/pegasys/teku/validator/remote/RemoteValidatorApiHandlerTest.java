@@ -447,7 +447,11 @@ class RemoteValidatorApiHandlerTest {
 
     SafeFuture<Optional<BlockContainer>> future =
         apiHandler.createUnsignedBlock(
-            UInt64.ONE, blsSignature, Optional.of(Bytes32.random()), Optional.of(false));
+            UInt64.ONE,
+            blsSignature,
+            Optional.of(Bytes32.random()),
+            Optional.of(false),
+            Optional.empty());
 
     assertThat(unwrapToOptional(future)).isEmpty();
   }
@@ -463,7 +467,27 @@ class RemoteValidatorApiHandlerTest {
         .thenReturn(Optional.of(beaconBlock));
 
     SafeFuture<Optional<BlockContainer>> future =
-        apiHandler.createUnsignedBlock(UInt64.ONE, blsSignature, graffiti, Optional.of(false));
+        apiHandler.createUnsignedBlock(
+            UInt64.ONE, blsSignature, graffiti, Optional.of(false), Optional.empty());
+
+    assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(beaconBlock);
+  }
+
+  @Test
+  public void createUnsignedBlock_viaBlockV3_WhenFound_ReturnsBlock() {
+    final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(UInt64.ONE);
+    final BLSSignature blsSignature = dataStructureUtil.randomSignature();
+    final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
+
+    // we expect new block API to be called (with proposer boost factor parameter instead of blinded
+    // parameter)
+    when(typeDefClient.createUnsignedBlock(
+            eq(beaconBlock.getSlot()), eq(blsSignature), eq(graffiti), eq(Optional.of(UInt64.ONE))))
+        .thenReturn(Optional.of(beaconBlock));
+
+    SafeFuture<Optional<BlockContainer>> future =
+        apiHandler.createUnsignedBlock(
+            UInt64.ONE, blsSignature, graffiti, Optional.empty(), Optional.of(UInt64.ONE));
 
     assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(beaconBlock);
   }
@@ -482,7 +506,8 @@ class RemoteValidatorApiHandlerTest {
         .thenReturn(Optional.of(blockContents));
 
     SafeFuture<Optional<BlockContainer>> future =
-        apiHandler.createUnsignedBlock(UInt64.ONE, blsSignature, graffiti, Optional.of(false));
+        apiHandler.createUnsignedBlock(
+            UInt64.ONE, blsSignature, graffiti, Optional.of(false), Optional.empty());
 
     assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(blockContents);
   }
