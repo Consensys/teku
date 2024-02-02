@@ -32,7 +32,6 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAttestationDataRequest;
@@ -120,7 +119,7 @@ public class OkHttpValidatorTypeDefClient {
             baseEndpoint, okHttpClient, spec, slot, blinded, preferSszBlockEncoding);
     try {
       return createBlockRequest.createUnsignedBlock(randaoReveal, graffiti);
-    } catch (BlindedBlockEndpointNotAvailableException ex) {
+    } catch (final BlindedBlockEndpointNotAvailableException ex) {
       LOG.warn(
           "Beacon Node {} does not support blinded block production. Falling back to normal block production.",
           baseEndpoint);
@@ -129,15 +128,21 @@ public class OkHttpValidatorTypeDefClient {
   }
 
   public Optional<BlockContainer> createUnsignedBlock(
-      final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
+      final UInt64 slot,
+      final BLSSignature randaoReveal,
+      final Optional<Bytes32> graffiti,
+      final Optional<UInt64> requestedBuilderBoostFactor) {
     final ProduceBlockRequest produceBlockRequest =
         new ProduceBlockRequest(baseEndpoint, okHttpClient, spec, slot, preferSszBlockEncoding);
     try {
-      return produceBlockRequest.createUnsignedBlock(randaoReveal, graffiti);
+      return produceBlockRequest.createUnsignedBlock(
+          randaoReveal, graffiti, requestedBuilderBoostFactor);
     } catch (final BlockProductionV3FailedException ex) {
       LOG.warn("Produce Block V3 request failed at slot {}. Retrying with Block V2", slot);
-      return createUnsignedBlock(
-          slot, randaoReveal, graffiti, ValidatorsUtil.DEFAULT_PRODUCE_BLINDED_BLOCK);
+
+      // Falling back to V2, we have to request a blinded block to be able to support both local and
+      // builder flow.
+      return createUnsignedBlock(slot, randaoReveal, graffiti, true);
     }
   }
 

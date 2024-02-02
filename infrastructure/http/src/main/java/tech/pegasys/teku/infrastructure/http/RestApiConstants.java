@@ -187,6 +187,37 @@ public class RestApiConstants {
           + " `randao_reveal` must be set to the point at infinity (`0xc0..00`). This query parameter\n"
           + "  is a flag and does not take a value";
 
+  public static final String BUILDER_BOOST_FACTOR = "builder_boost_factor";
+  public static final String BUILDER_BOOST_FACTOR_DESCRIPTION =
+      """
+          Percentage multiplier to apply to the builder's payload value when choosing between a
+          builder payload header and payload from the paired execution node. This parameter is only
+          relevant if the beacon node is connected to a builder, deems it safe to produce a builder
+          payload, and receives valid responses from both the builder endpoint _and_ the paired
+          execution node. When these preconditions are met, the server MUST act as follows:
+
+          * if `exec_node_payload_value >= builder_boost_factor * (builder_payload_value // 100)`,
+            then return a full (unblinded) block containing the execution node payload.
+          * otherwise, return a blinded block containing the builder payload header.
+
+          Servers must support the following values of the boost factor which encode common
+          preferences:
+
+          * `builder_boost_factor=0`: prefer the execution node payload unless an error makes it
+            unviable.
+          * `builder_boost_factor=100`: default profit maximization mode; choose whichever
+            payload pays more.
+          * `builder_boost_factor=2**64 - 1`: prefer the builder payload unless an error or
+            beacon node health check makes it unviable.
+
+          Servers should use saturating arithmetic or another technique to ensure that large values of
+          the `builder_boost_factor` do not trigger overflows or errors. If this parameter is
+          provided and the beacon node is not configured with a builder then the beacon node MUST
+          respond with a full block, which the caller can choose to reject if it wishes. If this
+          parameter is **not** provided then it should be treated as having the default value of 100.
+          If the value is provided but out of range for a 64-bit unsigned integer, then an error
+          response with status code 400 MUST be returned.""";
+
   public static final String HEADER_ACCEPT = "Accept";
 
   public static final String HEADER_CONSENSUS_VERSION = "Eth-Consensus-Version";
