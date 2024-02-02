@@ -86,7 +86,6 @@ public class BlockImporter {
   }
 
   @CheckReturnValue
-  @SuppressWarnings("FutureReturnValueIgnored")
   public SafeFuture<BlockImportResult> importBlock(
       final SignedBeaconBlock block,
       final Optional<BlockImportPerformance> blockImportPerformance,
