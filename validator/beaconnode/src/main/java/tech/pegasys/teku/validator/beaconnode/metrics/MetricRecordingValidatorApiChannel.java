@@ -129,10 +129,12 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
   public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
       final UInt64 slot,
       final BLSSignature randaoReveal,
-      Optional<Bytes32> graffiti,
-      final Optional<Boolean> requestedBlinded) {
+      final Optional<Bytes32> graffiti,
+      final Optional<Boolean> requestedBlinded,
+      final Optional<UInt64> requestedBuilderBoostFactor) {
     return countOptionalDataRequest(
-        delegate.createUnsignedBlock(slot, randaoReveal, graffiti, requestedBlinded),
+        delegate.createUnsignedBlock(
+            slot, randaoReveal, graffiti, requestedBlinded, requestedBuilderBoostFactor),
         BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD);
   }
 

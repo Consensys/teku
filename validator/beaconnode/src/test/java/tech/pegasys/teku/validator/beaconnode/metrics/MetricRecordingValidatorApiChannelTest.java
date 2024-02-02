@@ -193,7 +193,8 @@ class MetricRecordingValidatorApiChannelTest {
         requestDataTest(
             "createUnsignedBlock",
             channel ->
-                channel.createUnsignedBlock(slot, signature, Optional.empty(), Optional.of(false)),
+                channel.createUnsignedBlock(
+                    slot, signature, Optional.empty(), Optional.of(false), Optional.empty()),
             BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD,
             dataStructureUtil.randomBeaconBlock(slot)),
         requestDataTest(

@@ -696,16 +696,16 @@ public class Spec {
 
   // Block Proposal
   public SafeFuture<BeaconBlockAndState> createNewUnsignedBlock(
-      final UInt64 newSlot,
+      final UInt64 proposalSlot,
       final int proposerIndex,
       final BeaconState blockSlotState,
       final Bytes32 parentBlockSigningRoot,
       final Function<BeaconBlockBodyBuilder, SafeFuture<Void>> bodyBuilder,
       final BlockProductionPerformance blockProductionPerformance) {
-    return atSlot(newSlot)
+    return atSlot(proposalSlot)
         .getBlockProposalUtil()
         .createNewUnsignedBlock(
-            newSlot,
+            proposalSlot,
             proposerIndex,
             blockSlotState,
             parentBlockSigningRoot,

@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.mockito.ArgumentCaptor;
@@ -72,8 +73,9 @@ import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
@@ -107,7 +109,6 @@ public class ValidatorDataProviderTest {
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private ValidatorDataProvider provider;
   private BeaconBlock blockInternal;
-  private BlockContents blockContents;
   private final BLSSignature signatureInternal = BLSTestUtil.randomSignature(1234);
 
   @BeforeEach
@@ -129,13 +130,19 @@ public class ValidatorDataProviderTest {
   @TestTemplate
   void getUnsignedBeaconBlockAtSlot_throwsWithoutSlotDefined() {
     assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(() -> provider.getUnsignedBeaconBlockAtSlot(null, null, Optional.empty()));
+        .isThrownBy(
+            () ->
+                provider.getUnsignedBeaconBlockAtSlot(
+                    null, null, Optional.empty(), false, Optional.empty()));
   }
 
   @TestTemplate
   void getUnsignedBeaconBlockAtSlot_shouldThrowWithoutRandaoDefined() {
     assertThatExceptionOfType(IllegalArgumentException.class)
-        .isThrownBy(() -> provider.getUnsignedBeaconBlockAtSlot(ONE, null, Optional.empty()));
+        .isThrownBy(
+            () ->
+                provider.getUnsignedBeaconBlockAtSlot(
+                    ONE, null, Optional.empty(), false, Optional.empty()));
   }
 
   @TestTemplate
@@ -144,7 +151,9 @@ public class ValidatorDataProviderTest {
 
     assertThatExceptionOfType(IllegalArgumentException.class)
         .isThrownBy(
-            () -> provider.getUnsignedBeaconBlockAtSlot(ZERO, signatureInternal, Optional.empty()));
+            () ->
+                provider.getUnsignedBeaconBlockAtSlot(
+                    ZERO, signatureInternal, Optional.empty(), false, Optional.empty()));
   }
 
   @TestTemplate
@@ -155,7 +164,11 @@ public class ValidatorDataProviderTest {
         .isThrownBy(
             () ->
                 provider.getUnsignedBeaconBlockAtSlot(
-                    UInt64.valueOf(10L), signatureInternal, Optional.empty()));
+                    UInt64.valueOf(10L),
+                    signatureInternal,
+                    Optional.empty(),
+                    false,
+                    Optional.empty()));
   }
 
   @TestTemplate
@@ -163,14 +176,16 @@ public class ValidatorDataProviderTest {
     assumeThat(specMilestone).isLessThan(SpecMilestone.DENEB);
     when(combinedChainDataClient.getCurrentSlot()).thenReturn(ZERO);
     when(validatorApiChannel.createUnsignedBlock(
-            ONE, signatureInternal, Optional.empty(), Optional.of(false)))
+            ONE, signatureInternal, Optional.empty(), Optional.of(false), Optional.empty()))
         .thenReturn(completedFuture(Optional.of(blockInternal)));
 
     SafeFuture<? extends Optional<? extends SszData>> data =
-        provider.getUnsignedBeaconBlockAtSlot(ONE, signatureInternal, Optional.empty());
+        provider.getUnsignedBeaconBlockAtSlot(
+            ONE, signatureInternal, Optional.empty(), false, Optional.empty());
 
     verify(validatorApiChannel)
-        .createUnsignedBlock(ONE, signatureInternal, Optional.empty(), Optional.of(false));
+        .createUnsignedBlock(
+            ONE, signatureInternal, Optional.empty(), Optional.of(false), Optional.empty());
 
     assertThat(data).isCompleted();
 
@@ -178,23 +193,78 @@ public class ValidatorDataProviderTest {
   }
 
   @TestTemplate
-  void getUnsignedBlockContentsAtSlot_PostDeneb_shouldCreateAnUnsignedBlockContents() {
-    assumeThat(specMilestone).isGreaterThanOrEqualTo(SpecMilestone.DENEB);
-    when(combinedChainDataClient.getCurrentSlot()).thenReturn(ZERO);
-    blockContents = dataStructureUtil.randomBlockContents();
-    when(validatorApiChannel.createUnsignedBlock(
-            ONE, signatureInternal, Optional.empty(), Optional.of(false)))
-        .thenReturn(completedFuture(Optional.of(blockContents)));
+  void produceBlock_throwsWithoutSlotDefined() {
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(() -> provider.produceBlock(null, null, Optional.empty(), Optional.empty()));
+  }
 
-    SafeFuture<? extends Optional<? extends SszData>> data =
-        provider.getUnsignedBeaconBlockAtSlot(ONE, signatureInternal, Optional.empty());
+  @TestTemplate
+  void produceBlock_shouldThrowWithoutRandaoDefined() {
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(() -> provider.produceBlock(ONE, null, Optional.empty(), Optional.empty()));
+  }
+
+  @TestTemplate
+  void produceBlock_shouldThrowIfHistoricSlotRequested() {
+    when(combinedChainDataClient.getCurrentSlot()).thenReturn(ONE);
+
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(
+            () ->
+                provider.produceBlock(ZERO, signatureInternal, Optional.empty(), Optional.empty()));
+  }
+
+  @TestTemplate
+  void produceBlock_shouldThrowIfFarFutureSlotRequested() {
+    when(combinedChainDataClient.getCurrentSlot()).thenReturn(ONE);
+
+    assertThatExceptionOfType(IllegalArgumentException.class)
+        .isThrownBy(
+            () ->
+                provider.produceBlock(
+                    UInt64.valueOf(10L), signatureInternal, Optional.empty(), Optional.empty()));
+  }
+
+  @TestTemplate
+  void produceBlock_shouldCreateAnUnsignedBlock() {
+    when(combinedChainDataClient.getCurrentSlot()).thenReturn(ONE);
+    when(combinedChainDataClient.getStateAtSlotExact(blockInternal.getSlot().decrement()))
+        .thenReturn(completedFuture(Optional.of(dataStructureUtil.randomBeaconState())));
+
+    final Optional<ExecutionPayloadResult> executionPayloadResult;
+
+    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
+      executionPayloadResult =
+          Optional.of(
+              new ExecutionPayloadResult(
+                  dataStructureUtil.randomPayloadExecutionContext(ONE, false),
+                  Optional.of(completedFuture(dataStructureUtil.randomExecutionPayload())),
+                  Optional.empty(),
+                  Optional.empty(),
+                  Optional.of(completedFuture(UInt256.ONE))));
+    } else {
+      executionPayloadResult = Optional.empty();
+    }
+
+    when(executionLayerBlockProductionManager.getCachedPayloadResult(ZERO))
+        .thenReturn(executionPayloadResult);
+
+    when(validatorApiChannel.createUnsignedBlock(
+            ONE, signatureInternal, Optional.empty(), Optional.empty(), Optional.of(ONE)))
+        .thenReturn(completedFuture(Optional.of(blockInternal)));
+
+    SafeFuture<? extends Optional<? extends BlockContainerAndMetaData<? extends SszData>>> data =
+        provider.produceBlock(ONE, signatureInternal, Optional.empty(), Optional.of(ONE));
 
     verify(validatorApiChannel)
-        .createUnsignedBlock(ONE, signatureInternal, Optional.empty(), Optional.of(false));
+        .createUnsignedBlock(
+            ONE, signatureInternal, Optional.empty(), Optional.empty(), Optional.of(ONE));
 
     assertThat(data).isCompleted();
 
-    assertThat(data.getNow(null).orElseThrow()).usingRecursiveComparison().isEqualTo(blockContents);
+    assertThat(data.getNow(null).orElseThrow().blockContainer())
+        .usingRecursiveComparison()
+        .isEqualTo(blockInternal);
   }
 
   @TestTemplate
