@@ -68,7 +68,7 @@ public class ValidatorTimingActionsTest {
           Map.entry(key4, ValidatorStatus.exited_slashed));
 
   @Test
-  public void shouldPrintAlertForSlashedValidators_AttesterSlashing() {
+  public void shouldTriggerSlashingActionForSlashedValidators_AttesterSlashing() {
     final ValidatorTimingActions validatorTimingActions =
         new ValidatorTimingActions(
             validatorIndexProvider, delegates, spec, metricsSystem, maybeSlashedValidatorAction);

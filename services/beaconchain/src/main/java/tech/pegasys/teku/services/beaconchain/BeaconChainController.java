@@ -688,19 +688,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
     }
   }
 
-  protected void initSlashingEventsSubscriptions() {
-    if (beaconConfig.validatorConfig().isShutdownWhenValidatorSlashedEnabled()) {
-      final ValidatorTimingChannel validatorTimingChannel =
-          eventChannels.getPublisher(ValidatorTimingChannel.class);
-      attesterSlashingPool.subscribeOperationAdded(
-          (operation, validationStatus, fromNetwork) ->
-              validatorTimingChannel.onAttesterSlashing(operation));
-      proposerSlashingPool.subscribeOperationAdded(
-          (operation, validationStatus, fromNetwork) ->
-              validatorTimingChannel.onProposerSlashing(operation));
-    }
-  }
-
   protected void initVoluntaryExitPool() {
     LOG.debug("BeaconChainController.initVoluntaryExitPool()");
     VoluntaryExitValidator validator = new VoluntaryExitValidator(spec, recentChainData);
