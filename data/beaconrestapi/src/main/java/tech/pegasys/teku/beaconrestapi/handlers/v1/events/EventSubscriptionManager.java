@@ -42,7 +42,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.ReceivedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -50,13 +49,15 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
 import tech.pegasys.teku.storage.api.ReorgContext;
 
-public class EventSubscriptionManager implements ChainHeadChannel, FinalizedCheckpointChannel {
+public class EventSubscriptionManager
+    implements ChainHeadChannel, FinalizedCheckpointChannel, ReceivedBlockEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
@@ -87,20 +88,8 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
     this.configProvider = configProvider;
     eventChannels.subscribe(ChainHeadChannel.class, this);
     eventChannels.subscribe(FinalizedCheckpointChannel.class, this);
+    eventChannels.subscribe(ReceivedBlockEventsChannel.class, this);
     syncDataProvider.subscribeToSyncStateChanges(this::onSyncStateChange);
-    nodeDataProvider.subscribeToReceivedBlocks(
-        new ReceivedBlockListener() {
-          @Override
-          public void onBlockValidated(final SignedBeaconBlock block) {
-            onNewBlockGossip(block);
-          }
-
-          @Override
-          public void onBlockImported(
-              final SignedBeaconBlock block, final boolean executionOptimistic) {
-            onNewBlock(block, executionOptimistic);
-          }
-        });
     nodeDataProvider.subscribeToReceivedBlobSidecar(this::onNewBlobSidecar);
     nodeDataProvider.subscribeToAttesterSlashing(this::onNewAttesterSlashing);
     nodeDataProvider.subscribeToProposerSlashing(this::onNewProposerSlashing);
@@ -166,6 +155,29 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
             previousDutyDependentRoot,
             currentDutyDependentRoot);
     notifySubscribersOfEvent(EventType.head, headEvent);
+  }
+
+  @Override
+  public void onNewFinalizedCheckpoint(
+      final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
+    Optional<Bytes32> stateRoot = provider.getStateRootFromBlockRoot(checkpoint.getRoot());
+    final FinalizedCheckpointEvent event =
+        new FinalizedCheckpointEvent(
+            checkpoint.getRoot(),
+            stateRoot.orElse(Bytes32.ZERO),
+            checkpoint.getEpoch(),
+            fromOptimisticBlock);
+    notifySubscribersOfEvent(EventType.finalized_checkpoint, event);
+  }
+
+  @Override
+  public void onBlockValidated(final SignedBeaconBlock block) {
+    onNewBlockGossip(block);
+  }
+
+  @Override
+  public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
+    onNewBlock(block, executionOptimistic);
   }
 
   protected void onNewVoluntaryExit(
@@ -253,19 +265,6 @@ public class EventSubscriptionManager implements ChainHeadChannel, FinalizedChec
                       forkChoiceUpdatedResultNotification.forkChoiceState());
               notifySubscribersOfEvent(EventType.payload_attributes, payloadAttributesEvent);
             });
-  }
-
-  @Override
-  public void onNewFinalizedCheckpoint(
-      final Checkpoint checkpoint, final boolean fromOptimisticBlock) {
-    Optional<Bytes32> stateRoot = provider.getStateRootFromBlockRoot(checkpoint.getRoot());
-    final FinalizedCheckpointEvent event =
-        new FinalizedCheckpointEvent(
-            checkpoint.getRoot(),
-            stateRoot.orElse(Bytes32.ZERO),
-            checkpoint.getEpoch(),
-            fromOptimisticBlock);
-    notifySubscribersOfEvent(EventType.finalized_checkpoint, event);
   }
 
   protected void onSyncStateChange(final SyncState syncState) {

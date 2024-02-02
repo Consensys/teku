@@ -26,7 +26,6 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
-import tech.pegasys.teku.spec.datastructures.blocks.ReceivedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
@@ -41,7 +40,7 @@ import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockManager extends Service
-    implements SlotEventsChannel, BlockImportChannel, BlockImportNotifications {
+    implements SlotEventsChannel, BlockImportChannel, ReceivedBlockEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private final RecentChainData recentChainData;
@@ -57,8 +56,6 @@ public class BlockManager extends Service
   // and will not require any further retry. Descendants of these blocks will be considered invalid
   // as well.
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots;
-  private final Subscribers<ReceivedBlockListener> receivedBlockSubscribers =
-      Subscribers.create(true);
   private final Subscribers<FailedPayloadExecutionSubscriber> failedPayloadExecutionSubscribers =
       Subscribers.create(true);
 
@@ -175,19 +172,6 @@ public class BlockManager extends Service
     futureBlocks.prune(slot).forEach(this::importBlockIgnoringResult);
   }
 
-  public void subscribeToReceivedBlocks(ReceivedBlockListener receivedBlockListener) {
-    receivedBlockSubscribers.subscribe(receivedBlockListener);
-  }
-
-  private void notifySubscribersThatBlockIsValidated(final SignedBeaconBlock block) {
-    receivedBlockSubscribers.forEach(s -> s.onBlockValidated(block));
-  }
-
-  private void notifySubscribersThatBlockIsImported(
-      final SignedBeaconBlock block, final boolean executionOptimistic) {
-    receivedBlockSubscribers.forEach(s -> s.onBlockImported(block, executionOptimistic));
-  }
-
   public void subscribeFailedPayloadExecution(final FailedPayloadExecutionSubscriber subscriber) {
     failedPayloadExecutionSubscribers.subscribe(subscriber);
   }
@@ -197,7 +181,10 @@ public class BlockManager extends Service
   }
 
   @Override
-  public void onBlockImported(final SignedBeaconBlock block) {
+  public void onBlockValidated(final SignedBeaconBlock block) {}
+
+  @Override
+  public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
     final Bytes32 blockRoot = block.getRoot();
     blockBlobSidecarsTrackersPool.removeAllForBlock(blockRoot);
     pendingBlocks.remove(block);
@@ -224,13 +211,7 @@ public class BlockManager extends Service
             () ->
                 handleBlockImport(block, blockImportPerformance, blockBroadcastValidator, origin)
                     .thenPeek(
-                        result -> lateBlockImportCheck(blockImportPerformance, block, result)))
-        .thenPeek(
-            result -> {
-              if (result.isSuccessful()) {
-                notifySubscribersThatBlockIsImported(block, result.isImportedOptimistically());
-              }
-            });
+                        result -> lateBlockImportCheck(blockImportPerformance, block, result)));
   }
 
   private Optional<BlockImportResult> propagateInvalidity(final SignedBeaconBlock block) {
@@ -271,8 +252,6 @@ public class BlockManager extends Service
       final Optional<BlockImportPerformance> blockImportPerformance,
       final BlockBroadcastValidator blockBroadcastValidator,
       final Optional<RemoteOrigin> origin) {
-
-    notifySubscribersThatBlockIsValidated(block);
     blockBlobSidecarsTrackersPool.onNewBlock(block, origin);
 
     return blockImporter
