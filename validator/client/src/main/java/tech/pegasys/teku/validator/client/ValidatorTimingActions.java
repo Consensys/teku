@@ -15,11 +15,13 @@ package tech.pegasys.teku.validator.client;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.metrics.SettableGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -130,7 +132,31 @@ public class ValidatorTimingActions implements ValidatorTimingChannel {
           final UInt64 slashedIndex = proposerSlashing.getHeader1().getMessage().getProposerIndex();
           validatorIndexProvider
               .getPublicKey(slashedIndex.intValue())
-              .ifPresent(slashedPubKey -> maybeValidatorSlashedAction.get().perform(slashedPubKey));
+              .ifPresent(validatorSlashedAction::perform);
         });
+  }
+
+  @Override
+  public void onUpdatedValidatorStatuses(
+      final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
+      final boolean possibleMissingEvents) {
+    delegates.forEach(
+        delegates ->
+            delegates.onUpdatedValidatorStatuses(newValidatorStatuses, possibleMissingEvents));
+    maybeValidatorSlashedAction.ifPresent(
+        validatorSlashedAction ->
+            validatorSlashedAction.perform(getSlashedOwnedValidatorsPubKeys(newValidatorStatuses)));
+  }
+
+  private List<BLSPublicKey> getSlashedOwnedValidatorsPubKeys(
+      final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses) {
+    return newValidatorStatuses.entrySet().stream()
+        .filter(
+            validatorStatusEntry ->
+                validatorStatusEntry.getValue().equals(ValidatorStatus.exited_slashed)
+                    || validatorStatusEntry.getValue().equals(ValidatorStatus.active_slashed))
+        .map(Map.Entry::getKey)
+        .filter(validatorIndexProvider::containsPublicKey)
+        .toList();
   }
 }
