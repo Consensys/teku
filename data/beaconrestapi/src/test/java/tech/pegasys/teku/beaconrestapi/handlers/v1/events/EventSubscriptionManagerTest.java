@@ -259,6 +259,15 @@ public class EventSubscriptionManagerTest {
   }
 
   @Test
+  void shouldPropagateBlockGossip() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=block_gossip");
+    manager.registerClient(client1);
+
+    triggerBlockGossipEvent();
+    checkEvent("block_gossip", new BlockGossipEvent(sampleBlock.asInternalSignedBeaconBlock(spec)));
+  }
+
+  @Test
   void shouldPropagateBlobSidecar() throws IOException {
     when(req.getQueryString()).thenReturn("&topics=blob_sidecar");
     manager.registerClient(client1);
@@ -441,6 +450,11 @@ public class EventSubscriptionManagerTest {
 
   private void triggerBlockEvent() {
     manager.onNewBlock(sampleBlock.asInternalSignedBeaconBlock(spec), false);
+    asyncRunner.executeQueuedActions();
+  }
+
+  private void triggerBlockGossipEvent() {
+    manager.onNewBlockGossip(sampleBlock.asInternalSignedBeaconBlock(spec));
     asyncRunner.executeQueuedActions();
   }
 

@@ -93,6 +93,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blocks.ReceivedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
@@ -340,7 +341,18 @@ public class BeaconChainController extends Service implements BeaconChainControl
                 .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult)
                 .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
     blockManager.subscribeToReceivedBlocks(
-        (block, __) -> recentBlocksFetcher.cancelRecentBlockRequest(block.getRoot()));
+        new ReceivedBlockListener() {
+          @Override
+          public void onBlockValidated(final SignedBeaconBlock block) {
+            // NOOP
+          }
+
+          @Override
+          public void onBlockImported(
+              final SignedBeaconBlock block, final boolean executionOptimistic) {
+            recentBlocksFetcher.cancelRecentBlockRequest(block.getRoot());
+          }
+        });
     final RecentBlobSidecarsFetcher recentBlobSidecarsFetcher =
         syncService.getRecentBlobSidecarsFetcher();
     recentBlobSidecarsFetcher.subscribeBlobSidecarFetched(
@@ -1191,9 +1203,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blockValidator,
             timeProvider,
             EVENT_LOG,
-            importMetrics,
-            beaconConfig.beaconRestApiConfig().isBeaconEventsBlockNotifyWhenImportedEnabled(),
-            beaconConfig.beaconRestApiConfig().isBeaconEventsBlockNotifyWhenValidatedEnabled());
+            importMetrics);
     if (spec.isMilestoneSupported(SpecMilestone.BELLATRIX)) {
       final FailedExecutionPool failedExecutionPool =
           new FailedExecutionPool(blockManager, beaconAsyncRunner);

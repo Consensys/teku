@@ -214,9 +214,6 @@ public class AttestationManager extends Service
             });
   }
 
-  @Override
-  public void onBlockValidated(SignedBeaconBlock block) {}
-
   public SafeFuture<AttestationProcessingResult> onAttestation(
       final ValidatableAttestation attestation) {
     if (pendingAttestations.contains(attestation)) {
