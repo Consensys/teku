@@ -115,10 +115,10 @@ public class BeaconNodeReadinessManager extends Service implements ValidatorTimi
   }
 
   @Override
-  public void onAttesterSlashing(AttesterSlashing attesterSlashing) {}
+  public void onAttesterSlashing(final AttesterSlashing attesterSlashing) {}
 
   @Override
-  public void onProposerSlashing(ProposerSlashing proposerSlashing) {}
+  public void onProposerSlashing(final ProposerSlashing proposerSlashing) {}
 
   @Override
   public void onUpdatedValidatorStatuses(

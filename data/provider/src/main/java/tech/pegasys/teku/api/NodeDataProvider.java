@@ -97,7 +97,7 @@ public class NodeDataProvider {
   }
 
   public List<Attestation> getAttestations(
-      Optional<UInt64> maybeSlot, Optional<UInt64> maybeCommitteeIndex) {
+      final Optional<UInt64> maybeSlot, final Optional<UInt64> maybeCommitteeIndex) {
     return attestationPool.getAttestations(maybeSlot, maybeCommitteeIndex);
   }
 
@@ -113,20 +113,22 @@ public class NodeDataProvider {
     return new ArrayList<>(voluntaryExitPool.getAll());
   }
 
-  public SafeFuture<InternalValidationResult> postVoluntaryExit(SignedVoluntaryExit exit) {
+  public SafeFuture<InternalValidationResult> postVoluntaryExit(final SignedVoluntaryExit exit) {
     return voluntaryExitPool.addLocal(exit);
   }
 
-  public SafeFuture<InternalValidationResult> postAttesterSlashing(AttesterSlashing slashing) {
+  public SafeFuture<InternalValidationResult> postAttesterSlashing(
+      final AttesterSlashing slashing) {
     return attesterSlashingPool.addLocal(slashing);
   }
 
-  public SafeFuture<InternalValidationResult> postProposerSlashing(ProposerSlashing slashing) {
+  public SafeFuture<InternalValidationResult> postProposerSlashing(
+      final ProposerSlashing slashing) {
     return proposerSlashingPool.addLocal(slashing);
   }
 
   public List<SignedBlsToExecutionChange> getBlsToExecutionChanges(
-      Optional<Boolean> locallySubmitted) {
+      final Optional<Boolean> locallySubmitted) {
     if (locallySubmitted.isPresent() && locallySubmitted.get()) {
       return new ArrayList<>(blsToExecutionChangePool.getLocallySubmitted());
     }
@@ -168,37 +170,40 @@ public class NodeDataProvider {
             });
   }
 
-  public void subscribeToReceivedBlocks(ReceivedBlockListener listener) {
+  public void subscribeToReceivedBlocks(final ReceivedBlockListener listener) {
     blockManager.subscribeToReceivedBlocks(listener);
   }
 
-  public void subscribeToReceivedBlobSidecar(NewBlobSidecarSubscriber listener) {
+  public void subscribeToReceivedBlobSidecar(final NewBlobSidecarSubscriber listener) {
     blockBlobSidecarsTrackersPool.subscribeNewBlobSidecar(listener);
   }
 
-  public void subscribeToAttesterSlashing(OperationAddedSubscriber<AttesterSlashing> listener) {
+  public void subscribeToAttesterSlashing(
+      final OperationAddedSubscriber<AttesterSlashing> listener) {
     attesterSlashingPool.subscribeOperationAdded(listener);
   }
 
-  public void subscribeToProposerSlashing(OperationAddedSubscriber<ProposerSlashing> listener) {
+  public void subscribeToProposerSlashing(
+      final OperationAddedSubscriber<ProposerSlashing> listener) {
     proposerSlashingPool.subscribeOperationAdded(listener);
   }
 
-  public void subscribeToValidAttestations(ProcessedAttestationListener listener) {
+  public void subscribeToValidAttestations(final ProcessedAttestationListener listener) {
     attestationManager.subscribeToAllValidAttestations(listener);
   }
 
-  public void subscribeToNewVoluntaryExits(OperationAddedSubscriber<SignedVoluntaryExit> listener) {
+  public void subscribeToNewVoluntaryExits(
+      final OperationAddedSubscriber<SignedVoluntaryExit> listener) {
     voluntaryExitPool.subscribeOperationAdded(listener);
   }
 
   public void subscribeToNewBlsToExecutionChanges(
-      OperationAddedSubscriber<SignedBlsToExecutionChange> listener) {
+      final OperationAddedSubscriber<SignedBlsToExecutionChange> listener) {
     blsToExecutionChangePool.subscribeOperationAdded(listener);
   }
 
   public void subscribeToSyncCommitteeContributions(
-      OperationAddedSubscriber<SignedContributionAndProof> listener) {
+      final OperationAddedSubscriber<SignedContributionAndProof> listener) {
     syncCommitteeContributionPool.subscribeOperationAdded(listener);
   }
 
