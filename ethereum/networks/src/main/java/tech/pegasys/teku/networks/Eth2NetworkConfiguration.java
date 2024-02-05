@@ -584,7 +584,6 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
-    // TODO
     public Builder electraForkEpoch(final UInt64 electraForkEpoch) {
       this.electraForkEpoch = Optional.of(electraForkEpoch);
       return this;
