@@ -27,12 +27,12 @@ class ReadSlotIndex {
   private final long recordStart;
   private final List<Integer> slotOffsets = new ArrayList<>();
   private final long recordEnd;
-  private final long count;
+  private final int count;
   private final ReadEntry entry;
 
   ReadSlotIndex(final ByteBuffer byteBuffer, final int offset) {
     this.recordEnd = offset;
-    this.count = byteBuffer.getLong((int) recordEnd - 8);
+    this.count = (int) byteBuffer.getLong((int) recordEnd - 8);
     this.recordStart = recordEnd - (8 * count + 24);
     this.entry = new ReadEntry(byteBuffer, (int) recordStart);
 
@@ -73,7 +73,7 @@ class ReadSlotIndex {
     return slotOffsets;
   }
 
-  public long getCount() {
+  public int getCount() {
     return count;
   }
 

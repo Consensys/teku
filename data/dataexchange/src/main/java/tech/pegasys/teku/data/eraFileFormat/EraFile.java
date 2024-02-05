@@ -239,19 +239,15 @@ public class EraFile {
     file.close();
   }
 
-  public static void main(String[] args) throws IOException {
-    Spec spec = null;
+  public static void main(final String[] args) throws IOException {
+    if (args.length == 0) {
+      System.out.println("Usage: eraFile [filename]...");
+      System.exit(2);
+    }
+    final Spec spec = getNetworkFromEraFilename(args[0]);
     SignedBeaconBlock lastBlock = null;
-    for (String filename : args) {
+    for (final String filename : args) {
       final Path p = Path.of(filename);
-      if (spec == null) {
-        final String network =
-            Arrays.stream(p.getFileName().toString().toLowerCase(Locale.ROOT).split("-", 2))
-                .findFirst()
-                .orElseThrow();
-        System.out.println("Loading network: " + network);
-        spec = SpecFactory.create(network);
-      }
       final EraFile f = new EraFile(p, spec);
       f.readEraFile();
       f.printStats();
@@ -260,5 +256,15 @@ public class EraFile {
 
       f.close();
     }
+  }
+
+  private static Spec getNetworkFromEraFilename(final String filename) {
+    final Path p = Path.of(filename);
+    final String network =
+        Arrays.stream(p.getFileName().toString().toLowerCase(Locale.ROOT).split("-", 2))
+            .findFirst()
+            .orElseThrow();
+    System.out.println("Loading network: " + network);
+    return SpecFactory.create(network);
   }
 }
