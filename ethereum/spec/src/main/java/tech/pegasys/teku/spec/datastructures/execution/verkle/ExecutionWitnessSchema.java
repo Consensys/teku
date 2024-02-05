@@ -32,7 +32,6 @@ public class ExecutionWitnessSchema
       final VerkleProofSchema verkleProofSchema) {
     super(
         "ExecutionWitness",
-        // TODO: only valid if list is sorted by stems
         namedSchema(FIELD_STATE_DIFF, SszListSchema.create(stemStateDiffSchema, maxStems)),
         namedSchema(FIELD_VERKLE_PROOF, verkleProofSchema));
   }

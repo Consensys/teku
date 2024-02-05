@@ -16,6 +16,7 @@ package tech.pegasys.teku.infrastructure.bytes;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.math.BigInteger;
 import java.util.Objects;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.MutableBytes;
@@ -82,6 +83,10 @@ public class Bytes31 {
 
   public Bytes31 copy() {
     return new Bytes31(bytes.copy());
+  }
+
+  public BigInteger toUnsignedBigInteger() {
+    return bytes.toUnsignedBigInteger();
   }
 
   @Override

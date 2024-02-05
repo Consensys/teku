@@ -32,7 +32,6 @@ public class StemStateDiffSchema
     super(
         "StemStateDiff",
         namedSchema("stem", SszByteVectorSchema.create(Bytes31.SIZE)),
-        // TODO: Valid only if list is sorted by suffixes
         namedSchema(
             FIELD_SUFFIX_DIFFS, SszListSchema.create(SuffixStateDiffSchema.INSTANCE, verkleWidth)));
   }

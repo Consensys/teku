@@ -16,6 +16,7 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra;
 import java.util.Optional;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitness;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
 
 public interface BeaconBlockBodyElectra extends BeaconBlockBodyCapella {
@@ -32,6 +33,11 @@ public interface BeaconBlockBodyElectra extends BeaconBlockBodyCapella {
 
   @Override
   ExecutionPayloadElectra getExecutionPayload();
+
+  @Override
+  default Optional<ExecutionWitness> getOptionalExecutionWitness() {
+    return Optional.of(getExecutionPayload().getExecutionWitness());
+  }
 
   @Override
   default Optional<BeaconBlockBodyElectra> toVersionElectra() {

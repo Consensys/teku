@@ -11,18 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.logic.versions.deneb.block;
+package tech.pegasys.teku.spec.logic.versions.electra.block;
 
 import java.util.List;
 import java.util.Optional;
-import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.infrastructure.bytes.Bytes31;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
-import tech.pegasys.teku.spec.datastructures.execution.NewPayloadRequest;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.ExecutionWitness;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.StemStateDiff;
+import tech.pegasys.teku.spec.datastructures.execution.verkle.SuffixStateDiff;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.helpers.BeaconStateMutators;
 import tech.pegasys.teku.spec.logic.common.helpers.Predicates;
 import tech.pegasys.teku.spec.logic.common.operations.OperationSignatureVerifier;
@@ -34,18 +33,17 @@ import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
 import tech.pegasys.teku.spec.logic.common.util.ValidatorsUtil;
 import tech.pegasys.teku.spec.logic.versions.altair.helpers.BeaconStateAccessorsAltair;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.block.OptimisticExecutionPayloadExecutor;
-import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
-import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
-import tech.pegasys.teku.spec.logic.versions.electra.block.BlockProcessorElectra;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
+import tech.pegasys.teku.spec.logic.versions.capella.helpers.MiscHelpersCapella;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
-public class BlockProcessorDeneb extends BlockProcessorElectra {
+public class BlockProcessorElectra extends BlockProcessorCapella {
 
-  public BlockProcessorDeneb(
-      final SpecConfigDeneb specConfig,
+  public BlockProcessorElectra(
+      final SpecConfigElectra specConfig,
       final Predicates predicates,
-      final MiscHelpersDeneb miscHelpers,
+      final MiscHelpersCapella miscHelpers,
       final SyncCommitteeUtil syncCommitteeUtil,
       final BeaconStateAccessorsAltair beaconStateAccessors,
       final BeaconStateMutators beaconStateMutators,
@@ -54,7 +52,7 @@ public class BlockProcessorDeneb extends BlockProcessorElectra {
       final AttestationUtil attestationUtil,
       final ValidatorsUtil validatorsUtil,
       final OperationValidator operationValidator,
-      final SchemaDefinitionsDeneb schemaDefinitions) {
+      final SchemaDefinitionsElectra schemaDefinitions) {
     super(
         specConfig,
         predicates,
@@ -67,7 +65,7 @@ public class BlockProcessorDeneb extends BlockProcessorElectra {
         attestationUtil,
         validatorsUtil,
         operationValidator,
-        SchemaDefinitionsElectra.required(schemaDefinitions));
+        SchemaDefinitionsCapella.required(schemaDefinitions));
   }
 
   @Override
@@ -76,34 +74,42 @@ public class BlockProcessorDeneb extends BlockProcessorElectra {
       final BeaconBlockBody beaconBlockBody,
       final Optional<? extends OptimisticExecutionPayloadExecutor> payloadExecutor)
       throws BlockProcessingException {
-    final int maxBlobsPerBlock = SpecConfigDeneb.required(specConfig).getMaxBlobsPerBlock();
-    final SszList<SszKZGCommitment> blobKzgCommitments = extractBlobKzgCommitments(beaconBlockBody);
-    if (blobKzgCommitments.size() > maxBlobsPerBlock) {
-      throw new BlockProcessingException(
-          "Number of kzg commitments in block exceeds max blobs per block");
+    final ExecutionWitness executionWitness = extractExecutionWitness(beaconBlockBody);
+    final List<StemStateDiff> stemStateDiffs = executionWitness.getStateDiffs();
+    Optional<Bytes31> lastStem = Optional.empty();
+
+    for (final StemStateDiff stemStateDiff : stemStateDiffs) {
+      // only valid if list is sorted by stems
+      final Bytes31 currentStem = stemStateDiff.getStem();
+      if (lastStem.isPresent()) {
+        if (currentStem.toUnsignedBigInteger().compareTo(lastStem.get().toUnsignedBigInteger())
+            <= 0) {
+          throw new BlockProcessingException("StemStateDiffs are not sorted by stems");
+        }
+      }
+      lastStem = Optional.of(currentStem);
+
+      final List<SuffixStateDiff> stateDiffs = stemStateDiff.getStateDiffs();
+      Optional<Integer> lastSuffix = Optional.empty();
+      for (final SuffixStateDiff suffixStateDiff : stateDiffs) {
+        // only valid if list is sorted by suffixes
+        final int suffix = Byte.toUnsignedInt(suffixStateDiff.getSuffix());
+        if (lastSuffix.isPresent()) {
+          if (suffix <= lastSuffix.get()) {
+            throw new BlockProcessingException("SuffixStateDiffs are not sorted by suffixes");
+          }
+        }
+        lastSuffix = Optional.of(suffix);
+      }
     }
+
     super.validateExecutionPayload(genericState, beaconBlockBody, payloadExecutor);
   }
 
-  @Override
-  public NewPayloadRequest computeNewPayloadRequest(
-      final BeaconState state, final BeaconBlockBody beaconBlockBody)
-      throws BlockProcessingException {
-    final ExecutionPayload executionPayload = extractExecutionPayload(beaconBlockBody);
-    final SszList<SszKZGCommitment> blobKzgCommitments = extractBlobKzgCommitments(beaconBlockBody);
-    final List<VersionedHash> versionedHashes =
-        blobKzgCommitments.stream()
-            .map(SszKZGCommitment::getKZGCommitment)
-            .map(miscHelpers::kzgCommitmentToVersionedHash)
-            .toList();
-    final Bytes32 parentBeaconBlockRoot = state.getLatestBlockHeader().getParentRoot();
-    return new NewPayloadRequest(executionPayload, versionedHashes, parentBeaconBlockRoot);
-  }
-
-  public SszList<SszKZGCommitment> extractBlobKzgCommitments(final BeaconBlockBody beaconBlockBody)
+  public ExecutionWitness extractExecutionWitness(final BeaconBlockBody beaconBlockBody)
       throws BlockProcessingException {
     return beaconBlockBody
-        .getOptionalBlobKzgCommitments()
-        .orElseThrow(() -> new BlockProcessingException("Blob kzg commitments expected"));
+        .getOptionalExecutionWitness()
+        .orElseThrow(() -> new BlockProcessingException("ExecutionWitness expected"));
   }
 }

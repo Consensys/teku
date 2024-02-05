@@ -35,13 +35,12 @@ import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BeaconStateMutato
 import tech.pegasys.teku.spec.logic.versions.bellatrix.helpers.BellatrixTransitionHelpers;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.statetransition.epoch.EpochProcessorBellatrix;
 import tech.pegasys.teku.spec.logic.versions.bellatrix.util.BlindBlockUtilBellatrix;
-import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
 import tech.pegasys.teku.spec.logic.versions.capella.helpers.MiscHelpersCapella;
 import tech.pegasys.teku.spec.logic.versions.capella.operations.validation.OperationValidatorCapella;
 import tech.pegasys.teku.spec.logic.versions.capella.statetransition.epoch.EpochProcessorCapella;
+import tech.pegasys.teku.spec.logic.versions.electra.block.BlockProcessorElectra;
 import tech.pegasys.teku.spec.logic.versions.electra.forktransition.ElectraStateUpgrade;
 import tech.pegasys.teku.spec.logic.versions.phase0.operations.validation.AttestationDataValidatorPhase0;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public class SpecLogicElectra extends AbstractSpecLogic {
@@ -61,7 +60,7 @@ public class SpecLogicElectra extends AbstractSpecLogic {
       final OperationValidator operationValidator,
       final ValidatorStatusFactoryAltair validatorStatusFactory,
       final EpochProcessorBellatrix epochProcessor,
-      final BlockProcessorCapella blockProcessor,
+      final BlockProcessorElectra blockProcessor,
       final ForkChoiceUtil forkChoiceUtil,
       final BlockProposalUtil blockProposalUtil,
       final BlindBlockUtil blindBlockUtil,
@@ -141,8 +140,8 @@ public class SpecLogicElectra extends AbstractSpecLogic {
             beaconStateAccessors, validatorsUtil, config, miscHelpers, schemaDefinitions);
     final LightClientUtil lightClientUtil =
         new LightClientUtil(beaconStateAccessors, syncCommitteeUtil, schemaDefinitions);
-    final BlockProcessorCapella blockProcessor =
-        new BlockProcessorCapella(
+    final BlockProcessorElectra blockProcessor =
+        new BlockProcessorElectra(
             config,
             predicates,
             miscHelpers,
@@ -154,7 +153,7 @@ public class SpecLogicElectra extends AbstractSpecLogic {
             attestationUtil,
             validatorsUtil,
             operationValidator,
-            SchemaDefinitionsCapella.required(schemaDefinitions));
+            schemaDefinitions);
     final ForkChoiceUtil forkChoiceUtil =
         new ForkChoiceUtil(
             config, beaconStateAccessors, epochProcessor, attestationUtil, miscHelpers);
