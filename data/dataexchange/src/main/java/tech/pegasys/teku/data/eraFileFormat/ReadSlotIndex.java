@@ -19,10 +19,11 @@ import com.google.common.primitives.Longs;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 class ReadSlotIndex {
 
-  private final long startSlot;
+  private final UInt64 startSlot;
   private final long recordStart;
   private final List<Integer> slotOffsets = new ArrayList<>();
   private final long recordEnd;
@@ -36,7 +37,7 @@ class ReadSlotIndex {
     this.entry = new ReadEntry(byteBuffer, (int) recordStart);
 
     final byte[] data = entry.getData();
-    this.startSlot = getBigEndianLongFromLittleEndianData(data, 0);
+    this.startSlot = UInt64.valueOf(getBigEndianLongFromLittleEndianData(data, 0));
 
     for (int i = 8; i < entry.getDataSize() - 15; i += 8) {
       long relativePosition = getBigEndianLongFromLittleEndianData(data, i);
@@ -60,7 +61,7 @@ class ReadSlotIndex {
         data[startOffset]);
   }
 
-  public long getStartSlot() {
+  public UInt64 getStartSlot() {
     return startSlot;
   }
 
