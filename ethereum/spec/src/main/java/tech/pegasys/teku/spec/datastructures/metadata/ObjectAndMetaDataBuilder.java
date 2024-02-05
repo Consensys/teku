@@ -16,11 +16,11 @@ package tech.pegasys.teku.spec.datastructures.metadata;
 import tech.pegasys.teku.spec.SpecMilestone;
 
 public class ObjectAndMetaDataBuilder<T> {
-  private T data;
-  private SpecMilestone milestone;
-  private boolean executionOptimistic;
-  private boolean canonical;
-  private boolean finalized;
+  protected T data;
+  protected SpecMilestone milestone;
+  protected boolean executionOptimistic;
+  protected boolean canonical;
+  protected boolean finalized;
 
   public ObjectAndMetaDataBuilder<T> data(T data) {
     this.data = data;

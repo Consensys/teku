@@ -24,32 +24,64 @@ import org.apache.tuweni.bytes.Bytes48;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableObjectTypeDefinitionBuilder;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaDataBuilder;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 
 public class SharedApiTypes {
-  public static final SerializableTypeDefinition<BlockAndMetaData> BLOCK_HEADER_TYPE =
-      SerializableTypeDefinition.object(BlockAndMetaData.class)
-          .withField("root", BYTES32_TYPE, block -> block.getData().getRoot())
-          .withField("canonical", BOOLEAN_TYPE, BlockAndMetaData::isCanonical)
+  public static final DeserializableTypeDefinition<BlockAndMetaData> BLOCK_HEADER_TYPE =
+      DeserializableTypeDefinition.object(BlockAndMetaData.class, BlockAndMetaDataBuilder.class)
+          .initializer(BlockAndMetaDataBuilder::new)
+          .finisher(BlockAndMetaDataBuilder::build)
+          .withField(
+              "root",
+              BYTES32_TYPE,
+              block -> block.getData().getRoot(),
+              ((builder, bytes32) -> builder)) // todo fix setter
+          .withField(
+              "canonical",
+              BOOLEAN_TYPE,
+              BlockAndMetaData::isCanonical,
+              BlockAndMetaDataBuilder::canonical)
           .withField(
               "header",
               SignedBeaconBlockHeader.SSZ_SCHEMA.getJsonTypeDefinition(),
-              data -> data.getData().asHeader())
+              data -> data.getData().asHeader(),
+              BlockAndMetaDataBuilder::data) // todo fix setter from header?
           .build();
 
-  public static final SerializableTypeDefinition<BlockAndMetaData> GET_BLOCK_HEADER_RESPONSE_TYPE =
-      SerializableTypeDefinition.object(BlockAndMetaData.class)
-          .name("GetBlockHeaderResponse")
-          .withField("data", BLOCK_HEADER_TYPE, Function.identity())
-          .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
-          .withField(FINALIZED, BOOLEAN_TYPE, ObjectAndMetaData::isFinalized)
-          .build();
+  public static final DeserializableTypeDefinition<BlockAndMetaData>
+      GET_BLOCK_HEADER_RESPONSE_TYPE =
+          DeserializableTypeDefinition.object(BlockAndMetaData.class, BlockAndMetaDataBuilder.class)
+              .name("GetBlockHeaderResponse")
+              .initializer(BlockAndMetaDataBuilder::new)
+              .finisher(BlockAndMetaDataBuilder::build)
+              .withField(
+                  "data",
+                  BLOCK_HEADER_TYPE,
+                  Function.identity(),
+                  ((builder, blockAndMetaData) ->
+                      builder
+                          .data(blockAndMetaData.getData())
+                          .milestone(blockAndMetaData.getMilestone())
+                          .executionOptimistic(blockAndMetaData.isExecutionOptimistic())
+                          .canonical(blockAndMetaData.isCanonical())
+                          .finalized(blockAndMetaData.isFinalized())))
+              .withField(
+                  EXECUTION_OPTIMISTIC,
+                  BOOLEAN_TYPE,
+                  ObjectAndMetaData::isExecutionOptimistic,
+                  BlockAndMetaDataBuilder::executionOptimistic)
+              .withField(
+                  FINALIZED,
+                  BOOLEAN_TYPE,
+                  ObjectAndMetaData::isFinalized,
+                  BlockAndMetaDataBuilder::finalized)
+              .build();
 
   public static final StringValueTypeDefinition<BLSPublicKey> PUBKEY_API_TYPE =
       DeserializableTypeDefinition.string(BLSPublicKey.class)
