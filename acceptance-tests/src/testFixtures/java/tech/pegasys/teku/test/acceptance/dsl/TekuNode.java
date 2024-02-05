@@ -191,6 +191,10 @@ public class TekuNode extends Node {
     waitFor(() -> assertThat(maybeEventStreamListener.get().isReady()).isTrue());
   }
 
+  public Spec getSpec() {
+    return spec;
+  }
+
   public void waitForContributionAndProofEvent() {
     waitForContributionAndProofEvent(proof -> true);
   }
@@ -302,12 +306,73 @@ public class TekuNode extends Node {
 
   public String postProposerSlashing(
       final UInt64 slot, final UInt64 index, final BLSSecretKey secretKey) throws IOException {
+    final ForkInfo forkInfo = getForkInfo(slot);
+    final SigningRootUtil signingRootUtil = new SigningRootUtil(spec);
+    final SignedBeaconBlockHeader header1 =
+        randomSignedBeaconBlockHeader(slot, index, secretKey, signingRootUtil, forkInfo);
+    final SignedBeaconBlockHeader header2 =
+        randomSignedBeaconBlockHeader(slot, index, secretKey, signingRootUtil, forkInfo);
+    final ProposerSlashing proposerSlashing = new ProposerSlashing(header1, header2);
+    final String body = JSON_PROVIDER.objectToJSON(proposerSlashing);
+    return httpClient.post(getRestApiUrl(), POST_PROPOSER_SLASHING_URL, body);
+  }
 
+  private ForkInfo getForkInfo(final UInt64 slot) throws IOException {
     final Fork fork = spec.getForkSchedule().getFork(spec.computeEpochAtSlot(slot));
     final Bytes32 genesisValidatorRoot = fetchGenesis().getGenesisValidatorsRoot();
     final ForkInfo forkInfo = new ForkInfo(fork, genesisValidatorRoot);
-    final SigningRootUtil signingRootUtil = new SigningRootUtil(spec);
+    return forkInfo;
+  }
 
+  public String postAttesterSlashing(
+      final UInt64 slashingSlot,
+      final UInt64 slashedIndex,
+      final BLSSecretKey slashedValidatorSecretKey)
+      throws IOException {
+    final ForkInfo forkInfo = getForkInfo(slashingSlot);
+    final SigningRootUtil signingRootUtil = new SigningRootUtil(spec);
+    final IndexedAttestation indexedAttestation1 =
+        randomIndexedAttestation(
+            slashingSlot, slashedIndex, slashedValidatorSecretKey, signingRootUtil, forkInfo);
+    final IndexedAttestation indexedAttestation2 =
+        randomIndexedAttestation(
+            slashingSlot, slashedIndex, slashedValidatorSecretKey, signingRootUtil, forkInfo);
+    final AttesterSlashing attesterSlashing =
+        new AttesterSlashing(indexedAttestation1, indexedAttestation2);
+    final String body = JSON_PROVIDER.objectToJSON(attesterSlashing);
+    return httpClient.post(getRestApiUrl(), POST_ATTESTER_SLASHING_URL, body);
+  }
+
+  private static IndexedAttestation randomIndexedAttestation(
+      final UInt64 slot,
+      final UInt64 index,
+      final BLSSecretKey secretKey,
+      final SigningRootUtil signingRootUtil,
+      final ForkInfo forkInfo) {
+    final AttestationData attestationData1 =
+        new AttestationData(
+            slot,
+            index,
+            Bytes32.random(),
+            new Checkpoint(UInt64.valueOf(1), Bytes32.random()),
+            new Checkpoint(UInt64.valueOf(2), Bytes32.random()));
+    final BLSSignature blsSignature1 =
+        new BLSSignature(
+            BLS.sign(
+                secretKey,
+                signingRootUtil.signingRootForSignAttestationData(
+                    attestationData1.asInternalAttestationData(), forkInfo)));
+    final IndexedAttestation indexedAttestation1 =
+        new IndexedAttestation(List.of(index), attestationData1, blsSignature1);
+    return indexedAttestation1;
+  }
+
+  private SignedBeaconBlockHeader randomSignedBeaconBlockHeader(
+      final UInt64 slot,
+      final UInt64 index,
+      final BLSSecretKey secretKey,
+      final SigningRootUtil signingRootUtil,
+      final ForkInfo forkInfo) {
     final BeaconBlockHeader beaconBlockHeader1 =
         new BeaconBlockHeader(slot, index, Bytes32.random(), Bytes32.random(), Bytes32.random());
 
@@ -318,71 +383,7 @@ public class TekuNode extends Node {
         new BLSSignature(BLS.sign(secretKey, blockHeaderSigningRoot1));
     final SignedBeaconBlockHeader header1 =
         new SignedBeaconBlockHeader(beaconBlockHeader1, blsSignature1);
-
-    final BeaconBlockHeader beaconBlockHeader2 =
-        new BeaconBlockHeader(slot, index, Bytes32.random(), Bytes32.random(), Bytes32.random());
-    final Bytes blockHeaderSigningRoot2 =
-        signingRootUtil.signingRootForSignBlockHeader(
-            beaconBlockHeader2.asInternalBeaconBlockHeader(), forkInfo);
-    final BLSSignature blsSignature2 =
-        new BLSSignature(BLS.sign(secretKey, blockHeaderSigningRoot2));
-    final SignedBeaconBlockHeader header2 =
-        new SignedBeaconBlockHeader(beaconBlockHeader2, blsSignature2);
-
-    final ProposerSlashing proposerSlashing = new ProposerSlashing(header1, header2);
-    final String body = JSON_PROVIDER.objectToJSON(proposerSlashing);
-
-    return httpClient.post(getRestApiUrl(), POST_PROPOSER_SLASHING_URL, body);
-  }
-
-  public String postAttesterSlashing(
-      final UInt64 slashingSlot,
-      final UInt64 slashedIndex,
-      final BLSSecretKey slashedValidatorSecretKey)
-      throws IOException {
-
-    final Fork fork = spec.getForkSchedule().getFork(spec.computeEpochAtSlot(slashingSlot));
-    final Bytes32 genesisValidatorRoot = fetchGenesis().getGenesisValidatorsRoot();
-    final ForkInfo forkInfo = new ForkInfo(fork, genesisValidatorRoot);
-    final SigningRootUtil signingRootUtil = new SigningRootUtil(spec);
-
-    final AttestationData attestationData1 =
-        new AttestationData(
-            slashingSlot,
-            slashedIndex,
-            Bytes32.random(),
-            new Checkpoint(UInt64.valueOf(1), Bytes32.random()),
-            new Checkpoint(UInt64.valueOf(2), Bytes32.random()));
-    final BLSSignature blsSignature1 =
-        new BLSSignature(
-            BLS.sign(
-                slashedValidatorSecretKey,
-                signingRootUtil.signingRootForSignAttestationData(
-                    attestationData1.asInternalAttestationData(), forkInfo)));
-    final IndexedAttestation indexedAttestation1 =
-        new IndexedAttestation(List.of(slashedIndex), attestationData1, blsSignature1);
-
-    final AttestationData attestationData2 =
-        new AttestationData(
-            slashingSlot,
-            slashedIndex,
-            Bytes32.random(),
-            new Checkpoint(UInt64.valueOf(1), Bytes32.random()),
-            new Checkpoint(UInt64.valueOf(2), Bytes32.random()));
-    final BLSSignature blsSignature2 =
-        new BLSSignature(
-            BLS.sign(
-                slashedValidatorSecretKey,
-                signingRootUtil.signingRootForSignAttestationData(
-                    attestationData2.asInternalAttestationData(), forkInfo)));
-    final IndexedAttestation indexedAttestation2 =
-        new IndexedAttestation(List.of(slashedIndex), attestationData2, blsSignature2);
-
-    final AttesterSlashing attesterSlashing =
-        new AttesterSlashing(indexedAttestation1, indexedAttestation2);
-    final String body = JSON_PROVIDER.objectToJSON(attesterSlashing);
-
-    return httpClient.post(getRestApiUrl(), POST_ATTESTER_SLASHING_URL, body);
+    return header1;
   }
 
   public void submitBlsToExecutionChange(

@@ -23,11 +23,20 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSSecretKey;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 
+/** In order to cover all possible validator slashing scenarios, this acceptance test runs different combinations:
+ * - Single Process: VC/BN running in a single process. In this case there is no SEE and the slashing is passed through the ValidatorTimingChannel
+ * - Stand-Alone VC: VC/BN running in a separate processes and communicating through the REST APIs and SEE. In this case the slashing event is sent from the BN to the VC through SSE
+ * - Single Peer: No network, the slashing event is directly received by the running node
+ * - Multi Peers: Multiple running node, the slashing event is received by a first node through the PostAttesterSlashing or PostProposerSlashing REST APIs and then sent to the concerned node either through gossip or within a block
+ * - No Blocks: the slashing event is not sent to the correspondent node within a block but rather through p2p gossip network
+ * - No Gossip: the slashing event is not sent to the correspondent node through the p2p gossip network but rather within a block
+ * */
 public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase {
 
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
@@ -66,12 +75,14 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
 
     final int slashedValidatorIndex = 3;
     final BLSKeyPair slashedValidatorKeyPair = getBlsKeyPair(slashedValidatorIndex);
+    final int slotInFirstEpoch =
+        tekuNode.getSpec().forMilestone(SpecMilestone.ALTAIR).getSlotsPerEpoch() - 1;
 
     postSlashing(
-        UInt64.valueOf(3),
+        tekuNode,
+        UInt64.valueOf(slotInFirstEpoch),
         UInt64.valueOf(slashedValidatorIndex),
         slashedValidatorKeyPair.getSecretKey(),
-        tekuNode,
         slashingEventType);
 
     tekuNode.waitForLogMessageContaining(
@@ -106,12 +117,14 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
 
     final int slashedValidatorIndex = 3;
     final BLSKeyPair slashedValidatorKeyPair = getBlsKeyPair(slashedValidatorIndex);
+    final int slotInFirstEpoch =
+        beaconNode.getSpec().forMilestone(SpecMilestone.ALTAIR).getSlotsPerEpoch() - 1;
 
     postSlashing(
-        UInt64.valueOf(3),
+        beaconNode,
+        UInt64.valueOf(slotInFirstEpoch),
         UInt64.valueOf(slashedValidatorIndex),
         slashedValidatorKeyPair.getSecretKey(),
-        beaconNode,
         slashingEventType);
 
     validatorClient.waitForLogMessageContaining(
@@ -153,12 +166,14 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
 
     final int slashedValidatorIndex = 34;
     final BLSKeyPair slashedValidatorKeyPair = getBlsKeyPair(slashedValidatorIndex);
+    final int slotInFirstEpoch =
+        firstTekuNode.getSpec().forMilestone(SpecMilestone.ALTAIR).getSlotsPerEpoch() - 1;
 
     postSlashing(
-        UInt64.valueOf(3),
+        firstTekuNode,
+        UInt64.valueOf(slotInFirstEpoch),
         UInt64.valueOf(slashedValidatorIndex),
         slashedValidatorKeyPair.getSecretKey(),
-        firstTekuNode,
         slashingEventType);
 
     secondTekuNode.waitForLogMessageContaining(
@@ -202,12 +217,14 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
 
     final int slashedValidatorIndex = 4;
     final BLSKeyPair slashedValidatorKeyPair = getBlsKeyPair(slashedValidatorIndex);
+    final int slotInFirstEpoch =
+        firstTekuNode.getSpec().forMilestone(SpecMilestone.ALTAIR).getSlotsPerEpoch() - 1;
 
     postSlashing(
-        UInt64.valueOf(3),
+        firstTekuNode,
+        UInt64.valueOf(slotInFirstEpoch),
         UInt64.valueOf(slashedValidatorIndex),
         slashedValidatorKeyPair.getSecretKey(),
-        firstTekuNode,
         slashingEventType);
 
     secondTekuNode.waitForLogMessageContaining(
@@ -239,12 +256,14 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
 
     final int slashedValidatorIndex = 34;
     final BLSKeyPair slashedValidatorKeyPair = getBlsKeyPair(slashedValidatorIndex);
+    final int slotInFirstEpoch =
+        firstTekuNode.getSpec().forMilestone(SpecMilestone.ALTAIR).getSlotsPerEpoch() - 1;
 
     postSlashing(
-        UInt64.valueOf(3),
+        firstTekuNode,
+        UInt64.valueOf(slotInFirstEpoch),
         UInt64.valueOf(slashedValidatorIndex),
         slashedValidatorKeyPair.getSecretKey(),
-        firstTekuNode,
         slashingEventType);
 
     final TekuNode secondTekuNode =
@@ -310,12 +329,14 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
 
     final int slashedValidatorIndex = 34;
     final BLSKeyPair slashedValidatorKeyPair = getBlsKeyPair(slashedValidatorIndex);
+    final int slotInThirdEpoch =
+        firstTekuNode.getSpec().forMilestone(SpecMilestone.ALTAIR).getSlotsPerEpoch() * 2 + 3;
 
     postSlashing(
-        UInt64.valueOf(60),
+        firstTekuNode,
+        UInt64.valueOf(slotInThirdEpoch),
         UInt64.valueOf(slashedValidatorIndex),
         slashedValidatorKeyPair.getSecretKey(),
-        firstTekuNode,
         slashingEventType);
 
     secondValidatorClient.waitForLogMessageContaining(
@@ -371,12 +392,14 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
 
     final int slashedValidatorIndex = 4;
     final BLSKeyPair slashedValidatorKeyPair = getBlsKeyPair(slashedValidatorIndex);
+    final int slotInThirdEpoch =
+        firstTekuNode.getSpec().forMilestone(SpecMilestone.ALTAIR).getSlotsPerEpoch() * 2 + 3;
 
     postSlashing(
-        UInt64.valueOf(60),
+        firstTekuNode,
+        UInt64.valueOf(slotInThirdEpoch),
         UInt64.valueOf(slashedValidatorIndex),
         slashedValidatorKeyPair.getSecretKey(),
-        firstTekuNode,
         slashingEventType);
 
     secondValidatorClient.waitForLogMessageContaining(
@@ -409,12 +432,14 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
 
     final int slashedValidatorIndex = 34;
     final BLSKeyPair slashedValidatorKeyPair = getBlsKeyPair(slashedValidatorIndex);
+    final int slotInThirdEpoch =
+        firstTekuNode.getSpec().forMilestone(SpecMilestone.ALTAIR).getSlotsPerEpoch() * 2 + 3;
 
     postSlashing(
-        UInt64.valueOf(60),
+        firstTekuNode,
+        UInt64.valueOf(slotInThirdEpoch),
         UInt64.valueOf(slashedValidatorIndex),
         slashedValidatorKeyPair.getSecretKey(),
-        firstTekuNode,
         slashingEventType);
 
     final TekuNode secondBeaconNode =
@@ -458,10 +483,10 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
   }
 
   private void postSlashing(
+      final TekuNode tekuNode,
       final UInt64 slashingSlot,
       final UInt64 slashedIndex,
       final BLSSecretKey slashedValidatorSecretKey,
-      final TekuNode tekuNode,
       final SlashingEventType slashingEventType)
       throws IOException {
     switch (slashingEventType) {
