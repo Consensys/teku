@@ -22,7 +22,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -38,9 +40,13 @@ import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcRequestHandler;
 import tech.pegasys.teku.networking.p2p.rpc.RpcStreamController;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRangeRequestMessage;
+import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 class Eth2PeerTest {
@@ -165,7 +171,103 @@ class Eth2PeerTest {
 
   @Test
   @SuppressWarnings({"unchecked", "FutureReturnValueIgnored"})
-  public void shouldModifyRequestSpanningTheDenebForkTransition() {
+  public void shouldSendRequest_BlobSidecarsByRoot() {
+
+    final Eth2RpcMethod<BlobSidecarsByRootRequestMessage, BlobSidecar> blobSidecarsByRootMethod =
+        mock(Eth2RpcMethod.class);
+
+    final RpcStreamController<RpcRequestHandler> rpcStreamController =
+        mock(RpcStreamController.class);
+
+    when(rpcMethods.blobSidecarsByRoot()).thenReturn(Optional.of(blobSidecarsByRootMethod));
+
+    when(peer.sendRequest(any(), any(), any()))
+        .thenReturn(SafeFuture.completedFuture(rpcStreamController));
+
+    final List<BlobIdentifier> blobIdentifiers =
+        IntStream.range(0, 3).mapToObj(index -> dataStructureUtil.randomBlobIdentifier()).toList();
+
+    peer.requestBlobSidecarsByRoot(blobIdentifiers, __ -> SafeFuture.COMPLETE);
+
+    final ArgumentCaptor<BlobSidecarsByRootRequestMessage> requestCaptor =
+        ArgumentCaptor.forClass(BlobSidecarsByRootRequestMessage.class);
+
+    verify(delegate, times(1)).sendRequest(any(), requestCaptor.capture(), any());
+
+    final BlobSidecarsByRootRequestMessage request = requestCaptor.getValue();
+
+    assertThat(request.getMaximumResponseChunks()).isEqualTo(3);
+  }
+
+  @Test
+  @SuppressWarnings({"unchecked", "FutureReturnValueIgnored"})
+  public void shouldSendRequest_BlobSidecarByRoot() {
+
+    final Eth2RpcMethod<BlobSidecarsByRootRequestMessage, BlobSidecar> blobSidecarsByRootMethod =
+        mock(Eth2RpcMethod.class);
+
+    final RpcStreamController<RpcRequestHandler> rpcStreamController =
+        mock(RpcStreamController.class);
+
+    when(rpcMethods.blobSidecarsByRoot()).thenReturn(Optional.of(blobSidecarsByRootMethod));
+
+    when(peer.sendRequest(any(), any(), any()))
+        .thenReturn(SafeFuture.completedFuture(rpcStreamController));
+
+    final BlobIdentifier blobIdentifier = dataStructureUtil.randomBlobIdentifier();
+
+    peer.requestBlobSidecarByRoot(blobIdentifier);
+
+    final ArgumentCaptor<BlobSidecarsByRootRequestMessage> requestCaptor =
+        ArgumentCaptor.forClass(BlobSidecarsByRootRequestMessage.class);
+
+    verify(delegate, times(1)).sendRequest(any(), requestCaptor.capture(), any());
+
+    final BlobSidecarsByRootRequestMessage request = requestCaptor.getValue();
+
+    assertThat(request.getMaximumResponseChunks()).isEqualTo(1);
+  }
+
+  @Test
+  @SuppressWarnings({"unchecked", "FutureReturnValueIgnored"})
+  public void shouldNotUpdateRequestWhenWithinDeneb_BlobSidecarsByRange() {
+
+    final Eth2RpcMethod<BlobSidecarsByRangeRequestMessage, BlobSidecar> blobSidecarsByRangeMethod =
+        mock(Eth2RpcMethod.class);
+
+    final RpcStreamController<RpcRequestHandler> rpcStreamController =
+        mock(RpcStreamController.class);
+
+    when(rpcMethods.blobSidecarsByRange()).thenReturn(Optional.of(blobSidecarsByRangeMethod));
+
+    when(peer.sendRequest(any(), any(), any()))
+        .thenReturn(SafeFuture.completedFuture(rpcStreamController));
+
+    final SpecConfigDeneb specConfigDeneb =
+        SpecConfigDeneb.required(spec.forMilestone(SpecMilestone.DENEB).getConfig());
+    final UInt64 denebForkEpoch = specConfigDeneb.getDenebForkEpoch();
+    final UInt64 denebStartSlot = spec.computeStartSlotAtEpoch(denebForkEpoch);
+
+    final UInt64 startSlot = denebStartSlot.plus(5);
+    final UInt64 count = UInt64.valueOf(10);
+
+    peer.requestBlobSidecarsByRange(startSlot, count, __ -> SafeFuture.COMPLETE);
+
+    final ArgumentCaptor<BlobSidecarsByRangeRequestMessage> requestCaptor =
+        ArgumentCaptor.forClass(BlobSidecarsByRangeRequestMessage.class);
+
+    verify(delegate, times(1)).sendRequest(any(), requestCaptor.capture(), any());
+
+    final BlobSidecarsByRangeRequestMessage request = requestCaptor.getValue();
+
+    assertThat(request.getStartSlot()).isEqualTo(startSlot);
+    assertThat(request.getCount()).isEqualTo(count);
+    assertThat(request.getMaximumResponseChunks()).isEqualTo(60); // 10 * MAX_BLOBS_PER_BLOCK (6)
+  }
+
+  @Test
+  @SuppressWarnings({"unchecked", "FutureReturnValueIgnored"})
+  public void shouldModifyRequestSpanningTheDenebForkTransition_BlobSidecarsByRange() {
 
     final Eth2RpcMethod<BlobSidecarsByRangeRequestMessage, BlobSidecar> blobSidecarsByRangeMethod =
         mock(Eth2RpcMethod.class);
@@ -195,7 +297,7 @@ class Eth2PeerTest {
 
   @Test
   @SuppressWarnings({"unchecked", "FutureReturnValueIgnored"})
-  public void shouldSetCountToZeroWhenRequestIsPreDeneb() {
+  public void shouldSetCountToZeroWhenRequestIsPreDeneb_BlobSidecarsByRange() {
 
     final Eth2RpcMethod<BlobSidecarsByRangeRequestMessage, BlobSidecar> blobSidecarsByRangeMethod =
         mock(Eth2RpcMethod.class);
