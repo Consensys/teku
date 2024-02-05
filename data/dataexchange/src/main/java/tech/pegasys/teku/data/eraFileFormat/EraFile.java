@@ -64,7 +64,6 @@ public class EraFile {
   }
 
   public void readEraFile() {
-    // System.out.println("Reading Indices from ERA File " + filename);
     getStateIndices();
     getBlockIndices();
   }
