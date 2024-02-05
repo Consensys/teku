@@ -32,7 +32,8 @@ public class DenebBuilder implements ForkConfigBuilder<SpecConfigElectra, SpecCo
   private Bytes4 denebForkVersion;
   private UInt64 denebForkEpoch;
 
-  private Integer maxPerEpochActivationChurnLimit;
+  // FIXME: Remove me, stub to handle old config
+  private Integer maxPerEpochActivationChurnLimit = 8;
   private Integer fieldElementsPerBlob;
   private Integer maxBlobCommitmentsPerBlock;
   private Integer maxBlobsPerBlock;
