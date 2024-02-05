@@ -71,8 +71,6 @@ import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.json.types.StringValueTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
-import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 
 public class BeaconRestApiTypes {
@@ -209,16 +207,6 @@ public class BeaconRestApiTypes {
   public static final SerializableTypeDefinition<Bytes32> ROOT_TYPE =
       SerializableTypeDefinition.object(Bytes32.class)
           .withField("root", BYTES32_TYPE, Function.identity())
-          .build();
-
-  public static final SerializableTypeDefinition<BlockAndMetaData> BLOCK_HEADER_TYPE =
-      SerializableTypeDefinition.object(BlockAndMetaData.class)
-          .withField("root", BYTES32_TYPE, block -> block.getData().getRoot())
-          .withField("canonical", BOOLEAN_TYPE, BlockAndMetaData::isCanonical)
-          .withField(
-              "header",
-              SignedBeaconBlockHeader.SSZ_SCHEMA.getJsonTypeDefinition(),
-              data -> data.getData().asHeader())
           .build();
 
   public static final ParameterMetadata<UInt64> BLOB_INDICES_PARAMETER =
