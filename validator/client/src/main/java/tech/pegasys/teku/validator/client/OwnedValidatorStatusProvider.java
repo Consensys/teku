@@ -130,6 +130,11 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
   public void onProposerSlashing(ProposerSlashing proposerSlashing) {}
 
   @Override
+  public void onUpdatedValidatorStatuses(
+      final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
+      final boolean possibleMissingEvents) {}
+
+  @Override
   public void subscribeValidatorStatusesUpdates(final ValidatorStatusSubscriber subscriber) {
     validatorStatusSubscribers.subscribe(subscriber);
   }

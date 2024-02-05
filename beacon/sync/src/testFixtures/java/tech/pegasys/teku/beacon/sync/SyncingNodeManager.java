@@ -50,6 +50,7 @@ import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
+import tech.pegasys.teku.spec.datastructures.blocks.ReceivedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -158,9 +159,7 @@ public class SyncingNodeManager {
             blockValidator,
             timeProvider,
             EVENT_LOG,
-            Optional.empty(),
-            true,
-            false);
+            Optional.empty());
 
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
@@ -207,8 +206,18 @@ public class SyncingNodeManager {
     recentBlocksFetcher.subscribeBlockFetched(
         block -> blockManager.importBlock(block, BroadcastValidationLevel.NOT_REQUIRED));
     blockManager.subscribeToReceivedBlocks(
-        (block, executionOptimistic) ->
-            recentBlocksFetcher.cancelRecentBlockRequest(block.getRoot()));
+        new ReceivedBlockListener() {
+          @Override
+          public void onBlockValidated(final SignedBeaconBlock block) {
+            // NOOP
+          }
+
+          @Override
+          public void onBlockImported(
+              final SignedBeaconBlock block, final boolean executionOptimistic) {
+            recentBlocksFetcher.cancelRecentBlockRequest(block.getRoot());
+          }
+        });
 
     recentBlocksFetcher.start().join();
     blockManager.start().join();

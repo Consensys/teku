@@ -13,50 +13,16 @@
 
 package tech.pegasys.teku.ethereum.json.types.beacon;
 
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.FINALIZED;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition.listOf;
-
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class StateValidatorData {
-  private static final DeserializableTypeDefinition<ValidatorStatus> STATUS_TYPE =
-      DeserializableTypeDefinition.enumOf(ValidatorStatus.class);
-
-  public static final SerializableTypeDefinition<StateValidatorData> STATE_VALIDATOR_DATA_TYPE =
-      SerializableTypeDefinition.object(StateValidatorData.class)
-          .withField("index", UINT64_TYPE, StateValidatorData::getIndex)
-          .withField("balance", UINT64_TYPE, StateValidatorData::getBalance)
-          .withField("status", STATUS_TYPE, StateValidatorData::getStatus)
-          .withField(
-              "validator",
-              Validator.SSZ_SCHEMA.getJsonTypeDefinition(),
-              StateValidatorData::getValidator)
-          .build();
-
-  public static final SerializableTypeDefinition<ObjectAndMetaData<List<StateValidatorData>>>
-      STATE_VALIDATORS_RESPONSE_TYPE =
-          SerializableTypeDefinition.<ObjectAndMetaData<List<StateValidatorData>>>object()
-              .name("GetStateValidatorsResponse")
-              .withField(
-                  EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, ObjectAndMetaData::isExecutionOptimistic)
-              .withField(FINALIZED, BOOLEAN_TYPE, ObjectAndMetaData::isFinalized)
-              .withField("data", listOf(STATE_VALIDATOR_DATA_TYPE), ObjectAndMetaData::getData)
-              .build();
-
   private final UInt64 index;
   private final UInt64 balance;
   private final ValidatorStatus status;
@@ -95,6 +61,10 @@ public class StateValidatorData {
 
   public UInt64 getIndex() {
     return index;
+  }
+
+  public Integer getIntegerIndex() {
+    return index.intValue();
   }
 
   public UInt64 getBalance() {
