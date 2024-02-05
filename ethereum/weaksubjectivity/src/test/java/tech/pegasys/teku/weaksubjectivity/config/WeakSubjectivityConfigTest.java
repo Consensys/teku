@@ -84,11 +84,11 @@ public class WeakSubjectivityConfigTest {
 
   @Test
   public void equals() {
-    WeakSubjectivityConfig configA = config;
-    WeakSubjectivityConfig configB = configBuilder().weakSubjectivityCheckpoint(checkpoint).build();
+    final WeakSubjectivityConfig configA = config;
+    final WeakSubjectivityConfig configB =
+        configBuilder().weakSubjectivityCheckpoint(checkpoint).build();
 
-    assertThat(configA).isEqualTo(configA);
-    assertThat(configB).isEqualTo(configB);
+    assertThat(config).isEqualTo(configA);
     assertThat(configA).isNotEqualTo(configB);
   }
 
