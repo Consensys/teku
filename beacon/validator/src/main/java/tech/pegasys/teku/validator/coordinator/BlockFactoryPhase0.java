@@ -24,14 +24,12 @@ import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanc
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.constants.EthConstants;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 
 public class BlockFactoryPhase0 implements BlockFactory {
 
@@ -78,14 +76,6 @@ public class BlockFactoryPhase0 implements BlockFactory {
                 requestedBuilderBoostFactor,
                 blockProductionPerformance),
             blockProductionPerformance)
-        .thenPeek(
-            beaconBlockAndState ->
-                System.out.println(
-                    "block rewards: "
-                        + EthConstants.GWEI_TO_WEI.multiply(
-                            BeaconStateCache.getSlotCaches(beaconBlockAndState.getState())
-                                .getBlockProposerRewards()
-                                .longValue())))
         .thenApply(BeaconBlockAndState::getBlock);
   }
 
