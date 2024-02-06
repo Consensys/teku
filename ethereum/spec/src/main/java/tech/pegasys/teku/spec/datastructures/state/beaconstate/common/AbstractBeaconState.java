@@ -35,8 +35,8 @@ public abstract class AbstractBeaconState<TMutable extends MutableBeaconState>
 
   protected AbstractBeaconState(final BeaconStateSchema<?, ?> schema) {
     super(schema);
-    transitionCaches = TransitionCaches.createNewEmpty();
-    slotCaches = SlotCaches.createNewEmpty();
+    this.transitionCaches = TransitionCaches.createNewEmpty();
+    this.slotCaches = SlotCaches.createNewEmpty();
   }
 
   protected AbstractBeaconState(
@@ -53,8 +53,8 @@ public abstract class AbstractBeaconState<TMutable extends MutableBeaconState>
   protected AbstractBeaconState(
       AbstractSszContainerSchema<? extends SszContainer> type, TreeNode backingNode) {
     super(type, backingNode);
-    transitionCaches = TransitionCaches.createNewEmpty();
-    slotCaches = SlotCaches.createNewEmpty();
+    this.transitionCaches = TransitionCaches.createNewEmpty();
+    this.slotCaches = SlotCaches.createNewEmpty();
   }
 
   @Override
