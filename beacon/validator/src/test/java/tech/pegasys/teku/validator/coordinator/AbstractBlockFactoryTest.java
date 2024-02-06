@@ -41,7 +41,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
@@ -57,6 +56,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -138,7 +138,7 @@ public abstract class AbstractBlockFactoryTest {
     return BlindedBeaconBlockBodyBellatrix.required(block.getBody()).getExecutionPayloadHeader();
   }
 
-  protected BlockContainer assertBlockCreated(
+  protected BlockContainerAndMetaData assertBlockCreated(
       final int blockSlot,
       final Spec spec,
       final boolean postMerge,
@@ -202,7 +202,7 @@ public abstract class AbstractBlockFactoryTest {
         .thenAnswer(invocation -> createEmptySyncAggregate(spec));
     executionPayloadBuilder.accept(blockSlotState);
 
-    final BlockContainer blockContainer =
+    final BlockContainerAndMetaData blockContainer =
         safeJoin(
             blockFactory.createUnsignedBlock(
                 blockSlotState,
@@ -213,7 +213,7 @@ public abstract class AbstractBlockFactoryTest {
                 Optional.empty(),
                 BlockProductionPerformance.NOOP));
 
-    final BeaconBlock block = blockContainer.getBlock();
+    final BeaconBlock block = blockContainer.blockContainer().getBlock();
 
     assertThat(block).isNotNull();
     assertThat(block.getSlot()).isEqualTo(newSlot);

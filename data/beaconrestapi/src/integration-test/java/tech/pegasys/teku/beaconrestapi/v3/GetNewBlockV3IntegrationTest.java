@@ -18,7 +18,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -40,7 +39,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
-import tech.pegasys.teku.api.migrated.BlockRewardData;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v3.validator.GetNewBlockV3;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -50,11 +48,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
-import tech.pegasys.teku.spec.constants.EthConstants;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 @TestSpecContext(allMilestones = true)
@@ -62,11 +58,6 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
 
   private DataStructureUtil dataStructureUtil;
   private SpecMilestone specMilestone;
-  private final UInt256 executionPayloadValue = UInt256.valueOf(12345);
-  private final UInt256 consensusBlockValue = UInt256.valueOf(123);
-
-  private final String consensusBlockValueWei =
-      EthConstants.GWEI_TO_WEI.multiply(consensusBlockValue).toDecimalString();
 
   @BeforeEach
   void setup(final TestSpecInvocationContextProvider.SpecContext specContext) {
@@ -74,32 +65,24 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
     specMilestone = specContext.getSpecMilestone();
     startRestAPIAtGenesis(specMilestone);
     dataStructureUtil = specContext.getDataStructureUtil();
-    when(executionLayerBlockProductionManager.getCachedPayloadResult(UInt64.ONE))
-        .thenReturn(
-            Optional.of(
-                new ExecutionPayloadResult(
-                    mock(ExecutionPayloadContext.class),
-                    // we can provide an empty future here as we are only
-                    // preparing execution payload value
-                    Optional.of(SafeFuture.completedFuture(null)),
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.of(SafeFuture.completedFuture(executionPayloadValue)))));
-    final BlockRewardData blockRewardDataMock = mock(BlockRewardData.class);
-    when(blockRewardDataMock.getTotal()).thenReturn(consensusBlockValue.toLong());
-    when(rewardCalculator.getBlockRewardData(any(), any())).thenReturn(blockRewardDataMock);
   }
 
   @TestTemplate
   void shouldGetUnBlindedBeaconBlockAsJson() throws IOException {
     assumeThat(specMilestone).isLessThan(DENEB);
-    final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
-    final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
+    final BlockContainerAndMetaData blockContainerAndMetaData =
+        dataStructureUtil.randomBlockContainerAndMetaData(ONE);
+    final BLSSignature signature =
+        blockContainerAndMetaData.blockContainer().getBlock().getBody().getRandaoReveal();
     when(validatorApiChannel.createUnsignedBlock(
             eq(UInt64.ONE), eq(signature), any(), any(), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconBlock)));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)));
     Response response = get(signature, ContentTypes.JSON);
-    assertResponseWithHeaders(response, false);
+    assertResponseWithHeaders(
+        response,
+        false,
+        blockContainerAndMetaData.executionPayloadValue(),
+        blockContainerAndMetaData.consensusBlockValue());
     final String body = response.body().string();
     assertThat(body).isEqualTo(getExpectedBlockAsJson(specMilestone, false, false));
   }
@@ -107,30 +90,42 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
   @TestTemplate
   void shouldGetUnblindedBeaconBlockAsSsz() throws IOException {
     assumeThat(specMilestone).isLessThan(DENEB);
-    final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
-    final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
+    final BlockContainerAndMetaData blockContainerAndMetaData =
+        dataStructureUtil.randomBlockContainerAndMetaData(ONE);
+    final BLSSignature signature =
+        blockContainerAndMetaData.blockContainer().getBlock().getBody().getRandaoReveal();
     when(validatorApiChannel.createUnsignedBlock(
             eq(UInt64.ONE), eq(signature), any(), any(), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(beaconBlock)));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)));
     Response response = get(signature, ContentTypes.OCTET_STREAM);
-    assertResponseWithHeaders(response, false);
+    assertResponseWithHeaders(
+        response,
+        false,
+        blockContainerAndMetaData.executionPayloadValue(),
+        blockContainerAndMetaData.consensusBlockValue());
     final BeaconBlock result =
         spec.getGenesisSchemaDefinitions()
             .getBeaconBlockSchema()
             .sszDeserialize(Bytes.of(response.body().bytes()));
-    assertThat(result).isEqualTo(beaconBlock);
+    assertThat(result).isEqualTo(blockContainerAndMetaData.blockContainer().getBlock());
   }
 
   @TestTemplate
   void shouldGetBlindedBeaconBlockAsJson() throws IOException {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX);
-    final BeaconBlock blindedBeaconBlock = dataStructureUtil.randomBlindedBeaconBlock(ONE);
-    final BLSSignature signature = blindedBeaconBlock.getBlock().getBody().getRandaoReveal();
+    final BlockContainerAndMetaData blockContainerAndMetaData =
+        dataStructureUtil.randomBlindedBlockContainerAndMetaData(ONE);
+    final BLSSignature signature =
+        blockContainerAndMetaData.blockContainer().getBlock().getBody().getRandaoReveal();
     when(validatorApiChannel.createUnsignedBlock(
             eq(UInt64.ONE), eq(signature), any(), any(), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(blindedBeaconBlock)));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)));
     Response response = get(signature, ContentTypes.JSON);
-    assertResponseWithHeaders(response, true);
+    assertResponseWithHeaders(
+        response,
+        true,
+        blockContainerAndMetaData.executionPayloadValue(),
+        blockContainerAndMetaData.consensusBlockValue());
     final String body = response.body().string();
     assertThat(body).isEqualTo(getExpectedBlockAsJson(specMilestone, true, false));
   }
@@ -138,13 +133,20 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
   @TestTemplate
   void shouldGetBlindedBeaconBlockAsSsz() throws IOException {
     assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX);
+    final BlockContainerAndMetaData blockContainerAndMetaData =
+        dataStructureUtil.randomBlindedBlockContainerAndMetaData(ONE);
     final BeaconBlock blindedBeaconBlock = dataStructureUtil.randomBlindedBeaconBlock(ONE);
-    final BLSSignature signature = blindedBeaconBlock.getBlock().getBody().getRandaoReveal();
+    final BLSSignature signature =
+        blockContainerAndMetaData.blockContainer().getBlock().getBody().getRandaoReveal();
     when(validatorApiChannel.createUnsignedBlock(
             eq(UInt64.ONE), eq(signature), any(), any(), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(blindedBeaconBlock)));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)));
     Response response = get(signature, ContentTypes.OCTET_STREAM);
-    assertResponseWithHeaders(response, true);
+    assertResponseWithHeaders(
+        response,
+        true,
+        blockContainerAndMetaData.executionPayloadValue(),
+        blockContainerAndMetaData.consensusBlockValue());
     final BeaconBlock result =
         spec.getGenesisSchemaDefinitions()
             .getBlindedBeaconBlockSchema()
@@ -155,13 +157,19 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
   @TestTemplate
   void shouldGetUnBlindedBlockContentPostDenebAsJson() throws IOException {
     assumeThat(specMilestone).isEqualTo(DENEB);
-    final BlockContents blockContents = dataStructureUtil.randomBlockContents(ONE);
-    final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
+    final BlockContainerAndMetaData blockContainerAndMetaData =
+        dataStructureUtil.randomBlockContainerAndMetaData(ONE);
+    final BLSSignature signature =
+        blockContainerAndMetaData.blockContainer().getBlock().getBody().getRandaoReveal();
     when(validatorApiChannel.createUnsignedBlock(
             eq(UInt64.ONE), eq(signature), any(), any(), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(blockContents)));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)));
     Response response = get(signature, ContentTypes.JSON);
-    assertResponseWithHeaders(response, false);
+    assertResponseWithHeaders(
+        response,
+        false,
+        blockContainerAndMetaData.executionPayloadValue(),
+        blockContainerAndMetaData.consensusBlockValue());
     final String body = response.body().string();
     assertThat(body).isEqualTo(getExpectedBlockAsJson(specMilestone, false, true));
   }
@@ -170,12 +178,18 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
   void shouldGetUnBlindedBlockContentPostDenebAsSsz() throws IOException {
     assumeThat(specMilestone).isEqualTo(DENEB);
     final BlockContents blockContents = dataStructureUtil.randomBlockContents(ONE);
+    final BlockContainerAndMetaData blockContainerAndMetaData =
+        dataStructureUtil.randomBlockContainerAndMetaData(blockContents, ONE);
     final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
     when(validatorApiChannel.createUnsignedBlock(
             eq(UInt64.ONE), eq(signature), any(), any(), any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(blockContents)));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)));
     Response response = get(signature, ContentTypes.OCTET_STREAM);
-    assertResponseWithHeaders(response, false);
+    assertResponseWithHeaders(
+        response,
+        false,
+        blockContainerAndMetaData.executionPayloadValue(),
+        blockContainerAndMetaData.consensusBlockValue());
     final BlockContents result =
         (BlockContents)
             spec.getGenesisSchemaDefinitions()
@@ -217,7 +231,11 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
         Resources.getResource(GetNewBlockV3IntegrationTest.class, fileName), UTF_8);
   }
 
-  private void assertResponseWithHeaders(Response response, boolean blinded) {
+  private void assertResponseWithHeaders(
+      Response response,
+      boolean blinded,
+      final UInt256 executionPayloadValue,
+      final UInt256 consensusBlockValue) {
     assertThat(response.code()).isEqualTo(SC_OK);
     assertThat(response.header(HEADER_CONSENSUS_VERSION))
         .isEqualTo(specMilestone.name().toLowerCase(Locale.ROOT));
@@ -225,6 +243,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
         .isEqualTo(Boolean.toString(blinded));
     assertThat(response.header(HEADER_EXECUTION_PAYLOAD_VALUE))
         .isEqualTo(executionPayloadValue.toDecimalString());
-    assertThat(response.header(HEADER_CONSENSUS_BLOCK_VALUE)).isEqualTo(consensusBlockValueWei);
+    assertThat(response.header(HEADER_CONSENSUS_BLOCK_VALUE))
+        .isEqualTo(consensusBlockValue.toDecimalString());
   }
 }

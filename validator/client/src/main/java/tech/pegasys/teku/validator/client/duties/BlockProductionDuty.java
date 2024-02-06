@@ -32,6 +32,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -93,9 +94,9 @@ public class BlockProductionDuty implements Duty {
                     () -> createUnsignedBlock(signature), this, ValidatorDutyMetricsSteps.CREATE))
         .thenCompose(this::validateBlock)
         .thenCompose(
-            blockContainer ->
+            blockContainerAndMetaData ->
                 validatorDutyMetrics.record(
-                    () -> signBlockContainer(forkInfo, blockContainer),
+                    () -> signBlockContainer(forkInfo, blockContainerAndMetaData),
                     this,
                     ValidatorDutyMetricsSteps.SIGN))
         .thenCompose(
@@ -109,7 +110,7 @@ public class BlockProductionDuty implements Duty {
     return validator.getSigner().createRandaoReveal(spec.computeEpochAtSlot(slot), forkInfo);
   }
 
-  private SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
+  private SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
       final BLSSignature randaoReveal) {
     if (blockV3Enabled) {
       return validatorApiChannel.createUnsignedBlock(
@@ -125,10 +126,12 @@ public class BlockProductionDuty implements Duty {
   }
 
   private SafeFuture<BlockContainer> validateBlock(
-      final Optional<BlockContainer> maybeBlockContainer) {
+      final Optional<BlockContainerAndMetaData> maybeBlockContainer) {
     final BlockContainer unsignedBlockContainer =
-        maybeBlockContainer.orElseThrow(
-            () -> new IllegalStateException("Node was not syncing but could not create block"));
+        maybeBlockContainer
+            .map(BlockContainerAndMetaData::blockContainer)
+            .orElseThrow(
+                () -> new IllegalStateException("Node was not syncing but could not create block"));
     checkArgument(
         unsignedBlockContainer.getSlot().equals(slot),
         "Unsigned block slot (%s) does not match expected slot %s",

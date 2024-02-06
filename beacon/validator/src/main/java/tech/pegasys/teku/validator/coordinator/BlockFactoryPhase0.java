@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.constants.EthConstants.GWEI_TO_WEI;
 
 import java.util.Collections;
 import java.util.List;
@@ -26,10 +27,12 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.SlotCaches;
 
 public class BlockFactoryPhase0 implements BlockFactory {
 
@@ -43,7 +46,7 @@ public class BlockFactoryPhase0 implements BlockFactory {
   }
 
   @Override
-  public SafeFuture<BlockContainer> createUnsignedBlock(
+  public SafeFuture<BlockContainerAndMetaData> createUnsignedBlock(
       final BeaconState blockSlotState,
       final UInt64 proposalSlot,
       final BLSSignature randaoReveal,
@@ -76,7 +79,17 @@ public class BlockFactoryPhase0 implements BlockFactory {
                 requestedBuilderBoostFactor,
                 blockProductionPerformance),
             blockProductionPerformance)
-        .thenApply(BeaconBlockAndState::getBlock);
+        .thenApply(this::beaconBlockAndStateToBlockContainerAndMetaData);
+  }
+
+  private BlockContainerAndMetaData beaconBlockAndStateToBlockContainerAndMetaData(
+      final BeaconBlockAndState blockAndState) {
+    SlotCaches slotCaches = BeaconStateCache.getSlotCaches(blockAndState.getState());
+    return new BlockContainerAndMetaData(
+        blockAndState.getBlock(),
+        spec.atSlot(blockAndState.getSlot()).getMilestone(),
+        slotCaches.getBlockExecutionValue(),
+        GWEI_TO_WEI.multiply(slotCaches.getBlockProposerRewards().longValue()));
   }
 
   @Override

@@ -49,6 +49,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.validator.remote.typedef.BlockProductionV3FailedException;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
@@ -103,7 +104,7 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
                 });
   }
 
-  public Optional<BlockContainer> createUnsignedBlock(
+  public Optional<BlockContainerAndMetaData> createUnsignedBlock(
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
       final Optional<UInt64> requestedBuilderBoostFactor) {
@@ -125,7 +126,13 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
             queryParams,
             headers,
             this.responseHandler)
-        .map(ProduceBlockResponse::getData);
+        .map(
+            response ->
+                new BlockContainerAndMetaData(
+                    response.getData(),
+                    response.getSpecMilestone(),
+                    response.executionPayloadValue,
+                    response.consensusBlockValue));
   }
 
   private Optional<ProduceBlockResponse> handleBlockContainerResult(
