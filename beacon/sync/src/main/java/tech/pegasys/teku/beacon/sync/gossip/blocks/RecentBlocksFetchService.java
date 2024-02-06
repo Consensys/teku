@@ -128,6 +128,14 @@ public class RecentBlocksFetchService
     removeTask(task);
   }
 
+  @Override
+  public void onBlockValidated(final SignedBeaconBlock block) {}
+
+  @Override
+  public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
+    cancelRecentBlockRequest(block.getRoot());
+  }
+
   private void setupSubscribers() {
     pendingBlockPool.subscribeRequiredBlockRoot(this::requestRecentBlock);
     pendingBlockPool.subscribeRequiredBlockRootDropped(this::cancelRecentBlockRequest);

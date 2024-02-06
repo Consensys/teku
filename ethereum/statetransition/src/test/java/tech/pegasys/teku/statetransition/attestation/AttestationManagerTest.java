@@ -245,10 +245,10 @@ class AttestationManagerTest {
     verifyNoMoreInteractions(forkChoice);
 
     // Importing a different block shouldn't cause the attestation to be processed
-    attestationManager.onBlockImported(dataStructureUtil.randomSignedBeaconBlock(2));
+    attestationManager.onBlockImported(dataStructureUtil.randomSignedBeaconBlock(2), false);
     verifyNoMoreInteractions(forkChoice);
 
-    attestationManager.onBlockImported(block);
+    attestationManager.onBlockImported(block, false);
     verify(forkChoice, times(2)).onAttestation(attestation);
     assertThat(futureAttestations.size()).isZero();
     assertThat(pendingAttestations.size()).isZero();
@@ -273,7 +273,7 @@ class AttestationManagerTest {
 
     assertThat(pendingAttestations.contains(attestation)).isTrue();
 
-    attestationManager.onBlockImported(block);
+    attestationManager.onBlockImported(block, false);
     verify(forkChoice, times(2)).onAttestation(attestation);
     // Validate for gossip, but it is ignored so shouldn't send to gossip
     verify(aggregateValidator).validate(attestation);
