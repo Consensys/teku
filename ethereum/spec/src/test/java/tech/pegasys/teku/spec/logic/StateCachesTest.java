@@ -55,7 +55,7 @@ public class StateCachesTest {
 
   @BeforeEach
   void setUp() {
-    storageSystem.chainUpdater().initializeGenesis();
+    chainUpdater.initializeGenesis();
     bestBlock = chainUpdater.advanceChainUntil(2);
 
     // To avoid inheriting noop caches from the genesis generator, we need to recreate the state
