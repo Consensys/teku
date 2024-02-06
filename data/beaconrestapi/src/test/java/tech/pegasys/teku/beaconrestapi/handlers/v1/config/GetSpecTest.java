@@ -23,8 +23,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ConfigProvider;
+import tech.pegasys.teku.api.SpecConfigData;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
-import tech.pegasys.teku.ethereum.json.types.config.SpecConfigData;
 
 class GetSpecTest extends AbstractMigratedBeaconHandlerTest {
   private final ConfigProvider configProvider = new ConfigProvider(spec);

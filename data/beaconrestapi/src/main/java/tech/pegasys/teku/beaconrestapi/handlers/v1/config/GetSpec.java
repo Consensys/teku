@@ -23,7 +23,7 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_R
 import com.fasterxml.jackson.core.JsonProcessingException;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.ethereum.json.types.config.SpecConfigData;
+import tech.pegasys.teku.api.SpecConfigData;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
