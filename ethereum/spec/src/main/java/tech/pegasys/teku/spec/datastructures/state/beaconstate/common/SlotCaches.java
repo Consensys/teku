@@ -76,7 +76,7 @@ public class SlotCaches {
   }
 
   // Called at the end of every slot transition (processSlot)
-  // Note: this is always called before the block is processed (if block is proposed)
+  // Note: this is always called before the block is processed
   public void onSlotProcessed() {
     this.blockProposerRewards = UInt64.ZERO;
     this.blockExecutionValue = UInt256.ZERO;
