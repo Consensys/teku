@@ -43,9 +43,9 @@ class MutableBeaconStateAltairImpl extends AbstractMutableBeaconState<BeaconStat
       TreeNode backingNode,
       IntCache<SszData> viewCache,
       TransitionCaches transitionCaches,
-      SlotCaches stateTransitionCaches) {
+      SlotCaches slotCaches) {
     return new BeaconStateAltairImpl(
-        getSchema(), backingNode, viewCache, transitionCaches, stateTransitionCaches);
+        getSchema(), backingNode, viewCache, transitionCaches, slotCaches);
   }
 
   @Override

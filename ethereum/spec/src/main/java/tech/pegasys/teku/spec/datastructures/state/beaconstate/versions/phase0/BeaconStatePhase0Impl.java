@@ -39,8 +39,8 @@ class BeaconStatePhase0Impl extends AbstractBeaconState<MutableBeaconStatePhase0
       TreeNode backingNode,
       IntCache<SszData> cache,
       TransitionCaches transitionCaches,
-      SlotCaches stateTransitionCaches) {
-    super(type, backingNode, cache, transitionCaches, stateTransitionCaches);
+      SlotCaches slotCaches) {
+    super(type, backingNode, cache, transitionCaches, slotCaches);
   }
 
   BeaconStatePhase0Impl(

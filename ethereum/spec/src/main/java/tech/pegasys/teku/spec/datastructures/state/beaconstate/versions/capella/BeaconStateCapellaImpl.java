@@ -40,8 +40,8 @@ public class BeaconStateCapellaImpl extends AbstractBeaconState<MutableBeaconSta
       TreeNode backingNode,
       IntCache<SszData> cache,
       TransitionCaches transitionCaches,
-      SlotCaches stateTransitionCaches) {
-    super(type, backingNode, cache, transitionCaches, stateTransitionCaches);
+      SlotCaches slotCaches) {
+    super(type, backingNode, cache, transitionCaches, slotCaches);
   }
 
   BeaconStateCapellaImpl(

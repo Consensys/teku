@@ -29,13 +29,8 @@ public class SlotCaches {
   private volatile UInt64 blockProposerRewards = UInt64.ZERO;
   private volatile UInt256 blockExecutionValue = UInt256.ZERO;
 
-  private static final SlotCaches NO_OP_INSTANCE =
-      new SlotCaches() {
-        @Override
-        public SlotCaches copy() {
-          return this;
-        }
-      };
+  // currently there are no actual caches, so NOOP behaves same as a new instance
+  private static final SlotCaches NO_OP_INSTANCE = new SlotCaches() {};
 
   private SlotCaches(final UInt64 blockProposerRewards, final UInt256 blockExecutionValue) {
     this.blockProposerRewards = blockProposerRewards;

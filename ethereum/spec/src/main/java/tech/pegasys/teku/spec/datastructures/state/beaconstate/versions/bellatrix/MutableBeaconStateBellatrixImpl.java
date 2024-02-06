@@ -46,9 +46,9 @@ class MutableBeaconStateBellatrixImpl extends AbstractMutableBeaconState<BeaconS
       TreeNode backingNode,
       IntCache<SszData> viewCache,
       TransitionCaches transitionCaches,
-      SlotCaches stateTransitionCaches) {
+      SlotCaches slotCaches) {
     return new BeaconStateBellatrixImpl(
-        getSchema(), backingNode, viewCache, transitionCaches, stateTransitionCaches);
+        getSchema(), backingNode, viewCache, transitionCaches, slotCaches);
   }
 
   @Override

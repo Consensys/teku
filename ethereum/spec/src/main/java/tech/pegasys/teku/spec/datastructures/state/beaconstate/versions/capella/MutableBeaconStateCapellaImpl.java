@@ -40,9 +40,9 @@ public class MutableBeaconStateCapellaImpl
       final TreeNode backingNode,
       final IntCache<SszData> viewCache,
       final TransitionCaches transitionCaches,
-      final SlotCaches stateTransitionCaches) {
+      final SlotCaches slotCaches) {
     return new BeaconStateCapellaImpl(
-        getSchema(), backingNode, viewCache, transitionCaches, stateTransitionCaches);
+        getSchema(), backingNode, viewCache, transitionCaches, slotCaches);
   }
 
   @Override

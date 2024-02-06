@@ -45,9 +45,9 @@ class MutableBeaconStatePhase0Impl extends AbstractMutableBeaconState<BeaconStat
       TreeNode backingNode,
       IntCache<SszData> viewCache,
       TransitionCaches transitionCaches,
-      SlotCaches stateTransitionCaches) {
+      SlotCaches slotCaches) {
     return new BeaconStatePhase0Impl(
-        getSchema(), backingNode, viewCache, transitionCaches, stateTransitionCaches);
+        getSchema(), backingNode, viewCache, transitionCaches, slotCaches);
   }
 
   @Override

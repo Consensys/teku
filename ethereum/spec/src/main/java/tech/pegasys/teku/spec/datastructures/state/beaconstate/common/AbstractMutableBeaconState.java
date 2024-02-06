@@ -63,7 +63,7 @@ public abstract class AbstractMutableBeaconState<
       TreeNode backingNode,
       IntCache<SszData> viewCache,
       TransitionCaches transitionCaches,
-      SlotCaches stateTransitionCaches);
+      SlotCaches slotCaches);
 
   @Override
   public TransitionCaches getTransitionCaches() {

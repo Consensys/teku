@@ -39,8 +39,8 @@ public class BeaconStateDenebImpl extends AbstractBeaconState<MutableBeaconState
       final TreeNode backingNode,
       final IntCache<SszData> cache,
       final TransitionCaches transitionCaches,
-      final SlotCaches stateTransitionCaches) {
-    super(type, backingNode, cache, transitionCaches, stateTransitionCaches);
+      final SlotCaches slotCaches) {
+    super(type, backingNode, cache, transitionCaches, slotCaches);
   }
 
   BeaconStateDenebImpl(

@@ -39,8 +39,8 @@ class BeaconStateAltairImpl extends AbstractBeaconState<MutableBeaconStateAltair
       TreeNode backingNode,
       IntCache<SszData> cache,
       TransitionCaches transitionCaches,
-      SlotCaches stateTransitionCaches) {
-    super(type, backingNode, cache, transitionCaches, stateTransitionCaches);
+      SlotCaches slotCaches) {
+    super(type, backingNode, cache, transitionCaches, slotCaches);
   }
 
   BeaconStateAltairImpl(
