@@ -14,7 +14,6 @@
 package tech.pegasys.teku.validator.remote.typedef;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
