@@ -71,7 +71,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.ImportedBlockListener;
+import tech.pegasys.teku.spec.datastructures.blocks.ReceivedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -200,9 +200,7 @@ public class BlockManagerTest {
             blockValidator,
             timeProvider,
             eventLogger,
-            Optional.of(mock(BlockImportMetrics.class)),
-            true,
-            false);
+            Optional.of(mock(BlockImportMetrics.class)));
     forwardBlockImportedNotificationsTo(blockManager);
     localChain
         .chainUpdater()
@@ -244,7 +242,7 @@ public class BlockManagerTest {
 
   @Test
   public void shouldNotifySubscribersOnImport() {
-    final ImportedBlockListener subscriber = mock(ImportedBlockListener.class);
+    final ReceivedBlockListener subscriber = mock(ReceivedBlockListener.class);
     final RecentChainData localRecentChainData = mock(RecentChainData.class);
     blockManager = setupBlockManagerWithMockRecentChainData(localRecentChainData, false);
 
@@ -255,13 +253,14 @@ public class BlockManagerTest {
     incrementSlot();
 
     safeJoinBlockImport(nextBlock);
+    verify(subscriber).onBlockValidated(nextBlock);
     verify(subscriber).onBlockImported(nextBlock, false);
     verify(blockBlobSidecarsTrackersPool).removeAllForBlock(nextBlock.getRoot());
   }
 
   @Test
   public void shouldNotifySubscribersOnKnownBlock() {
-    final ImportedBlockListener subscriber = mock(ImportedBlockListener.class);
+    final ReceivedBlockListener subscriber = mock(ReceivedBlockListener.class);
     final RecentChainData localRecentChainData = mock(RecentChainData.class);
     blockManager = setupBlockManagerWithMockRecentChainData(localRecentChainData, false);
 
@@ -272,16 +271,18 @@ public class BlockManagerTest {
     incrementSlot();
 
     safeJoinBlockImport(nextBlock);
+    verify(subscriber).onBlockValidated(nextBlock);
     verify(subscriber).onBlockImported(nextBlock, false);
 
     assertThatBlockImport(nextBlock)
         .isCompletedWithValue(BlockImportResult.knownBlock(nextBlock, false));
+    verify(subscriber, times(2)).onBlockValidated(nextBlock);
     verify(subscriber, times(2)).onBlockImported(nextBlock, false);
   }
 
   @Test
   public void shouldNotifySubscribersOnKnownOptimisticBlock() {
-    final ImportedBlockListener subscriber = mock(ImportedBlockListener.class);
+    final ReceivedBlockListener subscriber = mock(ReceivedBlockListener.class);
     executionLayer.setPayloadStatus(PayloadStatus.SYNCING);
     final RecentChainData localRecentChainData = mock(RecentChainData.class);
     blockManager = setupBlockManagerWithMockRecentChainData(localRecentChainData, true);
@@ -292,16 +293,18 @@ public class BlockManagerTest {
     incrementSlot();
 
     safeJoinBlockImport(nextBlock);
+    verify(subscriber).onBlockValidated(nextBlock);
     verify(subscriber).onBlockImported(nextBlock, true);
 
     assertThatBlockImport(nextBlock)
         .isCompletedWithValue(BlockImportResult.knownBlock(nextBlock, true));
+    verify(subscriber, times(2)).onBlockValidated(nextBlock);
     verify(subscriber, times(2)).onBlockImported(nextBlock, true);
   }
 
   @Test
   public void shouldNotNotifySubscribersOnInvalidBlock() {
-    final ImportedBlockListener subscriber = mock(ImportedBlockListener.class);
+    final ReceivedBlockListener subscriber = mock(ReceivedBlockListener.class);
     blockManager.subscribeToReceivedBlocks(subscriber);
     final UInt64 nextSlot = GENESIS_SLOT.plus(UInt64.ONE);
     final SignedBeaconBlock validBlock =
@@ -349,9 +352,7 @@ public class BlockManagerTest {
             blockValidator,
             timeProvider,
             eventLogger,
-            Optional.empty(),
-            true,
-            false);
+            Optional.empty());
     forwardBlockImportedNotificationsTo(blockManager);
     assertThat(blockManager.start()).isCompleted();
 
@@ -1189,9 +1190,7 @@ public class BlockManagerTest {
         blockValidator,
         timeProvider,
         eventLogger,
-        Optional.empty(),
-        true,
-        false);
+        Optional.empty());
   }
 
   private SafeFutureAssert<BlockImportResult> assertThatBlockImport(final SignedBeaconBlock block) {

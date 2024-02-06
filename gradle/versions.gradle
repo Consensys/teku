@@ -1,11 +1,11 @@
 dependencyManagement {
   dependencies {
-    dependency 'com.fasterxml.jackson.core:jackson-databind:2.16.0'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.16.0'
-    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.16.0'
-    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.16.0'
+    dependency 'com.fasterxml.jackson.core:jackson-databind:2.16.1'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.16.1'
+    dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.16.1'
+    dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.16.1'
 
-    dependencySet(group: 'com.google.errorprone', version: '2.23.0') {
+    dependencySet(group: 'com.google.errorprone', version: '2.24.1') {
       entry 'error_prone_annotation'
       entry 'error_prone_check_api'
       entry 'error_prone_core'
@@ -14,9 +14,9 @@ dependencyManagement {
 
     dependency 'tech.pegasys.tools.epchecks:errorprone-checks:1.1.1'
 
-    dependency 'com.google.guava:guava:32.1.3-jre'
+    dependency 'com.google.guava:guava:33.0.0-jre'
 
-    dependency 'org.jsoup:jsoup:1.17.1'
+    dependency 'org.jsoup:jsoup:1.17.2'
 
     dependency 'com.launchdarkly:okhttp-eventsource:4.1.1'
 
@@ -40,17 +40,17 @@ dependencyManagement {
 
     dependency 'org.mock-server:mockserver-junit-jupiter:5.15.0'
 
-    dependencySet(group: 'io.swagger.core.v3', version: '2.2.19') {
+    dependencySet(group: 'io.swagger.core.v3', version: '2.2.20') {
       entry 'swagger-parser'
       entry 'swagger-core'
       entry 'swagger-models'
       entry 'swagger-annotations'
     }
     // On update don't forget to change version in tech.pegasys.teku.infrastructure.restapi.SwaggerUIBuilder
-    dependency 'org.webjars:swagger-ui:5.9.0'
+    dependency 'org.webjars:swagger-ui:5.10.3'
     dependency 'org.thymeleaf:thymeleaf:3.1.2.RELEASE'
     dependency 'io.github.classgraph:classgraph:4.8.165'
-    dependencySet(group: 'com.github.oshi', version: '6.4.8') {
+    dependencySet(group: 'com.github.oshi', version: '6.4.11') {
       entry 'oshi-core'
       entry 'oshi-core-java11'
     }
@@ -60,13 +60,13 @@ dependencyManagement {
       entry 'netty-codec-http'
     }
 
-    dependencySet(group: 'io.vertx', version: '4.5.0') {
+    dependencySet(group: 'io.vertx', version: '4.5.2') {
       entry 'vertx-codegen'
       entry 'vertx-core'
       entry 'vertx-unit'
       entry 'vertx-web'
     }
-    dependency 'io.projectreactor:reactor-core:3.6.0'
+    dependency 'io.projectreactor:reactor-core:3.6.2'
 
     dependency 'it.unimi.dsi:fastutil:8.5.12'
 
@@ -94,7 +94,7 @@ dependencyManagement {
 
     dependency 'org.apiguardian:apiguardian-api:1.1.2'
 
-    dependency 'org.assertj:assertj-core:3.24.2'
+    dependency 'org.assertj:assertj-core:3.25.3'
 
     dependency 'org.awaitility:awaitility:4.2.0'
 
@@ -103,13 +103,13 @@ dependencyManagement {
       entry 'bcpkix-jdk18on'
     }
 
-    dependencySet(group: 'org.junit.jupiter', version: '5.10.1') {
+    dependencySet(group: 'org.junit.jupiter', version: '5.10.2') {
       entry 'junit-jupiter-api'
       entry 'junit-jupiter-engine'
       entry 'junit-jupiter-params'
     }
 
-    dependencySet(group: 'org.mockito', version: '5.7.0') {
+    dependencySet(group: 'org.mockito', version: '5.10.0') {
       entry 'mockito-core'
       entry 'mockito-junit-jupiter'
     }
@@ -135,18 +135,18 @@ dependencyManagement {
 
     dependency 'io.prometheus:simpleclient:0.9.0'
 
-    dependencySet(group: 'org.hyperledger.besu.internal', version: '23.10.2') {
+    dependencySet(group: 'org.hyperledger.besu.internal', version: '24.1.1') {
       entry('metrics-core')
       entry('core')
       entry('config')
     }
-    dependencySet(group: 'org.hyperledger.besu', version: '23.10.2') {
+    dependencySet(group: 'org.hyperledger.besu', version: '24.1.1') {
       entry('besu-datatypes')
       entry('evm')
       entry('plugin-api')
     }
 
-    dependencySet(group: 'org.testcontainers', version: '1.19.3') {
+    dependencySet(group: 'org.testcontainers', version: '1.19.4') {
       entry "testcontainers"
       entry "junit-jupiter"
     }
@@ -164,7 +164,7 @@ dependencyManagement {
       entry "org.jupnp.support"
     }
 
-    dependencySet(group: 'io.jsonwebtoken', version: '0.12.3') {
+    dependencySet(group: 'io.jsonwebtoken', version: '0.12.5') {
       entry 'jjwt-api'
       entry 'jjwt-impl'
       entry 'jjwt-jackson'

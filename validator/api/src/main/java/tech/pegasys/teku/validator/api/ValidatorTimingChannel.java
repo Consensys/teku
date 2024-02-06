@@ -13,7 +13,10 @@
 
 package tech.pegasys.teku.validator.api;
 
+import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
@@ -41,4 +44,7 @@ public interface ValidatorTimingChannel extends VoidReturningChannelInterface {
   void onAttesterSlashing(AttesterSlashing attesterSlashing);
 
   void onProposerSlashing(ProposerSlashing proposerSlashing);
+
+  void onUpdatedValidatorStatuses(
+      Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses, boolean possibleMissingEvents);
 }

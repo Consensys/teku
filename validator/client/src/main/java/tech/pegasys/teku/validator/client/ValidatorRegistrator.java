@@ -128,6 +128,7 @@ public class ValidatorRegistrator implements ValidatorTimingChannel {
   @Override
   public void onProposerSlashing(final ProposerSlashing proposerSlashing) {}
 
+  @Override
   public void onUpdatedValidatorStatuses(
       final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
       final boolean possibleMissingEvents) {
