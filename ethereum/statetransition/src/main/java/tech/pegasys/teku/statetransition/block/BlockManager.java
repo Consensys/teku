@@ -181,7 +181,9 @@ public class BlockManager extends Service
   }
 
   @Override
-  public void onBlockValidated(final SignedBeaconBlock block) {}
+  public void onBlockValidated(final SignedBeaconBlock block) {
+    // No-op
+  }
 
   @Override
   public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
