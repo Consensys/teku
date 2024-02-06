@@ -29,14 +29,21 @@ import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 
-/** In order to cover all possible validator slashing scenarios, this acceptance test runs different combinations:
- * - Single Process: VC/BN running in a single process. In this case there is no SEE and the slashing is passed through the ValidatorTimingChannel
- * - Stand-Alone VC: VC/BN running in a separate processes and communicating through the REST APIs and SEE. In this case the slashing event is sent from the BN to the VC through SSE
- * - Single Peer: No network, the slashing event is directly received by the running node
- * - Multi Peers: Multiple running node, the slashing event is received by a first node through the PostAttesterSlashing or PostProposerSlashing REST APIs and then sent to the concerned node either through gossip or within a block
- * - No Blocks: the slashing event is not sent to the correspondent node within a block but rather through p2p gossip network
- * - No Gossip: the slashing event is not sent to the correspondent node through the p2p gossip network but rather within a block
- * */
+/*
+ * In order to cover all possible validator slashing scenarios, this acceptance test runs different
+ * combinations:
+ *  - Single Process: VC/BN running in a single process. In this case there is no SEE.
+ *  - Stand-Alone VC: VC/BN running in a separate processes and communicating through the REST APIs and SEE. In this
+ * case the slashing event is sent from the BN to the VC through SSE.
+ *  - Single Peer: No network, the slashing event is directly received by the running node.
+ *  - Multi Peers: Multiple running nodes, the slashing event is received by a first node through
+ * the PostAttesterSlashing or PostProposerSlashing REST APIs and then sent to the concerned node either through
+ * gossip or within a block.
+ *  - No Blocks: the slashing event is not received by the slashed node within a block but rather through the
+ * proposer_slashing or attester_slashing p2p gossip topics.
+ *  - No Gossip: the slashing event is not received by the slashed node through the proposer_slashing or
+ * attester_slashing p2p gossip topics but rather within a block.
+ */
 public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase {
 
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
@@ -87,6 +94,7 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
 
     tekuNode.waitForLogMessageContaining(
         String.format(slashingActionLog, slashedValidatorKeyPair.getPublicKey().toHexString()));
+    tekuNode.waitForShutDown();
   }
 
   @ParameterizedTest
@@ -129,6 +137,10 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
 
     validatorClient.waitForLogMessageContaining(
         String.format(slashingActionLog, slashedValidatorKeyPair.getPublicKey().toHexString()));
+    validatorClient.waitForShutDown();
+    // Make sure the BN didn't shut down
+    beaconNode.waitForEpochAtOrAbove(4);
+    beaconNode.stop();
   }
 
   @ParameterizedTest
@@ -178,7 +190,9 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
 
     secondTekuNode.waitForLogMessageContaining(
         String.format(slashingActionLog, slashedValidatorKeyPair.getPublicKey().toHexString()));
-
+    secondTekuNode.waitForShutDown();
+    // Make sure the first node didn't shut down
+    firstTekuNode.waitForEpochAtOrAbove(4);
     firstTekuNode.stop();
   }
 
@@ -230,6 +244,9 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
     secondTekuNode.waitForLogMessageContaining(
         String.format(slashingActionLog, slashedValidatorKeyPair.getPublicKey().toHexString()));
 
+    secondTekuNode.waitForShutDown();
+    // Make sure the first node didn't shut down
+    firstTekuNode.waitForEpochAtOrAbove(4);
     firstTekuNode.stop();
   }
 
@@ -280,6 +297,9 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
     secondTekuNode.waitForLogMessageContaining(
         String.format(slashingActionLog, slashedValidatorKeyPair.getPublicKey().toHexString()));
 
+    secondTekuNode.waitForShutDown();
+    // Make sure the first node didn't shut down
+    firstTekuNode.waitForEpochAtOrAbove(4);
     firstTekuNode.stop();
   }
 
@@ -341,9 +361,10 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
 
     secondValidatorClient.waitForLogMessageContaining(
         String.format(slashingActionLog, slashedValidatorKeyPair.getPublicKey().toHexString()));
-
+    secondValidatorClient.waitForShutDown();
+    // Make sure the BN didn't shut down
+    secondBeaconNode.waitForEpochAtOrAbove(4);
     secondBeaconNode.stop();
-    secondValidatorClient.stop();
   }
 
   @ParameterizedTest
@@ -405,8 +426,11 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
     secondValidatorClient.waitForLogMessageContaining(
         String.format(slashingActionLog, slashedValidatorKeyPair.getPublicKey().toHexString()));
 
+    secondValidatorClient.waitForShutDown();
+
+    // Make sure the BN didn't shut down
+    secondBeaconNode.waitForBlockAtOrAfterSlot(4);
     secondBeaconNode.stop();
-    secondValidatorClient.stop();
   }
 
   @ParameterizedTest
@@ -467,8 +491,14 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
     secondValidatorClient.waitForLogMessageContaining(
         String.format(slashingActionLog, slashedValidatorKeyPair.getPublicKey().toHexString()));
 
+    secondValidatorClient.waitForShutDown();
+
+    // Make sure the BN didn't shut down
+    secondBeaconNode.waitForBlockAtOrAfterSlot(4);
+    // Make sure the first node didn't shut down
+    firstTekuNode.waitForBlockAtOrAfterSlot(4);
     secondBeaconNode.stop();
-    secondValidatorClient.stop();
+    firstTekuNode.stop();
   }
 
   private TekuNode.Config configureNode(
