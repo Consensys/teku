@@ -27,7 +27,6 @@ import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationListener;
-import tech.pegasys.teku.spec.datastructures.blocks.ReceivedBlockListener;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -40,7 +39,6 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool.NewBlobSidecarSubscriber;
-import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber;
 import tech.pegasys.teku.statetransition.forkchoice.PreparedProposerInfo;
@@ -59,7 +57,6 @@ public class NodeDataProvider {
   private final OperationPool<SignedVoluntaryExit> voluntaryExitPool;
   private final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool;
   private final SyncCommitteeContributionPool syncCommitteeContributionPool;
-  private final BlockManager blockManager;
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   private final AttestationManager attestationManager;
   private final ActiveValidatorChannel activeValidatorChannel;
@@ -74,7 +71,6 @@ public class NodeDataProvider {
       final OperationPool<SignedVoluntaryExit> voluntaryExitPool,
       final OperationPool<SignedBlsToExecutionChange> blsToExecutionChangePool,
       final SyncCommitteeContributionPool syncCommitteeContributionPool,
-      final BlockManager blockManager,
       final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final AttestationManager attestationManager,
       final boolean isLivenessTrackingEnabled,
@@ -87,7 +83,6 @@ public class NodeDataProvider {
     this.voluntaryExitPool = voluntaryExitPool;
     this.blsToExecutionChangePool = blsToExecutionChangePool;
     this.syncCommitteeContributionPool = syncCommitteeContributionPool;
-    this.blockManager = blockManager;
     this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     this.attestationManager = attestationManager;
     this.activeValidatorChannel = activeValidatorChannel;
@@ -168,10 +163,6 @@ public class NodeDataProvider {
                           .orElse(
                               "Invalid BlsToExecutionChange, it will never pass validation so it's rejected")));
             });
-  }
-
-  public void subscribeToReceivedBlocks(final ReceivedBlockListener listener) {
-    blockManager.subscribeToReceivedBlocks(listener);
   }
 
   public void subscribeToReceivedBlobSidecar(final NewBlobSidecarSubscriber listener) {

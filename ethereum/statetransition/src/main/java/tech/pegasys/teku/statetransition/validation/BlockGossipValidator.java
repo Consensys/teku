@@ -34,30 +34,46 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
+import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 
 public class BlockGossipValidator {
   private static final Logger LOG = LogManager.getLogger();
 
   private final Spec spec;
   private final GossipValidationHelper gossipValidationHelper;
+  private final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher;
+
   private final Set<SlotAndProposer> receivedValidBlockInfoSet =
       LimitedSet.createSynchronized(VALID_BLOCK_SET_SIZE);
 
   public BlockGossipValidator(
-      final Spec spec, final GossipValidationHelper gossipValidationHelper) {
+      final Spec spec,
+      final GossipValidationHelper gossipValidationHelper,
+      final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher) {
     this.spec = spec;
     this.gossipValidationHelper = gossipValidationHelper;
+    this.receivedBlockEventsChannelPublisher = receivedBlockEventsChannelPublisher;
   }
 
   /**
    * Perform gossip validation on a block.
    *
-   * @param block
+   * @param block the block to validate
    * @param isLocallyProduced whether the block was produced locally or received from gossip. The
    *     locally produced flow applies only during broadcast validation.
-   * @return
    */
-  SafeFuture<InternalValidationResult> validate(
+  public SafeFuture<InternalValidationResult> validate(
+      final SignedBeaconBlock block, final boolean isLocallyProduced) {
+    return internalValidate(block, isLocallyProduced)
+        .thenPeek(
+            result -> {
+              if (result.isAccept()) {
+                receivedBlockEventsChannelPublisher.onBlockValidated(block);
+              }
+            });
+  }
+
+  private SafeFuture<InternalValidationResult> internalValidate(
       final SignedBeaconBlock block, final boolean isLocallyProduced) {
 
     if (gossipValidationHelper.isSlotFinalized(block.getSlot())
