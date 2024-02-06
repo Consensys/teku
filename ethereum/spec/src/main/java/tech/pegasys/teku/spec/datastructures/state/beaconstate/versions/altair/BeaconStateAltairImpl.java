@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.SlotCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
 
 class BeaconStateAltairImpl extends AbstractBeaconState<MutableBeaconStateAltair>
@@ -37,8 +38,9 @@ class BeaconStateAltairImpl extends AbstractBeaconState<MutableBeaconStateAltair
       SszCompositeSchema<?> type,
       TreeNode backingNode,
       IntCache<SszData> cache,
-      TransitionCaches transitionCaches) {
-    super(type, backingNode, cache, transitionCaches);
+      TransitionCaches transitionCaches,
+      SlotCaches stateTransitionCaches) {
+    super(type, backingNode, cache, transitionCaches, stateTransitionCaches);
   }
 
   BeaconStateAltairImpl(

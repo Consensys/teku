@@ -30,6 +30,7 @@ public abstract class AbstractMutableBeaconState<
     extends SszMutableContainerImpl implements MutableBeaconState, BeaconStateCache {
 
   private final TransitionCaches transitionCaches;
+  private final SlotCaches slotCaches;
   private final boolean builder;
 
   protected AbstractMutableBeaconState(T backingImmutableView) {
@@ -40,6 +41,7 @@ public abstract class AbstractMutableBeaconState<
     super(backingImmutableView);
     this.transitionCaches =
         builder ? TransitionCaches.getNoOp() : backingImmutableView.getTransitionCaches().copy();
+    this.slotCaches = builder ? SlotCaches.getNoOp() : backingImmutableView.getSlotCaches().copy();
     this.builder = builder;
   }
 
@@ -51,15 +53,26 @@ public abstract class AbstractMutableBeaconState<
   @Override
   protected T createImmutableSszComposite(TreeNode backingNode, IntCache<SszData> viewCache) {
     return createImmutableBeaconState(
-        backingNode, viewCache, builder ? TransitionCaches.createNewEmpty() : transitionCaches);
+        backingNode,
+        viewCache,
+        builder ? TransitionCaches.createNewEmpty() : transitionCaches,
+        builder ? SlotCaches.createNewEmpty() : slotCaches);
   }
 
   protected abstract T createImmutableBeaconState(
-      TreeNode backingNode, IntCache<SszData> viewCache, TransitionCaches transitionCache);
+      TreeNode backingNode,
+      IntCache<SszData> viewCache,
+      TransitionCaches transitionCaches,
+      SlotCaches stateTransitionCaches);
 
   @Override
   public TransitionCaches getTransitionCaches() {
     return transitionCaches;
+  }
+
+  @Override
+  public SlotCaches getSlotCaches() {
+    return slotCaches;
   }
 
   @Override

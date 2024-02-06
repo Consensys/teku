@@ -21,6 +21,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractMutableBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.SlotCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
 
 class MutableBeaconStatePhase0Impl extends AbstractMutableBeaconState<BeaconStatePhase0Impl>
@@ -41,8 +42,12 @@ class MutableBeaconStatePhase0Impl extends AbstractMutableBeaconState<BeaconStat
 
   @Override
   protected BeaconStatePhase0Impl createImmutableBeaconState(
-      TreeNode backingNode, IntCache<SszData> viewCache, TransitionCaches transitionCache) {
-    return new BeaconStatePhase0Impl(getSchema(), backingNode, viewCache, transitionCache);
+      TreeNode backingNode,
+      IntCache<SszData> viewCache,
+      TransitionCaches transitionCaches,
+      SlotCaches stateTransitionCaches) {
+    return new BeaconStatePhase0Impl(
+        getSchema(), backingNode, viewCache, transitionCaches, stateTransitionCaches);
   }
 
   @Override
