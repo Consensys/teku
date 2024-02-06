@@ -83,8 +83,6 @@ public class OkHttpValidatorTypeDefClient {
         new CreateAttestationDataRequest(baseEndpoint, okHttpClient);
   }
 
-  public Map<String, String> getSpec() {}
-
   public SyncingStatus getSyncingStatus() {
     return getSyncingStatusRequest.getSyncingStatus();
   }
