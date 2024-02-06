@@ -32,9 +32,9 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 /**
  * In order to cover all possible validator slashing scenarios, this acceptance test runs different
  * combinations: <br>
- * - Single Process: VC/BN running in a single process. In this case there is no SEE. <br>
+ * - Single Process: VC/BN running in a single process. In this case there is no SSE. <br>
  * - Stand-Alone VC: VC/BN running in a separate processes and communicating through the REST APIs
- * and SEE. In this case the slashing event is sent from the BN to the VC through SSE. <br>
+ * and SSE. In this case the slashing event is sent from the BN to the VC through SSE. <br>
  * - Single Peer: No network, the slashing event is directly received by the running node. <br>
  * - Multi Peers: Multiple running nodes, the slashing event is received by a first node through the
  * PostAttesterSlashing or PostProposerSlashing REST APIs and then sent to the concerned node either
@@ -50,6 +50,7 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
   private final String network = "swift";
   private final String slashingActionLog =
       "Validator(s) with public key(s) %s got slashed. Shutting down...";
+  private final int shutdownWaitingSeconds = 60;
 
   private enum SlashingEventType {
     PROPOSER_SLASHING,
@@ -94,7 +95,7 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
 
     tekuNode.waitForLogMessageContaining(
         String.format(slashingActionLog, slashedValidatorKeyPair.getPublicKey().toHexString()));
-    tekuNode.waitForShutDown();
+    tekuNode.waitForExit(shutdownWaitingSeconds);
   }
 
   @ParameterizedTest
@@ -137,7 +138,7 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
 
     validatorClient.waitForLogMessageContaining(
         String.format(slashingActionLog, slashedValidatorKeyPair.getPublicKey().toHexString()));
-    validatorClient.waitForShutDown();
+    validatorClient.waitForExit(shutdownWaitingSeconds);
     // Make sure the BN didn't shut down
     beaconNode.waitForEpochAtOrAbove(4);
     beaconNode.stop();
@@ -190,7 +191,7 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
 
     secondTekuNode.waitForLogMessageContaining(
         String.format(slashingActionLog, slashedValidatorKeyPair.getPublicKey().toHexString()));
-    secondTekuNode.waitForShutDown();
+    secondTekuNode.waitForExit(shutdownWaitingSeconds);
     // Make sure the first node didn't shut down
     firstTekuNode.waitForEpochAtOrAbove(4);
     firstTekuNode.stop();
@@ -244,7 +245,7 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
     secondTekuNode.waitForLogMessageContaining(
         String.format(slashingActionLog, slashedValidatorKeyPair.getPublicKey().toHexString()));
 
-    secondTekuNode.waitForShutDown();
+    secondTekuNode.waitForExit(shutdownWaitingSeconds);
     // Make sure the first node didn't shut down
     firstTekuNode.waitForEpochAtOrAbove(4);
     firstTekuNode.stop();
@@ -297,7 +298,7 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
     secondTekuNode.waitForLogMessageContaining(
         String.format(slashingActionLog, slashedValidatorKeyPair.getPublicKey().toHexString()));
 
-    secondTekuNode.waitForShutDown();
+    secondTekuNode.waitForExit(shutdownWaitingSeconds);
     // Make sure the first node didn't shut down
     firstTekuNode.waitForEpochAtOrAbove(4);
     firstTekuNode.stop();
@@ -361,7 +362,7 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
 
     secondValidatorClient.waitForLogMessageContaining(
         String.format(slashingActionLog, slashedValidatorKeyPair.getPublicKey().toHexString()));
-    secondValidatorClient.waitForShutDown();
+    secondValidatorClient.waitForExit(shutdownWaitingSeconds);
     // Make sure the BN didn't shut down
     secondBeaconNode.waitForEpochAtOrAbove(4);
     secondBeaconNode.stop();
@@ -426,7 +427,7 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
     secondValidatorClient.waitForLogMessageContaining(
         String.format(slashingActionLog, slashedValidatorKeyPair.getPublicKey().toHexString()));
 
-    secondValidatorClient.waitForShutDown();
+    secondValidatorClient.waitForExit(shutdownWaitingSeconds);
 
     // Make sure the BN didn't shut down
     secondBeaconNode.waitForBlockAtOrAfterSlot(4);
@@ -491,7 +492,7 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
     secondValidatorClient.waitForLogMessageContaining(
         String.format(slashingActionLog, slashedValidatorKeyPair.getPublicKey().toHexString()));
 
-    secondValidatorClient.waitForShutDown();
+    secondValidatorClient.waitForExit(shutdownWaitingSeconds);
 
     // Make sure the BN didn't shut down
     secondBeaconNode.waitForBlockAtOrAfterSlot(4);
@@ -506,7 +507,7 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
     return node.withNetwork(network).withGenesisTime(genesisTime).withRealNetwork();
   }
 
-  private static BLSKeyPair getBlsKeyPair(int slashedValidatorIndex) {
+  private static BLSKeyPair getBlsKeyPair(final int slashedValidatorIndex) {
     final List<BLSKeyPair> blsKeyPairs =
         new MockStartValidatorKeyPairFactory().generateKeyPairs(0, slashedValidatorIndex + 1);
     return blsKeyPairs.get(slashedValidatorIndex);

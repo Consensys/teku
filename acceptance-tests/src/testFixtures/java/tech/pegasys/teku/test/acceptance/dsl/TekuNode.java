@@ -349,7 +349,7 @@ public class TekuNode extends Node {
       final BLSSecretKey secretKey,
       final SigningRootUtil signingRootUtil,
       final ForkInfo forkInfo) {
-    final AttestationData attestationData1 =
+    final AttestationData attestationData =
         new AttestationData(
             slot,
             index,
@@ -361,10 +361,8 @@ public class TekuNode extends Node {
             BLS.sign(
                 secretKey,
                 signingRootUtil.signingRootForSignAttestationData(
-                    attestationData1.asInternalAttestationData(), forkInfo)));
-    final IndexedAttestation indexedAttestation1 =
-        new IndexedAttestation(List.of(index), attestationData1, blsSignature1);
-    return indexedAttestation1;
+                    attestationData.asInternalAttestationData(), forkInfo)));
+    return new IndexedAttestation(List.of(index), attestationData, blsSignature1);
   }
 
   private SignedBeaconBlockHeader randomSignedBeaconBlockHeader(
@@ -373,17 +371,14 @@ public class TekuNode extends Node {
       final BLSSecretKey secretKey,
       final SigningRootUtil signingRootUtil,
       final ForkInfo forkInfo) {
-    final BeaconBlockHeader beaconBlockHeader1 =
+    final BeaconBlockHeader beaconBlockHeader =
         new BeaconBlockHeader(slot, index, Bytes32.random(), Bytes32.random(), Bytes32.random());
 
-    final Bytes blockHeaderSigningRoot1 =
+    final Bytes blockHeaderSigningRoot =
         signingRootUtil.signingRootForSignBlockHeader(
-            beaconBlockHeader1.asInternalBeaconBlockHeader(), forkInfo);
-    final BLSSignature blsSignature1 =
-        new BLSSignature(BLS.sign(secretKey, blockHeaderSigningRoot1));
-    final SignedBeaconBlockHeader header1 =
-        new SignedBeaconBlockHeader(beaconBlockHeader1, blsSignature1);
-    return header1;
+            beaconBlockHeader.asInternalBeaconBlockHeader(), forkInfo);
+    final BLSSignature blsSignature = new BLSSignature(BLS.sign(secretKey, blockHeaderSigningRoot));
+    return new SignedBeaconBlockHeader(beaconBlockHeader, blsSignature);
   }
 
   public void submitBlsToExecutionChange(
