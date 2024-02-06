@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.remote.typedef;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
@@ -81,6 +82,8 @@ public class OkHttpValidatorTypeDefClient {
     this.createAttestationDataRequest =
         new CreateAttestationDataRequest(baseEndpoint, okHttpClient);
   }
+
+  public Map<String, String> getSpec() {}
 
   public SyncingStatus getSyncingStatus() {
     return getSyncingStatusRequest.getSyncingStatus();

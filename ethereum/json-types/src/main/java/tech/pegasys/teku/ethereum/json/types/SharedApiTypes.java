@@ -24,6 +24,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszSchema;
 
 public class SharedApiTypes {
+
   public static final StringValueTypeDefinition<BLSPublicKey> PUBKEY_API_TYPE =
       DeserializableTypeDefinition.string(BLSPublicKey.class)
           .name("Pubkey")

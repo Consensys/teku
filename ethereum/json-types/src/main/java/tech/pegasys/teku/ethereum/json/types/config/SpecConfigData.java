@@ -11,22 +11,23 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api;
+package tech.pegasys.teku.ethereum.json.types.config;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.constants.ValidatorConstants;
 
-public class GetSpecResponse {
+public class SpecConfigData {
   private final SpecConfig specConfig;
 
-  public GetSpecResponse(SpecConfig specConfig) {
+  public SpecConfigData(SpecConfig specConfig) {
     this.specConfig = specConfig;
   }
 
