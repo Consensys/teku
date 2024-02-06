@@ -29,20 +29,20 @@ import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 
-/*
+/**
  * In order to cover all possible validator slashing scenarios, this acceptance test runs different
- * combinations:
- *  - Single Process: VC/BN running in a single process. In this case there is no SEE.
- *  - Stand-Alone VC: VC/BN running in a separate processes and communicating through the REST APIs and SEE. In this
- * case the slashing event is sent from the BN to the VC through SSE.
- *  - Single Peer: No network, the slashing event is directly received by the running node.
- *  - Multi Peers: Multiple running nodes, the slashing event is received by a first node through
- * the PostAttesterSlashing or PostProposerSlashing REST APIs and then sent to the concerned node either through
- * gossip or within a block.
- *  - No Blocks: the slashing event is not received by the slashed node within a block but rather through the
- * proposer_slashing or attester_slashing p2p gossip topics.
- *  - No Gossip: the slashing event is not received by the slashed node through the proposer_slashing or
- * attester_slashing p2p gossip topics but rather within a block.
+ * combinations: <br>
+ * - Single Process: VC/BN running in a single process. In this case there is no SEE. <br>
+ * - Stand-Alone VC: VC/BN running in a separate processes and communicating through the REST APIs
+ * and SEE. In this case the slashing event is sent from the BN to the VC through SSE. <br>
+ * - Single Peer: No network, the slashing event is directly received by the running node. <br>
+ * - Multi Peers: Multiple running nodes, the slashing event is received by a first node through the
+ * PostAttesterSlashing or PostProposerSlashing REST APIs and then sent to the concerned node either
+ * through gossip or within a block. <br>
+ * - No Blocks: the slashing event is not received by the slashed node within a block but rather
+ * through the proposer_slashing or attester_slashing p2p gossip topics. <br>
+ * - No Gossip: the slashing event is not received by the slashed node through the proposer_slashing
+ * or attester_slashing p2p gossip topics but rather within a block. <br>
  */
 public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase {
 
