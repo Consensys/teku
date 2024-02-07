@@ -31,11 +31,13 @@ public class ProposerSlashingGenerator {
   private final Spec spec;
   private final List<BLSKeyPair> validatorKeys;
   private final DataStructureUtil dataStructureUtil;
+  private final SigningRootUtil signingRootUtil;
 
   public ProposerSlashingGenerator(final Spec spec, final List<BLSKeyPair> validatorKeys) {
     this.spec = spec;
     this.validatorKeys = validatorKeys;
     this.dataStructureUtil = new DataStructureUtil(spec);
+    this.signingRootUtil = new SigningRootUtil(spec);
   }
 
   public ProposerSlashing createProposerSlashingForBlock(
@@ -60,7 +62,7 @@ public class ProposerSlashingGenerator {
       final BeaconBlockHeader blockHeader, final BeaconState state) {
     final BLSKeyPair proposerKeyPair = validatorKeys.get(blockHeader.getProposerIndex().intValue());
     final Bytes signingRootForSignBlockHeader =
-        new SigningRootUtil(spec).signingRootForSignBlockHeader(blockHeader, state.getForkInfo());
+        signingRootUtil.signingRootForSignBlockHeader(blockHeader, state.getForkInfo());
     return new SignedBeaconBlockHeader(
         blockHeader, sign(proposerKeyPair, signingRootForSignBlockHeader));
   }
