@@ -191,4 +191,18 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(depositTreeSnapshotConfiguration.getCheckpointSyncDepositSnapshotUrl())
         .hasValue("http://checkpoint-sync.com" + DEPOSIT_SNAPSHOT_URL_PATH);
   }
+
+  @Test
+  public void
+      shouldDisableBundledDepositSnapshotWhenUsingCustomDepositSnapshotWithCheckpointSyncUrl() {
+    final String[] args = {
+      "--Xdeposit-snapshot", "/foo/bar", "--checkpoint-sync-url", "http://checkpoint-sync.com"
+    };
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    final DepositTreeSnapshotConfiguration depositTreeSnapshotConfiguration =
+        config.powchain().getDepositTreeSnapshotConfiguration();
+    assertThat(depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()).isFalse();
+    assertThat(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath())
+        .hasValue("/foo/bar");
+  }
 }
