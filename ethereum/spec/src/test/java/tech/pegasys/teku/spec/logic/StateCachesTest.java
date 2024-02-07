@@ -21,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import tech.pegasys.teku.api.RewardCalculator;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -53,20 +54,13 @@ public class StateCachesTest {
   private BeaconState stateWithCaches;
   private SignedBlockAndState bestBlock;
 
+  private final RewardCalculator rewardCalculator = new RewardCalculator(spec);
+
   @BeforeEach
   void setUp() {
     chainUpdater.initializeGenesis();
     bestBlock = chainUpdater.advanceChainUntil(2);
-
-    // To avoid inheriting noop caches from the genesis generator, we need to recreate the state
-    // from scratch so it gets real caches
-    stateWithCaches =
-        (BeaconState)
-            bestBlock
-                .getState()
-                .getSchema()
-                .createFromBackingNode(bestBlock.getState().getBackingNode());
-
+    stateWithCaches = bestBlock.getState();
     assertThat(BeaconStateCache.getSlotCaches(stateWithCaches)).isNotEqualTo(SlotCaches.getNoOp());
     assertThat(BeaconStateCache.getTransitionCaches(stateWithCaches))
         .isNotEqualTo(TransitionCaches.getNoOp());
@@ -121,13 +115,13 @@ public class StateCachesTest {
                 BLSSignatureVerifier.NO_OP,
                 Optional.empty());
 
-    if (blockRewardsSource == BlockRewardsSource.NONE) {
-      assertThat(BeaconStateCache.getSlotCaches(stateAtSlot3WithBlock).getBlockProposerRewards())
-          .isEqualByComparingTo(UInt64.ZERO);
-    } else {
-      assertThat(BeaconStateCache.getSlotCaches(stateAtSlot3WithBlock).getBlockProposerRewards())
-          .matches(rewards -> rewards.isGreaterThan(UInt64.ZERO));
-    }
+    final UInt64 expectedRewards =
+        UInt64.valueOf(
+            rewardCalculator
+                .getBlockRewardData(blockAtSlot3.getMessage(), stateWithCaches)
+                .getTotal());
+    assertThat(BeaconStateCache.getSlotCaches(stateAtSlot3WithBlock).getBlockProposerRewards())
+        .isEqualByComparingTo(expectedRewards);
 
     // execution value should not be affected by block processing
     assertThat(BeaconStateCache.getSlotCaches(stateAtSlot3WithBlock).getBlockExecutionValue())

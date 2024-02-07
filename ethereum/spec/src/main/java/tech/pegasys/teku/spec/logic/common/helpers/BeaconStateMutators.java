@@ -236,15 +236,19 @@ public class BeaconStateMutators {
 
     // Apply proposer and whistleblower rewards
     int proposerIndex = beaconStateAccessors.getBeaconProposerIndex(state);
-    if (whistleblowerIndex == -1) {
-      whistleblowerIndex = proposerIndex;
-    }
 
-    UInt64 whistleblowerReward =
+    final UInt64 whistleblowerReward =
         validator.getEffectiveBalance().dividedBy(specConfig.getWhistleblowerRewardQuotient());
-    UInt64 proposerReward = calculateProposerReward(whistleblowerReward);
-    increaseProposerBalance(state, proposerIndex, proposerReward);
-    increaseBalance(state, whistleblowerIndex, whistleblowerReward.minus(proposerReward));
+
+    if (whistleblowerIndex == -1) {
+      // proposer takes all rewards
+      increaseProposerBalance(state, proposerIndex, whistleblowerReward);
+    } else {
+      // split between proposer and whistleblower
+      final UInt64 proposerReward = calculateProposerReward(whistleblowerReward);
+      increaseProposerBalance(state, proposerIndex, proposerReward);
+      increaseBalance(state, whistleblowerIndex, whistleblowerReward.minus(proposerReward));
+    }
   }
 
   protected UInt64 calculateProposerReward(final UInt64 whistleblowerReward) {
