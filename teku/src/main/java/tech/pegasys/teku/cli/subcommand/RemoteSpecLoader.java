@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpClientAuth;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
+import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
 
 class RemoteSpecLoader {
 
@@ -114,6 +115,15 @@ class RemoteSpecLoader {
     return apiEndpoints.stream()
         .map(apiEndpoint -> new OkHttpValidatorRestApiClient(apiEndpoint, okHttpClient))
         .toList();
+
+    // todo could move to separate method
+    final boolean preferSszBlockEncoding = validatorConfig.isValidatorClientUseSszBlocksEnabled();
+    final HttpUrl httpUrl; // todo use apiEndpoints variable to create type def
+    final Spec spec;
+    final OkHttpValidatorTypeDefClient typeDefClient = // todo here type def client made
+        new OkHttpValidatorTypeDefClient(okHttpClient, apiEndpoints, spec, preferSszBlockEncoding);
+
+    // todo
   }
 
   private static List<HttpUrl> stripAuthentication(final List<HttpUrl> endpoints) {

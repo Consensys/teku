@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.remote.typedef;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
@@ -38,6 +39,7 @@ import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAttestationData
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetGenesisRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetProposerDutiesRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.GetSpecRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetStateValidatorsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetSyncingStatusRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.ProduceBlockRequest;
@@ -53,6 +55,7 @@ public class OkHttpValidatorTypeDefClient {
 
   private final Spec spec;
   private final boolean preferSszBlockEncoding;
+  private final GetSpecRequest getSpecRequest;
   private final GetSyncingStatusRequest getSyncingStatusRequest;
   private final GetGenesisRequest getGenesisRequest;
   private final GetProposerDutiesRequest getProposerDutiesRequest;
@@ -70,6 +73,7 @@ public class OkHttpValidatorTypeDefClient {
     this.baseEndpoint = baseEndpoint;
     this.spec = spec;
     this.preferSszBlockEncoding = preferSszBlockEncoding;
+    this.getSpecRequest = new GetSpecRequest(baseEndpoint, okHttpClient);
     this.getSyncingStatusRequest = new GetSyncingStatusRequest(okHttpClient, baseEndpoint);
     this.getGenesisRequest = new GetGenesisRequest(okHttpClient, baseEndpoint);
     this.getProposerDutiesRequest = new GetProposerDutiesRequest(baseEndpoint, okHttpClient);
@@ -80,6 +84,10 @@ public class OkHttpValidatorTypeDefClient {
         new RegisterValidatorsRequest(baseEndpoint, okHttpClient, false);
     this.createAttestationDataRequest =
         new CreateAttestationDataRequest(baseEndpoint, okHttpClient);
+  }
+
+  public Optional<Map<String, String>> getSpec() {
+    return getSpecRequest.getSpec();
   }
 
   public SyncingStatus getSyncingStatus() {

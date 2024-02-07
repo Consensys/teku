@@ -534,7 +534,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
       final AsyncRunner asyncRunner) {
     final OkHttpValidatorRestApiClient apiClient =
         new OkHttpValidatorRestApiClient(endpoint, httpClient);
-    final OkHttpValidatorTypeDefClient typeDefClient =
+    final OkHttpValidatorTypeDefClient typeDefClient = // todo here type def client made
         new OkHttpValidatorTypeDefClient(httpClient, endpoint, spec, preferSszBlockEncoding);
     return new RemoteValidatorApiHandler(
         endpoint, spec, apiClient, typeDefClient, asyncRunner, usePostValidatorsEndpoint);
