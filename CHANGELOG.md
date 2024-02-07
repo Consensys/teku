@@ -18,7 +18,6 @@ the [releases page](https://github.com/Consensys/teku/releases).
 
 ### Additions and Improvements
 - Improved compatibility with `/eth/v3/validator/blocks/{slot}` experimental beacon API for block production. It can now respond with blinded and unblinded content based on the block production flow. It also supports the `builder_boost_factor` parameter.
-
 - Add `block_gossip` SSE event as per https://github.com/ethereum/beacon-APIs/pull/405
-
+- - Deposit tree snapshots will be downloaded from checkpoint-sync-url when available [#7715](https://github.com/Consensys/teku/issues/7715)
 ### Bug Fixes
