@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.test.acceptance;
+package tech.pegasys.teku.test.acceptance.validatorslasshingdetection;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -21,21 +21,6 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 
-/**
- * In order to cover all possible validator slashing scenarios, this acceptance test runs different
- * combinations: <br>
- * - Single Process: VC/BN running in a single process. In this case there is no SSE. <br>
- * - Stand-Alone VC: VC/BN running in a separate processes and communicating through the REST APIs
- * and SSE. In this case the slashing event is sent from the BN to the VC through SSE. <br>
- * - Single Peer: No network, the slashing event is directly received by the running node. <br>
- * - Multi Peers: Multiple running nodes, the slashing event is received by a first node through the
- * PostAttesterSlashing or PostProposerSlashing REST APIs and then sent to the concerned node either
- * through gossip or within a block. <br>
- * - No Blocks: the slashing event is not received by the slashed node within a block but rather
- * through the proposer_slashing or attester_slashing p2p gossip topics. <br>
- * - No Gossip: the slashing event is not received by the slashed node through the proposer_slashing
- * or attester_slashing p2p gossip topics but rather within a block. <br>
- */
 public class ValidatorSlashingDetectionSinglePeerAcceptanceTest
     extends ValidatorSlashingDetectionAcceptanceTest {
 
