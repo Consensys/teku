@@ -131,26 +131,30 @@ public class StateCachesTest {
   private SignedBeaconBlock createWorthyBlock(final BlockRewardsSource blockRewardsSource) {
     final ChainBuilder.BlockOptions blockOptions = ChainBuilder.BlockOptions.create();
 
-    switch (blockRewardsSource) {
-      case ATTESTATION -> {
-        final Attestation attestation =
-            chainBuilder.streamValidAttestationsForBlockAtSlot(3).findFirst().orElseThrow();
+    if (blockRewardsSource.isAttestation()) {
+      final Attestation attestation =
+          chainBuilder.streamValidAttestationsForBlockAtSlot(3).findFirst().orElseThrow();
 
-        blockOptions.addAttestation(attestation);
-      }
-      case SYNC_COMMITTEE -> {
-        final SyncAggregate syncAggregate =
-            dataStructureUtil.randomSyncAggregate(
-                0, 3, 4, 7, 8, 9, 10, 16, 17, 20, 23, 25, 26, 29, 30);
-        blockOptions.setSyncAggregate(syncAggregate);
-      }
-      case SLASHING -> {
-        final Attestation attestation =
-            chainBuilder.streamValidAttestationsForBlockAtSlot(3).findFirst().orElseThrow();
-        blockOptions.addAttesterSlashing(
-            chainBuilder.createAttesterSlashingForAttestation(attestation, bestBlock));
-      }
-      case NONE -> {}
+      blockOptions.addAttestation(attestation);
+    }
+
+    if (blockRewardsSource.isSyncCommittee()) {
+      final SyncAggregate syncAggregate =
+          dataStructureUtil.randomSyncAggregate(
+              0, 3, 4, 7, 8, 9, 10, 16, 17, 20, 23, 25, 26, 29, 30);
+      blockOptions.setSyncAggregate(syncAggregate);
+    }
+
+    if (blockRewardsSource.isAttesterSlashing()) {
+      final Attestation attestation =
+          chainBuilder.streamValidAttestationsForBlockAtSlot(3).findFirst().orElseThrow();
+      blockOptions.addAttesterSlashing(
+          chainBuilder.createAttesterSlashingForAttestation(attestation, bestBlock));
+    }
+
+    if (blockRewardsSource.isProposerSlashing()) {
+      blockOptions.addProposerSlashing(
+          chainBuilder.createProposerSlashingForAttestation(bestBlock));
     }
 
     return chainBuilder.generateBlockAtSlot(3, blockOptions).getBlock();
@@ -159,7 +163,25 @@ public class StateCachesTest {
   private enum BlockRewardsSource {
     ATTESTATION,
     SYNC_COMMITTEE,
-    SLASHING,
-    NONE
+    ATTESTER_SLASHING,
+    PROPOSER_SLASHING,
+    ALL,
+    NONE;
+
+    boolean isAttestation() {
+      return this == ATTESTATION || this == ALL;
+    }
+
+    boolean isSyncCommittee() {
+      return this == SYNC_COMMITTEE || this == ALL;
+    }
+
+    boolean isAttesterSlashing() {
+      return this == ATTESTER_SLASHING || this == ALL;
+    }
+
+    boolean isProposerSlashing() {
+      return this == PROPOSER_SLASHING || this == ALL;
+    }
   }
 }
