@@ -28,13 +28,11 @@ import tech.pegasys.teku.spec.signatures.SigningRootUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class ProposerSlashingGenerator {
-  private final Spec spec;
   private final List<BLSKeyPair> validatorKeys;
   private final DataStructureUtil dataStructureUtil;
   private final SigningRootUtil signingRootUtil;
 
   public ProposerSlashingGenerator(final Spec spec, final List<BLSKeyPair> validatorKeys) {
-    this.spec = spec;
     this.validatorKeys = validatorKeys;
     this.dataStructureUtil = new DataStructureUtil(spec);
     this.signingRootUtil = new SigningRootUtil(spec);
