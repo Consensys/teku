@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.test.acceptance.validatorslasshingdetection;
+package tech.pegasys.teku.test.acceptance.slasshingdetection;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -21,8 +21,15 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 
-public class ValidatorSlashingDetectionMultiPeersStandAloneVcAcceptanceTest
-    extends ValidatorSlashingDetectionAcceptanceTest {
+/**
+ * Running 2 nodes: <br>
+ * - Node 1: VC/BN running in a single process <br>
+ * - Node 2: Stand-alone VC with a separate BN <br>
+ * The slashing event is sent to the first node via the POST attester/proposer slashing REST API. It
+ * is then sent <br>
+ * to the second BN which sends it to it's VC vie the attester/proposer slashing SSE channel
+ */
+public class MultiPeersStandAloneVcAcceptanceTest extends ValidatorSlashingDetectionAcceptanceTest {
 
   @ParameterizedTest
   @MethodSource("getSlashingEventTypes")

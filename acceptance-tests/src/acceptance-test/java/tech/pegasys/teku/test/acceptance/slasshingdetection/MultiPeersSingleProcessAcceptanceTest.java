@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.test.acceptance.validatorslasshingdetection;
+package tech.pegasys.teku.test.acceptance.slasshingdetection;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -19,15 +19,19 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
-import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 
-public class ValidatorSlashingDetectionMultiPeersStandAloneVcGossipAcceptanceTest
+/**
+ * Running 2 nodes with VC/BN running in a single process The slashing event is sent to the first
+ * node via the POST attester/proposer slashing REST API. It's then <br>
+ * received by the second node (running the slashed validator)
+ */
+public class MultiPeersSingleProcessAcceptanceTest
     extends ValidatorSlashingDetectionAcceptanceTest {
+
   @ParameterizedTest
   @MethodSource("getSlashingEventTypes")
-  void
-      shouldShutDownWhenOwnedValidatorSlashed_StandAloneVC_MultiplePeers_SlashingEventsThroughGossipOnly_NoBlocks(
-          final SlashingEventType slashingEventType) throws Exception {
+  void shouldShutDownWhenOwnedValidatorSlashed_SingleProcess_MultiplePeers(
+      final SlashingEventType slashingEventType) throws Exception {
 
     final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
     final UInt64 altairEpoch = UInt64.valueOf(100);
@@ -37,55 +41,43 @@ public class ValidatorSlashingDetectionMultiPeersStandAloneVcGossipAcceptanceTes
             config ->
                 configureNode(config, genesisTime, network)
                     .withRealNetwork()
-                    .withAltairEpoch(altairEpoch));
+                    .withAltairEpoch(altairEpoch)
+                    .withInteropValidators(0, 32));
 
     firstTekuNode.start();
 
     firstTekuNode.waitForEpochAtOrAbove(1);
 
-    final TekuNode secondBeaconNode =
+    final TekuNode secondTekuNode =
         createTekuNode(
             config ->
                 configureNode(config, genesisTime, network)
-                    .withRealNetwork()
                     .withAltairEpoch(altairEpoch)
+                    .withStopVcWhenValidatorSlashedEnabled()
+                    .withInteropValidators(32, 32)
                     .withPeers(firstTekuNode));
 
-    final TekuValidatorNode secondValidatorClient =
-        createValidatorNode(
-            config ->
-                config
-                    .withNetwork("auto")
-                    .withValidatorApiEnabled()
-                    .withStopVcWhenValidatorSlashedEnabled()
-                    .withInteropValidators(0, 32)
-                    .withBeaconNode(secondBeaconNode));
-
-    secondBeaconNode.start();
-
-    secondValidatorClient.start();
+    secondTekuNode.start();
 
     firstTekuNode.waitForEpochAtOrAbove(2);
 
-    final int slashedValidatorIndex = 4;
+    final int slashedValidatorIndex = 34;
     final BLSKeyPair slashedValidatorKeyPair = getBlsKeyPair(slashedValidatorIndex);
-    final int slotInThirdEpoch =
-        firstTekuNode.getSpec().forMilestone(SpecMilestone.ALTAIR).getSlotsPerEpoch() * 2 + 3;
+    final int slotInFirstEpoch =
+        firstTekuNode.getSpec().forMilestone(SpecMilestone.ALTAIR).getSlotsPerEpoch() - 1;
 
     postSlashing(
         firstTekuNode,
-        UInt64.valueOf(slotInThirdEpoch),
+        UInt64.valueOf(slotInFirstEpoch),
         UInt64.valueOf(slashedValidatorIndex),
         slashedValidatorKeyPair.getSecretKey(),
         slashingEventType);
 
-    secondValidatorClient.waitForLogMessageContaining(
+    secondTekuNode.waitForLogMessageContaining(
         String.format(slashingActionLog, slashedValidatorKeyPair.getPublicKey().toHexString()));
-
-    secondValidatorClient.waitForExit(shutdownWaitingSeconds);
-
-    // Make sure the BN didn't shut down
-    secondBeaconNode.waitForBlockAtOrAfterSlot(4);
-    secondBeaconNode.stop();
+    secondTekuNode.waitForExit(shutdownWaitingSeconds);
+    // Make sure the first node didn't shut down
+    firstTekuNode.waitForEpochAtOrAbove(4);
+    firstTekuNode.stop();
   }
 }

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.test.acceptance.validatorslasshingdetection;
+package tech.pegasys.teku.test.acceptance.slasshingdetection;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -21,46 +21,11 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 
-public class ValidatorSlashingDetectionSinglePeerAcceptanceTest
-    extends ValidatorSlashingDetectionAcceptanceTest {
-
-  @ParameterizedTest
-  @MethodSource("getSlashingEventTypes")
-  void shouldShutDownWhenOwnedValidatorSlashed_SingleProcess_SinglePeer(
-      final ValidatorSlashingDetectionAcceptanceTest.SlashingEventType slashingEventType)
-      throws Exception {
-
-    final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
-    final UInt64 altairEpoch = UInt64.valueOf(100);
-
-    final TekuNode tekuNode =
-        createTekuNode(
-            config ->
-                configureNode(config, genesisTime, network)
-                    .withAltairEpoch(altairEpoch)
-                    .withStopVcWhenValidatorSlashedEnabled()
-                    .withInteropValidators(0, 32));
-
-    tekuNode.start();
-
-    tekuNode.waitForEpochAtOrAbove(2);
-
-    final int slashedValidatorIndex = 3;
-    final BLSKeyPair slashedValidatorKeyPair = getBlsKeyPair(slashedValidatorIndex);
-    final int slotInFirstEpoch =
-        tekuNode.getSpec().forMilestone(SpecMilestone.ALTAIR).getSlotsPerEpoch() - 1;
-
-    postSlashing(
-        tekuNode,
-        UInt64.valueOf(slotInFirstEpoch),
-        UInt64.valueOf(slashedValidatorIndex),
-        slashedValidatorKeyPair.getSecretKey(),
-        slashingEventType);
-
-    tekuNode.waitForLogMessageContaining(
-        String.format(slashingActionLog, slashedValidatorKeyPair.getPublicKey().toHexString()));
-    tekuNode.waitForExit(shutdownWaitingSeconds);
-  }
+/**
+ * Running a stand-alone VC with a separate BN. The slashing event is sent to the BN via the POST
+ * attester/proposer slashing POST API
+ */
+public class SinglePeerStandAloneVcAcceptanceTest extends ValidatorSlashingDetectionAcceptanceTest {
 
   @ParameterizedTest
   @MethodSource("getSlashingEventTypes")
