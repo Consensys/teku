@@ -14,8 +14,8 @@
 package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static tech.pegasys.teku.beacon.pow.DepositSnapshotFileLoader.DEFAULT_SNAPSHOT_RESOURCE_PATHS;
+import static tech.pegasys.teku.services.powchain.PowchainConfiguration.DEPOSIT_SNAPSHOT_URL_PATH;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -23,7 +23,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
-import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
+import tech.pegasys.teku.services.powchain.DepositTreeSnapshotConfiguration;
 import tech.pegasys.teku.services.powchain.PowchainConfiguration;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
@@ -119,8 +119,14 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
   public void shouldSetDefaultBundleSnapshotPathForSupportedNetwork(final String network) {
     final String[] args = {"--network=" + network, "--deposit-snapshot-enabled"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
-    assertThat(config.powchain().isDepositSnapshotEnabled()).isTrue();
-    assertThat(config.powchain().getDepositSnapshotPath())
+    assertThat(
+            config
+                .powchain()
+                .getDepositTreeSnapshotConfiguration()
+                .isBundledDepositSnapshotEnabled())
+        .isTrue();
+    assertThat(
+            config.powchain().getDepositTreeSnapshotConfiguration().getBundledDepositSnapshotPath())
         .contains(
             PowchainConfiguration.class
                 .getResource(
@@ -130,22 +136,73 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void shouldIgnoreBundleSnapshotPathForNotSupportedNetwork() {
-    final String[] args = {"--network=swift", "--deposit-snapshot-enabled"};
+  public void shouldHaveDepositSnapshotEnabledByDefault() {
+    final String[] args = {};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
-    assertThat(config.powchain().isDepositSnapshotEnabled()).isTrue();
-    assertThat(config.powchain().getDepositSnapshotPath()).isEmpty();
+    assertThat(
+            config
+                .powchain()
+                .getDepositTreeSnapshotConfiguration()
+                .isBundledDepositSnapshotEnabled())
+        .isTrue();
   }
 
   @Test
-  public void shouldThrowErrorIfSnapshotPathProvidedWithBundleSnapshot() {
-    assertThatThrownBy(
-            () ->
-                createConfigBuilder()
-                    .eth2NetworkConfig(b -> b.applyNetworkDefaults(Eth2Network.MAINNET))
-                    .powchain(b -> b.depositSnapshotEnabled(true).depositSnapshotPath("/some/path"))
-                    .build())
-        .isInstanceOf(InvalidConfigurationException.class)
-        .hasMessage("Use either custom deposit tree snapshot path or snapshot bundle");
+  public void shouldIgnoreBundleSnapshotPathForNotSupportedNetwork() {
+    final String[] args = {"--network=swift", "--deposit-snapshot-enabled"};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    final DepositTreeSnapshotConfiguration depositTreeSnapshotConfiguration =
+        config.powchain().getDepositTreeSnapshotConfiguration();
+    assertThat(depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()).isTrue();
+    assertThat(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath()).isEmpty();
+    assertThat(depositTreeSnapshotConfiguration.getBundledDepositSnapshotPath()).isEmpty();
+  }
+
+  @Test
+  public void shouldRespectDepositSnapshotFlagWhenDisabled() {
+    final String[] args = {"--deposit-snapshot-enabled", "false"};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(
+            config
+                .powchain()
+                .getDepositTreeSnapshotConfiguration()
+                .isBundledDepositSnapshotEnabled())
+        .isFalse();
+  }
+
+  @Test
+  public void shouldDisableBundledDepositSnapshotWhenUsingCustomDepositSnapshotPath() {
+    final String[] args = {"--Xdeposit-snapshot", "/foo/bar"};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    final DepositTreeSnapshotConfiguration depositTreeSnapshotConfiguration =
+        config.powchain().getDepositTreeSnapshotConfiguration();
+    assertThat(depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()).isFalse();
+    assertThat(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath())
+        .hasValue("/foo/bar");
+  }
+
+  @Test
+  public void shouldSetCheckpointSyncDepositSnapshotUrlWhenUsingCheckpointSyncUrl() {
+    final String[] args = {"--checkpoint-sync-url", "http://checkpoint-sync.com"};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    final DepositTreeSnapshotConfiguration depositTreeSnapshotConfiguration =
+        config.powchain().getDepositTreeSnapshotConfiguration();
+    assertThat(depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()).isTrue();
+    assertThat(depositTreeSnapshotConfiguration.getCheckpointSyncDepositSnapshotUrl())
+        .hasValue("http://checkpoint-sync.com" + DEPOSIT_SNAPSHOT_URL_PATH);
+  }
+
+  @Test
+  public void
+      shouldDisableBundledDepositSnapshotWhenUsingCustomDepositSnapshotWithCheckpointSyncUrl() {
+    final String[] args = {
+      "--Xdeposit-snapshot", "/foo/bar", "--checkpoint-sync-url", "http://checkpoint-sync.com"
+    };
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    final DepositTreeSnapshotConfiguration depositTreeSnapshotConfiguration =
+        config.powchain().getDepositTreeSnapshotConfiguration();
+    assertThat(depositTreeSnapshotConfiguration.isBundledDepositSnapshotEnabled()).isFalse();
+    assertThat(depositTreeSnapshotConfiguration.getCustomDepositSnapshotPath())
+        .hasValue("/foo/bar");
   }
 }

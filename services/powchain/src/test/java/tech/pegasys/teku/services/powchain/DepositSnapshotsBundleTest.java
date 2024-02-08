@@ -57,12 +57,22 @@ public class DepositSnapshotsBundleTest {
         .depositSnapshotEnabled(true)
         .setDepositSnapshotPathForNetwork(Optional.of(eth2Network));
     final PowchainConfiguration powchainConfiguration = powchainConfigBuilder.build();
-    assumeThat(powchainConfiguration.getDepositSnapshotPath())
+    assumeThat(
+            powchainConfiguration
+                .getDepositTreeSnapshotConfiguration()
+                .getBundledDepositSnapshotPath())
         .describedAs("No built-in snapshot for network %s", eth2Network)
         .isPresent();
 
     final DepositSnapshotFileLoader depositSnapshotLoader =
-        new DepositSnapshotFileLoader(powchainConfiguration.getDepositSnapshotPath());
+        new DepositSnapshotFileLoader.Builder()
+            .addRequiredResource(
+                powchainConfiguration
+                    .getDepositTreeSnapshotConfiguration()
+                    .getBundledDepositSnapshotPath()
+                    .get())
+            .build();
+
     final DepositTreeSnapshot depositTreeSnapshot =
         depositSnapshotLoader.loadDepositSnapshot().getDepositTreeSnapshot().orElseThrow();
     final DepositTree depositTree = DepositTree.fromSnapshot(depositTreeSnapshot);
@@ -85,9 +95,13 @@ public class DepositSnapshotsBundleTest {
         .setDepositSnapshotPathForNetwork(Optional.of(eth2Network));
     final PowchainConfiguration powchainConfiguration = powchainConfigBuilder.build();
 
-    final String depositSnapshotPath = powchainConfiguration.getDepositSnapshotPath().orElseThrow();
+    final String depositSnapshotPath =
+        powchainConfiguration
+            .getDepositTreeSnapshotConfiguration()
+            .getBundledDepositSnapshotPath()
+            .orElseThrow();
     final DepositSnapshotFileLoader depositSnapshotLoader =
-        new DepositSnapshotFileLoader(Optional.of(depositSnapshotPath));
+        new DepositSnapshotFileLoader.Builder().addRequiredResource(depositSnapshotPath).build();
 
     // Snapshot
     final DepositTreeSnapshot depositTreeSnapshot =
