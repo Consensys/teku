@@ -42,16 +42,17 @@ class RemoteSpecLoader {
       final List<URI> beaconEndpoints, final boolean isValidatorClientUseSszBlocksEnabled) {
     if (beaconEndpoints.size() > 1) {
       return getSpecWithFailovers(
-          createApiClients(beaconEndpoints, isValidatorClientUseSszBlocksEnabled));
+          createTypeDefClients(beaconEndpoints, isValidatorClientUseSszBlocksEnabled));
     }
-    return getSpec(createApiClient(beaconEndpoints.get(0), isValidatorClientUseSszBlocksEnabled));
+    return getSpec(
+        createTypeDefClient(beaconEndpoints.get(0), isValidatorClientUseSszBlocksEnabled));
   }
 
-  static Spec getSpec(final OkHttpValidatorRestApiClient apiClient) {
+  static Spec getSpec(final OkHttpValidatorTypeDefClient apiClient) {
     try {
       return apiClient
-          .getConfigSpec()
-          .map(response -> SpecConfigLoader.loadRemoteConfig(response.data))
+          .getSpec()
+          .map(SpecConfigLoader::loadRemoteConfig)
           .map(SpecFactory::create)
           .orElseThrow();
     } catch (final Throwable ex) {
@@ -63,13 +64,12 @@ class RemoteSpecLoader {
     }
   }
 
-  static OkHttpValidatorRestApiClient createApiClient(
-      final URI endpoint, final boolean isValidator) {
-    return createApiClients(List.of(endpoint), isValidator).get(0);
+  static OkHttpValidatorRestApiClient createApiClient(final URI endpoint) {
+    return createApiClients(List.of(endpoint)).get(0);
   }
 
-  private static Spec getSpecWithFailovers(final List<OkHttpValidatorRestApiClient> apiClients) {
-    for (final OkHttpValidatorRestApiClient apiClient : apiClients) {
+  private static Spec getSpecWithFailovers(final List<OkHttpValidatorTypeDefClient> apiClients) {
+    for (final OkHttpValidatorTypeDefClient apiClient : apiClients) {
       try {
         return getSpec(apiClient);
       } catch (final Throwable ex) {
@@ -104,7 +104,7 @@ class RemoteSpecLoader {
   }
 
   private static List<OkHttpValidatorRestApiClient> createApiClients(
-      final List<URI> baseEndpoints, final boolean isValidatorClientUseSszBlocksEnabled) {
+      final List<URI> baseEndpoints) {
     final OkHttpClient.Builder httpClientBuilder =
         new OkHttpClient.Builder().readTimeout(30, TimeUnit.SECONDS);
     List<HttpUrl> apiEndpoints = baseEndpoints.stream().map(HttpUrl::get).toList();
@@ -119,13 +119,33 @@ class RemoteSpecLoader {
     return apiEndpoints.stream()
         .map(apiEndpoint -> new OkHttpValidatorRestApiClient(apiEndpoint, okHttpClient))
         .toList();
+  }
 
-    // todo could move to separate method
-    final HttpUrl httpUrl; // todo use apiEndpoints variable to create type def
-    final Spec spec;
-    final OkHttpValidatorTypeDefClient typeDefClient = // todo here type def client made
-        new OkHttpValidatorTypeDefClient(
-            okHttpClient, httpUrl, spec, isValidatorClientUseSszBlocksEnabled);
+  private static List<OkHttpValidatorTypeDefClient> createTypeDefClients(
+      final List<URI> baseEndpoints, final boolean isValidatorClientUseSszBlocksEnabled) {
+    final OkHttpClient.Builder httpClientBuilder =
+        new OkHttpClient.Builder().readTimeout(30, TimeUnit.SECONDS);
+    List<HttpUrl> apiEndpoints = baseEndpoints.stream().map(HttpUrl::get).toList();
+    if (apiEndpoints.size() > 1) {
+      OkHttpClientAuth.addAuthInterceptorForMultipleEndpoints(apiEndpoints, httpClientBuilder);
+    } else {
+      OkHttpClientAuth.addAuthInterceptor(apiEndpoints.get(0), httpClientBuilder);
+    }
+    // Strip any authentication info from the URL(s) to ensure it doesn't get logged.
+    apiEndpoints = stripAuthentication(apiEndpoints);
+    final OkHttpClient okHttpClient = httpClientBuilder.build();
+    final Spec spec = SpecFactory.create("swift");
+    return apiEndpoints.stream()
+        .map(
+            apiEndpoint ->
+                new OkHttpValidatorTypeDefClient(
+                    okHttpClient, apiEndpoint, spec, isValidatorClientUseSszBlocksEnabled))
+        .toList();
+  }
+
+  private static OkHttpValidatorTypeDefClient createTypeDefClient(
+      final URI endpoint, final boolean isValidatorClientUseSszBlocksEnabled) {
+    return createTypeDefClients(List.of(endpoint), isValidatorClientUseSszBlocksEnabled).get(0);
   }
 
   private static List<HttpUrl> stripAuthentication(final List<HttpUrl> endpoints) {

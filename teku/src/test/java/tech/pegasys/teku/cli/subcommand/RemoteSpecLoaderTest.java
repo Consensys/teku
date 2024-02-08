@@ -26,25 +26,24 @@ import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.ConfigProvider;
-import tech.pegasys.teku.api.response.v1.config.GetSpecResponse;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
-import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
+import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
 
 class RemoteSpecLoaderTest {
   private final Spec spec = TestSpecFactory.createDefault();
 
-  private final OkHttpValidatorRestApiClient apiClient = mock(OkHttpValidatorRestApiClient.class);
+  private final OkHttpValidatorTypeDefClient apiClient = mock(OkHttpValidatorTypeDefClient.class);
 
   @Test
   void shouldIgnoreUnknownConfigItems() {
     final Map<String, String> rawConfig = getRawConfigForSpec(spec);
     rawConfig.put("UNKNOWN_ITEM", "foo");
-    when(apiClient.getConfigSpec()).thenReturn(Optional.of(new GetSpecResponse(rawConfig)));
+    when(apiClient.getSpec()).thenReturn(Optional.of(rawConfig));
     final Spec result = RemoteSpecLoader.getSpec(apiClient);
     assertThat(getRawConfigForSpec(result)).containsExactlyInAnyOrderEntriesOf(rawConfig);
     assertThat(result.getGenesisSpecConfig()).isEqualTo(spec.getGenesisSpecConfig());
@@ -55,7 +54,7 @@ class RemoteSpecLoaderTest {
     final Map<String, String> rawConfig = getRawConfigForSpec(spec);
     assertThat(rawConfig.remove("GENESIS_FORK_VERSION")).isNotNull();
 
-    when(apiClient.getConfigSpec()).thenReturn(Optional.of(new GetSpecResponse(rawConfig)));
+    when(apiClient.getSpec()).thenReturn(Optional.of(rawConfig));
 
     final SpecConfig config = RemoteSpecLoader.getSpec(apiClient).getSpecConfig(UInt64.ONE);
     assertThat(config.getGenesisForkVersion()).isEqualTo(Bytes4.fromHexString("0x00000001"));

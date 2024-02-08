@@ -286,19 +286,15 @@ public class VoluntaryExitCommand implements Callable<Integer> {
             .validatorClient()
             .getValidatorConfig()
             .getPrimaryBeaconNodeApiEndpoint()
-            .map(
-                uri ->
-                    RemoteSpecLoader.createApiClient(
-                        uri,
-                        config
-                            .validatorClient()
-                            .getValidatorConfig()
-                            .isValidatorClientUseSszBlocksEnabled()))
+            .map(RemoteSpecLoader::createApiClient)
             .orElseThrow();
 
     if (network == null) {
       SUB_COMMAND_LOG.display(" - Loading network settings from " + apiClient.getBaseEndpoint());
-      spec = getSpec(apiClient);
+      spec =
+          getSpec(
+              List.of(apiClient.getBaseEndpoint()),
+              config.validatorClient().getValidatorConfig().isValidatorClientUseSszBlocksEnabled());
     } else {
       SUB_COMMAND_LOG.display(" - Loading local settings for " + network + " network");
       spec = SpecFactory.create(network);

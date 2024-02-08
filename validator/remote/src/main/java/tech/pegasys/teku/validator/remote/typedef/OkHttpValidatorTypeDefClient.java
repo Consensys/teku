@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote.typedef;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -162,5 +163,9 @@ public class OkHttpValidatorTypeDefClient {
   public Optional<AttestationData> createAttestationData(
       final UInt64 slot, final int committeeIndex) {
     return createAttestationDataRequest.createAttestationData(slot, committeeIndex);
+  }
+
+  public URI getBaseEndpoint() {
+    return baseEndpoint.uri();
   }
 }
