@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.test.acceptance.slasshingdetection;
+package tech.pegasys.teku.test.acceptance.validatorslashing;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -27,17 +27,14 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
  * - Node 2: Stand-alone VC with a separate BN <br>
  * The slashing event is sent to the first node via the POST attester/proposer slashing REST API. It
  * is then sent <br>
- * to the second BN via the attester/proposer slashing gossip topic which sends it to it's VC via
- * the <br>
- * attester/proposer slashing SSE channel
+ * to the second BN which sends it to it's VC vie the attester/proposer slashing SSE channel
  */
-public class MultiPeersStandAloneVcGossipAcceptanceTest
-    extends ValidatorSlashingDetectionAcceptanceTest {
+public class MultiPeersStandAloneVcAcceptanceTest extends ValidatorSlashingDetectionAcceptanceTest {
+
   @ParameterizedTest
   @MethodSource("getSlashingEventTypes")
-  void
-      shouldShutDownWhenOwnedValidatorSlashed_StandAloneVC_MultiplePeers_SlashingEventsThroughGossipOnly_NoBlocks(
-          final SlashingEventType slashingEventType) throws Exception {
+  void shouldShutDownWhenOwnedValidatorSlashed_StandAloneVC_MultiplePeers(
+      final SlashingEventType slashingEventType) throws Exception {
 
     final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
     final UInt64 altairEpoch = UInt64.valueOf(100);
@@ -47,7 +44,8 @@ public class MultiPeersStandAloneVcGossipAcceptanceTest
             config ->
                 configureNode(config, genesisTime, network)
                     .withRealNetwork()
-                    .withAltairEpoch(altairEpoch));
+                    .withAltairEpoch(altairEpoch)
+                    .withInteropValidators(0, 32));
 
     firstTekuNode.start();
 
@@ -68,7 +66,7 @@ public class MultiPeersStandAloneVcGossipAcceptanceTest
                     .withNetwork("auto")
                     .withValidatorApiEnabled()
                     .withStopVcWhenValidatorSlashedEnabled()
-                    .withInteropValidators(0, 32)
+                    .withInteropValidators(32, 32)
                     .withBeaconNode(secondBeaconNode));
 
     secondBeaconNode.start();
@@ -77,7 +75,7 @@ public class MultiPeersStandAloneVcGossipAcceptanceTest
 
     firstTekuNode.waitForEpochAtOrAbove(2);
 
-    final int slashedValidatorIndex = 4;
+    final int slashedValidatorIndex = 34;
     final BLSKeyPair slashedValidatorKeyPair = getBlsKeyPair(slashedValidatorIndex);
     final int slotInThirdEpoch =
         firstTekuNode.getSpec().forMilestone(SpecMilestone.ALTAIR).getSlotsPerEpoch() * 2 + 3;
@@ -91,11 +89,9 @@ public class MultiPeersStandAloneVcGossipAcceptanceTest
 
     secondValidatorClient.waitForLogMessageContaining(
         String.format(slashingActionLog, slashedValidatorKeyPair.getPublicKey().toHexString()));
-
     secondValidatorClient.waitForExit(shutdownWaitingSeconds);
-
     // Make sure the BN didn't shut down
-    secondBeaconNode.waitForBlockAtOrAfterSlot(4);
+    secondBeaconNode.waitForEpochAtOrAbove(4);
     secondBeaconNode.stop();
   }
 }

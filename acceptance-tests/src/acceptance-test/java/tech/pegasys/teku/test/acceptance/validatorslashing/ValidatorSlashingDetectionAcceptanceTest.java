@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.test.acceptance.slasshingdetection;
+package tech.pegasys.teku.test.acceptance.validatorslashing;
 
 import java.io.IOException;
 import java.util.List;

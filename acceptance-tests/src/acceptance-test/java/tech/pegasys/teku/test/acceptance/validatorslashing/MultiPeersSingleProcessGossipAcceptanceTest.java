@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.test.acceptance.slasshingdetection;
+package tech.pegasys.teku.test.acceptance.validatorslashing;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -21,17 +21,22 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 
 /**
- * Running 2 nodes with VC/BN running in a single process The slashing event is sent to the first
- * node via the POST attester/proposer slashing REST API. It's then <br>
- * received by the second node (running the slashed validator)
+ * Running 2 nodes with VC/BN running in single processes. <br>
+ * The slashing event is sent to the first node via the POST attester/proposer slashing REST API.
+ * It's then <br>
+ * received by the second node (running the slashed validator) through the attester/proposer
+ * slashings gossip topic <br>
+ * (The first node is not running any validator and hence won't produce any block to include the
+ * slashing event)
  */
-public class MultiPeersSingleProcessAcceptanceTest
+public class MultiPeersSingleProcessGossipAcceptanceTest
     extends ValidatorSlashingDetectionAcceptanceTest {
 
   @ParameterizedTest
   @MethodSource("getSlashingEventTypes")
-  void shouldShutDownWhenOwnedValidatorSlashed_SingleProcess_MultiplePeers(
-      final SlashingEventType slashingEventType) throws Exception {
+  void
+      shouldShutDownWhenOwnedValidatorSlashed_SingleProcess_MultiplePeers_SlashingEventsThroughGossipOnly_NoBlocks(
+          final SlashingEventType slashingEventType) throws Exception {
 
     final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
     final UInt64 altairEpoch = UInt64.valueOf(100);
@@ -41,8 +46,7 @@ public class MultiPeersSingleProcessAcceptanceTest
             config ->
                 configureNode(config, genesisTime, network)
                     .withRealNetwork()
-                    .withAltairEpoch(altairEpoch)
-                    .withInteropValidators(0, 32));
+                    .withAltairEpoch(altairEpoch));
 
     firstTekuNode.start();
 
@@ -54,14 +58,14 @@ public class MultiPeersSingleProcessAcceptanceTest
                 configureNode(config, genesisTime, network)
                     .withAltairEpoch(altairEpoch)
                     .withStopVcWhenValidatorSlashedEnabled()
-                    .withInteropValidators(32, 32)
+                    .withInteropValidators(0, 32)
                     .withPeers(firstTekuNode));
 
     secondTekuNode.start();
 
     firstTekuNode.waitForEpochAtOrAbove(2);
 
-    final int slashedValidatorIndex = 34;
+    final int slashedValidatorIndex = 4;
     final BLSKeyPair slashedValidatorKeyPair = getBlsKeyPair(slashedValidatorIndex);
     final int slotInFirstEpoch =
         firstTekuNode.getSpec().forMilestone(SpecMilestone.ALTAIR).getSlotsPerEpoch() - 1;
@@ -75,6 +79,7 @@ public class MultiPeersSingleProcessAcceptanceTest
 
     secondTekuNode.waitForLogMessageContaining(
         String.format(slashingActionLog, slashedValidatorKeyPair.getPublicKey().toHexString()));
+
     secondTekuNode.waitForExit(shutdownWaitingSeconds);
     // Make sure the first node didn't shut down
     firstTekuNode.waitForEpochAtOrAbove(4);

@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.test.acceptance.slasshingdetection;
+package tech.pegasys.teku.test.acceptance.validatorslashing;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -21,46 +21,63 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 
 /**
- * Running a single node with BN/VC running in a single process. The slashing event is sent to the
- * node via the POST attester/proposer slashing POST API
+ * Running 2 nodes with VC/BN running in a single process The slashing event is sent to the first
+ * node via the POST attester/proposer slashing REST API. It's then <br>
+ * received by the second node (running the slashed validator)
  */
-public class SinglePeerAcceptanceTest extends ValidatorSlashingDetectionAcceptanceTest {
+public class MultiPeersSingleProcessAcceptanceTest
+    extends ValidatorSlashingDetectionAcceptanceTest {
 
   @ParameterizedTest
   @MethodSource("getSlashingEventTypes")
-  void shouldShutDownWhenOwnedValidatorSlashed_SingleProcess_SinglePeer(
-      final ValidatorSlashingDetectionAcceptanceTest.SlashingEventType slashingEventType)
-      throws Exception {
+  void shouldShutDownWhenOwnedValidatorSlashed_SingleProcess_MultiplePeers(
+      final SlashingEventType slashingEventType) throws Exception {
 
     final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
     final UInt64 altairEpoch = UInt64.valueOf(100);
 
-    final TekuNode tekuNode =
+    final TekuNode firstTekuNode =
+        createTekuNode(
+            config ->
+                configureNode(config, genesisTime, network)
+                    .withRealNetwork()
+                    .withAltairEpoch(altairEpoch)
+                    .withInteropValidators(0, 32));
+
+    firstTekuNode.start();
+
+    firstTekuNode.waitForEpochAtOrAbove(1);
+
+    final TekuNode secondTekuNode =
         createTekuNode(
             config ->
                 configureNode(config, genesisTime, network)
                     .withAltairEpoch(altairEpoch)
                     .withStopVcWhenValidatorSlashedEnabled()
-                    .withInteropValidators(0, 32));
+                    .withInteropValidators(32, 32)
+                    .withPeers(firstTekuNode));
 
-    tekuNode.start();
+    secondTekuNode.start();
 
-    tekuNode.waitForEpochAtOrAbove(2);
+    firstTekuNode.waitForEpochAtOrAbove(2);
 
-    final int slashedValidatorIndex = 3;
+    final int slashedValidatorIndex = 34;
     final BLSKeyPair slashedValidatorKeyPair = getBlsKeyPair(slashedValidatorIndex);
     final int slotInFirstEpoch =
-        tekuNode.getSpec().forMilestone(SpecMilestone.ALTAIR).getSlotsPerEpoch() - 1;
+        firstTekuNode.getSpec().forMilestone(SpecMilestone.ALTAIR).getSlotsPerEpoch() - 1;
 
     postSlashing(
-        tekuNode,
+        firstTekuNode,
         UInt64.valueOf(slotInFirstEpoch),
         UInt64.valueOf(slashedValidatorIndex),
         slashedValidatorKeyPair.getSecretKey(),
         slashingEventType);
 
-    tekuNode.waitForLogMessageContaining(
+    secondTekuNode.waitForLogMessageContaining(
         String.format(slashingActionLog, slashedValidatorKeyPair.getPublicKey().toHexString()));
-    tekuNode.waitForExit(shutdownWaitingSeconds);
+    secondTekuNode.waitForExit(shutdownWaitingSeconds);
+    // Make sure the first node didn't shut down
+    firstTekuNode.waitForEpochAtOrAbove(4);
+    firstTekuNode.stop();
   }
 }

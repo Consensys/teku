@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.test.acceptance.slasshingdetection;
+package tech.pegasys.teku.test.acceptance.validatorslashing;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -27,14 +27,16 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
  * - Node 2: Stand-alone VC with a separate BN <br>
  * The slashing event is sent to the first node via the POST attester/proposer slashing REST API. It
  * is then sent <br>
- * to the second BN which sends it to it's VC vie the attester/proposer slashing SSE channel
+ * to the second BN withing a block which sends it to it's VC via the attester/proposer slashing SSE
+ * channel
  */
-public class MultiPeersStandAloneVcAcceptanceTest extends ValidatorSlashingDetectionAcceptanceTest {
-
+public class MultiPeersStandAloneVcBlocksAcceptanceTest
+    extends ValidatorSlashingDetectionAcceptanceTest {
   @ParameterizedTest
   @MethodSource("getSlashingEventTypes")
-  void shouldShutDownWhenOwnedValidatorSlashed_StandAloneVC_MultiplePeers(
-      final SlashingEventType slashingEventType) throws Exception {
+  void
+      shouldShutDownWhenOwnedValidatorSlashed_StandAloneVC_MultiplePeers_SlashingThroughBlock_NoSlashingEventsGossip(
+          final SlashingEventType slashingEventType) throws Exception {
 
     final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
     final UInt64 altairEpoch = UInt64.valueOf(100);
@@ -49,7 +51,19 @@ public class MultiPeersStandAloneVcAcceptanceTest extends ValidatorSlashingDetec
 
     firstTekuNode.start();
 
-    firstTekuNode.waitForEpochAtOrAbove(1);
+    firstTekuNode.waitForEpochAtOrAbove(2);
+
+    final int slashedValidatorIndex = 34;
+    final BLSKeyPair slashedValidatorKeyPair = getBlsKeyPair(slashedValidatorIndex);
+    final int slotInThirdEpoch =
+        firstTekuNode.getSpec().forMilestone(SpecMilestone.ALTAIR).getSlotsPerEpoch() * 2 + 3;
+
+    postSlashing(
+        firstTekuNode,
+        UInt64.valueOf(slotInThirdEpoch),
+        UInt64.valueOf(slashedValidatorIndex),
+        slashedValidatorKeyPair.getSecretKey(),
+        slashingEventType);
 
     final TekuNode secondBeaconNode =
         createTekuNode(
@@ -73,25 +87,16 @@ public class MultiPeersStandAloneVcAcceptanceTest extends ValidatorSlashingDetec
 
     secondValidatorClient.start();
 
-    firstTekuNode.waitForEpochAtOrAbove(2);
-
-    final int slashedValidatorIndex = 34;
-    final BLSKeyPair slashedValidatorKeyPair = getBlsKeyPair(slashedValidatorIndex);
-    final int slotInThirdEpoch =
-        firstTekuNode.getSpec().forMilestone(SpecMilestone.ALTAIR).getSlotsPerEpoch() * 2 + 3;
-
-    postSlashing(
-        firstTekuNode,
-        UInt64.valueOf(slotInThirdEpoch),
-        UInt64.valueOf(slashedValidatorIndex),
-        slashedValidatorKeyPair.getSecretKey(),
-        slashingEventType);
-
     secondValidatorClient.waitForLogMessageContaining(
         String.format(slashingActionLog, slashedValidatorKeyPair.getPublicKey().toHexString()));
+
     secondValidatorClient.waitForExit(shutdownWaitingSeconds);
+
     // Make sure the BN didn't shut down
-    secondBeaconNode.waitForEpochAtOrAbove(4);
+    secondBeaconNode.waitForBlockAtOrAfterSlot(4);
+    // Make sure the first node didn't shut down
+    firstTekuNode.waitForBlockAtOrAfterSlot(4);
     secondBeaconNode.stop();
+    firstTekuNode.stop();
   }
 }
