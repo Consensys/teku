@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.logic.common.helpers;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.apache.tuweni.bytes.Bytes;
@@ -81,8 +80,9 @@ public class MathHelpersTest {
 
   @Test
   void sqrtOfMaxValue() {
-    assertThatThrownBy(() -> MathHelpers.integerSquareRoot(UInt64.MAX_VALUE))
-        .isInstanceOf(ArithmeticException.class);
+    UInt64 actual = MathHelpers.integerSquareRoot(UInt64.MAX_VALUE);
+    UInt64 expected = UInt64.valueOf(4294967295L);
+    assertEquals(expected, actual);
   }
 
   @Test

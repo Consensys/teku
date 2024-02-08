@@ -93,7 +93,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.ReceivedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
@@ -127,10 +126,10 @@ import tech.pegasys.teku.statetransition.blobs.DataUnavailableBlockPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.statetransition.block.BlockImportMetrics;
-import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.block.FailedExecutionPool;
+import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifierImpl;
@@ -223,6 +222,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile AsyncRunner beaconAsyncRunner;
   protected volatile TimeProvider timeProvider;
   protected volatile SlotEventsChannel slotEventsChannelPublisher;
+  protected volatile ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher;
   protected volatile AsyncRunner networkAsyncRunner;
   protected volatile AsyncRunnerFactory asyncRunnerFactory;
   protected volatile AsyncRunner eventAsyncRunner;
@@ -311,6 +311,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
     this.poolFactory = new PoolFactory(this.metricsSystem);
     this.rejectedExecutionCountSupplier = serviceConfig.getRejectedExecutionsSupplier();
     this.slotEventsChannelPublisher = eventChannels.getPublisher(SlotEventsChannel.class);
+    this.receivedBlockEventsChannelPublisher =
+        eventChannels.getPublisher(ReceivedBlockEventsChannel.class);
     this.forkChoiceExecutor = new AsyncRunnerEventThread("forkchoice", asyncRunnerFactory);
     this.futureItemsMetric =
         SettableLabelledGauge.create(
@@ -340,19 +342,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
                     block, BroadcastValidationLevel.NOT_REQUIRED, Optional.of(RemoteOrigin.RPC))
                 .thenCompose(BlockImportAndBroadcastValidationResults::blockImportResult)
                 .finish(err -> LOG.error("Failed to process recently fetched block.", err)));
-    blockManager.subscribeToReceivedBlocks(
-        new ReceivedBlockListener() {
-          @Override
-          public void onBlockValidated(final SignedBeaconBlock block) {
-            // NOOP
-          }
-
-          @Override
-          public void onBlockImported(
-              final SignedBeaconBlock block, final boolean executionOptimistic) {
-            recentBlocksFetcher.cancelRecentBlockRequest(block.getRoot());
-          }
-        });
+    eventChannels.subscribe(ReceivedBlockEventsChannel.class, recentBlocksFetcher);
     final RecentBlobSidecarsFetcher recentBlobSidecarsFetcher =
         syncService.getRecentBlobSidecarsFetcher();
     recentBlobSidecarsFetcher.subscribeBlobSidecarFetched(
@@ -736,7 +726,6 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .validatorApiChannel(
                 eventChannels.getPublisher(ValidatorApiChannel.class, beaconAsyncRunner))
             .attestationPool(attestationPool)
-            .blockManager(blockManager)
             .blockBlobSidecarsTrackersPool(blockBlobSidecarsTrackersPool)
             .attestationManager(attestationManager)
             .isLivenessTrackingEnabled(getLivenessTrackingEnabled(beaconConfig))
@@ -1023,7 +1012,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels
         .subscribe(SlotEventsChannel.class, attestationManager)
         .subscribe(FinalizedCheckpointChannel.class, pendingAttestations)
-        .subscribe(BlockImportNotifications.class, attestationManager);
+        .subscribe(ReceivedBlockEventsChannel.class, attestationManager);
   }
 
   protected void initSyncCommitteePools() {
@@ -1173,7 +1162,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     blockImporter =
         new BlockImporter(
             spec,
-            eventChannels.getPublisher(BlockImportNotifications.class),
+            receivedBlockEventsChannelPublisher,
             recentChainData,
             forkChoice,
             weakSubjectivityValidator,
@@ -1185,7 +1174,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     final FutureItems<SignedBeaconBlock> futureBlocks =
         FutureItems.create(SignedBeaconBlock::getSlot, futureItemsMetric, "blocks");
     final BlockGossipValidator blockGossipValidator =
-        new BlockGossipValidator(spec, gossipValidationHelper);
+        new BlockGossipValidator(spec, gossipValidationHelper, receivedBlockEventsChannelPublisher);
     final BlockValidator blockValidator = new BlockValidator(blockGossipValidator);
     final Optional<BlockImportMetrics> importMetrics =
         beaconConfig.getMetricsConfig().isBlockPerformanceEnabled()
@@ -1220,7 +1209,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
         .subscribe(BlockImportChannel.class, blockManager)
-        .subscribe(BlockImportNotifications.class, blockManager);
+        .subscribe(ReceivedBlockEventsChannel.class, blockManager);
   }
 
   protected SyncServiceFactory createSyncServiceFactory() {

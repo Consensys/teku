@@ -60,7 +60,6 @@ public interface BlockBroadcastValidator {
     CONSENSUS_FAILURE,
     FINAL_EQUIVOCATION_FAILURE;
 
-    // is success
     public boolean isFailure() {
       return this != SUCCESS;
     }
