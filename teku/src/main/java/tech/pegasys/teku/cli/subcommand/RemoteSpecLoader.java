@@ -33,15 +33,18 @@ class RemoteSpecLoader {
 
   private static final long RETRY_DELAY = 5000;
 
-  static Spec getSpecWithRetry(final List<URI> beaconEndpoints) {
-    return retry(() -> getSpec(beaconEndpoints));
+  static Spec getSpecWithRetry(
+      final List<URI> beaconEndpoints, final boolean isValidatorClientUseSszBlocksEnabled) {
+    return retry(() -> getSpec(beaconEndpoints, isValidatorClientUseSszBlocksEnabled));
   }
 
-  static Spec getSpec(final List<URI> beaconEndpoints) {
+  static Spec getSpec(
+      final List<URI> beaconEndpoints, final boolean isValidatorClientUseSszBlocksEnabled) {
     if (beaconEndpoints.size() > 1) {
-      return getSpecWithFailovers(createApiClients(beaconEndpoints));
+      return getSpecWithFailovers(
+          createApiClients(beaconEndpoints, isValidatorClientUseSszBlocksEnabled));
     }
-    return getSpec(createApiClient(beaconEndpoints.get(0)));
+    return getSpec(createApiClient(beaconEndpoints.get(0), isValidatorClientUseSszBlocksEnabled));
   }
 
   static Spec getSpec(final OkHttpValidatorRestApiClient apiClient) {
@@ -60,8 +63,9 @@ class RemoteSpecLoader {
     }
   }
 
-  static OkHttpValidatorRestApiClient createApiClient(final URI endpoint) {
-    return createApiClients(List.of(endpoint)).get(0);
+  static OkHttpValidatorRestApiClient createApiClient(
+      final URI endpoint, final boolean isValidator) {
+    return createApiClients(List.of(endpoint), isValidator).get(0);
   }
 
   private static Spec getSpecWithFailovers(final List<OkHttpValidatorRestApiClient> apiClients) {
@@ -100,7 +104,7 @@ class RemoteSpecLoader {
   }
 
   private static List<OkHttpValidatorRestApiClient> createApiClients(
-      final List<URI> baseEndpoints) {
+      final List<URI> baseEndpoints, final boolean isValidatorClientUseSszBlocksEnabled) {
     final OkHttpClient.Builder httpClientBuilder =
         new OkHttpClient.Builder().readTimeout(30, TimeUnit.SECONDS);
     List<HttpUrl> apiEndpoints = baseEndpoints.stream().map(HttpUrl::get).toList();
@@ -117,13 +121,11 @@ class RemoteSpecLoader {
         .toList();
 
     // todo could move to separate method
-    final boolean preferSszBlockEncoding = validatorConfig.isValidatorClientUseSszBlocksEnabled();
     final HttpUrl httpUrl; // todo use apiEndpoints variable to create type def
     final Spec spec;
     final OkHttpValidatorTypeDefClient typeDefClient = // todo here type def client made
-        new OkHttpValidatorTypeDefClient(okHttpClient, apiEndpoints, spec, preferSszBlockEncoding);
-
-    // todo
+        new OkHttpValidatorTypeDefClient(
+            okHttpClient, httpUrl, spec, isValidatorClientUseSszBlocksEnabled);
   }
 
   private static List<HttpUrl> stripAuthentication(final List<HttpUrl> endpoints) {

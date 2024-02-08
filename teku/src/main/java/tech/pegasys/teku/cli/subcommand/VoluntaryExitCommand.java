@@ -286,7 +286,14 @@ public class VoluntaryExitCommand implements Callable<Integer> {
             .validatorClient()
             .getValidatorConfig()
             .getPrimaryBeaconNodeApiEndpoint()
-            .map(RemoteSpecLoader::createApiClient)
+            .map(
+                uri ->
+                    RemoteSpecLoader.createApiClient(
+                        uri,
+                        config
+                            .validatorClient()
+                            .getValidatorConfig()
+                            .isValidatorClientUseSszBlocksEnabled()))
             .orElseThrow();
 
     if (network == null) {
