@@ -475,15 +475,24 @@ public class PendingPoolTest {
   }
 
   @Test
-  public void onSlot_prunesOldBlocks() {
+  public void onSlot_prunesOldAndFinalizedBlocks() {
+    // We prune on PRUNE_SLOT every epoch everything
+    // older than (current - historicalTolerance) or finalized
+    // Let's put some blocks around (pruneSlot - historicalTolerance)
+    final UInt64 startSlot =
+        AbstractIgnoringFutureHistoricalSlot.PRUNE_SLOT
+            .plus(spec.getGenesisSpec().getSlotsPerEpoch())
+            .minus(historicalTolerance);
+    setSlot(startSlot);
+
     // Interleave blocks to keep and blocks to prune
     final List<SignedBeaconBlock> blocksToPrune = new ArrayList<>();
     final List<SignedBeaconBlock> blocksToKeep = new ArrayList<>();
     for (int i = 0; i < 3; i++) {
       final SignedBeaconBlock toPrune =
-          dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue() - 1L);
+          dataStructureUtil.randomSignedBeaconBlock(startSlot.longValue() - 1L);
       final SignedBeaconBlock toKeep =
-          dataStructureUtil.randomSignedBeaconBlock(currentSlot.longValue());
+          dataStructureUtil.randomSignedBeaconBlock(startSlot.longValue());
 
       blocksToPrune.add(toPrune);
       blocksToKeep.add(toKeep);
@@ -494,7 +503,7 @@ public class PendingPoolTest {
     blocksToKeep.forEach(b -> assertThat(pendingPool.contains(b)).isTrue());
     blocksToPrune.forEach(b -> assertThat(pendingPool.contains(b)).isTrue());
 
-    UInt64 newSlot = currentSlot;
+    UInt64 newSlot = startSlot;
     for (int i = 0; i < historicalTolerance.intValue() - 1; i++) {
       newSlot = newSlot.plus(UInt64.ONE);
       pendingPool.onSlot(newSlot);
@@ -507,5 +516,10 @@ public class PendingPoolTest {
 
     blocksToKeep.forEach(b -> assertThat(pendingPool.contains(b)).isTrue());
     blocksToPrune.forEach(b -> assertThat(pendingPool.contains(b)).isFalse());
+
+    // Make all finalized
+    pendingPool.onNewFinalizedCheckpoint(dataStructureUtil.randomCheckpoint(1), false);
+    pendingPool.onSlot(newSlot.plus(UInt64.ONE));
+    blocksToKeep.forEach(b -> assertThat(pendingPool.contains(b)).isFalse());
   }
 }
