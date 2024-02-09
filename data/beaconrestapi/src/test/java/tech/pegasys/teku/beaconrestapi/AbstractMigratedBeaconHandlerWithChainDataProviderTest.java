@@ -21,6 +21,7 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
@@ -71,6 +72,9 @@ public class AbstractMigratedBeaconHandlerWithChainDataProviderTest
     chainUpdater = new ChainUpdater(recentChainData, chainBuilder, spec);
     chainDataProvider =
         new ChainDataProvider(
-            spec, recentChainData, combinedChainDataClient, new RewardCalculator(spec));
+            spec,
+            recentChainData,
+            combinedChainDataClient,
+            new RewardCalculator(spec, new BlockRewardCalculatorUtil(spec)));
   }
 }
