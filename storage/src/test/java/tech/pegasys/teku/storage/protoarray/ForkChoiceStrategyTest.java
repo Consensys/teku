@@ -559,6 +559,9 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
             recentChainData.getFinalizedCheckpoint().orElseThrow());
     recentChainData.updateHead(revertHead.getBlockRoot(), optimisticHead.getSlot());
 
+    // Advance current slot so that current head is no more viable
+    chainUpdater.setCurrentSlot(UInt64.valueOf(60));
+
     final ForkChoiceState forkChoiceState =
         protoArray.getForkChoiceState(
             recentChainData.getCurrentEpoch().orElseThrow(),
@@ -569,7 +572,7 @@ public class ForkChoiceStrategyTest extends AbstractBlockMetadataStoreTest {
     assertThat(forkChoiceState.getHeadBlockRoot()).isEqualTo(currentJustified.getRoot());
     // The current head block itself is fully validated
     assertThat(protoArray.isFullyValidated(currentJustified.getRoot())).isTrue();
-    // But we consider the chain head optimistic because of the updated justified checkpoint
+    // the head is optimistic because it is not viable
     assertThat(forkChoiceState.isHeadOptimistic()).isTrue();
   }
 

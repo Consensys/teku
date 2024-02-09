@@ -21,4 +21,5 @@ the [releases page](https://github.com/Consensys/teku/releases).
 - Add `block_gossip` SSE event as per https://github.com/ethereum/beacon-APIs/pull/405
 - Deposit tree snapshots will be downloaded from checkpoint-sync-url when available [#7715](https://github.com/Consensys/teku/issues/7715)
 - Updated mainnet configuration with Deneb fork scheduled for epoch 269568 (March 13, 2024, 01:55:35pm UTC)
+- Applied fork-choice confirmation rule prerequisite change outlined in PR #3431 in consensus-specs.
 ### Bug Fixes
