@@ -214,7 +214,7 @@ public class BeaconStateAccessorsAltair extends BeaconStateAccessors {
   public static BeaconStateAccessorsAltair required(
       final BeaconStateAccessors beaconStateAccessors) {
     checkArgument(
-        beaconStateAccessors.getClass().isAssignableFrom(BeaconStateAccessorsAltair.class),
+        BeaconStateAccessorsAltair.class.isAssignableFrom(beaconStateAccessors.getClass()),
         "Expected %s but it was %s",
         BeaconStateAccessorsAltair.class,
         beaconStateAccessors.getClass());
