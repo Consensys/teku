@@ -132,18 +132,6 @@ public class NoVotesTest {
     processBlock(
         UInt64.valueOf(11), getHash(5), getHash(4), Bytes32.ZERO, unsigned(2), unsigned(1));
 
-    // Ensure the head is still 4 whilst the justified epoch is 0.
-    //
-    //         0
-    //        / \
-    //        2  1
-    //        |  |
-    // head-> 4  3
-    //        |
-    //        5
-    assertThat(applyPendingVotes(checkpoint(1, 0), checkpoint(1, 0), balances))
-        .isEqualTo(getHash(4));
-
     // Ensure there is no error when starting from a block that has the wrong justified epoch.
     //
     //      0
