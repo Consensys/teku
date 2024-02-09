@@ -52,10 +52,7 @@ public class RewardCalculator {
   public ObjectAndMetaData<BlockRewardData> getBlockRewardDataAndMetaData(
       final BlockAndMetaData blockAndMetaData, final BeaconState parentState) {
     return blockAndMetaData.map(
-        __ ->
-            BlockRewardData.fromInternal(
-                blockRewardCalculatorUtil.getBlockRewardData(
-                    blockAndMetaData.getData().getMessage(), parentState)));
+        __ -> getBlockRewardData(blockAndMetaData.getData().getMessage(), parentState));
   }
 
   public BlockRewardData getBlockRewardData(
