@@ -109,6 +109,7 @@ import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil;
 import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.statetransition.EpochCachePrimer;
 import tech.pegasys.teku.statetransition.LocalOperationAcceptedFilter;
@@ -872,7 +873,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   public void initRewardCalculator() {
     LOG.debug("BeaconChainController.initRewardCalculator()");
-    rewardCalculator = new RewardCalculator(spec);
+    rewardCalculator = new RewardCalculator(spec, new BlockRewardCalculatorUtil(spec));
   }
 
   public void initValidatorApiHandler() {
