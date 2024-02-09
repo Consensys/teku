@@ -58,10 +58,6 @@ public class DepCheckPlugin implements Plugin<Project> {
 
   private Stream<ProjectDependency> illegalDependencies(final Rule rule, final Project project) {
     return project.getConfigurations().stream()
-        // check only production dependencies
-        .filter(
-            config ->
-                Set.of("implementationClasspath", "runtimeClasspath").contains(config.getName()))
         .flatMap(config -> config.getAllDependencies().stream())
         .filter(dep -> dep instanceof ProjectDependency)
         .map(dep -> (ProjectDependency) dep)

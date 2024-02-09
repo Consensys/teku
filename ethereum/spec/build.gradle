@@ -66,8 +66,6 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-api'
     testImplementation 'org.junit.jupiter:junit-jupiter-params'
     testImplementation 'org.mockito:mockito-core'
-    testImplementation project(':data:provider')
-    testImplementation project(':data:serializer')
     testImplementation testFixtures(project(':ethereum:statetransition'))
     testImplementation testFixtures(project(':infrastructure:async'))
     testImplementation testFixtures(project(':infrastructure:bls'))
