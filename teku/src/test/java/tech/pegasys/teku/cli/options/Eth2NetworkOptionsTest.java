@@ -34,11 +34,11 @@ import tech.pegasys.teku.spec.SpecMilestone;
 
 class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
-  void shouldEnableCapellaByDefault() {
+  void shouldEnableDenebByDefault() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     final Spec spec = config.eth2NetworkConfiguration().getSpec();
     assertThat(spec.getForkSchedule().getHighestSupportedMilestone())
-        .isEqualTo(SpecMilestone.CAPELLA);
+        .isEqualTo(SpecMilestone.DENEB);
   }
 
   @Test
