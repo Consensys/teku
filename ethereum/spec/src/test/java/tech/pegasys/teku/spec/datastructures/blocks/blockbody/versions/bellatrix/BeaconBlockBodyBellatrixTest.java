@@ -17,14 +17,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
-import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.function.Consumer;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
@@ -55,7 +53,7 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
   @Test
   void equalsReturnsFalseWhenExecutionPayloadIsDifferent() {
     executionPayload = dataStructureUtil.randomExecutionPayload();
-    BeaconBlockBodyBellatrix testBeaconBlockBody = safeJoin(createBlockBody());
+    final BeaconBlockBodyBellatrix testBeaconBlockBody = createBlockBody();
 
     assertNotEquals(defaultBlockBody, testBeaconBlockBody);
   }
@@ -63,8 +61,7 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
   @Test
   void equalsReturnsFalseWhenExecutionPayloadHeaderIsDifferent() {
     executionPayloadHeader = dataStructureUtil.randomExecutionPayloadHeader();
-    final BlindedBeaconBlockBodyBellatrix testBlindedBeaconBlockBody =
-        safeJoin(createBlindedBlockBody());
+    final BlindedBeaconBlockBodyBellatrix testBlindedBeaconBlockBody = createBlindedBlockBody();
 
     assertNotEquals(defaultBlindedBlockBody, testBlindedBeaconBlockBody);
   }
@@ -96,7 +93,7 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
                             b ->
                                 // payload header is already set because we requested a blinded
                                 // content
-                                b.executionPayload(SafeFuture.completedFuture(executionPayload)))));
+                                b.executionPayload(executionPayload))));
     assertEquals(
         exception.getMessage(),
         "Exactly one of 'executionPayload' or 'executionPayloadHeader' must be set");
@@ -120,7 +117,7 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
                     .attesterSlashings(mock(SszList.class))
                     .deposits(mock(SszList.class))
                     .voluntaryExits(mock(SszList.class))
-                    .executionPayload(mock(SafeFuture.class))
+                    .executionPayload(mock(ExecutionPayload.class))
                     .syncAggregate(mock(SyncAggregate.class))
                     .build());
     assertEquals(exception.getMessage(), "Schema must be specified");
@@ -145,26 +142,26 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
                     .attesterSlashings(mock(SszList.class))
                     .deposits(mock(SszList.class))
                     .voluntaryExits(mock(SszList.class))
-                    .executionPayloadHeader(mock(SafeFuture.class))
+                    .executionPayloadHeader(mock(ExecutionPayloadHeader.class))
                     .syncAggregate(mock(SyncAggregate.class))
                     .build());
     assertEquals(exception.getMessage(), "Blinded schema must be specified");
   }
 
   @Override
-  protected SafeFuture<BeaconBlockBodyBellatrix> createBlockBody(
+  protected BeaconBlockBodyBellatrix createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> contentProvider) {
     final BeaconBlockBodyBuilder bodyBuilder = createBeaconBlockBodyBuilder();
     contentProvider.accept(bodyBuilder);
-    return bodyBuilder.build().thenApply(body -> body.toVersionBellatrix().orElseThrow());
+    return bodyBuilder.build().toVersionBellatrix().orElseThrow();
   }
 
   @Override
-  protected SafeFuture<BlindedBeaconBlockBodyBellatrix> createBlindedBlockBody(
+  protected BlindedBeaconBlockBodyBellatrix createBlindedBlockBody(
       final Consumer<BeaconBlockBodyBuilder> contentProvider) {
     final BeaconBlockBodyBuilder bodyBuilder = createBeaconBlockBodyBuilder();
     contentProvider.accept(bodyBuilder);
-    return bodyBuilder.build().thenApply(body -> body.toBlindedVersionBellatrix().orElseThrow());
+    return bodyBuilder.build().toBlindedVersionBellatrix().orElseThrow();
   }
 
   @Override
@@ -174,9 +171,9 @@ class BeaconBlockBodyBellatrixTest extends AbstractBeaconBlockBodyTest<BeaconBlo
             builder -> {
               builder.syncAggregate(syncAggregate);
               if (blinded) {
-                builder.executionPayloadHeader(SafeFuture.completedFuture(executionPayloadHeader));
+                builder.executionPayloadHeader(executionPayloadHeader);
               } else {
-                builder.executionPayload(SafeFuture.completedFuture(executionPayload));
+                builder.executionPayload(executionPayload);
               }
             });
   }

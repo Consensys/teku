@@ -41,12 +41,14 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.metrics.OperationTimer;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
-import tech.pegasys.teku.api.migrated.StateValidatorData;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
+import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuty;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanceFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -90,8 +92,6 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
-import tech.pegasys.teku.validator.api.ProposerDuties;
-import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
@@ -313,7 +313,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<Boolean> blinded) {
+      final Optional<Boolean> requestedBlinded,
+      final Optional<UInt64> requestedBuilderBoostFactor) {
     LOG.info("Creating unsigned block for slot {}", slot);
     performanceTracker.reportBlockProductionAttempt(spec.computeEpochAtSlot(slot));
     if (isSyncActive()) {
@@ -323,7 +324,10 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
         blockProductionPerformanceFactory.create(slot);
     return forkChoiceTrigger
         .prepareForBlockProduction(slot, blockProductionPerformance)
-        .thenCompose(__ -> combinedChainDataClient.getStateAtSlotExact(slot))
+        .thenCompose(
+            __ ->
+                combinedChainDataClient.getStateForBlockProduction(
+                    slot, forkChoiceTrigger.isForkChoiceOverrideLateBlockEnabled()))
         .thenPeek(
             maybeState -> {
               maybeState.ifPresent(
@@ -338,7 +342,8 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
                     slot,
                     randaoReveal,
                     graffiti,
-                    blinded,
+                    requestedBlinded,
+                    requestedBuilderBoostFactor,
                     blockSlotState,
                     blockProductionPerformance))
         .alwaysRun(blockProductionPerformance::complete);
@@ -348,14 +353,16 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final Optional<Boolean> blinded,
+      final Optional<Boolean> requestedBlinded,
+      final Optional<UInt64> requestedBuilderBoostFactor,
       final Optional<BeaconState> maybeBlockSlotState,
       final BlockProductionPerformance blockProductionPerformance) {
     if (maybeBlockSlotState.isEmpty()) {
       return SafeFuture.completedFuture(Optional.empty());
     }
     final BeaconState blockSlotState = maybeBlockSlotState.get();
-    final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, slot.minus(1));
+    final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, slot.decrement());
+    LOG.debug("parent block {}:({})", parentRoot, slot);
     if (combinedChainDataClient.isOptimisticBlock(parentRoot)) {
       LOG.warn(
           "Unable to produce block at slot {} because parent has optimistically validated payload",
@@ -364,7 +371,13 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
     }
     return blockFactory
         .createUnsignedBlock(
-            blockSlotState, slot, randaoReveal, graffiti, blinded, blockProductionPerformance)
+            blockSlotState,
+            slot,
+            randaoReveal,
+            graffiti,
+            requestedBlinded,
+            requestedBuilderBoostFactor,
+            blockProductionPerformance)
         .thenApply(Optional::of);
   }
 

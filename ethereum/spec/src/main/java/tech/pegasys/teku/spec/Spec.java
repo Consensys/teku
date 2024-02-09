@@ -30,6 +30,7 @@ import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes;
@@ -695,16 +696,16 @@ public class Spec {
 
   // Block Proposal
   public SafeFuture<BeaconBlockAndState> createNewUnsignedBlock(
-      final UInt64 newSlot,
+      final UInt64 proposalSlot,
       final int proposerIndex,
       final BeaconState blockSlotState,
       final Bytes32 parentBlockSigningRoot,
-      final Consumer<BeaconBlockBodyBuilder> bodyBuilder,
+      final Function<BeaconBlockBodyBuilder, SafeFuture<Void>> bodyBuilder,
       final BlockProductionPerformance blockProductionPerformance) {
-    return atSlot(newSlot)
+    return atSlot(proposalSlot)
         .getBlockProposalUtil()
         .createNewUnsignedBlock(
-            newSlot,
+            proposalSlot,
             proposerIndex,
             blockSlotState,
             parentBlockSigningRoot,

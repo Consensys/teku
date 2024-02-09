@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttesterSlashing;
@@ -28,6 +28,7 @@ import tech.pegasys.teku.api.schema.Deposit;
 import tech.pegasys.teku.api.schema.Eth1Data;
 import tech.pegasys.teku.api.schema.ProposerSlashing;
 import tech.pegasys.teku.api.schema.SignedVoluntaryExit;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.BeaconBlockBodySchemaAltair;
@@ -79,20 +80,23 @@ public class BeaconBlockBodyAltair extends BeaconBlockBody {
   @Override
   public tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody
       asInternalBeaconBlockBody(
-          final SpecVersion spec, Consumer<BeaconBlockBodyBuilder> builderRef) {
+          final SpecVersion spec,
+          final Function<BeaconBlockBodyBuilder, SafeFuture<Void>> builderRef) {
     final SyncAggregateSchema syncAggregateSchema =
         getBeaconBlockBodySchema(spec).getSyncAggregateSchema();
     return super.asInternalBeaconBlockBody(
         spec,
-        (builder) -> {
-          builderRef.accept(builder);
-          builder.syncAggregate(
-              syncAggregateSchema.create(
-                  syncAggregateSchema
-                      .getSyncCommitteeBitsSchema()
-                      .fromBytes(syncAggregate.syncCommitteeBits)
-                      .getAllSetBits(),
-                  syncAggregate.syncCommitteeSignature.asInternalBLSSignature()));
-        });
+        builder ->
+            SafeFuture.allOf(
+                builderRef.apply(builder),
+                SafeFuture.of(
+                    () ->
+                        builder.syncAggregate(
+                            syncAggregateSchema.create(
+                                syncAggregateSchema
+                                    .getSyncCommitteeBitsSchema()
+                                    .fromBytes(syncAggregate.syncCommitteeBits)
+                                    .getAllSetBits(),
+                                syncAggregate.syncCommitteeSignature.asInternalBLSSignature())))));
   }
 }

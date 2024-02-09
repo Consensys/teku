@@ -121,8 +121,7 @@ public class StatusLogger {
   public void eth1DepositEventsFailure(final Throwable cause) {
     log.fatal(
         "PLEASE CHECK YOUR ETH1 NODE | Encountered a problem retrieving deposit events from eth1 endpoint: {}",
-        cause.getMessage(),
-        cause);
+        cause.getMessage());
   }
 
   public void eth1FetchDepositsRequiresSmallerRange(final int batchSize) {
@@ -244,6 +243,12 @@ public class StatusLogger {
   public void exitOnNoValidatorKeys() {
     log.fatal(
         "No loaded validators when --exit-when-no-validator-keys-enabled option is true. Shutting down...");
+  }
+
+  public void validatorSlashedAlert(final Set<String> slashedValidatorPublicKeys) {
+    log.fatal(
+        "Validator(s) with public key(s) {} got slashed. Shutting down...",
+        String.join(", ", slashedValidatorPublicKeys));
   }
 
   public void beginInitializingChainData() {

@@ -48,6 +48,7 @@ import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -73,7 +74,6 @@ import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
-import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
@@ -584,7 +584,8 @@ class FailoverValidatorApiHandlerTest {
 
     final ValidatorApiChannelRequest<Optional<BlockContainer>> creationRequest =
         apiChannel ->
-            apiChannel.createUnsignedBlock(slot, randaoReveal, Optional.empty(), Optional.of(true));
+            apiChannel.createUnsignedBlock(
+                slot, randaoReveal, Optional.empty(), Optional.of(true), Optional.empty());
 
     setupFailures(creationRequest, primaryApiChannel);
     setupSuccesses(creationRequest, Optional.of(blindedBlock), failoverApiChannel1);
@@ -686,7 +687,7 @@ class FailoverValidatorApiHandlerTest {
             "createUnsignedBlock",
             apiChannel ->
                 apiChannel.createUnsignedBlock(
-                    slot, randaoReveal, Optional.empty(), Optional.of(false)),
+                    slot, randaoReveal, Optional.empty(), Optional.of(false), Optional.empty()),
             BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD,
             Optional.of(mock(BeaconBlock.class))),
         getArguments(

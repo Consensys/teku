@@ -11,19 +11,15 @@ the [releases page](https://github.com/Consensys/teku/releases).
 
 ### Breaking Changes
 
-- Removed the following hidden feature flags which are no longer
-  needed: `--Xfork-choice-update-head-on-block-import-enabled`
-  and `--Xbls-to-execution-changes-subnet-enabled`
+- The CLI options `--beacon-events-block-notify-when-validated-enabled` and
+  `--beacon-events-block-notify-when-imported-enabled` have been removed. This change was made due
+  to redundancy, as the functionality of these options is now covered by the new `block_gossip` and
+  the existing `block` SSE events.
 
 ### Additions and Improvements
-
-- Added a hidden flag `--Xfork-choice-updated-always-send-payload-attributes` which would cause 
-  payload attributes to be calculated and sent with every fcU. This could be useful for builders
-  consuming the `payload_attributes` SSE events.
-- Added Deneb (aka Dencun) configuration for Sepolia network for epoch 132608 (2024-01-30 22:51:12 UTC).
-- Added Deneb (aka Dencun) configuration for Chiado network for epoch 516608 (2024-01-31 18:15:40 UTC).
-- Added Deneb (aka Dencun) configuration for Holesky network for epoch 29696 (2024-02-07 11:34:24 UTC).
-- Generate key at `—p2p-private-key-file` path if specified file doesn't exist.
+- Improved compatibility with `/eth/v3/validator/blocks/{slot}` experimental beacon API for block production. It can now respond with blinded and unblinded content based on the block production flow. It also supports the `builder_boost_factor` parameter.
+- Add `block_gossip` SSE event as per https://github.com/ethereum/beacon-APIs/pull/405
+- Deposit tree snapshots will be downloaded from checkpoint-sync-url when available [#7715](https://github.com/Consensys/teku/issues/7715)
+- Updated mainnet configuration with Deneb fork scheduled for epoch 269568 (March 13, 2024, 01:55:35pm UTC)
 - Applied fork-choice confirmation rule prerequisite change outlined in PR #3431 in consensus-specs.
-
 ### Bug Fixes

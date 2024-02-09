@@ -40,7 +40,6 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.junit.jupiter.api.AfterEach;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.ExecutionClientDataProvider;
 import tech.pegasys.teku.api.RewardCalculator;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
@@ -75,7 +74,6 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
-import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -127,7 +125,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final EventChannels eventChannels = mock(EventChannels.class);
   protected final AggregatingAttestationPool attestationPool =
       mock(AggregatingAttestationPool.class);
-  protected final BlockManager blockManager = mock(BlockManager.class);
   protected final AttestationManager attestationManager = mock(AttestationManager.class);
   protected final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
   protected final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
@@ -149,9 +146,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
   protected final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
   protected final Eth1DataProvider eth1DataProvider = mock(Eth1DataProvider.class);
-
-  protected final ExecutionClientDataProvider executionClientDataProvider =
-      mock(ExecutionClientDataProvider.class);
 
   private StorageSystem storageSystem;
 
@@ -234,7 +228,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             .p2pNetwork(eth2P2PNetwork)
             .syncService(syncService)
             .validatorApiChannel(validatorApiChannel)
-            .blockManager(blockManager)
             .blockBlobSidecarsTrackersPool(BlockBlobSidecarsTrackersPool.NOOP)
             .attestationManager(attestationManager)
             .activeValidatorChannel(activeValidatorChannel)
@@ -258,7 +251,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             eventChannels,
             asyncRunner,
             StubTimeProvider.withTimeInMillis(1000),
-            executionClientDataProvider,
             spec);
     assertThat(beaconRestApi.start()).isCompleted();
     client = new OkHttpClient.Builder().readTimeout(0, TimeUnit.SECONDS).build();

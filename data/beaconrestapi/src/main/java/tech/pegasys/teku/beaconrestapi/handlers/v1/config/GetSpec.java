@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.config;
 
+import static tech.pegasys.teku.ethereum.json.types.config.SpecConfigDataMapBuilder.GET_SPEC_RESPONSE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_CONFIG;
@@ -20,15 +21,11 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDAT
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.HTTP_ERROR_RESPONSE_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import java.util.Map;
-import java.util.function.Function;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.GetSpecResponse;
+import tech.pegasys.teku.api.SpecConfigData;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -36,12 +33,6 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 public class GetSpec extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/config/spec";
   private final ConfigProvider configProvider;
-
-  private static final SerializableTypeDefinition<Map<String, String>> GET_SPEC_RESPONSE_TYPE =
-      SerializableTypeDefinition.<Map<String, String>>object()
-          .name("GetSpecResponse")
-          .withField("data", DeserializableTypeDefinition.mapOfStrings(), Function.identity())
-          .build();
 
   public GetSpec(final DataProvider dataProvider) {
     this(dataProvider.getConfigProvider());
@@ -62,7 +53,7 @@ public class GetSpec extends RestApiEndpoint {
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
     try {
-      final GetSpecResponse responseContext = new GetSpecResponse(configProvider.getGenesisSpec());
+      final SpecConfigData responseContext = new SpecConfigData(configProvider.getGenesisSpec());
       request.respondOk(responseContext.getConfigMap());
     } catch (JsonProcessingException e) {
       String message =

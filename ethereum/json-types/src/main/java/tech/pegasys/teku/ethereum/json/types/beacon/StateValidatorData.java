@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api.migrated;
+package tech.pegasys.teku.ethereum.json.types.beacon;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -61,6 +61,10 @@ public class StateValidatorData {
 
   public UInt64 getIndex() {
     return index;
+  }
+
+  public Integer getIntegerIndex() {
+    return index.intValue();
   }
 
   public UInt64 getBalance() {

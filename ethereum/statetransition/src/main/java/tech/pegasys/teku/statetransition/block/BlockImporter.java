@@ -45,7 +45,7 @@ import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityValidator;
 public class BlockImporter {
   private static final Logger LOG = LogManager.getLogger();
   private final Spec spec;
-  private final BlockImportNotifications blockImportNotifications;
+  private final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher;
   private final RecentChainData recentChainData;
   private final ForkChoice forkChoice;
   private final WeakSubjectivityValidator weakSubjectivityValidator;
@@ -67,13 +67,13 @@ public class BlockImporter {
 
   public BlockImporter(
       final Spec spec,
-      final BlockImportNotifications blockImportNotifications,
+      final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher,
       final RecentChainData recentChainData,
       final ForkChoice forkChoice,
       final WeakSubjectivityValidator weakSubjectivityValidator,
       final ExecutionLayerChannel executionLayer) {
     this.spec = spec;
-    this.blockImportNotifications = blockImportNotifications;
+    this.receivedBlockEventsChannelPublisher = receivedBlockEventsChannelPublisher;
     this.recentChainData = recentChainData;
     this.forkChoice = forkChoice;
     this.weakSubjectivityValidator = weakSubjectivityValidator;
@@ -90,7 +90,6 @@ public class BlockImporter {
       final SignedBeaconBlock block,
       final Optional<BlockImportPerformance> blockImportPerformance,
       final BlockBroadcastValidator blockBroadcastValidator) {
-
     final Optional<Boolean> knownOptimistic = recentChainData.isBlockOptimistic(block.getRoot());
     if (knownOptimistic.isPresent()) {
       LOG.trace(
@@ -120,7 +119,8 @@ public class BlockImporter {
               }
               LOG.trace("Successfully imported block {}", block::toLogString);
 
-              blockImportNotifications.onBlockImported(block);
+              receivedBlockEventsChannelPublisher.onBlockImported(
+                  block, result.isImportedOptimistically());
 
               // Notify operation pools to remove operations only
               // if the block is on our canonical chain

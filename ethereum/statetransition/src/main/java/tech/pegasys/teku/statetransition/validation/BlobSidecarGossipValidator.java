@@ -107,6 +107,15 @@ public class BlobSidecarGossipValidator {
     final BeaconBlockHeader blockHeader = blobSidecar.getSignedBeaconBlockHeader().getMessage();
 
     /*
+     * [IGNORE] The sidecar is the first sidecar for the tuple (block_header.slot, block_header.proposer_index, blob_sidecar.index)
+     *  with valid header signature, sidecar inclusion proof, and kzg proof.
+     */
+    if (!isFirstValidForSlotProposerIndexAndBlobIndex(blobSidecar, blockHeader)) {
+      LOG.trace("BlobSidecar is not the first valid for its slot and index. It will be dropped");
+      return completedFuture(InternalValidationResult.IGNORE);
+    }
+
+    /*
      * [REJECT] The sidecar's index is consistent with `MAX_BLOBS_PER_BLOCK` -- i.e. `blob_sidecar.index < MAX_BLOBS_PER_BLOCK`.
      */
     final Optional<Integer> maxBlobsPerBlockAtSlot =
@@ -136,7 +145,7 @@ public class BlobSidecarGossipValidator {
 
     /*
      * [IGNORE] The sidecar is from a slot greater than the latest finalized slot -- i.e. validate that
-     * `block_header.slot > compute_start_slot_at_epoch(state.finalized_checkpoint.epoch)`
+     * `block_header.slot > compute_start_slot_at_epoch(store.finalized_checkpoint.epoch)`
      */
     if (gossipValidationHelper.isSlotFinalized(blockHeader.getSlot())) {
       LOG.trace("BlobSidecar is too old (slot already finalized)");
@@ -210,15 +219,6 @@ public class BlobSidecarGossipValidator {
      */
     if (!miscHelpersDeneb.verifyBlobKzgProof(kzg, blobSidecar)) {
       return completedFuture(reject("BlobSidecar does not pass kzg validation"));
-    }
-
-    /*
-     * [IGNORE] The sidecar is the first sidecar for the tuple (block_header.slot, block_header.proposer_index, blob_sidecar.index)
-     *  with valid header signature, sidecar inclusion proof, and kzg proof.
-     */
-    if (!isFirstValidForSlotProposerIndexAndBlobIndex(blobSidecar, blockHeader)) {
-      LOG.trace("BlobSidecar is not the first valid for its slot and index. It will be dropped");
-      return completedFuture(InternalValidationResult.IGNORE);
     }
 
     return gossipValidationHelper

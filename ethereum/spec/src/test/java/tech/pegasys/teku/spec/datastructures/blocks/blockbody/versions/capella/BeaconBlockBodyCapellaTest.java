@@ -14,12 +14,10 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella;
 
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
@@ -53,25 +51,25 @@ class BeaconBlockBodyCapellaTest extends AbstractBeaconBlockBodyTest<BeaconBlock
   @Test
   void equalsReturnsFalseWhenBlsToExecutionChangesIsDifferent() {
     blsToExecutionChanges = dataStructureUtil.randomSignedBlsToExecutionChangesList();
-    BeaconBlockBodyAltair testBeaconBlockBody = safeJoin(createBlockBody());
+    final BeaconBlockBodyAltair testBeaconBlockBody = createBlockBody();
 
     assertNotEquals(defaultBlockBody, testBeaconBlockBody);
   }
 
   @Override
-  protected SafeFuture<BeaconBlockBodyCapella> createBlockBody(
+  protected BeaconBlockBodyCapella createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> contentProvider) {
     final BeaconBlockBodyBuilder bodyBuilder = createBeaconBlockBodyBuilder();
     contentProvider.accept(bodyBuilder);
-    return bodyBuilder.build().thenApply(body -> body.toVersionCapella().orElseThrow());
+    return bodyBuilder.build().toVersionCapella().orElseThrow();
   }
 
   @Override
-  protected SafeFuture<BlindedBeaconBlockBodyBellatrix> createBlindedBlockBody(
+  protected BlindedBeaconBlockBodyBellatrix createBlindedBlockBody(
       Consumer<BeaconBlockBodyBuilder> contentProvider) {
     final BeaconBlockBodyBuilder bodyBuilder = createBeaconBlockBodyBuilder();
     contentProvider.accept(bodyBuilder);
-    return bodyBuilder.build().thenApply(body -> body.toBlindedVersionCapella().orElseThrow());
+    return bodyBuilder.build().toBlindedVersionCapella().orElseThrow();
   }
 
   @Override
@@ -81,9 +79,9 @@ class BeaconBlockBodyCapellaTest extends AbstractBeaconBlockBodyTest<BeaconBlock
             builder -> {
               builder.syncAggregate(syncAggregate).blsToExecutionChanges(blsToExecutionChanges);
               if (blinded) {
-                builder.executionPayloadHeader(SafeFuture.completedFuture(executionPayloadHeader));
+                builder.executionPayloadHeader(executionPayloadHeader);
               } else {
-                builder.executionPayload(SafeFuture.completedFuture(executionPayload));
+                builder.executionPayload(executionPayload);
               }
             });
   }

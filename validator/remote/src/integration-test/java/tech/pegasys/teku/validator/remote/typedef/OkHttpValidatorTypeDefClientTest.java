@@ -307,6 +307,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
         okHttpValidatorTypeDefClient.createUnsignedBlock(
             dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomSignature(),
+            Optional.empty(),
             Optional.empty());
 
     assertThat(producedBlock).hasValue(blockContainer);

@@ -51,7 +51,6 @@ import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
-import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.response.v1.validator.ValidatorLiveness;
@@ -59,6 +58,9 @@ import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.api.schema.Validator;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
+import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuty;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.async.Waiter;
@@ -82,8 +84,6 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
-import tech.pegasys.teku.validator.api.ProposerDuties;
-import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
@@ -195,8 +195,8 @@ class RemoteValidatorApiHandlerTest {
 
     // simulate POST not existing
     when(apiClient.postValidators(any())).thenThrow(PostStateValidatorsNotExistingException.class);
-    when(apiClient.getValidators(expectedValidatorIds))
-        .thenReturn(Optional.of(List.of(validatorResponse(1, key1), validatorResponse(2, key2))));
+    when(typeDefClient.getStateValidators(expectedValidatorIds))
+        .thenReturn(Optional.of(List.of(stateValidatorData(1, key1), stateValidatorData(2, key2))));
 
     // call method twice
     final SafeFuture<Map<BLSPublicKey, Integer>> future =
@@ -212,7 +212,7 @@ class RemoteValidatorApiHandlerTest {
     // POST only called once
     verify(apiClient, times(1)).postValidators(expectedValidatorIds);
     // GET called twice
-    verify(apiClient, times(2)).getValidators(expectedValidatorIds);
+    verify(typeDefClient, times(2)).getStateValidators(expectedValidatorIds);
   }
 
   @Test
@@ -227,8 +227,8 @@ class RemoteValidatorApiHandlerTest {
             key1.toBytesCompressed().toHexString(),
             key2.toBytesCompressed().toHexString(),
             key3.toBytesCompressed().toHexString());
-    when(apiClient.getValidators(expectedValidatorIds))
-        .thenReturn(Optional.of(List.of(validatorResponse(1, key1), validatorResponse(2, key2))));
+    when(typeDefClient.getStateValidators(expectedValidatorIds))
+        .thenReturn(Optional.of(List.of(stateValidatorData(1, key1), stateValidatorData(2, key2))));
 
     final SafeFuture<Map<BLSPublicKey, Integer>> future =
         apiHandler.getValidatorIndices(List.of(key1, key2, key3));
@@ -236,7 +236,7 @@ class RemoteValidatorApiHandlerTest {
     asyncRunner.executeQueuedActions();
     assertThat(future).isCompleted();
     assertThat(safeJoin(future)).containsOnly(entry(key1, 1), entry(key2, 2));
-    verify(apiClient).getValidators(expectedValidatorIds);
+    verify(typeDefClient).getStateValidators(expectedValidatorIds);
   }
 
   @Test
@@ -258,20 +258,20 @@ class RemoteValidatorApiHandlerTest {
     final List<String> expectedBatch3 =
         allSerializedKeys.subList(MAX_PUBLIC_KEY_BATCH_SIZE * 2, allKeys.size());
 
-    final List<ValidatorResponse> batch1Responses =
-        List.of(validatorResponse(10, allKeys.get(0)), validatorResponse(11, allKeys.get(3)));
-    final List<ValidatorResponse> batch2Responses =
+    final List<StateValidatorData> batch1Data =
+        List.of(stateValidatorData(10, allKeys.get(0)), stateValidatorData(11, allKeys.get(3)));
+    final List<StateValidatorData> batch2Data =
         List.of(
-            validatorResponse(20, allKeys.get(MAX_PUBLIC_KEY_BATCH_SIZE)),
-            validatorResponse(21, allKeys.get(MAX_PUBLIC_KEY_BATCH_SIZE + 3)));
-    final List<ValidatorResponse> batch3Responses =
+            stateValidatorData(20, allKeys.get(MAX_PUBLIC_KEY_BATCH_SIZE)),
+            stateValidatorData(21, allKeys.get(MAX_PUBLIC_KEY_BATCH_SIZE + 3)));
+    final List<StateValidatorData> batch3Data =
         List.of(
-            validatorResponse(30, allKeys.get(MAX_PUBLIC_KEY_BATCH_SIZE * 2)),
-            validatorResponse(31, allKeys.get(MAX_PUBLIC_KEY_BATCH_SIZE * 2 + 3)));
+            stateValidatorData(30, allKeys.get(MAX_PUBLIC_KEY_BATCH_SIZE * 2)),
+            stateValidatorData(31, allKeys.get(MAX_PUBLIC_KEY_BATCH_SIZE * 2 + 3)));
 
-    when(apiClient.getValidators(expectedBatch1)).thenReturn(Optional.of(batch1Responses));
-    when(apiClient.getValidators(expectedBatch2)).thenReturn(Optional.of(batch2Responses));
-    when(apiClient.getValidators(expectedBatch3)).thenReturn(Optional.of(batch3Responses));
+    when(typeDefClient.getStateValidators(expectedBatch1)).thenReturn(Optional.of(batch1Data));
+    when(typeDefClient.getStateValidators(expectedBatch2)).thenReturn(Optional.of(batch2Data));
+    when(typeDefClient.getStateValidators(expectedBatch3)).thenReturn(Optional.of(batch3Data));
 
     final SafeFuture<Map<BLSPublicKey, Integer>> future = apiHandler.getValidatorIndices(allKeys);
 
@@ -285,9 +285,9 @@ class RemoteValidatorApiHandlerTest {
             entry(allKeys.get(MAX_PUBLIC_KEY_BATCH_SIZE + 3), 21),
             entry(allKeys.get(MAX_PUBLIC_KEY_BATCH_SIZE * 2), 30),
             entry(allKeys.get(MAX_PUBLIC_KEY_BATCH_SIZE * 2 + 3), 31));
-    verify(apiClient).getValidators(expectedBatch1);
-    verify(apiClient).getValidators(expectedBatch2);
-    verify(apiClient).getValidators(expectedBatch3);
+    verify(typeDefClient).getStateValidators(expectedBatch1);
+    verify(typeDefClient).getStateValidators(expectedBatch2);
+    verify(typeDefClient).getStateValidators(expectedBatch3);
   }
 
   @Test
@@ -362,10 +362,10 @@ class RemoteValidatorApiHandlerTest {
 
   @Test
   public void getProposerDuties_WhenNoneFound_ReturnsEmpty() {
-    when(apiClient.getProposerDuties(any()))
+    when(typeDefClient.getProposerDuties(any()))
         .thenReturn(
             Optional.of(
-                new GetProposerDutiesResponse(
+                new ProposerDuties(
                     Bytes32.fromHexString("0x1234"), Collections.emptyList(), false)));
 
     SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(UInt64.ONE);
@@ -377,23 +377,21 @@ class RemoteValidatorApiHandlerTest {
   public void getProposerDuties_WhenFound_ReturnsDuties() {
     final BLSPublicKey blsPublicKey = dataStructureUtil.randomPublicKey();
     final int validatorIndex = 472;
-    final tech.pegasys.teku.api.response.v1.validator.ProposerDuty schemaValidatorDuties =
-        new tech.pegasys.teku.api.response.v1.validator.ProposerDuty(
-            new BLSPubKey(blsPublicKey), validatorIndex, UInt64.ZERO);
+    final ProposerDuty schemaValidatorDuties =
+        new ProposerDuty(blsPublicKey, validatorIndex, UInt64.ZERO);
     final ProposerDuty expectedValidatorDuties =
         new ProposerDuty(blsPublicKey, validatorIndex, UInt64.ZERO);
-    final GetProposerDutiesResponse response =
-        new GetProposerDutiesResponse(
-            Bytes32.fromHexString("0x1234"), List.of(schemaValidatorDuties), false);
+    final ProposerDuties response =
+        new ProposerDuties(Bytes32.fromHexString("0x1234"), List.of(schemaValidatorDuties), false);
 
-    when(apiClient.getProposerDuties(UInt64.ONE)).thenReturn(Optional.of(response));
+    when(typeDefClient.getProposerDuties(UInt64.ONE)).thenReturn(Optional.of(response));
 
     SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(UInt64.ONE);
 
     ProposerDuties validatorDuties = unwrapToValue(future);
 
     assertThat(validatorDuties.getDuties().get(0)).isEqualTo(expectedValidatorDuties);
-    assertThat(validatorDuties.getDependentRoot()).isEqualTo(response.dependentRoot);
+    assertThat(validatorDuties.getDependentRoot()).isEqualTo(response.getDependentRoot());
   }
 
   @Test
@@ -450,7 +448,11 @@ class RemoteValidatorApiHandlerTest {
 
     SafeFuture<Optional<BlockContainer>> future =
         apiHandler.createUnsignedBlock(
-            UInt64.ONE, blsSignature, Optional.of(Bytes32.random()), Optional.of(false));
+            UInt64.ONE,
+            blsSignature,
+            Optional.of(Bytes32.random()),
+            Optional.of(false),
+            Optional.empty());
 
     assertThat(unwrapToOptional(future)).isEmpty();
   }
@@ -466,7 +468,27 @@ class RemoteValidatorApiHandlerTest {
         .thenReturn(Optional.of(beaconBlock));
 
     SafeFuture<Optional<BlockContainer>> future =
-        apiHandler.createUnsignedBlock(UInt64.ONE, blsSignature, graffiti, Optional.of(false));
+        apiHandler.createUnsignedBlock(
+            UInt64.ONE, blsSignature, graffiti, Optional.of(false), Optional.empty());
+
+    assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(beaconBlock);
+  }
+
+  @Test
+  public void createUnsignedBlock_viaBlockV3_WhenFound_ReturnsBlock() {
+    final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(UInt64.ONE);
+    final BLSSignature blsSignature = dataStructureUtil.randomSignature();
+    final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
+
+    // we expect new block API to be called (with proposer boost factor parameter instead of blinded
+    // parameter)
+    when(typeDefClient.createUnsignedBlock(
+            eq(beaconBlock.getSlot()), eq(blsSignature), eq(graffiti), eq(Optional.of(UInt64.ONE))))
+        .thenReturn(Optional.of(beaconBlock));
+
+    SafeFuture<Optional<BlockContainer>> future =
+        apiHandler.createUnsignedBlock(
+            UInt64.ONE, blsSignature, graffiti, Optional.empty(), Optional.of(UInt64.ONE));
 
     assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(beaconBlock);
   }
@@ -485,7 +507,8 @@ class RemoteValidatorApiHandlerTest {
         .thenReturn(Optional.of(blockContents));
 
     SafeFuture<Optional<BlockContainer>> future =
-        apiHandler.createUnsignedBlock(UInt64.ONE, blsSignature, graffiti, Optional.of(false));
+        apiHandler.createUnsignedBlock(
+            UInt64.ONE, blsSignature, graffiti, Optional.of(false), Optional.empty());
 
     assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(blockContents);
   }
@@ -737,5 +760,23 @@ class RemoteValidatorApiHandlerTest {
             UInt64.ZERO,
             FAR_FUTURE_EPOCH,
             FAR_FUTURE_EPOCH));
+  }
+
+  private StateValidatorData stateValidatorData(final long index, final BLSPublicKey publicKey) {
+    final tech.pegasys.teku.spec.datastructures.state.Validator validator =
+        new tech.pegasys.teku.spec.datastructures.state.Validator(
+            publicKey,
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomUInt64(),
+            false,
+            UInt64.ZERO,
+            UInt64.ZERO,
+            FAR_FUTURE_EPOCH,
+            FAR_FUTURE_EPOCH);
+    return new StateValidatorData(
+        UInt64.valueOf(index),
+        dataStructureUtil.randomUInt64(),
+        ValidatorStatus.active_ongoing,
+        validator);
   }
 }

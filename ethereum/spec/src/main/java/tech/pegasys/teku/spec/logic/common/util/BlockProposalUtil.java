@@ -16,7 +16,7 @@ package tech.pegasys.teku.spec.logic.common.util;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
-import java.util.function.Consumer;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
@@ -47,16 +47,16 @@ public class BlockProposalUtil {
   }
 
   public SafeFuture<BeaconBlockAndState> createNewUnsignedBlock(
-      final UInt64 newSlot,
+      final UInt64 proposalSlot,
       final int proposerIndex,
       final BeaconState blockSlotState,
       final Bytes32 parentBlockSigningRoot,
-      final Consumer<BeaconBlockBodyBuilder> bodyBuilder,
+      final Function<BeaconBlockBodyBuilder, SafeFuture<Void>> bodyBuilder,
       final BlockProductionPerformance blockProductionPerformance) {
     checkArgument(
-        blockSlotState.getSlot().equals(newSlot),
+        blockSlotState.getSlot().equals(proposalSlot),
         "Block slot state from incorrect slot. Expected %s but got %s",
-        newSlot,
+        proposalSlot,
         blockSlotState.getSlot());
 
     // Create block body
@@ -72,7 +72,7 @@ public class BlockProposalUtil {
                       ? schemaDefinitions.getBlindedBeaconBlockSchema()
                       : schemaDefinitions.getBeaconBlockSchema();
               return beaconBlockSchema.create(
-                  newSlot,
+                  proposalSlot,
                   UInt64.valueOf(proposerIndex),
                   parentBlockSigningRoot,
                   tmpStateRoot,
@@ -113,9 +113,8 @@ public class BlockProposalUtil {
   }
 
   private SafeFuture<? extends BeaconBlockBody> createBlockBody(
-      final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
+      final Function<BeaconBlockBodyBuilder, SafeFuture<Void>> bodyBuilder) {
     final BeaconBlockBodyBuilder builder = schemaDefinitions.createBeaconBlockBodyBuilder();
-    builderConsumer.accept(builder);
-    return builder.build();
+    return bodyBuilder.apply(builder).thenApply(__ -> builder.build());
   }
 }

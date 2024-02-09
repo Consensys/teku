@@ -28,7 +28,6 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
-import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -45,6 +44,7 @@ public class DataProvider {
   private final ValidatorDataProvider validatorDataProvider;
   private final NodeDataProvider nodeDataProvider;
   private final ConfigProvider configProvider;
+  private final ExecutionClientDataProvider executionClientDataProvider;
 
   private DataProvider(
       final ConfigProvider configProvider,
@@ -52,13 +52,15 @@ public class DataProvider {
       final NodeDataProvider nodeDataProvider,
       final ChainDataProvider chainDataProvider,
       final SyncDataProvider syncDataProvider,
-      final ValidatorDataProvider validatorDataProvider) {
+      final ValidatorDataProvider validatorDataProvider,
+      final ExecutionClientDataProvider executionClientDataProvider) {
     this.configProvider = configProvider;
     this.networkDataProvider = networkDataProvider;
     this.nodeDataProvider = nodeDataProvider;
     this.chainDataProvider = chainDataProvider;
     this.syncDataProvider = syncDataProvider;
     this.validatorDataProvider = validatorDataProvider;
+    this.executionClientDataProvider = executionClientDataProvider;
   }
 
   public ConfigProvider getConfigProvider() {
@@ -85,6 +87,10 @@ public class DataProvider {
     return nodeDataProvider;
   }
 
+  public ExecutionClientDataProvider getExecutionClientDataProvider() {
+    return executionClientDataProvider;
+  }
+
   public static DataProvider.Builder builder() {
     return new Builder();
   }
@@ -100,7 +106,6 @@ public class DataProvider {
     private SyncService syncService;
     private ValidatorApiChannel validatorApiChannel;
     private AggregatingAttestationPool attestationPool;
-    private BlockManager blockManager;
     private BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
     private AttestationManager attestationManager;
     private ActiveValidatorChannel activeValidatorChannel;
@@ -152,11 +157,6 @@ public class DataProvider {
 
     public Builder attestationPool(final AggregatingAttestationPool attestationPool) {
       this.attestationPool = attestationPool;
-      return this;
-    }
-
-    public Builder blockManager(final BlockManager blockManager) {
-      this.blockManager = blockManager;
       return this;
     }
 
@@ -236,7 +236,6 @@ public class DataProvider {
               voluntaryExitPool,
               blsToExecutionChangePool,
               syncCommitteeContributionPool,
-              blockManager,
               blockBlobSidecarsTrackersPool,
               attestationManager,
               isLivenessTrackingEnabled,
@@ -254,19 +253,23 @@ public class DataProvider {
               combinedChainDataClient,
               executionLayerBlockProductionManager,
               rewardCalculator);
+      final ExecutionClientDataProvider executionClientDataProvider =
+          new ExecutionClientDataProvider();
 
       checkNotNull(configProvider, "Expect config Provider");
       checkNotNull(networkDataProvider, "Expect Network Data Provider");
       checkNotNull(chainDataProvider, "Expect Chain Data Provider");
       checkNotNull(syncDataProvider, "Expect Sync Data Provider");
       checkNotNull(validatorDataProvider, "Expect Validator Data Provider");
+      checkNotNull(executionClientDataProvider, "Expect Execution Client Data Provider");
       return new DataProvider(
           configProvider,
           networkDataProvider,
           nodeDataProvider,
           chainDataProvider,
           syncDataProvider,
-          validatorDataProvider);
+          validatorDataProvider,
+          executionClientDataProvider);
     }
 
     public Builder rejectedExecutionSupplier(final IntSupplier rejectedExecutionCountSupplier) {

@@ -17,7 +17,6 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
@@ -28,8 +27,8 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltair {
-  protected SafeFuture<ExecutionPayload> executionPayload;
-  protected SafeFuture<ExecutionPayloadHeader> executionPayloadHeader;
+  protected ExecutionPayload executionPayload;
+  protected ExecutionPayloadHeader executionPayloadHeader;
   protected final BeaconBlockBodySchema<? extends BlindedBeaconBlockBodyBellatrix> blindedSchema;
 
   public BeaconBlockBodyBuilderBellatrix(
@@ -46,15 +45,14 @@ public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltai
   }
 
   @Override
-  public BeaconBlockBodyBuilder executionPayload(
-      final SafeFuture<ExecutionPayload> executionPayload) {
+  public BeaconBlockBodyBuilder executionPayload(final ExecutionPayload executionPayload) {
     this.executionPayload = executionPayload;
     return this;
   }
 
   @Override
   public BeaconBlockBodyBuilder executionPayloadHeader(
-      final SafeFuture<ExecutionPayloadHeader> executionPayloadHeader) {
+      final ExecutionPayloadHeader executionPayloadHeader) {
     this.executionPayloadHeader = executionPayloadHeader;
     return this;
   }
@@ -91,42 +89,38 @@ public class BeaconBlockBodyBuilderBellatrix extends BeaconBlockBodyBuilderAltai
   }
 
   @Override
-  public SafeFuture<BeaconBlockBody> build() {
+  public BeaconBlockBody build() {
     validate();
     if (isBlinded()) {
       final BlindedBeaconBlockBodySchemaBellatrixImpl schema =
           getAndValidateSchema(true, BlindedBeaconBlockBodySchemaBellatrixImpl.class);
-      return executionPayloadHeader.thenApply(
-          header ->
-              new BlindedBeaconBlockBodyBellatrixImpl(
-                  schema,
-                  new SszSignature(randaoReveal),
-                  eth1Data,
-                  SszBytes32.of(graffiti),
-                  proposerSlashings,
-                  attesterSlashings,
-                  attestations,
-                  deposits,
-                  voluntaryExits,
-                  syncAggregate,
-                  header.toVersionBellatrix().orElseThrow()));
+      return new BlindedBeaconBlockBodyBellatrixImpl(
+          schema,
+          new SszSignature(randaoReveal),
+          eth1Data,
+          SszBytes32.of(graffiti),
+          proposerSlashings,
+          attesterSlashings,
+          attestations,
+          deposits,
+          voluntaryExits,
+          syncAggregate,
+          executionPayloadHeader.toVersionBellatrix().orElseThrow());
     }
 
     final BeaconBlockBodySchemaBellatrixImpl schema =
         getAndValidateSchema(false, BeaconBlockBodySchemaBellatrixImpl.class);
-    return executionPayload.thenApply(
-        payload ->
-            new BeaconBlockBodyBellatrixImpl(
-                schema,
-                new SszSignature(randaoReveal),
-                eth1Data,
-                SszBytes32.of(graffiti),
-                proposerSlashings,
-                attesterSlashings,
-                attestations,
-                deposits,
-                voluntaryExits,
-                syncAggregate,
-                payload.toVersionBellatrix().orElseThrow()));
+    return new BeaconBlockBodyBellatrixImpl(
+        schema,
+        new SszSignature(randaoReveal),
+        eth1Data,
+        SszBytes32.of(graffiti),
+        proposerSlashings,
+        attesterSlashings,
+        attestations,
+        deposits,
+        voluntaryExits,
+        syncAggregate,
+        executionPayload.toVersionBellatrix().orElseThrow());
   }
 }

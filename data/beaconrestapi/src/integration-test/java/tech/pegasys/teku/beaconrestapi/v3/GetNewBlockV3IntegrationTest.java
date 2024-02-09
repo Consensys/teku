@@ -73,13 +73,15 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
     spec = specContext.getSpec();
     specMilestone = specContext.getSpecMilestone();
     startRestAPIAtGenesis(specMilestone);
-    dataStructureUtil = new DataStructureUtil(spec);
+    dataStructureUtil = specContext.getDataStructureUtil();
     when(executionLayerBlockProductionManager.getCachedPayloadResult(UInt64.ONE))
         .thenReturn(
             Optional.of(
                 new ExecutionPayloadResult(
                     mock(ExecutionPayloadContext.class),
-                    Optional.empty(),
+                    // we can provide an empty future here as we are only
+                    // preparing execution payload value
+                    Optional.of(SafeFuture.completedFuture(null)),
                     Optional.empty(),
                     Optional.empty(),
                     Optional.of(SafeFuture.completedFuture(executionPayloadValue)))));
@@ -93,7 +95,8 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
     assumeThat(specMilestone).isLessThan(DENEB);
     final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
     final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
-    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any(), any()))
+    when(validatorApiChannel.createUnsignedBlock(
+            eq(UInt64.ONE), eq(signature), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(beaconBlock)));
     Response response = get(signature, ContentTypes.JSON);
     assertResponseWithHeaders(response, false);
@@ -106,7 +109,8 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
     assumeThat(specMilestone).isLessThan(DENEB);
     final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
     final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
-    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any(), any()))
+    when(validatorApiChannel.createUnsignedBlock(
+            eq(UInt64.ONE), eq(signature), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(beaconBlock)));
     Response response = get(signature, ContentTypes.OCTET_STREAM);
     assertResponseWithHeaders(response, false);
@@ -122,7 +126,8 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
     assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX);
     final BeaconBlock blindedBeaconBlock = dataStructureUtil.randomBlindedBeaconBlock(ONE);
     final BLSSignature signature = blindedBeaconBlock.getBlock().getBody().getRandaoReveal();
-    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any(), any()))
+    when(validatorApiChannel.createUnsignedBlock(
+            eq(UInt64.ONE), eq(signature), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blindedBeaconBlock)));
     Response response = get(signature, ContentTypes.JSON);
     assertResponseWithHeaders(response, true);
@@ -135,7 +140,8 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
     assumeThat(specMilestone).isGreaterThanOrEqualTo(BELLATRIX);
     final BeaconBlock blindedBeaconBlock = dataStructureUtil.randomBlindedBeaconBlock(ONE);
     final BLSSignature signature = blindedBeaconBlock.getBlock().getBody().getRandaoReveal();
-    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any(), any()))
+    when(validatorApiChannel.createUnsignedBlock(
+            eq(UInt64.ONE), eq(signature), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blindedBeaconBlock)));
     Response response = get(signature, ContentTypes.OCTET_STREAM);
     assertResponseWithHeaders(response, true);
@@ -151,7 +157,8 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
     assumeThat(specMilestone).isEqualTo(DENEB);
     final BlockContents blockContents = dataStructureUtil.randomBlockContents(ONE);
     final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
-    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any(), any()))
+    when(validatorApiChannel.createUnsignedBlock(
+            eq(UInt64.ONE), eq(signature), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockContents)));
     Response response = get(signature, ContentTypes.JSON);
     assertResponseWithHeaders(response, false);
@@ -164,7 +171,8 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
     assumeThat(specMilestone).isEqualTo(DENEB);
     final BlockContents blockContents = dataStructureUtil.randomBlockContents(ONE);
     final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
-    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any(), any()))
+    when(validatorApiChannel.createUnsignedBlock(
+            eq(UInt64.ONE), eq(signature), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockContents)));
     Response response = get(signature, ContentTypes.OCTET_STREAM);
     assertResponseWithHeaders(response, false);
@@ -180,17 +188,9 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
   void shouldFailWhenNoBlockProduced() throws IOException {
     final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
     final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
-    when(validatorApiChannel.createUnsignedBlock(eq(UInt64.ONE), eq(signature), any(), any()))
+    when(validatorApiChannel.createUnsignedBlock(
+            eq(UInt64.ONE), eq(signature), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.empty()));
-    when(executionLayerBlockProductionManager.getCachedPayloadResult(UInt64.ONE))
-        .thenReturn(
-            Optional.of(
-                new ExecutionPayloadResult(
-                    mock(ExecutionPayloadContext.class),
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.empty(),
-                    Optional.of(SafeFuture.completedFuture(executionPayloadValue)))));
     Response response = get(signature, ContentTypes.JSON);
     assertThat(response.code()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
     final String body = response.body().string();

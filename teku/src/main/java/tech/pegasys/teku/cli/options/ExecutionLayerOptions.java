@@ -112,7 +112,7 @@ public class ExecutionLayerOptions {
               + BUILDER_ALWAYS_KEYWORD
               + "' to always use builder bid. In this configuration locally produced payload will be used only when the bid is invalid.",
       arity = "1")
-  private String builderBidCompareFactor = Integer.toString(DEFAULT_BUILDER_BID_COMPARE_FACTOR);
+  private String builderBidCompareFactor = DEFAULT_BUILDER_BID_COMPARE_FACTOR.toString();
 
   @Option(
       names = {"--builder-set-user-agent-header"},
