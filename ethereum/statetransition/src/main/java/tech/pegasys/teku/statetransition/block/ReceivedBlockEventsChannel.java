@@ -16,7 +16,12 @@ package tech.pegasys.teku.statetransition.block;
 import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
-@FunctionalInterface
-public interface BlockImportNotifications extends VoidReturningChannelInterface {
-  void onBlockImported(SignedBeaconBlock block);
+/** Used to notify subscribers for events related to blocks received from P2P or API */
+public interface ReceivedBlockEventsChannel extends VoidReturningChannelInterface {
+
+  /** Block passes validation rules of the `beacon_block` topic */
+  void onBlockValidated(SignedBeaconBlock block);
+
+  /** Successfully imported on the fork-choice `on_block` handler */
+  void onBlockImported(SignedBeaconBlock block, boolean executionOptimistic);
 }

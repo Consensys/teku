@@ -412,7 +412,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
     assertThat(blockAndMetadata).isNotEmpty();
     verify(mockCombinedChainDataClient, times(1))
         .getStateAtSlotExact(blockAndMetadata.get().getData().getSlot().decrement());
-    verify(rewardCalculatorMock, times(1)).getBlockRewardData(eq(blockAndMetadata.get()), any());
+    verify(rewardCalculatorMock, times(1))
+        .getBlockRewardDataAndMetaData(eq(blockAndMetadata.get()), any());
     assertThat(future).isCompleted();
   }
 

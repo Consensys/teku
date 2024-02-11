@@ -30,8 +30,7 @@ public class ConfigProvider {
   }
 
   public GetSpecResponse getConfig() {
-    final tech.pegasys.teku.api.GetSpecResponse configuration =
-        new tech.pegasys.teku.api.GetSpecResponse(spec.getGenesisSpecConfig());
+    final SpecConfigData configuration = new SpecConfigData(spec.getGenesisSpecConfig());
 
     return new GetSpecResponse(configuration.getConfigMap());
   }

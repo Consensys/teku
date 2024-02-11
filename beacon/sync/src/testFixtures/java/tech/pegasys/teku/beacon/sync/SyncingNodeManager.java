@@ -50,7 +50,6 @@ import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.ReceivedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
@@ -60,9 +59,9 @@ import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
-import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
+import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
@@ -127,8 +126,14 @@ public class SyncingNodeManager {
             transitionBlockValidator,
             new StubMetricsSystem());
 
+    final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher =
+        eventChannels.getPublisher(ReceivedBlockEventsChannel.class);
+
     final BlockGossipValidator blockGossipValidator =
-        new BlockGossipValidator(spec, new GossipValidationHelper(spec, recentChainData));
+        new BlockGossipValidator(
+            spec,
+            new GossipValidationHelper(spec, recentChainData),
+            receivedBlockEventsChannelPublisher);
     final BlockValidator blockValidator = new BlockValidator(blockGossipValidator);
 
     final TimeProvider timeProvider = new SystemTimeProvider();
@@ -142,7 +147,7 @@ public class SyncingNodeManager {
     final BlockImporter blockImporter =
         new BlockImporter(
             spec,
-            eventChannels.getPublisher(BlockImportNotifications.class),
+            receivedBlockEventsChannelPublisher,
             recentChainData,
             forkChoice,
             WeakSubjectivityFactory.lenientValidator(),
@@ -164,7 +169,7 @@ public class SyncingNodeManager {
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
         .subscribe(BlockImportChannel.class, blockManager)
-        .subscribe(BlockImportNotifications.class, blockManager)
+        .subscribe(ReceivedBlockEventsChannel.class, blockManager)
         .subscribe(FinalizedCheckpointChannel.class, pendingBlocks)
         .subscribe(SlotEventsChannel.class, pendingBlocks);
 
@@ -205,19 +210,7 @@ public class SyncingNodeManager {
             fetchBlockTaskFactory);
     recentBlocksFetcher.subscribeBlockFetched(
         block -> blockManager.importBlock(block, BroadcastValidationLevel.NOT_REQUIRED));
-    blockManager.subscribeToReceivedBlocks(
-        new ReceivedBlockListener() {
-          @Override
-          public void onBlockValidated(final SignedBeaconBlock block) {
-            // NOOP
-          }
-
-          @Override
-          public void onBlockImported(
-              final SignedBeaconBlock block, final boolean executionOptimistic) {
-            recentBlocksFetcher.cancelRecentBlockRequest(block.getRoot());
-          }
-        });
+    eventChannels.subscribe(ReceivedBlockEventsChannel.class, recentBlocksFetcher);
 
     recentBlocksFetcher.start().join();
     blockManager.start().join();

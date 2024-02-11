@@ -19,7 +19,6 @@ import static org.assertj.core.api.Assertions.assertWith;
 
 import java.math.BigInteger;
 import java.net.URL;
-import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.pow.api.schema.LoadDepositSnapshotResult;
@@ -29,6 +28,7 @@ import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class DepositSnapshotFileLoaderTest {
+
   private static final String SNAPSHOT_BUNDLED_RESOURCE = "deposit_tree_snapshot_bundled.ssz";
   private static final String SNAPSHOT_BEACON_API_RESOURCE = "deposit_tree_snapshot_beaconAPI.json";
 
@@ -42,19 +42,23 @@ public class DepositSnapshotFileLoaderTest {
   public void setup() {
     this.notFoundResource = dataStructureUtil.randomBytes32().toHexString();
     this.depositSnapshotLoader =
-        new DepositSnapshotFileLoader(Optional.of(getResourceFilePath(SNAPSHOT_BUNDLED_RESOURCE)));
+        new DepositSnapshotFileLoader.Builder()
+            .addRequiredResource(getResourceFilePath(SNAPSHOT_BUNDLED_RESOURCE))
+            .build();
   }
 
   @Test
-  public void shouldReturnEmpty_whenNoDepositSnapshot() {
-    this.depositSnapshotLoader = new DepositSnapshotFileLoader(Optional.empty());
+  public void shouldReturnEmpty_whenNoSourceForDepositSnapshotIsProvided() {
+    this.depositSnapshotLoader = new DepositSnapshotFileLoader.Builder().build();
     final LoadDepositSnapshotResult result = depositSnapshotLoader.loadDepositSnapshot();
     assertThat(result.getDepositTreeSnapshot()).isEmpty();
   }
 
   @Test
-  public void shouldThrowInvalidConfigurationException_whenIncorrectResourcePath() {
-    this.depositSnapshotLoader = new DepositSnapshotFileLoader(Optional.of(notFoundResource));
+  public void
+      shouldThrowInvalidConfigurationException_whenResourceIsRequired_andIsUsingIncorrectResourcePath() {
+    this.depositSnapshotLoader =
+        new DepositSnapshotFileLoader.Builder().addRequiredResource(notFoundResource).build();
     assertThatThrownBy(() -> depositSnapshotLoader.loadDepositSnapshot())
         .isInstanceOf(InvalidConfigurationException.class);
   }
@@ -78,14 +82,83 @@ public class DepositSnapshotFileLoaderTest {
   }
 
   @Test
+  public void shouldTryAllAvailableResourcesUntilFirstNonEmptyFound() {
+    final String validResourcePath = getResourceFilePath(SNAPSHOT_BEACON_API_RESOURCE);
+    // assertion values from SNAPSHOT_BEACON_API_RESOURCE
+    final int deposits = 1106572;
+    final int blockNumber = 18754822;
+
+    depositSnapshotLoader =
+        new DepositSnapshotFileLoader.Builder()
+            .addOptionalResource("/foo/empty")
+            .addRequiredResource(validResourcePath)
+            .build();
+
+    final LoadDepositSnapshotResult result = depositSnapshotLoader.loadDepositSnapshot();
+    assertThat(result.getDepositTreeSnapshot()).isPresent();
+    assertWith(
+        result,
+        snapshotResult -> {
+          assertThat(snapshotResult.getDepositTreeSnapshot().isPresent()).isTrue();
+          assertThat(snapshotResult.getDepositTreeSnapshot().get().getDepositCount())
+              .isEqualTo(deposits);
+          assertThat(snapshotResult.getReplayDepositsResult().getLastProcessedDepositIndex())
+              .contains(BigInteger.valueOf(deposits - 1));
+          assertThat(snapshotResult.getReplayDepositsResult().getLastProcessedBlockNumber())
+              .isEqualTo(blockNumber);
+        });
+  }
+
+  @Test
+  public void shouldThrowException_whenRequiredResourceInChainFails() {
+    depositSnapshotLoader =
+        new DepositSnapshotFileLoader.Builder()
+            .addOptionalResource("/foo/empty1")
+            .addRequiredResource("/foo/empty2")
+            .addOptionalResource("/foo/empty3")
+            .build();
+
+    assertThatThrownBy(() -> depositSnapshotLoader.loadDepositSnapshot())
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessageContaining("File '/foo/empty2' not found");
+  }
+
+  @Test
+  public void shouldThrowException_whenFirstRequiredResourceInChainFails() {
+    depositSnapshotLoader =
+        new DepositSnapshotFileLoader.Builder()
+            .addRequiredResource("/foo/empty1")
+            .addRequiredResource("/foo/empty2")
+            .build();
+
+    assertThatThrownBy(() -> depositSnapshotLoader.loadDepositSnapshot())
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessageContaining("File '/foo/empty1' not found");
+  }
+
+  @Test
+  public void shouldReturnEmpty_whenAllResourcesAreNotRequiredAndFailToLoad() {
+    depositSnapshotLoader =
+        new DepositSnapshotFileLoader.Builder()
+            .addOptionalResource("/foo/empty")
+            .addOptionalResource("/foo/empty2")
+            .build();
+
+    final LoadDepositSnapshotResult result = depositSnapshotLoader.loadDepositSnapshot();
+    assertThat(result.getDepositTreeSnapshot()).isEmpty();
+  }
+
+  @Test
   public void shouldFallbackToJsonDeserialization() {
     // From deposit_tree_snapshot_beaconAPI.json file
     final int deposits = 1106572;
     final int blockNumber = 18754822;
 
     depositSnapshotLoader =
-        new DepositSnapshotFileLoader(
-            Optional.of(getResourceFilePath(SNAPSHOT_BEACON_API_RESOURCE)));
+        new DepositSnapshotFileLoader.Builder()
+            .addRequiredResource(getResourceFilePath(SNAPSHOT_BEACON_API_RESOURCE))
+            .build();
+
     final LoadDepositSnapshotResult result = depositSnapshotLoader.loadDepositSnapshot();
 
     assertWith(

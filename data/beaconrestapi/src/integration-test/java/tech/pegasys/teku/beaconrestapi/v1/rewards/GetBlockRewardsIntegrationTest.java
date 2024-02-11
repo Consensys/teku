@@ -31,6 +31,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetBlockRewardsIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
@@ -38,7 +39,7 @@ public class GetBlockRewardsIntegrationTest extends AbstractDataBackedRestAPIInt
   @BeforeEach
   public void setup() {
     spec = TestSpecFactory.createMinimalAltair();
-    rewardCalculator = new RewardCalculator(spec);
+    rewardCalculator = new RewardCalculator(spec, new BlockRewardCalculatorUtil(spec));
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
     chainBuilder.generateBlocksUpToSlot(10);

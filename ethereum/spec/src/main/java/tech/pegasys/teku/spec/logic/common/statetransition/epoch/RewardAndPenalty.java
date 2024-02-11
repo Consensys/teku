@@ -39,8 +39,8 @@ public interface RewardAndPenalty {
   }
 
   default Optional<DetailedRewardAndPenalty> asDetailed() {
-    if (this.getClass().isAssignableFrom(DetailedRewardAndPenalty.class)) {
-      return Optional.of((DetailedRewardAndPenalty) this);
+    if (this instanceof DetailedRewardAndPenalty detailedRewardAndPenalty) {
+      return Optional.of(detailedRewardAndPenalty);
     } else {
       return Optional.empty();
     }

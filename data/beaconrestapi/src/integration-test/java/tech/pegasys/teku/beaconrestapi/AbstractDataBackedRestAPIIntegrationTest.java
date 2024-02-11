@@ -74,7 +74,6 @@ import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
-import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
@@ -126,7 +125,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final EventChannels eventChannels = mock(EventChannels.class);
   protected final AggregatingAttestationPool attestationPool =
       mock(AggregatingAttestationPool.class);
-  protected final BlockManager blockManager = mock(BlockManager.class);
   protected final AttestationManager attestationManager = mock(AttestationManager.class);
   protected final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
   protected final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
@@ -230,7 +228,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             .p2pNetwork(eth2P2PNetwork)
             .syncService(syncService)
             .validatorApiChannel(validatorApiChannel)
-            .blockManager(blockManager)
             .blockBlobSidecarsTrackersPool(BlockBlobSidecarsTrackersPool.NOOP)
             .attestationManager(attestationManager)
             .activeValidatorChannel(activeValidatorChannel)

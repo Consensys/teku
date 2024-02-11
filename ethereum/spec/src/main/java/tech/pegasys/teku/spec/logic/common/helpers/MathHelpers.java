@@ -28,8 +28,8 @@ public class MathHelpers {
   }
 
   public static UInt64 integerSquareRoot(final UInt64 n) {
-    if (n.compareTo(UInt64.MAX_VALUE) >= 0) {
-      throw new ArithmeticException("uint64 overflow");
+    if (n.isMaxValue()) {
+      return UInt64.valueOf(4294967295L);
     }
     return UInt64.valueOf(integerSquareRootInternal(n.longValue()));
   }
