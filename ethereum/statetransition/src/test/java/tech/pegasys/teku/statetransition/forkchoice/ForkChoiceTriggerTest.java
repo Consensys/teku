@@ -37,12 +37,14 @@ class ForkChoiceTriggerTest {
 
   @Test
   void shouldProcessHeadOnSlotStartedWhileSyncing() {
+    when(forkChoice.getLastProcessHeadSlot()).thenReturn(UInt64.ZERO);
     trigger.onSlotStartedWhileSyncing(UInt64.ONE);
     verify(forkChoice).processHead(UInt64.ONE);
   }
 
   @Test
   void shouldProcessHeadOnAttestationDue() {
+    when(forkChoice.getLastProcessHeadSlot()).thenReturn(UInt64.ZERO);
     trigger.onAttestationsDueForSlot(UInt64.ONE);
     verify(forkChoice).processHead(UInt64.ONE);
   }

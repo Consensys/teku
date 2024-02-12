@@ -25,6 +25,7 @@ import java.net.ConnectException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -103,6 +104,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final boolean forkChoiceLateBlockReorgEnabled;
   private Optional<Boolean> optimisticSyncing = Optional.empty();
 
+  private final AtomicReference<UInt64> lastProcessHeadSlot = new AtomicReference<>();
+
   private final LabelledMetric<Counter> getProposerHeadSelectedCounter;
 
   public ForkChoice(
@@ -127,6 +130,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         new AttestationStateSelector(spec, recentChainData, metricsSystem);
     this.tickProcessor = tickProcessor;
     this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
+    this.lastProcessHeadSlot.set(UInt64.ZERO);
     LOG.debug("forkChoiceLateBlockReorgEnabled is set to {}", forkChoiceLateBlockReorgEnabled);
     getProposerHeadSelectedCounter =
         metricsSystem.createLabelledCounter(
@@ -340,7 +344,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                             justifiedCheckpoint::getRoot);
                         return false;
                       }
-
+                      nodeSlot.ifPresent(lastProcessHeadSlot::set);
                       updateHeadTransaction(
                           nodeSlot,
                           maybeJustifiedCheckpointState.orElseThrow(),
@@ -823,6 +827,10 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
               final VoteTracker voteTracker = transaction.getVote(validatorIndex);
               transaction.putVote(validatorIndex, voteTracker.createNextEquivocating());
             });
+  }
+
+  public UInt64 getLastProcessHeadSlot() {
+    return lastProcessHeadSlot.get();
   }
 
   SafeFuture<Void> prepareForBlockProduction(
