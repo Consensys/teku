@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate;
 
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.SlotCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
 
 public interface BeaconStateCache {
@@ -23,5 +24,13 @@ public interface BeaconStateCache {
         : TransitionCaches.getNoOp();
   }
 
+  static SlotCaches getSlotCaches(BeaconState state) {
+    return state instanceof BeaconStateCache
+        ? ((BeaconStateCache) state).getSlotCaches()
+        : SlotCaches.getNoOp();
+  }
+
   TransitionCaches getTransitionCaches();
+
+  SlotCaches getSlotCaches();
 }
