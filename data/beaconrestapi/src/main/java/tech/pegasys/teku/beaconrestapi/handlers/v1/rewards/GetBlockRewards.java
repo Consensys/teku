@@ -40,12 +40,12 @@ public class GetBlockRewards extends RestApiEndpoint {
 
   private static final SerializableTypeDefinition<BlockRewardData> DATA_TYPE =
       SerializableTypeDefinition.object(BlockRewardData.class)
-          .withField("proposer_index", UINT64_TYPE, BlockRewardData::getProposerIndex)
+          .withField("proposer_index", UINT64_TYPE, BlockRewardData::proposerIndex)
           .withField("total", LONG_TYPE, BlockRewardData::getTotal)
-          .withField("attestations", LONG_TYPE, BlockRewardData::getAttestations)
-          .withField("sync_aggregate", LONG_TYPE, BlockRewardData::getSyncAggregate)
-          .withField("proposer_slashings", LONG_TYPE, BlockRewardData::getProposerSlashings)
-          .withField("attester_slashings", LONG_TYPE, BlockRewardData::getAttesterSlashings)
+          .withField("attestations", LONG_TYPE, BlockRewardData::attestations)
+          .withField("sync_aggregate", LONG_TYPE, BlockRewardData::syncAggregate)
+          .withField("proposer_slashings", LONG_TYPE, BlockRewardData::proposerSlashings)
+          .withField("attester_slashings", LONG_TYPE, BlockRewardData::attesterSlashings)
           .build();
 
   private static final SerializableTypeDefinition<ObjectAndMetaData<BlockRewardData>>

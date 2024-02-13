@@ -28,7 +28,6 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
-import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -107,7 +106,6 @@ public class DataProvider {
     private SyncService syncService;
     private ValidatorApiChannel validatorApiChannel;
     private AggregatingAttestationPool attestationPool;
-    private BlockManager blockManager;
     private BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
     private AttestationManager attestationManager;
     private ActiveValidatorChannel activeValidatorChannel;
@@ -159,11 +157,6 @@ public class DataProvider {
 
     public Builder attestationPool(final AggregatingAttestationPool attestationPool) {
       this.attestationPool = attestationPool;
-      return this;
-    }
-
-    public Builder blockManager(final BlockManager blockManager) {
-      this.blockManager = blockManager;
       return this;
     }
 
@@ -243,7 +236,6 @@ public class DataProvider {
               voluntaryExitPool,
               blsToExecutionChangePool,
               syncCommitteeContributionPool,
-              blockManager,
               blockBlobSidecarsTrackersPool,
               attestationManager,
               isLivenessTrackingEnabled,

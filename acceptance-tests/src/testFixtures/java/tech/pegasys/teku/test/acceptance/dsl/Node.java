@@ -115,6 +115,13 @@ public abstract class Node {
         () -> assertThat(container.isRunning()).describedAs("Container is running").isFalse());
   }
 
+  public void waitForExit(final int timeoutInSeconds) {
+    Waiter.waitFor(
+        () -> assertThat(container.isRunning()).describedAs("Container is running").isFalse(),
+        timeoutInSeconds,
+        TimeUnit.SECONDS);
+  }
+
   public int waitForEpochAtOrAbove(final int epoch) {
     final AtomicInteger actualEpoch = new AtomicInteger();
     waitFor(

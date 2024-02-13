@@ -278,6 +278,31 @@ public class BlobSidecarGossipValidatorTest {
   }
 
   @TestTemplate
+  void shouldIgnoreImmediatelyWhenBlobFromValidInfoSet() {
+    SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar))
+        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+
+    verify(miscHelpersDeneb).verifyBlobSidecarMerkleProof(blobSidecar);
+    verify(miscHelpersDeneb).verifyBlobKzgProof(kzg, blobSidecar);
+    verify(gossipValidationHelper).getParentStateInBlockEpoch(any(), any(), any());
+    verify(gossipValidationHelper).isProposerTheExpectedProposer(any(), any(), any());
+    verify(gossipValidationHelper)
+        .isSignatureValidWithRespectToProposerIndex(any(), any(), any(), any());
+    clearInvocations(gossipValidationHelper);
+    clearInvocations(miscHelpersDeneb);
+
+    SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar))
+        .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+
+    verify(miscHelpersDeneb, never()).verifyBlobSidecarMerkleProof(blobSidecar);
+    verify(miscHelpersDeneb, never()).verifyBlobKzgProof(kzg, blobSidecar);
+    verify(gossipValidationHelper, never()).getParentStateInBlockEpoch(any(), any(), any());
+    verify(gossipValidationHelper, never()).isProposerTheExpectedProposer(any(), any(), any());
+    verify(gossipValidationHelper, never())
+        .isSignatureValidWithRespectToProposerIndex(any(), any(), any(), any());
+  }
+
+  @TestTemplate
   void shouldNotVerifyKnownValidSignedHeader() {
     SafeFutureAssert.assertThatSafeFuture(blobSidecarValidator.validate(blobSidecar))
         .isCompletedWithValueMatching(InternalValidationResult::isAccept);

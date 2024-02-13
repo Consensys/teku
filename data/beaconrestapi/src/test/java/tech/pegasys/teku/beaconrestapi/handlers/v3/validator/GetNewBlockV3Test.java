@@ -61,6 +61,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
+import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -378,7 +379,8 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
         .thenReturn(Optional.of(SafeFuture.completedFuture(executionPayloadValue)));
     when(executionLayerBlockProductionManagerMock.getCachedPayloadResult(any()))
         .thenReturn(Optional.of(executionPayloadResultMock));
-    final RewardCalculator rewardCalculatorMock = new RewardCalculator(spec);
+    final RewardCalculator rewardCalculatorMock =
+        new RewardCalculator(spec, new BlockRewardCalculatorUtil(spec));
 
     validatorDataProvider =
         new ValidatorDataProvider(

@@ -220,6 +220,10 @@ public class TekuConfiguration {
       powchainConfigBuilder.depositContractDeployBlockDefault(depositContractDeployBlock);
       powchainConfigBuilder.setDepositSnapshotPathForNetwork(
           eth2NetworkConfiguration.getEth2Network());
+      eth2NetworkConfiguration
+          .getNetworkBoostrapConfig()
+          .getCheckpointSyncUrl()
+          .ifPresent(powchainConfigBuilder::checkpointSyncDepositSnapshotUrl);
       p2pConfigBuilder.discovery(
           b -> b.bootnodesDefault(eth2NetworkConfiguration.getDiscoveryBootnodes()));
       restApiBuilder.eth1DepositContractAddressDefault(depositContractAddress);

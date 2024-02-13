@@ -13,89 +13,28 @@
 
 package tech.pegasys.teku.api.migrated;
 
-import java.util.Objects;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /** Represents the block rewards in GWei and the block proposer index */
-public class BlockRewardData {
-  private UInt64 proposerIndex;
-  private final long attestations;
-  private final long syncAggregate;
-  private final long proposerSlashings;
-  private final long attesterSlashings;
+public record BlockRewardData(
+    UInt64 proposerIndex,
+    long attestations,
+    long syncAggregate,
+    long proposerSlashings,
+    long attesterSlashings) {
 
-  public BlockRewardData(
-      final UInt64 proposerIndex,
-      final long attestations,
-      final long syncAggregate,
-      final long proposerSlashings,
-      final long attesterSlashings) {
-    this.proposerIndex = proposerIndex;
-    this.attestations = attestations;
-    this.syncAggregate = syncAggregate;
-    this.proposerSlashings = proposerSlashings;
-    this.attesterSlashings = attesterSlashings;
-  }
-
-  public UInt64 getProposerIndex() {
-    return proposerIndex;
+  public static BlockRewardData fromInternal(
+      final tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil.BlockRewardData
+          internal) {
+    return new BlockRewardData(
+        internal.proposerIndex(),
+        internal.attestations(),
+        internal.syncAggregate(),
+        internal.proposerSlashings(),
+        internal.attesterSlashings());
   }
 
   public long getTotal() {
     return attestations + syncAggregate + proposerSlashings + attesterSlashings;
-  }
-
-  public long getAttestations() {
-    return attestations;
-  }
-
-  public long getSyncAggregate() {
-    return syncAggregate;
-  }
-
-  public long getProposerSlashings() {
-    return proposerSlashings;
-  }
-
-  public long getAttesterSlashings() {
-    return attesterSlashings;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    BlockRewardData that = (BlockRewardData) o;
-    return attestations == that.attestations
-        && syncAggregate == that.syncAggregate
-        && proposerSlashings == that.proposerSlashings
-        && attesterSlashings == that.attesterSlashings
-        && Objects.equals(proposerIndex, that.proposerIndex);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(
-        proposerIndex, attestations, syncAggregate, proposerSlashings, attesterSlashings);
-  }
-
-  @Override
-  public String toString() {
-    return "BlockRewardData{"
-        + "proposerIndex="
-        + proposerIndex
-        + ", attestations="
-        + attestations
-        + ", syncAggregate="
-        + syncAggregate
-        + ", proposerSlashings="
-        + proposerSlashings
-        + ", attesterSlashings="
-        + attesterSlashings
-        + '}';
   }
 }

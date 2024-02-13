@@ -600,7 +600,8 @@ public class ChainDataProvider {
                       maybeState ->
                           maybeState.map(
                               state ->
-                                  rewardCalculator.getBlockRewardData(blockAndMetaData, state)));
+                                  rewardCalculator.getBlockRewardDataAndMetaData(
+                                      blockAndMetaData, state)));
             });
   }
 
