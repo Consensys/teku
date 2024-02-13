@@ -654,10 +654,10 @@ public class DebugDbCommand implements Runnable {
         "\tEarliest finalized block slot: %s%n",
         maybeEarliestBlock.map(SignedBeaconBlock::getSlot));
     System.out.printf("\tLatest finalized block slot: %s%n", maybeLatestFinalizedSlot);
-    System.out.printf("\tMissing finalized BlobSidecars: %s%n", missingFinalizedBlobSidecar);
-    System.out.printf("\tMissing hot BlobsSidecars: %s%n", missingHotBlobsSidecars);
+    System.out.printf("\tMissing finalized Blob Sidecars: %s%n", missingFinalizedBlobSidecar);
+    System.out.printf("\tMissing hot Blob Sidecars: %s%n", missingHotBlobsSidecars);
     System.out.printf(
-        "\tOrphaned BlobSidecars (corresponding block is missing): %s%n", orphanBlobsSidecars);
+        "\tOrphaned Blob Sidecars (corresponding block is missing): %s%n", orphanBlobsSidecars);
     System.out.printf(
         "\tNon-pruned BlobSidecars (older than DA lower bound): %s%n", unprunedBlobsSidecars);
 
