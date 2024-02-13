@@ -13,9 +13,7 @@
 
 package tech.pegasys.teku.validator.remote.typedef;
 
-import java.net.URI;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
@@ -40,23 +38,18 @@ import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAttestationData
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetGenesisRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetProposerDutiesRequest;
-import tech.pegasys.teku.validator.remote.typedef.handlers.GetSpecRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetStateValidatorsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetSyncingStatusRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.ProduceBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.RegisterValidatorsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendSignedBlockRequest;
 
-public class OkHttpValidatorTypeDefClient {
+public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefClient {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final OkHttpClient okHttpClient;
-  private final HttpUrl baseEndpoint;
-
   private final Spec spec;
   private final boolean preferSszBlockEncoding;
-  private final GetSpecRequest getSpecRequest;
   private final GetSyncingStatusRequest getSyncingStatusRequest;
   private final GetGenesisRequest getGenesisRequest;
   private final GetProposerDutiesRequest getProposerDutiesRequest;
@@ -70,11 +63,9 @@ public class OkHttpValidatorTypeDefClient {
       final HttpUrl baseEndpoint,
       final Spec spec,
       final boolean preferSszBlockEncoding) {
-    this.okHttpClient = okHttpClient;
-    this.baseEndpoint = baseEndpoint;
+    super(okHttpClient, baseEndpoint);
     this.spec = spec;
     this.preferSszBlockEncoding = preferSszBlockEncoding;
-    this.getSpecRequest = new GetSpecRequest(baseEndpoint, okHttpClient);
     this.getSyncingStatusRequest = new GetSyncingStatusRequest(okHttpClient, baseEndpoint);
     this.getGenesisRequest = new GetGenesisRequest(okHttpClient, baseEndpoint);
     this.getProposerDutiesRequest = new GetProposerDutiesRequest(baseEndpoint, okHttpClient);
@@ -85,10 +76,6 @@ public class OkHttpValidatorTypeDefClient {
         new RegisterValidatorsRequest(baseEndpoint, okHttpClient, false);
     this.createAttestationDataRequest =
         new CreateAttestationDataRequest(baseEndpoint, okHttpClient);
-  }
-
-  public Optional<Map<String, String>> getSpec() {
-    return getSpecRequest.getSpec();
   }
 
   public SyncingStatus getSyncingStatus() {
@@ -125,13 +112,13 @@ public class OkHttpValidatorTypeDefClient {
       final boolean blinded) {
     final CreateBlockRequest createBlockRequest =
         new CreateBlockRequest(
-            baseEndpoint, okHttpClient, spec, slot, blinded, preferSszBlockEncoding);
+            getBaseEndpoint(), getOkHttpClient(), spec, slot, blinded, preferSszBlockEncoding);
     try {
       return createBlockRequest.createUnsignedBlock(randaoReveal, graffiti);
     } catch (final BlindedBlockEndpointNotAvailableException ex) {
       LOG.warn(
           "Beacon Node {} does not support blinded block production. Falling back to normal block production.",
-          baseEndpoint);
+          getBaseEndpoint());
       return createUnsignedBlock(slot, randaoReveal, graffiti, false);
     }
   }
@@ -142,7 +129,8 @@ public class OkHttpValidatorTypeDefClient {
       final Optional<Bytes32> graffiti,
       final Optional<UInt64> requestedBuilderBoostFactor) {
     final ProduceBlockRequest produceBlockRequest =
-        new ProduceBlockRequest(baseEndpoint, okHttpClient, spec, slot, preferSszBlockEncoding);
+        new ProduceBlockRequest(
+            getBaseEndpoint(), getOkHttpClient(), spec, slot, preferSszBlockEncoding);
     try {
       return produceBlockRequest.createUnsignedBlock(
           randaoReveal, graffiti, requestedBuilderBoostFactor);
@@ -163,9 +151,5 @@ public class OkHttpValidatorTypeDefClient {
   public Optional<AttestationData> createAttestationData(
       final UInt64 slot, final int committeeIndex) {
     return createAttestationDataRequest.createAttestationData(slot, committeeIndex);
-  }
-
-  public URI getBaseEndpoint() {
-    return baseEndpoint.uri();
   }
 }

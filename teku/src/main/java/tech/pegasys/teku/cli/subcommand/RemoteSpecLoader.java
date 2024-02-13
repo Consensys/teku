@@ -27,28 +27,24 @@ import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpClientAuth;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
-import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
+import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorMinimalTypeDefClient;
 
 class RemoteSpecLoader {
 
   private static final long RETRY_DELAY = 5000;
 
-  static Spec getSpecWithRetry(
-      final List<URI> beaconEndpoints, final boolean isValidatorClientUseSszBlocksEnabled) {
-    return retry(() -> getSpec(beaconEndpoints, isValidatorClientUseSszBlocksEnabled));
+  static Spec getSpecWithRetry(final List<URI> beaconEndpoints) {
+    return retry(() -> getSpec(beaconEndpoints));
   }
 
-  static Spec getSpec(
-      final List<URI> beaconEndpoints, final boolean isValidatorClientUseSszBlocksEnabled) {
+  static Spec getSpec(final List<URI> beaconEndpoints) {
     if (beaconEndpoints.size() > 1) {
-      return getSpecWithFailovers(
-          createTypeDefClients(beaconEndpoints, isValidatorClientUseSszBlocksEnabled));
+      return getSpecWithFailovers(createTypeDefClients(beaconEndpoints));
     }
-    return getSpec(
-        createTypeDefClient(beaconEndpoints.get(0), isValidatorClientUseSszBlocksEnabled));
+    return getSpec(createTypeDefClient(beaconEndpoints.get(0)));
   }
 
-  static Spec getSpec(final OkHttpValidatorTypeDefClient apiClient) {
+  static Spec getSpec(final OkHttpValidatorMinimalTypeDefClient apiClient) {
     try {
       return apiClient
           .getSpec()
@@ -68,8 +64,9 @@ class RemoteSpecLoader {
     return createApiClients(List.of(endpoint)).get(0);
   }
 
-  private static Spec getSpecWithFailovers(final List<OkHttpValidatorTypeDefClient> apiClients) {
-    for (final OkHttpValidatorTypeDefClient apiClient : apiClients) {
+  private static Spec getSpecWithFailovers(
+      final List<OkHttpValidatorMinimalTypeDefClient> apiClients) {
+    for (final OkHttpValidatorMinimalTypeDefClient apiClient : apiClients) {
       try {
         return getSpec(apiClient);
       } catch (final Throwable ex) {
@@ -121,8 +118,8 @@ class RemoteSpecLoader {
         .toList();
   }
 
-  private static List<OkHttpValidatorTypeDefClient> createTypeDefClients(
-      final List<URI> baseEndpoints, final boolean isValidatorClientUseSszBlocksEnabled) {
+  private static List<OkHttpValidatorMinimalTypeDefClient> createTypeDefClients(
+      final List<URI> baseEndpoints) {
     final OkHttpClient.Builder httpClientBuilder =
         new OkHttpClient.Builder().readTimeout(30, TimeUnit.SECONDS);
     List<HttpUrl> apiEndpoints = baseEndpoints.stream().map(HttpUrl::get).toList();
@@ -134,18 +131,13 @@ class RemoteSpecLoader {
     // Strip any authentication info from the URL(s) to ensure it doesn't get logged.
     apiEndpoints = stripAuthentication(apiEndpoints);
     final OkHttpClient okHttpClient = httpClientBuilder.build();
-    final Spec spec = SpecFactory.create("swift");
     return apiEndpoints.stream()
-        .map(
-            apiEndpoint ->
-                new OkHttpValidatorTypeDefClient(
-                    okHttpClient, apiEndpoint, spec, isValidatorClientUseSszBlocksEnabled))
+        .map(apiEndpoint -> new OkHttpValidatorMinimalTypeDefClient(okHttpClient, apiEndpoint))
         .toList();
   }
 
-  private static OkHttpValidatorTypeDefClient createTypeDefClient(
-      final URI endpoint, final boolean isValidatorClientUseSszBlocksEnabled) {
-    return createTypeDefClients(List.of(endpoint), isValidatorClientUseSszBlocksEnabled).get(0);
+  private static OkHttpValidatorMinimalTypeDefClient createTypeDefClient(final URI endpoint) {
+    return createTypeDefClients(List.of(endpoint)).get(0);
   }
 
   private static List<HttpUrl> stripAuthentication(final List<HttpUrl> endpoints) {
