@@ -327,7 +327,7 @@ public class StatusLogger {
         "Cannot start with provided initial state for the epoch {}, "
             + "checkpoint occurred on the empty slot, which is not yet supported.\n"
             + "If you are using remote checkpoint source, "
-            + "please wait next epoch finalization and retry.",
+            + "please wait for the next epoch to finalize and retry.",
         epoch);
   }
 
