@@ -322,6 +322,15 @@ public class StatusLogger {
     }
   }
 
+  public void errorIncompatibleInitialState(final UInt64 epoch) {
+    log.error(
+        "Cannot start with provided initial state for the epoch {}, "
+            + "checkpoint occurred on the empty slot, which is not yet supported. \n"
+            + "If you use remote checkpoint source, please, "
+            + "retry an epoch later (6 minutes for most networks).",
+        epoch);
+  }
+
   public void warnInitialStateIgnored() {
     log.warn("Not loading specified initial state as chain data already exists.");
   }
