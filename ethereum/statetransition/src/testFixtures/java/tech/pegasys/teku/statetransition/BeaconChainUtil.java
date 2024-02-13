@@ -278,6 +278,7 @@ public class BeaconChainUtil {
                 attestations,
                 deposits,
                 Optional.empty(),
+                Optional.empty(),
                 exits,
                 eth1Data,
                 Optional.empty(),

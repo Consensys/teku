@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.SlotCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.ValidatorStatsAltair;
 
@@ -37,8 +38,9 @@ public class BeaconStateDenebImpl extends AbstractBeaconState<MutableBeaconState
       final SszCompositeSchema<?> type,
       final TreeNode backingNode,
       final IntCache<SszData> cache,
-      final TransitionCaches transitionCaches) {
-    super(type, backingNode, cache, transitionCaches);
+      final TransitionCaches transitionCaches,
+      final SlotCaches slotCaches) {
+    super(type, backingNode, cache, transitionCaches, slotCaches);
   }
 
   BeaconStateDenebImpl(

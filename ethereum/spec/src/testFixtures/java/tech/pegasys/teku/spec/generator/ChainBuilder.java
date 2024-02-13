@@ -63,6 +63,7 @@ import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFa
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
@@ -92,6 +93,7 @@ public class ChainBuilder {
   private final List<BLSKeyPair> validatorKeys;
   private final AttestationGenerator attestationGenerator;
   private final AttesterSlashingGenerator attesterSlashingGenerator;
+  private final ProposerSlashingGenerator proposerSlashingGenerator;
   private final NavigableMap<UInt64, SignedBlockAndState> blocks = new TreeMap<>();
   private final Map<Bytes32, SignedBlockAndState> blocksByHash = new HashMap<>();
 
@@ -112,6 +114,7 @@ public class ChainBuilder {
     this.blobsUtil = new BlobsUtil(spec, KZG.NOOP);
     this.attestationGenerator = new AttestationGenerator(spec, validatorKeys);
     this.attesterSlashingGenerator = new AttesterSlashingGenerator(spec, validatorKeys);
+    this.proposerSlashingGenerator = new ProposerSlashingGenerator(spec, validatorKeys);
     this.blockProposalTestUtil = new BlockProposalTestUtil(spec);
     blocks.putAll(existingBlocks);
     existingBlocks.values().forEach(b -> blocksByHash.put(b.getRoot(), b));
@@ -520,6 +523,11 @@ public class ChainBuilder {
         attestation, blockAndState);
   }
 
+  public ProposerSlashing createProposerSlashingForAttestation(
+      final SignedBlockAndState blockAndState) {
+    return proposerSlashingGenerator.createProposerSlashingForBlock(blockAndState);
+  }
+
   private void assertChainIsNotEmpty() {
     checkState(!blocks.isEmpty(), "Unable to execute operation on empty chain");
   }
@@ -567,15 +575,33 @@ public class ChainBuilder {
           BeaconBlockBodyLists.ofSpec(spec)
               .createAttesterSlashings(
                   options.getAttesterSlashings().toArray(new AttesterSlashing[0]));
+      SszList<ProposerSlashing> proposerSlashings =
+          BeaconBlockBodyLists.ofSpec(spec)
+              .createProposerSlashings(
+                  options.getProposerSlashings().toArray(new ProposerSlashing[0]));
 
       if (denebMilestoneReached(slot)) {
         nextBlockAndState =
             generateBlockWithBlobSidecars(
-                slot, options, preState, parentRoot, signer, attestations, attesterSlashings);
+                slot,
+                options,
+                preState,
+                parentRoot,
+                signer,
+                attestations,
+                attesterSlashings,
+                proposerSlashings);
       } else {
         nextBlockAndState =
             generateBlock(
-                slot, options, preState, parentRoot, signer, attestations, attesterSlashings);
+                slot,
+                options,
+                preState,
+                parentRoot,
+                signer,
+                attestations,
+                attesterSlashings,
+                proposerSlashings);
       }
       trackBlock(nextBlockAndState);
       return nextBlockAndState;
@@ -591,7 +617,8 @@ public class ChainBuilder {
       final Bytes32 parentRoot,
       final Signer signer,
       final SszList<Attestation> attestations,
-      final SszList<AttesterSlashing> attesterSlashings)
+      final SszList<AttesterSlashing> attesterSlashings,
+      final SszList<ProposerSlashing> proposerSlashings)
       throws EpochProcessingException, SlotProcessingException {
     return safeJoin(
         blockProposalTestUtil.createBlock(
@@ -602,6 +629,7 @@ public class ChainBuilder {
             Optional.of(attestations),
             Optional.empty(),
             Optional.of(attesterSlashings),
+            Optional.of(proposerSlashings),
             Optional.empty(),
             options.getEth1Data(),
             options.getTransactions(),
@@ -620,7 +648,8 @@ public class ChainBuilder {
       final Bytes32 parentRoot,
       final Signer signer,
       final SszList<Attestation> attestations,
-      final SszList<AttesterSlashing> attesterSlashings)
+      final SszList<AttesterSlashing> attesterSlashings,
+      final SszList<ProposerSlashing> proposerSlashings)
       throws EpochProcessingException, SlotProcessingException {
 
     final List<Blob> blobs;
@@ -661,6 +690,7 @@ public class ChainBuilder {
                   Optional.of(attestations),
                   Optional.empty(),
                   Optional.of(attesterSlashings),
+                  Optional.of(proposerSlashings),
                   Optional.empty(),
                   options.getEth1Data(),
                   maybeGeneratedBlobTransactions,
@@ -682,6 +712,7 @@ public class ChainBuilder {
                   Optional.of(attestations),
                   Optional.empty(),
                   Optional.of(attesterSlashings),
+                  Optional.of(proposerSlashings),
                   Optional.empty(),
                   options.getEth1Data(),
                   maybeGeneratedBlobTransactions,
@@ -842,6 +873,7 @@ public class ChainBuilder {
 
     private List<Attestation> attestations = new ArrayList<>();
     private final List<AttesterSlashing> attesterSlashings = new ArrayList<>();
+    private final List<ProposerSlashing> proposerSlashings = new ArrayList<>();
     private Optional<Eth1Data> eth1Data = Optional.empty();
     private Optional<List<Bytes>> transactions = Optional.empty();
     private Optional<Bytes32> terminalBlockHash = Optional.empty();
@@ -876,6 +908,11 @@ public class ChainBuilder {
 
     public BlockOptions addAttesterSlashing(final AttesterSlashing attesterSlashing) {
       attesterSlashings.add(attesterSlashing);
+      return this;
+    }
+
+    public BlockOptions addProposerSlashing(final ProposerSlashing proposerSlashing) {
+      proposerSlashings.add(proposerSlashing);
       return this;
     }
 
@@ -1022,6 +1059,10 @@ public class ChainBuilder {
 
     public List<AttesterSlashing> getAttesterSlashings() {
       return attesterSlashings;
+    }
+
+    public List<ProposerSlashing> getProposerSlashings() {
+      return proposerSlashings;
     }
   }
 }

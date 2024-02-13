@@ -23,6 +23,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.SlotCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.ValidatorStatsAltair;
 
@@ -38,8 +39,9 @@ public class BeaconStateCapellaImpl extends AbstractBeaconState<MutableBeaconSta
       SszCompositeSchema<?> type,
       TreeNode backingNode,
       IntCache<SszData> cache,
-      TransitionCaches transitionCaches) {
-    super(type, backingNode, cache, transitionCaches);
+      TransitionCaches transitionCaches,
+      SlotCaches slotCaches) {
+    super(type, backingNode, cache, transitionCaches, slotCaches);
   }
 
   BeaconStateCapellaImpl(
