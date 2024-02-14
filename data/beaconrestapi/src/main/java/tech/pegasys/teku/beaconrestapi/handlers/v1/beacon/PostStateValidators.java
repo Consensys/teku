@@ -15,7 +15,7 @@ package tech.pegasys.teku.beaconrestapi.handlers.v1.beacon;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.PARAMETER_STATE_ID;
 import static tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorDataBuilder.STATE_VALIDATORS_RESPONSE_TYPE;
-import static tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorRequestType.STATE_VALIDATOR_REQUEST_TYPE;
+import static tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorRequestBodyType.STATE_VALIDATOR_REQUEST_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.beacon.StatusParameter.getApplicableValidatorStatuses;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -31,7 +31,7 @@ import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
-import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorRequestType;
+import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorRequestBodyType;
 import tech.pegasys.teku.ethereum.json.types.beacon.StatusParameter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
@@ -65,7 +65,7 @@ public class PostStateValidators extends RestApiEndpoint {
 
   @Override
   public void handleRequest(RestApiRequest request) throws JsonProcessingException {
-    final Optional<StateValidatorRequestType> requestBody;
+    final Optional<StateValidatorRequestBodyType> requestBody;
 
     try {
       requestBody = request.getOptionalRequestBody();
@@ -80,9 +80,9 @@ public class PostStateValidators extends RestApiEndpoint {
     }
 
     final List<String> validators =
-        requestBody.map(StateValidatorRequestType::getIds).orElse(List.of());
+        requestBody.map(StateValidatorRequestBodyType::getIds).orElse(List.of());
     final List<StatusParameter> statusParameters =
-        requestBody.map(StateValidatorRequestType::getStatuses).orElse(List.of());
+        requestBody.map(StateValidatorRequestBodyType::getStatuses).orElse(List.of());
 
     final Set<ValidatorStatus> statusFilter = getApplicableValidatorStatuses(statusParameters);
 

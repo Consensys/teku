@@ -52,7 +52,7 @@ import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
-import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorRequestType;
+import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorRequestBodyType;
 import tech.pegasys.teku.ethereum.json.types.beacon.StatusParameter;
 import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -71,7 +71,7 @@ class PostStateValidatorsTest extends AbstractMigratedBeaconHandlerWithChainData
 
   @Test
   public void shouldGetValidatorFromState() throws Exception {
-    final StateValidatorRequestType requestBody = new StateValidatorRequestType();
+    final StateValidatorRequestBodyType requestBody = new StateValidatorRequestBodyType();
     requestBody.setIds(Optional.of(List.of("1", "2", "3", "4")));
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
@@ -94,8 +94,8 @@ class PostStateValidatorsTest extends AbstractMigratedBeaconHandlerWithChainData
 
   @Test
   public void shouldGetValidatorFromStateWithList() throws Exception {
-    final StateValidatorRequestType requestBody =
-        new StateValidatorRequestType(
+    final StateValidatorRequestBodyType requestBody =
+        new StateValidatorRequestBodyType(
             List.of("1", "2"),
             List.of(
                 StatusParameter.ACTIVE_ONGOING,
@@ -126,7 +126,7 @@ class PostStateValidatorsTest extends AbstractMigratedBeaconHandlerWithChainData
   public void shouldGetValidatorsByStatusParameter(
       final List<String> statusParameters, final Set<ValidatorStatus> expectedValidatorStatuses)
       throws Exception {
-    final StateValidatorRequestType requestBody = new StateValidatorRequestType();
+    final StateValidatorRequestBodyType requestBody = new StateValidatorRequestBodyType();
     requestBody.setStatuses(Optional.of(statusParameters));
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
@@ -149,7 +149,7 @@ class PostStateValidatorsTest extends AbstractMigratedBeaconHandlerWithChainData
 
   @Test
   public void shouldGetBadRequestForInvalidState() {
-    final StateValidatorRequestType requestBody = new StateValidatorRequestType();
+    final StateValidatorRequestBodyType requestBody = new StateValidatorRequestBodyType();
     requestBody.setIds(Optional.of(List.of("1")));
     final StubRestApiRequest request =
         StubRestApiRequest.builder()

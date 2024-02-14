@@ -19,31 +19,32 @@ import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
-public class StateValidatorRequestType {
+public class StateValidatorRequestBodyType {
 
-  public static final DeserializableTypeDefinition<StateValidatorRequestType>
+  public static final DeserializableTypeDefinition<StateValidatorRequestBodyType>
       STATE_VALIDATOR_REQUEST_TYPE =
-          DeserializableTypeDefinition.object(StateValidatorRequestType.class)
+          DeserializableTypeDefinition.object(StateValidatorRequestBodyType.class)
               .name("PostStateValidatorsRequestBody")
-              .initializer(StateValidatorRequestType::new)
+              .initializer(StateValidatorRequestBodyType::new)
               .withOptionalField(
                   "ids",
                   DeserializableTypeDefinition.listOf(STRING_TYPE),
-                  StateValidatorRequestType::getMaybeIds,
-                  StateValidatorRequestType::setIds)
+                  StateValidatorRequestBodyType::getMaybeIds,
+                  StateValidatorRequestBodyType::setIds)
               .withOptionalField(
                   "statuses",
                   DeserializableTypeDefinition.listOf(STRING_TYPE),
-                  StateValidatorRequestType::getMaybeStringStatuses,
-                  StateValidatorRequestType::setStatuses)
+                  StateValidatorRequestBodyType::getMaybeStringStatuses,
+                  StateValidatorRequestBodyType::setStatuses)
               .build();
 
   private List<String> ids = List.of();
   private List<StatusParameter> statuses = List.of();
 
-  public StateValidatorRequestType() {}
+  public StateValidatorRequestBodyType() {}
 
-  public StateValidatorRequestType(final List<String> ids, final List<StatusParameter> statuses) {
+  public StateValidatorRequestBodyType(
+      final List<String> ids, final List<StatusParameter> statuses) {
     this.ids = ids;
     this.statuses = statuses;
   }
