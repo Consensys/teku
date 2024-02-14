@@ -32,12 +32,13 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigLoader;
-import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
+import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorMinimalTypeDefClient;
 
 class RemoteSpecLoaderTest {
   private final Spec spec = TestSpecFactory.createDefault();
 
-  private final OkHttpValidatorTypeDefClient apiClient = mock(OkHttpValidatorTypeDefClient.class);
+  private final OkHttpValidatorMinimalTypeDefClient apiClient =
+      mock(OkHttpValidatorMinimalTypeDefClient.class);
 
   @Test
   void shouldIgnoreUnknownConfigItems() {
