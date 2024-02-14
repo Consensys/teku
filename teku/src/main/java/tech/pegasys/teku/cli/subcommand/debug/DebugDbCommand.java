@@ -455,7 +455,11 @@ public class DebugDbCommand implements Runnable {
               names = {"--current-slot", "-s"},
               description =
                   "Provide the current slot from which calculate Data Availability window")
-          final Long currentSlot)
+          final Long currentSlot,
+      @Option(
+              names = {"--lower-data-availability-epoch", "-l"},
+              description = "Override the Data Availability window lower epoch")
+          final Long lowerDataAvailabilityEpoch)
       throws Exception {
 
     final Spec spec = eth2NetworkOptions.getNetworkConfiguration().getSpec();
@@ -472,9 +476,13 @@ public class DebugDbCommand implements Runnable {
             .computeEpochAtSlot(UInt64.valueOf(currentSlot));
 
     final UInt64 lowerEpochBoundDataAvailability =
-        currentEpoch
-            .minusMinZero(specConfigDeneb.getMinEpochsForBlobSidecarsRequests())
-            .max(denebActivationEpoch);
+        lowerDataAvailabilityEpoch != null
+            ? currentEpoch
+                .minusMinZero(UInt64.valueOf(lowerDataAvailabilityEpoch))
+                .max(denebActivationEpoch)
+            : currentEpoch
+                .minusMinZero(specConfigDeneb.getMinEpochsForBlobSidecarsRequests())
+                .max(denebActivationEpoch);
 
     final UInt64 lowerSlotBoundDataAvailability =
         eth2NetworkOptions
@@ -488,6 +496,7 @@ public class DebugDbCommand implements Runnable {
     long unprunedBlobsSidecars = 0;
     long blocksToSidecarsCheckCounter = 0;
     long sidecarsToBlocksCheckCounter = 0;
+    long commitmentsToBlobSidecarsCheckCounter = 0;
 
     final long startTimeMillis = System.currentTimeMillis();
 
@@ -518,6 +527,8 @@ public class DebugDbCommand implements Runnable {
                 .getOptionalBlobKzgCommitments()
                 .map(SszList::size)
                 .orElse(0);
+
+        commitmentsToBlobSidecarsCheckCounter += expectedBlobSidecarsCount;
 
         for (int blobSidecarIndex = 0;
             blobSidecarIndex < expectedBlobSidecarsCount;
@@ -590,6 +601,9 @@ public class DebugDbCommand implements Runnable {
                       .getOptionalBlobKzgCommitments()
                       .map(SszList::size)
                       .orElse(0);
+
+              commitmentsToBlobSidecarsCheckCounter += expectedBlobSidecarsCount;
+
               for (int blobSidecarIndex = 0;
                   blobSidecarIndex < expectedBlobSidecarsCount;
                   blobSidecarIndex++) {
@@ -647,13 +661,15 @@ public class DebugDbCommand implements Runnable {
       }
     } catch (DatabaseStorageException ex) {
       System.out.println("Failed to open database");
+      ex.printStackTrace();
     }
 
     final long endTimeMillis = System.currentTimeMillis();
     System.out.printf(
-        "Done. Performed %s block->blobs_sidecars and %s blobs_sidecars->block checks in %s ms%n",
+        "Done. Performed %s block->blob_sidecars, %s blob_sidecars->block checks and %s block_commitments->blob_sidecars in %s ms%n",
         blocksToSidecarsCheckCounter,
         sidecarsToBlocksCheckCounter,
+        commitmentsToBlobSidecarsCheckCounter,
         endTimeMillis - startTimeMillis);
     System.out.printf(
         "\tCalculated Data Availability window (slots): %s - %s%n",
