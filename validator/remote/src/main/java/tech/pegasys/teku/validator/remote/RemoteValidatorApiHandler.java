@@ -204,7 +204,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
         .map(responses -> convertToValidatorMapTypeDef(responses, valueExtractor));
   }
 
-  private <T> Map<BLSPublicKey, T> convertToValidatorMapTypeDef( // change name
+  private <T> Map<BLSPublicKey, T> convertToValidatorMapTypeDef(
       final List<StateValidatorData> validatorData,
       final Function<StateValidatorData, T> valueExtractor) {
     return validatorData.stream().collect(toMap(StateValidatorData::getPublicKey, valueExtractor));
@@ -534,7 +534,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
       final AsyncRunner asyncRunner) {
     final OkHttpValidatorRestApiClient apiClient =
         new OkHttpValidatorRestApiClient(endpoint, httpClient);
-    final OkHttpValidatorTypeDefClient typeDefClient = // todo here type def client made
+    final OkHttpValidatorTypeDefClient typeDefClient =
         new OkHttpValidatorTypeDefClient(httpClient, endpoint, spec, preferSszBlockEncoding);
     return new RemoteValidatorApiHandler(
         endpoint, spec, apiClient, typeDefClient, asyncRunner, usePostValidatorsEndpoint);
