@@ -41,7 +41,7 @@ class RemoteSpecLoader {
     if (beaconEndpoints.size() > 1) {
       return getSpecWithFailovers(createTypeDefClients(beaconEndpoints));
     }
-    return getSpec(createTypeDefClient(beaconEndpoints.get(0)));
+    return getSpec(createTypeDefClients(beaconEndpoints).get(0));
   }
 
   static Spec getSpec(final OkHttpValidatorMinimalTypeDefClient apiClient) {
@@ -134,10 +134,6 @@ class RemoteSpecLoader {
     return apiEndpoints.stream()
         .map(apiEndpoint -> new OkHttpValidatorMinimalTypeDefClient(okHttpClient, apiEndpoint))
         .toList();
-  }
-
-  private static OkHttpValidatorMinimalTypeDefClient createTypeDefClient(final URI endpoint) {
-    return createTypeDefClients(List.of(endpoint)).get(0);
   }
 
   private static List<HttpUrl> stripAuthentication(final List<HttpUrl> endpoints) {
