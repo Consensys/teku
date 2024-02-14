@@ -539,7 +539,8 @@ public class DebugDbCommand implements Runnable {
             // Inside DA window but missing
             missingFinalizedBlobSidecar++;
             System.err.printf(
-                "ERROR: Unable to locate finalized blob sidecar %s", slotAndBlockRootAndBlobIndex);
+                "ERROR: Unable to locate finalized blob sidecar %s%n",
+                slotAndBlockRootAndBlobIndex);
           }
         }
 
