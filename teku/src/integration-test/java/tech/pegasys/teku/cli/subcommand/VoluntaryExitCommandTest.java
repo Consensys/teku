@@ -18,7 +18,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
+import static tech.pegasys.teku.ethereum.json.types.config.SpecConfigDataMapBuilder.GET_SPEC_RESPONSE_TYPE;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.io.Resources;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -38,11 +40,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
-import org.mockserver.model.JsonBody;
 import org.mockserver.model.Parameter;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -126,7 +128,7 @@ public class VoluntaryExitCommandTest {
   }
 
   @Test
-  public void shouldExitAllLoadedValidators() {
+  public void shouldExitAllLoadedValidators() throws JsonProcessingException {
     configureSuccessfulSpecResponse(mockBeaconServer);
     configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
 
@@ -139,7 +141,7 @@ public class VoluntaryExitCommandTest {
   }
 
   @Test
-  public void shouldExitLoadedValidatorsUsingConfirmationMessage() {
+  public void shouldExitLoadedValidatorsUsingConfirmationMessage() throws JsonProcessingException {
     setUserInput("yes");
     configureSuccessfulSpecResponse(mockBeaconServer);
     configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
@@ -153,7 +155,7 @@ public class VoluntaryExitCommandTest {
   }
 
   @Test
-  public void shouldExitValidatorWithPubKeyFromKeyManagerOnly() {
+  public void shouldExitValidatorWithPubKeyFromKeyManagerOnly() throws JsonProcessingException {
     configureSuccessfulSpecResponse(mockBeaconServer);
     configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
 
@@ -217,7 +219,7 @@ public class VoluntaryExitCommandTest {
   }
 
   @Test
-  public void shouldExitValidatorWithPubKeyFromPathOnly() {
+  public void shouldExitValidatorWithPubKeyFromPathOnly() throws JsonProcessingException {
     configureSuccessfulSpecResponse(mockBeaconServer);
     configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
 
@@ -235,7 +237,7 @@ public class VoluntaryExitCommandTest {
   }
 
   @Test
-  public void shouldSkipKeyManagerKeys() {
+  public void shouldSkipKeyManagerKeys() throws JsonProcessingException {
     configureSuccessfulSpecResponse(mockBeaconServer);
     configureSuccessfulVoluntaryExitResponse(mockBeaconServer);
 
@@ -253,7 +255,7 @@ public class VoluntaryExitCommandTest {
   }
 
   @Test
-  void shouldNotWarn_NotWithdrawableIfCapellaEnabled() {
+  void shouldNotWarn_NotWithdrawableIfCapellaEnabled() throws JsonProcessingException {
     configureSuccessfulSpecResponse(mockBeaconServer, TestSpecFactory.createMinimalCapella());
 
     final List<String> args = getCommandArguments(false, true, List.of());
@@ -268,7 +270,7 @@ public class VoluntaryExitCommandTest {
   }
 
   @Test
-  void shouldExitFailureWithNoValidatorKeysFound() {
+  void shouldExitFailureWithNoValidatorKeysFound() throws JsonProcessingException {
     configureSuccessfulSpecResponse(mockBeaconServer);
 
     final List<String> args = commandArgs.subList(0, 5);
@@ -279,7 +281,7 @@ public class VoluntaryExitCommandTest {
   }
 
   @Test
-  void shouldExitFailureFutureEpoch() {
+  void shouldExitFailureFutureEpoch() throws JsonProcessingException {
     configureSuccessfulSpecResponse(mockBeaconServer);
 
     final List<String> args = getCommandArguments(false, true, List.of("--epoch=1024"));
@@ -313,15 +315,16 @@ public class VoluntaryExitCommandTest {
     return String.format("http://127.0.0.1:%s/", mockBeaconServer.getLocalPort());
   }
 
-  private void configureSuccessfulSpecResponse(final ClientAndServer mockBeaconServer) {
+  private void configureSuccessfulSpecResponse(final ClientAndServer mockBeaconServer)
+      throws JsonProcessingException {
     configureSuccessfulSpecResponse(mockBeaconServer, TestSpecFactory.createMinimalBellatrix());
   }
 
   private void configureSuccessfulSpecResponse(
-      final ClientAndServer mockBeaconServer, final Spec spec) {
+      final ClientAndServer mockBeaconServer, final Spec spec) throws JsonProcessingException {
     mockBeaconServer
         .when(request().withPath("/eth/v1/config/spec"))
-        .respond(response().withStatusCode(200).withBody(getTestSpecResponse(spec)));
+        .respond(response().withStatusCode(200).withBody(getTestSpecJsonString(spec)));
   }
 
   private void configureSuccessfulHeadResponse(final ClientAndServer mockBeaconServer)
@@ -441,8 +444,8 @@ public class VoluntaryExitCommandTest {
         .respond(response().withStatusCode(400).withBody(rejectedExitResponseBody));
   }
 
-  private String getTestSpecResponse(final Spec spec) {
-    return JsonBody.json(new ConfigProvider(spec).getConfig()).toString();
+  private String getTestSpecJsonString(final Spec spec) throws JsonProcessingException {
+    return JsonUtil.serialize(new ConfigProvider(spec).getConfig(), GET_SPEC_RESPONSE_TYPE);
   }
 
   private String extractValidatorId(String pubKey) {

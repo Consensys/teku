@@ -84,6 +84,6 @@ class RemoteSpecLoaderTest {
   }
 
   private Map<String, String> getRawConfigForSpec(final Spec spec) {
-    return new ConfigProvider(spec).getConfig().data;
+    return new ConfigProvider(spec).getConfig();
   }
 }
