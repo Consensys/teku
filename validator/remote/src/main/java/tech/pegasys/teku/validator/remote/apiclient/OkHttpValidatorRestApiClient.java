@@ -20,7 +20,6 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_AGGREGATE;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_ATTESTATION_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_BLOCK_HEADER;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_CONFIG_SPEC;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_GENESIS;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_PROPOSER_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_SYNC_COMMITTEE_CONTRIBUTION;
@@ -64,7 +63,6 @@ import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
-import tech.pegasys.teku.api.response.v1.config.GetSpecResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetSyncCommitteeContributionResponse;
@@ -99,11 +97,6 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   public OkHttpValidatorRestApiClient(final HttpUrl baseEndpoint, final OkHttpClient okHttpClient) {
     this.baseEndpoint = baseEndpoint;
     this.httpClient = okHttpClient;
-  }
-
-  public Optional<GetSpecResponse> getConfigSpec() {
-    return get(
-        GET_CONFIG_SPEC, EMPTY_MAP, EMPTY_MAP, EMPTY_MAP, createHandler(GetSpecResponse.class));
   }
 
   @Override
