@@ -589,7 +589,12 @@ public class DebugDbCommand implements Runnable {
           final Bytes hotBlockData = rootAndHotBlock.getValue();
           final UInt64 hotBlockSlot =
               BeaconBlockInvariants.extractSignedBlockContainerSlot(hotBlockData);
-          if (hotBlockSlot.isGreaterThanOrEqualTo(lowerSlotBoundDataAvailability)) {
+
+          // exclude finalized hot blocks (keep non finalized hot blocks only so they are not
+          // counted twice)
+          if (hotBlockSlot.isGreaterThanOrEqualTo(lowerSlotBoundDataAvailability)
+              && hotBlockSlot.isGreaterThanOrEqualTo(
+                  maybeLatestFinalizedSlot.orElse(UInt64.ZERO))) {
             final Bytes32 hotBlockRoot = Bytes32.wrap(rootAndHotBlock.getKey());
             final Optional<SignedBeaconBlock> hotBlock = database.getHotBlock(hotBlockRoot);
             if (hotBlock.isPresent()) {
