@@ -565,35 +565,42 @@ public class DebugDbCommand implements Runnable {
 
       // Checking blobs sidecars for hot blocks
 
-      try (final Stream<Map.Entry<Bytes, Bytes>> blockStream = database.streamHotBlocksAsSsz()) {
+      try (final Stream<Map.Entry<Bytes, Bytes>> hotBlockStream = database.streamHotBlocksAsSsz()) {
         // Iterate through hot blocks
         System.out.printf("Checking blob sidecars excess for hot blocks...%n");
 
-        for (final Iterator<Map.Entry<Bytes, Bytes>> blockIterator = blockStream.iterator();
-            blockIterator.hasNext(); ) {
+        for (final Iterator<Map.Entry<Bytes, Bytes>> hotBlockIterator = hotBlockStream.iterator();
+            hotBlockIterator.hasNext(); ) {
           blocksToSidecarsCheckCounter++;
 
-          final Map.Entry<Bytes, Bytes> rootAndBlock = blockIterator.next();
-          final Bytes blockData = rootAndBlock.getValue();
-          final UInt64 blockSlot = BeaconBlockInvariants.extractSignedBlockContainerSlot(blockData);
-          if (blockSlot.isGreaterThanOrEqualTo(lowerSlotBoundDataAvailability)) {
-            final Bytes32 blockRoot = Bytes32.wrap(rootAndBlock.getKey());
-            final Optional<SignedBeaconBlock> hotBlock = database.getHotBlock(blockRoot);
+          final Map.Entry<Bytes, Bytes> rootAndHotBlock = hotBlockIterator.next();
+          final Bytes hotBlockData = rootAndHotBlock.getValue();
+          final UInt64 hotBlockSlot =
+              BeaconBlockInvariants.extractSignedBlockContainerSlot(hotBlockData);
+          if (hotBlockSlot.isGreaterThanOrEqualTo(lowerSlotBoundDataAvailability)) {
+            final Bytes32 hotBlockRoot = Bytes32.wrap(rootAndHotBlock.getKey());
+            final Optional<SignedBeaconBlock> hotBlock = database.getHotBlock(hotBlockRoot);
             if (hotBlock.isPresent()) {
               final int expectedBlobSidecarsCount =
-                  hotBlock.get().getMessage().getKzgProofs().map(SszList::size).orElse(0);
+                  hotBlock
+                      .get()
+                      .getMessage()
+                      .getBody()
+                      .getOptionalBlobKzgCommitments()
+                      .map(SszList::size)
+                      .orElse(0);
               for (int blobSidecarIndex = 0;
                   blobSidecarIndex < expectedBlobSidecarsCount;
                   blobSidecarIndex++) {
                 final SlotAndBlockRootAndBlobIndex blobSidecarKey =
                     new SlotAndBlockRootAndBlobIndex(
-                        blockSlot, blockRoot, UInt64.valueOf(blobSidecarIndex));
+                        hotBlockSlot, hotBlockRoot, UInt64.valueOf(blobSidecarIndex));
 
                 // Checking blob sidecar existence
                 final Optional<BlobSidecar> maybeCurrentBlobSidecar =
                     database.getBlobSidecar(blobSidecarKey);
                 if (maybeCurrentBlobSidecar.isEmpty()
-                    && blockSlot.isGreaterThanOrEqualTo(lowerSlotBoundDataAvailability)) {
+                    && hotBlockSlot.isGreaterThanOrEqualTo(lowerSlotBoundDataAvailability)) {
                   // inside DA window but missing
                   missingHotBlobsSidecars++;
                   System.err.printf(
@@ -608,9 +615,10 @@ public class DebugDbCommand implements Runnable {
       // Checking orphaned blob sidecars
       try (final Stream<SlotAndBlockRootAndBlobIndex> blobsSidecarKeys =
           database.streamBlobSidecarKeys(UInt64.ZERO, UInt64.MAX_VALUE)) {
-        for (final Iterator<SlotAndBlockRootAndBlobIndex> iterator = blobsSidecarKeys.iterator();
-            iterator.hasNext(); ) {
-          final SlotAndBlockRootAndBlobIndex blobSidecarKey = iterator.next();
+        for (final Iterator<SlotAndBlockRootAndBlobIndex> blobSidecarsIterator =
+                blobsSidecarKeys.iterator();
+            blobSidecarsIterator.hasNext(); ) {
+          final SlotAndBlockRootAndBlobIndex blobSidecarKey = blobSidecarsIterator.next();
 
           sidecarsToBlocksCheckCounter++;
 
