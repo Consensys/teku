@@ -224,6 +224,90 @@ class StoreTest extends AbstractStoreTest {
         });
   }
 
+  @Test
+  public void retrieveSignedBlock_withKzgCommitments() {
+    final UpdatableStore store = createGenesisStore();
+    final SignedBlockAndState blockAndState =
+        chainBuilder.generateBlockAtSlot(
+            1, ChainBuilder.BlockOptions.create().setGenerateRandomBlobs(true));
+
+    addBlock(store, blockAndState);
+
+    final SafeFuture<Optional<SignedBeaconBlock>> signedBlock =
+        store.retrieveSignedBlock(blockAndState.getRoot());
+
+    assertThat(signedBlock)
+        .isCompletedWithValueMatching(Optional::isPresent, "Result must be present")
+        .isCompletedWithValueMatching(
+            signedBeaconBlock ->
+                signedBeaconBlock
+                    .orElseThrow()
+                    .getSignedBeaconBlock()
+                    .orElseThrow()
+                    .equals(blockAndState.getBlock()),
+            " Block must match")
+        .isCompletedWithValueMatching(
+            signedBeaconBlock ->
+                !signedBeaconBlock
+                    .orElseThrow()
+                    .getBeaconBlock()
+                    .orElseThrow()
+                    .getBody()
+                    .getOptionalBlobKzgCommitments()
+                    .orElseThrow()
+                    .isEmpty(),
+            "KZG commitments must be present");
+  }
+
+  @Test
+  public void retrieveSignedBlock_withEmptyKzgCommitments() {
+    final UpdatableStore store = createGenesisStore();
+    final SignedBlockAndState blockAndState =
+        chainBuilder.generateBlockAtSlot(
+            1, ChainBuilder.BlockOptions.create().setGenerateRandomBlobs(false));
+
+    addBlock(store, blockAndState);
+
+    final SafeFuture<Optional<SignedBeaconBlock>> signedBlock =
+        store.retrieveSignedBlock(blockAndState.getRoot());
+
+    assertThat(signedBlock)
+        .isCompletedWithValueMatching(Optional::isPresent, "Result must be present")
+        .isCompletedWithValueMatching(
+            signedBeaconBlock ->
+                signedBeaconBlock
+                    .orElseThrow()
+                    .getSignedBeaconBlock()
+                    .orElseThrow()
+                    .equals(blockAndState.getBlock()),
+            " Block must match")
+        .isCompletedWithValueMatching(
+            signedBeaconBlockAndBlobsSidecar ->
+                signedBeaconBlockAndBlobsSidecar
+                    .orElseThrow()
+                    .getBeaconBlock()
+                    .orElseThrow()
+                    .getBody()
+                    .getOptionalBlobKzgCommitments()
+                    .orElseThrow()
+                    .isEmpty(),
+            "Blobs must be empty");
+  }
+
+  @Test
+  public void retrieveSignedBlock_shouldReturnEmptyIfBlockNotPresent() {
+    final UpdatableStore store = createGenesisStore();
+    final SignedBlockAndState blockAndState =
+        chainBuilder.generateBlockAtSlot(
+            1, ChainBuilder.BlockOptions.create().setGenerateRandomBlobs(true));
+
+    final SafeFuture<Optional<SignedBeaconBlock>> signedBeaconBlock =
+        store.retrieveSignedBlock(blockAndState.getRoot());
+
+    assertThat(signedBeaconBlock)
+        .isCompletedWithValueMatching(Optional::isEmpty, "Result must be empty");
+  }
+
   private void setProtoNodeDataForBlock(
       SignedBlockAndState blockAndState,
       BlockCheckpoints headCheckpoint,
