@@ -20,7 +20,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockserver.model.HttpRequest.request;
 import static org.mockserver.model.HttpResponse.response;
 import static tech.pegasys.teku.cli.BeaconNodeCommand.StartAction;
+import static tech.pegasys.teku.ethereum.json.types.config.SpecConfigDataMapBuilder.GET_SPEC_RESPONSE_TYPE;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.common.io.Resources;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -33,11 +35,11 @@ import org.mockito.ArgumentCaptor;
 import org.mockserver.integration.ClientAndServer;
 import org.mockserver.junit.jupiter.MockServerExtension;
 import org.mockserver.matchers.Times;
-import org.mockserver.model.JsonBody;
 import org.mockserver.socket.PortFactory;
 import tech.pegasys.teku.api.ConfigProvider;
 import tech.pegasys.teku.cli.BeaconNodeCommand;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfigurator;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
@@ -112,19 +114,22 @@ public class ValidatorClientCommandTest {
   }
 
   @Test
-  public void autoDetectNetwork_ShouldRetryRequest_IfFailsToFetchFromBeaconNode() {
+  public void autoDetectNetwork_ShouldRetryRequest_IfFailsToFetchFromBeaconNode()
+      throws JsonProcessingException {
     configureMockServer(1);
     fetchAndVerifySpec(argsNetworkOptAuto);
   }
 
   @Test
-  public void autoDetectNetwork_ShouldFetchNetworkDetailsFromBeaconNode_IfEnabled() {
+  public void autoDetectNetwork_ShouldFetchNetworkDetailsFromBeaconNode_IfEnabled()
+      throws JsonProcessingException {
     configureMockServer(0);
     fetchAndVerifySpec(argsNetworkOptAuto);
   }
 
   @Test
-  public void autoDetectNetwork_ShouldFetchNetworkDetailsFromFailoverNode() {
+  public void autoDetectNetwork_ShouldFetchNetworkDetailsFromFailoverNode()
+      throws JsonProcessingException {
     // primary node always fails
     configureMockServer(-1);
     configureSuccessfulResponse(failoverMockBeaconServer);
@@ -132,7 +137,8 @@ public class ValidatorClientCommandTest {
   }
 
   @Test
-  public void autoDetectNetwork_ShouldRetryRequest_IfFailsToFetchFromAllConfiguredBeaconNodes() {
+  public void autoDetectNetwork_ShouldRetryRequest_IfFailsToFetchFromAllConfiguredBeaconNodes()
+      throws JsonProcessingException {
     configureMockServer(1);
     // failover node always fails
     configureFailedResponse(failoverMockBeaconServer, -1);
@@ -140,13 +146,14 @@ public class ValidatorClientCommandTest {
   }
 
   @Test
-  public void autoDetectNetwork_ShouldFetchNetworkDetailsFromBeaconNode_IfEnabledInConfigFile() {
+  public void autoDetectNetwork_ShouldFetchNetworkDetailsFromBeaconNode_IfEnabledInConfigFile()
+      throws JsonProcessingException {
     configureMockServer(0);
     fetchAndVerifySpec(argsNetworkOptAutoInConfig);
   }
 
   @Test
-  public void networkOption_ShouldDefaultToAuto_IfNotSpecified() {
+  public void networkOption_ShouldDefaultToAuto_IfNotSpecified() throws JsonProcessingException {
     configureMockServer(0);
     fetchAndVerifySpec(argsNetworkOptDefault);
   }
@@ -159,15 +166,16 @@ public class ValidatorClientCommandTest {
     assertThat(config.eth2NetworkConfiguration().getSpec()).isEqualTo(testSpec);
   }
 
-  private void configureMockServer(final int fails) {
+  private void configureMockServer(final int fails) throws JsonProcessingException {
     configureFailedResponse(mockBeaconServer, fails);
     configureSuccessfulResponse(mockBeaconServer);
   }
 
-  private void configureSuccessfulResponse(final ClientAndServer mockBeaconServer) {
+  private void configureSuccessfulResponse(final ClientAndServer mockBeaconServer)
+      throws JsonProcessingException {
     mockBeaconServer
         .when(request().withPath("/eth/v1/config/spec"))
-        .respond(response().withStatusCode(200).withBody(getTestSpecResponse()));
+        .respond(response().withStatusCode(200).withBody(getTestSpecJsonString()));
   }
 
   private void configureFailedResponse(final ClientAndServer mockBeaconServer, final int fails) {
@@ -182,8 +190,8 @@ public class ValidatorClientCommandTest {
     return String.format("http://127.0.0.1:%s/", mockBeaconServer.getLocalPort());
   }
 
-  private String getTestSpecResponse() {
-    return JsonBody.json(new ConfigProvider(testSpec).getConfig()).toString();
+  private String getTestSpecJsonString() throws JsonProcessingException {
+    return JsonUtil.serialize(new ConfigProvider(testSpec).getConfig(), GET_SPEC_RESPONSE_TYPE);
   }
 
   public TekuConfiguration getResultingTekuConfiguration() {
