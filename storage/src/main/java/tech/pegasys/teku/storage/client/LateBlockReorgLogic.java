@@ -57,6 +57,7 @@ public class LateBlockReorgLogic {
     this.timeProviderSupplier = timeProviderSupplier;
     this.recentChainData = recentChainData;
   }
+
   public void setBlockTimelinessFromArrivalTime(
       final SignedBeaconBlock block, final UInt64 arrivalTimeMillis) {
     if (blockTimeliness.get(block.getRoot()) != null) {
@@ -102,7 +103,6 @@ public class LateBlockReorgLogic {
             });
   }
 
-
   // implements is_timely from Consensus Spec
   Optional<Boolean> isBlockTimely(final Bytes32 root) {
     return Optional.ofNullable(blockTimeliness.get(root));
@@ -134,8 +134,6 @@ public class LateBlockReorgLogic {
   public boolean isBlockLate(final Bytes32 root) {
     return !isBlockTimely(root).orElse(true);
   }
-
-
 
   // implements get_proposer_head from Consensus Spec
   public Bytes32 getProposerHead(final Bytes32 headRoot, final UInt64 slot) {
