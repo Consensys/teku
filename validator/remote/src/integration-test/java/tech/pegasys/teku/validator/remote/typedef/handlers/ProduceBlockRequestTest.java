@@ -37,8 +37,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase;
 
@@ -74,12 +74,13 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
 
-    final Optional<BlockContainer> maybeBlockContainer =
+    final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
         request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
 
-    assertThat(maybeBlockContainer).isPresent();
+    assertThat(maybeBlockContainerAndMetaData).isPresent();
 
-    assertThat(maybeBlockContainer.get()).isEqualTo(blockResponse.getData());
+    assertThat(maybeBlockContainerAndMetaData.get().blockContainer())
+        .isEqualTo(blockResponse.getData());
   }
 
   @TestTemplate
@@ -103,12 +104,13 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
 
-    final Optional<BlockContainer> maybeBlockContainer =
+    final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
         request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
 
-    assertThat(maybeBlockContainer).isPresent();
+    assertThat(maybeBlockContainerAndMetaData).isPresent();
 
-    assertThat(maybeBlockContainer.get()).isEqualTo(blockResponse.getData());
+    assertThat(maybeBlockContainerAndMetaData.get().blockContainer())
+        .isEqualTo(blockResponse.getData());
   }
 
   @TestTemplate
@@ -124,10 +126,11 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     final BLSSignature signature = blindedBeaconBlock.getBlock().getBody().getRandaoReveal();
 
-    final Optional<BlockContainer> maybeBlockContainer =
+    final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
         request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
 
-    assertThat(maybeBlockContainer).hasValue(blockResponse.getData());
+    assertThat(maybeBlockContainerAndMetaData.map(BlockContainerAndMetaData::blockContainer))
+        .hasValue(blockResponse.getData());
   }
 
   @TestTemplate
@@ -151,12 +154,13 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     final BLSSignature signature = blindedBeaconBlock.getBlock().getBody().getRandaoReveal();
 
-    final Optional<BlockContainer> maybeBlockContainer =
+    final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
         request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
 
-    assertThat(maybeBlockContainer).isPresent();
+    assertThat(maybeBlockContainerAndMetaData).isPresent();
 
-    assertThat(maybeBlockContainer.get()).isEqualTo(blockResponse.getData());
+    assertThat(maybeBlockContainerAndMetaData.get().blockContainer())
+        .isEqualTo(blockResponse.getData());
   }
 
   @TestTemplate
@@ -172,12 +176,13 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
 
-    final Optional<BlockContainer> maybeBlockContainer =
+    final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
         request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
 
-    assertThat(maybeBlockContainer).isPresent();
+    assertThat(maybeBlockContainerAndMetaData).isPresent();
 
-    assertThat(maybeBlockContainer.get()).isEqualTo(blockResponse.getData());
+    assertThat(maybeBlockContainerAndMetaData.get().blockContainer())
+        .isEqualTo(blockResponse.getData());
   }
 
   @TestTemplate
@@ -201,12 +206,13 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
 
-    final Optional<BlockContainer> maybeBlockContainer =
+    final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
         request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
 
-    assertThat(maybeBlockContainer).isPresent();
+    assertThat(maybeBlockContainerAndMetaData).isPresent();
 
-    assertThat(maybeBlockContainer.get()).isEqualTo(blockResponse.getData());
+    assertThat(maybeBlockContainerAndMetaData.get().blockContainer())
+        .isEqualTo(blockResponse.getData());
   }
 
   @TestTemplate

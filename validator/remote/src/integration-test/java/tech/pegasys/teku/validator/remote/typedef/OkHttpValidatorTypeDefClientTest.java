@@ -36,6 +36,7 @@ import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
@@ -87,14 +88,15 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
                     + specMilestone
                     + "\"}"));
 
-    final Optional<BlockContainer> producedBlock =
+    final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
         okHttpValidatorTypeDefClient.createUnsignedBlock(
             dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomSignature(),
             Optional.empty(),
             true);
 
-    assertThat(producedBlock).hasValue(blockContainer);
+    assertThat(maybeBlockContainerAndMetaData.map(BlockContainerAndMetaData::blockContainer))
+        .hasValue(blockContainer);
 
     assertThat(mockWebServer.getRequestCount()).isEqualTo(2);
 
@@ -303,14 +305,15 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
                     + specMilestone
                     + "\"}"));
 
-    final Optional<BlockContainer> producedBlock =
+    final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
         okHttpValidatorTypeDefClient.createUnsignedBlock(
             dataStructureUtil.randomUInt64(),
             dataStructureUtil.randomSignature(),
             Optional.empty(),
             Optional.empty());
 
-    assertThat(producedBlock).hasValue(blockContainer);
+    assertThat(maybeBlockContainerAndMetaData.map(BlockContainerAndMetaData::blockContainer))
+        .hasValue(blockContainer);
 
     assertThat(mockWebServer.getRequestCount()).isEqualTo(2);
 
