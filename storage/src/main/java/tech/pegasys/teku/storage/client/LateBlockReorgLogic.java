@@ -44,7 +44,6 @@ public class LateBlockReorgLogic {
     this(spec, recentChainData, recentChainData::getStore);
   }
 
-  // implements is_timely from Consensus Spec
   LateBlockReorgLogic(
       final Spec spec,
       final RecentChainData recentChainData,
@@ -58,8 +57,6 @@ public class LateBlockReorgLogic {
     this.timeProviderSupplier = timeProviderSupplier;
     this.recentChainData = recentChainData;
   }
-
-  // implements get_proposer_head from Consensus Spec
   public void setBlockTimelinessFromArrivalTime(
       final SignedBeaconBlock block, final UInt64 arrivalTimeMillis) {
     if (blockTimeliness.get(block.getRoot()) != null) {
@@ -105,6 +102,8 @@ public class LateBlockReorgLogic {
             });
   }
 
+
+  // implements is_timely from Consensus Spec
   Optional<Boolean> isBlockTimely(final Bytes32 root) {
     return Optional.ofNullable(blockTimeliness.get(root));
   }
@@ -136,6 +135,9 @@ public class LateBlockReorgLogic {
     return !isBlockTimely(root).orElse(true);
   }
 
+
+
+  // implements get_proposer_head from Consensus Spec
   public Bytes32 getProposerHead(final Bytes32 headRoot, final UInt64 slot) {
     LOG.debug("start getProposerHead");
     final boolean isProposerBoostActive = isProposerBoostActive(headRoot);

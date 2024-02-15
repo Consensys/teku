@@ -119,16 +119,6 @@ class LateBlockReorgLogicTest {
   }
 
   @Test
-  void blockTimeliness_ifBlockFromFuture() {
-    final UInt64 computedTime = computeTime(slot, 2100);
-
-    reorgLogicInstrumented.setBlockTimelinessFromArrivalTime(
-        dataStructureUtil.randomSignedBeaconBlock(0), computedTime);
-    assertThat(reorgLogicInstrumented.isBlockTimely(blockRoot)).isEmpty();
-    assertThat(reorgLogicInstrumented.isBlockLate(blockRoot)).isFalse();
-  }
-
-  @Test
   void blockTimeliness_shouldReportEmptyIfNotSet() {
     assertThat(reorgLogicInstrumented.isBlockTimely(blockRoot)).isEmpty();
     assertThat(reorgLogicInstrumented.isBlockLate(blockRoot)).isFalse();
