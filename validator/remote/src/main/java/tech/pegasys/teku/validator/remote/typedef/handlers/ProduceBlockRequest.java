@@ -20,7 +20,9 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.CONSENSUS_B
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_PAYLOAD_BLINDED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_PAYLOAD_VALUE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.GRAFFITI;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_BLOCK_VALUE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_VALUE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.RANDAO_REVEAL;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT256_TYPE;
@@ -28,6 +30,7 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GE
 
 import com.google.common.net.MediaType;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -62,7 +65,8 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
   private final BlockContainerSchema<BlockContainer> blockContainerSchema;
   private final BlockContainerSchema<BlockContainer> blindedBlockContainerSchema;
   private final ResponseHandler<ProduceBlockResponse> responseHandler;
-  public final DeserializableOneOfTypeDefinition<ProduceBlockResponse> produceBlockTypeDefinition;
+
+  private final DeserializableOneOfTypeDefinition<ProduceBlockResponse> produceBlockTypeDefinition;
 
   public ProduceBlockRequest(
       final HttpUrl baseEndpoint,
@@ -141,23 +145,43 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
       final String responseContentType = response.header("Content-Type");
       if (responseContentType != null
           && MediaType.parse(responseContentType).is(MediaType.OCTET_STREAM)) {
+
+        final UInt256 executionPayloadValue =
+            parseUInt256Header(response, HEADER_EXECUTION_PAYLOAD_VALUE);
+        final UInt256 consensusBlockValue =
+            parseUInt256Header(response, HEADER_CONSENSUS_BLOCK_VALUE);
+
         if (Boolean.parseBoolean(response.header(HEADER_EXECUTION_PAYLOAD_BLINDED))) {
           return Optional.of(
               new ProduceBlockResponse(
                   this.blindedBlockContainerSchema.sszDeserialize(
-                      Bytes.of(response.body().bytes()))));
+                      Bytes.of(response.body().bytes())),
+                  executionPayloadValue,
+                  consensusBlockValue));
         } else {
           return Optional.of(
               new ProduceBlockResponse(
-                  this.blockContainerSchema.sszDeserialize(Bytes.of(response.body().bytes()))));
+                  this.blockContainerSchema.sszDeserialize(Bytes.of(response.body().bytes())),
+                  executionPayloadValue,
+                  consensusBlockValue));
         }
+
       } else {
         return Optional.of(JsonUtil.parse(response.body().string(), produceBlockTypeDefinition));
       }
     } catch (final IOException ex) {
-      LOG.trace("Failed to parse response object creating block", ex);
+      LOG.error("Failed to parse response object creating block", ex);
     }
     return Optional.empty();
+  }
+
+  private UInt256 parseUInt256Header(final Response response, final String headerName) {
+    final String headerValue = response.header(headerName);
+    if (headerValue == null) {
+      LOG.warn("Header {} not found in response, defaulting value to ZERO", headerName);
+      return UInt256.ZERO;
+    }
+    return UInt256.valueOf(new BigInteger(headerValue, 10));
   }
 
   private DeserializableTypeDefinition<ProduceBlockResponse> buildDeserializableTypeDefinition(
@@ -203,6 +227,15 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
 
     public ProduceBlockResponse(final BlockContainer data) {
       this.data = data;
+    }
+
+    public ProduceBlockResponse(
+        final BlockContainer data,
+        final UInt256 executionPayloadValue,
+        final UInt256 consensusBlockValue) {
+      this.data = data;
+      this.executionPayloadValue = executionPayloadValue;
+      this.consensusBlockValue = consensusBlockValue;
     }
 
     public BlockContainer getData() {

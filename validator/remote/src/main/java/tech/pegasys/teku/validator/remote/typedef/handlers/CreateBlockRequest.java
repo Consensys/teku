@@ -31,6 +31,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
@@ -112,7 +113,7 @@ public class CreateBlockRequest extends AbstractTypeDefRequest {
         .map(
             response ->
                 new BlockContainerAndMetaData(
-                    response.getData(), response.getSpecMilestone(), null, null));
+                    response.getData(), response.getSpecMilestone(), UInt256.ZERO, UInt256.ZERO));
   }
 
   private Optional<GetBlockResponse> handleBlockContainerResult(
