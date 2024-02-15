@@ -33,6 +33,7 @@ import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -229,9 +230,17 @@ class StoreTest extends AbstractStoreTest {
     final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState blockAndState =
         chainBuilder.generateBlockAtSlot(
-            1, ChainBuilder.BlockOptions.create().setGenerateRandomBlobs(true));
+            1,
+            ChainBuilder.BlockOptions.create()
+                .setGenerateRandomBlobs(true)
+                .setStoreBlobSidecars(true));
 
     addBlock(store, blockAndState);
+
+    final List<BlobSidecar> blobSidecars =
+        chainBuilder.getBlobSidecars(blockAndState.getBlock().getRoot());
+
+    assertThat(blobSidecars).isNotEmpty();
 
     final SafeFuture<Optional<SignedBeaconBlock>> signedBlock =
         store.retrieveSignedBlock(blockAndState.getRoot());
@@ -248,15 +257,16 @@ class StoreTest extends AbstractStoreTest {
             " Block must match")
         .isCompletedWithValueMatching(
             signedBeaconBlock ->
-                !signedBeaconBlock
-                    .orElseThrow()
-                    .getBeaconBlock()
-                    .orElseThrow()
-                    .getBody()
-                    .getOptionalBlobKzgCommitments()
-                    .orElseThrow()
-                    .isEmpty(),
-            "KZG commitments must be present");
+                signedBeaconBlock
+                        .orElseThrow()
+                        .getBeaconBlock()
+                        .orElseThrow()
+                        .getBody()
+                        .getOptionalBlobKzgCommitments()
+                        .orElseThrow()
+                        .size()
+                    == blobSidecars.size(),
+            "KZG commitments must be present and has the same count as the blob sidecars");
   }
 
   @Test
@@ -264,9 +274,16 @@ class StoreTest extends AbstractStoreTest {
     final UpdatableStore store = createGenesisStore();
     final SignedBlockAndState blockAndState =
         chainBuilder.generateBlockAtSlot(
-            1, ChainBuilder.BlockOptions.create().setGenerateRandomBlobs(false));
+            1,
+            ChainBuilder.BlockOptions.create()
+                .setGenerateRandomBlobs(false)
+                .setStoreBlobSidecars(false));
 
     addBlock(store, blockAndState);
+
+    final List<BlobSidecar> blobSidecars =
+        chainBuilder.getBlobSidecars(blockAndState.getBlock().getRoot());
+    assertThat(blobSidecars).isEmpty();
 
     final SafeFuture<Optional<SignedBeaconBlock>> signedBlock =
         store.retrieveSignedBlock(blockAndState.getRoot());
@@ -291,7 +308,7 @@ class StoreTest extends AbstractStoreTest {
                     .getOptionalBlobKzgCommitments()
                     .orElseThrow()
                     .isEmpty(),
-            "Blobs must be empty");
+            "KZG commitments must be empty");
   }
 
   @Test
