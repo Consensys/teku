@@ -87,7 +87,8 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
         blockContainerAndMetaData.consensusBlockValue());
 
     final JsonNode resultAsJsonNode = JsonTestUtil.parseAsJsonNode(response.body().string());
-    final JsonNode expectedAsJsonNode = JsonTestUtil.parseAsJsonNode(getExpectedBlockAsJson(specMilestone, false, false));
+    final JsonNode expectedAsJsonNode =
+        JsonTestUtil.parseAsJsonNode(getExpectedBlockAsJson(specMilestone, false, false));
 
     assertThat(resultAsJsonNode).isEqualTo(expectedAsJsonNode);
   }
@@ -133,7 +134,8 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
         blockContainerAndMetaData.consensusBlockValue());
 
     final JsonNode resultAsJsonNode = JsonTestUtil.parseAsJsonNode(response.body().string());
-    final JsonNode expectedAsJsonNode = JsonTestUtil.parseAsJsonNode(getExpectedBlockAsJson(specMilestone, true, false));
+    final JsonNode expectedAsJsonNode =
+        JsonTestUtil.parseAsJsonNode(getExpectedBlockAsJson(specMilestone, true, false));
 
     assertThat(resultAsJsonNode).isEqualTo(expectedAsJsonNode);
   }
@@ -181,7 +183,8 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
         blockContainerAndMetaData.consensusBlockValue());
 
     final JsonNode resultAsJsonNode = JsonTestUtil.parseAsJsonNode(response.body().string());
-    final JsonNode expectedAsJsonNode = JsonTestUtil.parseAsJsonNode(getExpectedBlockAsJson(specMilestone, false, true));
+    final JsonNode expectedAsJsonNode =
+        JsonTestUtil.parseAsJsonNode(getExpectedBlockAsJson(specMilestone, false, true));
 
     assertThat(resultAsJsonNode).isEqualTo(expectedAsJsonNode);
   }
