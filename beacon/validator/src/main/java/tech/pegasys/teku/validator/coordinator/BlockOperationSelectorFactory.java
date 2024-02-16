@@ -48,6 +48,7 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
@@ -255,6 +256,7 @@ public class BlockOperationSelectorFactory {
             blockProductionPerformance);
 
     return SafeFuture.allOf(
+        cacheExecutionPayloadValue(executionPayloadResult, blockSlotState),
         builderSetPayloadPostMerge(
             bodyBuilder, setUnblindedContentIfBuilderFallbacks, executionPayloadResult),
         builderSetKzgCommitments(
@@ -262,6 +264,19 @@ public class BlockOperationSelectorFactory {
             setUnblindedContentIfBuilderFallbacks,
             schemaDefinitions,
             executionPayloadResult));
+  }
+
+  private SafeFuture<Void> cacheExecutionPayloadValue(
+      final ExecutionPayloadResult executionPayloadResult, final BeaconState blockSlotState) {
+    return executionPayloadResult
+        .getExecutionPayloadValueFuture()
+        .map(
+            futureValue ->
+                futureValue.thenAccept(
+                    value ->
+                        BeaconStateCache.getSlotCaches(blockSlotState)
+                            .setBlockExecutionValue(value)))
+        .orElse(SafeFuture.COMPLETE);
   }
 
   private SafeFuture<Void> builderSetPayloadPostMerge(
@@ -308,16 +323,21 @@ public class BlockOperationSelectorFactory {
               .getDefault());
       return SafeFuture.COMPLETE;
     }
-    return executionLayerBlockProductionManager
-        .initiateBlockProduction(
+
+    final ExecutionPayloadResult executionPayloadResult =
+        executionLayerBlockProductionManager.initiateBlockProduction(
             executionPayloadContext.get(),
             blockSlotState,
             false,
             Optional.empty(),
-            blockProductionPerformance)
-        .getExecutionPayloadFuture()
-        .orElseThrow()
-        .thenAccept(bodyBuilder::executionPayload);
+            blockProductionPerformance);
+
+    return SafeFuture.allOf(
+        cacheExecutionPayloadValue(executionPayloadResult, blockSlotState),
+        executionPayloadResult
+            .getExecutionPayloadFuture()
+            .orElseThrow()
+            .thenAccept(bodyBuilder::executionPayload));
   }
 
   private SafeFuture<Void> builderSetPayloadHeader(
@@ -337,25 +357,32 @@ public class BlockOperationSelectorFactory {
       return SafeFuture.COMPLETE;
     }
 
-    return executionLayerBlockProductionManager
-        .initiateBlockProduction(
+    final ExecutionPayloadResult executionPayloadResult =
+        executionLayerBlockProductionManager.initiateBlockProduction(
             executionPayloadContext.get(),
             blockSlotState,
             true,
             requestedBuilderBoostFactor,
-            blockProductionPerformance)
-        .getHeaderWithFallbackDataFuture()
-        .orElseThrow()
-        .thenAccept(
-            headerWithFallbackData -> {
-              if (setUnblindedContentIfBuilderFallbacks.apply(headerWithFallbackData)) {
-                bodyBuilder.executionPayload(
-                    headerWithFallbackData.getFallbackData().orElseThrow().getExecutionPayload());
-                return;
-              }
-              bodyBuilder.executionPayloadHeader(
-                  headerWithFallbackData.getExecutionPayloadHeader());
-            });
+            blockProductionPerformance);
+
+    return SafeFuture.allOf(
+        cacheExecutionPayloadValue(executionPayloadResult, blockSlotState),
+        executionPayloadResult
+            .getHeaderWithFallbackDataFuture()
+            .orElseThrow()
+            .thenAccept(
+                headerWithFallbackData -> {
+                  if (setUnblindedContentIfBuilderFallbacks.apply(headerWithFallbackData)) {
+                    bodyBuilder.executionPayload(
+                        headerWithFallbackData
+                            .getFallbackData()
+                            .orElseThrow()
+                            .getExecutionPayload());
+                    return;
+                  }
+                  bodyBuilder.executionPayloadHeader(
+                      headerWithFallbackData.getExecutionPayloadHeader());
+                }));
   }
 
   private SafeFuture<Void> builderSetKzgCommitments(

@@ -14,6 +14,7 @@
 package tech.pegasys.teku.validator.client.duties;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.infrastructure.logging.Converter.gweiToEth;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -127,16 +128,23 @@ public class BlockProductionDuty implements Duty {
 
   private SafeFuture<BlockContainer> validateBlock(
       final Optional<BlockContainerAndMetaData> maybeBlockContainer) {
-    final BlockContainer unsignedBlockContainer =
-        maybeBlockContainer
-            .map(BlockContainerAndMetaData::blockContainer)
-            .orElseThrow(
-                () -> new IllegalStateException("Node was not syncing but could not create block"));
+    final BlockContainerAndMetaData blockContainerAndMetaData =
+        maybeBlockContainer.orElseThrow(
+            () -> new IllegalStateException("Node was not syncing but could not create block"));
+    final BlockContainer unsignedBlockContainer = blockContainerAndMetaData.blockContainer();
     checkArgument(
         unsignedBlockContainer.getSlot().equals(slot),
         "Unsigned block slot (%s) does not match expected slot %s",
         unsignedBlockContainer.getSlot(),
         slot);
+
+    if (!blockContainerAndMetaData.consensusBlockValue().isZero()) {
+      LOG.info(
+          "Received block for slot {}, block rewards {} ETH, execution payload value {} ETH",
+          slot,
+          gweiToEth(blockContainerAndMetaData.consensusBlockValue()),
+          gweiToEth(blockContainerAndMetaData.executionPayloadValue()));
+    }
     return SafeFuture.completedFuture(unsignedBlockContainer);
   }
 

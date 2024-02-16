@@ -28,6 +28,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -67,6 +68,7 @@ import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChan
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
@@ -396,11 +398,15 @@ class BlockOperationSelectorFactoryTest {
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtil.randomPayloadExecutionContext(false);
     final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
+    final UInt256 blockExecutionValue = dataStructureUtil.randomUInt256();
 
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
     prepareBlockProductionWithPayload(
-        randomExecutionPayload, executionPayloadContext, blockSlotState);
+        randomExecutionPayload,
+        executionPayloadContext,
+        blockSlotState,
+        Optional.of(blockExecutionValue));
 
     safeJoin(
         factory
@@ -413,6 +419,9 @@ class BlockOperationSelectorFactoryTest {
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
+
+    assertThat(BeaconStateCache.getSlotCaches(blockSlotState).getBlockExecutionValue())
+        .isEqualByComparingTo(blockExecutionValue);
 
     assertThat(bodyBuilder.executionPayload).isEqualTo(randomExecutionPayload);
   }
@@ -427,10 +436,15 @@ class BlockOperationSelectorFactoryTest {
     final ExecutionPayloadHeader randomExecutionPayloadHeader =
         dataStructureUtil.randomExecutionPayloadHeader();
 
+    final UInt256 blockExecutionValue = dataStructureUtil.randomUInt256();
+
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
     prepareBlockProductionWithPayloadHeader(
-        randomExecutionPayloadHeader, executionPayloadContext, blockSlotState);
+        randomExecutionPayloadHeader,
+        executionPayloadContext,
+        blockSlotState,
+        Optional.of(blockExecutionValue));
 
     safeJoin(
         factory
@@ -444,6 +458,9 @@ class BlockOperationSelectorFactoryTest {
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
 
+    assertThat(BeaconStateCache.getSlotCaches(blockSlotState).getBlockExecutionValue())
+        .isEqualByComparingTo(blockExecutionValue);
+
     assertThat(bodyBuilder.executionPayloadHeader).isEqualTo(randomExecutionPayloadHeader);
   }
 
@@ -456,10 +473,15 @@ class BlockOperationSelectorFactoryTest {
         dataStructureUtil.randomPayloadExecutionContext(false);
     final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
 
+    final UInt256 blockExecutionValue = dataStructureUtil.randomUInt256();
+
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
     prepareBlockProductionWithPayload(
-        randomExecutionPayload, executionPayloadContext, blockSlotState);
+        randomExecutionPayload,
+        executionPayloadContext,
+        blockSlotState,
+        Optional.of(blockExecutionValue));
 
     safeJoin(
         factory
@@ -473,6 +495,9 @@ class BlockOperationSelectorFactoryTest {
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
 
+    assertThat(BeaconStateCache.getSlotCaches(blockSlotState).getBlockExecutionValue())
+        .isEqualByComparingTo(blockExecutionValue);
+
     assertThat(bodyBuilder.executionPayload).isEqualTo(randomExecutionPayload);
   }
 
@@ -485,10 +510,15 @@ class BlockOperationSelectorFactoryTest {
         dataStructureUtil.randomPayloadExecutionContext(false, false);
     final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
 
+    final UInt256 blockExecutionValue = dataStructureUtil.randomUInt256();
+
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
     prepareBlockProductionWithPayload(
-        randomExecutionPayload, executionPayloadContext, blockSlotState);
+        randomExecutionPayload,
+        executionPayloadContext,
+        blockSlotState,
+        Optional.of(blockExecutionValue));
 
     safeJoin(
         factory
@@ -501,6 +531,9 @@ class BlockOperationSelectorFactoryTest {
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
+
+    assertThat(BeaconStateCache.getSlotCaches(blockSlotState).getBlockExecutionValue())
+        .isEqualByComparingTo(blockExecutionValue);
 
     assertThat(bodyBuilder.executionPayload).isEqualTo(randomExecutionPayload);
   }
@@ -514,10 +547,15 @@ class BlockOperationSelectorFactoryTest {
         dataStructureUtil.randomPayloadExecutionContext(false, true);
     final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
 
+    final UInt256 blockExecutionValue = dataStructureUtil.randomUInt256();
+
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
     prepareBlindedBlockProductionWithFallBack(
-        randomExecutionPayload, executionPayloadContext, blockSlotState);
+        randomExecutionPayload,
+        executionPayloadContext,
+        blockSlotState,
+        Optional.of(blockExecutionValue));
 
     safeJoin(
         factory
@@ -530,6 +568,9 @@ class BlockOperationSelectorFactoryTest {
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
+
+    assertThat(BeaconStateCache.getSlotCaches(blockSlotState).getBlockExecutionValue())
+        .isEqualByComparingTo(blockExecutionValue);
 
     assertThat(bodyBuilder.executionPayload).isEqualTo(randomExecutionPayload);
   }
@@ -545,12 +586,18 @@ class BlockOperationSelectorFactoryTest {
     final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
     final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
 
+    final UInt256 blockExecutionValue = dataStructureUtil.randomUInt256();
+
     final CapturingBeaconBlockBodyBuilder bodyBuilder = new CapturingBeaconBlockBodyBuilder(true);
 
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
     prepareBlindedBlockAndBlobsProductionWithFallBack(
-        randomExecutionPayload, executionPayloadContext, blockSlotState, blobsBundle);
+        randomExecutionPayload,
+        executionPayloadContext,
+        blockSlotState,
+        blobsBundle,
+        Optional.of(blockExecutionValue));
 
     safeJoin(
         factory
@@ -563,6 +610,9 @@ class BlockOperationSelectorFactoryTest {
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
+
+    assertThat(BeaconStateCache.getSlotCaches(blockSlotState).getBlockExecutionValue())
+        .isEqualByComparingTo(blockExecutionValue);
 
     assertThat(bodyBuilder.executionPayload).isEqualTo(randomExecutionPayload);
     assertThat(bodyBuilder.blobKzgCommitments)
@@ -593,13 +643,19 @@ class BlockOperationSelectorFactoryTest {
         dataStructureUtil.randomPayloadExecutionContext(false);
     final ExecutionPayload randomExecutionPayload = dataStructureUtil.randomExecutionPayload();
 
+    final UInt256 blockExecutionValue = dataStructureUtil.randomUInt256();
+
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
 
     final BlobsBundle blobsBundle = dataStructureUtil.randomBlobsBundle();
 
     prepareBlockAndBlobsProduction(
-        randomExecutionPayload, executionPayloadContext, blockSlotState, blobsBundle);
+        randomExecutionPayload,
+        executionPayloadContext,
+        blockSlotState,
+        blobsBundle,
+        Optional.of(blockExecutionValue));
 
     final CapturingBeaconBlockBodyBuilder bodyBuilder = new CapturingBeaconBlockBodyBuilder(true);
 
@@ -615,6 +671,9 @@ class BlockOperationSelectorFactoryTest {
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
 
+    assertThat(BeaconStateCache.getSlotCaches(blockSlotState).getBlockExecutionValue())
+        .isEqualByComparingTo(blockExecutionValue);
+
     assertThat(bodyBuilder.blobKzgCommitments)
         .map(SszKZGCommitment::getKZGCommitment)
         .hasSameElementsAs(blobsBundle.getCommitments());
@@ -629,6 +688,8 @@ class BlockOperationSelectorFactoryTest {
     final ExecutionPayloadHeader randomExecutionPayloadHeader =
         dataStructureUtil.randomExecutionPayloadHeader();
 
+    final UInt256 blockExecutionValue = dataStructureUtil.randomUInt256();
+
     when(forkChoiceNotifier.getPayloadId(any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(executionPayloadContext)));
 
@@ -636,7 +697,11 @@ class BlockOperationSelectorFactoryTest {
         dataStructureUtil.randomBlobKzgCommitments();
 
     prepareBlindedBlockAndBlobsProduction(
-        randomExecutionPayloadHeader, executionPayloadContext, blockSlotState, blobKzgCommitments);
+        randomExecutionPayloadHeader,
+        executionPayloadContext,
+        blockSlotState,
+        blobKzgCommitments,
+        Optional.of(blockExecutionValue));
 
     final CapturingBeaconBlockBodyBuilder bodyBuilder = new CapturingBeaconBlockBodyBuilder(true);
 
@@ -652,6 +717,8 @@ class BlockOperationSelectorFactoryTest {
                 BlockProductionPerformance.NOOP)
             .apply(bodyBuilder));
 
+    assertThat(BeaconStateCache.getSlotCaches(blockSlotState).getBlockExecutionValue())
+        .isEqualByComparingTo(blockExecutionValue);
     assertThat(bodyBuilder.blobKzgCommitments).hasSameElementsAs(blobKzgCommitments);
   }
 
@@ -666,7 +733,8 @@ class BlockOperationSelectorFactoryTest {
         block.getSlot(),
         dataStructureUtil.randomExecutionPayload(),
         dataStructureUtil.randomPayloadExecutionContext(false),
-        expectedBlobsBundle);
+        expectedBlobsBundle,
+        Optional.empty());
 
     final BlobsBundle blobsBundle = safeJoin(factory.createBlobsBundleSelector().apply(block));
 
@@ -685,7 +753,8 @@ class BlockOperationSelectorFactoryTest {
         dataStructureUtil.randomExecutionPayloadHeader(),
         dataStructureUtil.randomExecutionPayload(),
         dataStructureUtil.randomPayloadExecutionContext(false),
-        expectedBlobsBundle);
+        expectedBlobsBundle,
+        Optional.empty());
 
     final BlobsBundle blobsBundle = safeJoin(factory.createBlobsBundleSelector().apply(block));
 
@@ -800,7 +869,8 @@ class BlockOperationSelectorFactoryTest {
   private void prepareBlockProductionWithPayload(
       final ExecutionPayload executionPayload,
       final ExecutionPayloadContext executionPayloadContext,
-      final BeaconState blockSlotState) {
+      final BeaconState blockSlotState,
+      final Optional<UInt256> executionPayloadValue) {
     when(executionLayer.initiateBlockProduction(
             executionPayloadContext,
             blockSlotState,
@@ -813,13 +883,14 @@ class BlockOperationSelectorFactoryTest {
                 Optional.of(SafeFuture.completedFuture(executionPayload)),
                 Optional.empty(),
                 Optional.empty(),
-                Optional.empty()));
+                executionPayloadValue.map(SafeFuture::completedFuture)));
   }
 
   private void prepareBlockProductionWithPayloadHeader(
       final ExecutionPayloadHeader executionPayloadHeader,
       final ExecutionPayloadContext executionPayloadContext,
-      final BeaconState blockSlotState) {
+      final BeaconState blockSlotState,
+      final Optional<UInt256> executionPayloadValue) {
     when(executionLayer.initiateBlockProduction(
             executionPayloadContext,
             blockSlotState,
@@ -834,13 +905,14 @@ class BlockOperationSelectorFactoryTest {
                 Optional.of(
                     SafeFuture.completedFuture(
                         HeaderWithFallbackData.create(executionPayloadHeader))),
-                Optional.empty()));
+                executionPayloadValue.map(SafeFuture::completedFuture)));
   }
 
   private void prepareBlindedBlockProductionWithFallBack(
       final ExecutionPayload executionPayload,
       final ExecutionPayloadContext executionPayloadContext,
-      final BeaconState blockSlotState) {
+      final BeaconState blockSlotState,
+      final Optional<UInt256> executionPayloadValue) {
     final HeaderWithFallbackData headerWithFallbackData =
         HeaderWithFallbackData.create(
             dataStructureUtil.randomExecutionPayloadHeader(),
@@ -862,14 +934,15 @@ class BlockOperationSelectorFactoryTest {
                 Optional.empty(),
                 Optional.empty(),
                 Optional.of(SafeFuture.completedFuture(headerWithFallbackData)),
-                Optional.empty()));
+                executionPayloadValue.map(SafeFuture::completedFuture)));
   }
 
   private void prepareBlockAndBlobsProduction(
       final ExecutionPayload executionPayload,
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState blockSlotState,
-      final BlobsBundle blobsBundle) {
+      final BlobsBundle blobsBundle,
+      final Optional<UInt256> executionPayloadValue) {
     when(executionLayer.initiateBlockAndBlobsProduction(
             executionPayloadContext,
             blockSlotState,
@@ -882,14 +955,15 @@ class BlockOperationSelectorFactoryTest {
                 Optional.of(SafeFuture.completedFuture(executionPayload)),
                 Optional.of(SafeFuture.completedFuture(Optional.of(blobsBundle))),
                 Optional.empty(),
-                Optional.empty()));
+                executionPayloadValue.map(SafeFuture::completedFuture)));
   }
 
   private void prepareBlindedBlockAndBlobsProduction(
       final ExecutionPayloadHeader executionPayloadHeader,
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState blockSlotState,
-      final SszList<SszKZGCommitment> blobKzgCommitments) {
+      final SszList<SszKZGCommitment> blobKzgCommitments,
+      final Optional<UInt256> executionPayloadValue) {
     final HeaderWithFallbackData headerWithFallbackData =
         HeaderWithFallbackData.create(executionPayloadHeader, Optional.of(blobKzgCommitments));
     when(executionLayer.initiateBlockAndBlobsProduction(
@@ -904,14 +978,15 @@ class BlockOperationSelectorFactoryTest {
                 Optional.empty(),
                 Optional.empty(),
                 Optional.of(SafeFuture.completedFuture(headerWithFallbackData)),
-                Optional.empty()));
+                executionPayloadValue.map(SafeFuture::completedFuture)));
   }
 
   private void prepareBlindedBlockAndBlobsProductionWithFallBack(
       final ExecutionPayload executionPayload,
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState blockSlotState,
-      final BlobsBundle blobsBundle) {
+      final BlobsBundle blobsBundle,
+      final Optional<UInt256> executionPayloadValue) {
     final HeaderWithFallbackData headerWithFallbackData =
         HeaderWithFallbackData.create(
             dataStructureUtil.randomExecutionPayloadHeader(),
@@ -933,14 +1008,15 @@ class BlockOperationSelectorFactoryTest {
                 Optional.empty(),
                 Optional.empty(),
                 Optional.of(SafeFuture.completedFuture(headerWithFallbackData)),
-                Optional.empty()));
+                executionPayloadValue.map(SafeFuture::completedFuture)));
   }
 
   private void prepareCachedPayloadResult(
       final UInt64 slot,
       final ExecutionPayload executionPayload,
       final ExecutionPayloadContext executionPayloadContext,
-      final BlobsBundle blobsBundle) {
+      final BlobsBundle blobsBundle,
+      final Optional<UInt256> executionPayloadValue) {
     when(executionLayer.getCachedPayloadResult(slot))
         .thenReturn(
             Optional.of(
@@ -949,7 +1025,7 @@ class BlockOperationSelectorFactoryTest {
                     Optional.of(SafeFuture.completedFuture(executionPayload)),
                     Optional.of(SafeFuture.completedFuture(Optional.of(blobsBundle))),
                     Optional.empty(),
-                    Optional.empty())));
+                    executionPayloadValue.map(SafeFuture::completedFuture))));
   }
 
   private void prepareCachedPayloadHeaderWithFallbackResult(
@@ -957,7 +1033,8 @@ class BlockOperationSelectorFactoryTest {
       final ExecutionPayloadHeader executionPayloadHeader,
       final ExecutionPayload executionPayload,
       final ExecutionPayloadContext executionPayloadContext,
-      final BlobsBundle blobsBundle) {
+      final BlobsBundle blobsBundle,
+      final Optional<UInt256> executionPayloadValue) {
 
     final SszList<SszKZGCommitment> sszKZGCommitments =
         SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
@@ -980,7 +1057,7 @@ class BlockOperationSelectorFactoryTest {
                                     executionPayload,
                                     Optional.of(blobsBundle),
                                     FallbackReason.SHOULD_OVERRIDE_BUILDER_FLAG_IS_TRUE)))),
-                    Optional.empty())));
+                    executionPayloadValue.map(SafeFuture::completedFuture))));
   }
 
   private void prepareCachedBuilderPayload(
