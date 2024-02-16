@@ -84,7 +84,7 @@ public class BlockFactoryPhase0 implements BlockFactory {
 
   private BlockContainerAndMetaData beaconBlockAndStateToBlockContainerAndMetaData(
       final BeaconBlockAndState blockAndState) {
-    SlotCaches slotCaches = BeaconStateCache.getSlotCaches(blockAndState.getState());
+    final SlotCaches slotCaches = BeaconStateCache.getSlotCaches(blockAndState.getState());
     return new BlockContainerAndMetaData(
         blockAndState.getBlock(),
         spec.atSlot(blockAndState.getSlot()).getMilestone(),

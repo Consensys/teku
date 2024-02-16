@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
+import static tech.pegasys.teku.spec.constants.EthConstants.GWEI_TO_WEI;
 
 import java.util.Collections;
 import java.util.List;
@@ -29,6 +30,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -64,6 +66,8 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.SlotCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
@@ -202,6 +206,22 @@ public abstract class AbstractBlockFactoryTest {
         .thenAnswer(invocation -> createEmptySyncAggregate(spec));
     executionPayloadBuilder.accept(blockSlotState);
 
+    final UInt256 blockExecutionValue;
+    final UInt64 blockProposerRewards;
+
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
+      blockExecutionValue = dataStructureUtil.randomUInt256();
+      blockProposerRewards = dataStructureUtil.randomUInt64();
+
+      // inject values into slot caches
+      final SlotCaches slotCaches = BeaconStateCache.getSlotCaches(blockSlotState);
+      slotCaches.setBlockExecutionValue(blockExecutionValue);
+      slotCaches.increaseBlockProposerRewards(blockProposerRewards);
+    } else {
+      blockExecutionValue = UInt256.ZERO;
+      blockProposerRewards = UInt64.ZERO;
+    }
+
     final BlockContainerAndMetaData blockContainer =
         safeJoin(
             blockFactory.createUnsignedBlock(
@@ -244,6 +264,10 @@ public abstract class AbstractBlockFactoryTest {
     } else {
       assertThat(block.getBody().getOptionalBlobKzgCommitments()).isEmpty();
     }
+
+    assertThat(blockContainer.consensusBlockValue())
+        .isEqualByComparingTo(GWEI_TO_WEI.multiply(blockProposerRewards.longValue()));
+    assertThat(blockContainer.executionPayloadValue()).isEqualByComparingTo(blockExecutionValue);
 
     return blockContainer;
   }
