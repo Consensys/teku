@@ -70,7 +70,11 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     final String mockResponse = readExpectedJsonResource(specMilestone, false, false);
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(SC_OK)
+            .setBody(mockResponse)
+            .setHeader(HEADER_EXECUTION_PAYLOAD_BLINDED, "false"));
 
     final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
 
@@ -120,7 +124,11 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     final String mockResponse = readExpectedJsonResource(specMilestone, true, false);
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(SC_OK)
+            .setBody(mockResponse)
+            .setHeader(HEADER_EXECUTION_PAYLOAD_BLINDED, "true"));
 
     final BLSSignature signature = blindedBeaconBlock.getBlock().getBody().getRandaoReveal();
 
@@ -168,7 +176,11 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     final String mockResponse = readExpectedJsonResource(specMilestone, false, true);
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(SC_OK)
+            .setBody(mockResponse)
+            .setHeader(HEADER_EXECUTION_PAYLOAD_BLINDED, "false"));
 
     final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
 

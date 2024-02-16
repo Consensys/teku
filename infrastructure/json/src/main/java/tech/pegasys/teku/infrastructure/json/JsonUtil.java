@@ -122,6 +122,14 @@ public class JsonUtil {
     }
   }
 
+  public static <T> T parseBasedOnHeader(
+      final String header, final String json, final DeserializableOneOfTypeDefinition<T> oneOfType)
+      throws JsonProcessingException {
+    final DeserializableTypeDefinition<? extends T> typeDefinition =
+        oneOfType.getMatchingType(header);
+    return parse(json, typeDefinition);
+  }
+
   public static <T> Optional<T> getAttribute(
       final String json, final DeserializableTypeDefinition<T> type, final String... path)
       throws JsonProcessingException {

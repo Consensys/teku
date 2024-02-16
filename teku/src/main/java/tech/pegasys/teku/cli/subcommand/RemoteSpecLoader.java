@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.config.SpecConfigLoader;
 import tech.pegasys.teku.storage.server.ShuttingDownException;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpClientAuth;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
+import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorMinimalTypeDefClient;
 
 class RemoteSpecLoader {
 
@@ -38,16 +39,16 @@ class RemoteSpecLoader {
 
   static Spec getSpec(final List<URI> beaconEndpoints) {
     if (beaconEndpoints.size() > 1) {
-      return getSpecWithFailovers(createApiClients(beaconEndpoints));
+      return getSpecWithFailovers(createTypeDefClients(beaconEndpoints));
     }
-    return getSpec(createApiClient(beaconEndpoints.get(0)));
+    return getSpec(createTypeDefClients(beaconEndpoints).get(0));
   }
 
-  static Spec getSpec(final OkHttpValidatorRestApiClient apiClient) {
+  static Spec getSpec(final OkHttpValidatorMinimalTypeDefClient apiClient) {
     try {
       return apiClient
-          .getConfigSpec()
-          .map(response -> SpecConfigLoader.loadRemoteConfig(response.data))
+          .getSpec()
+          .map(SpecConfigLoader::loadRemoteConfig)
           .map(SpecFactory::create)
           .orElseThrow();
     } catch (final Throwable ex) {
@@ -63,8 +64,9 @@ class RemoteSpecLoader {
     return createApiClients(List.of(endpoint)).get(0);
   }
 
-  private static Spec getSpecWithFailovers(final List<OkHttpValidatorRestApiClient> apiClients) {
-    for (final OkHttpValidatorRestApiClient apiClient : apiClients) {
+  private static Spec getSpecWithFailovers(
+      final List<OkHttpValidatorMinimalTypeDefClient> apiClients) {
+    for (final OkHttpValidatorMinimalTypeDefClient apiClient : apiClients) {
       try {
         return getSpec(apiClient);
       } catch (final Throwable ex) {
@@ -113,6 +115,24 @@ class RemoteSpecLoader {
     final OkHttpClient okHttpClient = httpClientBuilder.build();
     return apiEndpoints.stream()
         .map(apiEndpoint -> new OkHttpValidatorRestApiClient(apiEndpoint, okHttpClient))
+        .toList();
+  }
+
+  private static List<OkHttpValidatorMinimalTypeDefClient> createTypeDefClients(
+      final List<URI> baseEndpoints) {
+    final OkHttpClient.Builder httpClientBuilder =
+        new OkHttpClient.Builder().readTimeout(30, TimeUnit.SECONDS);
+    List<HttpUrl> apiEndpoints = baseEndpoints.stream().map(HttpUrl::get).toList();
+    if (apiEndpoints.size() > 1) {
+      OkHttpClientAuth.addAuthInterceptorForMultipleEndpoints(apiEndpoints, httpClientBuilder);
+    } else {
+      OkHttpClientAuth.addAuthInterceptor(apiEndpoints.get(0), httpClientBuilder);
+    }
+    // Strip any authentication info from the URL(s) to ensure it doesn't get logged.
+    apiEndpoints = stripAuthentication(apiEndpoints);
+    final OkHttpClient okHttpClient = httpClientBuilder.build();
+    return apiEndpoints.stream()
+        .map(apiEndpoint -> new OkHttpValidatorMinimalTypeDefClient(okHttpClient, apiEndpoint))
         .toList();
   }
 
