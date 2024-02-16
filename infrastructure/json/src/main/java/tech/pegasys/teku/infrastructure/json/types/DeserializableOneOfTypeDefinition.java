@@ -44,7 +44,7 @@ public class DeserializableOneOfTypeDefinition<TObject>
     return new DeserializableOneOfTypeDefinitionBuilder<>();
   }
 
-  public DeserializableTypeDefinition<? extends TObject> getMatchingType(String content) {
+  public DeserializableTypeDefinition<? extends TObject> getMatchingType(final String content) {
     DeserializableTypeDefinition<? extends TObject> typeDefinition = null;
     for (Predicate<String> predicate : parserTypes.keySet()) {
       if (predicate.test(content)) {

@@ -85,12 +85,10 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
         DeserializableOneOfTypeDefinition.object(ProduceBlockResponse.class)
             .withType(
                 x -> true,
-                executionPayloadBlindedHeader -> executionPayloadBlindedHeader.equals("false"),
+                executionPayloadBlindedHeader ->
+                    !Boolean.parseBoolean(executionPayloadBlindedHeader),
                 produceBlockResponseDefinition)
-            .withType(
-                x -> true,
-                executionPayloadBlindedHeader -> executionPayloadBlindedHeader.equals("true"),
-                produceBlindedBlockResponseDefinition)
+            .withType(x -> true, Boolean::parseBoolean, produceBlindedBlockResponseDefinition)
             .build();
 
     this.responseHandler =
