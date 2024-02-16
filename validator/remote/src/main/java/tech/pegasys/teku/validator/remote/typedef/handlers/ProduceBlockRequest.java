@@ -85,12 +85,10 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
         DeserializableOneOfTypeDefinition.object(ProduceBlockResponse.class)
             .withType(
                 x -> true,
-                s -> s.matches(".*\"execution_payload_blinded\" *: *false.*"),
+                executionPayloadBlindedHeader ->
+                    !Boolean.parseBoolean(executionPayloadBlindedHeader),
                 produceBlockResponseDefinition)
-            .withType(
-                x -> true,
-                s -> s.matches(".*\"execution_payload_blinded\" *: *true.*"),
-                produceBlindedBlockResponseDefinition)
+            .withType(x -> true, Boolean::parseBoolean, produceBlindedBlockResponseDefinition)
             .build();
 
     this.responseHandler =
@@ -145,7 +143,11 @@ public class ProduceBlockRequest extends AbstractTypeDefRequest {
                   this.blockContainerSchema.sszDeserialize(Bytes.of(response.body().bytes()))));
         }
       } else {
-        return Optional.of(JsonUtil.parse(response.body().string(), produceBlockTypeDefinition));
+        return Optional.of(
+            JsonUtil.parseBasedOnHeader(
+                response.header(HEADER_EXECUTION_PAYLOAD_BLINDED),
+                response.body().string(),
+                produceBlockTypeDefinition));
       }
     } catch (final IOException ex) {
       LOG.trace("Failed to parse response object creating block", ex);
