@@ -222,7 +222,7 @@ public abstract class AbstractBlockFactoryTest {
       blockProposerRewards = UInt64.ZERO;
     }
 
-    final BlockContainerAndMetaData blockContainer =
+    final BlockContainerAndMetaData blockContainerAndMetaData =
         safeJoin(
             blockFactory.createUnsignedBlock(
                 blockSlotState,
@@ -233,7 +233,7 @@ public abstract class AbstractBlockFactoryTest {
                 Optional.empty(),
                 BlockProductionPerformance.NOOP));
 
-    final BeaconBlock block = blockContainer.blockContainer().getBlock();
+    final BeaconBlock block = blockContainerAndMetaData.blockContainer().getBlock();
 
     assertThat(block).isNotNull();
     assertThat(block.getSlot()).isEqualTo(newSlot);
@@ -265,11 +265,12 @@ public abstract class AbstractBlockFactoryTest {
       assertThat(block.getBody().getOptionalBlobKzgCommitments()).isEmpty();
     }
 
-    assertThat(blockContainer.consensusBlockValue())
+    assertThat(blockContainerAndMetaData.consensusBlockValue())
         .isEqualByComparingTo(GWEI_TO_WEI.multiply(blockProposerRewards.longValue()));
-    assertThat(blockContainer.executionPayloadValue()).isEqualByComparingTo(blockExecutionValue);
+    assertThat(blockContainerAndMetaData.executionPayloadValue())
+        .isEqualByComparingTo(blockExecutionValue);
 
-    return blockContainer;
+    return blockContainerAndMetaData;
   }
 
   protected SyncAggregate createEmptySyncAggregate(final Spec spec) {
