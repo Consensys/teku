@@ -37,7 +37,6 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
-import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -58,8 +57,6 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
-import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.BeaconStateUtil;
 import tech.pegasys.teku.storage.api.ChainHeadChannel;
 import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
@@ -106,7 +103,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private final SingleBlockProvider validatedBlockProvider;
   private final SingleBlobSidecarProvider validatedBlobSidecarProvider;
 
-  private final BlockTimelinessTracker blockTimelinessTracker;
+  private final LateBlockReorgLogic lateBlockReorgLogic;
 
   private final ValidatorIsConnectedProvider validatorIsConnectedProvider;
 
@@ -114,7 +111,6 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final StoreConfig storeConfig,
-      final TimeProvider timeProvider,
       final BlockProvider blockProvider,
       final SingleBlockProvider validatedBlockProvider,
       final SingleBlobSidecarProvider validatedBlobSidecarProvider,
@@ -138,7 +134,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     this.chainHeadChannel = chainHeadChannel;
     this.storageUpdateChannel = storageUpdateChannel;
     this.finalizedCheckpointChannel = finalizedCheckpointChannel;
-    this.blockTimelinessTracker = new BlockTimelinessTracker(spec, this);
+    this.lateBlockReorgLogic = new LateBlockReorgLogic(spec, this);
     reorgCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.BEACON,
@@ -643,152 +639,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         .orElse(Collections.emptyList());
   }
 
-  // implements get_proposer_head from Consensus Spec
   public Bytes32 getProposerHead(final Bytes32 headRoot, final UInt64 slot) {
-    LOG.debug("start getProposerHead");
-    // if proposer boost is still active, don't attempt to override head
-    final boolean isProposerBoostActive =
-        store.getProposerBoostRoot().map(root -> !root.equals(headRoot)).orElse(false);
-    final boolean isShufflingStable = spec.atSlot(slot).getForkChoiceUtil().isShufflingStable(slot);
-    final boolean isFinalizationOk =
-        spec.atSlot(slot).getForkChoiceUtil().isFinalizationOk(store, slot);
-    final boolean isProposingOnTime = isProposingOnTime(slot);
-    final boolean isHeadLate = isBlockLate(headRoot);
-    final Optional<SignedBeaconBlock> maybeHead = store.getBlockIfAvailable(headRoot);
-
-    // to return parent root, we need all of (isHeadLate, isShufflingStable, isFfgCompetitive,
-    // isFinalizationOk, isProposingOnTime, isSingleSlotReorg, isHeadWeak, isParentStrong)
-
-    // cheap checks of that list:
-    // (isHeadLate, isShufflingStable, isFinalizationOk, isProposingOnTime);
-    // and  isProposerBoostActive (assert condition);
-    // finally need head block to make further checks
-    if (!isHeadLate
-        || !isShufflingStable
-        || !isFinalizationOk
-        || !isProposingOnTime
-        || isProposerBoostActive
-        || maybeHead.isEmpty()) {
-      LOG.debug(
-          "getProposerHead - return headRoot - isHeadLate {}, isShufflingStable {}, isFinalizationOk {}, isProposingOnTime {}, isProposerBoostActive {}, head.isEmpty {}",
-          () -> isHeadLate,
-          () -> isShufflingStable,
-          () -> isFinalizationOk,
-          () -> isProposingOnTime,
-          () -> isProposerBoostActive,
-          () -> headRoot.isEmpty());
-      return headRoot;
-    }
-
-    final SignedBeaconBlock head = maybeHead.get();
-    final boolean isFfgCompetitive =
-        store.isFfgCompetitive(headRoot, head.getParentRoot()).orElse(false);
-
-    final Optional<UInt64> maybeParentSlot = getSlotForBlockRoot(head.getParentRoot());
-    final boolean isParentSlotOk =
-        maybeParentSlot.map(uInt64 -> uInt64.increment().equals(head.getSlot())).orElse(false);
-    final boolean isCurrentTimeOk = head.getSlot().increment().equals(slot);
-    final boolean isSingleSlotReorg = isParentSlotOk && isCurrentTimeOk;
-
-    // from the initial list, check
-    // isFfgCompetitive, isSingleSlotReorg
-    if (!isFfgCompetitive || !isSingleSlotReorg) {
-      LOG.debug(
-          "getProposerHead - return headRoot - isFfgCompetitive {}, isSingleSlotReorg {}",
-          isFfgCompetitive,
-          isSingleSlotReorg);
-      return headRoot;
-    }
-
-    LOG.debug("getProposerHead - return headRoot");
-    return headRoot;
+    return lateBlockReorgLogic.getProposerHead(headRoot, slot);
   }
 
-  // implements should_override_forkchoice_update from Consensus-spec
-  //     return all([head_late, shuffling_stable, ffg_competitive, finalization_ok,
-  //                proposing_reorg_slot, single_slot_reorg,
-  //                head_weak, parent_strong])
   public boolean shouldOverrideForkChoiceUpdate(final Bytes32 headRoot) {
-    final Optional<SignedBeaconBlock> maybeHead = store.getBlockIfAvailable(headRoot);
-    final Optional<UInt64> maybeCurrentSlot = getCurrentSlot();
-    final boolean isHeadLate = isBlockLate(headRoot);
-    if (maybeHead.isEmpty() || maybeCurrentSlot.isEmpty() || !isHeadLate) {
-      // ! isHeadLate, or we don't have data we need (currentSlot and the block in question)
-      LOG.debug(
-          "shouldOverrideForkChoiceUpdate head {}, currentSlot {}, isHeadLate {}",
-          () -> maybeHead.map(SignedBeaconBlock::getRoot),
-          () -> maybeCurrentSlot,
-          () -> isHeadLate);
-      return false;
-    }
-    final SignedBeaconBlock head = maybeHead.get();
-    final UInt64 currentSlot = maybeCurrentSlot.get();
-    final UInt64 proposalSlot = maybeHead.get().getSlot().increment();
-    final boolean isShufflingStable =
-        spec.atSlot(proposalSlot).getForkChoiceUtil().isShufflingStable(proposalSlot);
-
-    final boolean isFfgCompetitive =
-        store.isFfgCompetitive(headRoot, head.getParentRoot()).orElse(false);
-    final boolean isFinalizationOk =
-        spec.atSlot(proposalSlot).getForkChoiceUtil().isFinalizationOk(store, proposalSlot);
-    final Optional<UInt64> maybeParentSlot = getSlotForBlockRoot(head.getParentRoot());
-
-    if (!isShufflingStable || !isFfgCompetitive || !isFinalizationOk || maybeParentSlot.isEmpty()) {
-      // !shufflingStable or !ffgCompetetive or !finalizationOk, or parentSlot is not found
-      LOG.debug(
-          "shouldOverrideForkChoiceUpdate isShufflingStable {}, isFfgCompetitive {}, isFinalizationOk {}, maybeParentSlot {}",
-          isShufflingStable,
-          isFfgCompetitive,
-          isFinalizationOk,
-          maybeParentSlot);
-      return false;
-    }
-
-    final boolean isParentSlotOk =
-        maybeParentSlot.map(uInt64 -> uInt64.increment().equals(head.getSlot())).orElse(false);
-    final boolean isProposingOnTime = isProposingOnTime(proposalSlot);
-    final boolean isCurrentTimeOk =
-        head.getSlot().equals(currentSlot)
-            || (currentSlot.equals(proposalSlot) && isProposingOnTime);
-    final boolean isHeadWeak;
-    final boolean isParentStrong;
-    if (currentSlot.isGreaterThan(head.getSlot())) {
-      isHeadWeak = store.isHeadWeak(headRoot);
-      isParentStrong = store.isParentStrong(head.getParentRoot());
-    } else {
-      isHeadWeak = true;
-      isParentStrong = true;
-    }
-    final boolean isSingleSlotReorg = isParentSlotOk && isCurrentTimeOk;
-    if (!isSingleSlotReorg || !isHeadWeak || !isParentStrong) {
-      LOG.debug(
-          "shouldOverrideForkChoiceUpdate isSingleSlotReorg {}, isHeadWeak {}, isParentStrong {}",
-          isSingleSlotReorg,
-          isHeadWeak,
-          isParentStrong);
-      return false;
-    }
-
-    // Only suppress the fork choice update if we are confident that we will propose the next block.
-    final Optional<BeaconState> maybeParentState =
-        store.getBlockStateIfAvailable(head.getParentRoot());
-    if (maybeParentState.isEmpty()) {
-      return false;
-    }
-    try {
-      final BeaconState proposerPreState = spec.processSlots(maybeParentState.get(), proposalSlot);
-      final int proposerIndex = spec.getBeaconProposerIndex(proposerPreState, proposalSlot);
-      if (!validatorIsConnectedProvider.isValidatorConnected(proposerIndex, proposalSlot)) {
-        LOG.debug(
-            "shouldOverrideForkChoiceUpdate isValidatorConnected({}) {}, ", proposerIndex, false);
-        return false;
-      }
-    } catch (SlotProcessingException | EpochProcessingException e) {
-      LOG.trace("Failed to process", e);
-      return false;
-    }
-
-    return true;
+    return lateBlockReorgLogic.shouldOverrideForkChoiceUpdate(headRoot);
   }
 
   public boolean validatorIsConnected(final int validatorIndex, final UInt64 slot) {
@@ -797,19 +653,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   public void setBlockTimelinessFromArrivalTime(
       final SignedBeaconBlock block, final UInt64 arrivalTime) {
-    blockTimelinessTracker.setBlockTimelinessFromArrivalTime(block, arrivalTime);
-  }
-
-  // implements is_head_late from consensus spec
-  public boolean isBlockLate(final Bytes32 blockRoot) {
-    return blockTimelinessTracker.isBlockLate(blockRoot);
-  }
-
-  public boolean isProposingOnTime(final UInt64 slot) {
-    return blockTimelinessTracker.isProposingOnTime(slot);
+    lateBlockReorgLogic.setBlockTimelinessFromArrivalTime(block, arrivalTime);
   }
 
   public void setBlockTimelinessIfEmpty(SignedBeaconBlock block) {
-    blockTimelinessTracker.setBlockTimelinessFromArrivalTime(block, store.getTimeInMillis());
+    lateBlockReorgLogic.setBlockTimelinessFromArrivalTime(block, store.getTimeInMillis());
   }
 }

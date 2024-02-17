@@ -66,7 +66,6 @@ public class StorageBackedRecentChainData extends RecentChainData {
         asyncRunner,
         metricsSystem,
         storeConfig,
-        timeProvider,
         storageQueryChannel::getHotBlocksByRoot,
         validatedBlockProvider,
         validatedBlobSidecarProvider,
