@@ -46,8 +46,7 @@ public class EngineCapabilitiesMonitor implements ExecutionClientEventsChannel {
   @Override
   public void onAvailabilityUpdated(final boolean isAvailable) {
     if (isAvailable) {
-      monitor()
-          .handleException(ex -> LOG.error("Exception exchanging Engine API capabilities", ex));
+      monitor().finish(error -> LOG.error("Exception exchanging Engine API capabilities", error));
     }
   }
 
