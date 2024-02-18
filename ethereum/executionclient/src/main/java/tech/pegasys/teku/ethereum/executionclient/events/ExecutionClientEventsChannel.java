@@ -17,5 +17,6 @@ import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 
 public interface ExecutionClientEventsChannel extends VoidReturningChannelInterface {
 
+  /** `true` on startup or on a successful request after an error, `false` on an error */
   void onAvailabilityUpdated(boolean isAvailable);
 }
