@@ -47,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannelWithDelays;
@@ -226,24 +227,40 @@ class StoreTest extends AbstractStoreTest {
   }
 
   @Test
-  public void retrieveSignedBlock_withKzgCommitments() {
+  public void retrieveSignedBlock_withBlobs() {
     final UpdatableStore store = createGenesisStore();
-    final SignedBlockAndState blockAndState =
+    final UInt64 slot = UInt64.ONE;
+    final SignedBlockAndState signedBlockAndState =
         chainBuilder.generateBlockAtSlot(
-            1,
+            slot,
             ChainBuilder.BlockOptions.create()
                 .setGenerateRandomBlobs(true)
                 .setStoreBlobSidecars(true));
 
-    addBlock(store, blockAndState);
+    addBlock(store, signedBlockAndState);
 
-    final List<BlobSidecar> blobSidecars =
-        chainBuilder.getBlobSidecars(blockAndState.getBlock().getRoot());
+    final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
+    chainBuilder
+        .streamBlocksAndStates()
+        .forEach(
+            blockAndState ->
+                tx.putBlockAndState(
+                    blockAndState,
+                    chainBuilder.getBlobSidecars(blockAndState.getBlock().getRoot()),
+                    spec.calculateBlockCheckpoints(blockAndState.getState())));
+    tx.commit().join();
 
-    assertThat(blobSidecars).isNotEmpty();
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(slot, signedBlockAndState.getBlock().getRoot());
+
+    final Optional<List<BlobSidecar>> blobSidecarsFromStore =
+        store.getBlobSidecarsIfAvailable(slotAndBlockRoot);
+
+    assertThat(blobSidecarsFromStore)
+        .hasValueSatisfying(blobSidecars -> assertThat(blobSidecars).isNotEmpty());
 
     final SafeFuture<Optional<SignedBeaconBlock>> signedBlock =
-        store.retrieveSignedBlock(blockAndState.getRoot());
+        store.retrieveSignedBlock(signedBlockAndState.getRoot());
 
     assertThat(signedBlock)
         .isCompletedWithValueMatching(Optional::isPresent, "Result must be present")
@@ -253,40 +270,59 @@ class StoreTest extends AbstractStoreTest {
                     .orElseThrow()
                     .getSignedBeaconBlock()
                     .orElseThrow()
-                    .equals(blockAndState.getBlock()),
+                    .equals(signedBlockAndState.getBlock()),
             " Block must match")
         .isCompletedWithValueMatching(
             signedBeaconBlock ->
                 signedBeaconBlock
-                        .orElseThrow()
-                        .getBeaconBlock()
-                        .orElseThrow()
-                        .getBody()
-                        .getOptionalBlobKzgCommitments()
-                        .orElseThrow()
-                        .size()
-                    == blobSidecars.size(),
-            "KZG commitments must be present and has the same count as the blob sidecars");
+                    .orElseThrow()
+                    .getBeaconBlock()
+                    .orElseThrow()
+                    .getBody()
+                    .getOptionalBlobKzgCommitments()
+                    .orElseThrow()
+                    .asList()
+                    .containsAll(
+                        blobSidecarsFromStore.get().stream()
+                            .map(blob -> new SszKZGCommitment(blob.getKZGCommitment()))
+                            .toList()),
+            "Blob sidecars must match");
   }
 
   @Test
-  public void retrieveSignedBlock_withEmptyKzgCommitments() {
+  public void retrieveSignedBlock_withEmptyBlobs() {
     final UpdatableStore store = createGenesisStore();
-    final SignedBlockAndState blockAndState =
+    final UInt64 slot = UInt64.ONE;
+    final SignedBlockAndState signedBlockAndState =
         chainBuilder.generateBlockAtSlot(
-            1,
+            slot,
             ChainBuilder.BlockOptions.create()
                 .setGenerateRandomBlobs(false)
                 .setStoreBlobSidecars(false));
 
-    addBlock(store, blockAndState);
+    addBlock(store, signedBlockAndState);
 
-    final List<BlobSidecar> blobSidecars =
-        chainBuilder.getBlobSidecars(blockAndState.getBlock().getRoot());
-    assertThat(blobSidecars).isEmpty();
+    final StoreTransaction tx = store.startTransaction(new StubStorageUpdateChannel());
+    chainBuilder
+        .streamBlocksAndStates()
+        .forEach(
+            blockAndState ->
+                tx.putBlockAndState(
+                    blockAndState,
+                    chainBuilder.getBlobSidecars(blockAndState.getBlock().getRoot()),
+                    spec.calculateBlockCheckpoints(blockAndState.getState())));
+    tx.commit().join();
+
+    final SlotAndBlockRoot slotAndBlockRoot =
+        new SlotAndBlockRoot(slot, signedBlockAndState.getBlock().getRoot());
+    final Optional<List<BlobSidecar>> blobSidecarsFromStore =
+        store.getBlobSidecarsIfAvailable(slotAndBlockRoot);
+
+    assertThat(blobSidecarsFromStore)
+        .hasValueSatisfying(blobSidecars -> assertThat(blobSidecars).isEmpty());
 
     final SafeFuture<Optional<SignedBeaconBlock>> signedBlock =
-        store.retrieveSignedBlock(blockAndState.getRoot());
+        store.retrieveSignedBlock(signedBlockAndState.getRoot());
 
     assertThat(signedBlock)
         .isCompletedWithValueMatching(Optional::isPresent, "Result must be present")
@@ -296,7 +332,7 @@ class StoreTest extends AbstractStoreTest {
                     .orElseThrow()
                     .getSignedBeaconBlock()
                     .orElseThrow()
-                    .equals(blockAndState.getBlock()),
+                    .equals(signedBlockAndState.getBlock()),
             " Block must match")
         .isCompletedWithValueMatching(
             signedBeaconBlockAndBlobsSidecar ->
@@ -308,7 +344,7 @@ class StoreTest extends AbstractStoreTest {
                     .getOptionalBlobKzgCommitments()
                     .orElseThrow()
                     .isEmpty(),
-            "KZG commitments must be empty");
+            "Blob sidecars must be empty");
   }
 
   @Test
