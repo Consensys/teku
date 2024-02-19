@@ -322,21 +322,12 @@ public class StatusLogger {
     }
   }
 
-  public void errorIncompatibleInitialState(final UInt64 epoch) {
-    log.error(
-        "Cannot start with provided initial state for the epoch {}, "
-            + "checkpoint occurred on the empty slot, which is not yet supported.\n"
-            + "If you are using remote checkpoint source, "
-            + "please wait for the next epoch to finalize and retry.",
-        epoch);
-  }
-
   public void warnInitialStateIgnored() {
     log.warn("Not loading specified initial state as chain data already exists.");
   }
 
-  public void warnFailedToLoadInitialState(final String message) {
-    log.warn(message);
+  public void warnFailedToLoadInitialState(final Throwable throwable) {
+    log.warn("Failed to load initial state", throwable);
   }
 
   public void warnOnInitialStateWithSkippedSlots(

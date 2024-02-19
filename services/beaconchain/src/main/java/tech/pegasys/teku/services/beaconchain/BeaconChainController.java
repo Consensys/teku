@@ -1384,14 +1384,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
       initialAnchor =
           attemptToLoadAnchorPoint(
               networkConfiguration.getNetworkBoostrapConfig().getInitialState());
-    } catch (final InvalidConfigurationException e) {
+    } catch (final InvalidConfigurationException ex) {
       final StateBoostrapConfig stateBoostrapConfig =
           networkConfiguration.getNetworkBoostrapConfig();
       if (stateBoostrapConfig.isUsingCustomInitialState()
           && !stateBoostrapConfig.isUsingCheckpointSync()) {
-        throw e;
+        throw ex;
       }
-      STATUS_LOG.warnFailedToLoadInitialState(e.getMessage());
+      STATUS_LOG.warnFailedToLoadInitialState(ex);
     }
 
     return initialAnchor;

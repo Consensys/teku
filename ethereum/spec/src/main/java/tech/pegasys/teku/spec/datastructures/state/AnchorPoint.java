@@ -56,6 +56,15 @@ public class AnchorPoint extends StateAndBlockSummary {
     this.isGenesis = checkpoint.getEpoch().equals(SpecConfig.GENESIS_EPOCH);
   }
 
+  @Override
+  protected void verifyStateAndBlockConsistency() {
+    if (state.getSlot().isGreaterThan(blockSummary.getSlot())) {
+      // skip verification when state is transitioned with empty slot(s)
+      return;
+    }
+    super.verifyStateAndBlockConsistency();
+  }
+
   public static AnchorPoint create(
       final Spec spec,
       Checkpoint checkpoint,

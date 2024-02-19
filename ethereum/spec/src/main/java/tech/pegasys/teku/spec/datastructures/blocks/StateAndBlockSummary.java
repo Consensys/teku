@@ -33,11 +33,15 @@ public class StateAndBlockSummary implements BeaconBlockSummary {
   protected StateAndBlockSummary(final BeaconBlockSummary blockSummary, final BeaconState state) {
     checkNotNull(blockSummary);
     checkNotNull(state);
+    verifyStateAndBlockConsistency();
+    this.blockSummary = blockSummary;
+    this.state = state;
+  }
+
+  protected void verifyStateAndBlockConsistency() {
     checkArgument(
         blockSummary.getStateRoot().equals(state.hashTreeRoot()),
         "Block state root must match the supplied state");
-    this.blockSummary = blockSummary;
-    this.state = state;
   }
 
   public static StateAndBlockSummary create(final BeaconState state) {
