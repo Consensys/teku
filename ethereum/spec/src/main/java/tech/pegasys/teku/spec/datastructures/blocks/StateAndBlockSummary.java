@@ -33,9 +33,9 @@ public class StateAndBlockSummary implements BeaconBlockSummary {
   protected StateAndBlockSummary(final BeaconBlockSummary blockSummary, final BeaconState state) {
     checkNotNull(blockSummary);
     checkNotNull(state);
-    verifyStateAndBlockConsistency();
     this.blockSummary = blockSummary;
     this.state = state;
+    verifyStateAndBlockConsistency();
   }
 
   protected void verifyStateAndBlockConsistency() {
