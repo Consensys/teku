@@ -16,9 +16,15 @@ package tech.pegasys.teku.spec.datastructures.metadata;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 
-public record BlockContainerAndMetaData<T extends BlockContainer>(
-    T blockContainer,
+public record BlockContainerAndMetaData(
+    BlockContainer blockContainer,
     SpecMilestone specMilestone,
     UInt256 executionPayloadValue,
-    UInt256 consensusBlockValue) {}
+    UInt256 consensusBlockValue) {
+  public BlockContainerAndMetaData withBlockContents(final BlockContents blockContents) {
+    return new BlockContainerAndMetaData(
+        blockContents, specMilestone, executionPayloadValue, consensusBlockValue);
+  }
+}

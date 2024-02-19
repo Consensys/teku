@@ -112,7 +112,7 @@ public class GetNewBlockV3 extends RestApiEndpoint {
     final Optional<Bytes32> graffiti = request.getOptionalQueryParameter(GRAFFITI_PARAMETER);
     final Optional<UInt64> requestedBuilderBoostFactor =
         request.getOptionalQueryParameter(BUILDER_BOOST_FACTOR_PARAMETER);
-    final SafeFuture<Optional<BlockContainerAndMetaData<BlockContainer>>> result =
+    final SafeFuture<Optional<BlockContainerAndMetaData>> result =
         validatorDataProvider.produceBlock(slot, randao, graffiti, requestedBuilderBoostFactor);
     request.respondAsync(
         result.thenApply(
@@ -145,8 +145,8 @@ public class GetNewBlockV3 extends RestApiEndpoint {
                                 SC_INTERNAL_SERVER_ERROR, "Unable to produce a block"))));
   }
 
-  private static SerializableTypeDefinition<BlockContainerAndMetaData<BlockContainer>>
-      getResponseType(final SchemaDefinitionCache schemaDefinitionCache) {
+  private static SerializableTypeDefinition<BlockContainerAndMetaData> getResponseType(
+      final SchemaDefinitionCache schemaDefinitionCache) {
 
     final List<MilestoneDependentTypesUtil.ConditionalSchemaGetter<BlockContainer>> schemaGetters =
         generateBlockContainerSchemaGetters(schemaDefinitionCache);
@@ -154,7 +154,7 @@ public class GetNewBlockV3 extends RestApiEndpoint {
     final SerializableTypeDefinition<BlockContainer> blockContainerType =
         getMultipleSchemaDefinitionFromMilestone(schemaDefinitionCache, "Block", schemaGetters);
 
-    return SerializableTypeDefinition.<BlockContainerAndMetaData<BlockContainer>>object()
+    return SerializableTypeDefinition.<BlockContainerAndMetaData>object()
         .name("ProduceBlockV3Response")
         .withField("version", MILESTONE_TYPE, BlockContainerAndMetaData::specMilestone)
         .withField(

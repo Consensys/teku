@@ -21,14 +21,14 @@ import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanc
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public interface BlockFactory {
 
-  SafeFuture<BlockContainer> createUnsignedBlock(
+  SafeFuture<BlockContainerAndMetaData> createUnsignedBlock(
       BeaconState blockSlotState,
       UInt64 proposalSlot,
       BLSSignature randaoReveal,

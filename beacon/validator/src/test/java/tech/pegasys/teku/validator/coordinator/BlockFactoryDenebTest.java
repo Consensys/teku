@@ -47,7 +47,8 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     final BlobsBundle blobsBundle = prepareBlobsBundle(spec, 3);
 
     final BlockContainer blockContainer =
-        assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), false);
+        assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), false)
+            .blockContainer();
 
     assertThat(blockContainer).isInstanceOf(BlockContents.class);
     assertThat(blockContainer.getBlock().getBody().getOptionalBlobKzgCommitments())
@@ -66,7 +67,8 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     final SszList<SszKZGCommitment> blobKzgCommitments = prepareBuilderBlobKzgCommitments(spec, 3);
 
     final BlockContainer blockContainer =
-        assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), true);
+        assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), true)
+            .blockContainer();
 
     assertThat(blockContainer).isInstanceOf(BeaconBlock.class);
     final BeaconBlock blindedBeaconBlock = (BeaconBlock) blockContainer;
