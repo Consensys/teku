@@ -59,7 +59,7 @@ public class AnchorPoint extends StateAndBlockSummary {
   @Override
   protected void verifyStateAndBlockConsistency() {
     if (state.getSlot().isGreaterThan(blockSummary.getSlot())) {
-      // state is transitioned with empty slot(s)
+      // the finalized state is transitioned with empty slot(s)
       checkArgument(
           blockSummary.getStateRoot().equals(state.getLatestBlockHeader().getStateRoot()),
           "Block state root must match the latest block header state root in the state");
