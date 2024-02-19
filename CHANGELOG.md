@@ -16,3 +16,5 @@ the [releases page](https://github.com/Consensys/teku/releases).
 - Updated Javalin to v.6 (used by rest-api and keymanager-api).
 
 ### Bug Fixes
+
+- Fixed a checkpoint sync issue where Teku couldn't start when the finalized state has been transitioned with empty slot(s) 
