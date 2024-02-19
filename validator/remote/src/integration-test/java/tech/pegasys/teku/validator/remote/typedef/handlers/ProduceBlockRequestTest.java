@@ -18,7 +18,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_BLOCK_VALUE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_VALUE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
@@ -29,6 +31,7 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
 import okio.Buffer;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
@@ -37,8 +40,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.validator.remote.typedef.AbstractTypeDefRequestTestBase;
 
@@ -70,16 +73,26 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     final String mockResponse = readExpectedJsonResource(specMilestone, false, false);
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(SC_OK)
+            .setBody(mockResponse)
+            .setHeader(HEADER_EXECUTION_PAYLOAD_BLINDED, "false"));
 
     final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
 
-    final Optional<BlockContainer> maybeBlockContainer =
+    final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
         request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
 
-    assertThat(maybeBlockContainer).isPresent();
+    assertThat(maybeBlockContainerAndMetaData).isPresent();
 
-    assertThat(maybeBlockContainer.get()).isEqualTo(blockResponse.getData());
+    assertThat(maybeBlockContainerAndMetaData.get().blockContainer().getBlock())
+        .isEqualTo(blockResponse.getData());
+
+    assertThat(maybeBlockContainerAndMetaData.get().consensusBlockValue())
+        .isEqualTo(UInt256.valueOf(123000000000L));
+    assertThat(maybeBlockContainerAndMetaData.get().executionPayloadValue())
+        .isEqualTo(UInt256.valueOf(12345));
   }
 
   @TestTemplate
@@ -95,20 +108,43 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
             .sszSerialize(beaconBlock)
             .toArrayUnsafe());
 
-    mockWebServer.enqueue(
+    final MockResponse mockResponse =
         new MockResponse()
             .setResponseCode(SC_OK)
             .setHeader("Content-Type", MediaType.OCTET_STREAM)
-            .setBody(responseBodyBuffer));
+            .setBody(responseBodyBuffer);
+
+    final UInt256 expectedConsensusBlockValue;
+    final UInt256 expectedExecutionPayloadValue;
+
+    if (specMilestone.isGreaterThanOrEqualTo(BELLATRIX)) {
+      mockResponse
+          .setHeader(HEADER_CONSENSUS_BLOCK_VALUE, "123000000000")
+          .setHeader(HEADER_EXECUTION_PAYLOAD_VALUE, "12345");
+
+      expectedConsensusBlockValue = UInt256.valueOf(123000000000L);
+      expectedExecutionPayloadValue = UInt256.valueOf(12345);
+    } else {
+      expectedConsensusBlockValue = UInt256.ZERO;
+      expectedExecutionPayloadValue = UInt256.ZERO;
+    }
+
+    mockWebServer.enqueue(mockResponse);
 
     final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
 
-    final Optional<BlockContainer> maybeBlockContainer =
+    final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
         request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
 
-    assertThat(maybeBlockContainer).isPresent();
+    assertThat(maybeBlockContainerAndMetaData).isPresent();
 
-    assertThat(maybeBlockContainer.get()).isEqualTo(blockResponse.getData());
+    assertThat(maybeBlockContainerAndMetaData.get().blockContainer())
+        .isEqualTo(blockResponse.getData());
+
+    assertThat(maybeBlockContainerAndMetaData.get().consensusBlockValue())
+        .isEqualTo(expectedConsensusBlockValue);
+    assertThat(maybeBlockContainerAndMetaData.get().executionPayloadValue())
+        .isEqualTo(expectedExecutionPayloadValue);
   }
 
   @TestTemplate
@@ -120,14 +156,19 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     final String mockResponse = readExpectedJsonResource(specMilestone, true, false);
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(SC_OK)
+            .setBody(mockResponse)
+            .setHeader(HEADER_EXECUTION_PAYLOAD_BLINDED, "true"));
 
     final BLSSignature signature = blindedBeaconBlock.getBlock().getBody().getRandaoReveal();
 
-    final Optional<BlockContainer> maybeBlockContainer =
+    final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
         request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
 
-    assertThat(maybeBlockContainer).hasValue(blockResponse.getData());
+    assertThat(maybeBlockContainerAndMetaData.map(BlockContainerAndMetaData::blockContainer))
+        .hasValue(blockResponse.getData());
   }
 
   @TestTemplate
@@ -147,16 +188,19 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
             .setResponseCode(SC_OK)
             .setHeader(HEADER_EXECUTION_PAYLOAD_BLINDED, "true")
             .setHeader("Content-Type", MediaType.OCTET_STREAM)
+            .setHeader(HEADER_CONSENSUS_BLOCK_VALUE, "123000000000")
+            .setHeader(HEADER_EXECUTION_PAYLOAD_VALUE, "12345")
             .setBody(responseBodyBuffer));
 
     final BLSSignature signature = blindedBeaconBlock.getBlock().getBody().getRandaoReveal();
 
-    final Optional<BlockContainer> maybeBlockContainer =
+    final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
         request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
 
-    assertThat(maybeBlockContainer).isPresent();
+    assertThat(maybeBlockContainerAndMetaData).isPresent();
 
-    assertThat(maybeBlockContainer.get()).isEqualTo(blockResponse.getData());
+    assertThat(maybeBlockContainerAndMetaData.get().blockContainer())
+        .isEqualTo(blockResponse.getData());
   }
 
   @TestTemplate
@@ -168,16 +212,21 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     final String mockResponse = readExpectedJsonResource(specMilestone, false, true);
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(SC_OK)
+            .setBody(mockResponse)
+            .setHeader(HEADER_EXECUTION_PAYLOAD_BLINDED, "false"));
 
     final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
 
-    final Optional<BlockContainer> maybeBlockContainer =
+    final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
         request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
 
-    assertThat(maybeBlockContainer).isPresent();
+    assertThat(maybeBlockContainerAndMetaData).isPresent();
 
-    assertThat(maybeBlockContainer.get()).isEqualTo(blockResponse.getData());
+    assertThat(maybeBlockContainerAndMetaData.get().blockContainer())
+        .isEqualTo(blockResponse.getData());
   }
 
   @TestTemplate
@@ -201,12 +250,13 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
 
-    final Optional<BlockContainer> maybeBlockContainer =
+    final Optional<BlockContainerAndMetaData> maybeBlockContainerAndMetaData =
         request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
 
-    assertThat(maybeBlockContainer).isPresent();
+    assertThat(maybeBlockContainerAndMetaData).isPresent();
 
-    assertThat(maybeBlockContainer.get()).isEqualTo(blockResponse.getData());
+    assertThat(maybeBlockContainerAndMetaData.get().blockContainer())
+        .isEqualTo(blockResponse.getData());
   }
 
   @TestTemplate

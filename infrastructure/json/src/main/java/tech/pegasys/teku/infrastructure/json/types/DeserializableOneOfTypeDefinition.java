@@ -44,16 +44,16 @@ public class DeserializableOneOfTypeDefinition<TObject>
     return new DeserializableOneOfTypeDefinitionBuilder<>();
   }
 
-  public DeserializableTypeDefinition<? extends TObject> getMatchingType(String json) {
+  public DeserializableTypeDefinition<? extends TObject> getMatchingType(final String content) {
     DeserializableTypeDefinition<? extends TObject> typeDefinition = null;
     for (Predicate<String> predicate : parserTypes.keySet()) {
-      if (predicate.test(json)) {
+      if (predicate.test(content)) {
         typeDefinition = parserTypes.get(predicate);
         break;
       }
     }
 
-    checkArgument(typeDefinition != null, "No class deserialization method found: %s", json);
+    checkArgument(typeDefinition != null, "No class deserialization method found: %s", content);
     return typeDefinition;
   }
 }

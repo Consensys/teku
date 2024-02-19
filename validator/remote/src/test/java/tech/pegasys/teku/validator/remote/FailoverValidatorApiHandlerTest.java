@@ -57,11 +57,10 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
@@ -580,9 +579,10 @@ class FailoverValidatorApiHandlerTest {
     final UInt64 slot = UInt64.ONE;
     final BLSSignature randaoReveal = DATA_STRUCTURE_UTIL.randomSignature();
 
-    final BeaconBlock blindedBlock = DATA_STRUCTURE_UTIL.randomBlindedBeaconBlock(UInt64.ONE);
+    final BlockContainerAndMetaData blindedBlock =
+        DATA_STRUCTURE_UTIL.randomBlindedBlockContainerAndMetaData(UInt64.ONE);
 
-    final ValidatorApiChannelRequest<Optional<BlockContainer>> creationRequest =
+    final ValidatorApiChannelRequest<Optional<BlockContainerAndMetaData>> creationRequest =
         apiChannel ->
             apiChannel.createUnsignedBlock(
                 slot, randaoReveal, Optional.empty(), Optional.of(true), Optional.empty());
@@ -689,7 +689,7 @@ class FailoverValidatorApiHandlerTest {
                 apiChannel.createUnsignedBlock(
                     slot, randaoReveal, Optional.empty(), Optional.of(false), Optional.empty()),
             BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD,
-            Optional.of(mock(BeaconBlock.class))),
+            Optional.of(mock(BlockContainerAndMetaData.class))),
         getArguments(
             "createAttestationData",
             apiChannel -> apiChannel.createAttestationData(slot, 0),

@@ -29,6 +29,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.ssz.SszDataAssert.assertThatSszData;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 import static tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler.MAX_PUBLIC_KEY_BATCH_SIZE;
 import static tech.pegasys.teku.validator.remote.RemoteValidatorApiHandler.MAX_RATE_LIMITING_RETRIES;
@@ -67,11 +68,10 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
@@ -119,7 +119,7 @@ class RemoteValidatorApiHandlerTest {
   @Test
   public void getSyncingStatus_ReturnsSyncingStatus() {
     final SyncingStatus syncingStatus =
-        new SyncingStatus(UInt64.ONE, UInt64.ONE, true, Optional.of(true), Optional.of(true));
+        new SyncingStatus(ONE, ONE, true, Optional.of(true), Optional.of(true));
     when(typeDefClient.getSyncingStatus()).thenReturn(syncingStatus);
 
     final SafeFuture<SyncingStatus> future = apiHandler.getSyncingStatus();
@@ -295,7 +295,7 @@ class RemoteValidatorApiHandlerTest {
   @Test
   public void getAttestationDuties_WithEmptyPublicKeys_ReturnsEmpty() {
     SafeFuture<Optional<AttesterDuties>> future =
-        apiHandler.getAttestationDuties(UInt64.ONE, IntList.of());
+        apiHandler.getAttestationDuties(ONE, IntList.of());
 
     assertThat(unwrapToOptional(future)).isEmpty();
   }
@@ -309,7 +309,7 @@ class RemoteValidatorApiHandlerTest {
                     dataStructureUtil.randomBytes32(), Collections.emptyList(), false)));
 
     SafeFuture<Optional<AttesterDuties>> future =
-        apiHandler.getAttestationDuties(UInt64.ONE, IntList.of(1234));
+        apiHandler.getAttestationDuties(ONE, IntList.of(1234));
 
     assertThat(unwrapToValue(future).getDuties()).isEmpty();
   }
@@ -341,14 +341,14 @@ class RemoteValidatorApiHandlerTest {
             validatorCommitteeIndex,
             UInt64.ZERO);
 
-    when(apiClient.getAttestationDuties(UInt64.ONE, IntList.of(validatorIndex)))
+    when(apiClient.getAttestationDuties(ONE, IntList.of(validatorIndex)))
         .thenReturn(
             Optional.of(
                 new PostAttesterDutiesResponse(
                     dataStructureUtil.randomBytes32(), List.of(schemaValidatorDuties), false)));
 
     SafeFuture<Optional<AttesterDuties>> future =
-        apiHandler.getAttestationDuties(UInt64.ONE, IntList.of(validatorIndex));
+        apiHandler.getAttestationDuties(ONE, IntList.of(validatorIndex));
 
     AttesterDuties validatorDuties = unwrapToValue(future);
 
@@ -357,7 +357,7 @@ class RemoteValidatorApiHandlerTest {
 
   @Test
   public void getProposerDuties_WithEmptyPublicKeys_ReturnsEmpty() {
-    SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(UInt64.ONE);
+    SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(ONE);
 
     assertThat(unwrapToOptional(future)).isEmpty();
   }
@@ -370,7 +370,7 @@ class RemoteValidatorApiHandlerTest {
                 new ProposerDuties(
                     Bytes32.fromHexString("0x1234"), Collections.emptyList(), false)));
 
-    SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(UInt64.ONE);
+    SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(ONE);
 
     assertThat(unwrapToValue(future).getDuties()).isEmpty();
   }
@@ -386,9 +386,9 @@ class RemoteValidatorApiHandlerTest {
     final ProposerDuties response =
         new ProposerDuties(Bytes32.fromHexString("0x1234"), List.of(schemaValidatorDuties), false);
 
-    when(typeDefClient.getProposerDuties(UInt64.ONE)).thenReturn(Optional.of(response));
+    when(typeDefClient.getProposerDuties(ONE)).thenReturn(Optional.of(response));
 
-    SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(UInt64.ONE);
+    SafeFuture<Optional<ProposerDuties>> future = apiHandler.getProposerDuties(ONE);
 
     ProposerDuties validatorDuties = unwrapToValue(future);
 
@@ -400,7 +400,7 @@ class RemoteValidatorApiHandlerTest {
   public void createAttestationData_WhenNone_ReturnsEmpty() {
     when(typeDefClient.createAttestationData(any(), anyInt())).thenReturn(Optional.empty());
 
-    SafeFuture<Optional<AttestationData>> future = apiHandler.createAttestationData(UInt64.ONE, 0);
+    SafeFuture<Optional<AttestationData>> future = apiHandler.createAttestationData(ONE, 0);
 
     assertThat(unwrapToOptional(future)).isEmpty();
   }
@@ -409,10 +409,10 @@ class RemoteValidatorApiHandlerTest {
   public void createAttestationData_WhenFound_ReturnsAttestation() {
     final Attestation attestation = dataStructureUtil.randomAttestation();
 
-    when(typeDefClient.createAttestationData(UInt64.ONE, 0))
+    when(typeDefClient.createAttestationData(ONE, 0))
         .thenReturn(Optional.of(attestation.getData()));
 
-    SafeFuture<Optional<AttestationData>> future = apiHandler.createAttestationData(UInt64.ONE, 0);
+    SafeFuture<Optional<AttestationData>> future = apiHandler.createAttestationData(ONE, 0);
 
     assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(attestation.getData());
   }
@@ -448,76 +448,92 @@ class RemoteValidatorApiHandlerTest {
   public void createUnsignedBlock_WhenNoneFound_ReturnsEmpty() {
     final BLSSignature blsSignature = dataStructureUtil.randomSignature();
 
-    SafeFuture<Optional<BlockContainer>> future =
+    SafeFuture<Optional<BlockContainerAndMetaData>> future =
         apiHandler.createUnsignedBlock(
-            UInt64.ONE,
-            blsSignature,
-            Optional.of(Bytes32.random()),
-            Optional.of(false),
-            Optional.empty());
+            ONE, blsSignature, Optional.of(Bytes32.random()), Optional.of(false), Optional.empty());
 
     assertThat(unwrapToOptional(future)).isEmpty();
   }
 
   @Test
   public void createUnsignedBlock_WhenFound_ReturnsBlock() {
-    final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(UInt64.ONE);
+    final BlockContainerAndMetaData blockContainerAndMetaData =
+        dataStructureUtil.randomBlockContainerAndMetaData(ONE);
     final BLSSignature blsSignature = dataStructureUtil.randomSignature();
     final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
 
     when(typeDefClient.createUnsignedBlock(
-            eq(beaconBlock.getSlot()), eq(blsSignature), eq(graffiti), eq(false)))
-        .thenReturn(Optional.of(beaconBlock));
+            eq(blockContainerAndMetaData.blockContainer().getSlot()),
+            eq(blsSignature),
+            eq(graffiti),
+            eq(false)))
+        .thenReturn(Optional.of(blockContainerAndMetaData));
 
-    SafeFuture<Optional<BlockContainer>> future =
+    SafeFuture<Optional<BlockContainerAndMetaData>> future =
         apiHandler.createUnsignedBlock(
-            UInt64.ONE, blsSignature, graffiti, Optional.of(false), Optional.empty());
+            ONE, blsSignature, graffiti, Optional.of(false), Optional.empty());
 
-    assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(beaconBlock);
+    final BlockContainerAndMetaData resultValue = unwrapToValue(future);
+    assertThat(resultValue).isEqualTo(blockContainerAndMetaData);
+    assertThatSszData(resultValue.blockContainer())
+        .isEqualByAllMeansTo(blockContainerAndMetaData.blockContainer());
   }
 
   @Test
   public void createUnsignedBlock_viaBlockV3_WhenFound_ReturnsBlock() {
-    final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(UInt64.ONE);
+    final BlockContainerAndMetaData blockContainerAndMetaData =
+        dataStructureUtil.randomBlockContainerAndMetaData(ONE);
     final BLSSignature blsSignature = dataStructureUtil.randomSignature();
     final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
 
     // we expect new block API to be called (with proposer boost factor parameter instead of blinded
     // parameter)
     when(typeDefClient.createUnsignedBlock(
-            eq(beaconBlock.getSlot()), eq(blsSignature), eq(graffiti), eq(Optional.of(UInt64.ONE))))
-        .thenReturn(Optional.of(beaconBlock));
+            eq(blockContainerAndMetaData.blockContainer().getSlot()),
+            eq(blsSignature),
+            eq(graffiti),
+            eq(Optional.of(ONE))))
+        .thenReturn(Optional.of(blockContainerAndMetaData));
 
-    SafeFuture<Optional<BlockContainer>> future =
+    SafeFuture<Optional<BlockContainerAndMetaData>> future =
         apiHandler.createUnsignedBlock(
-            UInt64.ONE, blsSignature, graffiti, Optional.empty(), Optional.of(UInt64.ONE));
+            ONE, blsSignature, graffiti, Optional.empty(), Optional.of(ONE));
 
-    assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(beaconBlock);
+    final BlockContainerAndMetaData resultValue = unwrapToValue(future);
+    assertThat(resultValue).isEqualTo(blockContainerAndMetaData);
+    assertThatSszData(resultValue.blockContainer())
+        .isEqualByAllMeansTo(blockContainerAndMetaData.blockContainer());
   }
 
   @Test
   public void createUnsignedBlock_WhenFound_ReturnsBlockContents() {
     final Spec denebSpec = TestSpecFactory.createMinimalDeneb();
     final DataStructureUtil denebDataStructureUtil = new DataStructureUtil(denebSpec);
-    final BeaconBlock beaconBlock = denebDataStructureUtil.randomBeaconBlock(UInt64.ONE);
-    final BlockContents blockContents = denebDataStructureUtil.randomBlockContents(UInt64.ONE);
+    final BlockContainerAndMetaData blockContentsAndMetaData =
+        denebDataStructureUtil.randomBlockContainerAndMetaData(ONE);
     final BLSSignature blsSignature = denebDataStructureUtil.randomSignature();
     final Optional<Bytes32> graffiti = Optional.of(Bytes32.random());
 
     when(typeDefClient.createUnsignedBlock(
-            eq(beaconBlock.getSlot()), eq(blsSignature), eq(graffiti), eq(false)))
-        .thenReturn(Optional.of(blockContents));
+            eq(blockContentsAndMetaData.blockContainer().getSlot()),
+            eq(blsSignature),
+            eq(graffiti),
+            eq(false)))
+        .thenReturn(Optional.of(blockContentsAndMetaData));
 
-    SafeFuture<Optional<BlockContainer>> future =
+    SafeFuture<Optional<BlockContainerAndMetaData>> future =
         apiHandler.createUnsignedBlock(
-            UInt64.ONE, blsSignature, graffiti, Optional.of(false), Optional.empty());
+            ONE, blsSignature, graffiti, Optional.of(false), Optional.empty());
 
-    assertThatSszData(unwrapToValue(future)).isEqualByAllMeansTo(blockContents);
+    final BlockContainerAndMetaData resultValue = unwrapToValue(future);
+    assertThat(resultValue).isEqualTo(blockContentsAndMetaData);
+    assertThatSszData(resultValue.blockContainer())
+        .isEqualByAllMeansTo(blockContentsAndMetaData.blockContainer());
   }
 
   @Test
   public void sendSignedBlock_InvokeApiWithCorrectRequest() {
-    final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(UInt64.ONE);
+    final BeaconBlock beaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
     final BLSSignature signature = dataStructureUtil.randomSignature();
     final SignedBeaconBlock signedBeaconBlock =
         dataStructureUtil.signedBlock(beaconBlock, signature);
@@ -597,7 +613,7 @@ class RemoteValidatorApiHandlerTest {
   public void subscribeToBeaconCommitteeForAggregation_InvokeApi() {
     final int validatorIndex = 3;
     final int committeeIndex = 1;
-    final UInt64 aggregationSlot = UInt64.ONE;
+    final UInt64 aggregationSlot = ONE;
     final boolean isAggregator = true;
     final UInt64 committeesAtSlot = UInt64.valueOf(23);
     final List<CommitteeSubscriptionRequest> requests =
@@ -616,7 +632,7 @@ class RemoteValidatorApiHandlerTest {
   @SuppressWarnings("unchecked")
   public void subscribeToPersistentSubnets_InvokeApi() {
     final int subnetId = 1;
-    final UInt64 slot = UInt64.ONE;
+    final UInt64 slot = ONE;
 
     final SubnetSubscription subnetSubscription = new SubnetSubscription(subnetId, slot);
     final tech.pegasys.teku.api.schema.SubnetSubscription schemaSubnetSubscription =

@@ -20,8 +20,16 @@ import org.web3j.utils.Convert;
 
 public class Converter {
 
+  static BigDecimal gweiToEthFactor = BigDecimal.TEN.pow(18);
+
   public static String weiToEth(final UInt256 wei) {
     final BigDecimal result = Convert.fromWei(wei.toDecimalString(), Convert.Unit.ETHER);
     return result.setScale(6, RoundingMode.HALF_UP).toString();
+  }
+
+  public static String gweiToEth(final UInt256 gwei) {
+    return new BigDecimal(gwei.toBigInteger())
+        .divide(gweiToEthFactor, 6, RoundingMode.HALF_UP)
+        .toString();
   }
 }

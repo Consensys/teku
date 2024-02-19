@@ -31,7 +31,6 @@ import tech.pegasys.teku.infrastructure.restapi.openapi.response.ResponseContent
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
@@ -103,7 +102,7 @@ public class EthereumTypes {
         value -> getSszHeaders(__ -> value.getMilestone(), value.getData()));
   }
 
-  public static ResponseContentTypeDefinition<BlockContainerAndMetaData<BlockContainer>>
+  public static ResponseContentTypeDefinition<BlockContainerAndMetaData>
       blockContainerAndMetaDataSszResponseType() {
     return new OctetStreamResponseContentTypeDefinition<>(
         (data, out) -> data.blockContainer().sszSerialize(out),

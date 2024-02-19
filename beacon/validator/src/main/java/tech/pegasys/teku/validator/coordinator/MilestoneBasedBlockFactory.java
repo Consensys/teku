@@ -27,9 +27,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
 public class MilestoneBasedBlockFactory implements BlockFactory {
@@ -61,7 +61,7 @@ public class MilestoneBasedBlockFactory implements BlockFactory {
   }
 
   @Override
-  public SafeFuture<BlockContainer> createUnsignedBlock(
+  public SafeFuture<BlockContainerAndMetaData> createUnsignedBlock(
       final BeaconState blockSlotState,
       final UInt64 proposalSlot,
       final BLSSignature randaoReveal,

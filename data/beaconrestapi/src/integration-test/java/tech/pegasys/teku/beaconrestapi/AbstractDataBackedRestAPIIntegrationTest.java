@@ -239,7 +239,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             .syncCommitteeContributionPool(syncCommitteeContributionPool)
             .proposersDataManager(proposersDataManager)
             .forkChoiceNotifier(forkChoiceNotifier)
-            .executionLayerBlockProductionManager(executionLayerBlockProductionManager)
             .rewardCalculator(rewardCalculator)
             .build();
 

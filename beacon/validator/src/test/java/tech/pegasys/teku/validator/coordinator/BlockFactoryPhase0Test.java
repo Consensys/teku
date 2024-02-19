@@ -56,6 +56,7 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
   void shouldIncludeSyncAggregateWhenAltairIsActive() {
     final BeaconBlock block =
         assertBlockCreated(1, TestSpecFactory.createMinimalAltair(), false, state -> {}, false)
+            .blockContainer()
             .getBlock();
     final SyncAggregate result = getSyncAggregate(block);
     assertThatSyncAggregate(result).isNotNull();
@@ -67,7 +68,9 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
   void shouldIncludeExecutionPayloadWhenBellatrixIsActive() {
     final Spec spec = TestSpecFactory.createMinimalBellatrix();
     final BeaconBlock block =
-        assertBlockCreated(1, spec, false, state -> prepareDefaultPayload(spec), false).getBlock();
+        assertBlockCreated(1, spec, false, state -> prepareDefaultPayload(spec), false)
+            .blockContainer()
+            .getBlock();
     final ExecutionPayload result = getExecutionPayload(block);
     assertThat(result).isEqualTo(executionPayload);
   }
@@ -77,6 +80,7 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
     final Spec spec = TestSpecFactory.createMinimalCapella();
     final BeaconBlock block =
         assertBlockCreated(1, spec, true, state -> prepareValidPayload(spec, state), false)
+            .blockContainer()
             .getBlock();
     final SszList<SignedBlsToExecutionChange> blsToExecutionChanges =
         BeaconBlockBodyCapella.required(block.getBody()).getBlsToExecutionChanges();
@@ -87,7 +91,9 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
   void shouldIncludeExecutionPayloadHeaderWhenBellatrixIsActiveAndBlindedBlockRequested() {
     final Spec spec = TestSpecFactory.createMinimalBellatrix();
     final BeaconBlock block =
-        assertBlockCreated(1, spec, false, state -> prepareDefaultPayload(spec), true).getBlock();
+        assertBlockCreated(1, spec, false, state -> prepareDefaultPayload(spec), true)
+            .blockContainer()
+            .getBlock();
     final ExecutionPayloadHeader result = getExecutionPayloadHeader(block);
     assertThat(result).isEqualTo(executionPayloadHeader);
   }

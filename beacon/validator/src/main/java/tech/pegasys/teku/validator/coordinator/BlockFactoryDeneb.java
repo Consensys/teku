@@ -24,10 +24,10 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
@@ -43,7 +43,7 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
   }
 
   @Override
-  public SafeFuture<BlockContainer> createUnsignedBlock(
+  public SafeFuture<BlockContainerAndMetaData> createUnsignedBlock(
       final BeaconState blockSlotState,
       final UInt64 proposalSlot,
       final BLSSignature randaoReveal,
@@ -59,17 +59,18 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
             requestedBlinded,
             requestedBuilderBoostFactor,
             blockProductionPerformance)
-        .thenApply(BlockContainer::getBlock)
         .thenCompose(
-            block -> {
+            blockContainerAndMetaData -> {
+              final BeaconBlock block = blockContainerAndMetaData.blockContainer().getBlock();
               if (block.isBlinded()) {
-                return SafeFuture.completedFuture(block);
+                return SafeFuture.completedFuture(blockContainerAndMetaData);
               }
               // The execution BlobsBundle has been cached as part of the block creation
               return operationSelector
                   .createBlobsBundleSelector()
                   .apply(block)
-                  .thenApply(blobsBundle -> createBlockContents(block, blobsBundle));
+                  .thenApply(blobsBundle -> createBlockContents(block, blobsBundle))
+                  .thenApply(blockContainerAndMetaData::withBlockContents);
             });
   }
 

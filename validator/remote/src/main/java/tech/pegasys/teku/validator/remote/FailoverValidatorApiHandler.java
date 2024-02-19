@@ -43,6 +43,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
@@ -146,21 +147,24 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
   }
 
   @Override
-  public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
+  public SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
       final Optional<Boolean> requestedBlinded,
       final Optional<UInt64> requestedBuilderBoostFactor) {
-    final ValidatorApiChannelRequest<Optional<BlockContainer>> request =
+    final ValidatorApiChannelRequest<Optional<BlockContainerAndMetaData>> request =
         apiChannel ->
             apiChannel
                 .createUnsignedBlock(
                     slot, randaoReveal, graffiti, requestedBlinded, requestedBuilderBoostFactor)
                 .thenPeek(
-                    blockContainer -> {
+                    blockContainerAndMetaData -> {
                       if (!failoverDelegates.isEmpty()
-                          && blockContainer.map(BlockContainer::isBlinded).orElse(false)) {
+                          && blockContainerAndMetaData
+                              .map(BlockContainerAndMetaData::blockContainer)
+                              .map(BlockContainer::isBlinded)
+                              .orElse(false)) {
                         blindedBlockCreatorCache.put(slot, apiChannel);
                       }
                     });
