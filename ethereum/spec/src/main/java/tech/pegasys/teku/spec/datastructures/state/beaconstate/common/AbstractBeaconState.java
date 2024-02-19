@@ -31,25 +31,30 @@ public abstract class AbstractBeaconState<TMutable extends MutableBeaconState>
     extends SszContainerImpl implements BeaconState, BeaconStateCache {
 
   private final TransitionCaches transitionCaches;
+  private final SlotCaches slotCaches;
 
   protected AbstractBeaconState(final BeaconStateSchema<?, ?> schema) {
     super(schema);
-    transitionCaches = TransitionCaches.createNewEmpty();
+    this.transitionCaches = TransitionCaches.createNewEmpty();
+    this.slotCaches = SlotCaches.createNewEmpty();
   }
 
   protected AbstractBeaconState(
-      SszCompositeSchema<?> type,
-      TreeNode backingNode,
-      IntCache<SszData> cache,
-      TransitionCaches transitionCaches) {
+      final SszCompositeSchema<?> type,
+      final TreeNode backingNode,
+      final IntCache<SszData> cache,
+      final TransitionCaches transitionCaches,
+      final SlotCaches slotCaches) {
     super(type, backingNode, cache);
     this.transitionCaches = transitionCaches;
+    this.slotCaches = slotCaches;
   }
 
   protected AbstractBeaconState(
       AbstractSszContainerSchema<? extends SszContainer> type, TreeNode backingNode) {
     super(type, backingNode);
-    transitionCaches = TransitionCaches.createNewEmpty();
+    this.transitionCaches = TransitionCaches.createNewEmpty();
+    this.slotCaches = SlotCaches.createNewEmpty();
   }
 
   @Override
@@ -78,6 +83,11 @@ public abstract class AbstractBeaconState<TMutable extends MutableBeaconState>
   @Override
   public TransitionCaches getTransitionCaches() {
     return transitionCaches;
+  }
+
+  @Override
+  public SlotCaches getSlotCaches() {
+    return slotCaches;
   }
 
   @Override

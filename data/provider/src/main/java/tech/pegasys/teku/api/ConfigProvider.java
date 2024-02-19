@@ -14,9 +14,9 @@
 package tech.pegasys.teku.api;
 
 import java.util.List;
+import java.util.Map;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.api.response.v1.config.GetForkScheduleResponse;
-import tech.pegasys.teku.api.response.v1.config.GetSpecResponse;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -29,11 +29,9 @@ public class ConfigProvider {
     this.spec = spec;
   }
 
-  public GetSpecResponse getConfig() {
-    final tech.pegasys.teku.api.GetSpecResponse configuration =
-        new tech.pegasys.teku.api.GetSpecResponse(spec.getGenesisSpecConfig());
-
-    return new GetSpecResponse(configuration.getConfigMap());
+  public Map<String, String> getConfig() {
+    final SpecConfigData configuration = new SpecConfigData(spec.getGenesisSpecConfig());
+    return configuration.getConfigMap();
   }
 
   public SpecConfig getGenesisSpec() {

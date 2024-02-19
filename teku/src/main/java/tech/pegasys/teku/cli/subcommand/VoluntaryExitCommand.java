@@ -291,7 +291,7 @@ public class VoluntaryExitCommand implements Callable<Integer> {
 
     if (network == null) {
       SUB_COMMAND_LOG.display(" - Loading network settings from " + apiClient.getBaseEndpoint());
-      spec = getSpec(apiClient);
+      spec = getSpec(List.of(apiClient.getBaseEndpoint()));
     } else {
       SUB_COMMAND_LOG.display(" - Loading local settings for " + network + " network");
       spec = SpecFactory.create(network);

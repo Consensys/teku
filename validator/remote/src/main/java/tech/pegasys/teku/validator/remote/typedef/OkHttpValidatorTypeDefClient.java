@@ -44,12 +44,9 @@ import tech.pegasys.teku.validator.remote.typedef.handlers.ProduceBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.RegisterValidatorsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendSignedBlockRequest;
 
-public class OkHttpValidatorTypeDefClient {
+public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefClient {
 
   private static final Logger LOG = LogManager.getLogger();
-
-  private final OkHttpClient okHttpClient;
-  private final HttpUrl baseEndpoint;
 
   private final Spec spec;
   private final boolean preferSszBlockEncoding;
@@ -66,8 +63,7 @@ public class OkHttpValidatorTypeDefClient {
       final HttpUrl baseEndpoint,
       final Spec spec,
       final boolean preferSszBlockEncoding) {
-    this.okHttpClient = okHttpClient;
-    this.baseEndpoint = baseEndpoint;
+    super(okHttpClient, baseEndpoint);
     this.spec = spec;
     this.preferSszBlockEncoding = preferSszBlockEncoding;
     this.getSyncingStatusRequest = new GetSyncingStatusRequest(okHttpClient, baseEndpoint);
@@ -116,13 +112,13 @@ public class OkHttpValidatorTypeDefClient {
       final boolean blinded) {
     final CreateBlockRequest createBlockRequest =
         new CreateBlockRequest(
-            baseEndpoint, okHttpClient, spec, slot, blinded, preferSszBlockEncoding);
+            getBaseEndpoint(), getOkHttpClient(), spec, slot, blinded, preferSszBlockEncoding);
     try {
       return createBlockRequest.createUnsignedBlock(randaoReveal, graffiti);
     } catch (final BlindedBlockEndpointNotAvailableException ex) {
       LOG.warn(
           "Beacon Node {} does not support blinded block production. Falling back to normal block production.",
-          baseEndpoint);
+          getBaseEndpoint());
       return createUnsignedBlock(slot, randaoReveal, graffiti, false);
     }
   }
@@ -133,7 +129,8 @@ public class OkHttpValidatorTypeDefClient {
       final Optional<Bytes32> graffiti,
       final Optional<UInt64> requestedBuilderBoostFactor) {
     final ProduceBlockRequest produceBlockRequest =
-        new ProduceBlockRequest(baseEndpoint, okHttpClient, spec, slot, preferSszBlockEncoding);
+        new ProduceBlockRequest(
+            getBaseEndpoint(), getOkHttpClient(), spec, slot, preferSszBlockEncoding);
     try {
       return produceBlockRequest.createUnsignedBlock(
           randaoReveal, graffiti, requestedBuilderBoostFactor);

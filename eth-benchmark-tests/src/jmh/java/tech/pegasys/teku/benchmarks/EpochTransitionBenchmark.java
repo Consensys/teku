@@ -55,8 +55,8 @@ import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProce
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
-import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
+import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
 import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
@@ -105,7 +105,8 @@ public class EpochTransitionBenchmark {
 
     final List<BLSKeyPair> validatorKeys = KeyFileGenerator.readValidatorKeys(validatorsCount);
 
-    final BlockImportNotifications blockImportNotifications = mock(BlockImportNotifications.class);
+    final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher =
+        mock(ReceivedBlockEventsChannel.class);
     epochProcessor = spec.getGenesisSpec().getEpochProcessor();
     wsValidator = WeakSubjectivityFactory.lenientValidator();
 
@@ -127,7 +128,7 @@ public class EpochTransitionBenchmark {
     blockImporter =
         new BlockImporter(
             spec,
-            blockImportNotifications,
+            receivedBlockEventsChannelPublisher,
             recentChainData,
             forkChoice,
             wsValidator,

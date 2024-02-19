@@ -204,7 +204,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
         .map(responses -> convertToValidatorMapTypeDef(responses, valueExtractor));
   }
 
-  private <T> Map<BLSPublicKey, T> convertToValidatorMapTypeDef( // change name
+  private <T> Map<BLSPublicKey, T> convertToValidatorMapTypeDef(
       final List<StateValidatorData> validatorData,
       final Function<StateValidatorData, T> valueExtractor) {
     return validatorData.stream().collect(toMap(StateValidatorData::getPublicKey, valueExtractor));

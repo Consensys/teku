@@ -23,10 +23,10 @@ import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.constants.NetworkConstants;
 import tech.pegasys.teku.spec.constants.ValidatorConstants;
 
-public class GetSpecResponse {
+public class SpecConfigData {
   private final SpecConfig specConfig;
 
-  public GetSpecResponse(SpecConfig specConfig) {
+  public SpecConfigData(SpecConfig specConfig) {
     this.specConfig = specConfig;
   }
 

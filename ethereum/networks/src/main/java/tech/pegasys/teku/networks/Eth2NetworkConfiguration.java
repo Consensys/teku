@@ -769,6 +769,7 @@ public class Eth2NetworkConfiguration {
           .defaultInitialStateFromClasspath("gnosis-genesis.ssz")
           .genesisStateFromClasspath("gnosis-genesis.ssz")
           .startupTimeoutSeconds(120)
+          .trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME)
           .eth1DepositContractDeployBlock(19469077)
           .discoveryBootnodes(
               // Gnosis Chain Team bootnodes
