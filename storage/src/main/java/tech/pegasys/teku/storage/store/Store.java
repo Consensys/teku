@@ -858,13 +858,10 @@ class Store extends CacheableStore {
       return SafeFuture.completedFuture(maybeEpochState);
     }
 
-    // if finalized is gone from cache we can still reconstruct that without regenerating
+    // if finalized is gone from cache we can use the finalized anchor without regenerating
     if (finalizedAnchor.getRoot().equals(blockRoot)) {
       LOG.trace("epochCache GET finalizedAnchor {}", finalizedAnchor::getSlot);
-      return SafeFuture.completedFuture(
-          Optional.of(
-              StateAndBlockSummary.create(
-                  finalizedAnchor.getBlockSummary(), finalizedAnchor.getState())));
+      return SafeFuture.completedFuture(Optional.of(finalizedAnchor));
     }
 
     maybeEpochStates.ifPresent(

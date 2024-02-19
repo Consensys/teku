@@ -56,18 +56,6 @@ public class AnchorPoint extends StateAndBlockSummary {
     this.isGenesis = checkpoint.getEpoch().equals(SpecConfig.GENESIS_EPOCH);
   }
 
-  @Override
-  protected void verifyStateAndBlockConsistency() {
-    if (state.getSlot().isGreaterThan(blockSummary.getSlot())) {
-      // the finalized state is transitioned with empty slot(s)
-      checkArgument(
-          blockSummary.getStateRoot().equals(state.getLatestBlockHeader().getStateRoot()),
-          "Block state root must match the latest block header state root in the state");
-      return;
-    }
-    super.verifyStateAndBlockConsistency();
-  }
-
   public static AnchorPoint create(
       final Spec spec,
       Checkpoint checkpoint,
@@ -136,6 +124,18 @@ public class AnchorPoint extends StateAndBlockSummary {
     final Checkpoint checkpoint = new Checkpoint(epoch, block.getRoot());
 
     return new AnchorPoint(spec, checkpoint, state, block);
+  }
+
+  @Override
+  protected void verifyStateAndBlockConsistency() {
+    if (state.getSlot().isGreaterThan(blockSummary.getSlot())) {
+      // the finalized state is transitioned with empty slot(s)
+      checkArgument(
+          blockSummary.getStateRoot().equals(state.getLatestBlockHeader().getStateRoot()),
+          "Block state root must match the latest block header state root in the state");
+      return;
+    }
+    super.verifyStateAndBlockConsistency();
   }
 
   public boolean isGenesis() {
