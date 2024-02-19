@@ -52,7 +52,7 @@ public class AnchorPointTest {
   }
 
   @Test
-  public void createFromInitialState_WithEmptySlotOnCheckpointEpochTransition()
+  public void createFromInitialState_WhenFinalizedStateTransitionedWithAnEmptySlot()
       throws SlotProcessingException, EpochProcessingException {
     storageSystem.chainUpdater().initializeGenesis();
 
@@ -61,7 +61,7 @@ public class AnchorPointTest {
     final SignedBlockAndState blockAndState =
         storageSystem.chainUpdater().advanceChainUntil(latestBlockHeaderSlot);
 
-    // process empty slot on checkpoint epoch transition
+    // empty slot transition
     final BeaconState postState =
         spec.processSlots(blockAndState.getState(), latestBlockHeaderSlot.increment());
 
