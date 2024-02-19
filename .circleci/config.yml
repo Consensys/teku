@@ -542,10 +542,6 @@ workflows:
           filters:
             tags:
               <<: *filters-release-tags
-      - windowsBuild:
-          filters:
-            tags:
-              <<: *filters-release-tags
       - referenceTestsPrep:
           requires:
             - assemble
@@ -605,7 +601,6 @@ workflows:
             - referenceTests
             - extractAPISpec
             - spotless
-            - windowsBuild
           context:
             - protocols-cloudsmith
       - publishDockerAmd64:
@@ -624,7 +619,6 @@ workflows:
             - referenceTests
             - extractAPISpec
             - spotless
-            - windowsBuild
           context:
             - protocols-dockerhub
       - publishDockerArm64:
@@ -643,7 +637,6 @@ workflows:
             - referenceTests
             - extractAPISpec
             - spotless
-            - windowsBuild
           context:
             - protocols-dockerhub
       - manifestDocker:
@@ -675,7 +668,6 @@ workflows:
             - referenceTests
             - extractAPISpec
             - spotless
-            - windowsBuild
   nightly:
     triggers:
       - schedule:

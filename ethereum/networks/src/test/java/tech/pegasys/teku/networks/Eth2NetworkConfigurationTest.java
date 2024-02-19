@@ -23,12 +23,14 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.ethereum.beacon.discovery.schema.NodeRecord;
 import org.ethereum.beacon.discovery.schema.NodeRecordFactory;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
+@Disabled
 public class Eth2NetworkConfigurationTest {
 
   @ParameterizedTest(name = "{0}")

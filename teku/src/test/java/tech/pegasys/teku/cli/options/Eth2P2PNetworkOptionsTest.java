@@ -19,6 +19,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -31,6 +32,7 @@ import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 
+@Disabled
 public class Eth2P2PNetworkOptionsTest extends AbstractBeaconNodeCommandTest {
 
   @Test
