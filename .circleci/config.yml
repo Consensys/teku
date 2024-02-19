@@ -201,7 +201,7 @@ jobs:
             - deps-{{ checksum "build.gradle" }}-{{ checksum "gradle/versions.gradle" }}
       - run:
           name: Build
-          no_output_timeout: 20m
+          no_output_timeout: 60m
           command: |
             $Env:JAVA_TOOL_OPTIONS = "-Xmx2g"
             $Env:GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true"
@@ -256,7 +256,7 @@ jobs:
           at: ~/project
       - run:
           name: UnitTests
-          no_output_timeout: 20m
+          no_output_timeout: 60m
           command: |
             CLASSNAMES=$(circleci tests glob "**/src/test/java/**/*.java" \
               | sed 's@.*/src/test/java/@@' \
