@@ -121,7 +121,10 @@ public class AnchorPoint extends StateAndBlockSummary {
     return new AnchorPoint(spec, checkpoint, state, block);
   }
 
-  /** Skipping verification in the super class. All checks are made in {@link #verifyAnchor()} */
+  /**
+   * Skipping verification in the super class. All checks are made in {@link #verifyAnchor()}
+   * instead
+   */
   @Override
   protected void verifyStateAndBlockConsistency() {}
 
