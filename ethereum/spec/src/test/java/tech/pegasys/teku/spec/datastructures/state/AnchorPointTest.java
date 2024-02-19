@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.state;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 import java.util.Optional;
@@ -21,11 +22,19 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 
 public class AnchorPointTest {
   private final Spec spec = TestSpecFactory.createDefault();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+  private final StorageSystem storageSystem =
+      InMemoryStorageSystemBuilder.create().specProvider(spec).build();
 
   @Test
   public void create_withCheckpointPriorToState() {
@@ -40,5 +49,31 @@ public class AnchorPointTest {
             () -> AnchorPoint.create(spec, checkpoint, blockAndState.getState(), Optional.empty()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("Block must be at or prior to the start of the checkpoint epoch");
+  }
+
+  @Test
+  public void createFromInitialState_WithEmptySlotOnCheckpointEpochTransition()
+      throws SlotProcessingException, EpochProcessingException {
+    storageSystem.chainUpdater().initializeGenesis();
+
+    final UInt64 latestBlockHeaderEpoch = UInt64.valueOf(4);
+    final UInt64 latestBlockHeaderSlot = spec.computeEndSlotAtEpoch(latestBlockHeaderEpoch);
+    final SignedBlockAndState blockAndState =
+        storageSystem.chainUpdater().advanceChainUntil(latestBlockHeaderSlot);
+
+    // process empty slot on checkpoint epoch transition
+    final BeaconState postState =
+        spec.processSlots(blockAndState.getState(), latestBlockHeaderSlot.increment());
+
+    final AnchorPoint anchor = AnchorPoint.fromInitialState(spec, postState);
+
+    // verify finalized anchor
+    assertThat(anchor.getBlockSlot()).isEqualTo(latestBlockHeaderSlot);
+    assertThat(anchor.getStateRoot()).isEqualTo(blockAndState.getBlock().getStateRoot());
+    final Checkpoint expectedCheckpoint =
+        new Checkpoint(
+            latestBlockHeaderEpoch.plus(1),
+            blockAndState.getBlock().asHeader().getMessage().hashTreeRoot());
+    assertThat(anchor.getCheckpoint()).isEqualTo(expectedCheckpoint);
   }
 }

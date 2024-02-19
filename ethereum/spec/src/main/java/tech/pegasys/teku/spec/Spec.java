@@ -426,6 +426,10 @@ public class Spec {
     return atEpoch(epoch).miscHelpers().computeStartSlotAtEpoch(epoch);
   }
 
+  public UInt64 computeEndSlotAtEpoch(final UInt64 epoch) {
+    return atEpoch(epoch).miscHelpers().computeEndSlotAtEpoch(epoch);
+  }
+
   public UInt64 computeEpochAtSlot(final UInt64 slot) {
     return atSlot(slot).miscHelpers().computeEpochAtSlot(slot);
   }
