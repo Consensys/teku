@@ -25,7 +25,6 @@ import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
 
 public class ReflectionBasedBeaconRestApiOptionsTest extends AbstractBeaconNodeCommandTest {
-  //TODO-lucas fix
 
   private BeaconRestApiConfig getConfig(final TekuConfiguration tekuConfiguration) {
     return tekuConfiguration.beaconChain().beaconRestApiConfig();

@@ -56,8 +56,10 @@ public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
         getResultingTekuConfiguration().weakSubjectivity().getWeakSubjectivityCheckpoint().get();
 
     assertThat(checkpoint.getEpoch()).isEqualTo(UInt64.valueOf(24187));
-    assertThat(checkpoint.getRoot()).isEqualTo(Bytes32.fromHexString(
-        "0x2a6b2528908d5a9ed729417740f54e7267141fd8dca1ec052fc05aa8806e56e3"));
+    assertThat(checkpoint.getRoot())
+        .isEqualTo(
+            Bytes32.fromHexString(
+                "0x2a6b2528908d5a9ed729417740f54e7267141fd8dca1ec052fc05aa8806e56e3"));
   }
 
   @Test

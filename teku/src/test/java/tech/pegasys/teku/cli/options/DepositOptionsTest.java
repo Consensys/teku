@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.beacon.pow.DepositSnapshotFileLoader.DEFAULT_SNAPSHOT_RESOURCE_PATHS;
 import static tech.pegasys.teku.services.powchain.PowchainConfiguration.DEPOSIT_SNAPSHOT_URL_PATH;
 
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;

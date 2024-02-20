@@ -20,8 +20,6 @@ import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.EVENTB
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.LIBP2P;
 import static tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory.NETWORK;
 
-import java.util.Comparator;
-import java.util.List;
 import java.util.Set;
 import org.hyperledger.besu.metrics.StandardMetricCategory;
 import org.hyperledger.besu.plugin.services.metrics.MetricCategory;

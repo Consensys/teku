@@ -106,18 +106,29 @@ public class LoggingConfig {
       return false;
     }
     final LoggingConfig that = (LoggingConfig) o;
-    return colorEnabled == that.colorEnabled && includeEventsEnabled == that.includeEventsEnabled
+    return colorEnabled == that.colorEnabled
+        && includeEventsEnabled == that.includeEventsEnabled
         && includeValidatorDutiesEnabled == that.includeValidatorDutiesEnabled
         && includeP2pWarningsEnabled == that.includeP2pWarningsEnabled
-        && dbOpAlertThresholdMillis == that.dbOpAlertThresholdMillis && Objects.equals(logLevel, that.logLevel)
-        && destination == that.destination && Objects.equals(logFile, that.logFile) && Objects.equals(
-        logFileNamePattern, that.logFileNamePattern);
+        && dbOpAlertThresholdMillis == that.dbOpAlertThresholdMillis
+        && Objects.equals(logLevel, that.logLevel)
+        && destination == that.destination
+        && Objects.equals(logFile, that.logFile)
+        && Objects.equals(logFileNamePattern, that.logFileNamePattern);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(logLevel, colorEnabled, includeEventsEnabled, includeValidatorDutiesEnabled,
-        includeP2pWarningsEnabled, destination, logFile, logFileNamePattern, dbOpAlertThresholdMillis);
+    return Objects.hash(
+        logLevel,
+        colorEnabled,
+        includeEventsEnabled,
+        includeValidatorDutiesEnabled,
+        includeP2pWarningsEnabled,
+        destination,
+        logFile,
+        logFileNamePattern,
+        dbOpAlertThresholdMillis);
   }
 
   public static final class LoggingConfigBuilder {
