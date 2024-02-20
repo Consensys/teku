@@ -13,9 +13,9 @@
 
 package tech.pegasys.teku.infrastructure.restapi;
 
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORIZED;
-
 import io.javalin.http.Context;
+import io.javalin.http.Handler;
+import io.javalin.http.UnauthorizedResponse;
 import java.io.File;
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -27,12 +27,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
-public class AuthorizationManager {
+public class AuthorizationHandler implements Handler {
   private static final Logger LOG = LogManager.getLogger();
   private static final String BEARER_PREFIX = "Bearer ";
   private final String bearer;
 
-  public AuthorizationManager(final Path path) {
+  public AuthorizationHandler(final Path path) {
     bearer = readPasswordFile(path);
   }
 
@@ -80,33 +80,26 @@ public class AuthorizationManager {
     }
   }
 
-  private void unauthorized(final Context ctx, final String message) {
-    LOG.debug(message);
-    ctx.json("{\n  \"status\": 401, \n \"message\":\"Unauthorized\"\n}");
-    ctx.status(SC_UNAUTHORIZED);
-  }
-
-  public boolean manage(final Context ctx) {
+  @Override
+  public void handle(final Context ctx) throws Exception {
     if (ctx.path().startsWith("/swagger-") || ctx.path().startsWith("/webjars")) {
-      return true;
+      return;
     }
 
     if (bearer.isEmpty()) {
-      unauthorized(ctx, "API Reject - no bearer loaded by server.");
-      return false;
+      LOG.debug("API Reject - no bearer loaded by server.");
+      throw new UnauthorizedResponse();
     }
 
     final String auth = ctx.header("Authorization");
     if (auth == null || !auth.startsWith(BEARER_PREFIX)) {
-      unauthorized(ctx, "API Reject - authorization bearer missing from request header");
-      return false;
+      LOG.debug("API Reject - authorization bearer missing from request header");
+      throw new UnauthorizedResponse();
     }
-    if (!auth.substring(BEARER_PREFIX.length()).equals(bearer)) {
-      unauthorized(ctx, "API Reject - Unauthorized");
-      return false;
-    }
-    return true;
 
-    //    handler.handle(ctx);
+    if (!auth.substring(BEARER_PREFIX.length()).equals(bearer)) {
+      LOG.debug("API Reject - Unauthorized");
+      throw new UnauthorizedResponse();
+    }
   }
 }

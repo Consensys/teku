@@ -13,15 +13,13 @@
 
 package tech.pegasys.teku.infrastructure.restapi;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.javalin.http.Context;
 import io.javalin.http.HandlerType;
+import io.javalin.http.UnauthorizedResponse;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,7 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
-public class AuthorizationManagerTest {
+public class AuthorizationHandlerTest {
   private static final String PASS = "secure";
   private final Context context = mock(Context.class);
 
@@ -38,8 +36,8 @@ public class AuthorizationManagerTest {
     setupPasswordFile(tempDir);
     when(context.method()).thenReturn(HandlerType.GET);
     when(context.path()).thenReturn("/swagger-docs");
-    final AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
-    assertThat(manager.manage(context)).isTrue();
+    final AuthorizationHandler handler = new AuthorizationHandler(tempDir.resolve("passwd"));
+    handler.handle(context);
   }
 
   @Test
@@ -47,8 +45,8 @@ public class AuthorizationManagerTest {
     setupPasswordFile(tempDir);
     when(context.method()).thenReturn(HandlerType.GET);
     when(context.path()).thenReturn("/webjars");
-    final AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
-    assertThat(manager.manage(context)).isTrue();
+    final AuthorizationHandler handler = new AuthorizationHandler(tempDir.resolve("passwd"));
+    handler.handle(context);
   }
 
   @Test
@@ -57,8 +55,8 @@ public class AuthorizationManagerTest {
     when(context.method()).thenReturn(HandlerType.DELETE);
     when(context.path()).thenReturn("/aPath");
     when(context.header("Authorization")).thenReturn("Bearer " + PASS);
-    final AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
-    assertThat(manager.manage(context)).isTrue();
+    final AuthorizationHandler handler = new AuthorizationHandler(tempDir.resolve("passwd"));
+    handler.handle(context);
   }
 
   @Test
@@ -68,8 +66,8 @@ public class AuthorizationManagerTest {
     when(context.method()).thenReturn(HandlerType.POST);
     when(context.path()).thenReturn("/aPath");
     when(context.header("Authorization")).thenReturn("Bearer " + PASS + "+" + PASS);
-    final AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
-    assertThat(manager.manage(context)).isTrue();
+    final AuthorizationHandler handler = new AuthorizationHandler(tempDir.resolve("passwd"));
+    handler.handle(context);
   }
 
   @Test
@@ -78,10 +76,8 @@ public class AuthorizationManagerTest {
     when(context.method()).thenReturn(HandlerType.POST);
     when(context.path()).thenReturn("/aPath");
     when(context.header("Authorization")).thenReturn(null);
-    final AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
-    assertThat(manager.manage(context)).isFalse();
-    verify(context).status(401);
-    verify(context).json(any());
+    final AuthorizationHandler handler = new AuthorizationHandler(tempDir.resolve("passwd"));
+    assertThatThrownBy(() -> handler.handle(context)).isInstanceOf(UnauthorizedResponse.class);
   }
 
   @Test
@@ -90,10 +86,8 @@ public class AuthorizationManagerTest {
     when(context.method()).thenReturn(HandlerType.GET);
     when(context.path()).thenReturn("/aPath");
     when(context.header("Authorization")).thenReturn(PASS);
-    final AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
-    assertThat(manager.manage(context)).isFalse();
-    verify(context).status(401);
-    verify(context).json(any());
+    final AuthorizationHandler handler = new AuthorizationHandler(tempDir.resolve("passwd"));
+    assertThatThrownBy(() -> handler.handle(context)).isInstanceOf(UnauthorizedResponse.class);
   }
 
   @Test
@@ -102,17 +96,15 @@ public class AuthorizationManagerTest {
     when(context.method()).thenReturn(HandlerType.GET);
     when(context.path()).thenReturn("/aPath");
     when(context.header("Authorization")).thenReturn("Bearer no");
-    final AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
-    assertThat(manager.manage(context)).isFalse();
-    verify(context).status(401);
-    verify(context).json(any());
+    final AuthorizationHandler handler = new AuthorizationHandler(tempDir.resolve("passwd"));
+    assertThatThrownBy(() -> handler.handle(context)).isInstanceOf(UnauthorizedResponse.class);
   }
 
   @Test
   public void createAuthorizationManagerShouldFailWhenPasswordFileDoesNotExist() {
     final Path directory = Path.of("/foo/bar");
 
-    assertThatThrownBy(() -> new AuthorizationManager(directory))
+    assertThatThrownBy(() -> new AuthorizationHandler(directory))
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessageContaining(
             "password file %s does not exist", directory.toFile().getAbsolutePath());
@@ -126,10 +118,10 @@ public class AuthorizationManagerTest {
     if (!unreadableFilePath.toFile().setReadable(false)) {
       // If the underlying OS does not support setting file permissions we ignore the check on the
       // error message
-      assertThatThrownBy(() -> new AuthorizationManager(unreadableFilePath))
+      assertThatThrownBy(() -> new AuthorizationHandler(unreadableFilePath))
           .isInstanceOf(InvalidConfigurationException.class);
     } else {
-      assertThatThrownBy(() -> new AuthorizationManager(unreadableFilePath))
+      assertThatThrownBy(() -> new AuthorizationHandler(unreadableFilePath))
           .isInstanceOf(InvalidConfigurationException.class)
           .hasMessageContaining(
               "cannot read password file %s", unreadableFilePath.toFile().getAbsolutePath());
@@ -141,7 +133,7 @@ public class AuthorizationManagerTest {
       @TempDir final Path tempDir) throws IOException {
     final Path directory = Files.createDirectories(tempDir);
 
-    assertThatThrownBy(() -> new AuthorizationManager(directory))
+    assertThatThrownBy(() -> new AuthorizationHandler(directory))
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessageContaining(
             "password file %s is a directory", directory.toFile().getAbsolutePath());
@@ -152,7 +144,7 @@ public class AuthorizationManagerTest {
       @TempDir final Path tempDir) throws IOException {
     final Path directory = Files.writeString(tempDir.resolve("passwd"), "");
 
-    assertThatThrownBy(() -> new AuthorizationManager(directory))
+    assertThatThrownBy(() -> new AuthorizationHandler(directory))
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessageContaining("password file %s is empty", directory.toFile().getAbsolutePath());
   }

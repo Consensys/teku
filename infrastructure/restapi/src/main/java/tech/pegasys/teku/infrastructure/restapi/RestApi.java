@@ -17,7 +17,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Throwables;
 import io.javalin.Javalin;
-import io.javalin.http.UnauthorizedResponse;
 import io.javalin.util.JavalinBindException;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -35,8 +34,6 @@ public class RestApi extends Service {
   private final Javalin app;
   private final Optional<String> restApiDocs;
   private final Optional<Path> passwordPath;
-
-  private Optional<AuthorizationManager> maybeAuthorizationManager = Optional.empty();
 
   public RestApi(
       final Javalin app,
@@ -98,14 +95,7 @@ public class RestApi extends Service {
         throw new IllegalStateException("Failed to initialise access file for validator-api.");
       }
     }
-    maybeAuthorizationManager = Optional.of(new AuthorizationManager(path));
-    app.beforeMatched(
-        ctx -> {
-          if (maybeAuthorizationManager.isPresent()
-              && !maybeAuthorizationManager.get().manage(ctx)) {
-            throw new UnauthorizedResponse();
-          }
-        });
+    app.beforeMatched(new AuthorizationHandler(path));
   }
 
   @Override
