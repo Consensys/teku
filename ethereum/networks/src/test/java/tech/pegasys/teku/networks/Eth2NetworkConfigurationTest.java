@@ -42,7 +42,7 @@ public class Eth2NetworkConfigurationTest {
     networkDefinition.configure(networkConfigBuilder);
 
     assertThat(networkConfig.getConstants()).isEqualTo(network.configName());
-    assertThat(networkConfigBuilder.build()).usingRecursiveComparison().isEqualTo(networkConfig);
+    assertThat(networkConfigBuilder.build()).isEqualTo(networkConfig);
     assertThat(networkConfig.getNetworkBoostrapConfig().isUsingCustomInitialState()).isFalse();
   }
 
@@ -52,7 +52,7 @@ public class Eth2NetworkConfigurationTest {
         Eth2NetworkConfiguration.builder("goerli").build();
     final Eth2NetworkConfiguration praterConfig =
         Eth2NetworkConfiguration.builder("prater").build();
-    assertThat(goerliConfig).usingRecursiveComparison().isEqualTo(praterConfig);
+    assertThat(goerliConfig).isEqualTo(praterConfig);
   }
 
   @Test
@@ -77,7 +77,7 @@ public class Eth2NetworkConfigurationTest {
 
   @Test
   public void applyNetworkDefaults_shouldOverwritePreviouslySetValues() {
-    List<Arguments> definedNetworks = getDefinedNetworks().collect(Collectors.toList());
+    List<Arguments> definedNetworks = getDefinedNetworks().toList();
 
     for (Arguments networkA : definedNetworks) {
       for (Arguments networkB : definedNetworks) {
@@ -88,16 +88,15 @@ public class Eth2NetworkConfigurationTest {
         builder.applyNetworkDefaults(networkAName);
         builder.applyNetworkDefaults(networkBName);
 
-        assertThat(builder)
-            .usingRecursiveComparison()
-            .isEqualTo(Eth2NetworkConfiguration.builder(networkBName));
+        assertThat(builder.build())
+            .isEqualTo(Eth2NetworkConfiguration.builder(networkBName).build());
       }
     }
   }
 
   @Test
   public void applyNamedNetworkDefaults_shouldOverwritePreviouslySetValues() {
-    List<Arguments> definedNetworks = getDefinedNetworks().collect(Collectors.toList());
+    List<Arguments> definedNetworks = getDefinedNetworks().toList();
 
     for (Arguments networkA : definedNetworks) {
       for (Arguments networkB : definedNetworks) {
@@ -109,9 +108,8 @@ public class Eth2NetworkConfigurationTest {
         networkBDef.configure(builder);
 
         final Eth2Network networkBName = ((Eth2Network) networkB.get()[0]);
-        assertThat(builder)
-            .usingRecursiveComparison()
-            .isEqualTo(Eth2NetworkConfiguration.builder(networkBName));
+        assertThat(builder.build())
+            .isEqualTo(Eth2NetworkConfiguration.builder(networkBName).build());
       }
     }
   }
