@@ -53,7 +53,7 @@ public abstract class AbstractStoreTest {
   protected final ForkChoiceStrategy dummyForkChoiceStrategy = mock(ForkChoiceStrategy.class);
 
   protected void processChainWithLimitedCache(
-      BiConsumer<UpdatableStore, SignedBlockAndState> chainProcessor) {
+      final BiConsumer<UpdatableStore, SignedBlockAndState> chainProcessor) {
     final int cacheSize = 10;
     final int cacheMultiplier = 3;
 
@@ -84,7 +84,7 @@ public abstract class AbstractStoreTest {
   }
 
   protected void processCheckpointsWithLimitedCache(
-      BiConsumer<UpdatableStore, CheckpointState> chainProcessor) {
+      final BiConsumer<UpdatableStore, CheckpointState> chainProcessor) {
     final int cacheSize = 3;
     final int epochsToProcess = cacheSize * 3;
 
@@ -122,7 +122,7 @@ public abstract class AbstractStoreTest {
   }
 
   protected void processChainHeadWithMockForkChoiceStrategy(
-      BiConsumer<UpdatableStore, SignedBlockAndState> chainProcessor) {
+      final BiConsumer<UpdatableStore, SignedBlockAndState> chainProcessor) {
     final StoreConfig pruningOptions = StoreConfig.builder().build();
 
     final UpdatableStore store = createGenesisStoreWithMockForkChoiceStrategy(pruningOptions);
@@ -177,7 +177,9 @@ public abstract class AbstractStoreTest {
   }
 
   private StoreBuilder createStoreBuilder(
-      StoreConfig pruningOptions, SignedBlockAndState genesis, Checkpoint genesisCheckpoint) {
+      final StoreConfig pruningOptions,
+      final SignedBlockAndState genesis,
+      final Checkpoint genesisCheckpoint) {
     return createStoreBuilder(
         pruningOptions,
         genesis,
