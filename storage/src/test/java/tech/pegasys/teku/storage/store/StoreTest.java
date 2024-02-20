@@ -51,6 +51,8 @@ import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannelWithDelays;
+import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
+import tech.pegasys.teku.storage.storageSystem.StorageSystem;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
 
 class StoreTest extends AbstractStoreTest {
@@ -359,6 +361,44 @@ class StoreTest extends AbstractStoreTest {
 
     assertThat(signedBeaconBlock)
         .isCompletedWithValueMatching(Optional::isEmpty, "Result must be empty");
+  }
+
+  @Test
+  public void retrieveEarliestBlobSidecarSlot_shouldReturnUpdatedValue() {
+    final StorageSystem storageSystem = InMemoryStorageSystemBuilder.buildDefault(spec);
+    storageSystem.chainUpdater().initializeGenesis();
+    final UpdatableStore store =
+        createGenesisStore(
+            () ->
+                SafeFuture.completedFuture(storageSystem.database().getEarliestBlobSidecarSlot()));
+
+    assertThat(store.retrieveEarliestBlobSidecarSlot())
+        .isCompletedWithValueMatching(
+            maybeEarliestBlobSidecarSlot ->
+                maybeEarliestBlobSidecarSlot.isPresent()
+                    && maybeEarliestBlobSidecarSlot.get().equals(UInt64.ZERO));
+
+    storageSystem
+        .chainUpdater()
+        .advanceChainUntil(
+            10,
+            ChainBuilder.BlockOptions.create()
+                .setGenerateRandomBlobs(true)
+                .setStoreBlobSidecars(true));
+
+    assertThat(store.retrieveEarliestBlobSidecarSlot())
+        .isCompletedWithValueMatching(
+            maybeEarliestBlobSidecarSlot ->
+                maybeEarliestBlobSidecarSlot.isPresent()
+                    && maybeEarliestBlobSidecarSlot.get().equals(UInt64.ZERO));
+
+    storageSystem.database().pruneOldestBlobSidecars(UInt64.valueOf(5), 5);
+
+    assertThat(store.retrieveEarliestBlobSidecarSlot())
+        .isCompletedWithValueMatching(
+            maybeEarliestBlobSidecarSlot ->
+                maybeEarliestBlobSidecarSlot.isPresent()
+                    && maybeEarliestBlobSidecarSlot.get().equals(UInt64.valueOf(4)));
   }
 
   private void setProtoNodeDataForBlock(

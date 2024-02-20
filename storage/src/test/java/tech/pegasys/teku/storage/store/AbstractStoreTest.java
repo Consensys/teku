@@ -150,15 +150,52 @@ public abstract class AbstractStoreTest {
     return createGenesisStore(defaultStoreConfig);
   }
 
+  protected UpdatableStore createGenesisStore(
+      final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider) {
+    return createStoreBuilder(defaultStoreConfig, chainBuilder, earliestBlobSidecarSlotProvider)
+        .build();
+  }
+
+  protected UpdatableStore createGenesisStore(final StoreConfig pruningOptions) {
+    return createStoreBuilder(pruningOptions).build();
+  }
+
+  protected StoreBuilder createStoreBuilder(
+      final StoreConfig pruningOptions,
+      final ChainBuilder chainBuilder,
+      final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider) {
+    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
+    final Checkpoint genesisCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(0);
+    return createStoreBuilder(
+        pruningOptions, genesis, genesisCheckpoint, earliestBlobSidecarSlotProvider);
+  }
+
   protected StoreBuilder createStoreBuilder(final StoreConfig pruningOptions) {
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     final Checkpoint genesisCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(0);
+    return createStoreBuilder(pruningOptions, genesis, genesisCheckpoint);
+  }
+
+  private StoreBuilder createStoreBuilder(
+      StoreConfig pruningOptions, SignedBlockAndState genesis, Checkpoint genesisCheckpoint) {
+    return createStoreBuilder(
+        pruningOptions,
+        genesis,
+        genesisCheckpoint,
+        earliestBlobSidecarSlotProviderFromChainBuilder());
+  }
+
+  private StoreBuilder createStoreBuilder(
+      final StoreConfig pruningOptions,
+      final SignedBlockAndState genesis,
+      final Checkpoint genesisCheckpoint,
+      final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider) {
     return StoreBuilder.create()
         .asyncRunner(SYNC_RUNNER)
         .metricsSystem(new StubMetricsSystem())
         .specProvider(spec)
         .blockProvider(blockProviderFromChainBuilder())
-        .earliestBlobSidecarSlotProvider(earliestBlobSidecarSlotProviderFromChainBuilder())
+        .earliestBlobSidecarSlotProvider(earliestBlobSidecarSlotProvider)
         .stateProvider(StateAndBlockSummaryProvider.NOOP)
         .anchor(Optional.empty())
         .genesisTime(genesis.getState().getGenesisTime())
@@ -179,10 +216,6 @@ public abstract class AbstractStoreTest {
                     Optional.of(spec.calculateBlockCheckpoints(genesis.getState())))))
         .storeConfig(pruningOptions)
         .votes(emptyMap());
-  }
-
-  protected UpdatableStore createGenesisStore(final StoreConfig pruningOptions) {
-    return createStoreBuilder(pruningOptions).build();
   }
 
   protected UpdatableStore createGenesisStoreWithMockForkChoiceStrategy(
