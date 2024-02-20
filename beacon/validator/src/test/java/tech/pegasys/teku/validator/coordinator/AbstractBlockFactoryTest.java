@@ -22,6 +22,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
+import static tech.pegasys.teku.spec.constants.EthConstants.GWEI_TO_WEI;
 
 import java.util.Collections;
 import java.util.List;
@@ -29,6 +30,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.apache.tuweni.bytes.Bytes32;
+import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -41,7 +43,6 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
@@ -57,6 +58,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -64,6 +66,8 @@ import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.SlotCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.datastructures.util.BeaconBlockBodyLists;
@@ -138,7 +142,7 @@ public abstract class AbstractBlockFactoryTest {
     return BlindedBeaconBlockBodyBellatrix.required(block.getBody()).getExecutionPayloadHeader();
   }
 
-  protected BlockContainer assertBlockCreated(
+  protected BlockContainerAndMetaData assertBlockCreated(
       final int blockSlot,
       final Spec spec,
       final boolean postMerge,
@@ -202,7 +206,23 @@ public abstract class AbstractBlockFactoryTest {
         .thenAnswer(invocation -> createEmptySyncAggregate(spec));
     executionPayloadBuilder.accept(blockSlotState);
 
-    final BlockContainer blockContainer =
+    final UInt256 blockExecutionValue;
+    final UInt64 blockProposerRewards;
+
+    if (milestone.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
+      blockExecutionValue = dataStructureUtil.randomUInt256();
+      blockProposerRewards = dataStructureUtil.randomUInt64();
+
+      // inject values into slot caches
+      final SlotCaches slotCaches = BeaconStateCache.getSlotCaches(blockSlotState);
+      slotCaches.setBlockExecutionValue(blockExecutionValue);
+      slotCaches.increaseBlockProposerRewards(blockProposerRewards);
+    } else {
+      blockExecutionValue = UInt256.ZERO;
+      blockProposerRewards = UInt64.ZERO;
+    }
+
+    final BlockContainerAndMetaData blockContainerAndMetaData =
         safeJoin(
             blockFactory.createUnsignedBlock(
                 blockSlotState,
@@ -213,7 +233,7 @@ public abstract class AbstractBlockFactoryTest {
                 Optional.empty(),
                 BlockProductionPerformance.NOOP));
 
-    final BeaconBlock block = blockContainer.getBlock();
+    final BeaconBlock block = blockContainerAndMetaData.blockContainer().getBlock();
 
     assertThat(block).isNotNull();
     assertThat(block.getSlot()).isEqualTo(newSlot);
@@ -245,7 +265,12 @@ public abstract class AbstractBlockFactoryTest {
       assertThat(block.getBody().getOptionalBlobKzgCommitments()).isEmpty();
     }
 
-    return blockContainer;
+    assertThat(blockContainerAndMetaData.consensusBlockValue())
+        .isEqualByComparingTo(GWEI_TO_WEI.multiply(blockProposerRewards.longValue()));
+    assertThat(blockContainerAndMetaData.executionPayloadValue())
+        .isEqualByComparingTo(blockExecutionValue);
+
+    return blockContainerAndMetaData;
   }
 
   protected SyncAggregate createEmptySyncAggregate(final Spec spec) {

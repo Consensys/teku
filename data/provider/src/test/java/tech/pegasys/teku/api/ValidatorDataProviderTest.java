@@ -46,7 +46,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import org.mockito.ArgumentCaptor;
@@ -63,7 +62,6 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.bls.BLSTestUtil;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;
-import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
@@ -71,15 +69,12 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider.SpecContext;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
-import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
-import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
@@ -102,13 +97,9 @@ public class ValidatorDataProviderTest {
   private SchemaObjectProvider schemaProvider;
   private final CombinedChainDataClient combinedChainDataClient =
       mock(CombinedChainDataClient.class);
-  private final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager =
-      mock(ExecutionLayerBlockProductionManager.class);
-
-  private final RewardCalculator rewardCalculator = mock(RewardCalculator.class);
   private final ValidatorApiChannel validatorApiChannel = mock(ValidatorApiChannel.class);
   private ValidatorDataProvider provider;
-  private BeaconBlock blockInternal;
+  private BlockContainerAndMetaData blockContainerAndMetaDataInternal;
   private final BLSSignature signatureInternal = BLSTestUtil.randomSignature(1234);
 
   @BeforeEach
@@ -116,14 +107,8 @@ public class ValidatorDataProviderTest {
     spec = specContext.getSpec();
     dataStructureUtil = specContext.getDataStructureUtil();
     schemaProvider = new SchemaObjectProvider(spec);
-    provider =
-        new ValidatorDataProvider(
-            spec,
-            validatorApiChannel,
-            combinedChainDataClient,
-            executionLayerBlockProductionManager,
-            rewardCalculator);
-    blockInternal = dataStructureUtil.randomBeaconBlock(123);
+    provider = new ValidatorDataProvider(spec, validatorApiChannel, combinedChainDataClient);
+    blockContainerAndMetaDataInternal = dataStructureUtil.randomBlockContainerAndMetaData(123);
     specMilestone = specContext.getSpecMilestone();
   }
 
@@ -177,9 +162,9 @@ public class ValidatorDataProviderTest {
     when(combinedChainDataClient.getCurrentSlot()).thenReturn(ZERO);
     when(validatorApiChannel.createUnsignedBlock(
             ONE, signatureInternal, Optional.empty(), Optional.of(false), Optional.empty()))
-        .thenReturn(completedFuture(Optional.of(blockInternal)));
+        .thenReturn(completedFuture(Optional.of(blockContainerAndMetaDataInternal)));
 
-    SafeFuture<? extends Optional<? extends SszData>> data =
+    SafeFuture<? extends Optional<BlockContainerAndMetaData>> data =
         provider.getUnsignedBeaconBlockAtSlot(
             ONE, signatureInternal, Optional.empty(), false, Optional.empty());
 
@@ -189,7 +174,9 @@ public class ValidatorDataProviderTest {
 
     assertThat(data).isCompleted();
 
-    assertThat(data.getNow(null).orElseThrow()).usingRecursiveComparison().isEqualTo(blockInternal);
+    assertThat(data.getNow(null).orElseThrow())
+        .usingRecursiveComparison()
+        .isEqualTo(blockContainerAndMetaDataInternal);
   }
 
   @TestTemplate
@@ -228,32 +215,15 @@ public class ValidatorDataProviderTest {
   @TestTemplate
   void produceBlock_shouldCreateAnUnsignedBlock() {
     when(combinedChainDataClient.getCurrentSlot()).thenReturn(ONE);
-    when(combinedChainDataClient.getStateAtSlotExact(blockInternal.getSlot().decrement()))
+    when(combinedChainDataClient.getStateAtSlotExact(
+            blockContainerAndMetaDataInternal.blockContainer().getSlot().decrement()))
         .thenReturn(completedFuture(Optional.of(dataStructureUtil.randomBeaconState())));
-
-    final Optional<ExecutionPayloadResult> executionPayloadResult;
-
-    if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.BELLATRIX)) {
-      executionPayloadResult =
-          Optional.of(
-              new ExecutionPayloadResult(
-                  dataStructureUtil.randomPayloadExecutionContext(ONE, false),
-                  Optional.of(completedFuture(dataStructureUtil.randomExecutionPayload())),
-                  Optional.empty(),
-                  Optional.empty(),
-                  Optional.of(completedFuture(UInt256.ONE))));
-    } else {
-      executionPayloadResult = Optional.empty();
-    }
-
-    when(executionLayerBlockProductionManager.getCachedPayloadResult(ZERO))
-        .thenReturn(executionPayloadResult);
 
     when(validatorApiChannel.createUnsignedBlock(
             ONE, signatureInternal, Optional.empty(), Optional.empty(), Optional.of(ONE)))
-        .thenReturn(completedFuture(Optional.of(blockInternal)));
+        .thenReturn(completedFuture(Optional.of(blockContainerAndMetaDataInternal)));
 
-    SafeFuture<? extends Optional<? extends BlockContainerAndMetaData<? extends SszData>>> data =
+    SafeFuture<? extends Optional<? extends BlockContainerAndMetaData>> data =
         provider.produceBlock(ONE, signatureInternal, Optional.empty(), Optional.of(ONE));
 
     verify(validatorApiChannel)
@@ -262,9 +232,9 @@ public class ValidatorDataProviderTest {
 
     assertThat(data).isCompleted();
 
-    assertThat(data.getNow(null).orElseThrow().blockContainer())
+    assertThat(data.getNow(null).orElseThrow())
         .usingRecursiveComparison()
-        .isEqualTo(blockInternal);
+        .isEqualTo(blockContainerAndMetaDataInternal);
   }
 
   @TestTemplate

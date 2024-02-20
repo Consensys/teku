@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networks;
 
+import java.util.Objects;
 import java.util.Optional;
 
 public class StateBoostrapConfig {
@@ -57,5 +58,31 @@ public class StateBoostrapConfig {
 
   public boolean isAllowSyncOutsideWeakSubjectivityPeriod() {
     return allowSyncOutsideWeakSubjectivityPeriod;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final StateBoostrapConfig that = (StateBoostrapConfig) o;
+    return isUsingCustomInitialState == that.isUsingCustomInitialState
+        && allowSyncOutsideWeakSubjectivityPeriod == that.allowSyncOutsideWeakSubjectivityPeriod
+        && Objects.equals(genesisState, that.genesisState)
+        && Objects.equals(initialState, that.initialState)
+        && Objects.equals(checkpointSyncUrl, that.checkpointSyncUrl);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        genesisState,
+        initialState,
+        checkpointSyncUrl,
+        isUsingCustomInitialState,
+        allowSyncOutsideWeakSubjectivityPeriod);
   }
 }

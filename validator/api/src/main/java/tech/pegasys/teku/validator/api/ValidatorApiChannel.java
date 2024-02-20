@@ -29,10 +29,10 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
@@ -81,7 +81,7 @@ public interface ValidatorApiChannel extends ChannelInterface {
         }
 
         @Override
-        public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
+        public SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
             UInt64 slot,
             BLSSignature randaoReveal,
             Optional<Bytes32> graffiti,
@@ -197,7 +197,7 @@ public interface ValidatorApiChannel extends ChannelInterface {
    * @param requestedBlinded can be removed once block creation V2 APIs are removed in favour of V3
    *     only
    */
-  SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
+  SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
       UInt64 slot,
       BLSSignature randaoReveal,
       Optional<Bytes32> graffiti,

@@ -68,6 +68,7 @@ import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig.LoggingConfigBuilder;
 import tech.pegasys.teku.networking.nat.NatMethod;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.storage.server.DatabaseStorageException;
@@ -717,12 +718,21 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
       final TekuConfiguration expected, final LoggingConfig expectedLogging) {
     assertTekuConfiguration(expected);
     final LoggingConfig actualLogging = getResultingLoggingConfiguration();
-    assertThat(actualLogging).usingRecursiveComparison().isEqualTo(expectedLogging);
+    assertThat(actualLogging).isEqualTo(expectedLogging);
   }
 
   private void assertTekuConfiguration(final TekuConfiguration expected) {
     final TekuConfiguration actual = getResultingTekuConfiguration();
-    assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
+
+    // Assert Spec object separately to avoid recursion issues
+    assertThat(actual.eth2NetworkConfiguration().getSpec())
+        .isEqualTo(expected.eth2NetworkConfiguration().getSpec());
+
+    // Ignore any Spec assertion on recursion
+    assertThat(actual)
+        .usingRecursiveComparison()
+        .ignoringFieldsOfTypes(Spec.class)
+        .isEqualTo(expected);
   }
 
   private Path createTempFile(final byte[] contents) throws IOException {

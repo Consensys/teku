@@ -129,6 +129,7 @@ import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdate;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponse;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateResponseSchema;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientUpdateSchema;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.EnrForkId;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
@@ -1044,6 +1045,36 @@ public final class DataStructureUtil {
 
   public BeaconBlock randomBlindedBeaconBlock(long slotNum) {
     return randomBlindedBeaconBlock(UInt64.valueOf(slotNum));
+  }
+
+  public BlockContainerAndMetaData randomBlockContainerAndMetaData(final long slotNum) {
+    return randomBlockContainerAndMetaData(UInt64.valueOf(slotNum));
+  }
+
+  public BlockContainerAndMetaData randomBlockContainerAndMetaData(final UInt64 slotNum) {
+    return new BlockContainerAndMetaData(
+        randomBeaconBlock(slotNum),
+        spec.atSlot(slotNum).getMilestone(),
+        randomUInt256(),
+        randomUInt256());
+  }
+
+  public BlockContainerAndMetaData randomBlindedBlockContainerAndMetaData(final long slotNum) {
+    return randomBlindedBlockContainerAndMetaData(UInt64.valueOf(slotNum));
+  }
+
+  public BlockContainerAndMetaData randomBlindedBlockContainerAndMetaData(final UInt64 slotNum) {
+    return new BlockContainerAndMetaData(
+        randomBlindedBeaconBlock(slotNum),
+        spec.atSlot(slotNum).getMilestone(),
+        randomUInt256(),
+        randomUInt256());
+  }
+
+  public BlockContainerAndMetaData randomBlockContainerAndMetaData(
+      final BlockContents blockContents, final UInt64 slotNum) {
+    return new BlockContainerAndMetaData(
+        blockContents, spec.atSlot(slotNum).getMilestone(), randomUInt256(), randomUInt256());
   }
 
   public BeaconBlock randomBlindedBeaconBlock(UInt64 slotNum) {

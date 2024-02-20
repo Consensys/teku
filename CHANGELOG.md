@@ -12,5 +12,6 @@ the [releases page](https://github.com/Consensys/teku/releases).
 ### Breaking Changes
 
 ### Additions and Improvements
+- Improve block rewards calculation performance for `/eth/v3/validator/blocks/{slot}` block production beacon node API.
 
 ### Bug Fixes

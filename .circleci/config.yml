@@ -543,6 +543,8 @@ workflows:
             tags:
               <<: *filters-release-tags
       - windowsBuild:
+          requires:
+            - spotless
           filters:
             tags:
               <<: *filters-release-tags
