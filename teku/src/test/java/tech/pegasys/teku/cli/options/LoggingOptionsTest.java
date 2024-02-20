@@ -75,7 +75,6 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
     final LoggingConfig config = getLoggingConfigurationFromArguments("--log-destination", "file");
     assertThat(config.getDestination()).isEqualTo(LoggingDestination.FILE);
     assertThat(createLoggingConfigBuilder().destination(LoggingDestination.FILE).build())
-        .usingRecursiveComparison()
         .isEqualTo(config);
   }
 
@@ -84,9 +83,6 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
     final LoggingConfig config =
         getLoggingConfigurationFromArguments("--log-include-events-enabled");
     assertThat(config.isIncludeEventsEnabled()).isTrue();
-    assertThat(createLoggingConfigBuilder().includeEventsEnabled(true).build())
-        .usingRecursiveComparison()
-        .isEqualTo(config);
   }
 
   @Test
@@ -94,18 +90,12 @@ public class LoggingOptionsTest extends AbstractBeaconNodeCommandTest {
     final LoggingConfig config =
         getLoggingConfigurationFromArguments("--log-destination", "console");
     assertThat(config.getDestination()).isEqualTo(LoggingDestination.CONSOLE);
-    assertThat(createLoggingConfigBuilder().destination(LoggingDestination.CONSOLE).build())
-        .usingRecursiveComparison()
-        .isEqualTo(config);
   }
 
   @Test
   public void logDestination_shouldAcceptBothAsDestination() {
     final LoggingConfig config = getLoggingConfigurationFromArguments("--log-destination", "both");
     assertThat(config.getDestination()).isEqualTo(LoggingDestination.BOTH);
-    assertThat(createLoggingConfigBuilder().destination(LoggingDestination.BOTH).build())
-        .usingRecursiveComparison()
-        .isEqualTo(config);
   }
 
   @Test

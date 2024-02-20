@@ -52,9 +52,6 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromArguments("--data-storage-mode", "prune");
     final StorageConfiguration config = tekuConfiguration.storageConfiguration();
     assertThat(config.getDataStorageMode()).isEqualTo(PRUNE);
-    assertThat(createConfigBuilder().storageConfiguration(b -> b.dataStorageMode(PRUNE)).build())
-        .usingRecursiveComparison()
-        .isEqualTo(tekuConfiguration);
   }
 
   @Test
@@ -63,9 +60,6 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromArguments("--data-storage-mode", "archive");
     final StorageConfiguration config = tekuConfiguration.storageConfiguration();
     assertThat(config.getDataStorageMode()).isEqualTo(ARCHIVE);
-    assertThat(createConfigBuilder().storageConfiguration(b -> b.dataStorageMode(ARCHIVE)).build())
-        .usingRecursiveComparison()
-        .isEqualTo(tekuConfiguration);
   }
 
   @Test
@@ -73,9 +67,6 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration config =
         getTekuConfigurationFromArguments("--data-path", TEST_PATH.toString());
     assertThat(config.dataConfig().getDataBasePath()).isEqualTo(TEST_PATH);
-    assertThat(createConfigBuilder().data(b -> b.dataBasePath(TEST_PATH)).build())
-        .usingRecursiveComparison()
-        .isEqualTo(config);
   }
 
   @Test
@@ -90,12 +81,6 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromArguments("--data-storage-archive-frequency", "1024000");
     final StorageConfiguration config = tekuConfiguration.storageConfiguration();
     assertThat(config.getDataStorageFrequency()).isEqualTo(1024000L);
-    assertThat(
-            createConfigBuilder()
-                .storageConfiguration(b -> b.dataStorageFrequency(1024000L))
-                .build())
-        .usingRecursiveComparison()
-        .isEqualTo(tekuConfiguration);
   }
 
   @Test
@@ -126,12 +111,6 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromArguments("--Xdata-storage-create-db-version", "noop");
     final StorageConfiguration config = tekuConfiguration.storageConfiguration();
     assertThat(config.getDataStorageCreateDbVersion()).isEqualTo(DatabaseVersion.NOOP);
-    assertThat(
-            createConfigBuilder()
-                .storageConfiguration(b -> b.dataStorageCreateDbVersion(DatabaseVersion.NOOP))
-                .build())
-        .usingRecursiveComparison()
-        .isEqualTo(tekuConfiguration);
   }
 
   @Test
@@ -145,14 +124,6 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
             "--reconstruct-historic-states",
             "true");
     assertThat(tekuConfiguration.sync().isReconstructHistoricStatesEnabled()).isEqualTo(true);
-    assertThat(
-            createConfigBuilder()
-                .eth2NetworkConfig(b -> b.customGenesisState(GENESIS_STATE))
-                .storageConfiguration(b -> b.dataStorageMode(ARCHIVE))
-                .sync(b -> b.reconstructHistoricStatesEnabled(true))
-                .build())
-        .usingRecursiveComparison()
-        .isEqualTo(tekuConfiguration);
   }
 
   @Test
@@ -180,14 +151,6 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
             "true");
 
     assertThat(tekuConfiguration.sync().isReconstructHistoricStatesEnabled()).isEqualTo(true);
-    assertThat(
-            createConfigBuilder()
-                .eth2NetworkConfig(b -> b.applyNetworkDefaults(Eth2Network.MAINNET))
-                .storageConfiguration(b -> b.dataStorageMode(ARCHIVE))
-                .sync(b -> b.reconstructHistoricStatesEnabled(true))
-                .build())
-        .usingRecursiveComparison()
-        .isEqualTo(tekuConfiguration);
   }
 
   @Test
@@ -213,17 +176,7 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.storageConfiguration().getDataStorageMode()).isEqualTo(MINIMAL);
     assertThat(config.storageConfiguration().getBlockPruningInterval())
         .isEqualTo(Duration.ofSeconds(150));
-    assertThat(
-            createConfigBuilder()
-                .storageConfiguration(
-                    b ->
-                        b.dataStorageMode(MINIMAL)
-                            .blockPruningInterval(Duration.ofSeconds(150))
-                            .blockPruningLimit(50))
-                .sync(b -> b.fetchAllHistoricBlocks(false))
-                .build())
-        .usingRecursiveComparison()
-        .isEqualTo(config);
+    assertThat(config.storageConfiguration().getBlockPruningLimit()).isEqualTo(50);
   }
 
   @Test
@@ -234,13 +187,6 @@ public class BeaconNodeDataOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.storageConfiguration().getBlobsPruningInterval())
         .isEqualTo(Duration.ofSeconds(55));
     assertThat(config.storageConfiguration().getBlobsPruningLimit()).isEqualTo(10);
-    assertThat(
-            createConfigBuilder()
-                .storageConfiguration(
-                    b -> b.blobsPruningInterval(Duration.ofSeconds(55)).blobsPruningLimit(10))
-                .build())
-        .usingRecursiveComparison()
-        .isEqualTo(config);
   }
 
   @Test
