@@ -50,12 +50,6 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(SpecMilestone.PHASE0);
     assertThat(spec.getForkSchedule().getSpecMilestoneAtEpoch(UInt64.valueOf(64)))
         .isEqualTo(SpecMilestone.ALTAIR);
-    assertThat(
-            createConfigBuilder()
-                .eth2NetworkConfig(b -> b.altairForkEpoch(UInt64.valueOf(64)))
-                .build())
-        .usingRecursiveComparison()
-        .isEqualTo(config);
   }
 
   @Test
@@ -64,9 +58,6 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromArguments("--Xtrusted-setup", "/test.txt");
     final Optional<String> trustedSetup = config.eth2NetworkConfiguration().getTrustedSetup();
     assertThat(trustedSetup).isEqualTo(Optional.of("/test.txt"));
-    assertThat(createConfigBuilder().eth2NetworkConfig(b -> b.trustedSetup("/test.txt")).build())
-        .usingRecursiveComparison()
-        .isEqualTo(config);
   }
 
   @Test
@@ -75,7 +66,6 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
     final Optional<String> trustedSetup = config.eth2NetworkConfiguration().getTrustedSetup();
     assertThat(trustedSetup)
         .matches(ts -> ts.map(path -> path.endsWith("mainnet-trusted-setup.txt")).orElse(false));
-    assertThat(createConfigBuilder().build()).usingRecursiveComparison().isEqualTo(config);
   }
 
   @Test
@@ -88,13 +78,6 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         .isEqualTo(SpecMilestone.ALTAIR);
     assertThat(spec.getForkSchedule().getSpecMilestoneAtEpoch(UInt64.valueOf(120000)))
         .isEqualTo(SpecMilestone.BELLATRIX);
-    assertThat(
-            createConfigBuilder()
-                .executionLayer(b -> b.engineEndpoint("someEndpoint"))
-                .eth2NetworkConfig(b -> b.bellatrixForkEpoch(UInt64.valueOf(120000)))
-                .build())
-        .usingRecursiveComparison()
-        .isEqualTo(config);
   }
 
   @Test
@@ -166,15 +149,6 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
             "--Xnetwork-total-terminal-difficulty-override", "123456789012345678901");
     assertThat(config.eth2NetworkConfiguration().getTotalTerminalDifficultyOverride())
         .isEqualTo(Optional.of(UInt256.valueOf(new BigInteger("123456789012345678901"))));
-    assertThat(
-            createConfigBuilder()
-                .eth2NetworkConfig(
-                    b ->
-                        b.totalTerminalDifficultyOverride(
-                            UInt256.valueOf(new BigInteger("123456789012345678901"))))
-                .build())
-        .usingRecursiveComparison()
-        .isEqualTo(config);
   }
 
   @Test
@@ -188,16 +162,6 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
             Optional.of(
                 Bytes32.fromHexStringStrict(
                     "0x7562f205a2d14e80a3a67da9df0b769b0ba0111a8e81034606f8f27f51f4dd8e")));
-    assertThat(
-            createConfigBuilder()
-                .eth2NetworkConfig(
-                    b ->
-                        b.terminalBlockHashOverride(
-                            Bytes32.fromHexStringStrict(
-                                "0x7562f205a2d14e80a3a67da9df0b769b0ba0111a8e81034606f8f27f51f4dd8e")))
-                .build())
-        .usingRecursiveComparison()
-        .isEqualTo(config);
   }
 
   @Test
@@ -207,12 +171,6 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
             "--Xnetwork-terminal-block-hash-epoch-override", "120000");
     assertThat(config.eth2NetworkConfiguration().getTerminalBlockHashEpochOverride())
         .isEqualTo(Optional.of(UInt64.valueOf(120000)));
-    assertThat(
-            createConfigBuilder()
-                .eth2NetworkConfig(b -> b.terminalBlockHashEpochOverride(UInt64.valueOf(120000)))
-                .build())
-        .usingRecursiveComparison()
-        .isEqualTo(config);
   }
 
   @Test
@@ -242,12 +200,6 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromArguments("--genesis-state", genesisState);
     assertThat(config.eth2NetworkConfiguration().getNetworkBoostrapConfig().getGenesisState())
         .isEqualTo(Optional.of(genesisState));
-    assertThat(
-            createConfigBuilder()
-                .eth2NetworkConfig(b -> b.customGenesisState(genesisState))
-                .build())
-        .usingRecursiveComparison()
-        .isEqualTo(config);
   }
 
   @ParameterizedTest

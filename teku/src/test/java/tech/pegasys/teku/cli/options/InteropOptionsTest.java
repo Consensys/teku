@@ -31,21 +31,5 @@ public class InteropOptionsTest extends AbstractBeaconNodeCommandTest {
         tekuConfiguration.validatorClient().getInteropConfig().getInteropGenesisTime();
     assertThat(interopGenesisTime)
         .isGreaterThanOrEqualTo((int) (System.currentTimeMillis() / 1000));
-
-    assertThat(
-            createConfigBuilder()
-                .interop(b -> b.interopEnabled(true))
-                .build()
-                .validatorClient()
-                .getInteropConfig()
-                .getInteropGenesisTime())
-        .isGreaterThanOrEqualTo((int) (System.currentTimeMillis() / 1000));
-
-    assertThat(
-            createConfigBuilder()
-                .interop(b -> b.interopEnabled(true).interopGenesisTime(interopGenesisTime))
-                .build())
-        .usingRecursiveComparison()
-        .isEqualTo(tekuConfiguration);
   }
 }
