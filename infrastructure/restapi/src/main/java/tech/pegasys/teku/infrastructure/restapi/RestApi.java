@@ -17,6 +17,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Throwables;
 import io.javalin.Javalin;
+import io.javalin.http.UnauthorizedResponse;
 import io.javalin.util.JavalinBindException;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -34,6 +35,8 @@ public class RestApi extends Service {
   private final Javalin app;
   private final Optional<String> restApiDocs;
   private final Optional<Path> passwordPath;
+
+  private Optional<AuthorizationManager> maybeAuthorizationManager = Optional.empty();
 
   public RestApi(
       final Javalin app,
@@ -64,7 +67,7 @@ public class RestApi extends Service {
         // throwing it here will terminate the process effectively.
         LOG.error("Failed to start Rest API", e);
         throw e;
-      } else if (app.jettyServer() == null || !app.jettyServer().started) {
+      } else if (app.jettyServer() == null || !app.jettyServer().started()) {
         // failing to create the jetty server or start the jetty server is fatal.
         throw new IllegalStateException("Rest API failed to start", e);
       } else {
@@ -95,7 +98,14 @@ public class RestApi extends Service {
         throw new IllegalStateException("Failed to initialise access file for validator-api.");
       }
     }
-    app.updateConfig(config -> config.accessManager(new AuthorizationManager(path)));
+    maybeAuthorizationManager = Optional.of(new AuthorizationManager(path));
+    app.beforeMatched(
+        ctx -> {
+          if (maybeAuthorizationManager.isPresent()
+              && !maybeAuthorizationManager.get().manage(ctx)) {
+            throw new UnauthorizedResponse();
+          }
+        });
   }
 
   @Override

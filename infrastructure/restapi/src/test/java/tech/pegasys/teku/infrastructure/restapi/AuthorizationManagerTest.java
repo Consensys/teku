@@ -13,50 +13,52 @@
 
 package tech.pegasys.teku.infrastructure.restapi;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.javalin.http.Context;
-import io.javalin.http.Handler;
 import io.javalin.http.HandlerType;
-import io.javalin.security.RouteRole;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 
 public class AuthorizationManagerTest {
   private static final String PASS = "secure";
-  private final Handler handler = mock(Handler.class);
   private final Context context = mock(Context.class);
-  private final Set<RouteRole> roles = Set.of();
 
   @Test
   void shouldNotRequireAuthorizationForSwagger(@TempDir final Path tempDir) throws Exception {
     setupPasswordFile(tempDir);
     when(context.method()).thenReturn(HandlerType.GET);
-    when(context.matchedPath()).thenReturn("/swagger-docs");
-    AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
-    manager.manage(handler, context, roles);
-    verify(handler, times(1)).handle(context);
+    when(context.path()).thenReturn("/swagger-docs");
+    final AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
+    assertThat(manager.manage(context)).isTrue();
+  }
+
+  @Test
+  void shouldNotRequireAuthorizationForWebjars(@TempDir final Path tempDir) throws Exception {
+    setupPasswordFile(tempDir);
+    when(context.method()).thenReturn(HandlerType.GET);
+    when(context.path()).thenReturn("/webjars");
+    final AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
+    assertThat(manager.manage(context)).isTrue();
   }
 
   @Test
   void shouldGrantAccessIfHeaderSet(@TempDir final Path tempDir) throws Exception {
     setupPasswordFile(tempDir);
     when(context.method()).thenReturn(HandlerType.DELETE);
-    when(context.matchedPath()).thenReturn("/aPath");
+    when(context.path()).thenReturn("/aPath");
     when(context.header("Authorization")).thenReturn("Bearer " + PASS);
-    AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
-    manager.manage(handler, context, roles);
-    verify(handler, times(1)).handle(context);
+    final AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
+    assertThat(manager.manage(context)).isTrue();
   }
 
   @Test
@@ -64,22 +66,20 @@ public class AuthorizationManagerTest {
     // url encode will rewrite the ' ' to a '+'
     Files.writeString(tempDir.resolve("passwd"), PASS + " " + PASS);
     when(context.method()).thenReturn(HandlerType.POST);
-    when(context.matchedPath()).thenReturn("/aPath");
+    when(context.path()).thenReturn("/aPath");
     when(context.header("Authorization")).thenReturn("Bearer " + PASS + "+" + PASS);
-    AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
-    manager.manage(handler, context, roles);
-    verify(handler, times(1)).handle(context);
+    final AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
+    assertThat(manager.manage(context)).isTrue();
   }
 
   @Test
   void shouldDenyAccessIfHeaderNotSet(@TempDir final Path tempDir) throws Exception {
     setupPasswordFile(tempDir);
     when(context.method()).thenReturn(HandlerType.POST);
-    when(context.matchedPath()).thenReturn("/aPath");
+    when(context.path()).thenReturn("/aPath");
     when(context.header("Authorization")).thenReturn(null);
-    AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
-    manager.manage(handler, context, roles);
-    verify(handler, times(0)).handle(context);
+    final AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
+    assertThat(manager.manage(context)).isFalse();
     verify(context).status(401);
     verify(context).json(any());
   }
@@ -88,11 +88,10 @@ public class AuthorizationManagerTest {
   void shouldDenyAccessIfHeaderIsNotBearer(@TempDir final Path tempDir) throws Exception {
     setupPasswordFile(tempDir);
     when(context.method()).thenReturn(HandlerType.GET);
-    when(context.matchedPath()).thenReturn("/aPath");
+    when(context.path()).thenReturn("/aPath");
     when(context.header("Authorization")).thenReturn(PASS);
-    AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
-    manager.manage(handler, context, roles);
-    verify(handler, times(0)).handle(context);
+    final AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
+    assertThat(manager.manage(context)).isFalse();
     verify(context).status(401);
     verify(context).json(any());
   }
@@ -101,11 +100,10 @@ public class AuthorizationManagerTest {
   void shouldDenyAccessIfBearerIsIncorrect(@TempDir final Path tempDir) throws Exception {
     setupPasswordFile(tempDir);
     when(context.method()).thenReturn(HandlerType.GET);
-    when(context.matchedPath()).thenReturn("/aPath");
+    when(context.path()).thenReturn("/aPath");
     when(context.header("Authorization")).thenReturn("Bearer no");
-    AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
-    manager.manage(handler, context, roles);
-    verify(handler, times(0)).handle(context);
+    final AuthorizationManager manager = new AuthorizationManager(tempDir.resolve("passwd"));
+    assertThat(manager.manage(context)).isFalse();
     verify(context).status(401);
     verify(context).json(any());
   }
