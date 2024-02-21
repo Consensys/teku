@@ -13,9 +13,10 @@
 
 package tech.pegasys.teku.infrastructure.restapi;
 
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORIZED;
+
 import io.javalin.http.Context;
 import io.javalin.http.Handler;
-import io.javalin.http.UnauthorizedResponse;
 import java.io.File;
 import java.io.IOException;
 import java.net.URLEncoder;
@@ -80,6 +81,13 @@ public class AuthorizationHandler implements Handler {
     }
   }
 
+  private void unauthorized(final Context ctx, final String message) {
+    LOG.debug(message);
+    ctx.json("{\n  \"status\": 401, \n \"message\":\"Unauthorized\"\n}");
+    ctx.status(SC_UNAUTHORIZED);
+    ctx.skipRemainingHandlers();
+  }
+
   @Override
   public void handle(final Context ctx) throws Exception {
     if (ctx.path().startsWith("/swagger-") || ctx.path().startsWith("/webjars")) {
@@ -87,19 +95,18 @@ public class AuthorizationHandler implements Handler {
     }
 
     if (bearer.isEmpty()) {
-      LOG.debug("API Reject - no bearer loaded by server.");
-      throw new UnauthorizedResponse();
+      unauthorized(ctx, "API Reject - no bearer loaded by server.");
+      return;
     }
 
     final String auth = ctx.header("Authorization");
     if (auth == null || !auth.startsWith(BEARER_PREFIX)) {
-      LOG.debug("API Reject - authorization bearer missing from request header");
-      throw new UnauthorizedResponse();
+      unauthorized(ctx, "API Reject - authorization bearer missing from request header");
+      return;
     }
 
     if (!auth.substring(BEARER_PREFIX.length()).equals(bearer)) {
-      LOG.debug("API Reject - Unauthorized");
-      throw new UnauthorizedResponse();
+      unauthorized(ctx, "API Reject - Unauthorized");
     }
   }
 }

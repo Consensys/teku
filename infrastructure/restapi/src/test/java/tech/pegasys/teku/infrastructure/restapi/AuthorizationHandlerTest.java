@@ -14,12 +14,14 @@
 package tech.pegasys.teku.infrastructure.restapi;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_UNAUTHORIZED;
 
 import io.javalin.http.Context;
 import io.javalin.http.HandlerType;
-import io.javalin.http.UnauthorizedResponse;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -77,7 +79,8 @@ public class AuthorizationHandlerTest {
     when(context.path()).thenReturn("/aPath");
     when(context.header("Authorization")).thenReturn(null);
     final AuthorizationHandler handler = new AuthorizationHandler(tempDir.resolve("passwd"));
-    assertThatThrownBy(() -> handler.handle(context)).isInstanceOf(UnauthorizedResponse.class);
+    handler.handle(context);
+    verifyUnauthorizedResponse();
   }
 
   @Test
@@ -87,7 +90,8 @@ public class AuthorizationHandlerTest {
     when(context.path()).thenReturn("/aPath");
     when(context.header("Authorization")).thenReturn(PASS);
     final AuthorizationHandler handler = new AuthorizationHandler(tempDir.resolve("passwd"));
-    assertThatThrownBy(() -> handler.handle(context)).isInstanceOf(UnauthorizedResponse.class);
+    handler.handle(context);
+    verifyUnauthorizedResponse();
   }
 
   @Test
@@ -97,7 +101,8 @@ public class AuthorizationHandlerTest {
     when(context.path()).thenReturn("/aPath");
     when(context.header("Authorization")).thenReturn("Bearer no");
     final AuthorizationHandler handler = new AuthorizationHandler(tempDir.resolve("passwd"));
-    assertThatThrownBy(() -> handler.handle(context)).isInstanceOf(UnauthorizedResponse.class);
+    handler.handle(context);
+    verifyUnauthorizedResponse();
   }
 
   @Test
@@ -147,6 +152,12 @@ public class AuthorizationHandlerTest {
     assertThatThrownBy(() -> new AuthorizationHandler(directory))
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessageContaining("password file %s is empty", directory.toFile().getAbsolutePath());
+  }
+
+  private void verifyUnauthorizedResponse() {
+    verify(context).status(SC_UNAUTHORIZED);
+    verify(context).json(any());
+    verify(context).skipRemainingHandlers();
   }
 
   private void setupPasswordFile(final Path tempDir) throws IOException {
