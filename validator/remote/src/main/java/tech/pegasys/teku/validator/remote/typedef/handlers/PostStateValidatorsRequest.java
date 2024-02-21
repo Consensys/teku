@@ -15,6 +15,9 @@ package tech.pegasys.teku.validator.remote.typedef.handlers;
 
 import static tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorDataBuilder.STATE_VALIDATORS_RESPONSE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorRequestBodyType.STATE_VALIDATOR_REQUEST_TYPE;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_METHOD_NOT_ALLOWED;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_VALIDATORS;
 
 import java.util.List;
@@ -25,6 +28,7 @@ import okhttp3.OkHttpClient;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorRequestBodyType;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.validator.remote.apiclient.PostStateValidatorsNotExistingException;
 import tech.pegasys.teku.validator.remote.typedef.ResponseHandler;
 
 public class PostStateValidatorsRequest extends AbstractTypeDefRequest {
@@ -39,6 +43,13 @@ public class PostStateValidatorsRequest extends AbstractTypeDefRequest {
         Map.of(),
         new StateValidatorRequestBodyType(validatorIds, List.of()),
         STATE_VALIDATOR_REQUEST_TYPE,
-        new ResponseHandler<>(STATE_VALIDATORS_RESPONSE_TYPE));
+        new ResponseHandler<>(STATE_VALIDATORS_RESPONSE_TYPE)
+            .withHandler(
+                (request, response) -> {
+                  throw new PostStateValidatorsNotExistingException();
+                },
+                SC_BAD_REQUEST,
+                SC_NOT_FOUND,
+                SC_METHOD_NOT_ALLOWED));
   }
 }
