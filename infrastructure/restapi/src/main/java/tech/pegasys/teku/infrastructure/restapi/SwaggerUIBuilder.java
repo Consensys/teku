@@ -46,7 +46,7 @@ public class SwaggerUIBuilder {
 
   private static final Handler INDEX =
       (ctx) -> {
-        Map<String, Object> model = new HashMap<>();
+        final Map<String, Object> model = new HashMap<>();
         model.put("title", "Teku REST API");
         model.put("basePath", SWAGGER_HOSTED_PATH);
         ctx.render("index.html", model);
@@ -92,13 +92,13 @@ public class SwaggerUIBuilder {
   }
 
   private JavalinThymeleaf createThymeleafRenderer(final String templatePath) {
-    TemplateEngine templateEngine = new TemplateEngine();
+    final TemplateEngine templateEngine = new TemplateEngine();
     templateEngine.addTemplateResolver(templateResolver(templatePath));
     return new JavalinThymeleaf(templateEngine);
   }
 
   private ITemplateResolver templateResolver(final String prefix) {
-    ClassLoaderTemplateResolver templateResolver =
+    final ClassLoaderTemplateResolver templateResolver =
         new ClassLoaderTemplateResolver(Thread.currentThread().getContextClassLoader());
     templateResolver.setTemplateMode(TemplateMode.HTML);
     templateResolver.setPrefix(prefix);

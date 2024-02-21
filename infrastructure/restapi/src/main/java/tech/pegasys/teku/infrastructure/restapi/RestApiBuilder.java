@@ -192,7 +192,7 @@ public class RestApiBuilder {
     }
   }
 
-  private void modifyJettyServer(Server server) {
+  private void modifyJettyServer(final Server server) {
     final ServerConnector connector;
     if (maybeKeystorePath.isPresent()) {
       connector = new ServerConnector(server, getSslContextFactory());
