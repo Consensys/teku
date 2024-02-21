@@ -32,6 +32,7 @@ import static tech.pegasys.teku.spec.networks.Eth2Network.SWIFT;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -264,6 +265,71 @@ public class Eth2NetworkConfiguration {
   @Override
   public String toString() {
     return constants;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final Eth2NetworkConfiguration that = (Eth2NetworkConfiguration) o;
+    return startupTargetPeerCount == that.startupTargetPeerCount
+        && startupTimeoutSeconds == that.startupTimeoutSeconds
+        && asyncP2pMaxThreads == that.asyncP2pMaxThreads
+        && asyncBeaconChainMaxThreads == that.asyncBeaconChainMaxThreads
+        && asyncBeaconChainMaxQueue == that.asyncBeaconChainMaxQueue
+        && asyncP2pMaxQueue == that.asyncP2pMaxQueue
+        && forkChoiceLateBlockReorgEnabled == that.forkChoiceLateBlockReorgEnabled
+        && forkChoiceUpdatedAlwaysSendPayloadAttributes
+            == that.forkChoiceUpdatedAlwaysSendPayloadAttributes
+        && Objects.equals(spec, that.spec)
+        && Objects.equals(constants, that.constants)
+        && Objects.equals(stateBoostrapConfig, that.stateBoostrapConfig)
+        && Objects.equals(discoveryBootnodes, that.discoveryBootnodes)
+        && Objects.equals(altairForkEpoch, that.altairForkEpoch)
+        && Objects.equals(bellatrixForkEpoch, that.bellatrixForkEpoch)
+        && Objects.equals(capellaForkEpoch, that.capellaForkEpoch)
+        && Objects.equals(denebForkEpoch, that.denebForkEpoch)
+        && Objects.equals(eth1DepositContractAddress, that.eth1DepositContractAddress)
+        && Objects.equals(eth1DepositContractDeployBlock, that.eth1DepositContractDeployBlock)
+        && Objects.equals(trustedSetup, that.trustedSetup)
+        && Objects.equals(terminalBlockHashOverride, that.terminalBlockHashOverride)
+        && Objects.equals(totalTerminalDifficultyOverride, that.totalTerminalDifficultyOverride)
+        && Objects.equals(terminalBlockHashEpochOverride, that.terminalBlockHashEpochOverride)
+        && Objects.equals(eth2Network, that.eth2Network)
+        && Objects.equals(epochsStoreBlobs, that.epochsStoreBlobs);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        spec,
+        constants,
+        stateBoostrapConfig,
+        startupTargetPeerCount,
+        startupTimeoutSeconds,
+        discoveryBootnodes,
+        altairForkEpoch,
+        bellatrixForkEpoch,
+        capellaForkEpoch,
+        denebForkEpoch,
+        eth1DepositContractAddress,
+        eth1DepositContractDeployBlock,
+        trustedSetup,
+        terminalBlockHashOverride,
+        totalTerminalDifficultyOverride,
+        terminalBlockHashEpochOverride,
+        eth2Network,
+        epochsStoreBlobs,
+        asyncP2pMaxThreads,
+        asyncBeaconChainMaxThreads,
+        asyncBeaconChainMaxQueue,
+        asyncP2pMaxQueue,
+        forkChoiceLateBlockReorgEnabled,
+        forkChoiceUpdatedAlwaysSendPayloadAttributes);
   }
 
   public static class Builder {
