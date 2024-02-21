@@ -225,16 +225,28 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState advanceChainUntil(final UInt64 slot) {
+    return advanceChainUntil(slot, this.blockOptions);
+  }
+
+  public SignedBlockAndState advanceChainUntil(final long slot, final BlockOptions blockOptions) {
+    return advanceChainUntil(UInt64.valueOf(slot), blockOptions);
+  }
+
+  public SignedBlockAndState advanceChainUntil(final UInt64 slot, final BlockOptions blockOptions) {
     UInt64 currentSlot = chainBuilder.getLatestSlot();
     SignedBlockAndState latestSigneBlockAndState = chainBuilder.getLatestBlockAndState();
     while (currentSlot.isLessThan(slot)) {
       currentSlot = currentSlot.increment();
-      latestSigneBlockAndState = advanceChain(currentSlot);
+      latestSigneBlockAndState = advanceChain(currentSlot, blockOptions);
     }
     return latestSigneBlockAndState;
   }
 
   public SignedBlockAndState advanceChain(final UInt64 slot) {
+    return advanceChain(slot, this.blockOptions);
+  }
+
+  public SignedBlockAndState advanceChain(final UInt64 slot, final BlockOptions blockOptions) {
     final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(slot, blockOptions);
     final List<BlobSidecar> blobSidecars = chainBuilder.getBlobSidecars(block.getRoot());
     if (blobSidecars.isEmpty()) {
