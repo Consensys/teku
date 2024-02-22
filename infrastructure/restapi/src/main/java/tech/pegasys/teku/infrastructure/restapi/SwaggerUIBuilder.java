@@ -17,10 +17,15 @@ import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
 import io.javalin.http.Handler;
 import io.javalin.http.staticfiles.Location;
+import io.javalin.rendering.template.JavalinThymeleaf;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.templatemode.TemplateMode;
+import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
+import org.thymeleaf.templateresolver.ITemplateResolver;
 import tech.pegasys.teku.infrastructure.restapi.openapi.OpenApiDocBuilder;
 
 public class SwaggerUIBuilder {
@@ -41,7 +46,7 @@ public class SwaggerUIBuilder {
 
   private static final Handler INDEX =
       (ctx) -> {
-        Map<String, Object> model = new HashMap<>();
+        final Map<String, Object> model = new HashMap<>();
         model.put("title", "Teku REST API");
         model.put("basePath", SWAGGER_HOSTED_PATH);
         ctx.render("index.html", model);
@@ -71,7 +76,8 @@ public class SwaggerUIBuilder {
         SWAGGER_HOSTED_PATH + SWAGGER_INITIALIZER_JS,
         SWAGGER_UI_PATCHED + SWAGGER_INITIALIZER_JS,
         Location.CLASSPATH);
-    ThymeleafConfigurator.enableThymeleafTemplates(SWAGGER_UI_PATCHED + "/");
+    config.fileRenderer(createThymeleafRenderer(SWAGGER_UI_PATCHED + "/"));
+
     config.spaRoot.addHandler(SWAGGER_UI_PATH, INDEX);
   }
 
@@ -83,5 +89,21 @@ public class SwaggerUIBuilder {
     final String apiDocs = openApiDocBuilder.build();
     app.get(SWAGGER_DOCS_PATH, ctx -> ctx.json(apiDocs));
     return Optional.of(apiDocs);
+  }
+
+  private JavalinThymeleaf createThymeleafRenderer(final String templatePath) {
+    final TemplateEngine templateEngine = new TemplateEngine();
+    templateEngine.addTemplateResolver(templateResolver(templatePath));
+    return new JavalinThymeleaf(templateEngine);
+  }
+
+  private ITemplateResolver templateResolver(final String prefix) {
+    final ClassLoaderTemplateResolver templateResolver =
+        new ClassLoaderTemplateResolver(Thread.currentThread().getContextClassLoader());
+    templateResolver.setTemplateMode(TemplateMode.HTML);
+    templateResolver.setPrefix(prefix);
+    templateResolver.setSuffix(".html");
+    templateResolver.setCharacterEncoding("UTF-8");
+    return templateResolver;
   }
 }

@@ -64,7 +64,7 @@ public class RestApi extends Service {
         // throwing it here will terminate the process effectively.
         LOG.error("Failed to start Rest API", e);
         throw e;
-      } else if (app.jettyServer() == null || !app.jettyServer().started) {
+      } else if (app.jettyServer() == null || !app.jettyServer().started()) {
         // failing to create the jetty server or start the jetty server is fatal.
         throw new IllegalStateException("Rest API failed to start", e);
       } else {
@@ -95,7 +95,7 @@ public class RestApi extends Service {
         throw new IllegalStateException("Failed to initialise access file for validator-api.");
       }
     }
-    app.updateConfig(config -> config.accessManager(new AuthorizationManager(path)));
+    app.beforeMatched(new AuthorizationHandler(path));
   }
 
   @Override
