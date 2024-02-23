@@ -49,11 +49,13 @@ import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
 import tech.pegasys.teku.networking.eth2.gossip.config.GossipConfigurator;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
+import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager.Builder;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsAltair;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsBellatrix;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsCapella;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsDeneb;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsElectra;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
@@ -306,7 +308,7 @@ public class Eth2P2PNetworkFactory {
                 .currentSchemaDefinitionsSupplier(currentSchemaDefinitions)
                 .build();
 
-        final GossipForkManager.Builder gossipForkManagerBuilder =
+        final Builder gossipForkManagerBuilder =
             GossipForkManager.builder().spec(spec).recentChainData(recentChainData);
 
         spec.getEnabledMilestones().stream()
@@ -403,7 +405,25 @@ public class Eth2P2PNetworkFactory {
             signedContributionAndProofProcessor,
             syncCommitteeMessageProcessor,
             signedBlsToExecutionChangeProcessor);
-        case DENEB, ELECTRA -> new GossipForkSubscriptionsDeneb(
+        case DENEB -> new GossipForkSubscriptionsDeneb(
+            forkAndSpecMilestone.getFork(),
+            spec,
+            asyncRunner,
+            metricsSystem,
+            network,
+            recentChainData,
+            gossipEncoding,
+            gossipedBlockProcessor,
+            gossipedBlobSidecarProcessor,
+            gossipedAttestationProcessor,
+            gossipedAggregateProcessor,
+            attesterSlashingProcessor,
+            proposerSlashingProcessor,
+            voluntaryExitProcessor,
+            signedContributionAndProofProcessor,
+            syncCommitteeMessageProcessor,
+            signedBlsToExecutionChangeProcessor);
+        case ELECTRA -> new GossipForkSubscriptionsElectra(
             forkAndSpecMilestone.getFork(),
             spec,
             asyncRunner,
