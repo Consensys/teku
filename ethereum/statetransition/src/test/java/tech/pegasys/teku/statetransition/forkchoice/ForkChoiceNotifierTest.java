@@ -265,17 +265,16 @@ class ForkChoiceNotifierTest {
 
     // setup two block productions in a row
     final UInt64 blockSlot = headState.getSlot().plus(1);
-    final PayloadBuildingAttributes payloadBuildingAttributes =
-        withProposerForSlot(forkChoiceState, headState, blockSlot);
     final UInt64 nextBlockSlot = headState.getSlot().plus(2);
-    final PayloadBuildingAttributes nextPayloadBuildingAttributes =
-        withProposerForSlot(nextBlockSlot);
+
+    final List<PayloadBuildingAttributes> payloadBuildingAttributes =
+        withProposerForTwoSlots(forkChoiceState, headState, blockSlot, nextBlockSlot);
 
     storageSystem.chainUpdater().setCurrentSlot(blockSlot);
 
     notifyForkChoiceUpdated(forkChoiceState, Optional.of(blockSlot));
     verify(executionLayerChannel)
-        .engineForkChoiceUpdated(forkChoiceState, Optional.of(payloadBuildingAttributes));
+        .engineForkChoiceUpdated(forkChoiceState, Optional.of(payloadBuildingAttributes.get(0)));
 
     assertThat(recentChainData.getCurrentSlot()).contains(blockSlot);
 
@@ -288,9 +287,9 @@ class ForkChoiceNotifierTest {
     notifier.onAttestationsDue(blockSlot);
     assertThat(forkChoiceUpdatedResultNotification).isNotNull();
     assertThat(forkChoiceUpdatedResultNotification.payloadAttributes())
-        .contains(nextPayloadBuildingAttributes);
+        .contains(payloadBuildingAttributes.get(1));
     verify(executionLayerChannel)
-        .engineForkChoiceUpdated(forkChoiceState, Optional.of(nextPayloadBuildingAttributes));
+        .engineForkChoiceUpdated(forkChoiceState, Optional.of(payloadBuildingAttributes.get(1)));
 
     // we are still on blockSlot, with EL already notified to build nextBlockSlot
     notifyForkChoiceUpdatedVerifyNoNotification(forkChoiceState);
@@ -423,11 +422,7 @@ class ForkChoiceNotifierTest {
     verify(executionLayerChannel)
         .engineForkChoiceUpdated(forkChoiceState, Optional.of(payloadBuildingAttributes.get(0)));
 
-    storageSystem
-        .chainUpdater()
-        .setCurrentSlot(headState.getSlot().plus(1)); // set current slot to 2
-
-    notifyForkChoiceUpdated(forkChoiceState); // calculate attributes for slot 3
+    notifier.onAttestationsDue(blockSlot); // calculate attributes for slot 3
 
     // expect attributes for slot 3
     verify(executionLayerChannel)
