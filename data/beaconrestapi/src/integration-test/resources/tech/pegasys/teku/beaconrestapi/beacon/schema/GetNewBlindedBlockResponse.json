@@ -16,11 +16,13 @@
         "$ref" : "#/components/schemas/BlindedBlockCapella"
       }, {
         "$ref" : "#/components/schemas/BlindedBlockDeneb"
-      } ]
+      }, {
+        "$ref" : "#/components/schemas/BlindedBlockElectra"
+      }  ]
     },
     "version" : {
       "type" : "string",
-      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb" ]
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra" ]
     }
   }
 }
