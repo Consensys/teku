@@ -403,7 +403,7 @@ public class Eth2P2PNetworkFactory {
             signedContributionAndProofProcessor,
             syncCommitteeMessageProcessor,
             signedBlsToExecutionChangeProcessor);
-        case DENEB -> new GossipForkSubscriptionsDeneb(
+        case DENEB, ELECTRA -> new GossipForkSubscriptionsDeneb(
             forkAndSpecMilestone.getFork(),
             spec,
             asyncRunner,

@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.spec.schemas;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import java.util.Optional;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
@@ -27,6 +29,15 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   public SchemaDefinitionsElectra(final SpecConfigElectra specConfig) {
     super(specConfig);
     this.beaconStateSchema = BeaconStateSchemaElectra.create(specConfig);
+  }
+
+  public static SchemaDefinitionsElectra required(final SchemaDefinitions schemaDefinitions) {
+    checkArgument(
+        schemaDefinitions instanceof SchemaDefinitionsElectra,
+        "Expected definitions of type %s by got %s",
+        SchemaDefinitionsElectra.class,
+        schemaDefinitions.getClass());
+    return (SchemaDefinitionsElectra) schemaDefinitions;
   }
 
   @Override
