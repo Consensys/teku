@@ -201,8 +201,8 @@ public class SchemaObjectProvider {
   private BeaconBlockBodyElectra getBeaconBlockBodyElectra(
       final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
     return new BeaconBlockBodyElectra(
-        tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb
-            .required(body));
+        tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra
+            .BeaconBlockBodyElectra.required(body));
   }
 
   private BlindedBeaconBlockBodyBellatrix getBlindedBlockBodyBellatrix(
@@ -229,8 +229,8 @@ public class SchemaObjectProvider {
   private BlindedBeaconBlockBodyElectra getBlindedBlockBodyElectra(
       final tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody body) {
     return new BlindedBeaconBlockBodyElectra(
-        tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb
-            .BlindedBeaconBlockBodyDeneb.required(body));
+        tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra
+            .BlindedBeaconBlockBodyElectra.required(body));
   }
 
   public BeaconState getBeaconState(
