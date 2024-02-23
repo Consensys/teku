@@ -155,6 +155,28 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
     assertThat(providedMethod).isExactlyInstanceOf(expectedMethodClass);
   }
 
+  private static Stream<Arguments> denebMethods() {
+    return Stream.of(
+        arguments(ENGINE_NEW_PAYLOAD, EngineNewPayloadV3.class),
+        arguments(ENGINE_GET_PAYLOAD, EngineGetPayloadV3.class),
+        arguments(ENGINE_FORK_CHOICE_UPDATED, EngineForkChoiceUpdatedV3.class));
+  }
+
+  @ParameterizedTest
+  @MethodSource("denebMethods")
+  void shouldProvideExpectedMethodsForElectra(
+      EngineApiMethod method, Class<EngineJsonRpcMethod<?>> expectedMethodClass) {
+    final Spec electraSpec = TestSpecFactory.createMinimalElectra();
+
+    final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
+        new MilestoneBasedEngineJsonRpcMethodsResolver(electraSpec, executionEngineClient);
+
+    final EngineJsonRpcMethod<Object> providedMethod =
+        engineMethodsResolver.getMethod(method, () -> SpecMilestone.ELECTRA, Object.class);
+
+    assertThat(providedMethod).isExactlyInstanceOf(expectedMethodClass);
+  }
+
   @Test
   void getsCapabilities() {
     final Spec spec =
@@ -176,12 +198,5 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
             "engine_newPayloadV3",
             "engine_getPayloadV3",
             "engine_forkchoiceUpdatedV3");
-  }
-
-  private static Stream<Arguments> denebMethods() {
-    return Stream.of(
-        arguments(ENGINE_NEW_PAYLOAD, EngineNewPayloadV3.class),
-        arguments(ENGINE_GET_PAYLOAD, EngineGetPayloadV3.class),
-        arguments(ENGINE_FORK_CHOICE_UPDATED, EngineForkChoiceUpdatedV3.class));
   }
 }
