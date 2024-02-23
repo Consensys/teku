@@ -110,6 +110,11 @@ public interface SchemaDefinitions {
     return Optional.empty();
   }
 
+  @NonSchema
+  default Optional<SchemaDefinitionsElectra> toVersionElectra() {
+    return Optional.empty();
+  }
+
   @Retention(RetentionPolicy.RUNTIME)
   @Target(ElementType.METHOD)
   @interface NonSchema {}

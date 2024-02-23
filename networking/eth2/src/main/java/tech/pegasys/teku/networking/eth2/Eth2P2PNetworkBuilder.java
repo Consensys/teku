@@ -267,7 +267,7 @@ public class Eth2P2PNetworkBuilder {
           gossipedSignedContributionAndProofProcessor,
           gossipedSyncCommitteeMessageProcessor,
           gossipedSignedBlsToExecutionChangeProcessor);
-      case DENEB -> new GossipForkSubscriptionsDeneb(
+      case DENEB, ELECTRA -> new GossipForkSubscriptionsDeneb(
           forkAndSpecMilestone.getFork(),
           spec,
           asyncRunner,

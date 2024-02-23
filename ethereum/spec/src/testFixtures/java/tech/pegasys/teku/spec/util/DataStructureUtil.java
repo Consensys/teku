@@ -32,7 +32,6 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes;
@@ -1709,9 +1708,7 @@ public final class DataStructureUtil {
   public DepositTreeSnapshot randomDepositTreeSnapshot(
       final long depositsCount, final UInt64 blockHeight) {
     return new DepositTreeSnapshot(
-        Stream.generate(this::randomBytes32)
-            .limit(DEPOSIT_CONTRACT_TREE_DEPTH)
-            .collect(Collectors.toList()),
+        Stream.generate(this::randomBytes32).limit(DEPOSIT_CONTRACT_TREE_DEPTH).collect(toList()),
         Bytes32.random(),
         depositsCount,
         Bytes32.random(),
@@ -1926,6 +1923,7 @@ public final class DataStructureUtil {
       case BELLATRIX -> stateBuilderBellatrix(validatorCount, numItemsInSszLists);
       case CAPELLA -> stateBuilderCapella(validatorCount, numItemsInSszLists);
       case DENEB -> stateBuilderDeneb(validatorCount, numItemsInSszLists);
+      case ELECTRA -> stateBuilderElectra(validatorCount, numItemsInSszLists);
     };
   }
 
@@ -1975,6 +1973,16 @@ public final class DataStructureUtil {
   public BeaconStateBuilderDeneb stateBuilderDeneb(
       final int defaultValidatorCount, final int defaultItemsInSSZLists) {
     return BeaconStateBuilderDeneb.create(
+        this, spec, defaultValidatorCount, defaultItemsInSSZLists);
+  }
+
+  public BeaconStateBuilderElectra stateBuilderElectra() {
+    return stateBuilderElectra(10, 10);
+  }
+
+  public BeaconStateBuilderElectra stateBuilderElectra(
+      final int defaultValidatorCount, final int defaultItemsInSSZLists) {
+    return BeaconStateBuilderElectra.create(
         this, spec, defaultValidatorCount, defaultItemsInSSZLists);
   }
 

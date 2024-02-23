@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,14 +11,18 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb;
+package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra;
 
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSignedBeaconBlockBlinder;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import java.util.Optional;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.MutableBeaconStateDeneb;
 
-public class SignedBeaconBlockBlinderDeneb extends AbstractSignedBeaconBlockBlinder {
+public interface MutableBeaconStateElectra extends MutableBeaconStateDeneb, BeaconStateElectra {
 
-  public SignedBeaconBlockBlinderDeneb(final SchemaDefinitionsDeneb schemaDefinitions) {
-    super(schemaDefinitions.toVersionDeneb().orElseThrow());
+  @Override
+  BeaconStateElectra commitChanges();
+
+  @Override
+  default Optional<MutableBeaconStateElectra> toMutableVersionElectra() {
+    return Optional.of(this);
   }
 }
