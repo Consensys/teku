@@ -212,6 +212,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
     return new BeaconBlockBodyBuilderElectra(beaconBlockBodySchema, blindedBeaconBlockBodySchema);
   }
 
+  @Override
   public BlockContentsSchema getBlockContentsSchema() {
     return blockContentsSchema;
   }
