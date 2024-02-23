@@ -48,7 +48,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadSchemaDeneb;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessageSchema;
-import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateSchemaDeneb;
@@ -86,8 +85,6 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
   public SchemaDefinitionsDeneb(final SpecConfigDeneb specConfig) {
     super(specConfig);
     this.executionPayloadSchemaDeneb = new ExecutionPayloadSchemaDeneb(specConfig);
-    final SignedBlsToExecutionChangeSchema signedBlsToExecutionChangeSchema =
-        new SignedBlsToExecutionChangeSchema();
 
     this.beaconStateSchema = BeaconStateSchemaDeneb.create(specConfig);
     this.executionPayloadHeaderSchemaDeneb =
@@ -97,14 +94,14 @@ public class SchemaDefinitionsDeneb extends SchemaDefinitionsCapella {
         BeaconBlockBodySchemaDenebImpl.create(
             specConfig,
             getAttesterSlashingSchema(),
-            signedBlsToExecutionChangeSchema,
+            getSignedBlsToExecutionChangeSchema(),
             blobKzgCommitmentsSchema,
             "BeaconBlockBodyDeneb");
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaDenebImpl.create(
             specConfig,
             getAttesterSlashingSchema(),
-            signedBlsToExecutionChangeSchema,
+            getSignedBlsToExecutionChangeSchema(),
             blobKzgCommitmentsSchema,
             "BlindedBlockBodyDeneb");
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockDeneb");

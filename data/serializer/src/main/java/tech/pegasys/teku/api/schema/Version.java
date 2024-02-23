@@ -21,23 +21,17 @@ public enum Version {
   altair,
   bellatrix,
   capella,
-  deneb;
+  deneb,
+  electra;
 
   public static Version fromMilestone(final SpecMilestone milestone) {
-    switch (milestone) {
-      case DENEB:
-        return deneb;
-      case CAPELLA:
-        return capella;
-      case BELLATRIX:
-        return bellatrix;
-      case ALTAIR:
-        return altair;
-      case PHASE0:
-        return phase0;
-      default:
-        throw new UnsupportedOperationException(
-            "Milestone " + milestone.name() + "was not found in Schema Version for api.");
-    }
+    return switch (milestone) {
+      case PHASE0 -> phase0;
+      case ALTAIR -> altair;
+      case BELLATRIX -> bellatrix;
+      case CAPELLA -> capella;
+      case DENEB -> deneb;
+      case ELECTRA -> electra;
+    };
   }
 }

@@ -36,7 +36,9 @@
               "$ref" : "#/components/schemas/SignedBlindedBlockCapella"
             }, {
               "$ref" : "#/components/schemas/SignedBlindedBlockDeneb"
-            } ]
+            }, {
+              "$ref" : "#/components/schemas/SignedBlindedBlockElectra"
+            }  ]
           }
         }
       }

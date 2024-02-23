@@ -24,6 +24,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.Be
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodySchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodySchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodySchemaElectra;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -62,6 +63,10 @@ public interface BeaconBlockBodySchema<T extends BeaconBlockBody> extends SszCon
   }
 
   default Optional<BeaconBlockBodySchemaDeneb<?>> toVersionDeneb() {
+    return Optional.empty();
+  }
+
+  default Optional<BeaconBlockBodySchemaElectra<?>> toVersionElectra() {
     return Optional.empty();
   }
 

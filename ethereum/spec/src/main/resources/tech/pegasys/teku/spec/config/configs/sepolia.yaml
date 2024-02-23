@@ -36,6 +36,10 @@ CAPELLA_FORK_EPOCH: 56832
 DENEB_FORK_VERSION: 0x90000073
 DENEB_FORK_EPOCH: 132608
 
+# Electra
+ELECTRA_FORK_VERSION: 0x90000074
+ELECTRA_FORK_EPOCH: 18446744073709551615
+
 # Time parameters
 # ---------------------------------------------------------------
 # 12 seconds
