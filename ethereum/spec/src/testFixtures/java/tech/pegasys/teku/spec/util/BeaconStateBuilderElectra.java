@@ -118,7 +118,7 @@ public class BeaconStateBuilderElectra
     nextSyncCommittee = dataStructureUtil.randomSyncCommittee();
     latestExecutionPayloadHeader =
         dataStructureUtil.randomExecutionPayloadHeader(
-            dataStructureUtil.getSpec().forMilestone(SpecMilestone.DENEB));
+            dataStructureUtil.getSpec().forMilestone(SpecMilestone.ELECTRA));
 
     this.nextWithdrawalIndex = UInt64.ZERO;
     this.nextWithdrawalValidatorIndex =

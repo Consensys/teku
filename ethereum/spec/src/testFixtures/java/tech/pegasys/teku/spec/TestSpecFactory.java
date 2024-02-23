@@ -219,14 +219,6 @@ public class TestSpecFactory {
     return create(config, SpecMilestone.BELLATRIX);
   }
 
-  public static Spec createCapella(final SpecConfig config) {
-    return create(config, SpecMilestone.CAPELLA);
-  }
-
-  public static Spec createDeneb(final SpecConfig config) {
-    return create(config, SpecMilestone.DENEB);
-  }
-
   public static Spec create(final SpecMilestone specMilestone, final Eth2Network network) {
     return create(specMilestone, network, builder -> {});
   }
