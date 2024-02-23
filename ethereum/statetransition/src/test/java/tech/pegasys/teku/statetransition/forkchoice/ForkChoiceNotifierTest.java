@@ -259,6 +259,51 @@ class ForkChoiceNotifierTest {
   }
 
   @Test
+  void onForkChoiceUpdated_shouldSendNotificationWithStableSlot() {
+    final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
+    final BeaconState headState = getHeadState();
+
+    // setup two block productions in a row
+    final UInt64 blockSlot = headState.getSlot().plus(1);
+    final PayloadBuildingAttributes payloadBuildingAttributes =
+        withProposerForSlot(forkChoiceState, headState, blockSlot);
+    final UInt64 nextBlockSlot = headState.getSlot().plus(2);
+    final PayloadBuildingAttributes nextPayloadBuildingAttributes =
+        withProposerForSlot(nextBlockSlot);
+
+    storageSystem.chainUpdater().setCurrentSlot(blockSlot);
+
+    notifyForkChoiceUpdated(forkChoiceState, Optional.of(blockSlot));
+    verify(executionLayerChannel)
+        .engineForkChoiceUpdated(forkChoiceState, Optional.of(payloadBuildingAttributes));
+
+    assertThat(recentChainData.getCurrentSlot()).contains(blockSlot);
+
+    // fcu call with same state but no proposerSlot should not cause a new call to the EL
+    notifyForkChoiceUpdatedVerifyNoNotification(forkChoiceState);
+    verifyNoMoreInteractions(executionLayerChannel);
+
+    // when attestation due arrives, the next proposer attributes should be sent
+    forkChoiceUpdatedResultNotification = null;
+    notifier.onAttestationsDue(blockSlot);
+    assertThat(forkChoiceUpdatedResultNotification).isNotNull();
+    assertThat(forkChoiceUpdatedResultNotification.payloadAttributes())
+        .contains(nextPayloadBuildingAttributes);
+    verify(executionLayerChannel)
+        .engineForkChoiceUpdated(forkChoiceState, Optional.of(nextPayloadBuildingAttributes));
+
+    // we are still on blockSlot, with EL already notified to build nextBlockSlot
+    notifyForkChoiceUpdatedVerifyNoNotification(forkChoiceState);
+    verifyNoMoreInteractions(executionLayerChannel);
+
+    storageSystem.chainUpdater().setCurrentSlot(nextBlockSlot);
+
+    // we are asked to build nextBlockSlot, EL is already notified for that
+    notifyForkChoiceUpdatedVerifyNoNotification(forkChoiceState, Optional.of(nextBlockSlot));
+    verifyNoMoreInteractions(executionLayerChannel);
+  }
+
+  @Test
   void
       onForkChoiceUpdated_shouldSendNotificationWithPayloadBuildingAttributesIfConfiguredToAlwaysSendThem() {
     setUp(false, true);
@@ -880,6 +925,17 @@ class ForkChoiceNotifierTest {
 
   private void notifyForkChoiceUpdated(final ForkChoiceState forkChoiceState) {
     notifyForkChoiceUpdated(forkChoiceState, Optional.empty());
+  }
+
+  private void notifyForkChoiceUpdatedVerifyNoNotification(final ForkChoiceState forkChoiceState) {
+    notifyForkChoiceUpdated(
+        forkChoiceState, Optional.empty(), notification -> assertThat(notification).isNull());
+  }
+
+  private void notifyForkChoiceUpdatedVerifyNoNotification(
+      final ForkChoiceState forkChoiceState, final Optional<UInt64> proposingSlot) {
+    notifyForkChoiceUpdated(
+        forkChoiceState, proposingSlot, notification -> assertThat(notification).isNull());
   }
 
   private void notifyForkChoiceUpdated(

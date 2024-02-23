@@ -27,6 +27,7 @@ import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
+import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager.ProposersDataManagerSubscriber;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -220,12 +221,54 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
 
     LOG.debug("internalForkChoiceUpdated forkChoiceUpdateData {}", forkChoiceUpdateData);
 
-    final Optional<UInt64> attributesSlot =
-        proposingSlot.or(() -> recentChainData.getCurrentSlot().map(UInt64::increment));
-
-    attributesSlot.ifPresent(this::updatePayloadAttributes);
+    calculatePayloadAttributesSlot(forkChoiceState, proposingSlot)
+        .ifPresent(this::updatePayloadAttributes);
 
     sendForkChoiceUpdated();
+  }
+
+  /**
+   * Determine for which slot we should calculate payload attributes (block proposal)
+   *
+   * <pre>
+   * this will guarantee that whenever we calculate a payload attributes for a slot, it will remain stable until:
+   * 1. next slot attestation due is reached (internalAttestationsDue forcing attributes calculation for next slot)
+   * OR
+   * 2. we imported the block for current slot and has become the head
+   * </pre>
+   */
+  private Optional<UInt64> calculatePayloadAttributesSlot(
+      final ForkChoiceState forkChoiceState, final Optional<UInt64> proposingSlot) {
+    if (proposingSlot.isPresent()) {
+      // We are in the context of a block production, so we should use the proposing slot
+      return proposingSlot;
+    }
+
+    final Optional<UInt64> currentSlot = recentChainData.getCurrentSlot();
+    if (currentSlot.isEmpty()) {
+      // We are pre-genesis, so we don't care about proposing slots
+      return Optional.empty();
+    }
+
+    final Optional<UInt64> maybeCurrentPayloadAttributesSlot =
+        forkChoiceUpdateData
+            .getPayloadBuildingAttributes()
+            .map(PayloadBuildingAttributes::getProposalSlot);
+
+    if (maybeCurrentPayloadAttributesSlot.isPresent()
+        // we are still in the same slot as the last proposing slot
+        && currentSlot.get().equals(maybeCurrentPayloadAttributesSlot.get())
+        // we have not yet imported our own produced block
+        && forkChoiceState.getHeadBlockSlot().isLessThan(maybeCurrentPayloadAttributesSlot.get())) {
+
+      // in case we propose two blocks in a row and we fail producing the first block,
+      // we won't keep using the same first slot because internalAttestationsDue will
+      // update the payload attributes for the second block slot
+      return currentSlot;
+    }
+
+    // chain advanced since last proposing slot, we should consider attributes for the next slot
+    return currentSlot.map(UInt64::increment);
   }
 
   private void internalAttestationsDue(final UInt64 slot) {
