@@ -26,7 +26,6 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.AbstractBe
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.SlotCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.TransitionCaches;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.ValidatorStatsAltair;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateSchemaDeneb;
 
 public class BeaconStateElectraImpl extends AbstractBeaconState<MutableBeaconStateElectra>
     implements BeaconStateElectra, BeaconStateCache, ValidatorStatsAltair {
@@ -51,8 +50,8 @@ public class BeaconStateElectraImpl extends AbstractBeaconState<MutableBeaconSta
   }
 
   @Override
-  public BeaconStateSchemaDeneb getBeaconStateSchema() {
-    return (BeaconStateSchemaDeneb) getSchema();
+  public BeaconStateSchemaElectra getBeaconStateSchema() {
+    return (BeaconStateSchemaElectra) getSchema();
   }
 
   @Override

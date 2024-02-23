@@ -25,6 +25,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.bellatrix.Execut
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
 
 public interface ExecutionPayload extends ExecutionPayloadSummary, SszContainer, BuilderPayload {
 
@@ -53,6 +54,10 @@ public interface ExecutionPayload extends ExecutionPayloadSummary, SszContainer,
   }
 
   default Optional<ExecutionPayloadDeneb> toVersionDeneb() {
+    return Optional.empty();
+  }
+
+  default Optional<ExecutionPayloadElectra> toVersionElectra() {
     return Optional.empty();
   }
 
