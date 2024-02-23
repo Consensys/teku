@@ -33,7 +33,6 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager;
-import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkManager.Builder;
 import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsAltair;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsBellatrix;
@@ -189,7 +188,7 @@ public class Eth2P2PNetworkBuilder {
 
   private GossipForkManager buildGossipForkManager(
       final GossipEncoding gossipEncoding, final DiscoveryNetwork<?> network) {
-    final Builder gossipForkManagerBuilder =
+    final GossipForkManager.Builder gossipForkManagerBuilder =
         GossipForkManager.builder()
             .spec(spec)
             .recentChainData(combinedChainDataClient.getRecentChainData());
