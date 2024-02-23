@@ -31,12 +31,12 @@ import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderSchemaDeneb;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee.SyncCommitteeSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
-import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.MutableBeaconStateDeneb;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 
 public class BeaconStateElectra extends BeaconStateAltair {
 
@@ -152,9 +152,9 @@ public class BeaconStateElectra extends BeaconStateAltair {
 
   protected static void applyElectraFields(
       final SpecVersion specVersion,
-      final MutableBeaconStateDeneb state,
+      final MutableBeaconStateElectra state,
       final SyncCommitteeSchema syncCommitteeSchema,
-      final ExecutionPayloadHeaderSchemaDeneb executionPayloadHeaderSchema,
+      final ExecutionPayloadHeaderSchemaElectra executionPayloadHeaderSchema,
       SszListSchema<
               tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary, ?>
           historicalSummariesSchema,
