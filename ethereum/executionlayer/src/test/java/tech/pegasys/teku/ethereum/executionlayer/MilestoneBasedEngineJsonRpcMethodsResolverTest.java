@@ -162,8 +162,22 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
         arguments(ENGINE_FORK_CHOICE_UPDATED, EngineForkChoiceUpdatedV3.class));
   }
 
+  @Test
+  void electraMilestoneMethodIsNotSupportedInDeneb() {
+    final Spec capellaSpec = TestSpecFactory.createMinimalDeneb();
+
+    final MilestoneBasedEngineJsonRpcMethodsResolver engineMethodsResolver =
+        new MilestoneBasedEngineJsonRpcMethodsResolver(capellaSpec, executionEngineClient);
+
+    assertThatThrownBy(
+            () ->
+                engineMethodsResolver.getMethod(
+                    ENGINE_GET_PAYLOAD, () -> SpecMilestone.ELECTRA, Object.class))
+        .hasMessage("Can't find method with name engine_getPayload for milestone ELECTRA");
+  }
+
   @ParameterizedTest
-  @MethodSource("denebMethods")
+  @MethodSource("electraMethods")
   void shouldProvideExpectedMethodsForElectra(
       EngineApiMethod method, Class<EngineJsonRpcMethod<?>> expectedMethodClass) {
     final Spec electraSpec = TestSpecFactory.createMinimalElectra();
@@ -175,6 +189,13 @@ class MilestoneBasedEngineJsonRpcMethodsResolverTest {
         engineMethodsResolver.getMethod(method, () -> SpecMilestone.ELECTRA, Object.class);
 
     assertThat(providedMethod).isExactlyInstanceOf(expectedMethodClass);
+  }
+
+  private static Stream<Arguments> electraMethods() {
+    return Stream.of(
+        arguments(ENGINE_NEW_PAYLOAD, EngineNewPayloadV3.class),
+        arguments(ENGINE_GET_PAYLOAD, EngineGetPayloadV3.class),
+        arguments(ENGINE_FORK_CHOICE_UPDATED, EngineForkChoiceUpdatedV3.class));
   }
 
   @Test
