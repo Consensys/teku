@@ -76,19 +76,4 @@ public class ExecutionPayloadElectra extends ExecutionPayloadDeneb implements Ex
   public Optional<ExecutionPayloadElectra> toVersionElectra() {
     return Optional.of(this);
   }
-
-  @Override
-  public boolean equals(final Object o) {
-    return super.equals(o);
-  }
-
-  @Override
-  public int hashCode() {
-    return super.hashCode();
-  }
-
-  @Override
-  public String toString() {
-    return super.toString();
-  }
 }
