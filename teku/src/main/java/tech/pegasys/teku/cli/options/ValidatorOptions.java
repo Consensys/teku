@@ -154,7 +154,7 @@ public class ValidatorOptions {
       DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED;
 
   @Option(
-      names = {"--Xshut-down-when-validator-slashed-enabled"},
+      names = {"--shut-down-when-validator-slashed-enabled"},
       paramLabel = "<BOOLEAN>",
       description =
           "If an owned validator key is detected as slashed, the node should terminate with exit code 2. In this case, the service should not be restarted.",
