@@ -160,7 +160,6 @@ public class ValidatorOptions {
           "If an owned validator key is detected as slashed, the node should terminate with exit code 2. In this case, the service should not be restarted.",
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "0..1",
-      hidden = true,
       fallbackValue = "true")
   private boolean shutdownWhenValidatorSlashed = DEFAULT_SHUTDOWN_WHEN_VALIDATOR_SLASHED_ENABLED;
 
