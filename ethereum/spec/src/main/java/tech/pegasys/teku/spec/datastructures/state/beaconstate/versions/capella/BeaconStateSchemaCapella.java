@@ -111,11 +111,6 @@ public class BeaconStateSchemaCapella
         getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE));
   }
 
-  public SyncCommittee.SyncCommitteeSchema getNextSyncCommitteeSchema() {
-    return (SyncCommittee.SyncCommitteeSchema)
-        getChildSchema(getFieldIndex(BeaconStateFields.NEXT_SYNC_COMMITTEE));
-  }
-
   public ExecutionPayloadHeaderSchemaCapella getLastExecutionPayloadHeaderSchema() {
     return (ExecutionPayloadHeaderSchemaCapella)
         getChildSchema(getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER));

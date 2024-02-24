@@ -54,6 +54,7 @@ import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscri
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsBellatrix;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsCapella;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsDeneb;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsElectra;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
@@ -404,6 +405,24 @@ public class Eth2P2PNetworkFactory {
             syncCommitteeMessageProcessor,
             signedBlsToExecutionChangeProcessor);
         case DENEB -> new GossipForkSubscriptionsDeneb(
+            forkAndSpecMilestone.getFork(),
+            spec,
+            asyncRunner,
+            metricsSystem,
+            network,
+            recentChainData,
+            gossipEncoding,
+            gossipedBlockProcessor,
+            gossipedBlobSidecarProcessor,
+            gossipedAttestationProcessor,
+            gossipedAggregateProcessor,
+            attesterSlashingProcessor,
+            proposerSlashingProcessor,
+            voluntaryExitProcessor,
+            signedContributionAndProofProcessor,
+            syncCommitteeMessageProcessor,
+            signedBlsToExecutionChangeProcessor);
+        case ELECTRA -> new GossipForkSubscriptionsElectra(
             forkAndSpecMilestone.getFork(),
             spec,
             asyncRunner,

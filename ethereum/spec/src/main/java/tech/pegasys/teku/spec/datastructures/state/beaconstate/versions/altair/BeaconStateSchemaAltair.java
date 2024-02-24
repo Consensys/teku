@@ -118,11 +118,6 @@ public class BeaconStateSchemaAltair
         getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE));
   }
 
-  public SyncCommitteeSchema getNextSyncCommitteeSchema() {
-    return (SyncCommitteeSchema)
-        getChildSchema(getFieldIndex(BeaconStateFields.NEXT_SYNC_COMMITTEE));
-  }
-
   @Override
   public BeaconStateAltair createFromBackingNode(TreeNode node) {
     return new BeaconStateAltairImpl(this, node);

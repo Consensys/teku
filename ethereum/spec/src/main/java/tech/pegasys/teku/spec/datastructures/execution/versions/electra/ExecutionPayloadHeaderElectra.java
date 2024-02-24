@@ -11,14 +11,15 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb;
+package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractSignedBeaconBlockBlinder;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import java.util.Optional;
+import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderDeneb;
 
-public class SignedBeaconBlockBlinderDeneb extends AbstractSignedBeaconBlockBlinder {
+public interface ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
 
-  public SignedBeaconBlockBlinderDeneb(final SchemaDefinitionsDeneb schemaDefinitions) {
-    super(schemaDefinitions.toVersionDeneb().orElseThrow());
+  @Override
+  default Optional<ExecutionPayloadHeaderElectra> toVersionElectra() {
+    return Optional.of(this);
   }
 }

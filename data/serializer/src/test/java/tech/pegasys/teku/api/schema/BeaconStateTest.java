@@ -20,6 +20,7 @@ import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
 import tech.pegasys.teku.api.schema.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.api.schema.capella.BeaconStateCapella;
 import tech.pegasys.teku.api.schema.deneb.BeaconStateDeneb;
+import tech.pegasys.teku.api.schema.electra.BeaconStateElectra;
 import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecContext;
@@ -33,27 +34,15 @@ public class BeaconStateTest {
     final tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState beaconStateInternal =
         ctx.getDataStructureUtil().randomBeaconState();
     final Spec spec = ctx.getSpec();
-    final BeaconState beaconState;
-
-    switch (spec.getGenesisSpec().getMilestone()) {
-      case PHASE0:
-        beaconState = new BeaconStatePhase0(beaconStateInternal);
-        break;
-      case ALTAIR:
-        beaconState = new BeaconStateAltair(beaconStateInternal);
-        break;
-      case BELLATRIX:
-        beaconState = new BeaconStateBellatrix(beaconStateInternal);
-        break;
-      case CAPELLA:
-        beaconState = new BeaconStateCapella(beaconStateInternal);
-        break;
-      case DENEB:
-        beaconState = new BeaconStateDeneb(beaconStateInternal);
-        break;
-      default:
-        throw new IllegalStateException("Unsupported milestone");
-    }
+    final BeaconState beaconState =
+        switch (spec.getGenesisSpec().getMilestone()) {
+          case PHASE0 -> new BeaconStatePhase0(beaconStateInternal);
+          case ALTAIR -> new BeaconStateAltair(beaconStateInternal);
+          case BELLATRIX -> new BeaconStateBellatrix(beaconStateInternal);
+          case CAPELLA -> new BeaconStateCapella(beaconStateInternal);
+          case DENEB -> new BeaconStateDeneb(beaconStateInternal);
+          case ELECTRA -> new BeaconStateElectra(beaconStateInternal);
+        };
 
     assertThat(beaconState.asInternalBeaconState(spec)).isEqualTo(beaconStateInternal);
   }
