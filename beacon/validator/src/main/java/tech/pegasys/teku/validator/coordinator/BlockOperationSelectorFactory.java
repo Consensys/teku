@@ -206,6 +206,13 @@ public class BlockOperationSelectorFactory {
       final BeaconState blockSlotState,
       final BlockProductionPerformance blockProductionPerformance) {
 
+    if (spec.isMergeTransitionComplete(blockSlotState) && executionPayloadContext.isEmpty()) {
+      throw new IllegalStateException(
+          String.format(
+              "ExecutionPayloadContext is not provided for production of post-merge block at slot %s",
+              blockSlotState.getSlot()));
+    }
+
     // if requestedBlinded has been specified, we strictly follow it otherwise, we should run
     // Builder
     // flow (blinded) only if we have a validator registration
@@ -246,10 +253,7 @@ public class BlockOperationSelectorFactory {
     // Post-Deneb: Execution Payload / Execution Payload Header + KZG Commitments
     final ExecutionPayloadResult executionPayloadResult =
         executionLayerBlockProductionManager.initiateBlockAndBlobsProduction(
-            // kzg commitments are supported: we should have already merged by now, so we
-            // can safely assume we have an executionPayloadContext
-            executionPayloadContext.orElseThrow(
-                () -> new IllegalStateException("Cannot provide kzg commitments before The Merge")),
+            executionPayloadContext.orElseThrow(),
             blockSlotState,
             shouldTryBuilderFlow,
             requestedBuilderBoostFactor,
