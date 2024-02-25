@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
+import tech.pegasys.teku.validator.api.required.BeaconCommitteeSelectionProof;
 
 public interface ValidatorApiChannel extends ChannelInterface {
   ValidatorApiChannel NO_OP =
@@ -174,6 +175,12 @@ public interface ValidatorApiChannel extends ChannelInterface {
             List<UInt64> validatorIndices, UInt64 epoch) {
           return SafeFuture.completedFuture(Optional.empty());
         }
+
+        @Override
+        public SafeFuture<Optional<List<BeaconCommitteeSelectionProof>>>
+            getBeaconCommitteeSelectionProof(final List<BeaconCommitteeSelectionProof> requests) {
+          return SafeFuture.completedFuture(Optional.of(requests));
+        }
       };
 
   int UNKNOWN_VALIDATOR_ID = -1;
@@ -250,4 +257,7 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> getValidatorsLiveness(
       List<UInt64> validatorIndices, UInt64 epoch);
+
+  SafeFuture<Optional<List<BeaconCommitteeSelectionProof>>> getBeaconCommitteeSelectionProof(
+      List<BeaconCommitteeSelectionProof> requests);
 }

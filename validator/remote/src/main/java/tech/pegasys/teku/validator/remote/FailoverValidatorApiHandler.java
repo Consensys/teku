@@ -60,6 +60,7 @@ import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.api.required.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.validator.beaconnode.metrics.BeaconNodeRequestLabels;
 
 public class FailoverValidatorApiHandler implements ValidatorApiChannel {
@@ -297,6 +298,14 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
     return tryRequestUntilSuccess(
         apiChannel -> apiChannel.getValidatorsLiveness(validatorIndices, epoch),
         BeaconNodeRequestLabels.GET_VALIDATORS_LIVENESS);
+  }
+
+  @Override
+  public SafeFuture<Optional<List<BeaconCommitteeSelectionProof>>> getBeaconCommitteeSelectionProof(
+      final List<BeaconCommitteeSelectionProof> request) {
+    return relayRequest(
+        apiChannel -> apiChannel.getBeaconCommitteeSelectionProof(request),
+        BeaconNodeRequestLabels.BEACON_COMMITTEE_SELECTIONS);
   }
 
   private <T> SafeFuture<T> relayRequest(

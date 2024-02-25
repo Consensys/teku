@@ -48,6 +48,7 @@ import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.api.required.BeaconCommitteeSelectionProof;
 
 public class SentryValidatorApiChannel implements ValidatorApiChannel {
 
@@ -218,5 +219,11 @@ public class SentryValidatorApiChannel implements ValidatorApiChannel {
   public SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> getValidatorsLiveness(
       List<UInt64> validatorIndices, UInt64 epoch) {
     return dutiesProviderChannel.getValidatorsLiveness(validatorIndices, epoch);
+  }
+
+  @Override
+  public SafeFuture<Optional<List<BeaconCommitteeSelectionProof>>> getBeaconCommitteeSelectionProof(
+      final List<BeaconCommitteeSelectionProof> request) {
+    return dutiesProviderChannel.getBeaconCommitteeSelectionProof(request);
   }
 }

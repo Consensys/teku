@@ -75,6 +75,7 @@ import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
+import tech.pegasys.teku.validator.api.required.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
 import tech.pegasys.teku.validator.remote.apiclient.PostStateValidatorsNotExistingException;
@@ -485,6 +486,12 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
             apiClient
                 .sendValidatorsLiveness(epoch, validatorIndices)
                 .map(this::responseToValidatorsLivenessResult));
+  }
+
+  @Override
+  public SafeFuture<Optional<List<BeaconCommitteeSelectionProof>>> getBeaconCommitteeSelectionProof(
+      final List<BeaconCommitteeSelectionProof> request) {
+    return sendRequest(() -> typeDefClient.getBeaconCommitteeSelectionProof(request));
   }
 
   private List<ValidatorLivenessAtEpoch> responseToValidatorsLivenessResult(

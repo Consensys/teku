@@ -58,6 +58,7 @@ import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
+import tech.pegasys.teku.validator.api.required.BeaconCommitteeSelectionProof;
 
 public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
 
@@ -252,6 +253,14 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
     return countOptionalDataRequest(
         delegate.getValidatorsLiveness(validatorIndices, epoch),
         BeaconNodeRequestLabels.GET_VALIDATORS_LIVENESS);
+  }
+
+  @Override
+  public SafeFuture<Optional<List<BeaconCommitteeSelectionProof>>> getBeaconCommitteeSelectionProof(
+      final List<BeaconCommitteeSelectionProof> requests) {
+    return countDataRequest(
+        delegate.getBeaconCommitteeSelectionProof(requests),
+        BeaconNodeRequestLabels.BEACON_COMMITTEE_SELECTIONS);
   }
 
   private <T> SafeFuture<T> countDataRequest(

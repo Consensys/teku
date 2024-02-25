@@ -86,6 +86,8 @@ import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
+import tech.pegasys.teku.validator.api.required.BeaconCommitteeSelectionProof;
+import tech.pegasys.teku.validator.api.required.BeaconCommitteeSelectionProof.Builder;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.apiclient.PostStateValidatorsNotExistingException;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
@@ -110,6 +112,27 @@ class RemoteValidatorApiHandlerTest {
   public void beforeEach() {
     apiHandler =
         new RemoteValidatorApiHandler(endpoint, spec, apiClient, typeDefClient, asyncRunner, true);
+  }
+
+  @Test
+  public void beaconCommitteeSelectionsRequest_ReturnBeaconCommitteeSelectionProof() {
+    final String blsSignatureHex =
+        dataStructureUtil.randomSignature().toBytesCompressed().toHexString();
+    final BeaconCommitteeSelectionProof proof =
+        new Builder().validatorIndex(1).slot(ONE).selectionProof(blsSignatureHex).build();
+
+    when(typeDefClient.getBeaconCommitteeSelectionProof(any()))
+        .thenReturn(Optional.of(List.of(proof)));
+
+    final SafeFuture<Optional<List<BeaconCommitteeSelectionProof>>> future =
+        apiHandler.getBeaconCommitteeSelectionProof(List.of(proof));
+    asyncRunner.executeQueuedActions();
+
+    final List<BeaconCommitteeSelectionProof> response = unwrapToValue(future);
+    final BeaconCommitteeSelectionProof responseProof = response.get(0);
+    assertThat(responseProof.getValidatorIndex()).isEqualTo(proof.getValidatorIndex());
+    assertThat(responseProof.getSlot()).isEqualTo(proof.getSlot());
+    assertThat(responseProof.getSelectionProof()).isEqualTo(proof.getSelectionProof());
   }
 
   @Test
