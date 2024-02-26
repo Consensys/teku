@@ -46,6 +46,7 @@ import tech.pegasys.teku.validator.remote.typedef.handlers.GetSyncingStatusReque
 import tech.pegasys.teku.validator.remote.typedef.handlers.ProduceBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.RegisterValidatorsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendSignedBlockRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.SyncCommitteeSelectionsRequest;
 
 public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefClient {
 
@@ -61,6 +62,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   private final RegisterValidatorsRequest registerValidatorsRequest;
   private final CreateAttestationDataRequest createAttestationDataRequest;
   private final BeaconCommitteeSelectionsRequest beaconCommitteeSelectionsRequest;
+  private final SyncCommitteeSelectionsRequest syncCommitteeSelectionsRequest;
 
   public OkHttpValidatorTypeDefClient(
       final OkHttpClient okHttpClient,
@@ -82,6 +84,8 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
         new CreateAttestationDataRequest(baseEndpoint, okHttpClient);
     this.beaconCommitteeSelectionsRequest =
         new BeaconCommitteeSelectionsRequest(baseEndpoint, okHttpClient);
+    this.syncCommitteeSelectionsRequest =
+        new SyncCommitteeSelectionsRequest(baseEndpoint, okHttpClient);
   }
 
   public SyncingStatus getSyncingStatus() {
@@ -166,6 +170,6 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
 
   public Optional<List<SyncCommitteeSelectionProof>> getSyncCommitteeSelectionProof(
       final List<SyncCommitteeSelectionProof> validatorsPartialProofs) {
-    throw new UnsupportedOperationException("Not implemented yet");
+    return syncCommitteeSelectionsRequest.getSelectionProof(validatorsPartialProofs);
   }
 }
