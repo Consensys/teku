@@ -34,6 +34,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricUtils;
@@ -261,6 +262,14 @@ public class MetricRecordingValidatorApiChannel implements ValidatorApiChannel {
     return countDataRequest(
         delegate.getBeaconCommitteeSelectionProof(requests),
         BeaconNodeRequestLabels.BEACON_COMMITTEE_SELECTIONS);
+  }
+
+  @Override
+  public SafeFuture<Optional<List<SyncCommitteeSelectionProof>>> getSyncCommitteeSelectionProof(
+      final List<SyncCommitteeSelectionProof> requests) {
+    return countDataRequest(
+        delegate.getSyncCommitteeSelectionProof(requests),
+        BeaconNodeRequestLabels.SYNC_COMMITTEE_SELECTIONS);
   }
 
   private <T> SafeFuture<T> countDataRequest(

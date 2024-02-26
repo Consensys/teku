@@ -24,6 +24,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -161,5 +162,10 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   public Optional<List<BeaconCommitteeSelectionProof>> getBeaconCommitteeSelectionProof(
       final List<BeaconCommitteeSelectionProof> validatorsPartialProofs) {
     return beaconCommitteeSelectionsRequest.getSelectionProof(validatorsPartialProofs);
+  }
+
+  public Optional<List<SyncCommitteeSelectionProof>> getSyncCommitteeSelectionProof(
+      final List<SyncCommitteeSelectionProof> validatorsPartialProofs) {
+    throw new UnsupportedOperationException("Not implemented yet");
   }
 }

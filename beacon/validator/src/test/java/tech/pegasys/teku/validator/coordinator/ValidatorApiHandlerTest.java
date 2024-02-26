@@ -1202,6 +1202,12 @@ class ValidatorApiHandlerTest {
         .isInstanceOf(UnsupportedOperationException.class);
   }
 
+  @Test
+  public void getSyncCommitteeSelectionProofShouldNotBeImplementedByBeaconNode() {
+    assertThatThrownBy(() -> validatorApiHandler.getSyncCommitteeSelectionProof(List.of()))
+        .isInstanceOf(UnsupportedOperationException.class);
+  }
+
   private boolean validatorIsLive(
       List<ValidatorLivenessAtEpoch> validatorLivenessAtEpochs, UInt64 validatorIndex) {
     return validatorLivenessAtEpochs.stream()

@@ -48,6 +48,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
@@ -490,8 +491,14 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
 
   @Override
   public SafeFuture<Optional<List<BeaconCommitteeSelectionProof>>> getBeaconCommitteeSelectionProof(
-      final List<BeaconCommitteeSelectionProof> request) {
-    return sendRequest(() -> typeDefClient.getBeaconCommitteeSelectionProof(request));
+      final List<BeaconCommitteeSelectionProof> requests) {
+    return sendRequest(() -> typeDefClient.getBeaconCommitteeSelectionProof(requests));
+  }
+
+  @Override
+  public SafeFuture<Optional<List<SyncCommitteeSelectionProof>>> getSyncCommitteeSelectionProof(
+      final List<SyncCommitteeSelectionProof> requests) {
+    return sendRequest(() -> typeDefClient.getSyncCommitteeSelectionProof(requests));
   }
 
   private List<ValidatorLivenessAtEpoch> responseToValidatorsLivenessResult(
