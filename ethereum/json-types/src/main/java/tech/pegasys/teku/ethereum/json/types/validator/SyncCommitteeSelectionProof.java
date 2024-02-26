@@ -95,8 +95,8 @@ public class SyncCommitteeSelectionProof {
     }
     final SyncCommitteeSelectionProof that = (SyncCommitteeSelectionProof) o;
     return validatorIndex == that.validatorIndex
+        && subcommitteeIndex == that.subcommitteeIndex
         && Objects.equals(slot, that.slot)
-        && Objects.equals(subcommitteeIndex, that.subcommitteeIndex)
         && Objects.equals(selectionProof, that.selectionProof);
   }
 
