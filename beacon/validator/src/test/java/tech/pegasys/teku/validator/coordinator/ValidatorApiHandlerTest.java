@@ -1196,6 +1196,12 @@ class ValidatorApiHandlerTest {
     assertThat(validatorIsLive(validatorLivenessAtEpochsResult, thirdIndex)).isTrue();
   }
 
+  @Test
+  public void getBeaconCommitteeSelectionProofShouldNotBeImplementedByBeaconNode() {
+    assertThatThrownBy(() -> validatorApiHandler.getBeaconCommitteeSelectionProof(List.of()))
+        .isInstanceOf(UnsupportedOperationException.class);
+  }
+
   private boolean validatorIsLive(
       List<ValidatorLivenessAtEpoch> validatorLivenessAtEpochs, UInt64 validatorIndex) {
     return validatorLivenessAtEpochs.stream()

@@ -22,6 +22,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
+import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -34,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
+import tech.pegasys.teku.validator.remote.typedef.handlers.BeaconCommitteeSelectionsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateAttestationDataRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.CreateBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetGenesisRequest;
@@ -57,6 +59,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   private final SendSignedBlockRequest sendSignedBlockRequest;
   private final RegisterValidatorsRequest registerValidatorsRequest;
   private final CreateAttestationDataRequest createAttestationDataRequest;
+  private final BeaconCommitteeSelectionsRequest beaconCommitteeSelectionsRequest;
 
   public OkHttpValidatorTypeDefClient(
       final OkHttpClient okHttpClient,
@@ -76,6 +79,8 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
         new RegisterValidatorsRequest(baseEndpoint, okHttpClient, false);
     this.createAttestationDataRequest =
         new CreateAttestationDataRequest(baseEndpoint, okHttpClient);
+    this.beaconCommitteeSelectionsRequest =
+        new BeaconCommitteeSelectionsRequest(baseEndpoint, okHttpClient);
   }
 
   public SyncingStatus getSyncingStatus() {
@@ -151,5 +156,10 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   public Optional<AttestationData> createAttestationData(
       final UInt64 slot, final int committeeIndex) {
     return createAttestationDataRequest.createAttestationData(slot, committeeIndex);
+  }
+
+  public Optional<List<BeaconCommitteeSelectionProof>> getBeaconCommitteeSelectionProof(
+      final List<BeaconCommitteeSelectionProof> validatorsPartialProofs) {
+    return beaconCommitteeSelectionsRequest.getSelectionProof(validatorsPartialProofs);
   }
 }
