@@ -110,6 +110,14 @@ public class StatusLogger {
             Color.RED));
   }
 
+  public void validatorLoadError(final String causeMessage) {
+    log.error("Error was encountered during validator client service start up. {}", causeMessage);
+  }
+
+  public void warnNoValidatorsLoaded() {
+    log.warn("Loaded 0 validators from provided key sources.");
+  }
+
   public void fatalError(final String description, final Throwable cause) {
     log.fatal("Exiting due to fatal error in {}", description, cause);
   }

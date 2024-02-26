@@ -213,6 +213,10 @@ public class ValidatorLoader {
     return ownedValidators;
   }
 
+  public boolean hasValidatorSources() {
+    return !validatorSources.isEmpty();
+  }
+
   public static ValidatorLoader create(
       final Spec spec,
       final ValidatorConfig config,

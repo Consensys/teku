@@ -274,11 +274,17 @@ public class ValidatorClientService extends Service {
               final Optional<Throwable> maybeCause =
                   ExceptionUtil.getCause(error, InvalidConfigurationException.class);
               if (maybeCause.isPresent()) {
-                LOG.warn(maybeCause.get().getMessage());
+                STATUS_LOG.validatorLoadError(maybeCause.get().getMessage());
+                LOG.error(maybeCause.get());
               } else {
-                LOG.error("Error was encountered during validator client service start up.", error);
+                STATUS_LOG.validatorLoadError(error.getMessage());
+                LOG.error(error);
               }
               checkNoKeysLoaded(validatorConfig, validatorLoader);
+              if (validatorLoader.hasValidatorSources()
+                  && validatorLoader.getOwnedValidators().hasNoValidators()) {
+                STATUS_LOG.warnNoValidatorsLoaded();
+              }
               return null;
             })
         .always(() -> LOG.trace("Finished starting validator client service."));
