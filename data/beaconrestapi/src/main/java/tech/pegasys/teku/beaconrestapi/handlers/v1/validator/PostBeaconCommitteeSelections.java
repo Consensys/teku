@@ -20,7 +20,11 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDAT
 import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.listOf;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
+import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
+import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
@@ -28,6 +32,13 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 public class PostBeaconCommitteeSelections extends RestApiEndpoint {
 
   public static final String ROUTE = "/eth/v1/validator/beacon_committee_selections";
+
+  private static final SerializableTypeDefinition<List<BeaconCommitteeSelectionProof>>
+      RESPONSE_TYPE =
+          SerializableTypeDefinition.<List<BeaconCommitteeSelectionProof>>object()
+              .name("PostBeaconCommitteeSelectionsResponse")
+              .withField("data", listOf(BEACON_COMMITTEE_SELECTION_PROOF), Function.identity())
+              .build();
 
   public PostBeaconCommitteeSelections() {
     super(
@@ -46,7 +57,10 @@ public class PostBeaconCommitteeSelections extends RestApiEndpoint {
                     + " clients need not support this endpoint and may return a 501.")
             .tags(TAG_VALIDATOR)
             .requestBodyType(listOf(BEACON_COMMITTEE_SELECTION_PROOF))
-            .response(SC_OK, "Returns the threshold aggregated beacon committee selection proofs.")
+            .response(
+                SC_OK,
+                "Returns the threshold aggregated beacon committee selection proofs.",
+                RESPONSE_TYPE)
             .withBadRequestResponse(Optional.of("Invalid request syntax."))
             .withInternalErrorResponse()
             .withNotImplementedResponse()
