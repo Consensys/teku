@@ -26,6 +26,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -181,6 +182,12 @@ public interface ValidatorApiChannel extends ChannelInterface {
             getBeaconCommitteeSelectionProof(final List<BeaconCommitteeSelectionProof> requests) {
           return SafeFuture.completedFuture(Optional.of(requests));
         }
+
+        @Override
+        public SafeFuture<Optional<List<SyncCommitteeSelectionProof>>>
+            getSyncCommitteeSelectionProof(final List<SyncCommitteeSelectionProof> requests) {
+          return SafeFuture.completedFuture(Optional.of(requests));
+        }
       };
 
   int UNKNOWN_VALIDATOR_ID = -1;
@@ -260,4 +267,7 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Optional<List<BeaconCommitteeSelectionProof>>> getBeaconCommitteeSelectionProof(
       List<BeaconCommitteeSelectionProof> requests);
+
+  SafeFuture<Optional<List<SyncCommitteeSelectionProof>>> getSyncCommitteeSelectionProof(
+      List<SyncCommitteeSelectionProof> requests);
 }

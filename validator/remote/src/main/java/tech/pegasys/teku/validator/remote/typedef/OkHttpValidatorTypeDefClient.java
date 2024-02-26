@@ -24,6 +24,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -45,6 +46,7 @@ import tech.pegasys.teku.validator.remote.typedef.handlers.GetSyncingStatusReque
 import tech.pegasys.teku.validator.remote.typedef.handlers.ProduceBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.RegisterValidatorsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendSignedBlockRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.SyncCommitteeSelectionsRequest;
 
 public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefClient {
 
@@ -60,6 +62,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   private final RegisterValidatorsRequest registerValidatorsRequest;
   private final CreateAttestationDataRequest createAttestationDataRequest;
   private final BeaconCommitteeSelectionsRequest beaconCommitteeSelectionsRequest;
+  private final SyncCommitteeSelectionsRequest syncCommitteeSelectionsRequest;
 
   public OkHttpValidatorTypeDefClient(
       final OkHttpClient okHttpClient,
@@ -81,6 +84,8 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
         new CreateAttestationDataRequest(baseEndpoint, okHttpClient);
     this.beaconCommitteeSelectionsRequest =
         new BeaconCommitteeSelectionsRequest(baseEndpoint, okHttpClient);
+    this.syncCommitteeSelectionsRequest =
+        new SyncCommitteeSelectionsRequest(baseEndpoint, okHttpClient);
   }
 
   public SyncingStatus getSyncingStatus() {
@@ -161,5 +166,10 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   public Optional<List<BeaconCommitteeSelectionProof>> getBeaconCommitteeSelectionProof(
       final List<BeaconCommitteeSelectionProof> validatorsPartialProofs) {
     return beaconCommitteeSelectionsRequest.getSelectionProof(validatorsPartialProofs);
+  }
+
+  public Optional<List<SyncCommitteeSelectionProof>> getSyncCommitteeSelectionProof(
+      final List<SyncCommitteeSelectionProof> validatorsPartialProofs) {
+    return syncCommitteeSelectionsRequest.getSelectionProof(validatorsPartialProofs);
   }
 }
