@@ -25,6 +25,8 @@ public class AttesterDutyBuilder {
   public static final DeserializableTypeDefinition<AttesterDuty> ATTESTER_DUTY_TYPE =
       DeserializableTypeDefinition.object(AttesterDuty.class, AttesterDutyBuilder.class)
           .name("AttesterDuty")
+          .initializer(AttesterDutyBuilder::new)
+          .finisher(AttesterDutyBuilder::build)
           .withField(
               "pubkey", PUBLIC_KEY_TYPE, AttesterDuty::getPublicKey, AttesterDutyBuilder::publicKey)
           .withField(
