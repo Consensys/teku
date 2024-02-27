@@ -275,7 +275,6 @@ public class ValidatorClientService extends Service {
                   ExceptionUtil.getCause(error, InvalidConfigurationException.class);
               if (maybeCause.isPresent()) {
                 STATUS_LOG.validatorLoadError(maybeCause.get().getMessage());
-                LOG.error(maybeCause.get());
               } else {
                 STATUS_LOG.validatorLoadError(error.getMessage());
                 LOG.error(error);
