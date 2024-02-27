@@ -18,7 +18,6 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUE
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_METHOD_NOT_ALLOWED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_AGGREGATE;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_ATTESTATION_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_BLOCK_HEADER;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_GENESIS;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_PROPOSER_DUTIES;
@@ -66,7 +65,6 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetSyncCommitteeContributionResponse;
-import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.schema.Attestation;
@@ -152,16 +150,6 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
                     SC_NOT_FOUND,
                     SC_METHOD_NOT_ALLOWED))
         .map(response -> response.data);
-  }
-
-  @Override
-  public Optional<PostAttesterDutiesResponse> getAttestationDuties( // todo delete
-      final UInt64 epoch, final Collection<Integer> validatorIndices) {
-    return post(
-        GET_ATTESTATION_DUTIES,
-        Map.of("epoch", epoch.toString()),
-        validatorIndices.stream().map(UInt64::valueOf).toList(),
-        createHandler(PostAttesterDutiesResponse.class));
   }
 
   @Override
