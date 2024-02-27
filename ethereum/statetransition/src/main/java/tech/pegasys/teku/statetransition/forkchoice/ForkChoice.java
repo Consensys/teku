@@ -344,12 +344,12 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
                             justifiedCheckpoint::getRoot);
                         return false;
                       }
-                      nodeSlot.ifPresent(lastProcessHeadSlot::set);
                       updateHeadTransaction(
                           nodeSlot,
                           maybeJustifiedCheckpointState.orElseThrow(),
                           finalizedCheckpoint,
                           justifiedCheckpoint);
+                      nodeSlot.ifPresent(lastProcessHeadSlot::set);
                       notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
                           isPreProposal ? nodeSlot : Optional.empty());
                       return true;
