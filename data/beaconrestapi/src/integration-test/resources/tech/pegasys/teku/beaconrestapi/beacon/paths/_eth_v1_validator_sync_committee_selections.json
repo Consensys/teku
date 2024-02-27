@@ -1,0 +1,72 @@
+{
+  "post" : {
+    "tags" : [ "Validator" ],
+    "operationId" : "submitSyncCommitteeSelections",
+    "summary" : "Determine if a distributed validator has been selected to make a sync committee contribution",
+    "description" : "Submit sync committee selections to a DVT middleware client. It returns the threshold aggregated sync committee selection. This endpoint should be used by a validator client running as part of a distributed validator cluster, and is implemented by a distributed validator middleware client. This endpoint is used to exchange partial selection proof slot signatures for combined/aggregated selection proofs to allow a validator client to correctly determine if one of its validators has been selected to perform a sync committee contribution (sync aggregation) duty in this slot. Consensus clients need not support this endpoint and may return a 501.",
+    "requestBody" : {
+      "content" : {
+        "application/json" : {
+          "schema" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SyncCommitteeSelectionProof"
+            }
+          }
+        }
+      }
+    },
+    "responses" : {
+      "200" : {
+        "description" : "Returns the threshold aggregated sync committee selection proofs.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/PostSyncCommitteeSelectionsResponse"
+            }
+          }
+        }
+      },
+      "400" : {
+        "description" : "Invalid request syntax.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "500" : {
+        "description" : "Internal server error",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "501" : {
+        "description" : "Not implemented",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      },
+      "503" : {
+        "description" : "Beacon node is currently syncing and not serving requests.",
+        "content" : {
+          "application/json" : {
+            "schema" : {
+              "$ref" : "#/components/schemas/HttpErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  }
+}

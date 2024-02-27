@@ -31,7 +31,8 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONS
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_VALUE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_PATH_DESCRIPTION;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT256_TYPE;
 
@@ -90,7 +91,7 @@ public class GetNewBlockV3 extends RestApiEndpoint {
                 + "header from an MEV relay.\n"
                 + "Metadata in the response indicates the type of block produced, and the supported types of block\n"
                 + "will be added to as forks progress.")
-        .tags(TAG_EXPERIMENTAL)
+        .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
         .pathParam(SLOT_PARAMETER.withDescription(SLOT_PATH_DESCRIPTION))
         .queryParamRequired(RANDAO_PARAMETER)
         .queryParam(GRAFFITI_PARAMETER)
