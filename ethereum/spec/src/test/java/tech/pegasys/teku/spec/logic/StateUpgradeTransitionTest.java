@@ -36,11 +36,20 @@ import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.altair.BeaconStateAltair;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateCapella;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateDeneb;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.datastructures.util.DepositGenerator;
 
 @TestSpecContext(
-    milestone = {SpecMilestone.ALTAIR, SpecMilestone.BELLATRIX},
+    milestone = {
+      SpecMilestone.ALTAIR,
+      SpecMilestone.BELLATRIX,
+      SpecMilestone.CAPELLA,
+      SpecMilestone.DENEB,
+      SpecMilestone.ELECTRA
+    },
     doNotGenerateSpec = true)
 public class StateUpgradeTransitionTest {
   private static final List<BLSKeyPair> VALIDATOR_KEYS =
@@ -57,21 +66,35 @@ public class StateUpgradeTransitionTest {
 
   @BeforeEach
   public void setup(SpecContext specContext) {
-    Spec spec;
-    switch (specContext.getSpecMilestone()) {
-      case ALTAIR:
-        spec = TestSpecFactory.createMinimalWithAltairForkEpoch(milestoneTransitionEpoch);
-        beforeBeaconStateClass = BeaconStatePhase0.class;
-        afterBeaconStateClass = BeaconStateAltair.class;
-        break;
-      case BELLATRIX:
-        spec = TestSpecFactory.createMinimalWithBellatrixForkEpoch(milestoneTransitionEpoch);
-        beforeBeaconStateClass = BeaconStateAltair.class;
-        afterBeaconStateClass = BeaconStateBellatrix.class;
-        break;
-      default:
-        throw new IllegalArgumentException("unsupported milestone");
-    }
+    final Spec spec =
+        switch (specContext.getSpecMilestone()) {
+          case PHASE0 -> throw new IllegalArgumentException("Phase0 is an unsupported milestone");
+          case ALTAIR -> {
+            beforeBeaconStateClass = BeaconStatePhase0.class;
+            afterBeaconStateClass = BeaconStateAltair.class;
+            yield TestSpecFactory.createMinimalWithAltairForkEpoch(milestoneTransitionEpoch);
+          }
+          case BELLATRIX -> {
+            beforeBeaconStateClass = BeaconStateAltair.class;
+            afterBeaconStateClass = BeaconStateBellatrix.class;
+            yield TestSpecFactory.createMinimalWithBellatrixForkEpoch(milestoneTransitionEpoch);
+          }
+          case CAPELLA -> {
+            beforeBeaconStateClass = BeaconStateBellatrix.class;
+            afterBeaconStateClass = BeaconStateCapella.class;
+            yield TestSpecFactory.createMinimalWithCapellaForkEpoch(milestoneTransitionEpoch);
+          }
+          case DENEB -> {
+            beforeBeaconStateClass = BeaconStateCapella.class;
+            afterBeaconStateClass = BeaconStateDeneb.class;
+            yield TestSpecFactory.createMinimalWithDenebForkEpoch(milestoneTransitionEpoch);
+          }
+          case ELECTRA -> {
+            beforeBeaconStateClass = BeaconStateDeneb.class;
+            afterBeaconStateClass = BeaconStateElectra.class;
+            yield TestSpecFactory.createMinimalWithElectraForkEpoch(milestoneTransitionEpoch);
+          }
+        };
 
     genesis = createGenesis(spec);
     stateTransition = new StateTransition(spec::atSlot);

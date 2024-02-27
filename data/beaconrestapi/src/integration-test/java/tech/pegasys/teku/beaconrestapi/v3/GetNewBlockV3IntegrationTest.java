@@ -166,7 +166,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
 
   @TestTemplate
   void shouldGetUnBlindedBlockContentPostDenebAsJson() throws Exception {
-    assumeThat(specMilestone).isEqualTo(DENEB);
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
     final BlockContents blockContents = dataStructureUtil.randomBlockContents(ONE);
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(blockContents, ONE);
@@ -191,7 +191,7 @@ public class GetNewBlockV3IntegrationTest extends AbstractDataBackedRestAPIInteg
 
   @TestTemplate
   void shouldGetUnBlindedBlockContentPostDenebAsSsz() throws IOException {
-    assumeThat(specMilestone).isEqualTo(DENEB);
+    assumeThat(specMilestone).isGreaterThanOrEqualTo(DENEB);
     final BlockContents blockContents = dataStructureUtil.randomBlockContents(ONE);
     final BlockContainerAndMetaData blockContainerAndMetaData =
         dataStructureUtil.randomBlockContainerAndMetaData(blockContents, ONE);

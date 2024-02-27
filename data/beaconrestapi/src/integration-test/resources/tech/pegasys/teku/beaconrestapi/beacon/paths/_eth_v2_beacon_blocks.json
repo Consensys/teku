@@ -36,7 +36,9 @@
               "$ref" : "#/components/schemas/SignedBeaconBlockCapella"
             }, {
               "$ref" : "#/components/schemas/SignedBlockContentsDeneb"
-            } ]
+            }, {
+              "$ref" : "#/components/schemas/SignedBlockContentsElectra"
+            }  ]
           }
         }
       }

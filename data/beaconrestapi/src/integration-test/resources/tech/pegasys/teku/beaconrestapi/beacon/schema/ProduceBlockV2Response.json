@@ -16,11 +16,13 @@
         "$ref" : "#/components/schemas/BeaconBlockCapella"
       }, {
         "$ref" : "#/components/schemas/BlockContentsDeneb"
-      } ]
+      }, {
+        "$ref" : "#/components/schemas/BlockContentsElectra"
+      }  ]
     },
     "version" : {
       "type" : "string",
-      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb" ]
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra" ]
     }
   }
 }

@@ -105,11 +105,6 @@ public class BeaconStateSchemaDeneb
         getChildSchema(getFieldIndex(BeaconStateFields.CURRENT_SYNC_COMMITTEE));
   }
 
-  public SyncCommittee.SyncCommitteeSchema getNextSyncCommitteeSchema() {
-    return (SyncCommittee.SyncCommitteeSchema)
-        getChildSchema(getFieldIndex(BeaconStateFields.NEXT_SYNC_COMMITTEE));
-  }
-
   public ExecutionPayloadHeaderSchemaDeneb getLastExecutionPayloadHeaderSchema() {
     return (ExecutionPayloadHeaderSchemaDeneb)
         getChildSchema(getFieldIndex(BeaconStateFields.LATEST_EXECUTION_PAYLOAD_HEADER));
