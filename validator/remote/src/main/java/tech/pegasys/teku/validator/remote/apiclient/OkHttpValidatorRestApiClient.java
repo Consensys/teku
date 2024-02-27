@@ -155,7 +155,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public Optional<PostAttesterDutiesResponse> getAttestationDuties(
+  public Optional<PostAttesterDutiesResponse> getAttestationDuties( // todo delete
       final UInt64 epoch, final Collection<Integer> validatorIndices) {
     return post(
         GET_ATTESTATION_DUTIES,

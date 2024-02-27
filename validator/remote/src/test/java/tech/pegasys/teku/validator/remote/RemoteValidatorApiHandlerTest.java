@@ -52,7 +52,6 @@ import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
-import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.response.v1.validator.ValidatorLiveness;
 import tech.pegasys.teku.api.schema.BLSPubKey;
@@ -354,11 +353,11 @@ class RemoteValidatorApiHandlerTest {
 
   @Test
   public void getAttestationDuties_WhenNoneFound_ReturnsEmpty() {
-    when(apiClient.getAttestationDuties(any(), any()))
+    when(typeDefClient.postAttesterDuties(any(), any()))
         .thenReturn(
             Optional.of(
-                new PostAttesterDutiesResponse(
-                    dataStructureUtil.randomBytes32(), Collections.emptyList(), false)));
+                new AttesterDuties(
+                    false, dataStructureUtil.randomBytes32(), Collections.emptyList())));
 
     SafeFuture<Optional<AttesterDuties>> future =
         apiHandler.getAttestationDuties(ONE, IntList.of(1234));
@@ -374,15 +373,6 @@ class RemoteValidatorApiHandlerTest {
     final int committeeIndex = 1;
     final int validatorCommitteeIndex = 3;
     final int committeesAtSlot = 15;
-    final tech.pegasys.teku.api.response.v1.validator.AttesterDuty schemaValidatorDuties =
-        new tech.pegasys.teku.api.response.v1.validator.AttesterDuty(
-            new BLSPubKey(blsPublicKey),
-            UInt64.valueOf(validatorIndex),
-            UInt64.valueOf(committeeIndex),
-            UInt64.valueOf(committeeLength),
-            UInt64.valueOf(committeesAtSlot),
-            UInt64.valueOf(validatorCommitteeIndex),
-            UInt64.ZERO);
     final AttesterDuty expectedValidatorDuties =
         new AttesterDuty(
             blsPublicKey,
@@ -393,11 +383,11 @@ class RemoteValidatorApiHandlerTest {
             validatorCommitteeIndex,
             UInt64.ZERO);
 
-    when(apiClient.getAttestationDuties(ONE, IntList.of(validatorIndex)))
+    when(typeDefClient.postAttesterDuties(ONE, IntList.of(validatorIndex)))
         .thenReturn(
             Optional.of(
-                new PostAttesterDutiesResponse(
-                    dataStructureUtil.randomBytes32(), List.of(schemaValidatorDuties), false)));
+                new AttesterDuties(
+                    false, dataStructureUtil.randomBytes32(), List.of(expectedValidatorDuties))));
 
     SafeFuture<Optional<AttesterDuties>> future =
         apiHandler.getAttestationDuties(ONE, IntList.of(validatorIndex));
