@@ -40,7 +40,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
-import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.infrastructure.ssz.SszDataAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -385,7 +384,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
         okHttpValidatorTypeDefClient.postStateValidators(List.of("1", "2"));
 
     assertThat(result).isPresent();
-    assertThat(result.get()).usingRecursiveComparison().isEqualTo(expected);
+    assertThat(result.get()).isEqualTo(expected);
   }
 
   private StateValidatorData generateStateValidatorData() {
@@ -401,10 +400,10 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
             FAR_FUTURE_EPOCH,
             FAR_FUTURE_EPOCH);
     return new StateValidatorData(
-            UInt64.valueOf(index),
-            dataStructureUtil.randomUInt64(),
-            ValidatorStatus.active_ongoing,
-            validator);
+        UInt64.valueOf(index),
+        dataStructureUtil.randomUInt64(),
+        ValidatorStatus.active_ongoing,
+        validator);
   }
 
   private void verifyRegisterValidatorsPostRequest(
