@@ -24,6 +24,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.json.JsonUtil.serialize;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,6 +40,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.infrastructure.ssz.SszDataAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -51,6 +53,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
@@ -375,10 +378,8 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     final ObjectAndMetaData<List<StateValidatorData>> response =
         new ObjectAndMetaData<>(expected, specMilestone, false, true, false);
 
-    mockWebServer.enqueue(
-        new MockResponse()
-            .setResponseCode(SC_OK)
-            .setBody(serialize(response, STATE_VALIDATORS_RESPONSE_TYPE)));
+    final String body = serialize(response, STATE_VALIDATORS_RESPONSE_TYPE);
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(body));
 
     Optional<List<StateValidatorData>> result =
         okHttpValidatorTypeDefClient.postStateValidators(List.of("1", "2"));
@@ -388,11 +389,22 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   }
 
   private StateValidatorData generateStateValidatorData() {
+    final long index = dataStructureUtil.randomLong();
+    final Validator validator =
+        new Validator(
+            dataStructureUtil.randomPublicKey(),
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomUInt64(),
+            false,
+            UInt64.ZERO,
+            UInt64.ZERO,
+            FAR_FUTURE_EPOCH,
+            FAR_FUTURE_EPOCH);
     return new StateValidatorData(
-        dataStructureUtil.randomValidatorIndex(),
-        dataStructureUtil.randomUInt64(),
-        ValidatorStatus.active_ongoing,
-        dataStructureUtil.randomValidator());
+            UInt64.valueOf(index),
+            dataStructureUtil.randomUInt64(),
+            ValidatorStatus.active_ongoing,
+            validator);
   }
 
   private void verifyRegisterValidatorsPostRequest(
