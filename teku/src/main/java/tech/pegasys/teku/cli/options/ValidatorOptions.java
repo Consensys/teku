@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_VALIDATOR_EXECUTOR_THREADS;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_DOPPELGANGER_DETECTION_ENABLED;
+import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_DVT_SELECTIONS_ENDPOINT_ENABLED;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_SHUTDOWN_WHEN_VALIDATOR_SLASHED_ENABLED;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED;
 
@@ -164,6 +165,16 @@ public class ValidatorOptions {
       fallbackValue = "true")
   private boolean shutdownWhenValidatorSlashed = DEFAULT_SHUTDOWN_WHEN_VALIDATOR_SLASHED_ENABLED;
 
+  @Option(
+      names = {"--Xdvt-selections-endpoints-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Use DVT endpoints to determine if a distributed validator has aggregation duties.",
+      arity = "0..1",
+      hidden = true,
+      fallbackValue = "true")
+  private boolean dvtSelectionsEndpointEnabled = DEFAULT_DVT_SELECTIONS_ENDPOINT_ENABLED;
+
   public void configure(TekuConfiguration.Builder builder) {
     builder.validator(
         config ->
@@ -183,7 +194,8 @@ public class ValidatorOptions {
                 .executorThreads(executorThreads)
                 .blockV3enabled(blockV3Enabled)
                 .exitWhenNoValidatorKeysEnabled(exitWhenNoValidatorKeysEnabled)
-                .shutdownWhenValidatorSlashedEnabled(shutdownWhenValidatorSlashed));
+                .shutdownWhenValidatorSlashedEnabled(shutdownWhenValidatorSlashed)
+                .dvtSelectionsEndpointEnabled(dvtSelectionsEndpointEnabled));
     validatorProposerOptions.configure(builder);
     validatorKeysOptions.configure(builder);
   }
