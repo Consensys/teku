@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote.typedef;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import okhttp3.HttpUrl;
@@ -98,6 +99,11 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     return getStateValidatorsRequest
         .getStateValidators(validatorIds)
         .map(ObjectAndMetaData::getData);
+  }
+
+  public void getAttestationDuties(
+      final UInt64 epoch, final Collection<Integer> validatorIndices) {
+    return
   }
 
   public SendSignedBlockResult sendSignedBlock(final SignedBlockContainer blockContainer) {
