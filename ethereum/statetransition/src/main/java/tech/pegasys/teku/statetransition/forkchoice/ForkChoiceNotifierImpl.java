@@ -23,16 +23,14 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
 import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
-import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager.ProposersDataManagerSubscriber;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersDataManagerSubscriber {
+public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventThread eventThread;
@@ -65,7 +63,6 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
     this.recentChainData = recentChainData;
     this.proposersDataManager = proposersDataManager;
     this.timeProvider = timeProvider;
-    proposersDataManager.subscribeToProposersDataChanges(this);
   }
 
   @Override
@@ -107,14 +104,6 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
   public boolean validatorIsConnected(UInt64 validatorIndex, UInt64 currentSlot) {
     return proposersDataManager.validatorIsConnected(validatorIndex, currentSlot);
   }
-
-  @Override
-  public void onPreparedProposersUpdated() {
-    eventThread.execute(this::internalUpdatePreparableProposers);
-  }
-
-  @Override
-  public void onValidatorRegistrationsUpdated() {}
 
   private void internalTerminalBlockReached(Bytes32 executionBlockHash) {
     eventThread.checkOnEventThread();
@@ -197,18 +186,6 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
                 return maybeExecutionPayloadContext;
               });
     }
-  }
-
-  private void internalUpdatePreparableProposers() {
-    eventThread.checkOnEventThread();
-
-    LOG.debug("internalUpdatePreparableProposers");
-
-    // Default to the genesis slot if we're pre-genesis.
-    final UInt64 currentSlot = recentChainData.getCurrentSlot().orElse(SpecConfig.GENESIS_SLOT);
-
-    // Update payload attributes in case we now need to propose the next block
-    updatePayloadAttributes(currentSlot.plus(1));
   }
 
   private void internalForkChoiceUpdated(

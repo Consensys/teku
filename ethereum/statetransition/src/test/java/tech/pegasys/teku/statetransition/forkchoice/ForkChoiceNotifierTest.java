@@ -609,7 +609,7 @@ class ForkChoiceNotifierTest {
   }
 
   @Test
-  void onPreparedProposersUpdated_shouldSendNewNotificationWhenProposerAdded() {
+  void onPreparedProposersUpdated_shouldNotCallForkChoiceUpdated() {
     final ForkChoiceState forkChoiceState = getCurrentForkChoiceState();
     final BeaconState headState = getHeadState();
     final UInt64 blockSlot = headState.getSlot().plus(1);
@@ -617,10 +617,8 @@ class ForkChoiceNotifierTest {
     notifyForkChoiceUpdated(forkChoiceState);
     verify(executionLayerChannel).engineForkChoiceUpdated(forkChoiceState, Optional.empty());
 
-    final PayloadBuildingAttributes payloadBuildingAttributes =
-        withProposerForSlot(forkChoiceState, headState, blockSlot);
-    verify(executionLayerChannel)
-        .engineForkChoiceUpdated(forkChoiceState, Optional.of(payloadBuildingAttributes));
+    withProposerForSlot(forkChoiceState, headState, blockSlot);
+    verifyNoMoreInteractions(executionLayerChannel);
   }
 
   @Test
