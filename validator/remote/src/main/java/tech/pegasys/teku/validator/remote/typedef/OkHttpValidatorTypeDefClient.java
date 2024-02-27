@@ -101,9 +101,8 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
         .map(ObjectAndMetaData::getData);
   }
 
-  public void getAttestationDuties(
-      final UInt64 epoch, final Collection<Integer> validatorIndices) {
-    return
+  public void getAttestationDuties(final UInt64 epoch, final Collection<Integer> validatorIndices) {
+    // not implemented
   }
 
   public SendSignedBlockResult sendSignedBlock(final SignedBlockContainer blockContainer) {
