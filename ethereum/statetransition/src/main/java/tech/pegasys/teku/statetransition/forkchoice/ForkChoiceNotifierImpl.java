@@ -238,7 +238,9 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
         // we have not yet imported our own produced block
         && forkChoiceState.getHeadBlockSlot().isLessThan(maybeCurrentPayloadAttributesSlot.get())) {
 
-      LOG.info("Returned same slot as current payload attributes", new Exception("Stack trace"));
+      LOG.debug(
+          "current payload attributes slot has been chosen for payload attributes calculation: {}",
+          currentSlot.get());
 
       // in case we propose two blocks in a row and we fail producing the first block,
       // we won't keep using the same first slot because internalAttestationsDue will
