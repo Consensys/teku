@@ -34,6 +34,7 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetSubscri
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopics;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
@@ -69,7 +70,8 @@ public class AttestationGossipManagerTest {
           gossipEncoding,
           recentChainData,
           gossipedAttestationProcessor,
-          forkInfo);
+          forkInfo,
+          ReputationManager.NOOP);
 
   @BeforeEach
   public void setup() {

@@ -18,6 +18,7 @@ import static tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment.L
 import static tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment.LARGE_REWARD;
 import static tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment.SMALL_PENALTY;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -42,6 +43,7 @@ class DefaultReputationManagerTest {
       DefaultReputationManager.BAN_PERIOD.intValue() + 1;
   private final StubTimeProvider timeProvider = StubTimeProvider.withTimeInSeconds(10_000);
   private final PeerAddress peerAddress = new PeerAddress(new MockNodeId(1));
+  private final PeerAddress peerAddress2 = new PeerAddress(new MockNodeId(2));
   private final StubMetricsSystem metricsSystem = new StubMetricsSystem();
 
   private final PeerPools peerPools = new PeerPools();
@@ -199,6 +201,15 @@ class DefaultReputationManagerTest {
   void shouldBeUnsuitableToConnectToAfterBeingDisconnected() {
     assertThat(reputationManager.adjustReputation(peerAddress, LARGE_PENALTY)).isTrue();
     assertThat(reputationManager.isConnectionInitiationAllowed(peerAddress)).isFalse();
+  }
+
+  @Test
+  void shouldShowPeerReputations() {
+    reputationManager.adjustReputation(peerAddress, LARGE_PENALTY);
+    reputationManager.adjustReputation(peerAddress2, SMALL_PENALTY);
+    final Map<String, String> peerReputationCache = reputationManager.getPeerReputationCache();
+    assertThat(peerReputationCache.get(peerAddress.getId().toBase58())).contains("score=0");
+    assertThat(peerReputationCache.get(peerAddress2.getId().toBase58())).contains("score=-3");
   }
 
   @ParameterizedTest

@@ -62,11 +62,9 @@ import tech.pegasys.teku.networking.p2p.network.P2PNetwork;
 import tech.pegasys.teku.networking.p2p.network.PeerHandler;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
-import tech.pegasys.teku.networking.p2p.reputation.DefaultReputationManager;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -123,6 +121,9 @@ public class Eth2P2PNetworkBuilder {
   protected StatusMessageFactory statusMessageFactory;
   protected KZG kzg;
   protected boolean recordMessageArrival;
+
+  protected ReputationManager reputationManager;
+  protected PeerPools peerPools;
 
   protected Eth2P2PNetworkBuilder() {}
 
@@ -217,7 +218,8 @@ public class Eth2P2PNetworkBuilder {
           gossipedAggregateProcessor,
           gossipedAttesterSlashingConsumer,
           gossipedProposerSlashingConsumer,
-          gossipedVoluntaryExitConsumer);
+          gossipedVoluntaryExitConsumer,
+          reputationManager);
       case ALTAIR -> new GossipForkSubscriptionsAltair(
           forkAndSpecMilestone.getFork(),
           spec,
@@ -233,7 +235,8 @@ public class Eth2P2PNetworkBuilder {
           gossipedProposerSlashingConsumer,
           gossipedVoluntaryExitConsumer,
           gossipedSignedContributionAndProofProcessor,
-          gossipedSyncCommitteeMessageProcessor);
+          gossipedSyncCommitteeMessageProcessor,
+          reputationManager);
       case BELLATRIX -> new GossipForkSubscriptionsBellatrix(
           forkAndSpecMilestone.getFork(),
           spec,
@@ -249,7 +252,8 @@ public class Eth2P2PNetworkBuilder {
           gossipedProposerSlashingConsumer,
           gossipedVoluntaryExitConsumer,
           gossipedSignedContributionAndProofProcessor,
-          gossipedSyncCommitteeMessageProcessor);
+          gossipedSyncCommitteeMessageProcessor,
+          reputationManager);
       case CAPELLA -> new GossipForkSubscriptionsCapella(
           forkAndSpecMilestone.getFork(),
           spec,
@@ -266,7 +270,8 @@ public class Eth2P2PNetworkBuilder {
           gossipedVoluntaryExitConsumer,
           gossipedSignedContributionAndProofProcessor,
           gossipedSyncCommitteeMessageProcessor,
-          gossipedSignedBlsToExecutionChangeProcessor);
+          gossipedSignedBlsToExecutionChangeProcessor,
+          reputationManager);
       case DENEB -> new GossipForkSubscriptionsDeneb(
           forkAndSpecMilestone.getFork(),
           spec,
@@ -284,17 +289,18 @@ public class Eth2P2PNetworkBuilder {
           gossipedVoluntaryExitConsumer,
           gossipedSignedContributionAndProofProcessor,
           gossipedSyncCommitteeMessageProcessor,
-          gossipedSignedBlsToExecutionChangeProcessor);
+          gossipedSignedBlsToExecutionChangeProcessor,
+          reputationManager);
     };
   }
 
   protected DiscoveryNetwork<?> buildNetwork(
       final GossipEncoding gossipEncoding,
       final SubnetSubscriptionService syncCommitteeSubnetService) {
-    final PeerPools peerPools = new PeerPools();
-    final ReputationManager reputationManager =
-        new DefaultReputationManager(
-            metricsSystem, timeProvider, Constants.REPUTATION_MANAGER_CAPACITY, peerPools);
+    //    final PeerPools peerPools = new PeerPools();
+    //    final ReputationManager reputationManager =
+    //        new DefaultReputationManager(
+    //            metricsSystem, timeProvider, Constants.REPUTATION_MANAGER_CAPACITY, peerPools);
     PreparedGossipMessageFactory defaultMessageFactory =
         gossipEncoding.createPreparedGossipMessageFactory(
             combinedChainDataClient.getRecentChainData()::getMilestoneByForkDigest);
@@ -405,6 +411,16 @@ public class Eth2P2PNetworkBuilder {
   public Eth2P2PNetworkBuilder config(final P2PConfig config) {
     checkNotNull(config);
     this.config = config;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder peerPools(final PeerPools peerPools) {
+    this.peerPools = peerPools;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder reputationManager(final ReputationManager reputationManager) {
+    this.reputationManager = reputationManager;
     return this;
   }
 

@@ -27,6 +27,7 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.SingleAttestationTopicHandler;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.StateAndBlockSummary;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
@@ -48,7 +49,8 @@ public class SingleAttestationTopicHandlerTest
         forkInfo,
         GossipTopicName.getAttestationSubnetTopicName(SUBNET_ID),
         spec.getGenesisSchemaDefinitions().getAttestationSchema(),
-        SUBNET_ID);
+        SUBNET_ID,
+        ReputationManager.NOOP);
   }
 
   @Test

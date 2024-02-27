@@ -32,6 +32,7 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 
 class CommitteeSubnetSubscriptionsTest {
 
@@ -195,7 +196,7 @@ class CommitteeSubnetSubscriptionsTest {
 
     protected TestCommitteeSubnetSubscriptions(
         final GossipNetwork gossipNetwork, final GossipEncoding gossipEncoding) {
-      super(gossipNetwork, gossipEncoding);
+      super(gossipNetwork, gossipEncoding, ReputationManager.NOOP);
     }
 
     @Override

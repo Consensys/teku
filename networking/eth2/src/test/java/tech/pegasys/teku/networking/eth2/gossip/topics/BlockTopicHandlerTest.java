@@ -27,6 +27,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -36,7 +37,14 @@ public class BlockTopicHandlerTest extends AbstractTopicHandlerTest<SignedBeacon
   @Override
   protected Eth2TopicHandler<SignedBeaconBlock> createHandler() {
     return new BlockGossipManager(
-            recentChainData, spec, asyncRunner, gossipNetwork, gossipEncoding, forkInfo, processor)
+            recentChainData,
+            spec,
+            asyncRunner,
+            gossipNetwork,
+            gossipEncoding,
+            forkInfo,
+            processor,
+            ReputationManager.NOOP)
         .getTopicHandler();
   }
 

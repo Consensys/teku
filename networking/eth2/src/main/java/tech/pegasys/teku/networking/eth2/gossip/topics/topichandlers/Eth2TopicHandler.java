@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers;
 
 import static tech.pegasys.teku.infrastructure.logging.P2PLogger.P2P_LOG;
 
+import io.libp2p.core.PeerId;
 import io.libp2p.core.pubsub.ValidationResult;
 import java.util.Optional;
 import java.util.concurrent.RejectedExecutionException;
@@ -38,6 +39,10 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationMilestoneValidat
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
+import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
+import tech.pegasys.teku.networking.p2p.network.PeerAddress;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.service.serviceutils.ServiceCapacityExceededException;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
@@ -55,6 +60,8 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
   private final OperationMilestoneValidator<MessageT> forkValidator;
   private final NetworkingSpecConfig networkingConfig;
 
+  private final ReputationManager reputationManager;
+
   public Eth2TopicHandler(
       final RecentChainData recentChainData,
       final AsyncRunner asyncRunner,
@@ -64,7 +71,8 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       final String topicName,
       final OperationMilestoneValidator<MessageT> forkValidator,
       final SszSchema<MessageT> messageType,
-      final NetworkingSpecConfig networkingConfig) {
+      final NetworkingSpecConfig networkingConfig,
+      final ReputationManager reputationManager) {
     this.asyncRunner = asyncRunner;
     this.processor = processor;
     this.gossipEncoding = gossipEncoding;
@@ -76,6 +84,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
     this.preparedGossipMessageFactory =
         gossipEncoding.createPreparedGossipMessageFactory(
             recentChainData::getMilestoneByForkDigest);
+    this.reputationManager = reputationManager;
   }
 
   public Eth2TopicHandler(
@@ -87,7 +96,8 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
       final GossipTopicName topicName,
       final OperationMilestoneValidator<MessageT> forkValidator,
       final SszSchema<MessageT> messageType,
-      final NetworkingSpecConfig networkingConfig) {
+      final NetworkingSpecConfig networkingConfig,
+      final ReputationManager reputationManager) {
     this(
         recentChainData,
         asyncRunner,
@@ -97,11 +107,18 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
         topicName.toString(),
         forkValidator,
         messageType,
-        networkingConfig);
+        networkingConfig,
+        reputationManager);
   }
 
   @Override
   public SafeFuture<ValidationResult> handleMessage(PreparedGossipMessage message) {
+    return handleMessage(message, Optional.empty());
+  }
+
+  @Override
+  public SafeFuture<ValidationResult> handleMessage(
+      PreparedGossipMessage message, Optional<Bytes> maybePeerIdBytes) {
     return SafeFuture.of(() -> deserialize(message))
         .thenCompose(
             deserialized -> {
@@ -116,7 +133,7 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
                           .process(deserialized, message.getArrivalTimestamp())
                           .thenApply(
                               internalValidation -> {
-                                processMessage(internalValidation, message);
+                                processMessage(internalValidation, message, maybePeerIdBytes);
                                 return GossipSubValidationUtil.fromInternalValidationResult(
                                     internalValidation);
                               }));
@@ -126,13 +143,15 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
 
   private void processMessage(
       final InternalValidationResult internalValidationResult,
-      final PreparedGossipMessage message) {
+      final PreparedGossipMessage message,
+      final Optional<Bytes> maybePeerIdBytes) {
     switch (internalValidationResult.code()) {
       case REJECT:
         P2P_LOG.onGossipRejected(
             getTopic(),
             message.getDecodedMessage().getDecodedMessage().orElse(Bytes.EMPTY),
             internalValidationResult.getDescription());
+        applySmallPenalty(maybePeerIdBytes);
         break;
       case IGNORE:
         LOG.trace("Ignoring message for topic: {}", this::getTopic);
@@ -146,6 +165,16 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
         throw new UnsupportedOperationException(
             "Unexpected validation result: " + internalValidationResult);
     }
+  }
+
+  private void applySmallPenalty(Optional<Bytes> maybePeerIdBytes) {
+    maybePeerIdBytes.ifPresentOrElse(
+        p -> {
+          final PeerId peerId = new PeerId(p.toArray());
+          final LibP2PNodeId libP2PNodeId = new LibP2PNodeId(peerId);
+          final PeerAddress peerAddress = new PeerAddress(libP2PNodeId);
+          reputationManager.adjustReputation(peerAddress, ReputationAdjustment.SMALL_PENALTY);
+        }, () -> LOG.error("Message was penalized but no peer was found {}", maybePeerIdBytes));
   }
 
   private String getTopicName() {

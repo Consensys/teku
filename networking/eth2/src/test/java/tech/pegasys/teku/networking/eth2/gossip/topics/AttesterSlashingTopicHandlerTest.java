@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.AttesterSlashingGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 
@@ -33,7 +34,14 @@ public class AttesterSlashingTopicHandlerTest extends AbstractTopicHandlerTest<A
   protected Eth2TopicHandler<?> createHandler() {
     final AttesterSlashingGossipManager gossipManager =
         new AttesterSlashingGossipManager(
-            spec, recentChainData, asyncRunner, null, gossipEncoding, forkInfo, processor);
+            spec,
+            recentChainData,
+            asyncRunner,
+            null,
+            gossipEncoding,
+            forkInfo,
+            processor,
+            ReputationManager.NOOP);
     return gossipManager.getTopicHandler();
   }
 

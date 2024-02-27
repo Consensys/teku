@@ -31,6 +31,7 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.DecodingException;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.PreparedGossipMessage;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.service.serviceutils.ServiceCapacityExceededException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -306,7 +307,8 @@ public class Eth2TopicHandlerTest {
           new OperationMilestoneValidator<>(
               spec, spec.getForkSchedule().getFork(UInt64.ZERO), message -> UInt64.ZERO),
           spec.getGenesisSchemaDefinitions().getSignedBeaconBlockSchema(),
-          spec.getNetworkingConfig());
+          spec.getNetworkingConfig(),
+          ReputationManager.NOOP);
       this.forkDigest =
           recentChainData.getForkDigestByMilestone(SpecMilestone.PHASE0).orElseThrow();
       deserializer =

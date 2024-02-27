@@ -18,6 +18,7 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.GossipTopicName;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
@@ -33,7 +34,8 @@ public class AggregateGossipManager extends AbstractGossipManager<SignedAggregat
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final OperationProcessor<ValidatableAttestation> processor) {
+      final OperationProcessor<ValidatableAttestation> processor,
+      final ReputationManager reputationManager) {
     super(
         recentChainData,
         GossipTopicName.BEACON_AGGREGATE_AND_PROOF,
@@ -50,7 +52,8 @@ public class AggregateGossipManager extends AbstractGossipManager<SignedAggregat
             .getSchemaDefinitions()
             .getSignedAggregateAndProofSchema(),
         message -> spec.computeEpochAtSlot(message.getMessage().getAggregate().getData().getSlot()),
-        spec.getNetworkingConfig());
+        spec.getNetworkingConfig(),
+        reputationManager);
   }
 
   public void onNewAggregate(final ValidatableAttestation validatableAttestation) {

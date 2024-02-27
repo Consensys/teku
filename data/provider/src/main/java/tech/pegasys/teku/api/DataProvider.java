@@ -18,6 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.function.IntSupplier;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -116,6 +117,7 @@ public class DataProvider {
     private ForkChoiceNotifier forkChoiceNotifier;
     private boolean isLivenessTrackingEnabled = true;
     private IntSupplier rejectedExecutionSupplier;
+    private ReputationManager reputationManager;
 
     public Builder recentChainData(final RecentChainData recentChainData) {
       this.recentChainData = recentChainData;
@@ -219,7 +221,8 @@ public class DataProvider {
 
     public DataProvider build() {
       final ConfigProvider configProvider = new ConfigProvider(spec);
-      final NetworkDataProvider networkDataProvider = new NetworkDataProvider(p2pNetwork);
+      final NetworkDataProvider networkDataProvider =
+          new NetworkDataProvider(p2pNetwork, reputationManager);
       final NodeDataProvider nodeDataProvider =
           new NodeDataProvider(
               attestationPool,
@@ -261,6 +264,11 @@ public class DataProvider {
 
     public Builder rejectedExecutionSupplier(final IntSupplier rejectedExecutionCountSupplier) {
       this.rejectedExecutionSupplier = rejectedExecutionCountSupplier;
+      return this;
+    }
+
+    public Builder reputationManager(final ReputationManager reputationManager) {
+      this.reputationManager = reputationManager;
       return this;
     }
   }

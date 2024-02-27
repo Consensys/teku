@@ -27,6 +27,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.storage.client.RecentChainData;
@@ -50,7 +51,8 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
       final OperationProcessor<T> processor,
       final SszSchema<T> gossipType,
       final Function<T, UInt64> getEpochForMessage,
-      final NetworkingSpecConfig networkingConfig) {
+      final NetworkingSpecConfig networkingConfig,
+      final ReputationManager reputationManager) {
     this.gossipNetwork = gossipNetwork;
     this.topicHandler =
         new Eth2TopicHandler<>(
@@ -63,7 +65,8 @@ public abstract class AbstractGossipManager<T extends SszData> implements Gossip
             new OperationMilestoneValidator<>(
                 recentChainData.getSpec(), forkInfo.getFork(), getEpochForMessage),
             gossipType,
-            networkingConfig);
+            networkingConfig,
+            reputationManager);
     this.gossipEncoding = gossipEncoding;
   }
 

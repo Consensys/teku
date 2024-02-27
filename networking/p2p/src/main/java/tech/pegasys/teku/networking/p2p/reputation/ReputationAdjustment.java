@@ -28,4 +28,8 @@ public enum ReputationAdjustment {
   int getScoreChange() {
     return scoreChange;
   }
+
+  public boolean isPenalty() {
+    return this == SMALL_PENALTY || this == LARGE_PENALTY;
+  }
 }

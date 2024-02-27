@@ -36,6 +36,11 @@ public interface TopicHandler {
    */
   SafeFuture<ValidationResult> handleMessage(PreparedGossipMessage message);
 
+  default SafeFuture<ValidationResult> handleMessage(
+      PreparedGossipMessage message, Optional<Bytes> maybePeerIdBytes) {
+    return handleMessage(message);
+  }
+
   /**
    * Expected maximum message size
    *

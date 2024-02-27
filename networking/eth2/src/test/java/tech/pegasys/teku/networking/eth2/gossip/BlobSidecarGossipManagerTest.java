@@ -39,6 +39,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -103,7 +104,8 @@ public class BlobSidecarGossipManagerTest {
             gossipNetwork,
             gossipEncoding,
             forkInfo,
-            processor);
+            processor,
+            ReputationManager.NOOP);
     blobSidecarGossipManager.subscribe();
   }
 

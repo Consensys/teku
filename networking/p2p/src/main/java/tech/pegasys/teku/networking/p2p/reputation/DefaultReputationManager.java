@@ -15,12 +15,15 @@ package tech.pegasys.teku.networking.p2p.reputation;
 
 import com.google.common.base.MoreObjects;
 import java.util.EnumSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
-import tech.pegasys.teku.infrastructure.collections.cache.Cache;
-import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
+import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -31,6 +34,7 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public class DefaultReputationManager implements ReputationManager {
+  private static final Logger LOG = LogManager.getLogger();
   // This is not a big ban, we expect the peer could be usable very soon
   public static final UInt64 COOLDOWN_PERIOD = UInt64.valueOf(TimeUnit.MINUTES.toSeconds(2));
   // It's a big ban, we expect that the peer is not useful until major changes, for example,
@@ -43,7 +47,8 @@ public class DefaultReputationManager implements ReputationManager {
   private static final int MAX_REPUTATION_SCORE = 2 * LARGE_CHANGE;
 
   private final TimeProvider timeProvider;
-  private final Cache<NodeId, Reputation> peerReputations;
+
+  private final Map<NodeId, Reputation> peerReputations;
   private final PeerPools peerPools;
 
   public DefaultReputationManager(
@@ -52,13 +57,19 @@ public class DefaultReputationManager implements ReputationManager {
       final int capacity,
       final PeerPools peerPools) {
     this.timeProvider = timeProvider;
-    this.peerReputations = LRUCache.create(capacity);
+    this.peerReputations = LimitedMap.createSynchronizedLRU(capacity);
     metricsSystem.createIntegerGauge(
         TekuMetricCategory.NETWORK,
         "peer_reputation_cache_size",
         "Total number of peer reputations tracked",
         peerReputations::size);
     this.peerPools = peerPools;
+  }
+
+  @Override
+  public Map<String, String> getPeerReputationCache() {
+    return peerReputations.entrySet().stream()
+        .collect(Collectors.toMap(e -> e.getKey().toBase58(), e -> e.getValue().toString()));
   }
 
   @Override
@@ -69,10 +80,11 @@ public class DefaultReputationManager implements ReputationManager {
 
   @Override
   public boolean isConnectionInitiationAllowed(final PeerAddress peerAddress) {
-    return peerReputations
-        .getCached(peerAddress.getId())
-        .map(reputation -> reputation.shouldInitiateConnection(timeProvider.getTimeInSeconds()))
-        .orElse(true);
+    final Reputation reputation = peerReputations.get(peerAddress.getId());
+    if (reputation == null) {
+      return true;
+    }
+    return reputation.shouldInitiateConnection(timeProvider.getTimeInSeconds());
   }
 
   @Override
@@ -102,12 +114,19 @@ public class DefaultReputationManager implements ReputationManager {
     if (peerPools.getPeerConnectionType(peerAddress.getId()).equals(PeerConnectionType.STATIC)) {
       return false;
     }
-    return getOrCreateReputation(peerAddress)
-        .adjustReputation(effect, timeProvider.getTimeInSeconds());
+    final boolean disconnected =
+        getOrCreateReputation(peerAddress)
+            .adjustReputation(effect, timeProvider.getTimeInSeconds());
+    if (disconnected) {
+      LOG.error("Peer {} has been disconnected.", peerAddress.getId().toBase58());
+    } else {
+      LOG.error("Peer {}, adjust {}", peerAddress.getId().toBase58(), effect);
+    }
+    return disconnected;
   }
 
   private Reputation getOrCreateReputation(final PeerAddress peerAddress) {
-    return peerReputations.get(peerAddress.getId(), key -> new Reputation());
+    return peerReputations.computeIfAbsent(peerAddress.getId(), __ -> new Reputation());
   }
 
   private static class Reputation {

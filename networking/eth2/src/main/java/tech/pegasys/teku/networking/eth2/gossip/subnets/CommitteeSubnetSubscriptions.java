@@ -20,20 +20,25 @@ import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 
 abstract class CommitteeSubnetSubscriptions {
 
   protected final GossipNetwork gossipNetwork;
   protected final GossipEncoding gossipEncoding;
+  protected final ReputationManager reputationManager;
 
   private final Int2ObjectMap<RequestedSubscription> subnetIdToSubscription =
       new Int2ObjectOpenHashMap<>();
   private boolean subscribed = false;
 
   protected CommitteeSubnetSubscriptions(
-      final GossipNetwork gossipNetwork, final GossipEncoding gossipEncoding) {
+      final GossipNetwork gossipNetwork,
+      final GossipEncoding gossipEncoding,
+      final ReputationManager reputationManager) {
     this.gossipNetwork = gossipNetwork;
     this.gossipEncoding = gossipEncoding;
+    this.reputationManager = reputationManager;
   }
 
   protected synchronized Optional<TopicChannel> getChannelForSubnet(final int subnetId) {

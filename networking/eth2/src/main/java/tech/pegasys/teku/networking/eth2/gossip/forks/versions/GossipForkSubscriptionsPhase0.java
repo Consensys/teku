@@ -31,6 +31,7 @@ import tech.pegasys.teku.networking.eth2.gossip.forks.GossipForkSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetSubscriptions;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -50,6 +51,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
   protected final DiscoveryNetwork<?> discoveryNetwork;
   protected final RecentChainData recentChainData;
   protected final GossipEncoding gossipEncoding;
+  protected final ReputationManager reputationManager;
 
   // Upstream consumers
   private final OperationProcessor<SignedBeaconBlock> blockProcessor;
@@ -79,7 +81,8 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
       final OperationProcessor<ValidatableAttestation> aggregateProcessor,
       final OperationProcessor<AttesterSlashing> attesterSlashingProcessor,
       final OperationProcessor<ProposerSlashing> proposerSlashingProcessor,
-      final OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor) {
+      final OperationProcessor<SignedVoluntaryExit> voluntaryExitProcessor,
+      final ReputationManager reputationManager) {
     this.fork = fork;
     this.spec = spec;
     this.asyncRunner = asyncRunner;
@@ -93,6 +96,7 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
     this.attesterSlashingProcessor = attesterSlashingProcessor;
     this.proposerSlashingProcessor = proposerSlashingProcessor;
     this.voluntaryExitProcessor = voluntaryExitProcessor;
+    this.reputationManager = reputationManager;
   }
 
   @Override
@@ -121,7 +125,8 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             gossipEncoding,
             recentChainData,
             attestationProcessor,
-            forkInfo);
+            forkInfo,
+            reputationManager);
 
     attestationGossipManager =
         new AttestationGossipManager(metricsSystem, attestationSubnetSubscriptions);
@@ -137,7 +142,8 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
-            blockProcessor);
+            blockProcessor,
+            reputationManager);
     addGossipManager(blockGossipManager);
   }
 
@@ -150,7 +156,8 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
-            aggregateProcessor);
+            aggregateProcessor,
+            reputationManager);
     addGossipManager(aggregateGossipManager);
   }
 
@@ -163,7 +170,8 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             gossipEncoding,
             forkInfo,
             voluntaryExitProcessor,
-            spec.getNetworkingConfig());
+            spec.getNetworkingConfig(),
+            reputationManager);
     addGossipManager(voluntaryExitGossipManager);
   }
 
@@ -176,7 +184,8 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             gossipEncoding,
             forkInfo,
             proposerSlashingProcessor,
-            spec.getNetworkingConfig());
+            spec.getNetworkingConfig(),
+            reputationManager);
     addGossipManager(proposerSlashingGossipManager);
   }
 
@@ -189,7 +198,8 @@ public class GossipForkSubscriptionsPhase0 implements GossipForkSubscriptions {
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
-            attesterSlashingProcessor);
+            attesterSlashingProcessor,
+            reputationManager);
     addGossipManager(attesterSlashingGossipManager);
   }
 

@@ -28,6 +28,7 @@ import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -40,7 +41,8 @@ public abstract class AbstractMigratedBeaconHandlerTest {
   protected Spec spec = TestSpecFactory.createMinimalPhase0();
 
   protected final JsonProvider jsonProvider = new JsonProvider();
-  protected final NetworkDataProvider network = new NetworkDataProvider(eth2P2PNetwork);
+  protected final NetworkDataProvider network =
+      new NetworkDataProvider(eth2P2PNetwork, ReputationManager.NOOP);
 
   protected final SyncService syncService = mock(SyncService.class);
   protected int rejectedExecutionCount = 0;

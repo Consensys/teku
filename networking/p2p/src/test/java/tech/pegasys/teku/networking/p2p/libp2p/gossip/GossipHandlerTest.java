@@ -48,7 +48,7 @@ public class GossipHandlerTest {
 
   @BeforeEach
   public void setup() {
-    when(topicHandler.handleMessage(any()))
+    when(topicHandler.handleMessage(any(), any()))
         .thenReturn(SafeFuture.completedFuture(ValidationResult.Valid));
     when(topicHandler.getMaxMessageSize()).thenReturn(gossipMaxSize);
     when(publisher.publish(any(), any())).thenReturn(SafeFuture.completedFuture(null));
@@ -67,7 +67,7 @@ public class GossipHandlerTest {
   public void apply_invalid() {
     final Bytes data = Bytes.fromHexString("0x01");
     final MockMessageApi message = new MockMessageApi(data, topic);
-    when(topicHandler.handleMessage(any()))
+    when(topicHandler.handleMessage(any(), any()))
         .thenReturn(SafeFuture.completedFuture(ValidationResult.Invalid));
     final SafeFuture<ValidationResult> result = gossipHandler.apply(message);
 

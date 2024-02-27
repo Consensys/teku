@@ -14,6 +14,7 @@
 package tech.pegasys.teku.api;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import tech.pegasys.teku.api.response.v1.node.Direction;
 import tech.pegasys.teku.api.response.v1.node.Peer;
@@ -21,13 +22,18 @@ import tech.pegasys.teku.api.response.v1.node.State;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.peer.NodeId;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessage;
 
 public class NetworkDataProvider {
   private final Eth2P2PNetwork network;
 
-  public NetworkDataProvider(final Eth2P2PNetwork network) {
+  private final ReputationManager reputationManager;
+
+  public NetworkDataProvider(
+      final Eth2P2PNetwork network, final ReputationManager reputationManager) {
     this.network = network;
+    this.reputationManager = reputationManager;
   }
 
   /**
@@ -89,6 +95,10 @@ public class NetworkDataProvider {
 
   public List<Eth2Peer> getPeerScores() {
     return network.streamPeers().toList();
+  }
+
+  public Map<String, String> getPeerReputations() {
+    return reputationManager.getPeerReputationCache();
   }
 
   public Optional<Peer> getPeerById(final String peerId) {

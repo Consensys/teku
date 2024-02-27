@@ -313,7 +313,11 @@ public class Eth2P2PNetworkFactory {
             .map(
                 forkAndSpecMilestone ->
                     createSubscriptions(
-                        forkAndSpecMilestone, metricsSystem, network, gossipEncoding))
+                        forkAndSpecMilestone,
+                        metricsSystem,
+                        network,
+                        gossipEncoding,
+                        reputationManager))
             .forEach(gossipForkManagerBuilder::fork);
 
         final GossipForkManager gossipForkManager = gossipForkManagerBuilder.build();
@@ -338,7 +342,8 @@ public class Eth2P2PNetworkFactory {
         final ForkAndSpecMilestone forkAndSpecMilestone,
         final NoOpMetricsSystem metricsSystem,
         final DiscoveryNetwork<?> network,
-        final GossipEncoding gossipEncoding) {
+        final GossipEncoding gossipEncoding,
+        final ReputationManager reputationManager) {
       return switch (forkAndSpecMilestone.getSpecMilestone()) {
         case PHASE0 -> new GossipForkSubscriptionsPhase0(
             forkAndSpecMilestone.getFork(),
@@ -353,7 +358,8 @@ public class Eth2P2PNetworkFactory {
             gossipedAggregateProcessor,
             attesterSlashingProcessor,
             proposerSlashingProcessor,
-            voluntaryExitProcessor);
+            voluntaryExitProcessor,
+            reputationManager);
         case ALTAIR -> new GossipForkSubscriptionsAltair(
             forkAndSpecMilestone.getFork(),
             spec,
@@ -369,7 +375,8 @@ public class Eth2P2PNetworkFactory {
             proposerSlashingProcessor,
             voluntaryExitProcessor,
             signedContributionAndProofProcessor,
-            syncCommitteeMessageProcessor);
+            syncCommitteeMessageProcessor,
+            reputationManager);
         case BELLATRIX -> new GossipForkSubscriptionsBellatrix(
             forkAndSpecMilestone.getFork(),
             spec,
@@ -385,7 +392,8 @@ public class Eth2P2PNetworkFactory {
             proposerSlashingProcessor,
             voluntaryExitProcessor,
             signedContributionAndProofProcessor,
-            syncCommitteeMessageProcessor);
+            syncCommitteeMessageProcessor,
+            reputationManager);
         case CAPELLA -> new GossipForkSubscriptionsCapella(
             forkAndSpecMilestone.getFork(),
             spec,
@@ -402,7 +410,8 @@ public class Eth2P2PNetworkFactory {
             voluntaryExitProcessor,
             signedContributionAndProofProcessor,
             syncCommitteeMessageProcessor,
-            signedBlsToExecutionChangeProcessor);
+            signedBlsToExecutionChangeProcessor,
+            reputationManager);
         case DENEB -> new GossipForkSubscriptionsDeneb(
             forkAndSpecMilestone.getFork(),
             spec,
@@ -420,7 +429,8 @@ public class Eth2P2PNetworkFactory {
             voluntaryExitProcessor,
             signedContributionAndProofProcessor,
             syncCommitteeMessageProcessor,
-            signedBlsToExecutionChangeProcessor);
+            signedBlsToExecutionChangeProcessor,
+            reputationManager);
       };
     }
 

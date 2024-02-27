@@ -82,7 +82,10 @@ import tech.pegasys.teku.networking.eth2.gossip.subnets.NodeBasedStableSubnetSub
 import tech.pegasys.teku.networking.eth2.gossip.subnets.StableSubnetSubscriber;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.SyncCommitteeSubscriptionManager;
 import tech.pegasys.teku.networking.eth2.mock.NoOpEth2P2PNetwork;
+import tech.pegasys.teku.networking.p2p.connection.PeerPools;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
+import tech.pegasys.teku.networking.p2p.reputation.DefaultReputationManager;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.networks.StateBoostrapConfig;
 import tech.pegasys.teku.service.serviceutils.Service;
@@ -91,6 +94,7 @@ import tech.pegasys.teku.services.executionlayer.ExecutionLayerBlockManagerFacto
 import tech.pegasys.teku.services.timer.TimerService;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
+import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -279,6 +283,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
   protected volatile ExecutionLayerBlockProductionManager executionLayerBlockProductionManager;
   protected volatile RewardCalculator rewardCalculator;
   protected UInt64 genesisTimeTracker = ZERO;
+  protected volatile ReputationManager reputationManager = null;
   protected BlockManager blockManager;
   protected TimerService timerService;
   protected PoolFactory poolFactory;
@@ -722,6 +727,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .combinedChainDataClient(combinedChainDataClient)
             .rewardCalculator(rewardCalculator)
             .p2pNetwork(p2pNetwork)
+            .reputationManager(reputationManager)
             .syncService(syncService)
             .validatorApiChannel(
                 eventChannels.getPublisher(ValidatorApiChannel.class, beaconAsyncRunner))
@@ -1058,9 +1064,16 @@ public class BeaconChainController extends Service implements BeaconChainControl
     PortAvailability.checkPortsAvailable(
         beaconConfig.p2pConfig().getNetworkConfig().getListenPort(), maybeUdpPort);
 
+    final PeerPools peerPools = new PeerPools();
+    reputationManager =
+        new DefaultReputationManager(
+            metricsSystem, timeProvider, Constants.REPUTATION_MANAGER_CAPACITY, peerPools);
+
     this.p2pNetwork =
         createEth2P2PNetworkBuilder()
             .config(beaconConfig.p2pConfig())
+            .peerPools(peerPools)
+            .reputationManager(reputationManager)
             .eventChannels(eventChannels)
             .combinedChainDataClient(combinedChainDataClient)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)

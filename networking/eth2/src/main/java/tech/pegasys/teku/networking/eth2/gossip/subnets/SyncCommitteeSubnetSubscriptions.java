@@ -22,6 +22,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationMilestoneValidat
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.ValidatableSyncCommitteeMessage;
@@ -46,8 +47,9 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
       final SchemaDefinitionsAltair schemaDefinitions,
       final AsyncRunner asyncRunner,
       final OperationProcessor<ValidatableSyncCommitteeMessage> processor,
-      final ForkInfo forkInfo) {
-    super(gossipNetwork, gossipEncoding);
+      final ForkInfo forkInfo,
+      final ReputationManager reputationManager) {
+    super(gossipNetwork, gossipEncoding, reputationManager);
     this.spec = spec;
     this.recentChainData = recentChainData;
     this.schemaDefinitions = schemaDefinitions;
@@ -81,6 +83,7 @@ public class SyncCommitteeSubnetSubscriptions extends CommitteeSubnetSubscriptio
             forkInfo.getFork(),
             message -> spec.computeEpochAtSlot(message.getSlot())),
         schemaDefinitions.getSyncCommitteeMessageSchema(),
-        spec.getNetworkingConfig());
+        spec.getNetworkingConfig(),
+        reputationManager);
   }
 }

@@ -19,6 +19,7 @@ import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
@@ -59,7 +60,8 @@ public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella
       final OperationProcessor<ValidatableSyncCommitteeMessage>
           syncCommitteeMessageOperationProcessor,
       final OperationProcessor<SignedBlsToExecutionChange>
-          signedBlsToExecutionChangeOperationProcessor) {
+          signedBlsToExecutionChangeOperationProcessor,
+      final ReputationManager reputationManager) {
     super(
         fork,
         spec,
@@ -76,7 +78,8 @@ public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella
         voluntaryExitProcessor,
         signedContributionAndProofOperationProcessor,
         syncCommitteeMessageOperationProcessor,
-        signedBlsToExecutionChangeOperationProcessor);
+        signedBlsToExecutionChangeOperationProcessor,
+        reputationManager);
     this.blobSidecarProcessor = blobSidecarProcessor;
   }
 
@@ -95,7 +98,8 @@ public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella
             discoveryNetwork,
             gossipEncoding,
             forkInfo,
-            blobSidecarProcessor);
+            blobSidecarProcessor,
+            reputationManager);
     addGossipManager(blobSidecarGossipManager);
   }
 

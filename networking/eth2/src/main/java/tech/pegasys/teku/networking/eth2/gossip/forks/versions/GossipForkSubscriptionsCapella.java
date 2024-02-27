@@ -21,6 +21,7 @@ import tech.pegasys.teku.networking.eth2.gossip.SignedBlsToExecutionChangeGossip
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -61,7 +62,8 @@ public class GossipForkSubscriptionsCapella extends GossipForkSubscriptionsBella
       final OperationProcessor<ValidatableSyncCommitteeMessage>
           syncCommitteeMessageOperationProcessor,
       final OperationProcessor<SignedBlsToExecutionChange>
-          signedBlsToExecutionChangeOperationProcessor) {
+          signedBlsToExecutionChangeOperationProcessor,
+      final ReputationManager reputationManager) {
     super(
         fork,
         spec,
@@ -77,7 +79,8 @@ public class GossipForkSubscriptionsCapella extends GossipForkSubscriptionsBella
         proposerSlashingProcessor,
         voluntaryExitProcessor,
         signedContributionAndProofOperationProcessor,
-        syncCommitteeMessageOperationProcessor);
+        syncCommitteeMessageOperationProcessor,
+        reputationManager);
 
     this.signedBlsToExecutionChangeOperationProcessor =
         signedBlsToExecutionChangeOperationProcessor;
@@ -97,7 +100,8 @@ public class GossipForkSubscriptionsCapella extends GossipForkSubscriptionsBella
             gossipEncoding,
             forkInfo,
             signedBlsToExecutionChangeOperationProcessor,
-            spec.getNetworkingConfig());
+            spec.getNetworkingConfig(),
+            reputationManager);
 
     addGossipManager(gossipManager);
     this.signedBlsToExecutionChangeGossipManager = Optional.of(gossipManager);

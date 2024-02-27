@@ -37,6 +37,7 @@ import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetEth1VotingSumma
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetProposersData;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.beacon.GetStateByBlockRoot;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.node.GetPeersScore;
+import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.node.GetReputationScoresCache;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.validatorInclusion.GetGlobalValidatorInclusion;
 import tech.pegasys.teku.beaconrestapi.handlers.tekuv1.validatorInclusion.GetValidatorInclusion;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetAttestations;
@@ -292,6 +293,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new Readiness(dataProvider))
             .endpoint(new GetAllBlocksAtSlot(dataProvider, schemaCache))
             .endpoint(new GetPeersScore(dataProvider))
+            .endpoint(new GetReputationScoresCache(dataProvider))
             .endpoint(new GetProposersData(dataProvider))
             .endpoint(new GetDeposits(eth1DataProvider))
             .endpoint(new GetEth1Data(dataProvider, eth1DataProvider))

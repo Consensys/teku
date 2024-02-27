@@ -28,6 +28,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
@@ -54,7 +55,8 @@ public class BlobSidecarGossipManager implements GossipManager {
       final GossipNetwork gossipNetwork,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final OperationProcessor<BlobSidecar> processor) {
+      final OperationProcessor<BlobSidecar> processor,
+      final ReputationManager reputationManager) {
     final SpecVersion forkSpecVersion = spec.atEpoch(forkInfo.getFork().getEpoch());
     final BlobSidecarSchema gossipType =
         SchemaDefinitionsDeneb.required(forkSpecVersion.getSchemaDefinitions())
@@ -74,7 +76,8 @@ public class BlobSidecarGossipManager implements GossipManager {
                       processor,
                       gossipEncoding,
                       forkInfo,
-                      gossipType);
+                      gossipType,
+                      reputationManager);
               subnetIdToTopicHandler.put(subnetId, topicHandler);
             });
     return new BlobSidecarGossipManager(
@@ -135,7 +138,8 @@ public class BlobSidecarGossipManager implements GossipManager {
       final OperationProcessor<BlobSidecar> processor,
       final GossipEncoding gossipEncoding,
       final ForkInfo forkInfo,
-      final BlobSidecarSchema gossipType) {
+      final BlobSidecarSchema gossipType,
+      final ReputationManager reputationManager) {
     return new Eth2TopicHandler<>(
         recentChainData,
         asyncRunner,
@@ -148,7 +152,8 @@ public class BlobSidecarGossipManager implements GossipManager {
             forkInfo.getFork(),
             blobSidecar -> spec.computeEpochAtSlot(blobSidecar.getSlot())),
         gossipType,
-        spec.getNetworkingConfig());
+        spec.getNetworkingConfig(),
+        reputationManager);
   }
 
   private record TopicSubnetIdAwareOperationProcessor(

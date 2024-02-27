@@ -23,6 +23,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 
 public class NetworkDataProviderTest {
 
@@ -31,7 +32,7 @@ public class NetworkDataProviderTest {
 
   @Test
   void getPeerCount_shouldReturnTotalPeers() {
-    final NetworkDataProvider network = new NetworkDataProvider(p2pNetwork);
+    final NetworkDataProvider network = new NetworkDataProvider(p2pNetwork, ReputationManager.NOOP);
     final Eth2Peer peer1 = mock(Eth2Peer.class);
     final Eth2Peer peer2 = mock(Eth2Peer.class);
     when(p2pNetwork.streamPeers()).thenReturn(Stream.of(peer1, peer2));
@@ -42,7 +43,7 @@ public class NetworkDataProviderTest {
 
   @Test
   void getPeerCount_shouldReturnTotalPeersIfEmpty() {
-    final NetworkDataProvider network = new NetworkDataProvider(p2pNetwork);
+    final NetworkDataProvider network = new NetworkDataProvider(p2pNetwork, ReputationManager.NOOP);
     when(p2pNetwork.streamPeers()).thenReturn(Stream.of());
 
     assertThat(network.getPeerCount()).isEqualTo(0);
@@ -51,7 +52,7 @@ public class NetworkDataProviderTest {
 
   @Test
   void getListeningAddresses_shouldReturnAddressFromNetwork() {
-    final NetworkDataProvider network = new NetworkDataProvider(p2pNetwork);
+    final NetworkDataProvider network = new NetworkDataProvider(p2pNetwork, ReputationManager.NOOP);
     final String nodeAddress = "/some/libp2p/addr";
 
     when(p2pNetwork.getNodeAddress()).thenReturn(nodeAddress);

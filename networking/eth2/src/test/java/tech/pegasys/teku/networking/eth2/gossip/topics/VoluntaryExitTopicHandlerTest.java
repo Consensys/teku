@@ -18,13 +18,23 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
+import io.libp2p.core.PeerId;
 import io.libp2p.core.pubsub.ValidationResult;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
+import org.hyperledger.besu.metrics.noop.NoOpMetricsSystem;
+import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.networking.eth2.gossip.VoluntaryExitGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHandler;
+import tech.pegasys.teku.networking.p2p.connection.PeerPools;
+import tech.pegasys.teku.networking.p2p.libp2p.LibP2PNodeId;
+import tech.pegasys.teku.networking.p2p.network.PeerAddress;
+import tech.pegasys.teku.networking.p2p.peer.Peer;
+import tech.pegasys.teku.networking.p2p.reputation.DefaultReputationManager;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.generator.VoluntaryExitGenerator;
@@ -37,6 +47,9 @@ public class VoluntaryExitTopicHandlerTest extends AbstractTopicHandlerTest<Sign
   private final VoluntaryExitGenerator exitGenerator =
       new VoluntaryExitGenerator(spec, storageSystem.chainBuilder().getValidatorKeys());
   private final int validEpoch = spec.computeEpochAtSlot(validSlot).intValue();
+  private final SystemTimeProvider timeProvider = new SystemTimeProvider();
+  private final PeerPools peerPools = new PeerPools();
+  private final ReputationManager reputationManager = new DefaultReputationManager(new NoOpMetricsSystem(), timeProvider, 100, peerPools);
 
   @Override
   protected Eth2TopicHandler<?> createHandler() {
@@ -47,7 +60,8 @@ public class VoluntaryExitTopicHandlerTest extends AbstractTopicHandlerTest<Sign
             gossipEncoding,
             forkInfo,
             processor,
-            spec.getNetworkingConfig())
+            spec.getNetworkingConfig(),
+            reputationManager)
         .getTopicHandler();
   }
 
@@ -61,7 +75,7 @@ public class VoluntaryExitTopicHandlerTest extends AbstractTopicHandlerTest<Sign
     final SignedVoluntaryExit exit = exitGenerator.withEpoch(getBestState(), validEpoch, 3);
     when(processor.process(exit, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
-    Bytes serialized = gossipEncoding.encode(exit);
+    final Bytes serialized = gossipEncoding.encode(exit);
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(serialized, Optional.empty()));
     asyncRunner.executeQueuedActions();
@@ -73,7 +87,7 @@ public class VoluntaryExitTopicHandlerTest extends AbstractTopicHandlerTest<Sign
     final SignedVoluntaryExit exit =
         exitGenerator.withEpoch(
             getBestState(), spec.computeEpochAtSlot(wrongForkSlot).intValue(), 3);
-    Bytes serialized = gossipEncoding.encode(exit);
+    final Bytes serialized = gossipEncoding.encode(exit);
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(serialized, Optional.empty()));
     asyncRunner.executeQueuedActions();
@@ -86,7 +100,7 @@ public class VoluntaryExitTopicHandlerTest extends AbstractTopicHandlerTest<Sign
     final SignedVoluntaryExit exit = exitGenerator.withEpoch(getBestState(), validEpoch, 3);
     when(processor.process(exit, Optional.empty()))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.IGNORE));
-    Bytes serialized = gossipEncoding.encode(exit);
+    final Bytes serialized = gossipEncoding.encode(exit);
     final SafeFuture<ValidationResult> result =
         topicHandler.handleMessage(topicHandler.prepareMessage(serialized, Optional.empty()));
     asyncRunner.executeQueuedActions();
@@ -94,8 +108,21 @@ public class VoluntaryExitTopicHandlerTest extends AbstractTopicHandlerTest<Sign
   }
 
   @Test
+  public void handleMessage_exitedValidator() {
+    final SignedVoluntaryExit exit = exitGenerator.withEpoch(getBestState(), validEpoch, 3);
+    when(processor.process(exit, Optional.empty()))
+            .thenReturn(SafeFuture.completedFuture(InternalValidationResult.reject("computer says no")));
+
+    final Bytes serialized = gossipEncoding.encode(exit);
+    final SafeFuture<ValidationResult> result =
+            topicHandler.handleMessage(topicHandler.prepareMessage(serialized, Optional.empty()), Optional.of(dataStructureUtil.randomBytes(32)));
+    asyncRunner.executeQueuedActions();
+    assertThat(result).isCompletedWithValue(ValidationResult.Invalid);
+  }
+
+  @Test
   public void handleMessage_invalidSSZ() {
-    Bytes serialized = Bytes.fromHexString("0x1234");
+    final Bytes serialized = Bytes.fromHexString("0x1234");
 
     final ValidationResult result =
         topicHandler

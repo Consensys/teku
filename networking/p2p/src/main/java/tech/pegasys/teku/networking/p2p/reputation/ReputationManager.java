@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.networking.p2p.reputation;
 
+import java.util.Map;
 import java.util.Optional;
 import tech.pegasys.teku.networking.p2p.network.PeerAddress;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
@@ -20,6 +21,11 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 public interface ReputationManager {
   ReputationManager NOOP =
       new ReputationManager() {
+        @Override
+        public Map<String, String> getPeerReputationCache() {
+          return Map.of();
+        }
+
         @Override
         public void reportInitiatedConnectionFailed(PeerAddress peerAddress) {}
 
@@ -40,6 +46,8 @@ public interface ReputationManager {
           return false;
         }
       };
+
+  Map<String, String> getPeerReputationCache();
 
   void reportInitiatedConnectionFailed(final PeerAddress peerAddress);
 

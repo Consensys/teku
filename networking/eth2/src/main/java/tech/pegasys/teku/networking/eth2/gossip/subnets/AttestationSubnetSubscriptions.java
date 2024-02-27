@@ -25,6 +25,7 @@ import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.Eth2TopicHa
 import tech.pegasys.teku.networking.eth2.gossip.topics.topichandlers.SingleAttestationTopicHandler;
 import tech.pegasys.teku.networking.p2p.gossip.GossipNetwork;
 import tech.pegasys.teku.networking.p2p.gossip.TopicChannel;
+import tech.pegasys.teku.networking.p2p.reputation.ReputationManager;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
@@ -48,8 +49,9 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
       final GossipEncoding gossipEncoding,
       final RecentChainData recentChainData,
       final OperationProcessor<ValidatableAttestation> processor,
-      final ForkInfo forkInfo) {
-    super(gossipNetwork, gossipEncoding);
+      final ForkInfo forkInfo,
+      final ReputationManager reputationManager) {
+    super(gossipNetwork, gossipEncoding, reputationManager);
     this.spec = spec;
     this.asyncRunner = asyncRunner;
     this.recentChainData = recentChainData;
@@ -93,7 +95,8 @@ public class AttestationSubnetSubscriptions extends CommitteeSubnetSubscriptions
         forkInfo,
         topicName,
         attestationSchema,
-        subnetId);
+        subnetId,
+        reputationManager);
   }
 
   private SafeFuture<Optional<Integer>> computeSubnetForAttestation(final Attestation attestation) {

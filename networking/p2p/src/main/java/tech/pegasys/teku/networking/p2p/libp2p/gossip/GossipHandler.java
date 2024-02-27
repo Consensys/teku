@@ -19,6 +19,7 @@ import io.libp2p.core.pubsub.Topic;
 import io.libp2p.core.pubsub.ValidationResult;
 import io.libp2p.pubsub.PubsubMessage;
 import io.netty.buffer.Unpooled;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
@@ -29,6 +30,8 @@ import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
+
+import static tech.pegasys.teku.spec.constants.Domain.VOLUNTARY_EXIT;
 
 public class GossipHandler implements Function<MessageApi, CompletableFuture<ValidationResult>> {
   private static final Logger LOG = LogManager.getLogger();
@@ -73,13 +76,22 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
     }
     LOG.trace("Received message for topic {}", topic);
 
+    final byte[] fromRaw = message.getFrom();
+    Optional<Bytes> from = Optional.empty();
+    if (fromRaw != null) {
+      from = Optional.of(Bytes.of(fromRaw));
+    } else {
+      if (topic.getTopic().contains("voluntary_exit")) {
+        LOG.error("from not set {}", topic);
+        }
+    }
     PubsubMessage pubsubMessage = message.getOriginalMessage();
     if (!(pubsubMessage instanceof PreparedPubsubMessage)) {
       throw new IllegalArgumentException(
           "Don't know this PubsubMessage implementation: " + pubsubMessage.getClass());
     }
     PreparedPubsubMessage gossipPubsubMessage = (PreparedPubsubMessage) pubsubMessage;
-    return handler.handleMessage(gossipPubsubMessage.getPreparedMessage());
+    return handler.handleMessage(gossipPubsubMessage.getPreparedMessage(), from);
   }
 
   public void gossip(Bytes bytes) {
