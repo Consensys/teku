@@ -5,7 +5,7 @@
   "properties" : {
     "version" : {
       "type" : "string",
-      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb" ]
+      "enum" : [ "phase0", "altair", "bellatrix", "capella", "deneb", "electra" ]
     },
     "execution_payload_blinded" : {
       "type" : "boolean"
@@ -41,7 +41,11 @@
         "$ref" : "#/components/schemas/BlockContentsDeneb"
       }, {
         "$ref" : "#/components/schemas/BlindedBlockDeneb"
-      } ]
+      }, {
+        "$ref" : "#/components/schemas/BlockContentsElectra"
+      }, {
+        "$ref" : "#/components/schemas/BlindedBlockElectra"
+      }  ]
     }
   }
 }

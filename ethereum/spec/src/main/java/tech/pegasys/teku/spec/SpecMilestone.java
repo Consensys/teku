@@ -26,13 +26,15 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 
 public enum SpecMilestone {
   PHASE0,
   ALTAIR,
   BELLATRIX,
   CAPELLA,
-  DENEB;
+  DENEB,
+  ELECTRA;
 
   /**
    * Returns true if this milestone is at or after the supplied milestone ({@code other})
@@ -102,39 +104,32 @@ public enum SpecMilestone {
 
   static Optional<Bytes4> getForkVersion(
       final SpecConfig specConfig, final SpecMilestone milestone) {
-    switch (milestone) {
-      case PHASE0:
-        return Optional.of(specConfig.getGenesisForkVersion());
-      case ALTAIR:
-        return specConfig.toVersionAltair().map(SpecConfigAltair::getAltairForkVersion);
-      case BELLATRIX:
-        return specConfig.toVersionBellatrix().map(SpecConfigBellatrix::getBellatrixForkVersion);
-      case CAPELLA:
-        return specConfig.toVersionCapella().map(SpecConfigCapella::getCapellaForkVersion);
-      case DENEB:
-        return specConfig.toVersionDeneb().map(SpecConfigDeneb::getDenebForkVersion);
-      default:
-        throw new UnsupportedOperationException("Unknown milestone requested: " + milestone.name());
-    }
+    return switch (milestone) {
+      case PHASE0 -> Optional.of(specConfig.getGenesisForkVersion());
+      case ALTAIR -> specConfig.toVersionAltair().map(SpecConfigAltair::getAltairForkVersion);
+      case BELLATRIX -> specConfig
+          .toVersionBellatrix()
+          .map(SpecConfigBellatrix::getBellatrixForkVersion);
+      case CAPELLA -> specConfig.toVersionCapella().map(SpecConfigCapella::getCapellaForkVersion);
+      case DENEB -> specConfig.toVersionDeneb().map(SpecConfigDeneb::getDenebForkVersion);
+      case ELECTRA -> specConfig.toVersionElectra().map(SpecConfigElectra::getElectraForkVersion);
+    };
   }
 
   static Optional<UInt64> getForkEpoch(final SpecConfig specConfig, final SpecMilestone milestone) {
-    switch (milestone) {
-      case PHASE0:
-        // Phase0 can only ever start at epoch 0 - no non-zero slot is valid. However, another fork
-        // may also be configured to start at epoch 0, effectively overriding phase0
-        return Optional.of(UInt64.ZERO);
-      case ALTAIR:
-        return specConfig.toVersionAltair().map(SpecConfigAltair::getAltairForkEpoch);
-      case BELLATRIX:
-        return specConfig.toVersionBellatrix().map(SpecConfigBellatrix::getBellatrixForkEpoch);
-      case CAPELLA:
-        return specConfig.toVersionCapella().map(SpecConfigCapella::getCapellaForkEpoch);
-      case DENEB:
-        return specConfig.toVersionDeneb().map(SpecConfigDeneb::getDenebForkEpoch);
-      default:
-        throw new UnsupportedOperationException("Unknown milestone requested: " + milestone.name());
-    }
+    return switch (milestone) {
+      case PHASE0 ->
+      // Phase0 can only ever start at epoch 0 - no non-zero slot is valid. However, another fork
+      // may also be configured to start at epoch 0, effectively overriding phase0
+      Optional.of(UInt64.ZERO);
+      case ALTAIR -> specConfig.toVersionAltair().map(SpecConfigAltair::getAltairForkEpoch);
+      case BELLATRIX -> specConfig
+          .toVersionBellatrix()
+          .map(SpecConfigBellatrix::getBellatrixForkEpoch);
+      case CAPELLA -> specConfig.toVersionCapella().map(SpecConfigCapella::getCapellaForkEpoch);
+      case DENEB -> specConfig.toVersionDeneb().map(SpecConfigDeneb::getDenebForkEpoch);
+      case ELECTRA -> specConfig.toVersionElectra().map(SpecConfigElectra::getElectraForkEpoch);
+    };
   }
 
   public static SpecMilestone forName(final String milestoneName) {

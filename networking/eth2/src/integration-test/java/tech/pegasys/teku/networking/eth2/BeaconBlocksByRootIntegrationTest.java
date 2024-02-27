@@ -254,11 +254,17 @@ public class BeaconBlocksByRootIntegrationTest extends AbstractRpcMethodIntegrat
           .hasRootCauseInstanceOf(UnrecognizedContextBytesException.class)
           .hasMessageContaining("Must request blocks with compatible fork.");
     } else {
-      assertThat(res).isCompletedExceptionally();
-      assertThatThrownBy(res::get)
-          .hasCauseInstanceOf(RpcException.class)
-          .hasRootCauseInstanceOf(DeserializationFailedException.class)
-          .hasMessageContaining("Failed to deserialize payload");
+      if (nextMilestone.equals(SpecMilestone.ELECTRA)) {
+        // ELECTRA block structure is temporarily the same as DENEB so wouldn't fail
+        assertThat(res).isCompleted();
+        assertThat(blocks).containsExactly(block1.getBlock(), block2.getBlock());
+      } else {
+        assertThat(res).isCompletedExceptionally();
+        assertThatThrownBy(res::get)
+            .hasCauseInstanceOf(RpcException.class)
+            .hasRootCauseInstanceOf(DeserializationFailedException.class)
+            .hasMessageContaining("Failed to deserialize payload");
+      }
     }
   }
 

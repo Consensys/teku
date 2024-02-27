@@ -36,6 +36,10 @@ public class BeaconBlockBodyBuilderDeneb extends BeaconBlockBodyBuilderCapella {
     super(schema, blindedSchema);
   }
 
+  protected SszList<SszKZGCommitment> getBlobKzgCommitments() {
+    return blobKzgCommitments;
+  }
+
   @Override
   public Boolean supportsKzgCommitments() {
     return true;
