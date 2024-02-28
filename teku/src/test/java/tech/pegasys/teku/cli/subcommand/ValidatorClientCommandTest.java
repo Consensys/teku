@@ -210,6 +210,23 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
             "--Xvalidator-client-executor-threads must be greater than 0 and less than 5000.");
   }
 
+  @Test
+  public void shouldSetUseDvtSelectionsEndpoint() {
+    final String[] args = {"vc", "--network", "minimal", "--Xdvt-integration-enabled"};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+
+    assertThat(config.validatorClient().getValidatorConfig().isDvtSelectionsEndpointEnabled())
+        .isTrue();
+  }
+
+  @Test
+  public void shouldNotUseDvtSelectionsEndpointByDefault() {
+    final String[] args = {"vc", "--network", "minimal"};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.validatorClient().getValidatorConfig().isDvtSelectionsEndpointEnabled())
+        .isFalse();
+  }
+
   private String pathFor(final String filename) {
     return Resources.getResource(ValidatorClientCommandTest.class, filename).toString();
   }

@@ -242,12 +242,4 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
     assertThat(config.validatorClient().getValidatorConfig().isDvtSelectionsEndpointEnabled())
         .isFalse();
   }
-
-  @Test
-  public void shouldSetUseDvtSelectionsEndpoint() {
-    final String[] args = {"--Xdvt-selections-endpoints-enabled"};
-    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
-    assertThat(config.validatorClient().getValidatorConfig().isDvtSelectionsEndpointEnabled())
-        .isTrue();
-  }
 }
