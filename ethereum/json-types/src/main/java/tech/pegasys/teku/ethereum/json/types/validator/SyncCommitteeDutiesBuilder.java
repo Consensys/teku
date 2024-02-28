@@ -16,19 +16,28 @@ package tech.pegasys.teku.ethereum.json.types.validator;
 import static tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDutyBuilder.SYNC_COMMITTEE_DUTY_TYPE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.listOf;
 
 import java.util.List;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class SyncCommitteeDutiesBuilder {
-  public static final SerializableTypeDefinition<SyncCommitteeDuties> SYNC_COMMITTEE_DUTIES_TYPE =
-      SerializableTypeDefinition.object(SyncCommitteeDuties.class)
+  public static final DeserializableTypeDefinition<SyncCommitteeDuties> SYNC_COMMITTEE_DUTIES_TYPE =
+      DeserializableTypeDefinition.object(
+              SyncCommitteeDuties.class, SyncCommitteeDutiesBuilder.class)
           .name("GetSyncCommitteeDutiesResponse")
-          .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, SyncCommitteeDuties::isExecutionOptimistic)
+          .initializer(SyncCommitteeDutiesBuilder::new)
+          .finisher(SyncCommitteeDutiesBuilder::build)
+          .withField(
+              EXECUTION_OPTIMISTIC,
+              BOOLEAN_TYPE,
+              SyncCommitteeDuties::isExecutionOptimistic,
+              SyncCommitteeDutiesBuilder::executionOptimistic)
           .withField(
               "data",
-              SerializableTypeDefinition.listOf(SYNC_COMMITTEE_DUTY_TYPE),
-              SyncCommitteeDuties::getDuties)
+              listOf(SYNC_COMMITTEE_DUTY_TYPE),
+              SyncCommitteeDuties::getDuties,
+              SyncCommitteeDutiesBuilder::duties)
           .build();
 
   private boolean executionOptimistic;
