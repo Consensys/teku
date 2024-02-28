@@ -225,7 +225,7 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
   }
 
   @Override
-  public Optional<PostSyncDutiesResponse> getSyncCommitteeDuties(
+  public Optional<PostSyncDutiesResponse> getSyncCommitteeDuties( // todo remove
       final UInt64 epoch, final Collection<Integer> validatorIndices) {
     return post(
         GET_SYNC_COMMITTEE_DUTIES,

@@ -14,14 +14,12 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.EPOCH_PARAMETER;
-import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.PUBLIC_KEY_TYPE;
+import static tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDutiesBuilder.SYNC_COMMITTEE_DUTIES_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SERVICE_UNAVAILABLE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -32,42 +30,19 @@ import java.util.Optional;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
-import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 
 public class PostSyncDuties extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/duties/sync/{epoch}";
   private final ValidatorDataProvider validatorDataProvider;
   private final SyncDataProvider syncDataProvider;
-
-  private static final SerializableTypeDefinition<SyncCommitteeDuty> SYNC_COMMITTEE_DUTY_TYPE =
-      SerializableTypeDefinition.object(SyncCommitteeDuty.class)
-          .withField("pubkey", PUBLIC_KEY_TYPE, SyncCommitteeDuty::getPublicKey)
-          .withField("validator_index", INTEGER_TYPE, SyncCommitteeDuty::getValidatorIndex)
-          .withField(
-              "validator_sync_committee_indices",
-              SerializableTypeDefinition.listOf(INTEGER_TYPE),
-              syncCommitteeDuty ->
-                  new IntArrayList(syncCommitteeDuty.getValidatorSyncCommitteeIndices()))
-          .build();
-
-  private static final SerializableTypeDefinition<SyncCommitteeDuties> RESPONSE_TYPE =
-      SerializableTypeDefinition.object(SyncCommitteeDuties.class)
-          .name("GetSyncCommitteeDutiesResponse")
-          .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, SyncCommitteeDuties::isExecutionOptimistic)
-          .withField(
-              "data",
-              SerializableTypeDefinition.listOf(SYNC_COMMITTEE_DUTY_TYPE),
-              SyncCommitteeDuties::getDuties)
-          .build();
 
   public PostSyncDuties(final DataProvider dataProvider) {
     this(dataProvider.getSyncDataProvider(), dataProvider.getValidatorDataProvider());
@@ -83,7 +58,7 @@ public class PostSyncDuties extends RestApiEndpoint {
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
             .pathParam(EPOCH_PARAMETER)
             .requestBodyType(DeserializableTypeDefinition.listOf(INTEGER_TYPE, 1))
-            .response(SC_OK, "Request successful", RESPONSE_TYPE)
+            .response(SC_OK, "Request successful", SYNC_COMMITTEE_DUTIES_TYPE)
             .withServiceUnavailableResponse()
             .build());
     this.validatorDataProvider = validatorDataProvider;
