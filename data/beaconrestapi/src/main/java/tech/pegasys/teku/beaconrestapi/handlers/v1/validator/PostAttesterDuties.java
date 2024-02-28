@@ -14,16 +14,12 @@
 package tech.pegasys.teku.beaconrestapi.handlers.v1.validator;
 
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.EPOCH_PARAMETER;
-import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.PUBLIC_KEY_TYPE;
+import static tech.pegasys.teku.ethereum.json.types.validator.AttesterDutiesBuilder.ATTESTER_DUTIES_RESPONSE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.EXECUTION_OPTIMISTIC;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -33,45 +29,19 @@ import java.util.Optional;
 import tech.pegasys.teku.api.DataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.ValidatorDataProvider;
+import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.AsyncApiResponse;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.EndpointMetadata;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.validator.api.AttesterDuties;
-import tech.pegasys.teku.validator.api.AttesterDuty;
 
 public class PostAttesterDuties extends RestApiEndpoint {
   public static final String ROUTE = "/eth/v1/validator/duties/attester/{epoch}";
   private final ValidatorDataProvider validatorDataProvider;
   private final SyncDataProvider syncDataProvider;
-
-  private static final SerializableTypeDefinition<AttesterDuty> ATTESTER_DUTY_TYPE =
-      SerializableTypeDefinition.object(AttesterDuty.class)
-          .name("AttesterDuty")
-          .withField("pubkey", PUBLIC_KEY_TYPE, AttesterDuty::getPublicKey)
-          .withField("validator_index", INTEGER_TYPE, AttesterDuty::getValidatorIndex)
-          .withField("committee_index", INTEGER_TYPE, AttesterDuty::getCommitteeIndex)
-          .withField("committee_length", INTEGER_TYPE, AttesterDuty::getCommitteeLength)
-          .withField("committees_at_slot", INTEGER_TYPE, AttesterDuty::getCommitteesAtSlot)
-          .withField(
-              "validator_committee_index", INTEGER_TYPE, AttesterDuty::getValidatorCommitteeIndex)
-          .withField("slot", UINT64_TYPE, AttesterDuty::getSlot)
-          .build();
-
-  private static final SerializableTypeDefinition<AttesterDuties> RESPONSE_TYPE =
-      SerializableTypeDefinition.object(AttesterDuties.class)
-          .name("GetAttesterDutiesResponse")
-          .withField("dependent_root", BYTES32_TYPE, AttesterDuties::getDependentRoot)
-          .withField(EXECUTION_OPTIMISTIC, BOOLEAN_TYPE, AttesterDuties::isExecutionOptimistic)
-          .withField(
-              "data",
-              SerializableTypeDefinition.listOf(ATTESTER_DUTY_TYPE),
-              AttesterDuties::getDuties)
-          .build();
 
   public PostAttesterDuties(final DataProvider dataProvider) {
     this(dataProvider.getSyncDataProvider(), dataProvider.getValidatorDataProvider());
@@ -100,7 +70,7 @@ public class PostAttesterDuties extends RestApiEndpoint {
             .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
             .requestBodyType(DeserializableTypeDefinition.listOf(INTEGER_TYPE, 1))
             .pathParam(EPOCH_PARAMETER)
-            .response(SC_OK, "Success response", RESPONSE_TYPE)
+            .response(SC_OK, "Success response", ATTESTER_DUTIES_RESPONSE_TYPE)
             .withServiceUnavailableResponse()
             .build());
     this.validatorDataProvider = validatorDataProvider;
