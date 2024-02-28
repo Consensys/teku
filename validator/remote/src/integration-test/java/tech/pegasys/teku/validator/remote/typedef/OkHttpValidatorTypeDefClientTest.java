@@ -13,11 +13,22 @@
 
 package tech.pegasys.teku.validator.remote.typedef;
 
+import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assumptions.assumeThat;
+import static tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorDataBuilder.STATE_VALIDATORS_RESPONSE_TYPE;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_METHOD_NOT_ALLOWED;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.json.JsonUtil.serialize;
+import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.List;
 import java.util.Optional;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -26,7 +37,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
-import tech.pegasys.teku.infrastructure.json.JsonUtil;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.infrastructure.ssz.SszDataAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -37,10 +49,14 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
+import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
+import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.networks.Eth2Network;
 import tech.pegasys.teku.spec.schemas.ApiSchemas;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
+import tech.pegasys.teku.validator.remote.apiclient.PostStateValidatorsNotExistingException;
+import tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod;
 import tech.pegasys.teku.validator.remote.typedef.handlers.RegisterValidatorsRequest;
 
 @TestSpecContext(allMilestones = true, network = Eth2Network.MINIMAL)
@@ -136,7 +152,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     final RecordedRequest recordedRequest = mockWebServer.takeRequest();
 
     final String expectedRequest =
-        JsonUtil.serialize(
+        serialize(
             signedBeaconBlock,
             spec.atSlot(UInt64.ONE)
                 .getSchemaDefinitions()
@@ -193,7 +209,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
         dataStructureUtil.randomSignedValidatorRegistrations(5);
 
     final String expectedRequest =
-        JsonUtil.serialize(
+        serialize(
             validatorRegistrations,
             ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA.getJsonTypeDefinition());
 
@@ -323,6 +339,77 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     assertThat(secondRequest.getPath()).startsWith("/eth/v1/validator/blinded_blocks");
   }
 
+  @TestTemplate
+  void postValidators_MakesExpectedRequest() throws Exception {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
+
+    okHttpValidatorTypeDefClient.postStateValidators(List.of("1", "0x1234"));
+
+    final RecordedRequest request = mockWebServer.takeRequest();
+    assertThat(request.getMethod()).isEqualTo("POST");
+
+    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_VALIDATORS.getPath(emptyMap()));
+    assertThat(request.getBody().readUtf8()).isEqualTo("{\"ids\":[\"1\",\"0x1234\"]}");
+  }
+
+  @TestTemplate
+  public void postValidators_WhenNoContent_ReturnsEmpty() {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
+
+    assertThat(okHttpValidatorTypeDefClient.postStateValidators(List.of("1"))).isEmpty();
+  }
+
+  @TestTemplate
+  public void postValidators_WhenNotExisting_ThrowsException() {
+    final List<Integer> responseCodes =
+        List.of(SC_BAD_REQUEST, SC_NOT_FOUND, SC_METHOD_NOT_ALLOWED);
+    for (int code : responseCodes) {
+      checkThrowsExceptionForCode(code);
+    }
+  }
+
+  private void checkThrowsExceptionForCode(final int responseCode) {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(responseCode));
+    assertThatThrownBy(() -> okHttpValidatorTypeDefClient.postStateValidators(List.of("1")))
+        .isInstanceOf(PostStateValidatorsNotExistingException.class);
+  }
+
+  @TestTemplate
+  public void postValidators_WhenSuccess_ReturnsResponse() throws JsonProcessingException {
+    final List<StateValidatorData> expected =
+        List.of(generateStateValidatorData(), generateStateValidatorData());
+    final ObjectAndMetaData<List<StateValidatorData>> response =
+        new ObjectAndMetaData<>(expected, specMilestone, false, true, false);
+
+    final String body = serialize(response, STATE_VALIDATORS_RESPONSE_TYPE);
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(body));
+
+    Optional<List<StateValidatorData>> result =
+        okHttpValidatorTypeDefClient.postStateValidators(List.of("1", "2"));
+
+    assertThat(result).isPresent();
+    assertThat(result.get()).isEqualTo(expected);
+  }
+
+  private StateValidatorData generateStateValidatorData() {
+    final long index = dataStructureUtil.randomLong();
+    final Validator validator =
+        new Validator(
+            dataStructureUtil.randomPublicKey(),
+            dataStructureUtil.randomBytes32(),
+            dataStructureUtil.randomUInt64(),
+            false,
+            UInt64.ZERO,
+            UInt64.ZERO,
+            FAR_FUTURE_EPOCH,
+            FAR_FUTURE_EPOCH);
+    return new StateValidatorData(
+        UInt64.valueOf(index),
+        dataStructureUtil.randomUInt64(),
+        ValidatorStatus.active_ongoing,
+        validator);
+  }
+
   private void verifyRegisterValidatorsPostRequest(
       final RecordedRequest recordedRequest, final String expectedContentType) {
     assertThat(recordedRequest.getPath()).isEqualTo("/eth/v1/validator/register_validator");
@@ -341,7 +428,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
   private String serializeBlockContainer(final BlockContainer blockContainer)
       throws JsonProcessingException {
-    return JsonUtil.serialize(
+    return serialize(
         blockContainer,
         blockContainer.isBlinded()
             ? schemaDefinitions.getBlindedBlockContainerSchema().getJsonTypeDefinition()
