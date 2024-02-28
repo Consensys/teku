@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
@@ -40,6 +41,8 @@ public class BeaconStateBuilderElectra
   private SyncCommittee currentSyncCommittee;
   private SyncCommittee nextSyncCommittee;
   private ExecutionPayloadHeader latestExecutionPayloadHeader;
+
+  private UInt64 depositReceiptsStartIndex;
 
   protected BeaconStateBuilderElectra(
       final SpecVersion spec,
@@ -64,6 +67,7 @@ public class BeaconStateBuilderElectra
     state.setLatestExecutionPayloadHeader(latestExecutionPayloadHeader);
     state.setNextWithdrawalIndex(nextWithdrawalIndex);
     state.setNextWithdrawalValidatorIndex(nextWithdrawalValidatorIndex);
+    state.setDepositReceiptsStartIndex(depositReceiptsStartIndex);
   }
 
   public static BeaconStateBuilderElectra create(
@@ -88,6 +92,13 @@ public class BeaconStateBuilderElectra
       final UInt64 nextWithdrawalValidatorIndex) {
     checkNotNull(nextWithdrawalValidatorIndex);
     this.nextWithdrawalValidatorIndex = nextWithdrawalValidatorIndex;
+    return this;
+  }
+
+  public BeaconStateBuilderElectra depositReceiptsStartIndex(
+      final UInt64 depositReceiptsStartIndex) {
+    checkNotNull(depositReceiptsStartIndex);
+    this.depositReceiptsStartIndex = depositReceiptsStartIndex;
     return this;
   }
 
@@ -125,5 +136,7 @@ public class BeaconStateBuilderElectra
         defaultValidatorCount > 0
             ? dataStructureUtil.randomUInt64(defaultValidatorCount)
             : UInt64.ZERO;
+
+    this.depositReceiptsStartIndex = SpecConfigElectra.UNSET_DEPOSIT_RECEIPTS_START_INDEX;
   }
 }
