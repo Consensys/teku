@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceiptSchema;
 
 public interface ExecutionPayloadSchema<T extends ExecutionPayload>
     extends SszContainerSchema<T>, BuilderPayloadSchema<T> {
@@ -34,6 +35,8 @@ public interface ExecutionPayloadSchema<T extends ExecutionPayload>
   SszListSchema<Withdrawal, ? extends SszList<Withdrawal>> getWithdrawalsSchemaRequired();
 
   WithdrawalSchema getWithdrawalSchemaRequired();
+
+  DepositReceiptSchema getDepositReceiptSchemaRequired();
 
   LongList getBlindedNodeGeneralizedIndices();
 

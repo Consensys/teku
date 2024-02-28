@@ -120,6 +120,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.forkchoice.VoteTracker;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrap;
 import tech.pegasys.teku.spec.datastructures.lightclient.LightClientBootstrapSchema;
@@ -184,6 +185,7 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsBellatrix;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitionsElectra;
 
 public final class DataStructureUtil {
 
@@ -2149,6 +2151,17 @@ public final class DataStructureUtil {
         .create(randomUInt64(), randomValidatorIndex(), randomBytes20(), randomUInt64());
   }
 
+  public DepositReceipt randomDepositReceipt() {
+    return getElectraSchemaDefinitions(randomSlot())
+        .getDepositReceiptSchema()
+        .create(
+            randomPublicKey(),
+            randomEth1WithdrawalCredentials(),
+            randomUInt64(),
+            randomSignature(),
+            randomUInt64());
+  }
+
   public HistoricalSummary randomHistoricalSummary() {
     return getCapellaSchemaDefinitions(randomSlot())
         .getHistoricalSummarySchema()
@@ -2564,6 +2577,10 @@ public final class DataStructureUtil {
 
   private SchemaDefinitionsDeneb getDenebSchemaDefinitions(final UInt64 slot) {
     return SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions());
+  }
+
+  private SchemaDefinitionsElectra getElectraSchemaDefinitions(final UInt64 slot) {
+    return SchemaDefinitionsElectra.required(spec.atSlot(slot).getSchemaDefinitions());
   }
 
   int getEpochsPerEth1VotingPeriod() {

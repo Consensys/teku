@@ -26,6 +26,9 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 
 public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
 
+  @JsonProperty("deposit_receipts_root")
+  public final Bytes32 depositReceiptsRoot;
+
   @JsonCreator
   public ExecutionPayloadHeaderElectra(
       @JsonProperty("parent_hash") final Bytes32 parentHash,
@@ -44,7 +47,8 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
       @JsonProperty("transactions_root") final Bytes32 transactionsRoot,
       @JsonProperty("withdrawals_root") final Bytes32 withdrawalsRoot,
       @JsonProperty("blob_gas_used") final UInt64 blobGasUsed,
-      @JsonProperty("excess_blob_gas") final UInt64 excessBlobGas) {
+      @JsonProperty("excess_blob_gas") final UInt64 excessBlobGas,
+      @JsonProperty("deposit_receipts_root") final Bytes32 depositReceiptsRoot) {
     super(
         parentHash,
         feeRecipient,
@@ -63,6 +67,7 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
         withdrawalsRoot,
         blobGasUsed,
         excessBlobGas);
+    this.depositReceiptsRoot = depositReceiptsRoot;
   }
 
   public ExecutionPayloadHeaderElectra(final ExecutionPayloadHeader executionPayloadHeader) {
@@ -84,6 +89,8 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
         executionPayloadHeader.getOptionalWithdrawalsRoot().orElseThrow(),
         executionPayloadHeader.toVersionDeneb().orElseThrow().getBlobGasUsed(),
         executionPayloadHeader.toVersionDeneb().orElseThrow().getExcessBlobGas());
+    this.depositReceiptsRoot =
+        executionPayloadHeader.toVersionElectra().orElseThrow().getDepositReceiptsRoot();
   }
 
   @Override
