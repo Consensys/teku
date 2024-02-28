@@ -464,7 +464,8 @@ public class ValidatorClientService extends Service {
                 validators,
                 validatorIndexProvider,
                 beaconCommitteeSubscriptions,
-                spec));
+                spec,
+                config.getValidatorConfig().isDvtSelectionsEndpointEnabled()));
     final DutyLoader<?> blockDutyLoader =
         new RetryingDutyLoader<>(
             asyncRunner,
