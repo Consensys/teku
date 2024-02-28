@@ -25,9 +25,9 @@ public class SpecConfigElectraTest {
 
   @Test
   public void equals_mainnet() {
-    SpecConfigElectra configA =
+    final SpecConfigElectra configA =
         SpecConfigLoader.loadConfig("mainnet").toVersionElectra().orElseThrow();
-    SpecConfigElectra configB =
+    final SpecConfigElectra configB =
         SpecConfigLoader.loadConfig("mainnet").toVersionElectra().orElseThrow();
 
     assertThat(configA).isEqualTo(configB);
@@ -36,10 +36,10 @@ public class SpecConfigElectraTest {
 
   @Test
   public void equals_sameRandomValues() {
-    SpecConfigDeneb specConfigDeneb =
+    final SpecConfigDeneb specConfigDeneb =
         SpecConfigLoader.loadConfig("mainnet").toVersionDeneb().orElseThrow();
-    SpecConfigElectra configA = createRandomElectraConfig(specConfigDeneb, 1);
-    SpecConfigElectra configB = createRandomElectraConfig(specConfigDeneb, 1);
+    final SpecConfigElectra configA = createRandomElectraConfig(specConfigDeneb, 1);
+    final SpecConfigElectra configB = createRandomElectraConfig(specConfigDeneb, 1);
 
     assertThat(configA).isEqualTo(configB);
     assertThat(configA.hashCode()).isEqualTo(configB.hashCode());
@@ -47,10 +47,10 @@ public class SpecConfigElectraTest {
 
   @Test
   public void equals_differentRandomValues() {
-    SpecConfigDeneb specConfigDeneb =
+    final SpecConfigDeneb specConfigDeneb =
         SpecConfigLoader.loadConfig("mainnet").toVersionDeneb().orElseThrow();
-    SpecConfigElectra configA = createRandomElectraConfig(specConfigDeneb, 1);
-    SpecConfigElectra configB = createRandomElectraConfig(specConfigDeneb, 2);
+    final SpecConfigElectra configA = createRandomElectraConfig(specConfigDeneb, 1);
+    final SpecConfigElectra configB = createRandomElectraConfig(specConfigDeneb, 2);
 
     assertThat(configA).isNotEqualTo(configB);
     assertThat(configA.hashCode()).isNotEqualTo(configB.hashCode());
@@ -58,16 +58,17 @@ public class SpecConfigElectraTest {
 
   @Test
   public void equals_denebConfigDiffer() {
-    SpecConfigDeneb denebA = SpecConfigLoader.loadConfig("mainnet").toVersionDeneb().orElseThrow();
-    SpecConfigDeneb denebB =
+    final SpecConfigDeneb denebA =
+        SpecConfigLoader.loadConfig("mainnet").toVersionDeneb().orElseThrow();
+    final SpecConfigDeneb denebB =
         SpecConfigLoader.loadConfig(
                 "mainnet",
                 b -> b.denebBuilder(db -> db.maxBlobsPerBlock(denebA.getMaxBlobsPerBlock() + 4)))
             .toVersionDeneb()
             .orElseThrow();
 
-    SpecConfigElectra configA = createRandomElectraConfig(denebA, 1);
-    SpecConfigElectra configB = createRandomElectraConfig(denebB, 1);
+    final SpecConfigElectra configA = createRandomElectraConfig(denebA, 1);
+    final SpecConfigElectra configB = createRandomElectraConfig(denebB, 1);
 
     assertThat(configA).isNotEqualTo(configB);
     assertThat(configA.hashCode()).isNotEqualTo(configB.hashCode());
