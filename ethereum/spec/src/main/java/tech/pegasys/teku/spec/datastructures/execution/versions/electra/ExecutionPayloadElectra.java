@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadDeneb;
@@ -29,6 +30,8 @@ public interface ExecutionPayloadElectra extends ExecutionPayload, ExecutionPayl
                     "Expected Electra execution payload but got "
                         + payload.getClass().getSimpleName()));
   }
+
+  SszList<DepositReceipt> getDepositReceipts();
 
   @Override
   default Optional<ExecutionPayloadElectra> toVersionElectra() {

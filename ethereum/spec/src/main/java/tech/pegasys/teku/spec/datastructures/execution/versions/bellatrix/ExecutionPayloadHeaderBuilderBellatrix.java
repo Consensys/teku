@@ -152,6 +152,12 @@ public class ExecutionPayloadHeaderBuilderBellatrix implements ExecutionPayloadH
     return this;
   }
 
+  @Override
+  public ExecutionPayloadHeaderBuilder depositReceiptsRoot(
+      final Supplier<Bytes32> depositReceiptsRootSupplier) {
+    return this;
+  }
+
   protected void validateSchema() {
     checkNotNull(schema, "schema must be specified");
   }

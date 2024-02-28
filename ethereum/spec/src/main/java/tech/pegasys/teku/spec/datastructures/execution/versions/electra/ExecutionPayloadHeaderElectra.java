@@ -14,9 +14,12 @@
 package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderDeneb;
 
 public interface ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
+
+  Bytes32 getDepositReceiptsRoot();
 
   @Override
   default Optional<ExecutionPayloadHeaderElectra> toVersionElectra() {
