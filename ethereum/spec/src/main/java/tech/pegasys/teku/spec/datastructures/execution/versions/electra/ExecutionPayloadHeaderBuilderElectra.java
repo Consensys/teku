@@ -15,19 +15,31 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.function.Supplier;
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionPayloadHeaderBuilderDeneb;
 
 public class ExecutionPayloadHeaderBuilderElectra extends ExecutionPayloadHeaderBuilderDeneb {
   private ExecutionPayloadHeaderSchemaElectra schema;
 
+  protected Bytes32 depositReceiptsRoot;
+
   public ExecutionPayloadHeaderBuilderElectra schema(
       final ExecutionPayloadHeaderSchemaElectra schema) {
     this.schema = schema;
+    return this;
+  }
+
+  @Override
+  public ExecutionPayloadHeaderBuilder depositReceiptsRoot(
+      final Supplier<Bytes32> depositReceiptsRootSupplier) {
+    this.depositReceiptsRoot = depositReceiptsRootSupplier.get();
     return this;
   }
 
@@ -39,6 +51,7 @@ public class ExecutionPayloadHeaderBuilderElectra extends ExecutionPayloadHeader
   @Override
   protected void validate() {
     super.validate();
+    checkNotNull(depositReceiptsRoot, "depositReceiptsRoot must be specified");
   }
 
   @Override
@@ -62,6 +75,7 @@ public class ExecutionPayloadHeaderBuilderElectra extends ExecutionPayloadHeader
         SszBytes32.of(transactionsRoot),
         SszBytes32.of(withdrawalsRoot),
         SszUInt64.of(blobGasUsed),
-        SszUInt64.of(excessBlobGas));
+        SszUInt64.of(excessBlobGas),
+        SszBytes32.of(depositReceiptsRoot));
   }
 }
