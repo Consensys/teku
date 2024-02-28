@@ -193,6 +193,7 @@ public final class DataStructureUtil {
   private static final int MAX_EP_RANDOM_TRANSACTIONS_SIZE = 32;
 
   private static final int MAX_EP_RANDOM_WITHDRAWALS = 4;
+  private static final int MAX_EP_RANDOM_DEPOSIT_RECEIPTS = 4;
 
   private final Spec spec;
 
@@ -572,7 +573,8 @@ public final class DataStructureUtil {
                     .transactionsRoot(randomBytes32())
                     .withdrawalsRoot(() -> withdrawalsRoot)
                     .blobGasUsed(this::randomUInt64)
-                    .excessBlobGas(this::randomUInt64));
+                    .excessBlobGas(this::randomUInt64)
+                    .depositReceiptsRoot(this::randomBytes32));
   }
 
   public ExecutionPayloadHeader randomExecutionPayloadHeader(final SpecVersion specVersion) {
@@ -682,7 +684,8 @@ public final class DataStructureUtil {
                       .transactions(randomExecutionPayloadTransactions())
                       .withdrawals(this::randomExecutionPayloadWithdrawals)
                       .blobGasUsed(this::randomUInt64)
-                      .excessBlobGas(this::randomUInt64);
+                      .excessBlobGas(this::randomUInt64)
+                      .depositReceipts(this::randomExecutionPayloadDepositReceipts);
               postRandomModifications.accept(executionPayloadBuilder);
             });
   }
@@ -704,6 +707,12 @@ public final class DataStructureUtil {
   public List<Withdrawal> randomExecutionPayloadWithdrawals() {
     return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_WITHDRAWALS))
         .mapToObj(__ -> randomWithdrawal())
+        .collect(toList());
+  }
+
+  public List<DepositReceipt> randomExecutionPayloadDepositReceipts() {
+    return IntStream.rangeClosed(0, randomInt(MAX_EP_RANDOM_DEPOSIT_RECEIPTS))
+        .mapToObj(__ -> randomDepositReceipt())
         .collect(toList());
   }
 
