@@ -28,6 +28,7 @@ public class DvtAttestationAggregations {
 
   // TODO-lucas add a limit on the number of entries in batch request
 
+  @SuppressWarnings("unused")
   private static final Logger LOG = LogManager.getLogger();
 
   private final ValidatorApiChannel validatorApiChannel;
