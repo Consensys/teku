@@ -46,6 +46,7 @@ import tech.pegasys.teku.validator.remote.typedef.handlers.GetProposerDutiesRequ
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetStateValidatorsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetSyncingStatusRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.PostAttesterDutiesRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.PostStateValidatorsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.ProduceBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.RegisterValidatorsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendSignedBlockRequest;
@@ -62,6 +63,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   private final GetProposerDutiesRequest getProposerDutiesRequest;
   private final GetStateValidatorsRequest getStateValidatorsRequest;
   private final PostAttesterDutiesRequest postAttesterDutiesRequest;
+  private final PostStateValidatorsRequest postStateValidatorsRequest;
   private final SendSignedBlockRequest sendSignedBlockRequest;
   private final RegisterValidatorsRequest registerValidatorsRequest;
   private final CreateAttestationDataRequest createAttestationDataRequest;
@@ -80,6 +82,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     this.getGenesisRequest = new GetGenesisRequest(okHttpClient, baseEndpoint);
     this.getProposerDutiesRequest = new GetProposerDutiesRequest(baseEndpoint, okHttpClient);
     this.getStateValidatorsRequest = new GetStateValidatorsRequest(baseEndpoint, okHttpClient);
+    this.postStateValidatorsRequest = new PostStateValidatorsRequest(baseEndpoint, okHttpClient);
     this.postAttesterDutiesRequest = new PostAttesterDutiesRequest(baseEndpoint, okHttpClient);
     this.sendSignedBlockRequest =
         new SendSignedBlockRequest(spec, baseEndpoint, okHttpClient, preferSszBlockEncoding);
@@ -112,6 +115,12 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   public Optional<List<StateValidatorData>> getStateValidators(final List<String> validatorIds) {
     return getStateValidatorsRequest
         .getStateValidators(validatorIds)
+        .map(ObjectAndMetaData::getData);
+  }
+
+  public Optional<List<StateValidatorData>> postStateValidators(final List<String> validatorIds) {
+    return postStateValidatorsRequest
+        .postStateValidators(validatorIds)
         .map(ObjectAndMetaData::getData);
   }
 
