@@ -61,7 +61,7 @@ executors:
 
   machine_executor_amd64:
     machine:
-      image: ubuntu-2204:2023.07.2 # https://circleci.com/developer/machine/image/ubuntu-2204
+      image: ubuntu-2204:2024.01.1 # https://circleci.com/developer/machine/image/ubuntu-2204
       docker_layer_caching: true
     working_directory: ~/project
     environment:
@@ -70,7 +70,7 @@ executors:
 
   machine_executor_arm64:
     machine:
-      image: ubuntu-2204:2023.07.2 # https://circleci.com/developer/machine/image/ubuntu-2204
+      image: ubuntu-2204:2024.01.1 # https://circleci.com/developer/machine/image/ubuntu-2204
     resource_class: arm.medium
     environment:
       architecture: "arm64"
@@ -201,7 +201,7 @@ jobs:
             - deps-{{ checksum "build.gradle" }}-{{ checksum "gradle/versions.gradle" }}
       - run:
           name: Build
-          no_output_timeout: 60m
+          no_output_timeout: 20m
           command: |
             $Env:JAVA_TOOL_OPTIONS = "-Xmx2g"
             $Env:GRADLE_OPTS = "-Dorg.gradle.daemon=false -Dorg.gradle.parallel=true"
@@ -256,7 +256,7 @@ jobs:
           at: ~/project
       - run:
           name: UnitTests
-          no_output_timeout: 60m
+          no_output_timeout: 20m
           command: |
             CLASSNAMES=$(circleci tests glob "**/src/test/java/**/*.java" \
               | sed 's@.*/src/test/java/@@' \
@@ -543,6 +543,8 @@ workflows:
             tags:
               <<: *filters-release-tags
       - windowsBuild:
+          requires:
+            - spotless
           filters:
             tags:
               <<: *filters-release-tags

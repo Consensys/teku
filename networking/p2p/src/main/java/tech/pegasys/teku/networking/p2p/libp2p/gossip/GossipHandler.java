@@ -31,8 +31,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.networking.p2p.gossip.TopicHandler;
 
-import static tech.pegasys.teku.spec.constants.Domain.VOLUNTARY_EXIT;
-
 public class GossipHandler implements Function<MessageApi, CompletableFuture<ValidationResult>> {
   private static final Logger LOG = LogManager.getLogger();
 
@@ -83,7 +81,7 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
     } else {
       if (topic.getTopic().contains("voluntary_exit")) {
         LOG.error("from not set {}", topic);
-        }
+      }
     }
     PubsubMessage pubsubMessage = message.getOriginalMessage();
     if (!(pubsubMessage instanceof PreparedPubsubMessage)) {

@@ -174,7 +174,8 @@ public class Eth2TopicHandler<MessageT extends SszData> implements TopicHandler 
           final LibP2PNodeId libP2PNodeId = new LibP2PNodeId(peerId);
           final PeerAddress peerAddress = new PeerAddress(libP2PNodeId);
           reputationManager.adjustReputation(peerAddress, ReputationAdjustment.SMALL_PENALTY);
-        }, () -> LOG.error("Message was penalized but no peer was found {}", maybePeerIdBytes));
+        },
+        () -> LOG.error("Message was penalized but no peer was found {}", maybePeerIdBytes));
   }
 
   private String getTopicName() {

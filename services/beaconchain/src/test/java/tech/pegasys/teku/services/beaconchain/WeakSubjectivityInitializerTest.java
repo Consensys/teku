@@ -73,7 +73,7 @@ public class WeakSubjectivityInitializerTest {
     assertThat(result).isCompleted();
     verify(queryChannel).getWeakSubjectivityState();
     verify(updateChannel, never()).onWeakSubjectivityUpdate(any());
-    assertThat(safeJoin(result)).usingRecursiveComparison().isEqualTo(defaultConfig);
+    assertThat(safeJoin(result)).isEqualTo(defaultConfig);
   }
 
   @Test
@@ -98,7 +98,7 @@ public class WeakSubjectivityInitializerTest {
     verify(updateChannel)
         .onWeakSubjectivityUpdate(
             WeakSubjectivityUpdate.setWeakSubjectivityCheckpoint(cliCheckpoint));
-    assertThat(safeJoin(result)).usingRecursiveComparison().isEqualTo(cliConfig);
+    assertThat(safeJoin(result)).isEqualTo(cliConfig);
   }
 
   @Test
@@ -119,7 +119,6 @@ public class WeakSubjectivityInitializerTest {
     verify(queryChannel).getWeakSubjectivityState();
     verify(updateChannel, never()).onWeakSubjectivityUpdate(any());
     assertThat(safeJoin(result))
-        .usingRecursiveComparison()
         .isEqualTo(WeakSubjectivityConfig.builder(storedState).specProvider(spec).build());
   }
 
@@ -150,7 +149,7 @@ public class WeakSubjectivityInitializerTest {
     verify(updateChannel)
         .onWeakSubjectivityUpdate(
             WeakSubjectivityUpdate.setWeakSubjectivityCheckpoint(cliCheckpoint));
-    assertThat(safeJoin(result)).usingRecursiveComparison().isEqualTo(cliConfig);
+    assertThat(safeJoin(result)).isEqualTo(cliConfig);
   }
 
   @Test
@@ -175,7 +174,7 @@ public class WeakSubjectivityInitializerTest {
     assertThat(result).isCompleted();
     verify(queryChannel).getWeakSubjectivityState();
     verify(updateChannel, never()).onWeakSubjectivityUpdate(any());
-    assertThat(safeJoin(result)).usingRecursiveComparison().isEqualTo(cliConfig);
+    assertThat(safeJoin(result)).isEqualTo(cliConfig);
   }
 
   @Test

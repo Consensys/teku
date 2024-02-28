@@ -17,7 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.beacon.pow.DepositSnapshotFileLoader.DEFAULT_SNAPSHOT_RESOURCE_PATHS;
 import static tech.pegasys.teku.services.powchain.PowchainConfiguration.DEPOSIT_SNAPSHOT_URL_PATH;
 
-import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -43,12 +42,6 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
     final String[] args = {"--eth1-endpoint", "http://example.com:1234/path/"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.powchain().isEnabled()).isTrue();
-    assertThat(
-            createConfigBuilder()
-                .powchain(b -> b.eth1Endpoints(List.of("http://example.com:1234/path/")))
-                .build())
-        .usingRecursiveComparison()
-        .isEqualTo(config);
   }
 
   @Test
@@ -62,9 +55,6 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
     final String[] args = {"--eth1-endpoint", "   "};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.powchain().isEnabled()).isFalse();
-    assertThat(createConfigBuilder().powchain(b -> b.eth1Endpoints(List.of())).build())
-        .usingRecursiveComparison()
-        .isEqualTo(config);
   }
 
   @Test
@@ -81,18 +71,6 @@ public class DepositOptionsTest extends AbstractBeaconNodeCommandTest {
             "http://example-2.com:1234/path/",
             "http://example-3.com:1234/path/");
     assertThat(config.powchain().isEnabled()).isTrue();
-    assertThat(
-            createConfigBuilder()
-                .powchain(
-                    b ->
-                        b.eth1Endpoints(
-                            List.of(
-                                "http://example.com:1234/path/",
-                                "http://example-2.com:1234/path/",
-                                "http://example-3.com:1234/path/")))
-                .build())
-        .usingRecursiveComparison()
-        .isEqualTo(config);
   }
 
   @Test

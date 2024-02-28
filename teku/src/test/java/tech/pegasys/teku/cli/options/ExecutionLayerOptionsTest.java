@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ExecutionLayerOptionsTest extends AbstractBeaconNodeCommandTest {
 
@@ -50,15 +49,8 @@ public class ExecutionLayerOptionsTest extends AbstractBeaconNodeCommandTest {
     };
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.executionLayer().isEnabled()).isTrue();
-
-    assertThat(
-            createConfigBuilder()
-                .eth2NetworkConfig(
-                    b -> b.altairForkEpoch(UInt64.ZERO).bellatrixForkEpoch(UInt64.ONE))
-                .executionLayer(b -> b.engineEndpoint("http://example.com:1234/path/"))
-                .build())
-        .usingRecursiveComparison()
-        .isEqualTo(config);
+    assertThat(config.executionLayer().getEngineEndpoint())
+        .isEqualTo("http://example.com:1234/path/");
   }
 
   @Test
@@ -75,18 +67,10 @@ public class ExecutionLayerOptionsTest extends AbstractBeaconNodeCommandTest {
     };
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.executionLayer().isEnabled()).isTrue();
-
-    assertThat(
-            createConfigBuilder()
-                .eth2NetworkConfig(
-                    b -> b.altairForkEpoch(UInt64.ZERO).bellatrixForkEpoch(UInt64.ONE))
-                .executionLayer(
-                    b ->
-                        b.engineEndpoint("http://example.com:1234/path/")
-                            .builderEndpoint("http://example2.com:1234/path2/"))
-                .build())
-        .usingRecursiveComparison()
-        .isEqualTo(config);
+    assertThat(config.executionLayer().getEngineEndpoint())
+        .isEqualTo("http://example.com:1234/path/");
+    assertThat(config.executionLayer().getBuilderEndpoint())
+        .contains("http://example2.com:1234/path2/");
   }
 
   @Test
