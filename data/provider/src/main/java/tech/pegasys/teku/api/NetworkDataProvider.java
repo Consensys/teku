@@ -16,6 +16,7 @@ package tech.pegasys.teku.api;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import tech.pegasys.teku.api.response.v1.node.Direction;
 import tech.pegasys.teku.api.response.v1.node.Peer;
 import tech.pegasys.teku.api.response.v1.node.State;
@@ -98,7 +99,12 @@ public class NetworkDataProvider {
   }
 
   public Map<String, String> getPeerReputations() {
-    return reputationManager.getPeerReputationCache();
+    final Map<String, String> z = reputationManager.getPeerReputationCache();
+
+    // filter out 0 score data so that it's more consumable
+    return z.entrySet().stream()
+        .filter(i -> !i.getValue().contains("score=0"))
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   public Optional<Peer> getPeerById(final String peerId) {

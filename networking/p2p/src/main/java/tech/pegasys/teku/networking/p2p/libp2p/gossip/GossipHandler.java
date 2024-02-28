@@ -77,11 +77,9 @@ public class GossipHandler implements Function<MessageApi, CompletableFuture<Val
     final byte[] fromRaw = message.getFrom();
     Optional<Bytes> from = Optional.empty();
     if (fromRaw != null) {
+      // FIXME really what we'd need here is the propagator, also the from is empty quite often on
+      // rejected messages
       from = Optional.of(Bytes.of(fromRaw));
-    } else {
-      if (topic.getTopic().contains("voluntary_exit")) {
-        LOG.error("from not set {}", topic);
-      }
     }
     PubsubMessage pubsubMessage = message.getOriginalMessage();
     if (!(pubsubMessage instanceof PreparedPubsubMessage)) {
