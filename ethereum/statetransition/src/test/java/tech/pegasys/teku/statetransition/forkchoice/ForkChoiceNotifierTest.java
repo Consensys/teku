@@ -331,7 +331,7 @@ class ForkChoiceNotifierTest {
               return deferredResponseA;
             })
         .when(proposersDataManager)
-        .calculatePayloadBuildingAttributes(any(), anyBoolean(), any(), anyBoolean());
+        .calculatePayloadBuildingAttributes(any(), anyBoolean(), any(), anyBoolean(), any());
 
     notifyForkChoiceUpdated(forkChoiceState); // calculate attributes for slot 2
 
@@ -341,7 +341,7 @@ class ForkChoiceNotifierTest {
     // forward to real method call
     doAnswer(InvocationOnMock::callRealMethod)
         .when(proposersDataManager)
-        .calculatePayloadBuildingAttributes(any(), anyBoolean(), any(), anyBoolean());
+        .calculatePayloadBuildingAttributes(any(), anyBoolean(), any(), anyBoolean(), any());
 
     storageSystem
         .chainUpdater()
@@ -441,7 +441,7 @@ class ForkChoiceNotifierTest {
               return deferredResponseA;
             })
         .when(proposersDataManager)
-        .calculatePayloadBuildingAttributes(any(), anyBoolean(), any(), anyBoolean());
+        .calculatePayloadBuildingAttributes(any(), anyBoolean(), any(), anyBoolean(), any());
 
     notifyForkChoiceUpdated(forkChoiceStateSlot3); // calculate attributes for slot 2
 

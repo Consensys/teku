@@ -758,10 +758,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
 
   private void notifyForkChoiceUpdatedAndOptimisticSyncingChanged(
       final Optional<UInt64> proposingSlot) {
-    final ForkChoiceState forkChoiceState = forkChoiceStateProvider.getForkChoiceStateSync();
+    final ForkChoiceState forkChoiceState = forkChoiceStateProvider.getForkChoiceStateSync(false);
 
-    forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState, proposingSlot);
-    getProposerHeadSelectedCounter.labels("fork_choice").inc();
+    notifyForkChoiceUpdated(forkChoiceState, proposingSlot);
 
     if (optimisticSyncing
         .map(oldValue -> !oldValue.equals(forkChoiceState.isHeadOptimistic()))
@@ -770,6 +769,58 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       optimisticSyncSubscribers.deliver(
           OptimisticHeadSubscriber::onOptimisticHeadChanged, forkChoiceState.isHeadOptimistic());
     }
+  }
+
+  @SuppressWarnings("AlreadyChecked")
+  private void notifyForkChoiceUpdated(
+      final ForkChoiceState forkChoiceState, final Optional<UInt64> proposingSlot) {
+    if (!forkChoiceLateBlockReorgEnabled) {
+      forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState, proposingSlot);
+      return;
+    }
+    // late block reorg logic
+    final boolean shouldOverrideForkChoice =
+        recentChainData.shouldOverrideForkChoiceUpdate(forkChoiceState.getHeadBlockRoot());
+    final Optional<Bytes32> maybeProposerHead =
+        proposingSlot.map(
+            slot ->
+                recentChainData.getProposerHead(
+                    forkChoiceState.getHeadBlockRoot(), proposingSlot.get()));
+
+    if (!shouldOverrideForkChoice) {
+      LOG.debug(
+          "Fork Choice Notify shouldOverrideForkChoice {}, getProposerHead {}, chose fork choice head {}:({})",
+          () -> shouldOverrideForkChoice,
+          () -> maybeProposerHead,
+          forkChoiceState::getHeadBlockRoot,
+          forkChoiceState::getHeadBlockSlot);
+      forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState, proposingSlot);
+      maybeProposerHead.ifPresent(
+          proposerHead -> getProposerHeadSelectedCounter.labels("fork_choice").inc());
+      return;
+    } else if (maybeProposerHead.isPresent()
+        && maybeProposerHead.get().equals(forkChoiceState.getHeadBlockRoot())) {
+      LOG.debug(
+          "Fork Choice Notify shouldOverrideForkChoice {}, getProposerHead {}, chose head {}:({})",
+          () -> shouldOverrideForkChoice,
+          () -> maybeProposerHead,
+          forkChoiceState::getHeadBlockRoot,
+          forkChoiceState::getHeadBlockSlot);
+      getProposerHeadSelectedCounter.labels("head").inc();
+      forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState, proposingSlot);
+      return;
+    }
+    final ForkChoiceState parentForkChoiceState =
+        forkChoiceStateProvider.getForkChoiceStateSync(true);
+    LOG.debug(
+        "Fork Choice Notify shouldOverrideForkChoice {}, fork choice head {}:({}), chose parent {}:({})",
+        () -> shouldOverrideForkChoice,
+        forkChoiceState::getHeadBlockRoot,
+        forkChoiceState::getHeadBlockSlot,
+        parentForkChoiceState::getHeadBlockRoot,
+        parentForkChoiceState::getHeadBlockSlot);
+    getProposerHeadSelectedCounter.labels("parent").inc();
+    forkChoiceNotifier.onForkChoiceUpdated(parentForkChoiceState, proposingSlot);
   }
 
   private void applyVotesFromBlock(

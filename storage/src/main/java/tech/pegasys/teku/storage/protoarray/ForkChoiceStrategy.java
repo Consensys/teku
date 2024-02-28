@@ -184,11 +184,13 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   public ForkChoiceState getForkChoiceState(
       final UInt64 currentEpoch,
       final Checkpoint justifiedCheckpoint,
-      final Checkpoint finalizedCheckpoint) {
+      final Checkpoint finalizedCheckpoint,
+      final boolean isForkChoiceOverrideHead) {
     protoArrayLock.readLock().lock();
     try {
       final ProtoNode headNode =
           protoArray.findOptimisticHead(currentEpoch, justifiedCheckpoint, finalizedCheckpoint);
+      final Optional<ProtoNode> maybeParentNode = protoArray.getProtoNode(headNode.getParentRoot());
       final UInt64 headExecutionBlockNumber = headNode.getExecutionBlockNumber();
       final Bytes32 headExecutionBlockHash = headNode.getExecutionBlockHash();
       final Bytes32 justifiedExecutionHash =
@@ -201,6 +203,17 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
               .getProtoNode(finalizedCheckpoint.getRoot())
               .map(ProtoNode::getExecutionBlockHash)
               .orElse(Bytes32.ZERO);
+      if (isForkChoiceOverrideHead && maybeParentNode.isPresent()) {
+        final ProtoNode parentNode = maybeParentNode.get();
+        return new ForkChoiceState(
+            parentNode.getBlockRoot(),
+            parentNode.getBlockSlot(),
+            parentNode.getExecutionBlockNumber(),
+            parentNode.getExecutionBlockHash(),
+            justifiedExecutionHash,
+            finalizedExecutionHash,
+            headNode.isOptimistic() || !protoArray.nodeIsViableForHead(headNode));
+      }
       return new ForkChoiceState(
           headNode.getBlockRoot(),
           headNode.getBlockSlot(),
@@ -289,10 +302,10 @@ public class ForkChoiceStrategy implements BlockMetadataStore, ReadOnlyForkChoic
   }
 
   @Override
-  public Optional<Bytes32> executionBlockHash(final Bytes32 blockRoot) {
+  public Optional<Bytes32> executionBlockHash(final Bytes32 beaconBlockRoot) {
     protoArrayLock.readLock().lock();
     try {
-      return getProtoNode(blockRoot).map(ProtoNode::getExecutionBlockHash);
+      return getProtoNode(beaconBlockRoot).map(ProtoNode::getExecutionBlockHash);
     } finally {
       protoArrayLock.readLock().unlock();
     }

@@ -50,11 +50,15 @@ public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
 
+  public static final boolean DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED = false;
+
   public static final boolean DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED = false;
 
   public static final boolean DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES = false;
 
   public static final boolean DEFAULT_ALLOW_SYNC_OUTSIDE_WEAK_SUBJECTIVITY_PERIOD = false;
+
+  public static final boolean DEFAULT_FORK_CHOICE_VALIDATOR_IS_PROPOSER_ALWAYS_ENABLED = false;
 
   public static final int DEFAULT_ASYNC_P2P_MAX_THREADS = 10;
 
@@ -101,6 +105,8 @@ public class Eth2NetworkConfiguration {
   private final boolean forkChoiceLateBlockReorgEnabled;
   private final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes;
 
+  private final boolean forkChoiceValidatorIsProposerAlwaysEnabled;
+
   private Eth2NetworkConfiguration(
       final Spec spec,
       final String constants,
@@ -126,6 +132,7 @@ public class Eth2NetworkConfiguration {
       final int asyncBeaconChainMaxThreads,
       final int asyncBeaconChainMaxQueue,
       final boolean forkChoiceLateBlockReorgEnabled,
+      final boolean forkChoiceValidatorIsProposerAlwaysEnabled,
       final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes) {
     this.spec = spec;
     this.constants = constants;
@@ -154,6 +161,7 @@ public class Eth2NetworkConfiguration {
     this.asyncBeaconChainMaxThreads = asyncBeaconChainMaxThreads;
     this.asyncBeaconChainMaxQueue = asyncBeaconChainMaxQueue;
     this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
+    this.forkChoiceValidatorIsProposerAlwaysEnabled = forkChoiceValidatorIsProposerAlwaysEnabled;
     this.forkChoiceUpdatedAlwaysSendPayloadAttributes =
         forkChoiceUpdatedAlwaysSendPayloadAttributes;
   }
@@ -266,6 +274,10 @@ public class Eth2NetworkConfiguration {
     return forkChoiceUpdatedAlwaysSendPayloadAttributes;
   }
 
+  public boolean isForkChoiceValidatorIsProposerAlwaysEnabled() {
+    return forkChoiceValidatorIsProposerAlwaysEnabled;
+  }
+
   @Override
   public String toString() {
     return constants;
@@ -371,6 +383,8 @@ public class Eth2NetworkConfiguration {
     private boolean forkChoiceLateBlockReorgEnabled = DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
     private boolean forkChoiceUpdatedAlwaysSendPayloadAttributes =
         DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES;
+    private boolean forkChoiceValidatorIsProposerAlwaysEnabled =
+        DEFAULT_FORK_CHOICE_VALIDATOR_IS_PROPOSER_ALWAYS_ENABLED;
 
     public void spec(Spec spec) {
       this.spec = spec;
@@ -457,6 +471,7 @@ public class Eth2NetworkConfiguration {
           asyncBeaconChainMaxThreads,
           asyncBeaconChainMaxQueue,
           forkChoiceLateBlockReorgEnabled,
+          forkChoiceValidatorIsProposerAlwaysEnabled,
           forkChoiceUpdatedAlwaysSendPayloadAttributes);
     }
 
@@ -935,6 +950,12 @@ public class Eth2NetworkConfiguration {
         boolean forkChoiceUpdatedAlwaysSendPayloadAttributes) {
       this.forkChoiceUpdatedAlwaysSendPayloadAttributes =
           forkChoiceUpdatedAlwaysSendPayloadAttributes;
+      return this;
+    }
+
+    public Builder forkChoiceValidatorIsProposerAlwaysEnabled(
+        boolean forkChoiceValidatorIsProposerAlwaysEnabled) {
+      this.forkChoiceValidatorIsProposerAlwaysEnabled = forkChoiceValidatorIsProposerAlwaysEnabled;
       return this;
     }
   }
