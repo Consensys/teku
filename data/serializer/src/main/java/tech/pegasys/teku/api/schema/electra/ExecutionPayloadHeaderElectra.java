@@ -23,6 +23,7 @@ import tech.pegasys.teku.api.schema.deneb.ExecutionPayloadHeaderDeneb;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 
 public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
 
@@ -91,6 +92,32 @@ public class ExecutionPayloadHeaderElectra extends ExecutionPayloadHeaderDeneb {
         executionPayloadHeader.toVersionDeneb().orElseThrow().getExcessBlobGas());
     this.depositReceiptsRoot =
         executionPayloadHeader.toVersionElectra().orElseThrow().getDepositReceiptsRoot();
+  }
+
+  @Override
+  public ExecutionPayloadHeader asInternalExecutionPayloadHeader(
+      final ExecutionPayloadHeaderSchema<?> schema) {
+    return schema.createExecutionPayloadHeader(
+        payloadBuilder ->
+            payloadBuilder
+                .parentHash(parentHash)
+                .feeRecipient(feeRecipient)
+                .stateRoot(stateRoot)
+                .receiptsRoot(receiptsRoot)
+                .logsBloom(logsBloom)
+                .prevRandao(prevRandao)
+                .blockNumber(blockNumber)
+                .gasLimit(gasLimit)
+                .gasUsed(gasUsed)
+                .timestamp(timestamp)
+                .extraData(extraData)
+                .baseFeePerGas(baseFeePerGas)
+                .blockHash(blockHash)
+                .transactionsRoot(transactionsRoot)
+                .withdrawalsRoot(() -> withdrawalsRoot)
+                .blobGasUsed(() -> blobGasUsed)
+                .excessBlobGas(() -> excessBlobGas)
+                .depositReceiptsRoot(() -> depositReceiptsRoot));
   }
 
   @Override
