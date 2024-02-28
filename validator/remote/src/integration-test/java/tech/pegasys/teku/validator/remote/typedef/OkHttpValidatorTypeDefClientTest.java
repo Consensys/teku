@@ -36,8 +36,6 @@ import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
@@ -361,11 +359,17 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     assertThat(okHttpValidatorTypeDefClient.postStateValidators(List.of("1"))).isEmpty();
   }
 
-  @ParameterizedTest
-  @ValueSource(ints = {SC_BAD_REQUEST, SC_NOT_FOUND, SC_METHOD_NOT_ALLOWED})
-  public void postValidators_WhenNotExisting_ThrowsException(final int responseCode) {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(responseCode));
+  @TestTemplate
+  public void postValidators_WhenNotExisting_ThrowsException() {
+    final List<Integer> responseCodes =
+        List.of(SC_BAD_REQUEST, SC_NOT_FOUND, SC_METHOD_NOT_ALLOWED);
+    for (int code : responseCodes) {
+      checkThrowsExceptionForCode(code);
+    }
+  }
 
+  private void checkThrowsExceptionForCode(final int responseCode) {
+    mockWebServer.enqueue(new MockResponse().setResponseCode(responseCode));
     assertThatThrownBy(() -> okHttpValidatorTypeDefClient.postStateValidators(List.of("1")))
         .isInstanceOf(PostStateValidatorsNotExistingException.class);
   }
