@@ -15,22 +15,36 @@ package tech.pegasys.teku.ethereum.json.types.validator;
 
 import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.PUBLIC_KEY_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition.listOf;
 
 import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntArraySet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import tech.pegasys.teku.bls.BLSPublicKey;
-import tech.pegasys.teku.infrastructure.json.types.SerializableTypeDefinition;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 
 public class SyncCommitteeDutyBuilder {
-  public static final SerializableTypeDefinition<SyncCommitteeDuty> SYNC_COMMITTEE_DUTY_TYPE =
-      SerializableTypeDefinition.object(SyncCommitteeDuty.class)
-          .withField("pubkey", PUBLIC_KEY_TYPE, SyncCommitteeDuty::getPublicKey)
-          .withField("validator_index", INTEGER_TYPE, SyncCommitteeDuty::getValidatorIndex)
+  public static final DeserializableTypeDefinition<SyncCommitteeDuty> SYNC_COMMITTEE_DUTY_TYPE =
+      DeserializableTypeDefinition.object(SyncCommitteeDuty.class, SyncCommitteeDutyBuilder.class)
+          .initializer(SyncCommitteeDutyBuilder::new)
+          .finisher(SyncCommitteeDutyBuilder::build)
+          .withField(
+              "pubkey",
+              PUBLIC_KEY_TYPE,
+              SyncCommitteeDuty::getPublicKey,
+              SyncCommitteeDutyBuilder::publicKey)
+          .withField(
+              "validator_index",
+              INTEGER_TYPE,
+              SyncCommitteeDuty::getValidatorIndex,
+              SyncCommitteeDutyBuilder::validatorIndex)
           .withField(
               "validator_sync_committee_indices",
-              SerializableTypeDefinition.listOf(INTEGER_TYPE),
+              listOf(INTEGER_TYPE),
               syncCommitteeDuty ->
-                  new IntArrayList(syncCommitteeDuty.getValidatorSyncCommitteeIndices()))
+                  new IntArrayList(syncCommitteeDuty.getValidatorSyncCommitteeIndices()),
+              (syncCommitteeDutyBuilder, integers) ->
+                  syncCommitteeDutyBuilder.validatorSyncCommitteeIndices(new IntArraySet(integers)))
           .build();
 
   private BLSPublicKey publicKey;
