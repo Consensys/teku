@@ -80,6 +80,7 @@ public class ValidatorClientOptions {
       description =
           "Use DVT endpoints to determine if a distributed validator has aggregation duties.",
       arity = "0..1",
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       hidden = true,
       fallbackValue = "true")
   private boolean dvtSelectionsEndpointEnabled =
