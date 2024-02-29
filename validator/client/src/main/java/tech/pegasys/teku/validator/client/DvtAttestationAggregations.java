@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,16 +32,14 @@ public class DvtAttestationAggregations {
   private static final Logger LOG = LogManager.getLogger();
 
   private final ValidatorApiChannel validatorApiChannel;
-
   private final Map<BeaconCommitteeSelectionProof, SafeFuture<BLSSignature>> pendingRequests =
       new ConcurrentHashMap<>();
-
-  private final int expectedCount;
+  private final int expectedDutiesCount;
 
   public DvtAttestationAggregations(
       final ValidatorApiChannel validatorApiChannel, int expectedDutiesCount) {
     this.validatorApiChannel = validatorApiChannel;
-    this.expectedCount = expectedDutiesCount;
+    this.expectedDutiesCount = expectedDutiesCount;
   }
 
   public SafeFuture<BLSSignature> getCombinedSelectionProofFuture(
@@ -61,7 +60,7 @@ public class DvtAttestationAggregations {
     final SafeFuture<BLSSignature> future = new SafeFuture<>();
     pendingRequests.put(request, future);
 
-    if (pendingRequests.size() >= expectedCount) {
+    if (pendingRequests.size() >= expectedDutiesCount) {
       submitBatchRequests();
     }
 
@@ -75,23 +74,8 @@ public class DvtAttestationAggregations {
             response ->
                 response.ifPresentOrElse(
                     this::handleBeaconCommitteeSelectionProofsResponse, this::handleEmptyResponse))
-        .exceptionally(
-            (ex) -> {
-              throw new RuntimeException(
-                  "Error getting DVT attestation aggregation complete proof", ex);
-            })
+        .exceptionally(unexpectedErrorHandler())
         .ifExceptionGetsHereRaiseABug();
-  }
-
-  private void handleEmptyResponse() {
-    LOG.warn("Received empty response from DVT middleware. This will impact aggregation duties.");
-
-    pendingRequests
-        .values()
-        .forEach(
-            future ->
-                future.completeExceptionally(
-                    new RuntimeException("Empty response from DVT middleware")));
   }
 
   private void handleBeaconCommitteeSelectionProofsResponse(
@@ -124,5 +108,32 @@ public class DvtAttestationAggregations {
     return proof ->
         request.getValidatorIndex() == proof.getValidatorIndex()
             && request.getSlot().equals(proof.getSlot());
+  }
+
+  private void handleEmptyResponse() {
+    LOG.warn("Received empty response from DVT middleware. This will impact aggregation duties.");
+    completeAllPendingFuturesExceptionally("Empty response from DVT middleware");
+  }
+
+  private Function<Throwable, Void> unexpectedErrorHandler() {
+    return (ex) -> {
+      final String errorMsg = "Error getting DVT attestation aggregation complete proof";
+      LOG.warn(errorMsg);
+      LOG.debug(errorMsg, ex);
+
+      completeAllPendingFuturesExceptionally(errorMsg);
+      return null;
+    };
+  }
+
+  private void completeAllPendingFuturesExceptionally(final String errorMsg) {
+    pendingRequests
+        .values()
+        .forEach(
+            future -> {
+              if (!future.isDone()) {
+                future.completeExceptionally(new RuntimeException(errorMsg));
+              }
+            });
   }
 }
