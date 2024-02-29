@@ -21,7 +21,6 @@ import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GE
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_GENESIS;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_PROPOSER_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_SYNC_COMMITTEE_CONTRIBUTION;
-import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_SYNC_COMMITTEE_DUTIES;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.GET_VALIDATORS;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.PREPARE_BEACON_PROPOSER;
 import static tech.pegasys.teku.validator.remote.apiclient.ValidatorApiMethod.SEND_CONTRIBUTION_AND_PROOF;
@@ -64,7 +63,6 @@ import tech.pegasys.teku.api.response.v1.validator.GetAggregatedAttestationRespo
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetSyncCommitteeContributionResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
-import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
@@ -222,16 +220,6 @@ public class OkHttpValidatorRestApiClient implements ValidatorRestApiClient {
         syncCommitteeMessages,
         ResponseHandler.createForEmptyOkAndContentInBadResponse(
             jsonProvider, PostDataFailureResponse.class));
-  }
-
-  @Override
-  public Optional<PostSyncDutiesResponse> getSyncCommitteeDuties( // todo remove
-      final UInt64 epoch, final Collection<Integer> validatorIndices) {
-    return post(
-        GET_SYNC_COMMITTEE_DUTIES,
-        Map.of("epoch", epoch.toString()),
-        validatorIndices.stream().map(UInt64::valueOf).toList(),
-        createHandler(PostSyncDutiesResponse.class));
   }
 
   @Override

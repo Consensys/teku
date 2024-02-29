@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote.typedef;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import okhttp3.HttpUrl;
@@ -24,6 +25,7 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -44,6 +46,7 @@ import tech.pegasys.teku.validator.remote.typedef.handlers.GetProposerDutiesRequ
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetStateValidatorsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.GetSyncingStatusRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.PostStateValidatorsRequest;
+import tech.pegasys.teku.validator.remote.typedef.handlers.PostSyncDutiesRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.ProduceBlockRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.RegisterValidatorsRequest;
 import tech.pegasys.teku.validator.remote.typedef.handlers.SendSignedBlockRequest;
@@ -60,6 +63,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
   private final GetProposerDutiesRequest getProposerDutiesRequest;
   private final GetStateValidatorsRequest getStateValidatorsRequest;
   private final PostStateValidatorsRequest postStateValidatorsRequest;
+  private final PostSyncDutiesRequest postSyncDutiesRequest;
   private final SendSignedBlockRequest sendSignedBlockRequest;
   private final RegisterValidatorsRequest registerValidatorsRequest;
   private final CreateAttestationDataRequest createAttestationDataRequest;
@@ -79,6 +83,7 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     this.getProposerDutiesRequest = new GetProposerDutiesRequest(baseEndpoint, okHttpClient);
     this.getStateValidatorsRequest = new GetStateValidatorsRequest(baseEndpoint, okHttpClient);
     this.postStateValidatorsRequest = new PostStateValidatorsRequest(baseEndpoint, okHttpClient);
+    this.postSyncDutiesRequest = new PostSyncDutiesRequest(baseEndpoint, okHttpClient);
     this.sendSignedBlockRequest =
         new SendSignedBlockRequest(spec, baseEndpoint, okHttpClient, preferSszBlockEncoding);
     this.registerValidatorsRequest =
@@ -117,6 +122,11 @@ public class OkHttpValidatorTypeDefClient extends OkHttpValidatorMinimalTypeDefC
     return postStateValidatorsRequest
         .postStateValidators(validatorIds)
         .map(ObjectAndMetaData::getData);
+  }
+
+  public Optional<SyncCommitteeDuties> postSyncDuties(
+      final UInt64 epoch, final Collection<Integer> validatorIndices) {
+    return postSyncDutiesRequest.postSyncDuties(epoch, validatorIndices);
   }
 
   public SendSignedBlockResult sendSignedBlock(final SignedBlockContainer blockContainer) {
