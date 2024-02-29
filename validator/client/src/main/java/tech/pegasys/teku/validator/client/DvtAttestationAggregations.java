@@ -28,8 +28,6 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class DvtAttestationAggregations {
 
-  // TODO-lucas add a limit on the number of entries in batch request
-
   private static final Logger LOG = LogManager.getLogger();
 
   private final ValidatorApiChannel validatorApiChannel;
