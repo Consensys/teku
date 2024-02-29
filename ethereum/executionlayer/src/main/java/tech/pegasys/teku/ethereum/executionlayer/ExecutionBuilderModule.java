@@ -93,7 +93,7 @@ public class ExecutionBuilderModule {
     this.useShouldOverrideBuilderFlag = useShouldOverrideBuilderFlag;
   }
 
-  private Optional<SafeFuture<HeaderWithFallbackData>> validateBuilderGetHeader(
+  private Optional<SafeFuture<HeaderWithFallbackData>> checkIfBuilderGetHeaderIsViable(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
       final SafeFuture<GetPayloadResponse> localGetPayloadResponse,
@@ -140,11 +140,17 @@ public class ExecutionBuilderModule {
             .engineGetPayloadForFallback(executionPayloadContext, state.getSlot())
             .thenPeek(__ -> blockProductionPerformance.engineGetPayload());
 
-    final Optional<SafeFuture<HeaderWithFallbackData>> validationResult =
-        validateBuilderGetHeader(
+    final Optional<SafeFuture<HeaderWithFallbackData>> nonViabilityReason =
+        checkIfBuilderGetHeaderIsViable(
             executionPayloadContext, state, localGetPayloadResponse, payloadValueResult);
-    if (validationResult.isPresent()) {
-      return validationResult.get();
+    if (nonViabilityReason.isPresent()) {
+      return nonViabilityReason
+          .get()
+          .thenPeek(
+              headerWithFallbackData ->
+                  headerWithFallbackData
+                      .getFallbackData()
+                      .ifPresent(this::recordAndLogFallbackToLocallyProducedExecutionData));
     }
 
     final UInt64 slot = state.getSlot();
@@ -242,7 +248,12 @@ public class ExecutionBuilderModule {
                   error);
               return getResultFromLocalGetPayloadResponse(
                   localGetPayloadResponse, slot, FallbackReason.BUILDER_ERROR, payloadValueResult);
-            });
+            })
+        .thenPeek(
+            headerWithFallbackData ->
+                headerWithFallbackData
+                    .getFallbackData()
+                    .ifPresent(this::recordAndLogFallbackToLocallyProducedExecutionData));
   }
 
   private boolean calculateIfLocalPayloadWinsAndLog(
@@ -458,9 +469,6 @@ public class ExecutionBuilderModule {
             return getPayloadFromBuilder(signedBlindedBeaconBlock);
           } else {
             final FallbackData fallbackData = headerWithFallbackData.getFallbackData().get();
-            logFallbackToLocalExecutionPayloadAndBlobsBundle(fallbackData);
-            executionLayerManager.recordExecutionPayloadFallbackSource(
-                Source.BUILDER_LOCAL_EL_FALLBACK, fallbackData.getReason());
             final BuilderPayload builderPayload =
                 fallbackData
                     .getBlobsBundle()
@@ -514,7 +522,9 @@ public class ExecutionBuilderModule {
     eventLogger.builderIsNotAvailable(errorMessage);
   }
 
-  private void logFallbackToLocalExecutionPayloadAndBlobsBundle(final FallbackData fallbackData) {
+  private void recordAndLogFallbackToLocallyProducedExecutionData(final FallbackData fallbackData) {
+    executionLayerManager.recordExecutionPayloadFallbackSource(
+        Source.BUILDER_LOCAL_EL_FALLBACK, fallbackData.getReason());
     final Level logLevel =
         fallbackData.getReason() == FallbackReason.NOT_NEEDED ? Level.DEBUG : Level.INFO;
     final ExecutionPayload executionPayload = fallbackData.getExecutionPayload();
