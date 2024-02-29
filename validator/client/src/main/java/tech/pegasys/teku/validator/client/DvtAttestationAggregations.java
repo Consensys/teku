@@ -13,9 +13,11 @@
 
 package tech.pegasys.teku.validator.client;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignature;
@@ -28,7 +30,6 @@ public class DvtAttestationAggregations {
 
   // TODO-lucas add a limit on the number of entries in batch request
 
-  @SuppressWarnings("unused")
   private static final Logger LOG = LogManager.getLogger();
 
   private final ValidatorApiChannel validatorApiChannel;
@@ -46,6 +47,11 @@ public class DvtAttestationAggregations {
 
   public SafeFuture<BLSSignature> getCombinedSelectionProofFuture(
       final int validatorIndex, final UInt64 slot, final BLSSignature partialProof) {
+
+    LOG.debug(
+        "Created pending request for DVT attestation aggregation proof (validator_id={}, slot={})",
+        validatorIndex,
+        slot);
 
     final BeaconCommitteeSelectionProof request =
         new BeaconCommitteeSelectionProof.Builder()
@@ -68,27 +74,57 @@ public class DvtAttestationAggregations {
     validatorApiChannel
         .getBeaconCommitteeSelectionProof(pendingRequests.keySet().stream().toList())
         .thenAccept(
-            beaconCommitteeSelectionProofs -> {
-              if (beaconCommitteeSelectionProofs.isPresent()) {
-                pendingRequests.forEach(
-                    (request, future) -> {
-                      final Optional<BeaconCommitteeSelectionProof> response =
-                          beaconCommitteeSelectionProofs.get().stream()
-                              .filter(
-                                  p ->
-                                      request.getValidatorIndex() == p.getValidatorIndex()
-                                          && request.getSlot().equals(p.getSlot()))
-                              .findFirst();
-                      response.ifPresentOrElse(
-                          resp -> future.complete(resp.getSelectionProofSignature()),
-                          () -> future.completeExceptionally(new RuntimeException("Error")));
-                    });
-              } else {
-                pendingRequests
-                    .values()
-                    .forEach(future -> future.completeExceptionally(new RuntimeException("Error")));
-              }
+            response ->
+                response.ifPresentOrElse(
+                    this::handleBeaconCommitteeSelectionProofsResponse, this::handleEmptyResponse))
+        .exceptionally(
+            (ex) -> {
+              throw new RuntimeException(
+                  "Error getting DVT attestation aggregation complete proof", ex);
             })
         .ifExceptionGetsHereRaiseABug();
+  }
+
+  private void handleEmptyResponse() {
+    LOG.warn("Received empty response from DVT middleware. This will impact aggregation duties.");
+
+    pendingRequests
+        .values()
+        .forEach(
+            future ->
+                future.completeExceptionally(
+                    new RuntimeException("Empty response from DVT middleware")));
+  }
+
+  private void handleBeaconCommitteeSelectionProofsResponse(
+      final List<BeaconCommitteeSelectionProof> proofsFromMiddleware) {
+    LOG.debug("Processing response from middleware for {} requests", proofsFromMiddleware.size());
+
+    pendingRequests.forEach(
+        (request, future) -> {
+          final Optional<BeaconCommitteeSelectionProof> completeProof =
+              proofsFromMiddleware.stream().filter(matchingRequest(request)).findFirst();
+
+          completeProof.ifPresentOrElse(
+              resp -> {
+                LOG.debug(
+                    "Completing request for DVT attestation aggregation proof (validator_id={}, slot={})",
+                    request.getValidatorIndex(),
+                    request.getSlot());
+
+                future.complete(resp.getSelectionProofSignature());
+              },
+              () ->
+                  future.completeExceptionally(
+                      new RuntimeException(
+                          "No matching complete proof from DVT middleware for this request")));
+        });
+  }
+
+  private static Predicate<BeaconCommitteeSelectionProof> matchingRequest(
+      final BeaconCommitteeSelectionProof request) {
+    return proof ->
+        request.getValidatorIndex() == proof.getValidatorIndex()
+            && request.getSlot().equals(proof.getSlot());
   }
 }
