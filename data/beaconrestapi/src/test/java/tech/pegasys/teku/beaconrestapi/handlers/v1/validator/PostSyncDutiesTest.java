@@ -37,10 +37,10 @@ import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerTest;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuty;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.http.HttpErrorResponse;
-import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
-import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 
 public class PostSyncDutiesTest extends AbstractMigratedBeaconHandlerTest {
   private final SyncCommitteeDuty duty =

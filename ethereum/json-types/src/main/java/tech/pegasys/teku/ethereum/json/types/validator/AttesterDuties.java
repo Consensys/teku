@@ -11,19 +11,24 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.api;
+package tech.pegasys.teku.ethereum.json.types.validator;
 
 import com.google.common.base.MoreObjects;
 import java.util.List;
 import java.util.Objects;
+import org.apache.tuweni.bytes.Bytes32;
 
-public class SyncCommitteeDuties {
+public class AttesterDuties {
   private final boolean executionOptimistic;
-  private final List<SyncCommitteeDuty> duties;
+  private final Bytes32 dependentRoot;
+  private final List<AttesterDuty> duties;
 
-  public SyncCommitteeDuties(
-      final boolean executionOptimistic, final List<SyncCommitteeDuty> duties) {
+  public AttesterDuties(
+      final boolean executionOptimistic,
+      final Bytes32 dependentRoot,
+      final List<AttesterDuty> duties) {
     this.executionOptimistic = executionOptimistic;
+    this.dependentRoot = dependentRoot;
     this.duties = duties;
   }
 
@@ -31,7 +36,11 @@ public class SyncCommitteeDuties {
     return executionOptimistic;
   }
 
-  public List<SyncCommitteeDuty> getDuties() {
+  public Bytes32 getDependentRoot() {
+    return dependentRoot;
+  }
+
+  public List<AttesterDuty> getDuties() {
     return duties;
   }
 
@@ -43,17 +52,23 @@ public class SyncCommitteeDuties {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final SyncCommitteeDuties that = (SyncCommitteeDuties) o;
-    return Objects.equals(duties, that.duties);
+    final AttesterDuties that = (AttesterDuties) o;
+    return executionOptimistic == that.executionOptimistic
+        && Objects.equals(dependentRoot, that.dependentRoot)
+        && Objects.equals(duties, that.duties);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(duties);
+    return Objects.hash(executionOptimistic, dependentRoot, duties);
   }
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this).add("duties", duties).toString();
+    return MoreObjects.toStringHelper(this)
+        .add("executionOptimistic", executionOptimistic)
+        .add("dependentRoot", dependentRoot)
+        .add("duties", duties)
+        .toString();
   }
 }

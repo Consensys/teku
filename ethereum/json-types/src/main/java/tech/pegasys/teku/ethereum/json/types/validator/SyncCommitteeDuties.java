@@ -11,24 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.api;
+package tech.pegasys.teku.ethereum.json.types.validator;
 
 import com.google.common.base.MoreObjects;
 import java.util.List;
 import java.util.Objects;
-import org.apache.tuweni.bytes.Bytes32;
 
-public class AttesterDuties {
+public class SyncCommitteeDuties {
   private final boolean executionOptimistic;
-  private final Bytes32 dependentRoot;
-  private final List<AttesterDuty> duties;
+  private final List<SyncCommitteeDuty> duties;
 
-  public AttesterDuties(
-      final boolean executionOptimistic,
-      final Bytes32 dependentRoot,
-      final List<AttesterDuty> duties) {
+  public SyncCommitteeDuties(
+      final boolean executionOptimistic, final List<SyncCommitteeDuty> duties) {
     this.executionOptimistic = executionOptimistic;
-    this.dependentRoot = dependentRoot;
     this.duties = duties;
   }
 
@@ -36,11 +31,7 @@ public class AttesterDuties {
     return executionOptimistic;
   }
 
-  public Bytes32 getDependentRoot() {
-    return dependentRoot;
-  }
-
-  public List<AttesterDuty> getDuties() {
+  public List<SyncCommitteeDuty> getDuties() {
     return duties;
   }
 
@@ -52,23 +43,17 @@ public class AttesterDuties {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    final AttesterDuties that = (AttesterDuties) o;
-    return executionOptimistic == that.executionOptimistic
-        && Objects.equals(dependentRoot, that.dependentRoot)
-        && Objects.equals(duties, that.duties);
+    final SyncCommitteeDuties that = (SyncCommitteeDuties) o;
+    return Objects.equals(duties, that.duties);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(executionOptimistic, dependentRoot, duties);
+    return Objects.hash(duties);
   }
 
   @Override
   public String toString() {
-    return MoreObjects.toStringHelper(this)
-        .add("executionOptimistic", executionOptimistic)
-        .add("dependentRoot", dependentRoot)
-        .add("duties", duties)
-        .toString();
+    return MoreObjects.toStringHelper(this).add("duties", duties).toString();
   }
 }
