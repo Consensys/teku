@@ -469,6 +469,9 @@ public class ExecutionBuilderModule {
             return getPayloadFromBuilder(signedBlindedBeaconBlock);
           } else {
             final FallbackData fallbackData = headerWithFallbackData.getFallbackData().get();
+            LOG.debug(
+                "Using FallbackData to provide unblinded execution data (FallbackReason: {})",
+                fallbackData.getReason());
             final BuilderPayload builderPayload =
                 fallbackData
                     .getBlobsBundle()
