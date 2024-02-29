@@ -19,6 +19,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public interface SpecConfigElectra extends SpecConfigDeneb {
 
+  UInt64 UNSET_DEPOSIT_RECEIPTS_START_INDEX = UInt64.MAX_VALUE;
+
   static SpecConfigElectra required(final SpecConfig specConfig) {
     return specConfig
         .toVersionElectra()
@@ -32,6 +34,8 @@ public interface SpecConfigElectra extends SpecConfigDeneb {
   Bytes4 getElectraForkVersion();
 
   UInt64 getElectraForkEpoch();
+
+  int getMaxDepositReceiptsPerPayload();
 
   @Override
   Optional<SpecConfigElectra> toVersionElectra();
