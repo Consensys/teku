@@ -93,7 +93,7 @@ public class ExecutionBuilderModule {
     this.useShouldOverrideBuilderFlag = useShouldOverrideBuilderFlag;
   }
 
-  private Optional<SafeFuture<HeaderWithFallbackData>> checkIfBuilderGetHeaderIsViable(
+  private Optional<SafeFuture<HeaderWithFallbackData>> isBuilderFlowViable(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
       final SafeFuture<GetPayloadResponse> localGetPayloadResponse,
@@ -140,11 +140,11 @@ public class ExecutionBuilderModule {
             .engineGetPayloadForFallback(executionPayloadContext, state.getSlot())
             .thenPeek(__ -> blockProductionPerformance.engineGetPayload());
 
-    final Optional<SafeFuture<HeaderWithFallbackData>> nonViabilityReason =
-        checkIfBuilderGetHeaderIsViable(
+    final Optional<SafeFuture<HeaderWithFallbackData>> maybeFallback =
+        isBuilderFlowViable(
             executionPayloadContext, state, localGetPayloadResponse, payloadValueResult);
-    if (nonViabilityReason.isPresent()) {
-      return nonViabilityReason
+    if (maybeFallback.isPresent()) {
+      return maybeFallback
           .get()
           .thenPeek(
               headerWithFallbackData ->
