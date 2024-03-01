@@ -5,7 +5,7 @@ dependencyManagement {
     dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.16.1'
     dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.16.1'
 
-    dependencySet(group: 'com.google.errorprone', version: '2.24.1') {
+    dependencySet(group: 'com.google.errorprone', version: '2.25.0') {
       entry 'error_prone_annotation'
       entry 'error_prone_check_api'
       entry 'error_prone_core'
@@ -27,8 +27,10 @@ dependencyManagement {
 
     dependency 'info.picocli:picocli:4.7.5'
 
-    dependency 'io.javalin:javalin:6.1.0'
-    dependency 'io.javalin:javalin-rendering:6.1.0'
+    dependencySet(group: 'io.javalin', version: '6.1.2') {
+      entry 'javalin'
+      entry 'javalin-rendering'
+    }
 
     dependency 'io.libp2p:jvm-libp2p:1.1.0-RELEASE'
     dependency 'tech.pegasys:jblst:0.3.11'
@@ -47,20 +49,20 @@ dependencyManagement {
       entry 'swagger-annotations'
     }
     // On update don't forget to change version in tech.pegasys.teku.infrastructure.restapi.SwaggerUIBuilder
-    dependency 'org.webjars:swagger-ui:5.10.3'
+    dependency 'org.webjars:swagger-ui:5.11.8'
     dependency 'org.thymeleaf:thymeleaf:3.1.2.RELEASE'
     dependency 'io.github.classgraph:classgraph:4.8.165'
-    dependencySet(group: 'com.github.oshi', version: '6.4.11') {
+    dependencySet(group: 'com.github.oshi', version: '6.4.13') {
       entry 'oshi-core'
       entry 'oshi-core-java11'
     }
 
-    dependencySet(group: 'io.netty', version: '4.1.100.Final') {
+    dependencySet(group: 'io.netty', version: '4.1.107.Final') {
       entry 'netty-handler'
       entry 'netty-codec-http'
     }
 
-    dependencySet(group: 'io.vertx', version: '4.5.2') {
+    dependencySet(group: 'io.vertx', version: '4.5.4') {
       entry 'vertx-codegen'
       entry 'vertx-core'
       entry 'vertx-unit'
@@ -85,7 +87,7 @@ dependencyManagement {
     dependency 'commons-io:commons-io:2.15.1'
     dependency 'org.commonjava.mimeparse:mimeparse:0.1.3.3'
 
-    dependencySet(group: 'org.apache.logging.log4j', version: '2.22.0') {
+    dependencySet(group: 'org.apache.logging.log4j', version: '2.23.0') {
       entry 'log4j-api'
       entry 'log4j-core'
       entry 'log4j-slf4j-impl'
@@ -109,7 +111,7 @@ dependencyManagement {
       entry 'junit-jupiter-params'
     }
 
-    dependencySet(group: 'org.mockito', version: '5.10.0') {
+    dependencySet(group: 'org.mockito', version: '5.11.0') {
       entry 'mockito-core'
       entry 'mockito-junit-jupiter'
     }
@@ -124,7 +126,7 @@ dependencyManagement {
     dependency 'org.fusesource.leveldbjni:leveldbjni-win32:1.8'
     dependency 'tech.pegasys:leveldb-native:0.3.1'
 
-    dependencySet(group: "org.web3j", version: "4.10.3") {
+    dependencySet(group: "org.web3j", version: "4.11.0") {
       entry 'core'
       entry 'abi'
       entry 'crypto'
@@ -135,18 +137,18 @@ dependencyManagement {
 
     dependency 'io.prometheus:simpleclient:0.9.0'
 
-    dependencySet(group: 'org.hyperledger.besu.internal', version: '24.1.1') {
+    dependencySet(group: 'org.hyperledger.besu.internal', version: '24.1.2') {
       entry('metrics-core')
       entry('core')
       entry('config')
     }
-    dependencySet(group: 'org.hyperledger.besu', version: '24.1.1') {
+    dependencySet(group: 'org.hyperledger.besu', version: '24.1.2') {
       entry('besu-datatypes')
       entry('evm')
       entry('plugin-api')
     }
 
-    dependencySet(group: 'org.testcontainers', version: '1.19.4') {
+    dependencySet(group: 'org.testcontainers', version: '1.19.6') {
       entry "testcontainers"
       entry "junit-jupiter"
     }
@@ -159,7 +161,7 @@ dependencyManagement {
       exclude 'org.apache.tuweni:units'
     }
 
-    dependencySet(group: 'org.jupnp', version: '2.7.1') {
+    dependencySet(group: 'org.jupnp', version: '3.0.0') {
       entry "org.jupnp"
       entry "org.jupnp.support"
     }
@@ -170,6 +172,6 @@ dependencyManagement {
       entry 'jjwt-jackson'
     }
 
-    dependency 'net.jqwik:jqwik:1.8.2'
+    dependency 'net.jqwik:jqwik:1.8.3'
   }
 }
