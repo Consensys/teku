@@ -24,6 +24,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.spec.signatures.DeletableSigner;
 import tech.pegasys.teku.validator.api.GraffitiProvider;
 import tech.pegasys.teku.validator.client.Validator;
@@ -85,11 +86,13 @@ public class MultithreadedValidatorLoader {
           addedValidators.stream()
               .map(validator -> validator.getPublicKey().toAbbreviatedString())
               .toList());
-
     } catch (InterruptedException e) {
       throw new RuntimeException("Interrupted while attempting to load validator key files", e);
     } catch (ExecutionException e) {
       if (e.getCause() instanceof RuntimeException) {
+        if (e.getCause() instanceof InvalidConfigurationException) {
+          STATUS_LOG.failedToLoadValidatorKey(e.getMessage());
+        }
         throw (RuntimeException) e.getCause();
       }
       throw new RuntimeException("Unable to load validator key files", e);

@@ -65,7 +65,7 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
                         .withNetwork(networkName)
                         .withInteropModeDisabled()
                         .withBeaconNode(beaconNode))
-            .withValidatorKeystores(validatorKeys);
+            .withReadOnlyKeystorePath(validatorKeys);
 
     beaconNode.start();
     validatorClient.start();

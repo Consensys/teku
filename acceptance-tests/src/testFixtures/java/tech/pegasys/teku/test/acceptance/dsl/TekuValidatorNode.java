@@ -28,6 +28,7 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -98,14 +99,50 @@ public class TekuValidatorNode extends Node {
     return validatorKeysApi;
   }
 
-  public TekuValidatorNode withValidatorKeystores(ValidatorKeystores validatorKeystores) {
-    this.config.withValidatorKeys(
+  // will copy keystores onto the filesystem, so not read-only, except permissions are root access.
+  public TekuValidatorNode withReadOnlyKeystorePath(final ValidatorKeystores validatorKeystores) {
+    this.config.configMap.put("Xinterop-enabled", false);
+    this.config.configMap.put("validators-keystore-locking-enabled", false);
+    this.copyContentsToWorkingDirectory(validatorKeystores.getTarball());
+    this.config.configMap.put(
+        "validator-keys",
         WORKING_DIRECTORY
             + validatorKeystores.getKeysDirectoryName()
             + ":"
             + WORKING_DIRECTORY
             + validatorKeystores.getPasswordsDirectoryName());
-    this.copyContentsToWorkingDirectory(validatorKeystores.getTarball());
+    return this;
+  }
+
+  // will mount keystores folder as a read only filesystem
+  public TekuValidatorNode withReadOnlyKeystorePath(
+      final ValidatorKeystores keystores, final Path tempDir) {
+    this.config.configMap.put("Xinterop-enabled", false);
+    final String keysFolder = "/home/validatorInfo/" + keystores.getKeysDirectoryName();
+    final String passFolder = "/home/validatorInfo/" + keystores.getPasswordsDirectoryName();
+    keystores.writeToTempDir(tempDir);
+    this.config.configMap.put("validator-keys", keysFolder + ":" + passFolder);
+    this.config.readOnlyMountPoints.put(
+        tempDir.resolve(keystores.getKeysDirectoryName()).toAbsolutePath().toString(), keysFolder);
+    this.config.readOnlyMountPoints.put(
+        tempDir.resolve(keystores.getPasswordsDirectoryName()).toAbsolutePath().toString(),
+        passFolder);
+    return this;
+  }
+
+  // will mount keystores folder as a writable filesystem and be able to create locks
+  public TekuValidatorNode withWritableKeystorePath(
+      final ValidatorKeystores keystores, final Path tempDir) {
+    this.config.configMap.put("Xinterop-enabled", false);
+    final String keysFolder = "/home/validatorInfo/" + keystores.getKeysDirectoryName();
+    final String passFolder = "/home/validatorInfo/" + keystores.getPasswordsDirectoryName();
+    keystores.writeToTempDir(tempDir);
+    this.config.configMap.put("validator-keys", keysFolder + ":" + passFolder);
+    this.config.writableMountPoints.put(
+        tempDir.resolve(keystores.getKeysDirectoryName()).toAbsolutePath().toString(), keysFolder);
+    this.config.readOnlyMountPoints.put(
+        tempDir.resolve(keystores.getPasswordsDirectoryName()).toAbsolutePath().toString(),
+        passFolder);
     return this;
   }
 
@@ -129,6 +166,8 @@ public class TekuValidatorNode extends Node {
     started = true;
     config.writeConfigFile();
     final Map<File, String> configFileMap = config.getConfigFileMap();
+    config.getWritableMountPoints().forEach(this::withWritableMountPoint);
+    config.getReadOnlyMountPoints().forEach(this::withReadOnlyMountPoint);
     this.configFiles = configFileMap.keySet();
     configFileMap.forEach(
         (localFile, targetPath) ->
@@ -203,11 +242,12 @@ public class TekuValidatorNode extends Node {
     private boolean keyfilesGenerated = false;
     private final Map<File, String> configFileMap = new HashMap<>();
     private Optional<InputStream> maybeNetworkYaml = Optional.empty();
+    private final Map<String, String> readOnlyMountPoints = new HashMap<>();
+    private final Map<String, String> writableMountPoints = new HashMap<>();
 
     private boolean isUsingSentryNodeConfig = false;
 
     public Config() {
-      configMap.put("validators-keystore-locking-enabled", false);
       configMap.put("Xinterop-owned-validator-start-index", 0);
       configMap.put("Xinterop-owned-validator-count", DEFAULT_VALIDATOR_COUNT);
       configMap.put("Xinterop-number-of-validators", DEFAULT_VALIDATOR_COUNT);
@@ -276,6 +316,14 @@ public class TekuValidatorNode extends Node {
     public TekuValidatorNode.Config withNetwork(String networkName) {
       configMap.put("network", networkName);
       return this;
+    }
+
+    private Map<String, String> getWritableMountPoints() {
+      return writableMountPoints;
+    }
+
+    private Map<String, String> getReadOnlyMountPoints() {
+      return readOnlyMountPoints;
     }
 
     public TekuValidatorNode.Config withInteropValidators(

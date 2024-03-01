@@ -90,8 +90,14 @@ public class TekuDepositSender extends Node {
   }
 
   public ValidatorKeystores generateValidatorKeys(int numberOfValidators) {
+    return generateValidatorKeys(numberOfValidators, false);
+  }
+
+  public ValidatorKeystores generateValidatorKeys(int numberOfValidators, boolean isLocked) {
     return new ValidatorKeystores(
-        validatorKeyGenerator.generateKeysStream(numberOfValidators).collect(Collectors.toList()));
+        validatorKeyGenerator
+            .generateKeysStream(numberOfValidators, isLocked)
+            .collect(Collectors.toList()));
   }
 
   public UInt64 getMinDepositAmount() {

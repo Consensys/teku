@@ -43,7 +43,7 @@ public class AddValidatorsAcceptanceTest extends AcceptanceTestBase {
                 config
                     .withNetwork(networkName)
                     .withInitialState(genesis)
-                    .withValidatorKeystores(initialKeystores));
+                    .withReadOnlyKeystorePath(initialKeystores));
     node.start();
 
     node.waitForOwnedValidatorCount(2);
