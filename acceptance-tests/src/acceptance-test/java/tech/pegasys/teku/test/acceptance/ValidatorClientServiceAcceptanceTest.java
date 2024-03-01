@@ -13,12 +13,16 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import java.nio.file.Path;
 import java.util.Collections;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
+import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 import tech.pegasys.teku.test.acceptance.dsl.tools.ValidatorKeysApi;
+import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
 
@@ -29,6 +33,93 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
             config -> config.withExitWhenNoValidatorKeysEnabled(true).withInteropValidators(0, 0));
     beaconNode.startWithFailure(
         "No loaded validators when --exit-when-no-validator-keys-enabled option is true");
+  }
+
+  @Test
+  void bn_shouldFailIfValidatorKeyLocked(@TempDir final Path tempDir) throws Exception {
+    final String networkName = "swift";
+    final ValidatorKeystores initialKeystores =
+        createTekuDepositSender(networkName).generateValidatorKeys(2, true);
+
+    final GenesisGenerator.InitialStateData genesis =
+        createGenesisGenerator().network(networkName).validatorKeys(initialKeystores).generate();
+
+    final TekuNode beaconNode =
+        createTekuNode(
+            config ->
+                config
+                    .withNetwork(networkName)
+                    .withInitialState(genesis)
+                    .withWritableKeystorePath(initialKeystores, tempDir));
+
+    beaconNode.startWithFailure(
+        "Unable to initialize validator keys, please manually correct errors and try again.");
+  }
+
+  @Test
+  void vc_shouldFailIfValidatorKeyLocked(@TempDir final Path tempDir) throws Exception {
+    final String networkName = "swift";
+    final ValidatorKeystores initialKeystores =
+        createTekuDepositSender(networkName).generateValidatorKeys(2, true);
+
+    final GenesisGenerator.InitialStateData genesis =
+        createGenesisGenerator().network(networkName).validatorKeys(initialKeystores).generate();
+
+    final TekuNode beaconNode =
+        createTekuNode(config -> config.withNetwork(networkName).withInitialState(genesis));
+    beaconNode.start();
+
+    final TekuValidatorNode validatorNode =
+        createValidatorNode(config -> config.withBeaconNode(beaconNode).withNetwork("auto"))
+            .withWritableKeystorePath(initialKeystores, tempDir);
+
+    validatorNode.startWithFailure(
+        "Unable to initialize validator keys, please manually correct errors and try again.");
+  }
+
+  @Test
+  void bn_shouldFailIfCannotLockKeys(@TempDir final Path tempDir) throws Exception {
+    final String networkName = "swift";
+    // keys aren't locked, but we're on readonly filesystem, so will cause unchecked io exception
+    final ValidatorKeystores initialKeystores =
+        createTekuDepositSender(networkName).generateValidatorKeys(2, false);
+
+    final GenesisGenerator.InitialStateData genesis =
+        createGenesisGenerator().network(networkName).validatorKeys(initialKeystores).generate();
+
+    final TekuNode beaconNode =
+        createTekuNode(
+            config ->
+                config
+                    .withNetwork(networkName)
+                    .withInitialState(genesis)
+                    .withReadOnlyKeystorePath(initialKeystores, tempDir));
+
+    beaconNode.startWithFailure(
+        "Unable to initialize validator keys, please manually correct errors and try again.");
+  }
+
+  @Test
+  void bn_shouldFailIfCannotLockKeysUnhandledException() throws Exception {
+    final String networkName = "swift";
+    // keys aren't locked, but we have no access to write
+    final ValidatorKeystores initialKeystores =
+        createTekuDepositSender(networkName).generateValidatorKeys(2, true);
+
+    final GenesisGenerator.InitialStateData genesis =
+        createGenesisGenerator().network(networkName).validatorKeys(initialKeystores).generate();
+
+    final TekuNode beaconNode =
+        createTekuNode(
+            config ->
+                config
+                    .withNetwork(networkName)
+                    .withInitialState(genesis)
+                    .withReadOnlyKeystorePath(initialKeystores)
+                    .withValidatorKeystoreLockingEnabled(true));
+
+    beaconNode.startWithFailure(
+        "Unable to initialize validator keys, please manually correct errors and try again.");
   }
 
   @Test

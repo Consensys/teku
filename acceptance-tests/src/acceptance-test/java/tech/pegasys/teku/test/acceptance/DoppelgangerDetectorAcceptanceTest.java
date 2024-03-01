@@ -144,7 +144,7 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
                     .withDepositsFrom(eth1Node)
                     .withExecutionEngine(eth1Node)
                     .withRealNetwork()
-                    .withValidatorKeystores(keyStore));
+                    .withReadOnlyKeystorePath(keyStore));
     firstNode.start();
 
     firstNode.waitForOwnedValidatorCount(2);
@@ -158,7 +158,7 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
                 config
                     .withNetwork(networkName)
                     .withInitialState(genesis)
-                    .withValidatorKeystores(keyStore)
+                    .withReadOnlyKeystorePath(keyStore)
                     .withDepositsFrom(eth1Node)
                     .withExecutionEngine(eth1Node)
                     .withPeers(firstNode)

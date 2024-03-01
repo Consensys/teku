@@ -54,7 +54,7 @@ public class WebsocketsMergeTransitionAcceptanceTest extends AcceptanceTestBase 
                 configureTekuNode(config, genesisTime)
                     .withDepositsFrom(eth1Node)
                     .withStartupTargetPeerCount(0)
-                    .withValidatorKeystores(validatorKeystores)
+                    .withReadOnlyKeystorePath(validatorKeystores)
                     .withValidatorProposerDefaultFeeRecipient(
                         "0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73")
                     .withExecutionEngine(eth1Node)

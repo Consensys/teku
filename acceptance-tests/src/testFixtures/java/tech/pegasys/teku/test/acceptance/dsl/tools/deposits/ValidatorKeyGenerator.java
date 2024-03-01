@@ -26,15 +26,18 @@ import tech.pegasys.teku.infrastructure.crypto.SecureRandomProvider;
 public class ValidatorKeyGenerator {
   private final SecureRandom srng = SecureRandomProvider.createSecureRandom();
 
-  public Stream<ValidatorKeys> generateKeysStream(final int validatorCount) {
+  public Stream<ValidatorKeys> generateKeysStream(
+      final int validatorCount, final boolean lockedKeys) {
     return IntStream.range(0, validatorCount)
-        .mapToObj(ignore -> new ValidatorKeys(BLSKeyPair.random(srng), BLSKeyPair.random(srng)));
+        .mapToObj(
+            ignore ->
+                new ValidatorKeys(BLSKeyPair.random(srng), BLSKeyPair.random(srng), lockedKeys));
   }
 
   public Stream<ValidatorKeys> generateKeysStream(
       final int validatorCount, final Bytes20 eth1WithdrawalAddress) {
     final Bytes32 withdrawalCredentials = createWithdrawalCredentials(eth1WithdrawalAddress);
     return IntStream.range(0, validatorCount)
-        .mapToObj(__ -> new ValidatorKeys(BLSKeyPair.random(srng), withdrawalCredentials));
+        .mapToObj(__ -> new ValidatorKeys(BLSKeyPair.random(srng), withdrawalCredentials, false));
   }
 }

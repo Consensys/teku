@@ -118,6 +118,10 @@ public class StatusLogger {
     log.warn("Spec failed for {}: {}", description, cause, cause);
   }
 
+  public void failedToLoadValidatorKey(final String message) {
+    log.error("Failed to load keystore, error {}", message);
+  }
+
   public void eth1DepositEventsFailure(final Throwable cause) {
     log.fatal(
         "PLEASE CHECK YOUR ETH1 NODE | Encountered a problem retrieving deposit events from eth1 endpoint: {}",

@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.images.PullPolicy;
@@ -252,5 +253,13 @@ public abstract class Node {
   /** Copies contents of the given directory into node's working directory. */
   public void copyContentsToWorkingDirectory(File tarFile) {
     container.withExpandedTarballToContainer(tarFile, WORKING_DIRECTORY);
+  }
+
+  public void withWritableMountPoint(final String filePath, final String nodePath) {
+    container.withFileSystemBind(filePath, nodePath, BindMode.READ_WRITE);
+  }
+
+  public void withReadOnlyMountPoint(final String filePath, final String nodePath) {
+    container.withFileSystemBind(filePath, nodePath, BindMode.READ_ONLY);
   }
 }

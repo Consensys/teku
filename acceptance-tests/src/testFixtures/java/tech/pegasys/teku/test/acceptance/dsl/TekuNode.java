@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -183,6 +184,8 @@ public class TekuNode extends Node {
             container.withCopyFileToContainer(
                 MountableFile.forHostPath(localFile.getAbsolutePath()), targetPath));
     config.getTarballsToCopy().forEach(this::copyContentsToWorkingDirectory);
+    config.getWritableMountPoints().forEach(this::withWritableMountPoint);
+    config.getReadOnlyMountPoints().forEach(this::withReadOnlyMountPoint);
   }
 
   public void startEventListener(final EventType... eventTypes) {
@@ -912,6 +915,9 @@ public class TekuNode extends Node {
     private final Map<String, Object> configMap = new HashMap<>();
     private final List<File> tarballsToCopy = new ArrayList<>();
 
+    private final Map<String, String> readOnlyMountPoints = new HashMap<>();
+    private final Map<String, String> writableMountPoints = new HashMap<>();
+
     private Consumer<SpecConfigBuilder> specConfigModifier = builder -> {};
 
     public Config() {
@@ -928,7 +934,6 @@ public class TekuNode extends Node {
       configMap.put("Xinterop-owned-validator-count", DEFAULT_VALIDATOR_COUNT);
       configMap.put("Xinterop-number-of-validators", DEFAULT_VALIDATOR_COUNT);
       configMap.put("Xinterop-enabled", true);
-      configMap.put("validators-keystore-locking-enabled", false);
       configMap.put("rest-api-enabled", true);
       configMap.put("rest-api-port", REST_API_PORT);
       configMap.put("rest-api-docs-enabled", false);
@@ -971,6 +976,11 @@ public class TekuNode extends Node {
       return this;
     }
 
+    public Config withValidatorKeystoreLockingEnabled(final boolean enabled) {
+      configMap.put("validators-keystore-locking-enabled", enabled);
+      return this;
+    }
+
     public Config withStopVcWhenValidatorSlashedEnabled() {
       configMap.put("Xshut-down-when-validator-slashed-enabled", true);
       return this;
@@ -993,8 +1003,11 @@ public class TekuNode extends Node {
       return this;
     }
 
-    public Config withValidatorKeystores(final ValidatorKeystores keystores) {
+    // will copy keystores onto the filesystem, so not read-only, except permissions are root
+    // access.
+    public Config withReadOnlyKeystorePath(final ValidatorKeystores keystores) {
       configMap.put("Xinterop-enabled", false);
+      configMap.put("validators-keystore-locking-enabled", false);
       tarballsToCopy.add(keystores.getTarball());
       configMap.put(
           "validator-keys",
@@ -1003,6 +1016,38 @@ public class TekuNode extends Node {
               + ":"
               + WORKING_DIRECTORY
               + keystores.getPasswordsDirectoryName());
+      return this;
+    }
+
+    // will mount keystores folder as a read only filesystem
+    public Config withReadOnlyKeystorePath(final ValidatorKeystores keystores, final Path tempDir) {
+      configMap.put("Xinterop-enabled", false);
+      final String keysFolder = "/home/validatorInfo/" + keystores.getKeysDirectoryName();
+      final String passFolder = "/home/validatorInfo/" + keystores.getPasswordsDirectoryName();
+      keystores.writeToTempDir(tempDir);
+      configMap.put("validator-keys", keysFolder + ":" + passFolder);
+      readOnlyMountPoints.put(
+          tempDir.resolve(keystores.getKeysDirectoryName()).toAbsolutePath().toString(),
+          keysFolder);
+      readOnlyMountPoints.put(
+          tempDir.resolve(keystores.getPasswordsDirectoryName()).toAbsolutePath().toString(),
+          passFolder);
+      return this;
+    }
+
+    // will mount keystores folder as a writable filesystem and be able to create locks
+    public Config withWritableKeystorePath(final ValidatorKeystores keystores, final Path tempDir) {
+      configMap.put("Xinterop-enabled", false);
+      final String keysFolder = "/home/validatorInfo/" + keystores.getKeysDirectoryName();
+      final String passFolder = "/home/validatorInfo/" + keystores.getPasswordsDirectoryName();
+      keystores.writeToTempDir(tempDir);
+      configMap.put("validator-keys", keysFolder + ":" + passFolder);
+      writableMountPoints.put(
+          tempDir.resolve(keystores.getKeysDirectoryName()).toAbsolutePath().toString(),
+          keysFolder);
+      readOnlyMountPoints.put(
+          tempDir.resolve(keystores.getPasswordsDirectoryName()).toAbsolutePath().toString(),
+          passFolder);
       return this;
     }
 
@@ -1201,6 +1246,14 @@ public class TekuNode extends Node {
 
     private List<File> getTarballsToCopy() {
       return tarballsToCopy;
+    }
+
+    private Map<String, String> getWritableMountPoints() {
+      return writableMountPoints;
+    }
+
+    private Map<String, String> getReadOnlyMountPoints() {
+      return readOnlyMountPoints;
     }
   }
 }

@@ -271,14 +271,21 @@ public class ValidatorClientService extends Service {
             })
         .exceptionally(
             error -> {
-              final Optional<Throwable> maybeCause =
-                  ExceptionUtil.getCause(error, InvalidConfigurationException.class);
-              if (maybeCause.isPresent()) {
-                LOG.warn(maybeCause.get().getMessage());
-              } else {
-                LOG.error("Error was encountered during validator client service start up.", error);
-              }
-              checkNoKeysLoaded(validatorConfig, validatorLoader);
+              ExceptionUtil.getCause(error, InvalidConfigurationException.class)
+                  .ifPresentOrElse(
+                      cause -> LOG.error(cause.getMessage()),
+                      () ->
+                          LOG.error(
+                              "Error was encountered during validator client service start up.",
+                              error));
+
+              LOG.error(
+                  "Unable to initialize validator keys, please manually correct errors and try again.");
+              // an unhandled exception getting this far means any number of above steps failed to
+              // complete,
+              // which is fatal, we don't know how to recover at this point, regardless of if we're
+              // in VC or BN mode.
+              System.exit(FATAL_EXIT_CODE);
               return null;
             })
         .always(() -> LOG.trace("Finished starting validator client service."));
