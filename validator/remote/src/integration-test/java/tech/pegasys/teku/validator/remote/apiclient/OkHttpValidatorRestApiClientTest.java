@@ -20,7 +20,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.fail;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_SERVER_ERROR;
-import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_METHOD_NOT_ALLOWED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
@@ -39,8 +38,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.GetStateValidatorsResponse;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailure;
@@ -146,48 +143,6 @@ class OkHttpValidatorRestApiClientTest {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(asJson(response)));
 
     Optional<List<ValidatorResponse>> result = apiClient.getValidators(List.of("1", "2"));
-
-    assertThat(result).isPresent();
-    assertThat(result.get()).usingRecursiveComparison().isEqualTo(expected);
-  }
-
-  @Test
-  void postValidators_MakesExpectedRequest() throws Exception {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
-
-    apiClient.postValidators(List.of("1", "0x1234"));
-
-    final RecordedRequest request = mockWebServer.takeRequest();
-    assertThat(request.getMethod()).isEqualTo("POST");
-    assertThat(request.getPath()).contains(ValidatorApiMethod.GET_VALIDATORS.getPath(emptyMap()));
-    assertThat(request.getBody().readUtf8()).isEqualTo("{\"ids\":[\"1\",\"0x1234\"]}");
-  }
-
-  @Test
-  public void postValidators_WhenNoContent_ReturnsEmpty() {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NO_CONTENT));
-
-    assertThat(apiClient.postValidators(List.of("1"))).isEmpty();
-  }
-
-  @ParameterizedTest
-  @ValueSource(ints = {SC_BAD_REQUEST, SC_NOT_FOUND, SC_METHOD_NOT_ALLOWED})
-  public void postValidators_WhenNotExisting_ThrowsException(final int responseCode) {
-    mockWebServer.enqueue(new MockResponse().setResponseCode(responseCode));
-
-    assertThatThrownBy(() -> apiClient.postValidators(List.of("1")))
-        .isInstanceOf(PostStateValidatorsNotExistingException.class);
-  }
-
-  @Test
-  public void postValidators_WhenSuccess_ReturnsResponse() {
-    final List<ValidatorResponse> expected =
-        List.of(schemaObjects.validatorResponse(), schemaObjects.validatorResponse());
-    final GetStateValidatorsResponse response = new GetStateValidatorsResponse(false, expected);
-
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(asJson(response)));
-
-    Optional<List<ValidatorResponse>> result = apiClient.postValidators(List.of("1", "2"));
 
     assertThat(result).isPresent();
     assertThat(result.get()).usingRecursiveComparison().isEqualTo(expected);

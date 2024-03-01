@@ -1,1 +1,6 @@
 # Mainnet preset - Electra
+
+# Execution
+# ---------------------------------------------------------------
+# 2**13 (= 8192) receipts
+MAX_DEPOSIT_RECEIPTS_PER_PAYLOAD: 8192

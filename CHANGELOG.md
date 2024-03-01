@@ -15,6 +15,7 @@ the [releases page](https://github.com/Consensys/teku/releases).
 ### Additions and Improvements
 - Improve block rewards calculation performance for `/eth/v3/validator/blocks/{slot}` block production beacon node API.
 - Updated Javalin to v.6 (used by rest-api and keymanager-api).
+- Docker image tags now default to jdk21 images unless a jdk-specific tag is used.
 
 ### Bug Fixes
 - Fixed an issue where stale lock files weren't able to be cleaned up and would effectively park the service (BN or VC) with no user errors or any indication that the service was in a bad state.
