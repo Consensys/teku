@@ -22,7 +22,8 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfig;
 
 public class ValidatorLivenessAcceptanceTest extends AcceptanceTestBase {
 
@@ -30,8 +31,8 @@ public class ValidatorLivenessAcceptanceTest extends AcceptanceTestBase {
   private static final int TOTAL_VALIDATORS = NODE_VALIDATORS * 2;
 
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
-  private TekuNode primaryNode;
-  private TekuNode secondaryNode;
+  private TekuBeaconNode primaryNode;
+  private TekuBeaconNode secondaryNode;
 
   @BeforeEach
   public void setup() {
@@ -82,10 +83,10 @@ public class ValidatorLivenessAcceptanceTest extends AcceptanceTestBase {
     primaryNode.stop();
   }
 
-  private TekuNode.Config configureNode(final TekuNode.Config node, final int genesisTime) {
-    return node.withNetwork("swift")
+  private TekuNodeConfig configureNode(final TekuBeaconNode.Config node, final int genesisTime) {
+    return node.withValidatorLivenessTracking()
+        .withNetwork("swift")
         .withGenesisTime(genesisTime)
-        .withValidatorLivenessTracking()
         .withInteropNumberOfValidators(TOTAL_VALIDATORS)
         .withRealNetwork();
   }

@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 import tech.pegasys.teku.test.acceptance.dsl.Web3SignerNode;
 import tech.pegasys.teku.test.acceptance.dsl.tools.ValidatorKeysApi;
@@ -35,7 +35,7 @@ public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
     final InitialStateData genesis =
         createGenesisGenerator().network(networkName).validatorKeys(validatorKeystores).generate();
 
-    final TekuNode beaconNode =
+    final TekuBeaconNode beaconNode =
         createTekuNode(config -> config.withNetwork(networkName).withInitialState(genesis));
     final Web3SignerNode web3SignerNode =
         createWeb3SignerNode(config -> config.withNetwork(networkName));
@@ -49,7 +49,7 @@ public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
                     .withValidatorApiEnabled()
                     .withExternalSignerUrl(web3SignerNode.getValidatorRestApiUrl())
                     .withInteropModeDisabled()
-                    .withBeaconNode(beaconNode));
+                    .withBeaconNodes(beaconNode));
 
     beaconNode.start();
     validatorClient.start();

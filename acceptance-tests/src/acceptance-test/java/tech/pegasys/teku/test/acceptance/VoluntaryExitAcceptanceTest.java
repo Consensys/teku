@@ -21,8 +21,8 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuDepositSender;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuVoluntaryExit;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
@@ -46,7 +46,7 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
     final InitialStateData genesis =
         createGenesisGenerator().network(networkName).validatorKeys(validatorKeys).generate();
 
-    final TekuNode beaconNode =
+    final TekuBeaconNode beaconNode =
         createTekuNode(config -> config.withNetwork(networkName).withInitialState(genesis));
 
     final TekuVoluntaryExit voluntaryExitProcessFailing =
@@ -60,12 +60,12 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
 
     final TekuValidatorNode validatorClient =
         createValidatorNode(
-                config ->
-                    config
-                        .withNetwork(networkName)
-                        .withInteropModeDisabled()
-                        .withBeaconNode(beaconNode))
-            .withReadOnlyKeystorePath(validatorKeys);
+            config ->
+                config
+                    .withNetwork(networkName)
+                    .withInteropModeDisabled()
+                    .withBeaconNodes(beaconNode)
+                    .withReadOnlyKeystorePath(validatorKeys));
 
     beaconNode.start();
     validatorClient.start();

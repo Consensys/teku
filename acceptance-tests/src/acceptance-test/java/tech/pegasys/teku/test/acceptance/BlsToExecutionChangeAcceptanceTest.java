@@ -21,8 +21,8 @@ import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode.Config;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode.Config;
 
 public class BlsToExecutionChangeAcceptanceTest extends AcceptanceTestBase {
 
@@ -39,12 +39,12 @@ public class BlsToExecutionChangeAcceptanceTest extends AcceptanceTestBase {
         Eth1Address.fromHexString("0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73");
     final UInt64 capellaActivationEpoch = UInt64.ONE;
 
-    final TekuNode primaryNode = createPrimaryNode(executionAddress, capellaActivationEpoch);
+    final TekuBeaconNode primaryNode = createPrimaryNode(executionAddress, capellaActivationEpoch);
     primaryNode.start();
     primaryNode.waitForNextEpoch();
     primaryNode.startEventListener(EventType.bls_to_execution_change);
 
-    final TekuNode lateJoiningNode =
+    final TekuBeaconNode lateJoiningNode =
         createLateJoiningNode(capellaActivationEpoch, primaryNode, primaryNode.getGenesisTime());
     lateJoiningNode.start();
     lateJoiningNode.waitUntilInSyncWith(primaryNode);
@@ -57,7 +57,7 @@ public class BlsToExecutionChangeAcceptanceTest extends AcceptanceTestBase {
     lateJoiningNode.waitForBlsToExecutionChangeEventForValidator(0);
   }
 
-  private TekuNode createPrimaryNode(
+  private TekuBeaconNode createPrimaryNode(
       final Eth1Address executionAddress, final UInt64 capellaActivationEpoch) {
     return createTekuNode(
         c -> {
@@ -69,8 +69,10 @@ public class BlsToExecutionChangeAcceptanceTest extends AcceptanceTestBase {
         });
   }
 
-  private TekuNode createLateJoiningNode(
-      final UInt64 capellaActivationEpoch, final TekuNode primaryNode, final UInt64 genesisTime) {
+  private TekuBeaconNode createLateJoiningNode(
+      final UInt64 capellaActivationEpoch,
+      final TekuBeaconNode primaryNode,
+      final UInt64 genesisTime) {
     return createTekuNode(
         c -> {
           c.withGenesisTime(genesisTime.intValue())

@@ -16,9 +16,9 @@ package tech.pegasys.teku.test.acceptance;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode.Config;
 import tech.pegasys.teku.test.acceptance.dsl.TekuDepositSender;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode.Config;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
@@ -30,11 +30,11 @@ public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
 
     createTekuDepositSender(Config.DEFAULT_NETWORK_NAME).sendValidatorDeposits(eth1Node, 4);
 
-    final TekuNode firstTeku = createTekuNode(config -> config.withDepositsFrom(eth1Node));
+    final TekuBeaconNode firstTeku = createTekuNode(config -> config.withDepositsFrom(eth1Node));
     firstTeku.start();
     firstTeku.waitForGenesis();
 
-    final TekuNode lateJoinTeku = createTekuNode(config -> config.withDepositsFrom(eth1Node));
+    final TekuBeaconNode lateJoinTeku = createTekuNode(config -> config.withDepositsFrom(eth1Node));
     lateJoinTeku.start();
     lateJoinTeku.waitForGenesis();
 
@@ -59,7 +59,7 @@ public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
         validatorKeys,
         depositSender.getMaxEffectiveBalance().minus(depositSender.getMinDepositAmount()));
 
-    final TekuNode teku = createTekuNode(config -> config.withDepositsFrom(eth1Node));
+    final TekuBeaconNode teku = createTekuNode(config -> config.withDepositsFrom(eth1Node));
     teku.start();
     teku.waitForGenesis();
 

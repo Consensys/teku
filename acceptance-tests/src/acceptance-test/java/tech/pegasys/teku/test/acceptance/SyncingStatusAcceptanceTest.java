@@ -20,7 +20,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class SyncingStatusAcceptanceTest extends AcceptanceTestBase {
@@ -47,17 +47,17 @@ public class SyncingStatusAcceptanceTest extends AcceptanceTestBase {
         createGenesisGenerator().network(networkName).validatorKeys(validatorKeystores).generate();
 
     final String defaultFeeRecipient = "0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73";
-    final TekuNode beaconNode =
+    final TekuBeaconNode beaconNode =
         createTekuNode(
             config ->
                 config
+                    .withValidatorLivenessTracking()
                     .withNetwork(networkName)
                     .withDepositsFrom(eth1Node)
                     .withBellatrixEpoch(UInt64.ONE)
                     .withTotalTerminalDifficulty(10001)
                     .withValidatorProposerDefaultFeeRecipient(defaultFeeRecipient)
                     .withExecutionEngine(eth1Node)
-                    .withValidatorLivenessTracking()
                     .withInitialState(genesis)
                     .withRealNetwork()
                     .withJwtSecretFile(JWT_FILE));

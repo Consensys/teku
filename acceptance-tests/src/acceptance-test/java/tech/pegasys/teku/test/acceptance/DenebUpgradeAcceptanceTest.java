@@ -24,8 +24,8 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuDockerVersion;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode.Config;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode.Config;
 
 /**
  * The test is based on `shanghaiTime` and `cancunTime` in Besu EL genesis config as the only option
@@ -77,7 +77,7 @@ public class DenebUpgradeAcceptanceTest extends AcceptanceTestBase {
     secondaryEL.start();
     secondaryEL.addPeer(primaryEL);
 
-    TekuNode primaryNode =
+    TekuBeaconNode primaryNode =
         createTekuNode(
             config -> {
               config
@@ -94,7 +94,7 @@ public class DenebUpgradeAcceptanceTest extends AcceptanceTestBase {
 
     final int primaryNodeGenesisTime = primaryNode.getGenesisTime().intValue();
 
-    TekuNode lateJoiningNode =
+    TekuBeaconNode lateJoiningNode =
         createTekuNode(
             c -> {
               c.withGenesisTime(primaryNodeGenesisTime)

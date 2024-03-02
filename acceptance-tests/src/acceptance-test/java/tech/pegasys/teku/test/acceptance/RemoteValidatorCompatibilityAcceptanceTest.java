@@ -15,14 +15,14 @@ package tech.pegasys.teku.test.acceptance;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuDockerVersion;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 
 public class RemoteValidatorCompatibilityAcceptanceTest extends AcceptanceTestBase {
   static final int VALIDATOR_COUNT = 8;
 
-  private TekuNode beaconNode;
+  private TekuBeaconNode beaconNode;
   private TekuValidatorNode validatorClient;
 
   @Test
@@ -62,7 +62,7 @@ public class RemoteValidatorCompatibilityAcceptanceTest extends AcceptanceTestBa
                 config
                     .withNetwork("auto")
                     .withInteropValidators(0, VALIDATOR_COUNT)
-                    .withBeaconNode(beaconNode));
+                    .withBeaconNodes(beaconNode));
   }
 
   private void createBeaconNode(final TekuDockerVersion version) {

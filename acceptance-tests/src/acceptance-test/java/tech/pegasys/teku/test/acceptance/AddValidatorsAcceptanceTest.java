@@ -16,7 +16,7 @@ package tech.pegasys.teku.test.acceptance;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class AddValidatorsAcceptanceTest extends AcceptanceTestBase {
@@ -37,7 +37,7 @@ public class AddValidatorsAcceptanceTest extends AcceptanceTestBase {
             .validatorKeys(initialKeystores, additionalKeystores)
             .generate();
 
-    final TekuNode node =
+    final TekuBeaconNode node =
         createTekuNode(
             config ->
                 config

@@ -48,18 +48,18 @@ public class AcceptanceTestBase {
     network.close();
   }
 
-  protected TekuNode createTekuNode() {
+  protected TekuBeaconNode createTekuNode() {
     return createTekuNode(config -> {});
   }
 
-  protected TekuNode createTekuNode(final Consumer<TekuNode.Config> configOptions) {
+  protected TekuBeaconNode createTekuNode(final Consumer<TekuBeaconNode.Config> configOptions) {
     return createTekuNode(TekuDockerVersion.LOCAL_BUILD, configOptions);
   }
 
-  protected TekuNode createTekuNode(
-      final TekuDockerVersion version, final Consumer<TekuNode.Config> configOptions) {
+  protected TekuBeaconNode createTekuNode(
+      final TekuDockerVersion version, final Consumer<TekuBeaconNode.Config> configOptions) {
     try {
-      return addNode(TekuNode.create(network, version, configOptions));
+      return addNode(TekuBeaconNode.create(network, version, configOptions));
     } catch (IOException | TimeoutException e) {
       throw new RuntimeException(e);
     }
@@ -74,13 +74,12 @@ public class AcceptanceTestBase {
     return addNode(TekuVoluntaryExit.create(network, configOptions));
   }
 
-  protected TekuValidatorNode createValidatorNode(
-      final Consumer<TekuValidatorNode.Config> configOptions) {
+  protected TekuValidatorNode createValidatorNode(final Consumer<TekuNodeConfig> configOptions) {
     return createValidatorNode(TekuDockerVersion.LOCAL_BUILD, configOptions);
   }
 
   protected TekuValidatorNode createValidatorNode(
-      final TekuDockerVersion version, final Consumer<TekuValidatorNode.Config> configOptions) {
+      final TekuDockerVersion version, final Consumer<TekuNodeConfig> configOptions) {
     return addNode(TekuValidatorNode.create(network, version, configOptions));
   }
 

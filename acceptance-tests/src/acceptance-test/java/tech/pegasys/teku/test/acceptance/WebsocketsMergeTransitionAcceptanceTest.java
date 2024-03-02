@@ -21,7 +21,8 @@ import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfig;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class WebsocketsMergeTransitionAcceptanceTest extends AcceptanceTestBase {
@@ -29,7 +30,7 @@ public class WebsocketsMergeTransitionAcceptanceTest extends AcceptanceTestBase 
 
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
   private BesuNode eth1Node;
-  private TekuNode tekuNode;
+  private TekuBeaconNode tekuNode;
 
   @BeforeEach
   void setup() throws Exception {
@@ -54,11 +55,11 @@ public class WebsocketsMergeTransitionAcceptanceTest extends AcceptanceTestBase 
                 configureTekuNode(config, genesisTime)
                     .withDepositsFrom(eth1Node)
                     .withStartupTargetPeerCount(0)
-                    .withReadOnlyKeystorePath(validatorKeystores)
                     .withValidatorProposerDefaultFeeRecipient(
                         "0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73")
                     .withExecutionEngine(eth1Node)
-                    .withJwtSecretFile(jwtFile));
+                    .withJwtSecretFile(jwtFile)
+                    .withReadOnlyKeystorePath(validatorKeystores));
     tekuNode.start();
   }
 
@@ -70,10 +71,10 @@ public class WebsocketsMergeTransitionAcceptanceTest extends AcceptanceTestBase 
     tekuNode.waitForNewFinalization();
   }
 
-  private TekuNode.Config configureTekuNode(final TekuNode.Config node, final int genesisTime) {
+  private TekuNodeConfig configureTekuNode(final TekuNodeConfig node, final int genesisTime) {
     return node.withNetwork(NETWORK_NAME)
-        .withBellatrixEpoch(UInt64.ONE)
         .withTotalTerminalDifficulty(10001)
+        .withBellatrixEpoch(UInt64.ONE)
         .withGenesisTime(genesisTime);
   }
 }

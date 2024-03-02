@@ -22,7 +22,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class MergedGenesisAcceptanceTest extends AcceptanceTestBase {
@@ -33,7 +33,7 @@ public class MergedGenesisAcceptanceTest extends AcceptanceTestBase {
       Eth1Address.fromHexString("0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
 
   private BesuNode eth1Node;
-  private TekuNode tekuNode;
+  private TekuBeaconNode tekuNode;
 
   @BeforeEach
   void setup() throws Exception {

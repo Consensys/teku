@@ -21,7 +21,8 @@ import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfig;
 
 public class OptimisticSyncSafeSlotsAcceptanceTest extends AcceptanceTestBase {
   private static final String NETWORK_NAME = "swift";
@@ -32,8 +33,8 @@ public class OptimisticSyncSafeSlotsAcceptanceTest extends AcceptanceTestBase {
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
   private BesuNode executionNode1;
   private BesuNode executionNode2;
-  private TekuNode tekuNode1;
-  private TekuNode tekuNode2;
+  private TekuBeaconNode tekuNode1;
+  private TekuBeaconNode tekuNode2;
 
   @BeforeEach
   void setup() throws Exception {
@@ -84,8 +85,8 @@ public class OptimisticSyncSafeSlotsAcceptanceTest extends AcceptanceTestBase {
     tekuNode2.waitForNonOptimisticBlock();
   }
 
-  private TekuNode.Config configureTekuNode(
-      final TekuNode.Config config, final BesuNode executionEngine, final int genesisTime) {
+  private TekuNodeConfig configureTekuNode(
+      final TekuNodeConfig config, final BesuNode executionEngine, final int genesisTime) {
     return config
         .withNetwork(NETWORK_NAME)
         .withBellatrixEpoch(UInt64.ZERO)

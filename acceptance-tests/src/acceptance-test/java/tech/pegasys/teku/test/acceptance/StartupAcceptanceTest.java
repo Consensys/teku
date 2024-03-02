@@ -18,14 +18,14 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode.Config;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode.Config;
 
 public class StartupAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   public void shouldProgressChainAfterStartingFromMockGenesis() throws Exception {
-    final TekuNode node = createTekuNode();
+    final TekuBeaconNode node = createTekuNode();
     node.start();
     node.waitForGenesis();
     node.waitForNewBlock();
@@ -33,13 +33,13 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   public void shouldProgressChainAfterStartingFromDisk() throws Exception {
-    final TekuNode node1 = createTekuNode();
+    final TekuBeaconNode node1 = createTekuNode();
     node1.start();
     final UInt64 genesisTime = node1.getGenesisTime();
     File dataDirectory = node1.getDataDirectoryFromContainer();
     node1.stop();
 
-    final TekuNode node2 = createTekuNode();
+    final TekuBeaconNode node2 = createTekuNode();
     node2.copyContentsToWorkingDirectory(dataDirectory);
     node2.start();
     node2.waitForGenesisTime(genesisTime);
@@ -48,7 +48,7 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   public void shouldContainSyncCommitteeAggregatesOnAltair() throws Exception {
-    final TekuNode node1 =
+    final TekuBeaconNode node1 =
         createTekuNode(
             config -> {
               config.withAltairEpoch(UInt64.ZERO);
@@ -60,7 +60,7 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   public void shouldFinalize() throws Exception {
-    final TekuNode node1 = createTekuNode();
+    final TekuBeaconNode node1 = createTekuNode();
     node1.start();
     node1.waitForNewFinalization();
     node1.stop();
@@ -71,7 +71,7 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
     final BesuNode eth1Node = createBesuNode(config -> config.withMiningEnabled(true));
     eth1Node.start();
 
-    final TekuNode tekuNode = createTekuNode(config -> config.withDepositsFrom(eth1Node));
+    final TekuBeaconNode tekuNode = createTekuNode(config -> config.withDepositsFrom(eth1Node));
     tekuNode.start();
 
     createTekuDepositSender(Config.DEFAULT_NETWORK_NAME).sendValidatorDeposits(eth1Node, 4);

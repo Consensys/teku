@@ -16,7 +16,7 @@ package tech.pegasys.teku.test.acceptance;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 
 public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
@@ -25,7 +25,7 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
 
   private static final int VALIDATOR_COUNT = 8;
 
-  private TekuNode beaconNode;
+  private TekuBeaconNode beaconNode;
   private TekuValidatorNode validatorClient;
 
   @BeforeEach
@@ -43,7 +43,7 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
                 config
                     .withNetwork(NETWORK_NAME)
                     .withInteropValidators(0, VALIDATOR_COUNT)
-                    .withBeaconNode(beaconNode));
+                    .withBeaconNodes(beaconNode));
   }
 
   @Test
@@ -68,7 +68,7 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldFailoverWhenPrimaryBeaconNodeGoesDown() throws Exception {
-    final TekuNode failoverBeaconNode =
+    final TekuBeaconNode failoverBeaconNode =
         createTekuNode(
             config ->
                 config
@@ -93,7 +93,7 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
     waitForSuccessfulEventStreamConnection();
     waitForValidatorDutiesToComplete();
 
-    beaconNode.stop();
+    beaconNode.stop(false);
 
     validatorClient.waitForLogMessageContaining(
         "Switching to failover beacon node for event streaming");
@@ -112,7 +112,7 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
   @Test
   void shouldPerformDutiesIfPrimaryBeaconNodeIsDownOnStartup() throws Exception {
     // creating a primary beacon node which we would never start
-    final TekuNode primaryBeaconNode =
+    final TekuBeaconNode primaryBeaconNode =
         createTekuNode(
             config ->
                 config

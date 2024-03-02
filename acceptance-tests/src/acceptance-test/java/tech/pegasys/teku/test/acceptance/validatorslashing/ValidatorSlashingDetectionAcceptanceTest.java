@@ -23,7 +23,8 @@ import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfig;
 
 /**
  * In order to cover all possible validator slashing scenarios, this acceptance test runs different
@@ -57,8 +58,8 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
     return Stream.of(SlashingEventType.values()).map(Arguments::of);
   }
 
-  TekuNode.Config configureNode(
-      final TekuNode.Config node, final int genesisTime, final String network) {
+  TekuNodeConfig configureNode(
+      final TekuBeaconNode.Config node, final int genesisTime, final String network) {
     return node.withNetwork(network).withGenesisTime(genesisTime).withRealNetwork();
   }
 
@@ -69,7 +70,7 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
   }
 
   void postSlashing(
-      final TekuNode tekuNode,
+      final TekuBeaconNode tekuNode,
       final UInt64 slashingSlot,
       final UInt64 slashedIndex,
       final BLSSecretKey slashedValidatorSecretKey,

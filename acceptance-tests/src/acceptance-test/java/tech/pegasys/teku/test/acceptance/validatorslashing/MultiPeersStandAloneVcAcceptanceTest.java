@@ -18,7 +18,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 
 /**
@@ -39,7 +39,7 @@ public class MultiPeersStandAloneVcAcceptanceTest extends ValidatorSlashingDetec
     final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
     final UInt64 altairEpoch = UInt64.valueOf(100);
 
-    final TekuNode firstTekuNode =
+    final TekuBeaconNode firstTekuNode =
         createTekuNode(
             config ->
                 configureNode(config, genesisTime, network)
@@ -51,7 +51,7 @@ public class MultiPeersStandAloneVcAcceptanceTest extends ValidatorSlashingDetec
 
     firstTekuNode.waitForEpochAtOrAbove(1);
 
-    final TekuNode secondBeaconNode =
+    final TekuBeaconNode secondBeaconNode =
         createTekuNode(
             config ->
                 configureNode(config, genesisTime, network)
@@ -63,11 +63,11 @@ public class MultiPeersStandAloneVcAcceptanceTest extends ValidatorSlashingDetec
         createValidatorNode(
             config ->
                 config
-                    .withNetwork("auto")
                     .withValidatorApiEnabled()
+                    .withNetwork("auto")
                     .withStopVcWhenValidatorSlashedEnabled()
                     .withInteropValidators(32, 32)
-                    .withBeaconNode(secondBeaconNode));
+                    .withBeaconNodes(secondBeaconNode));
 
     secondBeaconNode.start();
 

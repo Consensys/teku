@@ -19,7 +19,8 @@ import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfig;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 
 public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
@@ -28,10 +29,10 @@ public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
   private final String network = "swift";
 
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
-  private TekuNode primaryNode;
-  private TekuNode secondaryNode;
+  private TekuBeaconNode primaryNode;
+  private TekuBeaconNode secondaryNode;
   private TekuValidatorNode validatorClient;
-  private TekuNode watcherNode;
+  private TekuBeaconNode watcherNode;
 
   @BeforeEach
   public void setup() {
@@ -51,7 +52,7 @@ public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
                 config
                     .withNetwork(network)
                     .withInteropValidators(NODE_VALIDATORS, NODE_VALIDATORS)
-                    .withBeaconNode(secondaryNode));
+                    .withBeaconNodes(secondaryNode));
 
     // Use a third node to watch for published aggregates.
     watcherNode =
@@ -82,7 +83,7 @@ public class SyncCommitteeGossipAcceptanceTest extends AcceptanceTestBase {
     primaryNode.stop();
   }
 
-  private TekuNode.Config configureNode(final TekuNode.Config node, final int genesisTime) {
+  private TekuNodeConfig configureNode(final TekuBeaconNode.Config node, final int genesisTime) {
     return node.withNetwork(network)
         .withAltairEpoch(UInt64.ZERO)
         .withGenesisTime(genesisTime)

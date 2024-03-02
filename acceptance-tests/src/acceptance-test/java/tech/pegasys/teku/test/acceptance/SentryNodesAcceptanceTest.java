@@ -18,18 +18,18 @@ import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.SentryNodesConfig;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode.Config;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode.Config;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 
 public class SentryNodesAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void sentryBeaconNodesSetup() throws Exception {
-    final TekuNode dutiesProviderNode = createAndStartBootstrapBeaconNode();
-    final TekuNode attestationPublisherNode =
+    final TekuBeaconNode dutiesProviderNode = createAndStartBootstrapBeaconNode();
+    final TekuBeaconNode attestationPublisherNode =
         createAndStartPeerBeaconNode(dutiesProviderNode, dutiesProviderNode.getGenesisTime());
-    final TekuNode blockHandlerNode =
+    final TekuBeaconNode blockHandlerNode =
         createAndStartPeerBeaconNode(dutiesProviderNode, dutiesProviderNode.getGenesisTime());
 
     final SentryNodesConfig sentryNodesConfig =
@@ -49,16 +49,16 @@ public class SentryNodesAcceptanceTest extends AcceptanceTestBase {
     remoteValidator.waitForBlockPublishedTo(blockHandlerNode);
   }
 
-  private TekuNode createAndStartPeerBeaconNode(
-      final TekuNode dutiesProviderNode, final UInt64 genesisTime) throws Exception {
-    final TekuNode blockHandlerNode =
+  private TekuBeaconNode createAndStartPeerBeaconNode(
+      final TekuBeaconNode dutiesProviderNode, final UInt64 genesisTime) throws Exception {
+    final TekuBeaconNode blockHandlerNode =
         createTekuNode(configureLateJoiningNode(dutiesProviderNode, genesisTime.intValue()));
     blockHandlerNode.start();
     return blockHandlerNode;
   }
 
-  private TekuNode createAndStartBootstrapBeaconNode() throws Exception {
-    final TekuNode dutiesProviderNode =
+  private TekuBeaconNode createAndStartBootstrapBeaconNode() throws Exception {
+    final TekuBeaconNode dutiesProviderNode =
         createTekuNode(
             c -> {
               c.withRealNetwork();
@@ -71,7 +71,7 @@ public class SentryNodesAcceptanceTest extends AcceptanceTestBase {
   }
 
   private Consumer<Config> configureLateJoiningNode(
-      final TekuNode primaryNode, final int genesisTime) {
+      final TekuBeaconNode primaryNode, final int genesisTime) {
     return c ->
         c.withGenesisTime(genesisTime)
             .withRealNetwork()
