@@ -19,6 +19,7 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 
 /**
@@ -42,12 +43,14 @@ public class MultiPeersStandAloneVcBlocksAcceptanceTest
     final UInt64 altairEpoch = UInt64.valueOf(100);
 
     final TekuBeaconNode firstTekuNode =
-        createTekuNode(
-            config ->
-                configureNode(config, genesisTime, network)
-                    .withRealNetwork()
-                    .withAltairEpoch(altairEpoch)
-                    .withInteropValidators(0, 32));
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode()
+                .withGenesisTime(genesisTime)
+                .withNetwork(network)
+                .withRealNetwork()
+                .withAltairEpoch(altairEpoch)
+                .withInteropValidators(0, 32)
+                .build());
 
     firstTekuNode.start();
 
@@ -66,22 +69,25 @@ public class MultiPeersStandAloneVcBlocksAcceptanceTest
         slashingEventType);
 
     final TekuBeaconNode secondBeaconNode =
-        createTekuNode(
-            config ->
-                configureNode(config, genesisTime, network)
-                    .withRealNetwork()
-                    .withAltairEpoch(altairEpoch)
-                    .withPeers(firstTekuNode));
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode()
+                .withGenesisTime(genesisTime)
+                .withNetwork(network)
+                .withRealNetwork()
+                .withRealNetwork()
+                .withAltairEpoch(altairEpoch)
+                .withPeers(firstTekuNode)
+                .build());
 
     final TekuValidatorNode secondValidatorClient =
         createValidatorNode(
-            config ->
-                config
-                    .withNetwork("auto")
-                    .withValidatorApiEnabled()
-                    .withStopVcWhenValidatorSlashedEnabled()
-                    .withInteropValidators(32, 32)
-                    .withBeaconNodes(secondBeaconNode));
+            TekuNodeConfigBuilder.createValidatorClient()
+                .withNetwork("auto")
+                .withValidatorApiEnabled()
+                .withStopVcWhenValidatorSlashedEnabled()
+                .withInteropValidators(32, 32)
+                .withBeaconNodes(secondBeaconNode)
+                .build());
 
     secondBeaconNode.start();
 

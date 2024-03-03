@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -48,21 +47,17 @@ public class AcceptanceTestBase {
     network.close();
   }
 
-  protected TekuBeaconNode createTekuNode() {
-    return createTekuNode(config -> {});
+  protected TekuBeaconNode createTekuBeaconNode() throws IOException {
+    return createTekuBeaconNode(TekuNodeConfigBuilder.createBeaconNode().build());
   }
 
-  protected TekuBeaconNode createTekuNode(final Consumer<TekuBeaconNode.Config> configOptions) {
-    return createTekuNode(TekuDockerVersion.LOCAL_BUILD, configOptions);
+  protected TekuBeaconNode createTekuBeaconNode(final TekuNodeConfig config) {
+    return addNode(TekuBeaconNode.create(network, TekuDockerVersion.LOCAL_BUILD, config));
   }
 
-  protected TekuBeaconNode createTekuNode(
-      final TekuDockerVersion version, final Consumer<TekuBeaconNode.Config> configOptions) {
-    try {
-      return addNode(TekuBeaconNode.create(network, version, configOptions));
-    } catch (IOException | TimeoutException e) {
-      throw new RuntimeException(e);
-    }
+  protected TekuBeaconNode createTekuBeaconNode(
+      final TekuDockerVersion version, final TekuNodeConfig config) {
+    return addNode(TekuBeaconNode.create(network, version, config));
   }
 
   protected ExternalMetricNode createExternalMetricNode() {
@@ -74,12 +69,12 @@ public class AcceptanceTestBase {
     return addNode(TekuVoluntaryExit.create(network, configOptions));
   }
 
-  protected TekuValidatorNode createValidatorNode(final Consumer<TekuNodeConfig> configOptions) {
-    return createValidatorNode(TekuDockerVersion.LOCAL_BUILD, configOptions);
+  protected TekuValidatorNode createValidatorNode(final TekuNodeConfig config) {
+    return addNode(TekuValidatorNode.create(network, TekuDockerVersion.LOCAL_BUILD, config));
   }
 
   protected TekuValidatorNode createValidatorNode(
-      final TekuDockerVersion version, final Consumer<TekuNodeConfig> configOptions) {
+      final TekuDockerVersion version, final TekuNodeConfig configOptions) {
     return addNode(TekuValidatorNode.create(network, version, configOptions));
   }
 

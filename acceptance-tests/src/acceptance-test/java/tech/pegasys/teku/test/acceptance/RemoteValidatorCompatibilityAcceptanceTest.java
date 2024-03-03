@@ -13,10 +13,12 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import java.io.IOException;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuDockerVersion;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 
 public class RemoteValidatorCompatibilityAcceptanceTest extends AcceptanceTestBase {
@@ -58,21 +60,20 @@ public class RemoteValidatorCompatibilityAcceptanceTest extends AcceptanceTestBa
     validatorClient =
         createValidatorNode(
             version,
-            config ->
-                config
-                    .withNetwork("auto")
-                    .withInteropValidators(0, VALIDATOR_COUNT)
-                    .withBeaconNodes(beaconNode));
+            TekuNodeConfigBuilder.createValidatorClient()
+                .withNetwork("auto")
+                .withInteropValidators(0, VALIDATOR_COUNT)
+                .withBeaconNodes(beaconNode)
+                .build());
   }
 
-  private void createBeaconNode(final TekuDockerVersion version) {
+  private void createBeaconNode(final TekuDockerVersion version) throws IOException {
     beaconNode =
-        createTekuNode(
+        createTekuBeaconNode(
             version,
-            config ->
-                config
-                    .withNetwork("swift")
-                    .withInteropNumberOfValidators(VALIDATOR_COUNT)
-                    .withInteropValidators(0, 0));
+            TekuNodeConfigBuilder.createBeaconNode()
+                .withInteropNumberOfValidators(VALIDATOR_COUNT)
+                .withInteropValidators(0, 0)
+                .build());
   }
 }

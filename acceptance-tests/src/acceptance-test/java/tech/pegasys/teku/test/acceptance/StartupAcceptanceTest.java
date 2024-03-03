@@ -13,19 +13,21 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import static tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder.DEFAULT_NETWORK_NAME;
+
 import java.io.File;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
-import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode.Config;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 
 public class StartupAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   public void shouldProgressChainAfterStartingFromMockGenesis() throws Exception {
-    final TekuBeaconNode node = createTekuNode();
+    final TekuBeaconNode node = createTekuBeaconNode();
     node.start();
     node.waitForGenesis();
     node.waitForNewBlock();
@@ -33,13 +35,13 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   public void shouldProgressChainAfterStartingFromDisk() throws Exception {
-    final TekuBeaconNode node1 = createTekuNode();
+    final TekuBeaconNode node1 = createTekuBeaconNode();
     node1.start();
     final UInt64 genesisTime = node1.getGenesisTime();
     File dataDirectory = node1.getDataDirectoryFromContainer();
     node1.stop();
 
-    final TekuBeaconNode node2 = createTekuNode();
+    final TekuBeaconNode node2 = createTekuBeaconNode();
     node2.copyContentsToWorkingDirectory(dataDirectory);
     node2.start();
     node2.waitForGenesisTime(genesisTime);
@@ -49,18 +51,15 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
   @Test
   public void shouldContainSyncCommitteeAggregatesOnAltair() throws Exception {
     final TekuBeaconNode node1 =
-        createTekuNode(
-            config -> {
-              config.withAltairEpoch(UInt64.ZERO);
-              config.withNetwork("minimal");
-            });
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode().withAltairEpoch(UInt64.ZERO).build());
     node1.start();
     node1.waitForFullSyncCommitteeAggregate();
   }
 
   @Test
   public void shouldFinalize() throws Exception {
-    final TekuBeaconNode node1 = createTekuNode();
+    final TekuBeaconNode node1 = createTekuBeaconNode();
     node1.start();
     node1.waitForNewFinalization();
     node1.stop();
@@ -71,10 +70,12 @@ public class StartupAcceptanceTest extends AcceptanceTestBase {
     final BesuNode eth1Node = createBesuNode(config -> config.withMiningEnabled(true));
     eth1Node.start();
 
-    final TekuBeaconNode tekuNode = createTekuNode(config -> config.withDepositsFrom(eth1Node));
+    final TekuBeaconNode tekuNode =
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode().withDepositsFrom(eth1Node).build());
     tekuNode.start();
 
-    createTekuDepositSender(Config.DEFAULT_NETWORK_NAME).sendValidatorDeposits(eth1Node, 4);
+    createTekuDepositSender(DEFAULT_NETWORK_NAME).sendValidatorDeposits(eth1Node, 4);
     tekuNode.waitForGenesis();
   }
 }

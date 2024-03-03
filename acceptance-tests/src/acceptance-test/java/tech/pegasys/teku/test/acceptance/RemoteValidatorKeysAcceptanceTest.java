@@ -19,6 +19,7 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 import tech.pegasys.teku.test.acceptance.dsl.Web3SignerNode;
 import tech.pegasys.teku.test.acceptance.dsl.tools.ValidatorKeysApi;
@@ -36,7 +37,8 @@ public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
         createGenesisGenerator().network(networkName).validatorKeys(validatorKeystores).generate();
 
     final TekuBeaconNode beaconNode =
-        createTekuNode(config -> config.withNetwork(networkName).withInitialState(genesis));
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode().withInitialState(genesis).build());
     final Web3SignerNode web3SignerNode =
         createWeb3SignerNode(config -> config.withNetwork(networkName));
     web3SignerNode.start();
@@ -44,12 +46,12 @@ public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
 
     final TekuValidatorNode validatorClient =
         createValidatorNode(
-            config ->
-                config
-                    .withValidatorApiEnabled()
-                    .withExternalSignerUrl(web3SignerNode.getValidatorRestApiUrl())
-                    .withInteropModeDisabled()
-                    .withBeaconNodes(beaconNode));
+            TekuNodeConfigBuilder.createValidatorClient()
+                .withValidatorApiEnabled()
+                .withExternalSignerUrl(web3SignerNode.getValidatorRestApiUrl())
+                .withInteropModeDisabled()
+                .withBeaconNodes(beaconNode)
+                .build());
 
     beaconNode.start();
     validatorClient.start();
@@ -92,5 +94,8 @@ public class RemoteValidatorKeysAcceptanceTest extends AcceptanceTestBase {
 
     // remove validator that doesn't exist
     validatorNodeApi.removeRemoteValidatorAndCheckStatus(removedPubKey, "not_found");
+
+    validatorClient.stop();
+    beaconNode.stop();
   }
 }

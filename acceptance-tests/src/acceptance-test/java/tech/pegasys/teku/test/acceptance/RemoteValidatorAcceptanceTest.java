@@ -13,37 +13,34 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import java.io.IOException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 
 public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
-
-  private static final String NETWORK_NAME = "swift";
-
   private static final int VALIDATOR_COUNT = 8;
 
   private TekuBeaconNode beaconNode;
   private TekuValidatorNode validatorClient;
 
   @BeforeEach
-  public void setup() {
+  public void setup() throws IOException {
     beaconNode =
-        createTekuNode(
-            config ->
-                config
-                    .withNetwork(NETWORK_NAME)
-                    .withInteropNumberOfValidators(VALIDATOR_COUNT)
-                    .withInteropValidators(0, 0));
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode()
+                .withInteropNumberOfValidators(VALIDATOR_COUNT)
+                .withInteropValidators(0, 0)
+                .build());
     validatorClient =
         createValidatorNode(
-            config ->
-                config
-                    .withNetwork(NETWORK_NAME)
-                    .withInteropValidators(0, VALIDATOR_COUNT)
-                    .withBeaconNodes(beaconNode));
+            TekuNodeConfigBuilder.createValidatorClient()
+                .withInteropValidators(0, VALIDATOR_COUNT)
+                .withBeaconNodes(beaconNode)
+                .build());
   }
 
   @Test
@@ -69,24 +66,22 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
   @Test
   void shouldFailoverWhenPrimaryBeaconNodeGoesDown() throws Exception {
     final TekuBeaconNode failoverBeaconNode =
-        createTekuNode(
-            config ->
-                config
-                    .withNetwork(NETWORK_NAME)
-                    .withInteropNumberOfValidators(VALIDATOR_COUNT)
-                    .withInteropValidators(0, 0)
-                    .withPeers(beaconNode));
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode()
+                .withInteropNumberOfValidators(VALIDATOR_COUNT)
+                .withInteropValidators(0, 0)
+                .withPeers(beaconNode)
+                .build());
 
     beaconNode.start();
     failoverBeaconNode.start();
 
     validatorClient =
         createValidatorNode(
-            config ->
-                config
-                    .withNetwork(NETWORK_NAME)
-                    .withInteropValidators(0, VALIDATOR_COUNT)
-                    .withBeaconNodes(beaconNode, failoverBeaconNode));
+            TekuNodeConfigBuilder.createValidatorClient()
+                .withInteropValidators(0, VALIDATOR_COUNT)
+                .withBeaconNodes(beaconNode, failoverBeaconNode)
+                .build());
 
     validatorClient.start();
 
@@ -113,23 +108,21 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
   void shouldPerformDutiesIfPrimaryBeaconNodeIsDownOnStartup() throws Exception {
     // creating a primary beacon node which we would never start
     final TekuBeaconNode primaryBeaconNode =
-        createTekuNode(
-            config ->
-                config
-                    .withNetwork(NETWORK_NAME)
-                    .withInteropNumberOfValidators(VALIDATOR_COUNT)
-                    .withInteropValidators(0, 0)
-                    .withPeers(beaconNode));
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode()
+                .withInteropNumberOfValidators(VALIDATOR_COUNT)
+                .withInteropValidators(0, 0)
+                .withPeers(beaconNode)
+                .build());
 
     beaconNode.start();
 
     validatorClient =
         createValidatorNode(
-            config ->
-                config
-                    .withNetwork(NETWORK_NAME)
-                    .withInteropValidators(0, VALIDATOR_COUNT)
-                    .withBeaconNodes(primaryBeaconNode, beaconNode));
+            TekuNodeConfigBuilder.createValidatorClient()
+                .withInteropValidators(0, VALIDATOR_COUNT)
+                .withBeaconNodes(primaryBeaconNode, beaconNode)
+                .build());
 
     validatorClient.start();
 

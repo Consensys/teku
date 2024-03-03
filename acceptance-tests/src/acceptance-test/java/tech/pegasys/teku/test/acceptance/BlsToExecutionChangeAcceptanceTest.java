@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import java.io.IOException;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.api.response.v1.EventType;
@@ -22,11 +23,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFactory;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
-import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode.Config;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 
 public class BlsToExecutionChangeAcceptanceTest extends AcceptanceTestBase {
-
-  private static final String NETWORK_NAME = "swift";
 
   @Test
   void shouldUpdateWithdrawalCredentials() throws Exception {
@@ -58,37 +57,36 @@ public class BlsToExecutionChangeAcceptanceTest extends AcceptanceTestBase {
   }
 
   private TekuBeaconNode createPrimaryNode(
-      final Eth1Address executionAddress, final UInt64 capellaActivationEpoch) {
-    return createTekuNode(
-        c -> {
-          c.withNetwork(NETWORK_NAME)
-              .withRealNetwork()
-              .withStartupTargetPeerCount(0)
-              .withValidatorProposerDefaultFeeRecipient(executionAddress.toHexString());
-          applyMilestoneConfig(c, capellaActivationEpoch);
-        });
+      final Eth1Address executionAddress, final UInt64 capellaActivationEpoch) throws IOException {
+    return createTekuBeaconNode(
+        beaconNodeWithMilestones(capellaActivationEpoch)
+            .withStartupTargetPeerCount(0)
+            .withValidatorProposerDefaultFeeRecipient(executionAddress.toHexString())
+            .build());
   }
 
   private TekuBeaconNode createLateJoiningNode(
       final UInt64 capellaActivationEpoch,
       final TekuBeaconNode primaryNode,
-      final UInt64 genesisTime) {
-    return createTekuNode(
-        c -> {
-          c.withGenesisTime(genesisTime.intValue())
-              .withNetwork(NETWORK_NAME)
-              .withRealNetwork()
-              .withPeers(primaryNode)
-              .withInteropValidators(0, 0);
-          applyMilestoneConfig(c, capellaActivationEpoch);
-        });
+      final UInt64 genesisTime)
+      throws IOException {
+    return createTekuBeaconNode(
+        beaconNodeWithMilestones(capellaActivationEpoch)
+            .withPeers(primaryNode)
+            .withGenesisTime(genesisTime.intValue())
+            .withInteropValidators(0, 0)
+            .build());
   }
 
-  private static void applyMilestoneConfig(final Config c, final UInt64 capellaForkEpoch) {
-    c.withAltairEpoch(UInt64.ZERO);
-    c.withBellatrixEpoch(UInt64.ZERO);
-    c.withCapellaEpoch(capellaForkEpoch);
-    c.withTotalTerminalDifficulty(0);
-    c.withStubExecutionEngine("0x14e88057b0b7538a8205cb07726a0de03dd69d9a70e88bcffae15ca3fc6b5215");
+  private static TekuNodeConfigBuilder beaconNodeWithMilestones(final UInt64 capellaActivationEpoch)
+      throws IOException {
+    return TekuNodeConfigBuilder.createBeaconNode()
+        .withRealNetwork()
+        .withAltairEpoch(UInt64.ZERO)
+        .withBellatrixEpoch(UInt64.ZERO)
+        .withCapellaEpoch(capellaActivationEpoch)
+        .withTotalTerminalDifficulty(0)
+        .withStubExecutionEngine(
+            "0x14e88057b0b7538a8205cb07726a0de03dd69d9a70e88bcffae15ca3fc6b5215");
   }
 }

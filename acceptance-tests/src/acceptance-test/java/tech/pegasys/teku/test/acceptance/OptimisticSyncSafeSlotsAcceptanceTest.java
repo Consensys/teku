@@ -22,7 +22,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfig;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 
 public class OptimisticSyncSafeSlotsAcceptanceTest extends AcceptanceTestBase {
   private static final String NETWORK_NAME = "swift";
@@ -60,18 +60,18 @@ public class OptimisticSyncSafeSlotsAcceptanceTest extends AcceptanceTestBase {
     executionNode2.start();
 
     tekuNode1 =
-        createTekuNode(
-            config ->
-                configureTekuNode(config, executionNode1, genesisTime)
-                    .withInteropValidators(0, VALIDATORS));
+        createTekuBeaconNode(
+            configureTekuNode(executionNode1, genesisTime)
+                .withInteropValidators(0, VALIDATORS)
+                .build());
     tekuNode1.start();
     tekuNode2 =
-        createTekuNode(
-            config ->
-                configureTekuNode(config, executionNode2, genesisTime)
-                    .withInteropValidators(0, 0)
-                    .withPeers(tekuNode1)
-                    .withSafeSlotsToImportOptimistically(SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY));
+        createTekuBeaconNode(
+            configureTekuNode(executionNode2, genesisTime)
+                .withInteropValidators(0, 0)
+                .withPeers(tekuNode1)
+                .withSafeSlotsToImportOptimistically(SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY)
+                .build());
     tekuNode2.start();
   }
 
@@ -85,9 +85,9 @@ public class OptimisticSyncSafeSlotsAcceptanceTest extends AcceptanceTestBase {
     tekuNode2.waitForNonOptimisticBlock();
   }
 
-  private TekuNodeConfig configureTekuNode(
-      final TekuNodeConfig config, final BesuNode executionEngine, final int genesisTime) {
-    return config
+  private TekuNodeConfigBuilder configureTekuNode(
+      final BesuNode executionEngine, final int genesisTime) throws Exception {
+    return TekuNodeConfigBuilder.createBeaconNode()
         .withNetwork(NETWORK_NAME)
         .withBellatrixEpoch(UInt64.ZERO)
         .withTotalTerminalDifficulty(10001)

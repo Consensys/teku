@@ -23,6 +23,7 @@ import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class MergedGenesisAcceptanceTest extends AcceptanceTestBase {
@@ -58,20 +59,20 @@ public class MergedGenesisAcceptanceTest extends AcceptanceTestBase {
             .validatorKeys(validatorKeys)
             .generate();
     tekuNode =
-        createTekuNode(
-            config ->
-                config
-                    .withNetwork(NETWORK_NAME)
-                    .withAltairEpoch(UInt64.ZERO)
-                    .withBellatrixEpoch(UInt64.ZERO)
-                    .withTotalTerminalDifficulty(0)
-                    .withInitialState(initialStateData)
-                    .withStartupTargetPeerCount(0)
-                    .withReadOnlyKeystorePath(validatorKeys)
-                    .withValidatorProposerDefaultFeeRecipient(
-                        "0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73")
-                    .withExecutionEngine(eth1Node)
-                    .withJwtSecretFile(JWT_FILE));
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode()
+                .withNetwork(NETWORK_NAME)
+                .withAltairEpoch(UInt64.ZERO)
+                .withBellatrixEpoch(UInt64.ZERO)
+                .withTotalTerminalDifficulty(0)
+                .withInitialState(initialStateData)
+                .withStartupTargetPeerCount(0)
+                .withReadOnlyKeystorePath(validatorKeys)
+                .withValidatorProposerDefaultFeeRecipient(
+                    "0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73")
+                .withExecutionEngine(eth1Node)
+                .withJwtSecretFile(JWT_FILE)
+                .build());
     tekuNode.start();
   }
 

@@ -24,26 +24,19 @@ import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.wit
 import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withValueGreaterThan;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import io.libp2p.core.PeerId;
-import io.libp2p.core.crypto.KeyKt;
-import io.libp2p.core.crypto.KeyType;
 import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import it.unimi.dsi.fastutil.objects.Object2BooleanOpenHashMap;
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -53,7 +46,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
-import org.apache.tuweni.units.bigints.UInt256;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import tech.pegasys.teku.api.response.v1.EventType;
@@ -90,11 +82,9 @@ import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitvectorSchema;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -107,7 +97,6 @@ import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
 import tech.pegasys.teku.spec.signatures.SigningRootUtil;
 import tech.pegasys.teku.test.acceptance.dsl.Eth2EventHandler.PackedMessage;
-import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class TekuBeaconNode extends TekuNode {
@@ -116,17 +105,14 @@ public class TekuBeaconNode extends TekuNode {
   public static final String LOCAL_VALIDATOR_LIVENESS_URL = "/eth/v1/validator/liveness/{epoch}";
   public static final String POST_PROPOSER_SLASHING_URL = "/eth/v1/beacon/pool/proposer_slashings";
   public static final String POST_ATTESTER_SLASHING_URL = "/eth/v1/beacon/pool/attester_slashings";
-  private final Config config;
+  private final TekuNodeConfig config;
   private final Spec spec;
 
   private TekuBeaconNode(
-      final Network network, final TekuDockerVersion version, final Config config) {
+      final Network network, final TekuDockerVersion version, final TekuNodeConfig tekuNodeConfig) {
     super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
-    this.config = config;
-
-    Consumer<SpecConfigBuilder> specConfigModifier = config.getSpecConfigModifier();
-    this.spec = SpecFactory.create(config.getNetworkName(), specConfigModifier);
-
+    this.config = tekuNodeConfig;
+    this.spec = SpecFactory.create(config.getNetworkName(), config.getSpecConfigModifier());
     container
         .withWorkingDirectory(WORKING_DIRECTORY)
         .withExposedPorts(REST_API_PORT, METRICS_PORT)
@@ -139,13 +125,8 @@ public class TekuBeaconNode extends TekuNode {
   }
 
   public static TekuBeaconNode create(
-      final Network network, final TekuDockerVersion version, final Consumer<Config> configOptions)
-      throws TimeoutException, IOException {
-
-    final Config config = new Config();
-    configOptions.accept(config);
-
-    return new TekuBeaconNode(network, version, config);
+      final Network network, final TekuDockerVersion version, final TekuNodeConfig tekuNodeConfig) {
+    return new TekuBeaconNode(network, version, tekuNodeConfig);
   }
 
   public Spec getSpec() {
@@ -784,120 +765,5 @@ public class TekuBeaconNode extends TekuNode {
 
   public void expectElOnline() throws IOException {
     assertThat(fetchSyncStatus().data.elOffline).isFalse();
-  }
-
-  public static class Config extends TekuNodeConfig {
-
-    public static final String DEFAULT_NETWORK_NAME = "swift";
-    public static final String EE_JWT_SECRET_FILE_KEY = "ee-jwt-secret-file";
-
-    private String networkName = DEFAULT_NETWORK_NAME;
-
-    public Config() {
-      configMap.put("network", networkName);
-      configMap.put("p2p-enabled", false);
-      configMap.put("p2p-discovery-enabled", false);
-      configMap.put("p2p-port", P2P_PORT);
-      configMap.put("p2p-advertised-port", P2P_PORT);
-      configMap.put("p2p-interface", "0.0.0.0");
-      configMap.put("p2p-private-key-file", PRIVATE_KEY_FILE_PATH);
-      configMap.put("Xinterop-genesis-time", 0);
-      configMap.put("Xinterop-owned-validator-start-index", 0);
-      configMap.put("Xstartup-target-peer-count", 0);
-      configMap.put("Xinterop-owned-validator-count", DEFAULT_VALIDATOR_COUNT);
-      configMap.put("Xinterop-number-of-validators", DEFAULT_VALIDATOR_COUNT);
-      configMap.put("Xinterop-enabled", true);
-      configMap.put("rest-api-enabled", true);
-      configMap.put("rest-api-port", REST_API_PORT);
-      configMap.put("rest-api-docs-enabled", false);
-      configMap.put("metrics-enabled", true);
-      configMap.put("metrics-port", METRICS_PORT);
-      configMap.put("metrics-interface", "0.0.0.0");
-      configMap.put("metrics-host-allowlist", "*");
-      configMap.put("data-path", DATA_PATH);
-      configMap.put("eth1-deposit-contract-address", "0xdddddddddddddddddddddddddddddddddddddddd");
-      configMap.put("log-destination", "console");
-      configMap.put("rest-api-host-allowlist", "*");
-      maybePrivateKey = Optional.of(KeyKt.generateKeyPair(KeyType.SECP256K1).component1());
-      maybePeerId = Optional.of(PeerId.fromPubKey(maybePrivateKey.get().publicKey()));
-      this.nodeType = "Beacon Node";
-    }
-
-    @Override
-    public Config withDepositsFrom(final BesuNode eth1Node) {
-      configMap.put("Xinterop-enabled", false);
-      configMap.put(
-          "eth1-deposit-contract-address", eth1Node.getDepositContractAddress().toString());
-      configMap.put("eth1-endpoint", eth1Node.getInternalJsonRpcUrl());
-      return this;
-    }
-
-    public Config withValidatorLivenessTracking() {
-      configMap.put("beacon-liveness-tracking-enabled", true);
-      return this;
-    }
-
-    @Override
-    public Config withGenesisTime(int time) {
-      configMap.put("Xinterop-genesis-time", time);
-      return this;
-    }
-
-    public Config withNetwork(final URL networkYaml, final String networkName) {
-      this.maybeNetworkYaml = Optional.of(networkYaml);
-      this.networkName = networkName;
-      configMap.put("network", NETWORK_FILE_PATH);
-      return this;
-    }
-
-    @Override
-    public Config withTotalTerminalDifficulty(final long totalTerminalDifficulty) {
-      return withTotalTerminalDifficulty(UInt256.valueOf(totalTerminalDifficulty));
-    }
-
-    public Config withTotalTerminalDifficulty(final UInt256 totalTerminalDifficulty) {
-      configMap.put(
-          "Xnetwork-total-terminal-difficulty-override",
-          totalTerminalDifficulty.toBigInteger().toString());
-      specConfigModifier =
-          specConfigModifier.andThen(
-              specConfigBuilder ->
-                  specConfigBuilder.bellatrixBuilder(
-                      bellatrixBuilder ->
-                          bellatrixBuilder.terminalTotalDifficulty(totalTerminalDifficulty)));
-      return this;
-    }
-
-    @Override
-    public Config withInitialState(final InitialStateData initialState) {
-      configMap.put("initial-state", INITIAL_STATE_FILE);
-      this.maybeInitialState = Optional.of(initialState);
-      return this;
-    }
-
-    @Override
-    public Config withTrustedSetupFromClasspath(final String trustedSetup) {
-      configMap.put("Xtrusted-setup", TRUSTED_SETUP_FILE);
-      final URL trustedSetupResource = Eth2NetworkConfiguration.class.getResource(trustedSetup);
-      assert trustedSetupResource != null;
-      this.maybeTrustedSetup = Optional.of(trustedSetupResource);
-      return this;
-    }
-
-    @Override
-    public Config withJwtSecretFile(final URL jwtFile) {
-      this.maybeJwtFile = Optional.of(jwtFile);
-      configMap.put(EE_JWT_SECRET_FILE_KEY, JWT_SECRET_FILE_PATH);
-      return this;
-    }
-
-    @Override
-    public Config withPeers(final TekuBeaconNode... nodes) {
-      final String peers =
-          Arrays.stream(nodes).map(TekuBeaconNode::getMultiAddr).collect(Collectors.joining(","));
-      LOG.debug("Set peers: {}", peers);
-      configMap.put("p2p-static-peers", peers);
-      return this;
-    }
   }
 }

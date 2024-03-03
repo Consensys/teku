@@ -25,7 +25,7 @@ import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuDockerVersion;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
-import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode.Config;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 
 /**
  * The test is based on `shanghaiTime` in Besu EL genesis config as the only option to start
@@ -73,16 +73,10 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
     secondaryEL.addPeer(primaryEL);
 
     TekuBeaconNode primaryNode =
-        createTekuNode(
-            config -> {
-              config
-                  .withGenesisTime(genesisTime)
-                  .withRealNetwork()
-                  .withStartupTargetPeerCount(0)
-                  .withExecutionEngine(primaryEL)
-                  .withJwtSecretFile(JWT_FILE);
-              applyMilestoneConfig(config);
-            });
+        createTekuBeaconNode(
+            beaconNodeConfigWithForks(genesisTime, primaryEL)
+                .withStartupTargetPeerCount(0)
+                .build());
 
     primaryNode.start();
     primaryNode.waitForMilestone(SpecMilestone.CAPELLA);
@@ -90,16 +84,11 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
     final int primaryNodeGenesisTime = primaryNode.getGenesisTime().intValue();
 
     TekuBeaconNode lateJoiningNode =
-        createTekuNode(
-            c -> {
-              c.withGenesisTime(primaryNodeGenesisTime)
-                  .withRealNetwork()
-                  .withPeers(primaryNode)
-                  .withInteropValidators(0, 0)
-                  .withExecutionEngine(secondaryEL)
-                  .withJwtSecretFile(JWT_FILE);
-              applyMilestoneConfig(c);
-            });
+        createTekuBeaconNode(
+            beaconNodeConfigWithForks(primaryNodeGenesisTime, secondaryEL)
+                .withPeers(primaryNode)
+                .withInteropValidators(0, 0)
+                .build());
 
     lateJoiningNode.start();
     lateJoiningNode.waitUntilInSyncWith(primaryNode);
@@ -107,11 +96,16 @@ public class CapellaUpgradeAcceptanceTest extends AcceptanceTestBase {
     primaryNode.waitForNewBlock();
   }
 
-  private static void applyMilestoneConfig(final Config config) {
-    config
+  private static TekuNodeConfigBuilder beaconNodeConfigWithForks(
+      final int genesisTime, final BesuNode besuNode) throws Exception {
+    return TekuNodeConfigBuilder.createBeaconNode()
         .withAltairEpoch(UInt64.ZERO)
         .withBellatrixEpoch(UInt64.ZERO)
         .withCapellaEpoch(UInt64.ONE)
-        .withTotalTerminalDifficulty(0);
+        .withTotalTerminalDifficulty(0)
+        .withGenesisTime(genesisTime)
+        .withExecutionEngine(besuNode)
+        .withJwtSecretFile(JWT_FILE)
+        .withRealNetwork();
   }
 }

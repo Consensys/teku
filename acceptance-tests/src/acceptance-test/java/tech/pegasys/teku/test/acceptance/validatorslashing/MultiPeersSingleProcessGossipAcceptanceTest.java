@@ -19,6 +19,7 @@ import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 
 /**
  * Running 2 nodes with VC/BN running in single processes. <br>
@@ -42,24 +43,30 @@ public class MultiPeersSingleProcessGossipAcceptanceTest
     final UInt64 altairEpoch = UInt64.valueOf(100);
 
     final TekuBeaconNode firstTekuNode =
-        createTekuNode(
-            config ->
-                configureNode(config, genesisTime, network)
-                    .withRealNetwork()
-                    .withAltairEpoch(altairEpoch));
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode()
+                .withGenesisTime(genesisTime)
+                .withNetwork(network)
+                .withRealNetwork()
+                .withRealNetwork()
+                .withAltairEpoch(altairEpoch)
+                .build());
 
     firstTekuNode.start();
 
     firstTekuNode.waitForEpochAtOrAbove(1);
 
     final TekuBeaconNode secondTekuNode =
-        createTekuNode(
-            config ->
-                configureNode(config, genesisTime, network)
-                    .withAltairEpoch(altairEpoch)
-                    .withStopVcWhenValidatorSlashedEnabled()
-                    .withInteropValidators(0, 32)
-                    .withPeers(firstTekuNode));
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode()
+                .withGenesisTime(genesisTime)
+                .withNetwork(network)
+                .withRealNetwork()
+                .withAltairEpoch(altairEpoch)
+                .withStopVcWhenValidatorSlashedEnabled()
+                .withInteropValidators(0, 32)
+                .withPeers(firstTekuNode)
+                .build());
 
     secondTekuNode.start();
 

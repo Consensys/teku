@@ -14,6 +14,7 @@
 package tech.pegasys.teku.test.acceptance;
 
 import com.google.common.io.Resources;
+import java.io.IOException;
 import java.net.URL;
 import java.util.Collections;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +24,7 @@ import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 import tech.pegasys.teku.test.acceptance.dsl.tools.ValidatorKeysApi;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
@@ -59,29 +61,26 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
 
     final String defaultFeeRecipient = "0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73";
     final TekuBeaconNode beaconNode =
-        createTekuNode(
-            config ->
-                config
-                    .withValidatorLivenessTracking()
-                    .withExecutionEngine(eth1Node)
-                    .withJwtSecretFile(JWT_FILE)
-                    .withNetwork(networkName)
-                    .withDepositsFrom(eth1Node)
-                    .withBellatrixEpoch(UInt64.ONE)
-                    .withTotalTerminalDifficulty(10001)
-                    .withValidatorProposerDefaultFeeRecipient(defaultFeeRecipient)
-                    .withInitialState(genesis));
+        createTekuBeaconNode(
+            configureBeaconNode(eth1Node)
+                .withValidatorLivenessTracking()
+                .withJwtSecretFile(JWT_FILE)
+                .withBellatrixEpoch(UInt64.ONE)
+                .withTotalTerminalDifficulty(10001)
+                .withValidatorProposerDefaultFeeRecipient(defaultFeeRecipient)
+                .withInitialState(genesis)
+                .build());
 
     final TekuValidatorNode firstValidatorClient =
         createValidatorNode(
-            config ->
-                config
-                    .withValidatorApiEnabled()
-                    .withValidatorProposerDefaultFeeRecipient(defaultFeeRecipient)
-                    .withInteropModeDisabled()
-                    .withBeaconNodes(beaconNode)
-                    .withNetwork("auto")
-                    .withDoppelgangerDetectionEnabled());
+            TekuNodeConfigBuilder.createValidatorClient()
+                .withValidatorApiEnabled()
+                .withValidatorProposerDefaultFeeRecipient(defaultFeeRecipient)
+                .withInteropModeDisabled()
+                .withBeaconNodes(beaconNode)
+                .withNetwork("auto")
+                .withDoppelgangerDetectionEnabled()
+                .build());
     final ValidatorKeysApi api = firstValidatorClient.getValidatorKeysApi();
 
     beaconNode.start();
@@ -94,14 +93,14 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
 
     final TekuValidatorNode secondValidatorClient =
         createValidatorNode(
-            config ->
-                config
-                    .withValidatorApiEnabled()
-                    .withValidatorProposerDefaultFeeRecipient(defaultFeeRecipient)
-                    .withInteropModeDisabled()
-                    .withBeaconNodes(beaconNode)
-                    .withNetwork("auto")
-                    .withDoppelgangerDetectionEnabled());
+            TekuNodeConfigBuilder.createValidatorClient()
+                .withValidatorApiEnabled()
+                .withValidatorProposerDefaultFeeRecipient(defaultFeeRecipient)
+                .withInteropModeDisabled()
+                .withBeaconNodes(beaconNode)
+                .withNetwork("auto")
+                .withDoppelgangerDetectionEnabled()
+                .build());
 
     final ValidatorKeysApi secondApi = secondValidatorClient.getValidatorKeysApi();
 
@@ -136,15 +135,11 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
         createGenesisGenerator().network(networkName).validatorKeys(keyStore).generate();
 
     final TekuBeaconNode firstNode =
-        createTekuNode(
-            config ->
-                config
-                    .withExecutionEngine(eth1Node)
-                    .withRealNetwork()
-                    .withNetwork(networkName)
-                    .withInitialState(genesis)
-                    .withDepositsFrom(eth1Node)
-                    .withReadOnlyKeystorePath(keyStore));
+        createTekuBeaconNode(
+            configureBeaconNode(eth1Node)
+                .withInitialState(genesis)
+                .withReadOnlyKeystorePath(keyStore)
+                .build());
     firstNode.start();
 
     firstNode.waitForOwnedValidatorCount(2);
@@ -153,17 +148,13 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
     firstNode.waitForEpochAtOrAbove(2);
 
     final TekuBeaconNode secondNode =
-        createTekuNode(
-            config ->
-                config
-                    .withPeers(firstNode)
-                    .withExecutionEngine(eth1Node)
-                    .withRealNetwork()
-                    .withNetwork(networkName)
-                    .withInitialState(genesis)
-                    .withReadOnlyKeystorePath(keyStore)
-                    .withDepositsFrom(eth1Node)
-                    .withDoppelgangerDetectionEnabled());
+        createTekuBeaconNode(
+            configureBeaconNode(eth1Node)
+                .withPeers(firstNode)
+                .withInitialState(genesis)
+                .withReadOnlyKeystorePath(keyStore)
+                .withDoppelgangerDetectionEnabled()
+                .build());
 
     secondNode.start();
 
@@ -176,5 +167,13 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
 
     secondNode.stop();
     eth1Node.stop();
+  }
+
+  private TekuNodeConfigBuilder configureBeaconNode(final BesuNode eth1Node) throws IOException {
+    return TekuNodeConfigBuilder.createBeaconNode()
+        .withDepositsFrom(eth1Node)
+        .withRealNetwork()
+        .withExecutionEngine(eth1Node)
+        .withNetwork(networkName);
   }
 }

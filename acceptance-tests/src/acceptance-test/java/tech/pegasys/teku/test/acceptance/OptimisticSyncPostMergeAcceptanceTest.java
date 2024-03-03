@@ -22,17 +22,15 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfig;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 
 public class OptimisticSyncPostMergeAcceptanceTest extends AcceptanceTestBase {
-  private static final String NETWORK_NAME = "swift";
   private static final URL JWT_FILE = Resources.getResource("auth/ee-jwt-secret.hex");
   private static final int VALIDATORS = 64;
 
   private final SystemTimeProvider timeProvider = new SystemTimeProvider();
   private BesuNode executionNode1;
   private BesuNode executionNode2;
-  private TekuBeaconNode tekuNode1;
   private TekuBeaconNode tekuNode2;
 
   @BeforeEach
@@ -59,18 +57,18 @@ public class OptimisticSyncPostMergeAcceptanceTest extends AcceptanceTestBase {
     executionNode2.start();
     executionNode2.addPeer(executionNode1);
 
-    tekuNode1 =
-        createTekuNode(
-            config ->
-                configureTekuNode(config, executionNode1, genesisTime)
-                    .withInteropValidators(0, VALIDATORS));
+    TekuBeaconNode tekuNode1 =
+        createTekuBeaconNode(
+            createBeaconNode(executionNode1, genesisTime)
+                .withInteropValidators(0, VALIDATORS)
+                .build());
     tekuNode1.start();
     tekuNode2 =
-        createTekuNode(
-            config ->
-                configureTekuNode(config, executionNode2, genesisTime)
-                    .withInteropValidators(0, 0)
-                    .withPeers(tekuNode1));
+        createTekuBeaconNode(
+            createBeaconNode(executionNode2, genesisTime)
+                .withInteropValidators(0, 0)
+                .withPeers(tekuNode1)
+                .build());
     tekuNode2.start();
   }
 
@@ -87,10 +85,9 @@ public class OptimisticSyncPostMergeAcceptanceTest extends AcceptanceTestBase {
     tekuNode2.waitForNonOptimisticBlock();
   }
 
-  private TekuNodeConfig configureTekuNode(
-      final TekuBeaconNode.Config config, final BesuNode executionEngine, final int genesisTime) {
-    return config
-        .withNetwork(NETWORK_NAME)
+  private TekuNodeConfigBuilder createBeaconNode(
+      final BesuNode executionEngine, final int genesisTime) throws Exception {
+    return TekuNodeConfigBuilder.createBeaconNode()
         .withBellatrixEpoch(UInt64.ZERO)
         .withTotalTerminalDifficulty(10001)
         .withGenesisTime(genesisTime)
