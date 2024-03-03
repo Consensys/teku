@@ -13,60 +13,35 @@
 
 package tech.pegasys.teku.test.acceptance.dsl;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withLabelsContaining;
 import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withNameEqualsTo;
 import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withValueGreaterThan;
 
-import com.google.common.io.Resources;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
-import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import org.testcontainers.shaded.org.apache.commons.io.IOUtils;
-import org.testcontainers.utility.MountableFile;
-import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.tools.ValidatorKeysApi;
-import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
-public class TekuValidatorNode extends Node {
+public class TekuValidatorNode extends TekuNode {
 
   private static final Logger LOG = LogManager.getLogger();
-  private static final int VALIDATOR_API_PORT = 9052;
+  public static final int VALIDATOR_API_PORT = 9052;
   protected static final String VALIDATOR_PATH = DATA_PATH + "validator/";
 
-  private final TekuValidatorNode.Config config;
-  private boolean started = false;
-  private Set<File> configFiles;
+  private final TekuNodeConfig config;
   private final ValidatorKeysApi validatorKeysApi =
       new ValidatorKeysApi(
           new TrustingSimpleHttpsClient(), this::getValidatorApiUrl, this::getApiPassword);
 
   private TekuValidatorNode(
-      final Network network,
-      final TekuDockerVersion version,
-      final TekuValidatorNode.Config config) {
+      final Network network, final TekuDockerVersion version, final TekuNodeConfig config) {
     super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
     this.config = config;
-    if (config.configMap.containsKey("validator-api-enabled")) {
+    if (config.getConfigMap().containsKey("validator-api-enabled")) {
       container.addExposedPort(VALIDATOR_API_PORT);
     }
     container.addExposedPort(METRICS_PORT);
@@ -77,131 +52,23 @@ public class TekuValidatorNode extends Node {
   }
 
   public static TekuValidatorNode create(
-      final Network network,
-      final TekuDockerVersion version,
-      Consumer<TekuValidatorNode.Config> configOptions) {
-
-    final TekuValidatorNode.Config config = new TekuValidatorNode.Config();
-    configOptions.accept(config);
-
-    return new TekuValidatorNode(network, version, config);
-  }
-
-  public TekuValidatorNode withValidatorApiEnabled() {
-    this.config.withValidatorApiEnabled();
-    return this;
+      final Network network, final TekuDockerVersion version, final TekuNodeConfig tekuNodeConfig) {
+    return new TekuValidatorNode(network, version, tekuNodeConfig);
   }
 
   public ValidatorKeysApi getValidatorKeysApi() {
-    if (!config.configMap.containsKey("validator-api-enabled")) {
+    if (!config.getConfigMap().containsKey("validator-api-enabled")) {
       LOG.error("Retrieving validator keys api but api is not enabled");
     }
     return validatorKeysApi;
   }
 
-  // will copy keystores onto the filesystem, so not read-only, except permissions are root access.
-  public TekuValidatorNode withReadOnlyKeystorePath(final ValidatorKeystores validatorKeystores) {
-    this.config.configMap.put("Xinterop-enabled", false);
-    this.config.configMap.put("validators-keystore-locking-enabled", false);
-    this.copyContentsToWorkingDirectory(validatorKeystores.getTarball());
-    this.config.configMap.put(
-        "validator-keys",
-        WORKING_DIRECTORY
-            + validatorKeystores.getKeysDirectoryName()
-            + ":"
-            + WORKING_DIRECTORY
-            + validatorKeystores.getPasswordsDirectoryName());
-    return this;
-  }
-
-  // will mount keystores folder as a read only filesystem
-  public TekuValidatorNode withReadOnlyKeystorePath(
-      final ValidatorKeystores keystores, final Path tempDir) {
-    this.config.configMap.put("Xinterop-enabled", false);
-    final String keysFolder = "/home/validatorInfo/" + keystores.getKeysDirectoryName();
-    final String passFolder = "/home/validatorInfo/" + keystores.getPasswordsDirectoryName();
-    keystores.writeToTempDir(tempDir);
-    this.config.configMap.put("validator-keys", keysFolder + ":" + passFolder);
-    this.config.readOnlyMountPoints.put(
-        tempDir.resolve(keystores.getKeysDirectoryName()).toAbsolutePath().toString(), keysFolder);
-    this.config.readOnlyMountPoints.put(
-        tempDir.resolve(keystores.getPasswordsDirectoryName()).toAbsolutePath().toString(),
-        passFolder);
-    return this;
-  }
-
-  // will mount keystores folder as a writable filesystem and be able to create locks
-  public TekuValidatorNode withWritableKeystorePath(
-      final ValidatorKeystores keystores, final Path tempDir) {
-    this.config.configMap.put("Xinterop-enabled", false);
-    final String keysFolder = "/home/validatorInfo/" + keystores.getKeysDirectoryName();
-    final String passFolder = "/home/validatorInfo/" + keystores.getPasswordsDirectoryName();
-    keystores.writeToTempDir(tempDir);
-    this.config.configMap.put("validator-keys", keysFolder + ":" + passFolder);
-    this.config.writableMountPoints.put(
-        tempDir.resolve(keystores.getKeysDirectoryName()).toAbsolutePath().toString(), keysFolder);
-    this.config.readOnlyMountPoints.put(
-        tempDir.resolve(keystores.getPasswordsDirectoryName()).toAbsolutePath().toString(),
-        passFolder);
-    return this;
-  }
-
-  public void start() throws Exception {
-    setUpStart();
-    container.start();
-  }
-
-  public void startWithFailure(final String expectedError) throws Exception {
-    setUpStart();
-    container.waitingFor(
-        new LogMessageWaitStrategy()
-            .withRegEx(".*" + expectedError + ".*")
-            .withStartupTimeout(Duration.ofSeconds(10)));
-    container.start();
-  }
-
-  private void setUpStart() throws Exception {
-    assertThat(started).isFalse();
-    LOG.debug("Start validator node {}", nodeAlias);
-    started = true;
-    config.writeConfigFile();
-    final Map<File, String> configFileMap = config.getConfigFileMap();
-    config.getWritableMountPoints().forEach(this::withWritableMountPoint);
-    config.getReadOnlyMountPoints().forEach(this::withReadOnlyMountPoint);
-    this.configFiles = configFileMap.keySet();
-    configFileMap.forEach(
-        (localFile, targetPath) ->
-            container.withCopyFileToContainer(
-                MountableFile.forHostPath(localFile.getAbsolutePath()), targetPath));
-  }
-
   @Override
-  public void stop() {
-    if (!started) {
-      return;
-    }
-    LOG.debug("Shutting down");
-    started = false;
-    configFiles.forEach(
-        configFile -> {
-          if (!configFile.delete() && configFile.exists()) {
-            throw new RuntimeException("Failed to delete config file: " + configFile);
-          }
-        });
-    container.stop();
+  public TekuNodeConfig getConfig() {
+    return config;
   }
 
-  private URI getValidatorApiUrl() {
-    return URI.create("https://127.0.0.1:" + container.getMappedPort(VALIDATOR_API_PORT));
-  }
-
-  public String getApiPassword() {
-    return container.copyFileFromContainer(
-        VALIDATOR_PATH + "key-manager/validator-api-bearer",
-        in -> IOUtils.toString(in, StandardCharsets.UTF_8));
-  }
-
-  public void waitForDutiesRequestedFrom(final TekuNode node) {
+  public void waitForDutiesRequestedFrom(final TekuBeaconNode node) {
     waitForMetric(
         withNameEqualsTo("validator_remote_beacon_nodes_requests_total"),
         withLabelsContaining(
@@ -212,7 +79,7 @@ public class TekuValidatorNode extends Node {
         withValueGreaterThan(0));
   }
 
-  public void waitForAttestationPublishedTo(final TekuNode node) {
+  public void waitForAttestationPublishedTo(final TekuBeaconNode node) {
     waitForMetric(
         withNameEqualsTo("validator_remote_beacon_nodes_requests_total"),
         withLabelsContaining(
@@ -223,7 +90,7 @@ public class TekuValidatorNode extends Node {
         withValueGreaterThan(0));
   }
 
-  public void waitForBlockPublishedTo(final TekuNode node) {
+  public void waitForBlockPublishedTo(final TekuBeaconNode node) {
     waitForMetric(
         withNameEqualsTo("validator_remote_beacon_nodes_requests_total"),
         withLabelsContaining(
@@ -234,187 +101,13 @@ public class TekuValidatorNode extends Node {
         withValueGreaterThan(0));
   }
 
-  public static class Config {
+  private URI getValidatorApiUrl() {
+    return URI.create("https://127.0.0.1:" + container.getMappedPort(VALIDATOR_API_PORT));
+  }
 
-    private static final int DEFAULT_VALIDATOR_COUNT = 64;
-
-    private Map<String, Object> configMap = new HashMap<>();
-    private boolean keyfilesGenerated = false;
-    private final Map<File, String> configFileMap = new HashMap<>();
-    private Optional<InputStream> maybeNetworkYaml = Optional.empty();
-    private final Map<String, String> readOnlyMountPoints = new HashMap<>();
-    private final Map<String, String> writableMountPoints = new HashMap<>();
-
-    private boolean isUsingSentryNodeConfig = false;
-
-    public Config() {
-      configMap.put("Xinterop-owned-validator-start-index", 0);
-      configMap.put("Xinterop-owned-validator-count", DEFAULT_VALIDATOR_COUNT);
-      configMap.put("Xinterop-number-of-validators", DEFAULT_VALIDATOR_COUNT);
-      configMap.put("Xinterop-enabled", true);
-      configMap.put("data-path", DATA_PATH);
-      configMap.put("log-destination", "console");
-      configMap.put("beacon-node-api-endpoint", "http://notvalid.restapi.com");
-      configMap.put("metrics-enabled", true);
-      configMap.put("metrics-port", METRICS_PORT);
-      configMap.put("metrics-interface", "0.0.0.0");
-      configMap.put("metrics-host-allowlist", "*");
-    }
-
-    public TekuValidatorNode.Config withInteropModeDisabled() {
-      configMap.put("Xinterop-enabled", false);
-      return this;
-    }
-
-    public TekuValidatorNode.Config withValidatorKeys(final String validatorKeyInformation) {
-      configMap.put("validator-keys", validatorKeyInformation);
-      return this;
-    }
-
-    public TekuValidatorNode.Config withProposerDefaultFeeRecipient(final String feeRecipient) {
-      configMap.put("validators-proposer-default-fee-recipient", feeRecipient);
-      return this;
-    }
-
-    public TekuValidatorNode.Config withValidatorApiEnabled() {
-      configMap.put("validator-api-enabled", true);
-      configMap.put("validator-api-port", VALIDATOR_API_PORT);
-      configMap.put("validator-api-host-allowlist", "*");
-      configMap.put("validator-api-keystore-file", "/keystore.pfx");
-      try {
-        publishSelfSignedCertificate("/keystore.pfx");
-      } catch (Exception e) {
-        LOG.error("Could not generate self signed cert", e);
-      }
-      return this;
-    }
-
-    public TekuValidatorNode.Config withExternalSignerUrl(final String externalSignerUrl) {
-      configMap.put("validators-external-signer-url", externalSignerUrl);
-      return this;
-    }
-
-    public TekuValidatorNode.Config withExitWhenNoValidatorKeysEnabled(
-        boolean exitWhenNoValidatorKeysEnabled) {
-      configMap.put("exit-when-no-validator-keys-enabled", exitWhenNoValidatorKeysEnabled);
-      return this;
-    }
-
-    public TekuValidatorNode.Config withBeaconNode(final TekuNode beaconNode) {
-      return withBeaconNodes(beaconNode);
-    }
-
-    public TekuValidatorNode.Config withBeaconNodes(final TekuNode... beaconNodes) {
-      configMap.put(
-          "beacon-node-api-endpoint",
-          Arrays.stream(beaconNodes)
-              .map(TekuNode::getBeaconRestApiUrl)
-              .collect(Collectors.joining(",")));
-      return this;
-    }
-
-    public TekuValidatorNode.Config withNetwork(String networkName) {
-      configMap.put("network", networkName);
-      return this;
-    }
-
-    private Map<String, String> getWritableMountPoints() {
-      return writableMountPoints;
-    }
-
-    private Map<String, String> getReadOnlyMountPoints() {
-      return readOnlyMountPoints;
-    }
-
-    public TekuValidatorNode.Config withInteropValidators(
-        final int startIndex, final int validatorCount) {
-      configMap.put("Xinterop-owned-validator-start-index", startIndex);
-      configMap.put("Xinterop-owned-validator-count", validatorCount);
-      return this;
-    }
-
-    public TekuValidatorNode.Config withDoppelgangerDetectionEnabled() {
-      configMap.put("doppelganger-detection-enabled", true);
-      return this;
-    }
-
-    public TekuValidatorNode.Config withStopVcWhenValidatorSlashedEnabled() {
-      configMap.put("Xshut-down-when-validator-slashed-enabled", true);
-      return this;
-    }
-
-    public TekuValidatorNode.Config withSentryNodes(final SentryNodesConfig sentryNodesConfig) {
-      final File sentryNodesConfigFile;
-      try {
-        sentryNodesConfigFile = File.createTempFile("sentry-node-config", ".json");
-        sentryNodesConfigFile.deleteOnExit();
-
-        try (FileWriter fw = new FileWriter(sentryNodesConfigFile, StandardCharsets.UTF_8)) {
-          fw.write(sentryNodesConfig.toJson(JSON_PROVIDER));
-        }
-      } catch (IOException e) {
-        throw new RuntimeException("Error creating sentry nodes configuration file", e);
-      }
-      configFileMap.put(sentryNodesConfigFile, SENTRY_NODE_CONFIG_FILE_PATH);
-
-      configMap.put("sentry-config-file", SENTRY_NODE_CONFIG_FILE_PATH);
-      isUsingSentryNodeConfig = true;
-
-      return this;
-    }
-
-    public void writeConfigFile() throws Exception {
-      final File configFile = File.createTempFile("config", ".yaml");
-      configFile.deleteOnExit();
-
-      if (isUsingSentryNodeConfig) {
-        configMap.remove("beacon-node-api-endpoint");
-      }
-
-      writeConfigFileTo(configFile);
-      configFileMap.put(configFile, CONFIG_FILE_PATH);
-      if (maybeNetworkYaml.isPresent()) {
-        final File networkFile = File.createTempFile("network", ".yaml");
-        networkFile.deleteOnExit();
-        try (FileOutputStream out = new FileOutputStream(networkFile)) {
-          IOUtils.copy(maybeNetworkYaml.get(), out);
-        } finally {
-          if (maybeNetworkYaml.isPresent()) {
-            maybeNetworkYaml.get().close();
-          }
-        }
-        configFileMap.put(networkFile, NETWORK_FILE_PATH);
-      }
-    }
-
-    public TekuValidatorNode.Config withAltairEpoch(final UInt64 altairSlot) {
-      configMap.put("Xnetwork-altair-fork-epoch", altairSlot.toString());
-      return this;
-    }
-
-    private void writeConfigFileTo(final File configFile) throws Exception {
-      YAML_MAPPER.writeValue(configFile, configMap);
-    }
-
-    public void publishSelfSignedCertificate(final String targetKeystoreFile)
-        throws URISyntaxException, IOException {
-      if (!keyfilesGenerated) {
-        keyfilesGenerated = true;
-
-        final File keystoreFile = File.createTempFile("keystore", ".pfx");
-        try (OutputStream out = new FileOutputStream(keystoreFile)) {
-          // validatorApi.pfx has a long expiry, and no password
-          Resources.copy(
-              Resources.getResource(TekuValidatorNode.class, "validatorApi.pfx").toURI().toURL(),
-              out);
-        }
-
-        configFileMap.put(keystoreFile, targetKeystoreFile);
-      }
-    }
-
-    public Map<File, String> getConfigFileMap() {
-      return configFileMap;
-    }
+  private String getApiPassword() {
+    return container.copyFileFromContainer(
+        VALIDATOR_PATH + "key-manager/validator-api-bearer",
+        in -> IOUtils.toString(in, StandardCharsets.UTF_8));
   }
 }

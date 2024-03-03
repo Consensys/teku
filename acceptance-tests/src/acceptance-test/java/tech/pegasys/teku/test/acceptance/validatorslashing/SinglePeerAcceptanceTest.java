@@ -18,7 +18,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 
 /**
  * Running a single node with BN/VC running in a single process. The slashing event is sent to the
@@ -35,13 +36,15 @@ public class SinglePeerAcceptanceTest extends ValidatorSlashingDetectionAcceptan
     final int genesisTime = timeProvider.getTimeInSeconds().plus(10).intValue();
     final UInt64 altairEpoch = UInt64.valueOf(100);
 
-    final TekuNode tekuNode =
-        createTekuNode(
-            config ->
-                configureNode(config, genesisTime, network)
-                    .withAltairEpoch(altairEpoch)
-                    .withStopVcWhenValidatorSlashedEnabled()
-                    .withInteropValidators(0, 32));
+    final TekuBeaconNode tekuNode =
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode()
+                .withGenesisTime(genesisTime)
+                .withRealNetwork()
+                .withAltairEpoch(altairEpoch)
+                .withStopVcWhenValidatorSlashedEnabled()
+                .withInteropValidators(0, 32)
+                .build());
 
     tekuNode.start();
 

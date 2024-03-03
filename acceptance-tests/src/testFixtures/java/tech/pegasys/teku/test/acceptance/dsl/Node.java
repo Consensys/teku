@@ -63,7 +63,7 @@ public abstract class Node {
   protected static final String CONFIG_FILE_PATH = "/config.yaml";
   protected static final String NETWORK_FILE_PATH = "/network.yaml";
   protected static final String PRIVATE_KEY_FILE_PATH = "/private-key.txt";
-  protected static final String JWT_SECRET_FILE_PATH = "/jwt-secret.hex";
+  public static final String JWT_SECRET_FILE_PATH = "/jwt-secret.hex";
   protected static final String SENTRY_NODE_CONFIG_FILE_PATH = "/sentry-node-config.json";
   protected static final String WORKING_DIRECTORY = "/opt/teku/";
   protected static final String DATA_PATH = WORKING_DIRECTORY + "data/";

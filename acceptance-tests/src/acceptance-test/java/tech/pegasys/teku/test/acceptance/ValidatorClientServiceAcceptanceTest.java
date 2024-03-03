@@ -19,7 +19,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfig;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
 import tech.pegasys.teku.test.acceptance.dsl.tools.ValidatorKeysApi;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
@@ -28,9 +30,12 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldFailWithNoValidatorKeysWhenExitOptionEnabledOnBeaconNode() throws Exception {
-    final TekuNode beaconNode =
-        createTekuNode(
-            config -> config.withExitWhenNoValidatorKeysEnabled(true).withInteropValidators(0, 0));
+    final TekuNodeConfig tekuNodeConfig =
+        TekuNodeConfigBuilder.createBeaconNode()
+            .withInteropValidators(0, 0)
+            .withExitWhenNoValidatorKeysEnabled(true)
+            .build();
+    final TekuBeaconNode beaconNode = createTekuBeaconNode(tekuNodeConfig);
     beaconNode.startWithFailure(
         "No loaded validators when --exit-when-no-validator-keys-enabled option is true");
   }
@@ -44,13 +49,12 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
     final GenesisGenerator.InitialStateData genesis =
         createGenesisGenerator().network(networkName).validatorKeys(initialKeystores).generate();
 
-    final TekuNode beaconNode =
-        createTekuNode(
-            config ->
-                config
-                    .withNetwork(networkName)
-                    .withInitialState(genesis)
-                    .withWritableKeystorePath(initialKeystores, tempDir));
+    final TekuBeaconNode beaconNode =
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode()
+                .withWritableKeystorePath(initialKeystores, tempDir)
+                .withInitialState(genesis)
+                .build());
 
     beaconNode.startWithFailure(
         "Unable to initialize validator keys, please manually correct errors and try again.");
@@ -65,13 +69,18 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
     final GenesisGenerator.InitialStateData genesis =
         createGenesisGenerator().network(networkName).validatorKeys(initialKeystores).generate();
 
-    final TekuNode beaconNode =
-        createTekuNode(config -> config.withNetwork(networkName).withInitialState(genesis));
+    final TekuBeaconNode beaconNode =
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode().withInitialState(genesis).build());
     beaconNode.start();
 
     final TekuValidatorNode validatorNode =
-        createValidatorNode(config -> config.withBeaconNode(beaconNode).withNetwork("auto"))
-            .withWritableKeystorePath(initialKeystores, tempDir);
+        createValidatorNode(
+            TekuNodeConfigBuilder.createValidatorClient()
+                .withBeaconNodes(beaconNode)
+                .withNetwork("auto")
+                .withWritableKeystorePath(initialKeystores, tempDir)
+                .build());
 
     validatorNode.startWithFailure(
         "Unable to initialize validator keys, please manually correct errors and try again.");
@@ -87,13 +96,13 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
     final GenesisGenerator.InitialStateData genesis =
         createGenesisGenerator().network(networkName).validatorKeys(initialKeystores).generate();
 
-    final TekuNode beaconNode =
-        createTekuNode(
-            config ->
-                config
-                    .withNetwork(networkName)
-                    .withInitialState(genesis)
-                    .withReadOnlyKeystorePath(initialKeystores, tempDir));
+    final TekuBeaconNode beaconNode =
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode()
+                .withNetwork(networkName)
+                .withInitialState(genesis)
+                .withReadOnlyKeystorePath(initialKeystores, tempDir)
+                .build());
 
     beaconNode.startWithFailure(
         "Unable to initialize validator keys, please manually correct errors and try again.");
@@ -109,14 +118,14 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
     final GenesisGenerator.InitialStateData genesis =
         createGenesisGenerator().network(networkName).validatorKeys(initialKeystores).generate();
 
-    final TekuNode beaconNode =
-        createTekuNode(
-            config ->
-                config
-                    .withNetwork(networkName)
-                    .withInitialState(genesis)
-                    .withReadOnlyKeystorePath(initialKeystores)
-                    .withValidatorKeystoreLockingEnabled(true));
+    final TekuBeaconNode beaconNode =
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode()
+                .withNetwork(networkName)
+                .withInitialState(genesis)
+                .withReadOnlyKeystorePath(initialKeystores)
+                .withValidatorKeystoreLockingEnabled(true)
+                .build());
 
     beaconNode.startWithFailure(
         "Unable to initialize validator keys, please manually correct errors and try again.");
@@ -124,14 +133,15 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldFailWithNoValidatorKeysWhenExitOptionEnabledOnValidatorClient() throws Exception {
-    final TekuNode beaconNode = createTekuNode();
+    final TekuBeaconNode beaconNode = createTekuBeaconNode();
+
     final TekuValidatorNode validatorClient =
         createValidatorNode(
-            config ->
-                config
-                    .withBeaconNode(beaconNode)
-                    .withExitWhenNoValidatorKeysEnabled(true)
-                    .withInteropModeDisabled());
+            TekuNodeConfigBuilder.createValidatorClient()
+                .withInteropModeDisabled()
+                .withBeaconNodes(beaconNode)
+                .withExitWhenNoValidatorKeysEnabled(true)
+                .build());
     beaconNode.start();
     validatorClient.startWithFailure(
         "No loaded validators when --exit-when-no-validator-keys-enabled option is true");
@@ -140,9 +150,12 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldNotFailWithNoValidatorKeysWhenExitOptionDisabledOnBeaconNode() throws Exception {
-    final TekuNode beaconNode =
-        createTekuNode(
-            config -> config.withExitWhenNoValidatorKeysEnabled(false).withInteropValidators(0, 0));
+    final TekuBeaconNode beaconNode =
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode()
+                .withExitWhenNoValidatorKeysEnabled(false)
+                .withInteropValidators(0, 0)
+                .build());
     beaconNode.start();
 
     beaconNode.waitForEpochAtOrAbove(1);
@@ -152,15 +165,15 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldNotFailWithNoValidatorKeysWhenExitOptionDisabledOnValidatorClient() throws Exception {
-    final TekuNode beaconNode = createTekuNode();
+    final TekuBeaconNode beaconNode = createTekuBeaconNode();
     final TekuValidatorNode validatorClient =
         createValidatorNode(
-            config ->
-                config
-                    .withBeaconNode(beaconNode)
-                    .withExitWhenNoValidatorKeysEnabled(false)
-                    .withValidatorApiEnabled()
-                    .withInteropModeDisabled());
+            TekuNodeConfigBuilder.createValidatorClient()
+                .withValidatorApiEnabled()
+                .withInteropModeDisabled()
+                .withBeaconNodes(beaconNode)
+                .withExitWhenNoValidatorKeysEnabled(false)
+                .build());
     beaconNode.start();
     validatorClient.start();
     beaconNode.waitForEpochAtOrAbove(1);
