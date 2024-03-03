@@ -13,6 +13,8 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import static tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder.DEFAULT_NETWORK_NAME;
+
 import java.io.IOException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,6 +55,15 @@ public class RemoteValidatorAcceptanceTest extends AcceptanceTestBase {
 
   @Test
   void shouldCreateAttestationsWithRemoteValidatorStartingFirst() throws Exception {
+    // if the validator starts first with network auto, it'll spin until it gets spec
+    // so here we'll explicitly define the network in use.
+    validatorClient =
+        createValidatorNode(
+            TekuNodeConfigBuilder.createValidatorClient()
+                .withNetwork(DEFAULT_NETWORK_NAME)
+                .withInteropValidators(0, VALIDATOR_COUNT)
+                .withBeaconNodes(beaconNode)
+                .build());
     validatorClient.start();
     validatorClient.waitForLogMessageContaining(
         "Error while connecting to beacon node event stream");
