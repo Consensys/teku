@@ -224,7 +224,12 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
               spec, forkProvider, validatorApiChannel, assignments.values());
       final SyncCommitteeAggregationDuty aggregationDuty =
           new SyncCommitteeAggregationDuty(
-              spec, forkProvider, validatorApiChannel, validatorLogger, assignments.values());
+              spec,
+              forkProvider,
+              validatorApiChannel,
+              validatorLogger,
+              assignments.values(),
+              new SyncAggregatorSelectionProofProvider());
       return new SyncCommitteeScheduledDuties(
           productionDuty,
           aggregationDuty,
