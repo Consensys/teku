@@ -34,11 +34,11 @@ import tech.pegasys.teku.spec.SpecMilestone;
 
 class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
   @Test
-  void shouldEnableCapellaByDefault() {
+  void shouldEnableDenebByDefault() {
     final TekuConfiguration config = getTekuConfigurationFromArguments();
     final Spec spec = config.eth2NetworkConfiguration().getSpec();
     assertThat(spec.getForkSchedule().getHighestSupportedMilestone())
-        .isEqualTo(SpecMilestone.CAPELLA);
+        .isEqualTo(SpecMilestone.DENEB);
   }
 
   @Test
@@ -114,16 +114,6 @@ class Eth2NetworkOptionsTest extends AbstractBeaconNodeCommandTest {
                 .orElseThrow()
                 .getSafeSlotsToImportOptimistically())
         .isEqualTo(256);
-  }
-
-  @ParameterizedTest
-  @ValueSource(strings = {"true", "false"})
-  void shouldSetFirstDescendentAsHead(final String value) {
-    final TekuConfiguration config =
-        getTekuConfigurationFromArguments(
-            "--Xfork-choice-update-head-on-block-import-enabled", value);
-    assertThat(config.eth2NetworkConfiguration().isForkChoiceUpdateHeadOnBlockImportEnabled())
-        .isEqualTo(Boolean.valueOf(value));
   }
 
   @ParameterizedTest

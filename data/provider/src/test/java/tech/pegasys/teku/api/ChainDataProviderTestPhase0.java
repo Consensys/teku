@@ -67,6 +67,7 @@ import tech.pegasys.teku.spec.datastructures.metadata.ObjectAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.generator.AttestationGenerator;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -322,7 +323,10 @@ public class ChainDataProviderTestPhase0 extends AbstractChainDataProviderTest {
   public void getSyncCommitteeRewardsFromBlockId_slotIsPreAltair() {
     final ChainDataProvider provider =
         new ChainDataProvider(
-            spec, recentChainData, combinedChainDataClient, new RewardCalculator(spec));
+            spec,
+            recentChainData,
+            combinedChainDataClient,
+            new RewardCalculator(spec, new BlockRewardCalculatorUtil(spec)));
     final SafeFuture<Optional<SyncCommitteeRewardData>> future =
         provider.getSyncCommitteeRewardsFromBlockId("head", Set.of());
     assertThat(future).isCompletedExceptionally();

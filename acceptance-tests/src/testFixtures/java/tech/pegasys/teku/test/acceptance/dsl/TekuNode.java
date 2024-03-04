@@ -75,12 +75,22 @@ import tech.pegasys.teku.api.response.v1.node.SyncingResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.response.v1.validator.ValidatorLiveness;
 import tech.pegasys.teku.api.response.v2.beacon.GetBlockResponseV2;
+import tech.pegasys.teku.api.schema.AttestationData;
+import tech.pegasys.teku.api.schema.AttesterSlashing;
+import tech.pegasys.teku.api.schema.BLSSignature;
+import tech.pegasys.teku.api.schema.BeaconBlockHeader;
+import tech.pegasys.teku.api.schema.Checkpoint;
+import tech.pegasys.teku.api.schema.IndexedAttestation;
+import tech.pegasys.teku.api.schema.ProposerSlashing;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
+import tech.pegasys.teku.api.schema.SignedBeaconBlockHeader;
 import tech.pegasys.teku.api.schema.altair.SignedBeaconBlockAltair;
 import tech.pegasys.teku.api.schema.altair.SignedContributionAndProof;
 import tech.pegasys.teku.api.schema.bellatrix.SignedBeaconBlockBellatrix;
 import tech.pegasys.teku.api.schema.interfaces.SignedBlock;
+import tech.pegasys.teku.bls.BLS;
 import tech.pegasys.teku.bls.BLSKeyPair;
+import tech.pegasys.teku.bls.BLSSecretKey;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
@@ -94,12 +104,15 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.builder.SpecConfigBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
+import tech.pegasys.teku.spec.datastructures.state.Fork;
+import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.state.Validator;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.generator.BlsToExecutionChangeGenerator;
 import tech.pegasys.teku.spec.logic.versions.capella.block.BlockProcessorCapella;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsCapella;
+import tech.pegasys.teku.spec.signatures.SigningRootUtil;
 import tech.pegasys.teku.test.acceptance.dsl.Eth2EventHandler.PackedMessage;
 import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator.InitialStateData;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
@@ -108,6 +121,8 @@ public class TekuNode extends Node {
 
   private static final Logger LOG = LogManager.getLogger();
   public static final String LOCAL_VALIDATOR_LIVENESS_URL = "/eth/v1/validator/liveness/{epoch}";
+  public static final String POST_PROPOSER_SLASHING_URL = "/eth/v1/beacon/pool/proposer_slashings";
+  public static final String POST_ATTESTER_SLASHING_URL = "/eth/v1/beacon/pool/attester_slashings";
   private final Config config;
   private final Spec spec;
   private Optional<EventStreamListener> maybeEventStreamListener = Optional.empty();
@@ -174,6 +189,10 @@ public class TekuNode extends Node {
     maybeEventStreamListener =
         Optional.of(new EventStreamListener(getEventUrl(List.of(eventTypes))));
     waitFor(() -> assertThat(maybeEventStreamListener.get().isReady()).isTrue());
+  }
+
+  public Spec getSpec() {
+    return spec;
   }
 
   public void waitForContributionAndProofEvent() {
@@ -283,6 +302,83 @@ public class TekuNode extends Node {
       output.put(entry.index, entry.isLive);
     }
     return output;
+  }
+
+  public String postProposerSlashing(
+      final UInt64 slot, final UInt64 index, final BLSSecretKey secretKey) throws IOException {
+    final ForkInfo forkInfo = getForkInfo(slot);
+    final SigningRootUtil signingRootUtil = new SigningRootUtil(spec);
+    final SignedBeaconBlockHeader header1 =
+        randomSignedBeaconBlockHeader(slot, index, secretKey, signingRootUtil, forkInfo);
+    final SignedBeaconBlockHeader header2 =
+        randomSignedBeaconBlockHeader(slot, index, secretKey, signingRootUtil, forkInfo);
+    final ProposerSlashing proposerSlashing = new ProposerSlashing(header1, header2);
+    final String body = JSON_PROVIDER.objectToJSON(proposerSlashing);
+    return httpClient.post(getRestApiUrl(), POST_PROPOSER_SLASHING_URL, body);
+  }
+
+  private ForkInfo getForkInfo(final UInt64 slot) throws IOException {
+    final Fork fork = spec.getForkSchedule().getFork(spec.computeEpochAtSlot(slot));
+    final Bytes32 genesisValidatorRoot = fetchGenesis().getGenesisValidatorsRoot();
+    final ForkInfo forkInfo = new ForkInfo(fork, genesisValidatorRoot);
+    return forkInfo;
+  }
+
+  public String postAttesterSlashing(
+      final UInt64 slashingSlot,
+      final UInt64 slashedIndex,
+      final BLSSecretKey slashedValidatorSecretKey)
+      throws IOException {
+    final ForkInfo forkInfo = getForkInfo(slashingSlot);
+    final SigningRootUtil signingRootUtil = new SigningRootUtil(spec);
+    final IndexedAttestation indexedAttestation1 =
+        randomIndexedAttestation(
+            slashingSlot, slashedIndex, slashedValidatorSecretKey, signingRootUtil, forkInfo);
+    final IndexedAttestation indexedAttestation2 =
+        randomIndexedAttestation(
+            slashingSlot, slashedIndex, slashedValidatorSecretKey, signingRootUtil, forkInfo);
+    final AttesterSlashing attesterSlashing =
+        new AttesterSlashing(indexedAttestation1, indexedAttestation2);
+    final String body = JSON_PROVIDER.objectToJSON(attesterSlashing);
+    return httpClient.post(getRestApiUrl(), POST_ATTESTER_SLASHING_URL, body);
+  }
+
+  private static IndexedAttestation randomIndexedAttestation(
+      final UInt64 slot,
+      final UInt64 index,
+      final BLSSecretKey secretKey,
+      final SigningRootUtil signingRootUtil,
+      final ForkInfo forkInfo) {
+    final AttestationData attestationData =
+        new AttestationData(
+            slot,
+            index,
+            Bytes32.random(),
+            new Checkpoint(UInt64.valueOf(1), Bytes32.random()),
+            new Checkpoint(UInt64.valueOf(2), Bytes32.random()));
+    final BLSSignature blsSignature1 =
+        new BLSSignature(
+            BLS.sign(
+                secretKey,
+                signingRootUtil.signingRootForSignAttestationData(
+                    attestationData.asInternalAttestationData(), forkInfo)));
+    return new IndexedAttestation(List.of(index), attestationData, blsSignature1);
+  }
+
+  private SignedBeaconBlockHeader randomSignedBeaconBlockHeader(
+      final UInt64 slot,
+      final UInt64 index,
+      final BLSSecretKey secretKey,
+      final SigningRootUtil signingRootUtil,
+      final ForkInfo forkInfo) {
+    final BeaconBlockHeader beaconBlockHeader =
+        new BeaconBlockHeader(slot, index, Bytes32.random(), Bytes32.random(), Bytes32.random());
+
+    final Bytes blockHeaderSigningRoot =
+        signingRootUtil.signingRootForSignBlockHeader(
+            beaconBlockHeader.asInternalBeaconBlockHeader(), forkInfo);
+    final BLSSignature blsSignature = new BLSSignature(BLS.sign(secretKey, blockHeaderSigningRoot));
+    return new SignedBeaconBlockHeader(beaconBlockHeader, blsSignature);
   }
 
   public void submitBlsToExecutionChange(
@@ -872,6 +968,11 @@ public class TekuNode extends Node {
 
     public Config withDoppelgangerDetectionEnabled() {
       configMap.put("doppelganger-detection-enabled", true);
+      return this;
+    }
+
+    public Config withStopVcWhenValidatorSlashedEnabled() {
+      configMap.put("Xshut-down-when-validator-slashed-enabled", true);
       return this;
     }
 

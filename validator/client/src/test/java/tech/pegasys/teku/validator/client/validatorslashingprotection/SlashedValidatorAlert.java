@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2022
+ * Copyright Consensys Software Inc., 2024
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,13 +11,17 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.statetransition.block;
+package tech.pegasys.teku.validator.client.validatorslashingprotection;
 
-import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.infrastructure.logging.StatusLogger;
+import tech.pegasys.teku.validator.client.slashingriskactions.SlashedValidatorShutDown;
 
-public interface BlockImportNotifications extends VoidReturningChannelInterface {
-  void onBlockImported(SignedBeaconBlock block);
+public class SlashedValidatorAlert extends SlashedValidatorShutDown {
 
-  void onBlockValidated(SignedBeaconBlock block);
+  public SlashedValidatorAlert(final StatusLogger statusLog) {
+    super(statusLog);
+  }
+
+  @Override
+  public void shutdown() {}
 }

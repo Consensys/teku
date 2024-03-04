@@ -15,7 +15,6 @@ package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
@@ -36,7 +35,6 @@ public class GossipForkSubscriptionsElectra extends GossipForkSubscriptionsCapel
   public GossipForkSubscriptionsElectra(
       final Fork fork,
       final Spec spec,
-      final P2PConfig config,
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final DiscoveryNetwork<?> discoveryNetwork,
@@ -57,7 +55,6 @@ public class GossipForkSubscriptionsElectra extends GossipForkSubscriptionsCapel
     super(
         fork,
         spec,
-        config,
         asyncRunner,
         metricsSystem,
         discoveryNetwork,

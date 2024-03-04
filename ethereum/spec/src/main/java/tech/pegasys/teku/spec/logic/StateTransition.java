@@ -22,6 +22,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 
@@ -102,6 +103,7 @@ public class StateTransition {
                     previousStateRoot,
                     latestBlockHeader.getBodyRoot());
             state.setLatestBlockHeader(latestBlockHeaderNew);
+            BeaconStateCache.getSlotCaches(state).onSlotProcessed();
           }
 
           // Cache block root

@@ -15,8 +15,6 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import org.apache.commons.lang3.tuple.Pair;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -30,7 +28,7 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class BeaconBlockBodyBuilderDeneb extends BeaconBlockBodyBuilderElectra {
 
-  private SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments;
+  private SszList<SszKZGCommitment> blobKzgCommitments;
 
   public BeaconBlockBodyBuilderDeneb(
       final BeaconBlockBodySchema<? extends BeaconBlockBodyDeneb> schema,
@@ -45,7 +43,7 @@ public class BeaconBlockBodyBuilderDeneb extends BeaconBlockBodyBuilderElectra {
 
   @Override
   public BeaconBlockBodyBuilder blobKzgCommitments(
-      final SafeFuture<SszList<SszKZGCommitment>> blobKzgCommitments) {
+      final SszList<SszKZGCommitment> blobKzgCommitments) {
     this.blobKzgCommitments = blobKzgCommitments;
     return this;
   }
@@ -57,54 +55,42 @@ public class BeaconBlockBodyBuilderDeneb extends BeaconBlockBodyBuilderElectra {
   }
 
   @Override
-  public SafeFuture<BeaconBlockBody> build() {
+  public BeaconBlockBody build() {
     validate();
     if (isBlinded()) {
       final BlindedBeaconBlockBodySchemaDenebImpl schema =
           getAndValidateSchema(true, BlindedBeaconBlockBodySchemaDenebImpl.class);
-      return executionPayloadHeader
-          .thenCompose(
-              header -> blobKzgCommitments.thenApply(commitments -> Pair.of(header, commitments)))
-          .thenApply(
-              headerWithCommitments ->
-                  new BlindedBeaconBlockBodyDenebImpl(
-                      schema,
-                      new SszSignature(randaoReveal),
-                      eth1Data,
-                      SszBytes32.of(graffiti),
-                      proposerSlashings,
-                      attesterSlashings,
-                      attestations,
-                      deposits,
-                      voluntaryExits,
-                      syncAggregate,
-                      (ExecutionPayloadHeaderDenebImpl)
-                          headerWithCommitments.getLeft().toVersionDeneb().orElseThrow(),
-                      getBlsToExecutionChanges(),
-                      headerWithCommitments.getRight()));
+      return new BlindedBeaconBlockBodyDenebImpl(
+          schema,
+          new SszSignature(randaoReveal),
+          eth1Data,
+          SszBytes32.of(graffiti),
+          proposerSlashings,
+          attesterSlashings,
+          attestations,
+          deposits,
+          voluntaryExits,
+          syncAggregate,
+          (ExecutionPayloadHeaderDenebImpl) executionPayloadHeader.toVersionDeneb().orElseThrow(),
+          getBlsToExecutionChanges(),
+          blobKzgCommitments);
     }
 
     final BeaconBlockBodySchemaDenebImpl schema =
         getAndValidateSchema(false, BeaconBlockBodySchemaDenebImpl.class);
-    return executionPayload
-        .thenCompose(
-            payload -> blobKzgCommitments.thenApply(commitments -> Pair.of(payload, commitments)))
-        .thenApply(
-            payloadWithCommitments ->
-                new BeaconBlockBodyDenebImpl(
-                    schema,
-                    new SszSignature(randaoReveal),
-                    eth1Data,
-                    SszBytes32.of(graffiti),
-                    proposerSlashings,
-                    attesterSlashings,
-                    attestations,
-                    deposits,
-                    voluntaryExits,
-                    syncAggregate,
-                    (ExecutionPayloadDenebImpl)
-                        payloadWithCommitments.getLeft().toVersionDeneb().orElseThrow(),
-                    getBlsToExecutionChanges(),
-                    payloadWithCommitments.getRight()));
+    return new BeaconBlockBodyDenebImpl(
+        schema,
+        new SszSignature(randaoReveal),
+        eth1Data,
+        SszBytes32.of(graffiti),
+        proposerSlashings,
+        attesterSlashings,
+        attestations,
+        deposits,
+        voluntaryExits,
+        syncAggregate,
+        (ExecutionPayloadDenebImpl) executionPayload.toVersionDeneb().orElseThrow(),
+        getBlsToExecutionChanges(),
+        blobKzgCommitments);
   }
 }

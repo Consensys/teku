@@ -254,7 +254,6 @@ public class Eth2P2PNetworkBuilder {
       case CAPELLA -> new GossipForkSubscriptionsCapella(
           forkAndSpecMilestone.getFork(),
           spec,
-          config,
           asyncRunner,
           metricsSystem,
           network,
@@ -272,7 +271,6 @@ public class Eth2P2PNetworkBuilder {
       case ELECTRA -> new GossipForkSubscriptionsElectra(
           forkAndSpecMilestone.getFork(),
           spec,
-          config,
           asyncRunner,
           metricsSystem,
           network,
@@ -290,7 +288,6 @@ public class Eth2P2PNetworkBuilder {
       case DENEB -> new GossipForkSubscriptionsDeneb(
           forkAndSpecMilestone.getFork(),
           spec,
-          config,
           asyncRunner,
           metricsSystem,
           network,

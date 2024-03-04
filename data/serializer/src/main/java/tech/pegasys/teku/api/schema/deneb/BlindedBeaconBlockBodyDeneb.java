@@ -127,21 +127,20 @@ public class BlindedBeaconBlockBodyDeneb extends BeaconBlockBodyAltair {
 
     return super.asInternalBeaconBlockBody(
         spec,
-        (builder) -> {
+        builder -> {
           builder.executionPayloadHeader(
-              SafeFuture.completedFuture(
-                  executionPayloadHeader.asInternalExecutionPayloadHeader(
-                      executionPayloadHeaderSchema)));
+              executionPayloadHeader.asInternalExecutionPayloadHeader(
+                  executionPayloadHeaderSchema));
           builder.blsToExecutionChanges(
               this.blsToExecutionChanges.stream()
                   .map(b -> b.asInternalSignedBlsToExecutionChange(spec))
                   .collect(blsToExecutionChangesSchema.collector()));
           builder.blobKzgCommitments(
-              SafeFuture.completedFuture(
-                  this.blobKZGCommitments.stream()
-                      .map(KZGCommitment::asInternalKZGCommitment)
-                      .map(SszKZGCommitment::new)
-                      .collect(blobKZGCommitmentsSchema.collector())));
+              this.blobKZGCommitments.stream()
+                  .map(KZGCommitment::asInternalKZGCommitment)
+                  .map(SszKZGCommitment::new)
+                  .collect(blobKZGCommitmentsSchema.collector()));
+          return SafeFuture.COMPLETE;
         });
   }
 }

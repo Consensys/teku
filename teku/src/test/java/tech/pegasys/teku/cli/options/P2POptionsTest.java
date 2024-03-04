@@ -26,8 +26,8 @@ import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
+import tech.pegasys.teku.networking.p2p.network.config.FilePrivateKeySource;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
-import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.FilePrivateKeySource;
 
 public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
 
@@ -276,21 +276,6 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void subscribeToBlsToExecutionChangesOption_shouldDefaultToTrue() {
-    final TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments();
-    final P2PConfig config = tekuConfiguration.p2p();
-    assertThat(config.isBlsToExecutionChangesSubnetEnabled()).isTrue();
-  }
-
-  @Test
-  public void subscribeToBlsToExecutionChangesOption_shouldOverrideDefault() {
-    final TekuConfiguration tekuConfiguration =
-        getTekuConfigurationFromArguments("--Xbls-to-execution-changes-subnet-enabled", "false");
-    final P2PConfig config = tekuConfiguration.p2p();
-    assertThat(config.isBlsToExecutionChangesSubnetEnabled()).isFalse();
-  }
-
-  @Test
   public void historicalSyncBatchSize_shouldBeSettable() {
     TekuConfiguration tekuConfiguration =
         getTekuConfigurationFromArguments("--Xp2p-historical-sync-batch-size", "10");
@@ -334,7 +319,7 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
   public void forwardSyncBatchSize_greaterThanMessageSizeShouldThrowException() {
     assertThatThrownBy(() -> createConfigBuilder().sync(s -> s.forwardSyncBatchSize(3000)).build())
         .isInstanceOf(InvalidConfigurationException.class)
-        .hasMessage("Forward sync batch size cannot be greater than 1024");
+        .hasMessage("Forward sync batch size cannot be greater than 128");
   }
 
   @Test
@@ -342,6 +327,6 @@ public class P2POptionsTest extends AbstractBeaconNodeCommandTest {
     assertThatThrownBy(
             () -> createConfigBuilder().sync(s -> s.historicalSyncBatchSize(3000)).build())
         .isInstanceOf(InvalidConfigurationException.class)
-        .hasMessage("Historical sync batch size cannot be greater than 1024");
+        .hasMessage("Historical sync batch size cannot be greater than 128");
   }
 }

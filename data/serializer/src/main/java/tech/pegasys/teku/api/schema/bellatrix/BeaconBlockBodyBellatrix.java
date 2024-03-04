@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.AttesterSlashing;
@@ -83,13 +83,15 @@ public class BeaconBlockBodyBellatrix extends BeaconBlockBodyAltair {
 
   @Override
   public BeaconBlockBody asInternalBeaconBlockBody(
-      final SpecVersion spec, Consumer<BeaconBlockBodyBuilder> builderRef) {
+      final SpecVersion spec, final Function<BeaconBlockBodyBuilder, SafeFuture<Void>> builderRef) {
     return super.asInternalBeaconBlockBody(
         spec,
-        (builder) -> {
-          builderRef.accept(builder);
-          builder.executionPayload(
-              SafeFuture.completedFuture(executionPayload.asInternalExecutionPayload(spec)));
-        });
+        builder ->
+            SafeFuture.allOf(
+                builderRef.apply(builder),
+                SafeFuture.of(
+                    () ->
+                        builder.executionPayload(
+                            executionPayload.asInternalExecutionPayload(spec)))));
   }
 }

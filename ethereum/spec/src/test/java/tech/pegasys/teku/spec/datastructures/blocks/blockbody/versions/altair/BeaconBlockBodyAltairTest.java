@@ -14,12 +14,10 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
@@ -38,28 +36,28 @@ class BeaconBlockBodyAltairTest extends AbstractBeaconBlockBodyTest<BeaconBlockB
   @Test
   void equalsReturnsFalseWhenSyncAggregateIsDifferent() {
     syncAggregate = dataStructureUtil.randomSyncAggregate();
-    BeaconBlockBodyAltair testBeaconBlockBody = safeJoin(createBlockBody());
+    final BeaconBlockBodyAltair testBeaconBlockBody = createBlockBody();
 
     assertNotEquals(defaultBlockBody, testBeaconBlockBody);
   }
 
   @Override
-  protected SafeFuture<BeaconBlockBodyAltair> createBlockBody(
+  protected BeaconBlockBodyAltair createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> contentProvider) {
     final BeaconBlockBodyBuilder bodyBuilder = createBeaconBlockBodyBuilder();
     contentProvider.accept(bodyBuilder);
-    return bodyBuilder.build().thenApply(body -> body.toVersionAltair().orElseThrow());
+    return bodyBuilder.build().toVersionAltair().orElseThrow();
   }
 
   @Override
-  protected SafeFuture<BlindedBeaconBlockBodyBellatrix> createBlindedBlockBody(
-      Consumer<BeaconBlockBodyBuilder> contentProvider) {
-    return SafeFuture.completedFuture(null);
+  protected BlindedBeaconBlockBodyBellatrix createBlindedBlockBody(
+      final Consumer<BeaconBlockBodyBuilder> contentProvider) {
+    return null;
   }
 
   @Override
-  protected SafeFuture<BlindedBeaconBlockBodyBellatrix> createDefaultBlindedBlockBody() {
-    return SafeFuture.completedFuture(null);
+  protected BlindedBeaconBlockBodyBellatrix createDefaultBlindedBlockBody() {
+    return null;
   }
 
   @Override

@@ -19,6 +19,7 @@ import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMilli
 import static tech.pegasys.teku.spec.constants.NetworkConstants.INTERVALS_PER_SLOT;
 import static tech.pegasys.teku.statetransition.forkchoice.StateRootCollector.addParentStateRoots;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Throwables;
 import java.net.ConnectException;
 import java.util.Collection;
@@ -28,6 +29,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import org.hyperledger.besu.plugin.services.metrics.Counter;
+import org.hyperledger.besu.plugin.services.metrics.LabelledMetric;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
@@ -35,6 +38,7 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.EventThread;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.FatalServiceFailureException;
+import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -87,13 +91,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final EventThread forkChoiceExecutor;
   private final ForkChoiceStateProvider forkChoiceStateProvider;
   private final RecentChainData recentChainData;
-
-  @SuppressWarnings("unused")
   private final BlobSidecarManager blobSidecarManager;
-
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final MergeTransitionBlockValidator transitionBlockValidator;
-  private final boolean forkChoiceUpdateHeadOnBlockImportEnabled;
   private final AttestationStateSelector attestationStateSelector;
   private final DeferredAttestations deferredAttestations = new DeferredAttestations();
 
@@ -102,6 +102,8 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
   private final TickProcessor tickProcessor;
   private final boolean forkChoiceLateBlockReorgEnabled;
   private Optional<Boolean> optimisticSyncing = Optional.empty();
+
+  private final LabelledMetric<Counter> getProposerHeadSelectedCounter;
 
   public ForkChoice(
       final Spec spec,
@@ -112,7 +114,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final ForkChoiceStateProvider forkChoiceStateProvider,
       final TickProcessor tickProcessor,
       final MergeTransitionBlockValidator transitionBlockValidator,
-      final boolean forkChoiceUpdateHeadOnBlockImportEnabled,
       final boolean forkChoiceLateBlockReorgEnabled,
       final MetricsSystem metricsSystem) {
     this.spec = spec;
@@ -125,19 +126,19 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     this.attestationStateSelector =
         new AttestationStateSelector(spec, recentChainData, metricsSystem);
     this.tickProcessor = tickProcessor;
-    this.forkChoiceUpdateHeadOnBlockImportEnabled = forkChoiceUpdateHeadOnBlockImportEnabled;
     this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
     LOG.debug("forkChoiceLateBlockReorgEnabled is set to {}", forkChoiceLateBlockReorgEnabled);
-
+    getProposerHeadSelectedCounter =
+        metricsSystem.createLabelledCounter(
+            TekuMetricCategory.BEACON,
+            "get_proposer_head_selection_total",
+            "when late_block_reorg is enabled, counts based on the proposer parent being based on fork choice, head, or parent of head.",
+            "selected_source");
     recentChainData.subscribeStoreInitialized(this::initializeProtoArrayForkChoice);
     forkChoiceNotifier.subscribeToForkChoiceUpdatedResult(this);
   }
 
-  /**
-   * @deprecated Provided only to avoid having to hard code forkChoiceUpdateHeadOnBlockImportEnabled
-   *     in lots of tests. Will be removed when the feature toggle is removed.
-   */
-  @Deprecated
+  @VisibleForTesting
   public ForkChoice(
       final Spec spec,
       final EventThread forkChoiceExecutor,
@@ -155,7 +156,6 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
         new ForkChoiceStateProvider(forkChoiceExecutor, recentChainData),
         new TickProcessor(spec, recentChainData),
         transitionBlockValidator,
-        true,
         false,
         metricsSystem);
   }
@@ -357,6 +357,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final BeaconState justifiedState,
       final Checkpoint finalizedCheckpoint,
       final Checkpoint justifiedCheckpoint) {
+    if (forkChoiceLateBlockReorgEnabled) {
+      recentChainData.getStore().computeBalanceThresholds(justifiedState);
+    }
     final VoteUpdater transaction = recentChainData.startVoteUpdate();
     final ReadOnlyForkChoiceStrategy forkChoiceStrategy = getForkChoiceStrategy();
     final List<UInt64> justifiedEffectiveBalances =
@@ -723,7 +726,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final BlockImportResult result,
       final ForkChoiceStrategy forkChoiceStrategy) {
 
-    final SlotAndBlockRoot bestHeadBlock = findNewChainHead(block, forkChoiceStrategy);
+    final SlotAndBlockRoot bestHeadBlock = findNewChainHead(forkChoiceStrategy);
     if (!bestHeadBlock.getBlockRoot().equals(recentChainData.getBestBlockRoot().orElseThrow())) {
       recentChainData.updateHead(bestHeadBlock.getBlockRoot(), bestHeadBlock.getSlot());
       if (bestHeadBlock.getBlockRoot().equals(block.getRoot())) {
@@ -732,29 +735,9 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     }
   }
 
-  private SlotAndBlockRoot findNewChainHead(
-      final SignedBeaconBlock block, final ForkChoiceStrategy forkChoiceStrategy) {
-    // If the new block builds on our current chain head it must be the new chain head.
-    // Since fork choice works by walking down the tree selecting the child block with
-    // the greatest weight, when a block has only one child it will automatically become
-    // a better choice than the block itself.  So the first block we receive that is a
-    // child of our current chain head, must be the new chain head. If we'd had any other
-    // child of the current chain head we'd have already selected it as head.
-    if (forkChoiceUpdateHeadOnBlockImportEnabled
-        && recentChainData
-            .getBestBlockRoot()
-            .map(chainHeadRoot -> chainHeadRoot.equals(block.getParentRoot()))
-            .orElse(false)) {
-      // NOTE: disabled by --Xfork-choice-update-head-on-block-import-enabled=false,
-      // this check avoids running fork choice on blocks that arrive if they descend from head,
-      // but we're far better off just running fork choice and applying the normal rules
-      return new SlotAndBlockRoot(block.getSlot(), block.getRoot());
-    }
-
-    // Otherwise, use fork choice to find the new chain head as if this block is on time the
-    // proposer weighting may cause us to reorg.
-    // During sync, this may be noticeably slower than just comparing the chain head due to the way
-    // ProtoArray skips updating all ancestors when adding a new block but it's cheap when in sync.
+  private SlotAndBlockRoot findNewChainHead(final ForkChoiceStrategy forkChoiceStrategy) {
+    // use fork choice to find the new chain head as if this block is on time the proposer weighting
+    // may cause us to reorg.
     final Checkpoint justifiedCheckpoint = recentChainData.getJustifiedCheckpoint().orElseThrow();
     final Checkpoint finalizedCheckpoint = recentChainData.getFinalizedCheckpoint().orElseThrow();
     return forkChoiceStrategy.findHead(
@@ -778,6 +761,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
     final ForkChoiceState forkChoiceState = forkChoiceStateProvider.getForkChoiceStateSync();
 
     forkChoiceNotifier.onForkChoiceUpdated(forkChoiceState, proposingSlot);
+    getProposerHeadSelectedCounter.labels("fork_choice").inc();
 
     if (optimisticSyncing
         .map(oldValue -> !oldValue.equals(forkChoiceState.isHeadOptimistic()))

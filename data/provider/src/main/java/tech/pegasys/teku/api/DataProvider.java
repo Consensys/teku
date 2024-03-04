@@ -18,7 +18,6 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.function.IntSupplier;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
-import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -29,7 +28,6 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
-import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -46,6 +44,7 @@ public class DataProvider {
   private final ValidatorDataProvider validatorDataProvider;
   private final NodeDataProvider nodeDataProvider;
   private final ConfigProvider configProvider;
+  private final ExecutionClientDataProvider executionClientDataProvider;
 
   private DataProvider(
       final ConfigProvider configProvider,
@@ -53,13 +52,15 @@ public class DataProvider {
       final NodeDataProvider nodeDataProvider,
       final ChainDataProvider chainDataProvider,
       final SyncDataProvider syncDataProvider,
-      final ValidatorDataProvider validatorDataProvider) {
+      final ValidatorDataProvider validatorDataProvider,
+      final ExecutionClientDataProvider executionClientDataProvider) {
     this.configProvider = configProvider;
     this.networkDataProvider = networkDataProvider;
     this.nodeDataProvider = nodeDataProvider;
     this.chainDataProvider = chainDataProvider;
     this.syncDataProvider = syncDataProvider;
     this.validatorDataProvider = validatorDataProvider;
+    this.executionClientDataProvider = executionClientDataProvider;
   }
 
   public ConfigProvider getConfigProvider() {
@@ -86,6 +87,10 @@ public class DataProvider {
     return nodeDataProvider;
   }
 
+  public ExecutionClientDataProvider getExecutionClientDataProvider() {
+    return executionClientDataProvider;
+  }
+
   public static DataProvider.Builder builder() {
     return new Builder();
   }
@@ -101,7 +106,6 @@ public class DataProvider {
     private SyncService syncService;
     private ValidatorApiChannel validatorApiChannel;
     private AggregatingAttestationPool attestationPool;
-    private BlockManager blockManager;
     private BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
     private AttestationManager attestationManager;
     private ActiveValidatorChannel activeValidatorChannel;
@@ -113,8 +117,6 @@ public class DataProvider {
     private ProposersDataManager proposersDataManager;
     private ForkChoiceNotifier forkChoiceNotifier;
     private boolean isLivenessTrackingEnabled = true;
-    private boolean acceptBlsToExecutionMessages =
-        P2PConfig.DEFAULT_BLS_TO_EXECUTION_CHANGES_SUBNET_ENABLED;
     private IntSupplier rejectedExecutionSupplier;
 
     public Builder recentChainData(final RecentChainData recentChainData) {
@@ -158,11 +160,6 @@ public class DataProvider {
       return this;
     }
 
-    public Builder blockManager(final BlockManager blockManager) {
-      this.blockManager = blockManager;
-      return this;
-    }
-
     public Builder blockBlobSidecarsTrackersPool(
         final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool) {
       this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
@@ -176,11 +173,6 @@ public class DataProvider {
 
     public Builder isLivenessTrackingEnabled(final boolean isLivenessTrackingEnabled) {
       this.isLivenessTrackingEnabled = isLivenessTrackingEnabled;
-      return this;
-    }
-
-    public Builder acceptBlsToExecutionMessages(final boolean acceptBlsToExecutionMessages) {
-      this.acceptBlsToExecutionMessages = acceptBlsToExecutionMessages;
       return this;
     }
 
@@ -244,14 +236,12 @@ public class DataProvider {
               voluntaryExitPool,
               blsToExecutionChangePool,
               syncCommitteeContributionPool,
-              blockManager,
               blockBlobSidecarsTrackersPool,
               attestationManager,
               isLivenessTrackingEnabled,
               activeValidatorChannel,
               proposersDataManager,
-              forkChoiceNotifier,
-              acceptBlsToExecutionMessages);
+              forkChoiceNotifier);
       final ChainDataProvider chainDataProvider =
           new ChainDataProvider(spec, recentChainData, combinedChainDataClient, rewardCalculator);
       final SyncDataProvider syncDataProvider =
@@ -263,19 +253,23 @@ public class DataProvider {
               combinedChainDataClient,
               executionLayerBlockProductionManager,
               rewardCalculator);
+      final ExecutionClientDataProvider executionClientDataProvider =
+          new ExecutionClientDataProvider();
 
       checkNotNull(configProvider, "Expect config Provider");
       checkNotNull(networkDataProvider, "Expect Network Data Provider");
       checkNotNull(chainDataProvider, "Expect Chain Data Provider");
       checkNotNull(syncDataProvider, "Expect Sync Data Provider");
       checkNotNull(validatorDataProvider, "Expect Validator Data Provider");
+      checkNotNull(executionClientDataProvider, "Expect Execution Client Data Provider");
       return new DataProvider(
           configProvider,
           networkDataProvider,
           nodeDataProvider,
           chainDataProvider,
           syncDataProvider,
-          validatorDataProvider);
+          validatorDataProvider,
+          executionClientDataProvider);
     }
 
     public Builder rejectedExecutionSupplier(final IntSupplier rejectedExecutionCountSupplier) {

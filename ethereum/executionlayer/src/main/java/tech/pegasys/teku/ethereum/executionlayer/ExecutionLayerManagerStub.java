@@ -24,6 +24,8 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
+import tech.pegasys.teku.spec.datastructures.execution.FallbackData;
+import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
 import tech.pegasys.teku.spec.datastructures.execution.HeaderWithFallbackData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
@@ -54,9 +56,35 @@ public class ExecutionLayerManagerStub extends ExecutionLayerChannelStub
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
       final SafeFuture<UInt256> payloadValueResult,
+      final Optional<UInt64> requestedBuilderBoostFactor,
       final BlockProductionPerformance blockProductionPerformance) {
-    LOG.info("Builder Circuit Breaker isEngaged: " + builderCircuitBreaker.isEngaged(state));
+    boolean builderCircuitBreakerEngaged = builderCircuitBreaker.isEngaged(state);
+    LOG.info("Builder Circuit Breaker isEngaged: " + builderCircuitBreakerEngaged);
+
     return super.builderGetHeader(
-        executionPayloadContext, state, payloadValueResult, blockProductionPerformance);
+            executionPayloadContext,
+            state,
+            payloadValueResult,
+            requestedBuilderBoostFactor,
+            blockProductionPerformance)
+        .thenCompose(
+            headerWithFallbackData -> {
+              if (builderCircuitBreakerEngaged) {
+                return engineGetPayload(
+                        executionPayloadContext,
+                        executionPayloadContext.getPayloadBuildingAttributes().getProposalSlot())
+                    .thenApply(
+                        payload ->
+                            HeaderWithFallbackData.create(
+                                headerWithFallbackData.getExecutionPayloadHeader(),
+                                headerWithFallbackData.getBlobKzgCommitments(),
+                                new FallbackData(
+                                    payload.getExecutionPayload(),
+                                    payload.getBlobsBundle(),
+                                    FallbackReason.CIRCUIT_BREAKER_ENGAGED)));
+              } else {
+                return SafeFuture.completedFuture(headerWithFallbackData);
+              }
+            });
   }
 }

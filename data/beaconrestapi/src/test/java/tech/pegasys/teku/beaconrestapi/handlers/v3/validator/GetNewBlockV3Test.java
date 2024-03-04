@@ -61,6 +61,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerBlockProductionManager;
+import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.CombinedChainDataClient;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -98,7 +99,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
             consensusBlockValue);
     doReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)))
         .when(validatorDataProvider)
-        .produceBlock(ONE, signature, Optional.empty());
+        .produceBlock(ONE, signature, Optional.empty(), Optional.empty());
 
     handler.handleRequest(request);
 
@@ -126,7 +127,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
             consensusBlockValue);
     doReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)))
         .when(validatorDataProvider)
-        .produceBlock(ONE, signature, Optional.empty());
+        .produceBlock(ONE, signature, Optional.empty(), Optional.empty());
 
     handler.handleRequest(request);
 
@@ -154,7 +155,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
             consensusBlockValue);
     doReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)))
         .when(validatorDataProvider)
-        .produceBlock(ONE, signature, Optional.empty());
+        .produceBlock(ONE, signature, Optional.empty(), Optional.empty());
 
     handler.handleRequest(request);
 
@@ -173,7 +174,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
   void shouldThrowExceptionWhenEmptyBlock() throws Exception {
     doReturn(SafeFuture.completedFuture(Optional.empty()))
         .when(validatorDataProvider)
-        .produceBlock(ONE, signature, Optional.empty());
+        .produceBlock(ONE, signature, Optional.empty(), Optional.empty());
 
     handler.handleRequest(request);
     assertThat(request.getResponseCode()).isEqualTo(SC_INTERNAL_SERVER_ERROR);
@@ -190,7 +191,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
       blockContainer = dataStructureUtil.randomBeaconBlock(ONE);
     }
     final ValidatorApiChannel validatorApiChannelMock = mock(ValidatorApiChannel.class);
-    when(validatorApiChannelMock.createUnsignedBlock(any(), any(), any(), any()))
+    when(validatorApiChannelMock.createUnsignedBlock(any(), any(), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainer)));
     final CombinedChainDataClient combinedChainDataClientMock = mock(CombinedChainDataClient.class);
     when(combinedChainDataClientMock.getCurrentSlot()).thenReturn(ZERO);
@@ -251,7 +252,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
       blockContainer = dataStructureUtil.randomBeaconBlock(ONE);
     }
     final ValidatorApiChannel validatorApiChannelMock = mock(ValidatorApiChannel.class);
-    when(validatorApiChannelMock.createUnsignedBlock(any(), any(), any(), any()))
+    when(validatorApiChannelMock.createUnsignedBlock(any(), any(), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainer)));
     final CombinedChainDataClient combinedChainDataClientMock = mock(CombinedChainDataClient.class);
     when(combinedChainDataClientMock.getCurrentSlot()).thenReturn(ZERO);
@@ -312,7 +313,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
       blockContainer = dataStructureUtil.randomBeaconBlock(ONE);
     }
     final ValidatorApiChannel validatorApiChannelMock = mock(ValidatorApiChannel.class);
-    when(validatorApiChannelMock.createUnsignedBlock(any(), any(), any(), any()))
+    when(validatorApiChannelMock.createUnsignedBlock(any(), any(), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainer)));
     final CombinedChainDataClient combinedChainDataClientMock = mock(CombinedChainDataClient.class);
     when(combinedChainDataClientMock.getCurrentSlot()).thenReturn(ZERO);
@@ -364,7 +365,7 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
     assumeThat(specMilestone).isLessThan(ALTAIR);
     final BlockContainer blockContainer = dataStructureUtil.randomBeaconBlock(ONE);
     final ValidatorApiChannel validatorApiChannelMock = mock(ValidatorApiChannel.class);
-    when(validatorApiChannelMock.createUnsignedBlock(any(), any(), any(), any()))
+    when(validatorApiChannelMock.createUnsignedBlock(any(), any(), any(), any(), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainer)));
     final BeaconState parentStateMock = mock(BeaconState.class);
     final CombinedChainDataClient combinedChainDataClientMock = mock(CombinedChainDataClient.class);
@@ -378,7 +379,8 @@ public class GetNewBlockV3Test extends AbstractMigratedBeaconHandlerTest {
         .thenReturn(Optional.of(SafeFuture.completedFuture(executionPayloadValue)));
     when(executionLayerBlockProductionManagerMock.getCachedPayloadResult(any()))
         .thenReturn(Optional.of(executionPayloadResultMock));
-    final RewardCalculator rewardCalculatorMock = new RewardCalculator(spec);
+    final RewardCalculator rewardCalculatorMock =
+        new RewardCalculator(spec, new BlockRewardCalculatorUtil(spec));
 
     validatorDataProvider =
         new ValidatorDataProvider(

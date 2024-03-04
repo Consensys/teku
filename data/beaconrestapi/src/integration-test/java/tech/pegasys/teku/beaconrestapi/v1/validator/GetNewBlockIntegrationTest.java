@@ -72,7 +72,7 @@ public class GetNewBlockIntegrationTest extends AbstractDataBackedRestAPIIntegra
   void shouldGetUnsignedBlock_asJson(final String route, final boolean isBlindedBlock)
       throws IOException {
     when(validatorApiChannel.createUnsignedBlock(
-            eq(UInt64.ONE), eq(signature), any(), eq(Optional.of(isBlindedBlock))))
+            eq(UInt64.ONE), eq(signature), any(), eq(Optional.of(isBlindedBlock)), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(randomBlock)));
     Response response = get(route, signature, ContentTypes.JSON);
     assertThat(response.code()).isEqualTo(SC_OK);
@@ -88,7 +88,7 @@ public class GetNewBlockIntegrationTest extends AbstractDataBackedRestAPIIntegra
   void shouldGetUnsignedBlock_asOctet(final String route, final boolean isBlindedBlock)
       throws IOException {
     when(validatorApiChannel.createUnsignedBlock(
-            eq(UInt64.ONE), eq(signature), any(), eq(Optional.of(isBlindedBlock))))
+            eq(UInt64.ONE), eq(signature), any(), eq(Optional.of(isBlindedBlock)), any()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(randomBlock)));
     Response response = get(route, signature, ContentTypes.OCTET_STREAM);
     assertThat(response.code()).isEqualTo(SC_OK);
@@ -100,7 +100,7 @@ public class GetNewBlockIntegrationTest extends AbstractDataBackedRestAPIIntegra
   @MethodSource("getNewBlockCases")
   void shouldShowNoContent(final String route, final boolean isBlindedBlock) throws IOException {
     when(validatorApiChannel.createUnsignedBlock(
-            eq(UInt64.ONE), eq(signature), any(), eq(Optional.of(isBlindedBlock))))
+            eq(UInt64.ONE), eq(signature), any(), eq(Optional.of(isBlindedBlock)), any()))
         .thenReturn(SafeFuture.failedFuture(new ChainDataUnavailableException()));
     Response response = get(route, signature, ContentTypes.OCTET_STREAM);
     assertThat(response.code()).isEqualTo(SC_NO_CONTENT);
@@ -111,7 +111,7 @@ public class GetNewBlockIntegrationTest extends AbstractDataBackedRestAPIIntegra
   @MethodSource("getNewBlockCases")
   void shouldShowUnavailable(final String route, final boolean isBlindedBlock) throws IOException {
     when(validatorApiChannel.createUnsignedBlock(
-            eq(UInt64.ONE), eq(signature), any(), eq(Optional.of(isBlindedBlock))))
+            eq(UInt64.ONE), eq(signature), any(), eq(Optional.of(isBlindedBlock)), any()))
         .thenReturn(SafeFuture.failedFuture(new ServiceUnavailableException()));
     Response response = get(route, signature, ContentTypes.OCTET_STREAM);
     assertThat(response.code()).isEqualTo(SC_SERVICE_UNAVAILABLE);
@@ -125,7 +125,7 @@ public class GetNewBlockIntegrationTest extends AbstractDataBackedRestAPIIntegra
   void shouldNotStackTraceForMissingDeposits(final String route, final boolean isBlindedBlock)
       throws IOException {
     when(validatorApiChannel.createUnsignedBlock(
-            eq(UInt64.ONE), eq(signature), any(), eq(Optional.of(isBlindedBlock))))
+            eq(UInt64.ONE), eq(signature), any(), eq(Optional.of(isBlindedBlock)), any()))
         .thenReturn(
             SafeFuture.failedFuture(
                 MissingDepositsException.missingRange(UInt64.valueOf(1), UInt64.valueOf(10))));

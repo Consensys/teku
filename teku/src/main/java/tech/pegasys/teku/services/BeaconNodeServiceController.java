@@ -23,7 +23,9 @@ import tech.pegasys.teku.services.chainstorage.StorageService;
 import tech.pegasys.teku.services.executionlayer.ExecutionLayerService;
 import tech.pegasys.teku.services.powchain.PowchainService;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
-import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionShutDown;
+import tech.pegasys.teku.validator.client.slashingriskactions.DoppelgangerDetectionShutDown;
+import tech.pegasys.teku.validator.client.slashingriskactions.SlashedValidatorShutDown;
+import tech.pegasys.teku.validator.client.slashingriskactions.SlashingRiskAction;
 
 public class BeaconNodeServiceController extends ServiceController {
 
@@ -34,7 +36,10 @@ public class BeaconNodeServiceController extends ServiceController {
         new StorageService(
             serviceConfig,
             tekuConfig.storageConfiguration(),
-            tekuConfig.powchain().isDepositSnapshotEnabled(),
+            tekuConfig
+                .powchain()
+                .getDepositTreeSnapshotConfiguration()
+                .isBundledDepositSnapshotEnabled(),
             tekuConfig.metricsConfig().isBlobSidecarsStorageCountersEnabled()));
     Optional<ExecutionWeb3jClientProvider> maybeExecutionWeb3jClientProvider = Optional.empty();
     if (tekuConfig.executionLayer().isEnabled()) {
@@ -52,9 +57,18 @@ public class BeaconNodeServiceController extends ServiceController {
             tekuConfig.discovery().isDiscoveryEnabled()));
     powchainService(tekuConfig, serviceConfig, maybeExecutionWeb3jClientProvider)
         .ifPresent(services::add);
+
+    final Optional<SlashingRiskAction> maybeValidatorSlashedAction =
+        tekuConfig.validatorClient().getValidatorConfig().isShutdownWhenValidatorSlashedEnabled()
+            ? Optional.of(new SlashedValidatorShutDown())
+            : Optional.empty();
+
     services.add(
         ValidatorClientService.create(
-            serviceConfig, tekuConfig.validatorClient(), new DoppelgangerDetectionShutDown()));
+            serviceConfig,
+            tekuConfig.validatorClient(),
+            new DoppelgangerDetectionShutDown(),
+            maybeValidatorSlashedAction));
   }
 
   private Optional<PowchainService> powchainService(

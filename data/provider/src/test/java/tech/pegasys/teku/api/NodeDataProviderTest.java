@@ -20,10 +20,8 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
@@ -37,7 +35,6 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
-import tech.pegasys.teku.statetransition.block.BlockManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
@@ -50,8 +47,6 @@ public class NodeDataProviderTest {
   private final Spec spec = TestSpecFactory.createMinimalCapella();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final AggregatingAttestationPool attestationPool = mock(AggregatingAttestationPool.class);
-
-  private final BlockManager blockManager = mock(BlockManager.class);
   private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool =
       mock(BlockBlobSidecarsTrackersPool.class);
   private final AttestationManager attestationManager = mock(AttestationManager.class);
@@ -82,14 +77,12 @@ public class NodeDataProviderTest {
             voluntaryExitPool,
             blsToExecutionChangePool,
             syncCommitteeContributionPool,
-            blockManager,
             blockBlobSidecarsTrackersPool,
             attestationManager,
             false,
             validatorChannel,
             proposersDataManager,
-            forkChoiceNotifier,
-            true);
+            forkChoiceNotifier);
   }
 
   @Test
@@ -119,38 +112,5 @@ public class NodeDataProviderTest {
     assertThat(future).isCompleted();
     assertThat(future.get())
         .isEqualTo(List.of(new SubmitDataError(UInt64.ONE, "Computer says no")));
-  }
-
-  @Test
-  public void shouldReturnErrorWhenPostingBlsToExecutionChangesAndAcceptFlagIsFalse() {
-    provider =
-        new NodeDataProvider(
-            attestationPool,
-            attesterSlashingPool,
-            proposerSlashingPool,
-            voluntaryExitPool,
-            blsToExecutionChangePool,
-            syncCommitteeContributionPool,
-            blockManager,
-            blockBlobSidecarsTrackersPool,
-            attestationManager,
-            false,
-            validatorChannel,
-            proposersDataManager,
-            forkChoiceNotifier,
-            false); // overriding provider with accept bls toggled off
-
-    final SafeFuture<List<SubmitDataError>> future =
-        provider.postBlsToExecutionChanges(
-            List.of(dataStructureUtil.randomSignedBlsToExecutionChange()));
-
-    assertThat(future)
-        .isCompletedExceptionally()
-        .failsWithin(1, TimeUnit.SECONDS)
-        .withThrowableOfType(ExecutionException.class)
-        .withCauseInstanceOf(BadRequestException.class)
-        .withMessageContaining(
-            "Beacon node is not subscribed to the bls_to_execution_changes subnet. This behaviour can be changed with"
-                + " the CLI option --Xbls-to-execution-changes-subnet-enabled");
   }
 }

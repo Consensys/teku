@@ -210,6 +210,7 @@ public abstract class AbstractBlockFactoryTest {
                 randaoReveal,
                 Optional.empty(),
                 Optional.of(blinded),
+                Optional.empty(),
                 BlockProductionPerformance.NOOP));
 
     final BeaconBlock block = blockContainer.getBlock();
@@ -415,7 +416,7 @@ public abstract class AbstractBlockFactoryTest {
 
   private void setupExecutionLayerBlockAndBlobsProduction() {
     // pre Deneb
-    when(executionLayer.initiateBlockProduction(any(), any(), eq(false), any()))
+    when(executionLayer.initiateBlockProduction(any(), any(), eq(false), any(), any()))
         .thenAnswer(
             args -> {
               final ExecutionPayloadResult executionPayloadResult =
@@ -428,7 +429,7 @@ public abstract class AbstractBlockFactoryTest {
               cachedExecutionPayloadResult = executionPayloadResult;
               return executionPayloadResult;
             });
-    when(executionLayer.initiateBlockProduction(any(), any(), eq(true), any()))
+    when(executionLayer.initiateBlockProduction(any(), any(), eq(true), any(), any()))
         .thenAnswer(
             args -> {
               final ExecutionPayloadResult executionPayloadResult =
@@ -444,7 +445,7 @@ public abstract class AbstractBlockFactoryTest {
               return executionPayloadResult;
             });
     // post Deneb
-    when(executionLayer.initiateBlockAndBlobsProduction(any(), any(), eq(false), any()))
+    when(executionLayer.initiateBlockAndBlobsProduction(any(), any(), eq(false), any(), any()))
         .thenAnswer(
             args -> {
               final ExecutionPayloadResult executionPayloadResult =
@@ -457,7 +458,7 @@ public abstract class AbstractBlockFactoryTest {
               cachedExecutionPayloadResult = executionPayloadResult;
               return executionPayloadResult;
             });
-    when(executionLayer.initiateBlockAndBlobsProduction(any(), any(), eq(true), any()))
+    when(executionLayer.initiateBlockAndBlobsProduction(any(), any(), eq(true), any(), any()))
         .thenAnswer(
             args -> {
               final ExecutionPayloadResult executionPayloadResult =

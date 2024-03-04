@@ -35,7 +35,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
 import tech.pegasys.teku.validator.client.OwnedKeyManager;
 import tech.pegasys.teku.validator.client.ProposerConfigManager;
-import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
+import tech.pegasys.teku.validator.client.slashingriskactions.SlashingRiskAction;
 
 class ValidatorOpenApiTest {
   private final ValidatorRestApiConfig config = mock(ValidatorRestApiConfig.class);
@@ -45,8 +45,7 @@ class ValidatorOpenApiTest {
   private final OpenApiTestUtil<ValidatorOpenApiTest> util =
       new OpenApiTestUtil<>(ValidatorOpenApiTest.class);
   private JsonNode jsonNode;
-  private DoppelgangerDetectionAction doppelgangerDetectionAction =
-      mock(DoppelgangerDetectionAction.class);
+  private SlashingRiskAction doppelgangerDetectionAction = mock(SlashingRiskAction.class);
 
   @BeforeEach
   void setup() throws IOException {

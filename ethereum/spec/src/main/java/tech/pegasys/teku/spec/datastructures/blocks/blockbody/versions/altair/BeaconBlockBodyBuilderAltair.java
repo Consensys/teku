@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
@@ -49,22 +48,21 @@ public class BeaconBlockBodyBuilderAltair extends BeaconBlockBodyBuilderPhase0 {
   }
 
   @Override
-  public SafeFuture<BeaconBlockBody> build() {
+  public BeaconBlockBody build() {
     validate();
     final BeaconBlockBodySchemaAltairImpl schema =
         getAndValidateSchema(false, BeaconBlockBodySchemaAltairImpl.class);
 
-    return SafeFuture.completedFuture(
-        new BeaconBlockBodyAltairImpl(
-            schema,
-            new SszSignature(randaoReveal),
-            eth1Data,
-            SszBytes32.of(graffiti),
-            proposerSlashings,
-            attesterSlashings,
-            attestations,
-            deposits,
-            voluntaryExits,
-            syncAggregate));
+    return new BeaconBlockBodyAltairImpl(
+        schema,
+        new SszSignature(randaoReveal),
+        eth1Data,
+        SszBytes32.of(graffiti),
+        proposerSlashings,
+        attesterSlashings,
+        attestations,
+        deposits,
+        voluntaryExits,
+        syncAggregate);
   }
 }

@@ -54,13 +54,15 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import tech.pegasys.teku.api.ChainDataProvider;
 import tech.pegasys.teku.api.NodeDataProvider;
-import tech.pegasys.teku.api.migrated.StateValidatorData;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
+import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuty;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanceFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -124,8 +126,6 @@ import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.NodeSyncingException;
-import tech.pegasys.teku.validator.api.ProposerDuties;
-import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
 import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
@@ -490,7 +490,11 @@ class ValidatorApiHandlerTest {
     nodeIsSyncing();
     final SafeFuture<Optional<BlockContainer>> result =
         validatorApiHandler.createUnsignedBlock(
-            ONE, dataStructureUtil.randomSignature(), Optional.empty(), Optional.of(false));
+            ONE,
+            dataStructureUtil.randomSignature(),
+            Optional.empty(),
+            Optional.of(false),
+            Optional.of(ONE));
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -500,14 +504,18 @@ class ValidatorApiHandlerTest {
   public void createUnsignedBlock_shouldFailWhenParentBlockIsOptimistic() {
     final UInt64 newSlot = UInt64.valueOf(25);
     final BeaconState blockSlotState = dataStructureUtil.randomBeaconState(newSlot);
-    when(chainDataClient.getStateAtSlotExact(newSlot))
+    when(chainDataClient.getStateForBlockProduction(newSlot, false))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
     final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, newSlot.minus(1));
     when(chainDataClient.isOptimisticBlock(parentRoot)).thenReturn(true);
 
     final SafeFuture<Optional<BlockContainer>> result =
         validatorApiHandler.createUnsignedBlock(
-            newSlot, dataStructureUtil.randomSignature(), Optional.empty(), Optional.of(false));
+            newSlot,
+            dataStructureUtil.randomSignature(),
+            Optional.empty(),
+            Optional.of(false),
+            Optional.of(ONE));
 
     assertThat(result).isCompletedExceptionally();
     assertThatThrownBy(result::get).hasRootCauseInstanceOf(NodeSyncingException.class);
@@ -521,7 +529,7 @@ class ValidatorApiHandlerTest {
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BeaconBlock createdBlock = dataStructureUtil.randomBeaconBlock(newSlot.longValue());
 
-    when(chainDataClient.getStateAtSlotExact(newSlot))
+    when(chainDataClient.getStateForBlockProduction(newSlot, false))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockSlotState)));
     when(blockFactory.createUnsignedBlock(
             blockSlotState,
@@ -529,12 +537,16 @@ class ValidatorApiHandlerTest {
             randaoReveal,
             Optional.empty(),
             Optional.of(false),
+            Optional.of(ONE),
             BlockProductionPerformance.NOOP))
         .thenReturn(SafeFuture.completedFuture(createdBlock));
 
+    // even if passing a non-empty reqestedBlinded and requestedBuilderBoostFactor isn't a valid
+    // combination,
+    // we still want to check that all parameters are passed down the line to the block factory
     final SafeFuture<Optional<BlockContainer>> result =
         validatorApiHandler.createUnsignedBlock(
-            newSlot, randaoReveal, Optional.empty(), Optional.of(false));
+            newSlot, randaoReveal, Optional.empty(), Optional.of(false), Optional.of(ONE));
 
     verify(blockFactory)
         .createUnsignedBlock(
@@ -543,6 +555,7 @@ class ValidatorApiHandlerTest {
             randaoReveal,
             Optional.empty(),
             Optional.of(false),
+            Optional.of(ONE),
             BlockProductionPerformance.NOOP);
     assertThat(result).isCompletedWithValue(Optional.of(createdBlock));
   }

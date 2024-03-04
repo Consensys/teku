@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.datastructures.attestation.ProcessedAttestationLis
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.util.AttestationProcessingResult;
-import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
+import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
@@ -39,7 +39,7 @@ import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerifica
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorChannel;
 
 public class AttestationManager extends Service
-    implements SlotEventsChannel, BlockImportNotifications {
+    implements SlotEventsChannel, ReceivedBlockEventsChannel {
 
   private static final Logger LOG = LogManager.getLogger();
   private final ActiveValidatorChannel activeValidatorChannel;
@@ -197,7 +197,12 @@ public class AttestationManager extends Service
   }
 
   @Override
-  public void onBlockImported(final SignedBeaconBlock block) {
+  public void onBlockValidated(final SignedBeaconBlock block) {
+    // No-op
+  }
+
+  @Override
+  public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
     final Bytes32 blockRoot = block.getMessage().hashTreeRoot();
     activeValidatorChannel.onBlockImported(block);
     pendingAttestations
@@ -213,9 +218,6 @@ public class AttestationManager extends Service
                               err));
             });
   }
-
-  @Override
-  public void onBlockValidated(SignedBeaconBlock block) {}
 
   public SafeFuture<AttestationProcessingResult> onAttestation(
       final ValidatableAttestation attestation) {

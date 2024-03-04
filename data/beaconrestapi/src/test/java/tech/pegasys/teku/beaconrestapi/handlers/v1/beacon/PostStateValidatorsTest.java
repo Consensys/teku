@@ -49,9 +49,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
-import tech.pegasys.teku.api.migrated.StateValidatorData;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
+import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
+import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorRequestBodyType;
+import tech.pegasys.teku.ethereum.json.types.beacon.StatusParameter;
 import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -69,7 +71,7 @@ class PostStateValidatorsTest extends AbstractMigratedBeaconHandlerWithChainData
 
   @Test
   public void shouldGetValidatorFromState() throws Exception {
-    final PostStateValidators.RequestBody requestBody = new PostStateValidators.RequestBody();
+    final StateValidatorRequestBodyType requestBody = new StateValidatorRequestBodyType();
     requestBody.setIds(Optional.of(List.of("1", "2", "3", "4")));
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
@@ -92,8 +94,8 @@ class PostStateValidatorsTest extends AbstractMigratedBeaconHandlerWithChainData
 
   @Test
   public void shouldGetValidatorFromStateWithList() throws Exception {
-    final PostStateValidators.RequestBody requestBody =
-        new PostStateValidators.RequestBody(
+    final StateValidatorRequestBodyType requestBody =
+        new StateValidatorRequestBodyType(
             List.of("1", "2"),
             List.of(
                 StatusParameter.ACTIVE_ONGOING,
@@ -124,7 +126,7 @@ class PostStateValidatorsTest extends AbstractMigratedBeaconHandlerWithChainData
   public void shouldGetValidatorsByStatusParameter(
       final List<String> statusParameters, final Set<ValidatorStatus> expectedValidatorStatuses)
       throws Exception {
-    final PostStateValidators.RequestBody requestBody = new PostStateValidators.RequestBody();
+    final StateValidatorRequestBodyType requestBody = new StateValidatorRequestBodyType();
     requestBody.setStatuses(Optional.of(statusParameters));
     final StubRestApiRequest request =
         StubRestApiRequest.builder()
@@ -147,7 +149,7 @@ class PostStateValidatorsTest extends AbstractMigratedBeaconHandlerWithChainData
 
   @Test
   public void shouldGetBadRequestForInvalidState() {
-    final PostStateValidators.RequestBody requestBody = new PostStateValidators.RequestBody();
+    final StateValidatorRequestBodyType requestBody = new StateValidatorRequestBodyType();
     requestBody.setIds(Optional.of(List.of("1")));
     final StubRestApiRequest request =
         StubRestApiRequest.builder()

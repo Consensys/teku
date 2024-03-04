@@ -21,7 +21,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.network.p2p.jvmlibp2p.PrivateKeyGenerator;
-import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig.PrivateKeySource;
+import tech.pegasys.teku.networking.p2p.network.config.PrivateKeySource;
 import tech.pegasys.teku.storage.store.MemKeyValueStore;
 
 public class LibP2PPrivateKeyLoaderTest {

@@ -121,8 +121,7 @@ public class StatusLogger {
   public void eth1DepositEventsFailure(final Throwable cause) {
     log.fatal(
         "PLEASE CHECK YOUR ETH1 NODE | Encountered a problem retrieving deposit events from eth1 endpoint: {}",
-        cause.getMessage(),
-        cause);
+        cause.getMessage());
   }
 
   public void eth1FetchDepositsRequiresSmallerRange(final int batchSize) {
@@ -246,6 +245,12 @@ public class StatusLogger {
         "No loaded validators when --exit-when-no-validator-keys-enabled option is true. Shutting down...");
   }
 
+  public void validatorSlashedAlert(final Set<String> slashedValidatorPublicKeys) {
+    log.fatal(
+        "Validator(s) with public key(s) {} got slashed. Shutting down...",
+        String.join(", ", slashedValidatorPublicKeys));
+  }
+
   public void beginInitializingChainData() {
     log.info("Initializing storage");
   }
@@ -315,6 +320,15 @@ public class StatusLogger {
           blockRoot,
           blockSlot);
     }
+  }
+
+  public void errorIncompatibleInitialState(final UInt64 epoch) {
+    log.error(
+        "Cannot start with provided initial state for the epoch {}, "
+            + "checkpoint occurred on the empty slot, which is not yet supported.\n"
+            + "If you are using remote checkpoint source, "
+            + "please wait for the next epoch to finalize and retry.",
+        epoch);
   }
 
   public void warnInitialStateIgnored() {

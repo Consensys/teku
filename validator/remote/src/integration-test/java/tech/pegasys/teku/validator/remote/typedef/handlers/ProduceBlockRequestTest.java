@@ -14,7 +14,9 @@
 package tech.pegasys.teku.validator.remote.typedef.handlers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assumptions.assumeThat;
+import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
@@ -24,7 +26,9 @@ import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import com.google.common.net.MediaType;
 import java.util.Optional;
 import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.RecordedRequest;
 import okio.Buffer;
+import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
@@ -66,12 +70,16 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     final String mockResponse = readExpectedJsonResource(specMilestone, false, false);
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(SC_OK)
+            .setBody(mockResponse)
+            .setHeader(HEADER_EXECUTION_PAYLOAD_BLINDED, "false"));
 
     final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainer> maybeBlockContainer =
-        request.createUnsignedBlock(signature, Optional.empty());
+        request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
 
     assertThat(maybeBlockContainer).isPresent();
 
@@ -100,7 +108,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = beaconBlock.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainer> maybeBlockContainer =
-        request.createUnsignedBlock(signature, Optional.empty());
+        request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
 
     assertThat(maybeBlockContainer).isPresent();
 
@@ -116,12 +124,16 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     final String mockResponse = readExpectedJsonResource(specMilestone, true, false);
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(SC_OK)
+            .setBody(mockResponse)
+            .setHeader(HEADER_EXECUTION_PAYLOAD_BLINDED, "true"));
 
     final BLSSignature signature = blindedBeaconBlock.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainer> maybeBlockContainer =
-        request.createUnsignedBlock(signature, Optional.empty());
+        request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
 
     assertThat(maybeBlockContainer).hasValue(blockResponse.getData());
   }
@@ -148,7 +160,7 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = blindedBeaconBlock.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainer> maybeBlockContainer =
-        request.createUnsignedBlock(signature, Optional.empty());
+        request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
 
     assertThat(maybeBlockContainer).isPresent();
 
@@ -164,12 +176,16 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
 
     final String mockResponse = readExpectedJsonResource(specMilestone, false, true);
 
-    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(mockResponse));
+    mockWebServer.enqueue(
+        new MockResponse()
+            .setResponseCode(SC_OK)
+            .setBody(mockResponse)
+            .setHeader(HEADER_EXECUTION_PAYLOAD_BLINDED, "false"));
 
     final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainer> maybeBlockContainer =
-        request.createUnsignedBlock(signature, Optional.empty());
+        request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
 
     assertThat(maybeBlockContainer).isPresent();
 
@@ -198,11 +214,52 @@ public class ProduceBlockRequestTest extends AbstractTypeDefRequestTestBase {
     final BLSSignature signature = blockContents.getBlock().getBody().getRandaoReveal();
 
     final Optional<BlockContainer> maybeBlockContainer =
-        request.createUnsignedBlock(signature, Optional.empty());
+        request.createUnsignedBlock(signature, Optional.empty(), Optional.empty());
 
     assertThat(maybeBlockContainer).isPresent();
 
     assertThat(maybeBlockContainer.get()).isEqualTo(blockResponse.getData());
+  }
+
+  @TestTemplate
+  public void shouldPassUrlParameters() throws InterruptedException {
+    final BLSSignature signature = dataStructureUtil.randomSignature();
+    RecordedRequest recordedRequest;
+
+    // here we are testing that the request is sent with the correct parameters, so we don't bother
+    // creating an actual block. We just return a 404 which will cause the request to throw
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
+
+    // no optional parameters
+    assertThatThrownBy(
+        () -> request.createUnsignedBlock(signature, Optional.empty(), Optional.empty()));
+
+    recordedRequest = mockWebServer.takeRequest();
+
+    // the request should not contain any optional parameters
+    assertThat(recordedRequest.getRequestUrl().queryParameterNames())
+        .doesNotContain("graffiti", "builder_boost_factor");
+    assertThat(recordedRequest.getRequestUrl().queryParameter("randao_reveal"))
+        .isEqualTo(signature.toString());
+
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_NOT_FOUND));
+
+    // with all parameters
+    assertThatThrownBy(
+        () ->
+            request.createUnsignedBlock(
+                signature, Optional.of(Bytes32.ZERO), Optional.of(UInt64.valueOf(48))));
+
+    recordedRequest = mockWebServer.takeRequest();
+
+    // the request should contain all optional parameters
+    assertThat(recordedRequest.getRequestUrl().queryParameter("randao_reveal"))
+        .isEqualTo(signature.toString());
+    assertThat(recordedRequest.getRequestUrl().queryParameter("graffiti"))
+        .isEqualTo("0x0000000000000000000000000000000000000000000000000000000000000000");
+    assertThat(recordedRequest.getRequestUrl().queryParameter("builder_boost_factor"))
+        .isEqualTo("48");
   }
 
   private String readExpectedJsonResource(

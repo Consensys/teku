@@ -17,6 +17,7 @@ import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.SIGNATURE_TYPE
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.ATTESTATION_DATA_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.BEACON_BLOCK_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.BLOCK_ROOT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.BUILDER_BOOST_FACTOR_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COUNT;
@@ -56,12 +57,13 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
 import java.util.Locale;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.StatusParameter;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.json.types.beacon.StatusParameter;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
@@ -140,6 +142,11 @@ public class BeaconRestApiTypes {
       new ParameterMetadata<>(
           RestApiConstants.SKIP_RANDAO_VERIFICATION,
           BOOLEAN_TYPE.withDescription(SKIP_RANDAO_VERIFICATION_PARAM_DESCRIPTION));
+
+  public static final ParameterMetadata<UInt64> BUILDER_BOOST_FACTOR_PARAMETER =
+      new ParameterMetadata<>(
+          RestApiConstants.BUILDER_BOOST_FACTOR,
+          UINT64_TYPE.withDescription(BUILDER_BOOST_FACTOR_DESCRIPTION));
 
   public static final ParameterMetadata<Bytes32> GRAFFITI_PARAMETER =
       new ParameterMetadata<>(

@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
@@ -646,6 +645,7 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
   // implements get_proposer_head from Consensus Spec
   public Bytes32 getProposerHead(final Bytes32 headRoot, final UInt64 slot) {
+    LOG.debug("start getProposerHead");
     // if proposer boost is still active, don't attempt to override head
     final boolean isProposerBoostActive =
         store.getProposerBoostRoot().map(root -> !root.equals(headRoot)).orElse(false);
@@ -669,6 +669,14 @@ public abstract class RecentChainData implements StoreUpdateHandler {
         || !isProposingOnTime
         || isProposerBoostActive
         || maybeHead.isEmpty()) {
+      LOG.debug(
+          "getProposerHead - return headRoot - isHeadLate {}, isShufflingStable {}, isFinalizationOk {}, isProposingOnTime {}, isProposerBoostActive {}, head.isEmpty {}",
+          () -> isHeadLate,
+          () -> isShufflingStable,
+          () -> isFinalizationOk,
+          () -> isProposingOnTime,
+          () -> isProposerBoostActive,
+          () -> headRoot.isEmpty());
       return headRoot;
     }
 
@@ -685,31 +693,14 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     // from the initial list, check
     // isFfgCompetitive, isSingleSlotReorg
     if (!isFfgCompetitive || !isSingleSlotReorg) {
+      LOG.debug(
+          "getProposerHead - return headRoot - isFfgCompetitive {}, isSingleSlotReorg {}",
+          isFfgCompetitive,
+          isSingleSlotReorg);
       return headRoot;
     }
 
-    final SafeFuture<Optional<BeaconState>> future =
-        store.retrieveCheckpointState(store.getJustifiedCheckpoint());
-    try {
-      final Optional<BeaconState> maybeJustifiedState = future.join();
-      // to make further checks, we would need the justified state, return headRoot if we don't have
-      // it.
-      if (maybeJustifiedState.isEmpty()) {
-        return headRoot;
-      }
-      final boolean isHeadWeak = store.isHeadWeak(maybeJustifiedState.get(), headRoot);
-      final boolean isParentStrong =
-          store.isParentStrong(maybeJustifiedState.get(), head.getParentRoot());
-      // finally, the parent must be strong, and the current head must be weak.
-      if (isHeadWeak && isParentStrong) {
-        return head.getParentRoot();
-      }
-    } catch (Exception exception) {
-      if (!(exception instanceof CancellationException)) {
-        LOG.error("Failed to get justified checkpoint", exception);
-      }
-    }
-
+    LOG.debug("getProposerHead - return headRoot");
     return headRoot;
   }
 
@@ -723,6 +714,11 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     final boolean isHeadLate = isBlockLate(headRoot);
     if (maybeHead.isEmpty() || maybeCurrentSlot.isEmpty() || !isHeadLate) {
       // ! isHeadLate, or we don't have data we need (currentSlot and the block in question)
+      LOG.debug(
+          "shouldOverrideForkChoiceUpdate head {}, currentSlot {}, isHeadLate {}",
+          () -> maybeHead.map(SignedBeaconBlock::getRoot),
+          () -> maybeCurrentSlot,
+          () -> isHeadLate);
       return false;
     }
     final SignedBeaconBlock head = maybeHead.get();
@@ -739,6 +735,12 @@ public abstract class RecentChainData implements StoreUpdateHandler {
 
     if (!isShufflingStable || !isFfgCompetitive || !isFinalizationOk || maybeParentSlot.isEmpty()) {
       // !shufflingStable or !ffgCompetetive or !finalizationOk, or parentSlot is not found
+      LOG.debug(
+          "shouldOverrideForkChoiceUpdate isShufflingStable {}, isFfgCompetitive {}, isFinalizationOk {}, maybeParentSlot {}",
+          isShufflingStable,
+          isFfgCompetitive,
+          isFinalizationOk,
+          maybeParentSlot);
       return false;
     }
 
@@ -751,28 +753,19 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     final boolean isHeadWeak;
     final boolean isParentStrong;
     if (currentSlot.isGreaterThan(head.getSlot())) {
-      try {
-        final SafeFuture<Optional<BeaconState>> future =
-            store.retrieveCheckpointState(store.getJustifiedCheckpoint());
-        final Optional<BeaconState> maybeJustifiedState = future.join();
-        isHeadWeak =
-            maybeJustifiedState.map(state -> store.isHeadWeak(state, headRoot)).orElse(true);
-        isParentStrong =
-            maybeJustifiedState
-                .map(beaconState -> store.isParentStrong(beaconState, head.getParentRoot()))
-                .orElse(true);
-      } catch (Exception exception) {
-        if (!(exception instanceof CancellationException)) {
-          LOG.error("Failed to get justified checkpoint", exception);
-        }
-        return false;
-      }
+      isHeadWeak = store.isHeadWeak(headRoot);
+      isParentStrong = store.isParentStrong(head.getParentRoot());
     } else {
       isHeadWeak = true;
       isParentStrong = true;
     }
     final boolean isSingleSlotReorg = isParentSlotOk && isCurrentTimeOk;
     if (!isSingleSlotReorg || !isHeadWeak || !isParentStrong) {
+      LOG.debug(
+          "shouldOverrideForkChoiceUpdate isSingleSlotReorg {}, isHeadWeak {}, isParentStrong {}",
+          isSingleSlotReorg,
+          isHeadWeak,
+          isParentStrong);
       return false;
     }
 
@@ -786,6 +779,8 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       final BeaconState proposerPreState = spec.processSlots(maybeParentState.get(), proposalSlot);
       final int proposerIndex = spec.getBeaconProposerIndex(proposerPreState, proposalSlot);
       if (!validatorIsConnectedProvider.isValidatorConnected(proposerIndex, proposalSlot)) {
+        LOG.debug(
+            "shouldOverrideForkChoiceUpdate isValidatorConnected({}) {}, ", proposerIndex, false);
         return false;
       }
     } catch (SlotProcessingException | EpochProcessingException e) {
