@@ -61,19 +61,20 @@ public class DvtAttestationAggregations {
     pendingRequests.put(request, future);
 
     if (pendingRequests.size() >= expectedDutiesCount) {
-      submitBatchRequests();
+      submitBatchRequests(slot);
     }
 
     return future;
   }
 
-  private void submitBatchRequests() {
+  private void submitBatchRequests(final UInt64 slot) {
     validatorApiChannel
         .getBeaconCommitteeSelectionProof(pendingRequests.keySet().stream().toList())
         .thenAccept(
             response ->
                 response.ifPresentOrElse(
-                    this::handleBeaconCommitteeSelectionProofsResponse, this::handleEmptyResponse))
+                    this::handleBeaconCommitteeSelectionProofsResponse,
+                    () -> handleEmptyResponse(slot)))
         .exceptionally(unexpectedErrorHandler())
         .ifExceptionGetsHereRaiseABug();
   }
@@ -110,9 +111,11 @@ public class DvtAttestationAggregations {
             && request.getSlot().equals(proof.getSlot());
   }
 
-  private void handleEmptyResponse() {
-    LOG.warn("Received empty response from DVT middleware. This will impact aggregation duties.");
-    completeAllPendingFuturesExceptionally("Empty response from DVT middleware");
+  private void handleEmptyResponse(final UInt64 slot) {
+    LOG.warn(
+        "Received empty response from DVT middleware for slot {}. This will impact aggregation duties.",
+        slot);
+    completeAllPendingFuturesExceptionally("Empty response from DVT middleware for slot " + slot);
   }
 
   private Function<Throwable, Void> unexpectedErrorHandler() {

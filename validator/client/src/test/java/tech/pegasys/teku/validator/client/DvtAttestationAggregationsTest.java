@@ -47,9 +47,12 @@ class DvtAttestationAggregationsTest {
 
   @Test
   public void completesAllFuturesWhenMiddlewareReturnsAllSelectionProofs() {
+    final BeaconCommitteeSelectionProof combinedProofForValidator1 = combinedProof(1);
+    final BeaconCommitteeSelectionProof combinedProofForValidator2 = combinedProof(2);
     when(validatorApiChannel.getBeaconCommitteeSelectionProof(any()))
         .thenReturn(
-            SafeFuture.completedFuture(Optional.of(List.of(combinedProof(1), combinedProof(2)))));
+            SafeFuture.completedFuture(
+                Optional.of(List.of(combinedProofForValidator1, combinedProofForValidator2))));
 
     loader = new DvtAttestationAggregations(validatorApiChannel, 2);
 
@@ -58,14 +61,17 @@ class DvtAttestationAggregationsTest {
     final SafeFuture<BLSSignature> futureSelectionProofValidator2 =
         loader.getCombinedSelectionProofFuture(2, UInt64.ONE, dataStructureUtil.randomSignature());
 
-    assertThat(futureSelectionProofValidator1).isCompleted();
-    assertThat(futureSelectionProofValidator2).isCompleted();
+    assertThat(futureSelectionProofValidator1)
+        .isCompletedWithValue(combinedProofForValidator1.getSelectionProofSignature());
+    assertThat(futureSelectionProofValidator2)
+        .isCompletedWithValue(combinedProofForValidator2.getSelectionProofSignature());
   }
 
   @Test
   public void partiallyCompleteFuturesWhenMiddlewareOnlyReturnsSomeSelectionProofs() {
+    final BeaconCommitteeSelectionProof combinedProofForValidator1 = combinedProof(1);
     when(validatorApiChannel.getBeaconCommitteeSelectionProof(any()))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(combinedProof(1)))));
+        .thenReturn(SafeFuture.completedFuture(Optional.of(List.of(combinedProofForValidator1))));
 
     loader = new DvtAttestationAggregations(validatorApiChannel, 2);
 
@@ -74,7 +80,8 @@ class DvtAttestationAggregationsTest {
     final SafeFuture<BLSSignature> futureSelectionProofValidator2 =
         loader.getCombinedSelectionProofFuture(2, UInt64.ONE, dataStructureUtil.randomSignature());
 
-    assertThat(futureSelectionProofValidator1).isCompleted();
+    assertThat(futureSelectionProofValidator1)
+        .isCompletedWithValue(combinedProofForValidator1.getSelectionProofSignature());
     assertThat(futureSelectionProofValidator2).isCompletedExceptionally();
   }
 
@@ -101,14 +108,17 @@ class DvtAttestationAggregationsTest {
 
   @Test
   public void handleDifferentValidatorAggregatingInSameSlot() {
+    final BeaconCommitteeSelectionProof combinedProofForValidator1 = combinedProofForSlot(1, 1);
+    final BeaconCommitteeSelectionProof combinedProofForValidator2 = combinedProofForSlot(2, 1);
+    final BeaconCommitteeSelectionProof combinedProofForValidator3 = combinedProofForSlot(3, 1);
     when(validatorApiChannel.getBeaconCommitteeSelectionProof(any()))
         .thenReturn(
             SafeFuture.completedFuture(
                 Optional.of(
                     List.of(
-                        combinedProofForSlot(1, 1),
-                        combinedProofForSlot(2, 1),
-                        combinedProofForSlot(3, 1)))));
+                        combinedProofForValidator1,
+                        combinedProofForValidator2,
+                        combinedProofForValidator3))));
 
     loader = new DvtAttestationAggregations(validatorApiChannel, 3);
 
@@ -119,19 +129,22 @@ class DvtAttestationAggregationsTest {
     final SafeFuture<BLSSignature> futureSelectionProofValidator3 =
         loader.getCombinedSelectionProofFuture(3, UInt64.ONE, dataStructureUtil.randomSignature());
 
-    assertThat(futureSelectionProofValidator1).isCompleted();
-    assertThat(futureSelectionProofValidator2).isCompleted();
-    assertThat(futureSelectionProofValidator3).isCompleted();
-
-    // TODO-lucas assert response values map to futures
+    assertThat(futureSelectionProofValidator1)
+        .isCompletedWithValue(combinedProofForValidator1.getSelectionProofSignature());
+    assertThat(futureSelectionProofValidator2)
+        .isCompletedWithValue(combinedProofForValidator2.getSelectionProofSignature());
+    assertThat(futureSelectionProofValidator3)
+        .isCompletedWithValue(combinedProofForValidator3.getSelectionProofSignature());
   }
 
   @Test
   public void handleSameValidatorAggregatingInDifferentSlots() {
+    final BeaconCommitteeSelectionProof combinedProofForSlot1 = combinedProofForSlot(1, 1);
+    final BeaconCommitteeSelectionProof combinedProofForSlot2 = combinedProofForSlot(1, 2);
     when(validatorApiChannel.getBeaconCommitteeSelectionProof(any()))
         .thenReturn(
             SafeFuture.completedFuture(
-                Optional.of(List.of(combinedProofForSlot(1, 1), combinedProofForSlot(1, 2)))));
+                Optional.of(List.of(combinedProofForSlot1, combinedProofForSlot2))));
 
     loader = new DvtAttestationAggregations(validatorApiChannel, 2);
 
@@ -141,8 +154,10 @@ class DvtAttestationAggregationsTest {
         loader.getCombinedSelectionProofFuture(
             1, UInt64.valueOf(2), dataStructureUtil.randomSignature());
 
-    assertThat(futureSelectionProofValidatorAtSlot1).isCompleted();
-    assertThat(futureSelectionProofValidatorAtSlot2).isCompleted();
+    assertThat(futureSelectionProofValidatorAtSlot1)
+        .isCompletedWithValue(combinedProofForSlot1.getSelectionProofSignature());
+    assertThat(futureSelectionProofValidatorAtSlot2)
+        .isCompletedWithValue(combinedProofForSlot2.getSelectionProofSignature());
   }
 
   @Test
