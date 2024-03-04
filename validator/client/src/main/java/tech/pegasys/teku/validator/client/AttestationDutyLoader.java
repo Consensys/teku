@@ -171,7 +171,8 @@ public class AttestationDutyLoader
                 dvtAttestationAggregation
                     .map(
                         dvt ->
-                            dvt.getCombinedSelectionProofFuture(validatorIndex, slot, slotSignature))
+                            dvt.getCombinedSelectionProofFuture(
+                                validatorIndex, slot, slotSignature))
                     .orElse(SafeFuture.completedFuture(slotSignature)))
         .thenAccept(
             slotSignature -> {
