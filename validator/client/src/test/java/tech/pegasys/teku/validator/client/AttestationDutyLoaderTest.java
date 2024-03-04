@@ -76,7 +76,8 @@ class AttestationDutyLoaderTest {
           new OwnedValidators(validators),
           validatorIndexProvider,
           beaconCommitteeSubscriptions,
-          spec);
+          spec,
+          false);
 
   @BeforeEach
   void setUp() {
