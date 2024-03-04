@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra;
 
 import it.unimi.dsi.fastutil.longs.LongList;
-import java.util.function.Consumer;
+import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema11;
@@ -133,10 +133,9 @@ public class BeaconBlockBodySchemaElectraImpl
 
   @Override
   public SafeFuture<? extends BeaconBlockBody> createBlockBody(
-      final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
+      final Function<BeaconBlockBodyBuilder, SafeFuture<Void>> bodyBuilder) {
     final BeaconBlockBodyBuilderElectra builder = new BeaconBlockBodyBuilderElectra(this, null);
-    builderConsumer.accept(builder);
-    return builder.build();
+    return bodyBuilder.apply(builder).thenApply(__ -> builder.build());
   }
 
   @Override

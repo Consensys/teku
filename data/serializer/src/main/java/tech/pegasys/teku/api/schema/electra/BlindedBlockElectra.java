@@ -32,7 +32,7 @@ public class BlindedBlockElectra extends BeaconBlockAltair {
         message.getParentRoot(),
         message.getStateRoot(),
         new BlindedBeaconBlockBodyElectra(
-            message.getBody().toBlindedVersionCapella().orElseThrow()));
+            message.getBody().toBlindedVersionElectra().orElseThrow()));
   }
 
   @Override

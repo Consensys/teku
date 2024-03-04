@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra;
 
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
@@ -36,44 +35,41 @@ public class BeaconBlockBodyBuilderElectra extends BeaconBlockBodyBuilderCapella
   }
 
   @Override
-  public SafeFuture<BeaconBlockBody> build() {
+  public BeaconBlockBody build() {
     validate();
     if (isBlinded()) {
       final BlindedBeaconBlockBodySchemaElectraImpl schema =
           getAndValidateSchema(true, BlindedBeaconBlockBodySchemaElectraImpl.class);
-      return executionPayloadHeader.thenApply(
-          header ->
-              new BlindedBeaconBlockBodyElectraImpl(
-                  schema,
-                  new SszSignature(randaoReveal),
-                  eth1Data,
-                  SszBytes32.of(graffiti),
-                  proposerSlashings,
-                  attesterSlashings,
-                  attestations,
-                  deposits,
-                  voluntaryExits,
-                  syncAggregate,
-                  (ExecutionPayloadHeaderElectraImpl) header.toVersionElectra().orElseThrow(),
-                  getBlsToExecutionChanges()));
+      return new BlindedBeaconBlockBodyElectraImpl(
+          schema,
+          new SszSignature(randaoReveal),
+          eth1Data,
+          SszBytes32.of(graffiti),
+          proposerSlashings,
+          attesterSlashings,
+          attestations,
+          deposits,
+          voluntaryExits,
+          syncAggregate,
+          (ExecutionPayloadHeaderElectraImpl)
+              executionPayloadHeader.toVersionElectra().orElseThrow(),
+          getBlsToExecutionChanges());
     }
 
     final BeaconBlockBodySchemaElectraImpl schema =
         getAndValidateSchema(false, BeaconBlockBodySchemaElectraImpl.class);
-    return executionPayload.thenApply(
-        payload ->
-            new BeaconBlockBodyElectraImpl(
-                schema,
-                new SszSignature(randaoReveal),
-                eth1Data,
-                SszBytes32.of(graffiti),
-                proposerSlashings,
-                attesterSlashings,
-                attestations,
-                deposits,
-                voluntaryExits,
-                syncAggregate,
-                (ExecutionPayloadElectraImpl) payload.toVersionElectra().orElseThrow(),
-                getBlsToExecutionChanges()));
+    return new BeaconBlockBodyElectraImpl(
+        schema,
+        new SszSignature(randaoReveal),
+        eth1Data,
+        SszBytes32.of(graffiti),
+        proposerSlashings,
+        attesterSlashings,
+        attestations,
+        deposits,
+        voluntaryExits,
+        syncAggregate,
+        (ExecutionPayloadElectraImpl) executionPayload.toVersionElectra().orElseThrow(),
+        getBlsToExecutionChanges());
   }
 }

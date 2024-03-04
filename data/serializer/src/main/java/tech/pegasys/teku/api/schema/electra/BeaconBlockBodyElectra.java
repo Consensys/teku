@@ -99,13 +99,13 @@ public class BeaconBlockBodyElectra extends BeaconBlockBodyAltair {
 
     return super.asInternalBeaconBlockBody(
         spec,
-        (builder) -> {
-          builder.executionPayload(
-              SafeFuture.completedFuture(executionPayload.asInternalExecutionPayload(spec)));
+        builder -> {
+          builder.executionPayload(executionPayload.asInternalExecutionPayload(spec));
           builder.blsToExecutionChanges(
               this.blsToExecutionChanges.stream()
                   .map(b -> b.asInternalSignedBlsToExecutionChange(spec))
                   .collect(blsToExecutionChangesSchema.collector()));
+          return SafeFuture.COMPLETE;
         });
   }
 }

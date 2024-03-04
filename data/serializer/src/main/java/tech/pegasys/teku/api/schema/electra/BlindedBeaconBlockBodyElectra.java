@@ -33,7 +33,6 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodyCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSchema;
 
@@ -78,7 +77,10 @@ public class BlindedBeaconBlockBodyElectra extends BeaconBlockBodyAltair {
     this.blsToExecutionChanges = blsToExecutionChanges;
   }
 
-  public BlindedBeaconBlockBodyElectra(final BlindedBeaconBlockBodyCapella blockBody) {
+  public BlindedBeaconBlockBodyElectra(
+      final tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra
+              .BlindedBeaconBlockBodyElectra
+          blockBody) {
     super(blockBody);
     this.executionPayloadHeader =
         new ExecutionPayloadHeaderElectra(blockBody.getExecutionPayloadHeader());
@@ -109,15 +111,15 @@ public class BlindedBeaconBlockBodyElectra extends BeaconBlockBodyAltair {
 
     return super.asInternalBeaconBlockBody(
         spec,
-        (builder) -> {
+        builder -> {
           builder.executionPayloadHeader(
-              SafeFuture.completedFuture(
-                  executionPayloadHeader.asInternalExecutionPayloadHeader(
-                      executionPayloadHeaderSchema)));
+              executionPayloadHeader.asInternalExecutionPayloadHeader(
+                  executionPayloadHeaderSchema));
           builder.blsToExecutionChanges(
               this.blsToExecutionChanges.stream()
                   .map(b -> b.asInternalSignedBlsToExecutionChange(spec))
                   .collect(blsToExecutionChangesSchema.collector()));
+          return SafeFuture.COMPLETE;
         });
   }
 }
