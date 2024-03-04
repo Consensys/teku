@@ -167,12 +167,12 @@ public class AttestationDutyLoader
         .getForkInfo(slot)
         .thenCompose(forkInfo -> validator.getSigner().signAggregationSlot(slot, forkInfo))
         .thenCompose(
-            blsSignature ->
+            slotSignature ->
                 dvtAttestationAggregation
                     .map(
                         dvt ->
-                            dvt.getCombinedSelectionProofFuture(validatorIndex, slot, blsSignature))
-                    .orElse(SafeFuture.completedFuture(blsSignature)))
+                            dvt.getCombinedSelectionProofFuture(validatorIndex, slot, slotSignature))
+                    .orElse(SafeFuture.completedFuture(slotSignature)))
         .thenAccept(
             slotSignature -> {
               final SpecVersion specVersion = spec.atSlot(slot);
