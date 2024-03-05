@@ -20,8 +20,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.electra.BeaconBlockBodyElectra;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.MutableBeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
@@ -83,7 +84,13 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
         () ->
             processDepositReceipts(
                 MutableBeaconStateElectra.required(state),
-                BeaconBlockBodyElectra.required(body).getExecutionPayload().getDepositReceipts()));
+                body.getOptionalExecutionPayload()
+                    .flatMap(ExecutionPayload::toVersionElectra)
+                    .map(ExecutionPayloadElectra::getDepositReceipts)
+                    .orElseThrow(
+                        () ->
+                            new BlockProcessingException(
+                                "Deposit receipts were not found during block processing."))));
   }
 
   /** Disable former deposit mechanism once all prior deposits are processed * */
