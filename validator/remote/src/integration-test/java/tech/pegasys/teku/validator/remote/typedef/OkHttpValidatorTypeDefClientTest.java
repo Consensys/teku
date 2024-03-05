@@ -460,7 +460,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     final String body = serialize(response, ATTESTER_DUTIES_RESPONSE_TYPE);
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(body));
 
-    final UInt64 epoch = UInt64.ONE;
+    final UInt64 epoch = ONE;
     final IntList validatorIndices = IntList.of(1, 2);
     Optional<AttesterDuties> result =
         okHttpValidatorTypeDefClient.postAttesterDuties(epoch, validatorIndices);
