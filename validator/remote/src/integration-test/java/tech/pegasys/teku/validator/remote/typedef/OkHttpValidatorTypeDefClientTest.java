@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote.typedef;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -25,6 +26,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.json.JsonUtil.serialize;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -43,6 +45,7 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuty;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszDataAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -415,7 +418,8 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  public void postAttesterDuties_WhenSuccess_ReturnsResponse() throws JsonProcessingException {
+  public void postAttesterDuties_WhenSuccess_ReturnsResponse()
+      throws JsonProcessingException, InterruptedException {
     final List<AttesterDuty> duties = List.of(randomAttesterDuty(), randomAttesterDuty());
     final AttesterDuties response =
         new AttesterDuties(true, dataStructureUtil.randomBytes32(), duties);
@@ -423,8 +427,20 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     final String body = serialize(response, ATTESTER_DUTIES_RESPONSE_TYPE);
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(body));
 
+    final UInt64 epoch = UInt64.ONE;
+    final List<Integer> validatorIndices = List.of(1, 2);
+    final IntSet validatorSet = IntSet.of(validatorIndices.stream().mapToInt(i -> i).toArray());
     Optional<AttesterDuties> result =
-        okHttpValidatorTypeDefClient.postAttesterDuties(UInt64.ONE, IntSet.of(1, 2));
+        okHttpValidatorTypeDefClient.postAttesterDuties(epoch, validatorSet);
+
+    final RecordedRequest recordedRequest = mockWebServer.takeRequest();
+    assertThat(recordedRequest.getPath()).isEqualTo("/eth/v1/validator/duties/attester/" + epoch);
+    assertThat(recordedRequest.getMethod()).isEqualTo("POST");
+    assertThat(recordedRequest.getHeader("Content-Type")).isEqualTo(JSON_CONTENT_TYPE);
+    assertThat(recordedRequest.getBody().readByteArray())
+        .isEqualTo(
+            serialize(validatorIndices, DeserializableTypeDefinition.listOf(INTEGER_TYPE, 1))
+                .getBytes(UTF_8));
 
     assertThat(result).isPresent();
     assertThat(result.get()).isEqualTo(response);
