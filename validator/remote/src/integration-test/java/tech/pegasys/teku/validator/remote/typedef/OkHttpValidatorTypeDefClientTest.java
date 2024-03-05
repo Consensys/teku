@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.validator.remote.typedef;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -25,11 +26,13 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.json.JsonUtil.serialize;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.List;
 import java.util.Optional;
@@ -44,6 +47,7 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuty;
+import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszDataAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -416,7 +420,8 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
   }
 
   @TestTemplate
-  public void postSyncDuties_WhenSuccess_ReturnsResponse() throws JsonProcessingException {
+  public void postSyncDuties_WhenSuccess_ReturnsResponse()
+      throws JsonProcessingException, InterruptedException {
     final List<SyncCommitteeDuty> duties =
         List.of(
             new SyncCommitteeDuty(
@@ -428,8 +433,20 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     final String body = serialize(response, SYNC_COMMITTEE_DUTIES_TYPE);
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(body));
 
+    final UInt64 epoch = ONE;
+    final IntList validatorIndices = IntList.of(1, 2);
     Optional<SyncCommitteeDuties> result =
-        okHttpValidatorTypeDefClient.postSyncDuties(ONE, IntSet.of(1, 2));
+        okHttpValidatorTypeDefClient.postSyncDuties(epoch, validatorIndices);
+
+    final RecordedRequest recordedRequest = mockWebServer.takeRequest();
+    assertThat(recordedRequest.getPath()).isEqualTo("/eth/v1/validator/duties/sync/" + epoch);
+    assertThat(recordedRequest.getMethod()).isEqualTo("POST");
+    assertThat(recordedRequest.getHeader("Content-Type")).isEqualTo(JSON_CONTENT_TYPE);
+    assertThat(recordedRequest.getBody().readByteArray())
+        .isEqualTo(
+            serialize(validatorIndices, DeserializableTypeDefinition.listOf(INTEGER_TYPE, 1))
+                .getBytes(UTF_8));
+
     assertThat(result).isPresent();
     assertThat(result.get()).isEqualTo(response);
   }
