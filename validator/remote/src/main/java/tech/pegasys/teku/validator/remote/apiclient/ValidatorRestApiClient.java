@@ -22,7 +22,6 @@ import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
-import tech.pegasys.teku.api.response.v1.validator.PostAttesterDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.schema.Attestation;
@@ -42,9 +41,6 @@ public interface ValidatorRestApiClient {
   Optional<GetGenesisResponse> getGenesis();
 
   Optional<List<ValidatorResponse>> getValidators(List<String> validatorIds);
-
-  Optional<PostAttesterDutiesResponse> getAttestationDuties(
-      final UInt64 epoch, final Collection<Integer> validatorIndices);
 
   Optional<GetProposerDutiesResponse> getProposerDuties(final UInt64 epoch);
 
