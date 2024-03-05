@@ -22,7 +22,6 @@ public class Constants {
 
   // Teku Networking Specific
   public static final int VALID_BLOCK_SET_SIZE = 1000;
-  public static final int MAX_EQUIVOCATING_BLOCKS_PER_SLOT_AND_PROPOSER = 100;
   // Target holding two slots worth of aggregators (16 aggregators, 64 committees and 2 slots)
   public static final int VALID_AGGREGATE_SET_SIZE = 16 * 64 * 2;
   // Target 2 different attestation data (aggregators normally agree) for two slots
