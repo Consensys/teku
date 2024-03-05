@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
-import static tech.pegasys.teku.spec.config.Constants.MAX_EQUIVOCATING_BLOCKS_PER_SLOT_AND_PROPOSER;
 import static tech.pegasys.teku.spec.config.Constants.VALID_BLOCK_SET_SIZE;
 import static tech.pegasys.teku.statetransition.validation.BlockGossipValidator.EquivocationCheckResult.EQUIVOCATING_BLOCK;
 import static tech.pegasys.teku.statetransition.validation.BlockGossipValidator.EquivocationCheckResult.FIRST_BLOCK_FOR_SLOT_PROPOSER;
@@ -24,17 +23,14 @@ import static tech.pegasys.teku.statetransition.validation.InternalValidationRes
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ValidationResultSubCode.IGNORE_DUPLICATE;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ValidationResultSubCode.IGNORE_EQUIVOCATION_DETECTED;
 
-import com.google.common.base.Objects;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
-import tech.pegasys.teku.infrastructure.collections.LimitedSet;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.Domain;
@@ -52,7 +48,7 @@ public class BlockGossipValidator {
   private final GossipValidationHelper gossipValidationHelper;
   private final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher;
 
-  private final Map<SlotAndProposer, Set<Bytes32>> receivedValidBlockInfoSet =
+  private final Map<SlotAndProposer, Bytes32> receivedValidBlockInfoSet =
       LimitedMap.createNonSynchronized(VALID_BLOCK_SET_SIZE);
 
   public BlockGossipValidator(
@@ -187,8 +183,8 @@ public class BlockGossipValidator {
               // another after consensus validation)
               final EquivocationCheckResult secondEquivocationCheckResult =
                   isLocallyProduced
-                      ? performBlockEquivocationCheck(block)
-                      : addAndPerformEquivocationCheck(block);
+                      ? performBlockEquivocationCheck(false, block)
+                      : performBlockEquivocationCheck(true, block);
 
               return switch (secondEquivocationCheckResult) {
                 case FIRST_BLOCK_FOR_SLOT_PROPOSER -> InternalValidationResult.ACCEPT;
@@ -202,40 +198,30 @@ public class BlockGossipValidator {
             });
   }
 
-  private synchronized EquivocationCheckResult addAndPerformEquivocationCheck(
-      final SignedBeaconBlock block) {
+  private synchronized EquivocationCheckResult performBlockEquivocationCheck(
+      final boolean add, final SignedBeaconBlock block) {
     final SlotAndProposer slotAndProposer = new SlotAndProposer(block);
-    final Optional<Set<Bytes32>> maybeEquivocatingBlockRoots =
-        Optional.ofNullable(receivedValidBlockInfoSet.get(slotAndProposer));
 
-    if (maybeEquivocatingBlockRoots.isEmpty()) {
-      final Set<Bytes32> newEquivocatingBlockRoots =
-          LimitedSet.createNonSynchronized(MAX_EQUIVOCATING_BLOCKS_PER_SLOT_AND_PROPOSER);
-      newEquivocatingBlockRoots.add(block.getRoot());
-      receivedValidBlockInfoSet.put(slotAndProposer, newEquivocatingBlockRoots);
+    final Optional<Bytes32> maybePreviouslySeenBlockRoot =
+        Optional.ofNullable(
+            add
+                ? receivedValidBlockInfoSet.put(slotAndProposer, block.getRoot())
+                : receivedValidBlockInfoSet.get(slotAndProposer));
+
+    if (maybePreviouslySeenBlockRoot.isEmpty()) {
       return FIRST_BLOCK_FOR_SLOT_PROPOSER;
     }
 
-    if (maybeEquivocatingBlockRoots.get().add(block.getRoot())) {
-      return EQUIVOCATING_BLOCK;
-    }
-
-    return SAME_BLOCK_FOR_SLOT_PROPOSER;
-  }
-
-  synchronized EquivocationCheckResult performBlockEquivocationCheck(
-      final SignedBeaconBlock block) {
-    final SlotAndProposer slotAndProposer = new SlotAndProposer(block);
-    final Optional<Set<Bytes32>> maybeEquivocatingBlockRoots =
-        Optional.ofNullable(receivedValidBlockInfoSet.get(slotAndProposer));
-    if (maybeEquivocatingBlockRoots.isEmpty()) {
-      return FIRST_BLOCK_FOR_SLOT_PROPOSER;
-    }
-    if (maybeEquivocatingBlockRoots.get().contains(block.getRoot())) {
+    if (maybePreviouslySeenBlockRoot.get().equals(block.getRoot())) {
       return SAME_BLOCK_FOR_SLOT_PROPOSER;
     }
 
     return EQUIVOCATING_BLOCK;
+  }
+
+  synchronized EquivocationCheckResult performBlockEquivocationCheck(
+      final SignedBeaconBlock block) {
+    return performBlockEquivocationCheck(false, block);
   }
 
   enum EquivocationCheckResult {
@@ -258,30 +244,9 @@ public class BlockGossipValidator {
         signingRoot, block.getProposerIndex(), block.getSignature(), postState);
   }
 
-  private static class SlotAndProposer {
-    private final UInt64 slot;
-    private final UInt64 proposerIndex;
-
+  private record SlotAndProposer(UInt64 slot, UInt64 proposerIndex) {
     public SlotAndProposer(final SignedBeaconBlock block) {
-      this.slot = block.getSlot();
-      this.proposerIndex = block.getMessage().getProposerIndex();
-    }
-
-    @Override
-    public boolean equals(final Object o) {
-      if (this == o) {
-        return true;
-      }
-      if (!(o instanceof SlotAndProposer)) {
-        return false;
-      }
-      SlotAndProposer that = (SlotAndProposer) o;
-      return Objects.equal(slot, that.slot) && Objects.equal(proposerIndex, that.proposerIndex);
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hashCode(slot, proposerIndex);
+      this(block.getSlot(), block.getMessage().getProposerIndex());
     }
   }
 }

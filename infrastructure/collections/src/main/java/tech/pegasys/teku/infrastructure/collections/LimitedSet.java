@@ -37,10 +37,6 @@ public final class LimitedSet {
     return Collections.newSetFromMap(LimitedMap.createSynchronizedLRU(maxSize));
   }
 
-  public static <T> Set<T> createNonSynchronized(final int maxSize) {
-    return Collections.newSetFromMap(LimitedMap.createNonSynchronized(maxSize));
-  }
-
   /**
    * Creates a limited set. The returned set is safe for all forms of concurrent access including
    * iteration and evicts the least recently used items.
