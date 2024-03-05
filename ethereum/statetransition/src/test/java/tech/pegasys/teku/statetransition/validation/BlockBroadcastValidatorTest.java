@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.validation.BlockGossipValidator.EquivocationCheckResult;
 
 public class BlockBroadcastValidatorTest {
   private final Spec spec = TestSpecFactory.createMinimalPhase0();
@@ -150,12 +151,15 @@ public class BlockBroadcastValidatorTest {
     verifyNoMoreInteractions(blockGossipValidator);
   }
 
-  @Test
-  public void shouldReturnSuccessWhenSecondEquivocationCheckIsValidated() {
+  @ParameterizedTest
+  @EnumSource(value = EquivocationCheckResult.class)
+  public void shouldReturnFinalEquivocationFailureOnlyForEquivocatingBlocks(
+      EquivocationCheckResult equivocationCheckResult) {
     when(blockGossipValidator.validate(eq(block), eq(true)))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
-    when(blockGossipValidator.performBlockEquivocationCheck(eq(block))).thenReturn(Boolean.TRUE);
+    when(blockGossipValidator.performBlockEquivocationCheck(eq(block)))
+        .thenReturn(equivocationCheckResult);
 
     prepareBlockBroadcastValidator(CONSENSUS_AND_EQUIVOCATION);
 
@@ -167,25 +171,13 @@ public class BlockBroadcastValidatorTest {
     blockImportResult.completeExceptionally(new RuntimeException("error"));
 
     assertThat(blockBroadcastValidator.getResult())
-        .isCompletedWithValueMatching(result -> result.equals(SUCCESS));
-    verify(blockGossipValidator).validate(eq(block), eq(true));
-    verify(blockGossipValidator).performBlockEquivocationCheck(eq(block));
-    verifyNoMoreInteractions(blockGossipValidator);
-  }
-
-  @Test
-  public void shouldReturnFinalEquivocationFailureWhenSecondEquivocationCheckFails() {
-    when(blockGossipValidator.validate(eq(block), eq(true)))
-        .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
-
-    when(blockGossipValidator.performBlockEquivocationCheck(eq(block))).thenReturn(Boolean.FALSE);
-
-    prepareBlockBroadcastValidator(CONSENSUS_AND_EQUIVOCATION);
-
-    blockBroadcastValidator.onConsensusValidationSucceeded();
-
-    assertThat(blockBroadcastValidator.getResult())
-        .isCompletedWithValueMatching(result -> result.equals(FINAL_EQUIVOCATION_FAILURE));
+        .isCompletedWithValueMatching(
+            result -> {
+              if (equivocationCheckResult.equals(EquivocationCheckResult.EQUIVOCATING_BLOCK)) {
+                return result.equals(FINAL_EQUIVOCATION_FAILURE);
+              }
+              return result.equals(SUCCESS);
+            });
     verify(blockGossipValidator).validate(eq(block), eq(true));
     verify(blockGossipValidator).performBlockEquivocationCheck(eq(block));
     verifyNoMoreInteractions(blockGossipValidator);

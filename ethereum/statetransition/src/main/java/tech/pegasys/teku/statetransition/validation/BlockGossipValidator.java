@@ -39,7 +39,6 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
-import tech.pegasys.teku.statetransition.validation.ValidationResultCode.ValidationResultSubCode;
 
 public class BlockGossipValidator {
   private static final Logger LOG = LogManager.getLogger();
@@ -86,20 +85,11 @@ public class BlockGossipValidator {
       return completedFuture(InternalValidationResult.IGNORE);
     }
 
-    final Optional<ValidationResultSubCode> validationResultSubCode =
-        switch (performBlockEquivocationCheck(block)) {
-          case EQUIVOCATING_BLOCK -> Optional.of(IGNORE_EQUIVOCATION_DETECTED);
-          case SAME_BLOCK_FOR_SLOT_PROPOSER -> Optional.of(
-              ValidationResultSubCode.IGNORE_DUPLICATE);
-          case FIRST_BLOCK_FOR_SLOT_PROPOSER -> Optional.empty();
-        };
+    final InternalValidationResult validationResult =
+        equivocationCheckResultToInternalValidationResult(performBlockEquivocationCheck(block));
 
-    if (validationResultSubCode.isPresent()) {
-      return completedFuture(
-          ignore(
-              validationResultSubCode.get(),
-              "Block is not the first with valid signature for its slot (%s) It will be dropped.",
-              validationResultSubCode.get()));
+    if (!validationResult.isAccept()) {
+      return completedFuture(validationResult);
     }
 
     if (gossipValidationHelper.isSlotFromFuture(block.getSlot())) {
@@ -186,16 +176,21 @@ public class BlockGossipValidator {
                       ? performBlockEquivocationCheck(false, block)
                       : performBlockEquivocationCheck(true, block);
 
-              return switch (secondEquivocationCheckResult) {
-                case FIRST_BLOCK_FOR_SLOT_PROPOSER -> InternalValidationResult.ACCEPT;
-                case EQUIVOCATING_BLOCK -> ignore(
-                    IGNORE_EQUIVOCATION_DETECTED,
-                    "Block is not the first with valid signature for its slot. It will be dropped.");
-                case SAME_BLOCK_FOR_SLOT_PROPOSER -> ignore(
-                    IGNORE_DUPLICATE,
-                    "Block is not the first with valid signature for its slot. It will be dropped.");
-              };
+              return equivocationCheckResultToInternalValidationResult(
+                  secondEquivocationCheckResult);
             });
+  }
+
+  private InternalValidationResult equivocationCheckResultToInternalValidationResult(
+      final EquivocationCheckResult equivocationCheckResult) {
+    return switch (equivocationCheckResult) {
+      case FIRST_BLOCK_FOR_SLOT_PROPOSER -> InternalValidationResult.ACCEPT;
+      case EQUIVOCATING_BLOCK -> ignore(
+          IGNORE_EQUIVOCATION_DETECTED, "Equivocating block detected. It will be dropped.");
+      case SAME_BLOCK_FOR_SLOT_PROPOSER -> ignore(
+          IGNORE_DUPLICATE,
+          "Block is not the first with valid signature for its slot. It will be dropped.");
+    };
   }
 
   private synchronized EquivocationCheckResult performBlockEquivocationCheck(
@@ -224,7 +219,7 @@ public class BlockGossipValidator {
     return performBlockEquivocationCheck(false, block);
   }
 
-  enum EquivocationCheckResult {
+  public enum EquivocationCheckResult {
     FIRST_BLOCK_FOR_SLOT_PROPOSER,
     SAME_BLOCK_FOR_SLOT_PROPOSER,
     EQUIVOCATING_BLOCK
