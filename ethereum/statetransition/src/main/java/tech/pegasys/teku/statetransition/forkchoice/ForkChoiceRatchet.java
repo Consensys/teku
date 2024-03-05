@@ -42,6 +42,9 @@ class ForkChoiceRatchet {
   }
 
   SafeFuture<Void> ensureForkChoiceCompleteForSlot(final UInt64 slot) {
+    if (forkChoice.getLastProcessHeadSlot().isGreaterThanOrEqualTo(slot)) {
+      return SafeFuture.COMPLETE;
+    }
     final ForkChoiceUpdate forkChoiceUpdate = processHead(slot);
     if (forkChoiceUpdate.nodeSlot.isGreaterThan(slot)) {
       return SafeFuture.COMPLETE;

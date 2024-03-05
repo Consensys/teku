@@ -47,15 +47,20 @@ public class ValidatorKeystoreGenerator {
     createDirectory(passwordsOutputPath);
   }
 
-  public void generateKeystoreAndPasswordFiles(final List<BLSKeyPair> keyPairs) {
+  public void generateKeystoreAndPasswordFiles(final List<ValidatorKeys> validatorKeys) {
     try {
-      for (BLSKeyPair keyPair : keyPairs) {
-        encryptedKeystoreWriter.writeValidatorKey(keyPair);
+      for (final ValidatorKeys key : validatorKeys) {
+        final BLSKeyPair keyPair = key.getValidatorKey();
+        final String keystoreFileName = encryptedKeystoreWriter.writeValidatorKey(keyPair);
         final String validatorPasswordFileName =
             keyPair.getPublicKey().toAbbreviatedString() + "_validator.txt";
-        Path validatorPasswordFile =
+        final Path validatorPasswordFile =
             Files.createFile(passwordsOutputPath.resolve(validatorPasswordFileName));
         Files.write(validatorPasswordFile, validatorKeyPassword.getBytes(Charset.defaultCharset()));
+        if (key.isLocked()) {
+          final Path lockFile = Path.of(keystoreFileName + ".lock");
+          lockFile.toFile().createNewFile();
+        }
       }
     } catch (IOException e) {
       throw new UncheckedIOException(e);

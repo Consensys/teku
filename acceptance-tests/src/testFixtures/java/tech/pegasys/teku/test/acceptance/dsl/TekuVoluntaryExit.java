@@ -107,7 +107,7 @@ public class TekuVoluntaryExit extends Node {
       return this;
     }
 
-    public TekuVoluntaryExit.Config withBeaconNode(final TekuNode beaconNode) {
+    public TekuVoluntaryExit.Config withBeaconNode(final TekuBeaconNode beaconNode) {
       configMap.put("beacon-node-api-endpoint", beaconNode.getBeaconRestApiUrl());
       return this;
     }

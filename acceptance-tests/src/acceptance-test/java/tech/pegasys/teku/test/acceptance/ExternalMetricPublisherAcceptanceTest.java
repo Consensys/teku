@@ -16,7 +16,8 @@ package tech.pegasys.teku.test.acceptance;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.ExternalMetricNode;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 
 public class ExternalMetricPublisherAcceptanceTest extends AcceptanceTestBase {
   private static final int ACTIVE_VALIDATOR_COUNT = 8;
@@ -27,13 +28,13 @@ public class ExternalMetricPublisherAcceptanceTest extends AcceptanceTestBase {
     ExternalMetricNode externalMetricNode = createExternalMetricNode();
     externalMetricNode.start();
 
-    final TekuNode tekuNode =
-        createTekuNode(
-            config ->
-                config
-                    .withExternalMetricsClient(externalMetricNode, 1)
-                    .withInteropNumberOfValidators(TOTAL_VALIDATOR_COUNT)
-                    .withInteropValidators(0, ACTIVE_VALIDATOR_COUNT));
+    final TekuBeaconNode tekuNode =
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode()
+                .withExternalMetricsClient(externalMetricNode, 1)
+                .withInteropNumberOfValidators(TOTAL_VALIDATOR_COUNT)
+                .withInteropValidators(0, ACTIVE_VALIDATOR_COUNT)
+                .build());
     tekuNode.start();
 
     externalMetricNode.waitForBeaconNodeMetricPublication();

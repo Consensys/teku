@@ -65,6 +65,7 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED = false;
   public static final int DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE = 100;
   public static final UInt64 DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT = UInt64.valueOf(30_000_000);
+  public static final boolean DEFAULT_DVT_SELECTIONS_ENDPOINT_ENABLED = false;
 
   private final List<String> validatorKeys;
   private final List<String> validatorExternalSignerPublicKeySources;
@@ -105,6 +106,7 @@ public class ValidatorConfig {
   private final int executorThreads;
 
   private final boolean isLocalSlashingProtectionSynchronizedModeEnabled;
+  private final boolean dvtSelectionsEndpointEnabled;
 
   private ValidatorConfig(
       final List<String> validatorKeys,
@@ -143,7 +145,8 @@ public class ValidatorConfig {
       final int executorMaxQueueSize,
       final int executorThreads,
       final Optional<String> sentryNodeConfigurationFile,
-      boolean isLocalSlashingProtectionSynchronizedModeEnabled) {
+      boolean isLocalSlashingProtectionSynchronizedModeEnabled,
+      boolean dvtSelectionsEndpointEnabled) {
     this.validatorKeys = validatorKeys;
     this.validatorExternalSignerPublicKeySources = validatorExternalSignerPublicKeySources;
     this.validatorExternalSignerUrl = validatorExternalSignerUrl;
@@ -186,6 +189,7 @@ public class ValidatorConfig {
     this.sentryNodeConfigurationFile = sentryNodeConfigurationFile;
     this.isLocalSlashingProtectionSynchronizedModeEnabled =
         isLocalSlashingProtectionSynchronizedModeEnabled;
+    this.dvtSelectionsEndpointEnabled = dvtSelectionsEndpointEnabled;
   }
 
   public static Builder builder() {
@@ -348,6 +352,10 @@ public class ValidatorConfig {
     return isLocalSlashingProtectionSynchronizedModeEnabled;
   }
 
+  public boolean isDvtSelectionsEndpointEnabled() {
+    return dvtSelectionsEndpointEnabled;
+  }
+
   public static final class Builder {
     private List<String> validatorKeys = new ArrayList<>();
     private List<String> validatorExternalSignerPublicKeySources = new ArrayList<>();
@@ -395,11 +403,10 @@ public class ValidatorConfig {
     private Optional<BLSPublicKey> builderRegistrationPublicKeyOverride = Optional.empty();
     private int executorMaxQueueSize = DEFAULT_EXECUTOR_MAX_QUEUE_SIZE;
     private Optional<String> sentryNodeConfigurationFile = Optional.empty();
-
     private int executorThreads = DEFAULT_VALIDATOR_EXECUTOR_THREADS;
-
     private boolean isLocalSlashingProtectionSynchronizedModeEnabled =
         DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED;
+    private boolean dvtSelectionsEndpointEnabled = DEFAULT_DVT_SELECTIONS_ENDPOINT_ENABLED;
 
     private Builder() {}
 
@@ -640,6 +647,11 @@ public class ValidatorConfig {
       return this;
     }
 
+    public Builder dvtSelectionsEndpointEnabled(final boolean dvtSelectionsEndpointEnabled) {
+      this.dvtSelectionsEndpointEnabled = dvtSelectionsEndpointEnabled;
+      return this;
+    }
+
     public ValidatorConfig build() {
       validateExternalSignerUrlAndPublicKeys();
       validateExternalSignerKeystoreAndPasswordFileConfig();
@@ -683,7 +695,8 @@ public class ValidatorConfig {
           executorMaxQueueSize,
           executorThreads,
           sentryNodeConfigurationFile,
-          isLocalSlashingProtectionSynchronizedModeEnabled);
+          isLocalSlashingProtectionSynchronizedModeEnabled,
+          dvtSelectionsEndpointEnabled);
     }
 
     private void validateExternalSignerUrlAndPublicKeys() {
