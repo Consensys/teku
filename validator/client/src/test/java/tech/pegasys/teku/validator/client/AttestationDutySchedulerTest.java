@@ -753,7 +753,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             new OwnedValidators(Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
             validatorIndexProvider,
             beaconCommitteeSubscriptions,
-            spec);
+            spec,
+            false);
     dutyScheduler =
         new AttestationDutyScheduler(
             metricsSystem, new RetryingDutyLoader<>(asyncRunner, attestationDutyLoader), spec);
@@ -768,7 +769,8 @@ public class AttestationDutySchedulerTest extends AbstractDutySchedulerTest {
             new OwnedValidators(Map.of(VALIDATOR1_KEY, validator1, VALIDATOR2_KEY, validator2)),
             validatorIndexProvider,
             beaconCommitteeSubscriptions,
-            spec);
+            spec,
+            false);
     dutyScheduler =
         new AttestationDutyScheduler(
             metricsSystem2, new RetryingDutyLoader<>(asyncRunner, attestationDutyLoader), spec);

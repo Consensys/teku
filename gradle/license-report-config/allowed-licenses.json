@@ -25,6 +25,10 @@
       "moduleName": ".*"
     },
     {
+      "moduleLicense": "CDDL-1.0",
+      "moduleName": ".*"
+    },
+    {
       "moduleLicense": "Creative Commons Legal Code",
       "moduleName": ".*"
     },

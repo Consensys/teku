@@ -234,4 +234,12 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
             .getValidatorConfig();
     assertThat(config.isShutdownWhenValidatorSlashedEnabled()).isTrue();
   }
+
+  @Test
+  public void shouldNotUseDvtSelectionsEndpointByDefault() {
+    final String[] args = {};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.validatorClient().getValidatorConfig().isDvtSelectionsEndpointEnabled())
+        .isFalse();
+  }
 }
