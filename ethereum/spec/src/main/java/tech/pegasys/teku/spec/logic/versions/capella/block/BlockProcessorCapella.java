@@ -33,6 +33,7 @@ import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
 import tech.pegasys.teku.spec.config.SpecConfigCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyCapella;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
@@ -139,13 +140,11 @@ public class BlockProcessorCapella extends BlockProcessorBellatrix {
       throws BlockProcessingException {
     super.processOperationsNoValidation(state, body, indexedAttestationCache);
 
-    processBlsToExecutionChangesNoValidation(
-        MutableBeaconStateCapella.required(state),
-        body.getOptionalBlsToExecutionChanges()
-            .orElseThrow(
-                () ->
-                    new BlockProcessingException(
-                        "BlsToExecutionChanges was not found during block processing.")));
+    safelyProcess(
+        () ->
+            processBlsToExecutionChangesNoValidation(
+                MutableBeaconStateCapella.required(state),
+                BeaconBlockBodyCapella.required(body).getBlsToExecutionChanges()));
   }
 
   @Override
