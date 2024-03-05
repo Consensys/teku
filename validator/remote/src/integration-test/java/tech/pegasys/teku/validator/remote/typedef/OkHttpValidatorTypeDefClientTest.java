@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorDataBuilder.STATE_VALIDATORS_RESPONSE_TYPE;
 import static tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDutiesBuilder.SYNC_COMMITTEE_DUTIES_TYPE;
+import static tech.pegasys.teku.ethereum.json.types.validator.AttesterDutiesBuilder.ATTESTER_DUTIES_RESPONSE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_METHOD_NOT_ALLOWED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
@@ -44,6 +45,8 @@ import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
+import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuty;
 import tech.pegasys.teku.infrastructure.ssz.SszDataAssert;
@@ -445,6 +448,43 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     assertThat(result).isPresent();
     assertThat(result.get()).isEqualTo(response);
+  }
+
+  @TestTemplate
+  public void postAttesterDuties_WhenSuccess_ReturnsResponse()
+      throws JsonProcessingException, InterruptedException {
+    final List<AttesterDuty> duties = List.of(randomAttesterDuty(), randomAttesterDuty());
+    final AttesterDuties response =
+        new AttesterDuties(true, dataStructureUtil.randomBytes32(), duties);
+
+    final String body = serialize(response, ATTESTER_DUTIES_RESPONSE_TYPE);
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(body));
+
+    final UInt64 epoch = UInt64.ONE;
+    final IntList validatorIndices = IntList.of(1, 2);
+    Optional<AttesterDuties> result =
+        okHttpValidatorTypeDefClient.postAttesterDuties(epoch, validatorIndices);
+
+    final RecordedRequest recordedRequest = mockWebServer.takeRequest();
+    assertThat(recordedRequest.getPath()).isEqualTo("/eth/v1/validator/duties/attester/" + epoch);
+    assertThat(recordedRequest.getMethod()).isEqualTo("POST");
+    assertThat(recordedRequest.getHeader("Content-Type")).isEqualTo(JSON_CONTENT_TYPE);
+    assertThat(recordedRequest.getBody().readByteArray())
+        .isEqualTo("[\"1\",\"2\"]".getBytes(UTF_8));
+
+    assertThat(result).isPresent();
+    assertThat(result.get()).isEqualTo(response);
+  }
+
+  private AttesterDuty randomAttesterDuty() {
+    return new AttesterDuty(
+        dataStructureUtil.randomPublicKey(),
+        dataStructureUtil.randomValidatorIndex().intValue(),
+        dataStructureUtil.randomPositiveInt(),
+        dataStructureUtil.randomPositiveInt(),
+        dataStructureUtil.randomPositiveInt(),
+        dataStructureUtil.randomPositiveInt(),
+        dataStructureUtil.randomSlot());
   }
 
   private void verifyRegisterValidatorsPostRequest(

@@ -44,7 +44,6 @@ import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
-import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
@@ -205,16 +204,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
       final UInt64 epoch, final IntCollection validatorIndices) {
-    return sendRequest(
-        () ->
-            apiClient
-                .getAttestationDuties(epoch, validatorIndices)
-                .map(
-                    response ->
-                        new AttesterDuties(
-                            response.executionOptimistic,
-                            response.dependentRoot,
-                            response.data.stream().map(this::mapToApiAttesterDuties).toList())));
+    return sendRequest(() -> typeDefClient.postAttesterDuties(epoch, validatorIndices));
   }
 
   @Override
@@ -226,18 +216,6 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
     return sendRequest(() -> typeDefClient.getProposerDuties(epoch));
-  }
-
-  private AttesterDuty mapToApiAttesterDuties(
-      final tech.pegasys.teku.api.response.v1.validator.AttesterDuty attesterDuty) {
-    return new AttesterDuty(
-        attesterDuty.pubkey.asBLSPublicKey(),
-        attesterDuty.validatorIndex.intValue(),
-        attesterDuty.committeeLength.intValue(),
-        attesterDuty.committeeIndex.intValue(),
-        attesterDuty.committeesAtSlot.intValue(),
-        attesterDuty.validatorCommitteeIndex.intValue(),
-        attesterDuty.slot);
   }
 
   @Override
