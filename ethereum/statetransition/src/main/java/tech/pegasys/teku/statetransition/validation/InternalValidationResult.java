@@ -17,6 +17,7 @@ import com.google.common.base.MoreObjects;
 import com.google.errorprone.annotations.FormatMethod;
 import java.util.Objects;
 import java.util.Optional;
+import tech.pegasys.teku.statetransition.validation.ValidationResultCode.ValidationResultSubCode;
 
 public class InternalValidationResult {
 
@@ -30,20 +31,33 @@ public class InternalValidationResult {
 
   private final ValidationResultCode validationResultCode;
   private final Optional<String> description;
+  private final Optional<ValidationResultSubCode> subCode;
 
   private InternalValidationResult(
-      final ValidationResultCode validationResultCode, final Optional<String> description) {
+      final ValidationResultCode validationResultCode,
+      final Optional<ValidationResultSubCode> subCode,
+      final Optional<String> description) {
     this.validationResultCode = validationResultCode;
+    this.subCode = subCode;
     this.description = description;
   }
 
   static InternalValidationResult create(final ValidationResultCode validationResultCode) {
-    return new InternalValidationResult(validationResultCode, Optional.empty());
+    return new InternalValidationResult(validationResultCode, Optional.empty(), Optional.empty());
   }
 
   public static InternalValidationResult create(
       final ValidationResultCode validationResultCode, final String description) {
-    return new InternalValidationResult(validationResultCode, Optional.of(description));
+    return new InternalValidationResult(
+        validationResultCode, Optional.empty(), Optional.of(description));
+  }
+
+  public static InternalValidationResult create(
+      final ValidationResultCode validationResultCode,
+      final ValidationResultSubCode subCode,
+      final String description) {
+    return new InternalValidationResult(
+        validationResultCode, Optional.of(subCode), Optional.of(description));
   }
 
   @FormatMethod
@@ -58,8 +72,20 @@ public class InternalValidationResult {
     return create(ValidationResultCode.IGNORE, String.format(descriptionTemplate, args));
   }
 
+  @FormatMethod
+  public static InternalValidationResult ignore(
+      final ValidationResultSubCode subCode,
+      final String descriptionTemplate,
+      final Object... args) {
+    return create(ValidationResultCode.IGNORE, subCode, String.format(descriptionTemplate, args));
+  }
+
   public ValidationResultCode code() {
     return validationResultCode;
+  }
+
+  public Optional<ValidationResultSubCode> getSubCode() {
+    return subCode;
   }
 
   public Optional<String> getDescription() {

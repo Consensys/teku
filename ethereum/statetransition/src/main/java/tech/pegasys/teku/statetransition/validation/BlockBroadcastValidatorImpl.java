@@ -24,6 +24,8 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
+import tech.pegasys.teku.statetransition.validation.BlockGossipValidator.EquivocationCheckResult;
+import tech.pegasys.teku.statetransition.validation.ValidationResultCode.ValidationResultSubCode;
 
 public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
   private final BlockGossipValidator blockGossipValidator;
@@ -95,6 +97,13 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
                   if (gossipValidationResult.isAccept()) {
                     return SUCCESS;
                   }
+                  if (gossipValidationResult.isIgnore()
+                      && gossipValidationResult
+                          .getSubCode()
+                          .map(subCode -> subCode.equals(ValidationResultSubCode.IGNORE_DUPLICATE))
+                          .orElse(false)) {
+                    return SUCCESS;
+                  }
                   return GOSSIP_FAILURE;
                 });
 
@@ -136,11 +145,13 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
               }
 
               // perform final equivocation validation
-              if (blockGossipValidator.blockIsFirstBlockWithValidSignatureForSlot(block)) {
-                return SUCCESS;
+              if (blockGossipValidator
+                  .blockIsFirstBlockWithValidSignatureForSlot(block)
+                  .equals(EquivocationCheckResult.EQUIVOCATING_BLOCK)) {
+                return FINAL_EQUIVOCATION_FAILURE;
               }
 
-              return FINAL_EQUIVOCATION_FAILURE;
+              return SUCCESS;
             })
         .propagateTo(broadcastValidationResult);
   }
