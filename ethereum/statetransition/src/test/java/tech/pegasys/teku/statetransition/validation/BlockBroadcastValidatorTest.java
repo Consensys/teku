@@ -155,8 +155,7 @@ public class BlockBroadcastValidatorTest {
     when(blockGossipValidator.validate(eq(block), eq(true)))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
-    when(blockGossipValidator.blockIsFirstBlockWithValidSignatureForSlot(eq(block)))
-        .thenReturn(Boolean.TRUE);
+    when(blockGossipValidator.performBlockEquivocationCheck(eq(block))).thenReturn(Boolean.TRUE);
 
     prepareBlockBroadcastValidator(CONSENSUS_AND_EQUIVOCATION);
 
@@ -170,7 +169,7 @@ public class BlockBroadcastValidatorTest {
     assertThat(blockBroadcastValidator.getResult())
         .isCompletedWithValueMatching(result -> result.equals(SUCCESS));
     verify(blockGossipValidator).validate(eq(block), eq(true));
-    verify(blockGossipValidator).blockIsFirstBlockWithValidSignatureForSlot(eq(block));
+    verify(blockGossipValidator).performBlockEquivocationCheck(eq(block));
     verifyNoMoreInteractions(blockGossipValidator);
   }
 
@@ -179,8 +178,7 @@ public class BlockBroadcastValidatorTest {
     when(blockGossipValidator.validate(eq(block), eq(true)))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
-    when(blockGossipValidator.blockIsFirstBlockWithValidSignatureForSlot(eq(block)))
-        .thenReturn(Boolean.FALSE);
+    when(blockGossipValidator.performBlockEquivocationCheck(eq(block))).thenReturn(Boolean.FALSE);
 
     prepareBlockBroadcastValidator(CONSENSUS_AND_EQUIVOCATION);
 
@@ -189,7 +187,7 @@ public class BlockBroadcastValidatorTest {
     assertThat(blockBroadcastValidator.getResult())
         .isCompletedWithValueMatching(result -> result.equals(FINAL_EQUIVOCATION_FAILURE));
     verify(blockGossipValidator).validate(eq(block), eq(true));
-    verify(blockGossipValidator).blockIsFirstBlockWithValidSignatureForSlot(eq(block));
+    verify(blockGossipValidator).performBlockEquivocationCheck(eq(block));
     verifyNoMoreInteractions(blockGossipValidator);
   }
 

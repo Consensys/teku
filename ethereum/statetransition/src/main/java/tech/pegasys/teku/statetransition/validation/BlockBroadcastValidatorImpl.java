@@ -146,7 +146,7 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
 
               // perform final equivocation validation
               if (blockGossipValidator
-                  .blockIsFirstBlockWithValidSignatureForSlot(block)
+                  .performBlockEquivocationCheck(block)
                   .equals(EquivocationCheckResult.EQUIVOCATING_BLOCK)) {
                 return FINAL_EQUIVOCATION_FAILURE;
               }

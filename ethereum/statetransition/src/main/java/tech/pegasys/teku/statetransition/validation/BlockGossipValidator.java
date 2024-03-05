@@ -90,20 +90,20 @@ public class BlockGossipValidator {
       return completedFuture(InternalValidationResult.IGNORE);
     }
 
-    final Optional<ValidationResultSubCode> subCode =
-        switch (blockIsFirstBlockWithValidSignatureForSlot(block)) {
+    final Optional<ValidationResultSubCode> validationResultSubCode =
+        switch (performBlockEquivocationCheck(block)) {
           case EQUIVOCATING_BLOCK -> Optional.of(IGNORE_EQUIVOCATION_DETECTED);
           case SAME_BLOCK_FOR_SLOT_PROPOSER -> Optional.of(
               ValidationResultSubCode.IGNORE_DUPLICATE);
           case FIRST_BLOCK_FOR_SLOT_PROPOSER -> Optional.empty();
         };
 
-    if (subCode.isPresent()) {
+    if (validationResultSubCode.isPresent()) {
       return completedFuture(
           ignore(
-              subCode.get(),
+              validationResultSubCode.get(),
               "Block is not the first with valid signature for its slot (%s) It will be dropped.",
-              subCode.get()));
+              validationResultSubCode.get()));
     }
 
     if (gossipValidationHelper.isSlotFromFuture(block.getSlot())) {
@@ -187,8 +187,8 @@ public class BlockGossipValidator {
               // another after consensus validation)
               final EquivocationCheckResult secondEquivocationCheckResult =
                   isLocallyProduced
-                      ? blockIsFirstBlockWithValidSignatureForSlot(block)
-                      : addBlockToReceivedValidBlockInfoSet(block);
+                      ? performBlockEquivocationCheck(block)
+                      : addAndPerformEquivocationCheck(block);
 
               return switch (secondEquivocationCheckResult) {
                 case FIRST_BLOCK_FOR_SLOT_PROPOSER -> InternalValidationResult.ACCEPT;
@@ -202,7 +202,7 @@ public class BlockGossipValidator {
             });
   }
 
-  synchronized EquivocationCheckResult addBlockToReceivedValidBlockInfoSet(
+  private synchronized EquivocationCheckResult addAndPerformEquivocationCheck(
       final SignedBeaconBlock block) {
     final SlotAndProposer slotAndProposer = new SlotAndProposer(block);
     final Optional<Set<Bytes32>> maybeEquivocatingBlockRoots =
@@ -223,7 +223,7 @@ public class BlockGossipValidator {
     return SAME_BLOCK_FOR_SLOT_PROPOSER;
   }
 
-  synchronized EquivocationCheckResult blockIsFirstBlockWithValidSignatureForSlot(
+  synchronized EquivocationCheckResult performBlockEquivocationCheck(
       final SignedBeaconBlock block) {
     final SlotAndProposer slotAndProposer = new SlotAndProposer(block);
     final Optional<Set<Bytes32>> maybeEquivocatingBlockRoots =

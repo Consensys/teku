@@ -324,7 +324,7 @@ public class BlockGossipValidatorTest {
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
 
     assertResultIsAccept(block, blockGossipValidator.validate(block, true));
-    assertTrue(blockGossipValidator.blockIsFirstBlockWithValidSignatureForSlot(block));
+    assertTrue(blockGossipValidator.performBlockEquivocationCheck(block));
   }
 
   @TestTemplate
