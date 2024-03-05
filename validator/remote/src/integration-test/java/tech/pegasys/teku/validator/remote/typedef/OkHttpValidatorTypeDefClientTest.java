@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorDataBuilder.STATE_VALIDATORS_RESPONSE_TYPE;
+import static tech.pegasys.teku.ethereum.json.types.validator.AttesterDutiesBuilder.ATTESTER_DUTIES_RESPONSE_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_METHOD_NOT_ALLOWED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
@@ -28,6 +29,7 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.List;
 import java.util.Optional;
 import okhttp3.mockwebserver.MockResponse;
@@ -39,6 +41,8 @@ import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
+import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuty;
 import tech.pegasys.teku.infrastructure.ssz.SszDataAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -408,6 +412,33 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
         dataStructureUtil.randomUInt64(),
         ValidatorStatus.active_ongoing,
         validator);
+  }
+
+  @TestTemplate
+  public void postAttesterDuties_WhenSuccess_ReturnsResponse() throws JsonProcessingException {
+    final List<AttesterDuty> duties = List.of(randomAttesterDuty(), randomAttesterDuty());
+    final AttesterDuties response =
+        new AttesterDuties(true, dataStructureUtil.randomBytes32(), duties);
+
+    final String body = serialize(response, ATTESTER_DUTIES_RESPONSE_TYPE);
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(body));
+
+    Optional<AttesterDuties> result =
+        okHttpValidatorTypeDefClient.postAttesterDuties(UInt64.ONE, IntSet.of(1, 2));
+
+    assertThat(result).isPresent();
+    assertThat(result.get()).isEqualTo(response);
+  }
+
+  private AttesterDuty randomAttesterDuty() {
+    return new AttesterDuty(
+        dataStructureUtil.randomPublicKey(),
+        dataStructureUtil.randomValidatorIndex().intValue(),
+        dataStructureUtil.randomPositiveInt(),
+        dataStructureUtil.randomPositiveInt(),
+        dataStructureUtil.randomPositiveInt(),
+        dataStructureUtil.randomPositiveInt(),
+        dataStructureUtil.randomSlot());
   }
 
   private void verifyRegisterValidatorsPostRequest(

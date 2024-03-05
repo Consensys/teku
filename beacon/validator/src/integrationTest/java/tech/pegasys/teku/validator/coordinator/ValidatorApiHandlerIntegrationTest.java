@@ -21,7 +21,6 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
-import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,7 +29,6 @@ import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beacon.sync.events.SyncStateProvider;
 import tech.pegasys.teku.beacon.sync.events.SyncStateTracker;
-import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanceFactory;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -193,31 +191,5 @@ public class ValidatorApiHandlerIntegrationTest {
     assertThat(attestation.getBeaconBlockRoot()).isEqualTo(latestBlock.getRoot());
     assertThat(attestation.getSource()).isEqualTo(genesisCheckpoint);
     assertThat(attestation.getTarget()).isEqualTo(expectedTarget);
-  }
-
-  @Test
-  public void getAttestationDuties_withRecentBlockAvailable() {
-    chainUpdater.initializeGenesis();
-    final UInt64 epoch = UInt64.valueOf(3);
-    final UInt64 slot = spec.computeStartSlotAtEpoch(epoch);
-
-    // todo might not need
-    //    final ChainBuilder.BlockOptions blockOptions = ChainBuilder.BlockOptions.create();
-    //    final List<Attestation> attestations =
-    //            attestationPool.getAttestations(Optional.of(slot), Optional.empty());
-    //    attestations.forEach(blockOptions::addAttestation);
-    //
-    //    chainUpdater.advanceChain(slot, blockOptions);
-    //    chainUpdater.addNewBestBlock();
-
-    chainUpdater.advanceChain(slot);
-
-    final SafeFuture<Optional<AttesterDuties>> result =
-        handler.getAttestationDuties(epoch, IntSet.of(1, 2));
-    assertThatSafeFuture(result).isCompletedWithNonEmptyOptional();
-    final AttesterDuties attesterDuties = safeJoin(result).orElseThrow();
-    assertThat(attesterDuties.isExecutionOptimistic()).isFalse();
-    assertThat(attesterDuties.getDependentRoot()).isEqualTo(null); // fixme find expected
-    assertThat(attesterDuties.getDuties()).isEqualTo(null); // fixme find expected
   }
 }
