@@ -26,7 +26,6 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.json.JsonUtil.serialize;
-import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
@@ -47,7 +46,6 @@ import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuty;
-import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.ssz.SszDataAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -443,9 +441,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     assertThat(recordedRequest.getMethod()).isEqualTo("POST");
     assertThat(recordedRequest.getHeader("Content-Type")).isEqualTo(JSON_CONTENT_TYPE);
     assertThat(recordedRequest.getBody().readByteArray())
-        .isEqualTo(
-            serialize(validatorIndices, DeserializableTypeDefinition.listOf(INTEGER_TYPE, 1))
-                .getBytes(UTF_8));
+        .isEqualTo("[\"1\",\"2\"]".getBytes(UTF_8));
 
     assertThat(result).isPresent();
     assertThat(result.get()).isEqualTo(response);
