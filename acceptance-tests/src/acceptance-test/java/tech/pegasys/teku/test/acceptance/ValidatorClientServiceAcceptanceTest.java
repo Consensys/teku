@@ -58,7 +58,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
                 .build());
 
     beaconNode.startWithFailures(
-        "Failed to load keystore, error: Keystore file /keys/.*_validator.json.lock already in use.",
+        "Failed to load keystore, error: Keystore file .*validator.json.lock already in use.",
         "Unable to initialize validator client service, please manually correct errors and try again.");
   }
 
@@ -86,7 +86,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
                 .build());
 
     validatorNode.startWithFailures(
-        "Failed to load keystore, error: Keystore file /keys/.*_validator.json.lock already in use.",
+        "Failed to load keystore, error: Keystore file .*validator.json.lock already in use.",
         "Unable to initialize validator client service, please manually correct errors and try again.");
   }
 
@@ -110,7 +110,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
                 .build());
 
     beaconNode.startWithFailures(
-        "Failed to load keystore, error: /keys/.*_validator.json.lock: Read-only file system",
+        "Failed to load keystore, error: .*validator.json.lock: Read-only file system",
         "Unable to initialize validator client service, please manually correct errors and try again.");
   }
 
@@ -135,7 +135,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
                 .build());
 
     beaconNode.startWithFailures(
-        "Failed to load keystore, error: Keystore file /opt/teku/keys/.*_validator.json.lock already in use.",
+        "Failed to load keystore, error: Keystore file .*validator.json.lock already in use.",
         "Unable to initialize validator client service, please manually correct errors and try again.");
   }
 
