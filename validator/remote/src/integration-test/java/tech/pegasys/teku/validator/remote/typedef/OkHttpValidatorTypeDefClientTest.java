@@ -18,16 +18,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorDataBuilder.STATE_VALIDATORS_RESPONSE_TYPE;
+import static tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDutiesBuilder.SYNC_COMMITTEE_DUTIES_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_METHOD_NOT_ALLOWED;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NOT_FOUND;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.json.JsonUtil.serialize;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import java.util.List;
 import java.util.Optional;
 import okhttp3.mockwebserver.MockResponse;
@@ -39,6 +42,8 @@ import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.api.exceptions.RemoteServiceNotAvailableException;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuty;
 import tech.pegasys.teku.infrastructure.ssz.SszDataAssert;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -89,9 +94,9 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
 
     final BlockContainer blockContainer;
     if (specMilestone.isGreaterThanOrEqualTo(SpecMilestone.DENEB)) {
-      blockContainer = dataStructureUtil.randomBlockContents(UInt64.ONE);
+      blockContainer = dataStructureUtil.randomBlockContents(ONE);
     } else {
-      blockContainer = dataStructureUtil.randomBeaconBlock(UInt64.ONE);
+      blockContainer = dataStructureUtil.randomBeaconBlock(ONE);
     }
 
     mockWebServer.enqueue(
@@ -154,7 +159,7 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     final String expectedRequest =
         serialize(
             signedBeaconBlock,
-            spec.atSlot(UInt64.ONE)
+            spec.atSlot(ONE)
                 .getSchemaDefinitions()
                 .getSignedBlindedBlockContainerSchema()
                 .getJsonTypeDefinition());
@@ -184,8 +189,8 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     assertThat(result)
         .satisfies(
             syncingStatus -> {
-              assertThat(syncingStatus.getHeadSlot()).isEqualTo(UInt64.ONE);
-              assertThat(syncingStatus.getSyncDistance()).isEqualTo(UInt64.ONE);
+              assertThat(syncingStatus.getHeadSlot()).isEqualTo(ONE);
+              assertThat(syncingStatus.getSyncDistance()).isEqualTo(ONE);
               assertThat(syncingStatus.isSyncing()).isTrue();
               assertThat(syncingStatus.getIsOptimistic()).hasValue(true);
             });
@@ -408,6 +413,25 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
         dataStructureUtil.randomUInt64(),
         ValidatorStatus.active_ongoing,
         validator);
+  }
+
+  @TestTemplate
+  public void postSyncDuties_WhenSuccess_ReturnsResponse() throws JsonProcessingException {
+    final List<SyncCommitteeDuty> duties =
+        List.of(
+            new SyncCommitteeDuty(
+                dataStructureUtil.randomPublicKey(),
+                dataStructureUtil.randomValidatorIndex().intValue(),
+                IntSet.of(1, 2)));
+    final SyncCommitteeDuties response = new SyncCommitteeDuties(true, duties);
+
+    final String body = serialize(response, SYNC_COMMITTEE_DUTIES_TYPE);
+    mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(body));
+
+    Optional<SyncCommitteeDuties> result =
+        okHttpValidatorTypeDefClient.postSyncDuties(ONE, IntSet.of(1, 2));
+    assertThat(result).isPresent();
+    assertThat(result.get()).isEqualTo(response);
   }
 
   private void verifyRegisterValidatorsPostRequest(
