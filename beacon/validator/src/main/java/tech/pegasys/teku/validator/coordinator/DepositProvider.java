@@ -206,12 +206,32 @@ public class DepositProvider
   }
 
   public synchronized SszList<Deposit> getDeposits(BeaconState state, Eth1Data eth1Data) {
-    final UInt64 eth1DepositCount;
-    if (spec.isEnoughVotesToUpdateEth1Data(state, eth1Data, 1)) {
-      eth1DepositCount = eth1Data.getDepositCount();
-    } else {
-      eth1DepositCount = state.getEth1Data().getDepositCount();
-    }
+    final UInt64 eth1DepositCount =
+        state
+            .toVersionElectra()
+            .map(
+                stateElectra -> {
+                  final UInt64 eth1DepositIndexLimit =
+                      stateElectra
+                          .getEth1Data()
+                          .getDepositCount()
+                          .min(stateElectra.getDepositReceiptsStartIndex());
+                  if (stateElectra.getEth1DepositIndex().isLessThan(eth1DepositIndexLimit)) {
+                    return eth1DepositIndexLimit
+                        .minus(stateElectra.getEth1DepositIndex())
+                        .min(spec.atSlot(state.getSlot()).getConfig().getMaxDeposits());
+                  } else {
+                    return UInt64.ZERO;
+                  }
+                })
+            .orElseGet(
+                () -> {
+                  if (spec.isEnoughVotesToUpdateEth1Data(state, eth1Data, 1)) {
+                    return eth1Data.getDepositCount();
+                  } else {
+                    return state.getEth1Data().getDepositCount();
+                  }
+                });
 
     final UInt64 eth1DepositIndex = state.getEth1DepositIndex();
 

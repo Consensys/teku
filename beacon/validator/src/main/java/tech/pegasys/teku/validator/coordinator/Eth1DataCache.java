@@ -110,17 +110,17 @@ public class Eth1DataCache {
     prune(blockTimestamp);
   }
 
-  public Eth1Data getEth1Vote(BeaconState state) {
-    NavigableMap<UInt64, Eth1Data> votesToConsider =
+  public Eth1Data getEth1Vote(final BeaconState state) {
+    final NavigableMap<UInt64, Eth1Data> votesToConsider =
         getVotesToConsider(state.getSlot(), state.getGenesisTime(), state.getEth1Data());
     // Avoid using .values() directly as it has O(n) lookup which gets expensive fast
     final Set<Eth1Data> validBlocks = new HashSet<>(votesToConsider.values());
     final Map<Eth1Data, Eth1Vote> votes = countVotes(state);
 
-    Eth1Data defaultVote =
+    final Eth1Data defaultVote =
         votesToConsider.isEmpty() ? state.getEth1Data() : votesToConsider.lastEntry().getValue();
 
-    Optional<Eth1Data> vote =
+    final Optional<Eth1Data> vote =
         votes.entrySet().stream()
             .filter(entry -> validBlocks.contains(entry.getKey()))
             .max(Map.Entry.comparingByValue())
