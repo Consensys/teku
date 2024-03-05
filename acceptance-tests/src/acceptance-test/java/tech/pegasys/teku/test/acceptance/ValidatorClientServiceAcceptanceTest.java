@@ -52,12 +52,14 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
     final TekuBeaconNode beaconNode =
         createTekuBeaconNode(
             TekuNodeConfigBuilder.createBeaconNode()
+                .withDefaultLogging()
                 .withWritableKeystorePath(initialKeystores, tempDir)
                 .withInitialState(genesis)
                 .build());
 
-    beaconNode.startWithFailure(
-        "Unable to initialize validator keys, please manually correct errors and try again.");
+    beaconNode.startWithFailures(
+        "Failed to load keystore, error: Keystore file /keys/.*_validator.json.lock already in use.",
+        "Unable to initialize validator client service, please manually correct errors and try again.");
   }
 
   @Test
@@ -79,11 +81,13 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
             TekuNodeConfigBuilder.createValidatorClient()
                 .withBeaconNodes(beaconNode)
                 .withNetwork("auto")
+                .withDefaultLogging()
                 .withWritableKeystorePath(initialKeystores, tempDir)
                 .build());
 
-    validatorNode.startWithFailure(
-        "Unable to initialize validator keys, please manually correct errors and try again.");
+    validatorNode.startWithFailures(
+        "Failed to load keystore, error: Keystore file /keys/.*_validator.json.lock already in use.",
+        "Unable to initialize validator client service, please manually correct errors and try again.");
   }
 
   @Test
@@ -101,11 +105,13 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
             TekuNodeConfigBuilder.createBeaconNode()
                 .withNetwork(networkName)
                 .withInitialState(genesis)
+                .withDefaultLogging()
                 .withReadOnlyKeystorePath(initialKeystores, tempDir)
                 .build());
 
-    beaconNode.startWithFailure(
-        "Unable to initialize validator keys, please manually correct errors and try again.");
+    beaconNode.startWithFailures(
+        "Failed to load keystore, error: /keys/.*_validator.json.lock: Read-only file system",
+        "Unable to initialize validator client service, please manually correct errors and try again.");
   }
 
   @Test
@@ -123,12 +129,14 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
             TekuNodeConfigBuilder.createBeaconNode()
                 .withNetwork(networkName)
                 .withInitialState(genesis)
+                .withDefaultLogging()
                 .withReadOnlyKeystorePath(initialKeystores)
                 .withValidatorKeystoreLockingEnabled(true)
                 .build());
 
-    beaconNode.startWithFailure(
-        "Unable to initialize validator keys, please manually correct errors and try again.");
+    beaconNode.startWithFailures(
+        "Failed to load keystore, error: Keystore file /opt/teku/keys/.*_validator.json.lock already in use.",
+        "Unable to initialize validator client service, please manually correct errors and try again.");
   }
 
   @Test
@@ -182,5 +190,27 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
     api.assertLocalValidatorListing(Collections.emptyList());
     validatorClient.stop();
     beaconNode.stop();
+  }
+
+  @Test
+  void bn_shouldFailIfValidatorKeysPathNotFound(@TempDir final Path tempDir) throws Exception {
+    final String networkName = "swift";
+    final ValidatorKeystores initialKeystores =
+        createTekuDepositSender(networkName).generateValidatorKeys(1, false);
+
+    final GenesisGenerator.InitialStateData genesis =
+        createGenesisGenerator().network(networkName).validatorKeys(initialKeystores).generate();
+
+    final TekuBeaconNode beaconNode =
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode()
+                .withDefaultLogging()
+                .withBadKeystorePath()
+                .withInitialState(genesis)
+                .build());
+
+    beaconNode.startWithFailures(
+        "Failed to load keystore, error: Invalid configuration. Could not find the key file (.*).",
+        "Unable to initialize validator client service, please manually correct errors and try again.");
   }
 }

@@ -317,6 +317,18 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
+  public TekuNodeConfigBuilder withDefaultLogging() {
+    configMap.remove("log-destination");
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withBadKeystorePath() {
+    LOG.debug("Xinterop-enabled=false");
+    configMap.put("Xinterop-enabled", false);
+    configMap.put("validator-keys", "/abcde:/abcdef");
+    return this;
+  }
+
   public TekuNodeConfigBuilder withReadOnlyKeystorePath(final ValidatorKeystores keystores) {
     LOG.debug("Xinterop-enabled=false");
     configMap.put("Xinterop-enabled", false);

@@ -27,6 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
+import org.testcontainers.containers.wait.strategy.WaitAllStrategy;
 import org.testcontainers.utility.MountableFile;
 import tech.pegasys.teku.api.response.v1.EventType;
 
@@ -74,6 +75,18 @@ public abstract class TekuNode extends Node {
         new LogMessageWaitStrategy()
             .withRegEx(".*" + expectedError + ".*")
             .withStartupTimeout(Duration.ofSeconds(10)));
+    container.start();
+  }
+
+  public void startWithFailures(final String... expectedErrors) throws Exception {
+    setUpStart();
+    final WaitAllStrategy allStrategies =
+        new WaitAllStrategy().withStartupTimeout(Duration.ofSeconds(10));
+    for (String expectedError : expectedErrors) {
+      allStrategies.withStrategy(
+          new LogMessageWaitStrategy().withRegEx(".*" + expectedError + ".*"));
+    }
+    container.waitingFor(allStrategies);
     container.start();
   }
 

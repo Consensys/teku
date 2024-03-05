@@ -119,7 +119,16 @@ public class StatusLogger {
   }
 
   public void failedToLoadValidatorKey(final String message) {
-    log.error("Failed to load keystore, error {}", message);
+    log.error("Failed to load keystore, error: {}", message);
+  }
+
+  public void errorDuringValidatorClientInitialization(final String message) {
+    log.error("Error was encountered during validator client service start up. error: {}", message);
+  }
+
+  public void failedToStartValidatorClient() {
+    log.error(
+        "Unable to initialize validator client service, please manually correct errors and try again.");
   }
 
   public void eth1DepositEventsFailure(final Throwable cause) {

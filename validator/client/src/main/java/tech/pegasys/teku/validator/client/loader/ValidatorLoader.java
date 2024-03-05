@@ -72,11 +72,15 @@ public class ValidatorLoader {
 
   // synchronized to ensure that only one load is active at a time
   public synchronized void loadValidators() {
-    final Map<BLSPublicKey, ValidatorProvider> validatorProviders = new HashMap<>();
-    validatorSources.forEach(source -> addValidatorsFromSource(validatorProviders, source));
-    MultithreadedValidatorLoader.loadValidators(
-        ownedValidators, validatorProviders, graffitiProvider);
-    slashingProtectionLogger.protectionSummary(ownedValidators.getValidators());
+    try {
+      final Map<BLSPublicKey, ValidatorProvider> validatorProviders = new HashMap<>();
+      validatorSources.forEach(source -> addValidatorsFromSource(validatorProviders, source));
+      MultithreadedValidatorLoader.loadValidators(
+          ownedValidators, validatorProviders, graffitiProvider);
+      slashingProtectionLogger.protectionSummary(ownedValidators.getValidators());
+    } catch (final Exception ex) {
+      throw new ValidatorLoaderException(ex);
+    }
   }
 
   public DeleteKeyResult deleteLocalMutableValidator(final BLSPublicKey publicKey) {
