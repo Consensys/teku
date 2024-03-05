@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.remote.apiclient;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
