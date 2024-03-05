@@ -31,7 +31,7 @@ import static tech.pegasys.teku.spec.config.SpecConfig.FAR_FUTURE_EPOCH;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.ints.IntList;
 import java.util.List;
 import java.util.Optional;
 import okhttp3.mockwebserver.MockResponse;
@@ -428,10 +428,9 @@ class OkHttpValidatorTypeDefClientTest extends AbstractTypeDefRequestTestBase {
     mockWebServer.enqueue(new MockResponse().setResponseCode(SC_OK).setBody(body));
 
     final UInt64 epoch = UInt64.ONE;
-    final List<Integer> validatorIndices = List.of(1, 2);
-    final IntSet validatorSet = IntSet.of(validatorIndices.stream().mapToInt(i -> i).toArray());
+    final IntList validatorIndices = IntList.of(1, 2);
     Optional<AttesterDuties> result =
-        okHttpValidatorTypeDefClient.postAttesterDuties(epoch, validatorSet);
+        okHttpValidatorTypeDefClient.postAttesterDuties(epoch, validatorIndices);
 
     final RecordedRequest recordedRequest = mockWebServer.takeRequest();
     assertThat(recordedRequest.getPath()).isEqualTo("/eth/v1/validator/duties/attester/" + epoch);
