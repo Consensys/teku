@@ -100,7 +100,9 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
                   if (gossipValidationResult.isIgnore()
                       && gossipValidationResult
                           .getSubCode()
-                          .map(subCode -> subCode.equals(ValidationResultSubCode.IGNORE_DUPLICATE))
+                          .map(
+                              subCode ->
+                                  subCode.equals(ValidationResultSubCode.IGNORE_ALREADY_SEEN))
                           .orElse(false)) {
                     return SUCCESS;
                   }

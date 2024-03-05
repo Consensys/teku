@@ -20,7 +20,7 @@ import static tech.pegasys.teku.statetransition.validation.BlockGossipValidator.
 import static tech.pegasys.teku.statetransition.validation.BlockGossipValidator.EquivocationCheckResult.SAME_BLOCK_FOR_SLOT_PROPOSER;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
-import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ValidationResultSubCode.IGNORE_DUPLICATE;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ValidationResultSubCode.IGNORE_ALREADY_SEEN;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ValidationResultSubCode.IGNORE_EQUIVOCATION_DETECTED;
 
 import java.util.Map;
@@ -188,7 +188,7 @@ public class BlockGossipValidator {
       case EQUIVOCATING_BLOCK -> ignore(
           IGNORE_EQUIVOCATION_DETECTED, "Equivocating block detected. It will be dropped.");
       case SAME_BLOCK_FOR_SLOT_PROPOSER -> ignore(
-          IGNORE_DUPLICATE,
+          IGNORE_ALREADY_SEEN,
           "Block is not the first with valid signature for its slot. It will be dropped.");
     };
   }

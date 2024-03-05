@@ -21,6 +21,6 @@ public enum ValidationResultCode {
 
   public enum ValidationResultSubCode {
     IGNORE_EQUIVOCATION_DETECTED,
-    IGNORE_DUPLICATE
+    IGNORE_ALREADY_SEEN
   }
 }
