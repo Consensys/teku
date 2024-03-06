@@ -164,6 +164,8 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectra;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.IndexedAttestationElectra;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.IndexedAttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
@@ -1529,6 +1531,24 @@ public final class DataStructureUtil {
     return new ProposerSlashing(
         randomSignedBeaconBlockHeader(slot, proposerIndex),
         randomSignedBeaconBlockHeader(slot, proposerIndex));
+  }
+
+  public IndexedAttestationElectra randomIndexedAttestationElectra() {
+    return randomIndexedAttestationElectra(randomUInt64(), randomUInt64(), randomUInt64());
+  }
+
+  public IndexedAttestationElectra randomIndexedAttestationElectra(
+      final UInt64... attestingIndicesInput) {
+    return randomIndexedAttestationElectra(randomAttestationData(), attestingIndicesInput);
+  }
+
+  public IndexedAttestationElectra randomIndexedAttestationElectra(
+      final AttestationData data, final UInt64... attestingIndicesInput) {
+    final IndexedAttestationElectraSchema indexedAttestationElectraSchema =
+        getElectraSchemaDefinitions(randomUInt64()).getIndexedAttestationElectraSchema();
+    SszUInt64List attestingIndices =
+        indexedAttestationElectraSchema.getAttestingIndicesSchema().of(attestingIndicesInput);
+    return indexedAttestationElectraSchema.create(attestingIndices, data, randomSignature());
   }
 
   public IndexedAttestation randomIndexedAttestation() {

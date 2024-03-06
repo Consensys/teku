@@ -53,12 +53,10 @@ public class AttestationElectra
     return (AttestationElectraSchema) super.getSchema();
   }
 
-  @Override
   public UInt64 getEarliestSlotForForkChoiceProcessing(final Spec spec) {
     return getData().getEarliestSlotForForkChoice(spec);
   }
 
-  @Override
   public Collection<Bytes32> getDependentBlockRoots() {
     return Sets.newHashSet(getData().getTarget().getRoot(), getData().getBeaconBlockRoot());
   }
@@ -77,7 +75,6 @@ public class AttestationElectra
     return getField2();
   }
 
-  @Override
   public BLSSignature getAggregateSignature() {
     return getField3().getSignature();
   }
