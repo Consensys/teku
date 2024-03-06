@@ -26,6 +26,8 @@ import static tech.pegasys.teku.statetransition.validation.BlockBroadcastValidat
 import static tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult.FINAL_EQUIVOCATION_FAILURE;
 import static tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult.GOSSIP_FAILURE;
 import static tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult.SUCCESS;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ValidationResultSubCode.IGNORE_ALREADY_SEEN;
+import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ValidationResultSubCode.IGNORE_EQUIVOCATION_DETECTED;
 
 import java.util.Arrays;
 import java.util.stream.Stream;
@@ -58,6 +60,22 @@ public class BlockBroadcastValidatorTest {
   public void shouldReturnSuccessWhenValidationIsGossipAndGossipValidationReturnsAccept() {
     when(blockGossipValidator.validate(eq(block), eq(true)))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
+
+    prepareBlockBroadcastValidator(GOSSIP);
+
+    assertThat(blockBroadcastValidator.getResult())
+        .isCompletedWithValueMatching(result -> result.equals(SUCCESS));
+    verify(blockGossipValidator).validate(eq(block), eq(true));
+    verifyNoMoreInteractions(blockGossipValidator);
+  }
+
+  @Test
+  public void
+      shouldReturnSuccessWhenValidationIsGossipAndGossipValidationReturnsIgnoreAlreadySeen() {
+    when(blockGossipValidator.validate(eq(block), eq(true)))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                InternalValidationResult.ignore(IGNORE_ALREADY_SEEN, "already seen")));
 
     prepareBlockBroadcastValidator(GOSSIP);
 
@@ -189,6 +207,10 @@ public class BlockBroadcastValidatorTest {
             broadcastValidation ->
                 Stream.of(
                     Arguments.of(broadcastValidation, InternalValidationResult.IGNORE),
+                    Arguments.of(
+                        broadcastValidation,
+                        InternalValidationResult.ignore(
+                            IGNORE_EQUIVOCATION_DETECTED, "equivocation detected")),
                     Arguments.of(broadcastValidation, InternalValidationResult.SAVE_FOR_FUTURE)));
   }
 

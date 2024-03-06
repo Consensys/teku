@@ -74,10 +74,13 @@ public class InternalValidationResult {
 
   @FormatMethod
   public static InternalValidationResult ignore(
-      final ValidationResultSubCode subCode,
+      final ValidationResultSubCode validationResultSubCode,
       final String descriptionTemplate,
       final Object... args) {
-    return create(ValidationResultCode.IGNORE, subCode, String.format(descriptionTemplate, args));
+    return create(
+        ValidationResultCode.IGNORE,
+        validationResultSubCode,
+        String.format(descriptionTemplate, args));
   }
 
   public ValidationResultCode code() {
