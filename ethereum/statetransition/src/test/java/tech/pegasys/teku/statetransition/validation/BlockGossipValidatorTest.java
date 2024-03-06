@@ -14,7 +14,6 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
@@ -43,6 +42,7 @@ import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
+import tech.pegasys.teku.statetransition.validation.BlockGossipValidator.EquivocationCheckResult;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -324,7 +324,8 @@ public class BlockGossipValidatorTest {
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
 
     assertResultIsAccept(block, blockGossipValidator.validate(block, true));
-    assertTrue(blockGossipValidator.blockIsFirstBlockWithValidSignatureForSlot(block));
+    assertThat(blockGossipValidator.performBlockEquivocationCheck(block))
+        .isEqualByComparingTo(EquivocationCheckResult.FIRST_BLOCK_FOR_SLOT_PROPOSER);
   }
 
   @TestTemplate
