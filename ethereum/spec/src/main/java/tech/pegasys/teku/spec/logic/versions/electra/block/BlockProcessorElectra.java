@@ -121,7 +121,7 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
 
   public void processDepositReceipts(
       final MutableBeaconStateElectra state, final SszList<DepositReceipt> depositReceipts) {
-    for (DepositReceipt depositReceipt : depositReceipts) {
+    for (final DepositReceipt depositReceipt : depositReceipts) {
       // process_deposit_receipt
       if (state
           .getDepositReceiptsStartIndex()
