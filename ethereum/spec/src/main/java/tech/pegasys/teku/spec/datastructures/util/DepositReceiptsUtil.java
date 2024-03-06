@@ -38,6 +38,7 @@ public class DepositReceiptsUtil {
 
   private final Spec spec;
 
+  @SuppressWarnings("DoNotCreateSecureRandomDirectly")
   private final SecureRandom random = new SecureRandom();
 
   public DepositReceiptsUtil(final Spec spec) {
