@@ -763,8 +763,7 @@ class ValidatorLoaderTest {
             Optional.empty());
 
     assertThatThrownBy(validatorLoader::loadValidators)
-        .isExactlyInstanceOf(ValidatorLoaderException.class)
-        .hasCauseExactlyInstanceOf(InvalidConfigurationException.class);
+        .isExactlyInstanceOf(InvalidConfigurationException.class);
     final OwnedValidators validators = validatorLoader.getOwnedValidators();
 
     assertThat(validators.getValidatorCount()).isEqualTo(0);
