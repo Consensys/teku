@@ -760,7 +760,11 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       final BLSPublicKey pubkey,
       final Optional<Object2IntMap<BLSPublicKey>> maybePubkeyToIndexMap) {
     LOG.debug("Skipping invalid deposit with pubkey {}", pubkey);
-    maybePubkeyToIndexMap.ifPresent(pubkeyToIndexMap -> pubkeyToIndexMap.removeInt(pubkey));
+    maybePubkeyToIndexMap.ifPresent(
+        pubkeyToIndexMap -> {
+          // The validator won't be created so the calculated index won't be correct
+          pubkeyToIndexMap.removeInt(pubkey);
+        });
   }
 
   private boolean depositSignatureIsValid(
