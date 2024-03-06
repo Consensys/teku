@@ -166,11 +166,10 @@ public class VoluntaryExitCommand implements Callable<Integer> {
     } catch (Exception ex) {
       if (ExceptionUtil.hasCause(ex, ConnectException.class)) {
         SUB_COMMAND_LOG.error(getFailedToConnectMessage());
+      } else if (ex instanceof InvalidConfigurationException) {
+        SUB_COMMAND_LOG.error(ex.getMessage());
       } else {
-        ExceptionUtil.getCause(ex, InvalidConfigurationException.class)
-            .ifPresentOrElse(
-                cause -> SUB_COMMAND_LOG.error(cause.getMessage()),
-                () -> SUB_COMMAND_LOG.error("Fatal error in VoluntaryExit. Exiting", ex));
+        SUB_COMMAND_LOG.error("Fatal error in VoluntaryExit. Exiting", ex);
       }
       return 1;
     } finally {

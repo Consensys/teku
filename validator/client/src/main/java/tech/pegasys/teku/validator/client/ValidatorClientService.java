@@ -31,6 +31,7 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.SyncDataAccessor;
 import tech.pegasys.teku.infrastructure.io.SystemSignalListener;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
@@ -64,7 +65,6 @@ import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 import tech.pegasys.teku.validator.client.loader.PublicKeyLoader;
 import tech.pegasys.teku.validator.client.loader.SlashingProtectionLogger;
 import tech.pegasys.teku.validator.client.loader.ValidatorLoader;
-import tech.pegasys.teku.validator.client.loader.ValidatorLoaderException;
 import tech.pegasys.teku.validator.client.proposerconfig.ProposerConfigProvider;
 import tech.pegasys.teku.validator.client.proposerconfig.loader.ProposerConfigLoader;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApi;
@@ -271,13 +271,16 @@ public class ValidatorClientService extends Service {
             })
         .exceptionally(
             error -> {
-              LOG.error("Error was encountered during validator client service start up.", error);
-              if (ExceptionUtil.hasCause(error, ValidatorLoaderException.class)) {
-                STATUS_LOG.failedToLoadValidatorKey(ExceptionUtil.getRootCauseMessage(error));
-              } else {
-                STATUS_LOG.errorDuringValidatorClientInitialization(
-                    ExceptionUtil.getRootCauseMessage(error));
-              }
+              ExceptionUtil.getCause(error, InvalidConfigurationException.class)
+                  .ifPresentOrElse(
+                      cause -> STATUS_LOG.failedToLoadValidatorKey(cause.getMessage()),
+                      () -> {
+                        STATUS_LOG.errorDuringValidatorClientInitialization(
+                            ExceptionUtil.getRootCauseMessage(error));
+                        LOG.error(
+                            "Error was encountered during validator client service start up.",
+                            error);
+                      });
 
               STATUS_LOG.failedToStartValidatorClient();
               // an unhandled exception getting this far means any number of above steps failed to

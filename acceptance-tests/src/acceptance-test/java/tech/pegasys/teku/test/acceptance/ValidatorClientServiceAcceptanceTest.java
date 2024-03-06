@@ -110,7 +110,8 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
                 .build());
 
     beaconNode.startWithFailures(
-        "Failed to load keystore, error: .*validator.json.lock: Read-only file system",
+        "Error was encountered during validator client service start up. error: "
+            + ".*validator.json.lock: Read-only file system. Please check the logs for details.",
         "Unable to initialize validator client service, please manually correct errors and try again.");
   }
 
