@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.validator.remote.apiclient;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -22,7 +21,6 @@ import tech.pegasys.teku.api.response.v1.beacon.GetGenesisResponse;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.validator.GetProposerDutiesResponse;
-import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.schema.Attestation;
 import tech.pegasys.teku.api.schema.SignedAggregateAndProof;
@@ -59,9 +57,6 @@ public interface ValidatorRestApiClient {
 
   Optional<PostDataFailureResponse> sendSyncCommitteeMessages(
       List<SyncCommitteeMessage> syncCommitteeMessages);
-
-  Optional<PostSyncDutiesResponse> getSyncCommitteeDuties(
-      UInt64 epoch, Collection<Integer> validatorIndices);
 
   void subscribeToSyncCommitteeSubnets(List<SyncCommitteeSubnetSubscription> subnetSubscriptions);
 

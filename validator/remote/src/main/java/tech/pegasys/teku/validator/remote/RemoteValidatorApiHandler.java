@@ -19,7 +19,6 @@ import static java.util.stream.Collectors.toMap;
 
 import com.google.common.base.Throwables;
 import it.unimi.dsi.fastutil.ints.IntCollection;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -39,7 +38,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
-import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.schema.altair.ContributionAndProof;
 import tech.pegasys.teku.bls.BLSPublicKey;
@@ -49,7 +47,6 @@ import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
 import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
-import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuty;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
@@ -213,25 +210,7 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   @Override
   public SafeFuture<Optional<SyncCommitteeDuties>> getSyncCommitteeDuties(
       final UInt64 epoch, final IntCollection validatorIndices) {
-    return sendRequest(
-        () ->
-            apiClient
-                .getSyncCommitteeDuties(epoch, validatorIndices)
-                .map(this::responseToSyncCommitteeDuties));
-  }
-
-  private SyncCommitteeDuties responseToSyncCommitteeDuties(final PostSyncDutiesResponse response) {
-    return new SyncCommitteeDuties(
-        response.executionOptimistic,
-        response.data.stream()
-            .map(
-                duty ->
-                    new SyncCommitteeDuty(
-                        duty.pubkey.asBLSPublicKey(),
-                        duty.validatorIndex.intValue(),
-                        IntOpenHashSet.toSet(
-                            duty.committeeIndices.stream().mapToInt(UInt64::intValue))))
-            .toList());
+    return sendRequest(() -> typeDefClient.postSyncDuties(epoch, validatorIndices));
   }
 
   @Override
