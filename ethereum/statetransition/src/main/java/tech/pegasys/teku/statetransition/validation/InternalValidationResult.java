@@ -31,14 +31,14 @@ public class InternalValidationResult {
 
   private final ValidationResultCode validationResultCode;
   private final Optional<String> description;
-  private final Optional<ValidationResultSubCode> subCode;
+  private final Optional<ValidationResultSubCode> validationResultSubCode;
 
   private InternalValidationResult(
       final ValidationResultCode validationResultCode,
-      final Optional<ValidationResultSubCode> subCode,
+      final Optional<ValidationResultSubCode> validationResultSubCode,
       final Optional<String> description) {
     this.validationResultCode = validationResultCode;
-    this.subCode = subCode;
+    this.validationResultSubCode = validationResultSubCode;
     this.description = description;
   }
 
@@ -84,8 +84,8 @@ public class InternalValidationResult {
     return validationResultCode;
   }
 
-  public Optional<ValidationResultSubCode> getSubCode() {
-    return subCode;
+  public Optional<ValidationResultSubCode> getValidationResultSubCode() {
+    return validationResultSubCode;
   }
 
   public Optional<String> getDescription() {
@@ -115,6 +115,13 @@ public class InternalValidationResult {
 
   public boolean isIgnore() {
     return this.validationResultCode.equals(ValidationResultCode.IGNORE);
+  }
+
+  public boolean isIgnoreAlreadySeen() {
+    return isIgnore()
+        && this.validationResultSubCode
+            .map(subCode -> subCode.equals(ValidationResultSubCode.IGNORE_ALREADY_SEEN))
+            .orElse(false);
   }
 
   public boolean isReject() {
