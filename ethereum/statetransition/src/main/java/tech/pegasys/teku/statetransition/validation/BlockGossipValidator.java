@@ -214,8 +214,7 @@ public class BlockGossipValidator {
     return EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER;
   }
 
-  synchronized EquivocationCheckResult performBlockEquivocationCheck(
-      final SignedBeaconBlock block) {
+  EquivocationCheckResult performBlockEquivocationCheck(final SignedBeaconBlock block) {
     return performBlockEquivocationCheck(false, block);
   }
 
