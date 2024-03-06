@@ -17,5 +17,10 @@ public enum ValidationResultCode {
   ACCEPT,
   SAVE_FOR_FUTURE,
   IGNORE,
-  REJECT
+  REJECT;
+
+  public enum ValidationResultSubCode {
+    IGNORE_EQUIVOCATION_DETECTED,
+    IGNORE_ALREADY_SEEN
+  }
 }
