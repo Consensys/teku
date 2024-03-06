@@ -81,15 +81,15 @@ public class BlockGossipValidator {
       final SignedBeaconBlock block, final boolean isLocallyProduced) {
 
     if (gossipValidationHelper.isSlotFinalized(block.getSlot())) {
-      LOG.trace("BlockValidator: Block is either too old. It will be dropped");
+      LOG.trace("BlockValidator: Block is too old. It will be dropped");
       return completedFuture(InternalValidationResult.IGNORE);
     }
 
-    final InternalValidationResult validationResult =
+    final InternalValidationResult intermediateValidationResult =
         equivocationCheckResultToInternalValidationResult(performBlockEquivocationCheck(block));
 
-    if (!validationResult.isAccept()) {
-      return completedFuture(validationResult);
+    if (!intermediateValidationResult.isAccept()) {
+      return completedFuture(intermediateValidationResult);
     }
 
     if (gossipValidationHelper.isSlotFromFuture(block.getSlot())) {

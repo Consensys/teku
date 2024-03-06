@@ -172,7 +172,7 @@ public class BlockBroadcastValidatorTest {
   @ParameterizedTest
   @EnumSource(value = EquivocationCheckResult.class)
   public void shouldReturnFinalEquivocationFailureOnlyForEquivocatingBlocks(
-      EquivocationCheckResult equivocationCheckResult) {
+      final EquivocationCheckResult equivocationCheckResult) {
     when(blockGossipValidator.validate(eq(block), eq(true)))
         .thenReturn(SafeFuture.completedFuture(InternalValidationResult.ACCEPT));
 
