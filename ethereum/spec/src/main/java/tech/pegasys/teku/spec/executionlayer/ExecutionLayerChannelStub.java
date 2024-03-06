@@ -75,6 +75,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private static final ClientVersion STUB_CLIENT_VERSION =
       new ClientVersion("SB", ExecutionLayerChannel.STUB_ENDPOINT_PREFIX, "0.0.0", Bytes4.ZERO);
 
+  private static final boolean GENERATE_DEPOSIT_RECEIPTS = false;
+
   private final TimeProvider timeProvider;
   private final Map<Bytes32, PowBlock> knownBlocks = new ConcurrentHashMap<>();
   private final Map<Bytes32, PayloadStatus> knownPosBlocks = new ConcurrentHashMap<>();
@@ -561,7 +563,13 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     return spec.atSlot(state.getSlot())
         .getConfig()
         .toVersionElectra()
-        .map(__ -> depositReceiptsUtil.generateDepositReceipts(state))
+        .map(
+            __ -> {
+              if (GENERATE_DEPOSIT_RECEIPTS) {
+                return depositReceiptsUtil.generateDepositReceipts(state);
+              }
+              return List.<DepositReceipt>of();
+            })
         .orElse(List.of());
   }
 }

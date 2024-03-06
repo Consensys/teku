@@ -31,7 +31,7 @@ import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
 public class DepositReceiptsUtil {
 
-  private static final float PROBABILITY_OF_NO_DEPOSIT = 0.9f;
+  private static final float PROBABILITY_OF_NO_DEPOSIT = 0.5f;
   private static final int MAX_NUMBER_OF_DEPOSITS_PER_BLOCK = 3;
 
   private final Spec spec;
