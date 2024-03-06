@@ -198,12 +198,12 @@ public class BlockGossipValidator {
     final SlotAndProposer slotAndProposer = new SlotAndProposer(block);
 
     final Optional<Bytes32> maybePreviouslySeenBlockRoot =
-        Optional.ofNullable(
-            add
-                ? receivedValidBlockInfoSet.computeIfAbsent(slotAndProposer, __ -> block.getRoot())
-                : receivedValidBlockInfoSet.get(slotAndProposer));
+        Optional.ofNullable(receivedValidBlockInfoSet.get(slotAndProposer));
 
     if (maybePreviouslySeenBlockRoot.isEmpty()) {
+      if (add) {
+        receivedValidBlockInfoSet.put(slotAndProposer, block.getRoot());
+      }
       return FIRST_BLOCK_FOR_SLOT_PROPOSER;
     }
 
