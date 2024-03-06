@@ -300,16 +300,20 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
-  public TekuNodeConfigBuilder withWritableKeystorePath(final ValidatorKeystores keystores) {
+  public TekuNodeConfigBuilder withWritableKeystorePath(
+      ValidatorKeystores keystores, Path tempDir) {
     LOG.debug("Xinterop-enabled=false");
     configMap.put("Xinterop-enabled", false);
-    LOG.debug("validators-keystore-locking-enabled=true");
-    configMap.put("validators-keystore-locking-enabled", true);
-    tarballsToCopy.add(keystores.getTarball());
-    final String keysFolder = WORKING_DIRECTORY + keystores.getKeysDirectoryName();
-    final String passFolder = WORKING_DIRECTORY + keystores.getPasswordsDirectoryName();
+    final String keysFolder = "/" + keystores.getKeysDirectoryName();
+    final String passFolder = "/" + keystores.getPasswordsDirectoryName();
+    keystores.writeToTempDir(tempDir);
     LOG.debug("set validator-keys folder to {}:{}", keysFolder, passFolder);
     configMap.put("validator-keys", keysFolder + ":" + passFolder);
+    writableMountPoints.put(
+        tempDir.resolve(keystores.getKeysDirectoryName()).toAbsolutePath().toString(), keysFolder);
+    readOnlyMountPoints.put(
+        tempDir.resolve(keystores.getPasswordsDirectoryName()).toAbsolutePath().toString(),
+        passFolder);
     return this;
   }
 
@@ -325,8 +329,7 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
-  public TekuNodeConfigBuilder withWritableKeystorePathLockDisabled(
-      final ValidatorKeystores keystores) {
+  public TekuNodeConfigBuilder withReadOnlyKeystorePath(final ValidatorKeystores keystores) {
     LOG.debug("Xinterop-enabled=false");
     configMap.put("Xinterop-enabled", false);
     configMap.put("validators-keystore-locking-enabled", false);

@@ -43,7 +43,7 @@ public class AddValidatorsAcceptanceTest extends AcceptanceTestBase {
             TekuNodeConfigBuilder.createBeaconNode()
                 .withNetwork(networkName)
                 .withInitialState(genesis)
-                .withWritableKeystorePathLockDisabled(initialKeystores)
+                .withReadOnlyKeystorePath(initialKeystores)
                 .build());
     node.start();
 

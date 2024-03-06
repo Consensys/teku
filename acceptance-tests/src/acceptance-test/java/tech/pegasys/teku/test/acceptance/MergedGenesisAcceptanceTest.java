@@ -67,7 +67,7 @@ public class MergedGenesisAcceptanceTest extends AcceptanceTestBase {
                 .withTotalTerminalDifficulty(0)
                 .withInitialState(initialStateData)
                 .withStartupTargetPeerCount(0)
-                .withWritableKeystorePathLockDisabled(validatorKeys)
+                .withReadOnlyKeystorePath(validatorKeys)
                 .withValidatorProposerDefaultFeeRecipient(
                     "0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73")
                 .withExecutionEngine(eth1Node)

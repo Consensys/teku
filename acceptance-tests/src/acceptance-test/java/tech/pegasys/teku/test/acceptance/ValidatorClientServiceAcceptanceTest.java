@@ -41,7 +41,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
   }
 
   @Test
-  void bn_shouldFailIfValidatorKeyLocked() throws Exception {
+  void bn_shouldFailIfValidatorKeyLocked(@TempDir final Path tempDir) throws Exception {
     final String networkName = "swift";
     final ValidatorKeystores initialKeystores =
         createTekuDepositSender(networkName).generateValidatorKeys(2, true);
@@ -53,7 +53,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
         createTekuBeaconNode(
             TekuNodeConfigBuilder.createBeaconNode()
                 .withDefaultLogging()
-                .withWritableKeystorePath(initialKeystores)
+                .withWritableKeystorePath(initialKeystores, tempDir)
                 .withInitialState(genesis)
                 .build());
 
@@ -63,7 +63,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
   }
 
   @Test
-  void vc_shouldFailIfValidatorKeyLocked() throws Exception {
+  void vc_shouldFailIfValidatorKeyLocked(@TempDir final Path tempDir) throws Exception {
     final String networkName = "swift";
     final ValidatorKeystores initialKeystores =
         createTekuDepositSender(networkName).generateValidatorKeys(2, true);
@@ -82,7 +82,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
                 .withBeaconNodes(beaconNode)
                 .withNetwork("auto")
                 .withDefaultLogging()
-                .withWritableKeystorePath(initialKeystores)
+                .withWritableKeystorePath(initialKeystores, tempDir)
                 .build());
 
     validatorNode.startWithFailures(
@@ -131,7 +131,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
                 .withNetwork(networkName)
                 .withInitialState(genesis)
                 .withDefaultLogging()
-                .withWritableKeystorePathLockDisabled(initialKeystores)
+                .withReadOnlyKeystorePath(initialKeystores)
                 .withValidatorKeystoreLockingEnabled(true)
                 .build());
 
