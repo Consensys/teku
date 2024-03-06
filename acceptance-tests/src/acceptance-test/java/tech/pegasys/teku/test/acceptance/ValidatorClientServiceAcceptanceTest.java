@@ -116,11 +116,11 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
   }
 
   @Test
-  void bn_shouldFailIfCannotLockKeysUnhandledException() throws Exception {
+  void bn_shouldFailIfCannotLockKeysAccessDenied() throws Exception {
     final String networkName = "swift";
     // keys aren't locked, but we have no access to write
     final ValidatorKeystores initialKeystores =
-        createTekuDepositSender(networkName).generateValidatorKeys(2, true);
+        createTekuDepositSender(networkName).generateValidatorKeys(2, false);
 
     final GenesisGenerator.InitialStateData genesis =
         createGenesisGenerator().network(networkName).validatorKeys(initialKeystores).generate();
@@ -136,7 +136,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
                 .build());
 
     beaconNode.startWithFailures(
-        "Failed to load keystore, error: Keystore file .*validator.json.lock already in use.",
+        "Failed to load keystore, error: Access Denied trying to access lock file .*validator.json.lock",
         "Unable to initialize validator client service, please manually correct errors and try again.");
   }
 
