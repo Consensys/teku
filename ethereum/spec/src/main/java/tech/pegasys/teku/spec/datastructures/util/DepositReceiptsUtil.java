@@ -34,7 +34,7 @@ public class DepositReceiptsUtil {
   private static final float PROBABILITY_OF_NO_DEPOSIT = 0.9f;
   private static final int MAX_NUMBER_OF_DEPOSITS_PER_BLOCK = 3;
 
-  private static final AtomicInteger startIndex = new AtomicInteger(64);
+  private static final AtomicInteger START_INDEX = new AtomicInteger(64);
 
   private final Spec spec;
 
@@ -75,6 +75,6 @@ public class DepositReceiptsUtil {
         depositAmount,
         signature,
         // TODO: set an appropriate index
-        UInt64.valueOf(startIndex.getAndIncrement()));
+        UInt64.valueOf(START_INDEX.getAndIncrement()));
   }
 }
