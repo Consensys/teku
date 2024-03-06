@@ -59,7 +59,7 @@ public class AttestationGenerator {
   }
 
   public static int getSingleAttesterIndex(Attestation attestation) {
-    return attestation.getAggregationBits().streamAllSetBits().findFirst().orElse(-1);
+    return attestation.getAggregationBits().orElseThrow().streamAllSetBits().findFirst().orElse(-1);
   }
 
   public static AttestationData diffSlotAttestationData(UInt64 slot, AttestationData data) {
@@ -87,10 +87,13 @@ public class AttestationGenerator {
     Preconditions.checkArgument(!srcAttestations.isEmpty(), "Expected at least one attestation");
     final AttestationSchema attestationSchema = srcAttestations.get(0).getSchema();
     int targetBitlistSize =
-        srcAttestations.stream().mapToInt(a -> a.getAggregationBits().size()).max().getAsInt();
+        srcAttestations.stream()
+            .mapToInt(a -> a.getAggregationBits().orElseThrow().size())
+            .max()
+            .getAsInt();
     SszBitlist targetBitlist =
         srcAttestations.stream()
-            .map(Attestation::getAggregationBits)
+            .map(attestation -> attestation.getAggregationBits().orElseThrow())
             .reduce(
                 attestationSchema.getAggregationBitsSchema().ofBits(targetBitlistSize),
                 SszBitlist::or,

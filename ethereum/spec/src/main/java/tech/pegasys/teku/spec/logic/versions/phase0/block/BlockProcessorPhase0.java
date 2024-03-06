@@ -85,7 +85,7 @@ public final class BlockProcessorPhase0 extends AbstractBlockProcessor {
             .getBeaconStateSchema()
             .getPendingAttestationSchema()
             .create(
-                attestation.getAggregationBits(),
+                attestation.getAggregationBits().orElseThrow(),
                 data,
                 state.getSlot().minus(data.getSlot()),
                 UInt64.valueOf(beaconStateAccessors.getBeaconProposerIndex(state)));

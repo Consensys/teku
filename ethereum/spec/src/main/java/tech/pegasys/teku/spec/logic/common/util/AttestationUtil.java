@@ -130,7 +130,7 @@ public abstract class AttestationUtil {
   public IntStream streamAttestingIndices(
       final BeaconState state, final AttestationContainer attestation) {
     final AttestationData data = attestation.getData();
-    final SszBitlist aggregationBits = attestation.getAggregationBits();
+    final SszBitlist aggregationBits = attestation.getAggregationBits().orElseThrow();
     final IntList committee =
         beaconStateAccessors.getBeaconCommittee(state, data.getSlot(), data.getIndex());
     checkArgument(

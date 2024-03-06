@@ -47,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.Executio
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequestSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.operations.versions.electra.AttestationElectraSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
@@ -81,6 +82,8 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   private final DepositReceiptSchema depositReceiptSchema;
 
   private final ExecutionLayerWithdrawalRequestSchema executionLayerWithdrawalRequestSchema;
+
+  private final AttestationElectraSchema attestationElectraSchema;
 
   private final PendingBalanceDeposit.PendingBalanceDepositSchema pendingBalanceDepositSchema;
 
@@ -138,6 +141,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
     this.depositReceiptSchema = DepositReceipt.SSZ_SCHEMA;
     this.executionLayerWithdrawalRequestSchema = ExecutionLayerWithdrawalRequest.SSZ_SCHEMA;
+    this.attestationElectraSchema = new AttestationElectraSchema(specConfig);
     this.pendingBalanceDepositSchema = new PendingBalanceDeposit.PendingBalanceDepositSchema();
     this.pendingPartialWithdrawalSchema =
         new PendingPartialWithdrawal.PendingPartialWithdrawalSchema();
@@ -291,6 +295,10 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   @Override
   public Optional<SchemaDefinitionsElectra> toVersionElectra() {
     return Optional.of(this);
+  }
+
+  public AttestationElectraSchema getAttestationElectraSchema() {
+    return attestationElectraSchema;
   }
 
   public PendingConsolidation.PendingConsolidationSchema getPendingConsolidationSchema() {

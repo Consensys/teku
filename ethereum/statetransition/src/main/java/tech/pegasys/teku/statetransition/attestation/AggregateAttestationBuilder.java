@@ -42,21 +42,23 @@ class AggregateAttestationBuilder {
 
   public boolean canAggregate(final ValidatableAttestation candidate) {
     return currentAggregateBits == null
-        || !currentAggregateBits.intersects(candidate.getAttestation().getAggregationBits());
+        || !currentAggregateBits.intersects(
+            candidate.getAttestation().getAggregationBits().orElseThrow());
   }
 
   public boolean isFullyIncluded(final ValidatableAttestation candidate) {
     return currentAggregateBits != null
-        && currentAggregateBits.isSuperSetOf(candidate.getAttestation().getAggregationBits());
+        && currentAggregateBits.isSuperSetOf(
+            candidate.getAttestation().getAggregationBits().orElseThrow());
   }
 
   public void aggregate(final ValidatableAttestation attestation) {
     includedAttestations.add(attestation);
     if (currentAggregateBits == null) {
-      currentAggregateBits = attestation.getAttestation().getAggregationBits();
+      currentAggregateBits = attestation.getAttestation().getAggregationBits().orElseThrow();
     } else {
       currentAggregateBits =
-          currentAggregateBits.or(attestation.getAttestation().getAggregationBits());
+          currentAggregateBits.or(attestation.getAttestation().getAggregationBits().orElseThrow());
     }
   }
 

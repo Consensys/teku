@@ -69,7 +69,8 @@ public class AggregateAttestationValidator {
 
   public void addSeenAggregate(final ValidatableAttestation attestation) {
     seenAggregationBits.add(
-        attestation.getData().hashTreeRoot(), attestation.getAttestation().getAggregationBits());
+        attestation.getData().hashTreeRoot(),
+        attestation.getAttestation().getAggregationBits().orElseThrow());
   }
 
   public SafeFuture<InternalValidationResult> validate(final ValidatableAttestation attestation) {
@@ -86,7 +87,8 @@ public class AggregateAttestationValidator {
       return completedFuture(ignore("Ignoring duplicate aggregate"));
     }
 
-    final SszBitlist aggregationBits = attestation.getAttestation().getAggregationBits();
+    final SszBitlist aggregationBits =
+        attestation.getAttestation().getAggregationBits().orElseThrow();
     if (seenAggregationBits.isAlreadySeen(attestation.getData().hashTreeRoot(), aggregationBits)) {
       return completedFuture(ignore("Ignoring duplicate aggregate based on aggregation bits"));
     }
@@ -216,7 +218,8 @@ public class AggregateAttestationValidator {
       return ignore("Ignoring duplicate aggregate");
     }
     if (!seenAggregationBits.add(
-        attestation.getData().hashTreeRoot(), attestation.getAttestation().getAggregationBits())) {
+        attestation.getData().hashTreeRoot(),
+        attestation.getAttestation().getAggregationBits().orElseThrow())) {
       return ignore("Ignoring duplicate aggregate based on aggregation bits");
     }
     return result;

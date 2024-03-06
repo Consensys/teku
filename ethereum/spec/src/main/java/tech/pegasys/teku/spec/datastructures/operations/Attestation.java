@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.operations;
 
 import com.google.common.collect.Sets;
 import java.util.Collection;
+import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
@@ -32,7 +33,8 @@ public class Attestation extends Container3<Attestation, SszBitlist, Attestation
     implements AttestationContainer {
 
   public static class AttestationSchema
-      extends ContainerSchema3<Attestation, SszBitlist, AttestationData, SszSignature> {
+      extends ContainerSchema3<Attestation, SszBitlist, AttestationData, SszSignature>
+      implements AttestationContainerSchema<Attestation> {
 
     public AttestationSchema(final SpecConfig specConfig) {
       super(
@@ -92,8 +94,8 @@ public class Attestation extends Container3<Attestation, SszBitlist, Attestation
   }
 
   @Override
-  public SszBitlist getAggregationBits() {
-    return getField0();
+  public Optional<SszBitlist> getAggregationBits() {
+    return Optional.of(getField0());
   }
 
   @Override

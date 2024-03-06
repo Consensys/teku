@@ -74,7 +74,7 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
   public void shouldRejectAttestationWithIncorrectAggregateBitsSize() {
     final Attestation attestation =
         attestationGenerator.validAttestation(storageSystem.getChainHead());
-    final SszBitlist validAggregationBits = attestation.getAggregationBits();
+    final SszBitlist validAggregationBits = attestation.getAggregationBits().orElseThrow();
     SszBitlist invalidAggregationBits =
         validAggregationBits
             .getSchema()
@@ -247,7 +247,7 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
                 ValidatableAttestation.fromNetwork(
                     spec,
                     attestationSchema.create(
-                        attestation.getAggregationBits(),
+                        attestation.getAggregationBits().orElseThrow(),
                         new AttestationData(
                             data.getSlot(),
                             spec.getCommitteeCountPerSlot(
@@ -272,7 +272,7 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
                 ValidatableAttestation.fromNetwork(
                     spec,
                     attestationSchema.create(
-                        attestation.getAggregationBits(),
+                        attestation.getAggregationBits().orElseThrow(),
                         new AttestationData(
                             data.getSlot(),
                             data.getIndex(),
@@ -307,7 +307,7 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
                 ValidatableAttestation.fromNetwork(
                     spec,
                     attestationSchema.create(
-                        attestation.getAggregationBits(),
+                        attestation.getAggregationBits().orElseThrow(),
                         new AttestationData(
                             data.getSlot(),
                             data.getIndex(),

@@ -47,7 +47,7 @@ interface ValidatorStatsPhase0 extends BeaconStatePhase0 {
                 .computeIfAbsent(attestation.getData().getSlot(), __ -> new HashMap<>())
                 .merge(
                     attestation.getData().getIndex(),
-                    attestation.getAggregationBits(),
+                    attestation.getAggregationBits().orElseThrow(),
                     SszBitlist::nullableOr);
           }
 
@@ -55,7 +55,7 @@ interface ValidatorStatsPhase0 extends BeaconStatePhase0 {
               .computeIfAbsent(attestation.getData().getSlot(), __ -> new HashMap<>())
               .merge(
                   attestation.getData().getIndex(),
-                  attestation.getAggregationBits(),
+                  attestation.getAggregationBits().orElseThrow(),
                   SszBitlist::nullableOr);
         });
 
