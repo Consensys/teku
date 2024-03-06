@@ -191,7 +191,8 @@ public class BlockBroadcastValidatorTest {
     assertThat(blockBroadcastValidator.getResult())
         .isCompletedWithValueMatching(
             result -> {
-              if (equivocationCheckResult.equals(EquivocationCheckResult.EQUIVOCATING_BLOCK)) {
+              if (equivocationCheckResult.equals(
+                  EquivocationCheckResult.EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER)) {
                 return result.equals(FINAL_EQUIVOCATION_FAILURE);
               }
               return result.equals(SUCCESS);

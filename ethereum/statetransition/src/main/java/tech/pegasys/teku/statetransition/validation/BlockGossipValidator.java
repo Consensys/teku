@@ -15,9 +15,9 @@ package tech.pegasys.teku.statetransition.validation;
 
 import static tech.pegasys.teku.infrastructure.async.SafeFuture.completedFuture;
 import static tech.pegasys.teku.spec.config.Constants.VALID_BLOCK_SET_SIZE;
-import static tech.pegasys.teku.statetransition.validation.BlockGossipValidator.EquivocationCheckResult.EQUIVOCATING_BLOCK;
+import static tech.pegasys.teku.statetransition.validation.BlockGossipValidator.EquivocationCheckResult.BLOCK_ALREADY_SEEN_FOR_SLOT_PROPOSER;
+import static tech.pegasys.teku.statetransition.validation.BlockGossipValidator.EquivocationCheckResult.EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER;
 import static tech.pegasys.teku.statetransition.validation.BlockGossipValidator.EquivocationCheckResult.FIRST_BLOCK_FOR_SLOT_PROPOSER;
-import static tech.pegasys.teku.statetransition.validation.BlockGossipValidator.EquivocationCheckResult.SAME_BLOCK_FOR_SLOT_PROPOSER;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.ignore;
 import static tech.pegasys.teku.statetransition.validation.InternalValidationResult.reject;
 import static tech.pegasys.teku.statetransition.validation.ValidationResultCode.ValidationResultSubCode.IGNORE_ALREADY_SEEN;
@@ -185,9 +185,9 @@ public class BlockGossipValidator {
       final EquivocationCheckResult equivocationCheckResult) {
     return switch (equivocationCheckResult) {
       case FIRST_BLOCK_FOR_SLOT_PROPOSER -> InternalValidationResult.ACCEPT;
-      case EQUIVOCATING_BLOCK -> ignore(
+      case EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER -> ignore(
           IGNORE_EQUIVOCATION_DETECTED, "Equivocating block detected. It will be dropped.");
-      case SAME_BLOCK_FOR_SLOT_PROPOSER -> ignore(
+      case BLOCK_ALREADY_SEEN_FOR_SLOT_PROPOSER -> ignore(
           IGNORE_ALREADY_SEEN,
           "Block is not the first with valid signature for its slot. It will be dropped.");
     };
@@ -200,7 +200,7 @@ public class BlockGossipValidator {
     final Optional<Bytes32> maybePreviouslySeenBlockRoot =
         Optional.ofNullable(
             add
-                ? receivedValidBlockInfoSet.put(slotAndProposer, block.getRoot())
+                ? receivedValidBlockInfoSet.computeIfAbsent(slotAndProposer, __ -> block.getRoot())
                 : receivedValidBlockInfoSet.get(slotAndProposer));
 
     if (maybePreviouslySeenBlockRoot.isEmpty()) {
@@ -208,10 +208,10 @@ public class BlockGossipValidator {
     }
 
     if (maybePreviouslySeenBlockRoot.get().equals(block.getRoot())) {
-      return SAME_BLOCK_FOR_SLOT_PROPOSER;
+      return BLOCK_ALREADY_SEEN_FOR_SLOT_PROPOSER;
     }
 
-    return EQUIVOCATING_BLOCK;
+    return EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER;
   }
 
   synchronized EquivocationCheckResult performBlockEquivocationCheck(
@@ -221,8 +221,8 @@ public class BlockGossipValidator {
 
   public enum EquivocationCheckResult {
     FIRST_BLOCK_FOR_SLOT_PROPOSER,
-    SAME_BLOCK_FOR_SLOT_PROPOSER,
-    EQUIVOCATING_BLOCK
+    BLOCK_ALREADY_SEEN_FOR_SLOT_PROPOSER,
+    EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER
   }
 
   private boolean blockSignatureIsValidWithRespectToProposerIndex(

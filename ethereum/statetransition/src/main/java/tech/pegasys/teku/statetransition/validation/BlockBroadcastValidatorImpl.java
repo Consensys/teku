@@ -140,7 +140,7 @@ public class BlockBroadcastValidatorImpl implements BlockBroadcastValidator {
               // perform final equivocation validation
               if (blockGossipValidator
                   .performBlockEquivocationCheck(block)
-                  .equals(EquivocationCheckResult.EQUIVOCATING_BLOCK)) {
+                  .equals(EquivocationCheckResult.EQUIVOCATING_BLOCK_FOR_SLOT_PROPOSER)) {
                 return FINAL_EQUIVOCATION_FAILURE;
               }
 
