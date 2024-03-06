@@ -138,7 +138,7 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
         createTekuBeaconNode(
             configureBeaconNode(eth1Node)
                 .withInitialState(genesis)
-                .withReadOnlyKeystorePath(keyStore)
+                .withWritableKeystorePathLockDisabled(keyStore)
                 .build());
     firstNode.start();
 
@@ -152,7 +152,7 @@ public class DoppelgangerDetectorAcceptanceTest extends AcceptanceTestBase {
             configureBeaconNode(eth1Node)
                 .withPeers(firstNode)
                 .withInitialState(genesis)
-                .withReadOnlyKeystorePath(keyStore)
+                .withWritableKeystorePathLockDisabled(keyStore)
                 .withDoppelgangerDetectionEnabled()
                 .build());
 

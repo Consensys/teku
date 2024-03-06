@@ -57,7 +57,7 @@ public class BellatrixMergeTransitionAcceptanceTest extends AcceptanceTestBase {
                 .withDepositsFrom(eth1Node)
                 .withExecutionEngine(eth1Node)
                 .withStartupTargetPeerCount(0)
-                .withReadOnlyKeystorePath(validatorKeystores)
+                .withWritableKeystorePathLockDisabled(validatorKeystores)
                 .withValidatorProposerDefaultFeeRecipient(
                     "0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73")
                 .withJwtSecretFile(JWT_FILE)

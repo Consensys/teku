@@ -65,7 +65,7 @@ public class VoluntaryExitAcceptanceTest extends AcceptanceTestBase {
             TekuNodeConfigBuilder.createValidatorClient()
                 .withInteropModeDisabled()
                 .withBeaconNodes(beaconNode)
-                .withReadOnlyKeystorePath(validatorKeys)
+                .withWritableKeystorePathLockDisabled(validatorKeys)
                 .build());
 
     beaconNode.start();

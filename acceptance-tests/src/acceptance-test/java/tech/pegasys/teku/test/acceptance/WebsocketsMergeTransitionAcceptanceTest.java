@@ -59,7 +59,7 @@ public class WebsocketsMergeTransitionAcceptanceTest extends AcceptanceTestBase 
                     "0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73")
                 .withExecutionEngine(eth1Node)
                 .withJwtSecretFile(jwtFile)
-                .withReadOnlyKeystorePath(validatorKeystores)
+                .withWritableKeystorePathLockDisabled(validatorKeystores)
                 .build());
     tekuNode.start();
   }
