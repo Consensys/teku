@@ -318,14 +318,14 @@ public class TekuNodeConfigBuilder {
   }
 
   public TekuNodeConfigBuilder withDefaultLogging() {
+    LOG.debug("Removed log-destination from config");
     configMap.remove("log-destination");
     return this;
   }
 
-  public TekuNodeConfigBuilder withBadKeystorePath() {
-    LOG.debug("Xinterop-enabled=false");
-    configMap.put("Xinterop-enabled", false);
-    configMap.put("validator-keys", "/abcde:/abcdef");
+  public TekuNodeConfigBuilder withValidatorKeysPath(final String path) {
+    LOG.debug("validator-keys=" + path);
+    configMap.put("validator-keys", path);
     return this;
   }
 

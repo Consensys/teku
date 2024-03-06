@@ -205,7 +205,9 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
         createTekuBeaconNode(
             TekuNodeConfigBuilder.createBeaconNode()
                 .withDefaultLogging()
-                .withBadKeystorePath()
+                .withInteropModeDisabled()
+                // something non-existent
+                .withValidatorKeysPath("/abcd:/abcde")
                 .withInitialState(genesis)
                 .build());
 
