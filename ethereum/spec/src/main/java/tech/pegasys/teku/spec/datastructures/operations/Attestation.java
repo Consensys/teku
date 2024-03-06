@@ -85,10 +85,12 @@ public class Attestation extends Container3<Attestation, SszBitlist, Attestation
     return (AttestationSchema) super.getSchema();
   }
 
+  @Override
   public UInt64 getEarliestSlotForForkChoiceProcessing(final Spec spec) {
     return getData().getEarliestSlotForForkChoice(spec);
   }
 
+  @Override
   public Collection<Bytes32> getDependentBlockRoots() {
     return Sets.newHashSet(getData().getTarget().getRoot(), getData().getBeaconBlockRoot());
   }
@@ -103,6 +105,7 @@ public class Attestation extends Container3<Attestation, SszBitlist, Attestation
     return getField1();
   }
 
+  @Override
   public BLSSignature getAggregateSignature() {
     return getField2().getSignature();
   }
