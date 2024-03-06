@@ -323,8 +323,8 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
-  public TekuNodeConfigBuilder withValidatorKeysPath(final String path) {
-    LOG.debug("validator-keys=" + path);
+  public TekuNodeConfigBuilder withInvalidKeystorePath(final String path) {
+    LOG.debug("set validator-keys folder to INVALID {}", path);
     configMap.put("validator-keys", path);
     return this;
   }

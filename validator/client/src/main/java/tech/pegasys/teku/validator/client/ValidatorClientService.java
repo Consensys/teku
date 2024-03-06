@@ -278,7 +278,7 @@ public class ValidatorClientService extends Service {
                         STATUS_LOG.errorDuringValidatorClientInitialization(
                             ExceptionUtil.getRootCauseMessage(error));
                         LOG.error(
-                            "Error was encountered during validator client service start up.",
+                            "An error was encountered during validator client service start up.",
                             error);
                       });
 

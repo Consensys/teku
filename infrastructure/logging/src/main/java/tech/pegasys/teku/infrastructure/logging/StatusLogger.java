@@ -124,7 +124,8 @@ public class StatusLogger {
 
   public void errorDuringValidatorClientInitialization(final String message) {
     log.error(
-        "Error was encountered during validator client service start up. error: {}. "
+        "An error was encountered during validator client service start up.\n"
+            + "Error: {}.\n"
             + "Please check the logs for details.",
         message);
   }
