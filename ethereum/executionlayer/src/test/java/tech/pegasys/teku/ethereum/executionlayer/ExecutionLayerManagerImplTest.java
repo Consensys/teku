@@ -166,11 +166,12 @@ class ExecutionLayerManagerImplTest {
     final ExecutionPayloadContext executionPayloadContext =
         dataStructureUtil.randomPayloadExecutionContext(false, true);
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+    final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
     final GetPayloadResponse getPayloadResponse =
         prepareEngineGetPayloadResponse(executionPayloadContext, localExecutionPayloadValue, slot);
 
-    assertThat(executionLayerManager.engineGetPayload(executionPayloadContext, slot))
+    assertThat(executionLayerManager.engineGetPayload(executionPayloadContext, state))
         .isCompletedWithValue(getPayloadResponse);
 
     // we expect no calls to builder
@@ -187,11 +188,12 @@ class ExecutionLayerManagerImplTest {
         dataStructureUtil.randomPayloadExecutionContext(false, true);
     executionLayerManager = createExecutionLayerChannelImpl(false, false);
     final UInt64 slot = executionPayloadContext.getForkChoiceState().getHeadBlockSlot();
+    final BeaconState state = dataStructureUtil.randomBeaconState(slot);
 
     final GetPayloadResponse getPayloadResponse =
         prepareEngineGetPayloadResponse(executionPayloadContext, localExecutionPayloadValue, slot);
 
-    assertThat(executionLayerManager.engineGetPayload(executionPayloadContext, slot))
+    assertThat(executionLayerManager.engineGetPayload(executionPayloadContext, state))
         .isCompletedWithValue(getPayloadResponse);
 
     // we expect no calls to builder

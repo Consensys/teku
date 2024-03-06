@@ -226,7 +226,8 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
   @Override
   public SafeFuture<GetPayloadResponse> engineGetPayload(
-      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
+      final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
+    final UInt64 slot = state.getSlot();
     if (!bellatrixActivationDetected) {
       LOG.info(
           "getPayload received before terminalBlock has been sent. Assuming transition already happened");
@@ -250,9 +251,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     final List<Bytes> transactions = generateTransactions(slot, headAndAttrs);
 
     final ExecutionPayload executionPayload =
-        spec.atSlot(slot)
-            .getSchemaDefinitions()
-            .toVersionBellatrix()
+        schemaDefinitionsBellatrix
             .orElseThrow()
             .getExecutionPayloadSchema()
             .createExecutionPayload(
@@ -275,7 +274,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                         .withdrawals(() -> payloadAttributes.getWithdrawals().orElse(List.of()))
                         .blobGasUsed(() -> UInt64.ZERO)
                         .excessBlobGas(() -> UInt64.ZERO)
-                        .depositReceipts(() -> generateDepositReceipts(slot)));
+                        .depositReceipts(() -> generateDepositReceipts(state)));
 
     // we assume all blocks are produced locally
     lastValidBlock =
@@ -349,7 +348,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
 
     final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
 
-    return engineGetPayload(executionPayloadContext, slot)
+    return engineGetPayload(executionPayloadContext, state)
         .thenPeek(__ -> blockProductionPerformance.engineGetPayload())
         .thenApply(
             getPayloadResponse -> {
@@ -558,11 +557,11 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     return blobsUtil.generateRawBlobTransactionFromKzgCommitments(commitments);
   }
 
-  private List<DepositReceipt> generateDepositReceipts(final UInt64 slot) {
-    return spec.atSlot(slot)
+  private List<DepositReceipt> generateDepositReceipts(final BeaconState state) {
+    return spec.atSlot(state.getSlot())
         .getConfig()
         .toVersionElectra()
-        .map(__ -> depositReceiptsUtil.generateDepositReceipts(slot))
+        .map(__ -> depositReceiptsUtil.generateDepositReceipts(state))
         .orElse(List.of());
   }
 }

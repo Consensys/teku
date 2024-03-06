@@ -37,8 +37,8 @@ public class ExecutionLayerManagerStub extends ExecutionLayerChannelStub
   private final BuilderCircuitBreaker builderCircuitBreaker;
 
   public ExecutionLayerManagerStub(
-      Spec spec,
-      TimeProvider timeProvider,
+      final Spec spec,
+      final TimeProvider timeProvider,
       boolean enableTransitionEmulation,
       final Optional<Bytes32> terminalBlockHashInTTDMode,
       final BuilderCircuitBreaker builderCircuitBreaker) {
@@ -70,9 +70,7 @@ public class ExecutionLayerManagerStub extends ExecutionLayerChannelStub
         .thenCompose(
             headerWithFallbackData -> {
               if (builderCircuitBreakerEngaged) {
-                return engineGetPayload(
-                        executionPayloadContext,
-                        executionPayloadContext.getPayloadBuildingAttributes().getProposalSlot())
+                return engineGetPayload(executionPayloadContext, state)
                     .thenApply(
                         payload ->
                             HeaderWithFallbackData.create(

@@ -60,7 +60,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
 
         @Override
         public SafeFuture<GetPayloadResponse> engineGetPayload(
-            final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
+            final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
           return SafeFuture.completedFuture(null);
         }
 
@@ -123,7 +123,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
    * BeaconState, boolean, Optional, BlockProductionPerformance)} instead
    */
   SafeFuture<GetPayloadResponse> engineGetPayload(
-      ExecutionPayloadContext executionPayloadContext, UInt64 slot);
+      ExecutionPayloadContext executionPayloadContext, BeaconState state);
 
   // builder namespace
   SafeFuture<Void> builderRegisterValidators(

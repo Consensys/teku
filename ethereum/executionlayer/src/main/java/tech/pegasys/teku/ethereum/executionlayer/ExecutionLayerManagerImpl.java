@@ -195,8 +195,8 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   @Override
   public SafeFuture<GetPayloadResponse> engineGetPayload(
-      final ExecutionPayloadContext executionPayloadContext, final UInt64 slot) {
-    return engineGetPayload(executionPayloadContext, slot, false)
+      final ExecutionPayloadContext executionPayloadContext, final BeaconState state) {
+    return engineGetPayload(executionPayloadContext, state.getSlot(), false)
         .thenPeek(__ -> recordExecutionPayloadFallbackSource(Source.LOCAL_EL, FallbackReason.NONE));
   }
 

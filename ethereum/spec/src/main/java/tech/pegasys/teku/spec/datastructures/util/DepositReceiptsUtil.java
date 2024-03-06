@@ -15,7 +15,6 @@ package tech.pegasys.teku.spec.datastructures.util;
 
 import java.security.SecureRandom;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLS;
@@ -27,14 +26,13 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
 public class DepositReceiptsUtil {
 
   private static final float PROBABILITY_OF_NO_DEPOSIT = 0.9f;
   private static final int MAX_NUMBER_OF_DEPOSITS_PER_BLOCK = 3;
-
-  private static final AtomicInteger START_INDEX = new AtomicInteger(64);
 
   private final Spec spec;
 
@@ -45,9 +43,10 @@ public class DepositReceiptsUtil {
     this.spec = spec;
   }
 
-  public List<DepositReceipt> generateDepositReceipts(final UInt64 slot) {
+  public List<DepositReceipt> generateDepositReceipts(final BeaconState state) {
+    final int validatorsInState = state.getValidators().size();
     return IntStream.range(0, getNumberOfDepositReceiptsToGenerate())
-        .mapToObj(__ -> createDepositReceipt(slot))
+        .mapToObj(i -> createDepositReceipt(state.getSlot(), validatorsInState + i))
         .toList();
   }
 
@@ -58,7 +57,7 @@ public class DepositReceiptsUtil {
     return random.nextInt(1, MAX_NUMBER_OF_DEPOSITS_PER_BLOCK + 1);
   }
 
-  private DepositReceipt createDepositReceipt(final UInt64 slot) {
+  private DepositReceipt createDepositReceipt(final UInt64 slot, final long index) {
     final BLSKeyPair validatorKeyPair = BLSKeyPair.random(random);
     final BLSPublicKey publicKey = validatorKeyPair.getPublicKey();
     final UInt64 depositAmount = UInt64.THIRTY_TWO_ETH;
@@ -71,11 +70,6 @@ public class DepositReceiptsUtil {
             validatorKeyPair.getSecretKey(),
             miscHelpers.computeSigningRoot(depositMessage, depositDomain));
     return DepositReceipt.SSZ_SCHEMA.create(
-        publicKey,
-        Bytes32.ZERO,
-        depositAmount,
-        signature,
-        // TODO: set an appropriate index
-        UInt64.valueOf(START_INDEX.getAndIncrement()));
+        publicKey, Bytes32.ZERO, depositAmount, signature, UInt64.valueOf(index));
   }
 }
