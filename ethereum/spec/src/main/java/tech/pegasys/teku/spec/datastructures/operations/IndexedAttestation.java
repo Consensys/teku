@@ -24,7 +24,8 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
 
 public class IndexedAttestation
-    extends Container3<IndexedAttestation, SszUInt64List, AttestationData, SszSignature> {
+    extends Container3<IndexedAttestation, SszUInt64List, AttestationData, SszSignature>
+    implements IndexedAttestationContainer {
 
   public static class IndexedAttestationSchema
       extends ContainerSchema3<IndexedAttestation, SszUInt64List, AttestationData, SszSignature> {
@@ -73,14 +74,17 @@ public class IndexedAttestation
     return (IndexedAttestationSchema) super.getSchema();
   }
 
+  @Override
   public SszUInt64List getAttestingIndices() {
     return getField0();
   }
 
+  @Override
   public AttestationData getData() {
     return getField1();
   }
 
+  @Override
   public BLSSignature getSignature() {
     return getField2().getSignature();
   }
