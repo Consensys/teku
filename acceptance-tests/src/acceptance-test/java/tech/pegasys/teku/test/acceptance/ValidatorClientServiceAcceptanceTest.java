@@ -57,7 +57,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
                 .build());
 
     beaconNode.startWithFailure(
-        "Unable to initialize validator keys, please manually correct errors and try again.");
+        "FATAL - Failed to load keystore, error Keystore file /keys/.+_validator.json.lock already in use.");
   }
 
   @Test
@@ -83,7 +83,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
                 .build());
 
     validatorNode.startWithFailure(
-        "Unable to initialize validator keys, please manually correct errors and try again.");
+        "FATAL - Failed to load keystore, error Keystore file /keys/.+_validator.json.lock already in use.");
   }
 
   @Test
@@ -104,8 +104,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
                 .withReadOnlyKeystorePath(initialKeystores, tempDir)
                 .build());
 
-    beaconNode.startWithFailure(
-        "Unable to initialize validator keys, please manually correct errors and try again.");
+    beaconNode.startWithFailure("FATAL - Please check the logs for details.");
   }
 
   @Test
@@ -128,7 +127,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
                 .build());
 
     beaconNode.startWithFailure(
-        "Unable to initialize validator keys, please manually correct errors and try again.");
+        "FATAL - Failed to load keystore, error Access Denied trying to access lock file /opt/teku/keys/.+_validator.json.lock");
   }
 
   @Test
