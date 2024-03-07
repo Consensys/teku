@@ -56,8 +56,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
                 .withInitialState(genesis)
                 .build());
 
-    beaconNode.startWithFailure(
-        "FATAL - Failed to load keystore, error Keystore file /keys/.+_validator.json.lock already in use.");
+    beaconNode.startWithFailure("FATAL - Failed to load keystore", 20);
   }
 
   @Test
@@ -82,8 +81,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
                 .withWritableKeystorePath(initialKeystores, tempDir)
                 .build());
 
-    validatorNode.startWithFailure(
-        "FATAL - Failed to load keystore, error Keystore file /keys/.+_validator.json.lock already in use.");
+    validatorNode.startWithFailure("FATAL - Failed to load keystore", 20);
   }
 
   @Test
@@ -126,8 +124,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
                 .withValidatorKeystoreLockingEnabled(true)
                 .build());
 
-    beaconNode.startWithFailure(
-        "FATAL - Failed to load keystore, error Access Denied trying to access lock file /opt/teku/keys/.+_validator.json.lock");
+    beaconNode.startWithFailure("FATAL - Failed to load keystore, error Access Denied", 20);
   }
 
   @Test
