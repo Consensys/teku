@@ -68,12 +68,18 @@ public abstract class TekuNode extends Node {
     container.start();
   }
 
+  // be aware that these regex's slow down quickly the bigger they are
+  // by default 10 second timeout, needs to be a short, simple match.
   public void startWithFailure(final String expectedError) throws Exception {
+    startWithFailure(expectedError, 10);
+  }
+
+  public void startWithFailure(final String expectedError, final int timeout) throws Exception {
     setUpStart();
     container.waitingFor(
         new LogMessageWaitStrategy()
-            .withRegEx(".*" + expectedError + ".*")
-            .withStartupTimeout(Duration.ofSeconds(10)));
+            .withRegEx(".*?" + expectedError + ".*")
+            .withStartupTimeout(Duration.ofSeconds(timeout)));
     container.start();
   }
 

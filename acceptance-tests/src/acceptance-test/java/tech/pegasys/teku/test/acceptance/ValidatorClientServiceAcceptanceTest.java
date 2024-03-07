@@ -56,8 +56,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
                 .withInitialState(genesis)
                 .build());
 
-    beaconNode.startWithFailure(
-        "Unable to initialize validator keys, please manually correct errors and try again.");
+    beaconNode.startWithFailure("FATAL - Failed to load keystore", 20);
   }
 
   @Test
@@ -82,8 +81,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
                 .withWritableKeystorePath(initialKeystores, tempDir)
                 .build());
 
-    validatorNode.startWithFailure(
-        "Unable to initialize validator keys, please manually correct errors and try again.");
+    validatorNode.startWithFailure("FATAL - Failed to load keystore", 20);
   }
 
   @Test
@@ -104,8 +102,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
                 .withReadOnlyKeystorePath(initialKeystores, tempDir)
                 .build());
 
-    beaconNode.startWithFailure(
-        "Unable to initialize validator keys, please manually correct errors and try again.");
+    beaconNode.startWithFailure("FATAL - Please check the logs for details.");
   }
 
   @Test
@@ -127,8 +124,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
                 .withValidatorKeystoreLockingEnabled(true)
                 .build());
 
-    beaconNode.startWithFailure(
-        "Unable to initialize validator keys, please manually correct errors and try again.");
+    beaconNode.startWithFailure("FATAL - Failed to load keystore, error Access Denied", 20);
   }
 
   @Test

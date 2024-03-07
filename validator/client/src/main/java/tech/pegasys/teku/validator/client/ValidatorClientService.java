@@ -273,14 +273,14 @@ public class ValidatorClientService extends Service {
             error -> {
               ExceptionUtil.getCause(error, InvalidConfigurationException.class)
                   .ifPresentOrElse(
-                      cause -> LOG.error(cause.getMessage()),
-                      () ->
-                          LOG.error(
-                              "Error was encountered during validator client service start up.",
-                              error));
-
-              LOG.error(
-                  "Unable to initialize validator keys, please manually correct errors and try again.");
+                      cause -> STATUS_LOG.failedToLoadValidatorKey(cause.getMessage()),
+                      () -> {
+                        STATUS_LOG.failedToStartValidatorClient(
+                            ExceptionUtil.getRootCauseMessage(error));
+                        LOG.error(
+                            "An error was encountered during validator client service start up.",
+                            error);
+                      });
               // an unhandled exception getting this far means any number of above steps failed to
               // complete,
               // which is fatal, we don't know how to recover at this point, regardless of if we're

@@ -119,7 +119,7 @@ public class StatusLogger {
   }
 
   public void failedToLoadValidatorKey(final String message) {
-    log.error("Failed to load keystore, error {}", message);
+    log.fatal("Failed to load keystore, error {}", message);
   }
 
   public void eth1DepositEventsFailure(final Throwable cause) {
@@ -265,6 +265,12 @@ public class StatusLogger {
         "ReconstructHistoricalStatesService recorded {} of {} historical blocks",
         numberRecorded,
         totalToRecord);
+  }
+
+  public void failedToStartValidatorClient(final String message) {
+    log.fatal(
+        "An error was encountered during validator client service start up. Error: {}", message);
+    log.fatal("Please check the logs for details.");
   }
 
   public void fatalErrorInitialisingStorage(Throwable err) {
