@@ -173,9 +173,7 @@ class SyncAggregatorSelectionProofProviderTest {
   }
 
   private ValidatorAndCommitteeIndices committeeAssignment(
-      final Validator validator,
-      final int validatorIndex,
-      final int... committeeIndices) {
+      final Validator validator, final int validatorIndex, final int... committeeIndices) {
     final ValidatorAndCommitteeIndices assignment =
         new ValidatorAndCommitteeIndices(validator, validatorIndex);
     assignment.addCommitteeIndices(IntList.of(committeeIndices));
