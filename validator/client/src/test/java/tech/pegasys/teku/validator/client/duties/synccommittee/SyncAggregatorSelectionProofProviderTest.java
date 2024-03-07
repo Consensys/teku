@@ -38,6 +38,7 @@ import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.client.Validator;
 
+@SuppressWarnings("FutureReturnValueIgnored")
 class SyncAggregatorSelectionProofProviderTest {
 
   final Spec spec = TestSpecFactory.createMinimalAltair();
@@ -120,18 +121,18 @@ class SyncAggregatorSelectionProofProviderTest {
   @Test
   public void failedSignatureHandling() {
     // Signature for subcommittee index 0 will fail
-    final SyncAggregatorSelectionData syncAggregatorSelectionData_SubCommitteeZero =
+    final SyncAggregatorSelectionData syncAggregatorSelectionDataSubCommitteeZero =
         syncCommitteeUtil.createSyncAggregatorSelectionData(slot, UInt64.ZERO);
     doReturn(SafeFuture.failedFuture(new RuntimeException("Boom")))
         .when(validator1.getSigner())
-        .signSyncCommitteeSelectionProof(eq(syncAggregatorSelectionData_SubCommitteeZero), any());
+        .signSyncCommitteeSelectionProof(eq(syncAggregatorSelectionDataSubCommitteeZero), any());
 
     // Signature for subcommittee index 1 will succeed
-    final SyncAggregatorSelectionData syncAggregatorSelectionData_SubCommitteeOne =
+    final SyncAggregatorSelectionData syncAggregatorSelectionDataSubCommitteeOne =
         syncCommitteeUtil.createSyncAggregatorSelectionData(slot, UInt64.ONE);
     doReturn(SafeFuture.completedFuture(dataStructureUtil.randomSignature()))
         .when(validator1.getSigner())
-        .signSyncCommitteeSelectionProof(eq(syncAggregatorSelectionData_SubCommitteeOne), any());
+        .signSyncCommitteeSelectionProof(eq(syncAggregatorSelectionDataSubCommitteeOne), any());
 
     final Collection<ValidatorAndCommitteeIndices> assignments =
         List.of(committeeAssignment(validator1, 1, 0, 1));
@@ -172,7 +173,7 @@ class SyncAggregatorSelectionProofProviderTest {
   }
 
   private ValidatorAndCommitteeIndices committeeAssignment(
-      final tech.pegasys.teku.validator.client.Validator validator,
+      final Validator validator,
       final int validatorIndex,
       final int... committeeIndices) {
     final ValidatorAndCommitteeIndices assignment =
