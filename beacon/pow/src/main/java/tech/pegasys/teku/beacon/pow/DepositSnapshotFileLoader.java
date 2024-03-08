@@ -32,7 +32,6 @@ import org.apache.tuweni.bytes.Bytes;
 import tech.pegasys.teku.ethereum.pow.api.DepositTreeSnapshot;
 import tech.pegasys.teku.ethereum.pow.api.schema.LoadDepositSnapshotResult;
 import tech.pegasys.teku.ethereum.pow.merkletree.DepositTree;
-import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.http.UrlSanitizer;
 import tech.pegasys.teku.infrastructure.io.resource.ResourceLoader;
@@ -76,7 +75,7 @@ public class DepositSnapshotFileLoader {
             depositTreeSnapshot.getDepositCount(), depositTreeSnapshot.getExecutionBlockHash());
         return LoadDepositSnapshotResult.create(Optional.of(depositTreeSnapshot));
       } catch (final Exception e) {
-        if (ExceptionUtil.hasCause(e, IllegalArgumentException.class)) {
+        if (e instanceof IllegalArgumentException) {
           LOG.warn(
               "Deposit tree snapshot loaded from " + sanitizedUrl + " is not a correct snapshot",
               e);
