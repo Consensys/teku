@@ -427,21 +427,10 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
       throws BlockProcessingException {
     safelyProcess(
         () -> {
-          final int expectedDepositCount =
-              Math.min(
-                  specConfig.getMaxDeposits(),
-                  state
-                      .getEth1Data()
-                      .getDepositCount()
-                      .minus(state.getEth1DepositIndex())
-                      .intValue());
+          verifyOutstandingDepositsAreProcessed(state, body);
 
           final Supplier<ValidatorExitContext> validatorExitContextSupplier =
               beaconStateMutators.createValidatorExitContextSupplier(state);
-
-          checkArgument(
-              body.getDeposits().size() == expectedDepositCount,
-              "process_operations: Verify that outstanding deposits are processed up to the maximum number of deposits");
 
           processProposerSlashingsNoValidation(
               state, body.getProposerSlashings(), validatorExitContextSupplier);
@@ -451,8 +440,19 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
           processDeposits(state, body.getDeposits());
           processVoluntaryExitsNoValidation(
               state, body.getVoluntaryExits(), validatorExitContextSupplier);
-          // @process_shard_receipt_proofs
         });
+  }
+
+  protected void verifyOutstandingDepositsAreProcessed(
+      final BeaconState state, final BeaconBlockBody body) {
+    final int expectedDepositCount =
+        Math.min(
+            specConfig.getMaxDeposits(),
+            state.getEth1Data().getDepositCount().minus(state.getEth1DepositIndex()).intValue());
+
+    checkArgument(
+        body.getDeposits().size() == expectedDepositCount,
+        "process_operations: Verify that outstanding deposits are processed up to the maximum number of deposits");
   }
 
   @Override
