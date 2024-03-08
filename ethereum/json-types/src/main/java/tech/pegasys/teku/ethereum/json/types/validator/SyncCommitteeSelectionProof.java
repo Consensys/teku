@@ -14,6 +14,8 @@
 package tech.pegasys.teku.ethereum.json.types.validator;
 
 import java.util.Objects;
+import org.apache.tuweni.bytes.Bytes;
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -79,6 +81,10 @@ public class SyncCommitteeSelectionProof {
 
   public String getSelectionProof() {
     return selectionProof;
+  }
+
+  public BLSSignature getSelectionProofSignature() {
+    return BLSSignature.fromBytesCompressed(Bytes.fromHexString(getSelectionProof()));
   }
 
   public static SyncCommitteeSelectionProof.Builder builder() {
