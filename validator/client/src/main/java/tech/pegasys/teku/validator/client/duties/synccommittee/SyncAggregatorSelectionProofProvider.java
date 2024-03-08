@@ -55,7 +55,7 @@ public class SyncAggregatorSelectionProofProvider {
               });
         });
 
-    return SafeFuture.completedFuture(null);
+    return SafeFuture.COMPLETE;
   }
 
   protected SafeFuture<BLSSignature> createAndSignSelectionData(
