@@ -22,7 +22,6 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.function.Supplier;
 import javax.annotation.CheckReturnValue;
 import org.apache.logging.log4j.LogManager;
@@ -53,7 +52,6 @@ import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
-import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
@@ -662,15 +660,19 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         });
   }
 
-  private boolean batchVerifyDepositSignatures(SszList<? extends Deposit> deposits) {
+  private boolean batchVerifyDepositSignatures(final SszList<? extends Deposit> deposits) {
     try {
       final List<List<BLSPublicKey>> publicKeys = new ArrayList<>();
       final List<Bytes> messages = new ArrayList<>();
       final List<BLSSignature> signatures = new ArrayList<>();
-      for (Deposit deposit : deposits) {
+      for (final Deposit deposit : deposits) {
         final BLSPublicKey pubkey = deposit.getData().getPubkey();
         publicKeys.add(List.of(pubkey));
-        messages.add(computeDepositSigningRoot(deposit, pubkey));
+        messages.add(
+            computeDepositSigningRoot(
+                pubkey,
+                deposit.getData().getWithdrawalCredentials(),
+                deposit.getData().getAmount()));
         signatures.add(deposit.getData().getSignature());
       }
       // Overwhelmingly often we expect all the deposit signatures to be good
@@ -681,7 +683,9 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   public void processDeposit(
-      MutableBeaconState state, Deposit deposit, boolean signatureAlreadyVerified) {
+      final MutableBeaconState state,
+      final Deposit deposit,
+      final boolean signatureAlreadyVerified) {
     checkArgument(
         predicates.isValidMerkleBranch(
             deposit.getData().hashTreeRoot(),
@@ -691,100 +695,118 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
             state.getEth1Data().getDepositRoot()),
         "process_deposit: Verify the Merkle branch");
 
-    processDepositWithoutCheckingMerkleProof(state, deposit, null, signatureAlreadyVerified);
+    processDepositWithoutCheckingMerkleProof(
+        state, deposit, Optional.empty(), signatureAlreadyVerified);
   }
 
   @Override
   public void processDepositWithoutCheckingMerkleProof(
       final MutableBeaconState state,
       final Deposit deposit,
-      final Object2IntMap<BLSPublicKey> pubKeyToIndexMap,
+      final Optional<Object2IntMap<BLSPublicKey>> maybePubkeyToIndexMap,
       final boolean signatureAlreadyVerified) {
-    final BLSPublicKey pubkey = deposit.getData().getPubkey();
 
     state.setEth1DepositIndex(state.getEth1DepositIndex().plus(UInt64.ONE));
 
+    applyDeposit(
+        state,
+        deposit.getData().getPubkey(),
+        deposit.getData().getWithdrawalCredentials(),
+        deposit.getData().getAmount(),
+        deposit.getData().getSignature(),
+        maybePubkeyToIndexMap,
+        signatureAlreadyVerified);
+  }
+
+  public void applyDeposit(
+      final MutableBeaconState state,
+      final BLSPublicKey pubkey,
+      final Bytes32 withdrawalCredentials,
+      final UInt64 amount,
+      final BLSSignature signature,
+      final Optional<Object2IntMap<BLSPublicKey>> maybePubkeyToIndexMap,
+      final boolean signatureAlreadyVerified) {
     // Find the validator index associated with this deposit, if it exists
-    OptionalInt existingIndex;
-    if (pubKeyToIndexMap != null) {
-      if (pubKeyToIndexMap.containsKey(pubkey)) {
-        existingIndex = OptionalInt.of(pubKeyToIndexMap.getInt(pubkey));
-      } else {
-        pubKeyToIndexMap.put(pubkey, state.getValidators().size());
-        existingIndex = OptionalInt.empty();
-      }
-    } else {
-      final Optional<Integer> validatorIndex = validatorsUtil.getValidatorIndex(state, pubkey);
-      existingIndex = validatorIndex.map(OptionalInt::of).orElseGet(OptionalInt::empty);
-    }
+    final Optional<Integer> existingIndex =
+        maybePubkeyToIndexMap
+            .flatMap(
+                pubkeyToIndexMap -> {
+                  if (pubkeyToIndexMap.containsKey(pubkey)) {
+                    return Optional.of(pubkeyToIndexMap.getInt(pubkey));
+                  } else {
+                    pubkeyToIndexMap.put(pubkey, state.getValidators().size());
+                    return Optional.empty();
+                  }
+                })
+            .or(() -> validatorsUtil.getValidatorIndex(state, pubkey));
 
     if (existingIndex.isEmpty()) {
       // This is a new validator
       // Verify the deposit signature (proof of possession) which is not checked by the deposit
       // contract
-      if (signatureAlreadyVerified || depositSignatureIsValid(deposit, pubkey)) {
-        addValidatorToRegistry(state, deposit);
+      if (signatureAlreadyVerified
+          || depositSignatureIsValid(pubkey, withdrawalCredentials, amount, signature)) {
+        addValidatorToRegistry(state, pubkey, withdrawalCredentials, amount);
       } else {
-        handleInvalidDeposit(deposit, pubkey, pubKeyToIndexMap);
+        handleInvalidDeposit(pubkey, maybePubkeyToIndexMap);
       }
     } else {
       // This validator already exists, increase their balance
-      beaconStateMutators.increaseBalance(
-          state, existingIndex.getAsInt(), deposit.getData().getAmount());
+      beaconStateMutators.increaseBalance(state, existingIndex.get(), amount);
     }
   }
 
   private void handleInvalidDeposit(
-      final Deposit deposit,
-      BLSPublicKey pubkey,
-      final Object2IntMap<BLSPublicKey> pubKeyToIndexMap) {
-    if (deposit instanceof DepositWithIndex) {
-      LOG.debug(
-          "Skipping invalid deposit with index {} and pubkey {}",
-          ((DepositWithIndex) deposit).getIndex(),
-          pubkey);
-    } else {
-      LOG.debug("Skipping invalid deposit with pubkey {}", pubkey);
-    }
-    if (pubKeyToIndexMap != null) {
-      // The validator won't be created so the calculated index won't be correct
-      pubKeyToIndexMap.removeInt(pubkey);
-    }
+      final BLSPublicKey pubkey,
+      final Optional<Object2IntMap<BLSPublicKey>> maybePubkeyToIndexMap) {
+    LOG.debug("Skipping invalid deposit with pubkey {}", pubkey);
+    maybePubkeyToIndexMap.ifPresent(
+        pubkeyToIndexMap -> {
+          // The validator won't be created so the calculated index won't be correct
+          pubkeyToIndexMap.removeInt(pubkey);
+        });
   }
 
-  private boolean depositSignatureIsValid(final Deposit deposit, BLSPublicKey pubkey) {
+  private boolean depositSignatureIsValid(
+      final BLSPublicKey pubkey,
+      final Bytes32 withdrawalCredentials,
+      final UInt64 amount,
+      final BLSSignature signature) {
     try {
       return depositSignatureVerifier.verify(
-          pubkey, computeDepositSigningRoot(deposit, pubkey), deposit.getData().getSignature());
+          pubkey, computeDepositSigningRoot(pubkey, withdrawalCredentials, amount), signature);
     } catch (final BlsException e) {
       return false;
     }
   }
 
-  private Bytes computeDepositSigningRoot(final Deposit deposit, BLSPublicKey pubkey) {
+  private Bytes computeDepositSigningRoot(
+      final BLSPublicKey pubkey, final Bytes32 withdrawalCredentials, final UInt64 amount) {
     final Bytes32 domain = miscHelpers.computeDomain(Domain.DEPOSIT);
-    final DepositMessage depositMessage =
-        new DepositMessage(
-            pubkey, deposit.getData().getWithdrawalCredentials(), deposit.getData().getAmount());
+    final DepositMessage depositMessage = new DepositMessage(pubkey, withdrawalCredentials, amount);
     return miscHelpers.computeSigningRoot(depositMessage, domain);
   }
 
-  protected void addValidatorToRegistry(final MutableBeaconState state, final Deposit deposit) {
-    final Validator validator = getValidatorFromDeposit(deposit);
+  protected void addValidatorToRegistry(
+      final MutableBeaconState state,
+      final BLSPublicKey pubkey,
+      final Bytes32 withdrawalCredentials,
+      final UInt64 amount) {
+    final Validator validator = getValidatorFromDeposit(pubkey, withdrawalCredentials, amount);
     LOG.debug("Adding new validator with index {} to state", state.getValidators().size());
     state.getValidators().append(validator);
-    state.getBalances().appendElement(deposit.getData().getAmount());
+    state.getBalances().appendElement(amount);
   }
 
-  private Validator getValidatorFromDeposit(final Deposit deposit) {
-    final UInt64 amount = deposit.getData().getAmount();
+  private Validator getValidatorFromDeposit(
+      final BLSPublicKey pubkey, final Bytes32 withdrawalCredentials, final UInt64 amount) {
     final UInt64 effectiveBalance =
         amount
             .minus(amount.mod(specConfig.getEffectiveBalanceIncrement()))
             .min(specConfig.getMaxEffectiveBalance());
     return new Validator(
-        deposit.getData().getPubkey(),
-        deposit.getData().getWithdrawalCredentials(),
+        pubkey,
+        withdrawalCredentials,
         effectiveBalance,
         false,
         FAR_FUTURE_EPOCH,
