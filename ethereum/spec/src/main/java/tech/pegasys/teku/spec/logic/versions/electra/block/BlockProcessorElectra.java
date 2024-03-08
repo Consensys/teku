@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.logic.versions.electra.block;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.cache.IndexedAttestationCache;
@@ -93,7 +94,6 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
                                 "Deposit receipts were not found during block processing."))));
   }
 
-  /** Disable former deposit mechanism once all prior deposits are processed * */
   @Override
   protected void verifyOutstandingDepositsAreProcessed(
       final BeaconState state, final BeaconBlockBody body) {
@@ -130,11 +130,11 @@ public class BlockProcessorElectra extends BlockProcessorDeneb {
       }
       applyDeposit(
           state,
-          null,
           depositReceipt.getPubkey(),
           depositReceipt.getWithdrawalCredentials(),
           depositReceipt.getAmount(),
           depositReceipt.getSignature(),
+          Optional.empty(),
           false);
     }
   }
