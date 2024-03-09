@@ -31,6 +31,7 @@ import org.testcontainers.utility.MountableFile;
 import tech.pegasys.teku.api.response.v1.EventType;
 
 public abstract class TekuNode extends Node {
+  public static final int VALIDATOR_API_PORT = 9052;
   private static final Logger LOG = LogManager.getLogger();
   protected boolean started = false;
 
@@ -145,5 +146,16 @@ public abstract class TekuNode extends Node {
 
   protected URI getRestApiUrl() {
     return URI.create("http://127.0.0.1:" + container.getMappedPort(REST_API_PORT));
+  }
+
+  public URI getValidatorApiUrl() {
+    final boolean isUseSsl =
+        (boolean) getConfig().getConfigMap().getOrDefault("Xvalidator-api-ssl-enabled", true);
+    final String prefix = isUseSsl ? "https" : "http";
+
+    final URI uri =
+        URI.create(prefix + "://127.0.0.1:" + container.getMappedPort(VALIDATOR_API_PORT));
+    LOG.debug("Validator URL: {}", uri);
+    return uri;
   }
 }
