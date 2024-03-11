@@ -53,7 +53,7 @@ public interface KZG {
 
         @Override
         public KZGCommitment blobToKzgCommitment(final Bytes blob) throws KZGException {
-          return KZGCommitment.infinity();
+          return KZGCommitment.INFINITY;
         }
 
         @Override

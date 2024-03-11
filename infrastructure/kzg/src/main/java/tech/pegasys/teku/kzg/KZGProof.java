@@ -23,8 +23,11 @@ import org.apache.tuweni.ssz.SSZ;
 
 public final class KZGProof {
 
-  /** Creates 0x00..00 for point-at-infinity */
-  public static final KZGProof INFINITY = KZGProof.fromBytesCompressed(Bytes48.ZERO);
+  /** The KZGProof which represents the point-at-infinity. */
+  public static final KZGProof INFINITY =
+      KZGProof.fromBytesCompressed(
+          Bytes48.fromHexString(
+              "0xc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"));
 
   public static KZGProof fromHexString(final String hexString) {
     return KZGProof.fromBytesCompressed(Bytes48.fromHexString(hexString));

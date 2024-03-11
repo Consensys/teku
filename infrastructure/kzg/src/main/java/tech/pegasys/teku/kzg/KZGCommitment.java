@@ -23,14 +23,11 @@ import org.apache.tuweni.ssz.SSZ;
 
 public final class KZGCommitment {
 
-  /**
-   * Creates 0x00..00 for point-at-infinity
-   *
-   * @return point-at-infinity as per the Eth2 spec
-   */
-  public static KZGCommitment infinity() {
-    return KZGCommitment.fromBytesCompressed(Bytes48.ZERO);
-  }
+  /** The KZGCommitment which represents the point-at-infinity. */
+  public static final KZGCommitment INFINITY =
+      KZGCommitment.fromBytesCompressed(
+          Bytes48.fromHexString(
+              "0xc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"));
 
   public static KZGCommitment fromHexString(final String hexString) {
     return KZGCommitment.fromBytesCompressed(Bytes48.fromHexString(hexString));

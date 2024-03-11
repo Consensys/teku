@@ -86,12 +86,12 @@ public final class CKZG4844Test {
                 () ->
                     CKZG.verifyBlobKzgProofBatch(
                         List.of(Bytes.fromHexString("0x", BYTES_PER_BLOB)),
-                        List.of(KZGCommitment.infinity()),
+                        List.of(KZGCommitment.INFINITY),
                         List.of(KZGProof.INFINITY))),
             assertThrows(KZGException.class, () -> CKZG.blobToKzgCommitment(Bytes.EMPTY)),
             assertThrows(
                 KZGException.class,
-                () -> CKZG.computeBlobKzgProof(Bytes.EMPTY, KZGCommitment.infinity())));
+                () -> CKZG.computeBlobKzgProof(Bytes.EMPTY, KZGCommitment.INFINITY)));
 
     assertThat(exceptions)
         .allSatisfy(
