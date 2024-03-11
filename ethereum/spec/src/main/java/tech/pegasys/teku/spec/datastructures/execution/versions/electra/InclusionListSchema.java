@@ -22,26 +22,30 @@ import tech.pegasys.teku.infrastructure.ssz.schema.SszSchemaHints;
 import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszByteVectorSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.config.SpecConfigElectra;
-import tech.pegasys.teku.spec.datastructures.type.SszSignature;
-import tech.pegasys.teku.spec.datastructures.type.SszSignatureSchema;
+import tech.pegasys.teku.spec.datastructures.execution.Transaction;
+import tech.pegasys.teku.spec.datastructures.execution.TransactionSchema;
 
-public class SignedInclusionListSummarySchema
-    extends ContainerSchema2<SignedInclusionListSummary, SszList<SszByteVector>, SszSignature> {
+public class InclusionListSchema
+    extends ContainerSchema2<InclusionList, SszList<SszByteVector>, SszList<Transaction>> {
 
-  public SignedInclusionListSummarySchema(final SpecConfigElectra specConfig) {
+  public InclusionListSchema(final SpecConfigElectra specConfig) {
     super(
-        "SignedInclusionListSummary",
+        "InclusionList",
         namedSchema(
             "summary",
             SszListSchema.create(
                 SszByteVectorSchema.create(Bytes20.SIZE),
                 specConfig.getMaxTransactionPerInclusionList(),
                 SszSchemaHints.none())),
-        namedSchema("signature", SszSignatureSchema.INSTANCE));
+        namedSchema(
+            "transactions",
+            SszListSchema.create(
+                new TransactionSchema(specConfig),
+                specConfig.getMaxTransactionPerInclusionList())));
   }
 
   @Override
-  public SignedInclusionListSummary createFromBackingNode(final TreeNode node) {
-    return new SignedInclusionListSummary(this, node);
+  public InclusionList createFromBackingNode(final TreeNode node) {
+    return new InclusionList(this, node);
   }
 }
