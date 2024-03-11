@@ -28,6 +28,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.SignedBeaconBlockAndInclusionList;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
@@ -119,9 +121,25 @@ public class BlockManager extends Service
             importResult, blockBroadcastValidator.getResult()));
   }
 
-  @SuppressWarnings("FutureReturnValueIgnored")
+  public SafeFuture<InternalValidationResult> validateAndImportBlockAndInclusionList(
+      final SignedBeaconBlockAndInclusionList blockAndInclusionList,
+      final Optional<UInt64> arrivalTimestamp) {
+    return validateAndImportBlock(
+        blockAndInclusionList.getSignedBeaconBlock(),
+        Optional.of(blockAndInclusionList.getSignedInclusionList()),
+        arrivalTimestamp);
+  }
+
   public SafeFuture<InternalValidationResult> validateAndImportBlock(
       final SignedBeaconBlock block, final Optional<UInt64> arrivalTimestamp) {
+    return validateAndImportBlock(block, Optional.empty(), arrivalTimestamp);
+  }
+
+  @SuppressWarnings("FutureReturnValueIgnored")
+  public SafeFuture<InternalValidationResult> validateAndImportBlock(
+      final SignedBeaconBlock block,
+      final Optional<SignedInclusionList> inclusionList,
+      final Optional<UInt64> arrivalTimestamp) {
 
     final Optional<BlockImportPerformance> blockImportPerformance;
 

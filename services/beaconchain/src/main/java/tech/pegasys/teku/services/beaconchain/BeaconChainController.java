@@ -1067,6 +1067,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
             .eventChannels(eventChannels)
             .combinedChainDataClient(combinedChainDataClient)
             .gossipedBlockProcessor(blockManager::validateAndImportBlock)
+            .gossipedBlockAndInclusionListProcessor(
+                blockManager::validateAndImportBlockAndInclusionList)
             .gossipedBlobSidecarProcessor(blobSidecarManager::validateAndPrepareForBlockImport)
             .gossipedAttestationProcessor(attestationManager::addAttestation)
             .gossipedAggregateProcessor(attestationManager::addAggregate)

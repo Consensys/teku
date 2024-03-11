@@ -71,6 +71,7 @@ import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.SignedBeaconBlockAndInclusionList;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
@@ -97,6 +98,8 @@ public class Eth2P2PNetworkBuilder {
   protected EventChannels eventChannels;
   protected CombinedChainDataClient combinedChainDataClient;
   protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
+  protected OperationProcessor<SignedBeaconBlockAndInclusionList>
+      gossipedBlockAndInclusionListProcessor;
   protected OperationProcessor<BlobSidecar> gossipedBlobSidecarProcessor;
   protected OperationProcessor<ValidatableAttestation> gossipedAttestationConsumer;
   protected OperationProcessor<ValidatableAttestation> gossipedAggregateProcessor;
@@ -295,6 +298,7 @@ public class Eth2P2PNetworkBuilder {
           combinedChainDataClient.getRecentChainData(),
           gossipEncoding,
           gossipedBlockProcessor,
+          gossipedBlockAndInclusionListProcessor,
           gossipedBlobSidecarProcessor,
           gossipedAttestationConsumer,
           gossipedAggregateProcessor,
@@ -457,6 +461,13 @@ public class Eth2P2PNetworkBuilder {
       final OperationProcessor<SignedBeaconBlock> blockProcessor) {
     checkNotNull(blockProcessor);
     this.gossipedBlockProcessor = blockProcessor;
+    return this;
+  }
+
+  public Eth2P2PNetworkBuilder gossipedBlockAndInclusionListProcessor(
+      final OperationProcessor<SignedBeaconBlockAndInclusionList> blockAndInclusionListProcessor) {
+    checkNotNull(blockAndInclusionListProcessor);
+    this.gossipedBlockAndInclusionListProcessor = blockAndInclusionListProcessor;
     return this;
   }
 

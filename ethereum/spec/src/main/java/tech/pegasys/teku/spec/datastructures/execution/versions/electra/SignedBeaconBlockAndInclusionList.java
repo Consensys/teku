@@ -31,4 +31,12 @@ public class SignedBeaconBlockAndInclusionList
       final SignedInclusionList inclusionList) {
     super(schema, block, inclusionList);
   }
+
+  public SignedBeaconBlock getSignedBeaconBlock() {
+    return getField0();
+  }
+
+  public SignedInclusionList getSignedInclusionList() {
+    return getField1();
+  }
 }
