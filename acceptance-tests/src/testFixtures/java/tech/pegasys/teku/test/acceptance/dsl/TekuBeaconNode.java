@@ -113,9 +113,13 @@ public class TekuBeaconNode extends TekuNode {
     super(network, TEKU_DOCKER_IMAGE_NAME, version, LOG);
     this.config = tekuNodeConfig;
     this.spec = SpecFactory.create(config.getNetworkName(), config.getSpecConfigModifier());
+    if (config.getConfigMap().containsKey("validator-api-enabled")) {
+      container.addExposedPort(VALIDATOR_API_PORT);
+    }
+
+    container.addExposedPorts(METRICS_PORT, REST_API_PORT);
     container
         .withWorkingDirectory(WORKING_DIRECTORY)
-        .withExposedPorts(REST_API_PORT, METRICS_PORT)
         .waitingFor(
             new HttpWaitStrategy()
                 .forPort(REST_API_PORT)
