@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb;
 
 import it.unimi.dsi.fastutil.longs.LongList;
-import java.util.function.Consumer;
+import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema12;
@@ -136,10 +136,9 @@ public class BeaconBlockBodySchemaDenebImpl
 
   @Override
   public SafeFuture<? extends BeaconBlockBody> createBlockBody(
-      final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
-    final BeaconBlockBodyBuilderDeneb builder = new BeaconBlockBodyBuilderDeneb().schema(this);
-    builderConsumer.accept(builder);
-    return builder.build();
+      final Function<BeaconBlockBodyBuilder, SafeFuture<Void>> bodyBuilder) {
+    final BeaconBlockBodyBuilderDeneb builder = new BeaconBlockBodyBuilderDeneb(this, null);
+    return bodyBuilder.apply(builder).thenApply(__ -> builder.build());
   }
 
   @Override
@@ -209,6 +208,11 @@ public class BeaconBlockBodySchemaDenebImpl
   public SszListSchema<SszKZGCommitment, ?> getBlobKzgCommitmentsSchema() {
     return (SszListSchema<SszKZGCommitment, ?>)
         getChildSchema(getFieldIndex(BlockBodyFields.BLOB_KZG_COMMITMENTS));
+  }
+
+  @Override
+  public long getBlobKzgCommitmentsGeneralizedIndex() {
+    return getChildGeneralizedIndex(getFieldIndex(BlockBodyFields.BLOB_KZG_COMMITMENTS));
   }
 
   @Override

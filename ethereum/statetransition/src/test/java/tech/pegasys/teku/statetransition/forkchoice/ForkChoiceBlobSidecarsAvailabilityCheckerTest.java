@@ -51,7 +51,7 @@ import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
@@ -78,11 +78,11 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   private final RecentChainData recentChainData = mock(RecentChainData.class);
 
   private SignedBeaconBlock block;
-  private List<BlobSidecarOld> blobSidecarsComplete;
+  private List<BlobSidecar> blobSidecarsComplete;
   private List<KZGCommitment> kzgCommitmentsComplete;
 
-  private List<BlobSidecarOld> blobSidecarsInitial;
-  private List<BlobSidecarOld> blobSidecarsAdditional;
+  private List<BlobSidecar> blobSidecarsInitial;
+  private List<BlobSidecar> blobSidecarsAdditional;
 
   private final SafeFuture<Void> trackerCompletionFuture = new SafeFuture<>();
 
@@ -315,11 +315,11 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     verifyValidationAndDataAvailabilityCall(blobSidecarsInitial, false);
 
     // we complete the blobs without index 3
-    final List<BlobSidecarOld> partialBlobs = blobSidecarsComplete.subList(1, 2);
+    final List<BlobSidecar> partialBlobs = blobSidecarsComplete.subList(1, 2);
     // we lie on availability check too (not actually possible)
     whenDataAvailability(partialBlobs).thenReturn(true);
 
-    final List<BlobSidecarOld> expectedIncompleteBlobSidecar = new ArrayList<>();
+    final List<BlobSidecar> expectedIncompleteBlobSidecar = new ArrayList<>();
     expectedIncompleteBlobSidecar.add(blobSidecarsComplete.get(0)); // blob 0
     expectedIncompleteBlobSidecar.add(blobSidecarsComplete.get(1)); // blob 1
     expectedIncompleteBlobSidecar.add(blobSidecarsComplete.get(2)); // blob 2
@@ -409,7 +409,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
 
   private void assertInvalid(
       final SafeFuture<BlobSidecarsAndValidationResult> availabilityOrValidityCheck,
-      final List<BlobSidecarOld> invalidBlobs,
+      final List<BlobSidecar> invalidBlobs,
       final Optional<Throwable> cause) {
     assertThat(availabilityOrValidityCheck)
         .isCompletedWithValueMatching(result -> !result.isValid(), "is not valid")
@@ -521,11 +521,11 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
       }
     }
 
-    final ImmutableSortedMap.Builder<UInt64, BlobSidecarOld> mapBuilder =
+    final ImmutableSortedMap.Builder<UInt64, BlobSidecar> mapBuilder =
         ImmutableSortedMap.naturalOrder();
     blobSidecarsInitial.forEach(blobSidecar -> mapBuilder.put(blobSidecar.getIndex(), blobSidecar));
 
-    when(blockBlobSidecarsTracker.getBlock()).thenReturn(block.getBeaconBlock());
+    when(blockBlobSidecarsTracker.getBlock()).thenReturn(Optional.of(block));
     when(blockBlobSidecarsTracker.getBlobSidecars()).thenReturn(mapBuilder.build());
     when(blockBlobSidecarsTracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());
 
@@ -534,8 +534,8 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
             spec, asyncRunner, recentChainData, blockBlobSidecarsTracker, kzg, timeout);
   }
 
-  private void completeTrackerWith(final List<BlobSidecarOld> blobSidecars) {
-    final ImmutableSortedMap.Builder<UInt64, BlobSidecarOld> mapBuilder =
+  private void completeTrackerWith(final List<BlobSidecar> blobSidecars) {
+    final ImmutableSortedMap.Builder<UInt64, BlobSidecar> mapBuilder =
         ImmutableSortedMap.naturalOrder();
     blobSidecars.forEach(blobSidecar -> mapBuilder.put(blobSidecar.getIndex(), blobSidecar));
     when(blockBlobSidecarsTracker.getBlobSidecars()).thenReturn(mapBuilder.build());
@@ -543,12 +543,12 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     trackerCompletionFuture.complete(null);
   }
 
-  private OngoingStubbing<Boolean> whenDataAvailability(final List<BlobSidecarOld> blobSidecars) {
+  private OngoingStubbing<Boolean> whenDataAvailability(final List<BlobSidecar> blobSidecars) {
     return when(miscHelpers.verifyBlobKzgProofBatch(kzg, blobSidecars));
   }
 
   private void throwWhenValidatingBlobSidecarsBatchAgainstBlock(
-      final List<BlobSidecarOld> blobSidecars, final Throwable cause) {
+      final List<BlobSidecar> blobSidecars, final Throwable cause) {
     doThrow(cause)
         .when(miscHelpers)
         .validateBlobSidecarsBatchAgainstBlock(
@@ -560,7 +560,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   private void throwWhenVerifyingBlobSidecarCompleteness(
-      final List<BlobSidecarOld> blobSidecars, final Throwable cause) {
+      final List<BlobSidecar> blobSidecars, final Throwable cause) {
     doThrow(cause)
         .when(miscHelpers)
         .verifyBlobSidecarCompleteness(
@@ -571,7 +571,7 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
   }
 
   private void verifyValidationAndDataAvailabilityCall(
-      final List<BlobSidecarOld> blobSidecars, final boolean isFinalValidation) {
+      final List<BlobSidecar> blobSidecars, final boolean isFinalValidation) {
     verify(miscHelpers, times(1))
         .validateBlobSidecarsBatchAgainstBlock(
             eq(blobSidecars),
@@ -604,13 +604,13 @@ public class ForkChoiceBlobSidecarsAvailabilityCheckerTest {
     block = dataStructureUtil.randomSignedBeaconBlock();
     blobSidecarsComplete = dataStructureUtil.randomBlobSidecarsForBlock(block);
 
-    final ImmutableSortedMap.Builder<UInt64, BlobSidecarOld> mapBuilder =
+    final ImmutableSortedMap.Builder<UInt64, BlobSidecar> mapBuilder =
         ImmutableSortedMap.naturalOrder();
     blobSidecarsComplete.forEach(
         blobSidecar -> mapBuilder.put(blobSidecar.getIndex(), blobSidecar));
 
     when(spec.isAvailabilityOfBlobSidecarsRequiredAtSlot(store, block.getSlot())).thenReturn(false);
-    when(blockBlobSidecarsTracker.getBlock()).thenReturn(block.getBeaconBlock());
+    when(blockBlobSidecarsTracker.getBlock()).thenReturn(Optional.of(block));
     when(blockBlobSidecarsTracker.getCompletionFuture()).thenReturn(SafeFuture.COMPLETE);
     when(blockBlobSidecarsTracker.getBlobSidecars()).thenReturn(ImmutableSortedMap.of());
     when(blockBlobSidecarsTracker.getSlotAndBlockRoot()).thenReturn(block.getSlotAndBlockRoot());

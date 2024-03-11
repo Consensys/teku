@@ -14,8 +14,12 @@
 package tech.pegasys.teku.validator.client.duties;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.infrastructure.logging.Converter.gweiToEth;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
+import com.google.common.annotations.VisibleForTesting;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,6 +33,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
@@ -90,9 +95,9 @@ public class BlockProductionDuty implements Duty {
                     () -> createUnsignedBlock(signature), this, ValidatorDutyMetricsSteps.CREATE))
         .thenCompose(this::validateBlock)
         .thenCompose(
-            blockContainer ->
+            blockContainerAndMetaData ->
                 validatorDutyMetrics.record(
-                    () -> signBlockContainer(forkInfo, blockContainer),
+                    () -> signBlockContainer(forkInfo, blockContainerAndMetaData),
                     this,
                     ValidatorDutyMetricsSteps.SIGN))
         .thenCompose(
@@ -106,26 +111,40 @@ public class BlockProductionDuty implements Duty {
     return validator.getSigner().createRandaoReveal(spec.computeEpochAtSlot(slot), forkInfo);
   }
 
-  private SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
+  private SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
       final BLSSignature randaoReveal) {
     if (blockV3Enabled) {
-      return validatorApiChannel.createUnsignedBlock(slot, randaoReveal, validator.getGraffiti());
+      return validatorApiChannel.createUnsignedBlock(
+          slot, randaoReveal, validator.getGraffiti(), Optional.empty(), Optional.empty());
     } else {
       return validatorApiChannel.createUnsignedBlock(
-          slot, randaoReveal, validator.getGraffiti(), useBlindedBlock);
+          slot,
+          randaoReveal,
+          validator.getGraffiti(),
+          Optional.of(useBlindedBlock),
+          Optional.empty());
     }
   }
 
   private SafeFuture<BlockContainer> validateBlock(
-      final Optional<BlockContainer> maybeBlockContainer) {
-    final BlockContainer unsignedBlockContainer =
+      final Optional<BlockContainerAndMetaData> maybeBlockContainer) {
+    final BlockContainerAndMetaData blockContainerAndMetaData =
         maybeBlockContainer.orElseThrow(
             () -> new IllegalStateException("Node was not syncing but could not create block"));
+    final BlockContainer unsignedBlockContainer = blockContainerAndMetaData.blockContainer();
     checkArgument(
         unsignedBlockContainer.getSlot().equals(slot),
         "Unsigned block slot (%s) does not match expected slot %s",
         unsignedBlockContainer.getSlot(),
         slot);
+
+    if (!blockContainerAndMetaData.consensusBlockValue().isZero()) {
+      LOG.info(
+          "Received block for slot {}, block rewards {} ETH, execution payload value {} ETH",
+          slot,
+          gweiToEth(blockContainerAndMetaData.consensusBlockValue()),
+          gweiToEth(blockContainerAndMetaData.executionPayloadValue()));
+    }
     return SafeFuture.completedFuture(unsignedBlockContainer);
   }
 
@@ -152,25 +171,25 @@ public class BlockProductionDuty implements Duty {
             });
   }
 
-  @Override
-  public String toString() {
-    return "BlockProductionDuty{"
-        + "validator="
-        + validator
-        + ", slot="
-        + slot
-        + ", forkProvider="
-        + forkProvider
-        + '}';
+  @VisibleForTesting
+  List<String> getBlockSummary(final BeaconBlockBody blockBody) {
+    final List<String> context = new ArrayList<>();
+    getBlobsSummary(blockBody).ifPresent(context::add);
+    getExecutionSummary(blockBody).ifPresent(context::add);
+    return context;
   }
 
-  static Optional<String> getBlockSummary(final BeaconBlockBody blockBody) {
+  private Optional<String> getBlobsSummary(final BeaconBlockBody blockBody) {
     return blockBody
-        .getOptionalExecutionPayloadSummary()
-        .map(BlockProductionDuty::getSummaryString);
+        .getOptionalBlobKzgCommitments()
+        .map(blobKzgCommitments -> "Blobs: " + blobKzgCommitments.size());
   }
 
-  private static String getSummaryString(final ExecutionPayloadSummary summary) {
+  private Optional<String> getExecutionSummary(final BeaconBlockBody blockBody) {
+    return blockBody.getOptionalExecutionPayloadSummary().map(this::getExecutionSummaryString);
+  }
+
+  private String getExecutionSummaryString(final ExecutionPayloadSummary summary) {
     UInt64 gasPercentage;
     try {
       gasPercentage =
@@ -182,10 +201,22 @@ public class BlockProductionDuty implements Duty {
       LOG.debug("Failed to compute percentage", e);
     }
     return String.format(
-        "%s (%s%%) gas, EL block:  %s (%s)",
+        "%s (%s%%) gas, EL block: %s (%s)",
         summary.getGasUsed(),
         gasPercentage,
         summary.getBlockHash().toUnprefixedHexString(),
         summary.getBlockNumber());
+  }
+
+  @Override
+  public String toString() {
+    return "BlockProductionDuty{"
+        + "validator="
+        + validator
+        + ", slot="
+        + slot
+        + ", forkProvider="
+        + forkProvider
+        + '}';
   }
 }

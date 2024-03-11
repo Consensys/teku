@@ -14,34 +14,32 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
-import java.util.Optional;
+import java.util.List;
+import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.mockito.InOrder;
-import org.mockito.Mockito;
+import tech.pegasys.teku.infrastructure.ssz.SszCollection;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
-import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
-import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
 
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final SchemaDefinitionsDeneb schemaDefinitions =
-      SchemaDefinitionsDeneb.required(spec.getGenesisSchemaDefinitions());
 
   @Test
   void shouldCreateBlockContents() {
@@ -49,27 +47,28 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
     final BlobsBundle blobsBundle = prepareBlobsBundle(spec, 3);
 
     final BlockContainer blockContainer =
-        assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), false);
+        assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), false)
+            .blockContainer();
 
     assertThat(blockContainer).isInstanceOf(BlockContents.class);
     assertThat(blockContainer.getBlock().getBody().getOptionalBlobKzgCommitments())
         .hasValueSatisfying(blobKzgCommitments -> assertThat(blobKzgCommitments).hasSize(3));
-    assertThat(blockContainer.getBlobSidecars())
-        .hasValueSatisfying(
-            blobSidecars ->
-                assertThat(blobSidecars)
-                    .hasSize(3)
-                    .map(BlobSidecarOld::getBlob)
-                    .hasSameElementsAs(blobsBundle.getBlobs()));
+    assertThat(blockContainer.getBlobs())
+        .map(SszCollection::asList)
+        .hasValue(blobsBundle.getBlobs());
+    assertThat(blockContainer.getKzgProofs())
+        .map(proofs -> proofs.stream().map(SszKZGProof::getKZGProof).toList())
+        .hasValue(blobsBundle.getProofs());
   }
 
   @Test
   void shouldCreateBlindedBeaconBlockWhenBlindedBlockRequested() {
 
-    final SszList<SszKZGCommitment> blobKzgCommitments = prepareBlobKzgCommitments(spec, 3);
+    final SszList<SszKZGCommitment> blobKzgCommitments = prepareBuilderBlobKzgCommitments(spec, 3);
 
     final BlockContainer blockContainer =
-        assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), true);
+        assertBlockCreated(1, spec, false, state -> prepareValidPayload(spec, state), true)
+            .blockContainer();
 
     assertThat(blockContainer).isInstanceOf(BeaconBlock.class);
     final BeaconBlock blindedBeaconBlock = (BeaconBlock) blockContainer;
@@ -78,46 +77,103 @@ public class BlockFactoryDenebTest extends AbstractBlockFactoryTest {
   }
 
   @Test
-  void unblindSignedBlock_shouldPassthroughUnblindedBlockContents() {
+  void unblindSignedBlock_shouldPassthroughUnblindedBlock() {
 
-    final SignedBlockContents signedBlockContents = dataStructureUtil.randomSignedBlockContents();
+    final SignedBeaconBlock signedBlock = dataStructureUtil.randomSignedBeaconBlock();
 
-    final SignedBlockContainer unblindedSignedBlockContainer =
-        assertBlockUnblinded(signedBlockContents, spec);
+    final SignedBeaconBlock unblindedSignedBlock = assertBlockUnblinded(signedBlock, spec);
 
-    assertThat(unblindedSignedBlockContainer).isEqualTo(signedBlockContents);
+    assertThat(unblindedSignedBlock).isEqualTo(signedBlock);
   }
 
   @Test
-  @Disabled(
-      "enable when block production flow for blob sidecar inclusion proof spec is implemented")
   void unblindSignedBlock_shouldUnblindBeaconBlock() {
 
-    final BlobsBundle blobsBundle = prepareBlobsBundle(spec, 3);
-    // let the unblinder verify the kzg commitments
-    blobKzgCommitments =
-        Optional.of(
-            schemaDefinitions.getBlobKzgCommitmentsSchema().createFromBlobsBundle(blobsBundle));
-
-    final SignedBeaconBlock unblindedBeaconBlock = dataStructureUtil.randomSignedBeaconBlock();
-    final SignedBeaconBlock blindedBlock = assertBlockBlinded(unblindedBeaconBlock, spec);
+    final SignedBeaconBlock expectedUnblindedBlock = dataStructureUtil.randomSignedBeaconBlock();
+    final SignedBeaconBlock blindedBlock = assertBlockBlinded(expectedUnblindedBlock, spec);
 
     // let the unblinder return a consistent execution payload
     executionPayload =
-        unblindedBeaconBlock.getMessage().getBody().getOptionalExecutionPayload().orElseThrow();
+        expectedUnblindedBlock.getMessage().getBody().getOptionalExecutionPayload().orElseThrow();
 
-    final SignedBlockContainer unblindedBlockContainer = assertBlockUnblinded(blindedBlock, spec);
+    final SignedBeaconBlock unblindedBlock = assertBlockUnblinded(blindedBlock, spec);
 
-    // make sure getCachedUnblindedPayload is second in order of method calling
-    final InOrder inOrder = Mockito.inOrder(executionLayer);
-    inOrder.verify(executionLayer).getUnblindedPayload(unblindedBlockContainer);
-    inOrder.verify(executionLayer).getCachedUnblindedPayload(unblindedBlockContainer.getSlot());
+    verify(executionLayer).getUnblindedPayload(unblindedBlock);
 
-    assertThat(unblindedBlockContainer).isInstanceOf(SignedBlockContents.class);
-    assertThat(unblindedBlockContainer.isBlinded()).isFalse();
-    assertThat(unblindedBlockContainer.getSignedBlock()).isEqualTo(unblindedBeaconBlock);
-    assertThat(unblindedBlockContainer.getSignedBlobSidecars())
-        .hasValueSatisfying(blobSidecars -> assertThat(blobSidecars).isEmpty());
+    assertThat(unblindedBlock.isBlinded()).isFalse();
+    assertThat(unblindedBlock).isEqualTo(expectedUnblindedBlock);
+  }
+
+  @Test
+  void shouldCreateValidBlobSidecarsForBlockContents() {
+    final Spec spec = TestSpecFactory.createMinimalDeneb();
+    final int blobsCount = 3;
+    final BlobsBundle blobsBundle = prepareBlobsBundle(spec, blobsCount);
+
+    final BlockAndBlobSidecars blockAndBlobSidecars = createBlockAndBlobSidecars(false, spec);
+
+    final List<BlobSidecar> blobSidecars = blockAndBlobSidecars.blobSidecars();
+
+    verifyNoInteractions(executionLayer);
+
+    final SszList<SszKZGCommitment> expectedCommitments =
+        blockAndBlobSidecars
+            .block()
+            .getSignedBlock()
+            .getMessage()
+            .getBody()
+            .getOptionalBlobKzgCommitments()
+            .orElseThrow();
+
+    assertThat(blobSidecars).hasSize(blobsCount).hasSameSizeAs(expectedCommitments);
+
+    IntStream.range(0, blobSidecars.size())
+        .forEach(
+            index -> {
+              final BlobSidecar blobSidecar = blobSidecars.get(index);
+              // check sidecar is created using the prepared BlobsBundle
+              assertThat(blobSidecar.getKZGProof()).isEqualTo(blobsBundle.getProofs().get(index));
+              assertThat(blobSidecar.getBlob()).isEqualTo(blobsBundle.getBlobs().get(index));
+              assertThat(blobSidecar.getSszKZGCommitment())
+                  .isEqualTo(expectedCommitments.get(index));
+            });
+  }
+
+  @Test
+  void shouldCreateValidBlobSidecarsForBlindedBlock() {
+    final Spec spec = TestSpecFactory.createMinimalDeneb();
+    final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
+
+    // random payload required to construct a valid BuilderPayload
+    executionPayload = dataStructureUtil.randomExecutionPayload();
+
+    final int blobsCount = 3;
+    final tech.pegasys.teku.spec.datastructures.builder.BlobsBundle blobsBundle =
+        prepareBuilderPayload(spec, blobsCount).getOptionalBlobsBundle().orElseThrow();
+
+    final BlockAndBlobSidecars blockAndBlobSidecars = createBlockAndBlobSidecars(true, spec);
+
+    final SignedBlockContainer block = blockAndBlobSidecars.block();
+    final List<BlobSidecar> blobSidecars = blockAndBlobSidecars.blobSidecars();
+
+    verify(executionLayer).getCachedUnblindedPayload(block.getSlot());
+
+    final SszList<SszKZGCommitment> expectedCommitments =
+        block.getSignedBlock().getMessage().getBody().getOptionalBlobKzgCommitments().orElseThrow();
+
+    assertThat(blobSidecars).hasSize(blobsCount).hasSameSizeAs(expectedCommitments);
+
+    IntStream.range(0, blobSidecars.size())
+        .forEach(
+            index -> {
+              final BlobSidecar blobSidecar = blobSidecars.get(index);
+              // check sidecar is created using the cached BuilderPayload
+              assertThat(blobSidecar.getSszKZGProof())
+                  .isEqualTo(blobsBundle.getProofs().get(index));
+              assertThat(blobSidecar.getBlob()).isEqualTo(blobsBundle.getBlobs().get(index));
+              assertThat(blobSidecar.getSszKZGCommitment())
+                  .isEqualTo(expectedCommitments.get(index));
+            });
   }
 
   @Override

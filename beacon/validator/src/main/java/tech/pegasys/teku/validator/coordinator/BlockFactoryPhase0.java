@@ -14,17 +14,25 @@
 package tech.pegasys.teku.validator.coordinator;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static tech.pegasys.teku.spec.constants.EthConstants.GWEI_TO_WEI;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateCache;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.common.SlotCaches;
 
 public class BlockFactoryPhase0 implements BlockFactory {
 
@@ -37,73 +45,65 @@ public class BlockFactoryPhase0 implements BlockFactory {
     this.operationSelector = operationSelector;
   }
 
-  @Deprecated
   @Override
-  public SafeFuture<BlockContainer> createUnsignedBlock(
+  public SafeFuture<BlockContainerAndMetaData> createUnsignedBlock(
       final BeaconState blockSlotState,
-      final UInt64 newSlot,
+      final UInt64 proposalSlot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> optionalGraffiti,
-      final boolean blinded) {
+      final Optional<Boolean> requestedBlinded,
+      final Optional<UInt64> requestedBuilderBoostFactor,
+      final BlockProductionPerformance blockProductionPerformance) {
     checkArgument(
-        blockSlotState.getSlot().equals(newSlot),
+        blockSlotState.getSlot().equals(proposalSlot),
         "Block slot state for slot %s but should be for slot %s",
         blockSlotState.getSlot(),
-        newSlot);
+        proposalSlot);
 
     // Process empty slots up to the one before the new block slot
-    final UInt64 slotBeforeBlock = newSlot.minus(UInt64.ONE);
+    final UInt64 slotBeforeBlock = proposalSlot.minus(UInt64.ONE);
 
     final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, slotBeforeBlock);
 
     return spec.createNewUnsignedBlock(
-            newSlot,
-            spec.getBeaconProposerIndex(blockSlotState, newSlot),
+            proposalSlot,
+            spec.getBeaconProposerIndex(blockSlotState, proposalSlot),
             blockSlotState,
             parentRoot,
             operationSelector.createSelector(
-                parentRoot, blockSlotState, randaoReveal, optionalGraffiti),
-            blinded)
-        .thenApply(BeaconBlockAndState::getBlock);
+                parentRoot,
+                blockSlotState,
+                randaoReveal,
+                optionalGraffiti,
+                requestedBlinded,
+                requestedBuilderBoostFactor,
+                blockProductionPerformance),
+            blockProductionPerformance)
+        .thenApply(this::beaconBlockAndStateToBlockContainerAndMetaData);
+  }
+
+  private BlockContainerAndMetaData beaconBlockAndStateToBlockContainerAndMetaData(
+      final BeaconBlockAndState blockAndState) {
+    final SlotCaches slotCaches = BeaconStateCache.getSlotCaches(blockAndState.getState());
+    return new BlockContainerAndMetaData(
+        blockAndState.getBlock(),
+        spec.atSlot(blockAndState.getSlot()).getMilestone(),
+        slotCaches.getBlockExecutionValue(),
+        GWEI_TO_WEI.multiply(slotCaches.getBlockProposerRewards().longValue()));
   }
 
   @Override
-  public SafeFuture<BlockContainer> createUnsignedBlock(
-      final BeaconState blockSlotState,
-      final UInt64 newSlot,
-      final BLSSignature randaoReveal,
-      final Optional<Bytes32> optionalGraffiti) {
-    checkArgument(
-        blockSlotState.getSlot().equals(newSlot),
-        "Block slot state for slot %s but should be for slot %s",
-        blockSlotState.getSlot(),
-        newSlot);
-
-    // Process empty slots up to the one before the new block slot
-    final UInt64 slotBeforeBlock = newSlot.minus(UInt64.ONE);
-
-    final Bytes32 parentRoot = spec.getBlockRootAtSlot(blockSlotState, slotBeforeBlock);
-
-    return spec.createNewUnsignedBlock(
-            newSlot,
-            spec.getBeaconProposerIndex(blockSlotState, newSlot),
-            blockSlotState,
-            parentRoot,
-            operationSelector.createSelector(
-                parentRoot, blockSlotState, randaoReveal, optionalGraffiti))
-        .thenApply(BeaconBlockAndState::getBlock);
+  public SafeFuture<SignedBeaconBlock> unblindSignedBlockIfBlinded(
+      final SignedBeaconBlock maybeBlindedBlock) {
+    if (maybeBlindedBlock.isBlinded()) {
+      return spec.unblindSignedBeaconBlock(
+          maybeBlindedBlock.getSignedBlock(), operationSelector.createBlockUnblinderSelector());
+    }
+    return SafeFuture.completedFuture(maybeBlindedBlock);
   }
 
   @Override
-  public SafeFuture<SignedBlockContainer> unblindSignedBlockIfBlinded(
-      final SignedBlockContainer maybeBlindedBlockContainer) {
-    return maybeBlindedBlockContainer
-        .toBlinded()
-        .map(
-            blindedBlockContainer ->
-                spec.unblindSignedBeaconBlock(
-                        blindedBlockContainer, operationSelector.createBlockUnblinderSelector())
-                    .thenApply(signedBeaconBlock -> (SignedBlockContainer) signedBeaconBlock))
-        .orElseGet(() -> SafeFuture.completedFuture(maybeBlindedBlockContainer));
+  public List<BlobSidecar> createBlobSidecars(final SignedBlockContainer blockContainer) {
+    return Collections.emptyList();
   }
 }

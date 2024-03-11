@@ -23,10 +23,10 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapella;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodyBuilderCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BeaconBlockBodySchemaCapellaImpl;
-import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodySchemaCapella;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella.BlindedBeaconBlockBodySchemaCapellaImpl;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBidSchema;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBidSchema;
@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSch
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadSchemaCapella;
+import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.WithdrawalSchema;
 import tech.pegasys.teku.spec.datastructures.operations.BlsToExecutionChangeSchema;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChangeSchema;
@@ -51,8 +52,8 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
   private final ExecutionPayloadSchemaCapella executionPayloadSchemaCapella;
   private final ExecutionPayloadHeaderSchemaCapella executionPayloadHeaderSchemaCapella;
 
-  private final BeaconBlockBodySchemaCapella<?> beaconBlockBodySchema;
-  private final BlindedBeaconBlockBodySchemaCapella<?> blindedBeaconBlockBodySchema;
+  private final BeaconBlockBodySchemaCapellaImpl beaconBlockBodySchema;
+  private final BlindedBeaconBlockBodySchemaCapellaImpl blindedBeaconBlockBodySchema;
 
   private final BeaconBlockSchema beaconBlockSchema;
   private final BeaconBlockSchema blindedBeaconBlockSchema;
@@ -74,7 +75,7 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
     this.executionPayloadSchemaCapella = new ExecutionPayloadSchemaCapella(specConfig);
     this.blsToExecutionChangeSchema = new BlsToExecutionChangeSchema();
     this.signedBlsToExecutionChangeSchema = new SignedBlsToExecutionChangeSchema();
-    this.withdrawalSchema = new WithdrawalSchema();
+    this.withdrawalSchema = Withdrawal.SSZ_SCHEMA;
 
     this.beaconStateSchema = BeaconStateSchemaCapella.create(specConfig);
     this.executionPayloadHeaderSchemaCapella =
@@ -178,6 +179,11 @@ public class SchemaDefinitionsCapella extends SchemaDefinitionsBellatrix {
   @Override
   public ExecutionPayloadHeaderSchema<?> getExecutionPayloadHeaderSchema() {
     return executionPayloadHeaderSchemaCapella;
+  }
+
+  @Override
+  public BeaconBlockBodyBuilder createBeaconBlockBodyBuilder() {
+    return new BeaconBlockBodyBuilderCapella(beaconBlockBodySchema, blindedBeaconBlockBodySchema);
   }
 
   public WithdrawalSchema getWithdrawalSchema() {

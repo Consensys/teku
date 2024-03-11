@@ -15,8 +15,8 @@ package tech.pegasys.teku.api;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Map;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.config.GetSpecResponse;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
@@ -29,8 +29,8 @@ class ConfigProviderTest {
 
   @Test
   void shouldParseResultOfConfig() {
-    final GetSpecResponse response = configProvider.getConfig();
-    final SpecConfig specConfig = SpecConfigLoader.loadRemoteConfig(response.data);
+    final Map<String, String> configMap = configProvider.getConfig();
+    final SpecConfig specConfig = SpecConfigLoader.loadRemoteConfig(configMap);
     final SpecConfig expectedConfig = spec.getGenesisSpecConfig();
     assertThat(specConfig).isEqualToComparingFieldByField(expectedConfig);
   }

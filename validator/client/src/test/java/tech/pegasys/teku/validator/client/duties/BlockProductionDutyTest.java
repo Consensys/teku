@@ -45,19 +45,21 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.metrics.Validator.ValidatorDutyMetricsSteps;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
+import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -125,19 +127,26 @@ class BlockProductionDutyTest {
             validatorDutyMetrics);
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
-    final BeaconBlock unsignedBlock;
+    final BlockContainerAndMetaData blockContainerAndMetaData;
 
     if (isBlindedBlocksEnabled) {
-      unsignedBlock = dataStructureUtil.randomBlindedBeaconBlock(CAPELLA_SLOT);
+      blockContainerAndMetaData =
+          dataStructureUtil.randomBlindedBlockContainerAndMetaData(CAPELLA_SLOT);
     } else {
-      unsignedBlock = dataStructureUtil.randomBeaconBlock(CAPELLA_SLOT);
+      blockContainerAndMetaData = dataStructureUtil.randomBlockContainerAndMetaData(CAPELLA_SLOT);
     }
+
+    final BeaconBlock unsignedBlock = blockContainerAndMetaData.blockContainer().getBlock();
 
     when(signer.createRandaoReveal(spec.computeEpochAtSlot(CAPELLA_SLOT), fork))
         .thenReturn(completedFuture(randaoReveal));
     when(validatorApiChannel.createUnsignedBlock(
-            CAPELLA_SLOT, randaoReveal, Optional.of(graffiti), isBlindedBlocksEnabled))
-        .thenReturn(completedFuture(Optional.of(unsignedBlock)));
+            CAPELLA_SLOT,
+            randaoReveal,
+            Optional.of(graffiti),
+            Optional.of(isBlindedBlocksEnabled),
+            Optional.empty()))
+        .thenReturn(completedFuture(Optional.of(blockContainerAndMetaData)));
     when(signer.signBlock(unsignedBlock, fork)).thenReturn(completedFuture(blockSignature));
     final SignedBeaconBlock signedBlock =
         dataStructureUtil.signedBlock(unsignedBlock, blockSignature);
@@ -182,14 +191,20 @@ class BlockProductionDutyTest {
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
     // can create BlockContents only post-Deneb
     final BlockContents unsignedBlockContents = dataStructureUtil.randomBlockContents(denebSlot);
+    final BlockContainerAndMetaData blockContainerAndMetaData =
+        dataStructureUtil.randomBlockContainerAndMetaData(unsignedBlockContents, denebSlot);
     final BeaconBlock unsignedBlock = unsignedBlockContents.getBlock();
+    final List<Blob> blobsFromUnsignedBlockContents =
+        unsignedBlockContents.getBlobs().orElseThrow().asList();
+    final List<SszKZGProof> kzgProofsFromUnsignedBlockContents =
+        unsignedBlockContents.getKzgProofs().orElseThrow().asList();
     when(signer.createRandaoReveal(spec.computeEpochAtSlot(denebSlot), fork))
         .thenReturn(completedFuture(randaoReveal));
     when(signer.signBlock(unsignedBlockContents.getBlock(), fork))
         .thenReturn(completedFuture(blockSignature));
     when(validatorApiChannel.createUnsignedBlock(
-            denebSlot, randaoReveal, Optional.of(graffiti), false))
-        .thenReturn(completedFuture(Optional.of(unsignedBlockContents)));
+            denebSlot, randaoReveal, Optional.of(graffiti), Optional.of(false), Optional.empty()))
+        .thenReturn(completedFuture(Optional.of(blockContainerAndMetaData)));
     when(validatorApiChannel.sendSignedBlock(any(), any()))
         .thenReturn(completedFuture(SendSignedBlockResult.success(unsignedBlock.getRoot())));
 
@@ -221,12 +236,23 @@ class BlockProductionDutyTest {
     assertThat(signedBlock.getMessage()).isEqualTo(unsignedBlock);
     assertThat(signedBlock.getSignature()).isEqualTo(blockSignature);
 
-    assertThat(signedBlockContents.getSignedBlobSidecars().isPresent()).isTrue();
+    assertThat(signedBlockContents.getKzgProofs()).isPresent();
 
-    final List<SignedBlobSidecarOld> signedBlobSidecars =
-        signedBlockContents.getSignedBlobSidecars().get();
+    final SszList<SszKZGProof> kzgProofsFromSignedBlockContent =
+        signedBlockContents.getKzgProofs().get();
 
-    assertThat(signedBlobSidecars).isEmpty();
+    assertThat(kzgProofsFromSignedBlockContent).isNotEmpty();
+
+    assertThat(kzgProofsFromUnsignedBlockContents)
+        .isEqualTo(kzgProofsFromSignedBlockContent.asList());
+
+    assertThat(signedBlockContents.getBlobs()).isPresent();
+
+    final SszList<Blob> blobsFromSignedBlockContents = signedBlockContents.getBlobs().get();
+
+    assertThat(blobsFromSignedBlockContents).isNotEmpty();
+
+    assertThat(blobsFromUnsignedBlockContents).isEqualTo(blobsFromSignedBlockContents.asList());
 
     verify(validatorDutyMetrics)
         .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
@@ -252,22 +278,24 @@ class BlockProductionDutyTest {
 
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
-    final BeaconBlock unsignedBlindedBlock = dataStructureUtil.randomBlindedBeaconBlock(denebSlot);
+    final BlockContainerAndMetaData blockContainerAndMetaData =
+        dataStructureUtil.randomBlindedBlockContainerAndMetaData(denebSlot);
+    final BeaconBlock unsignedBlindedBlock = blockContainerAndMetaData.blockContainer().getBlock();
 
     when(signer.createRandaoReveal(spec.computeEpochAtSlot(denebSlot), fork))
         .thenReturn(completedFuture(randaoReveal));
     when(signer.signBlock(unsignedBlindedBlock.getBlock(), fork))
         .thenReturn(completedFuture(blockSignature));
     when(validatorApiChannel.createUnsignedBlock(
-            denebSlot, randaoReveal, Optional.of(graffiti), true))
-        .thenReturn(completedFuture(Optional.of(unsignedBlindedBlock)));
+            denebSlot, randaoReveal, Optional.of(graffiti), Optional.of(true), Optional.empty()))
+        .thenReturn(completedFuture(Optional.of(blockContainerAndMetaData)));
     when(validatorApiChannel.sendSignedBlock(any(), any()))
         .thenReturn(completedFuture(SendSignedBlockResult.success(unsignedBlindedBlock.getRoot())));
 
     performAndReportDuty(denebSlot);
 
-    final ArgumentCaptor<SignedBlindedBlockContainer> signedBlindedBlockContainerArgumentCaptor =
-        ArgumentCaptor.forClass(SignedBlindedBlockContainer.class);
+    final ArgumentCaptor<SignedBlockContainer> signedBlindedBlockContainerArgumentCaptor =
+        ArgumentCaptor.forClass(SignedBlockContainer.class);
 
     verify(validatorApiChannel)
         .sendSignedBlock(signedBlindedBlockContainerArgumentCaptor.capture(), any());
@@ -280,7 +308,7 @@ class BlockProductionDutyTest {
             ArgumentMatchers.argThat(Optional::isPresent));
     verifyNoMoreInteractions(validatorLogger);
 
-    final SignedBlindedBlockContainer signedBlindedBlockContainer =
+    final SignedBlockContainer signedBlindedBlockContainer =
         signedBlindedBlockContainerArgumentCaptor.getValue();
 
     assertThat(signedBlindedBlockContainer).isInstanceOf(SignedBeaconBlock.class);
@@ -297,6 +325,96 @@ class BlockProductionDutyTest {
         .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SIGN));
     verify(validatorDutyMetrics)
         .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.SEND));
+  }
+
+  @Test
+  public void forDeneb_shouldFailWhenNoKzgProofs() {
+    duty =
+        new BlockProductionDuty(
+            validator,
+            denebSlot,
+            forkProvider,
+            validatorApiChannel,
+            blockContainerSigner,
+            false,
+            false,
+            spec,
+            validatorDutyMetrics);
+
+    final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
+    final BLSSignature blockSignature = dataStructureUtil.randomSignature();
+    // can create BlockContents only post-Deneb
+    final BlockContents unsignedBlockContents = dataStructureUtil.randomBlockContents(denebSlot);
+    final BlockContents unsignedBlockContentsMock = mock(BlockContents.class);
+    final BlockContainerAndMetaData blockContainerAndMetaData =
+        dataStructureUtil.randomBlockContainerAndMetaData(unsignedBlockContentsMock, denebSlot);
+
+    when(unsignedBlockContentsMock.getKzgProofs()).thenReturn(Optional.empty());
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    when(unsignedBlockContentsMock.getSlot()).thenReturn(unsignedBlockContents.getSlot());
+    when(unsignedBlockContentsMock.getBlock()).thenReturn(unsignedBlockContents.getBlock());
+    when(signer.createRandaoReveal(spec.computeEpochAtSlot(denebSlot), fork))
+        .thenReturn(completedFuture(randaoReveal));
+    when(signer.signBlock(unsignedBlockContentsMock.getBlock(), fork))
+        .thenReturn(completedFuture(blockSignature));
+    when(validatorApiChannel.createUnsignedBlock(
+            denebSlot, randaoReveal, Optional.of(graffiti), Optional.of(false), Optional.empty()))
+        .thenReturn(completedFuture(Optional.of(blockContainerAndMetaData)));
+    when(validatorApiChannel.sendSignedBlock(any(), any()))
+        .thenReturn(completedFuture(SendSignedBlockResult.success(blockRoot)));
+
+    final RuntimeException error =
+        new RuntimeException(
+            String.format(
+                "Unable to get KZG Proofs when signing Deneb block at slot %d",
+                denebSlot.longValue()));
+
+    assertDutyFails(error, denebSlot);
+  }
+
+  @Test
+  public void forDeneb_shouldFailWhenNoBlobs() {
+    duty =
+        new BlockProductionDuty(
+            validator,
+            denebSlot,
+            forkProvider,
+            validatorApiChannel,
+            blockContainerSigner,
+            false,
+            false,
+            spec,
+            validatorDutyMetrics);
+
+    final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
+    final BLSSignature blockSignature = dataStructureUtil.randomSignature();
+    // can create BlockContents only post-Deneb
+    final BlockContents unsignedBlockContents = dataStructureUtil.randomBlockContents(denebSlot);
+    final BlockContents unsignedBlockContentsMock = mock(BlockContents.class);
+    final BlockContainerAndMetaData blockContainerAndMetaData =
+        dataStructureUtil.randomBlockContainerAndMetaData(unsignedBlockContentsMock, denebSlot);
+
+    when(unsignedBlockContentsMock.getBlobs()).thenReturn(Optional.empty());
+    when(unsignedBlockContentsMock.getKzgProofs()).thenReturn(unsignedBlockContents.getKzgProofs());
+    final Bytes32 blockRoot = dataStructureUtil.randomBytes32();
+    when(unsignedBlockContentsMock.getSlot()).thenReturn(unsignedBlockContents.getSlot());
+    when(unsignedBlockContentsMock.getBlock()).thenReturn(unsignedBlockContents.getBlock());
+    when(signer.createRandaoReveal(spec.computeEpochAtSlot(denebSlot), fork))
+        .thenReturn(completedFuture(randaoReveal));
+    when(signer.signBlock(unsignedBlockContentsMock.getBlock(), fork))
+        .thenReturn(completedFuture(blockSignature));
+    when(validatorApiChannel.createUnsignedBlock(
+            denebSlot, randaoReveal, Optional.of(graffiti), Optional.of(false), Optional.empty()))
+        .thenReturn(completedFuture(Optional.of(blockContainerAndMetaData)));
+    when(validatorApiChannel.sendSignedBlock(any(), any()))
+        .thenReturn(completedFuture(SendSignedBlockResult.success(blockRoot)));
+
+    final RuntimeException error =
+        new RuntimeException(
+            String.format(
+                "Unable to get blobs when signing Deneb block at slot %d", denebSlot.longValue()));
+
+    assertDutyFails(error, denebSlot);
   }
 
   @Test
@@ -320,9 +438,18 @@ class BlockProductionDutyTest {
                     UInt64.valueOf(102400),
                     dataStructureUtil.randomBytes32(),
                     dataStructureUtil.randomUInt64())));
-    assertThat(BlockProductionDuty.getBlockSummary(block))
-        .contains(
-            "102400 (10%) gas, EL block:  499db7404cbff78670f0209f1932346fef68d985cb55a8d27472742bdf54d379 (4661716390776343276)");
+    assertThat(duty.getBlockSummary(block))
+        .containsExactly(
+            "102400 (10%) gas, EL block: 499db7404cbff78670f0209f1932346fef68d985cb55a8d27472742bdf54d379 (4661716390776343276)");
+  }
+
+  @Test
+  public void denebBlockSummary() {
+    final BeaconBlockBody block = dataStructureUtil.randomBeaconBlockBody(denebSlot);
+    assertThat(duty.getBlockSummary(block))
+        .containsExactly(
+            "Blobs: 1",
+            "4483248126065046120 (0%) gas, EL block: b736203ee72088edaf7eb5c7839744f5b1be69f748eea8fea77740914415c5b4 (4479943159631677864)");
   }
 
   @Test
@@ -332,7 +459,11 @@ class BlockProductionDutyTest {
     when(signer.createRandaoReveal(spec.computeEpochAtSlot(CAPELLA_SLOT), fork))
         .thenReturn(completedFuture(randaoReveal));
     when(validatorApiChannel.createUnsignedBlock(
-            CAPELLA_SLOT, randaoReveal, Optional.of(graffiti), false))
+            CAPELLA_SLOT,
+            randaoReveal,
+            Optional.of(graffiti),
+            Optional.of(false),
+            Optional.empty()))
         .thenReturn(failedFuture(error));
 
     assertDutyFails(error);
@@ -348,7 +479,11 @@ class BlockProductionDutyTest {
     when(signer.createRandaoReveal(spec.computeEpochAtSlot(CAPELLA_SLOT), fork))
         .thenReturn(completedFuture(randaoReveal));
     when(validatorApiChannel.createUnsignedBlock(
-            CAPELLA_SLOT, randaoReveal, Optional.of(graffiti), false))
+            CAPELLA_SLOT,
+            randaoReveal,
+            Optional.of(graffiti),
+            Optional.of(false),
+            Optional.empty()))
         .thenReturn(completedFuture(Optional.empty()));
 
     performAndReportDuty();
@@ -370,13 +505,19 @@ class BlockProductionDutyTest {
   public void shouldFailWhenSigningBlockFails() {
     final RuntimeException error = new RuntimeException("Sorry!");
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
-    final BeaconBlock unsignedBlock = dataStructureUtil.randomBeaconBlock(CAPELLA_SLOT.longValue());
+    final BlockContainerAndMetaData blockContainerAndMetaData =
+        dataStructureUtil.randomBlockContainerAndMetaData(CAPELLA_SLOT);
     when(signer.createRandaoReveal(spec.computeEpochAtSlot(CAPELLA_SLOT), fork))
         .thenReturn(completedFuture(randaoReveal));
     when(validatorApiChannel.createUnsignedBlock(
-            CAPELLA_SLOT, randaoReveal, Optional.of(graffiti), false))
-        .thenReturn(completedFuture(Optional.of(unsignedBlock)));
-    when(signer.signBlock(unsignedBlock, fork)).thenReturn(failedFuture(error));
+            CAPELLA_SLOT,
+            randaoReveal,
+            Optional.of(graffiti),
+            Optional.of(false),
+            Optional.empty()))
+        .thenReturn(completedFuture(Optional.of(blockContainerAndMetaData)));
+    when(signer.signBlock(blockContainerAndMetaData.blockContainer().getBlock(), fork))
+        .thenReturn(failedFuture(error));
 
     assertDutyFails(error);
 
@@ -403,27 +544,32 @@ class BlockProductionDutyTest {
             validatorDutyMetrics);
     final BLSSignature randaoReveal = dataStructureUtil.randomSignature();
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
-    final BeaconBlock unsignedBlock;
+    final BlockContainerAndMetaData blockContainerAndMetaData;
 
     if (isBlindedBlocksEnabled) {
-      unsignedBlock = dataStructureUtil.randomBlindedBeaconBlock(CAPELLA_SLOT);
+      blockContainerAndMetaData =
+          dataStructureUtil.randomBlindedBlockContainerAndMetaData(CAPELLA_SLOT);
     } else {
-      unsignedBlock = dataStructureUtil.randomBeaconBlock(CAPELLA_SLOT);
+      blockContainerAndMetaData = dataStructureUtil.randomBlockContainerAndMetaData(CAPELLA_SLOT);
     }
 
     when(signer.createRandaoReveal(spec.computeEpochAtSlot(CAPELLA_SLOT), fork))
         .thenReturn(completedFuture(randaoReveal));
-    when(validatorApiChannel.createUnsignedBlock(CAPELLA_SLOT, randaoReveal, Optional.of(graffiti)))
-        .thenReturn(completedFuture(Optional.of(unsignedBlock)));
-    when(signer.signBlock(unsignedBlock, fork)).thenReturn(completedFuture(blockSignature));
+    when(validatorApiChannel.createUnsignedBlock(
+            CAPELLA_SLOT, randaoReveal, Optional.of(graffiti), Optional.empty(), Optional.empty()))
+        .thenReturn(completedFuture(Optional.of(blockContainerAndMetaData)));
+    when(signer.signBlock(blockContainerAndMetaData.blockContainer().getBlock(), fork))
+        .thenReturn(completedFuture(blockSignature));
     final SignedBeaconBlock signedBlock =
-        dataStructureUtil.signedBlock(unsignedBlock, blockSignature);
+        dataStructureUtil.signedBlock(
+            blockContainerAndMetaData.blockContainer().getBlock(), blockSignature);
     when(validatorApiChannel.sendSignedBlock(signedBlock, BroadcastValidationLevel.NOT_REQUIRED))
         .thenReturn(completedFuture(SendSignedBlockResult.success(signedBlock.getRoot())));
 
     performAndReportDuty();
     verify(validatorApiChannel)
-        .createUnsignedBlock(CAPELLA_SLOT, randaoReveal, Optional.of(graffiti));
+        .createUnsignedBlock(
+            CAPELLA_SLOT, randaoReveal, Optional.of(graffiti), Optional.empty(), Optional.empty());
 
     verify(validatorApiChannel).sendSignedBlock(signedBlock, BroadcastValidationLevel.NOT_REQUIRED);
     verify(validatorLogger)
@@ -431,7 +577,7 @@ class BlockProductionDutyTest {
             eq(TYPE),
             eq(CAPELLA_SLOT),
             eq(1),
-            eq(Set.of(unsignedBlock.hashTreeRoot())),
+            eq(Set.of(blockContainerAndMetaData.blockContainer().getBlock().hashTreeRoot())),
             ArgumentMatchers.argThat(Optional::isPresent));
     verifyNoMoreInteractions(validatorLogger);
 
@@ -461,20 +607,29 @@ class BlockProductionDutyTest {
     final BLSSignature blockSignature = dataStructureUtil.randomSignature();
     // can create BlockContents only post-Deneb
     final BlockContents unsignedBlockContents = dataStructureUtil.randomBlockContents(denebSlot);
+    final BlockContainerAndMetaData blockContainerAndMetaData =
+        dataStructureUtil.randomBlockContainerAndMetaData(unsignedBlockContents, denebSlot);
     final BeaconBlock unsignedBlock = unsignedBlockContents.getBlock();
+    final List<Blob> blobsFromUnsignedBlockContents =
+        unsignedBlockContents.getBlobs().orElseThrow().asList();
+    final List<SszKZGProof> kzgProofsFromUnsignedBlockContents =
+        unsignedBlockContents.getKzgProofs().orElseThrow().asList();
 
     when(signer.createRandaoReveal(spec.computeEpochAtSlot(denebSlot), fork))
         .thenReturn(completedFuture(randaoReveal));
     when(signer.signBlock(unsignedBlockContents.getBlock(), fork))
         .thenReturn(completedFuture(blockSignature));
-    when(validatorApiChannel.createUnsignedBlock(denebSlot, randaoReveal, Optional.of(graffiti)))
-        .thenReturn(completedFuture(Optional.of(unsignedBlockContents)));
+    when(validatorApiChannel.createUnsignedBlock(
+            denebSlot, randaoReveal, Optional.of(graffiti), Optional.empty(), Optional.empty()))
+        .thenReturn(completedFuture(Optional.of(blockContainerAndMetaData)));
     when(validatorApiChannel.sendSignedBlock(any(), any()))
         .thenReturn(completedFuture(SendSignedBlockResult.success(unsignedBlock.getRoot())));
 
     performAndReportDuty(denebSlot);
 
-    verify(validatorApiChannel).createUnsignedBlock(denebSlot, randaoReveal, Optional.of(graffiti));
+    verify(validatorApiChannel)
+        .createUnsignedBlock(
+            denebSlot, randaoReveal, Optional.of(graffiti), Optional.empty(), Optional.empty());
 
     final ArgumentCaptor<SignedBlockContents> signedBlockContentsArgumentCaptor =
         ArgumentCaptor.forClass(SignedBlockContents.class);
@@ -499,12 +654,23 @@ class BlockProductionDutyTest {
     assertThat(signedBlock.getMessage()).isEqualTo(unsignedBlock);
     assertThat(signedBlock.getSignature()).isEqualTo(blockSignature);
 
-    assertThat(signedBlockContents.getSignedBlobSidecars().isPresent()).isTrue();
+    assertThat(signedBlockContents.getKzgProofs()).isPresent();
 
-    final List<SignedBlobSidecarOld> signedBlobSidecars =
-        signedBlockContents.getSignedBlobSidecars().get();
+    final SszList<SszKZGProof> kzgProofsFromSignedBlockContent =
+        signedBlockContents.getKzgProofs().get();
 
-    assertThat(signedBlobSidecars).isEmpty();
+    assertThat(kzgProofsFromSignedBlockContent).isNotEmpty();
+
+    assertThat(kzgProofsFromUnsignedBlockContents)
+        .isEqualTo(kzgProofsFromSignedBlockContent.asList());
+
+    assertThat(signedBlockContents.getBlobs()).isPresent();
+
+    final SszList<Blob> blobsFromSignedBlockContents = signedBlockContents.getBlobs().get();
+
+    assertThat(blobsFromSignedBlockContents).isNotEmpty();
+
+    assertThat(blobsFromUnsignedBlockContents).isEqualTo(blobsFromSignedBlockContents.asList());
 
     verify(validatorDutyMetrics)
         .record(any(), any(BlockProductionDuty.class), eq(ValidatorDutyMetricsSteps.CREATE));
@@ -515,10 +681,21 @@ class BlockProductionDutyTest {
   }
 
   public void assertDutyFails(final RuntimeException error) {
-    performAndReportDuty();
+    assertDutyFails(error, CAPELLA_SLOT);
+  }
+
+  public void assertDutyFails(final RuntimeException expectedError, final UInt64 slot) {
+    performAndReportDuty(slot);
+    final ArgumentCaptor<Throwable> errorCaptor = ArgumentCaptor.forClass(Throwable.class);
     verify(validatorLogger)
         .dutyFailed(
-            TYPE, CAPELLA_SLOT, Set.of(validator.getPublicKey().toAbbreviatedString()), error);
+            eq(TYPE),
+            eq(slot),
+            eq(Set.of(validator.getPublicKey().toAbbreviatedString())),
+            errorCaptor.capture());
+    final Throwable actualError = errorCaptor.getValue();
+    assertThat(expectedError.getCause()).isEqualTo(actualError.getCause());
+    assertThat(expectedError.getMessage()).isEqualTo(actualError.getMessage());
     verifyNoMoreInteractions(validatorLogger);
   }
 

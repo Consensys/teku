@@ -40,6 +40,7 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionCache;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
@@ -113,12 +114,13 @@ public class GetNewBlindedBlock extends RestApiEndpoint {
         request.getPathParameter(SLOT_PARAMETER.withDescription(SLOT_PATH_DESCRIPTION));
     final BLSSignature randao = request.getQueryParameter(RANDAO_PARAMETER);
     final Optional<Bytes32> graffiti = request.getOptionalQueryParameter(GRAFFITI_PARAMETER);
-    final SafeFuture<Optional<BlockContainer>> result =
-        provider.getUnsignedBeaconBlockAtSlot(slot, randao, graffiti, true);
+    final SafeFuture<Optional<BlockContainerAndMetaData>> result =
+        provider.getUnsignedBeaconBlockAtSlot(slot, randao, graffiti, true, Optional.empty());
     request.respondAsync(
         result.thenApplyChecked(
             maybeBlock ->
                 maybeBlock
+                    .map(BlockContainerAndMetaData::blockContainer)
                     .map(AsyncApiResponse::respondOk)
                     .orElseThrow(ChainDataUnavailableException::new)));
   }

@@ -78,11 +78,11 @@ public class LocalSlashingProtector implements SlashingProtector {
   @Override
   public Optional<ValidatorSigningRecord> getSigningRecord(final BLSPublicKey validator)
       throws IOException {
-    ValidatorSigningRecord record = signingRecords.get(validator);
+    final ValidatorSigningRecord record = signingRecords.get(validator);
     if (record != null) {
       return Optional.of(record);
     }
-    Optional<ValidatorSigningRecord> loaded =
+    final Optional<ValidatorSigningRecord> loaded =
         dataAccessor.read(validatorRecordPath(validator)).map(ValidatorSigningRecord::fromBytes);
     loaded.ifPresent(signingRecord -> signingRecords.put(validator, signingRecord));
     return loaded;
@@ -90,10 +90,11 @@ public class LocalSlashingProtector implements SlashingProtector {
 
   private ValidatorSigningRecord loadOrCreateSigningRecord(
       final BLSPublicKey validator, final Bytes32 genesisValidatorsRoot) throws IOException {
-    Optional<ValidatorSigningRecord> record = getSigningRecord(validator);
+    final Optional<ValidatorSigningRecord> record = getSigningRecord(validator);
     return record.orElseGet(
         () -> {
-          ValidatorSigningRecord newRecord = new ValidatorSigningRecord(genesisValidatorsRoot);
+          final ValidatorSigningRecord newRecord =
+              new ValidatorSigningRecord(genesisValidatorsRoot);
           signingRecords.put(validator, newRecord);
           return newRecord;
         });

@@ -23,6 +23,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.ethereum.executionlayer.ExecutionBuilderModule.BUILDER_BOOST_FACTOR_MAX_PROFIT;
 
 import java.util.Optional;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -32,6 +33,7 @@ import org.mockito.Mockito;
 import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImpl.Source;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -41,7 +43,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.ExecutionPayloadAndBlobsBundle;
@@ -108,7 +110,12 @@ class ExecutionLayerBlockProductionManagerImplTest {
             .createFromExecutionPayload(payload);
 
     final ExecutionPayloadResult executionPayloadResult =
-        blockProductionManager.initiateBlockProduction(executionPayloadContext, state, true);
+        blockProductionManager.initiateBlockProduction(
+            executionPayloadContext,
+            state,
+            true,
+            Optional.empty(),
+            BlockProductionPerformance.NOOP);
     assertThat(executionPayloadResult.getExecutionPayloadContext())
         .isEqualTo(executionPayloadContext);
     assertThat(executionPayloadResult.getExecutionPayloadFuture()).isEmpty();
@@ -161,7 +168,12 @@ class ExecutionLayerBlockProductionManagerImplTest {
     final HeaderWithFallbackData expectedResult = HeaderWithFallbackData.create(header);
 
     final ExecutionPayloadResult executionPayloadResult =
-        blockProductionManager.initiateBlockProduction(executionPayloadContext, state, true);
+        blockProductionManager.initiateBlockProduction(
+            executionPayloadContext,
+            state,
+            true,
+            Optional.empty(),
+            BlockProductionPerformance.NOOP);
     assertThat(executionPayloadResult.getExecutionPayloadContext())
         .isEqualTo(executionPayloadContext);
     assertThat(executionPayloadResult.getExecutionPayloadFuture()).isEmpty();
@@ -205,7 +217,12 @@ class ExecutionLayerBlockProductionManagerImplTest {
         prepareEngineGetPayloadResponse(executionPayloadContext, executionPayloadValue, slot);
 
     final ExecutionPayloadResult executionPayloadResult =
-        blockProductionManager.initiateBlockProduction(executionPayloadContext, state, false);
+        blockProductionManager.initiateBlockProduction(
+            executionPayloadContext,
+            state,
+            false,
+            Optional.empty(),
+            BlockProductionPerformance.NOOP);
     assertThat(executionPayloadResult.getExecutionPayloadContext())
         .isEqualTo(executionPayloadContext);
     assertThat(executionPayloadResult.getHeaderWithFallbackDataFuture()).isEmpty();
@@ -256,7 +273,11 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
     final ExecutionPayloadResult executionPayloadResult =
         blockProductionManager.initiateBlockAndBlobsProduction(
-            executionPayloadContext, state, true);
+            executionPayloadContext,
+            state,
+            true,
+            Optional.empty(),
+            BlockProductionPerformance.NOOP);
     assertThat(executionPayloadResult.getExecutionPayloadContext())
         .isEqualTo(executionPayloadContext);
     assertThat(executionPayloadResult.getExecutionPayloadFuture()).isEmpty();
@@ -310,7 +331,11 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
     final ExecutionPayloadResult executionPayloadResult =
         blockProductionManager.initiateBlockAndBlobsProduction(
-            executionPayloadContext, state, true);
+            executionPayloadContext,
+            state,
+            true,
+            Optional.empty(),
+            BlockProductionPerformance.NOOP);
     assertThat(executionPayloadResult.getExecutionPayloadContext())
         .isEqualTo(executionPayloadContext);
     assertThat(executionPayloadResult.getExecutionPayloadFuture()).isEmpty();
@@ -356,7 +381,11 @@ class ExecutionLayerBlockProductionManagerImplTest {
 
     final ExecutionPayloadResult executionPayloadResult =
         blockProductionManager.initiateBlockAndBlobsProduction(
-            executionPayloadContext, state, false);
+            executionPayloadContext,
+            state,
+            false,
+            Optional.empty(),
+            BlockProductionPerformance.NOOP);
     assertThat(executionPayloadResult.getExecutionPayloadContext())
         .isEqualTo(executionPayloadContext);
     assertThat(executionPayloadResult.getHeaderWithFallbackDataFuture()).isEmpty();
@@ -477,7 +506,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
   }
 
   private ExecutionPayload prepareBuilderGetPayloadResponse(
-      final SignedBlindedBlockContainer signedBlindedBlockContainer) {
+      final SignedBlockContainer signedBlindedBlockContainer) {
     final ExecutionPayload payload = dataStructureUtil.randomExecutionPayload();
     when(builderClient.getPayload(signedBlindedBlockContainer.getSignedBlock()))
         .thenReturn(SafeFuture.completedFuture(new Response<>(payload)));
@@ -485,7 +514,7 @@ class ExecutionLayerBlockProductionManagerImplTest {
   }
 
   private ExecutionPayloadAndBlobsBundle prepareBuilderGetPayloadResponseWithBlobs(
-      final SignedBlindedBlockContainer signedBlindedBlockContainer) {
+      final SignedBlockContainer signedBlindedBlockContainer) {
     final ExecutionPayloadAndBlobsBundle payloadAndBlobsBundle =
         dataStructureUtil.randomExecutionPayloadAndBlobsBundle();
     when(builderClient.getPayload(signedBlindedBlockContainer.getSignedBlock()))
@@ -527,10 +556,10 @@ class ExecutionLayerBlockProductionManagerImplTest {
         spec,
         stubMetricsSystem,
         builderValidatorEnabled
-            ? new BuilderBidValidatorImpl(eventLogger)
+            ? new BuilderBidValidatorImpl(spec, eventLogger)
             : BuilderBidValidator.NOOP,
         builderCircuitBreaker,
-        Optional.of(100),
+        BUILDER_BOOST_FACTOR_MAX_PROFIT,
         true);
   }
 

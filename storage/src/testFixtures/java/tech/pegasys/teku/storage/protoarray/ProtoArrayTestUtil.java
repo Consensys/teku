@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.storage.protoarray;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
 
 import org.apache.tuweni.bytes.Bytes32;
@@ -59,30 +58,13 @@ public class ProtoArrayTestUtil {
             new Checkpoint(finalizedCheckpointEpoch, Bytes32.ZERO),
             new Checkpoint(justifiedCheckpointEpoch, Bytes32.ZERO),
             new Checkpoint(finalizedCheckpointEpoch, Bytes32.ZERO)),
-        Bytes32.ZERO);
+        ProtoNode.NO_EXECUTION_BLOCK_NUMBER,
+        ProtoNode.NO_EXECUTION_BLOCK_HASH);
 
     return forkChoice;
   }
 
   public static TestStoreImpl createStoreToManipulateVotes() {
     return new TestStoreFactory().createGenesisStore();
-  }
-
-  public static void assertThatBlockInformationMatches(ProtoNode node1, ProtoNode node2) {
-    assertThat(node1.getBlockSlot()).isEqualTo(node2.getBlockSlot());
-    assertThat(node1.getStateRoot()).isEqualTo(node2.getStateRoot());
-    assertThat(node1.getBlockRoot()).isEqualTo(node2.getBlockRoot());
-    assertThat(node1.getParentRoot()).isEqualTo(node2.getParentRoot());
-    assertThat(node1.getJustifiedCheckpoint()).isEqualTo(node2.getJustifiedCheckpoint());
-    assertThat(node1.getFinalizedCheckpoint()).isEqualTo(node2.getFinalizedCheckpoint());
-  }
-
-  public static void assertThatProtoArrayMatches(ProtoArray array1, ProtoArray array2) {
-    assertThat(array1.getNodes().size()).isEqualTo(array2.getNodes().size());
-    assertThat(array1.getJustifiedCheckpoint()).isEqualTo(array2.getJustifiedCheckpoint());
-    assertThat(array1.getFinalizedCheckpoint()).isEqualTo(array2.getFinalizedCheckpoint());
-    for (int i = 0; i < array1.getNodes().size(); i++) {
-      assertThatBlockInformationMatches(array1.getNodes().get(i), array2.getNodes().get(i));
-    }
   }
 }

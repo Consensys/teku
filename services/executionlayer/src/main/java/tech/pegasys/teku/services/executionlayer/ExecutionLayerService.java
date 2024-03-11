@@ -71,6 +71,7 @@ public class ExecutionLayerService extends Service {
             EL_ENGINE_BLOCK_EXECUTION_TIMEOUT,
             true,
             config.getEngineJwtSecretFile(),
+            config.getEngineJwtClaimId(),
             beaconDataDirectory,
             timeProvider,
             executionClientEventsPublisher);
@@ -84,6 +85,7 @@ public class ExecutionLayerService extends Service {
                         builderEndpoint,
                         BUILDER_CALL_TIMEOUT,
                         false,
+                        Optional.empty(),
                         Optional.empty(),
                         beaconDataDirectory,
                         timeProvider));
@@ -201,7 +203,7 @@ public class ExecutionLayerService extends Service {
         builderClient,
         config.getSpec(),
         metricsSystem,
-        new BuilderBidValidatorImpl(EVENT_LOG),
+        new BuilderBidValidatorImpl(config.getSpec(), EVENT_LOG),
         builderCircuitBreaker,
         config.getBuilderBidCompareFactor(),
         config.getUseShouldOverrideBuilderFlag());

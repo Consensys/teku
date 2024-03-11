@@ -40,7 +40,7 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
           "--network", "auto", "vc",
         };
     int parseResult = beaconNodeCommand.parse(argsNetworkOptOnParent);
-    assertThat(parseResult).isEqualTo(1);
+    assertThat(parseResult).isEqualTo(2);
     String cmdOutput = getCommandLineOutput();
     assertThat(cmdOutput)
         .contains("--network option should not be specified before the validator-client command");
@@ -203,11 +203,28 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
     };
 
     int parseResult = beaconNodeCommand.parse(args);
-    assertThat(parseResult).isEqualTo(1);
+    assertThat(parseResult).isEqualTo(2);
     String cmdOutput = getCommandLineOutput();
     assertThat(cmdOutput)
         .contains(
             "--Xvalidator-client-executor-threads must be greater than 0 and less than 5000.");
+  }
+
+  @Test
+  public void shouldSetUseDvtSelectionsEndpoint() {
+    final String[] args = {"vc", "--network", "minimal", "--Xdvt-integration-enabled"};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+
+    assertThat(config.validatorClient().getValidatorConfig().isDvtSelectionsEndpointEnabled())
+        .isTrue();
+  }
+
+  @Test
+  public void shouldNotUseDvtSelectionsEndpointByDefault() {
+    final String[] args = {"vc", "--network", "minimal"};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.validatorClient().getValidatorConfig().isDvtSelectionsEndpointEnabled())
+        .isFalse();
   }
 
   private String pathFor(final String filename) {

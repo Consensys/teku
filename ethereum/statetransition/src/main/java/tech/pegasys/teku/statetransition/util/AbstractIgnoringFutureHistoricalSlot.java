@@ -32,11 +32,13 @@ import tech.pegasys.teku.storage.api.FinalizedCheckpointChannel;
  */
 abstract class AbstractIgnoringFutureHistoricalSlot
     implements SlotEventsChannel, FinalizedCheckpointChannel {
+  public static final UInt64 PRUNE_SLOT = UInt64.ONE;
   private final Spec spec;
 
   // Define the range of slots we care about
   private final UInt64 futureSlotTolerance;
   private final UInt64 historicalSlotTolerance;
+  private final UInt64 slotsInEpoch;
 
   private volatile UInt64 currentSlot = UInt64.ZERO;
   private volatile UInt64 latestFinalizedSlot = GENESIS_SLOT;
@@ -46,12 +48,13 @@ abstract class AbstractIgnoringFutureHistoricalSlot
     this.spec = spec;
     this.futureSlotTolerance = futureSlotTolerance;
     this.historicalSlotTolerance = historicalSlotTolerance;
+    this.slotsInEpoch = UInt64.valueOf(spec.getGenesisSpec().getSlotsPerEpoch());
   }
 
   @Override
   public void onSlot(final UInt64 slot) {
     currentSlot = slot;
-    if (currentSlot.mod(historicalSlotTolerance).equals(UInt64.ZERO)) {
+    if (currentSlot.mod(slotsInEpoch).equals(PRUNE_SLOT)) {
       // Purge old items
       prune();
     }

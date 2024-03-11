@@ -35,7 +35,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecContext;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.TestSpecInvocationContextProvider;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -52,7 +52,7 @@ public class BlobSidecarSelectorFactoryTest {
   private final DataStructureUtil data = new DataStructureUtil(spec);
   private final List<UInt64> indices = List.of(UInt64.ZERO, UInt64.ONE);
   private final SignedBeaconBlock block = data.randomSignedBeaconBlock();
-  private final List<BlobSidecarOld> blobSidecars = data.randomBlobSidecars(3);
+  private final List<BlobSidecar> blobSidecars = data.randomBlobSidecars(3);
 
   private final BlobSidecarSelectorFactory blobSidecarSelectorFactory =
       new BlobSidecarSelectorFactory(client);
@@ -66,7 +66,7 @@ public class BlobSidecarSelectorFactoryTest {
     when(client.getBlobSidecars(blockAndState.getSlotAndBlockRoot(), indices))
         .thenReturn(SafeFuture.completedFuture(blobSidecars));
 
-    final Optional<List<BlobSidecarOld>> result =
+    final Optional<List<BlobSidecar>> result =
         blobSidecarSelectorFactory.headSelector().getBlobSidecars(indices).get();
     assertThat(result).hasValue(blobSidecars);
   }
@@ -80,7 +80,7 @@ public class BlobSidecarSelectorFactoryTest {
     when(client.getBlobSidecars(anchorPoint.getSlotAndBlockRoot(), indices))
         .thenReturn(SafeFuture.completedFuture(blobSidecars));
 
-    final Optional<List<BlobSidecarOld>> result =
+    final Optional<List<BlobSidecar>> result =
         blobSidecarSelectorFactory.finalizedSelector().getBlobSidecars(indices).get();
     assertThat(result).hasValue(blobSidecars);
   }
@@ -93,7 +93,7 @@ public class BlobSidecarSelectorFactoryTest {
     when(client.getBlobSidecars(block.getSlotAndBlockRoot(), indices))
         .thenReturn(SafeFuture.completedFuture(blobSidecars));
 
-    final Optional<List<BlobSidecarOld>> result =
+    final Optional<List<BlobSidecar>> result =
         blobSidecarSelectorFactory.genesisSelector().getBlobSidecars(indices).get();
     assertThat(result).hasValue(blobSidecars);
   }
@@ -107,7 +107,7 @@ public class BlobSidecarSelectorFactoryTest {
     when(client.getBlobSidecars(new SlotAndBlockRoot(finalizedSlot, block.getRoot()), indices))
         .thenReturn(SafeFuture.completedFuture(blobSidecars));
 
-    final Optional<List<BlobSidecarOld>> result =
+    final Optional<List<BlobSidecar>> result =
         blobSidecarSelectorFactory
             .blockRootSelector(block.getRoot())
             .getBlobSidecars(indices)
@@ -125,7 +125,7 @@ public class BlobSidecarSelectorFactoryTest {
     when(client.getBlobSidecars(block.getSlotAndBlockRoot(), indices))
         .thenReturn(SafeFuture.completedFuture(blobSidecars));
 
-    final Optional<List<BlobSidecarOld>> result =
+    final Optional<List<BlobSidecar>> result =
         blobSidecarSelectorFactory
             .blockRootSelector(block.getRoot())
             .getBlobSidecars(indices)
@@ -140,7 +140,7 @@ public class BlobSidecarSelectorFactoryTest {
     when(client.getBlobSidecars(block.getSlot(), indices))
         .thenReturn(SafeFuture.completedFuture(blobSidecars));
 
-    final Optional<List<BlobSidecarOld>> result =
+    final Optional<List<BlobSidecar>> result =
         blobSidecarSelectorFactory.slotSelector(block.getSlot()).getBlobSidecars(indices).get();
     assertThat(result).hasValue(blobSidecars);
   }
@@ -154,7 +154,7 @@ public class BlobSidecarSelectorFactoryTest {
     when(client.getBlobSidecars(block.getSlotAndBlockRoot(), indices))
         .thenReturn(SafeFuture.completedFuture(blobSidecars));
 
-    final Optional<List<BlobSidecarOld>> result =
+    final Optional<List<BlobSidecar>> result =
         blobSidecarSelectorFactory.slotSelector(block.getSlot()).getBlobSidecars(indices).get();
     assertThat(result).hasValue(blobSidecars);
   }
@@ -193,7 +193,7 @@ public class BlobSidecarSelectorFactoryTest {
     when(client.isFinalized(blockWithEmptyCommitments.getSlot())).thenReturn(false);
     when(client.getBlockAtSlotExact(blockWithEmptyCommitments.getSlot()))
         .thenReturn(SafeFuture.completedFuture(Optional.of(blockWithEmptyCommitments)));
-    Optional<List<BlobSidecarOld>> maybeBlobsidecars =
+    Optional<List<BlobSidecar>> maybeBlobsidecars =
         blobSidecarSelectorFactory
             .slotSelector(blockWithEmptyCommitments.getSlot())
             .getBlobSidecars(indices)

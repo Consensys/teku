@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
@@ -30,7 +29,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 
 public class BlobSidecarsByRootIntegrationTest extends AbstractRpcMethodIntegrationTest {
@@ -56,7 +55,7 @@ public class BlobSidecarsByRootIntegrationTest extends AbstractRpcMethodIntegrat
   public void requestBlobSidecars_shouldReturnEmptyBlobSidecarsOnDenebMilestone()
       throws ExecutionException, InterruptedException, TimeoutException {
     final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalDeneb());
-    final Optional<BlobSidecarOld> blobSidecar =
+    final Optional<BlobSidecar> blobSidecar =
         requestBlobSidecarByRoot(peer, new BlobIdentifier(Bytes32.ZERO, UInt64.ZERO));
     assertThat(blobSidecar).isEmpty();
   }
@@ -75,7 +74,7 @@ public class BlobSidecarsByRootIntegrationTest extends AbstractRpcMethodIntegrat
     peerStorage.chainUpdater().advanceChainUntil(targetSlot);
 
     // grab expected blobs from storage
-    final List<BlobSidecarOld> expectedBlobSidecars =
+    final List<BlobSidecar> expectedBlobSidecars =
         retrieveCanonicalBlobSidecarsFromPeerStorage(Stream.of(UInt64.ONE, UInt64.valueOf(3)));
 
     // request all expected plus a non existing
@@ -84,17 +83,17 @@ public class BlobSidecarsByRootIntegrationTest extends AbstractRpcMethodIntegrat
                 Stream.of(new BlobIdentifier(Bytes32.ZERO, UInt64.ZERO)),
                 expectedBlobSidecars.stream()
                     .map(sidecar -> new BlobIdentifier(sidecar.getBlockRoot(), sidecar.getIndex())))
-            .collect(Collectors.toUnmodifiableList());
+            .toList();
 
-    final List<BlobSidecarOld> blobSidecars = requestBlobSidecarsByRoot(peer, requestedBlobIds);
+    final List<BlobSidecar> blobSidecars = requestBlobSidecarsByRoot(peer, requestedBlobIds);
 
     assertThat(blobSidecars).containsExactlyInAnyOrderElementsOf(expectedBlobSidecars);
   }
 
-  private List<BlobSidecarOld> requestBlobSidecarsByRoot(
+  private List<BlobSidecar> requestBlobSidecarsByRoot(
       final Eth2Peer peer, final List<BlobIdentifier> blobIdentifiers)
       throws InterruptedException, ExecutionException, TimeoutException {
-    final List<BlobSidecarOld> blobSidecars = new ArrayList<>();
+    final List<BlobSidecar> blobSidecars = new ArrayList<>();
     waitFor(
         peer.requestBlobSidecarsByRoot(
             blobIdentifiers, RpcResponseListener.from(blobSidecars::add)));
@@ -102,10 +101,10 @@ public class BlobSidecarsByRootIntegrationTest extends AbstractRpcMethodIntegrat
     return blobSidecars;
   }
 
-  private Optional<BlobSidecarOld> requestBlobSidecarByRoot(
+  private Optional<BlobSidecar> requestBlobSidecarByRoot(
       final Eth2Peer peer, final BlobIdentifier blobIdentifier)
       throws ExecutionException, InterruptedException, TimeoutException {
-    final Optional<BlobSidecarOld> blobSidecar =
+    final Optional<BlobSidecar> blobSidecar =
         waitFor(peer.requestBlobSidecarByRoot(blobIdentifier));
     assertThat(peer.getOutstandingRequests()).isEqualTo(0);
     return blobSidecar;

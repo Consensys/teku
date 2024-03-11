@@ -44,7 +44,7 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeRe
 import tech.pegasys.teku.networking.p2p.peer.PeerDisconnectedException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
@@ -146,7 +146,7 @@ public class SyncSourceBatchTest {
 
     // only receiving last block (70 + 50 - 1)
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(119);
-    final List<BlobSidecarOld> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
+    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
 
     receiveBlocks(batch, block);
     receiveBlobSidecars(batch, blobSidecars);
@@ -240,11 +240,14 @@ public class SyncSourceBatchTest {
 
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(19);
 
-    final List<BlobSidecarOld> blobSidecars =
+    final List<BlobSidecar> blobSidecars =
         new ArrayList<>(dataStructureUtil.randomBlobSidecarsForBlock(block));
     // receiving more sidecars than expected
     blobSidecars.add(
-        dataStructureUtil.createRandomBlobSidecarBuilder().blockRoot(block.getRoot()).build());
+        dataStructureUtil
+            .createRandomBlobSidecarBuilder()
+            .signedBeaconBlockHeader(block.asHeader())
+            .build());
 
     receiveBlocks(batch, block);
     receiveBlobSidecars(batch, blobSidecars);
@@ -266,13 +269,14 @@ public class SyncSourceBatchTest {
     final int numberOfKzgCommitments =
         BeaconBlockBodyDeneb.required(block.getMessage().getBody()).getBlobKzgCommitments().size();
     // receiving sidecars with different slot than the block
-    final List<BlobSidecarOld> blobSidecars =
+    final SignedBeaconBlock blockWrong = dataStructureUtil.randomSignedBeaconBlock(20);
+    final List<BlobSidecar> blobSidecars =
         IntStream.range(0, numberOfKzgCommitments)
             .mapToObj(
                 index ->
                     dataStructureUtil
                         .createRandomBlobSidecarBuilder()
-                        .blockRoot(block.getRoot())
+                        .signedBeaconBlockHeader(blockWrong.asHeader())
                         .index(UInt64.valueOf(index))
                         .build())
             .collect(toList());
@@ -294,8 +298,8 @@ public class SyncSourceBatchTest {
 
     final SignedBeaconBlock block = dataStructureUtil.randomSignedBeaconBlock(19);
 
-    final List<BlobSidecarOld> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
-    final List<BlobSidecarOld> unexpectedBlobSidecars = new ArrayList<>(blobSidecars);
+    final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecarsForBlock(block);
+    final List<BlobSidecar> unexpectedBlobSidecars = new ArrayList<>(blobSidecars);
     // receiving sidecars with unknown roots
     unexpectedBlobSidecars.addAll(
         dataStructureUtil.randomBlobSidecarsForBlock(
@@ -363,8 +367,8 @@ public class SyncSourceBatchTest {
     getSyncSource(batch).receiveBlocks(blocks);
   }
 
-  protected void receiveBlobSidecars(final Batch batch, final List<BlobSidecarOld> blobSidecars) {
-    getSyncSource(batch).receiveBlobSidecars(blobSidecars.toArray(new BlobSidecarOld[] {}));
+  protected void receiveBlobSidecars(final Batch batch, final List<BlobSidecar> blobSidecars) {
+    getSyncSource(batch).receiveBlobSidecars(blobSidecars.toArray(new BlobSidecar[] {}));
   }
 
   protected void requestError(final Batch batch, final Throwable error) {

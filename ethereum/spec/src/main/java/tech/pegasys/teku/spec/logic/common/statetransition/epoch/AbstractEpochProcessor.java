@@ -26,6 +26,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszMutableList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitvector;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszMutableUInt64List;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszUInt64List;
+import tech.pegasys.teku.infrastructure.time.Throttler;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -62,6 +63,8 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
   protected final BeaconStateMutators beaconStateMutators;
 
   private static final Logger LOG = LogManager.getLogger();
+  // Used to log once per epoch (throttlingPeriod = 1)
+  private final Throttler<Logger> loggerThrottler = new Throttler<>(LOG, UInt64.ONE);
 
   protected AbstractEpochProcessor(
       final SpecConfig specConfig,
@@ -122,7 +125,7 @@ public abstract class AbstractEpochProcessor implements EpochProcessor {
     processSyncCommitteeUpdates(state);
 
     if (beaconStateAccessors.isInactivityLeak(state)) {
-      LOG.info("Beacon chain is in activity leak");
+      loggerThrottler.invoke(currentEpoch, (log) -> log.info("Beacon chain is in inactivity leak"));
     }
   }
 

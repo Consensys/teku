@@ -38,24 +38,25 @@ import tech.pegasys.teku.networking.eth2.peers.SyncSource;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 
 class BatchImporterTest {
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final BlockImporter blockImporter = mock(BlockImporter.class);
-  private final BlobSidecarPool blobSidecarPool = mock(BlobSidecarPool.class);
+  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool =
+      mock(BlockBlobSidecarsTrackersPool.class);
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
   private final Batch batch = mock(Batch.class);
   final SyncSource syncSource = mock(SyncSource.class);
 
   private final BatchImporter importer =
-      new BatchImporter(blockImporter, blobSidecarPool, asyncRunner);
+      new BatchImporter(blockImporter, blockBlobSidecarsTrackersPool, asyncRunner);
 
   @BeforeEach
   public void setup() {
@@ -81,7 +82,7 @@ class BatchImporterTest {
 
     // Should not be started on the calling thread
     verifyNoInteractions(blockImporter);
-    verifyNoInteractions(blobSidecarPool);
+    verifyNoInteractions(blockBlobSidecarsTrackersPool);
 
     // We should have copied the blocks and blob sidecars to avoid accessing the Batch data from
     // other threads
@@ -107,14 +108,14 @@ class BatchImporterTest {
     final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(1);
     final SignedBeaconBlock block2 = dataStructureUtil.randomSignedBeaconBlock(2);
 
-    final List<BlobSidecarOld> blobSidecars1 = dataStructureUtil.randomBlobSidecarsForBlock(block1);
-    final List<BlobSidecarOld> blobSidecars2 = dataStructureUtil.randomBlobSidecarsForBlock(block2);
+    final List<BlobSidecar> blobSidecars1 = dataStructureUtil.randomBlobSidecarsForBlock(block1);
+    final List<BlobSidecar> blobSidecars2 = dataStructureUtil.randomBlobSidecarsForBlock(block2);
 
     final SafeFuture<BlockImportResult> importResult1 = new SafeFuture<>();
     final SafeFuture<BlockImportResult> importResult2 = new SafeFuture<>();
 
     final List<SignedBeaconBlock> blocks = new ArrayList<>(List.of(block1, block2));
-    final Map<Bytes32, List<BlobSidecarOld>> blobSidecars =
+    final Map<Bytes32, List<BlobSidecar>> blobSidecars =
         Map.of(block1.getRoot(), blobSidecars1, block2.getRoot(), blobSidecars2);
 
     when(batch.getBlocks()).thenReturn(blocks);
@@ -127,7 +128,7 @@ class BatchImporterTest {
 
     // Should not be started on the calling thread
     verifyNoInteractions(blockImporter);
-    verifyNoInteractions(blobSidecarPool);
+    verifyNoInteractions(blockBlobSidecarsTrackersPool);
 
     // We should have copied the blocks and blob sidecars  to avoid accessing the Batch data from
     // other threads
@@ -249,9 +250,9 @@ class BatchImporterTest {
   }
 
   private void blobSidecarsImportedSuccessfully(
-      final SignedBeaconBlock block, final List<BlobSidecarOld> blobSidecars) {
-    verify(blobSidecarPool).onCompletedBlockAndBlobSidecars(block, blobSidecars);
-    verifyNoMoreInteractions(blobSidecarPool);
+      final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
+    verify(blockBlobSidecarsTrackersPool).onCompletedBlockAndBlobSidecars(block, blobSidecars);
+    verifyNoMoreInteractions(blockBlobSidecarsTrackersPool);
   }
 
   private void blockImportedSuccessfully(

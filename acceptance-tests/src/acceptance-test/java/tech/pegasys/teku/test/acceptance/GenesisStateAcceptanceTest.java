@@ -13,12 +13,14 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import static tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder.DEFAULT_NETWORK_NAME;
+
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuDepositSender;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode.Config;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
@@ -28,13 +30,18 @@ public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
     final BesuNode eth1Node = createBesuNode(config -> config.withMiningEnabled(true));
     eth1Node.start();
 
-    createTekuDepositSender(Config.DEFAULT_NETWORK_NAME).sendValidatorDeposits(eth1Node, 4);
+    createTekuDepositSender(DEFAULT_NETWORK_NAME).sendValidatorDeposits(eth1Node, 4);
 
-    final TekuNode firstTeku = createTekuNode(config -> config.withDepositsFrom(eth1Node));
+    final TekuBeaconNode firstTeku =
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode().withDepositsFrom(eth1Node).build());
     firstTeku.start();
     firstTeku.waitForGenesis();
 
-    final TekuNode lateJoinTeku = createTekuNode(config -> config.withDepositsFrom(eth1Node));
+    final TekuBeaconNode lateJoinTeku =
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode().withDepositsFrom(eth1Node).build());
+
     lateJoinTeku.start();
     lateJoinTeku.waitForGenesis();
 
@@ -49,7 +56,7 @@ public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
     eth1Node.start();
     int numberOfValidators = 4;
 
-    final TekuDepositSender depositSender = createTekuDepositSender(Config.DEFAULT_NETWORK_NAME);
+    final TekuDepositSender depositSender = createTekuDepositSender(DEFAULT_NETWORK_NAME);
     final ValidatorKeystores validatorKeys =
         depositSender.generateValidatorKeys(numberOfValidators);
     depositSender.sendValidatorDeposits(
@@ -59,7 +66,10 @@ public class GenesisStateAcceptanceTest extends AcceptanceTestBase {
         validatorKeys,
         depositSender.getMaxEffectiveBalance().minus(depositSender.getMinDepositAmount()));
 
-    final TekuNode teku = createTekuNode(config -> config.withDepositsFrom(eth1Node));
+    final TekuBeaconNode teku =
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode().withDepositsFrom(eth1Node).build());
+
     teku.start();
     teku.waitForGenesis();
 

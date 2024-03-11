@@ -21,6 +21,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.ssz.SSZ;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.crypto.Hash;
@@ -115,11 +116,10 @@ public class BlockProposalTestUtil {
               }
               if (builder.supportsExecutionPayload()) {
                 builder.executionPayload(
-                    SafeFuture.completedFuture(
-                        executionPayload.orElseGet(
-                            () ->
-                                createExecutionPayload(
-                                    newSlot, blockSlotState, transactions, terminalBlock))));
+                    executionPayload.orElseGet(
+                        () ->
+                            createExecutionPayload(
+                                newSlot, blockSlotState, transactions, terminalBlock)));
               }
               if (builder.supportsBlsToExecutionChanges()) {
                 builder.blsToExecutionChanges(
@@ -128,11 +128,11 @@ public class BlockProposalTestUtil {
               }
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(
-                    SafeFuture.completedFuture(
-                        kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments)));
+                    kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
               }
+              return SafeFuture.COMPLETE;
             },
-            false)
+            BlockProductionPerformance.NOOP)
         .thenApply(
             newBlockAndState -> {
               // Sign block and set block signature
@@ -191,11 +191,8 @@ public class BlockProposalTestUtil {
               }
               if (builder.supportsExecutionPayload()) {
                 builder.executionPayload(
-                    SafeFuture.completedFuture(
-                        executionPayload.orElseGet(
-                            () ->
-                                createExecutionPayload(
-                                    newSlot, state, transactions, terminalBlock))));
+                    executionPayload.orElseGet(
+                        () -> createExecutionPayload(newSlot, state, transactions, terminalBlock)));
               }
               if (builder.supportsBlsToExecutionChanges()) {
                 builder.blsToExecutionChanges(
@@ -204,9 +201,9 @@ public class BlockProposalTestUtil {
               }
               if (builder.supportsKzgCommitments()) {
                 builder.blobKzgCommitments(
-                    SafeFuture.completedFuture(
-                        kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments)));
+                    kzgCommitments.orElseGet(dataStructureUtil::emptyBlobKzgCommitments));
               }
+              return SafeFuture.COMPLETE;
             })
         .thenApply(
             blockBody -> {
@@ -286,6 +283,7 @@ public class BlockProposalTestUtil {
       final Optional<SszList<Attestation>> attestations,
       final Optional<SszList<Deposit>> deposits,
       final Optional<SszList<AttesterSlashing>> attesterSlashings,
+      final Optional<SszList<ProposerSlashing>> proposerSlashings,
       final Optional<SszList<SignedVoluntaryExit>> exits,
       final Optional<Eth1Data> eth1Data,
       final Optional<List<Bytes>> transactions,
@@ -305,7 +303,7 @@ public class BlockProposalTestUtil {
           parentBlockSigningRoot,
           eth1Data.orElse(getEth1DataStub(previousState, newEpoch)),
           attestations.orElse(blockBodyLists.createAttestations()),
-          blockBodyLists.createProposerSlashings(),
+          proposerSlashings.orElse(blockBodyLists.createProposerSlashings()),
           attesterSlashings.orElse(blockBodyLists.createAttesterSlashings()),
           deposits.orElse(blockBodyLists.createDeposits()),
           exits.orElse(blockBodyLists.createVoluntaryExits()),
@@ -322,7 +320,7 @@ public class BlockProposalTestUtil {
         parentBlockSigningRoot,
         eth1Data.orElse(getEth1DataStub(previousState, newEpoch)),
         attestations.orElse(blockBodyLists.createAttestations()),
-        blockBodyLists.createProposerSlashings(),
+        proposerSlashings.orElse(blockBodyLists.createProposerSlashings()),
         attesterSlashings.orElse(blockBodyLists.createAttesterSlashings()),
         deposits.orElse(blockBodyLists.createDeposits()),
         exits.orElse(blockBodyLists.createVoluntaryExits()),
@@ -342,6 +340,7 @@ public class BlockProposalTestUtil {
       final Optional<SszList<Attestation>> attestations,
       final Optional<SszList<Deposit>> deposits,
       final Optional<SszList<AttesterSlashing>> attesterSlashings,
+      final Optional<SszList<ProposerSlashing>> proposerSlashings,
       final Optional<SszList<SignedVoluntaryExit>> exits,
       final Optional<Eth1Data> eth1Data,
       final Optional<List<Bytes>> transactions,
@@ -374,7 +373,7 @@ public class BlockProposalTestUtil {
           parentBlockSigningRoot,
           eth1Data.orElse(getEth1DataStub(previousState, newEpoch)),
           attestations.orElse(blockBodyLists.createAttestations()),
-          blockBodyLists.createProposerSlashings(),
+          proposerSlashings.orElse(blockBodyLists.createProposerSlashings()),
           attesterSlashings.orElse(blockBodyLists.createAttesterSlashings()),
           deposits.orElse(blockBodyLists.createDeposits()),
           exits.orElse(blockBodyLists.createVoluntaryExits()),
@@ -391,7 +390,7 @@ public class BlockProposalTestUtil {
           parentBlockSigningRoot,
           eth1Data.orElse(getEth1DataStub(previousState, newEpoch)),
           attestations.orElse(blockBodyLists.createAttestations()),
-          blockBodyLists.createProposerSlashings(),
+          proposerSlashings.orElse(blockBodyLists.createProposerSlashings()),
           attesterSlashings.orElse(blockBodyLists.createAttesterSlashings()),
           deposits.orElse(blockBodyLists.createDeposits()),
           exits.orElse(blockBodyLists.createVoluntaryExits()),

@@ -37,13 +37,6 @@ public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
     final TekuConfiguration config =
         getTekuConfigurationFromArguments("--ws-checkpoint", checkpointParam);
     assertThat(config.weakSubjectivity().getWeakSubjectivityCheckpoint()).contains(checkpoint);
-
-    assertThat(
-            createConfigBuilder()
-                .weakSubjectivity(b -> b.weakSubjectivityCheckpoint(checkpoint))
-                .build())
-        .usingRecursiveComparison()
-        .isEqualTo(config);
   }
 
   @Test
@@ -63,19 +56,10 @@ public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
         getResultingTekuConfiguration().weakSubjectivity().getWeakSubjectivityCheckpoint().get();
 
     assertThat(checkpoint.getEpoch()).isEqualTo(UInt64.valueOf(24187));
-
-    assertThat(
-            createConfigBuilder()
-                .weakSubjectivity(
-                    b ->
-                        b.weakSubjectivityCheckpoint(
-                            new Checkpoint(
-                                UInt64.valueOf(24187),
-                                Bytes32.fromHexString(
-                                    "0x2a6b2528908d5a9ed729417740f54e7267141fd8dca1ec052fc05aa8806e56e3"))))
-                .build())
-        .usingRecursiveComparison()
-        .isEqualTo(config);
+    assertThat(checkpoint.getRoot())
+        .isEqualTo(
+            Bytes32.fromHexString(
+                "0x2a6b2528908d5a9ed729417740f54e7267141fd8dca1ec052fc05aa8806e56e3"));
   }
 
   @Test
@@ -100,12 +84,6 @@ public class WeakSubjectivityOptionsTest extends AbstractBeaconNodeCommandTest {
         getTekuConfigurationFromArguments("--Xws-suppress-errors-until-epoch", "123");
     assertThat(config.weakSubjectivity().getSuppressWSPeriodChecksUntilEpoch())
         .contains(UInt64.valueOf(123));
-    assertThat(
-            createConfigBuilder()
-                .weakSubjectivity(b -> b.suppressWSPeriodChecksUntilEpoch(UInt64.valueOf(123)))
-                .build())
-        .usingRecursiveComparison()
-        .isEqualTo(config);
   }
 
   @Test

@@ -30,12 +30,14 @@ import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.CheckReturnValue;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
@@ -50,11 +52,8 @@ import tech.pegasys.teku.spec.config.SpecConfigAltair;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 import tech.pegasys.teku.spec.constants.Domain;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.blobs.SignedBlobSidecarsUnblinder;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlindedBlobSidecar;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockHeader;
@@ -64,7 +63,6 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockUnblinder;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -201,7 +199,7 @@ public class Spec {
   /**
    * Base networking constants
    *
-   * <p>These constants are unified among forks and are not overriden, new constant name is used if
+   * <p>These constants are unified among forks and are not overridden, new constant name is used if
    * it's changed in the new fork
    */
   public NetworkingSpecConfig getNetworkingConfig() {
@@ -307,7 +305,7 @@ public class Spec {
   }
 
   public GenesisGenerator createGenesisGenerator() {
-    return new GenesisGenerator(getGenesisSpec(), forkSchedule.getFork(SpecConfig.GENESIS_EPOCH));
+    return new GenesisGenerator(getGenesisSpec(), forkSchedule.getGenesisFork());
   }
 
   // Serialization
@@ -387,14 +385,13 @@ public class Spec {
         .sszDeserialize(serializedBlobs);
   }
 
-  public BlobSidecarOld deserializeBlobSidecar(
-      final Bytes serializedBlobSidecar, final UInt64 slot) {
+  public BlobSidecar deserializeBlobSidecar(final Bytes serializedBlobSidecar, final UInt64 slot) {
     return atSlot(slot)
         .getSchemaDefinitions()
         .toVersionDeneb()
         .orElseThrow(
             () -> new RuntimeException("Deneb milestone is required to deserialize blob sidecar"))
-        .getBlobSidecarOldSchema()
+        .getBlobSidecarSchema()
         .sszDeserialize(serializedBlobSidecar);
   }
 
@@ -439,10 +436,6 @@ public class Spec {
 
   public Bytes computeSigningRoot(BeaconBlock block, Bytes32 domain) {
     return atBlock(block).miscHelpers().computeSigningRoot(block, domain);
-  }
-
-  public Bytes computeSigningRoot(BlobSidecarOld blobSidecar, Bytes32 domain) {
-    return atSlot(blobSidecar.getSlot()).miscHelpers().computeSigningRoot(blobSidecar, domain);
   }
 
   public Bytes computeSigningRoot(BeaconBlockHeader blockHeader, Bytes32 domain) {
@@ -702,67 +695,43 @@ public class Spec {
   }
 
   // Block Proposal
-  @Deprecated
   public SafeFuture<BeaconBlockAndState> createNewUnsignedBlock(
-      final UInt64 newSlot,
+      final UInt64 proposalSlot,
       final int proposerIndex,
       final BeaconState blockSlotState,
       final Bytes32 parentBlockSigningRoot,
-      final Consumer<BeaconBlockBodyBuilder> bodyBuilder,
-      final boolean blinded) {
-    return atSlot(newSlot)
+      final Function<BeaconBlockBodyBuilder, SafeFuture<Void>> bodyBuilder,
+      final BlockProductionPerformance blockProductionPerformance) {
+    return atSlot(proposalSlot)
         .getBlockProposalUtil()
         .createNewUnsignedBlock(
-            newSlot, proposerIndex, blockSlotState, parentBlockSigningRoot, bodyBuilder, blinded);
-  }
-
-  public SafeFuture<BeaconBlockAndState> createNewUnsignedBlock(
-      final UInt64 newSlot,
-      final int proposerIndex,
-      final BeaconState blockSlotState,
-      final Bytes32 parentBlockSigningRoot,
-      final Consumer<BeaconBlockBodyBuilder> bodyBuilder) {
-    return atSlot(newSlot)
-        .getBlockProposalUtil()
-        .createNewUnsignedBlock(
-            newSlot, proposerIndex, blockSlotState, parentBlockSigningRoot, bodyBuilder);
+            proposalSlot,
+            proposerIndex,
+            blockSlotState,
+            parentBlockSigningRoot,
+            bodyBuilder,
+            blockProductionPerformance);
   }
 
   // Blind Block Utils
 
   public SafeFuture<SignedBeaconBlock> unblindSignedBeaconBlock(
-      final SignedBlindedBlockContainer signedBlindedBlockContainer,
+      final SignedBeaconBlock signedBlindedBeaconBlock,
       final Consumer<SignedBeaconBlockUnblinder> beaconBlockUnblinderConsumer) {
-    return atSlot(signedBlindedBlockContainer.getSlot())
+    return atSlot(signedBlindedBeaconBlock.getSlot())
         .getBlindBlockUtil()
         .map(
             converter ->
                 converter.unblindSignedBeaconBlock(
-                    signedBlindedBlockContainer, beaconBlockUnblinderConsumer))
+                    signedBlindedBeaconBlock, beaconBlockUnblinderConsumer))
         .orElseGet(
             () -> {
               // this shouldn't happen: BlockFactory should skip unblinding when is not needed
               checkState(
-                  !signedBlindedBlockContainer.isBlinded(),
+                  !signedBlindedBeaconBlock.isBlinded(),
                   "Unblinder not available for the current spec but the given block was blinded");
-              return SafeFuture.completedFuture(signedBlindedBlockContainer.getSignedBlock());
+              return SafeFuture.completedFuture(signedBlindedBeaconBlock);
             });
-  }
-
-  public SafeFuture<List<SignedBlobSidecarOld>> unblindSignedBlindedBlobSidecars(
-      final UInt64 slot,
-      final List<SignedBlindedBlobSidecar> blindedBlobSidecars,
-      final Consumer<SignedBlobSidecarsUnblinder> blobSidecarsUnblinderConsumer) {
-    return atSlot(slot)
-        .getBlindBlockUtil()
-        .map(
-            converter ->
-                converter.unblindSignedBlobSidecars(
-                    blindedBlobSidecars, blobSidecarsUnblinderConsumer))
-        .orElseThrow(
-            () ->
-                new IllegalStateException(
-                    "Unblinder was not available but blob sidecars were blinded"));
   }
 
   public SignedBeaconBlock blindSignedBeaconBlock(
@@ -959,13 +928,10 @@ public class Spec {
     return getSpecConfigDeneb(slot).map(SpecConfigDeneb::getMaxBlobsPerBlock);
   }
 
-  public UInt64 computeSubnetForBlobSidecar(final SignedBlobSidecarOld signedBlobSidecar) {
-    final SpecConfig config = atSlot(signedBlobSidecar.getSlot()).getConfig();
+  public UInt64 computeSubnetForBlobSidecar(final BlobSidecar blobSidecar) {
+    final SpecConfig config = atSlot(blobSidecar.getSlot()).getConfig();
     final SpecConfigDeneb specConfigDeneb = SpecConfigDeneb.required(config);
-    return signedBlobSidecar
-        .getBlobSidecar()
-        .getIndex()
-        .mod(specConfigDeneb.getBlobSidecarSubnetCount());
+    return blobSidecar.getIndex().mod(specConfigDeneb.getBlobSidecarSubnetCount());
   }
 
   public Optional<UInt64> computeFirstSlotWithBlobSupport() {

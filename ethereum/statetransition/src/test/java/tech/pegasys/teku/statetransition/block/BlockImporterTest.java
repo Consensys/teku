@@ -69,7 +69,7 @@ import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
-import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -84,13 +84,13 @@ public class BlockImporterTest {
   private final AttestationSchema attestationSchema =
       spec.getGenesisSchemaDefinitions().getAttestationSchema();
   private final List<BLSKeyPair> validatorKeys = BLSKeyGenerator.generateKeyPairs(8);
-  private final BlockImportNotifications blockImportNotifications =
-      mock(BlockImportNotifications.class);
+  private final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher =
+      mock(ReceivedBlockEventsChannel.class);
   private final RecentChainData recentChainData =
       MemoryOnlyRecentChainData.builder().specProvider(spec).build();
   private final WeakSubjectivityValidator weakSubjectivityValidator =
       mock(WeakSubjectivityValidator.class);
-  private final ForkChoiceNotifier forkChoiceNotifier = new StubForkChoiceNotifier();
+  private final ForkChoiceNotifier forkChoiceNotifier = new NoopForkChoiceNotifier();
   private final MergeTransitionBlockValidator transitionBlockValidator =
       new MergeTransitionBlockValidator(spec, recentChainData, ExecutionLayerChannel.NOOP);
 
@@ -114,7 +114,7 @@ public class BlockImporterTest {
   private final BlockImporter blockImporter =
       new BlockImporter(
           spec,
-          blockImportNotifications,
+          receivedBlockEventsChannelPublisher,
           recentChainData,
           forkChoice,
           weakSubjectivityValidator,
@@ -253,7 +253,7 @@ public class BlockImporterTest {
 
     // Known blocks should report as successfully imported
     final BlockImportResult result = blockImporter.importBlock(blocks.get(blocks.size() - 1)).get();
-    assertSuccessfulResult(result);
+    assertSuccessfulResult(result, false);
   }
 
   @Test
@@ -313,9 +313,19 @@ public class BlockImporterTest {
   }
 
   private void assertSuccessfulResult(final BlockImportResult result) {
+    assertSuccessfulResult(result, true);
+  }
+
+  private void assertSuccessfulResult(
+      final BlockImportResult result, final boolean shouldSendNotifications) {
     assertThat(result.isSuccessful()).isTrue();
     assertThat(result.getFailureReason()).isNull();
     assertThat(result.getFailureCause()).isEmpty();
+    if (shouldSendNotifications) {
+      // verify notifications are sent
+      verify(receivedBlockEventsChannelPublisher)
+          .onBlockImported(result.getBlock(), result.isImportedOptimistically());
+    }
   }
 
   @Test
@@ -394,7 +404,7 @@ public class BlockImporterTest {
     final BlockImporter blockImporter =
         new BlockImporter(
             spec,
-            blockImportNotifications,
+            receivedBlockEventsChannelPublisher,
             recentChainData,
             forkChoice,
             weakSubjectivityValidator,
@@ -424,7 +434,7 @@ public class BlockImporterTest {
     final BlockImporter blockImporter =
         new BlockImporter(
             spec,
-            blockImportNotifications,
+            receivedBlockEventsChannelPublisher,
             recentChainData,
             forkChoice,
             weakSubjectivityValidator,
@@ -433,9 +443,9 @@ public class BlockImporterTest {
     // Import wsBlock
     final BlockImportResult result = blockImporter.importBlock(wsBlock).get();
     assertSuccessfulResult(result);
-    // Import next valid block
+    // Known blocks should report as successfully imported
     final BlockImportResult result2 = blockImporter.importBlock(nextBlock).get();
-    assertSuccessfulResult(result2);
+    assertSuccessfulResult(result2, false);
   }
 
   @Test
@@ -454,7 +464,7 @@ public class BlockImporterTest {
     final BlockImporter blockImporter =
         new BlockImporter(
             spec,
-            blockImportNotifications,
+            receivedBlockEventsChannelPublisher,
             storageSystem.recentChainData(),
             forkChoice,
             weakSubjectivityValidator,
@@ -499,7 +509,7 @@ public class BlockImporterTest {
     final BlockImporter blockImporter =
         new BlockImporter(
             spec,
-            blockImportNotifications,
+            receivedBlockEventsChannelPublisher,
             storageSystem.recentChainData(),
             forkChoice,
             weakSubjectivityValidator,
@@ -552,7 +562,7 @@ public class BlockImporterTest {
     final BlockImporter blockImporter =
         new BlockImporter(
             spec,
-            blockImportNotifications,
+            receivedBlockEventsChannelPublisher,
             storageSystem.recentChainData(),
             forkChoice,
             weakSubjectivityValidator,
@@ -597,7 +607,7 @@ public class BlockImporterTest {
     final BlockImporter blockImporter =
         new BlockImporter(
             spec,
-            blockImportNotifications,
+            receivedBlockEventsChannelPublisher,
             storageSystem.recentChainData(),
             forkChoice,
             weakSubjectivityValidator,
@@ -630,7 +640,7 @@ public class BlockImporterTest {
     final BlockImporter blockImporter =
         new BlockImporter(
             spec,
-            blockImportNotifications,
+            receivedBlockEventsChannelPublisher,
             storageSystem.recentChainData(),
             forkChoice,
             weakSubjectivityValidator,
@@ -685,7 +695,7 @@ public class BlockImporterTest {
     final BlockImporter blockImporter =
         new BlockImporter(
             spec,
-            blockImportNotifications,
+            receivedBlockEventsChannelPublisher,
             storageSystem.recentChainData(),
             forkChoice,
             weakSubjectivityValidator,

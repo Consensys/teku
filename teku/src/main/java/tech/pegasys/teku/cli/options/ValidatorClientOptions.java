@@ -13,8 +13,6 @@
 
 package tech.pegasys.teku.cli.options;
 
-import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -62,7 +60,31 @@ public class ValidatorClientOptions {
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       arity = "0..1",
       fallbackValue = "true")
-  private boolean validatorClientSszBlocksEnabled = DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED;
+  private boolean validatorClientSszBlocksEnabled =
+      ValidatorConfig.DEFAULT_VALIDATOR_CLIENT_SSZ_BLOCKS_ENABLED;
+
+  @CommandLine.Option(
+      names = {"--Xuse-post-validators-endpoint-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Use the POST endpoint when getting validators from state",
+      hidden = true,
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean validatorClientUsePostValidatorsEndpointEnabled =
+      ValidatorConfig.DEFAULT_VALIDATOR_CLIENT_USE_POST_VALIDATORS_ENDPOINT_ENABLED;
+
+  @Option(
+      names = {"--Xdvt-integration-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Use DVT endpoints to determine if a distributed validator has aggregation duties.",
+      arity = "0..1",
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      hidden = true,
+      fallbackValue = "true")
+  private boolean dvtSelectionsEndpointEnabled =
+      ValidatorConfig.DEFAULT_DVT_SELECTIONS_ENDPOINT_ENABLED;
 
   public void configure(TekuConfiguration.Builder builder) {
     configureBeaconNodeApiEndpoints();
@@ -72,9 +94,12 @@ public class ValidatorClientOptions {
             config
                 .beaconNodeApiEndpoints(getBeaconNodeApiEndpoints())
                 .validatorClientUseSszBlocksEnabled(validatorClientSszBlocksEnabled)
+                .validatorClientUsePostValidatorsEndpointEnabled(
+                    validatorClientUsePostValidatorsEndpointEnabled)
                 .failoversSendSubnetSubscriptionsEnabled(failoversSendSubnetSubscriptionsEnabled)
                 .failoversPublishSignedDutiesEnabled(failoversPublishSignedDutiesEnabled)
-                .sentryNodeConfigurationFile(exclusiveParams.sentryConfigFile));
+                .sentryNodeConfigurationFile(exclusiveParams.sentryConfigFile)
+                .dvtSelectionsEndpointEnabled(dvtSelectionsEndpointEnabled));
   }
 
   private void configureBeaconNodeApiEndpoints() {

@@ -283,17 +283,6 @@ public class P2POptions {
   private boolean siteLocalAddressesEnabled = DiscoveryConfig.DEFAULT_SITE_LOCAL_ADDRESSES_ENABLED;
 
   @Option(
-      names = {"--Xbls-to-execution-changes-subnet-enabled"},
-      paramLabel = "<BOOLEAN>",
-      showDefaultValue = Visibility.ALWAYS,
-      description = "Whether this node will subscribe to the bls_to_execution_changes subnet",
-      arity = "0..1",
-      hidden = true,
-      fallbackValue = "true")
-  private boolean blsToExecutionChangesSubnetEnabled =
-      P2PConfig.DEFAULT_BLS_TO_EXECUTION_CHANGES_SUBNET_ENABLED;
-
-  @Option(
       names = {"--Xp2p-yamux-enabled"},
       paramLabel = "<BOOLEAN>",
       showDefaultValue = Visibility.ALWAYS,
@@ -333,8 +322,7 @@ public class P2POptions {
                     .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount)
                     .isGossipScoringEnabled(gossipScoringEnabled)
                     .peerRateLimit(peerRateLimit)
-                    .peerRequestLimit(peerRequestLimit)
-                    .blsToExecutionChangesSubnetEnabled(blsToExecutionChangesSubnetEnabled))
+                    .peerRequestLimit(peerRequestLimit))
         .discovery(
             d -> {
               if (p2pDiscoveryBootnodes != null) {

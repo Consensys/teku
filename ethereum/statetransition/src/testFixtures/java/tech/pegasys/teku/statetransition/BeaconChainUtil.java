@@ -49,7 +49,8 @@ import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
-import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore.StoreTransaction;
@@ -106,7 +107,7 @@ public class BeaconChainUtil {
             new InlineEventThread(),
             storageClient,
             BlobSidecarManager.NOOP,
-            new StubForkChoiceNotifier(),
+            new NoopForkChoiceNotifier(),
             new MergeTransitionBlockValidator(spec, storageClient, ExecutionLayerChannel.NOOP),
             new StubMetricsSystem()),
         true);
@@ -126,7 +127,7 @@ public class BeaconChainUtil {
             new InlineEventThread(),
             storageClient,
             BlobSidecarManager.NOOP,
-            new StubForkChoiceNotifier(),
+            new NoopForkChoiceNotifier(),
             new MergeTransitionBlockValidator(spec, storageClient, ExecutionLayerChannel.NOOP),
             new StubMetricsSystem()),
         signDeposits);
@@ -204,7 +205,7 @@ public class BeaconChainUtil {
             .onBlock(
                 block,
                 Optional.empty(),
-                Optional.empty(),
+                BlockBroadcastValidator.NOOP,
                 new ExecutionLayerChannelStub(spec, false, Optional.empty()))
             .join();
     if (!importResult.isSuccessful()) {
@@ -277,6 +278,7 @@ public class BeaconChainUtil {
                 attestations,
                 deposits,
                 Optional.empty(),
+                Optional.empty(),
                 exits,
                 eth1Data,
                 Optional.empty(),
@@ -321,7 +323,7 @@ public class BeaconChainUtil {
                 forkChoiceExecutor,
                 recentChainData,
                 BlobSidecarManager.NOOP,
-                new StubForkChoiceNotifier(),
+                new NoopForkChoiceNotifier(),
                 new MergeTransitionBlockValidator(
                     spec, recentChainData, ExecutionLayerChannel.NOOP),
                 new StubMetricsSystem());

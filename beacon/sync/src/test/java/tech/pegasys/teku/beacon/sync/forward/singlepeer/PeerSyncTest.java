@@ -46,7 +46,7 @@ import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlocksByRangeRe
 import tech.pegasys.teku.networking.eth2.rpc.core.RpcException.DecompressFailedException;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.StateTransitionException;
@@ -98,7 +98,7 @@ public class PeerSyncTest extends AbstractSyncTest {
             recentChainData,
             blockImporter,
             blobSidecarManager,
-            blobSidecarPool,
+            blockBlobSidecarsTrackersPool,
             FORWARD_SYNC_BATCH_SIZE.intValue(),
             new NoOpMetricsSystem());
   }
@@ -534,7 +534,7 @@ public class PeerSyncTest extends AbstractSyncTest {
 
     verify(peer).requestBlobSidecarsByRange(eq(denebSecondSlot), eq(denebPeerSlotsAhead), any());
 
-    final Map<UInt64, List<BlobSidecarOld>> blobSidecarsBySlot =
+    final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot =
         completeRequestWithBlobSidecarsAtSlots(
             blobSidecarsRequestFuture, denebSecondSlot, denebPeerSlotsAhead);
 
@@ -552,12 +552,12 @@ public class PeerSyncTest extends AbstractSyncTest {
   private void verifyBlobSidecarsAddedToPool(
       final UInt64 startSlot,
       final UInt64 count,
-      final Map<UInt64, List<BlobSidecarOld>> blobSidecarsBySlot) {
+      final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot) {
     for (UInt64 slot : getSlotsRange(startSlot, count)) {
       if (!blobSidecarsBySlot.containsKey(slot)) {
         Assertions.fail("Blob sidecars for slot %s is missing", slot);
       }
-      verify(blobSidecarPool)
+      verify(blockBlobSidecarsTrackersPool)
           .onCompletedBlockAndBlobSidecars(any(), eq(blobSidecarsBySlot.get(slot)));
     }
   }

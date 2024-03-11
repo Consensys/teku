@@ -16,6 +16,7 @@ package tech.pegasys.teku.storage.store;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -33,6 +34,7 @@ import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.storage.api.OnDiskStoreData;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
+import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 
 public class StoreBuilder {
   private AsyncRunner asyncRunner;
@@ -53,6 +55,7 @@ public class StoreBuilder {
   private Map<UInt64, VoteTracker> votes;
   private Optional<SlotAndExecutionPayloadSummary> finalizedOptimisticTransitionPayload =
       Optional.empty();
+  private ForkChoiceStrategy forkChoiceStrategy = null;
 
   private StoreBuilder() {}
 
@@ -74,6 +77,7 @@ public class StoreBuilder {
             anchor.getRoot(),
             anchor.getParentRoot(),
             anchor.getState().hashTreeRoot(),
+            anchor.getExecutionBlockNumber(),
             anchor.getExecutionBlockHash(),
             Optional.of(spec.calculateBlockCheckpoints(anchor.getState()))));
 
@@ -104,6 +108,26 @@ public class StoreBuilder {
   public UpdatableStore build() {
     assertValid();
 
+    if (forkChoiceStrategy != null) {
+      return Store.create(
+          asyncRunner,
+          metricsSystem,
+          spec,
+          blockProvider,
+          stateAndBlockProvider,
+          earliestBlobSidecarSlotProvider,
+          anchor,
+          time,
+          genesisTime,
+          latestFinalized,
+          finalizedOptimisticTransitionPayload,
+          justifiedCheckpoint,
+          bestJustifiedCheckpoint,
+          blockInfoByRoot,
+          votes,
+          storeConfig,
+          forkChoiceStrategy);
+    }
     return Store.create(
         asyncRunner,
         metricsSystem,
@@ -230,6 +254,12 @@ public class StoreBuilder {
 
   public StoreBuilder blockInformation(final Map<Bytes32, StoredBlockMetadata> blockInformation) {
     this.blockInfoByRoot.putAll(blockInformation);
+    return this;
+  }
+
+  @VisibleForTesting
+  StoreBuilder forkChoiceStrategy(final ForkChoiceStrategy forkChoiceStrategy) {
+    this.forkChoiceStrategy = forkChoiceStrategy;
     return this;
   }
 

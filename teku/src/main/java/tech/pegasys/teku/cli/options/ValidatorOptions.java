@@ -15,6 +15,8 @@ package tech.pegasys.teku.cli.options;
 
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_VALIDATOR_EXECUTOR_THREADS;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_DOPPELGANGER_DETECTION_ENABLED;
+import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_SHUTDOWN_WHEN_VALIDATOR_SLASHED_ENABLED;
+import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED;
 
 import java.nio.file.Path;
 import java.util.Optional;
@@ -130,6 +132,38 @@ public class ValidatorOptions {
       fallbackValue = "true")
   private boolean blockV3Enabled = ValidatorConfig.DEFAULT_BLOCK_V3_ENABLED;
 
+  @Option(
+      names = {"--exit-when-no-validator-keys-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Enable terminating the process if no validator keys are found during startup",
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      arity = "0..1",
+      fallbackValue = "true")
+  private boolean exitWhenNoValidatorKeysEnabled =
+      ValidatorConfig.DEFAULT_EXIT_WHEN_NO_VALIDATOR_KEYS_ENABLED;
+
+  @Option(
+      names = {"--Xvalidator-is-local-slashing-protection-synchronized-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Restrict local signing to a single operation at a time.",
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      arity = "0..1",
+      hidden = true,
+      fallbackValue = "true")
+  private boolean isLocalSlashingProtectionSynchronizedEnabled =
+      DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED;
+
+  @Option(
+      names = {"--Xshut-down-when-validator-slashed-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "If an owned validator key is detected as slashed, the node should terminate with exit code 2. In this case, the service should not be restarted.",
+      showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
+      arity = "0..1",
+      hidden = true,
+      fallbackValue = "true")
+  private boolean shutdownWhenValidatorSlashed = DEFAULT_SHUTDOWN_WHEN_VALIDATOR_SLASHED_ENABLED;
+
   public void configure(TekuConfiguration.Builder builder) {
     builder.validator(
         config ->
@@ -138,6 +172,8 @@ public class ValidatorOptions {
                 .validatorPerformanceTrackingMode(validatorPerformanceTrackingMode)
                 .validatorExternalSignerSlashingProtectionEnabled(
                     validatorExternalSignerSlashingProtectionEnabled)
+                .isLocalSlashingProtectionSynchronizedModeEnabled(
+                    isLocalSlashingProtectionSynchronizedEnabled)
                 .graffitiProvider(
                     new FileBackedGraffitiProvider(
                         Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
@@ -145,7 +181,9 @@ public class ValidatorOptions {
                 .executorMaxQueueSize(executorMaxQueueSize)
                 .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled)
                 .executorThreads(executorThreads)
-                .blockV3enabled(blockV3Enabled));
+                .blockV3enabled(blockV3Enabled)
+                .exitWhenNoValidatorKeysEnabled(exitWhenNoValidatorKeysEnabled)
+                .shutdownWhenValidatorSlashedEnabled(shutdownWhenValidatorSlashed));
     validatorProposerOptions.configure(builder);
     validatorKeysOptions.configure(builder);
   }

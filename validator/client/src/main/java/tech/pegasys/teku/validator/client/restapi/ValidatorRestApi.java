@@ -35,7 +35,6 @@ import tech.pegasys.teku.validator.client.KeyManager;
 import tech.pegasys.teku.validator.client.ProposerConfigManager;
 import tech.pegasys.teku.validator.client.ValidatorClientService;
 import tech.pegasys.teku.validator.client.VoluntaryExitDataProvider;
-import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
 import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteFeeRecipient;
 import tech.pegasys.teku.validator.client.restapi.apis.DeleteGasLimit;
@@ -50,6 +49,7 @@ import tech.pegasys.teku.validator.client.restapi.apis.PostRemoteKeys;
 import tech.pegasys.teku.validator.client.restapi.apis.PostVoluntaryExit;
 import tech.pegasys.teku.validator.client.restapi.apis.SetFeeRecipient;
 import tech.pegasys.teku.validator.client.restapi.apis.SetGasLimit;
+import tech.pegasys.teku.validator.client.slashingriskactions.SlashingRiskAction;
 
 public class ValidatorRestApi {
 
@@ -68,12 +68,18 @@ public class ValidatorRestApi {
       final DataDirLayout dataDirLayout,
       final TimeProvider timeProvider,
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector,
-      final DoppelgangerDetectionAction doppelgangerDetectionAction) {
+      final SlashingRiskAction doppelgangerDetectionAction) {
     final VoluntaryExitDataProvider voluntaryExitDataProvider =
         new VoluntaryExitDataProvider(
             spec, keyManager, validatorApiChannel, genesisDataProvider, timeProvider);
     final Path slashingProtectionPath =
         ValidatorClientService.getSlashingProtectionPath(dataDirLayout);
+    final Path validatorApiBearerFile =
+        config
+            .getMaybeValidatorApiBearerFile()
+            .orElse(
+                ValidatorClientService.getKeyManagerPath(dataDirLayout)
+                    .resolve("validator-api-bearer"));
     return new RestApiBuilder()
         .openApiInfo(
             openApi ->
@@ -123,8 +129,7 @@ public class ValidatorRestApi {
         .endpoint(new DeleteGasLimit(proposerConfigManager))
         .endpoint(new PostVoluntaryExit(voluntaryExitDataProvider))
         .sslCertificate(config.getRestApiKeystoreFile(), config.getRestApiKeystorePasswordFile())
-        .passwordFilePath(
-            ValidatorClientService.getKeyManagerPath(dataDirLayout).resolve("validator-api-bearer"))
+        .passwordFilePath(validatorApiBearerFile)
         .build();
   }
 }

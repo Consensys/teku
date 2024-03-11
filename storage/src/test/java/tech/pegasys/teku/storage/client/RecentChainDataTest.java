@@ -39,7 +39,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -799,11 +799,11 @@ class RecentChainDataTest {
     final SignedBlockAndState block =
         chainBuilder.generateBlockAtSlot(
             UInt64.valueOf(1), BlockOptions.create().setGenerateRandomBlobs(true));
-    final List<BlobSidecarOld> blobSidecars = chainBuilder.getBlobSidecars(block.getRoot());
+    final List<BlobSidecar> blobSidecars = chainBuilder.getBlobSidecars(block.getRoot());
     assertThat(blobSidecars).isNotEmpty();
     storageSystem.chainUpdater().saveBlock(block, blobSidecars);
 
-    final Optional<List<BlobSidecarOld>> maybeBlobSidecars =
+    final Optional<List<BlobSidecar>> maybeBlobSidecars =
         recentChainData.getBlobSidecars(block.getSlotAndBlockRoot());
     assertThat(maybeBlobSidecars).contains(blobSidecars);
   }
@@ -813,11 +813,11 @@ class RecentChainDataTest {
     initPostGenesis();
 
     final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(UInt64.valueOf(1));
-    final List<BlobSidecarOld> blobSidecars = chainBuilder.getBlobSidecars(block.getRoot());
+    final List<BlobSidecar> blobSidecars = chainBuilder.getBlobSidecars(block.getRoot());
     storageSystem.chainUpdater().saveBlock(block, blobSidecars);
     assertThat(blobSidecars).isEmpty();
 
-    final Optional<List<BlobSidecarOld>> maybeBlobSidecars =
+    final Optional<List<BlobSidecar>> maybeBlobSidecars =
         recentChainData.getBlobSidecars(block.getSlotAndBlockRoot());
     assertThat(maybeBlobSidecars).contains(blobSidecars);
   }
@@ -829,7 +829,7 @@ class RecentChainDataTest {
     final SignedBlockAndState block1 =
         chainBuilder.generateBlockAtSlot(
             UInt64.valueOf(1), BlockOptions.create().setGenerateRandomBlobs(true));
-    final List<BlobSidecarOld> blobSidecars1 = chainBuilder.getBlobSidecars(block1.getRoot());
+    final List<BlobSidecar> blobSidecars1 = chainBuilder.getBlobSidecars(block1.getRoot());
     storageSystem.chainUpdater().saveBlock(block1, blobSidecars1, UInt64.valueOf(1));
     // 0 from genesis
     assertThat(recentChainData.retrieveEarliestBlobSidecarSlot())

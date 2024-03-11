@@ -32,6 +32,7 @@ import static tech.pegasys.teku.spec.networks.Eth2Network.SWIFT;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
@@ -49,8 +50,11 @@ public class Eth2NetworkConfiguration {
   private static final int DEFAULT_STARTUP_TARGET_PEER_COUNT = 5;
   private static final int DEFAULT_STARTUP_TIMEOUT_SECONDS = 30;
 
-  public static final boolean DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED = false;
-  public static final boolean DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED = true;
+  public static final boolean DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED = false;
+
+  public static final boolean DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES = false;
+
+  public static final boolean DEFAULT_ALLOW_SYNC_OUTSIDE_WEAK_SUBJECTIVITY_PERIOD = false;
 
   public static final int DEFAULT_ASYNC_P2P_MAX_THREADS = 10;
 
@@ -73,8 +77,6 @@ public class Eth2NetworkConfiguration {
 
   private final Spec spec;
   private final String constants;
-  private final Optional<String> initialState;
-  private final Optional<String> genesisState;
   private final StateBoostrapConfig stateBoostrapConfig;
   private final int startupTargetPeerCount;
   private final int startupTimeoutSeconds;
@@ -83,11 +85,10 @@ public class Eth2NetworkConfiguration {
   private final Optional<UInt64> bellatrixForkEpoch;
   private final Optional<UInt64> capellaForkEpoch;
   private final Optional<UInt64> denebForkEpoch;
+  private final Optional<UInt64> electraForkEpoch;
   private final Eth1Address eth1DepositContractAddress;
   private final Optional<UInt64> eth1DepositContractDeployBlock;
   private final Optional<String> trustedSetup;
-  private final boolean forkChoiceUpdateHeadOnBlockImportEnabled;
-  private final boolean forkChoiceProposerBoostUniquenessEnabled;
   private final Optional<Bytes32> terminalBlockHashOverride;
   private final Optional<UInt256> totalTerminalDifficultyOverride;
   private final Optional<UInt64> terminalBlockHashEpochOverride;
@@ -97,12 +98,12 @@ public class Eth2NetworkConfiguration {
   private final int asyncBeaconChainMaxThreads;
   private final int asyncBeaconChainMaxQueue;
   private final int asyncP2pMaxQueue;
+  private final boolean forkChoiceLateBlockReorgEnabled;
+  private final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes;
 
   private Eth2NetworkConfiguration(
       final Spec spec,
       final String constants,
-      final Optional<String> initialState,
-      final Optional<String> genesisState,
       final StateBoostrapConfig stateBoostrapConfig,
       final int startupTargetPeerCount,
       final int startupTimeoutSeconds,
@@ -110,12 +111,11 @@ public class Eth2NetworkConfiguration {
       final Eth1Address eth1DepositContractAddress,
       final Optional<UInt64> eth1DepositContractDeployBlock,
       final Optional<String> trustedSetup,
-      final boolean forkChoiceUpdateHeadOnBlockImportEnabled,
-      final boolean forkChoiceProposerBoostUniquenessEnabled,
       final Optional<UInt64> altairForkEpoch,
       final Optional<UInt64> bellatrixForkEpoch,
       final Optional<UInt64> capellaForkEpoch,
       final Optional<UInt64> denebForkEpoch,
+      final Optional<UInt64> electraForkEpoch,
       final Optional<Bytes32> terminalBlockHashOverride,
       final Optional<UInt256> totalTerminalDifficultyOverride,
       final Optional<UInt64> terminalBlockHashEpochOverride,
@@ -124,11 +124,11 @@ public class Eth2NetworkConfiguration {
       final int asyncP2pMaxThreads,
       final int asyncP2pMaxQueue,
       final int asyncBeaconChainMaxThreads,
-      final int asyncBeaconChainMaxQueue) {
+      final int asyncBeaconChainMaxQueue,
+      final boolean forkChoiceLateBlockReorgEnabled,
+      final boolean forkChoiceUpdatedAlwaysSendPayloadAttributes) {
     this.spec = spec;
     this.constants = constants;
-    this.initialState = initialState;
-    this.genesisState = genesisState;
     this.stateBoostrapConfig = stateBoostrapConfig;
     this.startupTargetPeerCount = startupTargetPeerCount;
     this.startupTimeoutSeconds = startupTimeoutSeconds;
@@ -137,14 +137,13 @@ public class Eth2NetworkConfiguration {
     this.bellatrixForkEpoch = bellatrixForkEpoch;
     this.capellaForkEpoch = capellaForkEpoch;
     this.denebForkEpoch = denebForkEpoch;
+    this.electraForkEpoch = electraForkEpoch;
     this.eth1DepositContractAddress =
         eth1DepositContractAddress == null
             ? spec.getGenesisSpecConfig().getDepositContractAddress()
             : eth1DepositContractAddress;
     this.eth1DepositContractDeployBlock = eth1DepositContractDeployBlock;
     this.trustedSetup = trustedSetup;
-    this.forkChoiceUpdateHeadOnBlockImportEnabled = forkChoiceUpdateHeadOnBlockImportEnabled;
-    this.forkChoiceProposerBoostUniquenessEnabled = forkChoiceProposerBoostUniquenessEnabled;
     this.terminalBlockHashOverride = terminalBlockHashOverride;
     this.totalTerminalDifficultyOverride = totalTerminalDifficultyOverride;
     this.terminalBlockHashEpochOverride = terminalBlockHashEpochOverride;
@@ -154,6 +153,9 @@ public class Eth2NetworkConfiguration {
     this.asyncP2pMaxQueue = asyncP2pMaxQueue;
     this.asyncBeaconChainMaxThreads = asyncBeaconChainMaxThreads;
     this.asyncBeaconChainMaxQueue = asyncBeaconChainMaxQueue;
+    this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
+    this.forkChoiceUpdatedAlwaysSendPayloadAttributes =
+        forkChoiceUpdatedAlwaysSendPayloadAttributes;
   }
 
   public static Eth2NetworkConfiguration.Builder builder(final String network) {
@@ -179,14 +181,6 @@ public class Eth2NetworkConfiguration {
   @Deprecated
   public String getConstants() {
     return constants;
-  }
-
-  public Optional<String> getInitialState() {
-    return initialState;
-  }
-
-  public Optional<String> getGenesisState() {
-    return genesisState;
   }
 
   public StateBoostrapConfig getNetworkBoostrapConfig() {
@@ -217,20 +211,13 @@ public class Eth2NetworkConfiguration {
     return trustedSetup;
   }
 
-  public boolean isForkChoiceUpdateHeadOnBlockImportEnabled() {
-    return forkChoiceUpdateHeadOnBlockImportEnabled;
-  }
-
-  public boolean isForkChoiceProposerBoostUniquenessEnabled() {
-    return forkChoiceProposerBoostUniquenessEnabled;
-  }
-
   public Optional<UInt64> getForkEpoch(final SpecMilestone specMilestone) {
     return switch (specMilestone) {
       case ALTAIR -> altairForkEpoch;
       case BELLATRIX -> bellatrixForkEpoch;
       case CAPELLA -> capellaForkEpoch;
       case DENEB -> denebForkEpoch;
+      case ELECTRA -> electraForkEpoch;
       default -> Optional.empty();
     };
   }
@@ -271,22 +258,98 @@ public class Eth2NetworkConfiguration {
     return asyncBeaconChainMaxQueue;
   }
 
+  public boolean isForkChoiceLateBlockReorgEnabled() {
+    return forkChoiceLateBlockReorgEnabled;
+  }
+
+  public boolean isForkChoiceUpdatedAlwaysSendPayloadAttributes() {
+    return forkChoiceUpdatedAlwaysSendPayloadAttributes;
+  }
+
   @Override
   public String toString() {
     return constants;
   }
 
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    final Eth2NetworkConfiguration that = (Eth2NetworkConfiguration) o;
+    return startupTargetPeerCount == that.startupTargetPeerCount
+        && startupTimeoutSeconds == that.startupTimeoutSeconds
+        && asyncP2pMaxThreads == that.asyncP2pMaxThreads
+        && asyncBeaconChainMaxThreads == that.asyncBeaconChainMaxThreads
+        && asyncBeaconChainMaxQueue == that.asyncBeaconChainMaxQueue
+        && asyncP2pMaxQueue == that.asyncP2pMaxQueue
+        && forkChoiceLateBlockReorgEnabled == that.forkChoiceLateBlockReorgEnabled
+        && forkChoiceUpdatedAlwaysSendPayloadAttributes
+            == that.forkChoiceUpdatedAlwaysSendPayloadAttributes
+        && Objects.equals(spec, that.spec)
+        && Objects.equals(constants, that.constants)
+        && Objects.equals(stateBoostrapConfig, that.stateBoostrapConfig)
+        && Objects.equals(discoveryBootnodes, that.discoveryBootnodes)
+        && Objects.equals(altairForkEpoch, that.altairForkEpoch)
+        && Objects.equals(bellatrixForkEpoch, that.bellatrixForkEpoch)
+        && Objects.equals(capellaForkEpoch, that.capellaForkEpoch)
+        && Objects.equals(denebForkEpoch, that.denebForkEpoch)
+        && Objects.equals(electraForkEpoch, that.electraForkEpoch)
+        && Objects.equals(eth1DepositContractAddress, that.eth1DepositContractAddress)
+        && Objects.equals(eth1DepositContractDeployBlock, that.eth1DepositContractDeployBlock)
+        && Objects.equals(trustedSetup, that.trustedSetup)
+        && Objects.equals(terminalBlockHashOverride, that.terminalBlockHashOverride)
+        && Objects.equals(totalTerminalDifficultyOverride, that.totalTerminalDifficultyOverride)
+        && Objects.equals(terminalBlockHashEpochOverride, that.terminalBlockHashEpochOverride)
+        && Objects.equals(eth2Network, that.eth2Network)
+        && Objects.equals(epochsStoreBlobs, that.epochsStoreBlobs);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        spec,
+        constants,
+        stateBoostrapConfig,
+        startupTargetPeerCount,
+        startupTimeoutSeconds,
+        discoveryBootnodes,
+        altairForkEpoch,
+        bellatrixForkEpoch,
+        capellaForkEpoch,
+        denebForkEpoch,
+        electraForkEpoch,
+        eth1DepositContractAddress,
+        eth1DepositContractDeployBlock,
+        trustedSetup,
+        terminalBlockHashOverride,
+        totalTerminalDifficultyOverride,
+        terminalBlockHashEpochOverride,
+        eth2Network,
+        epochsStoreBlobs,
+        asyncP2pMaxThreads,
+        asyncBeaconChainMaxThreads,
+        asyncBeaconChainMaxQueue,
+        asyncP2pMaxQueue,
+        forkChoiceLateBlockReorgEnabled,
+        forkChoiceUpdatedAlwaysSendPayloadAttributes);
+  }
+
   public static class Builder {
     private static final String EPOCHS_STORE_BLOBS_MAX_KEYWORD = "MAX";
     private String constants;
-    private Optional<String> initialState = Optional.empty();
-    private final StateBoostrapConfig stateBoostrapConfig = new StateBoostrapConfig();
     private Optional<String> genesisState = Optional.empty();
+    private Optional<String> initialState = Optional.empty();
+    private Optional<String> checkpointSyncUrl = Optional.empty();
+    private boolean isUsingCustomInitialState = false;
+    private boolean allowSyncOutsideWeakSubjectivityPeriod =
+        DEFAULT_ALLOW_SYNC_OUTSIDE_WEAK_SUBJECTIVITY_PERIOD;
     private int startupTargetPeerCount = DEFAULT_STARTUP_TARGET_PEER_COUNT;
     private int startupTimeoutSeconds = DEFAULT_STARTUP_TIMEOUT_SECONDS;
-
     private int asyncP2pMaxThreads = DEFAULT_ASYNC_P2P_MAX_THREADS;
-
     private int asyncP2pMaxQueue = DEFAULT_ASYNC_P2P_MAX_QUEUE;
     private int asyncBeaconChainMaxThreads = DEFAULT_ASYNC_BEACON_CHAIN_MAX_THREADS;
     private int asyncBeaconChainMaxQueue = DEFAULT_ASYNC_BEACON_CHAIN_MAX_QUEUE;
@@ -298,16 +361,16 @@ public class Eth2NetworkConfiguration {
     private Optional<UInt64> bellatrixForkEpoch = Optional.empty();
     private Optional<UInt64> capellaForkEpoch = Optional.empty();
     private Optional<UInt64> denebForkEpoch = Optional.empty();
+    private Optional<UInt64> electraForkEpoch = Optional.empty();
     private Optional<Bytes32> terminalBlockHashOverride = Optional.empty();
     private Optional<UInt256> totalTerminalDifficultyOverride = Optional.empty();
     private Optional<UInt64> terminalBlockHashEpochOverride = Optional.empty();
     private int safeSlotsToImportOptimistically = DEFAULT_SAFE_SLOTS_TO_IMPORT_OPTIMISTICALLY;
     private String epochsStoreBlobs;
     private Spec spec;
-    private boolean forkChoiceUpdateHeadOnBlockImportEnabled =
-        DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
-    private boolean forkChoiceProposerBoostUniquenessEnabled =
-        DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED;
+    private boolean forkChoiceLateBlockReorgEnabled = DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
+    private boolean forkChoiceUpdatedAlwaysSendPayloadAttributes =
+        DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES;
 
     public void spec(Spec spec) {
       this.spec = spec;
@@ -349,7 +412,15 @@ public class Eth2NetworkConfiguration {
                           denebBuilder.epochsStoreBlobs(maybeEpochsStoreBlobs);
                         }
                       });
+                  builder.electraBuilder(
+                      electraBuilder ->
+                          electraForkEpoch.ifPresent(electraBuilder::electraForkEpoch));
                 });
+      }
+      if (spec.getForkSchedule().getSupportedMilestones().contains(SpecMilestone.DENEB)
+          && trustedSetup.isEmpty()) {
+        throw new InvalidConfigurationException(
+            "Trusted Setup was not configured but deneb fork epoch has been set, cannot start with supplied configuration.");
       }
       // if the deposit contract was not set, default from constants
       if (eth1DepositContractAddress == null) {
@@ -359,21 +430,23 @@ public class Eth2NetworkConfiguration {
       return new Eth2NetworkConfiguration(
           spec,
           constants,
-          initialState,
-          genesisState,
-          stateBoostrapConfig,
+          new StateBoostrapConfig(
+              genesisState,
+              initialState,
+              checkpointSyncUrl,
+              isUsingCustomInitialState,
+              allowSyncOutsideWeakSubjectivityPeriod),
           startupTargetPeerCount,
           startupTimeoutSeconds,
           discoveryBootnodes,
           eth1DepositContractAddress,
           eth1DepositContractDeployBlock,
           trustedSetup,
-          forkChoiceUpdateHeadOnBlockImportEnabled,
-          forkChoiceProposerBoostUniquenessEnabled,
           altairForkEpoch,
           bellatrixForkEpoch,
           capellaForkEpoch,
           denebForkEpoch,
+          electraForkEpoch,
           terminalBlockHashOverride,
           totalTerminalDifficultyOverride,
           terminalBlockHashEpochOverride,
@@ -382,7 +455,9 @@ public class Eth2NetworkConfiguration {
           asyncP2pMaxThreads,
           asyncP2pMaxQueue,
           asyncBeaconChainMaxThreads,
-          asyncBeaconChainMaxQueue);
+          asyncBeaconChainMaxQueue,
+          forkChoiceLateBlockReorgEnabled,
+          forkChoiceUpdatedAlwaysSendPayloadAttributes);
     }
 
     private void validateCommandLineParameters() {
@@ -416,35 +491,52 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder checkpointSyncUrl(final String checkpointSyncUrl) {
+      this.checkpointSyncUrl = Optional.of(checkpointSyncUrl);
       this.genesisState =
           Optional.of(UrlSanitizer.appendPath(checkpointSyncUrl, GENESIS_STATE_URL_PATH));
       this.initialState =
           Optional.of(UrlSanitizer.appendPath(checkpointSyncUrl, FINALIZED_STATE_URL_PATH));
-      this.stateBoostrapConfig.setUsingCheckpointSync(true);
       return this;
     }
 
+    /** Used when the user specifies the --initial-state option in the CLI. */
     public Builder customInitialState(final String initialState) {
       this.initialState = Optional.of(initialState);
-      this.stateBoostrapConfig.setUsingCustomInitialState(true);
+      this.isUsingCustomInitialState = true;
       return this;
     }
 
-    public Builder defaultInitialState(final String initialState) {
+    /**
+     * Used to load initial states from a URL.
+     *
+     * @param initialState The URL pointing to a initial state resource (e.g. a file on GitHub or an
+     *     Beacon API debug state endpoint.
+     */
+    public Builder defaultInitialStateFromUrl(final String initialState) {
       this.initialState = Optional.of(initialState);
-      this.stateBoostrapConfig.setUsingCustomInitialState(false);
       return this;
     }
 
-    public Builder initialStateFromClasspath(final String filename) {
-      this.initialState =
-          Optional.ofNullable(Eth2NetworkConfiguration.class.getResource(filename))
-              .map(URL::toExternalForm);
+    /**
+     * Used to load initial states from SSZ files within our distributed jar.
+     *
+     * @param filename the name of the ssz file (e.g. "mainnet-genesis.ssz")
+     */
+    public Builder defaultInitialStateFromClasspath(final String filename) {
+      Optional.ofNullable(Eth2NetworkConfiguration.class.getResource(filename))
+          .map(URL::toExternalForm)
+          .ifPresent(path -> this.initialState = Optional.of(path));
       return this;
     }
 
     public Builder customGenesisState(final String genesisState) {
       this.genesisState = Optional.of(genesisState);
+      return this;
+    }
+
+    public Builder ignoreWeakSubjectivityPeriodEnabled(
+        boolean ignoreWeakSubjectivityPeriodEnabled) {
+      this.allowSyncOutsideWeakSubjectivityPeriod = ignoreWeakSubjectivityPeriodEnabled;
       return this;
     }
 
@@ -469,9 +561,9 @@ public class Eth2NetworkConfiguration {
     }
 
     public Builder genesisStateFromClasspath(final String filename) {
-      this.genesisState =
-          Optional.ofNullable(Eth2NetworkConfiguration.class.getResource(filename))
-              .map(URL::toExternalForm);
+      Optional.ofNullable(Eth2NetworkConfiguration.class.getResource(filename))
+          .map(URL::toExternalForm)
+          .ifPresent(path -> this.genesisState = Optional.of(path));
       return this;
     }
 
@@ -527,18 +619,6 @@ public class Eth2NetworkConfiguration {
       return this;
     }
 
-    public Builder forkChoiceUpdateHeadOnBlockImportEnabled(
-        final boolean forkChoiceUpdateHeadOnBlockImportEnabled) {
-      this.forkChoiceUpdateHeadOnBlockImportEnabled = forkChoiceUpdateHeadOnBlockImportEnabled;
-      return this;
-    }
-
-    public Builder forkChoiceProposerBoostUniquenessEnabled(
-        final boolean forkChoiceProposerBoostUniquenessEnabled) {
-      this.forkChoiceProposerBoostUniquenessEnabled = forkChoiceProposerBoostUniquenessEnabled;
-      return this;
-    }
-
     public Builder altairForkEpoch(final UInt64 altairForkEpoch) {
       this.altairForkEpoch = Optional.of(altairForkEpoch);
       return this;
@@ -556,6 +636,11 @@ public class Eth2NetworkConfiguration {
 
     public Builder denebForkEpoch(final UInt64 denebForkEpoch) {
       this.denebForkEpoch = Optional.of(denebForkEpoch);
+      return this;
+    }
+
+    public Builder electraForkEpoch(final UInt64 electraForkEpoch) {
+      this.electraForkEpoch = Optional.of(electraForkEpoch);
       return this;
     }
 
@@ -619,8 +704,11 @@ public class Eth2NetworkConfiguration {
 
     private Builder reset() {
       constants = null;
-      initialState = Optional.empty();
       genesisState = Optional.empty();
+      initialState = Optional.empty();
+      checkpointSyncUrl = Optional.empty();
+      isUsingCustomInitialState = false;
+      allowSyncOutsideWeakSubjectivityPeriod = DEFAULT_ALLOW_SYNC_OUTSIDE_WEAK_SUBJECTIVITY_PERIOD;
       startupTargetPeerCount = DEFAULT_STARTUP_TARGET_PEER_COUNT;
       startupTimeoutSeconds = DEFAULT_STARTUP_TIMEOUT_SECONDS;
       discoveryBootnodes = new ArrayList<>();
@@ -652,14 +740,14 @@ public class Eth2NetworkConfiguration {
     public Builder applyMainnetNetworkDefaults() {
       return reset()
           .constants(MAINNET.configName())
-          .initialStateFromClasspath("mainnet-genesis.ssz")
+          .defaultInitialStateFromClasspath("mainnet-genesis.ssz")
           .genesisStateFromClasspath("mainnet-genesis.ssz")
           .trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME)
           .startupTimeoutSeconds(120)
           .eth1DepositContractDeployBlock(11052984)
           .discoveryBootnodes(
               // PegaSys Teku
-              "enr:-KG4QMOEswP62yzDjSwWS4YEjtTZ5PO6r65CPqYBkgTTkrpaedQ8uEUo1uMALtJIvb2w_WWEVmg5yt1UAuK1ftxUU7QDhGV0aDKQu6TalgMAAAD__________4JpZIJ2NIJpcIQEnfA2iXNlY3AyNTZrMaEDfol8oLr6XJ7FsdAYE7lpJhKMls4G_v6qQOGKJUWGb_uDdGNwgiMog3VkcIIjKA",
+              "enr:-KG4QNTx85fjxABbSq_Rta9wy56nQ1fHK0PewJbGjLm1M4bMGx5-3Qq4ZX2-iFJ0pys_O90sVXNNOxp2E7afBsGsBrgDhGV0aDKQu6TalgMAAAD__________4JpZIJ2NIJpcIQEnfA2iXNlY3AyNTZrMaECGXWQ-rQ2KZKRH1aOW4IlPDBkY4XDphxg9pxKytFCkayDdGNwgiMog3VkcIIjKA",
               "enr:-KG4QF4B5WrlFcRhUU6dZETwY5ZzAXnA0vGC__L1Kdw602nDZwXSTs5RFXFIFUnbQJmhNGVU6OIX7KVrCSTODsz1tK4DhGV0aDKQu6TalgMAAAD__________4JpZIJ2NIJpcIQExNYEiXNlY3AyNTZrMaECQmM9vp7KhaXhI-nqL_R0ovULLCFSFTa9CPPSdb1zPX6DdGNwgiMog3VkcIIjKA",
               // Prysmatic Labs
               "enr:-Ku4QImhMc1z8yCiNJ1TyUxdcfNucje3BGwEHzodEZUan8PherEo4sF7pPHPSIB1NNuSg5fZy7qFsjmUKs2ea1Whi0EBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpD1pf1CAAAAAP__________gmlkgnY0gmlwhBLf22SJc2VjcDI1NmsxoQOVphkDqal4QzPMksc5wnpuC3gvSC8AfbFOnZY_On34wIN1ZHCCIyg",
@@ -684,9 +772,10 @@ public class Eth2NetworkConfiguration {
     public Builder applyPraterNetworkDefaults() {
       return applyTestnetDefaults()
           .constants(PRATER.configName())
+          .trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME)
           .startupTimeoutSeconds(120)
           .eth1DepositContractDeployBlock(4367322)
-          .defaultInitialState(
+          .defaultInitialStateFromUrl(
               "https://github.com/eth2-clients/eth2-testnets/raw/192c1b48ea5ff4adb4e6ef7d2a9e5f82fb5ffd72/shared/prater/genesis.ssz")
           .customGenesisState(
               "https://github.com/eth2-clients/eth2-testnets/raw/192c1b48ea5ff4adb4e6ef7d2a9e5f82fb5ffd72/shared/prater/genesis.ssz")
@@ -712,8 +801,9 @@ public class Eth2NetworkConfiguration {
       return applyTestnetDefaults()
           .constants(SEPOLIA.configName())
           .startupTimeoutSeconds(120)
+          .trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME)
           .eth1DepositContractDeployBlock(1273020)
-          .defaultInitialState(
+          .defaultInitialStateFromUrl(
               "https://github.com/eth-clients/merge-testnets/raw/9c873ab67b902aa676370a549129e5e91013afa3/sepolia/genesis.ssz")
           .customGenesisState(
               "https://github.com/eth-clients/merge-testnets/raw/9c873ab67b902aa676370a549129e5e91013afa3/sepolia/genesis.ssz")
@@ -732,7 +822,7 @@ public class Eth2NetworkConfiguration {
           .constants(LUKSO.configName())
           .startupTimeoutSeconds(120)
           .eth1DepositContractDeployBlock(0)
-          .initialStateFromClasspath("lukso-genesis.ssz")
+          .defaultInitialStateFromClasspath("lukso-genesis.ssz")
           .genesisStateFromClasspath("lukso-genesis.ssz")
           .discoveryBootnodes(
               // Consensus layer bootnodes
@@ -743,9 +833,10 @@ public class Eth2NetworkConfiguration {
     public Builder applyGnosisNetworkDefaults() {
       return reset()
           .constants(GNOSIS.configName())
-          .initialStateFromClasspath("gnosis-genesis.ssz")
+          .defaultInitialStateFromClasspath("gnosis-genesis.ssz")
           .genesisStateFromClasspath("gnosis-genesis.ssz")
           .startupTimeoutSeconds(120)
+          .trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME)
           .eth1DepositContractDeployBlock(19469077)
           .discoveryBootnodes(
               // Gnosis Chain Team bootnodes
@@ -756,15 +847,22 @@ public class Eth2NetworkConfiguration {
               "enr:-Ly4QPoChSQTleJROee1-k-4HOEgKqL9kLksE-tEiVqcY9kwF9V53aBg-MruD7Yx4Aks3LAeJpKXAS4ntMrIdqvQYc8Ch2F0dG5ldHOIAAAAAAAAAACEZXRoMpCCS-QxAgAAZP__________gmlkgnY0gmlwhGsWBHiJc2VjcDI1NmsxoQKwGQrwOSBJB_DtQOkFZVAY4YQfMAbUVxFpL5WgrzEddYhzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
               "enr:-Ly4QBbaKRSX4SncCOxTTL611Kxlz-zYFrIn-k_63jGIPK_wbvFghVUHJICPCxufgTX5h79jvgfPr-2hEEQEdziGQ5MCh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCCS-QxAgAAZP__________gmlkgnY0gmlwhAMazo6Jc2VjcDI1NmsxoQKt-kbM9isuWp8djhyEq6-4MLv1Sy7dOXeMOMdPgwu9LohzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
               "enr:-Ly4QKJ5BzgFyJ6BaTlGY0C8ROzl508U3GA6qxdG5Gn2hxdke6nQO187pYlLvhp82Dez4PQn436Fts1F0WAm-_5l2LACh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCCS-QxAgAAZP__________gmlkgnY0gmlwhA-YLVKJc2VjcDI1NmsxoQI8_Lvr6p_TkcAu8KorKacfUEnoOon0tdO0qWhriPdBP4hzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
-              "enr:-Ly4QJMtoiX2bPnVbiQOJCLbtUlqdqZk7kCJQln_W1bp1vOHcxWowE-iMXkKC4_uOb0o73wAW71WYi80Dlsg-7a5wiICh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCCS-QxAgAAZP__________gmlkgnY0gmlwhDbP3KmJc2VjcDI1NmsxoQNvcfKYUqcemLFlpKxl7JcQJwQ3L9unYL44gY2aEiRnI4hzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA");
+              "enr:-Ly4QJMtoiX2bPnVbiQOJCLbtUlqdqZk7kCJQln_W1bp1vOHcxWowE-iMXkKC4_uOb0o73wAW71WYi80Dlsg-7a5wiICh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCCS-QxAgAAZP__________gmlkgnY0gmlwhDbP3KmJc2VjcDI1NmsxoQNvcfKYUqcemLFlpKxl7JcQJwQ3L9unYL44gY2aEiRnI4hzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
+              "enr:-Ly4QIAhiTHk6JdVhCdiLwT83wAolUFo5J4nI5HrF7-zJO_QEw3cmEGxC1jvqNNUN64Vu-xxqDKSM528vKRNCehZAfEBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCCS-QxAgAAZP__________gmlkgnY0gmlwhEFtZ5SJc2VjcDI1NmsxoQJwgL5C-30E8RJmW8gCb7sfwWvvfre7wGcCeV4X1G2wJYhzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
+              "enr:-Ly4QDhEjlkf8fwO5uWAadexy88GXZneTuUCIPHhv98v8ZfXMtC0S1S_8soiT0CMEgoeLe9Db01dtkFQUnA9YcnYC_8Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCCS-QxAgAAZP__________gmlkgnY0gmlwhEFtZ5WJc2VjcDI1NmsxoQMRSho89q2GKx_l2FZhR1RmnSiQr6o_9hfXfQUuW6bjMohzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
+              "enr:-Ly4QLKgv5M2D4DYJgo6s4NG_K4zu4sk5HOLCfGCdtgoezsbfRbfGpQ4iSd31M88ec3DHA5FWVbkgIas9EaJeXia0nwBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCCS-QxAgAAZP__________gmlkgnY0gmlwhI1eYRaJc2VjcDI1NmsxoQLpK_A47iNBkVjka9Mde1F-Kie-R0sq97MCNKCxt2HwOIhzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
+              "enr:-Ly4QF_0qvji6xqXrhQEhwJR1W9h5dXV7ZjVCN_NlosKxcgZW6emAfB_KXxEiPgKr_-CZG8CWvTiojEohG1ewF7P368Bh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCCS-QxAgAAZP__________gmlkgnY0gmlwhI1eYUqJc2VjcDI1NmsxoQIpNRUT6llrXqEbjkAodsZOyWv8fxQkyQtSvH4sg2D7n4hzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
+              "enr:-Ly4QCD5D99p36WafgTSxB6kY7D2V1ca71C49J4VWI2c8UZCCPYBvNRWiv0-HxOcbpuUdwPVhyWQCYm1yq2ZH0ukCbQBh2F0dG5ldHOIAAAAAAAAAACEZXRoMpCCS-QxAgAAZP__________gmlkgnY0gmlwhI1eYVSJc2VjcDI1NmsxoQJJMSV8iSZ8zvkgbi8cjIGEUVJeekLqT0LQha_co-siT4hzeW5jbmV0cwCDdGNwgiMog3VkcIIjKA",
+              "enr:-KK4QKXJq1QOVWuJAGige4uaT8LRPQGCVRf3lH3pxjaVScMRUfFW1eiiaz8RwOAYvw33D4EX-uASGJ5QVqVCqwccxa-Bi4RldGgykCGm-DYDAABk__________-CaWSCdjSCaXCEM0QnzolzZWNwMjU2azGhAhNvrRkpuK4MWTf3WqiOXSOePL8Zc-wKVpZ9FQx_BDadg3RjcIIjKIN1ZHCCIyg");
     }
 
     public Builder applyChiadoNetworkDefaults() {
       return reset()
           .constants(CHIADO.configName())
-          .initialStateFromClasspath("chiado-genesis.ssz")
+          .defaultInitialStateFromClasspath("chiado-genesis.ssz")
           .genesisStateFromClasspath("chiado-genesis.ssz")
           .startupTimeoutSeconds(120)
+          .trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME)
           .eth1DepositContractDeployBlock(155435)
           .discoveryBootnodes(
               // chiado-lighthouse-0
@@ -789,8 +887,9 @@ public class Eth2NetworkConfiguration {
       return applyTestnetDefaults()
           .constants(HOLESKY.configName())
           .startupTimeoutSeconds(120)
+          .trustedSetupFromClasspath(MAINNET_TRUSTED_SETUP_FILENAME)
           .eth1DepositContractDeployBlock(0)
-          .defaultInitialState(
+          .defaultInitialStateFromUrl(
               "https://checkpoint-sync.holesky.ethpandaops.io/eth/v2/debug/beacon/states/finalized")
           .customGenesisState(
               "https://github.com/eth-clients/holesky/raw/59cb4fcbc8b39e431c1d737937ae8188f4a19a98/custom_config_data/genesis.ssz")
@@ -825,6 +924,18 @@ public class Eth2NetworkConfiguration {
       checkArgument(
           epochsStoreBlobsInt > 0, "Number of the epochs to store blobs for should be > 0");
       return Optional.of(epochsStoreBlobsInt);
+    }
+
+    public Builder forkChoiceLateBlockReorgEnabled(boolean forkChoiceLateBlockReorgEnabled) {
+      this.forkChoiceLateBlockReorgEnabled = forkChoiceLateBlockReorgEnabled;
+      return this;
+    }
+
+    public Builder forkChoiceUpdatedAlwaysSendPayloadAttributes(
+        boolean forkChoiceUpdatedAlwaysSendPayloadAttributes) {
+      this.forkChoiceUpdatedAlwaysSendPayloadAttributes =
+          forkChoiceUpdatedAlwaysSendPayloadAttributes;
+      return this;
     }
   }
 }

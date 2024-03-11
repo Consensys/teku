@@ -44,7 +44,7 @@ import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.constants.Domain;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -74,7 +74,7 @@ public class HistoricalBatchFetcher {
   private final BlobSidecarManager blobSidecarManager;
   private final SafeFuture<BeaconBlockSummary> future = new SafeFuture<>();
   private final Deque<SignedBeaconBlock> blocksToImport = new ConcurrentLinkedDeque<>();
-  private final Map<SlotAndBlockRoot, List<BlobSidecarOld>> blobSidecarsBySlotToImport =
+  private final Map<SlotAndBlockRoot, List<BlobSidecar>> blobSidecarsBySlotToImport =
       new ConcurrentHashMap<>();
   private Optional<UInt64> maybeEarliestBlobSidecarSlot = Optional.empty();
   private final AtomicInteger requestCount = new AtomicInteger(0);
@@ -247,7 +247,7 @@ public class HistoricalBatchFetcher {
         .thenApply(__ -> shouldRetryBlocksAndBlobSidecarsByRangeRequest());
   }
 
-  private void processBlobSidecar(final BlobSidecarOld blobSidecar) {
+  private void processBlobSidecar(final BlobSidecar blobSidecar) {
     blobSidecarsBySlotToImport
         .computeIfAbsent(blobSidecar.getSlotAndBlockRoot(), __ -> new ArrayList<>())
         .add(blobSidecar);
@@ -399,7 +399,7 @@ public class HistoricalBatchFetcher {
   }
 
   private void validateBlobSidecars(final SignedBeaconBlock block) {
-    final List<BlobSidecarOld> blobSidecars =
+    final List<BlobSidecar> blobSidecars =
         blobSidecarsBySlotToImport.getOrDefault(
             block.getSlotAndBlockRoot(), Collections.emptyList());
     LOG.trace("Validating {} blob sidecars for block {}", blobSidecars.size(), block.getRoot());
@@ -455,7 +455,7 @@ public class HistoricalBatchFetcher {
     private final Bytes32 lastBlockRoot;
     private final Optional<SignedBeaconBlock> previousBlock;
     private final Consumer<SignedBeaconBlock> blockProcessor;
-    private final Consumer<BlobSidecarOld> blobSidecarProcessor;
+    private final Consumer<BlobSidecar> blobSidecarProcessor;
 
     private final AtomicInteger blocksReceived = new AtomicInteger(0);
     private final AtomicBoolean foundLastBlock = new AtomicBoolean(false);
@@ -464,7 +464,7 @@ public class HistoricalBatchFetcher {
         final Bytes32 lastBlockRoot,
         final Optional<SignedBeaconBlock> previousBlock,
         final Consumer<SignedBeaconBlock> blockProcessor,
-        final Consumer<BlobSidecarOld> blobSidecarProcessor) {
+        final Consumer<BlobSidecar> blobSidecarProcessor) {
       this.lastBlockRoot = lastBlockRoot;
       this.previousBlock = previousBlock;
       this.blockProcessor = blockProcessor;
@@ -493,7 +493,7 @@ public class HistoricalBatchFetcher {
           });
     }
 
-    private SafeFuture<?> processBlobSidecar(final BlobSidecarOld blobSidecar) {
+    private SafeFuture<?> processBlobSidecar(final BlobSidecar blobSidecar) {
       blobSidecarProcessor.accept(blobSidecar);
       return SafeFuture.COMPLETE;
     }

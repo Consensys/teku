@@ -163,6 +163,20 @@ public abstract class BeaconStateAccessors {
   }
 
   /**
+   * calculate_committee_fraction Refer to fork-choice specification.
+   *
+   * @param beaconState
+   * @param committeePercent
+   * @return
+   */
+  public UInt64 calculateCommitteeFraction(
+      final BeaconState beaconState, final int committeePercent) {
+    final UInt64 committeeWeight =
+        getTotalActiveBalance(beaconState).dividedBy(config.getSlotsPerEpoch());
+    return committeeWeight.times(committeePercent).dividedBy(100);
+  }
+
+  /**
    * return the number of committees in each slot for the given `epoch`.
    *
    * @param state

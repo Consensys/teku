@@ -14,7 +14,7 @@ ENV JAVA_HOME=/opt/java/openjdk
 ENV PATH "${JAVA_HOME}/bin:${PATH}"
 COPY --from=jre-build /javaruntime $JAVA_HOME
 
-RUN apt-get -y update && apt-get -y upgrade && apt-get -y install curl libc-bin libc6 && rm -rf /var/lib/api/lists/*
+RUN apt-get -y update && apt-get -y upgrade && apt-get -y install curl libc-bin libc6 && rm -rf /var/lib/apt/lists/*
 RUN adduser --disabled-password --gecos "" --home /opt/teku teku && \
     chown teku:teku /opt/teku && \
     chmod 0755 /opt/teku
@@ -31,6 +31,7 @@ ENV LANG C.UTF-8
 ENV TEKU_REST_API_INTERFACE="0.0.0.0"
 ENV TEKU_VALIDATOR_API_INTERFACE="0.0.0.0"
 ENV TEKU_METRICS_INTERFACE="0.0.0.0"
+ENV PATH "/opt/teku/bin:${PATH}"
 
 # List Exposed Ports
 # Metrics, Rest API, LibP2P, Discv5
@@ -46,8 +47,8 @@ ARG VCS_REF
 ARG VERSION
 LABEL org.label-schema.build-date=$BUILD_DATE \
       org.label-schema.name="Teku" \
-      org.label-schema.description="Ethereum 2.0 Beacon Chain Client" \
-      org.label-schema.url="https://consensys.net/knowledge-base/ethereum-2/teku/" \
+      org.label-schema.description="Ethereum Consensus Client" \
+      org.label-schema.url="https://docs.teku.consensys.io/" \
       org.label-schema.vcs-ref=$VCS_REF \
       org.label-schema.vcs-url="https://github.com/Consensys/teku.git" \
       org.label-schema.vendor="Consensys" \

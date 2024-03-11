@@ -18,7 +18,6 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.logging.LogFormatter;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBytes32Vector;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container6;
-import tech.pegasys.teku.infrastructure.ssz.impl.AbstractSszPrimitive;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -48,20 +47,38 @@ public class BlobSidecar
       final BlobSidecarSchema schema,
       final UInt64 index,
       final Blob blob,
-      final KZGCommitment kzgCommitment,
-      final KZGProof kzgProof,
+      final SszKZGCommitment sszKzgCommitment,
+      final SszKZGProof sszKzgProof,
       final SignedBeaconBlockHeader signedBeaconBlockHeader,
       final List<Bytes32> kzgCommitmentInclusionProof) {
     super(
         schema,
         SszUInt64.of(index),
         schema.getBlobSchema().create(blob.getBytes()),
-        new SszKZGCommitment(kzgCommitment),
-        new SszKZGProof(kzgProof),
+        sszKzgCommitment,
+        sszKzgProof,
         signedBeaconBlockHeader,
         schema
             .getKzgCommitmentInclusionProofSchema()
             .createFromElements(kzgCommitmentInclusionProof.stream().map(SszBytes32::of).toList()));
+  }
+
+  public BlobSidecar(
+      final BlobSidecarSchema schema,
+      final UInt64 index,
+      final Blob blob,
+      final KZGCommitment kzgCommitment,
+      final KZGProof kzgProof,
+      final SignedBeaconBlockHeader signedBeaconBlockHeader,
+      final List<Bytes32> kzgCommitmentInclusionProof) {
+    this(
+        schema,
+        index,
+        blob,
+        new SszKZGCommitment(kzgCommitment),
+        new SszKZGProof(kzgProof),
+        signedBeaconBlockHeader,
+        kzgCommitmentInclusionProof);
   }
 
   public UInt64 getIndex() {
@@ -72,8 +89,16 @@ public class BlobSidecar
     return getField1();
   }
 
+  public SszKZGCommitment getSszKZGCommitment() {
+    return getField2();
+  }
+
   public KZGCommitment getKZGCommitment() {
     return getField2().getKZGCommitment();
+  }
+
+  public SszKZGProof getSszKZGProof() {
+    return getField3();
   }
 
   public KZGProof getKZGProof() {
@@ -84,12 +109,16 @@ public class BlobSidecar
     return getField4();
   }
 
-  public List<Bytes32> getKzgCommitmentInclusionProof() {
-    return getField5().stream().map(AbstractSszPrimitive::get).toList();
+  public SszBytes32Vector getKzgCommitmentInclusionProof() {
+    return getField5();
   }
 
   public UInt64 getSlot() {
     return getSignedBeaconBlockHeader().getMessage().getSlot();
+  }
+
+  public Bytes32 getBlockBodyRoot() {
+    return getSignedBeaconBlockHeader().getMessage().getBodyRoot();
   }
 
   public Bytes32 getBlockRoot() {

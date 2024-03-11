@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBellatrix;
+import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeData;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ProtoNodeValidationStatus;
 import tech.pegasys.teku.spec.datastructures.forkchoice.ReadOnlyForkChoiceStrategy;
@@ -59,15 +60,13 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
   }
 
   @Override
+  public Optional<UInt64> executionBlockNumber(final Bytes32 blockRoot) {
+    return getExecutionPayload(blockRoot).map(ExecutionPayload::getBlockNumber);
+  }
+
+  @Override
   public Optional<Bytes32> executionBlockHash(final Bytes32 blockRoot) {
-    return getBlock(blockRoot)
-        .map(
-            block -> {
-              final BeaconBlockBody blockBody = block.getMessage().getBody();
-              return blockBody instanceof BeaconBlockBodyBellatrix
-                  ? ((BeaconBlockBodyBellatrix) blockBody).getExecutionPayload().getBlockHash()
-                  : null;
-            });
+    return getExecutionPayload(blockRoot).map(ExecutionPayload::getBlockHash);
   }
 
   @Override
@@ -104,6 +103,7 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
         blockAndState.getRoot(),
         blockAndState.getParentRoot(),
         blockAndState.getStateRoot(),
+        blockAndState.getExecutionBlockNumber().orElse(UInt64.ZERO),
         blockAndState.getExecutionBlockHash().orElse(Bytes32.ZERO),
         ProtoNodeValidationStatus.VALID,
         new BlockCheckpoints(
@@ -164,5 +164,16 @@ public class RandomChainBuilderForkChoiceStrategy implements ReadOnlyForkChoiceS
     return chainBuilder
         .getBlock(slot)
         .filter(b -> b.getSlot().isGreaterThanOrEqualTo(prunePriorToSlot));
+  }
+
+  private Optional<ExecutionPayload> getExecutionPayload(final Bytes32 blockRoot) {
+    return getBlock(blockRoot)
+        .map(
+            block -> {
+              final BeaconBlockBody blockBody = block.getMessage().getBody();
+              return blockBody instanceof BeaconBlockBodyBellatrix
+                  ? ((BeaconBlockBodyBellatrix) blockBody).getExecutionPayload()
+                  : null;
+            });
   }
 }

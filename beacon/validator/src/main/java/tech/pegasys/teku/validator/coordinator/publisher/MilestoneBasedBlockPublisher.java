@@ -24,7 +24,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
@@ -41,7 +41,7 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
       final BlockFactory blockFactory,
       final BlockImportChannel blockImportChannel,
       final BlockGossipChannel blockGossipChannel,
-      final BlobSidecarPool blobSidecarPool,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final BlobSidecarGossipChannel blobSidecarGossipChannel,
       final PerformanceTracker performanceTracker,
       final DutyMetrics dutyMetrics) {
@@ -58,7 +58,7 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
                     blockFactory,
                     blockImportChannel,
                     blockGossipChannel,
-                    blobSidecarPool,
+                    blockBlobSidecarsTrackersPool,
                     blobSidecarGossipChannel,
                     performanceTracker,
                     dutyMetrics));
@@ -78,12 +78,11 @@ public class MilestoneBasedBlockPublisher implements BlockPublisher {
 
   @Override
   public SafeFuture<SendSignedBlockResult> sendSignedBlock(
-      final SignedBlockContainer maybeBlindedBlockContainer,
+      final SignedBlockContainer blockContainer,
       final BroadcastValidationLevel broadcastValidationLevel) {
-    final SpecMilestone blockMilestone =
-        spec.atSlot(maybeBlindedBlockContainer.getSlot()).getMilestone();
+    final SpecMilestone blockMilestone = spec.atSlot(blockContainer.getSlot()).getMilestone();
     return registeredPublishers
         .get(blockMilestone)
-        .sendSignedBlock(maybeBlindedBlockContainer, broadcastValidationLevel);
+        .sendSignedBlock(blockContainer, broadcastValidationLevel);
   }
 }

@@ -27,7 +27,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BlockCheckpoints;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
@@ -167,6 +167,27 @@ public class ForkChoiceUtil {
     return roots;
   }
 
+  /**
+   * is_shuffling_stable
+   *
+   * <p>Refer to fork-choice specification.
+   *
+   * @param slot
+   * @return
+   */
+  public boolean isShufflingStable(final UInt64 slot) {
+    return !slot.mod(specConfig.getSlotsPerEpoch()).isZero();
+  }
+
+  public boolean isFinalizationOk(final ReadOnlyStore store, final UInt64 slot) {
+    final UInt64 epochsSinceFinalization =
+        miscHelpers
+            .computeEpochAtSlot(slot)
+            .minusMinZero(store.getFinalizedCheckpoint().getEpoch());
+    return epochsSinceFinalization.isLessThanOrEqualTo(
+        specConfig.getReorgMaxEpochsSinceFinalization());
+  }
+
   private void maybeAddRoot(
       final UInt64 startSlot,
       final UInt64 step,
@@ -197,7 +218,7 @@ public class ForkChoiceUtil {
   public void onTick(final MutableStore store, final UInt64 timeMillis) {
     // To be extra safe check both time and genesisTime, although time should always be >=
     // genesisTime
-    if (store.getTimeMillis().isGreaterThan(timeMillis)
+    if (store.getTimeInMillis().isGreaterThan(timeMillis)
         || store.getGenesisTimeMillis().isGreaterThan(timeMillis)) {
       return;
     }
@@ -383,7 +404,7 @@ public class ForkChoiceUtil {
       final SignedBeaconBlock signedBlock,
       final BeaconState postState,
       final boolean isBlockOptimistic,
-      final Optional<List<BlobSidecarOld>> blobSidecars,
+      final Optional<List<BlobSidecar>> blobSidecars,
       final Optional<UInt64> earliestBlobSidecarsSlot) {
 
     BlockCheckpoints blockCheckpoints = epochProcessor.calculateBlockCheckpoints(postState);

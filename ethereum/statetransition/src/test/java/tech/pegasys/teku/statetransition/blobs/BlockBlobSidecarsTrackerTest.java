@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
@@ -30,7 +31,7 @@ import tech.pegasys.teku.infrastructure.async.Waiter;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
@@ -44,7 +45,7 @@ public class BlockBlobSidecarsTrackerTest {
   private final SignedBeaconBlock block =
       dataStructureUtil.randomSignedBeaconBlockWithCommitments(maxBlobsPerBlock.intValue());
   private final SlotAndBlockRoot slotAndBlockRoot = block.getSlotAndBlockRoot();
-  private final List<BlobSidecarOld> blobSidecarsForBlock =
+  private final List<BlobSidecar> blobSidecarsForBlock =
       dataStructureUtil.randomBlobSidecarsForBlock(block);
   private final List<BlobIdentifier> blobIdentifiersForBlock =
       blobSidecarsForBlock.stream()
@@ -78,7 +79,7 @@ public class BlockBlobSidecarsTrackerTest {
         .isNotCompleted();
     assertThat(blockBlobSidecarsTracker.getMissingBlobSidecars())
         .containsExactlyInAnyOrderElementsOf(blobIdentifiersForBlock);
-    assertThat(blockBlobSidecarsTracker.getBlock()).isEqualTo(block.getBeaconBlock());
+    assertThat(blockBlobSidecarsTracker.getBlock()).isEqualTo(Optional.of(block));
     assertThat(blockBlobSidecarsTracker.getBlobSidecars()).isEmpty();
   }
 
@@ -96,7 +97,7 @@ public class BlockBlobSidecarsTrackerTest {
         new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
     blockBlobSidecarsTracker.setBlock(block);
     blockBlobSidecarsTracker.setBlock(block);
-    assertThat(blockBlobSidecarsTracker.getBlock()).isEqualTo(block.getBeaconBlock());
+    assertThat(blockBlobSidecarsTracker.getBlock()).isEqualTo(Optional.of(block));
   }
 
   @Test
@@ -159,8 +160,8 @@ public class BlockBlobSidecarsTrackerTest {
   void add_shouldWorkTillCompletionWhenAddingBlobsBeforeBlockIsSet() {
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
         new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock.plus(1));
-    final BlobSidecarOld toAdd = blobSidecarsForBlock.get(0);
-    final Map<UInt64, BlobSidecarOld> added = new HashMap<>();
+    final BlobSidecar toAdd = blobSidecarsForBlock.get(0);
+    final Map<UInt64, BlobSidecar> added = new HashMap<>();
     final SafeFuture<Void> completionFuture = blockBlobSidecarsTracker.getCompletionFuture();
 
     added.put(toAdd.getIndex(), toAdd);
@@ -179,7 +180,7 @@ public class BlockBlobSidecarsTrackerTest {
         .containsExactlyInAnyOrderEntriesOf(added);
 
     blockBlobSidecarsTracker.setBlock(block);
-    assertThat(blockBlobSidecarsTracker.getBlock()).isEqualTo(block.getBeaconBlock());
+    assertThat(blockBlobSidecarsTracker.getBlock()).isEqualTo(Optional.of(block));
 
     // now we know the block and we know about missing blobs
     final List<BlobIdentifier> stillMissing =
@@ -191,7 +192,7 @@ public class BlockBlobSidecarsTrackerTest {
     // let's complete with missing blobs
     for (int idx = 1; idx < blobIdentifiersForBlock.size(); idx++) {
 
-      BlobSidecarOld blobSidecar = blobSidecarsForBlock.get(idx);
+      BlobSidecar blobSidecar = blobSidecarsForBlock.get(idx);
 
       blockBlobSidecarsTracker.add(blobSidecar);
       added.put(blobSidecar.getIndex(), blobSidecar);
@@ -219,8 +220,8 @@ public class BlockBlobSidecarsTrackerTest {
 
     blockBlobSidecarsTracker.setBlock(block);
 
-    final BlobSidecarOld toAdd = blobSidecarsForBlock.get(0);
-    final Map<UInt64, BlobSidecarOld> added = new HashMap<>();
+    final BlobSidecar toAdd = blobSidecarsForBlock.get(0);
+    final Map<UInt64, BlobSidecar> added = new HashMap<>();
 
     final List<BlobIdentifier> stillMissing =
         blobIdentifiersForBlock.subList(1, blobIdentifiersForBlock.size());
@@ -233,14 +234,14 @@ public class BlockBlobSidecarsTrackerTest {
     SafeFutureAssert.assertThatSafeFuture(completionFuture).isNotCompleted();
     assertThat(blockBlobSidecarsTracker.getBlobSidecars())
         .containsExactlyInAnyOrderEntriesOf(added);
-    assertThat(blockBlobSidecarsTracker.getBlock()).isEqualTo(block.getBeaconBlock());
+    assertThat(blockBlobSidecarsTracker.getBlock()).isEqualTo(Optional.of(block));
   }
 
   @Test
   void add_shouldThrowWhenAddingInconsistentBlobSidecar() {
     BlockBlobSidecarsTracker blockBlobSidecarsTracker =
         new BlockBlobSidecarsTracker(dataStructureUtil.randomSlotAndBlockRoot(), maxBlobsPerBlock);
-    assertThatThrownBy(() -> blockBlobSidecarsTracker.add(dataStructureUtil.randomBlobSidecarOld()))
+    assertThatThrownBy(() -> blockBlobSidecarsTracker.add(dataStructureUtil.randomBlobSidecar()))
         .isInstanceOf(IllegalArgumentException.class);
   }
 
@@ -250,14 +251,14 @@ public class BlockBlobSidecarsTrackerTest {
         new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
     blockBlobSidecarsTracker.setBlock(block);
     blockBlobSidecarsTracker.setBlock(block);
-    assertThat(blockBlobSidecarsTracker.getBlock()).isEqualTo(block.getBeaconBlock());
+    assertThat(blockBlobSidecarsTracker.getBlock()).isEqualTo(Optional.of(block));
   }
 
   @Test
   void getMissingBlobSidecars_shouldReturnPartialBlobsIdentifierWhenBlockIsUnknown() {
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
         new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
-    final BlobSidecarOld toAdd = blobSidecarsForBlock.get(2);
+    final BlobSidecar toAdd = blobSidecarsForBlock.get(2);
 
     blockBlobSidecarsTracker.add(toAdd);
 
@@ -329,11 +330,10 @@ public class BlockBlobSidecarsTrackerTest {
   void getMissingBlobSidecars_shouldRespectMaxBlobsPerBlock() {
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
         new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
-    final BlobSidecarOld toAdd =
+    final BlobSidecar toAdd =
         dataStructureUtil
             .createRandomBlobSidecarBuilder()
-            .blockRoot(slotAndBlockRoot.getBlockRoot())
-            .slot(slotAndBlockRoot.getSlot())
+            .signedBeaconBlockHeader(block.asHeader())
             .index(UInt64.valueOf(100))
             .build();
 
@@ -351,11 +351,11 @@ public class BlockBlobSidecarsTrackerTest {
     final BlockBlobSidecarsTracker blockBlobSidecarsTracker =
         new BlockBlobSidecarsTracker(slotAndBlockRoot, maxBlobsPerBlock);
 
-    final BlobSidecarOld legitBlobSidecar = createBlobSidecar(UInt64.valueOf(2));
-    final BlobSidecarOld excessiveBlobSidecar1 = createBlobSidecar(maxBlobsPerBlock);
-    final BlobSidecarOld excessiveBlobSidecar2 = createBlobSidecar(maxBlobsPerBlock.plus(1));
+    final BlobSidecar legitBlobSidecar = createBlobSidecar(UInt64.valueOf(2));
+    final BlobSidecar excessiveBlobSidecar1 = createBlobSidecar(maxBlobsPerBlock);
+    final BlobSidecar excessiveBlobSidecar2 = createBlobSidecar(maxBlobsPerBlock.plus(1));
 
-    final List<BlobSidecarOld> toAddAltered =
+    final List<BlobSidecar> toAddAltered =
         List.of(legitBlobSidecar, excessiveBlobSidecar1, excessiveBlobSidecar2);
 
     toAddAltered.forEach(
@@ -377,9 +377,9 @@ public class BlockBlobSidecarsTrackerTest {
 
     blockBlobSidecarsTracker.setBlock(block);
 
-    final BlobSidecarOld legitBlobSidecar = createBlobSidecar(UInt64.valueOf(2));
-    final BlobSidecarOld excessiveBlobSidecar1 = createBlobSidecar(maxBlobsPerBlock);
-    final BlobSidecarOld excessiveBlobSidecar2 = createBlobSidecar(maxBlobsPerBlock.plus(1));
+    final BlobSidecar legitBlobSidecar = createBlobSidecar(UInt64.valueOf(2));
+    final BlobSidecar excessiveBlobSidecar1 = createBlobSidecar(maxBlobsPerBlock);
+    final BlobSidecar excessiveBlobSidecar2 = createBlobSidecar(maxBlobsPerBlock.plus(1));
 
     assertThat(blockBlobSidecarsTracker.add(legitBlobSidecar)).isTrue();
     assertThat(blockBlobSidecarsTracker.add(excessiveBlobSidecar1)).isFalse();
@@ -388,11 +388,10 @@ public class BlockBlobSidecarsTrackerTest {
     assertThat(blockBlobSidecarsTracker.getBlobSidecars().size()).isEqualTo(1);
   }
 
-  private BlobSidecarOld createBlobSidecar(final UInt64 index) {
+  private BlobSidecar createBlobSidecar(final UInt64 index) {
     return dataStructureUtil
         .createRandomBlobSidecarBuilder()
-        .blockRoot(slotAndBlockRoot.getBlockRoot())
-        .slot(slotAndBlockRoot.getSlot())
+        .signedBeaconBlockHeader(block.asHeader())
         .index(index)
         .build();
   }

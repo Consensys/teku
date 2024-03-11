@@ -124,28 +124,6 @@ public class BeaconRestApiOptions {
       BeaconRestApiConfig.DEFAULT_BEACON_LIVENESS_TRACKING_ENABLED;
 
   @Option(
-      names = {"--beacon-events-block-notify-when-validated-enabled"},
-      paramLabel = "<BOOLEAN>",
-      showDefaultValue = Visibility.ALWAYS,
-      description =
-          "Block notification events will be sent once the block has been validated, prior to attempting to import the block. The optimistic flag will be determined based on if chain head is optimistic.",
-      arity = "0..1",
-      fallbackValue = "true")
-  private Boolean beaconEventsBlockNotifyWhenValidated =
-      BeaconRestApiConfig.DEFAULT_BEACON_EVENTS_BLOCK_NOTIFY_WHEN_VALIDATED_ENABLED;
-
-  @Option(
-      names = {"--beacon-events-block-notify-when-imported-enabled"},
-      paramLabel = "<BOOLEAN>",
-      showDefaultValue = Visibility.ALWAYS,
-      description =
-          "Block notification events will be sent once the block has been imported, at which point we can accurately set the optimistic flag.",
-      arity = "0..1",
-      fallbackValue = "true")
-  private Boolean beaconEventsBlockNotifyWhenImported =
-      BeaconRestApiConfig.DEFAULT_BEACON_EVENTS_BLOCK_NOTIFY_WHEN_IMPORTED_ENABLED;
-
-  @Option(
       names = {"--Xrest-api-validator-threads"},
       description = "Set the number of threads used to handle validator api requests",
       paramLabel = "<INTEGER>",
@@ -175,8 +153,6 @@ public class BeaconRestApiOptions {
                 .restApiCorsAllowedOrigins(restApiCorsAllowedOrigins)
                 .maxUrlLength(maxUrlLength)
                 .beaconLivenessTrackingEnabled(beaconLivenessTrackingEnabled)
-                .beaconEventsBlockNotifyWhenValidatedEnabled(beaconEventsBlockNotifyWhenValidated)
-                .beaconEventsBlockNotifyWhenImportedEnabled(beaconEventsBlockNotifyWhenImported)
                 .maxPendingEvents(maxPendingEvents)
                 .validatorThreads(Optional.ofNullable(validatorThreads)));
   }

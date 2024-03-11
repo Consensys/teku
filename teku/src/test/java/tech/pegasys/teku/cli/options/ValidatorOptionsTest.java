@@ -202,4 +202,44 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
             config.validatorClient().getValidatorConfig().getBuilderRegistrationDefaultGasLimit())
         .isEqualTo(UInt64.valueOf(1000));
   }
+
+  @Test
+  public void shouldDefaultFalseExitWhenNoValidatorKeysEnabled() {
+    final ValidatorConfig config =
+        getTekuConfigurationFromArguments().validatorClient().getValidatorConfig();
+    assertThat(config.isExitWhenNoValidatorKeysEnabled()).isFalse();
+  }
+
+  @Test
+  public void shouldSetExitWhenNoValidatorKeysEnabled() {
+    final ValidatorConfig config =
+        getTekuConfigurationFromArguments("--exit-when-no-validator-keys-enabled=true")
+            .validatorClient()
+            .getValidatorConfig();
+    assertThat(config.isExitWhenNoValidatorKeysEnabled()).isTrue();
+  }
+
+  @Test
+  public void shouldDefaultFalseShutdownWhenValidatorSlashedEnabled() {
+    final ValidatorConfig config =
+        getTekuConfigurationFromArguments().validatorClient().getValidatorConfig();
+    assertThat(config.isShutdownWhenValidatorSlashedEnabled()).isFalse();
+  }
+
+  @Test
+  public void shouldSetShutdownWhenValidatorSlashedEnabled() {
+    final ValidatorConfig config =
+        getTekuConfigurationFromArguments("--Xshut-down-when-validator-slashed-enabled=true")
+            .validatorClient()
+            .getValidatorConfig();
+    assertThat(config.isShutdownWhenValidatorSlashedEnabled()).isTrue();
+  }
+
+  @Test
+  public void shouldNotUseDvtSelectionsEndpointByDefault() {
+    final String[] args = {};
+    final TekuConfiguration config = getTekuConfigurationFromArguments(args);
+    assertThat(config.validatorClient().getValidatorConfig().isDvtSelectionsEndpointEnabled())
+        .isFalse();
+  }
 }

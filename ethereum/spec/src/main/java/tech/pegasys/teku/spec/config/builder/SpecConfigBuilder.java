@@ -28,7 +28,7 @@ import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
-import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.spec.config.SpecConfigElectra;
 import tech.pegasys.teku.spec.config.SpecConfigPhase0;
 
 @SuppressWarnings({"UnusedReturnValue", "unused"})
@@ -123,11 +123,19 @@ public class SpecConfigBuilder {
   private Integer attestationSubnetExtraBits;
   private Integer attestationSubnetPrefixBits;
 
-  private final BuilderChain<SpecConfig, SpecConfigDeneb> builderChain =
+  // added after Phase0, so add default values, or will be compatibility issue
+  private Integer reorgMaxEpochsSinceFinalization = 2;
+
+  private Integer reorgHeadWeightThreshold = 20;
+
+  private Integer reorgParentWeightThreshold = 160;
+
+  private final BuilderChain<SpecConfig, SpecConfigElectra> builderChain =
       BuilderChain.create(new AltairBuilder())
           .appendBuilder(new BellatrixBuilder())
           .appendBuilder(new CapellaBuilder())
-          .appendBuilder(new DenebBuilder());
+          .appendBuilder(new DenebBuilder())
+          .appendBuilder(new ElectraBuilder());
 
   public SpecConfig build() {
     builderChain.addOverridableItemsToRawConfig(
@@ -203,7 +211,10 @@ public class SpecConfigBuilder {
             subnetsPerNode,
             attestationSubnetCount,
             attestationSubnetExtraBits,
-            attestationSubnetPrefixBits);
+            attestationSubnetPrefixBits,
+            reorgMaxEpochsSinceFinalization,
+            reorgHeadWeightThreshold,
+            reorgParentWeightThreshold);
 
     return builderChain.build(config);
   }
@@ -274,6 +285,9 @@ public class SpecConfigBuilder {
     constants.put("attestationSubnetCount", attestationSubnetCount);
     constants.put("attestationSubnetExtraBits", attestationSubnetExtraBits);
     constants.put("attestationSubnetPrefixBits", attestationSubnetPrefixBits);
+    constants.put("reorgMaxEpochsSinceFinalization", reorgMaxEpochsSinceFinalization);
+    constants.put("reorgHeadWeightThreshold", reorgHeadWeightThreshold);
+    constants.put("reorgParentWeightThreshold", reorgParentWeightThreshold);
     return constants;
   }
 
@@ -677,6 +691,22 @@ public class SpecConfigBuilder {
     return this;
   }
 
+  public SpecConfigBuilder reorgMaxEpochsSinceFinalization(
+      final Integer reorgMaxEpochsSinceFinalization) {
+    this.reorgMaxEpochsSinceFinalization = reorgMaxEpochsSinceFinalization;
+    return this;
+  }
+
+  public SpecConfigBuilder reorgHeadWeightThreshold(final Integer reorgHeadWeightThreshold) {
+    this.reorgHeadWeightThreshold = reorgHeadWeightThreshold;
+    return this;
+  }
+
+  public SpecConfigBuilder reorgParentWeightThreshold(final Integer reorgParentWeightThreshold) {
+    this.reorgParentWeightThreshold = reorgParentWeightThreshold;
+    return this;
+  }
+
   public SpecConfigBuilder altairBuilder(final Consumer<AltairBuilder> consumer) {
     builderChain.withBuilder(AltairBuilder.class, consumer);
     return this;
@@ -694,6 +724,11 @@ public class SpecConfigBuilder {
 
   public SpecConfigBuilder denebBuilder(final Consumer<DenebBuilder> consumer) {
     builderChain.withBuilder(DenebBuilder.class, consumer);
+    return this;
+  }
+
+  public SpecConfigBuilder electraBuilder(final Consumer<ElectraBuilder> consumer) {
+    builderChain.withBuilder(ElectraBuilder.class, consumer);
     return this;
   }
 }

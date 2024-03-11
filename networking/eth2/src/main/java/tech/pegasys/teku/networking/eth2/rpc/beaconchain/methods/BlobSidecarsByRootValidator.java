@@ -20,7 +20,7 @@ import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsResponseInvalidResponseException.InvalidResponseType;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 
 public class BlobSidecarsByRootValidator extends AbstractBlobSidecarsValidator {
@@ -37,7 +37,7 @@ public class BlobSidecarsByRootValidator extends AbstractBlobSidecarsValidator {
     this.expectedBlobIdentifiers.addAll(expectedBlobIdentifiers);
   }
 
-  public void validate(final BlobSidecarOld blobSidecar) {
+  public void validate(final BlobSidecar blobSidecar) {
     final BlobIdentifier blobIdentifier =
         new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
     if (!expectedBlobIdentifiers.remove(blobIdentifier)) {

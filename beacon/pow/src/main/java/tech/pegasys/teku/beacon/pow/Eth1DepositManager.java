@@ -17,6 +17,7 @@ import static tech.pegasys.teku.beacon.pow.MinimumGenesisTimeBlockFinder.isBlock
 import static tech.pegasys.teku.beacon.pow.MinimumGenesisTimeBlockFinder.notifyMinGenesisTimeBlockReached;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import java.math.BigInteger;
 import java.util.Optional;
@@ -251,5 +252,10 @@ public class Eth1DepositManager {
     return replayDepositsResult
         .getFirstUnprocessedBlockNumber()
         .max(depositContractDeployBlock.orElse(UInt64.ZERO).bigIntegerValue());
+  }
+
+  @VisibleForTesting
+  public DepositSnapshotFileLoader getDepositSnapshotFileLoader() {
+    return depositSnapshotFileLoader;
   }
 }

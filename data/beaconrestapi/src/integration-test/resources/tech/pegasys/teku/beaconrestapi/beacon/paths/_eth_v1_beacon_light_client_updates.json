@@ -43,7 +43,8 @@
                       "altair",
                       "bellatrix",
                       "capella",
-                      "deneb"
+                      "deneb",
+                      "electra"
                     ]
                   },
                   "data": {

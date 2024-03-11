@@ -1,6 +1,6 @@
 {
   "get" : {
-    "tags" : [ "Experimental" ],
+    "tags" : [ "Validator", "Validator Required Api" ],
     "operationId" : "produceBlockV3",
     "summary" : "Produce a new block, without signature",
     "description" : "Requests a beacon node to produce a valid block, which can then be signed by a validator. The\nreturned block may be blinded or unblinded, depending on the current state of the network as\ndecided by the execution and beacon nodes.\nThe beacon node must return an unblinded block if it obtains the execution payload from its\npaired execution node. It must only return a blinded block if it obtains the execution payload\nheader from an MEV relay.\nMetadata in the response indicates the type of block produced, and the supported types of block\nwill be added to as forks progress.",
@@ -39,6 +39,15 @@
       "schema" : {
         "type" : "boolean",
         "description" : "Skip verification of the `randao_reveal` value. If this flag is set then the\n `randao_reveal` must be set to the point at infinity (`0xc0..00`). This query parameter\n  is a flag and does not take a value"
+      }
+    }, {
+      "name" : "builder_boost_factor",
+      "in" : "query",
+      "schema" : {
+        "type" : "string",
+        "description" : "Percentage multiplier to apply to the builder's payload value when choosing between a\nbuilder payload header and payload from the paired execution node. This parameter is only\nrelevant if the beacon node is connected to a builder, deems it safe to produce a builder\npayload, and receives valid responses from both the builder endpoint _and_ the paired\nexecution node. When these preconditions are met, the server MUST act as follows:\n\n* if `exec_node_payload_value >= builder_boost_factor * (builder_payload_value // 100)`,\n  then return a full (unblinded) block containing the execution node payload.\n* otherwise, return a blinded block containing the builder payload header.\n\nServers must support the following values of the boost factor which encode common\npreferences:\n\n* `builder_boost_factor=0`: prefer the execution node payload unless an error makes it\n  unviable.\n* `builder_boost_factor=100`: default profit maximization mode; choose whichever\n  payload pays more.\n* `builder_boost_factor=2**64 - 1`: prefer the builder payload unless an error or\n  beacon node health check makes it unviable.\n\nServers should use saturating arithmetic or another technique to ensure that large values of\nthe `builder_boost_factor` do not trigger overflows or errors. If this parameter is\nprovided and the beacon node is not configured with a builder then the beacon node MUST\nrespond with a full block, which the caller can choose to reject if it wishes. If this\nparameter is **not** provided then it should be treated as having the default value of 100.\nIf the value is provided but out of range for a 64-bit unsigned integer, then an error\nresponse with status code 400 MUST be returned.",
+        "example" : "1",
+        "format" : "uint64"
       }
     } ],
     "responses" : {

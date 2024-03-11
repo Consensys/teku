@@ -33,6 +33,14 @@ TERMINAL_BLOCK_HASH_ACTIVATION_EPOCH: 18446744073709551615
 CAPELLA_FORK_VERSION: 0x04017000
 CAPELLA_FORK_EPOCH: 256
 
+# Deneb
+DENEB_FORK_VERSION: 0x05017000
+DENEB_FORK_EPOCH: 29696
+
+# Electra
+ELECTRA_FORK_VERSION: 0x06017000
+ELECTRA_FORK_EPOCH: 18446744073709551615
+
 # Time parameters
 # ---------------------------------------------------------------
 # 12 seconds
@@ -66,6 +74,12 @@ MAX_PER_EPOCH_ACTIVATION_CHURN_LIMIT: 8
 # ---------------------------------------------------------------
 # 40%
 PROPOSER_SCORE_BOOST: 40
+# 20%
+REORG_HEAD_WEIGHT_THRESHOLD: 20
+# 160%
+REORG_PARENT_WEIGHT_THRESHOLD: 160
+# `2` epochs
+REORG_MAX_EPOCHS_SINCE_FINALIZATION: 2
 
 # Deposit contract
 # ---------------------------------------------------------------

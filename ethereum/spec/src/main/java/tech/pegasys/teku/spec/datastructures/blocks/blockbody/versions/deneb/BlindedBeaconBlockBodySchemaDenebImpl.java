@@ -14,7 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb;
 
 import it.unimi.dsi.fastutil.longs.LongList;
-import java.util.function.Consumer;
+import java.util.function.Function;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema12;
@@ -137,11 +137,9 @@ public class BlindedBeaconBlockBodySchemaDenebImpl
 
   @Override
   public SafeFuture<BeaconBlockBody> createBlockBody(
-      final Consumer<BeaconBlockBodyBuilder> builderConsumer) {
-    final BeaconBlockBodyBuilderDeneb builder =
-        new BeaconBlockBodyBuilderDeneb().blindedSchema(this);
-    builderConsumer.accept(builder);
-    return builder.build();
+      final Function<BeaconBlockBodyBuilder, SafeFuture<Void>> bodyBuilder) {
+    final BeaconBlockBodyBuilderDeneb builder = new BeaconBlockBodyBuilderDeneb(null, this);
+    return bodyBuilder.apply(builder).thenApply(__ -> builder.build());
   }
 
   @Override

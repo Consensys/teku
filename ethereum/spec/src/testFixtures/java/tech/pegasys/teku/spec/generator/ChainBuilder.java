@@ -47,8 +47,8 @@ import tech.pegasys.teku.kzg.KZGProof;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchemaOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -63,6 +63,7 @@ import tech.pegasys.teku.spec.datastructures.interop.MockStartValidatorKeyPairFa
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncAggregatorSelectionData;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncCommitteeMessage;
@@ -77,6 +78,7 @@ import tech.pegasys.teku.spec.datastructures.util.SyncSubcommitteeAssignments;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
 import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.spec.logic.common.util.SyncCommitteeUtil;
+import tech.pegasys.teku.spec.logic.versions.deneb.helpers.MiscHelpersDeneb;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsAltair;
 import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 import tech.pegasys.teku.spec.signatures.LocalSigner;
@@ -91,10 +93,12 @@ public class ChainBuilder {
   private final List<BLSKeyPair> validatorKeys;
   private final AttestationGenerator attestationGenerator;
   private final AttesterSlashingGenerator attesterSlashingGenerator;
+  private final ProposerSlashingGenerator proposerSlashingGenerator;
   private final NavigableMap<UInt64, SignedBlockAndState> blocks = new TreeMap<>();
-  private final NavigableMap<SlotAndBlockRoot, List<BlobSidecarOld>> blobSidecars = new TreeMap<>();
   private final Map<Bytes32, SignedBlockAndState> blocksByHash = new HashMap<>();
-  private final Map<Bytes32, List<BlobSidecarOld>> blobSidecarsByHash = new HashMap<>();
+
+  private final NavigableMap<SlotAndBlockRoot, List<BlobSidecar>> blobSidecars = new TreeMap<>();
+  private final Map<Bytes32, List<BlobSidecar>> blobSidecarsByHash = new HashMap<>();
   private Optional<UInt64> earliestBlobSidecarSlot;
   private final BlockProposalTestUtil blockProposalTestUtil;
   private final BlobsUtil blobsUtil;
@@ -103,16 +107,18 @@ public class ChainBuilder {
       final Spec spec,
       final List<BLSKeyPair> validatorKeys,
       final Map<UInt64, SignedBlockAndState> existingBlocks,
-      final Map<SlotAndBlockRoot, List<BlobSidecarOld>> existingBlobSidecars,
+      final Map<SlotAndBlockRoot, List<BlobSidecar>> existingBlobSidecars,
       final Optional<UInt64> maybeEarliestBlobSidecarSlot) {
     this.spec = spec;
     this.validatorKeys = validatorKeys;
-    blobsUtil = new BlobsUtil(spec, KZG.NOOP);
-    attestationGenerator = new AttestationGenerator(spec, validatorKeys);
-    attesterSlashingGenerator = new AttesterSlashingGenerator(spec, validatorKeys);
-    blockProposalTestUtil = new BlockProposalTestUtil(spec);
+    this.blobsUtil = new BlobsUtil(spec, KZG.NOOP);
+    this.attestationGenerator = new AttestationGenerator(spec, validatorKeys);
+    this.attesterSlashingGenerator = new AttesterSlashingGenerator(spec, validatorKeys);
+    this.proposerSlashingGenerator = new ProposerSlashingGenerator(spec, validatorKeys);
+    this.blockProposalTestUtil = new BlockProposalTestUtil(spec);
     blocks.putAll(existingBlocks);
     existingBlocks.values().forEach(b -> blocksByHash.put(b.getRoot(), b));
+
     blobSidecars.putAll(existingBlobSidecars);
     blobSidecars
         .values()
@@ -122,7 +128,8 @@ public class ChainBuilder {
                 blobSidecarsByHash.put(b.get(0).getBlockRoot(), b);
               }
             });
-    earliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot;
+
+    this.earliestBlobSidecarSlot = maybeEarliestBlobSidecarSlot;
   }
 
   public static ChainBuilder create(final Spec spec) {
@@ -142,11 +149,11 @@ public class ChainBuilder {
     return Optional.ofNullable(blocksByHash.get(blockRoot));
   }
 
-  public List<BlobSidecarOld> getBlobSidecars(final Bytes32 blockRoot) {
+  public List<BlobSidecar> getBlobSidecars(final Bytes32 blockRoot) {
     return Optional.ofNullable(blobSidecarsByHash.get(blockRoot)).orElse(Collections.emptyList());
   }
 
-  public Optional<BlobSidecarOld> getBlobSidecar(final BlobIdentifier blobIdentifier) {
+  public Optional<BlobSidecar> getBlobSidecar(final BlobIdentifier blobIdentifier) {
     return getBlobSidecars(blobIdentifier.getBlockRoot()).stream()
         .filter(blobSidecar -> blobSidecar.getIndex().equals(blobIdentifier.getIndex()))
         .findFirst();
@@ -204,12 +211,12 @@ public class ChainBuilder {
         .filter(b -> b.getBlock().getSlot().isLessThanOrEqualTo(toSlot));
   }
 
-  public Stream<Map.Entry<SlotAndBlockRoot, List<BlobSidecarOld>>> streamBlobSidecars(
+  public Stream<Map.Entry<SlotAndBlockRoot, List<BlobSidecar>>> streamBlobSidecars(
       final long fromSlot, final long toSlot) {
     return streamBlobSidecars(UInt64.valueOf(fromSlot), UInt64.valueOf(toSlot));
   }
 
-  public Stream<Map.Entry<SlotAndBlockRoot, List<BlobSidecarOld>>> streamBlobSidecars(
+  public Stream<Map.Entry<SlotAndBlockRoot, List<BlobSidecar>>> streamBlobSidecars(
       final UInt64 fromSlot, final UInt64 toSlot) {
     return blobSidecars.entrySet().stream()
         .filter(slot -> slot.getKey().getSlot().isGreaterThanOrEqualTo(fromSlot))
@@ -218,7 +225,7 @@ public class ChainBuilder {
         .sorted(Map.Entry.comparingByKey());
   }
 
-  public Stream<BlobSidecarOld> streamBlobSidecars() {
+  public Stream<BlobSidecar> streamBlobSidecars() {
     return blobSidecars.values().stream().flatMap(Collection::stream);
   }
 
@@ -516,6 +523,11 @@ public class ChainBuilder {
         attestation, blockAndState);
   }
 
+  public ProposerSlashing createProposerSlashingForAttestation(
+      final SignedBlockAndState blockAndState) {
+    return proposerSlashingGenerator.createProposerSlashingForBlock(blockAndState);
+  }
+
   private void assertChainIsNotEmpty() {
     checkState(!blocks.isEmpty(), "Unable to execute operation on empty chain");
   }
@@ -536,7 +548,7 @@ public class ChainBuilder {
   }
 
   private void trackBlobSidecars(
-      final SlotAndBlockRoot slotAndBlockRoot, final List<BlobSidecarOld> blobSidecars) {
+      final SlotAndBlockRoot slotAndBlockRoot, final List<BlobSidecar> blobSidecars) {
     if (blobSidecars.isEmpty()) {
       return;
     }
@@ -563,19 +575,33 @@ public class ChainBuilder {
           BeaconBlockBodyLists.ofSpec(spec)
               .createAttesterSlashings(
                   options.getAttesterSlashings().toArray(new AttesterSlashing[0]));
+      SszList<ProposerSlashing> proposerSlashings =
+          BeaconBlockBodyLists.ofSpec(spec)
+              .createProposerSlashings(
+                  options.getProposerSlashings().toArray(new ProposerSlashing[0]));
 
-      if (denebMilestoneReached(slot) && options.getGenerateRandomBlobs()) {
+      if (denebMilestoneReached(slot)) {
         nextBlockAndState =
-            generateBlockWithRandomBlobSidecars(
-                slot, options, preState, parentRoot, signer, attestations, attesterSlashings);
-      } else if (denebMilestoneReached(slot)) {
-        nextBlockAndState =
-            generateBlockWithBlobSidecar(
-                slot, options, preState, parentRoot, signer, attestations, attesterSlashings);
+            generateBlockWithBlobSidecars(
+                slot,
+                options,
+                preState,
+                parentRoot,
+                signer,
+                attestations,
+                attesterSlashings,
+                proposerSlashings);
       } else {
         nextBlockAndState =
             generateBlock(
-                slot, options, preState, parentRoot, signer, attestations, attesterSlashings);
+                slot,
+                options,
+                preState,
+                parentRoot,
+                signer,
+                attestations,
+                attesterSlashings,
+                proposerSlashings);
       }
       trackBlock(nextBlockAndState);
       return nextBlockAndState;
@@ -591,7 +617,8 @@ public class ChainBuilder {
       final Bytes32 parentRoot,
       final Signer signer,
       final SszList<Attestation> attestations,
-      final SszList<AttesterSlashing> attesterSlashings)
+      final SszList<AttesterSlashing> attesterSlashings,
+      final SszList<ProposerSlashing> proposerSlashings)
       throws EpochProcessingException, SlotProcessingException {
     return safeJoin(
         blockProposalTestUtil.createBlock(
@@ -602,6 +629,7 @@ public class ChainBuilder {
             Optional.of(attestations),
             Optional.empty(),
             Optional.of(attesterSlashings),
+            Optional.of(proposerSlashings),
             Optional.empty(),
             options.getEth1Data(),
             options.getTransactions(),
@@ -613,23 +641,33 @@ public class ChainBuilder {
             options.getSkipStateTransition()));
   }
 
-  private SignedBlockAndState generateBlockWithBlobSidecar(
+  private SignedBlockAndState generateBlockWithBlobSidecars(
       final UInt64 slot,
       final BlockOptions options,
       final BeaconState preState,
       final Bytes32 parentRoot,
       final Signer signer,
       final SszList<Attestation> attestations,
-      final SszList<AttesterSlashing> attesterSlashings)
+      final SszList<AttesterSlashing> attesterSlashings,
+      final SszList<ProposerSlashing> proposerSlashings)
       throws EpochProcessingException, SlotProcessingException {
-    final List<Blob> blobs =
-        options
-            .getBlobSidecars()
-            .map(
-                blobSidecars ->
-                    blobSidecars.stream().map(BlobSidecarOld::getBlob).collect(Collectors.toList()))
-            .or(options::getBlobs)
-            .orElse(Collections.emptyList());
+
+    final List<Blob> blobs;
+    if (options.getGenerateRandomBlobs()) {
+      blobs =
+          blobsUtil.generateBlobs(
+              slot, options.getGenerateRandomBlobsCount().orElse(RANDOM_BLOBS_COUNT));
+    } else {
+      blobs =
+          options
+              .getBlobSidecars()
+              .map(
+                  blobSidecars ->
+                      blobSidecars.stream().map(BlobSidecar::getBlob).collect(Collectors.toList()))
+              .or(options::getBlobs)
+              .orElse(Collections.emptyList());
+    }
+
     final List<KZGCommitment> kzgCommitments = blobsUtil.blobsToKzgCommitments(blobs);
     final Optional<List<Bytes>> maybeGeneratedBlobTransactions;
     if (options.getTransactions().isEmpty() && !kzgCommitments.isEmpty()) {
@@ -640,119 +678,77 @@ public class ChainBuilder {
       maybeGeneratedBlobTransactions = Optional.empty();
     }
 
-    final SignedBlockAndState nextBlockAndState =
-        safeJoin(
-            blockProposalTestUtil.createBlock(
-                signer,
-                slot,
-                preState,
-                parentRoot,
-                Optional.of(attestations),
-                Optional.empty(),
-                Optional.of(attesterSlashings),
-                Optional.empty(),
-                options.getEth1Data(),
-                maybeGeneratedBlobTransactions,
-                options.getTerminalBlockHash(),
-                options.getExecutionPayload(),
-                options.getSyncAggregate(),
-                options.getBlsToExecutionChange(),
-                options.getKzgCommitments(),
-                options.getSkipStateTransition()));
-
-    final BlobSidecarSchemaOld blobSidecarSchema =
-        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
-            .getBlobSidecarOldSchema();
+    final SignedBlockAndState nextBlockAndState;
+    if (options.getGenerateRandomBlobs()) {
+      nextBlockAndState =
+          safeJoin(
+              blockProposalTestUtil.createBlockWithBlobs(
+                  signer,
+                  slot,
+                  preState,
+                  parentRoot,
+                  Optional.of(attestations),
+                  Optional.empty(),
+                  Optional.of(attesterSlashings),
+                  Optional.of(proposerSlashings),
+                  Optional.empty(),
+                  options.getEth1Data(),
+                  maybeGeneratedBlobTransactions,
+                  options.getTerminalBlockHash(),
+                  options.getExecutionPayload(),
+                  options.getSyncAggregate(),
+                  options.getBlsToExecutionChange(),
+                  blobsUtil,
+                  blobs,
+                  options.getSkipStateTransition()));
+    } else {
+      nextBlockAndState =
+          safeJoin(
+              blockProposalTestUtil.createBlock(
+                  signer,
+                  slot,
+                  preState,
+                  parentRoot,
+                  Optional.of(attestations),
+                  Optional.empty(),
+                  Optional.of(attesterSlashings),
+                  Optional.of(proposerSlashings),
+                  Optional.empty(),
+                  options.getEth1Data(),
+                  maybeGeneratedBlobTransactions,
+                  options.getTerminalBlockHash(),
+                  options.getExecutionPayload(),
+                  options.getSyncAggregate(),
+                  options.getBlsToExecutionChange(),
+                  options.getKzgCommitments(),
+                  options.getSkipStateTransition()));
+    }
 
     if (options.isStoreBlobSidecarsEnabled()) {
-      final List<BlobSidecarOld> blobSidecars =
+      final MiscHelpersDeneb miscHelpersDeneb =
+          MiscHelpersDeneb.required(spec.forMilestone(SpecMilestone.DENEB).miscHelpers());
+      final BlobSidecarSchema blobSidecarSchema =
+          SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
+              .getBlobSidecarSchema();
+
+      final List<BlobSidecar> blobSidecars =
           IntStream.range(0, blobs.size())
               .mapToObj(
                   index -> {
+                    final UInt64 blobSidecarIndex = UInt64.valueOf(index);
                     final Blob blob = blobs.get(index);
                     final KZGCommitment kzgCommitment = kzgCommitments.get(index);
-                    return new BlobSidecarOld(
+                    final List<Bytes32> merkleProof =
+                        miscHelpersDeneb.computeKzgCommitmentInclusionProof(
+                            blobSidecarIndex, nextBlockAndState.getBlock().getMessage().getBody());
+                    return new BlobSidecar(
                         blobSidecarSchema,
-                        nextBlockAndState.getRoot(),
-                        UInt64.valueOf(index),
-                        slot,
-                        parentRoot,
-                        UInt64.ZERO,
+                        blobSidecarIndex,
                         blob,
                         kzgCommitment,
-                        blobsUtil.computeKzgProof(blob, kzgCommitment));
-                  })
-              .collect(Collectors.toList());
-      trackBlobSidecars(nextBlockAndState.getSlotAndBlockRoot(), blobSidecars);
-    }
-
-    return nextBlockAndState;
-  }
-
-  private SignedBlockAndState generateBlockWithRandomBlobSidecars(
-      final UInt64 slot,
-      final BlockOptions options,
-      final BeaconState preState,
-      final Bytes32 parentRoot,
-      final Signer signer,
-      final SszList<Attestation> attestations,
-      final SszList<AttesterSlashing> attesterSlashings)
-      throws EpochProcessingException, SlotProcessingException {
-    final List<Blob> randomBlobs =
-        blobsUtil.generateBlobs(
-            slot, options.getGenerateRandomBlobsCount().orElse(RANDOM_BLOBS_COUNT));
-    final List<KZGCommitment> kzgCommitments = blobsUtil.blobsToKzgCommitments(randomBlobs);
-    final Optional<List<Bytes>> maybeGeneratedBlobTransactions;
-    if (options.getTransactions().isEmpty() && !kzgCommitments.isEmpty()) {
-      maybeGeneratedBlobTransactions =
-          Optional.of(
-              List.of(blobsUtil.generateRawBlobTransactionFromKzgCommitments(kzgCommitments)));
-    } else {
-      maybeGeneratedBlobTransactions = Optional.empty();
-    }
-
-    final SignedBlockAndState nextBlockAndState =
-        safeJoin(
-            blockProposalTestUtil.createBlockWithBlobs(
-                signer,
-                slot,
-                preState,
-                parentRoot,
-                Optional.of(attestations),
-                Optional.empty(),
-                Optional.of(attesterSlashings),
-                Optional.empty(),
-                options.getEth1Data(),
-                maybeGeneratedBlobTransactions,
-                options.getTerminalBlockHash(),
-                options.getExecutionPayload(),
-                options.getSyncAggregate(),
-                options.getBlsToExecutionChange(),
-                blobsUtil,
-                randomBlobs,
-                options.getSkipStateTransition()));
-
-    final BlobSidecarSchemaOld blobSidecarSchema =
-        SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
-            .getBlobSidecarOldSchema();
-
-    if (options.isStoreBlobSidecarsEnabled()) {
-      final List<BlobSidecarOld> blobSidecars =
-          IntStream.range(0, randomBlobs.size())
-              .mapToObj(
-                  index -> {
-                    final Blob blob = randomBlobs.get(index);
-                    final KZGCommitment kzgCommitment = kzgCommitments.get(index);
-                    return new BlobSidecarOld(
-                        blobSidecarSchema,
-                        nextBlockAndState.getRoot(),
-                        UInt64.valueOf(index),
-                        slot,
-                        parentRoot,
-                        UInt64.ZERO,
-                        randomBlobs.get(index),
-                        kzgCommitments.get(index),
-                        blobsUtil.computeKzgProof(blob, kzgCommitment));
+                        blobsUtil.computeKzgProof(blob, kzgCommitment),
+                        nextBlockAndState.getBlock().asHeader(),
+                        merkleProof);
                   })
               .collect(Collectors.toList());
       trackBlobSidecars(nextBlockAndState.getSlotAndBlockRoot(), blobSidecars);
@@ -877,6 +873,7 @@ public class ChainBuilder {
 
     private List<Attestation> attestations = new ArrayList<>();
     private final List<AttesterSlashing> attesterSlashings = new ArrayList<>();
+    private final List<ProposerSlashing> proposerSlashings = new ArrayList<>();
     private Optional<Eth1Data> eth1Data = Optional.empty();
     private Optional<List<Bytes>> transactions = Optional.empty();
     private Optional<Bytes32> terminalBlockHash = Optional.empty();
@@ -886,7 +883,7 @@ public class ChainBuilder {
     private Optional<SszList<SszKZGCommitment>> kzgCommitments = Optional.empty();
     private Optional<List<Blob>> blobs = Optional.empty();
     private Optional<KZGProof> kzgProof = Optional.empty();
-    private Optional<List<BlobSidecarOld>> blobSidecars = Optional.empty();
+    private Optional<List<BlobSidecar>> blobSidecars = Optional.empty();
     private boolean generateRandomBlobs = false;
     private Optional<Integer> generateRandomBlobsCount = Optional.empty();
     private boolean storeBlobSidecars = true;
@@ -911,6 +908,11 @@ public class ChainBuilder {
 
     public BlockOptions addAttesterSlashing(final AttesterSlashing attesterSlashing) {
       attesterSlashings.add(attesterSlashing);
+      return this;
+    }
+
+    public BlockOptions addProposerSlashing(final ProposerSlashing proposerSlashing) {
+      proposerSlashings.add(proposerSlashing);
       return this;
     }
 
@@ -945,7 +947,7 @@ public class ChainBuilder {
       return this;
     }
 
-    public BlockOptions setBlobSidecars(final List<BlobSidecarOld> blobSidecars) {
+    public BlockOptions setBlobSidecars(final List<BlobSidecar> blobSidecars) {
       this.blobSidecars = Optional.of(blobSidecars);
       return this;
     }
@@ -1027,7 +1029,7 @@ public class ChainBuilder {
       return blobs;
     }
 
-    public Optional<List<BlobSidecarOld>> getBlobSidecars() {
+    public Optional<List<BlobSidecar>> getBlobSidecars() {
       return blobSidecars;
     }
 
@@ -1057,6 +1059,10 @@ public class ChainBuilder {
 
     public List<AttesterSlashing> getAttesterSlashings() {
       return attesterSlashings;
+    }
+
+    public List<ProposerSlashing> getProposerSlashings() {
+      return proposerSlashings;
     }
   }
 }

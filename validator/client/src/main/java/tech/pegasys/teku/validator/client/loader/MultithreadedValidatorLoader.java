@@ -85,7 +85,6 @@ public class MultithreadedValidatorLoader {
           addedValidators.stream()
               .map(validator -> validator.getPublicKey().toAbbreviatedString())
               .toList());
-
     } catch (InterruptedException e) {
       throw new RuntimeException("Interrupted while attempting to load validator key files", e);
     } catch (ExecutionException e) {

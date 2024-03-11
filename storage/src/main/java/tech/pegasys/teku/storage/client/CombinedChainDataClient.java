@@ -30,7 +30,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
@@ -168,7 +168,7 @@ public class CombinedChainDataClient {
    * Retrieves blob sidecars for the given slot. If the slot is not finalized, it could return
    * non-canonical blob sidecars.
    */
-  public SafeFuture<List<BlobSidecarOld>> getBlobSidecars(
+  public SafeFuture<List<BlobSidecar>> getBlobSidecars(
       final UInt64 slot, final List<UInt64> indices) {
     return historicalChainData
         .getBlobSidecarKeys(slot)
@@ -176,9 +176,9 @@ public class CombinedChainDataClient {
         .thenCompose(this::getBlobSidecars);
   }
 
-  public SafeFuture<List<BlobSidecarOld>> getBlobSidecars(
+  public SafeFuture<List<BlobSidecar>> getBlobSidecars(
       final SlotAndBlockRoot slotAndBlockRoot, final List<UInt64> indices) {
-    final Optional<List<BlobSidecarOld>> maybeBlobSidecars =
+    final Optional<List<BlobSidecar>> maybeBlobSidecars =
         recentChainData.getBlobSidecars(slotAndBlockRoot);
     if (maybeBlobSidecars.isPresent()) {
       return SafeFuture.completedFuture(filterBlobSidecars(maybeBlobSidecars.get(), indices));
@@ -189,7 +189,7 @@ public class CombinedChainDataClient {
         .thenCompose(this::getBlobSidecars);
   }
 
-  public SafeFuture<List<BlobSidecarOld>> getAllBlobSidecars(
+  public SafeFuture<List<BlobSidecar>> getAllBlobSidecars(
       final UInt64 slot, final List<UInt64> indices) {
     return historicalChainData
         .getAllBlobSidecarKeys(slot)
@@ -197,8 +197,8 @@ public class CombinedChainDataClient {
         .thenCompose(this::getAllBlobSidecars);
   }
 
-  private List<BlobSidecarOld> filterBlobSidecars(
-      final List<BlobSidecarOld> blobSidecars, final List<UInt64> indices) {
+  private List<BlobSidecar> filterBlobSidecars(
+      final List<BlobSidecar> blobSidecars, final List<UInt64> indices) {
     if (indices.isEmpty()) {
       return blobSidecars;
     }
@@ -213,13 +213,13 @@ public class CombinedChainDataClient {
     return keys.stream().filter(key -> indices.contains(key.getBlobIndex()));
   }
 
-  private SafeFuture<List<BlobSidecarOld>> getBlobSidecars(
+  private SafeFuture<List<BlobSidecar>> getBlobSidecars(
       final Stream<SlotAndBlockRootAndBlobIndex> keys) {
     return SafeFuture.collectAll(keys.map(this::getAllBlobSidecarByKey))
         .thenApply(blobSidecars -> blobSidecars.stream().flatMap(Optional::stream).toList());
   }
 
-  private SafeFuture<List<BlobSidecarOld>> getAllBlobSidecars(
+  private SafeFuture<List<BlobSidecar>> getAllBlobSidecars(
       final Stream<SlotAndBlockRootAndBlobIndex> keys) {
     return SafeFuture.collectAll(keys.map(this::getAllBlobSidecarByKey))
         .thenApply(blobSidecars -> blobSidecars.stream().flatMap(Optional::stream).toList());
@@ -238,6 +238,30 @@ public class CombinedChainDataClient {
                       : regenerateStateAndSlotExact(slot));
     }
     return regenerateStateAndSlotExact(slot);
+  }
+
+  public SafeFuture<Optional<BeaconState>> getStateForBlockProduction(
+      final UInt64 slot, final boolean isForkChoiceLateBlockReorgEnabled) {
+    if (!isForkChoiceLateBlockReorgEnabled) {
+      return getStateAtSlotExact(slot);
+    }
+    final Optional<Bytes32> headRoot = getBestBlockRoot();
+    if (headRoot.isEmpty()) {
+      return getStateAtSlotExact(slot);
+    }
+    final Bytes32 root = recentChainData.getProposerHead(headRoot.get(), slot);
+    if (root.equals(headRoot.get())) {
+      return getStateAtSlotExact(slot);
+    }
+    // otherwise we're looking for the parent slot
+    return getStateByBlockRoot(root)
+        .thenCompose(
+            maybeState ->
+                maybeState
+                    .map(
+                        beaconState ->
+                            SafeFuture.completedFuture(regenerateBeaconState(beaconState, slot)))
+                    .orElseGet(() -> getStateAtSlotExact(slot)));
   }
 
   public SafeFuture<Optional<BeaconState>> getStateAtSlotExact(
@@ -569,8 +593,17 @@ public class CombinedChainDataClient {
     return historicalChainData.getEarliestAvailableBlobSidecarSlot();
   }
 
-  public SafeFuture<Optional<BlobSidecarOld>> getBlobSidecarByBlockRootAndIndex(
+  /**
+   * This is supposed to be consumed by RPC only, because it returns gossip-validated but not yet
+   * imported sidecars from the blobSidecar pool.
+   */
+  public SafeFuture<Optional<BlobSidecar>> getBlobSidecarByBlockRootAndIndex(
       final Bytes32 blockRoot, final UInt64 index) {
+    final Optional<BlobSidecar> recentlyValidatedBlobSidecar =
+        recentChainData.getRecentlyValidatedBlobSidecar(blockRoot, index);
+    if (recentlyValidatedBlobSidecar.isPresent()) {
+      return SafeFuture.completedFuture(recentlyValidatedBlobSidecar);
+    }
     final Optional<UInt64> hotSlotForBlockRoot = recentChainData.getSlotForBlockRoot(blockRoot);
     if (hotSlotForBlockRoot.isPresent()) {
       return getBlobSidecarByKey(
@@ -590,9 +623,9 @@ public class CombinedChainDataClient {
             });
   }
 
-  public SafeFuture<Optional<BlobSidecarOld>> getBlobSidecarByKey(
+  public SafeFuture<Optional<BlobSidecar>> getBlobSidecarByKey(
       final SlotAndBlockRootAndBlobIndex key) {
-    final Optional<List<BlobSidecarOld>> maybeBlobSidecars =
+    final Optional<List<BlobSidecar>> maybeBlobSidecars =
         recentChainData.getBlobSidecars(key.getSlotAndBlockRoot());
     if (maybeBlobSidecars.isPresent()) {
       return key.getBlobIndex().isLessThan(maybeBlobSidecars.get().size())
@@ -690,7 +723,7 @@ public class CombinedChainDataClient {
     return recentChainData;
   }
 
-  private SafeFuture<Optional<BlobSidecarOld>> getAllBlobSidecarByKey(
+  private SafeFuture<Optional<BlobSidecar>> getAllBlobSidecarByKey(
       final SlotAndBlockRootAndBlobIndex key) {
     return historicalChainData
         .getBlobSidecar(key)

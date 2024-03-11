@@ -32,8 +32,8 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.RestApiEndpoint;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 
@@ -51,14 +51,16 @@ public abstract class AbstractGetNewBlockTest extends AbstractMigratedBeaconHand
   @SuppressWarnings("unchecked")
   @Test
   void shouldReturnBlockWithoutGraffiti() throws Exception {
-    final BeaconBlock randomBeaconBlock = dataStructureUtil.randomBeaconBlock(ONE);
-    doReturn(SafeFuture.completedFuture(Optional.of(randomBeaconBlock)))
+    final BlockContainerAndMetaData blockContainerAndMetaData =
+        dataStructureUtil.randomBlockContainerAndMetaData(ONE);
+    doReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)))
         .when(validatorDataProvider)
-        .getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty(), isBlindedBlocks());
+        .getUnsignedBeaconBlockAtSlot(
+            ONE, signature, Optional.empty(), isBlindedBlocks(), Optional.empty());
 
     handler.handleRequest(request);
 
-    assertThat(request.getResponseBody()).isEqualTo(randomBeaconBlock);
+    assertThat(request.getResponseBody()).isEqualTo(blockContainerAndMetaData.blockContainer());
     // Check block serializes correctly
     assertThat(request.getResponseBodyAsJson(handler))
         .isEqualTo(
@@ -70,14 +72,16 @@ public abstract class AbstractGetNewBlockTest extends AbstractMigratedBeaconHand
   void shouldReturnBlindedBeaconBlockPostDeneb() throws Exception {
     spec = TestSpecFactory.createMinimalDeneb();
     dataStructureUtil = new DataStructureUtil(spec);
-    final BeaconBlock blindedBeaconBLock = dataStructureUtil.randomBlindedBeaconBlock(ONE);
-    doReturn(SafeFuture.completedFuture(Optional.of(blindedBeaconBLock)))
+    final BlockContainerAndMetaData blockContainerAndMetaData =
+        dataStructureUtil.randomBlindedBlockContainerAndMetaData(ONE);
+    doReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)))
         .when(validatorDataProvider)
-        .getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty(), isBlindedBlocks());
+        .getUnsignedBeaconBlockAtSlot(
+            ONE, signature, Optional.empty(), isBlindedBlocks(), Optional.empty());
 
     handler.handleRequest(request);
 
-    assertThat(request.getResponseBody()).isEqualTo(blindedBeaconBLock);
+    assertThat(request.getResponseBody()).isEqualTo(blockContainerAndMetaData.blockContainer());
   }
 
   @Test
@@ -85,9 +89,12 @@ public abstract class AbstractGetNewBlockTest extends AbstractMigratedBeaconHand
     spec = TestSpecFactory.createMinimalDeneb();
     dataStructureUtil = new DataStructureUtil(spec);
     final BlockContents blockContents = dataStructureUtil.randomBlockContents(ONE);
-    doReturn(SafeFuture.completedFuture(Optional.of(blockContents)))
+    final BlockContainerAndMetaData blockContainerAndMetaData =
+        dataStructureUtil.randomBlockContainerAndMetaData(blockContents, ONE);
+    doReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)))
         .when(validatorDataProvider)
-        .getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty(), isBlindedBlocks());
+        .getUnsignedBeaconBlockAtSlot(
+            ONE, signature, Optional.empty(), isBlindedBlocks(), Optional.empty());
 
     handler.handleRequest(request);
 
@@ -99,7 +106,8 @@ public abstract class AbstractGetNewBlockTest extends AbstractMigratedBeaconHand
 
     doReturn(SafeFuture.completedFuture(Optional.empty()))
         .when(validatorDataProvider)
-        .getUnsignedBeaconBlockAtSlot(ONE, signature, Optional.empty(), isBlindedBlocks());
+        .getUnsignedBeaconBlockAtSlot(
+            ONE, signature, Optional.empty(), isBlindedBlocks(), Optional.empty());
 
     handler.handleRequest(request);
     assertThat(request.getResponseError()).containsInstanceOf(ChainDataUnavailableException.class);

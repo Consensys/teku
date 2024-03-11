@@ -29,7 +29,6 @@ import tech.pegasys.teku.beacon.sync.forward.singlepeer.SinglePeerSyncServiceFac
 import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarsFetcher;
 import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlocksFetchService;
 import tech.pegasys.teku.beacon.sync.historical.HistoricalBlockSyncService;
-import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.AsyncRunnerFactory;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
@@ -39,7 +38,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.logic.common.util.AsyncBLSSignatureVerifier;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.validation.signatures.SignatureVerificationService;
@@ -68,7 +67,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
   private final BlockImporter blockImporter;
   private final BlobSidecarManager blobSidecarManager;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
-  private final BlobSidecarPool blobSidecarPool;
+  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   private final int getStartupTargetPeerCount;
   private final AsyncBLSSignatureVerifier signatureVerifier;
   private final Duration startupTimeout;
@@ -88,7 +87,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
       final BlockImporter blockImporter,
       final BlobSidecarManager blobSidecarManager,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
-      final BlobSidecarPool blobSidecarPool,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final int getStartupTargetPeerCount,
       final SignatureVerificationService signatureVerifier,
       final Duration startupTimeout,
@@ -106,7 +105,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
     this.blockImporter = blockImporter;
     this.blobSidecarManager = blobSidecarManager;
     this.pendingBlocks = pendingBlocks;
-    this.blobSidecarPool = blobSidecarPool;
+    this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     this.getStartupTargetPeerCount = getStartupTargetPeerCount;
     this.signatureVerifier = signatureVerifier;
     this.startupTimeout = startupTimeout;
@@ -125,14 +124,16 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
 
     final RecentBlocksFetchService recentBlocksFetchService =
         RecentBlocksFetchService.create(
-            asyncRunner, pendingBlocks, blobSidecarPool, forwardSyncService, fetchTaskFactory);
+            asyncRunner,
+            pendingBlocks,
+            blockBlobSidecarsTrackersPool,
+            forwardSyncService,
+            fetchTaskFactory);
     final RecentBlobSidecarsFetcher recentBlobSidecarsFetcher =
         RecentBlobSidecarsFetcher.create(
-            spec, asyncRunner, blobSidecarPool, forwardSyncService, fetchTaskFactory);
+            spec, asyncRunner, blockBlobSidecarsTrackersPool, forwardSyncService, fetchTaskFactory);
 
     final SyncStateTracker syncStateTracker = createSyncStateTracker(forwardSyncService);
-
-    eventChannels.subscribe(ExecutionClientEventsChannel.class, syncStateTracker);
 
     final HistoricalBlockSyncService historicalBlockSyncService =
         createHistoricalSyncService(syncStateTracker);
@@ -186,7 +187,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               p2pNetwork,
               blockImporter,
               blobSidecarManager,
-              blobSidecarPool,
+              blockBlobSidecarsTrackersPool,
               syncConfig.getForwardSyncBatchSize(),
               syncConfig.getForwardSyncMaxPendingBatches(),
               syncConfig.getForwardSyncMaxBlocksPerMinute(),
@@ -201,7 +202,7 @@ public class DefaultSyncServiceFactory implements SyncServiceFactory {
               recentChainData,
               blockImporter,
               blobSidecarManager,
-              blobSidecarPool,
+              blockBlobSidecarsTrackersPool,
               syncConfig.getForwardSyncBatchSize(),
               spec);
     }

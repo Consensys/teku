@@ -15,11 +15,16 @@ package tech.pegasys.teku.validator.client;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import java.util.Map;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
+import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
+import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 
 public class BlockDutyScheduler extends AbstractDutyScheduler {
   static final int LOOKAHEAD_EPOCHS = 0;
@@ -39,6 +44,17 @@ public class BlockDutyScheduler extends AbstractDutyScheduler {
   public void onBlockProductionDue(final UInt64 slot) {
     onProductionDue(slot);
   }
+
+  @Override
+  public void onAttesterSlashing(final AttesterSlashing attesterSlashing) {}
+
+  @Override
+  public void onProposerSlashing(final ProposerSlashing proposerSlashing) {}
+
+  @Override
+  public void onUpdatedValidatorStatuses(
+      final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
+      final boolean possibleMissingEvents) {}
 
   @Override
   protected Bytes32 getExpectedDependentRoot(

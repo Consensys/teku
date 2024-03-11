@@ -23,16 +23,14 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
-import tech.pegasys.teku.spec.executionlayer.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
-import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager.ProposersDataManagerSubscriber;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersDataManagerSubscriber {
+public class ForkChoiceNotifierImpl implements ForkChoiceNotifier {
   private static final Logger LOG = LogManager.getLogger();
 
   private final EventThread eventThread;
@@ -43,7 +41,7 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
   private final Spec spec;
   private final TimeProvider timeProvider;
 
-  private final Subscribers<ForkChoiceUpdatedResultSubscriber> subscribers =
+  private final Subscribers<ForkChoiceUpdatedResultSubscriber> forkChoiceUpdatedSubscribers =
       Subscribers.create(true);
 
   private ForkChoiceUpdateData forkChoiceUpdateData = new ForkChoiceUpdateData();
@@ -65,17 +63,11 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
     this.recentChainData = recentChainData;
     this.proposersDataManager = proposersDataManager;
     this.timeProvider = timeProvider;
-    proposersDataManager.subscribeToProposersDataChanges(this);
   }
 
   @Override
-  public long subscribeToForkChoiceUpdatedResult(ForkChoiceUpdatedResultSubscriber subscriber) {
-    return subscribers.subscribe(subscriber);
-  }
-
-  @Override
-  public boolean unsubscribeFromForkChoiceUpdatedResult(long subscriberId) {
-    return subscribers.unsubscribe(subscriberId);
+  public void subscribeToForkChoiceUpdatedResult(ForkChoiceUpdatedResultSubscriber subscriber) {
+    forkChoiceUpdatedSubscribers.subscribe(subscriber);
   }
 
   @Override
@@ -109,12 +101,9 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
   }
 
   @Override
-  public void onPreparedProposersUpdated() {
-    eventThread.execute(this::internalUpdatePreparableProposers);
+  public boolean validatorIsConnected(UInt64 validatorIndex, UInt64 currentSlot) {
+    return proposersDataManager.validatorIsConnected(validatorIndex, currentSlot);
   }
-
-  @Override
-  public void onValidatorRegistrationsUpdated() {}
 
   private void internalTerminalBlockReached(Bytes32 executionBlockHash) {
     eventThread.checkOnEventThread();
@@ -199,18 +188,6 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
     }
   }
 
-  private void internalUpdatePreparableProposers() {
-    eventThread.checkOnEventThread();
-
-    LOG.debug("internalUpdatePreparableProposers");
-
-    // Default to the genesis slot if we're pre-genesis.
-    final UInt64 currentSlot = recentChainData.getCurrentSlot().orElse(SpecConfig.GENESIS_SLOT);
-
-    // Update payload attributes in case we now need to propose the next block
-    updatePayloadAttributes(currentSlot.plus(1));
-  }
-
   private void internalForkChoiceUpdated(
       final ForkChoiceState forkChoiceState, final Optional<UInt64> proposingSlot) {
     eventThread.checkOnEventThread();
@@ -221,12 +198,58 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
 
     LOG.debug("internalForkChoiceUpdated forkChoiceUpdateData {}", forkChoiceUpdateData);
 
-    final Optional<UInt64> attributesSlot =
-        proposingSlot.or(() -> recentChainData.getCurrentSlot().map(UInt64::increment));
-
-    attributesSlot.ifPresent(this::updatePayloadAttributes);
+    calculatePayloadAttributesSlot(forkChoiceState, proposingSlot)
+        .ifPresent(this::updatePayloadAttributes);
 
     sendForkChoiceUpdated();
+  }
+
+  /**
+   * Determine for which slot we should calculate payload attributes (block proposal)
+   *
+   * <pre>
+   * this will guarantee that whenever we calculate a payload attributes for a slot, it will remain stable until:
+   * 1. next slot attestation due is reached (internalAttestationsDue forcing attributes calculation for next slot)
+   * OR
+   * 2. we imported the block for current slot and has become the head
+   * </pre>
+   */
+  private Optional<UInt64> calculatePayloadAttributesSlot(
+      final ForkChoiceState forkChoiceState, final Optional<UInt64> proposingSlot) {
+    if (proposingSlot.isPresent()) {
+      // We are in the context of a block production, so we should use the proposing slot
+      return proposingSlot;
+    }
+
+    final Optional<UInt64> currentSlot = recentChainData.getCurrentSlot();
+    if (currentSlot.isEmpty()) {
+      // We are pre-genesis, so we don't care about proposing slots
+      return Optional.empty();
+    }
+
+    final Optional<UInt64> maybeCurrentPayloadAttributesSlot =
+        forkChoiceUpdateData
+            .getPayloadBuildingAttributes()
+            .map(PayloadBuildingAttributes::getProposalSlot);
+
+    if (maybeCurrentPayloadAttributesSlot.isPresent()
+        // we are still in the same slot as the last proposing slot
+        && currentSlot.get().equals(maybeCurrentPayloadAttributesSlot.get())
+        // we have not yet imported our own produced block
+        && forkChoiceState.getHeadBlockSlot().isLessThan(maybeCurrentPayloadAttributesSlot.get())) {
+
+      LOG.debug(
+          "current payload attributes slot has been chosen for payload attributes calculation: {}",
+          currentSlot.get());
+
+      // in case we propose two blocks in a row and we fail producing the first block,
+      // we won't keep using the same first slot because internalAttestationsDue will
+      // update the payload attributes for the second block slot
+      return currentSlot;
+    }
+
+    // chain advanced since last proposing slot, we should consider attributes for the next slot
+    return currentSlot.map(UInt64::increment);
   }
 
   private void internalAttestationsDue(final UInt64 slot) {
@@ -239,14 +262,17 @@ public class ForkChoiceNotifierImpl implements ForkChoiceNotifier, ProposersData
   }
 
   private void sendForkChoiceUpdated() {
-    final SafeFuture<Optional<ForkChoiceUpdatedResult>> forkChoiceUpdatedResult =
-        forkChoiceUpdateData.send(executionLayerChannel, timeProvider.getTimeInMillis());
-    subscribers.deliver(
-        ForkChoiceUpdatedResultSubscriber::onForkChoiceUpdatedResult,
-        new ForkChoiceUpdatedResultNotification(
-            forkChoiceUpdateData.getForkChoiceState(),
-            forkChoiceUpdateData.hasTerminalBlockHash(),
-            forkChoiceUpdatedResult));
+    forkChoiceUpdateData
+        .send(executionLayerChannel, timeProvider.getTimeInMillis())
+        .ifPresent(
+            forkChoiceUpdatedResultFuture ->
+                forkChoiceUpdatedSubscribers.deliver(
+                    ForkChoiceUpdatedResultSubscriber::onForkChoiceUpdatedResult,
+                    new ForkChoiceUpdatedResultNotification(
+                        forkChoiceUpdateData.getForkChoiceState(),
+                        forkChoiceUpdateData.getPayloadBuildingAttributes(),
+                        forkChoiceUpdateData.hasTerminalBlockHash(),
+                        forkChoiceUpdatedResultFuture)));
   }
 
   private void updatePayloadAttributes(final UInt64 blockSlot) {

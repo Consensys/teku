@@ -14,7 +14,7 @@
         },
         "application/json" : {
           "schema" : {
-            "title" : "SignedBlock",
+            "title" : "SignedBeaconBlock",
             "type" : "object",
             "oneOf" : [ {
               "$ref" : "#/components/schemas/SignedBeaconBlockPhase0"
@@ -26,20 +26,14 @@
               "$ref" : "#/components/schemas/SignedBeaconBlockCapella"
             }, {
               "$ref" : "#/components/schemas/SignedBlockContentsDeneb"
+            }, {
+              "$ref" : "#/components/schemas/SignedBlockContentsElectra"
             } ]
           }
         }
       }
     },
     "responses" : {
-      "200" : {
-        "description" : "Block has been successfully broadcast, validated and imported.",
-        "content" : { }
-      },
-      "202" : {
-        "description" : "Block has been successfully broadcast, but failed validation and has not been imported.",
-        "content" : { }
-      },
       "415" : {
         "description" : "Unsupported media-type supplied",
         "content" : {
@@ -49,6 +43,14 @@
             }
           }
         }
+      },
+      "200" : {
+        "description" : "Block has been successfully broadcast, validated and imported.",
+        "content" : { }
+      },
+      "202" : {
+        "description" : "Block has been successfully broadcast, but failed validation and has not been imported.",
+        "content" : { }
       },
       "400" : {
         "description" : "Unable to parse request body.",

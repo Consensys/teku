@@ -13,13 +13,14 @@
 
 package tech.pegasys.teku.validator.coordinator.publisher;
 
+import java.util.List;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipChannel;
 import tech.pegasys.teku.networking.eth2.gossip.BlockGossipChannel;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
@@ -28,7 +29,7 @@ import tech.pegasys.teku.validator.coordinator.performance.PerformanceTracker;
 
 public class BlockPublisherDeneb extends AbstractBlockPublisher {
 
-  private final BlobSidecarPool blobSidecarPool;
+  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   private final BlockGossipChannel blockGossipChannel;
   private final BlobSidecarGossipChannel blobSidecarGossipChannel;
 
@@ -36,33 +37,30 @@ public class BlockPublisherDeneb extends AbstractBlockPublisher {
       final BlockFactory blockFactory,
       final BlockImportChannel blockImportChannel,
       final BlockGossipChannel blockGossipChannel,
-      final BlobSidecarPool blobSidecarPool,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final BlobSidecarGossipChannel blobSidecarGossipChannel,
       final PerformanceTracker performanceTracker,
       final DutyMetrics dutyMetrics) {
     super(blockFactory, blockImportChannel, performanceTracker, dutyMetrics);
-    this.blobSidecarPool = blobSidecarPool;
+    this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     this.blockGossipChannel = blockGossipChannel;
     this.blobSidecarGossipChannel = blobSidecarGossipChannel;
   }
 
   @Override
-  protected SafeFuture<BlockImportAndBroadcastValidationResults> importBlock(
-      final SignedBlockContainer blockContainer,
+  SafeFuture<BlockImportAndBroadcastValidationResults> importBlockAndBlobSidecars(
+      final SignedBeaconBlock block,
+      final List<BlobSidecar> blobSidecars,
       final BroadcastValidationLevel broadcastValidationLevel) {
-    final SignedBeaconBlock block = blockContainer.getSignedBlock();
-
-    blockContainer
-        .getSignedBlobSidecars()
-        .ifPresent(
-            signedBlobSidecars ->
-                blobSidecarPool.onCompletedBlockAndSignedBlobSidecars(block, signedBlobSidecars));
+    // provide blobs for the block before importing it
+    blockBlobSidecarsTrackersPool.onCompletedBlockAndBlobSidecars(block, blobSidecars);
     return blockImportChannel.importBlock(block, broadcastValidationLevel);
   }
 
   @Override
-  void publishBlock(final SignedBlockContainer blockContainer) {
-    blockContainer.getSignedBlobSidecars().ifPresent(blobSidecarGossipChannel::publishBlobSidecars);
-    blockGossipChannel.publishBlock(blockContainer.getSignedBlock());
+  void publishBlockAndBlobSidecars(
+      final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
+    blockGossipChannel.publishBlock(block);
+    blobSidecarGossipChannel.publishBlobSidecars(blobSidecars);
   }
 }

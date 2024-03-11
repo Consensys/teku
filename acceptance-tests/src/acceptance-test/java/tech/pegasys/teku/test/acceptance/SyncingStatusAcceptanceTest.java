@@ -20,7 +20,8 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.BesuNode;
 import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator;
-import tech.pegasys.teku.test.acceptance.dsl.TekuNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
+import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class SyncingStatusAcceptanceTest extends AcceptanceTestBase {
@@ -35,7 +36,7 @@ public class SyncingStatusAcceptanceTest extends AcceptanceTestBase {
             config ->
                 config
                     .withMiningEnabled(true)
-                    .withMergeSupport(true)
+                    .withMergeSupport()
                     .withGenesisFile("besu/preMergeGenesis.json")
                     .withJwtTokenAuthorization(JWT_FILE));
     eth1Node.start();
@@ -47,20 +48,20 @@ public class SyncingStatusAcceptanceTest extends AcceptanceTestBase {
         createGenesisGenerator().network(networkName).validatorKeys(validatorKeystores).generate();
 
     final String defaultFeeRecipient = "0xFE3B557E8Fb62b89F4916B721be55cEb828dBd73";
-    final TekuNode beaconNode =
-        createTekuNode(
-            config ->
-                config
-                    .withNetwork(networkName)
-                    .withDepositsFrom(eth1Node)
-                    .withBellatrixEpoch(UInt64.ONE)
-                    .withTotalTerminalDifficulty(10001)
-                    .withValidatorProposerDefaultFeeRecipient(defaultFeeRecipient)
-                    .withExecutionEngine(eth1Node)
-                    .withValidatorLivenessTracking()
-                    .withInitialState(genesis)
-                    .withRealNetwork()
-                    .withJwtSecretFile(JWT_FILE));
+    final TekuBeaconNode beaconNode =
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode()
+                .withValidatorLivenessTracking()
+                .withNetwork(networkName)
+                .withDepositsFrom(eth1Node)
+                .withBellatrixEpoch(UInt64.ONE)
+                .withTotalTerminalDifficulty(10001)
+                .withValidatorProposerDefaultFeeRecipient(defaultFeeRecipient)
+                .withExecutionEngine(eth1Node)
+                .withInitialState(genesis)
+                .withRealNetwork()
+                .withJwtSecretFile(JWT_FILE)
+                .build());
 
     beaconNode.start();
 

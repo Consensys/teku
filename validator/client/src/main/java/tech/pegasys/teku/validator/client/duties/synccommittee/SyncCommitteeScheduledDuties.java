@@ -75,7 +75,7 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
   }
 
   @Override
-  public boolean requiresRecalculation(final Bytes32 newHeadDependentRoot) {
+  public boolean requiresRecalculation(final Bytes32 newDependentRoot) {
     return false;
   }
 
@@ -224,7 +224,12 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
               spec, forkProvider, validatorApiChannel, assignments.values());
       final SyncCommitteeAggregationDuty aggregationDuty =
           new SyncCommitteeAggregationDuty(
-              spec, forkProvider, validatorApiChannel, validatorLogger, assignments.values());
+              spec,
+              forkProvider,
+              validatorApiChannel,
+              validatorLogger,
+              assignments.values(),
+              new SyncAggregatorSelectionProofProvider());
       return new SyncCommitteeScheduledDuties(
           productionDuty,
           aggregationDuty,

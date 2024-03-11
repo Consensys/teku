@@ -27,10 +27,13 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
+import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
+import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
+import tech.pegasys.teku.infrastructure.time.SystemTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
@@ -63,6 +66,9 @@ public class StorageBackedRecentChainDataTest {
   private final ChainHeadChannel chainHeadChannel = new StubChainHeadChannel();
   private final StubAsyncRunner asyncRunner = new StubAsyncRunner();
 
+  private final ValidatorIsConnectedProvider validatorIsConnectedProvider =
+      ValidatorIsConnectedProvider.NOOP;
+
   @Test
   public void storageBackedClient_storeInitializeViaGetStoreRequest()
       throws ExecutionException, InterruptedException {
@@ -76,11 +82,15 @@ public class StorageBackedRecentChainDataTest {
             new StubMetricsSystem(),
             storeConfig,
             asyncRunner,
+            new SystemTimeProvider(),
+            SingleBlockProvider.NOOP,
+            SingleBlobSidecarProvider.NOOP,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
+            validatorIsConnectedProvider,
             spec);
 
     // We should have posted a request to get the store from storage
@@ -123,11 +133,15 @@ public class StorageBackedRecentChainDataTest {
             new StubMetricsSystem(),
             storeConfig,
             asyncRunner,
+            new SystemTimeProvider(),
+            SingleBlockProvider.NOOP,
+            SingleBlobSidecarProvider.NOOP,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
+            validatorIsConnectedProvider,
             spec);
 
     // We should have posted a request to get the store from storage
@@ -173,11 +187,15 @@ public class StorageBackedRecentChainDataTest {
             new StubMetricsSystem(),
             StoreConfig.createDefault(),
             asyncRunner,
+            new SystemTimeProvider(),
+            SingleBlockProvider.NOOP,
+            SingleBlobSidecarProvider.NOOP,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
+            validatorIsConnectedProvider,
             spec);
 
     // We should have posted a request to get the store from storage
@@ -219,11 +237,15 @@ public class StorageBackedRecentChainDataTest {
             new StubMetricsSystem(),
             StoreConfig.createDefault(),
             asyncRunner,
+            new SystemTimeProvider(),
+            SingleBlockProvider.NOOP,
+            SingleBlobSidecarProvider.NOOP,
             storageQueryChannel,
             storageUpdateChannel,
             voteUpdateChannel,
             finalizedCheckpointChannel,
             chainHeadChannel,
+            validatorIsConnectedProvider,
             spec);
 
     // We should have posted a request to get the store from storage

@@ -38,7 +38,6 @@ public class P2PConfig {
   public static final int DEFAULT_BATCH_VERIFY_QUEUE_CAPACITY = 15_000;
   public static final int DEFAULT_BATCH_VERIFY_MAX_BATCH_SIZE = 250;
   public static final boolean DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED = false;
-  public static final boolean DEFAULT_BLS_TO_EXECUTION_CHANGES_SUBNET_ENABLED = true;
 
   private final Spec spec;
   private final NetworkConfig networkConfig;
@@ -55,7 +54,6 @@ public class P2PConfig {
   private final int batchVerifyQueueCapacity;
   private final int batchVerifyMaxBatchSize;
   private final boolean batchVerifyStrictThreadLimitEnabled;
-  private final boolean blsToExecutionChangesSubnetEnabled;
 
   private P2PConfig(
       final Spec spec,
@@ -70,8 +68,7 @@ public class P2PConfig {
       final int batchVerifyMaxThreads,
       final int batchVerifyQueueCapacity,
       final int batchVerifyMaxBatchSize,
-      final boolean batchVerifyStrictThreadLimitEnabled,
-      final boolean blsToExecutionChangesSubnetEnabled) {
+      final boolean batchVerifyStrictThreadLimitEnabled) {
     this.spec = spec;
     this.networkConfig = networkConfig;
     this.discoveryConfig = discoveryConfig;
@@ -85,7 +82,6 @@ public class P2PConfig {
     this.batchVerifyQueueCapacity = batchVerifyQueueCapacity;
     this.batchVerifyMaxBatchSize = batchVerifyMaxBatchSize;
     this.batchVerifyStrictThreadLimitEnabled = batchVerifyStrictThreadLimitEnabled;
-    this.blsToExecutionChangesSubnetEnabled = blsToExecutionChangesSubnetEnabled;
     this.networkingSpecConfig = spec.getNetworkingConfig();
   }
 
@@ -145,10 +141,6 @@ public class P2PConfig {
     return batchVerifyStrictThreadLimitEnabled;
   }
 
-  public boolean isBlsToExecutionChangesSubnetEnabled() {
-    return blsToExecutionChangesSubnetEnabled;
-  }
-
   public NetworkingSpecConfig getNetworkingSpecConfig() {
     return networkingSpecConfig;
   }
@@ -169,8 +161,6 @@ public class P2PConfig {
     private int batchVerifyMaxBatchSize = DEFAULT_BATCH_VERIFY_MAX_BATCH_SIZE;
     private boolean batchVerifyStrictThreadLimitEnabled =
         DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED;
-    private boolean blsToExecutionChangesSubnetEnabled =
-        DEFAULT_BLS_TO_EXECUTION_CHANGES_SUBNET_ENABLED;
 
     private Builder() {}
 
@@ -205,8 +195,7 @@ public class P2PConfig {
           batchVerifyMaxThreads,
           batchVerifyQueueCapacity,
           batchVerifyMaxBatchSize,
-          batchVerifyStrictThreadLimitEnabled,
-          blsToExecutionChangesSubnetEnabled);
+          batchVerifyStrictThreadLimitEnabled);
     }
 
     private void validate() {
@@ -301,12 +290,6 @@ public class P2PConfig {
     public Builder batchVerifyStrictThreadLimitEnabled(
         final boolean batchVerifyStrictThreadLimitEnabled) {
       this.batchVerifyStrictThreadLimitEnabled = batchVerifyStrictThreadLimitEnabled;
-      return this;
-    }
-
-    public Builder blsToExecutionChangesSubnetEnabled(
-        final boolean blsToExecutionChangesSubnetEnabled) {
-      this.blsToExecutionChangesSubnetEnabled = blsToExecutionChangesSubnetEnabled;
       return this;
     }
   }

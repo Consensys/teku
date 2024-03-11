@@ -26,7 +26,11 @@ public enum EventType {
   sync_state,
   contribution_and_proof,
   bls_to_execution_change,
-  blob_sidecar;
+  blob_sidecar,
+  attester_slashing,
+  proposer_slashing,
+  payload_attributes,
+  block_gossip;
 
   public static List<EventType> getTopics(List<String> topics) {
     return topics.stream().map(EventType::valueOf).toList();

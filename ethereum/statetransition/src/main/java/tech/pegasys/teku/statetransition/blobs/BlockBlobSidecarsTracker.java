@@ -30,8 +30,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
-import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
@@ -46,10 +45,10 @@ public class BlockBlobSidecarsTracker {
   private final SlotAndBlockRoot slotAndBlockRoot;
   private final UInt64 maxBlobsPerBlock;
 
-  private final AtomicReference<Optional<BeaconBlock>> block =
+  private final AtomicReference<Optional<SignedBeaconBlock>> block =
       new AtomicReference<>(Optional.empty());
 
-  private final NavigableMap<UInt64, BlobSidecarOld> blobSidecars = new ConcurrentSkipListMap<>();
+  private final NavigableMap<UInt64, BlobSidecar> blobSidecars = new ConcurrentSkipListMap<>();
   private final SafeFuture<Void> blobSidecarsComplete = new SafeFuture<>();
 
   private volatile boolean fetchTriggered = false;
@@ -58,7 +57,7 @@ public class BlockBlobSidecarsTracker {
 
   /**
    * {@link BlockBlobSidecarsTracker#add} and {@link BlockBlobSidecarsTracker#setBlock} methods are
-   * assumed to be called from BlobSidecarPool in a synchronized context
+   * assumed to be called from {@link BlockBlobSidecarsTrackersPool} in a synchronized context
    *
    * @param slotAndBlockRoot slot and block root to create tracker for
    * @param maxBlobsPerBlock max number of blobs per block for the slot
@@ -78,7 +77,7 @@ public class BlockBlobSidecarsTracker {
     }
   }
 
-  public SortedMap<UInt64, BlobSidecarOld> getBlobSidecars() {
+  public SortedMap<UInt64, BlobSidecar> getBlobSidecars() {
     return Collections.unmodifiableSortedMap(blobSidecars);
   }
 
@@ -88,7 +87,7 @@ public class BlockBlobSidecarsTracker {
     return newCompletionFuture;
   }
 
-  public Optional<BeaconBlock> getBlock() {
+  public Optional<SignedBeaconBlock> getBlock() {
     return block.get();
   }
 
@@ -96,6 +95,10 @@ public class BlockBlobSidecarsTracker {
     return Optional.ofNullable(blobSidecars.get(blobIdentifier.getIndex()))
         .map(blobSidecar -> blobSidecar.getBlockRoot().equals(blobIdentifier.getBlockRoot()))
         .orElse(false);
+  }
+
+  public Optional<BlobSidecar> getBlobSidecar(final UInt64 index) {
+    return Optional.ofNullable(blobSidecars.get(index));
   }
 
   public Stream<BlobIdentifier> getMissingBlobSidecars() {
@@ -125,7 +128,7 @@ public class BlockBlobSidecarsTracker {
         .map(blobIndex -> new BlobIdentifier(slotAndBlockRoot.getBlockRoot(), blobIndex));
   }
 
-  public boolean add(final BlobSidecarOld blobSidecar) {
+  public boolean add(final BlobSidecar blobSidecar) {
     checkArgument(
         blobSidecar.getBlockRoot().equals(slotAndBlockRoot.getBlockRoot()),
         "Wrong blobSidecar block root");
@@ -150,8 +153,8 @@ public class BlockBlobSidecarsTracker {
           debugTimings -> debugTimings.put(blobSidecar.getIndex(), System.currentTimeMillis()));
       checkCompletion();
     } else {
-      LOG.warn(
-          "Multiple BlobSidecars with index {} for {} detected.",
+      LOG.debug(
+          "Attempt to add already added BlobSidecar with index {} for {} detected.",
           blobSidecar.getIndex(),
           slotAndBlockRoot.toLogString());
     }
@@ -165,7 +168,7 @@ public class BlockBlobSidecarsTracker {
 
   public boolean setBlock(final SignedBeaconBlock block) {
     checkArgument(block.getSlotAndBlockRoot().equals(slotAndBlockRoot), "Wrong block");
-    final Optional<BeaconBlock> oldBlock = this.block.getAndSet(block.getBeaconBlock());
+    final Optional<SignedBeaconBlock> oldBlock = this.block.getAndSet(Optional.of(block));
     if (oldBlock.isPresent()) {
       return false;
     }
@@ -200,7 +203,7 @@ public class BlockBlobSidecarsTracker {
         .ifPresent(count -> blobSidecars.tailMap(UInt64.valueOf(count), true).clear());
   }
 
-  private boolean isExcessiveBlobSidecar(final BlobSidecarOld blobSidecar) {
+  private boolean isExcessiveBlobSidecar(final BlobSidecar blobSidecar) {
     return getBlockKzgCommitmentsCount()
         .map(count -> blobSidecar.getIndex().isGreaterThanOrEqualTo(count))
         .orElse(false);
@@ -227,7 +230,11 @@ public class BlockBlobSidecarsTracker {
   private Optional<Integer> getBlockKzgCommitmentsCount() {
     return block
         .get()
-        .map(b -> BeaconBlockBodyDeneb.required(b.getBody()).getBlobKzgCommitments().size());
+        .map(
+            b ->
+                BeaconBlockBodyDeneb.required(b.getMessage().getBody())
+                    .getBlobKzgCommitments()
+                    .size());
   }
 
   /**

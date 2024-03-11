@@ -43,7 +43,6 @@ import tech.pegasys.teku.api.migrated.BlockRewardData;
 import tech.pegasys.teku.api.migrated.GetAttestationRewardsResponse;
 import tech.pegasys.teku.api.migrated.StateSyncCommitteesData;
 import tech.pegasys.teku.api.migrated.StateValidatorBalanceData;
-import tech.pegasys.teku.api.migrated.StateValidatorData;
 import tech.pegasys.teku.api.migrated.SyncCommitteeRewardData;
 import tech.pegasys.teku.api.response.v1.beacon.GenesisData;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
@@ -52,13 +51,14 @@ import tech.pegasys.teku.api.schema.BeaconState;
 import tech.pegasys.teku.api.schema.Fork;
 import tech.pegasys.teku.api.stateselector.StateSelectorFactory;
 import tech.pegasys.teku.bls.BLSPublicKey;
+import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.ssz.Merkleizable;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
@@ -179,14 +179,14 @@ public class ChainDataProvider {
     return fromBlock(blockIdParam, Function.identity());
   }
 
-  public SafeFuture<Optional<List<BlobSidecarOld>>> getBlobSidecars(
+  public SafeFuture<Optional<List<BlobSidecar>>> getBlobSidecars(
       final String blockIdParam, final List<UInt64> indices) {
     return blobSidecarSelectorFactory
         .createSelectorForBlockId(blockIdParam)
         .getBlobSidecars(indices);
   }
 
-  public SafeFuture<Optional<List<BlobSidecarOld>>> getAllBlobSidecarsAtSlot(
+  public SafeFuture<Optional<List<BlobSidecar>>> getAllBlobSidecarsAtSlot(
       final UInt64 slot, final List<UInt64> indices) {
     return blobSidecarSelectorFactory.slotSelectorForAll(slot).getBlobSidecars(indices);
   }
@@ -600,7 +600,8 @@ public class ChainDataProvider {
                       maybeState ->
                           maybeState.map(
                               state ->
-                                  rewardCalculator.getBlockRewardData(blockAndMetaData, state)));
+                                  rewardCalculator.getBlockRewardDataAndMetaData(
+                                      blockAndMetaData, state)));
             });
   }
 

@@ -38,10 +38,9 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.Beaco
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannel;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
-import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager.ProposersDataManagerSubscriber;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
-public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
+public class ProposerDataManagerTest {
   private final InlineEventThread eventThread = new InlineEventThread();
   private final Spec spec = TestSpecFactory.createMinimalBellatrix();
   private final Spec specMock = mock(Spec.class);
@@ -60,12 +59,10 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
           metricsSystem,
           executionLayerChannel,
           recentChainData,
-          defaultFeeRecipient);
+          defaultFeeRecipient,
+          false);
 
   private final BeaconState state = dataStructureUtil.randomBeaconState();
-
-  private boolean onValidatorRegistrationsUpdatedCalled = false;
-  private boolean onPreparedProposerUpdatedCalled = false;
 
   private final UInt64 slot = UInt64.ONE;
   private SszList<SignedValidatorRegistration> registrations;
@@ -79,7 +76,6 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
     final SafeFuture<Void> updateCall =
         proposersDataManager.updateValidatorRegistrations(registrations, slot);
 
-    assertThat(onValidatorRegistrationsUpdatedCalled).isFalse();
     verify(executionLayerChannel).builderRegisterValidators(registrations, slot);
     verifyNoMoreInteractions(executionLayerChannel);
 
@@ -88,7 +84,6 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
     assertThat(updateCall).isCompleted();
 
     // final update
-    assertThat(onValidatorRegistrationsUpdatedCalled).isTrue();
     assertRegisteredValidatorsCount(2);
   }
 
@@ -100,14 +95,12 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
     final SafeFuture<Void> updateCall =
         proposersDataManager.updateValidatorRegistrations(registrations, slot);
 
-    assertThat(onValidatorRegistrationsUpdatedCalled).isFalse();
     verify(executionLayerChannel).builderRegisterValidators(registrations, slot);
 
     response.completeExceptionally(new RuntimeException("generic error"));
 
     assertThat(updateCall).isCompletedExceptionally();
 
-    assertThat(onValidatorRegistrationsUpdatedCalled).isFalse();
     verifyNoMoreInteractions(executionLayerChannel);
     assertRegisteredValidatorsCount(0);
   }
@@ -127,8 +120,6 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
                 dataStructureUtil.randomUInt64(), dataStructureUtil.randomEth1Address())),
         slot);
 
-    assertThat(onValidatorRegistrationsUpdatedCalled).isTrue();
-    assertThat(onPreparedProposerUpdatedCalled).isTrue();
     assertRegisteredValidatorsCount(2);
     assertPreparedProposersCount(1);
 
@@ -159,8 +150,6 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
     when(specMock.getValidatorIndex(state, registrations.get(1).getMessage().getPublicKey()))
         .thenReturn(Optional.of(1));
     when(specMock.getSlotsPerEpoch(any())).thenReturn(spec.getSlotsPerEpoch(slot));
-
-    proposersDataManager.subscribeToProposersDataChanges(this);
   }
 
   private void assertPreparedProposersCount(final int expectedCount) {
@@ -177,15 +166,5 @@ public class ProposerDataManagerTest implements ProposersDataManagerSubscriber {
             .getLabelledGauge(TekuMetricCategory.BEACON, "proposers_data_total")
             .getValue("registered_validators");
     assertThat(optionalValue).hasValue(expectedCount);
-  }
-
-  @Override
-  public void onPreparedProposersUpdated() {
-    onPreparedProposerUpdatedCalled = true;
-  }
-
-  @Override
-  public void onValidatorRegistrationsUpdated() {
-    onValidatorRegistrationsUpdatedCalled = true;
   }
 }

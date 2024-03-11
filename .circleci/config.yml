@@ -61,7 +61,7 @@ executors:
 
   machine_executor_amd64:
     machine:
-      image: ubuntu-2204:2023.07.2 # https://circleci.com/developer/machine/image/ubuntu-2204
+      image: ubuntu-2204:2024.01.1 # https://circleci.com/developer/machine/image/ubuntu-2204
       docker_layer_caching: true
     working_directory: ~/project
     environment:
@@ -70,7 +70,7 @@ executors:
 
   machine_executor_arm64:
     machine:
-      image: ubuntu-2204:2023.07.2 # https://circleci.com/developer/machine/image/ubuntu-2204
+      image: ubuntu-2204:2024.01.1 # https://circleci.com/developer/machine/image/ubuntu-2204
     resource_class: arm.medium
     environment:
       architecture: "arm64"
@@ -476,7 +476,7 @@ jobs:
           command: |
             mkdir -p .openapidoc/spec
 
-            build/install/teku/bin/teku --network=mainnet --ee-endpoint=unsafe-test-stub --Xinterop-enabled=true --rest-api-enabled=true --rest-api-docs-enabled=true 2>&1 > teku_output.log &
+            build/install/teku/bin/teku --network=mainnet --ee-endpoint=unsafe-test-stub --ignore-weak-subjectivity-period-enabled --Xinterop-enabled=true --rest-api-enabled=true --rest-api-docs-enabled=true 2>&1 > teku_output.log &
             TEKU_PID=$!
 
             EXIT_CODE=0
@@ -543,6 +543,8 @@ workflows:
             tags:
               <<: *filters-release-tags
       - windowsBuild:
+          requires:
+            - spotless
           filters:
             tags:
               <<: *filters-release-tags

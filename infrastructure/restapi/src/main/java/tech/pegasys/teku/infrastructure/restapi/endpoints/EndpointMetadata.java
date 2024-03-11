@@ -75,6 +75,7 @@ public class EndpointMetadata {
   private final String summary;
   private final Optional<String> security;
   private final String description;
+  private final boolean requiredRequestBody;
   private final boolean deprecated;
   private final String defaultResponseContentType;
   private final Map<String, OpenApiResponse> responses;
@@ -85,6 +86,8 @@ public class EndpointMetadata {
   private final Map<String, StringValueTypeDefinition<?>> requiredQueryParams;
   private final Map<String, StringValueTypeDefinition<?>> queryParams;
   private final Map<String, StringValueTypeDefinition<?>> queryListParams;
+  private final Map<String, StringValueTypeDefinition<?>> requiredHeaders;
+  private final Map<String, StringValueTypeDefinition<?>> headers;
 
   private EndpointMetadata(
       final HandlerType method,
@@ -97,18 +100,22 @@ public class EndpointMetadata {
       final String defaultResponseContentType,
       final Map<String, OpenApiResponse> responses,
       final String defaultRequestContentType,
+      final boolean requiredRequestBody,
       final Map<String, RequestContentTypeDefinition<?>> requestBodyTypes,
       final List<String> tags,
       final Map<String, StringValueTypeDefinition<?>> pathParams,
       final Map<String, StringValueTypeDefinition<?>> queryParams,
       final Map<String, StringValueTypeDefinition<?>> requiredQueryParams,
-      final Map<String, StringValueTypeDefinition<?>> queryListParams) {
+      final Map<String, StringValueTypeDefinition<?>> queryListParams,
+      final Map<String, StringValueTypeDefinition<?>> requiredHeaders,
+      final Map<String, StringValueTypeDefinition<?>> headers) {
     this.method = method;
     this.path = path;
     this.operationId = operationId;
     this.summary = summary;
     this.security = security;
     this.description = description;
+    this.requiredRequestBody = requiredRequestBody;
     this.deprecated = deprecated;
     this.defaultResponseContentType = defaultResponseContentType;
     this.responses = responses;
@@ -119,6 +126,8 @@ public class EndpointMetadata {
     this.queryParams = queryParams;
     this.requiredQueryParams = requiredQueryParams;
     this.queryListParams = queryListParams;
+    this.requiredHeaders = requiredHeaders;
+    this.headers = headers;
   }
 
   public static EndpointMetaDataBuilder get(final String path) {
@@ -302,17 +311,24 @@ public class EndpointMetadata {
     if (pathParams.size() > 0
         || queryParams.size() > 0
         || requiredQueryParams.size() > 0
-        || queryListParams.size() > 0) {
+        || queryListParams.size() > 0
+        || requiredHeaders.size() > 0
+        || headers.size() > 0) {
       gen.writeArrayFieldStart("parameters");
       writeParameters(gen, pathParams, "path", true, false);
       writeParameters(gen, requiredQueryParams, "query", true, false);
       writeParameters(gen, queryParams, "query", false, false);
       writeParameters(gen, queryListParams, "query", false, true);
+      writeParameters(gen, requiredHeaders, "header", true, false);
+      writeParameters(gen, headers, "header", false, false);
       gen.writeEndArray();
     }
 
     if (!requestBodyTypes.isEmpty()) {
       gen.writeObjectFieldStart("requestBody");
+      if (!requiredRequestBody) {
+        gen.writeBooleanField("required", false);
+      }
       gen.writeObjectFieldStart("content");
       for (Map.Entry<String, RequestContentTypeDefinition<?>> requestTypeEntry :
           requestBodyTypes.entrySet()) {
@@ -400,6 +416,10 @@ public class EndpointMetadata {
     return requestContentTypeDefinition;
   }
 
+  public boolean isRequiredRequestBody() {
+    return requiredRequestBody;
+  }
+
   public static class EndpointMetaDataBuilder {
     private HandlerType method;
     private String path;
@@ -407,11 +427,14 @@ public class EndpointMetadata {
     private String summary;
     private String description;
     private boolean deprecated = false;
+    private boolean requiredRequestBody = true;
     private final Map<String, StringValueTypeDefinition<?>> pathParams = new LinkedHashMap<>();
     private final Map<String, StringValueTypeDefinition<?>> queryParams = new LinkedHashMap<>();
     private final Map<String, StringValueTypeDefinition<?>> requiredQueryParams =
         new LinkedHashMap<>();
     private final Map<String, StringValueTypeDefinition<?>> queryListParams = new LinkedHashMap<>();
+    private final Map<String, StringValueTypeDefinition<?>> requiredHeaders = new HashMap<>();
+    private final Map<String, StringValueTypeDefinition<?>> headers = new HashMap<>();
     private Optional<String> security = Optional.empty();
     private String defaultRequestType = ContentTypes.JSON;
     private final Map<String, RequestContentTypeDefinition<?>> requestBodyTypes = new HashMap<>();
@@ -473,6 +496,30 @@ public class EndpointMetadata {
       return this;
     }
 
+    public EndpointMetaDataBuilder headerRequired(final ParameterMetadata<?> headerMetadata) {
+      checkRequestHeader(headerMetadata);
+      requiredHeaders.put(headerMetadata.getName(), headerMetadata.getType());
+      return this;
+    }
+
+    public EndpointMetaDataBuilder header(final ParameterMetadata<?> headerMetadata) {
+      checkRequestHeader(headerMetadata);
+      headers.put(headerMetadata.getName(), headerMetadata.getType());
+      return this;
+    }
+
+    private void checkRequestHeader(final ParameterMetadata<?> headerMetadata) {
+      final String param = headerMetadata.getName();
+      if (requiredHeaders.containsKey(param) || headers.containsKey(param)) {
+        throw new IllegalStateException("Header already contains " + headerMetadata.getName());
+      } else if ("Content-Type".equalsIgnoreCase(param)
+          || "Accept".equalsIgnoreCase(param)
+          || "Authorization".equalsIgnoreCase(param)) {
+        throw new IllegalArgumentException(
+            "Request headers cannot be named Content-Type, Accept, or Authorization");
+      }
+    }
+
     public EndpointMetaDataBuilder withBearerAuthSecurity() {
       return security("bearerAuth");
     }
@@ -520,6 +567,11 @@ public class EndpointMetadata {
         final DeserializableTypeDefinition<?> requestBodyType) {
       this.requestBodyTypes.put(
           ContentTypes.JSON, new SimpleJsonRequestContentTypeDefinition<>(requestBodyType));
+      return this;
+    }
+
+    public EndpointMetaDataBuilder optionalRequestBody() {
+      this.requiredRequestBody = false;
       return this;
     }
 
@@ -695,12 +747,15 @@ public class EndpointMetadata {
           defaultResponseType,
           responses,
           defaultRequestType,
+          requiredRequestBody,
           requestBodyTypes,
           tags,
           pathParams,
           queryParams,
           requiredQueryParams,
-          queryListParams);
+          queryListParams,
+          requiredHeaders,
+          headers);
     }
 
     public EndpointMetaDataBuilder tags(final String... tags) {

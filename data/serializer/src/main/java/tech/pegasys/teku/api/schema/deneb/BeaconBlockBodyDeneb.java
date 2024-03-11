@@ -115,19 +115,18 @@ public class BeaconBlockBodyDeneb extends BeaconBlockBodyAltair {
         getBeaconBlockBodySchema(spec).getBlobKzgCommitmentsSchema();
     return super.asInternalBeaconBlockBody(
         spec,
-        (builder) -> {
-          builder.executionPayload(
-              SafeFuture.completedFuture(executionPayload.asInternalExecutionPayload(spec)));
+        builder -> {
+          builder.executionPayload(executionPayload.asInternalExecutionPayload(spec));
           builder.blsToExecutionChanges(
               this.blsToExecutionChanges.stream()
                   .map(b -> b.asInternalSignedBlsToExecutionChange(spec))
                   .collect(blsToExecutionChangesSchema.collector()));
           builder.blobKzgCommitments(
-              SafeFuture.completedFuture(
-                  this.blobKZGCommitments.stream()
-                      .map(KZGCommitment::asInternalKZGCommitment)
-                      .map(SszKZGCommitment::new)
-                      .collect(blobKZGCommitmentsSchema.collector())));
+              this.blobKZGCommitments.stream()
+                  .map(KZGCommitment::asInternalKZGCommitment)
+                  .map(SszKZGCommitment::new)
+                  .collect(blobKZGCommitmentsSchema.collector()));
+          return SafeFuture.COMPLETE;
         });
   }
 }

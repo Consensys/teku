@@ -32,7 +32,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.state.ForkInfo;
-import tech.pegasys.teku.spec.signatures.LocalSlashingProtector;
+import tech.pegasys.teku.spec.signatures.LocalSlashingProtectorConcurrentAccess;
 import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.signatures.SlashingProtector;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
@@ -45,7 +45,7 @@ public class SlashingProtectedValidatorSourceTest {
   private final Path baseDir = Path.of("/data");
   private final SyncDataAccessor dataWriter = mock(SyncDataAccessor.class);
   private final SlashingProtector slashingProtector =
-      new LocalSlashingProtector(dataWriter, baseDir);
+      new LocalSlashingProtectorConcurrentAccess(dataWriter, baseDir);
   private final ValidatorSource validatorSource =
       new SlashingProtectedValidatorSource(delegate, slashingProtector);
 

@@ -24,7 +24,9 @@ import io.javalin.http.Header;
 import io.javalin.http.sse.SseClient;
 import io.javalin.http.sse.SseHandler;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PushbackInputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -41,18 +43,47 @@ public class JavalinRestApiRequest implements RestApiRequest {
   private final EndpointMetadata metadata;
   private final Map<String, String> pathParamMap;
   private final Map<String, List<String>> queryParamMap;
+  private final Map<String, String> headerMap;
 
   @Override
   @SuppressWarnings({"TypeParameterUnusedInFormals"})
   public <T> T getRequestBody() throws JsonProcessingException {
+    if (!metadata.isRequiredRequestBody()) {
+      throw new RuntimeException(
+          "Optional request body configured, use getOptionalRequestBody() instead");
+    }
     return metadata.getRequestBody(context.bodyInputStream(), context.headerMap());
+  }
+
+  @Override
+  public <T> Optional<T> getOptionalRequestBody() throws JsonProcessingException {
+    // We use a PushbackInputStream because the underlying input stream does not support reset()
+    try (final PushbackInputStream pushbackInputStream =
+        new PushbackInputStream(context.bodyInputStream())) {
+      final int firstByte = pushbackInputStream.read();
+      if (firstByte == -1) {
+        return Optional.empty();
+      } else {
+        pushbackInputStream.unread(firstByte);
+        return Optional.of(metadata.getRequestBody(pushbackInputStream, context.headerMap()));
+      }
+    } catch (final JsonProcessingException e) {
+      throw e;
+    } catch (final IOException e) {
+      throw new RuntimeException("Error reading request body", e);
+    }
   }
 
   public JavalinRestApiRequest(final Context context, final EndpointMetadata metadata) {
     this.context = context;
     this.metadata = metadata;
+    // Work around a bug in Javalin where it decides whether to compress on each call to
+    // write which could result in a mix of compressed and uncompressed content
+    // and means it doesn't evaluate the length of the response correctly.
+    this.context.minSizeForCompression(0);
     this.pathParamMap = context.pathParamMap();
     this.queryParamMap = context.queryParamMap();
+    this.headerMap = context.headerMap();
   }
 
   @Override
@@ -216,6 +247,37 @@ public class JavalinRestApiRequest implements RestApiRequest {
           String.format(
               "Could not read query list parameter %s: %s",
               parameterMetadata.getName(), e.getMessage()));
+    }
+  }
+
+  @Override
+  public <T> Optional<T> getOptionalRequestHeader(final ParameterMetadata<T> parameterMetadata) {
+    if (!headerMap.containsKey(parameterMetadata.getName())) {
+      return Optional.empty();
+    }
+    try {
+      return Optional.of(
+          parameterMetadata
+              .getType()
+              .deserializeFromString(headerMap.get(parameterMetadata.getName())));
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Could not read optional header %s: %s",
+              parameterMetadata.getName(), e.getMessage()));
+    }
+  }
+
+  @Override
+  public <T> T getRequestHeader(final ParameterMetadata<T> parameterMetadata) {
+    try {
+      return parameterMetadata
+          .getType()
+          .deserializeFromString(headerMap.get(parameterMetadata.getName()));
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException(
+          String.format(
+              "Could not read header %s: %s", parameterMetadata.getName(), e.getMessage()));
     }
   }
 

@@ -43,23 +43,35 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.concurrent.CompletionException;
+import java.util.regex.MatchResult;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import picocli.CommandLine;
 import picocli.CommandLine.Help.Visibility;
 import picocli.CommandLine.Model.OptionSpec;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApiConfig;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig;
 import tech.pegasys.teku.infrastructure.logging.LoggingConfig.LoggingConfigBuilder;
 import tech.pegasys.teku.networking.nat.NatMethod;
 import tech.pegasys.teku.networks.Eth2NetworkConfiguration;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
+import tech.pegasys.teku.storage.server.DatabaseStorageException;
 import tech.pegasys.teku.storage.server.DatabaseVersion;
 import tech.pegasys.teku.storage.server.StorageConfiguration;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
@@ -68,6 +80,7 @@ import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
 
 public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
+  private static final Logger LOG = LogManager.getLogger();
 
   private static final String LOG_FILE =
       LOG_FILE_PREFIX + LoggingConfig.DEFAULT_LOG_FILE_NAME_SUFFIX;
@@ -150,12 +163,45 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
 
   @Test
   void helpShouldNotShowUnsupportedOptions() {
+    // Any option starting with --X is marked as a developer option and should not be shown in the
+    // supported help
     final String[] args = {"--help"};
 
     beaconNodeCommand.parse(args);
     String str = getCommandLineOutput();
 
-    assertThat(str).doesNotContain("--X");
+    final Pattern p = Pattern.compile("--[X][^ ]+");
+    final Matcher matcher = p.matcher(str);
+    final List<String> errors = new ArrayList<>();
+    while (matcher.find()) {
+      MatchResult current = matcher.toMatchResult();
+      LOG.debug("found {} at position {}", current.group().trim(), current.start());
+      errors.add(current.group().trim());
+    }
+
+    assertThat(errors).describedAs("Found --X command arguments not marked as hidden").isEmpty();
+  }
+
+  @Test
+  void developerHelpShouldNotShowSupportedOptions() {
+    // Any option in developer help should be a --X option, and if they're not prefixed in this way
+    // there's likely a problem.
+    final String[] args = {"-X"};
+
+    beaconNodeCommand.parse(args);
+    String str = getCommandLineOutput();
+
+    final Pattern p = Pattern.compile("--[^X][^ ]+");
+    final Matcher matcher = p.matcher(str);
+    final List<String> errors = new ArrayList<>();
+    while (matcher.find()) {
+      MatchResult current = matcher.toMatchResult();
+      LOG.debug("found {} at position {}", current.group().trim(), current.start());
+      errors.add(current.group().trim());
+    }
+    assertThat(errors)
+        .describedAs("Found hidden command arguments not prefixed with --X")
+        .isEmpty();
   }
 
   @Test
@@ -395,7 +441,7 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
                 .getSpec()
                 .forMilestone(SpecMilestone.DENEB)
                 .getConfig());
-    // not overriden in spec however
+    // not overridden in spec however
     assertThat(specConfigDeneb.getEpochsStoreBlobs()).isEqualTo(4096);
   }
 
@@ -672,12 +718,21 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
       final TekuConfiguration expected, final LoggingConfig expectedLogging) {
     assertTekuConfiguration(expected);
     final LoggingConfig actualLogging = getResultingLoggingConfiguration();
-    assertThat(actualLogging).usingRecursiveComparison().isEqualTo(expectedLogging);
+    assertThat(actualLogging).isEqualTo(expectedLogging);
   }
 
   private void assertTekuConfiguration(final TekuConfiguration expected) {
     final TekuConfiguration actual = getResultingTekuConfiguration();
-    assertThat(actual).usingRecursiveComparison().isEqualTo(expected);
+
+    // Assert Spec object separately to avoid recursion issues
+    assertThat(actual.eth2NetworkConfiguration().getSpec())
+        .isEqualTo(expected.eth2NetworkConfiguration().getSpec());
+
+    // Ignore any Spec assertion on recursion
+    assertThat(actual)
+        .usingRecursiveComparison()
+        .ignoringFieldsOfTypes(Spec.class)
+        .isEqualTo(expected);
   }
 
   private Path createTempFile(final byte[] contents) throws IOException {
@@ -685,5 +740,24 @@ public class BeaconNodeCommandTest extends AbstractBeaconNodeCommandTest {
     Files.write(file, contents);
     file.toFile().deleteOnExit();
     return file;
+  }
+
+  @ParameterizedTest
+  @MethodSource("exceptionsAndExpectedStatusCodeParam")
+  public void handlingExceptionShouldReturnExpectedStatusCode(
+      final Throwable throwable, final int expectedStatusCode) {
+    assertThat(beaconNodeCommand.handleExceptionAndReturnExitCode(throwable))
+        .isEqualTo(expectedStatusCode);
+  }
+
+  private static Stream<Arguments> exceptionsAndExpectedStatusCodeParam() {
+    return Stream.of(
+        Arguments.of(new IllegalStateException("foo"), 1),
+        Arguments.of(new RuntimeException("foo"), 1),
+        Arguments.of(new InvalidConfigurationException("foo"), 2),
+        Arguments.of(DatabaseStorageException.unrecoverable("foo"), 2),
+        // Even when wrapped on something like completion exception, we still want it to return 2
+        Arguments.of(new CompletionException(new InvalidConfigurationException("foo")), 2),
+        Arguments.of(new CompletionException(DatabaseStorageException.unrecoverable("foo")), 2));
   }
 }

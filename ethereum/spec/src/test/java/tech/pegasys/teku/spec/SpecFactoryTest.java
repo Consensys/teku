@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.spec.SpecMilestone.ALTAIR;
 import static tech.pegasys.teku.spec.SpecMilestone.BELLATRIX;
 import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
+import static tech.pegasys.teku.spec.SpecMilestone.DENEB;
 import static tech.pegasys.teku.spec.SpecMilestone.PHASE0;
 
 import java.util.Arrays;
@@ -38,14 +39,16 @@ public class SpecFactoryTest {
 
   private static final Set<String> NON_BELLATRIX_NETWORKS = Set.of("swift", "less-swift");
 
-  private static final Set<String> CAPELLA_NETWORKS =
-      Set.of("sepolia", "prater", "mainnet", "gnosis", "chiado", "lukso", "holesky");
+  private static final Set<String> CAPELLA_NETWORKS = Set.of("lukso");
+
+  private static final Set<String> DENEB_NETWORKS =
+      Set.of("prater", "gnosis", "chiado", "sepolia", "holesky", "mainnet");
 
   @Test
-  public void defaultFactoryShouldScheduleBellatrixAndCapellaForMainNet() {
+  public void defaultFactoryShouldScheduleBellatrixCapellaAndDenebForMainNet() {
     final Spec spec = SpecFactory.create("mainnet");
     assertThat(spec.getForkSchedule().getSupportedMilestones())
-        .containsExactly(PHASE0, ALTAIR, BELLATRIX, CAPELLA);
+        .containsExactly(PHASE0, ALTAIR, BELLATRIX, CAPELLA, DENEB);
   }
 
   @ParameterizedTest(name = "{0}")
@@ -59,6 +62,9 @@ public class SpecFactoryTest {
     } else if (CAPELLA_NETWORKS.contains(configName)) {
       assertThat(spec.getForkSchedule().getSupportedMilestones())
           .containsExactly(PHASE0, ALTAIR, BELLATRIX, CAPELLA);
+    } else if (DENEB_NETWORKS.contains(configName)) {
+      assertThat(spec.getForkSchedule().getSupportedMilestones())
+          .containsExactly(PHASE0, ALTAIR, BELLATRIX, CAPELLA, DENEB);
     } else {
       assertThat(spec.getForkSchedule().getSupportedMilestones())
           .containsExactly(PHASE0, ALTAIR, BELLATRIX);
@@ -72,8 +78,23 @@ public class SpecFactoryTest {
     if (CAPELLA_NETWORKS.contains(configName)) {
       assertThat(spec.getForkSchedule().getSupportedMilestones())
           .containsExactly(PHASE0, ALTAIR, BELLATRIX, CAPELLA);
+    } else if (DENEB_NETWORKS.contains(configName)) {
+      assertThat(spec.getForkSchedule().getSupportedMilestones())
+          .contains(PHASE0, ALTAIR, BELLATRIX, CAPELLA);
     } else {
       assertThat(spec.getForkSchedule().getSupportedMilestones()).doesNotContain(CAPELLA);
+    }
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("getKnownConfigNames")
+  public void shouldSupportDenebWhenForkEpochSetInConfig(final String configName) {
+    final Spec spec = SpecFactory.create(configName);
+    if (DENEB_NETWORKS.contains(configName)) {
+      assertThat(spec.getForkSchedule().getSupportedMilestones())
+          .containsExactly(PHASE0, ALTAIR, BELLATRIX, CAPELLA, DENEB);
+    } else {
+      assertThat(spec.getForkSchedule().getSupportedMilestones()).doesNotContain(DENEB);
     }
   }
 

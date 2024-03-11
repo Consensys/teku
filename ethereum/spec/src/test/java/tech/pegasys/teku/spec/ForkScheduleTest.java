@@ -380,11 +380,20 @@ public class ForkScheduleTest {
     assertThat(forkSchedule.getSpecMilestoneAtForkVersion(UNKNOWN_FORK_VERSION)).isEmpty();
   }
 
-  public void getHoleskySchedule() {
-    final Spec spec = SpecFactory.create("holesky");
-    final ForkSchedule forkSchedule = spec.getForkSchedule();
-    final Fork fork = forkSchedule.getFork(UInt64.ZERO);
-    assertThat(fork.getPreviousVersion()).isNotEqualTo(fork.getCurrentVersion());
+  @Test
+  public void getGenesisFork_altairOnly() {
+    final ForkSchedule forkSchedule = buildForkSchedule(ALTAIR_CONFIG);
+
+    assertThat(forkSchedule.getGenesisFork())
+        .isEqualTo(new Fork(ALTAIR_FORK_VERSION, ALTAIR_FORK_VERSION, UInt64.ZERO));
+  }
+
+  @Test
+  public void getGenesisFork_withTransition() {
+    final ForkSchedule forkSchedule = buildForkSchedule(TRANSITION_CONFIG);
+
+    assertThat(forkSchedule.getGenesisFork())
+        .isEqualTo(new Fork(PHASE_0_FORK_VERSION, PHASE_0_FORK_VERSION, UInt64.ZERO));
   }
 
   private ForkSchedule buildForkSchedule(final SpecConfig specConfig) {
@@ -399,10 +408,7 @@ public class ForkScheduleTest {
 
   private Fork getAltairFork(final SpecConfigAltair config) {
     final UInt64 forkEpoch = config.getAltairForkEpoch();
-    return new Fork(
-        forkEpoch.isZero() ? config.getAltairForkVersion() : config.getGenesisForkVersion(),
-        config.getAltairForkVersion(),
-        forkEpoch);
+    return new Fork(config.getGenesisForkVersion(), config.getAltairForkVersion(), forkEpoch);
   }
 
   private Fork getPhase0Fork(final SpecConfig config) {

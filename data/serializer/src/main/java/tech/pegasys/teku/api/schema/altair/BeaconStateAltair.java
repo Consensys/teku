@@ -169,9 +169,6 @@ public class BeaconStateAltair extends BeaconState implements State {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    if (!super.equals(o)) {
-      return false;
-    }
     final BeaconStateAltair that = (BeaconStateAltair) o;
     return Arrays.equals(previous_epoch_participation, that.previous_epoch_participation)
         && Arrays.equals(current_epoch_participation, that.current_epoch_participation)
@@ -184,7 +181,10 @@ public class BeaconStateAltair extends BeaconState implements State {
   public int hashCode() {
     int result =
         Objects.hash(
-            super.hashCode(), inactivity_scores, current_sync_committee, next_sync_committee);
+            System.identityHashCode(this),
+            inactivity_scores,
+            current_sync_committee,
+            next_sync_committee);
     result = 31 * result + Arrays.hashCode(previous_epoch_participation);
     result = 31 * result + Arrays.hashCode(current_epoch_participation);
     return result;

@@ -38,6 +38,8 @@ import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.loader.OwnedValidators;
 
@@ -122,12 +124,24 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
   public void onAttestationAggregationDue(UInt64 slot) {}
 
   @Override
+  public void onAttesterSlashing(AttesterSlashing attesterSlashing) {}
+
+  @Override
+  public void onProposerSlashing(ProposerSlashing proposerSlashing) {}
+
+  @Override
+  public void onUpdatedValidatorStatuses(
+      final Map<BLSPublicKey, ValidatorStatus> newValidatorStatuses,
+      final boolean possibleMissingEvents) {}
+
+  @Override
   public void subscribeValidatorStatusesUpdates(final ValidatorStatusSubscriber subscriber) {
     validatorStatusSubscribers.subscribe(subscriber);
   }
 
   private SafeFuture<Void> initValidatorStatuses() {
     if (validators.hasNoValidators()) {
+      startupComplete.set(true);
       return SafeFuture.COMPLETE;
     }
     if (currentEpoch.get() == null) {
@@ -189,6 +203,7 @@ public class OwnedValidatorStatusProvider implements ValidatorStatusProvider {
           validatorStatusSubscribers.forEach(
               s -> s.onValidatorStatuses(latestValidatorStatuses.get(), true));
         }
+        lookupInProgress.set(false);
         return;
       }
       validatorApiChannel

@@ -47,11 +47,11 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
-import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
+import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
-import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
@@ -91,8 +91,8 @@ public class ProfilingRun {
     final WeakSubjectivityValidator wsValidator = WeakSubjectivityFactory.lenientValidator();
 
     while (true) {
-      final BlockImportNotifications blockImportNotifications =
-          mock(BlockImportNotifications.class);
+      final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher =
+          mock(ReceivedBlockEventsChannel.class);
       RecentChainData recentChainData = MemoryOnlyRecentChainData.create(spec);
       recentChainData.initializeFromGenesis(initialState, UInt64.ZERO);
       final MergeTransitionBlockValidator transitionBlockValidator =
@@ -103,7 +103,7 @@ public class ProfilingRun {
               new InlineEventThread(),
               recentChainData,
               BlobSidecarManager.NOOP,
-              new StubForkChoiceNotifier(),
+              new NoopForkChoiceNotifier(),
               transitionBlockValidator,
               metricsSystem);
       BeaconChainUtil localChain =
@@ -111,7 +111,7 @@ public class ProfilingRun {
       BlockImporter blockImporter =
           new BlockImporter(
               spec,
-              blockImportNotifications,
+              receivedBlockEventsChannelPublisher,
               recentChainData,
               forkChoice,
               wsValidator,
@@ -181,8 +181,8 @@ public class ProfilingRun {
     final WeakSubjectivityValidator wsValidator = WeakSubjectivityFactory.lenientValidator();
 
     while (true) {
-      final BlockImportNotifications blockImportNotifications =
-          mock(BlockImportNotifications.class);
+      final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher =
+          mock(ReceivedBlockEventsChannel.class);
       final RecentChainData recentChainData = MemoryOnlyRecentChainData.create();
       final BeaconChainUtil localChain =
           BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
@@ -196,13 +196,13 @@ public class ProfilingRun {
               new InlineEventThread(),
               recentChainData,
               BlobSidecarManager.NOOP,
-              new StubForkChoiceNotifier(),
+              new NoopForkChoiceNotifier(),
               transitionBlockValidator,
               metricsSystem);
       BlockImporter blockImporter =
           new BlockImporter(
               spec,
-              blockImportNotifications,
+              receivedBlockEventsChannelPublisher,
               recentChainData,
               forkChoice,
               wsValidator,

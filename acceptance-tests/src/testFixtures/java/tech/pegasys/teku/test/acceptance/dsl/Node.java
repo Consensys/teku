@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.compress.utils.IOUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.images.PullPolicy;
@@ -62,7 +63,7 @@ public abstract class Node {
   protected static final String CONFIG_FILE_PATH = "/config.yaml";
   protected static final String NETWORK_FILE_PATH = "/network.yaml";
   protected static final String PRIVATE_KEY_FILE_PATH = "/private-key.txt";
-  protected static final String JWT_SECRET_FILE_PATH = "/jwt-secret.hex";
+  public static final String JWT_SECRET_FILE_PATH = "/jwt-secret.hex";
   protected static final String SENTRY_NODE_CONFIG_FILE_PATH = "/sentry-node-config.json";
   protected static final String WORKING_DIRECTORY = "/opt/teku/";
   protected static final String DATA_PATH = WORKING_DIRECTORY + "data/";
@@ -113,6 +114,13 @@ public abstract class Node {
   public void waitForExit() {
     Waiter.waitFor(
         () -> assertThat(container.isRunning()).describedAs("Container is running").isFalse());
+  }
+
+  public void waitForExit(final int timeoutInSeconds) {
+    Waiter.waitFor(
+        () -> assertThat(container.isRunning()).describedAs("Container is running").isFalse(),
+        timeoutInSeconds,
+        TimeUnit.SECONDS);
   }
 
   public int waitForEpochAtOrAbove(final int epoch) {
@@ -245,5 +253,13 @@ public abstract class Node {
   /** Copies contents of the given directory into node's working directory. */
   public void copyContentsToWorkingDirectory(File tarFile) {
     container.withExpandedTarballToContainer(tarFile, WORKING_DIRECTORY);
+  }
+
+  public void withWritableMountPoint(final String filePath, final String nodePath) {
+    container.withFileSystemBind(filePath, nodePath, BindMode.READ_WRITE);
+  }
+
+  public void withReadOnlyMountPoint(final String filePath, final String nodePath) {
+    container.withFileSystemBind(filePath, nodePath, BindMode.READ_ONLY);
   }
 }

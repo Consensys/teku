@@ -70,15 +70,12 @@ public class DepositOptions {
 
   public void configure(final TekuConfiguration.Builder builder) {
     builder.powchain(
-        b ->
-            b.eth1Endpoints(eth1Endpoints)
-                .eth1LogsMaxBlockRange(eth1LogsMaxBlockRange)
-                .useMissingDepositEventLogging(useMissingDepositEventLogging)
-                .depositSnapshotPath(depositSnapshotPath)
-                .depositSnapshotEnabled(parseDepositSnapshotEnabled()));
-  }
-
-  private boolean parseDepositSnapshotEnabled() {
-    return depositSnapshotEnabled;
+        b -> {
+          b.eth1Endpoints(eth1Endpoints);
+          b.eth1LogsMaxBlockRange(eth1LogsMaxBlockRange);
+          b.useMissingDepositEventLogging(useMissingDepositEventLogging);
+          b.customDepositSnapshotPath(depositSnapshotPath);
+          b.depositSnapshotEnabled(depositSnapshotEnabled);
+        });
   }
 }

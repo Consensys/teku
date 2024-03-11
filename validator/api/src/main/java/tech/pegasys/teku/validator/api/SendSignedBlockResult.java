@@ -17,6 +17,7 @@ import com.google.common.base.MoreObjects;
 import java.util.Objects;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult.FailureReason;
 
 public class SendSignedBlockResult {
   private final Optional<Bytes32> blockRoot;
@@ -54,6 +55,12 @@ public class SendSignedBlockResult {
 
   public boolean isPublished() {
     return published;
+  }
+
+  public boolean isRejectedDueToBroadcastValidationFailure() {
+    return !published
+        && rejectionReason.isPresent()
+        && rejectionReason.get().startsWith(FailureReason.FAILED_BROADCAST_VALIDATION.name());
   }
 
   @Override

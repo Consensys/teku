@@ -50,8 +50,16 @@ public class Eth2NetworkOptions {
   private String initialState;
 
   @Option(
+      names = {"--ignore-weak-subjectivity-period-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Allows syncing outside of the weak subjectivity period.",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS)
+  private boolean ignoreWeakSubjectivityPeriodEnabled = false;
+
+  @Option(
       names = {"--genesis-state"},
-      hidden = true,
       paramLabel = "<STRING>",
       description =
           "The genesis state. This value should be a file or URL pointing to an SSZ-encoded finalized checkpoint state.",
@@ -60,7 +68,6 @@ public class Eth2NetworkOptions {
 
   @Option(
       names = {"--checkpoint-sync-url"},
-      hidden = true,
       paramLabel = "<STRING>",
       description = "The Checkpointz server that will be used to bootstrap this node.",
       arity = "1")
@@ -82,6 +89,29 @@ public class Eth2NetworkOptions {
           "The trusted setup which is needed for KZG commitments. Only required when creating a custom network. This value should be a file or URL pointing to a trusted setup.",
       arity = "1")
   private String trustedSetup = null; // Depends on network configuration
+
+  @Option(
+      names = {"--Xfork-choice-late-block-reorg-enabled"},
+      paramLabel = "<BOOLEAN>",
+      description = "Allow late blocks to be reorged out if they meet the requirements.",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private boolean forkChoiceLateBlockReorgEnabled =
+      Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
+
+  @Option(
+      names = {"--Xfork-choice-updated-always-send-payload-attributes"},
+      paramLabel = "<BOOLEAN>",
+      description =
+          "Calculate and send payload attributes on every forkChoiceUpdated regardless if a connected validator is due to be a block proposer or not.",
+      arity = "0..1",
+      fallbackValue = "true",
+      showDefaultValue = Visibility.ALWAYS,
+      hidden = true)
+  private boolean forkChoiceUpdatedAlwaysSendPayloadAttributes =
+      Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATED_ALWAYS_SEND_PAYLOAD_ATTRIBUTES;
 
   @Option(
       names = {"--Xnetwork-altair-fork-epoch"},
@@ -114,6 +144,14 @@ public class Eth2NetworkOptions {
       description = "Override the deneb fork activation epoch.",
       arity = "1")
   private UInt64 denebForkEpoch;
+
+  @Option(
+      names = {"--Xnetwork-electra-fork-epoch"},
+      hidden = true,
+      paramLabel = "<epoch>",
+      description = "Override the electra fork activation epoch.",
+      arity = "1")
+  private UInt64 electraForkEpoch;
 
   @Option(
       names = {"--Xnetwork-total-terminal-difficulty-override"},
@@ -199,30 +237,6 @@ public class Eth2NetworkOptions {
       hidden = true)
   private Integer startupTimeoutSeconds;
 
-  // can be removed after investigating the consequences of not doing it anymore
-  @Option(
-      names = {"--Xfork-choice-update-head-on-block-import-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description = "Make the first descendent of head the new chain head.",
-      arity = "0..1",
-      fallbackValue = "true",
-      showDefaultValue = Visibility.ALWAYS,
-      hidden = true)
-  private boolean forkChoiceUpdateHeadOnBlockImportEnabled =
-      Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
-
-  // https://github.com/Consensys/teku/issues/7537
-  @Option(
-      names = {"--Xfork-choice-proposer-boost-uniqueness-enabled"},
-      paramLabel = "<BOOLEAN>",
-      description = "Apply proposer boost to first block in case of equivocation.",
-      arity = "0..1",
-      fallbackValue = "true",
-      showDefaultValue = Visibility.ALWAYS,
-      hidden = true)
-  private boolean forkChoiceProposerBoostUniquenessEnabled =
-      Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED;
-
   @Option(
       names = {"--Xeth1-deposit-contract-deploy-block-override"},
       hidden = true,
@@ -295,6 +309,9 @@ public class Eth2NetworkOptions {
     if (denebForkEpoch != null) {
       builder.denebForkEpoch(denebForkEpoch);
     }
+    if (electraForkEpoch != null) {
+      builder.electraForkEpoch(electraForkEpoch);
+    }
     if (totalTerminalDifficultyOverride != null) {
       builder.totalTerminalDifficultyOverride(totalTerminalDifficultyOverride);
     }
@@ -311,14 +328,15 @@ public class Eth2NetworkOptions {
       builder.eth1DepositContractDeployBlock(eth1DepositContractDeployBlockOverride);
     }
     builder
+        .ignoreWeakSubjectivityPeriodEnabled(ignoreWeakSubjectivityPeriodEnabled)
         .safeSlotsToImportOptimistically(safeSlotsToImportOptimistically)
         .asyncP2pMaxThreads(asyncP2pMaxThreads)
         .asyncP2pMaxQueue(asyncP2pMaxQueue)
         .asyncBeaconChainMaxThreads(asyncBeaconChainMaxThreads)
         .asyncBeaconChainMaxQueue(asyncBeaconChainMaxQueue)
-        .forkChoiceUpdateHeadOnBlockImportEnabled(forkChoiceUpdateHeadOnBlockImportEnabled)
-        .forkChoiceProposerBoostUniquenessEnabled(forkChoiceProposerBoostUniquenessEnabled)
-        .epochsStoreBlobs(epochsStoreBlobs);
+        .forkChoiceLateBlockReorgEnabled(forkChoiceLateBlockReorgEnabled)
+        .epochsStoreBlobs(epochsStoreBlobs)
+        .forkChoiceUpdatedAlwaysSendPayloadAttributes(forkChoiceUpdatedAlwaysSendPayloadAttributes);
   }
 
   public String getNetwork() {

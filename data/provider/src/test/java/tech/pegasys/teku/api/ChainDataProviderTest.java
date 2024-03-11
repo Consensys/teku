@@ -85,6 +85,7 @@ import tech.pegasys.teku.spec.util.BeaconStateBuilderCapella;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.storage.client.RecentChainData;
+import tech.pegasys.teku.storage.protoarray.ProtoNode;
 
 public class ChainDataProviderTest extends AbstractChainDataProviderTest {
 
@@ -105,7 +106,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
                 blockRoot,
                 bestBlock.getParentRoot(),
                 bestBlock.getStateRoot(),
-                bestBlock.getExecutionBlockHash().orElse(Bytes32.ZERO),
+                bestBlock.getExecutionBlockNumber().orElse(ProtoNode.NO_EXECUTION_BLOCK_NUMBER),
+                bestBlock.getExecutionBlockHash().orElse(ProtoNode.NO_EXECUTION_BLOCK_HASH),
                 ProtoNodeValidationStatus.VALID,
                 spec.calculateBlockCheckpoints(bestBlock.getState()),
                 ZERO));
@@ -410,7 +412,8 @@ public class ChainDataProviderTest extends AbstractChainDataProviderTest {
     assertThat(blockAndMetadata).isNotEmpty();
     verify(mockCombinedChainDataClient, times(1))
         .getStateAtSlotExact(blockAndMetadata.get().getData().getSlot().decrement());
-    verify(rewardCalculatorMock, times(1)).getBlockRewardData(eq(blockAndMetadata.get()), any());
+    verify(rewardCalculatorMock, times(1))
+        .getBlockRewardDataAndMetaData(eq(blockAndMetadata.get()), any());
     assertThat(future).isCompleted();
   }
 

@@ -17,8 +17,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Throwables;
 import io.javalin.Javalin;
+import io.javalin.util.JavalinBindException;
 import java.io.IOException;
-import java.net.BindException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
@@ -55,19 +55,16 @@ public class RestApi extends Service {
       app.start();
       LOG.info("Listening on {}", app.jettyServer().server().getURI());
     } catch (final RuntimeException e) {
-      if (Throwables.getRootCause(e) instanceof BindException) {
-        throw new InvalidConfigurationException(
-            String.format(
-                "TCP Port %d is already in use. "
-                    + "You may need to stop another process or change the HTTP port for this process.",
-                app.port()));
+      if (e instanceof JavalinBindException) {
+        // The message in JavalinBindException has the port number in conflict
+        throw new InvalidConfigurationException(e.getMessage());
       } else if (e instanceof IllegalStateException
           || Throwables.getRootCause(e) instanceof IllegalStateException) {
         // IllegalStateException is a sign that something needed has failed to be initialised.
         // throwing it here will terminate the process effectively.
         LOG.error("Failed to start Rest API", e);
         throw e;
-      } else if (app.jettyServer() == null || !app.jettyServer().started) {
+      } else if (app.jettyServer() == null || !app.jettyServer().started()) {
         // failing to create the jetty server or start the jetty server is fatal.
         throw new IllegalStateException("Rest API failed to start", e);
       } else {
@@ -98,7 +95,7 @@ public class RestApi extends Service {
         throw new IllegalStateException("Failed to initialise access file for validator-api.");
       }
     }
-    app.updateConfig(config -> config.accessManager(new AuthorizationManager(path)));
+    app.beforeMatched(new AuthorizationHandler(path));
   }
 
   @Override

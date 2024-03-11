@@ -33,6 +33,11 @@ import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
+import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.collections.LimitedMap;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -42,6 +47,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
@@ -51,12 +57,9 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
-import tech.pegasys.teku.validator.api.AttesterDuties;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
-import tech.pegasys.teku.validator.api.ProposerDuties;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
-import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.beaconnode.metrics.BeaconNodeRequestLabels;
@@ -145,38 +148,25 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
         BeaconNodeRequestLabels.GET_PROPOSER_DUTIES_REQUESTS_METHOD);
   }
 
-  @Deprecated
   @Override
-  public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
+  public SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final boolean blinded) {
-    final ValidatorApiChannelRequest<Optional<BlockContainer>> request =
+      final Optional<Boolean> requestedBlinded,
+      final Optional<UInt64> requestedBuilderBoostFactor) {
+    final ValidatorApiChannelRequest<Optional<BlockContainerAndMetaData>> request =
         apiChannel ->
             apiChannel
-                .createUnsignedBlock(slot, randaoReveal, graffiti, blinded)
+                .createUnsignedBlock(
+                    slot, randaoReveal, graffiti, requestedBlinded, requestedBuilderBoostFactor)
                 .thenPeek(
-                    blockContainer -> {
+                    blockContainerAndMetaData -> {
                       if (!failoverDelegates.isEmpty()
-                          && blockContainer.map(BlockContainer::isBlinded).orElse(false)) {
-                        blindedBlockCreatorCache.put(slot, apiChannel);
-                      }
-                    });
-    return tryRequestUntilSuccess(request, BeaconNodeRequestLabels.CREATE_UNSIGNED_BLOCK_METHOD);
-  }
-
-  @Override
-  public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
-      final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
-    final ValidatorApiChannelRequest<Optional<BlockContainer>> request =
-        apiChannel ->
-            apiChannel
-                .createUnsignedBlock(slot, randaoReveal, graffiti)
-                .thenPeek(
-                    blockContainer -> {
-                      if (!failoverDelegates.isEmpty()
-                          && blockContainer.map(BlockContainer::isBlinded).orElse(false)) {
+                          && blockContainerAndMetaData
+                              .map(BlockContainerAndMetaData::blockContainer)
+                              .map(BlockContainer::isBlinded)
+                              .orElse(false)) {
                         blindedBlockCreatorCache.put(slot, apiChannel);
                       }
                     });
@@ -309,6 +299,22 @@ public class FailoverValidatorApiHandler implements ValidatorApiChannel {
     return tryRequestUntilSuccess(
         apiChannel -> apiChannel.getValidatorsLiveness(validatorIndices, epoch),
         BeaconNodeRequestLabels.GET_VALIDATORS_LIVENESS);
+  }
+
+  @Override
+  public SafeFuture<Optional<List<BeaconCommitteeSelectionProof>>> getBeaconCommitteeSelectionProof(
+      final List<BeaconCommitteeSelectionProof> requests) {
+    return relayRequest(
+        apiChannel -> apiChannel.getBeaconCommitteeSelectionProof(requests),
+        BeaconNodeRequestLabels.BEACON_COMMITTEE_SELECTIONS);
+  }
+
+  @Override
+  public SafeFuture<Optional<List<SyncCommitteeSelectionProof>>> getSyncCommitteeSelectionProof(
+      final List<SyncCommitteeSelectionProof> requests) {
+    return relayRequest(
+        apiChannel -> apiChannel.getSyncCommitteeSelectionProof(requests),
+        BeaconNodeRequestLabels.SYNC_COMMITTEE_SELECTIONS);
   }
 
   private <T> SafeFuture<T> relayRequest(

@@ -14,15 +14,14 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair;
 
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 
 import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.common.AbstractBeaconBlockBodyTest;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
 
 class BeaconBlockBodyAltairTest extends AbstractBeaconBlockBodyTest<BeaconBlockBodyAltair> {
 
@@ -37,21 +36,33 @@ class BeaconBlockBodyAltairTest extends AbstractBeaconBlockBodyTest<BeaconBlockB
   @Test
   void equalsReturnsFalseWhenSyncAggregateIsDifferent() {
     syncAggregate = dataStructureUtil.randomSyncAggregate();
-    BeaconBlockBodyAltair testBeaconBlockBody = safeJoin(createBlockBody());
+    final BeaconBlockBodyAltair testBeaconBlockBody = createBlockBody();
 
     assertNotEquals(defaultBlockBody, testBeaconBlockBody);
   }
 
   @Override
-  protected SafeFuture<BeaconBlockBodyAltair> createBlockBody(
+  protected BeaconBlockBodyAltair createBlockBody(
       final Consumer<BeaconBlockBodyBuilder> contentProvider) {
-    return getBlockBodySchema()
-        .createBlockBody(contentProvider)
-        .thenApply(body -> (BeaconBlockBodyAltair) body);
+    final BeaconBlockBodyBuilder bodyBuilder = createBeaconBlockBodyBuilder();
+    contentProvider.accept(bodyBuilder);
+    return bodyBuilder.build().toVersionAltair().orElseThrow();
   }
 
   @Override
-  protected Consumer<BeaconBlockBodyBuilder> createContentProvider() {
-    return super.createContentProvider().andThen(builder -> builder.syncAggregate(syncAggregate));
+  protected BlindedBeaconBlockBodyBellatrix createBlindedBlockBody(
+      final Consumer<BeaconBlockBodyBuilder> contentProvider) {
+    return null;
+  }
+
+  @Override
+  protected BlindedBeaconBlockBodyBellatrix createDefaultBlindedBlockBody() {
+    return null;
+  }
+
+  @Override
+  protected Consumer<BeaconBlockBodyBuilder> createContentProvider(final boolean blinded) {
+    return super.createContentProvider(blinded)
+        .andThen(builder -> builder.syncAggregate(syncAggregate));
   }
 }

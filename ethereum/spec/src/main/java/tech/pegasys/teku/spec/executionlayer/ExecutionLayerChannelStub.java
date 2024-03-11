@@ -31,6 +31,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
@@ -46,7 +47,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.config.SpecConfigBellatrix;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
@@ -195,13 +196,13 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         new ForkChoiceUpdatedResult(
             PayloadStatus.VALID,
             payloadBuildingAttributes.map(
-                payloadAttributes1 -> {
-                  Bytes8 payloadId =
+                payloadAttributes -> {
+                  final Bytes8 payloadId =
                       Bytes8.leftPad(Bytes.ofUnsignedInt(payloadIdCounter.incrementAndGet()));
                   payloadIdToHeadAndAttrsCache.invalidateWithNewValue(
                       payloadId,
                       new HeadAndAttributes(
-                          forkChoiceState.getHeadExecutionBlockHash(), payloadAttributes1));
+                          forkChoiceState.getHeadExecutionBlockHash(), payloadAttributes));
                   return payloadId;
                 }));
 
@@ -289,9 +290,10 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
             .map(
                 blobsBundle -> {
                   LOG.info("getPayload: blobsBundle: {}", blobsBundle.toBriefString());
-                  return new GetPayloadResponse(executionPayload, UInt256.ZERO, blobsBundle, false);
+                  return new GetPayloadResponse(
+                      executionPayload, UInt256.valueOf(424242424242424242L), blobsBundle, false);
                 })
-            .orElse(new GetPayloadResponse(executionPayload));
+            .orElse(new GetPayloadResponse(executionPayload, UInt256.valueOf(434242424242424242L)));
 
     return SafeFuture.completedFuture(getPayloadResponse);
   }
@@ -321,7 +323,9 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   public SafeFuture<HeaderWithFallbackData> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
-      final SafeFuture<UInt256> payloadValueResult) {
+      final SafeFuture<UInt256> payloadValueResult,
+      final Optional<UInt64> requestedBuilderBoostFactor,
+      final BlockProductionPerformance blockProductionPerformance) {
     final UInt64 slot = state.getSlot();
     LOG.info(
         "getPayloadHeader: payloadId: {} slot: {} ... delegating to getPayload ...",
@@ -331,6 +335,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
 
     return engineGetPayload(executionPayloadContext, slot)
+        .thenPeek(__ -> blockProductionPerformance.engineGetPayload())
         .thenApply(
             getPayloadResponse -> {
               final ExecutionPayload executionPayload = getPayloadResponse.getExecutionPayload();
@@ -362,14 +367,15 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
                                 .createFromBlobsBundle(blobsBundle);
                           });
               return HeaderWithFallbackData.create(payloadHeader, blobKzgCommitments);
-            });
+            })
+        .thenPeek(__ -> blockProductionPerformance.builderGetHeader());
   }
 
   @Override
   public SafeFuture<BuilderPayload> builderGetPayload(
-      final SignedBlockContainer signedBlockContainer,
+      final SignedBeaconBlock signedBeaconBlock,
       final Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction) {
-    final UInt64 slot = signedBlockContainer.getSlot();
+    final UInt64 slot = signedBeaconBlock.getSlot();
     final SchemaDefinitions schemaDefinitions = spec.atSlot(slot).getSchemaDefinitions();
     final Optional<SchemaDefinitionsBellatrix> schemaDefinitionsBellatrix =
         schemaDefinitions.toVersionBellatrix();
@@ -379,7 +385,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         "proposeBlindedBlock not supported for non-Bellatrix milestones");
 
     checkState(
-        signedBlockContainer.isBlinded(),
+        signedBeaconBlock.isBlinded(),
         "proposeBlindedBlock requires a signed blinded beacon block");
 
     checkState(
@@ -387,13 +393,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         "proposeBlindedBlock requires a previous call to getPayloadHeader");
 
     final ExecutionPayloadHeader executionPayloadHeader =
-        signedBlockContainer
-            .getSignedBlock()
-            .getBeaconBlock()
-            .orElseThrow()
-            .getBody()
-            .getOptionalExecutionPayloadHeader()
-            .orElseThrow();
+        signedBeaconBlock.getMessage().getBody().getOptionalExecutionPayloadHeader().orElseThrow();
 
     checkState(
         executionPayloadHeader
@@ -404,7 +404,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
     LOG.info(
         "proposeBlindedBlock: slot: {} block: {} -> unblinded executionPayload blockHash: {}",
         slot,
-        signedBlockContainer.getRoot(),
+        signedBeaconBlock.getRoot(),
         lastBuilderPayloadToBeUnblinded.get().getBlockHash());
 
     final BuilderPayload builderPayload =
@@ -413,8 +413,7 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
             .map(
                 blobsBundle -> {
                   checkState(
-                      signedBlockContainer
-                              .getSignedBlock()
+                      signedBeaconBlock
                               .getMessage()
                               .getBody()
                               .getOptionalBlobKzgCommitments()

@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.BlockContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BeaconBlocksByRootRequestMessage;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.metadata.MetadataMessageSchema;
@@ -87,6 +88,9 @@ public interface SchemaDefinitions {
       getBeaconBlocksByRootRequestMessageSchema();
 
   @NonSchema
+  BeaconBlockBodyBuilder createBeaconBlockBodyBuilder();
+
+  @NonSchema
   default Optional<SchemaDefinitionsAltair> toVersionAltair() {
     return Optional.empty();
   }
@@ -103,6 +107,11 @@ public interface SchemaDefinitions {
 
   @NonSchema
   default Optional<SchemaDefinitionsDeneb> toVersionDeneb() {
+    return Optional.empty();
+  }
+
+  @NonSchema
+  default Optional<SchemaDefinitionsElectra> toVersionElectra() {
     return Optional.empty();
   }
 

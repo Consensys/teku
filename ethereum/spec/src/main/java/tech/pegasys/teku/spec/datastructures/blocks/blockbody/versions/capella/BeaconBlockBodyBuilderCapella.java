@@ -14,14 +14,12 @@
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.capella;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 
-import java.util.Optional;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BeaconBlockBodyBuilderBellatrix;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadCapellaImpl;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.ExecutionPayloadHeaderCapellaImpl;
@@ -30,21 +28,12 @@ import tech.pegasys.teku.spec.datastructures.type.SszSignature;
 
 public class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatrix {
 
-  private BeaconBlockBodySchemaCapellaImpl schema;
-  private BlindedBeaconBlockBodySchemaCapellaImpl blindedSchema;
   private SszList<SignedBlsToExecutionChange> blsToExecutionChanges;
 
-  public BeaconBlockBodyBuilderCapella schema(final BeaconBlockBodySchemaCapellaImpl schema) {
-    this.schema = schema;
-    this.blinded = Optional.of(false);
-    return this;
-  }
-
-  public BeaconBlockBodyBuilderCapella blindedSchema(
-      final BlindedBeaconBlockBodySchemaCapellaImpl blindedSchema) {
-    this.blindedSchema = blindedSchema;
-    this.blinded = Optional.of(true);
-    return this;
+  public BeaconBlockBodyBuilderCapella(
+      final BeaconBlockBodySchema<? extends BeaconBlockBodyCapella> schema,
+      final BeaconBlockBodySchema<? extends BlindedBeaconBlockBodyCapella> blindedSchema) {
+    super(schema, blindedSchema);
   }
 
   protected SszList<SignedBlsToExecutionChange> getBlsToExecutionChanges() {
@@ -64,64 +53,47 @@ public class BeaconBlockBodyBuilderCapella extends BeaconBlockBodyBuilderBellatr
   }
 
   @Override
-  protected void validateSchema() {
-    if (isBlinded()) {
-      checkState(
-          blindedSchema != null && schema == null, "blindedSchema must be set with no schema");
-    } else {
-      checkState(
-          schema != null && blindedSchema == null, "schema must be set with no blindedSchema");
-    }
-  }
-
-  @Override
   protected void validate() {
     super.validate();
     checkNotNull(blsToExecutionChanges, "blsToExecutionChanges must be specified");
   }
 
   @Override
-  public Boolean isBlinded() {
-    return blinded.orElseThrow(
-        () ->
-            new IllegalStateException(
-                "schema or blindedSchema must be set before interacting with the builder"));
-  }
-
-  @Override
-  public SafeFuture<BeaconBlockBody> build() {
+  public BeaconBlockBody build() {
     validate();
     if (isBlinded()) {
-      return executionPayloadHeader.thenApply(
-          header ->
-              new BlindedBeaconBlockBodyCapellaImpl(
-                  blindedSchema,
-                  new SszSignature(randaoReveal),
-                  eth1Data,
-                  SszBytes32.of(graffiti),
-                  proposerSlashings,
-                  attesterSlashings,
-                  attestations,
-                  deposits,
-                  voluntaryExits,
-                  syncAggregate,
-                  (ExecutionPayloadHeaderCapellaImpl) header.toVersionCapella().orElseThrow(),
-                  blsToExecutionChanges));
+      final BlindedBeaconBlockBodySchemaCapellaImpl schema =
+          getAndValidateSchema(true, BlindedBeaconBlockBodySchemaCapellaImpl.class);
+      return new BlindedBeaconBlockBodyCapellaImpl(
+          schema,
+          new SszSignature(randaoReveal),
+          eth1Data,
+          SszBytes32.of(graffiti),
+          proposerSlashings,
+          attesterSlashings,
+          attestations,
+          deposits,
+          voluntaryExits,
+          syncAggregate,
+          (ExecutionPayloadHeaderCapellaImpl)
+              executionPayloadHeader.toVersionCapella().orElseThrow(),
+          blsToExecutionChanges);
     }
-    return executionPayload.thenApply(
-        payload ->
-            new BeaconBlockBodyCapellaImpl(
-                schema,
-                new SszSignature(randaoReveal),
-                eth1Data,
-                SszBytes32.of(graffiti),
-                proposerSlashings,
-                attesterSlashings,
-                attestations,
-                deposits,
-                voluntaryExits,
-                syncAggregate,
-                (ExecutionPayloadCapellaImpl) payload.toVersionCapella().orElseThrow(),
-                blsToExecutionChanges));
+
+    final BeaconBlockBodySchemaCapellaImpl schema =
+        getAndValidateSchema(false, BeaconBlockBodySchemaCapellaImpl.class);
+    return new BeaconBlockBodyCapellaImpl(
+        schema,
+        new SszSignature(randaoReveal),
+        eth1Data,
+        SszBytes32.of(graffiti),
+        proposerSlashings,
+        attesterSlashings,
+        attestations,
+        deposits,
+        voluntaryExits,
+        syncAggregate,
+        (ExecutionPayloadCapellaImpl) executionPayload.toVersionCapella().orElseThrow(),
+        blsToExecutionChanges);
   }
 }

@@ -50,6 +50,10 @@ public class ExecutionPayloadContext {
     return forkChoiceState.getHeadExecutionBlockHash();
   }
 
+  public boolean isValidatorRegistrationPresent() {
+    return payloadBuildingAttributes.getValidatorRegistration().isPresent();
+  }
+
   @Override
   public boolean equals(final Object o) {
     if (this == o) {

@@ -1,5 +1,6 @@
 dependencies {
   implementation project(':ethereum:events')
+  implementation project(':ethereum:performance-trackers')
   implementation project(':ethereum:executionclient')
   implementation project(':ethereum:execution-types')
   implementation project(':ethereum:spec')
@@ -13,10 +14,10 @@ dependencies {
 
   testImplementation testFixtures(project(':infrastructure:async'))
   testImplementation testFixtures(project(':infrastructure:bls'))
+  testImplementation testFixtures(project(':infrastructure:logging'))
   testImplementation testFixtures(project(':infrastructure:metrics'))
   testImplementation testFixtures(project(':infrastructure:time'))
   testImplementation testFixtures(project(':ethereum:spec'))
-  testImplementation 'io.github.hakky54:logcaptor'
 }
 
 publishing {

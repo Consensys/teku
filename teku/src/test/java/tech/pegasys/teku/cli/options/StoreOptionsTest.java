@@ -30,10 +30,6 @@ public class StoreOptionsTest extends AbstractBeaconNodeCommandTest {
     TekuConfiguration tekuConfiguration = getTekuConfigurationFromArguments(args);
     final StoreConfig globalConfiguration = tekuConfiguration.beaconChain().storeConfig();
     assertThat(globalConfiguration.getHotStatePersistenceFrequencyInEpochs()).isEqualTo(99);
-
-    assertThat(createConfigBuilder().store(b -> b.hotStatePersistenceFrequencyInEpochs(99)).build())
-        .usingRecursiveComparison()
-        .isEqualTo(tekuConfiguration);
   }
 
   @Test

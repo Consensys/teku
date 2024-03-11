@@ -20,7 +20,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.ExecutionClientDataProvider;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
 import tech.pegasys.teku.api.exceptions.ServiceUnavailableException;
 import tech.pegasys.teku.beaconrestapi.addon.CapellaRestApiBuilderAddon;
@@ -66,6 +65,8 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostAttesterSlashing;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlindedBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostBlock;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostProposerSlashing;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostStateValidatorBalances;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostStateValidators;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostSyncCommittees;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.PostVoluntaryExit;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.config.GetDepositContract;
@@ -90,14 +91,18 @@ import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetProposerDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.GetSyncCommitteeContribution;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAggregateAndProofs;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostAttesterDuties;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostBeaconCommitteeSelections;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostContributionAndProofs;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostPrepareBeaconProposer;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostRegisterValidator;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSubscribeToBeaconCommitteeSubnet;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncCommitteeSelections;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncCommitteeSubscriptions;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncDuties;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostValidatorLiveness;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.GetBlock;
+import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.PostBlindedBlockV2;
+import tech.pegasys.teku.beaconrestapi.handlers.v2.beacon.PostBlockV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetChainHeadsV2;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.debug.GetState;
 import tech.pegasys.teku.beaconrestapi.handlers.v2.validator.GetNewBlock;
@@ -129,18 +134,10 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
-      final ExecutionClientDataProvider executionClientDataProvider,
       final Spec spec) {
     restApi =
         create(
-            config,
-            dataProvider,
-            eth1DataProvider,
-            eventChannels,
-            asyncRunner,
-            timeProvider,
-            executionClientDataProvider,
-            spec);
+            config, dataProvider, eth1DataProvider, eventChannels, asyncRunner, timeProvider, spec);
   }
 
   @Override
@@ -165,7 +162,6 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
       final EventChannels eventChannels,
       final AsyncRunner asyncRunner,
       final TimeProvider timeProvider,
-      final ExecutionClientDataProvider executionClientDataProvider,
       final Spec spec) {
     final SchemaDefinitionCache schemaCache = new SchemaDefinitionCache(spec);
     RestApiBuilder builder =
@@ -215,8 +211,10 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new GetStateFork(dataProvider))
             .endpoint(new GetStateFinalityCheckpoints(dataProvider))
             .endpoint(new GetStateValidators(dataProvider))
+            .endpoint(new PostStateValidators(dataProvider))
             .endpoint(new GetStateValidator(dataProvider))
             .endpoint(new GetStateValidatorBalances(dataProvider))
+            .endpoint(new PostStateValidatorBalances(dataProvider))
             .endpoint(new GetStateCommittees(dataProvider))
             .endpoint(new GetStateSyncCommittees(dataProvider))
             .endpoint(new GetStateRandao(dataProvider))
@@ -224,6 +222,8 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new GetBlockHeader(dataProvider))
             .endpoint(new PostBlock(dataProvider, spec, schemaCache))
             .endpoint(new PostBlindedBlock(dataProvider, spec, schemaCache))
+            .endpoint(new PostBlockV2(dataProvider, spec, schemaCache))
+            .endpoint(new PostBlindedBlockV2(dataProvider, spec, schemaCache))
             .endpoint(new GetBlock(dataProvider, schemaCache))
             .endpoint(new GetBlindedBlock(dataProvider, schemaCache))
             .endpoint(new GetFinalizedCheckpointState(dataProvider, spec))
@@ -277,6 +277,9 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new PostContributionAndProofs(dataProvider, schemaCache))
             .endpoint(new PostPrepareBeaconProposer(dataProvider))
             .endpoint(new PostRegisterValidator(dataProvider))
+            // Obol DVT Methods
+            .endpoint(new PostBeaconCommitteeSelections())
+            .endpoint(new PostSyncCommitteeSelections())
             // Config Handlers
             .endpoint(
                 new GetDepositContract(
@@ -291,7 +294,7 @@ public class JsonTypeDefinitionBeaconRestApi implements BeaconRestApi {
             .endpoint(new PutLogLevel())
             .endpoint(new GetStateByBlockRoot(dataProvider, spec))
             .endpoint(new Liveness(dataProvider))
-            .endpoint(new Readiness(dataProvider, executionClientDataProvider))
+            .endpoint(new Readiness(dataProvider))
             .endpoint(new GetAllBlocksAtSlot(dataProvider, schemaCache))
             .endpoint(new GetPeersScore(dataProvider))
             .endpoint(new GetProposersData(dataProvider))

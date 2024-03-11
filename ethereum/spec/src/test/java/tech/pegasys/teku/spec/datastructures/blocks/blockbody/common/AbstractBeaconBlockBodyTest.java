@@ -13,9 +13,10 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks.blockbody.common;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.util.Collections;
 import java.util.List;
@@ -25,7 +26,6 @@ import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.bls.BLSSignature;
-import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.spec.Spec;
@@ -35,6 +35,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBody;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodyBuilder;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.BeaconBlockBodySchema;
+import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.bellatrix.BlindedBeaconBlockBodyBellatrix;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -57,10 +58,15 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
   protected SszList<SignedVoluntaryExit> voluntaryExits;
 
   protected T defaultBlockBody;
+  protected BlindedBeaconBlockBodyBellatrix defaultBlindedBlockBody;
   protected BeaconBlockBodySchema<?> blockBodySchema;
+  protected BeaconBlockBodySchema<? extends BlindedBeaconBlockBodyBellatrix> blindedBlockBodySchema;
+
+  protected boolean supportsExecutionPayload;
 
   protected void setUpBaseClass(final SpecMilestone milestone, Runnable additionalSetup) {
     spec = TestSpecFactory.createMinimal(milestone);
+    supportsExecutionPayload = spec.isMilestoneSupported(SpecMilestone.BELLATRIX);
     dataStructureUtil = new DataStructureUtil(spec);
     BeaconBlockBodyLists blockBodyLists = BeaconBlockBodyLists.ofSpec(spec);
 
@@ -89,15 +95,23 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
 
     additionalSetup.run();
 
-    defaultBlockBody = safeJoin(createDefaultBlockBody());
+    defaultBlockBody = createDefaultBlockBody();
+    defaultBlindedBlockBody = supportsExecutionPayload ? createDefaultBlindedBlockBody() : null;
     blockBodySchema = defaultBlockBody.getSchema();
+    blindedBlockBodySchema = supportsExecutionPayload ? defaultBlindedBlockBody.getSchema() : null;
   }
 
-  protected SafeFuture<T> createBlockBody() {
-    return createBlockBody(createContentProvider());
+  protected T createBlockBody() {
+    return createBlockBody(createContentProvider(false));
   }
 
-  protected abstract SafeFuture<T> createBlockBody(
+  protected BlindedBeaconBlockBodyBellatrix createBlindedBlockBody() {
+    return createBlindedBlockBody(createContentProvider(true));
+  }
+
+  protected abstract T createBlockBody(final Consumer<BeaconBlockBodyBuilder> contentProvider);
+
+  protected abstract BlindedBeaconBlockBodyBellatrix createBlindedBlockBody(
       final Consumer<BeaconBlockBodyBuilder> contentProvider);
 
   @SuppressWarnings("unchecked")
@@ -106,8 +120,18 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
         spec.getGenesisSchemaDefinitions().getBeaconBlockBodySchema();
   }
 
-  protected SafeFuture<T> createDefaultBlockBody() {
+  protected BeaconBlockBodyBuilder createBeaconBlockBodyBuilder() {
+    return spec.forMilestone(spec.getForkSchedule().getHighestSupportedMilestone())
+        .getSchemaDefinitions()
+        .createBeaconBlockBodyBuilder();
+  }
+
+  protected T createDefaultBlockBody() {
     return createBlockBody();
+  }
+
+  protected BlindedBeaconBlockBodyBellatrix createDefaultBlindedBlockBody() {
+    return createBlindedBlockBody();
   }
 
   @Test
@@ -119,7 +143,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
 
   @Test
   void equalsReturnsTrueWhenObjectFieldsAreEqual() {
-    T testBeaconBlockBody = safeJoin(createDefaultBlockBody());
+    T testBeaconBlockBody = createDefaultBlockBody();
     assertEquals(defaultBlockBody, testBeaconBlockBody);
   }
 
@@ -133,7 +157,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
   void equalsReturnsFalseWhenProposerSlashingsAreDifferent() {
     // Create copy of proposerSlashings and reverse to ensure it is different.
     this.proposerSlashings = reversed(proposerSlashings);
-    T testBeaconBlockBody = safeJoin(createBlockBody());
+    T testBeaconBlockBody = createBlockBody();
 
     assertNotEquals(defaultBlockBody, testBeaconBlockBody);
   }
@@ -146,7 +170,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
                 Stream.of(dataStructureUtil.randomAttesterSlashing()), attesterSlashings.stream())
             .collect(blockBodySchema.getAttesterSlashingsSchema().collector());
 
-    T testBeaconBlockBody = safeJoin(createBlockBody());
+    T testBeaconBlockBody = createBlockBody();
 
     assertNotEquals(defaultBlockBody, testBeaconBlockBody);
   }
@@ -156,7 +180,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
     // Create copy of attestations and reverse to ensure it is different.
     attestations = reversed(attestations);
 
-    T testBeaconBlockBody = safeJoin(createBlockBody());
+    T testBeaconBlockBody = createBlockBody();
 
     assertNotEquals(defaultBlockBody, testBeaconBlockBody);
   }
@@ -166,7 +190,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
     // Create copy of deposits and reverse to ensure it is different.
     deposits = reversed(deposits);
 
-    T testBeaconBlockBody = safeJoin(createBlockBody());
+    T testBeaconBlockBody = createBlockBody();
 
     assertNotEquals(defaultBlockBody, testBeaconBlockBody);
   }
@@ -176,7 +200,7 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
     // Create copy of exits and reverse to ensure it is different.
     voluntaryExits = reversed(voluntaryExits);
 
-    T testBeaconBlockBody = safeJoin(createBlockBody());
+    T testBeaconBlockBody = createBlockBody();
 
     assertNotEquals(defaultBlockBody, testBeaconBlockBody);
   }
@@ -188,7 +212,35 @@ public abstract class AbstractBeaconBlockBodyTest<T extends BeaconBlockBody> {
     assertEquals(defaultBlockBody, newBeaconBlockBody);
   }
 
-  protected Consumer<BeaconBlockBodyBuilder> createContentProvider() {
+  @Test
+  public void builderShouldCreateBlinded() {
+    assumeTrue(supportsExecutionPayload);
+    final BeaconBlockBody blockBody = createBlindedBlockBody(createContentProvider(true));
+    assertThat(blockBody)
+        .matches(
+            beaconBlockBody ->
+                beaconBlockBody.getOptionalExecutionPayload().isEmpty()
+                    && beaconBlockBody.getOptionalExecutionPayloadHeader().isPresent());
+  }
+
+  @Test
+  public void builderShouldCreateUnblinded() {
+    assumeTrue(supportsExecutionPayload);
+    final BeaconBlockBody blockBody = createBlockBody(createContentProvider(false));
+    assertThat(blockBody)
+        .matches(
+            beaconBlockBody ->
+                beaconBlockBody.getOptionalExecutionPayloadHeader().isEmpty()
+                    && beaconBlockBody.getOptionalExecutionPayload().isPresent());
+  }
+
+  @Test
+  public void verifyExecutionPayloadSupport() {
+    assertEquals(
+        createBeaconBlockBodyBuilder().supportsExecutionPayload(), supportsExecutionPayload);
+  }
+
+  protected Consumer<BeaconBlockBodyBuilder> createContentProvider(boolean blinded) {
     return builder ->
         builder
             .randaoReveal(randaoReveal)

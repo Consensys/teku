@@ -55,7 +55,8 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
-import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.store.UpdatableStore;
@@ -186,7 +187,7 @@ public class ForkChoiceIntegrationTest {
             forkChoiceExecutor,
             storageClient,
             BlobSidecarManager.NOOP,
-            new StubForkChoiceNotifier(),
+            new NoopForkChoiceNotifier(),
             transitionBlockValidator,
             new StubMetricsSystem());
 
@@ -201,7 +202,7 @@ public class ForkChoiceIntegrationTest {
       if (step instanceof UInt64) {
         UpdatableStore.StoreTransaction transaction = storageClient.startStoreTransaction();
         while (SPEC.getCurrentSlot(transaction).compareTo((UInt64) step) < 0) {
-          SPEC.onTick(transaction, transaction.getTimeMillis().plus(1000));
+          SPEC.onTick(transaction, transaction.getTimeInMillis().plus(1000));
         }
         assertEquals(step, SPEC.getCurrentSlot(transaction));
         transaction.commit().join();
@@ -287,7 +288,7 @@ public class ForkChoiceIntegrationTest {
         fc.onBlock(
                 block,
                 Optional.empty(),
-                Optional.empty(),
+                BlockBroadcastValidator.NOOP,
                 new ExecutionLayerChannelStub(SPEC, false, Optional.empty()))
             .join();
     return blockImportResult.isSuccessful();

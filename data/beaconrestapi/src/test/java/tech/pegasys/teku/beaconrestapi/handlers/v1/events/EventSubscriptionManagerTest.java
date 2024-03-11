@@ -35,22 +35,32 @@ import tech.pegasys.teku.api.NodeDataProvider;
 import tech.pegasys.teku.api.SyncDataProvider;
 import tech.pegasys.teku.api.schema.SignedBeaconBlock;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.events.PayloadAttributesEvent.Data;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.events.PayloadAttributesEvent.PayloadAttributes;
+import tech.pegasys.teku.beaconrestapi.handlers.v1.events.PayloadAttributesEvent.PayloadAttributesData;
+import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.events.EventChannels;
 import tech.pegasys.teku.infrastructure.json.JsonUtil;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.config.SpecConfig;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
+import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.SignedBlsToExecutionChange;
 import tech.pegasys.teku.spec.datastructures.operations.SignedVoluntaryExit;
 import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SignedContributionAndProof;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.executionlayer.ForkChoiceState;
+import tech.pegasys.teku.spec.executionlayer.PayloadBuildingAttributes;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.api.ReorgContext;
 
@@ -95,11 +105,51 @@ public class EventSubscriptionManagerTest {
   private final SyncState sampleSyncState = SyncState.IN_SYNC;
   private final SignedBeaconBlock sampleBlock =
       SignedBeaconBlock.create(data.randomSignedBeaconBlock(0));
-  private final BlobSidecarOld sampleBlobSidecar = data.randomBlobSidecarOld();
+  private final BlobSidecar sampleBlobSidecar = data.randomBlobSidecar();
   private final Attestation sampleAttestation = data.randomAttestation(0);
+
+  private final AttesterSlashing sampleAttesterSlashing =
+      spec.getGenesisSchemaDefinitions()
+          .getAttesterSlashingSchema()
+          .create(data.randomIndexedAttestation(), data.randomIndexedAttestation());
+
+  private final ProposerSlashing sampleProposerSlashing =
+      new ProposerSlashing(
+          data.randomSignedBeaconBlockHeader(), data.randomSignedBeaconBlockHeader());
   private final SignedVoluntaryExit sampleVoluntaryExit = data.randomSignedVoluntaryExit();
   private final SignedBlsToExecutionChange sampleBlsToExecutionChange =
       data.randomSignedBlsToExecutionChange();
+  final PayloadBuildingAttributes samplePayloadAttributes =
+      data.randomPayloadBuildingAttributes(true);
+  final PayloadAttributesData samplePayloadAttributesData =
+      new PayloadAttributesData(
+          SpecMilestone.DENEB,
+          new Data(
+              samplePayloadAttributes.getProposalSlot(),
+              samplePayloadAttributes.getParentBeaconBlockRoot(),
+              data.randomUInt64(),
+              data.randomBytes32(),
+              samplePayloadAttributes.getProposerIndex(),
+              new PayloadAttributes(
+                  samplePayloadAttributes.getTimestamp(),
+                  samplePayloadAttributes.getPrevRandao(),
+                  samplePayloadAttributes.getFeeRecipient(),
+                  samplePayloadAttributes.getWithdrawals(),
+                  Optional.of(samplePayloadAttributes.getParentBeaconBlockRoot()))));
+  final ForkChoiceUpdatedResultNotification forkChoiceUpdatedResultNotification =
+      new ForkChoiceUpdatedResultNotification(
+          new ForkChoiceState(
+              data.randomBytes32(),
+              data.randomSlot(),
+              samplePayloadAttributesData.data().parentExecutionBlockNumber(),
+              samplePayloadAttributesData.data().parentExecutionBlockHash(),
+              data.randomBytes32(),
+              data.randomBytes32(),
+              false),
+          Optional.of(samplePayloadAttributes),
+          false,
+          new SafeFuture<>());
+
   private final AsyncContext async = mock(AsyncContext.class);
   private final EventChannels channels = mock(EventChannels.class);
   private final HttpServletRequest req = mock(HttpServletRequest.class);
@@ -209,6 +259,15 @@ public class EventSubscriptionManagerTest {
   }
 
   @Test
+  void shouldPropagateBlockGossip() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=block_gossip");
+    manager.registerClient(client1);
+
+    triggerBlockGossipEvent();
+    checkEvent("block_gossip", new BlockGossipEvent(sampleBlock.asInternalSignedBeaconBlock(spec)));
+  }
+
+  @Test
   void shouldPropagateBlobSidecar() throws IOException {
     when(req.getQueryString()).thenReturn("&topics=blob_sidecar");
     manager.registerClient(client1);
@@ -218,12 +277,60 @@ public class EventSubscriptionManagerTest {
   }
 
   @Test
+  void shouldPropagatePayloadAttributes() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=payload_attributes");
+    manager.registerClient(client1);
+
+    triggerPayloadAttributesEvent();
+    checkEvent(
+        "payload_attributes",
+        PayloadAttributesEvent.create(
+            samplePayloadAttributesData.milestone(),
+            samplePayloadAttributes,
+            forkChoiceUpdatedResultNotification.forkChoiceState()));
+  }
+
+  @Test
   void shouldPropagateAttestation() throws IOException {
     when(req.getQueryString()).thenReturn("&topics=attestation");
     manager.registerClient(client1);
 
     triggerAttestationEvent();
     checkEvent("attestation", new AttestationEvent(sampleAttestation));
+  }
+
+  @Test
+  void shouldPropagateAttesterSlashing() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=attester_slashing");
+    manager.registerClient(client1);
+    triggerAttesterSlashingEvent();
+    checkEvent("attester_slashing", new AttesterSlashingEvent(sampleAttesterSlashing));
+  }
+
+  @Test
+  void shouldNotGetAttesterSlashingIfNotSubscribed() {
+    when(req.getQueryString()).thenReturn("&topics=head");
+    manager.registerClient(client1);
+
+    triggerAttesterSlashingEvent();
+    assertThat(outputStream.countEvents()).isEqualTo(0);
+  }
+
+  @Test
+  void shouldPropagateProposerSlashing() throws IOException {
+    when(req.getQueryString()).thenReturn("&topics=proposer_slashing");
+    manager.registerClient(client1);
+    triggerProposerSlashingEvent();
+    checkEvent("proposer_slashing", new ProposerSlashingEvent(sampleProposerSlashing));
+  }
+
+  @Test
+  void shouldNotGetProposerSlashingIfNotSubscribed() {
+    when(req.getQueryString()).thenReturn("&topics=head");
+    manager.registerClient(client1);
+
+    triggerProposerSlashingEvent();
+    assertThat(outputStream.countEvents()).isEqualTo(0);
   }
 
   @Test
@@ -331,13 +438,33 @@ public class EventSubscriptionManagerTest {
     asyncRunner.executeQueuedActions();
   }
 
+  private void triggerAttesterSlashingEvent() {
+    manager.onNewAttesterSlashing(sampleAttesterSlashing, InternalValidationResult.ACCEPT, false);
+    asyncRunner.executeQueuedActions();
+  }
+
+  private void triggerProposerSlashingEvent() {
+    manager.onNewProposerSlashing(sampleProposerSlashing, InternalValidationResult.ACCEPT, false);
+    asyncRunner.executeQueuedActions();
+  }
+
   private void triggerBlockEvent() {
     manager.onNewBlock(sampleBlock.asInternalSignedBeaconBlock(spec), false);
     asyncRunner.executeQueuedActions();
   }
 
+  private void triggerBlockGossipEvent() {
+    manager.onNewBlockGossip(sampleBlock.asInternalSignedBeaconBlock(spec));
+    asyncRunner.executeQueuedActions();
+  }
+
   private void triggerBlobSidecarEvent() {
     manager.onNewBlobSidecar(sampleBlobSidecar);
+    asyncRunner.executeQueuedActions();
+  }
+
+  private void triggerPayloadAttributesEvent() {
+    manager.onForkChoiceUpdatedResult(forkChoiceUpdatedResultNotification);
     asyncRunner.executeQueuedActions();
   }
 

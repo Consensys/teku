@@ -24,17 +24,17 @@ import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 
 public class RecentBlobSidecarsFetchService
-    extends AbstractFetchService<BlobIdentifier, FetchBlobSidecarTask, BlobSidecarOld>
+    extends AbstractFetchService<BlobIdentifier, FetchBlobSidecarTask, BlobSidecar>
     implements RecentBlobSidecarsFetcher {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private final BlobSidecarPool blobSidecarPool;
+  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   private final ForwardSync forwardSync;
   private final FetchTaskFactory fetchTaskFactory;
 
@@ -43,26 +43,30 @@ public class RecentBlobSidecarsFetchService
 
   RecentBlobSidecarsFetchService(
       final AsyncRunner asyncRunner,
-      final BlobSidecarPool blobSidecarPool,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final ForwardSync forwardSync,
       final FetchTaskFactory fetchTaskFactory,
       final int maxConcurrentRequests) {
     super(asyncRunner, maxConcurrentRequests);
-    this.blobSidecarPool = blobSidecarPool;
+    this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     this.forwardSync = forwardSync;
     this.fetchTaskFactory = fetchTaskFactory;
   }
 
   public static RecentBlobSidecarsFetchService create(
       final AsyncRunner asyncRunner,
-      final BlobSidecarPool blobSidecarPool,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final ForwardSync forwardSync,
       final FetchTaskFactory fetchTaskFactory,
       final Spec spec) {
     final int maxConcurrentRequests =
         RecentBlocksFetchService.MAX_CONCURRENT_REQUESTS * spec.getMaxBlobsPerBlock().orElse(1);
     return new RecentBlobSidecarsFetchService(
-        asyncRunner, blobSidecarPool, forwardSync, fetchTaskFactory, maxConcurrentRequests);
+        asyncRunner,
+        blockBlobSidecarsTrackersPool,
+        forwardSync,
+        fetchTaskFactory,
+        maxConcurrentRequests);
   }
 
   @Override
@@ -87,7 +91,7 @@ public class RecentBlobSidecarsFetchService
       // Forward sync already in progress, assume it will fetch any missing blob sidecars
       return;
     }
-    if (blobSidecarPool.containsBlobSidecar(blobIdentifier)) {
+    if (blockBlobSidecarsTrackersPool.containsBlobSidecar(blobIdentifier)) {
       // We've already got this blob sidecar
       return;
     }
@@ -107,8 +111,9 @@ public class RecentBlobSidecarsFetchService
   }
 
   private void setupSubscribers() {
-    blobSidecarPool.subscribeRequiredBlobSidecar(this::requestRecentBlobSidecar);
-    blobSidecarPool.subscribeRequiredBlobSidecarDropped(this::cancelRecentBlobSidecarRequest);
+    blockBlobSidecarsTrackersPool.subscribeRequiredBlobSidecar(this::requestRecentBlobSidecar);
+    blockBlobSidecarsTrackersPool.subscribeRequiredBlobSidecarDropped(
+        this::cancelRecentBlobSidecarRequest);
     forwardSync.subscribeToSyncChanges(this::onSyncStatusChanged);
   }
 
@@ -118,7 +123,9 @@ public class RecentBlobSidecarsFetchService
     }
     // Ensure we are requesting the blob sidecars not already filled in by the sync
     // We may have ignored these requested blob sidecars while the sync was in progress
-    blobSidecarPool.getAllRequiredBlobSidecars().forEach(this::requestRecentBlobSidecar);
+    blockBlobSidecarsTrackersPool
+        .getAllRequiredBlobSidecars()
+        .forEach(this::requestRecentBlobSidecar);
   }
 
   @Override
@@ -127,7 +134,7 @@ public class RecentBlobSidecarsFetchService
   }
 
   @Override
-  public void processFetchedResult(final FetchBlobSidecarTask task, final BlobSidecarOld result) {
+  public void processFetchedResult(final FetchBlobSidecarTask task, final BlobSidecar result) {
     LOG.trace("Successfully fetched blob sidecar: {}", result);
     blobSidecarSubscribers.forEach(s -> s.onBlobSidecar(result));
     // After retrieved blob sidecar has been processed, stop tracking it

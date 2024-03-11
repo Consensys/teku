@@ -48,6 +48,14 @@ public class ExecutionLayerOptions {
   private String engineJwtSecretFile = null;
 
   @Option(
+      names = {"--ee-jwt-claim-id"},
+      paramLabel = "<STRING>",
+      description =
+          "A unique identifier for the consensus layer client. This identifier will be added to the JWT claims as an 'id' claim.",
+      arity = "1")
+  private String engineJwtClaimId = null;
+
+  @Option(
       names = {"--builder-endpoint"},
       paramLabel = "<NETWORK>",
       description = "URL for an external Builder node (optional).",
@@ -104,7 +112,7 @@ public class ExecutionLayerOptions {
               + BUILDER_ALWAYS_KEYWORD
               + "' to always use builder bid. In this configuration locally produced payload will be used only when the bid is invalid.",
       arity = "1")
-  private String builderBidCompareFactor = Integer.toString(DEFAULT_BUILDER_BID_COMPARE_FACTOR);
+  private String builderBidCompareFactor = DEFAULT_BUILDER_BID_COMPARE_FACTOR.toString();
 
   @Option(
       names = {"--builder-set-user-agent-header"},
@@ -143,6 +151,7 @@ public class ExecutionLayerOptions {
         b ->
             b.engineEndpoint(executionEngineEndpoint)
                 .engineJwtSecretFile(engineJwtSecretFile)
+                .engineJwtClaimId(engineJwtClaimId)
                 .builderEndpoint(builderEndpoint)
                 .isBuilderCircuitBreakerEnabled(builderCircuitBreakerEnabled)
                 .builderCircuitBreakerWindow(builderCircuitBreakerWindow)

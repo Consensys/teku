@@ -15,8 +15,9 @@ package tech.pegasys.teku.beacon.sync.gossip.blocks;
 
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.service.serviceutils.ServiceFacade;
+import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 
-public interface RecentBlocksFetcher extends ServiceFacade {
+public interface RecentBlocksFetcher extends ServiceFacade, ReceivedBlockEventsChannel {
 
   void subscribeBlockFetched(BlockSubscriber subscriber);
 

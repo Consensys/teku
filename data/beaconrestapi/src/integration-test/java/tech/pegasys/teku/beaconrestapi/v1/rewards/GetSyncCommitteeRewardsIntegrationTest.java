@@ -39,6 +39,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.altair.SyncAggregate;
 import tech.pegasys.teku.spec.datastructures.type.SszPublicKey;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
+import tech.pegasys.teku.spec.logic.common.util.BlockRewardCalculatorUtil;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class GetSyncCommitteeRewardsIntegrationTest
@@ -47,7 +48,7 @@ public class GetSyncCommitteeRewardsIntegrationTest
   @BeforeEach
   public void setup() {
     spec = TestSpecFactory.createMinimalAltair();
-    rewardCalculator = new RewardCalculator(spec);
+    rewardCalculator = new RewardCalculator(spec, new BlockRewardCalculatorUtil(spec));
     final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
     final SyncAggregate syncAggregate =
@@ -62,7 +63,7 @@ public class GetSyncCommitteeRewardsIntegrationTest
   @Test
   public void handleEmptyRequestBodyList() throws IOException {
     final List<String> requestBody = List.of();
-    Response response =
+    final Response response1 =
         post(
             GetSyncCommitteeRewards.ROUTE.replace("{block_id}", "head"),
             jsonProvider.objectToJSON(requestBody));
@@ -86,15 +87,13 @@ public class GetSyncCommitteeRewardsIntegrationTest
     data.increaseReward(15, 0L);
     final String expectedResponse = serialize(data, GetSyncCommitteeRewards.RESPONSE_TYPE);
 
-    assertThat(response.code()).isEqualTo(SC_OK);
-    assertThat(response.body().string()).isEqualTo(expectedResponse);
-  }
+    assertThat(response1.code()).isEqualTo(SC_OK);
+    assertThat(response1.body().string()).isEqualTo(expectedResponse);
 
-  @Test
-  public void shouldGiveDecentErrorIfNoBody() throws IOException {
-    Response response = post(GetSyncCommitteeRewards.ROUTE.replace("{block_id}", "head"), "");
-    assertThat(response.code()).isEqualTo(SC_BAD_REQUEST);
-    assertThat(response.body().string()).contains("Array expected but got null");
+    final Response response2 =
+        post(GetSyncCommitteeRewards.ROUTE.replace("{block_id}", "head"), "");
+    assertThat(response2.code()).isEqualTo(SC_OK);
+    assertThat(response2.body().string()).isEqualTo(expectedResponse);
   }
 
   @Test

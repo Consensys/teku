@@ -17,6 +17,7 @@ import static tech.pegasys.teku.ethereum.json.types.EthereumTypes.SIGNATURE_TYPE
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.ATTESTATION_DATA_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.BEACON_BLOCK_ROOT;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.BLOCK_ROOT;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.BUILDER_BOOST_FACTOR_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COMMITTEE_INDEX_QUERY_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.COUNT;
@@ -26,6 +27,8 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.GRAFFITI;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.INDEX;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BLOCK_ID_DESCRIPTION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BROADCAST_VALIDATION;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_BROADCAST_VALIDATION_DESCRIPTION;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_PEER_ID;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.PARAM_PEER_ID_DESCRIPTION;
@@ -54,11 +57,13 @@ import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BYTES32_TYPE
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.RAW_INTEGER_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.STRING_TYPE;
+import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT64_TYPE;
 
+import java.util.Locale;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators.StatusParameter;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.json.types.beacon.StatusParameter;
 import tech.pegasys.teku.infrastructure.http.RestApiConstants;
 import tech.pegasys.teku.infrastructure.json.types.CoreTypes;
 import tech.pegasys.teku.infrastructure.json.types.DeserializableTypeDefinition;
@@ -68,12 +73,13 @@ import tech.pegasys.teku.infrastructure.restapi.endpoints.ParameterMetadata;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockHeader;
 import tech.pegasys.teku.spec.datastructures.metadata.BlockAndMetaData;
+import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 
 public class BeaconRestApiTypes {
   private static final StringValueTypeDefinition<StatusParameter> STATUS_VALUE =
       DeserializableTypeDefinition.string(StatusParameter.class)
-          .formatter(StatusParameter::toString)
-          .parser(StatusParameter::valueOf)
+          .formatter(StatusParameter::getValue)
+          .parser(StatusParameter::parse)
           .example("active_ongoing")
           .description("ValidatorStatus string")
           .format("string")
@@ -136,6 +142,11 @@ public class BeaconRestApiTypes {
       new ParameterMetadata<>(
           RestApiConstants.SKIP_RANDAO_VERIFICATION,
           BOOLEAN_TYPE.withDescription(SKIP_RANDAO_VERIFICATION_PARAM_DESCRIPTION));
+
+  public static final ParameterMetadata<UInt64> BUILDER_BOOST_FACTOR_PARAMETER =
+      new ParameterMetadata<>(
+          RestApiConstants.BUILDER_BOOST_FACTOR,
+          UINT64_TYPE.withDescription(BUILDER_BOOST_FACTOR_DESCRIPTION));
 
   public static final ParameterMetadata<Bytes32> GRAFFITI_PARAMETER =
       new ParameterMetadata<>(
@@ -215,4 +226,29 @@ public class BeaconRestApiTypes {
           "indices",
           CoreTypes.UINT64_TYPE.withDescription(
               "Array of indices for blob sidecars to request for in the specified block. Returns all blob sidecars in the block if not specified."));
+
+  private static final StringValueTypeDefinition<BroadcastValidationParameter>
+      BROADCAST_VALIDATION_VALUE =
+          DeserializableTypeDefinition.string(BroadcastValidationParameter.class)
+              .formatter(BroadcastValidationParameter::toString)
+              .parser(BroadcastValidationParameter::valueOf)
+              .example("consensus_and_equivocation")
+              .description(PARAM_BROADCAST_VALIDATION_DESCRIPTION)
+              .format("string")
+              .build();
+
+  public static final ParameterMetadata<BroadcastValidationParameter>
+      PARAMETER_BROADCAST_VALIDATION =
+          new ParameterMetadata<>(PARAM_BROADCAST_VALIDATION, BROADCAST_VALIDATION_VALUE);
+
+  @SuppressWarnings("JavaCase")
+  public enum BroadcastValidationParameter {
+    gossip,
+    consensus,
+    consensus_and_equivocation;
+
+    public BroadcastValidationLevel toInternal() {
+      return BroadcastValidationLevel.valueOf(name().toUpperCase(Locale.ROOT));
+    }
+  }
 }

@@ -48,10 +48,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import tech.pegasys.teku.api.exceptions.BadRequestException;
-import tech.pegasys.teku.api.migrated.StateValidatorData;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.beaconrestapi.AbstractMigratedBeaconHandlerWithChainDataProviderTest;
-import tech.pegasys.teku.beaconrestapi.handlers.v1.beacon.GetStateValidators.StatusParameter;
+import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
+import tech.pegasys.teku.ethereum.json.types.beacon.StatusParameter;
 import tech.pegasys.teku.infrastructure.restapi.StubRestApiRequest;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
@@ -197,7 +197,8 @@ public class GetStateValidatorsTest extends AbstractMigratedBeaconHandlerWithCha
             validatorStatus ->
                 Arrays.stream(StatusParameter.values())
                     .anyMatch(
-                        statusParameter -> statusParameter.name().equals(validatorStatus.name())));
+                        statusParameter ->
+                            statusParameter.getValue().equals(validatorStatus.name())));
   }
 
   private static Stream<Arguments> provideStatusParameters() {

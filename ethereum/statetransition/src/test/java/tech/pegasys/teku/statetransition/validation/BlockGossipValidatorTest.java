@@ -14,7 +14,8 @@
 package tech.pegasys.teku.statetransition.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import java.util.List;
@@ -40,6 +41,8 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.spec.generator.ChainBuilder.BlockOptions;
 import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
+import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
+import tech.pegasys.teku.statetransition.validation.BlockGossipValidator.EquivocationCheckResult;
 import tech.pegasys.teku.storage.client.ChainUpdater;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
@@ -50,6 +53,8 @@ public class BlockGossipValidatorTest {
   private Spec spec;
   private RecentChainData recentChainData;
   private StorageSystem storageSystem;
+  private final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher =
+      mock(ReceivedBlockEventsChannel.class);
 
   private BlockGossipValidator blockGossipValidator;
 
@@ -71,7 +76,10 @@ public class BlockGossipValidatorTest {
     storageSystem.chainUpdater().initializeGenesis(false);
     recentChainData = storageSystem.recentChainData();
     blockGossipValidator =
-        new BlockGossipValidator(spec, new GossipValidationHelper(spec, recentChainData));
+        new BlockGossipValidator(
+            spec,
+            new GossipValidationHelper(spec, recentChainData),
+            receivedBlockEventsChannelPublisher);
   }
 
   @TestTemplate
@@ -82,8 +90,7 @@ public class BlockGossipValidatorTest {
     final SignedBeaconBlock block = signedBlockAndState.getBlock();
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
 
-    assertThat(blockGossipValidator.validate(block, false))
-        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+    assertResultIsAccept(block, blockGossipValidator.validate(block, false));
   }
 
   @TestTemplate
@@ -102,8 +109,7 @@ public class BlockGossipValidatorTest {
     final SignedBeaconBlock block = signedBlockAndState.getBlock();
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
 
-    assertThat(blockGossipValidator.validate(block, false))
-        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+    assertResultIsAccept(block, blockGossipValidator.validate(block, false));
 
     assertThat(blockGossipValidator.validate(block, false))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
@@ -226,7 +232,10 @@ public class BlockGossipValidatorTest {
     final ChainUpdater chainUpdater = new ChainUpdater(localRecentChainData, chainBuilder, spec);
 
     final BlockGossipValidator blockValidator =
-        new BlockGossipValidator(spec, new GossipValidationHelper(spec, localRecentChainData));
+        new BlockGossipValidator(
+            spec,
+            new GossipValidationHelper(spec, localRecentChainData),
+            receivedBlockEventsChannelPublisher);
     chainUpdater.initializeGenesis();
 
     chainUpdater.updateBestBlock(chainUpdater.advanceChainUntil(1));
@@ -260,15 +269,17 @@ public class BlockGossipValidatorTest {
             false, specContext.getDataStructureUtil().randomExecutionPayloadHeader());
     recentChainData = storageSystem.recentChainData();
     blockGossipValidator =
-        new BlockGossipValidator(spec, new GossipValidationHelper(spec, recentChainData));
+        new BlockGossipValidator(
+            spec,
+            new GossipValidationHelper(spec, recentChainData),
+            receivedBlockEventsChannelPublisher);
 
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
 
     SignedBeaconBlock block = storageSystem.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
 
-    assertThat(blockGossipValidator.validate(block, false))
-        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+    assertResultIsAccept(block, blockGossipValidator.validate(block, false));
   }
 
   @TestTemplate
@@ -282,7 +293,10 @@ public class BlockGossipValidatorTest {
             false, specContext.getDataStructureUtil().randomExecutionPayloadHeader());
     recentChainData = storageSystem.recentChainData();
     blockGossipValidator =
-        new BlockGossipValidator(spec, new GossipValidationHelper(spec, recentChainData));
+        new BlockGossipValidator(
+            spec,
+            new GossipValidationHelper(spec, recentChainData),
+            receivedBlockEventsChannelPublisher);
 
     final UInt64 nextSlot = recentChainData.getHeadSlot().plus(ONE);
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
@@ -309,9 +323,9 @@ public class BlockGossipValidatorTest {
     final SignedBeaconBlock block = signedBlockAndState.getBlock();
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
 
-    assertThat(blockGossipValidator.validate(block, true))
-        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
-    assertTrue(blockGossipValidator.blockIsFirstBlockWithValidSignatureForSlot(block));
+    assertResultIsAccept(block, blockGossipValidator.validate(block, true));
+    assertThat(blockGossipValidator.performBlockEquivocationCheck(block))
+        .isEqualByComparingTo(EquivocationCheckResult.FIRST_BLOCK_FOR_SLOT_PROPOSER);
   }
 
   @TestTemplate
@@ -322,10 +336,15 @@ public class BlockGossipValidatorTest {
     final SignedBeaconBlock block = signedBlockAndState.getBlock();
     storageSystem.chainUpdater().setCurrentSlot(nextSlot);
 
-    assertThat(blockGossipValidator.validate(block, false))
-        .isCompletedWithValueMatching(InternalValidationResult::isAccept);
+    assertResultIsAccept(block, blockGossipValidator.validate(block, false));
 
     assertThat(blockGossipValidator.validate(block, true))
         .isCompletedWithValueMatching(InternalValidationResult::isIgnore);
+  }
+
+  private void assertResultIsAccept(
+      final SignedBeaconBlock block, final SafeFuture<InternalValidationResult> result) {
+    assertThat(result).isCompletedWithValueMatching(InternalValidationResult::isAccept);
+    verify(receivedBlockEventsChannelPublisher).onBlockValidated(block);
   }
 }

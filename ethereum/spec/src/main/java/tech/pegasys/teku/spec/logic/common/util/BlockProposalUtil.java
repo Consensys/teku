@@ -16,9 +16,10 @@ package tech.pegasys.teku.spec.logic.common.util;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import java.util.Optional;
-import java.util.function.Consumer;
+import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.bls.BLSSignatureVerifier;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -46,45 +47,42 @@ public class BlockProposalUtil {
   }
 
   public SafeFuture<BeaconBlockAndState> createNewUnsignedBlock(
-      final UInt64 newSlot,
+      final UInt64 proposalSlot,
       final int proposerIndex,
       final BeaconState blockSlotState,
       final Bytes32 parentBlockSigningRoot,
-      final Consumer<BeaconBlockBodyBuilder> bodyBuilder,
-      final boolean blinded) {
+      final Function<BeaconBlockBodyBuilder, SafeFuture<Void>> bodyBuilder,
+      final BlockProductionPerformance blockProductionPerformance) {
     checkArgument(
-        blockSlotState.getSlot().equals(newSlot),
+        blockSlotState.getSlot().equals(proposalSlot),
         "Block slot state from incorrect slot. Expected %s but got %s",
-        newSlot,
+        proposalSlot,
         blockSlotState.getSlot());
 
     // Create block body
-    final SafeFuture<? extends BeaconBlockBody> beaconBlockBody;
-    final BeaconBlockSchema beaconBlockSchema;
-
-    if (blinded) {
-      beaconBlockBody = createBlindedBeaconBlockBody(bodyBuilder);
-      beaconBlockSchema = schemaDefinitions.getBlindedBeaconBlockSchema();
-    } else {
-      beaconBlockBody = createBeaconBlockBody(bodyBuilder);
-      beaconBlockSchema = schemaDefinitions.getBeaconBlockSchema();
-    }
+    final SafeFuture<? extends BeaconBlockBody> beaconBlockBody = createBlockBody(bodyBuilder);
 
     // Create initial block with some stubs
     final Bytes32 tmpStateRoot = Bytes32.ZERO;
     final SafeFuture<BeaconBlock> newBlock =
         beaconBlockBody.thenApply(
-            body ->
-                beaconBlockSchema.create(
-                    newSlot,
-                    UInt64.valueOf(proposerIndex),
-                    parentBlockSigningRoot,
-                    tmpStateRoot,
-                    body));
+            body -> {
+              final BeaconBlockSchema beaconBlockSchema =
+                  body.isBlinded()
+                      ? schemaDefinitions.getBlindedBeaconBlockSchema()
+                      : schemaDefinitions.getBeaconBlockSchema();
+              return beaconBlockSchema.create(
+                  proposalSlot,
+                  UInt64.valueOf(proposerIndex),
+                  parentBlockSigningRoot,
+                  tmpStateRoot,
+                  body);
+            });
 
     return newBlock
         .thenApplyChecked(
             block -> {
+              blockProductionPerformance.beaconBlockCreated();
               // Run state transition and set state root
               // Skip verifying signatures as all operations are coming from our own pools.
 
@@ -96,7 +94,11 @@ public class BlockProposalUtil {
                       BLSSignatureVerifier.NO_OP,
                       Optional.empty());
 
+              blockProductionPerformance.stateTransition();
+
               final Bytes32 stateRoot = newState.hashTreeRoot();
+
+              blockProductionPerformance.stateHashing();
               final BeaconBlock newCompleteBlock = block.withStateRoot(stateRoot);
 
               return new BeaconBlockAndState(newCompleteBlock, newState);
@@ -110,28 +112,9 @@ public class BlockProposalUtil {
             });
   }
 
-  public SafeFuture<BeaconBlockAndState> createNewUnsignedBlock(
-      final UInt64 newSlot,
-      final int proposerIndex,
-      final BeaconState blockSlotState,
-      final Bytes32 parentBlockSigningRoot,
-      final Consumer<BeaconBlockBodyBuilder> bodyBuilder) {
-    return createNewUnsignedBlock(
-        newSlot,
-        proposerIndex,
-        blockSlotState,
-        parentBlockSigningRoot,
-        bodyBuilder,
-        ValidatorsUtil.DEFAULT_PRODUCE_BLINDED_BLOCK);
-  }
-
-  private SafeFuture<? extends BeaconBlockBody> createBeaconBlockBody(
-      final Consumer<BeaconBlockBodyBuilder> bodyBuilder) {
-    return schemaDefinitions.getBeaconBlockBodySchema().createBlockBody(bodyBuilder);
-  }
-
-  private SafeFuture<? extends BeaconBlockBody> createBlindedBeaconBlockBody(
-      final Consumer<BeaconBlockBodyBuilder> bodyBuilder) {
-    return schemaDefinitions.getBlindedBeaconBlockBodySchema().createBlockBody(bodyBuilder);
+  private SafeFuture<? extends BeaconBlockBody> createBlockBody(
+      final Function<BeaconBlockBodyBuilder, SafeFuture<Void>> bodyBuilder) {
+    final BeaconBlockBodyBuilder builder = schemaDefinitions.createBeaconBlockBodyBuilder();
+    return bodyBuilder.apply(builder).thenApply(__ -> builder.build());
   }
 }

@@ -13,16 +13,22 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v1.events;
 
+import io.javalin.config.Key;
 import io.javalin.http.Context;
 import io.javalin.http.HandlerType;
 import io.javalin.http.HttpStatus;
+import io.javalin.json.JsonMapper;
+import io.javalin.plugin.ContextPlugin;
+import io.javalin.security.RouteRole;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.InputStream;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,12 +40,6 @@ public class StubContext implements Context {
   public StubContext(final HttpServletRequest req, final HttpServletResponse res) {
     this.req = req;
     this.res = res;
-  }
-
-  @Override
-  @SuppressWarnings("TypeParameterUnusedInFormals")
-  public <T> T appAttribute(@NotNull final String s) {
-    return null;
   }
 
   @NotNull
@@ -107,4 +107,41 @@ public class StubContext implements Context {
   public InputStream resultInputStream() {
     return null;
   }
+
+  @Override
+  public <T> T appData(@NotNull Key<T> key) {
+    return null;
+  }
+
+  @NotNull
+  @Override
+  public JsonMapper jsonMapper() {
+    return null;
+  }
+
+  @NotNull
+  @Override
+  public Context minSizeForCompression(int i) {
+    return null;
+  }
+
+  @NotNull
+  @Override
+  public Set<RouteRole> routeRoles() {
+    return null;
+  }
+
+  @NotNull
+  @Override
+  public Context skipRemainingHandlers() {
+    return null;
+  }
+
+  @Override
+  public <T> T with(@NotNull Class<? extends ContextPlugin<?, T>> aClass) {
+    return null;
+  }
+
+  @Override
+  public void writeJsonStream(@NotNull Stream<?> stream) {}
 }

@@ -17,6 +17,7 @@ import static tech.pegasys.teku.ethereum.executionlayer.ExecutionLayerManagerImp
 import static tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil.getMessageOrSimpleName;
 import static tech.pegasys.teku.infrastructure.logging.Converter.weiToEth;
 
+import com.google.common.base.Preconditions;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
@@ -27,6 +28,7 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.ethereum.executionclient.BuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.exceptions.ExceptionUtil;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
@@ -34,8 +36,6 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlindedBlockContainer;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.BlobsBundle;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
@@ -59,6 +59,10 @@ public class ExecutionBuilderModule {
   private static final Logger LOG = LogManager.getLogger();
   private static final int HUNDRED_PERCENT = 100;
 
+  public static final UInt64 BUILDER_BOOST_FACTOR_MAX_PROFIT = UInt64.valueOf(HUNDRED_PERCENT);
+  public static final UInt64 BUILDER_BOOST_FACTOR_PREFER_EXECUTION = UInt64.ZERO;
+  public static final UInt64 BUILDER_BOOST_FACTOR_PREFER_BUILDER = UInt64.MAX_VALUE;
+
   private final Spec spec;
   private final AtomicBoolean latestBuilderAvailability;
   private final ExecutionLayerManagerImpl executionLayerManager;
@@ -66,7 +70,7 @@ public class ExecutionBuilderModule {
   private final BuilderCircuitBreaker builderCircuitBreaker;
   private final Optional<BuilderClient> builderClient;
   private final EventLogger eventLogger;
-  private final Optional<Integer> builderBidCompareFactor;
+  private final UInt64 builderBidCompareFactor;
   private final boolean useShouldOverrideBuilderFlag;
 
   public ExecutionBuilderModule(
@@ -76,7 +80,7 @@ public class ExecutionBuilderModule {
       final BuilderCircuitBreaker builderCircuitBreaker,
       final Optional<BuilderClient> builderClient,
       final EventLogger eventLogger,
-      final Optional<Integer> builderBidCompareFactor,
+      final UInt64 builderBidCompareFactor,
       final boolean useShouldOverrideBuilderFlag) {
     this.spec = spec;
     this.latestBuilderAvailability = new AtomicBoolean(builderClient.isPresent());
@@ -89,7 +93,7 @@ public class ExecutionBuilderModule {
     this.useShouldOverrideBuilderFlag = useShouldOverrideBuilderFlag;
   }
 
-  private Optional<SafeFuture<HeaderWithFallbackData>> validateBuilderGetHeader(
+  private Optional<SafeFuture<HeaderWithFallbackData>> isBuilderFlowViable(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
       final SafeFuture<GetPayloadResponse> localGetPayloadResponse,
@@ -127,16 +131,26 @@ public class ExecutionBuilderModule {
   public SafeFuture<HeaderWithFallbackData> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
-      final SafeFuture<UInt256> payloadValueResult) {
+      final SafeFuture<UInt256> payloadValueResult,
+      final Optional<UInt64> requestedBuilderBoostFactor,
+      final BlockProductionPerformance blockProductionPerformance) {
 
     final SafeFuture<GetPayloadResponse> localGetPayloadResponse =
-        executionLayerManager.engineGetPayloadForFallback(executionPayloadContext, state.getSlot());
+        executionLayerManager
+            .engineGetPayloadForFallback(executionPayloadContext, state.getSlot())
+            .thenPeek(__ -> blockProductionPerformance.engineGetPayload());
 
-    final Optional<SafeFuture<HeaderWithFallbackData>> validationResult =
-        validateBuilderGetHeader(
+    final Optional<SafeFuture<HeaderWithFallbackData>> maybeFallback =
+        isBuilderFlowViable(
             executionPayloadContext, state, localGetPayloadResponse, payloadValueResult);
-    if (validationResult.isPresent()) {
-      return validationResult.get();
+    if (maybeFallback.isPresent()) {
+      return maybeFallback
+          .get()
+          .thenPeek(
+              headerWithFallbackData ->
+                  headerWithFallbackData
+                      .getFallbackData()
+                      .ifPresent(this::recordAndLogFallbackToLocallyProducedExecutionData));
     }
 
     final UInt64 slot = state.getSlot();
@@ -162,13 +176,15 @@ public class ExecutionBuilderModule {
         .getHeader(slot, validatorPublicKey, executionPayloadContext.getParentHash())
         .thenApply(ResponseUnwrapper::unwrapBuilderResponseOrThrow)
         .thenPeek(
-            signedBuilderBidMaybe ->
-                LOG.trace(
-                    "builderGetHeader(slot={}, pubKey={}, parentHash={}) -> {}",
-                    slot,
-                    validatorPublicKey,
-                    executionPayloadContext.getParentHash(),
-                    signedBuilderBidMaybe))
+            signedBuilderBidMaybe -> {
+              blockProductionPerformance.builderGetHeader();
+              LOG.trace(
+                  "builderGetHeader(slot={}, pubKey={}, parentHash={}) -> {}",
+                  slot,
+                  validatorPublicKey,
+                  executionPayloadContext.getParentHash(),
+                  signedBuilderBidMaybe);
+            })
         .thenComposeCombined(
             safeLocalGetPayloadResponse,
             (signedBuilderBidMaybe, maybeLocalGetPayloadResponse) -> {
@@ -202,8 +218,11 @@ public class ExecutionBuilderModule {
 
                 logReceivedBuilderBid(signedBuilderBid.getMessage());
 
-                if (isLocalPayloadValueWinning(builderBidValue, localBlockValue)) {
-                  logLocalPayloadWin(builderBidValue, localBlockValue);
+                final boolean localPayloadValueWon =
+                    calculateIfLocalPayloadWinsAndLog(
+                        requestedBuilderBoostFactor, localBlockValue, builderBidValue);
+
+                if (localPayloadValueWon) {
                   return getResultFromLocalGetPayloadResponse(
                       localGetPayloadResponse,
                       slot,
@@ -218,7 +237,8 @@ public class ExecutionBuilderModule {
                     state,
                     validatorRegistration.get(),
                     localExecutionPayload,
-                    payloadValueResult);
+                    payloadValueResult,
+                    blockProductionPerformance);
               }
             })
         .exceptionallyCompose(
@@ -228,16 +248,62 @@ public class ExecutionBuilderModule {
                   error);
               return getResultFromLocalGetPayloadResponse(
                   localGetPayloadResponse, slot, FallbackReason.BUILDER_ERROR, payloadValueResult);
-            });
+            })
+        .thenPeek(
+            headerWithFallbackData ->
+                headerWithFallbackData
+                    .getFallbackData()
+                    .ifPresent(this::recordAndLogFallbackToLocallyProducedExecutionData));
+  }
+
+  private boolean calculateIfLocalPayloadWinsAndLog(
+      final Optional<UInt64> requestedBuilderBoostFactor,
+      final UInt256 localBlockValue,
+      final UInt256 builderBidValue) {
+    final UInt64 actualBuilderBoostFactor;
+    final boolean isRequestedBuilderBoostFactor;
+
+    // we give precedence to the requestedBuilderBoostFactor over the BN configured
+    // builderBidCompareFactor
+
+    if (requestedBuilderBoostFactor.isPresent()) {
+      actualBuilderBoostFactor = requestedBuilderBoostFactor.get();
+      isRequestedBuilderBoostFactor = true;
+    } else {
+      actualBuilderBoostFactor = builderBidCompareFactor;
+      isRequestedBuilderBoostFactor = false;
+    }
+
+    final boolean localPayloadValueWon =
+        isLocalPayloadValueWinning(builderBidValue, localBlockValue, actualBuilderBoostFactor);
+
+    logPayloadValueComparisonDetails(
+        localPayloadValueWon,
+        builderBidValue,
+        localBlockValue,
+        isRequestedBuilderBoostFactor,
+        actualBuilderBoostFactor);
+
+    return localPayloadValueWon;
   }
 
   /** 1 ETH is 10^18 wei, Uint256 max is more than 10^77 */
   private boolean isLocalPayloadValueWinning(
-      final UInt256 builderBidValue, final UInt256 localPayloadValue) {
-    return builderBidCompareFactor.isPresent()
-        && builderBidValue
-            .multiply(builderBidCompareFactor.get())
-            .lessOrEqualThan(localPayloadValue.multiply(HUNDRED_PERCENT));
+      final UInt256 builderBidValue,
+      final UInt256 localPayloadValue,
+      final UInt64 builderBoostFactor) {
+
+    if (builderBoostFactor.equals(BUILDER_BOOST_FACTOR_PREFER_EXECUTION)) {
+      return true;
+    }
+
+    if (builderBoostFactor.equals(BUILDER_BOOST_FACTOR_PREFER_BUILDER)) {
+      return false;
+    }
+
+    return builderBidValue
+        .multiply(UInt256.valueOf(builderBoostFactor.longValue()))
+        .lessOrEqualThan(localPayloadValue.multiply(HUNDRED_PERCENT));
   }
 
   private SafeFuture<HeaderWithFallbackData> getResultFromSignedBuilderBid(
@@ -245,15 +311,16 @@ public class ExecutionBuilderModule {
       final BeaconState state,
       final SignedValidatorRegistration validatorRegistration,
       final Optional<ExecutionPayload> localExecutionPayload,
-      final SafeFuture<UInt256> payloadValueResult) {
-    final ExecutionPayloadHeader executionPayloadHeader =
-        builderBidValidator.validateAndGetPayloadHeader(
-            spec, signedBuilderBid, validatorRegistration, state, localExecutionPayload);
-    final Optional<SszList<SszKZGCommitment>> blobKzgCommitments =
-        signedBuilderBid.getMessage().getOptionalBlobKzgCommitments();
-    payloadValueResult.complete(signedBuilderBid.getMessage().getValue());
+      final SafeFuture<UInt256> payloadValueResult,
+      final BlockProductionPerformance blockProductionPerformance) {
+    builderBidValidator.validateBuilderBid(
+        signedBuilderBid, validatorRegistration, state, localExecutionPayload);
+    blockProductionPerformance.builderBidValidated();
+    final BuilderBid builderBid = signedBuilderBid.getMessage();
+    payloadValueResult.complete(builderBid.getValue());
     return SafeFuture.completedFuture(
-        HeaderWithFallbackData.create(executionPayloadHeader, blobKzgCommitments));
+        HeaderWithFallbackData.create(
+            builderBid.getHeader(), builderBid.getOptionalBlobKzgCommitments()));
   }
 
   public SafeFuture<Void> builderRegisterValidators(
@@ -287,15 +354,12 @@ public class ExecutionBuilderModule {
   }
 
   public SafeFuture<BuilderPayload> builderGetPayload(
-      final SignedBlockContainer signedBlockContainer,
+      final SignedBeaconBlock signedBeaconBlock,
       final Function<UInt64, Optional<ExecutionPayloadResult>> getPayloadResultFunction) {
 
-    final SignedBlindedBlockContainer signedBlindedBlockContainer =
-        signedBlockContainer
-            .toBlinded()
-            .orElseThrow(() -> new IllegalArgumentException("SignedBlockContainer must be blind"));
+    Preconditions.checkArgument(signedBeaconBlock.isBlinded(), "SignedBeaconBlock must be blind");
 
-    final UInt64 slot = signedBlindedBlockContainer.getSlot();
+    final UInt64 slot = signedBeaconBlock.getSlot();
 
     final Optional<SafeFuture<HeaderWithFallbackData>> maybeProcessedSlot =
         getPayloadResultFunction
@@ -305,14 +369,13 @@ public class ExecutionBuilderModule {
     if (maybeProcessedSlot.isEmpty()) {
       LOG.warn(
           "Blinded block seems to not be built via either builder or local EL. Trying to unblind it via builder endpoint anyway.");
-      return getPayloadFromBuilder(signedBlindedBlockContainer.getSignedBlock());
+      return getPayloadFromBuilder(signedBeaconBlock);
     }
 
     final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture =
         maybeProcessedSlot.get();
 
-    return getPayloadFromBuilderOrFallbackData(
-        signedBlindedBlockContainer, headerWithFallbackDataFuture);
+    return getPayloadFromBuilderOrFallbackData(signedBeaconBlock, headerWithFallbackDataFuture);
   }
 
   private boolean isTransitionNotFinalized(final ExecutionPayloadContext executionPayloadContext) {
@@ -394,20 +457,21 @@ public class ExecutionBuilderModule {
   }
 
   private SafeFuture<BuilderPayload> getPayloadFromBuilderOrFallbackData(
-      final SignedBlindedBlockContainer signedBlindedBlockContainer,
+      final SignedBeaconBlock signedBlindedBeaconBlock,
       final SafeFuture<HeaderWithFallbackData> headerWithFallbackDataFuture) {
     // note: we don't do any particular consistency check here.
     // the header/payload compatibility check is done by SignedBeaconBlockUnblinder
-    // the blobs bundle compatibility is done by SignedBlobSidecarsUnblinder
+    // the blobs bundle compatibility check is done by
+    // BlockOperationSelectorFactory#createBlobSidecarsSelector
     return headerWithFallbackDataFuture.thenCompose(
         headerWithFallbackData -> {
           if (headerWithFallbackData.getFallbackData().isEmpty()) {
-            return getPayloadFromBuilder(signedBlindedBlockContainer.getSignedBlock());
+            return getPayloadFromBuilder(signedBlindedBeaconBlock);
           } else {
             final FallbackData fallbackData = headerWithFallbackData.getFallbackData().get();
-            logFallbackToLocalExecutionPayloadAndBlobsBundle(fallbackData);
-            executionLayerManager.recordExecutionPayloadFallbackSource(
-                Source.BUILDER_LOCAL_EL_FALLBACK, fallbackData.getReason());
+            LOG.debug(
+                "Using FallbackData to provide unblinded execution data (FallbackReason: {})",
+                fallbackData.getReason());
             final BuilderPayload builderPayload =
                 fallbackData
                     .getBlobsBundle()
@@ -415,7 +479,7 @@ public class ExecutionBuilderModule {
                         executionBlobsBundle -> {
                           final SchemaDefinitionsDeneb schemaDefinitions =
                               SchemaDefinitionsDeneb.required(
-                                  spec.atSlot(signedBlindedBlockContainer.getSlot())
+                                  spec.atSlot(signedBlindedBeaconBlock.getSlot())
                                       .getSchemaDefinitions());
                           final BlobsBundle blobsBundle =
                               schemaDefinitions
@@ -461,7 +525,9 @@ public class ExecutionBuilderModule {
     eventLogger.builderIsNotAvailable(errorMessage);
   }
 
-  private void logFallbackToLocalExecutionPayloadAndBlobsBundle(final FallbackData fallbackData) {
+  private void recordAndLogFallbackToLocallyProducedExecutionData(final FallbackData fallbackData) {
+    executionLayerManager.recordExecutionPayloadFallbackSource(
+        Source.BUILDER_LOCAL_EL_FALLBACK, fallbackData.getReason());
     final Level logLevel =
         fallbackData.getReason() == FallbackReason.NOT_NEEDED ? Level.DEBUG : Level.INFO;
     final ExecutionPayload executionPayload = fallbackData.getExecutionPayload();
@@ -514,16 +580,49 @@ public class ExecutionBuilderModule {
         blobsLog);
   }
 
-  private void logLocalPayloadWin(final UInt256 builderBidValue, final UInt256 localPayloadValue) {
-    if (builderBidCompareFactor.isEmpty() || builderBidCompareFactor.get() == HUNDRED_PERCENT) {
-      LOG.info(
-          "Local execution payload ({} ETH) is chosen over builder bid ({} ETH).",
-          weiToEth(localPayloadValue),
-          weiToEth(builderBidValue));
+  private void logPayloadValueComparisonDetails(
+      final boolean localPayloadValueWon,
+      final UInt256 builderBidValue,
+      final UInt256 localPayloadValue,
+      final boolean isRequestedBuilderBoostFactor,
+      final UInt64 actualBuilderBoostFactor) {
+    final String actualComparisonFactorString;
+    final String comparisonFactorSource = isRequestedBuilderBoostFactor ? "VC" : "BN";
+
+    if (actualBuilderBoostFactor.equals(BUILDER_BOOST_FACTOR_MAX_PROFIT)) {
+      actualComparisonFactorString = "MAX_PROFIT";
+    } else if (actualBuilderBoostFactor.equals(BUILDER_BOOST_FACTOR_PREFER_EXECUTION)) {
+      actualComparisonFactorString = "PREFER_EXECUTION";
+    } else if (actualBuilderBoostFactor.equals(BUILDER_BOOST_FACTOR_PREFER_BUILDER)) {
+      actualComparisonFactorString = "PREFER_BUILDER";
     } else {
-      LOG.info(
-          "Local execution payload ({} ETH) is chosen over builder bid ({} ETH, compare factor {}%).",
-          weiToEth(localPayloadValue), weiToEth(builderBidValue), builderBidCompareFactor.get());
+      actualComparisonFactorString = actualBuilderBoostFactor + "%";
     }
+
+    final String winningSideText;
+    final String winningSideValue;
+    final String losingSideText;
+    final String losingSideValue;
+
+    if (localPayloadValueWon) {
+      winningSideText = "Local execution payload";
+      winningSideValue = weiToEth(localPayloadValue);
+      losingSideText = "builder bid";
+      losingSideValue = weiToEth(builderBidValue);
+    } else {
+      winningSideText = "Builder bid";
+      winningSideValue = weiToEth(builderBidValue);
+      losingSideText = "local execution payload";
+      losingSideValue = weiToEth(localPayloadValue);
+    }
+
+    LOG.info(
+        "{} ({} ETH) is chosen over {} ({} ETH) - builder compare factor: {}, source: {}.",
+        winningSideText,
+        winningSideValue,
+        losingSideText,
+        losingSideValue,
+        actualComparisonFactorString,
+        comparisonFactorSource);
   }
 }

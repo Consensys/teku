@@ -15,8 +15,10 @@ package tech.pegasys.teku.beaconrestapi.v1.validator;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.mockito.Mockito.when;
+import static tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDutiesBuilder.SYNC_COMMITTEE_DUTIES_TYPE;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_BAD_REQUEST;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
+import static tech.pegasys.teku.infrastructure.json.JsonUtil.parse;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -27,15 +29,13 @@ import java.util.Optional;
 import okhttp3.Response;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
-import tech.pegasys.teku.api.schema.BLSPubKey;
 import tech.pegasys.teku.beacon.sync.events.SyncState;
 import tech.pegasys.teku.beaconrestapi.AbstractDataBackedRestAPIIntegrationTest;
 import tech.pegasys.teku.beaconrestapi.handlers.v1.validator.PostSyncDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuty;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
-import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 
 public class PostSyncDutiesIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
   final IntList validators = IntList.of(1);
@@ -68,11 +68,9 @@ public class PostSyncDutiesIntegrationTest extends AbstractDataBackedRestAPIInte
         post(PostSyncDuties.ROUTE.replace("{epoch}", "1"), jsonProvider.objectToJSON(validators));
 
     Assertions.assertThat(response.code()).isEqualTo(SC_OK);
-    final PostSyncDutiesResponse dutiesResponse =
-        jsonProvider.jsonToObject(response.body().string(), PostSyncDutiesResponse.class);
-    assertThat(dutiesResponse.data.get(0))
-        .isEqualTo(
-            new tech.pegasys.teku.api.response.v1.validator.SyncCommitteeDuty(
-                new BLSPubKey(VALIDATOR_KEYS.get(1).getPublicKey()), ONE, IntSet.of(11)));
+    final SyncCommitteeDuties committeeDuties =
+        parse(response.body().string(), SYNC_COMMITTEE_DUTIES_TYPE);
+    assertThat(committeeDuties.getDuties().get(0))
+        .isEqualTo(new SyncCommitteeDuty(VALIDATOR_KEYS.get(1).getPublicKey(), 1, IntSet.of(11)));
   }
 }

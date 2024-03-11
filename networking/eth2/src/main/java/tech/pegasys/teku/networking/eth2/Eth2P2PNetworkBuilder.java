@@ -38,6 +38,7 @@ import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscri
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsBellatrix;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsCapella;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsDeneb;
+import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsElectra;
 import tech.pegasys.teku.networking.eth2.gossip.forks.versions.GossipForkSubscriptionsPhase0;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.AttestationSubnetTopicProvider;
 import tech.pegasys.teku.networking.eth2.gossip.subnets.PeerSubnetSubscriptions;
@@ -68,7 +69,7 @@ import tech.pegasys.teku.networking.p2p.rpc.RpcMethod;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.Constants;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -96,7 +97,7 @@ public class Eth2P2PNetworkBuilder {
   protected EventChannels eventChannels;
   protected CombinedChainDataClient combinedChainDataClient;
   protected OperationProcessor<SignedBeaconBlock> gossipedBlockProcessor;
-  protected OperationProcessor<SignedBlobSidecarOld> gossipedBlobSidecarProcessor;
+  protected OperationProcessor<BlobSidecar> gossipedBlobSidecarProcessor;
   protected OperationProcessor<ValidatableAttestation> gossipedAttestationConsumer;
   protected OperationProcessor<ValidatableAttestation> gossipedAggregateProcessor;
   protected OperationProcessor<AttesterSlashing> gossipedAttesterSlashingConsumer;
@@ -253,7 +254,6 @@ public class Eth2P2PNetworkBuilder {
       case CAPELLA -> new GossipForkSubscriptionsCapella(
           forkAndSpecMilestone.getFork(),
           spec,
-          config,
           asyncRunner,
           metricsSystem,
           network,
@@ -271,7 +271,24 @@ public class Eth2P2PNetworkBuilder {
       case DENEB -> new GossipForkSubscriptionsDeneb(
           forkAndSpecMilestone.getFork(),
           spec,
-          config,
+          asyncRunner,
+          metricsSystem,
+          network,
+          combinedChainDataClient.getRecentChainData(),
+          gossipEncoding,
+          gossipedBlockProcessor,
+          gossipedBlobSidecarProcessor,
+          gossipedAttestationConsumer,
+          gossipedAggregateProcessor,
+          gossipedAttesterSlashingConsumer,
+          gossipedProposerSlashingConsumer,
+          gossipedVoluntaryExitConsumer,
+          gossipedSignedContributionAndProofProcessor,
+          gossipedSyncCommitteeMessageProcessor,
+          gossipedSignedBlsToExecutionChangeProcessor);
+      case ELECTRA -> new GossipForkSubscriptionsElectra(
+          forkAndSpecMilestone.getFork(),
+          spec,
           asyncRunner,
           metricsSystem,
           network,
@@ -444,7 +461,7 @@ public class Eth2P2PNetworkBuilder {
   }
 
   public Eth2P2PNetworkBuilder gossipedBlobSidecarProcessor(
-      final OperationProcessor<SignedBlobSidecarOld> blobSidecarProcessor) {
+      final OperationProcessor<BlobSidecar> blobSidecarProcessor) {
     checkNotNull(blobSidecarProcessor);
     this.gossipedBlobSidecarProcessor = blobSidecarProcessor;
     return this;

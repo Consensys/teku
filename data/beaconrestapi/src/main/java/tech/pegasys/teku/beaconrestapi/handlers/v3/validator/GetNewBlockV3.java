@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.beaconrestapi.handlers.v3.validator;
 
+import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.BUILDER_BOOST_FACTOR_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.GRAFFITI_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.RANDAO_PARAMETER;
 import static tech.pegasys.teku.beaconrestapi.BeaconRestApiTypes.SKIP_RANDAO_VERIFICATION_PARAMETER;
@@ -30,7 +31,8 @@ import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONS
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_BLINDED;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_EXECUTION_PAYLOAD_VALUE;
 import static tech.pegasys.teku.infrastructure.http.RestApiConstants.SLOT_PATH_DESCRIPTION;
-import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_EXPERIMENTAL;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.TAG_VALIDATOR_REQUIRED;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.BOOLEAN_TYPE;
 import static tech.pegasys.teku.infrastructure.json.types.CoreTypes.UINT256_TYPE;
 
@@ -89,11 +91,12 @@ public class GetNewBlockV3 extends RestApiEndpoint {
                 + "header from an MEV relay.\n"
                 + "Metadata in the response indicates the type of block produced, and the supported types of block\n"
                 + "will be added to as forks progress.")
-        .tags(TAG_EXPERIMENTAL)
+        .tags(TAG_VALIDATOR, TAG_VALIDATOR_REQUIRED)
         .pathParam(SLOT_PARAMETER.withDescription(SLOT_PATH_DESCRIPTION))
         .queryParamRequired(RANDAO_PARAMETER)
         .queryParam(GRAFFITI_PARAMETER)
         .queryParam(SKIP_RANDAO_VERIFICATION_PARAMETER)
+        .queryParam(BUILDER_BOOST_FACTOR_PARAMETER)
         .response(
             SC_OK,
             "Request successful",
@@ -108,8 +111,10 @@ public class GetNewBlockV3 extends RestApiEndpoint {
         request.getPathParameter(SLOT_PARAMETER.withDescription(SLOT_PATH_DESCRIPTION));
     final BLSSignature randao = request.getQueryParameter(RANDAO_PARAMETER);
     final Optional<Bytes32> graffiti = request.getOptionalQueryParameter(GRAFFITI_PARAMETER);
-    final SafeFuture<Optional<BlockContainerAndMetaData<BlockContainer>>> result =
-        validatorDataProvider.produceBlock(slot, randao, graffiti);
+    final Optional<UInt64> requestedBuilderBoostFactor =
+        request.getOptionalQueryParameter(BUILDER_BOOST_FACTOR_PARAMETER);
+    final SafeFuture<Optional<BlockContainerAndMetaData>> result =
+        validatorDataProvider.produceBlock(slot, randao, graffiti, requestedBuilderBoostFactor);
     request.respondAsync(
         result.thenApply(
             maybeBlock ->
@@ -141,8 +146,8 @@ public class GetNewBlockV3 extends RestApiEndpoint {
                                 SC_INTERNAL_SERVER_ERROR, "Unable to produce a block"))));
   }
 
-  private static SerializableTypeDefinition<BlockContainerAndMetaData<BlockContainer>>
-      getResponseType(final SchemaDefinitionCache schemaDefinitionCache) {
+  private static SerializableTypeDefinition<BlockContainerAndMetaData> getResponseType(
+      final SchemaDefinitionCache schemaDefinitionCache) {
 
     final List<MilestoneDependentTypesUtil.ConditionalSchemaGetter<BlockContainer>> schemaGetters =
         generateBlockContainerSchemaGetters(schemaDefinitionCache);
@@ -150,7 +155,7 @@ public class GetNewBlockV3 extends RestApiEndpoint {
     final SerializableTypeDefinition<BlockContainer> blockContainerType =
         getMultipleSchemaDefinitionFromMilestone(schemaDefinitionCache, "Block", schemaGetters);
 
-    return SerializableTypeDefinition.<BlockContainerAndMetaData<BlockContainer>>object()
+    return SerializableTypeDefinition.<BlockContainerAndMetaData>object()
         .name("ProduceBlockV3Response")
         .withField("version", MILESTONE_TYPE, BlockContainerAndMetaData::specMilestone)
         .withField(

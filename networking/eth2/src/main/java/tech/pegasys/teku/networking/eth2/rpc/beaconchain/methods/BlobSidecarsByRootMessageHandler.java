@@ -35,7 +35,7 @@ import tech.pegasys.teku.networking.eth2.rpc.core.RpcException;
 import tech.pegasys.teku.networking.p2p.rpc.StreamClosedException;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.config.SpecConfigDeneb;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobIdentifier;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.BlobSidecarsByRootRequestMessage;
@@ -47,7 +47,7 @@ import tech.pegasys.teku.storage.client.CombinedChainDataClient;
  * v1</a>
  */
 public class BlobSidecarsByRootMessageHandler
-    extends PeerRequiredLocalMessageHandler<BlobSidecarsByRootRequestMessage, BlobSidecarOld> {
+    extends PeerRequiredLocalMessageHandler<BlobSidecarsByRootRequestMessage, BlobSidecar> {
 
   private static final Logger LOG = LogManager.getLogger();
 
@@ -100,7 +100,7 @@ public class BlobSidecarsByRootMessageHandler
       final String protocolId,
       final Eth2Peer peer,
       final BlobSidecarsByRootRequestMessage message,
-      final ResponseCallback<BlobSidecarOld> callback) {
+      final ResponseCallback<BlobSidecar> callback) {
 
     LOG.trace(
         "Peer {} requested {} blob sidecars with blob identifiers: {}",
@@ -173,7 +173,7 @@ public class BlobSidecarsByRootMessageHandler
    */
   private SafeFuture<Void> validateMinimumRequestEpoch(
       final BlobIdentifier identifier,
-      final Optional<BlobSidecarOld> maybeSidecar,
+      final Optional<BlobSidecar> maybeSidecar,
       final UInt64 finalizedEpoch) {
     return maybeSidecar
         .map(sidecar -> SafeFuture.completedFuture(Optional.of(sidecar.getSlot())))
@@ -199,13 +199,12 @@ public class BlobSidecarsByRootMessageHandler
             });
   }
 
-  private SafeFuture<Optional<BlobSidecarOld>> retrieveBlobSidecar(
-      final BlobIdentifier identifier) {
+  private SafeFuture<Optional<BlobSidecar>> retrieveBlobSidecar(final BlobIdentifier identifier) {
     return combinedChainDataClient.getBlobSidecarByBlockRootAndIndex(
         identifier.getBlockRoot(), identifier.getIndex());
   }
 
-  private void handleError(final ResponseCallback<BlobSidecarOld> callback, final Throwable error) {
+  private void handleError(final ResponseCallback<BlobSidecar> callback, final Throwable error) {
     final Throwable rootCause = Throwables.getRootCause(error);
     if (rootCause instanceof RpcException) {
       LOG.trace("Rejecting blob sidecars by root request", error);

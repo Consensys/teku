@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.logic.common.helpers;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -127,6 +128,31 @@ public class BeaconStateAccessorsTest {
 
     final UInt64 oldSlot = epochSlot.minus(ONE);
     assertDoesNotThrow(() -> beaconStateAccessors.getBeaconCommittee(state, oldSlot, ONE));
+  }
+
+  @Test
+  void calculateCommitteeFraction_full() {
+    final BeaconState state = dataStructureUtil.randomBeaconState(1024);
+    final UInt64 totalActiveBalance =
+        spec.atSlot(state.getSlot()).beaconStateAccessors().getTotalActiveBalance(state);
+    final UInt64 totalActiveBalancePerSlot =
+        totalActiveBalance.dividedBy(spec.getGenesisSpec().getSlotsPerEpoch());
+    final UInt64 fraction = beaconStateAccessors.calculateCommitteeFraction(state, 100);
+    // at its simplest, if we've divided by slots in the function, this should be
+    // totalActiveBalance/slots (because fraction is 100%)
+    assertThat(fraction).isEqualTo(totalActiveBalancePerSlot);
+  }
+
+  @Test
+  void calculateCommitteeFraction_minimal() {
+    final BeaconState state = dataStructureUtil.randomBeaconState(1024);
+    final UInt64 totalActiveBalance =
+        spec.atSlot(state.getSlot()).beaconStateAccessors().getTotalActiveBalance(state);
+    final UInt64 totalActiveBalancePerSlot =
+        totalActiveBalance.dividedBy(spec.getGenesisSpec().getSlotsPerEpoch());
+    final UInt64 fraction = beaconStateAccessors.calculateCommitteeFraction(state, 1);
+    // should be 1% of balance per slot...
+    assertThat(fraction).isEqualTo(totalActiveBalancePerSlot.dividedBy(100));
   }
 
   private BeaconState createBeaconState() {

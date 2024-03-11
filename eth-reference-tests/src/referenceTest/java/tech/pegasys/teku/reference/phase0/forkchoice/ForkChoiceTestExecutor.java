@@ -17,8 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.time.TimeUtilities.secondsToMillis;
-import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED;
-import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
 
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
@@ -69,8 +67,9 @@ import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportRe
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceStateProvider;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
-import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.TickProcessor;
+import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
@@ -90,6 +89,8 @@ public class ForkChoiceTestExecutor implements TestExecutor {
           .put("fork_choice/on_merge_block", new ForkChoiceTestExecutor())
           .put("fork_choice/withholding", new ForkChoiceTestExecutor())
           .put("sync/optimistic", new ForkChoiceTestExecutor())
+          .put("fork_choice/should_override_forkchoice_update", new ForkChoiceTestExecutor())
+          .put("fork_choice/get_proposer_head", new ForkChoiceTestExecutor("basic_is_parent_root"))
           .build();
 
   private final List<?> testsToSkip;
@@ -125,18 +126,19 @@ public class ForkChoiceTestExecutor implements TestExecutor {
     final InlineEventThread eventThread = new InlineEventThread();
     final KZG kzg = KzgRetriever.getKzgWithLoadedTrustedSetup(spec, testDefinition.getConfigName());
     final StubBlobSidecarManager blobSidecarManager = new StubBlobSidecarManager(kzg);
+    // forkChoiceLateBlockReorgEnabled is true here always because this is the reference test
+    // executor
     final ForkChoice forkChoice =
         new ForkChoice(
             spec,
             eventThread,
             recentChainData,
             blobSidecarManager,
-            new StubForkChoiceNotifier(),
+            new NoopForkChoiceNotifier(),
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
-            DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED,
-            DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED,
+            true,
             storageSystem.getMetricsSystem());
     final ExecutionLayerChannelStub executionLayer =
         new ExecutionLayerChannelStub(spec, false, Optional.empty());
@@ -341,7 +343,7 @@ public class ForkChoiceTestExecutor implements TestExecutor {
         block.getSlot(),
         block.getParentRoot());
     final SafeFuture<BlockImportResult> result =
-        forkChoice.onBlock(block, Optional.empty(), Optional.empty(), executionLayer);
+        forkChoice.onBlock(block, Optional.empty(), BlockBroadcastValidator.NOOP, executionLayer);
     assertThat(result).isCompleted();
     final BlockImportResult importResult = safeJoin(result);
     assertThat(importResult)
@@ -455,6 +457,28 @@ public class ForkChoiceTestExecutor implements TestExecutor {
                   .describedAs("proposer_boost_root")
                   .contains(expectedBoostedRoot);
             }
+          }
+
+          case "get_proposer_head" -> {
+            final Bytes32 expectedProposerHead = getBytes32(checks, checkType);
+            final Bytes32 root =
+                recentChainData.getProposerHead(
+                    expectedProposerHead, recentChainData.getHeadSlot().increment());
+            assertThat(root).describedAs("get_proposer_head").isEqualTo(expectedProposerHead);
+          }
+
+          case "should_override_forkchoice_update" -> {
+            final Map<String, Boolean> shouldOverrideForkChoiceUpdateCheck = get(checks, checkType);
+            final boolean expectedResult = shouldOverrideForkChoiceUpdateCheck.get("result");
+            final boolean expectedValidatorIsConnected =
+                shouldOverrideForkChoiceUpdateCheck.get("validator_is_connected");
+            final boolean shouldOverrideChainHead =
+                recentChainData.shouldOverrideForkChoiceUpdate(
+                    recentChainData.getBestBlockRoot().orElseThrow());
+            assertThat(shouldOverrideChainHead).isEqualTo(expectedResult);
+            // We've currently only handled the validatorIsConnected 'true' case in reftests,
+            // lets validate we're dealing with that and don't have to extend tests further.
+            assertThat(expectedValidatorIsConnected).isTrue();
           }
 
           default -> throw new UnsupportedOperationException(

@@ -13,6 +13,9 @@
 
 package tech.pegasys.teku.validator.client;
 
+import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.FATAL_EXIT_CODE;
+import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
+
 import java.net.http.HttpClient;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -42,14 +45,13 @@ import tech.pegasys.teku.service.serviceutils.layout.DataDirLayout;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.signatures.LocalSlashingProtector;
+import tech.pegasys.teku.spec.signatures.LocalSlashingProtectorConcurrentAccess;
 import tech.pegasys.teku.spec.signatures.SlashingProtector;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconNodeApi;
 import tech.pegasys.teku.validator.beaconnode.GenesisDataProvider;
-import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAction;
-import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetectionAlert;
 import tech.pegasys.teku.validator.client.doppelganger.DoppelgangerDetector;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
 import tech.pegasys.teku.validator.client.duties.BlockDutyFactory;
@@ -69,6 +71,8 @@ import tech.pegasys.teku.validator.client.restapi.ValidatorRestApi;
 import tech.pegasys.teku.validator.client.restapi.ValidatorRestApiConfig;
 import tech.pegasys.teku.validator.client.signer.BlockContainerSigner;
 import tech.pegasys.teku.validator.client.signer.MilestoneBasedBlockContainerSigner;
+import tech.pegasys.teku.validator.client.slashingriskactions.DoppelgangerDetectionAlert;
+import tech.pegasys.teku.validator.client.slashingriskactions.SlashingRiskAction;
 import tech.pegasys.teku.validator.eventadapter.InProcessBeaconNodeApi;
 import tech.pegasys.teku.validator.remote.RemoteBeaconNodeApi;
 import tech.pegasys.teku.validator.remote.sentry.SentryBeaconNodeApi;
@@ -91,7 +95,9 @@ public class ValidatorClientService extends Service {
   private final ValidatorStatusProvider validatorStatusProvider;
   private ValidatorIndexProvider validatorIndexProvider;
   private Optional<DoppelgangerDetector> maybeDoppelgangerDetector = Optional.empty();
-  private final DoppelgangerDetectionAction doppelgangerDetectionAction;
+  private final SlashingRiskAction doppelgangerDetectionAction;
+
+  private final Optional<SlashingRiskAction> maybeValidatorSlashedAction;
   private Optional<RestApi> maybeValidatorRestApi = Optional.empty();
   private final Optional<BeaconProposerPreparer> beaconProposerPreparer;
   private final Optional<ValidatorRegistrator> validatorRegistrator;
@@ -112,7 +118,8 @@ public class ValidatorClientService extends Service {
       final Optional<ValidatorRegistrator> validatorRegistrator,
       final Spec spec,
       final MetricsSystem metricsSystem,
-      final DoppelgangerDetectionAction doppelgangerDetectionAction) {
+      final SlashingRiskAction doppelgangerDetectionAction,
+      final Optional<SlashingRiskAction> maybeValidatorSlashedAction) {
     this.eventChannels = eventChannels;
     this.validatorLoader = validatorLoader;
     this.beaconNodeApi = beaconNodeApi;
@@ -124,12 +131,14 @@ public class ValidatorClientService extends Service {
     this.spec = spec;
     this.metricsSystem = metricsSystem;
     this.doppelgangerDetectionAction = doppelgangerDetectionAction;
+    this.maybeValidatorSlashedAction = maybeValidatorSlashedAction;
   }
 
   public static ValidatorClientService create(
       final ServiceConfig services,
       final ValidatorClientConfiguration config,
-      final DoppelgangerDetectionAction doppelgangerDetectionAction) {
+      final SlashingRiskAction doppelgangerDetectionAction,
+      final Optional<SlashingRiskAction> maybeValidatorSlashedAction) {
     final EventChannels eventChannels = services.getEventChannels();
     final ValidatorConfig validatorConfig = config.getValidatorConfig();
 
@@ -211,13 +220,16 @@ public class ValidatorClientService extends Service {
             validatorRegistrator,
             config.getSpec(),
             services.getMetricsSystem(),
-            doppelgangerDetectionAction);
+            doppelgangerDetectionAction,
+            maybeValidatorSlashedAction);
 
     asyncRunner
         .runAsync(
             () -> validatorClientService.initializeValidators(validatorApiChannel, asyncRunner))
         .thenCompose(
             __ -> {
+              checkNoKeysLoaded(validatorConfig, validatorLoader);
+
               if (validatorConfig.isDoppelgangerDetectionEnabled()) {
                 validatorClientService.initializeDoppelgangerDetector(
                     asyncRunner,
@@ -236,7 +248,7 @@ public class ValidatorClientService extends Service {
                     validatorApiChannel,
                     genesisDataProvider,
                     proposerConfigManager,
-                    new ActiveKeyManager(
+                    new OwnedKeyManager(
                         validatorLoader,
                         services.getEventChannels().getPublisher(ValidatorTimingChannel.class)),
                     services.getDataDirLayout(),
@@ -259,18 +271,35 @@ public class ValidatorClientService extends Service {
             })
         .exceptionally(
             error -> {
-              final Optional<Throwable> maybeCause =
-                  ExceptionUtil.getCause(error, InvalidConfigurationException.class);
-              if (maybeCause.isPresent()) {
-                LOG.warn(maybeCause.get().getMessage());
-              } else {
-                LOG.error("Error was encountered during validator client service start up.", error);
-              }
+              ExceptionUtil.getCause(error, InvalidConfigurationException.class)
+                  .ifPresentOrElse(
+                      cause -> STATUS_LOG.failedToLoadValidatorKey(cause.getMessage()),
+                      () -> {
+                        STATUS_LOG.failedToStartValidatorClient(
+                            ExceptionUtil.getRootCauseMessage(error));
+                        LOG.error(
+                            "An error was encountered during validator client service start up.",
+                            error);
+                      });
+              // an unhandled exception getting this far means any number of above steps failed to
+              // complete,
+              // which is fatal, we don't know how to recover at this point, regardless of if we're
+              // in VC or BN mode.
+              System.exit(FATAL_EXIT_CODE);
               return null;
             })
         .always(() -> LOG.trace("Finished starting validator client service."));
 
     return validatorClientService;
+  }
+
+  private static void checkNoKeysLoaded(
+      final ValidatorConfig validatorConfig, final ValidatorLoader validatorLoader) {
+    if (validatorConfig.isExitWhenNoValidatorKeysEnabled()
+        && validatorLoader.getOwnedValidators().hasNoValidators()) {
+      STATUS_LOG.exitOnNoValidatorKeys();
+      System.exit(FATAL_EXIT_CODE);
+    }
   }
 
   private void initializeDoppelgangerDetector(
@@ -297,7 +326,7 @@ public class ValidatorClientService extends Service {
       final ValidatorApiChannel validatorApiChannel,
       final GenesisDataProvider genesisDataProvider,
       final Optional<ProposerConfigManager> proposerConfigManager,
-      final ActiveKeyManager activeKeyManager,
+      final OwnedKeyManager keyManager,
       final DataDirLayout dataDirLayout,
       final TimeProvider timeProvider,
       final Optional<DoppelgangerDetector> maybeDoppelgangerDetector) {
@@ -308,7 +337,7 @@ public class ValidatorClientService extends Service {
             validatorApiChannel,
             genesisDataProvider,
             proposerConfigManager,
-            activeKeyManager,
+            keyManager,
             dataDirLayout,
             timeProvider,
             maybeDoppelgangerDetector,
@@ -365,8 +394,11 @@ public class ValidatorClientService extends Service {
       final AsyncRunner asyncRunner) {
     final Path slashingProtectionPath = getSlashingProtectionPath(services.getDataDirLayout());
     final SlashingProtector slashingProtector =
-        new LocalSlashingProtector(
-            SyncDataAccessor.create(slashingProtectionPath), slashingProtectionPath);
+        config.getValidatorConfig().isLocalSlashingProtectionSynchronizedModeEnabled()
+            ? new LocalSlashingProtector(
+                SyncDataAccessor.create(slashingProtectionPath), slashingProtectionPath)
+            : new LocalSlashingProtectorConcurrentAccess(
+                SyncDataAccessor.create(slashingProtectionPath), slashingProtectionPath);
     final SlashingProtectionLogger slashingProtectionLogger =
         new SlashingProtectionLogger(
             slashingProtector, config.getSpec(), asyncRunner, ValidatorLogger.VALIDATOR_LOGGER);
@@ -432,7 +464,8 @@ public class ValidatorClientService extends Service {
                 validators,
                 validatorIndexProvider,
                 beaconCommitteeSubscriptions,
-                spec));
+                spec,
+                config.getValidatorConfig().isDvtSelectionsEndpointEnabled()));
     final DutyLoader<?> blockDutyLoader =
         new RetryingDutyLoader<>(
             asyncRunner,
@@ -543,10 +576,18 @@ public class ValidatorClientService extends Service {
             })
         .thenCompose(
             __ -> {
-              eventChannels.subscribe(
-                  ValidatorTimingChannel.class,
+              final ValidatorTimingActions validatorTimingActions =
                   new ValidatorTimingActions(
-                      validatorIndexProvider, validatorTimingChannels, spec, metricsSystem));
+                      validatorIndexProvider,
+                      validatorTimingChannels,
+                      spec,
+                      metricsSystem,
+                      maybeValidatorSlashedAction);
+              eventChannels.subscribe(ValidatorTimingChannel.class, validatorTimingActions);
+              if (maybeValidatorSlashedAction.isPresent()) {
+                validatorStatusProvider.subscribeValidatorStatusesUpdates(
+                    validatorTimingActions::onUpdatedValidatorStatuses);
+              }
               validatorStatusProvider.start().ifExceptionGetsHereRaiseABug();
               return beaconNodeApi.subscribeToEvents();
             });

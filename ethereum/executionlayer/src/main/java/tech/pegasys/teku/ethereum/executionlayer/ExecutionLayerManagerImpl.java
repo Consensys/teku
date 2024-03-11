@@ -37,6 +37,7 @@ import tech.pegasys.teku.ethereum.executionclient.rest.RestBuilderClient;
 import tech.pegasys.teku.ethereum.executionclient.rest.RestClient;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JClient;
 import tech.pegasys.teku.ethereum.executionclient.web3j.Web3JExecutionEngineClient;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.EventLogger;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
@@ -45,7 +46,7 @@ import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
@@ -78,7 +79,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final MetricsSystem metricsSystem,
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
-      final Optional<Integer> builderBidCompareFactor,
+      final UInt64 builderBidCompareFactor,
       final boolean useShouldOverrideBuilderFlag) {
     final LabelledMetric<Counter> executionPayloadSourceCounter =
         metricsSystem.createLabelledCounter(
@@ -145,7 +146,7 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
       final BuilderBidValidator builderBidValidator,
       final BuilderCircuitBreaker builderCircuitBreaker,
       final LabelledMetric<Counter> executionPayloadSourceCounter,
-      final Optional<Integer> builderBidCompareFactor,
+      final UInt64 builderBidCompareFactor,
       final boolean useShouldOverrideBuilderFlag) {
     this.executionClientHandler = executionClientHandler;
     this.spec = spec;
@@ -232,19 +233,25 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
 
   @Override
   public SafeFuture<BuilderPayload> builderGetPayload(
-      final SignedBlockContainer signedBlockContainer,
+      final SignedBeaconBlock signedBeaconBlock,
       final Function<UInt64, Optional<ExecutionPayloadResult>> getCachedPayloadResultFunction) {
     return executionBuilderModule.builderGetPayload(
-        signedBlockContainer, getCachedPayloadResultFunction);
+        signedBeaconBlock, getCachedPayloadResultFunction);
   }
 
   @Override
   public SafeFuture<HeaderWithFallbackData> builderGetHeader(
       final ExecutionPayloadContext executionPayloadContext,
       final BeaconState state,
-      final SafeFuture<UInt256> payloadValueResult) {
+      final SafeFuture<UInt256> payloadValueResult,
+      final Optional<UInt64> requestedBuilderBoostFactor,
+      final BlockProductionPerformance blockProductionPerformance) {
     return executionBuilderModule.builderGetHeader(
-        executionPayloadContext, state, payloadValueResult);
+        executionPayloadContext,
+        state,
+        payloadValueResult,
+        requestedBuilderBoostFactor,
+        blockProductionPerformance);
   }
 
   @VisibleForTesting

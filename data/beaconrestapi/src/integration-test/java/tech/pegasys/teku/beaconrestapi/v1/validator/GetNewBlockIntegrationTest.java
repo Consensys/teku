@@ -22,6 +22,7 @@ import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_INTERNAL_
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_NO_CONTENT;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_OK;
 import static tech.pegasys.teku.infrastructure.http.HttpStatusCodes.SC_SERVICE_UNAVAILABLE;
+import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 
 import com.google.common.io.Resources;
 import java.io.IOException;
@@ -44,6 +45,7 @@ import tech.pegasys.teku.infrastructure.http.ContentTypes;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.storage.client.ChainDataUnavailableException;
 import tech.pegasys.teku.validator.coordinator.MissingDepositsException;
@@ -51,7 +53,7 @@ import tech.pegasys.teku.validator.coordinator.MissingDepositsException;
 public class GetNewBlockIntegrationTest extends AbstractDataBackedRestAPIIntegrationTest {
   private DataStructureUtil dataStructureUtil;
   private BLSSignature signature;
-  private BeaconBlock randomBlock;
+  private BlockContainerAndMetaData blockContainerAndMetaData;
 
   public static Stream<Arguments> getNewBlockCases() {
     return Stream.of(
@@ -63,8 +65,8 @@ public class GetNewBlockIntegrationTest extends AbstractDataBackedRestAPIIntegra
   void setup() {
     startRestAPIAtGenesis(SpecMilestone.ALTAIR);
     dataStructureUtil = new DataStructureUtil(spec);
-    randomBlock = dataStructureUtil.randomBeaconBlock(UInt64.ONE);
-    signature = randomBlock.getBody().getRandaoReveal();
+    blockContainerAndMetaData = dataStructureUtil.randomBlockContainerAndMetaData(ONE);
+    signature = blockContainerAndMetaData.blockContainer().getBlock().getBody().getRandaoReveal();
   }
 
   @ParameterizedTest(name = "blinded_{1}")
@@ -72,8 +74,8 @@ public class GetNewBlockIntegrationTest extends AbstractDataBackedRestAPIIntegra
   void shouldGetUnsignedBlock_asJson(final String route, final boolean isBlindedBlock)
       throws IOException {
     when(validatorApiChannel.createUnsignedBlock(
-            eq(UInt64.ONE), eq(signature), any(), eq(isBlindedBlock)))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(randomBlock)));
+            eq(UInt64.ONE), eq(signature), any(), eq(Optional.of(isBlindedBlock)), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)));
     Response response = get(route, signature, ContentTypes.JSON);
     assertThat(response.code()).isEqualTo(SC_OK);
     final String body = response.body().string();
@@ -88,19 +90,19 @@ public class GetNewBlockIntegrationTest extends AbstractDataBackedRestAPIIntegra
   void shouldGetUnsignedBlock_asOctet(final String route, final boolean isBlindedBlock)
       throws IOException {
     when(validatorApiChannel.createUnsignedBlock(
-            eq(UInt64.ONE), eq(signature), any(), eq(isBlindedBlock)))
-        .thenReturn(SafeFuture.completedFuture(Optional.of(randomBlock)));
+            eq(UInt64.ONE), eq(signature), any(), eq(Optional.of(isBlindedBlock)), any()))
+        .thenReturn(SafeFuture.completedFuture(Optional.of(blockContainerAndMetaData)));
     Response response = get(route, signature, ContentTypes.OCTET_STREAM);
     assertThat(response.code()).isEqualTo(SC_OK);
     BeaconBlock block = spec.deserializeBeaconBlock(Bytes.of(response.body().bytes()));
-    assertThat(block).isEqualTo(randomBlock);
+    assertThat(block).isEqualTo(blockContainerAndMetaData.blockContainer().getBlock());
   }
 
   @ParameterizedTest(name = "blinded_{1}")
   @MethodSource("getNewBlockCases")
   void shouldShowNoContent(final String route, final boolean isBlindedBlock) throws IOException {
     when(validatorApiChannel.createUnsignedBlock(
-            eq(UInt64.ONE), eq(signature), any(), eq(isBlindedBlock)))
+            eq(UInt64.ONE), eq(signature), any(), eq(Optional.of(isBlindedBlock)), any()))
         .thenReturn(SafeFuture.failedFuture(new ChainDataUnavailableException()));
     Response response = get(route, signature, ContentTypes.OCTET_STREAM);
     assertThat(response.code()).isEqualTo(SC_NO_CONTENT);
@@ -111,7 +113,7 @@ public class GetNewBlockIntegrationTest extends AbstractDataBackedRestAPIIntegra
   @MethodSource("getNewBlockCases")
   void shouldShowUnavailable(final String route, final boolean isBlindedBlock) throws IOException {
     when(validatorApiChannel.createUnsignedBlock(
-            eq(UInt64.ONE), eq(signature), any(), eq(isBlindedBlock)))
+            eq(UInt64.ONE), eq(signature), any(), eq(Optional.of(isBlindedBlock)), any()))
         .thenReturn(SafeFuture.failedFuture(new ServiceUnavailableException()));
     Response response = get(route, signature, ContentTypes.OCTET_STREAM);
     assertThat(response.code()).isEqualTo(SC_SERVICE_UNAVAILABLE);
@@ -125,7 +127,7 @@ public class GetNewBlockIntegrationTest extends AbstractDataBackedRestAPIIntegra
   void shouldNotStackTraceForMissingDeposits(final String route, final boolean isBlindedBlock)
       throws IOException {
     when(validatorApiChannel.createUnsignedBlock(
-            eq(UInt64.ONE), eq(signature), any(), eq(isBlindedBlock)))
+            eq(UInt64.ONE), eq(signature), any(), eq(Optional.of(isBlindedBlock)), any()))
         .thenReturn(
             SafeFuture.failedFuture(
                 MissingDepositsException.missingRange(UInt64.valueOf(1), UInt64.valueOf(10))));

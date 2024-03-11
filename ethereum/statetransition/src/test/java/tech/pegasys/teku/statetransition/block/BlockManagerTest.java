@@ -15,7 +15,7 @@ package tech.pegasys.teku.statetransition.block;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
@@ -45,8 +45,7 @@ import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PRE
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PROCESSED_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TRANSACTION_COMMITTED_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.TRANSACTION_PREPARED_EVENT_LABEL;
-import static tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastValidationResult.CONSENSUS_FAILURE;
-import static tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastValidationResult.SUCCESS;
+import static tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult.SUCCESS;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -71,9 +70,8 @@ import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
-import tech.pegasys.teku.spec.datastructures.blocks.ImportedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
@@ -89,15 +87,17 @@ import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAndValidati
 import tech.pegasys.teku.spec.logic.versions.deneb.blobs.BlobSidecarsAvailabilityChecker;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel.BlockImportAndBroadcastValidationResults;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
-import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
+import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
+import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
 import tech.pegasys.teku.storage.client.ChainHead;
@@ -112,12 +112,13 @@ public class BlockManagerTest {
   private final EventLogger eventLogger = mock(EventLogger.class);
   private Spec spec;
   private DataStructureUtil dataStructureUtil;
-  private final BlockImportNotifications blockImportNotifications =
-      mock(BlockImportNotifications.class);
+  private final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher =
+      mock(ReceivedBlockEventsChannel.class);
   private final UInt64 historicalBlockTolerance = UInt64.valueOf(5);
   private final UInt64 futureBlockTolerance = UInt64.valueOf(2);
   private final int maxPendingBlocks = 10;
-  private final BlobSidecarPool blobSidecarPool = mock(BlobSidecarPool.class);
+  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool =
+      mock(BlockBlobSidecarsTrackersPool.class);
   private PendingPool<SignedBeaconBlock> pendingBlocks;
   private final FutureItems<SignedBeaconBlock> futureBlocks =
       FutureItems.create(SignedBeaconBlock::getSlot, mock(SettableLabelledGauge.class), "blocks");
@@ -127,13 +128,15 @@ public class BlockManagerTest {
   private StorageSystem localChain;
   private RecentChainData localRecentChainData = mock(RecentChainData.class);
 
-  private final ForkChoiceNotifier forkChoiceNotifier = new StubForkChoiceNotifier();
+  private final ForkChoiceNotifier forkChoiceNotifier = new NoopForkChoiceNotifier();
   private MergeTransitionBlockValidator transitionBlockValidator;
   private final BlobSidecarManager blobSidecarManager = mock(BlobSidecarManager.class);
   private ForkChoice forkChoice;
 
   private ExecutionLayerChannelStub executionLayer;
   private final BlockValidator blockValidator = mock(BlockValidator.class);
+  private final BlockBroadcastValidator blockBroadcastValidator =
+      mock(BlockBroadcastValidator.class);
 
   private BlockImporter blockImporter;
   private BlockManager blockManager;
@@ -181,7 +184,7 @@ public class BlockManagerTest {
     this.blockImporter =
         new BlockImporter(
             spec,
-            blockImportNotifications,
+            receivedBlockEventsChannelPublisher,
             localRecentChainData,
             forkChoice,
             WeakSubjectivityFactory.lenientValidator(),
@@ -190,16 +193,14 @@ public class BlockManagerTest {
         new BlockManager(
             localRecentChainData,
             blockImporter,
-            blobSidecarPool,
+            blockBlobSidecarsTrackersPool,
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,
             blockValidator,
             timeProvider,
             eventLogger,
-            Optional.of(mock(BlockImportMetrics.class)),
-            true,
-            false);
+            Optional.of(mock(BlockImportMetrics.class)));
     forwardBlockImportedNotificationsTo(blockManager);
     localChain
         .chainUpdater()
@@ -207,16 +208,19 @@ public class BlockManagerTest {
     assertThat(blockManager.start()).isCompleted();
     when(blobSidecarManager.createAvailabilityChecker(any()))
         .thenReturn(BlobSidecarsAvailabilityChecker.NOOP);
+    when(blockValidator.initiateBroadcastValidation(any(), any()))
+        .thenReturn(blockBroadcastValidator);
+    when(blockBroadcastValidator.getResult()).thenReturn(SafeFuture.completedFuture(SUCCESS));
   }
 
   private void forwardBlockImportedNotificationsTo(final BlockManager blockManager) {
     doAnswer(
             invocation -> {
-              blockManager.onBlockImported(invocation.getArgument(0));
+              blockManager.onBlockImported(invocation.getArgument(0), invocation.getArgument(1));
               return null;
             })
-        .when(blockImportNotifications)
-        .onBlockImported(any());
+        .when(receivedBlockEventsChannelPublisher)
+        .onBlockImported(any(), anyBoolean());
   }
 
   @AfterEach
@@ -237,66 +241,60 @@ public class BlockManagerTest {
   }
 
   @Test
-  public void shouldNotifySubscribersOnImport() {
-    final ImportedBlockListener subscriber = mock(ImportedBlockListener.class);
+  public void shouldBeNotifiedOnImport() {
     final RecentChainData localRecentChainData = mock(RecentChainData.class);
     blockManager = setupBlockManagerWithMockRecentChainData(localRecentChainData, false);
 
-    blockManager.subscribeToReceivedBlocks(subscriber);
     final UInt64 nextSlot = GENESIS_SLOT.plus(UInt64.ONE);
     final SignedBeaconBlock nextBlock =
         localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
     incrementSlot();
 
     safeJoinBlockImport(nextBlock);
-    verify(subscriber).onBlockImported(nextBlock, false);
-    verify(blobSidecarPool).removeAllForBlock(nextBlock.getRoot());
+    verify(receivedBlockEventsChannelPublisher).onBlockImported(nextBlock, false);
+    verify(blockBlobSidecarsTrackersPool).removeAllForBlock(nextBlock.getRoot());
   }
 
   @Test
-  public void shouldNotifySubscribersOnKnownBlock() {
-    final ImportedBlockListener subscriber = mock(ImportedBlockListener.class);
+  public void shouldBeNotNotifiedOnKnownBlock() {
     final RecentChainData localRecentChainData = mock(RecentChainData.class);
     blockManager = setupBlockManagerWithMockRecentChainData(localRecentChainData, false);
 
-    blockManager.subscribeToReceivedBlocks(subscriber);
     final UInt64 nextSlot = GENESIS_SLOT.plus(UInt64.ONE);
     final SignedBeaconBlock nextBlock =
         localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
     incrementSlot();
 
     safeJoinBlockImport(nextBlock);
-    verify(subscriber).onBlockImported(nextBlock, false);
+    verify(receivedBlockEventsChannelPublisher).onBlockImported(nextBlock, false);
 
+    // should not be notified
     assertThatBlockImport(nextBlock)
         .isCompletedWithValue(BlockImportResult.knownBlock(nextBlock, false));
-    verify(subscriber, times(2)).onBlockImported(nextBlock, false);
+    verifyNoMoreInteractions(receivedBlockEventsChannelPublisher);
   }
 
   @Test
-  public void shouldNotifySubscribersOnKnownOptimisticBlock() {
-    final ImportedBlockListener subscriber = mock(ImportedBlockListener.class);
+  public void shouldBeNotNotifiedOnKnownOptimisticBlock() {
     executionLayer.setPayloadStatus(PayloadStatus.SYNCING);
     final RecentChainData localRecentChainData = mock(RecentChainData.class);
     blockManager = setupBlockManagerWithMockRecentChainData(localRecentChainData, true);
-    blockManager.subscribeToReceivedBlocks(subscriber);
     final UInt64 nextSlot = GENESIS_SLOT.plus(UInt64.ONE);
     final SignedBeaconBlock nextBlock =
         localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
     incrementSlot();
 
     safeJoinBlockImport(nextBlock);
-    verify(subscriber).onBlockImported(nextBlock, true);
+    verify(receivedBlockEventsChannelPublisher).onBlockImported(nextBlock, true);
 
+    // should not be notified
     assertThatBlockImport(nextBlock)
         .isCompletedWithValue(BlockImportResult.knownBlock(nextBlock, true));
-    verify(subscriber, times(2)).onBlockImported(nextBlock, true);
+    verifyNoMoreInteractions(receivedBlockEventsChannelPublisher);
   }
 
   @Test
-  public void shouldNotNotifySubscribersOnInvalidBlock() {
-    final ImportedBlockListener subscriber = mock(ImportedBlockListener.class);
-    blockManager.subscribeToReceivedBlocks(subscriber);
+  public void shouldBeNotNotifiedOnInvalidBlock() {
     final UInt64 nextSlot = GENESIS_SLOT.plus(UInt64.ONE);
     final SignedBeaconBlock validBlock =
         localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
@@ -308,7 +306,7 @@ public class BlockManagerTest {
 
     assertThatBlockImport(invalidBlock)
         .isCompletedWithValueMatching(result -> !result.isSuccessful());
-    verifyNoInteractions(subscriber);
+    verifyNoInteractions(receivedBlockEventsChannelPublisher);
   }
 
   @Test
@@ -336,16 +334,14 @@ public class BlockManagerTest {
         new BlockManager(
             localRecentChainData,
             blockImporter,
-            blobSidecarPool,
+            blockBlobSidecarsTrackersPool,
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,
-            mock(BlockValidator.class),
+            blockValidator,
             timeProvider,
             eventLogger,
-            Optional.empty(),
-            true,
-            false);
+            Optional.empty());
     forwardBlockImportedNotificationsTo(blockManager);
     assertThat(blockManager.start()).isCompleted();
 
@@ -357,15 +353,14 @@ public class BlockManagerTest {
         localChain.chainBuilder().generateBlockAtSlot(nextNextSlot).getBlock();
 
     final SafeFuture<BlockImportResult> blockImportResult = new SafeFuture<>();
-    when(blockImporter.importBlock(nextNextBlock, Optional.empty(), Optional.empty()))
+    when(blockImporter.importBlock(eq(nextNextBlock), eq(Optional.empty()), any()))
         .thenReturn(blockImportResult)
         .thenReturn(new SafeFuture<>());
 
     incrementSlot();
     incrementSlot();
     assertThatBlockImport(nextNextBlock).isNotCompleted();
-    ignoreFuture(
-        verify(blockImporter).importBlock(nextNextBlock, Optional.empty(), Optional.empty()));
+    ignoreFuture(verify(blockImporter).importBlock(eq(nextNextBlock), eq(Optional.empty()), any()));
 
     // Before nextNextBlock imports, it's parent becomes available
     when(localRecentChainData.containsBlock(nextNextBlock.getParentRoot())).thenReturn(true);
@@ -374,7 +369,7 @@ public class BlockManagerTest {
     blockImportResult.complete(BlockImportResult.FAILED_UNKNOWN_PARENT);
     ignoreFuture(
         verify(blockImporter, times(2))
-            .importBlock(nextNextBlock, Optional.empty(), Optional.empty()));
+            .importBlock(eq(nextNextBlock), eq(Optional.empty()), any()));
 
     assertThat(pendingBlocks.contains(nextNextBlock)).isFalse();
   }
@@ -419,8 +414,8 @@ public class BlockManagerTest {
 
     // pool should get notified for new block and then should be notified to drop content due to
     // block import completion
-    verify(blobSidecarPool).onNewBlock(nextBlock);
-    verify(blobSidecarPool).removeAllForBlock(nextBlock.getRoot());
+    verify(blockBlobSidecarsTrackersPool).onNewBlock(nextBlock, Optional.empty());
+    verify(blockBlobSidecarsTrackersPool).removeAllForBlock(nextBlock.getRoot());
   }
 
   @Test
@@ -435,8 +430,8 @@ public class BlockManagerTest {
     assertThat(futureBlocks.contains(nextBlock)).isTrue();
 
     // blob pool should be notified about new block only
-    verify(blobSidecarPool).onNewBlock(nextBlock);
-    verifyNoMoreInteractions(blobSidecarPool);
+    verify(blockBlobSidecarsTrackersPool).onNewBlock(nextBlock, Optional.empty());
+    verifyNoMoreInteractions(blockBlobSidecarsTrackersPool);
   }
 
   @Test
@@ -493,7 +488,8 @@ public class BlockManagerTest {
     // verify blob sidecars pool get notified to drop content
     invalidBlockDescendants.forEach(
         invalidBlockDescendant ->
-            verify(blobSidecarPool).removeAllForBlock(invalidBlockDescendant.getRoot()));
+            verify(blockBlobSidecarsTrackersPool)
+                .removeAllForBlock(invalidBlockDescendant.getRoot()));
 
     // If any invalid block is again gossiped, it should be ignored
     invalidBlockDescendants.forEach(
@@ -636,6 +632,8 @@ public class BlockManagerTest {
     // import invalid block, which should fail to import and be marked invalid
     assertImportBlockWithResult(invalidBlock, FailureReason.FAILED_STATE_TRANSITION);
 
+    reset(blockBlobSidecarsTrackersPool);
+
     // Gossip same invalid block, must reject with no actual validation
     assertValidateAndImportBlockRejectWithoutValidation(invalidBlock);
 
@@ -652,17 +650,14 @@ public class BlockManagerTest {
   }
 
   @Test
-  void onImportBlock_shouldImportWithBroadcastValidationCompletedWileStillImporting() {
+  void onImportBlock_shouldImportWithBroadcastValidationCompletedWhileStillImporting() {
     final UInt64 nextSlot = GENESIS_SLOT.plus(UInt64.ONE);
     final SignedBeaconBlock nextBlock =
         localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
     incrementSlot();
 
-    when(blockValidator.validateBroadcast(
-            eq(nextBlock),
-            eq(GOSSIP),
-            argThat(importResult -> safeJoin(importResult).isSuccessful())))
-        .thenReturn(SafeFuture.completedFuture(SUCCESS));
+    when(blockValidator.initiateBroadcastValidation(eq(nextBlock), eq(GOSSIP)))
+        .thenReturn(BlockBroadcastValidator.NOOP);
 
     // let's delay EL so importResult SafeFuture doesn't complete
     final SafeFuture<PayloadStatus> payloadStatusSafeFuture = new SafeFuture<>();
@@ -677,9 +672,7 @@ public class BlockManagerTest {
               assertThatSafeFuture(blockImportAndBroadcastValidationResults.blockImportResult())
                   .isNotCompleted();
               assertThatSafeFuture(
-                      blockImportAndBroadcastValidationResults
-                          .broadcastValidationResult()
-                          .orElseThrow())
+                      blockImportAndBroadcastValidationResults.broadcastValidationResult())
                   .isCompletedWithValue(SUCCESS);
               return true;
             });
@@ -701,39 +694,33 @@ public class BlockManagerTest {
 
   @Test
   void onImportBlock_shouldNotImportWithBroadcastValidationWhenImportFails() {
+    final UInt64 nextSlot = GENESIS_SLOT.plus(UInt64.ONE);
+    final SignedBeaconBlock nextBlock =
+        localChain.chainBuilder().generateBlockAtSlot(nextSlot).getBlock();
+    incrementSlot();
 
-    final SignedBeaconBlock invalidBlock =
-        localChain
-            .chainBuilder()
-            .generateBlockAtSlot(incrementSlot(), BlockOptions.create().setWrongProposer(true))
-            .getBlock();
+    final BlockBroadcastValidator blockBroadcastValidator = mock(BlockBroadcastValidator.class);
+    when(blockValidator.initiateBroadcastValidation(eq(nextBlock), eq(GOSSIP)))
+        .thenReturn(blockBroadcastValidator);
 
-    when(blockValidator.validateBroadcast(
-            eq(invalidBlock),
-            eq(BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION),
-            // expecting consensus import state transition failure
-            argThat(
-                importResult ->
-                    safeJoin(importResult)
-                        .getFailureReason()
-                        .equals(FailureReason.FAILED_STATE_TRANSITION))))
-        .thenReturn(SafeFuture.completedFuture(CONSENSUS_FAILURE));
+    when(blockBroadcastValidator.getResult())
+        .thenReturn(SafeFuture.completedFuture(BroadcastValidationResult.GOSSIP_FAILURE));
 
-    assertThatBlockImportAndBroadcastValidationResults(
-            invalidBlock, BroadcastValidationLevel.CONSENSUS_AND_EQUIVOCATION)
+    assertThatBlockImportAndBroadcastValidationResults(nextBlock, GOSSIP)
         .isCompletedWithValueMatching(
             blockImportAndBroadcastValidationResults -> {
               assertThatSafeFuture(blockImportAndBroadcastValidationResults.blockImportResult())
                   .isCompletedWithValueMatching(
                       result ->
-                          result.getFailureReason().equals(FailureReason.FAILED_STATE_TRANSITION));
+                          result
+                              .getFailureReason()
+                              .equals(FailureReason.FAILED_BROADCAST_VALIDATION));
               assertThatSafeFuture(
-                      blockImportAndBroadcastValidationResults
-                          .broadcastValidationResult()
-                          .orElseThrow())
-                  .isCompletedWithValue(CONSENSUS_FAILURE);
+                      blockImportAndBroadcastValidationResults.broadcastValidationResult())
+                  .isCompletedWithValue(BroadcastValidationResult.GOSSIP_FAILURE);
               return true;
             });
+    assertThat(invalidBlockRoots).doesNotContainKeys(nextBlock.getRoot());
   }
 
   @Test
@@ -818,7 +805,7 @@ public class BlockManagerTest {
         localChain
             .chainBuilder()
             .generateBlockAtSlot(currentSlot, BlockOptions.create().setGenerateRandomBlobs(true));
-    final List<BlobSidecarOld> blobSidecars1 =
+    final List<BlobSidecar> blobSidecars1 =
         localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
     assertThatNothingStoredForSlotRoot(signedBlockAndState1.getSlotAndBlockRoot());
     assertThat(blobSidecars1).isNotEmpty();
@@ -841,7 +828,7 @@ public class BlockManagerTest {
             .chainBuilder()
             .generateBlockAtSlot(
                 incrementSlot(), BlockOptions.create().setGenerateRandomBlobs(true));
-    final List<BlobSidecarOld> blobSidecars2 =
+    final List<BlobSidecar> blobSidecars2 =
         localChain.chainBuilder().getBlobSidecars(signedBlockAndState2.getRoot());
     assertThat(signedBlockAndState2.getSlot()).isEqualTo(signedBlockAndState1.getSlot().plus(1));
     assertThat(blobSidecars2).isNotEmpty();
@@ -864,7 +851,7 @@ public class BlockManagerTest {
             .chainBuilder()
             .generateBlockAtSlot(
                 incrementSlot(), BlockOptions.create().setBlobSidecars(Collections.emptyList()));
-    final List<BlobSidecarOld> blobSidecars3 =
+    final List<BlobSidecar> blobSidecars3 =
         localChain.chainBuilder().getBlobSidecars(signedBlockAndState3.getRoot());
     assertThat(signedBlockAndState3.getSlot()).isEqualTo(signedBlockAndState2.getSlot().plus(1));
     assertThat(blobSidecars3).isEmpty();
@@ -891,7 +878,7 @@ public class BlockManagerTest {
         localChain
             .chainBuilder()
             .generateBlockAtSlot(currentSlot, BlockOptions.create().setGenerateRandomBlobs(true));
-    final List<BlobSidecarOld> blobSidecars1 =
+    final List<BlobSidecar> blobSidecars1 =
         localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
     assertThat(blobSidecars1).isNotEmpty();
 
@@ -920,7 +907,7 @@ public class BlockManagerTest {
         localChain
             .chainBuilder()
             .generateBlockAtSlot(currentSlot, BlockOptions.create().setGenerateRandomBlobs(true));
-    final List<BlobSidecarOld> blobSidecars1 =
+    final List<BlobSidecar> blobSidecars1 =
         localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
     assertThat(blobSidecars1).isNotEmpty();
 
@@ -947,7 +934,7 @@ public class BlockManagerTest {
         localChain
             .chainBuilder()
             .generateBlockAtSlot(currentSlot, BlockOptions.create().setGenerateRandomBlobs(true));
-    final List<BlobSidecarOld> blobSidecars1 =
+    final List<BlobSidecar> blobSidecars1 =
         localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
     assertThatNothingStoredForSlotRoot(signedBlockAndState1.getSlotAndBlockRoot());
     assertThat(blobSidecars1).isNotEmpty();
@@ -984,7 +971,7 @@ public class BlockManagerTest {
             .generateBlockAtSlot(
                 currentSlot.increment(), BlockOptions.create().setGenerateRandomBlobs(true));
 
-    final List<BlobSidecarOld> blobSidecars1 =
+    final List<BlobSidecar> blobSidecars1 =
         localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
     assertThatNothingStoredForSlotRoot(signedBlockAndState1.getSlotAndBlockRoot());
     assertThat(blobSidecars1).isNotEmpty();
@@ -1005,7 +992,7 @@ public class BlockManagerTest {
     assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
         .isCompletedWithValueMatching(Optional::isEmpty);
 
-    verify(blobSidecarPool).removeAllForBlock(block1.getRoot());
+    verify(blockBlobSidecarsTrackersPool).removeAllForBlock(block1.getRoot());
     assertThat(invalidBlockRoots).doesNotContainKeys(block1.getRoot());
 
     // if we receive a block building on top of block1, we should trigger unknown parent flow
@@ -1024,7 +1011,7 @@ public class BlockManagerTest {
         localChain
             .chainBuilder()
             .generateBlockAtSlot(currentSlot, BlockOptions.create().setGenerateRandomBlobs(true));
-    final List<BlobSidecarOld> blobSidecars1 =
+    final List<BlobSidecar> blobSidecars1 =
         localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
     assertThatNothingStoredForSlotRoot(signedBlockAndState1.getSlotAndBlockRoot());
     assertThat(blobSidecars1).isNotEmpty();
@@ -1044,6 +1031,7 @@ public class BlockManagerTest {
     assertThat(localRecentChainData.getBlobSidecars(block1.getSlotAndBlockRoot())).isEmpty();
     assertThat(localRecentChainData.retrieveEarliestBlobSidecarSlot())
         .isCompletedWithValueMatching(Optional::isEmpty);
+    assertThat(invalidBlockRoots).doesNotContainKeys(block1.getRoot());
   }
 
   @Test
@@ -1054,7 +1042,7 @@ public class BlockManagerTest {
             .chainBuilder()
             .generateBlockAtSlot(
                 incrementSlot(), BlockOptions.create().setGenerateRandomBlobs(true));
-    final List<BlobSidecarOld> blobSidecars1 =
+    final List<BlobSidecar> blobSidecars1 =
         localChain.chainBuilder().getBlobSidecars(signedBlockAndState1.getRoot());
     assertThatNothingStoredForSlotRoot(signedBlockAndState1.getSlotAndBlockRoot());
     assertThat(blobSidecars1).isEmpty();
@@ -1076,7 +1064,7 @@ public class BlockManagerTest {
   }
 
   private BlobSidecarsAvailabilityChecker createAvailabilityCheckerWithValidBlobSidecars(
-      final SignedBeaconBlock block, final List<BlobSidecarOld> blobSidecars) {
+      final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
     reset(blobSidecarManager);
     final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
         mock(BlobSidecarsAvailabilityChecker.class);
@@ -1113,7 +1101,7 @@ public class BlockManagerTest {
   }
 
   private BlobSidecarsAvailabilityChecker createAvailabilityCheckerWithInvalidBlobSidecars(
-      final SignedBeaconBlock block, final List<BlobSidecarOld> blobSidecars) {
+      final SignedBeaconBlock block, final List<BlobSidecar> blobSidecars) {
     reset(blobSidecarManager);
     final BlobSidecarsAvailabilityChecker blobSidecarsAvailabilityChecker =
         mock(BlobSidecarsAvailabilityChecker.class);
@@ -1128,7 +1116,7 @@ public class BlockManagerTest {
   }
 
   private void assertThatStored(
-      final BeaconBlock beaconBlock, final List<BlobSidecarOld> blobSidecars) {
+      final BeaconBlock beaconBlock, final List<BlobSidecar> blobSidecars) {
     assertThat(localRecentChainData.retrieveBlockByRoot(beaconBlock.getRoot()))
         .isCompletedWithValue(Optional.of(beaconBlock));
     assertThat(localRecentChainData.getBlobSidecars(beaconBlock.getSlotAndBlockRoot()))
@@ -1157,7 +1145,7 @@ public class BlockManagerTest {
     assertThat(blockManager.validateAndImportBlock(block, Optional.empty()))
         .isCompletedWithValueMatching(InternalValidationResult::isReject);
     verify(blockValidator, never()).validateGossip(eq(block));
-    verify(blockValidator, never()).validateBroadcast(any(), any(), any());
+    verify(blockBlobSidecarsTrackersPool).removeAllForBlock(block.getRoot());
   }
 
   private void assertImportBlockSuccessfully(final SignedBeaconBlock block) {
@@ -1180,21 +1168,18 @@ public class BlockManagerTest {
 
   private BlockManager setupBlockManagerWithMockRecentChainData(
       final RecentChainData localRecentChainData, final boolean isChainHeadOptimistic) {
-
     when(localRecentChainData.isChainHeadOptimistic()).thenReturn(isChainHeadOptimistic);
     return new BlockManager(
         localRecentChainData,
         blockImporter,
-        blobSidecarPool,
+        blockBlobSidecarsTrackersPool,
         pendingBlocks,
         futureBlocks,
         invalidBlockRoots,
-        mock(BlockValidator.class),
+        blockValidator,
         timeProvider,
         eventLogger,
-        Optional.empty(),
-        true,
-        false);
+        Optional.empty());
   }
 
   private SafeFutureAssert<BlockImportResult> assertThatBlockImport(final SignedBeaconBlock block) {

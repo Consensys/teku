@@ -19,13 +19,13 @@ import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuty;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
-import tech.pegasys.teku.validator.api.AttesterDuties;
-import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
 import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 import tech.pegasys.teku.validator.client.duties.BeaconCommitteeSubscriptions;
@@ -45,6 +45,7 @@ public class AttestationDutyLoader
       scheduledDutiesFactory;
   private final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions;
   private final Spec spec;
+  private final boolean useDvtEndpoint;
 
   public AttestationDutyLoader(
       final ValidatorApiChannel validatorApiChannel,
@@ -54,13 +55,15 @@ public class AttestationDutyLoader
       final OwnedValidators validators,
       final ValidatorIndexProvider validatorIndexProvider,
       final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions,
-      final Spec spec) {
+      final Spec spec,
+      final boolean useDvtEndpoint) {
     super(validators, validatorIndexProvider);
     this.validatorApiChannel = validatorApiChannel;
     this.forkProvider = forkProvider;
     this.scheduledDutiesFactory = scheduledDutiesFactory;
     this.beaconCommitteeSubscriptions = beaconCommitteeSubscriptions;
     this.spec = spec;
+    this.useDvtEndpoint = useDvtEndpoint;
   }
 
   @Override
@@ -77,9 +80,18 @@ public class AttestationDutyLoader
       final UInt64 epoch, final AttesterDuties duties) {
     final SlotBasedScheduledDuties<AttestationProductionDuty, AggregationDuty> scheduledDuties =
         scheduledDutiesFactory.apply(duties.getDependentRoot());
+
+    final Optional<DvtAttestationAggregations> dvtAttestationAggregationsForEpoch =
+        useDvtEndpoint
+            ? Optional.of(
+                new DvtAttestationAggregations(validatorApiChannel, duties.getDuties().size()))
+            : Optional.empty();
+
     return SafeFuture.allOf(
             duties.getDuties().stream()
-                .map(duty -> scheduleDuties(scheduledDuties, duty))
+                .map(
+                    duty ->
+                        scheduleDuties(scheduledDuties, duty, dvtAttestationAggregationsForEpoch))
                 .toArray(SafeFuture[]::new))
         .<SlotBasedScheduledDuties<?, ?>>thenApply(__ -> scheduledDuties)
         .alwaysRun(beaconCommitteeSubscriptions::sendRequests);
@@ -87,7 +99,8 @@ public class AttestationDutyLoader
 
   private SafeFuture<Void> scheduleDuties(
       final SlotBasedScheduledDuties<AttestationProductionDuty, AggregationDuty> scheduledDuties,
-      final AttesterDuty duty) {
+      final AttesterDuty duty,
+      final Optional<DvtAttestationAggregations> dvtAttestationAggregationLoader) {
     final Optional<Validator> maybeValidator = validators.getValidator(duty.getPublicKey());
     if (maybeValidator.isEmpty()) {
       return SafeFuture.COMPLETE;
@@ -116,7 +129,8 @@ public class AttestationDutyLoader
         validator,
         duty.getSlot(),
         aggregatorModulo,
-        unsignedAttestationFuture);
+        unsignedAttestationFuture,
+        dvtAttestationAggregationLoader);
   }
 
   private SafeFuture<Optional<AttestationData>> scheduleAttestationProduction(
@@ -147,10 +161,19 @@ public class AttestationDutyLoader
       final Validator validator,
       final UInt64 slot,
       final int aggregatorModulo,
-      final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture) {
+      final SafeFuture<Optional<AttestationData>> unsignedAttestationFuture,
+      final Optional<DvtAttestationAggregations> dvtAttestationAggregation) {
     return forkProvider
         .getForkInfo(slot)
         .thenCompose(forkInfo -> validator.getSigner().signAggregationSlot(slot, forkInfo))
+        .thenCompose(
+            slotSignature ->
+                dvtAttestationAggregation
+                    .map(
+                        dvt ->
+                            dvt.getCombinedSelectionProofFuture(
+                                validatorIndex, slot, slotSignature))
+                    .orElse(SafeFuture.completedFuture(slotSignature)))
         .thenAccept(
             slotSignature -> {
               final SpecVersion specVersion = spec.atSlot(slot);

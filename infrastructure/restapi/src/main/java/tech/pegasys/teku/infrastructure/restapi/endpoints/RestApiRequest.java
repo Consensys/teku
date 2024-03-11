@@ -24,6 +24,8 @@ public interface RestApiRequest {
   @SuppressWarnings({"TypeParameterUnusedInFormals"})
   <T> T getRequestBody() throws JsonProcessingException;
 
+  <T> Optional<T> getOptionalRequestBody() throws JsonProcessingException;
+
   void respondOk(Object response) throws JsonProcessingException;
 
   void respondAsync(SafeFuture<AsyncApiResponse> futureResponse);
@@ -51,6 +53,10 @@ public interface RestApiRequest {
   <T> T getQueryParameter(ParameterMetadata<T> parameterMetadata);
 
   <T> List<T> getQueryParameterList(final ParameterMetadata<T> parameterMetadata);
+
+  <T> Optional<T> getOptionalRequestHeader(final ParameterMetadata<T> parameterMetadata);
+
+  <T> T getRequestHeader(final ParameterMetadata<T> parameterMetadata);
 
   void header(final String name, final String value);
 

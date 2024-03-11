@@ -24,14 +24,19 @@ import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
+import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.events.ChannelInterface;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
@@ -79,16 +84,13 @@ public interface ValidatorApiChannel extends ChannelInterface {
           return SafeFuture.completedFuture(Optional.empty());
         }
 
-        @Deprecated
         @Override
-        public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
-            UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti, boolean blinded) {
-          return SafeFuture.completedFuture(Optional.empty());
-        }
-
-        @Override
-        public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
-            UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti) {
+        public SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
+            UInt64 slot,
+            BLSSignature randaoReveal,
+            Optional<Bytes32> graffiti,
+            Optional<Boolean> requestedBlinded,
+            Optional<UInt64> requestedBuilderBoostFactor) {
           return SafeFuture.completedFuture(Optional.empty());
         }
 
@@ -176,6 +178,18 @@ public interface ValidatorApiChannel extends ChannelInterface {
             List<UInt64> validatorIndices, UInt64 epoch) {
           return SafeFuture.completedFuture(Optional.empty());
         }
+
+        @Override
+        public SafeFuture<Optional<List<BeaconCommitteeSelectionProof>>>
+            getBeaconCommitteeSelectionProof(final List<BeaconCommitteeSelectionProof> requests) {
+          return SafeFuture.completedFuture(Optional.of(requests));
+        }
+
+        @Override
+        public SafeFuture<Optional<List<SyncCommitteeSelectionProof>>>
+            getSyncCommitteeSelectionProof(final List<SyncCommitteeSelectionProof> requests) {
+          return SafeFuture.completedFuture(Optional.of(requests));
+        }
       };
 
   int UNKNOWN_VALIDATOR_ID = -1;
@@ -195,12 +209,16 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Optional<ProposerDuties>> getProposerDuties(UInt64 epoch);
 
-  @Deprecated
-  SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
-      UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti, boolean blinded);
-
-  SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
-      UInt64 slot, BLSSignature randaoReveal, Optional<Bytes32> graffiti);
+  /**
+   * @param requestedBlinded can be removed once block creation V2 APIs are removed in favour of V3
+   *     only
+   */
+  SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
+      UInt64 slot,
+      BLSSignature randaoReveal,
+      Optional<Bytes32> graffiti,
+      Optional<Boolean> requestedBlinded,
+      Optional<UInt64> requestedBuilderBoostFactor);
 
   SafeFuture<Optional<AttestationData>> createAttestationData(UInt64 slot, int committeeIndex);
 
@@ -248,4 +266,10 @@ public interface ValidatorApiChannel extends ChannelInterface {
 
   SafeFuture<Optional<List<ValidatorLivenessAtEpoch>>> getValidatorsLiveness(
       List<UInt64> validatorIndices, UInt64 epoch);
+
+  SafeFuture<Optional<List<BeaconCommitteeSelectionProof>>> getBeaconCommitteeSelectionProof(
+      List<BeaconCommitteeSelectionProof> requests);
+
+  SafeFuture<Optional<List<SyncCommitteeSelectionProof>>> getSyncCommitteeSelectionProof(
+      List<SyncCommitteeSelectionProof> requests);
 }

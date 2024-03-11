@@ -21,8 +21,9 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -34,18 +35,11 @@ import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 
-public interface ReadOnlyStore {
+public interface ReadOnlyStore extends TimeProvider {
 
   default UInt64 getTimeSeconds() {
-    return millisToSeconds(getTimeMillis());
+    return millisToSeconds(getTimeInMillis());
   }
-
-  /**
-   * Returns time in milliseconds to allow for more fine-grained time calculations
-   *
-   * @return the time in milliseconds
-   */
-  UInt64 getTimeMillis();
 
   UInt64 getGenesisTime();
 
@@ -110,7 +104,7 @@ public interface ReadOnlyStore {
    */
   Optional<SignedBeaconBlock> getBlockIfAvailable(final Bytes32 blockRoot);
 
-  Optional<List<BlobSidecarOld>> getBlobSidecarsIfAvailable(SlotAndBlockRoot slotAndBlockRoot);
+  Optional<List<BlobSidecar>> getBlobSidecarsIfAvailable(SlotAndBlockRoot slotAndBlockRoot);
 
   default SafeFuture<Optional<BeaconBlock>> retrieveBlock(Bytes32 blockRoot) {
     return retrieveSignedBlock(blockRoot).thenApply(res -> res.map(SignedBeaconBlock::getMessage));
@@ -134,4 +128,15 @@ public interface ReadOnlyStore {
 
   SafeFuture<Optional<BeaconState>> retrieveCheckpointState(
       Checkpoint checkpoint, BeaconState latestStateAtEpoch);
+
+  // implements is_head_weak from fork-choice Consensus Spec
+  boolean isHeadWeak(Bytes32 root);
+
+  // implements is_parent_strong from fork-choice Consensus Spec
+  boolean isParentStrong(Bytes32 parentRoot);
+
+  void computeBalanceThresholds(final BeaconState justifiedState);
+
+  // implements is_ffg_competitive from Consensus Spec
+  Optional<Boolean> isFfgCompetitive(final Bytes32 headRoot, final Bytes32 parentRoot);
 }

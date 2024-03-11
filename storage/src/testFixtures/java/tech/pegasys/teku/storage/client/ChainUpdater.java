@@ -22,7 +22,7 @@ import java.util.Optional;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
@@ -225,18 +225,30 @@ public class ChainUpdater {
   }
 
   public SignedBlockAndState advanceChainUntil(final UInt64 slot) {
+    return advanceChainUntil(slot, this.blockOptions);
+  }
+
+  public SignedBlockAndState advanceChainUntil(final long slot, final BlockOptions blockOptions) {
+    return advanceChainUntil(UInt64.valueOf(slot), blockOptions);
+  }
+
+  public SignedBlockAndState advanceChainUntil(final UInt64 slot, final BlockOptions blockOptions) {
     UInt64 currentSlot = chainBuilder.getLatestSlot();
     SignedBlockAndState latestSigneBlockAndState = chainBuilder.getLatestBlockAndState();
     while (currentSlot.isLessThan(slot)) {
       currentSlot = currentSlot.increment();
-      latestSigneBlockAndState = advanceChain(currentSlot);
+      latestSigneBlockAndState = advanceChain(currentSlot, blockOptions);
     }
     return latestSigneBlockAndState;
   }
 
   public SignedBlockAndState advanceChain(final UInt64 slot) {
+    return advanceChain(slot, this.blockOptions);
+  }
+
+  public SignedBlockAndState advanceChain(final UInt64 slot, final BlockOptions blockOptions) {
     final SignedBlockAndState block = chainBuilder.generateBlockAtSlot(slot, blockOptions);
-    final List<BlobSidecarOld> blobSidecars = chainBuilder.getBlobSidecars(block.getRoot());
+    final List<BlobSidecar> blobSidecars = chainBuilder.getBlobSidecars(block.getRoot());
     if (blobSidecars.isEmpty()) {
       saveBlock(block);
     } else {
@@ -276,13 +288,13 @@ public class ChainUpdater {
     saveBlockTime(block);
   }
 
-  public void saveBlock(final SignedBlockAndState block, final List<BlobSidecarOld> blobSidecars) {
+  public void saveBlock(final SignedBlockAndState block, final List<BlobSidecar> blobSidecars) {
     saveBlock(block, blobSidecars, block.getSlot());
   }
 
   public void saveBlock(
       final SignedBlockAndState block,
-      final List<BlobSidecarOld> blobSidecars,
+      final List<BlobSidecar> blobSidecars,
       final UInt64 earliestBlobSidecarSlot) {
     final StoreTransaction tx = recentChainData.startStoreTransaction();
     tx.putBlockAndState(

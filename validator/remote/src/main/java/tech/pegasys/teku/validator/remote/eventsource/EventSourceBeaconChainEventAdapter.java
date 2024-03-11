@@ -15,6 +15,7 @@ package tech.pegasys.teku.validator.remote.eventsource;
 
 import static java.util.Collections.emptyMap;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.launchdarkly.eventsource.ConnectStrategy;
 import com.launchdarkly.eventsource.EventSource;
@@ -22,6 +23,7 @@ import com.launchdarkly.eventsource.RetryDelayStrategy;
 import com.launchdarkly.eventsource.background.BackgroundEventSource;
 import com.launchdarkly.eventsource.background.ConnectionErrorHandler.Action;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
@@ -34,6 +36,7 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.api.response.v1.EventType;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.logging.ValidatorLogger;
+import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.beaconnode.BeaconChainEventAdapter;
 import tech.pegasys.teku.validator.remote.BeaconNodeReadinessChannel;
@@ -61,6 +64,8 @@ public class EventSourceBeaconChainEventAdapter
   private final BeaconChainEventAdapter timeBasedEventAdapter;
   private final EventSourceHandler eventSourceHandler;
 
+  private final boolean shutdownWhenValidatorSlashedEnabled;
+
   public EventSourceBeaconChainEventAdapter(
       final BeaconNodeReadinessManager beaconNodeReadinessManager,
       final RemoteValidatorApiChannel primaryBeaconNodeApi,
@@ -70,7 +75,9 @@ public class EventSourceBeaconChainEventAdapter
       final BeaconChainEventAdapter timeBasedEventAdapter,
       final ValidatorTimingChannel validatorTimingChannel,
       final MetricsSystem metricsSystem,
-      final boolean generateEarlyAttestations) {
+      final boolean generateEarlyAttestations,
+      final boolean shutdownWhenValidatorSlashedEnabled,
+      final Spec spec) {
     this.beaconNodeReadinessManager = beaconNodeReadinessManager;
     this.primaryBeaconNodeApi = primaryBeaconNodeApi;
     this.failoverBeaconNodeApis = failoverBeaconNodeApis;
@@ -78,7 +85,9 @@ public class EventSourceBeaconChainEventAdapter
     this.validatorLogger = validatorLogger;
     this.timeBasedEventAdapter = timeBasedEventAdapter;
     this.eventSourceHandler =
-        new EventSourceHandler(validatorTimingChannel, metricsSystem, generateEarlyAttestations);
+        new EventSourceHandler(
+            validatorTimingChannel, metricsSystem, generateEarlyAttestations, spec);
+    this.shutdownWhenValidatorSlashedEnabled = shutdownWhenValidatorSlashedEnabled;
   }
 
   @Override
@@ -124,8 +133,18 @@ public class EventSourceBeaconChainEventAdapter
     }
   }
 
-  private BackgroundEventSource createEventSource(final RemoteValidatorApiChannel beaconNodeApi) {
-    final HttpUrl eventSourceUrl = createHeadEventSourceUrl(beaconNodeApi.getEndpoint());
+  @VisibleForTesting
+  BackgroundEventSource createEventSource(final RemoteValidatorApiChannel beaconNodeApi) {
+
+    final List<EventType> eventTypes = new ArrayList<>();
+    eventTypes.add(EventType.head);
+    if (shutdownWhenValidatorSlashedEnabled) {
+      eventTypes.add(EventType.attester_slashing);
+      eventTypes.add(EventType.proposer_slashing);
+    }
+    final HttpUrl eventSourceUrl =
+        createEventStreamSourceUrl(beaconNodeApi.getEndpoint(), eventTypes);
+
     final EventSource.Builder eventSourceBuilder =
         new EventSource.Builder(ConnectStrategy.http(eventSourceUrl).httpClient(okHttpClient))
             .retryDelayStrategy(
@@ -140,10 +159,13 @@ public class EventSourceBeaconChainEventAdapter
         .build();
   }
 
-  private HttpUrl createHeadEventSourceUrl(final HttpUrl endpoint) {
+  private HttpUrl createEventStreamSourceUrl(
+      final HttpUrl endpoint, final List<EventType> eventTypes) {
     final HttpUrl eventSourceUrl =
         endpoint.resolve(
-            ValidatorApiMethod.EVENTS.getPath(emptyMap()) + "?topics=" + EventType.head);
+            ValidatorApiMethod.EVENTS.getPath(emptyMap())
+                + "?topics="
+                + String.join(",", eventTypes.stream().map(EventType::name).toList()));
     return Preconditions.checkNotNull(eventSourceUrl);
   }
 

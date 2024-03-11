@@ -30,6 +30,8 @@ import org.hyperledger.besu.plugin.services.MetricsSystem;
 import org.hyperledger.besu.plugin.services.metrics.Counter;
 import tech.pegasys.teku.dataproviders.lookup.BlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.EarliestBlobSidecarSlotProvider;
+import tech.pegasys.teku.dataproviders.lookup.SingleBlobSidecarProvider;
+import tech.pegasys.teku.dataproviders.lookup.SingleBlockProvider;
 import tech.pegasys.teku.dataproviders.lookup.StateAndBlockSummaryProvider;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -39,7 +41,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
@@ -98,33 +100,47 @@ public abstract class RecentChainData implements StoreUpdateHandler {
   private volatile Optional<ChainHead> chainHead = Optional.empty();
   private volatile UInt64 genesisTime;
 
+  private final SingleBlockProvider validatedBlockProvider;
+  private final SingleBlobSidecarProvider validatedBlobSidecarProvider;
+
+  private final LateBlockReorgLogic lateBlockReorgLogic;
+
+  private final ValidatorIsConnectedProvider validatorIsConnectedProvider;
+
   RecentChainData(
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final StoreConfig storeConfig,
       final BlockProvider blockProvider,
+      final SingleBlockProvider validatedBlockProvider,
+      final SingleBlobSidecarProvider validatedBlobSidecarProvider,
       final StateAndBlockSummaryProvider stateProvider,
       final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider,
       final StorageUpdateChannel storageUpdateChannel,
       final VoteUpdateChannel voteUpdateChannel,
       final FinalizedCheckpointChannel finalizedCheckpointChannel,
       final ChainHeadChannel chainHeadChannel,
+      final ValidatorIsConnectedProvider validatorIsConnectedProvider,
       final Spec spec) {
     this.asyncRunner = asyncRunner;
     this.metricsSystem = metricsSystem;
     this.storeConfig = storeConfig;
     this.blockProvider = blockProvider;
     this.stateProvider = stateProvider;
+    this.validatedBlockProvider = validatedBlockProvider;
+    this.validatedBlobSidecarProvider = validatedBlobSidecarProvider;
     this.earliestBlobSidecarSlotProvider = earliestBlobSidecarSlotProvider;
     this.voteUpdateChannel = voteUpdateChannel;
     this.chainHeadChannel = chainHeadChannel;
     this.storageUpdateChannel = storageUpdateChannel;
     this.finalizedCheckpointChannel = finalizedCheckpointChannel;
+    this.lateBlockReorgLogic = new LateBlockReorgLogic(spec, this);
     reorgCounter =
         metricsSystem.createCounter(
             TekuMetricCategory.BEACON,
             "reorgs_total",
             "Total occurrences of reorganizations of the chain");
+    this.validatorIsConnectedProvider = validatorIsConnectedProvider;
     this.spec = spec;
   }
 
@@ -500,9 +516,14 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return getForkChoiceStrategy().flatMap(forkChoice -> forkChoice.executionBlockHash(root));
   }
 
-  public Optional<List<BlobSidecarOld>> getBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
+  public Optional<List<BlobSidecar>> getBlobSidecars(final SlotAndBlockRoot slotAndBlockRoot) {
     return Optional.ofNullable(store)
         .flatMap(s -> store.getBlobSidecarsIfAvailable(slotAndBlockRoot));
+  }
+
+  public Optional<BlobSidecar> getRecentlyValidatedBlobSidecar(
+      final Bytes32 blockRoot, final UInt64 index) {
+    return validatedBlobSidecarProvider.getBlobSidecar(blockRoot, index);
   }
 
   public SafeFuture<Optional<BeaconBlock>> retrieveBlockByRoot(final Bytes32 root) {
@@ -517,6 +538,10 @@ public abstract class RecentChainData implements StoreUpdateHandler {
       return EmptyStoreResults.EMPTY_SIGNED_BLOCK_FUTURE;
     }
     return store.retrieveSignedBlock(root);
+  }
+
+  public Optional<SignedBeaconBlock> getRecentlyValidatedSignedBlockByRoot(final Bytes32 root) {
+    return validatedBlockProvider.getBlock(root);
   }
 
   public SafeFuture<Optional<BeaconState>> retrieveBlockState(final Bytes32 blockRoot) {
@@ -612,5 +637,26 @@ public abstract class RecentChainData implements StoreUpdateHandler {
     return getForkChoiceStrategy()
         .map(forkChoiceStrategy -> forkChoiceStrategy.getBlockRootsAtSlot(slot))
         .orElse(Collections.emptyList());
+  }
+
+  public Bytes32 getProposerHead(final Bytes32 headRoot, final UInt64 slot) {
+    return lateBlockReorgLogic.getProposerHead(headRoot, slot);
+  }
+
+  public boolean shouldOverrideForkChoiceUpdate(final Bytes32 headRoot) {
+    return lateBlockReorgLogic.shouldOverrideForkChoiceUpdate(headRoot);
+  }
+
+  public boolean validatorIsConnected(final int validatorIndex, final UInt64 slot) {
+    return validatorIsConnectedProvider.isValidatorConnected(validatorIndex, slot);
+  }
+
+  public void setBlockTimelinessFromArrivalTime(
+      final SignedBeaconBlock block, final UInt64 arrivalTime) {
+    lateBlockReorgLogic.setBlockTimelinessFromArrivalTime(block, arrivalTime);
+  }
+
+  public void setBlockTimelinessIfEmpty(SignedBeaconBlock block) {
+    lateBlockReorgLogic.setBlockTimelinessFromArrivalTime(block, store.getTimeInMillis());
   }
 }

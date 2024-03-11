@@ -8,6 +8,7 @@ dependencies {
     integrationTestImplementation project(':infrastructure:ssz')
     integrationTestImplementation project(':storage')
     integrationTestImplementation project(':infrastructure:async')
+    integrationTestImplementation project(':infrastructure:time')
 
     integrationTestImplementation testFixtures(project(':ethereum:networks'))
     integrationTestImplementation testFixtures(project(':ethereum:statetransition'))

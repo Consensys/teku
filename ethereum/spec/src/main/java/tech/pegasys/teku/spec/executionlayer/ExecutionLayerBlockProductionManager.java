@@ -14,9 +14,10 @@
 package tech.pegasys.teku.spec.executionlayer;
 
 import java.util.Optional;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
@@ -40,7 +41,9 @@ public interface ExecutionLayerBlockProductionManager {
         public ExecutionPayloadResult initiateBlockProduction(
             final ExecutionPayloadContext context,
             final BeaconState blockSlotState,
-            final boolean isBlind) {
+            final boolean isBlind,
+            final Optional<UInt64> requestedBuilderBoostFactor,
+            final BlockProductionPerformance blockProductionPerformance) {
           return null;
         }
 
@@ -48,13 +51,15 @@ public interface ExecutionLayerBlockProductionManager {
         public ExecutionPayloadResult initiateBlockAndBlobsProduction(
             final ExecutionPayloadContext context,
             final BeaconState blockSlotState,
-            final boolean isBlind) {
+            final boolean isBlind,
+            final Optional<UInt64> requestedBuilderBoostFactor,
+            final BlockProductionPerformance blockProductionPerformance) {
           return null;
         }
 
         @Override
         public SafeFuture<BuilderPayload> getUnblindedPayload(
-            final SignedBlockContainer signedBlockContainer) {
+            final SignedBeaconBlock signedBeaconBlock) {
           return SafeFuture.completedFuture(null);
         }
 
@@ -70,10 +75,16 @@ public interface ExecutionLayerBlockProductionManager {
    * @param context Payload context
    * @param blockSlotState pre state
    * @param isBlind Block type. Use blind for builder building
+   * @param requestedBuilderBoostFactor The proposer boost factor requested by vc
+   * @param blockProductionPerformance Block production performance tracker
    * @return Container with filled Payload or Payload Header futures
    */
   ExecutionPayloadResult initiateBlockProduction(
-      ExecutionPayloadContext context, BeaconState blockSlotState, boolean isBlind);
+      ExecutionPayloadContext context,
+      BeaconState blockSlotState,
+      boolean isBlind,
+      Optional<UInt64> requestedBuilderBoostFactor,
+      BlockProductionPerformance blockProductionPerformance);
 
   /**
    * Initiates block and sidecar blobs production flow with execution client or builder. Use since
@@ -82,19 +93,30 @@ public interface ExecutionLayerBlockProductionManager {
    * @param context Payload context
    * @param blockSlotState pre state
    * @param isBlind Block type. Use blind for builder building
+   * @param requestedBuilderBoostFactor The proposer boost factor requested by vc
+   * @param blockProductionPerformance Block production performance tracker
    * @return Container with filled Payload or Payload Header futures
    */
   ExecutionPayloadResult initiateBlockAndBlobsProduction(
-      ExecutionPayloadContext context, BeaconState blockSlotState, boolean isBlind);
-
-  Optional<ExecutionPayloadResult> getCachedPayloadResult(UInt64 slot);
-
-  SafeFuture<BuilderPayload> getUnblindedPayload(SignedBlockContainer signedBlockContainer);
+      ExecutionPayloadContext context,
+      BeaconState blockSlotState,
+      boolean isBlind,
+      Optional<UInt64> requestedBuilderBoostFactor,
+      BlockProductionPerformance blockProductionPerformance);
 
   /**
-   * Requires {@link #getUnblindedPayload( SignedBlockContainer)} to have been called first in order
-   * for a value to be present
+   * Required {@link #initiateBlockProduction(ExecutionPayloadContext, BeaconState, boolean,
+   * Optional, BlockProductionPerformance)} or {@link
+   * #initiateBlockAndBlobsProduction(ExecutionPayloadContext, BeaconState, boolean, Optional,
+   * BlockProductionPerformance)} to have been called first in order for a value to be present
    */
-  @SuppressWarnings("unused")
+  Optional<ExecutionPayloadResult> getCachedPayloadResult(UInt64 slot);
+
+  SafeFuture<BuilderPayload> getUnblindedPayload(SignedBeaconBlock signedBeaconBlock);
+
+  /**
+   * Requires {@link #getUnblindedPayload(SignedBeaconBlock)} to have been called first in order for
+   * a value to be present
+   */
   Optional<BuilderPayload> getCachedUnblindedPayload(UInt64 slot);
 }

@@ -21,6 +21,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
@@ -36,12 +37,14 @@ class ForkChoiceTriggerTest {
 
   @Test
   void shouldProcessHeadOnSlotStartedWhileSyncing() {
+    when(forkChoice.getLastProcessHeadSlot()).thenReturn(UInt64.ZERO);
     trigger.onSlotStartedWhileSyncing(UInt64.ONE);
     verify(forkChoice).processHead(UInt64.ONE);
   }
 
   @Test
   void shouldProcessHeadOnAttestationDue() {
+    when(forkChoice.getLastProcessHeadSlot()).thenReturn(UInt64.ZERO);
     trigger.onAttestationsDueForSlot(UInt64.ONE);
     verify(forkChoice).processHead(UInt64.ONE);
   }
@@ -49,10 +52,11 @@ class ForkChoiceTriggerTest {
   @Test
   void shouldRunForkChoicePriorToBlockProduction() {
     final SafeFuture<Void> prepareFuture = new SafeFuture<>();
-    when(forkChoice.prepareForBlockProduction(any())).thenReturn(prepareFuture);
-    final SafeFuture<Void> result = trigger.prepareForBlockProduction(UInt64.ONE);
+    when(forkChoice.prepareForBlockProduction(any(), any())).thenReturn(prepareFuture);
+    final SafeFuture<Void> result =
+        trigger.prepareForBlockProduction(UInt64.ONE, BlockProductionPerformance.NOOP);
     assertThatSafeFuture(result).isNotDone();
-    verify(forkChoice).prepareForBlockProduction(UInt64.ONE);
+    verify(forkChoice).prepareForBlockProduction(UInt64.ONE, BlockProductionPerformance.NOOP);
 
     prepareFuture.complete(null);
     assertThatSafeFuture(result).isCompleted();

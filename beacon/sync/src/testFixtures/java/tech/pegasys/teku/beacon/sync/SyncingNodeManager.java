@@ -57,14 +57,14 @@ import tech.pegasys.teku.spec.executionlayer.ExecutionLayerChannelStub;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImportChannel;
-import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.statetransition.block.BlockManager;
+import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
-import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
 import tech.pegasys.teku.statetransition.util.PoolFactory;
@@ -122,12 +122,18 @@ public class SyncingNodeManager {
             new InlineEventThread(),
             recentChainData,
             BlobSidecarManager.NOOP,
-            new StubForkChoiceNotifier(),
+            new NoopForkChoiceNotifier(),
             transitionBlockValidator,
             new StubMetricsSystem());
 
+    final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher =
+        eventChannels.getPublisher(ReceivedBlockEventsChannel.class);
+
     final BlockGossipValidator blockGossipValidator =
-        new BlockGossipValidator(spec, new GossipValidationHelper(spec, recentChainData));
+        new BlockGossipValidator(
+            spec,
+            new GossipValidationHelper(spec, recentChainData),
+            receivedBlockEventsChannelPublisher);
     final BlockValidator blockValidator = new BlockValidator(blockGossipValidator);
 
     final TimeProvider timeProvider = new SystemTimeProvider();
@@ -141,7 +147,7 @@ public class SyncingNodeManager {
     final BlockImporter blockImporter =
         new BlockImporter(
             spec,
-            eventChannels.getPublisher(BlockImportNotifications.class),
+            receivedBlockEventsChannelPublisher,
             recentChainData,
             forkChoice,
             WeakSubjectivityFactory.lenientValidator(),
@@ -151,21 +157,19 @@ public class SyncingNodeManager {
         new BlockManager(
             recentChainData,
             blockImporter,
-            BlobSidecarPool.NOOP,
+            BlockBlobSidecarsTrackersPool.NOOP,
             pendingBlocks,
             futureBlocks,
             invalidBlockRoots,
             blockValidator,
             timeProvider,
             EVENT_LOG,
-            Optional.empty(),
-            true,
-            false);
+            Optional.empty());
 
     eventChannels
         .subscribe(SlotEventsChannel.class, blockManager)
         .subscribe(BlockImportChannel.class, blockManager)
-        .subscribe(BlockImportNotifications.class, blockManager)
+        .subscribe(ReceivedBlockEventsChannel.class, blockManager)
         .subscribe(FinalizedCheckpointChannel.class, pendingBlocks)
         .subscribe(SlotEventsChannel.class, pendingBlocks);
 
@@ -188,7 +192,7 @@ public class SyncingNodeManager {
             recentChainData,
             blockImporter,
             BlobSidecarManager.NOOP,
-            BlobSidecarPool.NOOP,
+            BlockBlobSidecarsTrackersPool.NOOP,
             new NoOpMetricsSystem(),
             SyncConfig.DEFAULT_FORWARD_SYNC_BATCH_SIZE,
             spec);
@@ -199,12 +203,14 @@ public class SyncingNodeManager {
 
     final RecentBlocksFetchService recentBlocksFetcher =
         RecentBlocksFetchService.create(
-            asyncRunner, pendingBlocks, BlobSidecarPool.NOOP, syncService, fetchBlockTaskFactory);
+            asyncRunner,
+            pendingBlocks,
+            BlockBlobSidecarsTrackersPool.NOOP,
+            syncService,
+            fetchBlockTaskFactory);
     recentBlocksFetcher.subscribeBlockFetched(
         block -> blockManager.importBlock(block, BroadcastValidationLevel.NOT_REQUIRED));
-    blockManager.subscribeToReceivedBlocks(
-        (block, executionOptimistic) ->
-            recentBlocksFetcher.cancelRecentBlockRequest(block.getRoot()));
+    eventChannels.subscribe(ReceivedBlockEventsChannel.class, recentBlocksFetcher);
 
     recentBlocksFetcher.start().join();
     blockManager.start().join();

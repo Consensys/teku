@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -31,8 +32,7 @@ import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.assertThat
 import static tech.pegasys.teku.infrastructure.async.SafeFutureAssert.safeJoin;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ONE;
 import static tech.pegasys.teku.infrastructure.unsigned.UInt64.ZERO;
-import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED;
-import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED;
+import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED;
 import static tech.pegasys.teku.statetransition.forkchoice.ForkChoice.BLOCK_CREATION_TOLERANCE_MS;
 
 import java.util.List;
@@ -56,6 +56,7 @@ import tech.pegasys.infrastructure.logging.LogCaptor;
 import tech.pegasys.teku.bls.BLSKeyPair;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.eventthread.InlineEventThread;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
@@ -64,7 +65,7 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.blocks.MinimalBeaconBlockSummary;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
@@ -94,6 +95,8 @@ import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice.OptimisticHeadSubscriber;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceUpdatedResultSubscriber.ForkChoiceUpdatedResultNotification;
+import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
+import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator.BroadcastValidationResult;
 import tech.pegasys.teku.storage.api.TrackingChainHeadChannel.ReorgEvent;
 import tech.pegasys.teku.storage.client.ChainHead;
 import tech.pegasys.teku.storage.client.ChainUpdater;
@@ -121,7 +124,8 @@ class ForkChoiceTest {
   private final OptimisticHeadSubscriber optimisticSyncStateTracker =
       mock(OptimisticHeadSubscriber.class);
   private ExecutionLayerChannelStub executionLayer;
-  private Optional<SafeFuture<BlockImportResult>> consensusValidationResult = Optional.empty();
+  private final BlockBroadcastValidator blockBroadcastValidator =
+      mock(BlockBroadcastValidator.class);
   private final MergeTransitionBlockValidator transitionBlockValidator =
       mock(MergeTransitionBlockValidator.class);
 
@@ -159,8 +163,7 @@ class ForkChoiceTest {
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
-            DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED,
-            DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED,
+            DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
             metricsSystem);
 
     // Starting and mocks
@@ -176,6 +179,8 @@ class ForkChoiceTest {
     setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.VALID);
     when(transitionBlockValidator.verifyAncestorTransitionBlock(any()))
         .thenReturn(SafeFuture.completedFuture(PayloadValidationResult.VALID));
+    when(blockBroadcastValidator.getResult())
+        .thenReturn(SafeFuture.completedFuture(BroadcastValidationResult.SUCCESS));
 
     forkChoice.subscribeToOptimisticHeadChangesAndUpdate(optimisticSyncStateTracker);
 
@@ -183,7 +188,7 @@ class ForkChoiceTest {
     if (spec.isMilestoneSupported(SpecMilestone.DENEB)) {
       when(blobSidecarManager.createAvailabilityChecker(any()))
           .thenReturn(blobSidecarsAvailabilityChecker);
-      final List<BlobSidecarOld> blobSidecars = dataStructureUtil.randomBlobSidecars(2);
+      final List<BlobSidecar> blobSidecars = dataStructureUtil.randomBlobSidecars(2);
       when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
           .thenReturn(
               SafeFuture.completedFuture(
@@ -231,7 +236,8 @@ class ForkChoiceTest {
     when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
         .thenReturn(SafeFuture.completedFuture(BlobSidecarsAndValidationResult.NOT_AVAILABLE));
 
-    importBlockWithError(blockAndState, FailureReason.FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE);
+    importBlockAndAssertFailure(
+        blockAndState, FailureReason.FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE);
 
     verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
     verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
@@ -241,16 +247,34 @@ class ForkChoiceTest {
   @Test
   void onBlock_consensusValidationShouldNotResolveWhenDataAvailabilityFails() {
     setupWithSpec(TestSpecFactory.createMinimalDeneb());
-    consensusValidationResult = Optional.of(new SafeFuture<>());
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
 
     when(blobSidecarsAvailabilityChecker.getAvailabilityCheckResult())
         .thenReturn(SafeFuture.completedFuture(BlobSidecarsAndValidationResult.NOT_AVAILABLE));
 
-    importBlockWithError(blockAndState, FailureReason.FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE);
+    importBlockAndAssertFailure(
+        blockAndState, FailureReason.FAILED_DATA_AVAILABILITY_CHECK_NOT_AVAILABLE);
 
-    assertThatSafeFuture(consensusValidationResult.get()).isNotDone();
+    verify(blockBroadcastValidator, never()).onConsensusValidationSucceeded();
+
+    verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
+    verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
+    verify(blobSidecarsAvailabilityChecker).getAvailabilityCheckResult();
+  }
+
+  @Test
+  void onBlock_shouldFailWhenBroadcastValidationFails() {
+    setupWithSpec(TestSpecFactory.createMinimalDeneb());
+    final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
+    storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
+
+    when(blockBroadcastValidator.getResult())
+        .thenReturn(SafeFuture.completedFuture(BroadcastValidationResult.GOSSIP_FAILURE));
+
+    importBlockAndAssertFailure(blockAndState, FailureReason.FAILED_BROADCAST_VALIDATION);
+
+    verify(blockBroadcastValidator).onConsensusValidationSucceeded();
 
     verify(blobSidecarManager).createAvailabilityChecker(blockAndState.getBlock());
     verify(blobSidecarsAvailabilityChecker).initiateDataAvailabilityCheck();
@@ -260,23 +284,21 @@ class ForkChoiceTest {
   @Test
   void onBlock_consensusValidationShouldNotResolveWhenEarlyFails() {
     setupWithSpec(TestSpecFactory.createMinimalDeneb());
-    consensusValidationResult = Optional.of(new SafeFuture<>());
     final List<SignedBlockAndState> signedBlockAndStates = chainBuilder.generateBlocksUpToSlot(2);
     final SignedBlockAndState wrongBlockAndState =
         signedBlockAndStates.get(signedBlockAndStates.size() - 1);
 
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(wrongBlockAndState.getSlot());
 
-    importBlockWithError(wrongBlockAndState, FailureReason.UNKNOWN_PARENT);
+    importBlockAndAssertFailure(wrongBlockAndState, FailureReason.UNKNOWN_PARENT);
 
-    assertThatSafeFuture(consensusValidationResult.get()).isNotDone();
+    verify(blockBroadcastValidator, never()).onConsensusValidationSucceeded();
   }
 
   @Test
   void onBlock_consensusValidationShouldNotResolveWhenStateTransitionFails()
       throws StateTransitionException {
     setupWithSpec(TestSpecFactory.createMinimalDeneb());
-    consensusValidationResult = Optional.of(new SafeFuture<>());
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
 
@@ -285,17 +307,20 @@ class ForkChoiceTest {
     when(blockProcessor.processAndValidateBlock(any(), any(), any(), any()))
         .thenThrow(new StateTransitionException("error!"));
 
-    importBlockWithError(blockAndState, FailureReason.FAILED_STATE_TRANSITION);
+    importBlockAndAssertFailure(blockAndState, FailureReason.FAILED_STATE_TRANSITION);
 
-    assertThatSafeFuture(consensusValidationResult.get()).isNotDone();
+    verify(blockBroadcastValidator, never()).onConsensusValidationSucceeded();
   }
 
   @Test
   void onBlock_consensusValidationShouldReturnRegardlessExecutionPayloadValidation() {
     setupWithSpec(TestSpecFactory.createMinimalDeneb());
-    consensusValidationResult = Optional.of(new SafeFuture<>());
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     importBlock(blockAndState);
+    reset(blockBroadcastValidator);
+
+    when(blockBroadcastValidator.getResult())
+        .thenReturn(SafeFuture.completedFuture(BroadcastValidationResult.SUCCESS));
 
     // let's prepare a mocked EL with lazy newPayload
     executionLayer = mock(ExecutionLayerChannelStub.class);
@@ -307,8 +332,7 @@ class ForkChoiceTest {
         importBlockNoResultCheck(chainBuilder.generateNextBlock());
 
     // successful consensus check prior to EL validation
-    assertThatSafeFuture(consensusValidationResult.get())
-        .isCompletedWithValueMatching(BlockImportResult::isSuccessful);
+    verify(blockBroadcastValidator).onConsensusValidationSucceeded();
 
     assertThatSafeFuture(importResult).isNotDone();
 
@@ -340,7 +364,10 @@ class ForkChoiceTest {
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
     final SafeFuture<BlockImportResult> importResult =
         forkChoice.onBlock(
-            blockAndState.getBlock(), Optional.empty(), Optional.empty(), executionLayer);
+            blockAndState.getBlock(),
+            Optional.empty(),
+            BlockBroadcastValidator.NOOP,
+            executionLayer);
     assertBlockImportedSuccessfully(importResult, false);
 
     assertThat(recentChainData.getHeadBlock().map(MinimalBeaconBlockSummary::getRoot))
@@ -358,7 +385,7 @@ class ForkChoiceTest {
     final SignedBlockAndState blockAndState = chainBuilder.generateBlockAtSlot(ONE);
     final SafeFuture<BlockImportResult> importResult =
         forkChoice.onBlock(
-            blockAndState.getBlock(), Optional.empty(), Optional.empty(), executionLayer);
+            blockAndState.getBlock(), Optional.empty(), blockBroadcastValidator, executionLayer);
     assertBlockImportedSuccessfully(importResult, false);
 
     assertThat(recentChainData.getHeadBlock().map(MinimalBeaconBlockSummary::getRoot))
@@ -391,8 +418,7 @@ class ForkChoiceTest {
             new ForkChoiceStateProvider(eventThread, recentChainData),
             new TickProcessor(spec, recentChainData),
             transitionBlockValidator,
-            DEFAULT_FORK_CHOICE_UPDATE_HEAD_ON_BLOCK_IMPORT_ENABLED,
-            DEFAULT_FORK_CHOICE_PROPOSER_BOOST_UNIQUENESS_ENABLED,
+            DEFAULT_FORK_CHOICE_LATE_BLOCK_REORG_ENABLED,
             metricsSystem);
 
     final UInt64 currentSlot = recentChainData.getCurrentSlot().orElseThrow();
@@ -425,7 +451,7 @@ class ForkChoiceTest {
     if (advanceTimeSlotMillis > 0) {
       StoreTransaction transaction = recentChainData.startStoreTransaction();
       UInt64 timeIntoSlotMillis =
-          recentChainData.getStore().getTimeMillis().plus(advanceTimeSlotMillis);
+          recentChainData.getStore().getTimeInMillis().plus(advanceTimeSlotMillis);
       transaction.setTimeMillis(timeIntoSlotMillis);
       safeJoin(transaction.commit());
     }
@@ -665,7 +691,10 @@ class ForkChoiceTest {
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(blockAndState.getSlot());
     final SafeFuture<BlockImportResult> importResult =
         forkChoice.onBlock(
-            blockAndState.getBlock(), Optional.empty(), Optional.empty(), executionLayer);
+            blockAndState.getBlock(),
+            Optional.empty(),
+            BlockBroadcastValidator.NOOP,
+            executionLayer);
     assertBlockImportedSuccessfully(importResult, false);
 
     assertForkChoiceUpdateNotification(blockAndState, false);
@@ -677,7 +706,8 @@ class ForkChoiceTest {
     // make EL returning SYNCING
     executionLayer.setPayloadStatus(PayloadStatus.SYNCING);
 
-    importBlockWithError(epoch4Block, FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
+    importBlockAndAssertFailure(
+        epoch4Block, FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION_SYNCING);
   }
 
   @Test
@@ -691,7 +721,7 @@ class ForkChoiceTest {
 
     // generate block which finalize epoch 2
     final SignedBlockAndState epoch4Block = chainBuilder.generateBlockAtSlot(slotToImport);
-    importBlockWithError(epoch4Block, FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION);
+    importBlockAndAssertFailure(epoch4Block, FailureReason.FAILED_EXECUTION_PAYLOAD_EXECUTION);
   }
 
   @Test
@@ -706,7 +736,8 @@ class ForkChoiceTest {
     executionLayer.setPayloadStatus(PayloadStatus.invalid(Optional.empty(), Optional.empty()));
 
     storageSystem.chainUpdater().setCurrentSlot(slotToImport.increment());
-    importBlockWithError(chainBuilder.generateNextBlock(), FailureReason.FAILED_STATE_TRANSITION);
+    importBlockAndAssertFailure(
+        chainBuilder.generateNextBlock(), FailureReason.FAILED_STATE_TRANSITION);
   }
 
   @Test
@@ -741,7 +772,7 @@ class ForkChoiceTest {
             Optional.of(maybeValidBlock.getExecutionBlockHash().get()), Optional.empty()));
     storageSystem.chainUpdater().setCurrentSlot(latestOptimisticBlock.getSlot().increment());
     SignedBlockAndState invalidBlock = chainBuilder.generateNextBlock();
-    importBlockWithError(invalidBlock, FailureReason.FAILED_STATE_TRANSITION);
+    importBlockAndAssertFailure(invalidBlock, FailureReason.FAILED_STATE_TRANSITION);
     assertThat(forkChoice.processHead(invalidBlock.getSlot())).isCompleted();
 
     assertHeadIsOptimistic(maybeValidBlock);
@@ -933,7 +964,10 @@ class ForkChoiceTest {
     setForkChoiceNotifierForkChoiceUpdatedResult(PayloadStatus.SYNCING);
     final SafeFuture<BlockImportResult> result =
         forkChoice.onBlock(
-            blockAndState.getBlock(), Optional.empty(), Optional.empty(), executionLayer);
+            blockAndState.getBlock(),
+            Optional.empty(),
+            BlockBroadcastValidator.NOOP,
+            executionLayer);
     assertBlockImportedSuccessfully(result, true);
 
     assertForkChoiceUpdateNotification(blockAndState, true);
@@ -999,7 +1033,7 @@ class ForkChoiceTest {
     try (LogCaptor logCaptor = LogCaptor.forClass(ForkChoice.class)) {
       forkChoice.onForkChoiceUpdatedResult(
           new ForkChoiceUpdatedResultNotification(
-              state, true, SafeFuture.completedFuture(Optional.ofNullable(result))));
+              state, Optional.empty(), true, SafeFuture.completedFuture(result)));
       if (result.getPayloadStatus().hasInvalidStatus()) {
         final List<String> errorLogs = logCaptor.getErrorLogs();
         assertThat(errorLogs).singleElement().asString().contains("INVALID", "terminal");
@@ -1017,7 +1051,8 @@ class ForkChoiceTest {
     storageSystem.chainUpdater().setTimeMillis(newTime);
 
     assertThat(recentChainData.getCurrentSlot()).isEqualTo(Optional.of(ZERO));
-    assertThat(forkChoice.prepareForBlockProduction(ONE)).isCompleted();
+    assertThat(forkChoice.prepareForBlockProduction(ONE, BlockProductionPerformance.NOOP))
+        .isCompleted();
     assertThat(recentChainData.getCurrentSlot()).isEqualTo(Optional.of(ONE));
 
     verify(forkChoiceNotifier, times(1)).onForkChoiceUpdated(any(), eq(Optional.of(ONE)));
@@ -1031,7 +1066,8 @@ class ForkChoiceTest {
     storageSystem.chainUpdater().setTimeMillis(newTime);
 
     assertThat(recentChainData.getCurrentSlot()).isEqualTo(Optional.of(ZERO));
-    assertThat(forkChoice.prepareForBlockProduction(ONE)).isCompleted();
+    assertThat(forkChoice.prepareForBlockProduction(ONE, BlockProductionPerformance.NOOP))
+        .isCompleted();
     assertThat(recentChainData.getCurrentSlot()).isEqualTo(Optional.of(ZERO));
 
     verifyNoInteractions(forkChoiceNotifier);
@@ -1068,6 +1104,8 @@ class ForkChoiceTest {
       final VerificationMode mode) {
     final ReadOnlyForkChoiceStrategy forkChoiceStrategy =
         recentChainData.getForkChoiceStrategy().orElseThrow();
+    final UInt64 headExecutionBlockNumber =
+        forkChoiceStrategy.executionBlockNumber(blockAndState.getRoot()).orElseThrow();
     final Bytes32 headExecutionHash =
         forkChoiceStrategy.executionBlockHash(blockAndState.getRoot()).orElseThrow();
     final Bytes32 justifiedExecutionHash =
@@ -1083,6 +1121,7 @@ class ForkChoiceTest {
             new ForkChoiceState(
                 blockAndState.getRoot(),
                 blockAndState.getSlot(),
+                headExecutionBlockNumber,
                 headExecutionHash,
                 justifiedExecutionHash,
                 finalizedExecutionHash,
@@ -1281,14 +1320,14 @@ class ForkChoiceTest {
   private SafeFuture<BlockImportResult> importBlockNoResultCheck(final SignedBlockAndState block) {
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(block.getSlot());
     return forkChoice.onBlock(
-        block.getBlock(), Optional.empty(), consensusValidationResult, executionLayer);
+        block.getBlock(), Optional.empty(), blockBroadcastValidator, executionLayer);
   }
 
   private void importBlock(final SignedBlockAndState block) {
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(block.getSlot());
     final SafeFuture<BlockImportResult> result =
         forkChoice.onBlock(
-            block.getBlock(), Optional.empty(), consensusValidationResult, executionLayer);
+            block.getBlock(), Optional.empty(), blockBroadcastValidator, executionLayer);
     assertBlockImportedSuccessfully(result, false);
   }
 
@@ -1296,7 +1335,7 @@ class ForkChoiceTest {
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(block.getSlot());
     final SafeFuture<BlockImportResult> result =
         forkChoice.onBlock(
-            block.getBlock(), Optional.empty(), consensusValidationResult, executionLayer);
+            block.getBlock(), Optional.empty(), blockBroadcastValidator, executionLayer);
     assertBlockImportedSuccessfully(result, true);
   }
 
@@ -1307,12 +1346,12 @@ class ForkChoiceTest {
     assertThat(result.getFailureReason()).isEqualTo(failureReason);
   }
 
-  private void importBlockWithError(
+  private void importBlockAndAssertFailure(
       final SignedBlockAndState block, final FailureReason failureReason) {
     storageSystem.chainUpdater().advanceCurrentSlotToAtLeast(block.getSlot());
     final SafeFuture<BlockImportResult> result =
         forkChoice.onBlock(
-            block.getBlock(), Optional.empty(), consensusValidationResult, executionLayer);
+            block.getBlock(), Optional.empty(), blockBroadcastValidator, executionLayer);
     assertBlockImportFailure(result, failureReason);
   }
 
@@ -1331,10 +1370,9 @@ class ForkChoiceTest {
     }
     Stubber stubber = null;
     for (PayloadStatus status : statuses) {
-      ForkChoiceUpdatedResult result =
+      Optional<ForkChoiceUpdatedResult> result =
           Optional.ofNullable(status)
-              .map(payloadStatus -> new ForkChoiceUpdatedResult(payloadStatus, Optional.empty()))
-              .orElse(null);
+              .map(payloadStatus -> new ForkChoiceUpdatedResult(payloadStatus, Optional.empty()));
       Answer<Void> onForkChoiceUpdatedResultAnswer = getOnForkChoiceUpdatedResultAnswer(result);
       if (stubber == null) {
         stubber = doAnswer(onForkChoiceUpdatedResultAnswer);
@@ -1345,13 +1383,17 @@ class ForkChoiceTest {
     stubber.when(forkChoiceNotifier).onForkChoiceUpdated(any(), any());
   }
 
-  private Answer<Void> getOnForkChoiceUpdatedResultAnswer(ForkChoiceUpdatedResult result) {
+  private Answer<Void> getOnForkChoiceUpdatedResultAnswer(
+      Optional<ForkChoiceUpdatedResult> result) {
     return invocation -> {
-      forkChoice.onForkChoiceUpdatedResult(
-          new ForkChoiceUpdatedResultNotification(
-              invocation.getArgument(0),
-              false,
-              SafeFuture.completedFuture(Optional.ofNullable(result))));
+      result.ifPresent(
+          forkChoiceUpdatedResult ->
+              forkChoice.onForkChoiceUpdatedResult(
+                  new ForkChoiceUpdatedResultNotification(
+                      invocation.getArgument(0),
+                      Optional.empty(),
+                      false,
+                      SafeFuture.completedFuture(forkChoiceUpdatedResult))));
       return null;
     };
   }

@@ -26,27 +26,26 @@ import tech.pegasys.teku.infrastructure.subscribers.Subscribers;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.service.serviceutils.Service;
-import tech.pegasys.teku.spec.datastructures.blocks.ImportedBlockListener;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSummary;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager.RemoteOrigin;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.util.FutureItems;
 import tech.pegasys.teku.statetransition.util.PendingPool;
+import tech.pegasys.teku.statetransition.validation.BlockBroadcastValidator;
 import tech.pegasys.teku.statetransition.validation.BlockValidator;
-import tech.pegasys.teku.statetransition.validation.BlockValidator.BroadcastValidationResult;
 import tech.pegasys.teku.statetransition.validation.InternalValidationResult;
-import tech.pegasys.teku.statetransition.validation.ValidationResultCode;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class BlockManager extends Service
-    implements SlotEventsChannel, BlockImportChannel, BlockImportNotifications {
+    implements SlotEventsChannel, BlockImportChannel, ReceivedBlockEventsChannel {
   private static final Logger LOG = LogManager.getLogger();
 
   private final RecentChainData recentChainData;
   private final BlockImporter blockImporter;
-  private final BlobSidecarPool blobSidecarPool;
+  private final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool;
   private final PendingPool<SignedBeaconBlock> pendingBlocks;
   private final BlockValidator blockValidator;
   private final TimeProvider timeProvider;
@@ -57,8 +56,6 @@ public class BlockManager extends Service
   // and will not require any further retry. Descendants of these blocks will be considered invalid
   // as well.
   private final Map<Bytes32, BlockImportResult> invalidBlockRoots;
-  private final Subscribers<ImportedBlockListener> receivedBlockSubscribers =
-      Subscribers.create(true);
   private final Subscribers<FailedPayloadExecutionSubscriber> failedPayloadExecutionSubscribers =
       Subscribers.create(true);
 
@@ -66,25 +63,21 @@ public class BlockManager extends Service
       Subscribers.create(true);
 
   private final Optional<BlockImportMetrics> blockImportMetrics;
-  private final boolean isNotifyWhenImported;
-  private final boolean isNotifyWhenValidated;
 
   public BlockManager(
       final RecentChainData recentChainData,
       final BlockImporter blockImporter,
-      final BlobSidecarPool blobSidecarPool,
+      final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool,
       final PendingPool<SignedBeaconBlock> pendingBlocks,
       final FutureItems<SignedBeaconBlock> futureBlocks,
       final Map<Bytes32, BlockImportResult> invalidBlockRoots,
       final BlockValidator blockValidator,
       final TimeProvider timeProvider,
       final EventLogger eventLogger,
-      final Optional<BlockImportMetrics> blockImportMetrics,
-      final boolean isNotifyWhenImported,
-      final boolean isNotifyWhenValidated) {
+      final Optional<BlockImportMetrics> blockImportMetrics) {
     this.recentChainData = recentChainData;
     this.blockImporter = blockImporter;
-    this.blobSidecarPool = blobSidecarPool;
+    this.blockBlobSidecarsTrackersPool = blockBlobSidecarsTrackersPool;
     this.pendingBlocks = pendingBlocks;
     this.futureBlocks = futureBlocks;
     this.invalidBlockRoots = invalidBlockRoots;
@@ -92,8 +85,6 @@ public class BlockManager extends Service
     this.timeProvider = timeProvider;
     this.eventLogger = eventLogger;
     this.blockImportMetrics = blockImportMetrics;
-    this.isNotifyWhenImported = isNotifyWhenImported;
-    this.isNotifyWhenValidated = isNotifyWhenValidated;
   }
 
   @Override
@@ -108,32 +99,24 @@ public class BlockManager extends Service
 
   @Override
   public SafeFuture<BlockImportAndBroadcastValidationResults> importBlock(
-      final SignedBeaconBlock block, final BroadcastValidationLevel broadcastValidationLevel) {
+      final SignedBeaconBlock block,
+      final BroadcastValidationLevel broadcastValidationLevel,
+      final Optional<RemoteOrigin> origin) {
     LOG.trace("Preparing to import block: {}", block::toLogString);
 
-    // NO broadcast validation, import the old way
-    if (broadcastValidationLevel == BroadcastValidationLevel.NOT_REQUIRED) {
-      return SafeFuture.completedFuture(
-          new BlockImportAndBroadcastValidationResults(
-              doImportBlock(block, Optional.empty(), Optional.empty()), Optional.empty()));
-    }
+    final BlockBroadcastValidator blockBroadcastValidator =
+        blockValidator.initiateBroadcastValidation(block, broadcastValidationLevel);
 
-    final SafeFuture<BlockImportResult> consensusValidationListener = new SafeFuture<>();
     final SafeFuture<BlockImportResult> importResult =
-        doImportBlock(block, Optional.empty(), Optional.of(consensusValidationListener));
+        doImportBlock(block, Optional.empty(), blockBroadcastValidator, origin);
 
-    // we want a future that completes as soon as the consensus validation is done, or intercept any
-    // early import results\exceptions happening before the consensus validation is completed
-    final SafeFuture<BlockImportResult> consensusValidationResultOrImportFailure =
-        consensusValidationListener.or(importResult);
-
-    final SafeFuture<BroadcastValidationResult> broadcastValidationResult =
-        blockValidator.validateBroadcast(
-            block, broadcastValidationLevel, consensusValidationResultOrImportFailure);
+    // we want to intercept any early import exceptions happening before the consensus validation is
+    // completed
+    blockBroadcastValidator.attachToBlockImport(importResult);
 
     return SafeFuture.completedFuture(
         new BlockImportAndBroadcastValidationResults(
-            importResult, Optional.of(broadcastValidationResult)));
+            importResult, blockBroadcastValidator.getResult()));
   }
 
   @SuppressWarnings("FutureReturnValueIgnored")
@@ -141,6 +124,9 @@ public class BlockManager extends Service
       final SignedBeaconBlock block, final Optional<UInt64> arrivalTimestamp) {
 
     final Optional<BlockImportPerformance> blockImportPerformance;
+
+    arrivalTimestamp.ifPresent(
+        arrivalTime -> recentChainData.setBlockTimelinessFromArrivalTime(block, arrivalTime));
 
     if (blockImportMetrics.isPresent()) {
       final BlockImportPerformance performance =
@@ -161,10 +147,19 @@ public class BlockManager extends Service
         blockValidator.validateGossip(block);
     validationResult.thenAccept(
         result -> {
-          if (result.code().equals(ValidationResultCode.ACCEPT)
-              || result.code().equals(ValidationResultCode.SAVE_FOR_FUTURE)) {
-            doImportBlock(block, blockImportPerformance, Optional.empty())
+          switch (result.code()) {
+            case ACCEPT, SAVE_FOR_FUTURE -> doImportBlock(
+                    block,
+                    blockImportPerformance,
+                    BlockBroadcastValidator.NOOP,
+                    Optional.of(RemoteOrigin.GOSSIP))
                 .finish(err -> LOG.error("Failed to process received block.", err));
+
+              // block failed gossip validation, let's drop it from the pool, so it won't be served
+              // via RPC anymore. This should not be done on ignore result (i.e. duplicate blocks
+              // could cause an unwanted drop)
+            case REJECT -> blockBlobSidecarsTrackersPool.removeAllForBlock(block.getRoot());
+            case IGNORE -> {}
           }
         });
     return validationResult;
@@ -177,16 +172,6 @@ public class BlockManager extends Service
     futureBlocks.prune(slot).forEach(this::importBlockIgnoringResult);
   }
 
-  public void subscribeToReceivedBlocks(ImportedBlockListener importedBlockListener) {
-    receivedBlockSubscribers.subscribe(importedBlockListener);
-  }
-
-  private void notifyReceivedBlockSubscribers(
-      final SignedBeaconBlock signedBeaconBlock, final boolean executionOptimistic) {
-    receivedBlockSubscribers.forEach(
-        s -> s.onBlockImported(signedBeaconBlock, executionOptimistic));
-  }
-
   public void subscribeFailedPayloadExecution(final FailedPayloadExecutionSubscriber subscriber) {
     failedPayloadExecutionSubscribers.subscribe(subscriber);
   }
@@ -196,9 +181,14 @@ public class BlockManager extends Service
   }
 
   @Override
-  public void onBlockImported(final SignedBeaconBlock block) {
+  public void onBlockValidated(final SignedBeaconBlock block) {
+    // No-op
+  }
+
+  @Override
+  public void onBlockImported(final SignedBeaconBlock block, final boolean executionOptimistic) {
     final Bytes32 blockRoot = block.getRoot();
-    blobSidecarPool.removeAllForBlock(blockRoot);
+    blockBlobSidecarsTrackersPool.removeAllForBlock(blockRoot);
     pendingBlocks.remove(block);
     // Check if any pending blocks can now be imported
     final List<SignedBeaconBlock> children = pendingBlocks.getItemsDependingOn(blockRoot, false);
@@ -206,34 +196,24 @@ public class BlockManager extends Service
     children.forEach(this::importBlockIgnoringResult);
   }
 
-  @Override
-  public void onBlockValidated(SignedBeaconBlock block) {
-    if (isNotifyWhenValidated) {
-      notifyReceivedBlockSubscribers(block, recentChainData.isChainHeadOptimistic());
-    }
-  }
-
   private void importBlockIgnoringResult(final SignedBeaconBlock block) {
-    doImportBlock(block, Optional.empty(), Optional.empty()).ifExceptionGetsHereRaiseABug();
+    // we don't care about origin here because flow calls this function for retries only
+    doImportBlock(block, Optional.empty(), BlockBroadcastValidator.NOOP, Optional.empty())
+        .ifExceptionGetsHereRaiseABug();
   }
 
   private SafeFuture<BlockImportResult> doImportBlock(
       final SignedBeaconBlock block,
       final Optional<BlockImportPerformance> blockImportPerformance,
-      final Optional<SafeFuture<BlockImportResult>> consensusValidationListener) {
+      final BlockBroadcastValidator blockBroadcastValidator,
+      final Optional<RemoteOrigin> origin) {
     return handleInvalidBlock(block)
         .or(() -> handleKnownBlock(block))
         .orElseGet(
             () ->
-                handleBlockImport(block, blockImportPerformance, consensusValidationListener)
+                handleBlockImport(block, blockImportPerformance, blockBroadcastValidator, origin)
                     .thenPeek(
-                        result -> lateBlockImportCheck(blockImportPerformance, block, result)))
-        .thenPeek(
-            result -> {
-              if (result.isSuccessful() && isNotifyWhenImported) {
-                notifyReceivedBlockSubscribers(block, result.isImportedOptimistically());
-              }
-            });
+                        result -> lateBlockImportCheck(blockImportPerformance, block, result)));
   }
 
   private Optional<BlockImportResult> propagateInvalidity(final SignedBeaconBlock block) {
@@ -272,13 +252,12 @@ public class BlockManager extends Service
   private SafeFuture<BlockImportResult> handleBlockImport(
       final SignedBeaconBlock block,
       final Optional<BlockImportPerformance> blockImportPerformance,
-      final Optional<SafeFuture<BlockImportResult>> consensusValidationListener) {
-
-    onBlockValidated(block);
-    blobSidecarPool.onNewBlock(block);
+      final BlockBroadcastValidator blockBroadcastValidator,
+      final Optional<RemoteOrigin> origin) {
+    blockBlobSidecarsTrackersPool.onNewBlock(block, origin);
 
     return blockImporter
-        .importBlock(block, blockImportPerformance, consensusValidationListener)
+        .importBlock(block, blockImportPerformance, blockBroadcastValidator)
         .thenPeek(
             result -> {
               if (result.isSuccessful()) {
@@ -330,9 +309,19 @@ public class BlockManager extends Service
                     // If next block builds on top of this one, we will re-download all blobSidecars
                     // and block again via RPC by root.
                     LOG.warn("Unable to import block {} due to invalid data", block.toLogString());
-                    blobSidecarPool.removeAllForBlock(block.getRoot());
+                    blockBlobSidecarsTrackersPool.removeAllForBlock(block.getRoot());
                     break;
-                  default:
+                  case FAILED_BROADCAST_VALIDATION:
+                    LOG.warn(
+                        "Unable to import block {} due to failed broadcast validation",
+                        block.toLogString());
+                    break;
+                    // let's avoid default: so we don't forget to explicitly handle new cases
+                  case DOES_NOT_DESCEND_FROM_LATEST_FINALIZED,
+                      FAILED_STATE_TRANSITION,
+                      FAILED_WEAK_SUBJECTIVITY_CHECKS,
+                      DESCENDANT_OF_INVALID_BLOCK,
+                      INTERNAL_ERROR:
                     LOG.trace(
                         "Unable to import block for reason {}: {}",
                         result.getFailureReason(),
@@ -358,7 +347,7 @@ public class BlockManager extends Service
 
     invalidBlockRoots.put(block.getMessage().hashTreeRoot(), blockImportResult);
     pendingBlocks.remove(block);
-    blobSidecarPool.removeAllForBlock(blockRoot);
+    blockBlobSidecarsTrackersPool.removeAllForBlock(blockRoot);
 
     pendingBlocks
         .getItemsDependingOn(blockRoot, true)
@@ -368,7 +357,7 @@ public class BlockManager extends Service
                   blockToDrop.getMessage().hashTreeRoot(),
                   BlockImportResult.FAILED_DESCENDANT_OF_INVALID_BLOCK);
               pendingBlocks.remove(blockToDrop);
-              blobSidecarPool.removeAllForBlock(blockToDrop.getRoot());
+              blockBlobSidecarsTrackersPool.removeAllForBlock(blockToDrop.getRoot());
             });
   }
 

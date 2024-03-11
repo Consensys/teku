@@ -27,7 +27,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.eth2.peers.Eth2Peer;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockAndState;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
 import tech.pegasys.teku.spec.generator.ChainBuilder;
@@ -46,7 +46,7 @@ public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegra
   public void requestBlobSidecars_shouldReturnEmptyBlobSidecarsOnDenebMilestone()
       throws ExecutionException, InterruptedException, TimeoutException {
     final Eth2Peer peer = createPeer(TestSpecFactory.createMinimalDeneb());
-    final List<BlobSidecarOld> blobSidecars =
+    final List<BlobSidecar> blobSidecars =
         requestBlobSidecarsByRange(peer, UInt64.ONE, UInt64.valueOf(10));
     assertThat(blobSidecars).isEmpty();
   }
@@ -66,7 +66,7 @@ public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegra
             .finalizeCurrentChain(Optional.of(peerStorage.chainUpdater().blockOptions));
     finalizedBlocksAndStates.forEach(
         blockAndState -> {
-          final List<BlobSidecarOld> blobSidecars =
+          final List<BlobSidecar> blobSidecars =
               peerStorage.chainBuilder().getBlobSidecars(blockAndState.getRoot());
           peerStorage.chainUpdater().saveBlock(blockAndState, blobSidecars);
           peerStorage.chainUpdater().updateBestBlock(blockAndState);
@@ -89,10 +89,10 @@ public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegra
     final List<SignedBlockAndState> nonCanonicalBlocksAndStates =
         fork.generateBlocksUpToSlot(targetSlot.intValue(), peerStorage.chainUpdater().blockOptions);
 
-    final List<BlobSidecarOld> nonCanonicalBlobSidecars = new ArrayList<>();
+    final List<BlobSidecar> nonCanonicalBlobSidecars = new ArrayList<>();
     nonCanonicalBlocksAndStates.forEach(
         signedBlockAndState -> {
-          final List<BlobSidecarOld> blobSidecars =
+          final List<BlobSidecar> blobSidecars =
               fork.getBlobSidecars(signedBlockAndState.getRoot());
           nonCanonicalBlobSidecars.addAll(blobSidecars);
           peerStorage.chainUpdater().saveBlock(signedBlockAndState, blobSidecars);
@@ -108,21 +108,20 @@ public class BlobSidecarsByRangeIntegrationTest extends AbstractRpcMethodIntegra
     final UInt64 startSlot = finalizedSlot.minus(5);
 
     // grab expected blobs from storage
-    final List<BlobSidecarOld> expectedCanonicalBlobSidecars =
+    final List<BlobSidecar> expectedCanonicalBlobSidecars =
         retrieveCanonicalBlobSidecarsFromPeerStorage(UInt64.rangeClosed(startSlot, targetSlot));
 
     final UInt64 slotCount = targetSlot.minus(startSlot).increment();
     // call and check
-    final List<BlobSidecarOld> blobSidecars =
-        requestBlobSidecarsByRange(peer, startSlot, slotCount);
+    final List<BlobSidecar> blobSidecars = requestBlobSidecarsByRange(peer, startSlot, slotCount);
     assertThat(blobSidecars).containsExactlyInAnyOrderElementsOf(expectedCanonicalBlobSidecars);
     assertThat(blobSidecars).doesNotContainAnyElementsOf(nonCanonicalBlobSidecars);
   }
 
-  private List<BlobSidecarOld> requestBlobSidecarsByRange(
+  private List<BlobSidecar> requestBlobSidecarsByRange(
       final Eth2Peer peer, final UInt64 from, final UInt64 count)
       throws InterruptedException, ExecutionException, TimeoutException {
-    final List<BlobSidecarOld> blobSidecars = new ArrayList<>();
+    final List<BlobSidecar> blobSidecars = new ArrayList<>();
     waitFor(
         peer.requestBlobSidecarsByRange(from, count, RpcResponseListener.from(blobSidecars::add)));
     waitFor(() -> assertThat(peer.getOutstandingRequests()).isEqualTo(0));

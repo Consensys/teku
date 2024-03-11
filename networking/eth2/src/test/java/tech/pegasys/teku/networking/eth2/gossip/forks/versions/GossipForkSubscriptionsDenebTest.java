@@ -18,13 +18,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.StubAsyncRunner;
 import tech.pegasys.teku.infrastructure.metrics.StubMetricsSystem;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
@@ -42,11 +40,9 @@ public class GossipForkSubscriptionsDenebTest {
   private final Spec spec = TestSpecFactory.createMainnetDeneb();
   private final Fork fork = spec.getForkSchedule().getFork(UInt64.ZERO);
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
-  private final P2PConfig p2pConfig = mock(P2PConfig.class);
 
   @Test
   public void shouldAddBlobSidecarGossipManager() {
-    when(p2pConfig.isBlsToExecutionChangesSubnetEnabled()).thenReturn(true);
 
     final GossipForkSubscriptionsDeneb gossipForkSubscriptions =
         spy(createGossipForkSubscriptionDeneb());
@@ -71,7 +67,6 @@ public class GossipForkSubscriptionsDenebTest {
     return new GossipForkSubscriptionsDeneb(
         fork,
         spec,
-        p2pConfig,
         new StubAsyncRunner(),
         new StubMetricsSystem(),
         discoveryNetwork,

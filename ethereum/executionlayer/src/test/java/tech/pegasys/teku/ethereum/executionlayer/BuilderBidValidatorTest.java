@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
@@ -62,7 +61,10 @@ public class BuilderBidValidatorTest {
   private final EventLogger eventLogger = mock(EventLogger.class);
 
   private final BuilderBidValidatorImpl builderBidValidator =
-      new BuilderBidValidatorImpl(eventLogger);
+      new BuilderBidValidatorImpl(spec, eventLogger);
+
+  private final BuilderBidValidatorImpl builderBidValidatorWithMockSpec =
+      new BuilderBidValidatorImpl(specMock, eventLogger);
 
   private BeaconState state = dataStructureUtil.randomBeaconState();
 
@@ -98,8 +100,8 @@ public class BuilderBidValidatorTest {
 
     assertThatThrownBy(
             () ->
-                builderBidValidator.validateAndGetPayloadHeader(
-                    spec, signedBuilderBid, validatorRegistration, state, Optional.empty()))
+                builderBidValidator.validateBuilderBid(
+                    signedBuilderBid, validatorRegistration, state, Optional.empty()))
         .isExactlyInstanceOf(BuilderBidValidationException.class)
         .hasMessage("Invalid Bid Signature");
   }
@@ -111,8 +113,8 @@ public class BuilderBidValidatorTest {
 
     assertThatThrownBy(
             () ->
-                builderBidValidator.validateAndGetPayloadHeader(
-                    spec, signedBuilderBid, validatorRegistration, state, Optional.empty()))
+                builderBidValidator.validateBuilderBid(
+                    signedBuilderBid, validatorRegistration, state, Optional.empty()))
         .isExactlyInstanceOf(BuilderBidValidationException.class)
         .hasMessage("Invalid proposed payload with respect to consensus.")
         .hasCauseInstanceOf(BlockProcessingException.class);
@@ -120,15 +122,8 @@ public class BuilderBidValidatorTest {
 
   @Test
   void shouldBeValidIfLocalPayloadWithdrawalsRootMatchesTheRootOfTheBid() {
-    final ExecutionPayloadHeader result =
-        builderBidValidator.validateAndGetPayloadHeader(
-            specMock,
-            signedBuilderBid,
-            validatorRegistration,
-            state,
-            Optional.of(localExecutionPayload));
-
-    assertThat(result).isEqualTo(signedBuilderBid.getMessage().getHeader());
+    builderBidValidatorWithMockSpec.validateBuilderBid(
+        signedBuilderBid, validatorRegistration, state, Optional.of(localExecutionPayload));
   }
 
   @Test
@@ -137,8 +132,7 @@ public class BuilderBidValidatorTest {
 
     assertThatThrownBy(
             () ->
-                builderBidValidator.validateAndGetPayloadHeader(
-                    specMock,
+                builderBidValidatorWithMockSpec.validateBuilderBid(
                     dodgySignedBuilderBid,
                     validatorRegistration,
                     state,
@@ -159,8 +153,8 @@ public class BuilderBidValidatorTest {
 
     prepareGasLimit(UInt64.valueOf(1024_000), UInt64.valueOf(1022_000), UInt64.valueOf(1023_000));
 
-    builderBidValidator.validateAndGetPayloadHeader(
-        specMock, signedBuilderBid, validatorRegistration, state, Optional.empty());
+    builderBidValidatorWithMockSpec.validateBuilderBid(
+        signedBuilderBid, validatorRegistration, state, Optional.empty());
 
     verifyNoInteractions(eventLogger);
   }
@@ -170,8 +164,8 @@ public class BuilderBidValidatorTest {
 
     prepareGasLimit(UInt64.valueOf(1024_000), UInt64.valueOf(1025_000), UInt64.valueOf(2048_000));
 
-    builderBidValidator.validateAndGetPayloadHeader(
-        specMock, signedBuilderBid, validatorRegistration, state, Optional.empty());
+    builderBidValidatorWithMockSpec.validateBuilderBid(
+        signedBuilderBid, validatorRegistration, state, Optional.empty());
 
     verifyNoInteractions(eventLogger);
   }
@@ -181,8 +175,8 @@ public class BuilderBidValidatorTest {
 
     prepareGasLimit(UInt64.valueOf(1024_000), UInt64.valueOf(1024_000), UInt64.valueOf(1024_000));
 
-    builderBidValidator.validateAndGetPayloadHeader(
-        specMock, signedBuilderBid, validatorRegistration, state, Optional.empty());
+    builderBidValidatorWithMockSpec.validateBuilderBid(
+        signedBuilderBid, validatorRegistration, state, Optional.empty());
 
     verifyNoInteractions(eventLogger);
   }
@@ -192,8 +186,8 @@ public class BuilderBidValidatorTest {
 
     prepareGasLimit(UInt64.valueOf(1024_000), UInt64.valueOf(1024_000), UInt64.valueOf(1023_100));
 
-    builderBidValidator.validateAndGetPayloadHeader(
-        specMock, signedBuilderBid, validatorRegistration, state, Optional.empty());
+    builderBidValidatorWithMockSpec.validateBuilderBid(
+        signedBuilderBid, validatorRegistration, state, Optional.empty());
 
     verify(eventLogger)
         .builderBidNotHonouringGasLimit(
@@ -205,8 +199,8 @@ public class BuilderBidValidatorTest {
 
     prepareGasLimit(UInt64.valueOf(1024_000), UInt64.valueOf(1020_000), UInt64.valueOf(1024_100));
 
-    builderBidValidator.validateAndGetPayloadHeader(
-        specMock, signedBuilderBid, validatorRegistration, state, Optional.empty());
+    builderBidValidatorWithMockSpec.validateBuilderBid(
+        signedBuilderBid, validatorRegistration, state, Optional.empty());
 
     verify(eventLogger)
         .builderBidNotHonouringGasLimit(

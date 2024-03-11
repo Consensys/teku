@@ -19,7 +19,6 @@ import static java.util.stream.Collectors.toMap;
 
 import com.google.common.base.Throwables;
 import it.unimi.dsi.fastutil.ints.IntCollection;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -28,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import okhttp3.HttpUrl;
@@ -37,13 +37,17 @@ import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.api.migrated.ValidatorLivenessAtEpoch;
 import tech.pegasys.teku.api.response.v1.beacon.PostDataFailureResponse;
-import tech.pegasys.teku.api.response.v1.beacon.ValidatorResponse;
 import tech.pegasys.teku.api.response.v1.beacon.ValidatorStatus;
-import tech.pegasys.teku.api.response.v1.validator.PostSyncDutiesResponse;
 import tech.pegasys.teku.api.response.v1.validator.PostValidatorLivenessResponse;
 import tech.pegasys.teku.api.schema.altair.ContributionAndProof;
 import tech.pegasys.teku.bls.BLSPublicKey;
 import tech.pegasys.teku.bls.BLSSignature;
+import tech.pegasys.teku.ethereum.json.types.beacon.StateValidatorData;
+import tech.pegasys.teku.ethereum.json.types.validator.AttesterDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.BeaconCommitteeSelectionProof;
+import tech.pegasys.teku.ethereum.json.types.validator.ProposerDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeDuties;
+import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingRunnable;
 import tech.pegasys.teku.infrastructure.async.ExceptionThrowingSupplier;
@@ -51,10 +55,10 @@ import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blocks.BlockContainer;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainer;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.genesis.GenesisData;
+import tech.pegasys.teku.spec.datastructures.metadata.BlockContainerAndMetaData;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.SignedAggregateAndProof;
@@ -64,18 +68,13 @@ import tech.pegasys.teku.spec.datastructures.operations.versions.altair.SyncComm
 import tech.pegasys.teku.spec.datastructures.operations.versions.bellatrix.BeaconPreparableProposer;
 import tech.pegasys.teku.spec.datastructures.validator.BroadcastValidationLevel;
 import tech.pegasys.teku.spec.datastructures.validator.SubnetSubscription;
-import tech.pegasys.teku.validator.api.AttesterDuties;
-import tech.pegasys.teku.validator.api.AttesterDuty;
 import tech.pegasys.teku.validator.api.CommitteeSubscriptionRequest;
-import tech.pegasys.teku.validator.api.ProposerDuties;
-import tech.pegasys.teku.validator.api.ProposerDuty;
 import tech.pegasys.teku.validator.api.SendSignedBlockResult;
 import tech.pegasys.teku.validator.api.SubmitDataError;
-import tech.pegasys.teku.validator.api.SyncCommitteeDuties;
-import tech.pegasys.teku.validator.api.SyncCommitteeDuty;
 import tech.pegasys.teku.validator.api.SyncCommitteeSubnetSubscription;
 import tech.pegasys.teku.validator.api.required.SyncingStatus;
 import tech.pegasys.teku.validator.remote.apiclient.OkHttpValidatorRestApiClient;
+import tech.pegasys.teku.validator.remote.apiclient.PostStateValidatorsNotExistingException;
 import tech.pegasys.teku.validator.remote.apiclient.RateLimitedException;
 import tech.pegasys.teku.validator.remote.apiclient.ValidatorRestApiClient;
 import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
@@ -83,6 +82,7 @@ import tech.pegasys.teku.validator.remote.typedef.OkHttpValidatorTypeDefClient;
 public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
 
   private static final Logger LOG = LogManager.getLogger();
+
   static final int MAX_PUBLIC_KEY_BATCH_SIZE = 50;
   static final int MAX_RATE_LIMITING_RETRIES = 3;
 
@@ -91,18 +91,21 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   private final ValidatorRestApiClient apiClient;
   private final OkHttpValidatorTypeDefClient typeDefClient;
   private final AsyncRunner asyncRunner;
+  private final AtomicBoolean usePostValidatorsEndpoint;
 
   public RemoteValidatorApiHandler(
       final HttpUrl endpoint,
       final Spec spec,
       final ValidatorRestApiClient apiClient,
       final OkHttpValidatorTypeDefClient typeDefClient,
-      final AsyncRunner asyncRunner) {
+      final AsyncRunner asyncRunner,
+      final boolean usePostValidatorsEndpoint) {
     this.endpoint = endpoint;
     this.spec = spec;
     this.apiClient = apiClient;
     this.asyncRunner = asyncRunner;
     this.typeDefClient = typeDefClient;
+    this.usePostValidatorsEndpoint = new AtomicBoolean(usePostValidatorsEndpoint);
   }
 
   @Override
@@ -128,25 +131,54 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
     }
     return sendRequest(
         () ->
-            makeBatchedValidatorRequest(publicKeys, ValidatorResponse::getIndex)
+            makeValidatorRequest(publicKeys, StateValidatorData::getIntegerIndex)
                 .orElse(emptyMap()));
   }
 
   @Override
   public SafeFuture<Optional<Map<BLSPublicKey, ValidatorStatus>>> getValidatorStatuses(
-      Collection<BLSPublicKey> publicKeys) {
-    return sendRequest(() -> makeBatchedValidatorRequest(publicKeys, ValidatorResponse::getStatus));
+      final Collection<BLSPublicKey> publicKeys) {
+    return sendRequest(() -> makeValidatorRequest(publicKeys, StateValidatorData::getStatus));
+  }
+
+  private <T> Optional<Map<BLSPublicKey, T>> makeValidatorRequest(
+      final Collection<BLSPublicKey> publicKeys,
+      final Function<StateValidatorData, T> valueExtractor) {
+    if (usePostValidatorsEndpoint.get()) {
+      try {
+        return typeDefClient
+            .postStateValidators(convertPublicKeysToValidatorIds(publicKeys))
+            .map(responses -> convertToValidatorMap(responses, valueExtractor));
+      } catch (final PostStateValidatorsNotExistingException __) {
+        LOG.debug(
+            "POST method is not available for getting validators from state. Will use GET instead.");
+        usePostValidatorsEndpoint.set(false);
+        return makeBatchedValidatorRequest(publicKeys, valueExtractor);
+      }
+    } else {
+      return makeBatchedValidatorRequest(publicKeys, valueExtractor);
+    }
+  }
+
+  private List<String> convertPublicKeysToValidatorIds(final Collection<BLSPublicKey> publicKeys) {
+    return publicKeys.stream().map(BLSPublicKey::toHexString).toList();
+  }
+
+  private <T> Map<BLSPublicKey, T> convertToValidatorMap(
+      final List<StateValidatorData> validatorData,
+      final Function<StateValidatorData, T> valueExtractor) {
+    return validatorData.stream().collect(toMap(StateValidatorData::getPublicKey, valueExtractor));
   }
 
   private <T> Optional<Map<BLSPublicKey, T>> makeBatchedValidatorRequest(
-      Collection<BLSPublicKey> publicKeysCollection,
-      Function<ValidatorResponse, T> valueExtractor) {
+      final Collection<BLSPublicKey> publicKeysCollection,
+      final Function<StateValidatorData, T> valueExtractor) {
     final List<BLSPublicKey> publicKeys = new ArrayList<>(publicKeysCollection);
     final Map<BLSPublicKey, T> returnedObjects = new HashMap<>();
     for (int i = 0; i < publicKeys.size(); i += MAX_PUBLIC_KEY_BATCH_SIZE) {
       final List<BLSPublicKey> batch =
           publicKeys.subList(i, Math.min(publicKeys.size(), i + MAX_PUBLIC_KEY_BATCH_SIZE));
-      Optional<Map<BLSPublicKey, T>> validatorObjects =
+      final Optional<Map<BLSPublicKey, T>> validatorObjects =
           requestValidatorObject(batch, valueExtractor);
       if (validatorObjects.isEmpty()) {
         return Optional.empty();
@@ -157,90 +189,33 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
   }
 
   private <T> Optional<Map<BLSPublicKey, T>> requestValidatorObject(
-      final List<BLSPublicKey> batch, Function<ValidatorResponse, T> valueExtractor) {
-    return apiClient
-        .getValidators(batch.stream().map(key -> key.toBytesCompressed().toHexString()).toList())
-        .map(responses -> convertToValidatorMap(responses, valueExtractor));
+      final List<BLSPublicKey> batch, Function<StateValidatorData, T> valueExtractor) {
+    return typeDefClient
+        .getStateValidators(convertPublicKeysToValidatorIds(batch))
+        .map(responses -> convertToValidatorMapTypeDef(responses, valueExtractor));
   }
 
-  private <T> Map<BLSPublicKey, T> convertToValidatorMap(
-      final List<ValidatorResponse> validatorResponses,
-      Function<ValidatorResponse, T> valueExtractor) {
-    return validatorResponses.stream()
-        .collect(toMap(ValidatorResponse::getPublicKey, valueExtractor));
+  private <T> Map<BLSPublicKey, T> convertToValidatorMapTypeDef(
+      final List<StateValidatorData> validatorData,
+      final Function<StateValidatorData, T> valueExtractor) {
+    return validatorData.stream().collect(toMap(StateValidatorData::getPublicKey, valueExtractor));
   }
 
   @Override
   public SafeFuture<Optional<AttesterDuties>> getAttestationDuties(
       final UInt64 epoch, final IntCollection validatorIndices) {
-    return sendRequest(
-        () ->
-            apiClient
-                .getAttestationDuties(epoch, validatorIndices)
-                .map(
-                    response ->
-                        new AttesterDuties(
-                            response.executionOptimistic,
-                            response.dependentRoot,
-                            response.data.stream().map(this::mapToApiAttesterDuties).toList())));
+    return sendRequest(() -> typeDefClient.postAttesterDuties(epoch, validatorIndices));
   }
 
   @Override
   public SafeFuture<Optional<SyncCommitteeDuties>> getSyncCommitteeDuties(
       final UInt64 epoch, final IntCollection validatorIndices) {
-    return sendRequest(
-        () ->
-            apiClient
-                .getSyncCommitteeDuties(epoch, validatorIndices)
-                .map(this::responseToSyncCommitteeDuties));
-  }
-
-  private SyncCommitteeDuties responseToSyncCommitteeDuties(final PostSyncDutiesResponse response) {
-    return new SyncCommitteeDuties(
-        response.executionOptimistic,
-        response.data.stream()
-            .map(
-                duty ->
-                    new SyncCommitteeDuty(
-                        duty.pubkey.asBLSPublicKey(),
-                        duty.validatorIndex.intValue(),
-                        IntOpenHashSet.toSet(
-                            duty.committeeIndices.stream().mapToInt(UInt64::intValue))))
-            .toList());
+    return sendRequest(() -> typeDefClient.postSyncDuties(epoch, validatorIndices));
   }
 
   @Override
   public SafeFuture<Optional<ProposerDuties>> getProposerDuties(final UInt64 epoch) {
-    return sendRequest(
-        () ->
-            apiClient
-                .getProposerDuties(epoch)
-                .map(
-                    response ->
-                        new ProposerDuties(
-                            response.dependentRoot,
-                            response.data.stream().map(this::mapToProposerDuties).toList(),
-                            response.executionOptimistic)));
-  }
-
-  private ProposerDuty mapToProposerDuties(
-      final tech.pegasys.teku.api.response.v1.validator.ProposerDuty proposerDuty) {
-    return new ProposerDuty(
-        proposerDuty.pubkey.asBLSPublicKey(),
-        proposerDuty.validatorIndex.intValue(),
-        proposerDuty.slot);
-  }
-
-  private AttesterDuty mapToApiAttesterDuties(
-      final tech.pegasys.teku.api.response.v1.validator.AttesterDuty attesterDuty) {
-    return new AttesterDuty(
-        attesterDuty.pubkey.asBLSPublicKey(),
-        attesterDuty.validatorIndex.intValue(),
-        attesterDuty.committeeLength.intValue(),
-        attesterDuty.committeeIndex.intValue(),
-        attesterDuty.committeesAtSlot.intValue(),
-        attesterDuty.validatorCommitteeIndex.intValue(),
-        attesterDuty.slot);
+    return sendRequest(() -> typeDefClient.getProposerDuties(epoch));
   }
 
   @Override
@@ -263,21 +238,23 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
                 .orElse(emptyList()));
   }
 
-  @Deprecated
   @Override
-  public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
+  public SafeFuture<Optional<BlockContainerAndMetaData>> createUnsignedBlock(
       final UInt64 slot,
       final BLSSignature randaoReveal,
       final Optional<Bytes32> graffiti,
-      final boolean blinded) {
+      final Optional<Boolean> requestedBlinded,
+      final Optional<UInt64> requestedBuilderBoostFactor) {
+    if (requestedBlinded.isPresent()) {
+      return sendRequest(
+          () ->
+              typeDefClient.createUnsignedBlock(
+                  slot, randaoReveal, graffiti, requestedBlinded.get()));
+    }
     return sendRequest(
-        () -> typeDefClient.createUnsignedBlock(slot, randaoReveal, graffiti, blinded));
-  }
-
-  @Override
-  public SafeFuture<Optional<BlockContainer>> createUnsignedBlock(
-      final UInt64 slot, final BLSSignature randaoReveal, final Optional<Bytes32> graffiti) {
-    return sendRequest(() -> typeDefClient.createUnsignedBlock(slot, randaoReveal, graffiti));
+        () ->
+            typeDefClient.createUnsignedBlock(
+                slot, randaoReveal, graffiti, requestedBuilderBoostFactor));
   }
 
   @Override
@@ -462,6 +439,18 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
                 .map(this::responseToValidatorsLivenessResult));
   }
 
+  @Override
+  public SafeFuture<Optional<List<BeaconCommitteeSelectionProof>>> getBeaconCommitteeSelectionProof(
+      final List<BeaconCommitteeSelectionProof> requests) {
+    return sendRequest(() -> typeDefClient.getBeaconCommitteeSelectionProof(requests));
+  }
+
+  @Override
+  public SafeFuture<Optional<List<SyncCommitteeSelectionProof>>> getSyncCommitteeSelectionProof(
+      final List<SyncCommitteeSelectionProof> requests) {
+    return sendRequest(() -> typeDefClient.getSyncCommitteeSelectionProof(requests));
+  }
+
   private List<ValidatorLivenessAtEpoch> responseToValidatorsLivenessResult(
       final PostValidatorLivenessResponse response) {
     return response.data.stream()
@@ -505,11 +494,13 @@ public class RemoteValidatorApiHandler implements RemoteValidatorApiChannel {
       final OkHttpClient httpClient,
       final Spec spec,
       final boolean preferSszBlockEncoding,
+      final boolean usePostValidatorsEndpoint,
       final AsyncRunner asyncRunner) {
     final OkHttpValidatorRestApiClient apiClient =
         new OkHttpValidatorRestApiClient(endpoint, httpClient);
     final OkHttpValidatorTypeDefClient typeDefClient =
         new OkHttpValidatorTypeDefClient(httpClient, endpoint, spec, preferSszBlockEncoding);
-    return new RemoteValidatorApiHandler(endpoint, spec, apiClient, typeDefClient, asyncRunner);
+    return new RemoteValidatorApiHandler(
+        endpoint, spec, apiClient, typeDefClient, asyncRunner, usePostValidatorsEndpoint);
   }
 }

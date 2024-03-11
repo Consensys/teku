@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.services.beaconchain;
 
+import static tech.pegasys.teku.infrastructure.exceptions.ExitConstants.ERROR_EXIT_CODE;
 import static tech.pegasys.teku.infrastructure.logging.StatusLogger.STATUS_LOG;
 import static tech.pegasys.teku.networks.Eth2NetworkConfiguration.FINALIZED_STATE_URL_PATH;
 
@@ -31,12 +32,16 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.state.AnchorPoint;
 import tech.pegasys.teku.spec.datastructures.state.Checkpoint;
+import tech.pegasys.teku.spec.datastructures.state.CheckpointState;
 import tech.pegasys.teku.spec.datastructures.state.Fork;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.util.ChainDataLoader;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.EpochProcessingException;
+import tech.pegasys.teku.spec.logic.common.statetransition.exceptions.SlotProcessingException;
 import tech.pegasys.teku.storage.api.StorageQueryChannel;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.WeakSubjectivityUpdate;
+import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityCalculator;
 import tech.pegasys.teku.weaksubjectivity.config.WeakSubjectivityConfig;
 
 public class WeakSubjectivityInitializer {
@@ -81,6 +86,10 @@ public class WeakSubjectivityInitializer {
       throws IOException {
     STATUS_LOG.loadingInitialStateResource(sanitizedResource);
     final BeaconState state = ChainDataLoader.loadState(spec, stateResource);
+    if (state.getSlot().isGreaterThan(state.getLatestBlockHeader().getSlot())) {
+      STATUS_LOG.errorIncompatibleInitialState(spec.computeEpochAtSlot(state.getSlot()));
+      System.exit(ERROR_EXIT_CODE);
+    }
     final AnchorPoint anchor = AnchorPoint.fromInitialState(spec, state);
     STATUS_LOG.loadedInitialStateResource(
         state.hashTreeRoot(),
@@ -137,8 +146,41 @@ public class WeakSubjectivityInitializer {
             });
   }
 
+  public void validateAnchorIsWithinWeakSubjectivityPeriod(
+      final AnchorPoint initialAnchor,
+      final UInt64 currentSlot,
+      final Spec spec,
+      final WeakSubjectivityCalculator weakSubjectivityCalculator) {
+    final UInt64 checkpointSlot =
+        spec.computeStartSlotAtEpoch(initialAnchor.getCheckpoint().getEpoch());
+    final BeaconState stateAtCheckpoint;
+    if (initialAnchor.getState().getSlot().isLessThan(checkpointSlot)) {
+      // play empty slot up to checkpoint slot
+      try {
+        stateAtCheckpoint = spec.processSlots(initialAnchor.getState(), checkpointSlot);
+      } catch (SlotProcessingException | EpochProcessingException e) {
+        throw new RuntimeException(e);
+      }
+    } else {
+      stateAtCheckpoint = initialAnchor.getState();
+    }
+    final CheckpointState checkpointState =
+        CheckpointState.create(
+            spec,
+            initialAnchor.getCheckpoint(),
+            initialAnchor.getBlockSummary(),
+            stateAtCheckpoint);
+    if (!weakSubjectivityCalculator.isWithinWeakSubjectivityPeriod(checkpointState, currentSlot)) {
+      throw new IllegalStateException(
+          "Cannot sync outside of weak subjectivity period. Consider re-syncing your node using --checkpoint-sync-url or use --ignore-weak-subjectivity-period-enabled to ignore this check.");
+    }
+  }
+
   public void validateInitialAnchor(
-      final AnchorPoint initialAnchor, final UInt64 currentSlot, final Spec spec) {
+      final AnchorPoint initialAnchor,
+      final UInt64 currentSlot,
+      final Spec spec,
+      final Optional<WeakSubjectivityCalculator> maybeWsCalculator) {
     final Fork expectedFork = spec.getForkSchedule().getFork(initialAnchor.getEpoch());
     final Fork loadedFork = initialAnchor.getState().getFork();
     if (!isSameForkInfo(expectedFork, loadedFork)) {
@@ -147,6 +189,11 @@ public class WeakSubjectivityInitializer {
               "The fork from the initial-state (%s) does not match the configured fork schedule (%s).\nPlease check that network in configuration matches the loaded state.",
               loadedFork, expectedFork));
     }
+
+    maybeWsCalculator.ifPresent(
+        wsCalculator ->
+            validateAnchorIsWithinWeakSubjectivityPeriod(
+                initialAnchor, currentSlot, spec, wsCalculator));
 
     if (initialAnchor.isGenesis()) {
       // Skip extra validations for genesis state

@@ -26,7 +26,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.networking.p2p.peer.DisconnectReason;
 import tech.pegasys.teku.networking.p2p.reputation.ReputationAdjustment;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 
 public class StubSyncSource implements SyncSource {
@@ -38,8 +38,7 @@ public class StubSyncSource implements SyncSource {
   private Optional<RpcResponseListener<SignedBeaconBlock>> currentBlockListener = Optional.empty();
 
   private Optional<SafeFuture<Void>> currentBlobSidecarRequest = Optional.empty();
-  private Optional<RpcResponseListener<BlobSidecarOld>> currentBlobSidecarListener =
-      Optional.empty();
+  private Optional<RpcResponseListener<BlobSidecar>> currentBlobSidecarListener = Optional.empty();
 
   public void receiveBlocks(final SignedBeaconBlock... blocks) {
     final RpcResponseListener<SignedBeaconBlock> listener = currentBlockListener.orElseThrow();
@@ -47,8 +46,8 @@ public class StubSyncSource implements SyncSource {
     currentBlockRequest.orElseThrow().complete(null);
   }
 
-  public void receiveBlobSidecars(final BlobSidecarOld... blobSidecars) {
-    final RpcResponseListener<BlobSidecarOld> listener = currentBlobSidecarListener.orElseThrow();
+  public void receiveBlobSidecars(final BlobSidecar... blobSidecars) {
+    final RpcResponseListener<BlobSidecar> listener = currentBlobSidecarListener.orElseThrow();
     Stream.of(blobSidecars)
         .forEach(response -> assertThat(listener.onResponse(response)).isCompleted());
     currentBlobSidecarRequest.orElseThrow().complete(null);
@@ -73,9 +72,7 @@ public class StubSyncSource implements SyncSource {
 
   @Override
   public SafeFuture<Void> requestBlobSidecarsByRange(
-      final UInt64 startSlot,
-      final UInt64 count,
-      final RpcResponseListener<BlobSidecarOld> listener) {
+      final UInt64 startSlot, final UInt64 count, final RpcResponseListener<BlobSidecar> listener) {
     checkArgument(count.isGreaterThan(UInt64.ZERO), "Count must be greater than zero");
     blobSidecarsRequests.add(new Request(startSlot, count));
     final SafeFuture<Void> request = new SafeFuture<>();

@@ -21,7 +21,7 @@ import io.libp2p.core.transport.Transport;
 import io.libp2p.mux.mplex.MplexFlag;
 import io.libp2p.mux.mplex.MplexFrame;
 import io.libp2p.mux.mplex.MplexId;
-import io.libp2p.mux.yamux.YamuxFlags;
+import io.libp2p.mux.yamux.YamuxFlag;
 import io.libp2p.mux.yamux.YamuxFrame;
 import io.libp2p.mux.yamux.YamuxId;
 import io.libp2p.mux.yamux.YamuxType;
@@ -39,6 +39,7 @@ import it.unimi.dsi.fastutil.ints.IntLists;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -242,7 +243,7 @@ public class MuxFirewallTest {
     return switch (muxType) {
       case MPLEX -> new MplexFrame(createMplexId(id), MplexFlag.NewStream, Unpooled.EMPTY_BUFFER);
       case YAMUX -> new YamuxFrame(
-          createYamuxId(id), YamuxType.DATA, YamuxFlags.ACK, 0, Unpooled.EMPTY_BUFFER);
+          createYamuxId(id), YamuxType.DATA, Set.of(YamuxFlag.ACK), 0, Unpooled.EMPTY_BUFFER);
     };
   }
 
@@ -251,7 +252,7 @@ public class MuxFirewallTest {
       case MPLEX -> new MplexFrame(
           createMplexId(id), MplexFlag.CloseInitiator, Unpooled.EMPTY_BUFFER);
       case YAMUX -> new YamuxFrame(
-          createYamuxId(id), YamuxType.DATA, YamuxFlags.FIN, 0, Unpooled.EMPTY_BUFFER);
+          createYamuxId(id), YamuxType.DATA, Set.of(YamuxFlag.FIN), 0, Unpooled.EMPTY_BUFFER);
     };
   }
 
@@ -260,7 +261,7 @@ public class MuxFirewallTest {
       case MPLEX -> new MplexFrame(
           createMplexId(id), MplexFlag.CloseReceiver, Unpooled.EMPTY_BUFFER);
       case YAMUX -> new YamuxFrame(
-          createYamuxId(id), YamuxType.DATA, YamuxFlags.FIN, 0, Unpooled.EMPTY_BUFFER);
+          createYamuxId(id), YamuxType.DATA, Set.of(YamuxFlag.FIN), 0, Unpooled.EMPTY_BUFFER);
     };
   }
 
@@ -269,7 +270,11 @@ public class MuxFirewallTest {
     return switch (muxType) {
       case MPLEX -> new MplexFrame(createMplexId(id), MplexFlag.MessageReceiver, slicedByteBuf);
       case YAMUX -> new YamuxFrame(
-          createYamuxId(id), YamuxType.DATA, 0, slicedByteBuf.readableBytes(), slicedByteBuf);
+          createYamuxId(id),
+          YamuxType.DATA,
+          Set.of(),
+          slicedByteBuf.readableBytes(),
+          slicedByteBuf);
     };
   }
 
@@ -278,7 +283,7 @@ public class MuxFirewallTest {
       case MPLEX -> new MplexFrame(
           createMplexId(id), MplexFlag.ResetInitiator, Unpooled.EMPTY_BUFFER);
       case YAMUX -> new YamuxFrame(
-          createYamuxId(id), YamuxType.DATA, YamuxFlags.RST, 0, Unpooled.EMPTY_BUFFER);
+          createYamuxId(id), YamuxType.DATA, Set.of(YamuxFlag.RST), 0, Unpooled.EMPTY_BUFFER);
     };
   }
 
@@ -287,7 +292,7 @@ public class MuxFirewallTest {
       case MPLEX -> new MplexFrame(
           createMplexId(id), MplexFlag.ResetReceiver, Unpooled.EMPTY_BUFFER);
       case YAMUX -> new YamuxFrame(
-          createYamuxId(id), YamuxType.DATA, YamuxFlags.RST, 0, Unpooled.EMPTY_BUFFER);
+          createYamuxId(id), YamuxType.DATA, Set.of(YamuxFlag.RST), 0, Unpooled.EMPTY_BUFFER);
     };
   }
 

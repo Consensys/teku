@@ -44,11 +44,11 @@ import tech.pegasys.teku.spec.logic.common.block.AbstractBlockProcessor;
 import tech.pegasys.teku.spec.logic.common.statetransition.results.BlockImportResult;
 import tech.pegasys.teku.statetransition.BeaconChainUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
-import tech.pegasys.teku.statetransition.block.BlockImportNotifications;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
+import tech.pegasys.teku.statetransition.block.ReceivedBlockEventsChannel;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
-import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
+import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.storage.client.MemoryOnlyRecentChainData;
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.weaksubjectivity.WeakSubjectivityFactory;
@@ -85,7 +85,8 @@ public abstract class TransitionBenchmark {
 
     final List<BLSKeyPair> validatorKeys = KeyFileGenerator.readValidatorKeys(validatorsCount);
 
-    final BlockImportNotifications blockImportNotifications = mock(BlockImportNotifications.class);
+    final ReceivedBlockEventsChannel receivedBlockEventsChannelPublisher =
+        mock(ReceivedBlockEventsChannel.class);
     wsValidator = WeakSubjectivityFactory.lenientValidator();
     recentChainData = MemoryOnlyRecentChainData.create(spec);
     final MergeTransitionBlockValidator transitionBlockValidator =
@@ -96,7 +97,7 @@ public abstract class TransitionBenchmark {
             new InlineEventThread(),
             recentChainData,
             BlobSidecarManager.NOOP,
-            new StubForkChoiceNotifier(),
+            new NoopForkChoiceNotifier(),
             transitionBlockValidator,
             new StubMetricsSystem());
     localChain = BeaconChainUtil.create(spec, recentChainData, validatorKeys, false);
@@ -105,7 +106,7 @@ public abstract class TransitionBenchmark {
     blockImporter =
         new BlockImporter(
             spec,
-            blockImportNotifications,
+            receivedBlockEventsChannelPublisher,
             recentChainData,
             forkChoice,
             wsValidator,

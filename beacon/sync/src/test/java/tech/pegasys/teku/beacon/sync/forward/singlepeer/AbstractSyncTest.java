@@ -36,12 +36,12 @@ import tech.pegasys.teku.networking.eth2.peers.PeerStatus;
 import tech.pegasys.teku.networking.p2p.rpc.RpcResponseListener;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.networking.libp2p.rpc.StatusMessage;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.block.BlockImporter;
 import tech.pegasys.teku.storage.client.RecentChainData;
 
@@ -53,7 +53,8 @@ public abstract class AbstractSyncTest {
   protected final Eth2Peer peer = mock(Eth2Peer.class);
   protected final BlockImporter blockImporter = mock(BlockImporter.class);
   protected final BlobSidecarManager blobSidecarManager = mock(BlobSidecarManager.class);
-  protected final BlobSidecarPool blobSidecarPool = mock(BlobSidecarPool.class);
+  protected final BlockBlobSidecarsTrackersPool blockBlobSidecarsTrackersPool =
+      mock(BlockBlobSidecarsTrackersPool.class);
   protected final RecentChainData recentChainData = mock(RecentChainData.class);
 
   protected final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
@@ -69,7 +70,7 @@ public abstract class AbstractSyncTest {
       blockResponseListenerArgumentCaptor = ArgumentCaptor.forClass(RpcResponseListener.class);
 
   @SuppressWarnings("unchecked")
-  protected final ArgumentCaptor<RpcResponseListener<BlobSidecarOld>>
+  protected final ArgumentCaptor<RpcResponseListener<BlobSidecar>>
       blobSidecarResponseListenerArgumentCaptor =
           ArgumentCaptor.forClass(RpcResponseListener.class);
 
@@ -93,15 +94,15 @@ public abstract class AbstractSyncTest {
     asyncRunner.executeQueuedActions();
   }
 
-  protected Map<UInt64, List<BlobSidecarOld>> completeRequestWithBlobSidecarsAtSlots(
+  protected Map<UInt64, List<BlobSidecar>> completeRequestWithBlobSidecarsAtSlots(
       final SafeFuture<Void> request, final UInt64 startSlot, final UInt64 count) {
     // Capture latest response listener
     verify(peer, atLeastOnce())
         .requestBlobSidecarsByRange(
             any(), any(), blobSidecarResponseListenerArgumentCaptor.capture());
-    final RpcResponseListener<BlobSidecarOld> responseListener =
+    final RpcResponseListener<BlobSidecar> responseListener =
         blobSidecarResponseListenerArgumentCaptor.getValue();
-    final Map<UInt64, List<BlobSidecarOld>> blobSidecarsBySlot =
+    final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot =
         respondWithBlobSidecarsAtSlots(request, responseListener, startSlot, count);
     request.complete(null);
     asyncRunner.executeQueuedActions();
@@ -129,23 +130,26 @@ public abstract class AbstractSyncTest {
     return blocks;
   }
 
-  protected Map<UInt64, List<BlobSidecarOld>> respondWithBlobSidecarsAtSlots(
+  protected Map<UInt64, List<BlobSidecar>> respondWithBlobSidecarsAtSlots(
       final SafeFuture<Void> request,
-      final RpcResponseListener<BlobSidecarOld> responseListener,
+      final RpcResponseListener<BlobSidecar> responseListener,
       final UInt64 startSlot,
       final UInt64 count) {
     return respondWithBlobSidecarsAtSlots(
         request, responseListener, getSlotsRange(startSlot, count));
   }
 
-  protected Map<UInt64, List<BlobSidecarOld>> respondWithBlobSidecarsAtSlots(
+  protected Map<UInt64, List<BlobSidecar>> respondWithBlobSidecarsAtSlots(
       final SafeFuture<Void> request,
-      final RpcResponseListener<BlobSidecarOld> responseListener,
+      final RpcResponseListener<BlobSidecar> responseListener,
       final UInt64... slots) {
-    final Map<UInt64, List<BlobSidecarOld>> blobSidecarsBySlot = new HashMap<>();
+    final Map<UInt64, List<BlobSidecar>> blobSidecarsBySlot = new HashMap<>();
     for (final UInt64 slot : slots) {
-      final BlobSidecarOld blobSidecar =
-          dataStructureUtil.createRandomBlobSidecarBuilder().slot(slot).build();
+      final BlobSidecar blobSidecar =
+          dataStructureUtil
+              .createRandomBlobSidecarBuilder()
+              .signedBeaconBlockHeader(dataStructureUtil.randomSignedBeaconBlockHeader(slot))
+              .build();
       blobSidecarsBySlot.computeIfAbsent(slot, __ -> new ArrayList<>()).add(blobSidecar);
       responseListener.onResponse(blobSidecar).propagateExceptionTo(request);
     }

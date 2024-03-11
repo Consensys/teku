@@ -72,10 +72,10 @@ public class StatusLogger {
 
   public void warnDenebEpochsStoreBlobsParameterSet(
       final String epochsStoreBlobs,
-      final boolean isOverriden,
+      final boolean isOverridden,
       final String specValue,
       final Integer maxEpochsStoreBlobs) {
-    if (isOverriden) {
+    if (isOverridden) {
       final boolean isMax = String.valueOf(maxEpochsStoreBlobs).equals(epochsStoreBlobs);
       log.warn(
           print(
@@ -118,11 +118,14 @@ public class StatusLogger {
     log.warn("Spec failed for {}: {}", description, cause, cause);
   }
 
+  public void failedToLoadValidatorKey(final String message) {
+    log.fatal("Failed to load keystore, error {}", message);
+  }
+
   public void eth1DepositEventsFailure(final Throwable cause) {
     log.fatal(
         "PLEASE CHECK YOUR ETH1 NODE | Encountered a problem retrieving deposit events from eth1 endpoint: {}",
-        cause.getMessage(),
-        cause);
+        cause.getMessage());
   }
 
   public void eth1FetchDepositsRequiresSmallerRange(final int batchSize) {
@@ -237,6 +240,21 @@ public class StatusLogger {
         String.join(", ", doppelgangerPublicKeys));
   }
 
+  public void exitOnDoppelgangerDetected(final String keys) {
+    log.fatal("Validator doppelganger detected. Public keys: {}. Shutting down...", keys);
+  }
+
+  public void exitOnNoValidatorKeys() {
+    log.fatal(
+        "No loaded validators when --exit-when-no-validator-keys-enabled option is true. Shutting down...");
+  }
+
+  public void validatorSlashedAlert(final Set<String> slashedValidatorPublicKeys) {
+    log.fatal(
+        "Validator(s) with public key(s) {} got slashed. Shutting down...",
+        String.join(", ", slashedValidatorPublicKeys));
+  }
+
   public void beginInitializingChainData() {
     log.info("Initializing storage");
   }
@@ -247,6 +265,12 @@ public class StatusLogger {
         "ReconstructHistoricalStatesService recorded {} of {} historical blocks",
         numberRecorded,
         totalToRecord);
+  }
+
+  public void failedToStartValidatorClient(final String message) {
+    log.fatal(
+        "An error was encountered during validator client service start up. Error: {}", message);
+    log.fatal("Please check the logs for details.");
   }
 
   public void fatalErrorInitialisingStorage(Throwable err) {
@@ -306,6 +330,15 @@ public class StatusLogger {
           blockRoot,
           blockSlot);
     }
+  }
+
+  public void errorIncompatibleInitialState(final UInt64 epoch) {
+    log.error(
+        "Cannot start with provided initial state for the epoch {}, "
+            + "checkpoint occurred on the empty slot, which is not yet supported.\n"
+            + "If you are using remote checkpoint source, "
+            + "please wait for the next epoch to finalize and retry.",
+        epoch);
   }
 
   public void warnInitialStateIgnored() {
@@ -500,6 +533,14 @@ public class StatusLogger {
         Level.WARN,
         String.format("Flag `%s` is deprecated, use `%s` instead", oldFlag, newFlag),
         Color.YELLOW);
+  }
+
+  public void warnIgnoringWeakSubjectivityPeriod() {
+    log.warn(
+        print(
+            "Ignoring weak subjectivity period check (--ignore-weak-subjectivity-period-enabled). Syncing "
+                + "from outside of the weak subjectivity period is considered UNSAFE.",
+            Color.YELLOW));
   }
 
   private void logWithColorIfLevelGreaterThanInfo(

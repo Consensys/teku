@@ -15,6 +15,7 @@ package tech.pegasys.teku.storage.store;
 
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.infrastructure.async.SyncAsyncRunner.SYNC_RUNNER;
 
 import java.util.ArrayList;
@@ -41,6 +42,7 @@ import tech.pegasys.teku.spec.generator.ChainBuilder;
 import tech.pegasys.teku.storage.api.StorageUpdateChannel;
 import tech.pegasys.teku.storage.api.StoredBlockMetadata;
 import tech.pegasys.teku.storage.api.StubStorageUpdateChannel;
+import tech.pegasys.teku.storage.protoarray.ForkChoiceStrategy;
 
 public abstract class AbstractStoreTest {
   protected final Spec spec = TestSpecFactory.createMinimalDeneb();
@@ -48,8 +50,10 @@ public abstract class AbstractStoreTest {
   protected final ChainBuilder chainBuilder = ChainBuilder.create(spec);
   protected final StoreConfig defaultStoreConfig = StoreConfig.createDefault();
 
+  protected final ForkChoiceStrategy dummyForkChoiceStrategy = mock(ForkChoiceStrategy.class);
+
   protected void processChainWithLimitedCache(
-      BiConsumer<UpdatableStore, SignedBlockAndState> chainProcessor) {
+      final BiConsumer<UpdatableStore, SignedBlockAndState> chainProcessor) {
     final int cacheSize = 10;
     final int cacheMultiplier = 3;
 
@@ -80,7 +84,7 @@ public abstract class AbstractStoreTest {
   }
 
   protected void processCheckpointsWithLimitedCache(
-      BiConsumer<UpdatableStore, CheckpointState> chainProcessor) {
+      final BiConsumer<UpdatableStore, CheckpointState> chainProcessor) {
     final int cacheSize = 3;
     final int epochsToProcess = cacheSize * 3;
 
@@ -117,6 +121,18 @@ public abstract class AbstractStoreTest {
     allCheckpoints.forEach(c -> chainProcessor.accept(store, c));
   }
 
+  protected void processChainHeadWithMockForkChoiceStrategy(
+      final BiConsumer<UpdatableStore, SignedBlockAndState> chainProcessor) {
+    final StoreConfig pruningOptions = StoreConfig.builder().build();
+
+    final UpdatableStore store = createGenesisStoreWithMockForkChoiceStrategy(pruningOptions);
+    final List<SignedBlockAndState> blocks = chainBuilder.generateBlocksUpToSlot(29);
+
+    addBlocks(store, blocks);
+
+    chainProcessor.accept(store, blocks.get(blocks.size() - 1));
+  }
+
   protected void addBlock(final UpdatableStore store, final SignedBlockAndState block) {
     addBlocks(store, List.of(block));
   }
@@ -134,15 +150,54 @@ public abstract class AbstractStoreTest {
     return createGenesisStore(defaultStoreConfig);
   }
 
+  protected UpdatableStore createGenesisStore(
+      final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider) {
+    return createStoreBuilder(defaultStoreConfig, chainBuilder, earliestBlobSidecarSlotProvider)
+        .build();
+  }
+
   protected UpdatableStore createGenesisStore(final StoreConfig pruningOptions) {
+    return createStoreBuilder(pruningOptions).build();
+  }
+
+  protected StoreBuilder createStoreBuilder(
+      final StoreConfig pruningOptions,
+      final ChainBuilder chainBuilder,
+      final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider) {
     final SignedBlockAndState genesis = chainBuilder.generateGenesis();
     final Checkpoint genesisCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(0);
+    return createStoreBuilder(
+        pruningOptions, genesis, genesisCheckpoint, earliestBlobSidecarSlotProvider);
+  }
+
+  protected StoreBuilder createStoreBuilder(final StoreConfig pruningOptions) {
+    final SignedBlockAndState genesis = chainBuilder.generateGenesis();
+    final Checkpoint genesisCheckpoint = chainBuilder.getCurrentCheckpointForEpoch(0);
+    return createStoreBuilder(pruningOptions, genesis, genesisCheckpoint);
+  }
+
+  private StoreBuilder createStoreBuilder(
+      final StoreConfig pruningOptions,
+      final SignedBlockAndState genesis,
+      final Checkpoint genesisCheckpoint) {
+    return createStoreBuilder(
+        pruningOptions,
+        genesis,
+        genesisCheckpoint,
+        earliestBlobSidecarSlotProviderFromChainBuilder());
+  }
+
+  private StoreBuilder createStoreBuilder(
+      final StoreConfig pruningOptions,
+      final SignedBlockAndState genesis,
+      final Checkpoint genesisCheckpoint,
+      final EarliestBlobSidecarSlotProvider earliestBlobSidecarSlotProvider) {
     return StoreBuilder.create()
         .asyncRunner(SYNC_RUNNER)
         .metricsSystem(new StubMetricsSystem())
         .specProvider(spec)
         .blockProvider(blockProviderFromChainBuilder())
-        .earliestBlobSidecarSlotProvider(earliestBlobSidecarSlotProviderFromChainBuilder())
+        .earliestBlobSidecarSlotProvider(earliestBlobSidecarSlotProvider)
         .stateProvider(StateAndBlockSummaryProvider.NOOP)
         .anchor(Optional.empty())
         .genesisTime(genesis.getState().getGenesisTime())
@@ -158,11 +213,16 @@ public abstract class AbstractStoreTest {
                     genesis.getRoot(),
                     genesis.getParentRoot(),
                     genesis.getStateRoot(),
+                    genesis.getExecutionBlockNumber(),
                     genesis.getExecutionBlockHash(),
                     Optional.of(spec.calculateBlockCheckpoints(genesis.getState())))))
         .storeConfig(pruningOptions)
-        .votes(emptyMap())
-        .build();
+        .votes(emptyMap());
+  }
+
+  protected UpdatableStore createGenesisStoreWithMockForkChoiceStrategy(
+      final StoreConfig pruningOptions) {
+    return createStoreBuilder(pruningOptions).forkChoiceStrategy(dummyForkChoiceStrategy).build();
   }
 
   protected BlockProvider blockProviderFromChainBuilder() {

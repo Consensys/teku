@@ -36,8 +36,9 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.kzg.KZGCommitment;
 import tech.pegasys.teku.spec.Spec;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
+import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SlotAndBlockRoot;
 import tech.pegasys.teku.spec.datastructures.blocks.blockbody.versions.deneb.BeaconBlockBodyDeneb;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGCommitment;
@@ -60,7 +61,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
   private final BlockBlobSidecarsTracker blockBlobSidecarsTracker;
   private final KZG kzg;
 
-  private final NavigableMap<UInt64, BlobSidecarOld> validatedBlobSidecars =
+  private final NavigableMap<UInt64, BlobSidecar> validatedBlobSidecars =
       new ConcurrentSkipListMap<>();
 
   private final SafeFuture<BlobSidecarsAndValidationResult> validationResult = new SafeFuture<>();
@@ -118,8 +119,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
   }
 
   @Override
-  public BlobSidecarsAndValidationResult validateImmediately(
-      final List<BlobSidecarOld> blobSidecars) {
+  public BlobSidecarsAndValidationResult validateImmediately(final List<BlobSidecar> blobSidecars) {
 
     final List<KZGCommitment> kzgCommitmentsFromBlock = kzgCommitmentsFromBlockSupplier.get();
 
@@ -143,8 +143,8 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
     return BlobSidecarsAndValidationResult.NOT_AVAILABLE;
   }
 
-  private BlobSidecarsAndValidationResult validateBatch(final List<BlobSidecarOld> blobSidecars) {
-    final BeaconBlock block = blockBlobSidecarsTracker.getBlock().orElseThrow();
+  private BlobSidecarsAndValidationResult validateBatch(final List<BlobSidecar> blobSidecars) {
+    final BeaconBlock block = blockBlobSidecarsTracker.getBlock().orElseThrow().getMessage();
     final SlotAndBlockRoot slotAndBlockRoot = blockBlobSidecarsTracker.getSlotAndBlockRoot();
 
     final MiscHelpers miscHelpers = spec.atSlot(slotAndBlockRoot.getSlot()).miscHelpers();
@@ -175,7 +175,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
   private Optional<BlobSidecarsAndValidationResult> validateImmediatelyAvailable() {
     final List<KZGCommitment> kzgCommitmentsInBlock = kzgCommitmentsFromBlockSupplier.get();
 
-    final List<BlobSidecarOld> blobSidecarsToValidate;
+    final List<BlobSidecar> blobSidecarsToValidate;
 
     final boolean performCompleteValidation = blockBlobSidecarsTracker.isCompleted();
 
@@ -274,10 +274,10 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
         blockBlobSidecarsTracker.isCompleted(),
         "BlobSidecar tracker assumed to be completed but it is not.");
 
-    final List<BlobSidecarOld> additionalBlobSidecarsToBeValidated = new ArrayList<>();
+    final List<BlobSidecar> additionalBlobSidecarsToBeValidated = new ArrayList<>();
 
     final List<KZGCommitment> kzgCommitmentsInBlock = kzgCommitmentsFromBlockSupplier.get();
-    final SortedMap<UInt64, BlobSidecarOld> completeBlobSidecars =
+    final SortedMap<UInt64, BlobSidecar> completeBlobSidecars =
         blockBlobSidecarsTracker.getBlobSidecars();
 
     UInt64.range(UInt64.ZERO, UInt64.valueOf(kzgCommitmentsInBlock.size()))
@@ -320,7 +320,7 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
         .getBlobSidecars()
         .forEach(blobSidecar -> validatedBlobSidecars.put(blobSidecar.getIndex(), blobSidecar));
 
-    final List<BlobSidecarOld> completeValidatedBlobSidecars =
+    final List<BlobSidecar> completeValidatedBlobSidecars =
         new ArrayList<>(validatedBlobSidecars.values());
 
     return BlobSidecarsAndValidationResult.validResult(
@@ -368,7 +368,12 @@ public class ForkChoiceBlobSidecarsAvailabilityChecker implements BlobSidecarsAv
     return Suppliers.memoize(
         () ->
             BeaconBlockBodyDeneb.required(
-                    availabilityChecker.blockBlobSidecarsTracker.getBlock().orElseThrow().getBody())
+                    availabilityChecker
+                        .blockBlobSidecarsTracker
+                        .getBlock()
+                        .flatMap(SignedBeaconBlock::getBeaconBlock)
+                        .map(BeaconBlock::getBody)
+                        .orElseThrow())
                 .getBlobKzgCommitments()
                 .stream()
                 .map(SszKZGCommitment::getKZGCommitment)

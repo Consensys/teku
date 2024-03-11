@@ -73,7 +73,8 @@ public class LibP2PParamsFactory {
         .maxSubscriptions(MAX_SUBSCRIPTIONS_PER_MESSAGE)
         .maxGraftMessages(200)
         .maxPruneMessages(200)
-        .maxPeersPerPruneMessage(1000)
+        .maxPeersSentInPruneMsg(0)
+        .maxPeersAcceptedInPruneMsg(0)
         .maxIHaveLength(5000)
         .maxIWantMessageIds(5000);
   }

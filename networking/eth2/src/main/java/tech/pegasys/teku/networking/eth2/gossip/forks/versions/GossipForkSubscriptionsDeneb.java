@@ -15,14 +15,13 @@ package tech.pegasys.teku.networking.eth2.gossip.forks.versions;
 
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
-import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.eth2.gossip.BlobSidecarGossipManager;
 import tech.pegasys.teku.networking.eth2.gossip.encoding.GossipEncoding;
 import tech.pegasys.teku.networking.eth2.gossip.topics.OperationProcessor;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryNetwork;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.attestation.ValidatableAttestation;
-import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.SignedBlobSidecarOld;
+import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSidecar;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -36,21 +35,20 @@ import tech.pegasys.teku.storage.client.RecentChainData;
 
 public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella {
 
-  private final OperationProcessor<SignedBlobSidecarOld> blobSidecarProcessor;
+  private final OperationProcessor<BlobSidecar> blobSidecarProcessor;
 
   private BlobSidecarGossipManager blobSidecarGossipManager;
 
   public GossipForkSubscriptionsDeneb(
       final Fork fork,
       final Spec spec,
-      final P2PConfig config,
       final AsyncRunner asyncRunner,
       final MetricsSystem metricsSystem,
       final DiscoveryNetwork<?> discoveryNetwork,
       final RecentChainData recentChainData,
       final GossipEncoding gossipEncoding,
       final OperationProcessor<SignedBeaconBlock> blockProcessor,
-      final OperationProcessor<SignedBlobSidecarOld> blobSidecarProcessor,
+      final OperationProcessor<BlobSidecar> blobSidecarProcessor,
       final OperationProcessor<ValidatableAttestation> attestationProcessor,
       final OperationProcessor<ValidatableAttestation> aggregateProcessor,
       final OperationProcessor<AttesterSlashing> attesterSlashingProcessor,
@@ -65,7 +63,6 @@ public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella
     super(
         fork,
         spec,
-        config,
         asyncRunner,
         metricsSystem,
         discoveryNetwork,
@@ -103,7 +100,7 @@ public class GossipForkSubscriptionsDeneb extends GossipForkSubscriptionsCapella
   }
 
   @Override
-  public void publishBlobSidecar(final SignedBlobSidecarOld blobSidecar) {
+  public void publishBlobSidecar(final BlobSidecar blobSidecar) {
     blobSidecarGossipManager.publishBlobSidecar(blobSidecar);
   }
 }

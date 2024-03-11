@@ -40,7 +40,6 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.junit.jupiter.api.AfterEach;
 import tech.pegasys.teku.api.DataProvider;
-import tech.pegasys.teku.api.ExecutionClientDataProvider;
 import tech.pegasys.teku.api.RewardCalculator;
 import tech.pegasys.teku.beacon.sync.SyncService;
 import tech.pegasys.teku.bls.BLSKeyGenerator;
@@ -74,12 +73,12 @@ import tech.pegasys.teku.statetransition.OperationPool;
 import tech.pegasys.teku.statetransition.attestation.AggregatingAttestationPool;
 import tech.pegasys.teku.statetransition.attestation.AttestationManager;
 import tech.pegasys.teku.statetransition.blobs.BlobSidecarManager;
-import tech.pegasys.teku.statetransition.blobs.BlobSidecarPool;
-import tech.pegasys.teku.statetransition.block.BlockManager;
+import tech.pegasys.teku.statetransition.blobs.BlockBlobSidecarsTrackersPool;
 import tech.pegasys.teku.statetransition.forkchoice.ForkChoice;
+import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.MergeTransitionBlockValidator;
+import tech.pegasys.teku.statetransition.forkchoice.NoopForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.forkchoice.ProposersDataManager;
-import tech.pegasys.teku.statetransition.forkchoice.StubForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validation.SignedBlsToExecutionChangeValidator;
 import tech.pegasys.teku.statetransition.validatorcache.ActiveValidatorCache;
@@ -126,7 +125,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final EventChannels eventChannels = mock(EventChannels.class);
   protected final AggregatingAttestationPool attestationPool =
       mock(AggregatingAttestationPool.class);
-  protected final BlockManager blockManager = mock(BlockManager.class);
   protected final AttestationManager attestationManager = mock(AttestationManager.class);
   protected final OperationPool<AttesterSlashing> attesterSlashingPool = mock(OperationPool.class);
   protected final OperationPool<ProposerSlashing> proposerSlashingPool = mock(OperationPool.class);
@@ -146,10 +144,8 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected final SyncCommitteeContributionPool syncCommitteeContributionPool =
       mock(SyncCommitteeContributionPool.class);
   protected final ProposersDataManager proposersDataManager = mock(ProposersDataManager.class);
+  protected final ForkChoiceNotifier forkChoiceNotifier = mock(ForkChoiceNotifier.class);
   protected final Eth1DataProvider eth1DataProvider = mock(Eth1DataProvider.class);
-
-  protected final ExecutionClientDataProvider executionClientDataProvider =
-      mock(ExecutionClientDataProvider.class);
 
   private StorageSystem storageSystem;
 
@@ -202,7 +198,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
                 new InlineEventThread(),
                 recentChainData,
                 BlobSidecarManager.NOOP,
-                new StubForkChoiceNotifier(),
+                new NoopForkChoiceNotifier(),
                 new MergeTransitionBlockValidator(
                     spec, recentChainData, ExecutionLayerChannel.NOOP),
                 storageSystem.getMetricsSystem());
@@ -232,8 +228,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             .p2pNetwork(eth2P2PNetwork)
             .syncService(syncService)
             .validatorApiChannel(validatorApiChannel)
-            .blockManager(blockManager)
-            .blobSidecarPool(BlobSidecarPool.NOOP)
+            .blockBlobSidecarsTrackersPool(BlockBlobSidecarsTrackersPool.NOOP)
             .attestationManager(attestationManager)
             .activeValidatorChannel(activeValidatorChannel)
             .attestationPool(attestationPool)
@@ -243,7 +238,7 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             .blsToExecutionChangePool(blsToExecutionChangePool)
             .syncCommitteeContributionPool(syncCommitteeContributionPool)
             .proposersDataManager(proposersDataManager)
-            .executionLayerBlockProductionManager(executionLayerBlockProductionManager)
+            .forkChoiceNotifier(forkChoiceNotifier)
             .rewardCalculator(rewardCalculator)
             .build();
 
@@ -255,7 +250,6 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
             eventChannels,
             asyncRunner,
             StubTimeProvider.withTimeInMillis(1000),
-            executionClientDataProvider,
             spec);
     assertThat(beaconRestApi.start()).isCompleted();
     client = new OkHttpClient.Builder().readTimeout(0, TimeUnit.SECONDS).build();
@@ -384,38 +378,59 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
   protected Response getResponse(
       final String route, Map<String, String> getParams, final String contentType)
       throws IOException {
-    final String params =
-        getParams.entrySet().stream()
-            .map(e -> e.getKey() + "=" + e.getValue())
-            .collect(Collectors.joining("&"));
-    return getResponse(route + "?" + params, contentType);
+    return getResponse(route + prepareQueryParams(getParams), contentType);
   }
 
-  protected Response getResponse(final String route, Map<String, String> getParams)
+  protected Response getResponse(final String route, final Map<String, String> getParams)
       throws IOException {
-    final String params =
-        getParams.entrySet().stream()
-            .map(e -> e.getKey() + "=" + e.getValue())
-            .collect(Collectors.joining("&"));
-    return getResponse(route + "?" + params);
+    return getResponse(route + prepareQueryParams(getParams));
+  }
+
+  protected Response post(
+      final String route, final String postData, final Map<String, String> postParams)
+      throws IOException {
+    return post(route + prepareQueryParams(postParams), postData, Optional.empty());
+  }
+
+  protected Response post(
+      final String route,
+      final String postData,
+      final Map<String, String> postParams,
+      final Optional<String> milestone)
+      throws IOException {
+    return post(route + prepareQueryParams(postParams), postData, milestone);
   }
 
   protected Response post(final String route, final String postData) throws IOException {
+    return post(route, postData, Optional.empty());
+  }
+
+  protected Response post(
+      final String route, final String postData, final Optional<String> milestone)
+      throws IOException {
     final RequestBody body = RequestBody.create(postData, JSON);
-    final Request request = new Request.Builder().url(getUrl() + route).post(body).build();
-    return client.newCall(request).execute();
+    final Request.Builder requestBuilder = new Request.Builder().url(getUrl() + route).post(body);
+    milestone.ifPresent(m -> requestBuilder.header(HEADER_CONSENSUS_VERSION, m));
+    return client.newCall(requestBuilder.build()).execute();
   }
 
   protected Response postSsz(
-      final String route, final byte[] postData, final Optional<String> milestone)
+      final String route,
+      final byte[] postData,
+      final Map<String, String> postParams,
+      final Optional<String> milestoneHeader)
+      throws IOException {
+    return postSsz(route + prepareQueryParams(postParams), postData, milestoneHeader);
+  }
+
+  protected Response postSsz(
+      final String route, final byte[] postData, final Optional<String> milestoneHeader)
       throws IOException {
     final RequestBody body = RequestBody.create(postData, SSZ);
 
     final Request.Builder requestBuilder = new Request.Builder().url(getUrl() + route).post(body);
-    milestone.ifPresent(m -> requestBuilder.header(HEADER_CONSENSUS_VERSION, m));
-
-    final Request request = requestBuilder.build();
-    return client.newCall(request).execute();
+    milestoneHeader.ifPresent(m -> requestBuilder.header(HEADER_CONSENSUS_VERSION, m));
+    return client.newCall(requestBuilder.build()).execute();
   }
 
   protected String mapToJson(Map<String, Object> postParams) throws JsonProcessingException {
@@ -424,6 +439,17 @@ public abstract class AbstractDataBackedRestAPIIntegrationTest {
 
   private String getUrl() {
     return "http://localhost:" + beaconRestApi.getListenPort();
+  }
+
+  private String prepareQueryParams(final Map<String, String> params) {
+    if (params.isEmpty()) {
+      return "";
+    }
+
+    return "?"
+        + params.entrySet().stream()
+            .map(e -> e.getKey() + "=" + e.getValue())
+            .collect(Collectors.joining("&"));
   }
 
   @AfterEach
