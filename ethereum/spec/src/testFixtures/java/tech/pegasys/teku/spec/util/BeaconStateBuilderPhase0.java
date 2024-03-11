@@ -21,6 +21,7 @@ import tech.pegasys.teku.spec.datastructures.state.PendingAttestation;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStatePhase0;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.BeaconStateSchemaPhase0;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.phase0.MutableBeaconStatePhase0;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class BeaconStateBuilderPhase0
     extends AbstractBeaconStateBuilder<
@@ -38,7 +39,7 @@ public class BeaconStateBuilderPhase0
   }
 
   @Override
-  protected BeaconStatePhase0 getEmptyState() {
+  protected BeaconStatePhase0 getEmptyState(final SchemaDefinitions schemaDefinitions) {
     return BeaconStateSchemaPhase0.create(spec.getConfig()).createEmpty();
   }
 

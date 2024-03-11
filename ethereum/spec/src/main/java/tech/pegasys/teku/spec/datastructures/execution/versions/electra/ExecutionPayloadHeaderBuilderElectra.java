@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
@@ -24,6 +25,8 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.deneb.ExecutionP
 
 public class ExecutionPayloadHeaderBuilderElectra extends ExecutionPayloadHeaderBuilderDeneb {
   private ExecutionPayloadHeaderSchemaElectra schema;
+
+  protected Bytes32 previousInclusionListSummaryRoot;
 
   public ExecutionPayloadHeaderBuilderElectra schema(
       final ExecutionPayloadHeaderSchemaElectra schema) {
@@ -62,6 +65,7 @@ public class ExecutionPayloadHeaderBuilderElectra extends ExecutionPayloadHeader
         SszBytes32.of(transactionsRoot),
         SszBytes32.of(withdrawalsRoot),
         SszUInt64.of(blobGasUsed),
-        SszUInt64.of(excessBlobGas));
+        SszUInt64.of(excessBlobGas),
+        SszBytes32.of(previousInclusionListSummaryRoot));
   }
 }

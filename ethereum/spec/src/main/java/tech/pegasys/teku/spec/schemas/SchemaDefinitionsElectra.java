@@ -40,6 +40,9 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeaderSch
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.SignedBeaconBlockAndInclusionListSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.SignedInclusionListSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.SignedInclusionListSummarySchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
@@ -48,6 +51,10 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.
 public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
   private final BeaconStateSchemaElectra beaconStateSchema;
+
+  private final SignedInclusionListSummarySchema signedInclusionListSummarySchema;
+  private final SignedInclusionListSchema signedInclusionListSchema;
+  private final SignedBeaconBlockAndInclusionListSchema signedBeaconBlockAndInclusionListSchema;
 
   private final ExecutionPayloadSchemaElectra executionPayloadSchemaElectra;
   private final ExecutionPayloadHeaderSchemaElectra executionPayloadHeaderSchemaElectra;
@@ -70,9 +77,13 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
   public SchemaDefinitionsElectra(final SpecConfigElectra specConfig) {
     super(specConfig);
-    this.executionPayloadSchemaElectra = new ExecutionPayloadSchemaElectra(specConfig);
+    this.signedInclusionListSummarySchema = new SignedInclusionListSummarySchema(specConfig);
 
-    this.beaconStateSchema = BeaconStateSchemaElectra.create(specConfig);
+    this.executionPayloadSchemaElectra =
+        new ExecutionPayloadSchemaElectra(specConfig, getSignedInclusionListSummarySchema());
+
+    this.beaconStateSchema =
+        BeaconStateSchemaElectra.create(specConfig, executionPayloadSchemaElectra);
     this.executionPayloadHeaderSchemaElectra =
         beaconStateSchema.getLastExecutionPayloadHeaderSchema();
     this.beaconBlockBodySchema =
@@ -81,6 +92,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
             getAttesterSlashingSchema(),
             getSignedBlsToExecutionChangeSchema(),
             getBlobKzgCommitmentsSchema(),
+            executionPayloadSchemaElectra,
             "BeaconBlockBodyElectra");
     this.blindedBeaconBlockBodySchema =
         BlindedBeaconBlockBodySchemaElectraImpl.create(
@@ -88,6 +100,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
             getAttesterSlashingSchema(),
             getSignedBlsToExecutionChangeSchema(),
             getBlobKzgCommitmentsSchema(),
+            executionPayloadHeaderSchemaElectra,
             "BlindedBlockBodyElectra");
     this.beaconBlockSchema = new BeaconBlockSchema(beaconBlockBodySchema, "BeaconBlockElectra");
     this.blindedBeaconBlockSchema =
@@ -96,6 +109,13 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
         new SignedBeaconBlockSchema(beaconBlockSchema, "SignedBeaconBlockElectra");
     this.signedBlindedBeaconBlockSchema =
         new SignedBeaconBlockSchema(blindedBeaconBlockSchema, "SignedBlindedBlockElectra");
+
+    this.signedInclusionListSchema =
+        new SignedInclusionListSchema(specConfig, signedInclusionListSummarySchema);
+    this.signedBeaconBlockAndInclusionListSchema =
+        new SignedBeaconBlockAndInclusionListSchema(
+            specConfig, signedBeaconBlockSchema, signedInclusionListSchema);
+
     this.builderBidSchemaElectra =
         new BuilderBidSchemaDeneb(
             "BuilderBidElectra",
@@ -230,6 +250,18 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   @Override
   public ExecutionPayloadAndBlobsBundleSchema getExecutionPayloadAndBlobsBundleSchema() {
     return executionPayloadAndBlobsBundleSchema;
+  }
+
+  public SignedInclusionListSummarySchema getSignedInclusionListSummarySchema() {
+    return signedInclusionListSummarySchema;
+  }
+
+  public SignedInclusionListSchema getSignedInclusionListSchema() {
+    return signedInclusionListSchema;
+  }
+
+  public SignedBeaconBlockAndInclusionListSchema getSignedBeaconBlockAndInclusionListSchema() {
+    return signedBeaconBlockAndInclusionListSchema;
   }
 
   @Override

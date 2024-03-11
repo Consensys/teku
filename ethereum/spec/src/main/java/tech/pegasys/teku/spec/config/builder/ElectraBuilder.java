@@ -32,13 +32,18 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   private UInt64 electraForkEpoch;
 
   private Integer maxDepositReceiptsPerPayload;
+  private Integer maxTransactionPerInclusionList;
 
   ElectraBuilder() {}
 
   @Override
   public SpecConfigElectra build(final SpecConfigDeneb specConfig) {
     return new SpecConfigElectraImpl(
-        specConfig, electraForkVersion, electraForkEpoch, maxDepositReceiptsPerPayload);
+        specConfig,
+        electraForkVersion,
+        electraForkEpoch,
+        maxDepositReceiptsPerPayload,
+        maxTransactionPerInclusionList);
   }
 
   public ElectraBuilder electraForkEpoch(final UInt64 electraForkEpoch) {
@@ -56,6 +61,13 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
   public ElectraBuilder maxDepositReceiptsPerPayload(final Integer maxDepositReceiptsPerPayload) {
     checkNotNull(maxDepositReceiptsPerPayload);
     this.maxDepositReceiptsPerPayload = maxDepositReceiptsPerPayload;
+    return this;
+  }
+
+  public ElectraBuilder maxTransactionPerInclusionList(
+      final Integer maxTransactionPerInclusionList) {
+    checkNotNull(maxTransactionPerInclusionList);
+    this.maxTransactionPerInclusionList = maxTransactionPerInclusionList;
     return this;
   }
 
@@ -81,6 +93,7 @@ public class ElectraBuilder implements ForkConfigBuilder<SpecConfigDeneb, SpecCo
     constants.put("electraForkEpoch", electraForkEpoch);
     constants.put("electraForkVersion", electraForkVersion);
     constants.put("maxDepositReceiptsPerPayload", maxDepositReceiptsPerPayload);
+    constants.put("maxTransactionPerInclusionList", maxTransactionPerInclusionList);
 
     return constants;
   }

@@ -26,6 +26,7 @@ import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.BeaconStateSchemaBellatrix;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.bellatrix.MutableBeaconStateBellatrix;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class BeaconStateBuilderBellatrix
     extends AbstractBeaconStateBuilder<
@@ -47,7 +48,7 @@ public class BeaconStateBuilderBellatrix
   }
 
   @Override
-  protected BeaconStateBellatrix getEmptyState() {
+  protected BeaconStateBellatrix getEmptyState(final SchemaDefinitions schemaDefinitions) {
     return BeaconStateSchemaBellatrix.create(spec.getConfig()).createEmpty();
   }
 

@@ -23,10 +23,12 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.SpecVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.SyncCommittee;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class BeaconStateBuilderElectra
     extends AbstractBeaconStateBuilder<
@@ -50,8 +52,12 @@ public class BeaconStateBuilderElectra
   }
 
   @Override
-  protected BeaconStateElectra getEmptyState() {
-    return BeaconStateSchemaElectra.create(spec.getConfig()).createEmpty();
+  protected BeaconStateElectra getEmptyState(final SchemaDefinitions schemaDefinitions) {
+    return BeaconStateSchemaElectra.create(
+            spec.getConfig(),
+            (ExecutionPayloadSchemaElectra)
+                schemaDefinitions.toVersionElectra().orElseThrow().getExecutionPayloadSchema())
+        .createEmpty();
   }
 
   @Override

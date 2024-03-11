@@ -22,8 +22,8 @@ import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container17;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema17;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container18;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema18;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -33,7 +33,7 @@ import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 import tech.pegasys.teku.spec.datastructures.execution.versions.capella.Withdrawal;
 
 public class ExecutionPayloadElectraImpl
-    extends Container17<
+    extends Container18<
         ExecutionPayloadElectraImpl,
         SszBytes32,
         SszByteVector,
@@ -51,11 +51,12 @@ public class ExecutionPayloadElectraImpl
         SszList<Transaction>,
         SszList<Withdrawal>,
         SszUInt64,
-        SszUInt64>
+        SszUInt64,
+        SignedInclusionListSummary>
     implements ExecutionPayloadElectra {
 
   public ExecutionPayloadElectraImpl(
-      ContainerSchema17<
+      ContainerSchema18<
               ExecutionPayloadElectraImpl,
               SszBytes32,
               SszByteVector,
@@ -73,7 +74,8 @@ public class ExecutionPayloadElectraImpl
               SszList<Transaction>,
               SszList<Withdrawal>,
               SszUInt64,
-              SszUInt64>
+              SszUInt64,
+              SignedInclusionListSummary>
           schema,
       TreeNode backingNode) {
     super(schema, backingNode);
@@ -97,7 +99,8 @@ public class ExecutionPayloadElectraImpl
       SszList<Transaction> transactions,
       SszList<Withdrawal> withdrawals,
       SszUInt64 blobGasUsed,
-      SszUInt64 excessBlobGas) {
+      SszUInt64 excessBlobGas,
+      SignedInclusionListSummary signedInclusionListSummary) {
     super(
         schema,
         parentHash,
@@ -116,7 +119,8 @@ public class ExecutionPayloadElectraImpl
         transactions,
         withdrawals,
         blobGasUsed,
-        excessBlobGas);
+        excessBlobGas,
+        signedInclusionListSummary);
   }
 
   @Override
@@ -222,6 +226,11 @@ public class ExecutionPayloadElectraImpl
   @Override
   public UInt64 getExcessBlobGas() {
     return getField16().get();
+  }
+
+  @Override
+  public SignedInclusionListSummary getPreviousInclusionListSummary() {
+    return getField17();
   }
 
   @Override

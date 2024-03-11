@@ -28,6 +28,7 @@ import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.BeaconStateSchemaCapella;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.capella.MutableBeaconStateCapella;
 import tech.pegasys.teku.spec.datastructures.state.versions.capella.HistoricalSummary;
+import tech.pegasys.teku.spec.schemas.SchemaDefinitions;
 
 public class BeaconStateBuilderCapella
     extends AbstractBeaconStateBuilder<
@@ -53,7 +54,7 @@ public class BeaconStateBuilderCapella
   }
 
   @Override
-  protected BeaconStateCapella getEmptyState() {
+  protected BeaconStateCapella getEmptyState(final SchemaDefinitions schemaDefinitions) {
     return BeaconStateSchemaCapella.create(spec.getConfig()).createEmpty();
   }
 

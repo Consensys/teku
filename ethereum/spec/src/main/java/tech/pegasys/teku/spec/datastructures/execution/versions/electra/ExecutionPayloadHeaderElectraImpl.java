@@ -19,8 +19,8 @@ import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
-import tech.pegasys.teku.infrastructure.ssz.containers.Container17;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema17;
+import tech.pegasys.teku.infrastructure.ssz.containers.Container18;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema18;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt256;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
@@ -28,7 +28,7 @@ import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 public class ExecutionPayloadHeaderElectraImpl
-    extends Container17<
+    extends Container18<
         ExecutionPayloadHeaderElectraImpl,
         SszBytes32,
         SszByteVector,
@@ -46,11 +46,12 @@ public class ExecutionPayloadHeaderElectraImpl
         SszBytes32,
         SszBytes32,
         SszUInt64,
-        SszUInt64>
+        SszUInt64,
+        SszBytes32>
     implements ExecutionPayloadHeaderElectra {
 
   protected ExecutionPayloadHeaderElectraImpl(
-      ContainerSchema17<
+      ContainerSchema18<
               ExecutionPayloadHeaderElectraImpl,
               SszBytes32,
               SszByteVector,
@@ -68,7 +69,8 @@ public class ExecutionPayloadHeaderElectraImpl
               SszBytes32,
               SszBytes32,
               SszUInt64,
-              SszUInt64>
+              SszUInt64,
+              SszBytes32>
           schema,
       TreeNode backingTree) {
     super(schema, backingTree);
@@ -92,7 +94,8 @@ public class ExecutionPayloadHeaderElectraImpl
       SszBytes32 transactionsRoot,
       SszBytes32 withdrawalsRoot,
       SszUInt64 blobGasUsed,
-      SszUInt64 excessBlobGas) {
+      SszUInt64 excessBlobGas,
+      SszBytes32 previousInclusionListSummaryRoot) {
     super(
         schema,
         parentHash,
@@ -111,7 +114,8 @@ public class ExecutionPayloadHeaderElectraImpl
         transactionsRoot,
         withdrawalsRoot,
         blobGasUsed,
-        excessBlobGas);
+        excessBlobGas,
+        previousInclusionListSummaryRoot);
   }
 
   @Override
