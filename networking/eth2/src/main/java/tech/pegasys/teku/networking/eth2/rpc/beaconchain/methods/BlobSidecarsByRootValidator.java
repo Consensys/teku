@@ -13,7 +13,6 @@
 
 package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,20 +33,18 @@ public class BlobSidecarsByRootValidator extends AbstractBlobSidecarsValidator {
       final KZG kzg,
       final List<BlobIdentifier> expectedBlobIdentifiers) {
     super(peer, spec, kzg);
-    this.expectedBlobIdentifiers = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    this.expectedBlobIdentifiers = ConcurrentHashMap.newKeySet();
     this.expectedBlobIdentifiers.addAll(expectedBlobIdentifiers);
   }
 
   public void validate(final BlobSidecarOld blobSidecar) {
     final BlobIdentifier blobIdentifier =
         new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
-    if (!expectedBlobIdentifiers.contains(blobIdentifier)) {
+    if (!expectedBlobIdentifiers.remove(blobIdentifier)) {
       throw new BlobSidecarsResponseInvalidResponseException(
           peer, InvalidResponseType.BLOB_SIDECAR_UNEXPECTED_IDENTIFIER);
     }
 
     verifyKzg(blobSidecar);
-
-    expectedBlobIdentifiers.remove(blobIdentifier);
   }
 }

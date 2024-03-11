@@ -93,8 +93,8 @@ public class BlobSidecarsByRootValidatorTest {
   void blobSidecarResponseWithDuplicateSidecar() {
     final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
     final BlobIdentifier blobIdentifier1 = new BlobIdentifier(blockRoot1, UInt64.ZERO);
-    final BlobSidecar blobSidecar1 =
-        dataStructureUtil.randomBlobSidecar(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
+    final BlobSidecarOld blobSidecar1 =
+        dataStructureUtil.randomBlobSidecarOld(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
 
     validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier1));
     assertDoesNotThrow(() -> validator.validate(blobSidecar1));
