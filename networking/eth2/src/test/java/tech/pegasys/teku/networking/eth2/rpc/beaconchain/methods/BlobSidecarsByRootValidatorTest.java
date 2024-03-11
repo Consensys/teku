@@ -89,14 +89,13 @@ public class BlobSidecarsByRootValidatorTest {
 
   @Test
   void blobSidecarResponseWithDuplicateSidecar() {
-    final Bytes32 blockRoot1 = dataStructureUtil.randomBytes32();
-    final BlobIdentifier blobIdentifier1 = new BlobIdentifier(blockRoot1, UInt64.ZERO);
-    final BlobSidecarOld blobSidecar1 =
-        dataStructureUtil.randomBlobSidecarOld(UInt64.ONE, blockRoot1, Bytes32.ZERO, UInt64.ZERO);
+    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
+    final BlobIdentifier blobIdentifier1_0 = new BlobIdentifier(block1.getRoot(), UInt64.ZERO);
+    final BlobSidecar blobSidecar1_0 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
 
-    validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier1));
-    assertDoesNotThrow(() -> validator.validate(blobSidecar1));
-    assertThatThrownBy(() -> validator.validate(blobSidecar1))
+    validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier1_0));
+    assertDoesNotThrow(() -> validator.validate(blobSidecar1_0));
+    assertThatThrownBy(() -> validator.validate(blobSidecar1_0))
         .isExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class)
         .hasMessageContaining(
             BlobSidecarsResponseInvalidResponseException.InvalidResponseType
