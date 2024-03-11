@@ -25,9 +25,9 @@ import static tech.pegasys.teku.test.acceptance.dsl.Node.REST_API_PORT;
 import static tech.pegasys.teku.test.acceptance.dsl.Node.SENTRY_NODE_CONFIG_FILE_PATH;
 import static tech.pegasys.teku.test.acceptance.dsl.Node.WORKING_DIRECTORY;
 import static tech.pegasys.teku.test.acceptance.dsl.Node.copyToTmpFile;
+import static tech.pegasys.teku.test.acceptance.dsl.TekuNode.VALIDATOR_API_PORT;
 import static tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfig.DEFAULT_VALIDATOR_COUNT;
 import static tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfig.INITIAL_STATE_FILE;
-import static tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode.VALIDATOR_API_PORT;
 
 import com.google.common.io.Resources;
 import io.libp2p.core.PeerId;
@@ -297,6 +297,27 @@ public class TekuNodeConfigBuilder {
     } catch (Exception e) {
       LOG.error("Could not generate self signed cert", e);
     }
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withValidatorApiNoSsl(final boolean ignoreSslInterface) {
+    LOG.debug("Validator api enabled, no SSL, ignoreInterface={}", ignoreSslInterface);
+    configMap.put("validator-api-enabled", true);
+    configMap.put("Xvalidator-api-ssl-enabled", false);
+    configMap.put("validator-api-port", VALIDATOR_API_PORT);
+    configMap.put("validator-api-host-allowlist", "*");
+    configMap.put("Xvalidator-api-unsafe-hosts-enabled", ignoreSslInterface);
+    return this;
+  }
+
+  public TekuNodeConfigBuilder withSpecifiedBearerToken(final String password) throws IOException {
+    final String bearerPath = "/bearer.txt";
+    LOG.debug("Setting bearer password, and mapping to file {}}", bearerPath);
+    configMap.put("validator-api-bearer-file", bearerPath);
+    final File bearerFile = File.createTempFile("bearer", ".txt");
+    Files.writeString(bearerFile.toPath(), password, UTF_8);
+    bearerFile.deleteOnExit();
+    configFileMap.put(bearerFile, bearerPath);
     return this;
   }
 

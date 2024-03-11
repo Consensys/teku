@@ -17,7 +17,6 @@ import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.wit
 import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withNameEqualsTo;
 import static tech.pegasys.teku.test.acceptance.dsl.metrics.MetricConditions.withValueGreaterThan;
 
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import org.apache.logging.log4j.LogManager;
@@ -29,7 +28,6 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.ValidatorKeysApi;
 public class TekuValidatorNode extends TekuNode {
 
   private static final Logger LOG = LogManager.getLogger();
-  public static final int VALIDATOR_API_PORT = 9052;
   protected static final String VALIDATOR_PATH = DATA_PATH + "validator/";
 
   private final TekuNodeConfig config;
@@ -99,10 +97,6 @@ public class TekuValidatorNode extends TekuNode {
                 "method", "publish_block",
                 "outcome", "success")),
         withValueGreaterThan(0));
-  }
-
-  private URI getValidatorApiUrl() {
-    return URI.create("https://127.0.0.1:" + container.getMappedPort(VALIDATOR_API_PORT));
   }
 
   private String getApiPassword() {
