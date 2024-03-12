@@ -74,8 +74,8 @@ public abstract class ExecutionHandlerClientTest {
   void engineGetClientVersion_shouldCallEngineGetClientVersionV1() {
     final ExecutionClientHandler handler = getHandler();
 
-    final ClientVersion consensusClientVersion = createClientVersion();
-    final ClientVersion executionClientVersion = createClientVersion();
+    final ClientVersion consensusClientVersion = dataStructureUtil.randomClientVersion();
+    final ClientVersion executionClientVersion = dataStructureUtil.randomClientVersion();
 
     when(executionEngineClient.getClientVersionV1(
             ClientVersionV1.fromInternalClientVersion(consensusClientVersion)))
@@ -88,14 +88,6 @@ public abstract class ExecutionHandlerClientTest {
         handler.engineGetClientVersion(consensusClientVersion);
 
     assertThat(result).isCompletedWithValue(List.of(executionClientVersion));
-  }
-
-  private ClientVersion createClientVersion() {
-    return new ClientVersion(
-        dataStructureUtil.randomString(2),
-        dataStructureUtil.randomString(10),
-        dataStructureUtil.randomString(10),
-        dataStructureUtil.randomBytes4());
   }
 
   final ExecutionClientHandler getHandler() {

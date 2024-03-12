@@ -114,6 +114,7 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
@@ -1850,6 +1851,14 @@ public final class DataStructureUtil {
             : Optional.empty(),
         randomWithdrawalList(),
         randomBytes32());
+  }
+
+  public ClientVersion randomClientVersion() {
+    return new ClientVersion(
+        randomString(2),
+        randomString(randomInt(1, 10)),
+        randomString(randomInt(1, 10)),
+        randomBytes4());
   }
 
   public BeaconPreparableProposer randomBeaconPreparableProposer() {
