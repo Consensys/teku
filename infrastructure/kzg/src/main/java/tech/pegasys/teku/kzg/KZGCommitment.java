@@ -23,12 +23,6 @@ import org.apache.tuweni.ssz.SSZ;
 
 public final class KZGCommitment {
 
-  /** The KZGCommitment which represents the point-at-infinity. */
-  public static final KZGCommitment INFINITY =
-      KZGCommitment.fromBytesCompressed(
-          Bytes48.fromHexString(
-              "0xc00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"));
-
   public static KZGCommitment fromHexString(final String hexString) {
     return KZGCommitment.fromBytesCompressed(Bytes48.fromHexString(hexString));
   }

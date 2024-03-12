@@ -15,6 +15,7 @@ package tech.pegasys.teku.kzg;
 
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes;
+import org.apache.tuweni.bytes.Bytes48;
 
 /**
  * This interface specifies all the KZG functions needed for the Deneb specification and is the
@@ -53,13 +54,13 @@ public interface KZG {
 
         @Override
         public KZGCommitment blobToKzgCommitment(final Bytes blob) throws KZGException {
-          return KZGCommitment.INFINITY;
+          return KZGCommitment.fromBytesCompressed(Bytes48.ZERO);
         }
 
         @Override
         public KZGProof computeBlobKzgProof(final Bytes blob, final KZGCommitment kzgCommitment)
             throws KZGException {
-          return KZGProof.INFINITY;
+          return KZGProof.fromBytesCompressed(Bytes48.ZERO);
         }
       };
 
