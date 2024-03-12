@@ -64,4 +64,9 @@ public class BlockContents
   public Optional<SszList<Blob>> getBlobs() {
     return Optional.of(getField2());
   }
+
+  @Override
+  public Optional<InclusionList> getInclusionList() {
+    return Optional.of(getField3());
+  }
 }

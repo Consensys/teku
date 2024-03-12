@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema;
 
@@ -26,5 +27,17 @@ public interface SignedBlockContainerSchema<T extends SignedBlockContainer>
   @SuppressWarnings("unchecked")
   default SignedBlockContainerSchema<SignedBlockContainer> castTypeToSignedBlockContainer() {
     return (SignedBlockContainerSchema<SignedBlockContainer>) this;
+  }
+
+  default Optional<
+          tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContentsSchema>
+      toVersionDeneb() {
+    return Optional.empty();
+  }
+
+  default Optional<
+          tech.pegasys.teku.spec.datastructures.blocks.versions.electra.SignedBlockContentsSchema>
+      toVersionElectra() {
+    return Optional.empty();
   }
 }

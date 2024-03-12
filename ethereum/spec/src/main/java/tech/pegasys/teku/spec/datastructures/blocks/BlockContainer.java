@@ -20,6 +20,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContents;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.InclusionList;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
 /**
@@ -40,6 +41,10 @@ public interface BlockContainer extends SszData, SszContainer {
   }
 
   default Optional<SszList<Blob>> getBlobs() {
+    return Optional.empty();
+  }
+
+  default Optional<InclusionList> getInclusionList() {
     return Optional.empty();
   }
 

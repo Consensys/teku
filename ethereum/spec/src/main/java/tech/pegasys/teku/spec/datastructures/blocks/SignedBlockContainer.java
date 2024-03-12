@@ -21,6 +21,7 @@ import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.Blob;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.SignedBlockContents;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.SignedInclusionList;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 
 /**
@@ -45,6 +46,10 @@ public interface SignedBlockContainer extends SszData, SszContainer {
   }
 
   default Optional<SszList<Blob>> getBlobs() {
+    return Optional.empty();
+  }
+
+  default Optional<SignedInclusionList> getInclusionList() {
     return Optional.empty();
   }
 

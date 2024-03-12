@@ -14,6 +14,7 @@
 package tech.pegasys.teku.spec.datastructures.blocks.versions.deneb;
 
 import java.util.List;
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
@@ -92,5 +93,10 @@ public class SignedBlockContentsSchema
   @SuppressWarnings("unchecked")
   public SszListSchema<Blob, ?> getBlobsSchema() {
     return (SszListSchema<Blob, ?>) getChildSchema(getFieldIndex(FIELD_BLOBS));
+  }
+
+  @Override
+  public Optional<SignedBlockContentsSchema> toVersionDeneb() {
+    return Optional.of(this);
   }
 }

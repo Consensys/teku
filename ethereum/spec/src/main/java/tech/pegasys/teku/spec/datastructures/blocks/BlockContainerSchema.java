@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.blocks;
 
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszContainerSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema;
 
@@ -25,5 +26,16 @@ public interface BlockContainerSchema<T extends BlockContainer> extends SszConta
   @SuppressWarnings("unchecked")
   default BlockContainerSchema<BlockContainer> castTypeToBlockContainer() {
     return (BlockContainerSchema<BlockContainer>) this;
+  }
+
+  default Optional<tech.pegasys.teku.spec.datastructures.blocks.versions.deneb.BlockContentsSchema>
+      toVersionDeneb() {
+    return Optional.empty();
+  }
+
+  default Optional<
+          tech.pegasys.teku.spec.datastructures.blocks.versions.electra.BlockContentsSchema>
+      toVersionElectra() {
+    return Optional.empty();
   }
 }

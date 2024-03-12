@@ -82,6 +82,8 @@ public class BlockContainerSignerDeneb implements BlockContainerSigner {
 
   private SignedBlockContentsSchema getSignedBlockContentsSchema(final UInt64 slot) {
     return SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
-        .getSignedBlockContentsSchema();
+        .getSignedBlockContentsSchema()
+        .toVersionDeneb()
+        .orElseThrow();
   }
 }

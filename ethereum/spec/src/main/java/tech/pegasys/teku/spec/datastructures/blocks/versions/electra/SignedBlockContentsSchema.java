@@ -14,8 +14,9 @@
 package tech.pegasys.teku.spec.datastructures.blocks.versions.electra;
 
 import java.util.List;
+import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema3;
+import tech.pegasys.teku.infrastructure.ssz.containers.ContainerSchema4;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszFieldName;
 import tech.pegasys.teku.infrastructure.ssz.schema.SszListSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
@@ -26,12 +27,18 @@ import tech.pegasys.teku.spec.datastructures.blobs.versions.deneb.BlobSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlockSchema;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBlockContainerSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.SignedInclusionList;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.SignedInclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProof;
 import tech.pegasys.teku.spec.datastructures.type.SszKZGProofSchema;
 
 public class SignedBlockContentsSchema
-    extends ContainerSchema3<
-        SignedBlockContents, SignedBeaconBlock, SszList<SszKZGProof>, SszList<Blob>>
+    extends ContainerSchema4<
+        SignedBlockContents,
+        SignedBeaconBlock,
+        SszList<SszKZGProof>,
+        SszList<Blob>,
+        SignedInclusionList>
     implements SignedBlockContainerSchema<SignedBlockContents> {
 
   static final SszFieldName FIELD_KZG_PROOFS = () -> "kzg_proofs";
@@ -41,7 +48,8 @@ public class SignedBlockContentsSchema
       final String containerName,
       final SpecConfigDeneb specConfig,
       final SignedBeaconBlockSchema signedBeaconBlockSchema,
-      final BlobSchema blobSchema) {
+      final BlobSchema blobSchema,
+      final SignedInclusionListSchema signedInclusionListSchema) {
     super(
         containerName,
         namedSchema("signed_block", signedBeaconBlockSchema),
@@ -49,30 +57,34 @@ public class SignedBlockContentsSchema
             FIELD_KZG_PROOFS,
             SszListSchema.create(SszKZGProofSchema.INSTANCE, specConfig.getMaxBlobsPerBlock())),
         namedSchema(
-            FIELD_BLOBS, SszListSchema.create(blobSchema, specConfig.getMaxBlobsPerBlock())));
+            FIELD_BLOBS, SszListSchema.create(blobSchema, specConfig.getMaxBlobsPerBlock())),
+        namedSchema("signed_inclusion_list", signedInclusionListSchema));
   }
 
   public static SignedBlockContentsSchema create(
       final SpecConfigDeneb specConfig,
       final SignedBeaconBlockSchema signedBeaconBlockSchema,
       final BlobSchema blobSchema,
+      final SignedInclusionListSchema signedInclusionListSchema,
       final String containerName) {
     return new SignedBlockContentsSchema(
-        containerName, specConfig, signedBeaconBlockSchema, blobSchema);
+        containerName, specConfig, signedBeaconBlockSchema, blobSchema, signedInclusionListSchema);
   }
 
   public SignedBlockContents create(
       final SignedBeaconBlock signedBeaconBlock,
       final List<KZGProof> kzgProofs,
-      final List<Blob> blobs) {
-    return new SignedBlockContents(this, signedBeaconBlock, kzgProofs, blobs);
+      final List<Blob> blobs,
+      final SignedInclusionList inclusionList) {
+    return new SignedBlockContents(this, signedBeaconBlock, kzgProofs, blobs, inclusionList);
   }
 
   public SignedBlockContents create(
       final SignedBeaconBlock signedBeaconBlock,
       final SszList<SszKZGProof> kzgProofs,
-      final SszList<Blob> blobs) {
-    return new SignedBlockContents(this, signedBeaconBlock, kzgProofs, blobs);
+      final SszList<Blob> blobs,
+      final SignedInclusionList inclusionList) {
+    return new SignedBlockContents(this, signedBeaconBlock, kzgProofs, blobs, inclusionList);
   }
 
   @Override
@@ -92,5 +104,10 @@ public class SignedBlockContentsSchema
   @SuppressWarnings("unchecked")
   public SszListSchema<Blob, ?> getBlobsSchema() {
     return (SszListSchema<Blob, ?>) getChildSchema(getFieldIndex(FIELD_BLOBS));
+  }
+
+  @Override
+  public Optional<SignedBlockContentsSchema> toVersionElectra() {
+    return Optional.of(this);
   }
 }

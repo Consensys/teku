@@ -82,6 +82,8 @@ public class BlockFactoryDeneb extends BlockFactoryPhase0 {
 
   private BlockContentsSchema getBlockContentsSchema(final UInt64 slot) {
     return SchemaDefinitionsDeneb.required(spec.atSlot(slot).getSchemaDefinitions())
-        .getBlockContentsSchema();
+        .getBlockContentsSchema()
+        .toVersionDeneb()
+        .orElseThrow();
   }
 }
