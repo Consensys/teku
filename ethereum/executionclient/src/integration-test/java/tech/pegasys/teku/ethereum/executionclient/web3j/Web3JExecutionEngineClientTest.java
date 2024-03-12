@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.fail;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.assertj.core.api.InstanceOfAssertFactories.INTEGER;
 import static org.assertj.core.api.InstanceOfAssertFactories.LIST;
+import static org.assertj.core.api.InstanceOfAssertFactories.MAP;
 import static org.assertj.core.api.InstanceOfAssertFactories.STRING;
 import static org.mockito.Mockito.mock;
 import static tech.pegasys.teku.spec.SpecMilestone.CAPELLA;
@@ -46,6 +47,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestTemplate;
 import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
+import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
@@ -54,6 +56,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes20;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.json.JsonTestUtil;
 import tech.pegasys.teku.infrastructure.time.StubTimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
@@ -202,6 +205,36 @@ public class Web3JExecutionEngineClientTest {
     final Map<String, Object> requestData = takeRequest();
     verifyJsonRpcMethodCall(requestData, "engine_exchangeCapabilities");
     assertThat(requestData.get("params")).asInstanceOf(LIST).containsExactly(consensusCapabilities);
+  }
+
+  @TestTemplate
+  public void getClientVersionV1_shouldBuildRequestAndResponseSuccessfully() throws Exception {
+    final ClientVersionV1 consensusClientVersion =
+        new ClientVersionV1(
+            ClientVersionV1.TEKU_CLIENT_CODE, "teku", "1.0.0", Bytes4.fromHexString("87fa8ca7"));
+    final ClientVersionV1 executionClientVersion =
+        new ClientVersionV1("BU", "besu", "1.0.0", Bytes4.fromHexString("8dba2981"));
+
+    final JsonRpcResponse responseBody = new JsonRpcResponse(List.of(executionClientVersion));
+    mockSuccessfulResponse(objectMapper.writeValueAsString(responseBody));
+
+    final SafeFuture<Response<List<ClientVersionV1>>> response =
+        eeClient.getClientVersionV1(consensusClientVersion);
+    assertThat(response)
+        .succeedsWithin(1, TimeUnit.SECONDS)
+        .isEqualTo(new Response<>(List.of(executionClientVersion)));
+
+    final Map<String, Object> requestData = takeRequest();
+    verifyJsonRpcMethodCall(requestData, "engine_getClientVersionV1");
+    assertThat(requestData.get("params"))
+        .asInstanceOf(LIST)
+        .hasSize(1)
+        .first()
+        .asInstanceOf(MAP)
+        .containsEntry("code", ClientVersionV1.TEKU_CLIENT_CODE)
+        .containsEntry("name", "teku")
+        .containsEntry("version", "1.0.0")
+        .containsEntry("commit", "0x87fa8ca7");
   }
 
   @TestTemplate

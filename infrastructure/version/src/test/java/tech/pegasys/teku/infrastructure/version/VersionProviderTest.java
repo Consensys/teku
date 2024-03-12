@@ -26,6 +26,13 @@ class VersionProviderTest {
   private static final String TEKU = "/teku";
 
   @Test
+  void getCommitHash_retrievesValidCommitHash() {
+    assertThat(VersionProvider.getCommitHash())
+        .hasValueSatisfying(
+            commitHash -> assertThat(commitHash).hasSize(40).matches("[0-9a-fA-F]+"));
+  }
+
+  @Test
   void defaultStoragePath_shouldHandleWindowsPath() {
     final String homeFolder = "c:\\users\\myUser\\AppData\\local";
     final Map<String, String> env = Map.of(ENV_LOCALAPPDATA, homeFolder);
