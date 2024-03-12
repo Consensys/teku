@@ -21,7 +21,7 @@ public class BlobSidecarsByRootRequestMessageSchema
     extends AbstractSszListSchema<BlobIdentifier, BlobSidecarsByRootRequestMessage> {
 
   // Size validation according to the spec (MAX_REQUEST_BLOCKS_DENEB * MAX_BLOBS_PER_BLOCK) is
-  // done in the RPC handler.
+  // done in the RPC handler
   public BlobSidecarsByRootRequestMessageSchema(final SpecConfigDeneb specConfigDeneb) {
     super(
         BlobIdentifier.SSZ_SCHEMA,
