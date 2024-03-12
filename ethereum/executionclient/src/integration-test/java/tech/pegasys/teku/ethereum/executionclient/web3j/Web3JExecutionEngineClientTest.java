@@ -210,8 +210,7 @@ public class Web3JExecutionEngineClientTest {
   @TestTemplate
   public void getClientVersionV1_shouldBuildRequestAndResponseSuccessfully() throws Exception {
     final ClientVersionV1 consensusClientVersion =
-        new ClientVersionV1(
-            ClientVersionV1.TEKU_CLIENT_CODE, "teku", "1.0.0", Bytes4.fromHexString("87fa8ca7"));
+        new ClientVersionV1("TK", "teku", "1.0.0", Bytes4.fromHexString("87fa8ca7"));
     final ClientVersionV1 executionClientVersion =
         new ClientVersionV1("BU", "besu", "1.0.0", Bytes4.fromHexString("8dba2981"));
 
@@ -231,7 +230,7 @@ public class Web3JExecutionEngineClientTest {
         .hasSize(1)
         .first()
         .asInstanceOf(MAP)
-        .containsEntry("code", ClientVersionV1.TEKU_CLIENT_CODE)
+        .containsEntry("code", "TK")
         .containsEntry("name", "teku")
         .containsEntry("version", "1.0.0")
         .containsEntry("commit", "0x87fa8ca7");
