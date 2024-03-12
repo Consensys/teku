@@ -69,7 +69,7 @@ public class OkHttpRestClient implements RestClient {
       final S requestBodyObject,
       final SerializableTypeDefinition<S> requestTypeDefinition) {
     return postAsyncInternal(
-        apiPath, Map.of(), requestBodyObject, requestTypeDefinition, Optional.empty());
+        apiPath, NO_HEADERS, requestBodyObject, requestTypeDefinition, Optional.empty());
   }
 
   @Override
