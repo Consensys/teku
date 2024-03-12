@@ -20,8 +20,8 @@ import tech.pegasys.teku.spec.config.SpecConfigDeneb;
 public class BlobSidecarsByRootRequestMessageSchema
     extends AbstractSszListSchema<BlobIdentifier, BlobSidecarsByRootRequestMessage> {
 
-  // Size validation according to the spec (MAX_REQUEST_BLOCKS_DENEB *
-  // MAX_BLOB_COMMITMENTS_PER_BLOCK) is done in the RPC handler.
+  // Size validation according to the spec (MAX_REQUEST_BLOCKS_DENEB * MAX_BLOBS_PER_BLOCK) is
+  // done in the RPC handler.
   public BlobSidecarsByRootRequestMessageSchema(final SpecConfigDeneb specConfigDeneb) {
     super(
         BlobIdentifier.SSZ_SCHEMA,
