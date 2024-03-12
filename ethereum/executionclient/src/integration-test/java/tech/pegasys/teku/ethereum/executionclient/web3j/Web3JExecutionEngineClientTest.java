@@ -230,6 +230,7 @@ public class Web3JExecutionEngineClientTest {
         .hasSize(1)
         .first()
         .asInstanceOf(MAP)
+        .hasSize(4)
         .containsEntry("code", "TK")
         .containsEntry("name", "teku")
         .containsEntry("version", "1.0.0")
