@@ -15,6 +15,7 @@ package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.util.function.Supplier;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.primitive.SszBytes32;
@@ -31,6 +32,13 @@ public class ExecutionPayloadHeaderBuilderElectra extends ExecutionPayloadHeader
   public ExecutionPayloadHeaderBuilderElectra schema(
       final ExecutionPayloadHeaderSchemaElectra schema) {
     this.schema = schema;
+    return this;
+  }
+
+  @Override
+  public ExecutionPayloadHeaderBuilderElectra previousInclusionListSummaryRoot(
+      final Supplier<Bytes32> previousInclusionListSummaryRootSupplier) {
+    this.previousInclusionListSummaryRoot = previousInclusionListSummaryRootSupplier.get();
     return this;
   }
 
