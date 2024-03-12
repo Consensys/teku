@@ -13,8 +13,12 @@
 
 package tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra;
 
+import static tech.pegasys.teku.spec.datastructures.state.beaconstate.common.BeaconStateFields.PREVIOUS_PROPOSER_INDEX;
+
 import com.google.common.base.MoreObjects;
 import java.util.Optional;
+import tech.pegasys.teku.infrastructure.ssz.primitive.SszUInt64;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.deneb.BeaconStateDeneb;
 
@@ -29,9 +33,14 @@ public interface BeaconStateElectra extends BeaconStateDeneb {
   }
 
   static void describeCustomElectraFields(
-      MoreObjects.ToStringHelper stringBuilder, BeaconStateDeneb state) {
+      MoreObjects.ToStringHelper stringBuilder, BeaconStateElectra state) {
     BeaconStateDeneb.describeCustomDenebFields(stringBuilder, state);
-    // no new fields
+    stringBuilder.add("previous_proposer_index", state.getPreviousProposerIndex());
+  }
+
+  default UInt64 getPreviousProposerIndex() {
+    final int index = getSchema().getFieldIndex(PREVIOUS_PROPOSER_INDEX);
+    return ((SszUInt64) get(index)).get();
   }
 
   @Override

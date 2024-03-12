@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 
+import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
@@ -32,5 +33,9 @@ public class SignedInclusionListSummary
       final SszList<SszByteVector> summary,
       final SszSignature signature) {
     super(schema, summary, signature);
+  }
+
+  public BLSSignature getSignature() {
+    return getField1().getSignature();
   }
 }
