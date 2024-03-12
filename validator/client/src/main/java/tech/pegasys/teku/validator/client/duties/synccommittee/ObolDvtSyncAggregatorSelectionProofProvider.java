@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.IntStream;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.ethereum.json.types.validator.SyncCommitteeSelectionProof;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
@@ -29,6 +31,7 @@ import tech.pegasys.teku.validator.api.ValidatorApiChannel;
 
 public class ObolDvtSyncAggregatorSelectionProofProvider
     extends SyncAggregatorSelectionProofProvider {
+  private static final Logger LOG = LogManager.getLogger();
 
   private final ValidatorApiChannel validatorApiChannel;
 
@@ -83,36 +86,47 @@ public class ObolDvtSyncAggregatorSelectionProofProvider
                   .thenCompose(
                       combinedSelectionProofs ->
                           combinedSelectionProofs
-                              .map(this::processCombinedSelectionProofsResponse)
+                              .map(
+                                  response ->
+                                      processCombinedSelectionProofsResponse(response, slot))
                               .orElseGet(
-                                  () ->
-                                      SafeFuture.failedFuture(
-                                          new RuntimeException(
-                                              "Empty response from Obol DVT integration"))));
+                                  () -> {
+                                    LOG.error(
+                                        "Error requesting sync committee selection proofs for slot {} - Empty "
+                                            + "response from Obol DVT",
+                                        slot);
+                                    return SafeFuture.failedFuture(
+                                        new ObolDvtIntegrationException(
+                                            "Empty response from Obol DVT integration"));
+                                  }));
             });
   }
 
   private SafeFuture<Void> processCombinedSelectionProofsResponse(
-      final List<SyncCommitteeSelectionProof> combinedSelectionProofs) {
-    combinedSelectionProofs.forEach(
-        combinedProof -> {
-          final Pair<Integer, Integer> key =
-              Pair.of(combinedProof.getValidatorIndex(), combinedProof.getSubcommitteeIndex());
+      final List<SyncCommitteeSelectionProof> combinedSelectionProofsResponse, final UInt64 slot) {
+    selectionProofFutures.forEach(
+        (key, selectionProofFuture) ->
+            combinedSelectionProofsResponse.stream()
+                .filter(
+                    syncCommitteeSelectionProof ->
+                        syncCommitteeSelectionProof.getValidatorIndex() == key.getLeft()
+                            && syncCommitteeSelectionProof.getSubcommitteeIndex() == key.getRight())
+                .findFirst()
+                .ifPresentOrElse(
+                    syncCommitteeSelectionProof ->
+                        selectionProofFuture.complete(
+                            syncCommitteeSelectionProof.getSelectionProofSignature()),
+                    () ->
+                        selectionProofFuture.completeExceptionally(
+                            new ObolDvtIntegrationException(
+                                "Missing selection proof for validator_index = "
+                                    + key.getLeft()
+                                    + ",  subcommittee_index = "
+                                    + key.getRight()
+                                    + ", slot = "
+                                    + slot))));
 
-          if (selectionProofFutures.containsKey(key)) {
-            selectionProofFutures.get(key).complete(combinedProof.getSelectionProofSignature());
-          } else {
-            throw new RuntimeException(
-                "Error processing combined proof for validator = "
-                    + combinedProof.getValidatorIndex()
-                    + ", slot = "
-                    + combinedProof.getSlot()
-                    + ", sync subcommittee = "
-                    + combinedProof.getSubcommitteeIndex());
-          }
-        });
-
-    return SafeFuture.completedFuture(null);
+    return SafeFuture.COMPLETE;
   }
 
   private SyncCommitteeSelectionProof mapToSelectionProofRequest(
