@@ -24,6 +24,7 @@ import static tech.pegasys.teku.spec.schemas.ApiSchemas.VALIDATOR_REGISTRATION_S
 
 import com.google.common.base.Preconditions;
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -280,6 +281,10 @@ public final class DataStructureUtil {
     final byte[] result = new byte[length];
     random.nextBytes(result);
     return Bytes.wrap(result);
+  }
+
+  public String randomString(final int length) {
+    return new String(randomBytes(length).toArrayUnsafe(), StandardCharsets.UTF_8);
   }
 
   public BLSSignature randomSignature() {

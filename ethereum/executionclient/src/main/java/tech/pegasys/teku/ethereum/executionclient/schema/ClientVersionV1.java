@@ -23,10 +23,9 @@ import java.util.Objects;
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes4Deserializer;
 import tech.pegasys.teku.ethereum.executionclient.serialization.Bytes4Serializer;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 
 public class ClientVersionV1 {
-
-  public static final String TEKU_CLIENT_CODE = "TK";
 
   public final String code;
   public final String name;
@@ -49,6 +48,22 @@ public class ClientVersionV1 {
     this.name = name;
     this.version = version;
     this.commit = commit;
+  }
+
+  public static ClientVersionV1 fromInternalClientVersion(final ClientVersion clientVersion) {
+    return new ClientVersionV1(
+        clientVersion.code(),
+        clientVersion.name(),
+        clientVersion.version(),
+        clientVersion.commit());
+  }
+
+  public static ClientVersion asInternalClientVersion(final ClientVersionV1 clientVersionV1) {
+    return new ClientVersion(
+        clientVersionV1.code,
+        clientVersionV1.name,
+        clientVersionV1.version,
+        clientVersionV1.commit);
   }
 
   @Override
