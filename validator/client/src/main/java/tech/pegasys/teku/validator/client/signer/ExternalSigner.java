@@ -43,11 +43,14 @@ import tech.pegasys.teku.bls.BLSSignature;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueueWithPriority;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
+import tech.pegasys.teku.infrastructure.ssz.SszList;
+import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.provider.JsonProvider;
 import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.datastructures.blocks.BeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.InclusionListWithSignedSummary;
 import tech.pegasys.teku.spec.datastructures.operations.AggregateAndProof;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.VoluntaryExit;
@@ -275,6 +278,22 @@ public class ExternalSigner implements Signer {
                         "pubkey",
                         validatorRegistration.getPublicKey().toString())),
                 slashableGenericMessage("validator registration")));
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signInclusionListWithSignedSummary(
+      final UInt64 slot,
+      final InclusionListWithSignedSummary inclusionListWithSignedSummary,
+      final ForkInfo forkInfo) {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public SafeFuture<BLSSignature> signInclusionListSummary(
+      final UInt64 slot,
+      final SszList<SszByteVector> inclusionListSummary,
+      final ForkInfo forkInfo) {
+    throw new UnsupportedOperationException();
   }
 
   @Override

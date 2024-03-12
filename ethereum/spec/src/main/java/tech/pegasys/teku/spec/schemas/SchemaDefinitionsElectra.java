@@ -41,6 +41,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.InclusionListSchema;
+import tech.pegasys.teku.spec.datastructures.execution.versions.electra.InclusionListWithSignedSummarySchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.SignedBeaconBlockAndInclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.SignedInclusionListSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.SignedInclusionListSummarySchema;
@@ -56,6 +57,7 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   private final SignedInclusionListSummarySchema signedInclusionListSummarySchema;
   private final SignedInclusionListSchema signedInclusionListSchema;
   private final InclusionListSchema inclusionListSchema;
+  private final InclusionListWithSignedSummarySchema inclusionListWithSignedSummarySchema;
   private final SignedBeaconBlockAndInclusionListSchema signedBeaconBlockAndInclusionListSchema;
 
   private final ExecutionPayloadSchemaElectra executionPayloadSchemaElectra;
@@ -80,6 +82,9 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   public SchemaDefinitionsElectra(final SpecConfigElectra specConfig) {
     super(specConfig);
     this.signedInclusionListSummarySchema = new SignedInclusionListSummarySchema(specConfig);
+
+    this.inclusionListWithSignedSummarySchema =
+        new InclusionListWithSignedSummarySchema(specConfig, signedInclusionListSummarySchema);
 
     this.executionPayloadSchemaElectra =
         new ExecutionPayloadSchemaElectra(specConfig, getSignedInclusionListSummarySchema());
@@ -277,6 +282,10 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
   public SignedBeaconBlockAndInclusionListSchema getSignedBeaconBlockAndInclusionListSchema() {
     return signedBeaconBlockAndInclusionListSchema;
+  }
+
+  public InclusionListWithSignedSummarySchema getInclusionListWithSignedSummarySchema() {
+    return inclusionListWithSignedSummarySchema;
   }
 
   @Override

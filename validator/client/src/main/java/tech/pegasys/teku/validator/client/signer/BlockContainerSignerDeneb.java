@@ -30,7 +30,7 @@ import tech.pegasys.teku.validator.client.Validator;
 
 public class BlockContainerSignerDeneb implements BlockContainerSigner {
 
-  private final Spec spec;
+  protected final Spec spec;
 
   public BlockContainerSignerDeneb(final Spec spec) {
     this.spec = spec;

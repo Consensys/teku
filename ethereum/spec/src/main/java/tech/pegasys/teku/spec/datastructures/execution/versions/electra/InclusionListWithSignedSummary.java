@@ -14,19 +14,27 @@
 package tech.pegasys.teku.spec.datastructures.execution.versions.electra;
 
 import tech.pegasys.teku.infrastructure.ssz.SszList;
-import tech.pegasys.teku.infrastructure.ssz.collections.SszByteVector;
 import tech.pegasys.teku.infrastructure.ssz.containers.Container2;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.spec.datastructures.execution.Transaction;
 
-public class InclusionList
-    extends Container2<InclusionList, SszList<SszByteVector>, SszList<Transaction>> {
+public class InclusionListWithSignedSummary
+    extends Container2<
+        InclusionListWithSignedSummary, SignedInclusionListSummary, SszList<Transaction>> {
 
-  public InclusionList(InclusionListSchema schema, TreeNode backingNode) {
+  public InclusionListWithSignedSummary(
+      InclusionListWithSignedSummarySchema schema, TreeNode backingNode) {
     super(schema, backingNode);
   }
 
-  public SszList<SszByteVector> getInclusionListSummary() {
+  public InclusionListWithSignedSummary(
+      final InclusionListWithSignedSummarySchema schema,
+      final SignedInclusionListSummary signedSummary,
+      final SszList<Transaction> transactions) {
+    super(schema, signedSummary, transactions);
+  }
+
+  public SignedInclusionListSummary getSignedInclusionListSummary() {
     return getField0();
   }
 
