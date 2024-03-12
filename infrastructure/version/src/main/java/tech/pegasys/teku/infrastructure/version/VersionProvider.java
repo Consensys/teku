@@ -45,10 +45,10 @@ public class VersionProvider {
   }
 
   public static Optional<String> getCommitHash() {
-    final Properties properties = new Properties();
     try (InputStream is =
         VersionProvider.class.getClassLoader().getResourceAsStream("git.properties")) {
       if (is != null) {
+        final Properties properties = new Properties();
         properties.load(is);
         return Optional.ofNullable(properties.getProperty("git.commit.id"));
       } else {
