@@ -61,7 +61,7 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
   public static final String GET_PAYLOAD_V3_METHOD = "get_payloadV3";
   public static final String NEW_PAYLOAD_V3_METHOD = "new_payloadV3";
   public static final String EXCHANGE_CAPABILITIES_METHOD = "exchange_capabilities";
-  public static final String GET_CLIENT_VERSION_METHOD = "get_client_version";
+  public static final String GET_CLIENT_VERSION_V1_METHOD = "get_clientVersionV1";
 
   private final ExecutionEngineClient delegate;
 
@@ -171,6 +171,6 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
   public SafeFuture<Response<List<ClientVersionV1>>> getClientVersionV1(
       final ClientVersionV1 clientVersion) {
     return countRequest(
-        () -> delegate.getClientVersionV1(clientVersion), GET_CLIENT_VERSION_METHOD);
+        () -> delegate.getClientVersionV1(clientVersion), GET_CLIENT_VERSION_V1_METHOD);
   }
 }
