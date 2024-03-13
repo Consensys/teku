@@ -16,5 +16,10 @@ package tech.pegasys.teku.ethereum.events;
 import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 
 public interface ExecutionClientEventsChannel extends VoidReturningChannelInterface {
+
+  /**
+   * @param isAvailable true on EL startup, or on successful call after availability has been set to
+   *     false, false on an EL error or on EL going offline (e.g. restart)
+   */
   void onAvailabilityUpdated(boolean isAvailable);
 }

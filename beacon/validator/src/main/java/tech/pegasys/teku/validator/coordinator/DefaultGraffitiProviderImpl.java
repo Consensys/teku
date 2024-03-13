@@ -16,6 +16,7 @@ package tech.pegasys.teku.validator.coordinator;
 import static tech.pegasys.teku.infrastructure.logging.EventLogger.EVENT_LOG;
 
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,6 +39,8 @@ public class DefaultGraffitiProviderImpl
 
   private static final Logger LOG = LogManager.getLogger();
 
+  private final AtomicBoolean lastExecutionClientAvailability = new AtomicBoolean(true);
+
   private final ExecutionLayerChannel executionLayerChannel;
   private final ClientVersion tekuClientVersion;
   private final AtomicReference<Bytes32> defaultGraffiti;
@@ -46,6 +49,8 @@ public class DefaultGraffitiProviderImpl
     this.executionLayerChannel = executionLayerChannel;
     this.tekuClientVersion = createTekuClientVersion();
     this.defaultGraffiti = new AtomicReference<>(getGraffitiFallback());
+    // update default graffiti on initialization
+    updateDefaultGraffiti();
   }
 
   @Override
@@ -55,9 +60,11 @@ public class DefaultGraffitiProviderImpl
 
   @Override
   public void onAvailabilityUpdated(final boolean isAvailable) {
-    if (isAvailable) {
+    // only update graffiti after EL has been unavailable
+    if (isAvailable && lastExecutionClientAvailability.compareAndSet(false, true)) {
       updateDefaultGraffiti();
     }
+    lastExecutionClientAvailability.set(isAvailable);
   }
 
   private ClientVersion createTekuClientVersion() {

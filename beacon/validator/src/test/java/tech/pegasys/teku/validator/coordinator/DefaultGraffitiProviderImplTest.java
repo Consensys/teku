@@ -16,11 +16,14 @@ package tech.pegasys.teku.validator.coordinator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.apache.tuweni.bytes.Bytes32;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.bytes.Bytes4;
@@ -31,44 +34,77 @@ class DefaultGraffitiProviderImplTest {
 
   private final ExecutionLayerChannel executionLayerChannel = mock(ExecutionLayerChannel.class);
 
-  private final DefaultGraffitiProviderImpl defaultGraffitiProvider =
-      new DefaultGraffitiProviderImpl(executionLayerChannel);
-
-  @Test
-  public void getsDefaultGraffitiFallbackIfExecutionLayerHasNotBeenCalled() {
-    assertDefaultGraffitiFallback(defaultGraffitiProvider.getDefaultGraffiti());
-  }
-
-  @Test
-  public void getsDefaultGraffitiFallbackIfExecutionLayerIsNotAvailable() {
-    defaultGraffitiProvider.onAvailabilityUpdated(false);
-    assertDefaultGraffitiFallback(defaultGraffitiProvider.getDefaultGraffiti());
-  }
-
-  @Test
-  public void getsDefaultGraffitiFallbackIfEngineGetClientVersionFails() {
-    when(executionLayerChannel.engineGetClientVersion(any()))
-        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")));
-    defaultGraffitiProvider.onAvailabilityUpdated(true);
-    assertDefaultGraffitiFallback(defaultGraffitiProvider.getDefaultGraffiti());
-  }
-
-  @Test
-  public void getsExecutionAndTekuDefaultGraffitiIfEngineClientVersionSucceeds() {
+  @BeforeEach
+  public void setUp() {
     final ClientVersion executionClientVersion =
         new ClientVersion("BU", "besu", "1.0.0", Bytes4.fromHexString("8dba2981"));
-
     when(executionLayerChannel.engineGetClientVersion(any()))
         .thenReturn(SafeFuture.completedFuture(List.of(executionClientVersion)));
+  }
+
+  @Test
+  public void getsExecutionAndTekuDefaultGraffitiIfEngineClientVersionSucceedsOnInitialization() {
+    final DefaultGraffitiProviderImpl defaultGraffitiProvider =
+        new DefaultGraffitiProviderImpl(executionLayerChannel);
+
+    assertExecutionAndTekuGraffiti(defaultGraffitiProvider.getDefaultGraffiti());
+  }
+
+  @Test
+  public void getsDefaultGraffitiFallbackIfEngineGetClientVersionFailsOnInitialization() {
+    when(executionLayerChannel.engineGetClientVersion(any()))
+        .thenReturn(SafeFuture.failedFuture(new IllegalStateException("oopsy")));
+
+    final DefaultGraffitiProviderImpl defaultGraffitiProvider =
+        new DefaultGraffitiProviderImpl(executionLayerChannel);
+
+    assertGraffitiFallback(defaultGraffitiProvider.getDefaultGraffiti());
+  }
+
+  @Test
+  public void doesNotTryToUpdateDefaultGraffitiIfElHasNotBeenUnavailable() {
+    final DefaultGraffitiProviderImpl defaultGraffitiProvider =
+        new DefaultGraffitiProviderImpl(executionLayerChannel);
+
+    assertExecutionAndTekuGraffiti(defaultGraffitiProvider.getDefaultGraffiti());
+
     defaultGraffitiProvider.onAvailabilityUpdated(true);
 
-    final Bytes32 defaultGraffiti = defaultGraffitiProvider.getDefaultGraffiti();
+    // no change in graffiti
+    assertExecutionAndTekuGraffiti(defaultGraffitiProvider.getDefaultGraffiti());
+    // EL called only one time
+    verify(executionLayerChannel, times(1)).engineGetClientVersion(any());
+  }
 
-    assertThat(new String(defaultGraffiti.toArrayUnsafe(), StandardCharsets.UTF_8))
+  @Test
+  public void updatesDefaultGraffitiIfElIsAvailableAfterBeingUnavailable() {
+    final DefaultGraffitiProviderImpl defaultGraffitiProvider =
+        new DefaultGraffitiProviderImpl(executionLayerChannel);
+
+    assertExecutionAndTekuGraffiti(defaultGraffitiProvider.getDefaultGraffiti());
+
+    final ClientVersion updatedExecutionClientVersion =
+        new ClientVersion("BU", "besu", "1.0.1", Bytes4.fromHexString("efd1bc70"));
+    when(executionLayerChannel.engineGetClientVersion(any()))
+        .thenReturn(SafeFuture.completedFuture(List.of(updatedExecutionClientVersion)));
+
+    defaultGraffitiProvider.onAvailabilityUpdated(false);
+    defaultGraffitiProvider.onAvailabilityUpdated(true);
+
+    // graffiti has changed
+    final Bytes32 changedGraffiti = defaultGraffitiProvider.getDefaultGraffiti();
+    assertThat(new String(changedGraffiti.toArrayUnsafe(), StandardCharsets.UTF_8))
+        .matches("BUefd1bc70TK[0-9a-fA-F]{8}.+");
+    // EL called two times
+    verify(executionLayerChannel, times(2)).engineGetClientVersion(any());
+  }
+
+  private void assertExecutionAndTekuGraffiti(final Bytes32 graffiti) {
+    assertThat(new String(graffiti.toArrayUnsafe(), StandardCharsets.UTF_8))
         .matches("BU8dba2981TK[0-9a-fA-F]{8}.+");
   }
 
-  private void assertDefaultGraffitiFallback(final Bytes32 graffiti) {
+  private void assertGraffitiFallback(final Bytes32 graffiti) {
     assertThat(new String(graffiti.toArrayUnsafe(), StandardCharsets.UTF_8)).startsWith("teku/v");
   }
 }
