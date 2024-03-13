@@ -38,7 +38,6 @@ import tech.pegasys.teku.spec.signatures.Signer;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 import tech.pegasys.teku.validator.client.Validator;
 
-@SuppressWarnings("FutureReturnValueIgnored")
 class SyncAggregatorSelectionProofProviderTest {
 
   final Spec spec = TestSpecFactory.createMinimalAltair();
@@ -65,19 +64,22 @@ class SyncAggregatorSelectionProofProviderTest {
     final Collection<ValidatorAndCommitteeIndices> assignments =
         List.of(committeeAssignment(validator1, 1, 0));
 
-    syncAggregatorSelectionProofProvider
-        .prepareSelectionProofForSlot(slot, assignments, syncCommitteeUtil, forkInfo)
-        .thenAccept(
-            __ -> {
-              // Expected signature for validator with assignment for subcommittee
-              assertSignedSelectionProofWasCreated(1, 0, expectedSignature);
-              // Empty when querying non-assigned subcommittee index
-              assertThat(syncAggregatorSelectionProofProvider.getSelectionProofFuture(1, 999))
-                  .isEmpty();
-              // Empty when querying validator without duty assignments
-              assertThat(syncAggregatorSelectionProofProvider.getSelectionProofFuture(2, 111))
-                  .isEmpty();
-            });
+    final SafeFuture<Void> prepareSelectionProofFuture =
+        syncAggregatorSelectionProofProvider
+            .prepareSelectionProofForSlot(slot, assignments, syncCommitteeUtil, forkInfo)
+            .thenAccept(
+                __ -> {
+                  // Expected signature for validator with assignment for subcommittee
+                  assertSignedSelectionProofWasCreated(1, 0, expectedSignature);
+                  // Empty when querying non-assigned subcommittee index
+                  assertThat(syncAggregatorSelectionProofProvider.getSelectionProofFuture(1, 999))
+                      .isEmpty();
+                  // Empty when querying validator without duty assignments
+                  assertThat(syncAggregatorSelectionProofProvider.getSelectionProofFuture(2, 111))
+                      .isEmpty();
+                });
+
+    assertThat(prepareSelectionProofFuture).isCompleted();
   }
 
   @Test
@@ -85,16 +87,42 @@ class SyncAggregatorSelectionProofProviderTest {
     final BLSSignature expectedSignature =
         mockValidatorSignerForSyncCommitteeSelectionProofSigning(validator1);
 
+    // Minimal subcommittee size is 8
     final Collection<ValidatorAndCommitteeIndices> assignments =
-        List.of(committeeAssignment(validator1, 1, 0, 1));
+        List.of(committeeAssignment(validator1, 1, 0, 9));
 
-    syncAggregatorSelectionProofProvider
-        .prepareSelectionProofForSlot(slot, assignments, syncCommitteeUtil, forkInfo)
-        .thenAccept(
-            __ -> {
-              assertSignedSelectionProofWasCreated(1, 0, expectedSignature);
-              assertSignedSelectionProofWasCreated(1, 1, expectedSignature);
-            });
+    final SafeFuture<Void> prepareSelectionProofFuture =
+        syncAggregatorSelectionProofProvider
+            .prepareSelectionProofForSlot(slot, assignments, syncCommitteeUtil, forkInfo)
+            .thenAccept(
+                __ -> {
+                  assertSignedSelectionProofWasCreated(1, 0, expectedSignature);
+                  assertSignedSelectionProofWasCreated(1, 1, expectedSignature);
+                });
+
+    assertThat(prepareSelectionProofFuture).isCompleted();
+  }
+
+  @Test
+  public void multipleValidatorsInSameSyncSubcommittee() {
+    final BLSSignature expectedSignatureValidator1 =
+        mockValidatorSignerForSyncCommitteeSelectionProofSigning(validator1);
+    final BLSSignature expectedSignatureValidator2 =
+        mockValidatorSignerForSyncCommitteeSelectionProofSigning(validator2);
+
+    final Collection<ValidatorAndCommitteeIndices> assignments =
+        List.of(committeeAssignment(validator1, 1, 0), committeeAssignment(validator2, 2, 1));
+
+    final SafeFuture<Void> prepareSelectionProofFuture =
+        syncAggregatorSelectionProofProvider
+            .prepareSelectionProofForSlot(slot, assignments, syncCommitteeUtil, forkInfo)
+            .thenAccept(
+                __ -> {
+                  assertSignedSelectionProofWasCreated(1, 0, expectedSignatureValidator1);
+                  assertSignedSelectionProofWasCreated(2, 0, expectedSignatureValidator2);
+                });
+
+    assertThat(prepareSelectionProofFuture).isCompleted();
   }
 
   @Test
@@ -105,17 +133,21 @@ class SyncAggregatorSelectionProofProviderTest {
         mockValidatorSignerForSyncCommitteeSelectionProofSigning(validator2);
 
     final Collection<ValidatorAndCommitteeIndices> assignments =
-        List.of(committeeAssignment(validator1, 1, 0, 1), committeeAssignment(validator2, 2, 1, 2));
+        List.of(
+            committeeAssignment(validator1, 1, 0, 9), committeeAssignment(validator2, 2, 1, 10));
 
-    syncAggregatorSelectionProofProvider
-        .prepareSelectionProofForSlot(slot, assignments, syncCommitteeUtil, forkInfo)
-        .thenAccept(
-            __ -> {
-              assertSignedSelectionProofWasCreated(1, 0, expectedSignatureValidator1);
-              assertSignedSelectionProofWasCreated(1, 1, expectedSignatureValidator1);
-              assertSignedSelectionProofWasCreated(2, 1, expectedSignatureValidator2);
-              assertSignedSelectionProofWasCreated(2, 2, expectedSignatureValidator2);
-            });
+    final SafeFuture<Void> prepareSelectionProofFuture =
+        syncAggregatorSelectionProofProvider
+            .prepareSelectionProofForSlot(slot, assignments, syncCommitteeUtil, forkInfo)
+            .thenAccept(
+                __ -> {
+                  assertSignedSelectionProofWasCreated(1, 0, expectedSignatureValidator1);
+                  assertSignedSelectionProofWasCreated(1, 1, expectedSignatureValidator1);
+                  assertSignedSelectionProofWasCreated(2, 0, expectedSignatureValidator2);
+                  assertSignedSelectionProofWasCreated(2, 1, expectedSignatureValidator2);
+                });
+
+    assertThat(prepareSelectionProofFuture).isCompleted();
   }
 
   @Test
@@ -135,24 +167,27 @@ class SyncAggregatorSelectionProofProviderTest {
         .signSyncCommitteeSelectionProof(eq(syncAggregatorSelectionDataSubCommitteeOne), any());
 
     final Collection<ValidatorAndCommitteeIndices> assignments =
-        List.of(committeeAssignment(validator1, 1, 0, 1));
+        List.of(committeeAssignment(validator1, 1, 0, 9));
 
-    syncAggregatorSelectionProofProvider
-        .prepareSelectionProofForSlot(slot, assignments, syncCommitteeUtil, forkInfo)
-        .thenAccept(
-            __ -> {
-              // Checking that future for subcommittee index 0 failed
-              final Optional<SafeFuture<BLSSignature>> selectionProofFuture0 =
-                  syncAggregatorSelectionProofProvider.getSelectionProofFuture(1, 0);
-              assertThat(selectionProofFuture0).isPresent();
-              assertThat(selectionProofFuture0.get()).isCompletedExceptionally();
+    final SafeFuture<Void> prepareSelectionProofFuture =
+        syncAggregatorSelectionProofProvider
+            .prepareSelectionProofForSlot(slot, assignments, syncCommitteeUtil, forkInfo)
+            .thenAccept(
+                __ -> {
+                  // Checking that future for subcommittee index 0 failed
+                  final Optional<SafeFuture<BLSSignature>> selectionProofFuture0 =
+                      syncAggregatorSelectionProofProvider.getSelectionProofFuture(1, 0);
+                  assertThat(selectionProofFuture0).isPresent();
+                  assertThat(selectionProofFuture0.get()).isCompletedExceptionally();
 
-              // Checking that future for subcommittee index 1 succeeded
-              final Optional<SafeFuture<BLSSignature>> selectionProofFuture1 =
-                  syncAggregatorSelectionProofProvider.getSelectionProofFuture(1, 0);
-              assertThat(selectionProofFuture1).isPresent();
-              assertThat(selectionProofFuture1.get()).isCompleted();
-            });
+                  // Checking that future for subcommittee index 1 succeeded
+                  final Optional<SafeFuture<BLSSignature>> selectionProofFuture1 =
+                      syncAggregatorSelectionProofProvider.getSelectionProofFuture(1, 1);
+                  assertThat(selectionProofFuture1).isPresent();
+                  assertThat(selectionProofFuture1.get()).isCompleted();
+                });
+
+    assertThat(prepareSelectionProofFuture).isCompleted();
   }
 
   private void assertSignedSelectionProofWasCreated(

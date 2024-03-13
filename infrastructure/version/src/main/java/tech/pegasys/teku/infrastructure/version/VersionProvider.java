@@ -13,9 +13,14 @@
 
 package tech.pegasys.teku.infrastructure.version;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Properties;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
@@ -28,11 +33,7 @@ public class VersionProvider {
   public static final String IMPLEMENTATION_VERSION = "v" + getImplementationVersion();
   public static final String VERSION =
       CLIENT_IDENTITY + "/" + IMPLEMENTATION_VERSION + "/" + detectOS() + "/" + detectJvm();
-
-  private static String getImplementationVersion() {
-    final String version = VersionProvider.class.getPackage().getImplementationVersion();
-    return version != null ? version : "<Unknown>";
-  }
+  public static final Optional<String> COMMIT_HASH = getCommitHash();
 
   public static Bytes32 getDefaultGraffiti() {
     final String graffitiVersionString = CLIENT_IDENTITY + "/" + IMPLEMENTATION_VERSION;
@@ -44,21 +45,45 @@ public class VersionProvider {
     }
   }
 
+  public static String defaultStoragePath() {
+    final String detectedOS = normalizeOS(normalize("os.name"));
+    return defaultStoragePathForNormalizedOS(detectedOS, System.getenv());
+  }
+
+  private static String getImplementationVersion() {
+    final String version = VersionProvider.class.getPackage().getImplementationVersion();
+    return version != null ? version : "<Unknown>";
+  }
+
   private static String detectOS() {
     final String detectedOS = normalizeOS(normalize("os.name"));
     final String detectedArch = normalizeArch(normalize("os.arch"));
     return detectedOS + '-' + detectedArch;
   }
 
-  public static String detectJvm() {
+  private static String detectJvm() {
     final String detectedVM = normalizeVM(normalize("java.vendor"), normalize("java.vm.name"));
     final String detectedJavaVersion = System.getProperty("java.specification.version");
     return detectedVM + "-java-" + detectedJavaVersion;
   }
 
-  public static String defaultStoragePath() {
-    final String detectedOS = normalizeOS(normalize("os.name"));
-    return defaultStoragePathForNormalizedOS(detectedOS, System.getenv());
+  private static Optional<String> getCommitHash() {
+    return getCommitHash(
+        VersionProvider.class.getClassLoader().getResourceAsStream("git.properties"));
+  }
+
+  static Optional<String> getCommitHash(final InputStream gitPropertiesStream) {
+    try (InputStream is = gitPropertiesStream) {
+      if (is != null) {
+        final Properties properties = new Properties();
+        properties.load(is);
+        return Optional.ofNullable(properties.getProperty("git.commit.id"));
+      } else {
+        return Optional.empty();
+      }
+    } catch (IOException ex) {
+      throw new UncheckedIOException(ex);
+    }
   }
 
   static String defaultStoragePathForNormalizedOS(
@@ -172,7 +197,7 @@ public class VersionProvider {
     return osArch;
   }
 
-  static String normalizeVM(final String javaVendor, final String javaVmName) {
+  private static String normalizeVM(final String javaVendor, final String javaVmName) {
     if (javaVmName.contains("graalvm") || javaVendor.contains("graalvm")) {
       return "graalvm";
     }

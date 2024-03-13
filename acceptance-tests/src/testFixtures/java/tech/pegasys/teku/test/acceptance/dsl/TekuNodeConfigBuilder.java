@@ -411,8 +411,8 @@ public class TekuNodeConfigBuilder {
   }
 
   public TekuNodeConfigBuilder withStopVcWhenValidatorSlashedEnabled() {
-    LOG.debug("Xshut-down-when-validator-slashed-enabled={}", true);
-    configMap.put("Xshut-down-when-validator-slashed-enabled", true);
+    LOG.debug("shut-down-when-validator-slashed-enabled={}", true);
+    configMap.put("shut-down-when-validator-slashed-enabled", true);
     return this;
   }
 

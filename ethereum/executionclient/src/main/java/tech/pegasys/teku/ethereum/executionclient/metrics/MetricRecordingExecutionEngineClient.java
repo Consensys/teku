@@ -19,6 +19,7 @@ import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
@@ -59,6 +60,8 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
       "forkchoice_updated_with_attributesV3";
   public static final String GET_PAYLOAD_V3_METHOD = "get_payloadV3";
   public static final String NEW_PAYLOAD_V3_METHOD = "new_payloadV3";
+  public static final String EXCHANGE_CAPABILITIES_METHOD = "exchange_capabilities";
+  public static final String GET_CLIENT_VERSION_V1_METHOD = "get_client_versionV1";
 
   private final ExecutionEngineClient delegate;
 
@@ -160,6 +163,14 @@ public class MetricRecordingExecutionEngineClient extends MetricRecordingAbstrac
 
   @Override
   public SafeFuture<Response<List<String>>> exchangeCapabilities(final List<String> capabilities) {
-    return delegate.exchangeCapabilities(capabilities);
+    return countRequest(
+        () -> delegate.exchangeCapabilities(capabilities), EXCHANGE_CAPABILITIES_METHOD);
+  }
+
+  @Override
+  public SafeFuture<Response<List<ClientVersionV1>>> getClientVersionV1(
+      final ClientVersionV1 clientVersion) {
+    return countRequest(
+        () -> delegate.getClientVersionV1(clientVersion), GET_CLIENT_VERSION_V1_METHOD);
   }
 }
