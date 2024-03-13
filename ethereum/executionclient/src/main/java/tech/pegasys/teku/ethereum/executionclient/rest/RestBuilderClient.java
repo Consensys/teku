@@ -14,6 +14,7 @@
 package tech.pegasys.teku.ethereum.executionclient.rest;
 
 import static tech.pegasys.teku.ethereum.executionclient.rest.RestClient.NO_HEADERS;
+import static tech.pegasys.teku.infrastructure.http.RestApiConstants.HEADER_CONSENSUS_VERSION;
 import static tech.pegasys.teku.spec.config.Constants.BUILDER_GET_PAYLOAD_TIMEOUT;
 import static tech.pegasys.teku.spec.config.Constants.BUILDER_PROPOSAL_DELAY_TOLERANCE;
 import static tech.pegasys.teku.spec.config.Constants.BUILDER_REGISTER_VALIDATOR_TIMEOUT;
@@ -21,6 +22,7 @@ import static tech.pegasys.teku.spec.config.Constants.BUILDER_STATUS_TIMEOUT;
 import static tech.pegasys.teku.spec.schemas.ApiSchemas.SIGNED_VALIDATOR_REGISTRATIONS_SCHEMA;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -161,6 +163,7 @@ public class RestBuilderClient implements BuilderClient {
     return restClient
         .postAsync(
             BuilderApiMethod.GET_PAYLOAD.getPath(),
+            Map.of(HEADER_CONSENSUS_VERSION, milestone.name().toLowerCase(Locale.ROOT)),
             signedBlindedBeaconBlock,
             requestTypeDefinition,
             responseTypeDefinition)
