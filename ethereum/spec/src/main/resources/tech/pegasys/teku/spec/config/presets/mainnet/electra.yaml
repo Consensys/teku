@@ -1,5 +1,10 @@
 # Mainnet preset - Electra
 
+# Max operations per block
+# ---------------------------------------------------------------
+# 2**4 (= 16)
+MAX_EXECUTION_LAYER_EXITS: 16
+
 # Execution
 # ---------------------------------------------------------------
 # 2**13 (= 8192) receipts
