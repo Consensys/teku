@@ -33,6 +33,7 @@ public class VersionProvider {
   public static final String IMPLEMENTATION_VERSION = "v" + getImplementationVersion();
   public static final String VERSION =
       CLIENT_IDENTITY + "/" + IMPLEMENTATION_VERSION + "/" + detectOS() + "/" + detectJvm();
+  public static final Optional<String> COMMIT_HASH = getCommitHash();
 
   public static Bytes32 getDefaultGraffiti() {
     final String graffitiVersionString = CLIENT_IDENTITY + "/" + IMPLEMENTATION_VERSION;
@@ -41,21 +42,6 @@ public class VersionProvider {
       return Bytes32.rightPad(versionBytes);
     } else {
       return Bytes32.wrap(versionBytes.slice(0, Bytes32.SIZE));
-    }
-  }
-
-  public static Optional<String> getCommitHash() {
-    try (InputStream is =
-        VersionProvider.class.getClassLoader().getResourceAsStream("git.properties")) {
-      if (is != null) {
-        final Properties properties = new Properties();
-        properties.load(is);
-        return Optional.ofNullable(properties.getProperty("git.commit.id"));
-      } else {
-        return Optional.empty();
-      }
-    } catch (IOException ex) {
-      throw new UncheckedIOException(ex);
     }
   }
 
@@ -79,6 +65,21 @@ public class VersionProvider {
     final String detectedVM = normalizeVM(normalize("java.vendor"), normalize("java.vm.name"));
     final String detectedJavaVersion = System.getProperty("java.specification.version");
     return detectedVM + "-java-" + detectedJavaVersion;
+  }
+
+  private static Optional<String> getCommitHash() {
+    try (InputStream is =
+        VersionProvider.class.getClassLoader().getResourceAsStream("git.properties")) {
+      if (is != null) {
+        final Properties properties = new Properties();
+        properties.load(is);
+        return Optional.ofNullable(properties.getProperty("git.commit.id"));
+      } else {
+        return Optional.empty();
+      }
+    } catch (IOException ex) {
+      throw new UncheckedIOException(ex);
+    }
   }
 
   static String defaultStoragePathForNormalizedOS(

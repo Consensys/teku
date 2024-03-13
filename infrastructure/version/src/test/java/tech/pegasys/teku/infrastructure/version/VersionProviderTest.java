@@ -26,8 +26,8 @@ class VersionProviderTest {
   private static final String TEKU = "/teku";
 
   @Test
-  void getCommitHash_retrievesValidCommitHash() {
-    assertThat(VersionProvider.getCommitHash())
+  void commitHashConstant_isValidCommitHash() {
+    assertThat(VersionProvider.COMMIT_HASH)
         .hasValueSatisfying(
             commitHash -> assertThat(commitHash).hasSize(40).matches("[0-9a-fA-F]+"));
   }
