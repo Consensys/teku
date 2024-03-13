@@ -63,8 +63,9 @@ public class DefaultGraffitiProviderImpl
     // only update graffiti after EL has been unavailable
     if (isAvailable && lastExecutionClientAvailability.compareAndSet(false, true)) {
       updateDefaultGraffiti();
+    } else {
+      lastExecutionClientAvailability.set(isAvailable);
     }
-    lastExecutionClientAvailability.set(isAvailable);
   }
 
   private ClientVersion createTekuClientVersion() {
