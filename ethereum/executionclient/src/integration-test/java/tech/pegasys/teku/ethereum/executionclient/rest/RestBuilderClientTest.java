@@ -388,8 +388,15 @@ class RestBuilderClientTest {
               final BuilderPayload builderPayload = response.getPayload();
               verifyBuilderPayloadResponse(builderPayload);
             });
-
-    verifyPostRequest("/eth/v1/builder/blinded_blocks", signedBlindedBeaconBlockRequest);
+    final Consumer<RecordedRequest> containsConsensusVersionHeader =
+        req ->
+            assertThat(req.getHeader("Eth-Consensus-Version"))
+                .isEqualTo(milestone.name().toLowerCase(Locale.ROOT));
+    verifyRequest(
+        "POST",
+        "/eth/v1/builder/blinded_blocks",
+        Optional.of(signedBlindedBeaconBlockRequest),
+        Optional.of(containsConsensusVersionHeader));
   }
 
   @TestTemplate
