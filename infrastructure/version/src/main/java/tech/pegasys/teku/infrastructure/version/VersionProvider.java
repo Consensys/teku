@@ -68,12 +68,17 @@ public class VersionProvider {
   }
 
   private static Optional<String> getCommitHash() {
-    try (InputStream is =
-        VersionProvider.class.getClassLoader().getResourceAsStream("git.properties")) {
+    return getCommitHash(
+        VersionProvider.class.getClassLoader().getResourceAsStream("git.properties"));
+  }
+
+  static Optional<String> getCommitHash(final InputStream gitPropertiesStream) {
+    try (InputStream is = gitPropertiesStream) {
       if (is != null) {
         final Properties properties = new Properties();
         properties.load(is);
-        return Optional.ofNullable(properties.getProperty("git.commit.id"));
+        return Optional.ofNullable(properties.getProperty("git.commit.id"))
+            .filter(commitHash -> commitHash.length() == 40);
       } else {
         return Optional.empty();
       }

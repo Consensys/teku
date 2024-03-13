@@ -73,7 +73,7 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         @Override
         public SafeFuture<List<ClientVersion>> engineGetClientVersion(
             final ClientVersion clientVersion) {
-          return SafeFuture.completedFuture(null);
+          return SafeFuture.completedFuture(List.of());
         }
 
         @Override
