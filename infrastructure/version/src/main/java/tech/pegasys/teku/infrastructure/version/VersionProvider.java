@@ -77,8 +77,7 @@ public class VersionProvider {
       if (is != null) {
         final Properties properties = new Properties();
         properties.load(is);
-        return Optional.ofNullable(properties.getProperty("git.commit.id"))
-            .filter(commitHash -> commitHash.length() == 40);
+        return Optional.ofNullable(properties.getProperty("git.commit.id"));
       } else {
         return Optional.empty();
       }

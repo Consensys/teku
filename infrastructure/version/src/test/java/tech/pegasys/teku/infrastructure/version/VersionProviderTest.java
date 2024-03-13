@@ -55,16 +55,6 @@ class VersionProviderTest {
   }
 
   @Test
-  void getCommitHashIsEmpty_whenGitCommitIdIsNot40Characters(@TempDir Path tempDir)
-      throws IOException {
-    final Path gitPropertiesFile = tempDir.resolve("git.properties");
-
-    Files.writeString(gitPropertiesFile, "git.commit.id=3824d24e9");
-
-    assertThat(VersionProvider.getCommitHash(Files.newInputStream(gitPropertiesFile))).isEmpty();
-  }
-
-  @Test
   void defaultStoragePath_shouldHandleWindowsPath() {
     final String homeFolder = "c:\\users\\myUser\\AppData\\local";
     final Map<String, String> env = Map.of(ENV_LOCALAPPDATA, homeFolder);
