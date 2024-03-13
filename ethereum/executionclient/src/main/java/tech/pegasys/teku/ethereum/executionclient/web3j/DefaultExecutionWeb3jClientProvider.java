@@ -18,8 +18,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.time.Duration;
 import java.util.Optional;
 import org.web3j.protocol.Web3j;
+import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.executionclient.auth.JwtConfig;
-import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 
 public class DefaultExecutionWeb3jClientProvider implements ExecutionWeb3jClientProvider {

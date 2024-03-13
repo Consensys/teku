@@ -16,14 +16,11 @@ package tech.pegasys.teku.infrastructure.version;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.tuweni.bytes.Bytes;
-import org.apache.tuweni.bytes.Bytes32;
 
 public class VersionProvider {
   public static final String ENV_XDG_DATA_HOME = "XDG_DATA_HOME";
@@ -34,16 +31,6 @@ public class VersionProvider {
   public static final String VERSION =
       CLIENT_IDENTITY + "/" + IMPLEMENTATION_VERSION + "/" + detectOS() + "/" + detectJvm();
   public static final Optional<String> COMMIT_HASH = getCommitHash();
-
-  public static Bytes32 getDefaultGraffiti() {
-    final String graffitiVersionString = CLIENT_IDENTITY + "/" + IMPLEMENTATION_VERSION;
-    final Bytes versionBytes = Bytes.wrap(graffitiVersionString.getBytes(StandardCharsets.UTF_8));
-    if (versionBytes.size() <= Bytes32.SIZE) {
-      return Bytes32.rightPad(versionBytes);
-    } else {
-      return Bytes32.wrap(versionBytes.slice(0, Bytes32.SIZE));
-    }
-  }
 
   public static String defaultStoragePath() {
     final String detectedOS = normalizeOS(normalize("os.name"));
