@@ -38,6 +38,7 @@ public class SyncCommitteeDutyLoader
 
   private final SettableGauge currentSyncDutyCount;
   private final SettableGauge currentSyncCommitteeLastEpoch;
+  private final boolean useDvtEndpoint;
 
   public SyncCommitteeDutyLoader(
       final OwnedValidators validators,
@@ -46,7 +47,8 @@ public class SyncCommitteeDutyLoader
       final ValidatorApiChannel validatorApiChannel,
       final ChainHeadTracker chainHeadTracker,
       final ForkProvider forkProvider,
-      final MetricsSystem metricsSystem) {
+      final MetricsSystem metricsSystem,
+      boolean useDvtEndpoint) {
     super(validators, validatorIndexProvider);
     this.spec = spec;
     this.validatorApiChannel = validatorApiChannel;
@@ -64,6 +66,7 @@ public class SyncCommitteeDutyLoader
             TekuMetricCategory.VALIDATOR,
             "current_sync_committee_last_epoch",
             "The final epoch of the current sync committee period");
+    this.useDvtEndpoint = useDvtEndpoint;
   }
 
   @Override
@@ -89,7 +92,8 @@ public class SyncCommitteeDutyLoader
             .validatorApiChannel(validatorApiChannel)
             .chainHeadTracker(chainHeadTracker)
             .spec(spec)
-            .lastEpochInCommitteePeriod(lastEpochInCommitteePeriod);
+            .lastEpochInCommitteePeriod(lastEpochInCommitteePeriod)
+            .useDvtEndpoint(useDvtEndpoint);
     duties.getDuties().forEach(duty -> scheduleDuty(dutyBuilder, duty));
     final SyncCommitteeScheduledDuties scheduledDuties = dutyBuilder.build();
     scheduledDuties.subscribeToSubnets();
