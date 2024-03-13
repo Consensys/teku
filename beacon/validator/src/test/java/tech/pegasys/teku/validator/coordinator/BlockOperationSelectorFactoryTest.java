@@ -186,7 +186,7 @@ class BlockOperationSelectorFactoryTest {
           contributionPool,
           depositProvider,
           eth1DataCache,
-          defaultGraffiti,
+          () -> defaultGraffiti,
           forkChoiceNotifier,
           executionLayer);
   private final BlockOperationSelectorFactory factoryBellatrix =
@@ -200,7 +200,7 @@ class BlockOperationSelectorFactoryTest {
           contributionPool,
           depositProvider,
           eth1DataCache,
-          defaultGraffiti,
+          () -> defaultGraffiti,
           forkChoiceNotifier,
           executionLayer);
   private ExecutionPayloadContext executionPayloadContext;
