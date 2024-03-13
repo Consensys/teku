@@ -17,12 +17,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import org.junit.jupiter.api.Test;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
+import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
@@ -64,6 +68,26 @@ public abstract class ExecutionHandlerClientTest {
 
     final SafeFuture<PowBlock> result = handler.eth1GetPowChainHead();
     assertThat(result).isCompletedWithValue(block);
+  }
+
+  @Test
+  void engineGetClientVersion_shouldCallEngineGetClientVersionV1() {
+    final ExecutionClientHandler handler = getHandler();
+
+    final ClientVersion consensusClientVersion = dataStructureUtil.randomClientVersion();
+    final ClientVersion executionClientVersion = dataStructureUtil.randomClientVersion();
+
+    when(executionEngineClient.getClientVersionV1(
+            ClientVersionV1.fromInternalClientVersion(consensusClientVersion)))
+        .thenReturn(
+            SafeFuture.completedFuture(
+                new Response<>(
+                    List.of(ClientVersionV1.fromInternalClientVersion(executionClientVersion)))));
+
+    final SafeFuture<List<ClientVersion>> result =
+        handler.engineGetClientVersion(consensusClientVersion);
+
+    assertThat(result).isCompletedWithValue(List.of(executionClientVersion));
   }
 
   final ExecutionClientHandler getHandler() {
