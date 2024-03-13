@@ -135,7 +135,7 @@ public class BlobSidecar
         getBlockRoot(),
         getIndex(),
         getBlob().toBriefString(),
-        getKZGCommitment().toHexString(),
+        getKZGCommitment().toAbbreviatedString(),
         getKZGProof().toAbbreviatedString());
   }
 }
