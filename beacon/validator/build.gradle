@@ -28,6 +28,7 @@ dependencies {
   implementation project(':infrastructure:events')
   implementation project(':infrastructure:exceptions')
   implementation project(':infrastructure:metrics')
+  implementation project(':infrastructure:version')
   implementation project(':ethereum:json-types')
 
   implementation 'it.unimi.dsi:fastutil'

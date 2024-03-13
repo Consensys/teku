@@ -17,5 +17,4 @@ tasks.withType(JavaCompile).configureEach {
 
 dependencies {
   implementation 'org.apache.commons:commons-lang3'
-  implementation 'org.apache.tuweni:tuweni-bytes'
 }

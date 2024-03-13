@@ -50,9 +50,9 @@ import tech.pegasys.teku.beacon.sync.gossip.blobs.RecentBlobSidecarsFetcher;
 import tech.pegasys.teku.beacon.sync.gossip.blocks.RecentBlocksFetcher;
 import tech.pegasys.teku.beaconrestapi.BeaconRestApi;
 import tech.pegasys.teku.beaconrestapi.JsonTypeDefinitionBeaconRestApi;
+import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
-import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanceFactory;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -68,7 +68,6 @@ import tech.pegasys.teku.infrastructure.metrics.SettableLabelledGauge;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.infrastructure.time.TimeProvider;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
-import tech.pegasys.teku.infrastructure.version.VersionProvider;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetwork;
 import tech.pegasys.teku.networking.eth2.Eth2P2PNetworkBuilder;
@@ -187,6 +186,7 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.BlockOperationSelectorFactory;
+import tech.pegasys.teku.validator.coordinator.DefaultGraffitiProviderImpl;
 import tech.pegasys.teku.validator.coordinator.DepositProvider;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
@@ -877,6 +877,8 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   public void initValidatorApiHandler() {
     LOG.debug("BeaconChainController.initValidatorApiHandler()");
+    final DefaultGraffitiProviderImpl defaultGraffitiProvider =
+        new DefaultGraffitiProviderImpl(executionLayer);
     final BlockOperationSelectorFactory operationSelector =
         new BlockOperationSelectorFactory(
             spec,
@@ -888,7 +890,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             syncCommitteeContributionPool,
             depositProvider,
             eth1DataCache,
-            VersionProvider.getDefaultGraffiti(),
+            defaultGraffitiProvider,
             forkChoiceNotifier,
             executionLayerBlockProductionManager);
     final BlockFactory blockFactory = new MilestoneBasedBlockFactory(spec, operationSelector);
@@ -938,6 +940,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blockProductionPerformanceFactory);
     eventChannels
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
+        .subscribe(ExecutionClientEventsChannel.class, defaultGraffitiProvider)
         .subscribeMultithreaded(
             ValidatorApiChannel.class,
             validatorApiHandler,

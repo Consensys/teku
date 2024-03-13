@@ -1,5 +1,5 @@
 /*
- * Copyright Consensys Software Inc., 2024
+ * Copyright Consensys Software Inc., 2022
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
  * the License. You may obtain a copy of the License at
@@ -11,11 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.spec.datastructures.execution;
+package tech.pegasys.teku.ethereum.events;
 
-import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 
-public record ClientVersion(String code, String name, String version, Bytes4 commit) {
-
-  public static final String TEKU_CLIENT_CODE = "TK";
+public interface ExecutionClientEventsChannel extends VoidReturningChannelInterface {
+  /**
+   * @param isAvailable true on EL startup, or on a successful call after availability has been set
+   *     to false, false on an EL error or on EL going offline (e.g. restart)
+   */
+  void onAvailabilityUpdated(boolean isAvailable);
 }

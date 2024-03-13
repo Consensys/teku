@@ -72,7 +72,7 @@ public class BlockOperationSelectorFactory {
   private final SyncCommitteeContributionPool contributionPool;
   private final DepositProvider depositProvider;
   private final Eth1DataCache eth1DataCache;
-  private final Bytes32 graffiti;
+  private final DefaultGraffitiProvider defaultGraffitiProvider;
   private final ForkChoiceNotifier forkChoiceNotifier;
   private final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager;
 
@@ -86,7 +86,7 @@ public class BlockOperationSelectorFactory {
       final SyncCommitteeContributionPool contributionPool,
       final DepositProvider depositProvider,
       final Eth1DataCache eth1DataCache,
-      final Bytes32 graffiti,
+      final DefaultGraffitiProvider defaultGraffitiProvider,
       final ForkChoiceNotifier forkChoiceNotifier,
       final ExecutionLayerBlockProductionManager executionLayerBlockProductionManager) {
     this.spec = spec;
@@ -98,7 +98,7 @@ public class BlockOperationSelectorFactory {
     this.contributionPool = contributionPool;
     this.depositProvider = depositProvider;
     this.eth1DataCache = eth1DataCache;
-    this.graffiti = graffiti;
+    this.defaultGraffitiProvider = defaultGraffitiProvider;
     this.forkChoiceNotifier = forkChoiceNotifier;
     this.executionLayerBlockProductionManager = executionLayerBlockProductionManager;
   }
@@ -147,7 +147,7 @@ public class BlockOperationSelectorFactory {
       bodyBuilder
           .randaoReveal(randaoReveal)
           .eth1Data(eth1Data)
-          .graffiti(optionalGraffiti.orElse(graffiti))
+          .graffiti(optionalGraffiti.orElse(defaultGraffitiProvider.getDefaultGraffiti()))
           .attestations(attestations)
           .proposerSlashings(proposerSlashings)
           .attesterSlashings(attesterSlashings)
