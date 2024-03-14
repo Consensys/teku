@@ -31,15 +31,7 @@ public class GetStateResponseV2 {
   @JsonProperty("execution_optimistic")
   public final boolean execution_optimistic;
 
-  @JsonTypeInfo(
-      use = JsonTypeInfo.Id.NAME,
-      include = JsonTypeInfo.As.EXTERNAL_PROPERTY,
-      property = "version")
-  @JsonSubTypes({
-    @JsonSubTypes.Type(value = BeaconStatePhase0.class, name = "phase0"),
-    @JsonSubTypes.Type(value = BeaconStateAltair.class, name = "altair"),
-    @JsonSubTypes.Type(value = BeaconStateBellatrix.class, name = "bellatrix")
-  })
+  @JsonProperty("data")
   public final State data;
 
   @JsonCreator
