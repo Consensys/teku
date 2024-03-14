@@ -1,4 +1,4 @@
-AfterAll
+AfterAll,afterall
 errorprone
 errro
 vertx
