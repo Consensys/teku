@@ -647,7 +647,7 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder dvtSelectionsEndpointEnabled(final boolean dvtSelectionsEndpointEnabled) {
+    public Builder obolDvtSelectionsEndpointEnabled(final boolean dvtSelectionsEndpointEnabled) {
       this.dvtSelectionsEndpointEnabled = dvtSelectionsEndpointEnabled;
       return this;
     }
