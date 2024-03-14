@@ -15,13 +15,8 @@ package tech.pegasys.teku.api.response.v2.debug;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import tech.pegasys.teku.api.schema.Version;
-import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
-import tech.pegasys.teku.api.schema.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.api.schema.interfaces.State;
-import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 
 @SuppressWarnings("JavaCase")
 public class GetStateResponseV2 {
