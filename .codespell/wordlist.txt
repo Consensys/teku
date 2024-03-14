@@ -1,12 +1,10 @@
 afterall
-AfterAll
 errorprone
 errro
 vertx
-dOut
-DOut
+dout
 vie
 interruptors
 uptodate
 whats
-BU
+bu
