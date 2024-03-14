@@ -84,7 +84,7 @@ public class ValidatorClientOptions {
       hidden = true,
       fallbackValue = "true")
   private boolean obolDvtSelectionsEndpointEnabled =
-      ValidatorConfig.DEFAULT_DVT_SELECTIONS_ENDPOINT_ENABLED;
+      ValidatorConfig.DEFAULT_OBOL_DVT_SELECTIONS_ENDPOINT_ENABLED;
 
   public void configure(TekuConfiguration.Builder builder) {
     configureBeaconNodeApiEndpoints();
