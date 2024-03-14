@@ -1,1 +1,3 @@
-crate,errorprone,@AfterAll
+crate
+errorprone
+AfterAll
