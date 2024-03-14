@@ -143,6 +143,7 @@ import tech.pegasys.teku.spec.datastructures.operations.Deposit;
 import tech.pegasys.teku.spec.datastructures.operations.DepositData;
 import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.operations.DepositWithIndex;
+import tech.pegasys.teku.spec.datastructures.operations.ExecutionLayerExit;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation;
 import tech.pegasys.teku.spec.datastructures.operations.IndexedAttestation.IndexedAttestationSchema;
 import tech.pegasys.teku.spec.datastructures.operations.ProposerSlashing;
@@ -2571,6 +2572,12 @@ public final class DataStructureUtil {
     }
 
     return rewardAndPenaltyDeltas;
+  }
+
+  public ExecutionLayerExit randomExecutionLayerExit() {
+    return getElectraSchemaDefinitions(randomSlot())
+        .getExecutionLayerExitSchema()
+        .create(randomEth1Address(), randomPublicKey());
   }
 
   public UInt64 randomBlobSidecarIndex() {

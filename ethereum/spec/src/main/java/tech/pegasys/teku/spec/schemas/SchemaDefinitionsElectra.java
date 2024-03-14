@@ -42,6 +42,7 @@ import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositR
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceiptSchema;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadHeaderSchemaElectra;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionPayloadSchemaElectra;
+import tech.pegasys.teku.spec.datastructures.operations.ExecutionLayerExitSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconStateSchema;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateElectra;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.BeaconStateSchemaElectra;
@@ -71,6 +72,8 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
   private final ExecutionPayloadAndBlobsBundleSchema executionPayloadAndBlobsBundleSchema;
 
   private final DepositReceiptSchema depositReceiptSchema;
+
+  private final ExecutionLayerExitSchema executionLayerExitSchema;
 
   public SchemaDefinitionsElectra(final SpecConfigElectra specConfig) {
     super(specConfig);
@@ -120,6 +123,8 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
             "BlobsBundleElectra", getBlobSchema(), getBlobKzgCommitmentsSchema(), specConfig);
     this.executionPayloadAndBlobsBundleSchema =
         new ExecutionPayloadAndBlobsBundleSchema(executionPayloadSchemaElectra, blobsBundleSchema);
+
+    this.executionLayerExitSchema = new ExecutionLayerExitSchema();
   }
 
   public static SchemaDefinitionsElectra required(final SchemaDefinitions schemaDefinitions) {
@@ -239,6 +244,10 @@ public class SchemaDefinitionsElectra extends SchemaDefinitionsDeneb {
 
   public DepositReceiptSchema getDepositReceiptSchema() {
     return depositReceiptSchema;
+  }
+
+  public ExecutionLayerExitSchema getExecutionLayerExitSchema() {
+    return executionLayerExitSchema;
   }
 
   @Override
