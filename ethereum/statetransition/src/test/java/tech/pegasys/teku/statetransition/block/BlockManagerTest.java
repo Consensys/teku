@@ -39,6 +39,7 @@ import static tech.pegasys.teku.spec.logic.common.statetransition.results.BlockI
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.ARRIVAL_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.BEGIN_IMPORTING_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.COMPLETED_EVENT_LABEL;
+import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.DATA_AVAILABILITY_CHECKED_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.EXECUTION_PAYLOAD_RESULT_RECEIVED_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.GOSSIP_VALIDATION_EVENT_LABEL;
 import static tech.pegasys.teku.statetransition.block.BlockImportPerformance.PRESTATE_RETRIEVED_EVENT_LABEL;
@@ -757,6 +758,8 @@ public class BlockManagerTest {
                 + PRESTATE_RETRIEVED_EVENT_LABEL
                 + " +3000ms, "
                 + PROCESSED_EVENT_LABEL
+                + " +0ms, "
+                + DATA_AVAILABILITY_CHECKED_LABEL
                 + " +0ms, "
                 + EXECUTION_PAYLOAD_RESULT_RECEIVED_LABEL
                 + " +0ms, "

@@ -450,6 +450,8 @@ public class ValidatorClientService extends Service {
         new AttestationDutyFactory(spec, forkProvider, validatorApiChannel, validatorDutyMetrics);
     final BeaconCommitteeSubscriptions beaconCommitteeSubscriptions =
         new BeaconCommitteeSubscriptions(validatorApiChannel);
+    final boolean dvtSelectionsEndpointEnabled =
+        config.getValidatorConfig().isDvtSelectionsEndpointEnabled();
     final DutyLoader<?> attestationDutyLoader =
         new RetryingDutyLoader<>(
             asyncRunner,
@@ -465,7 +467,7 @@ public class ValidatorClientService extends Service {
                 validatorIndexProvider,
                 beaconCommitteeSubscriptions,
                 spec,
-                config.getValidatorConfig().isDvtSelectionsEndpointEnabled()));
+                dvtSelectionsEndpointEnabled));
     final DutyLoader<?> blockDutyLoader =
         new RetryingDutyLoader<>(
             asyncRunner,
@@ -496,7 +498,8 @@ public class ValidatorClientService extends Service {
                   validatorApiChannel,
                   chainHeadTracker,
                   forkProvider,
-                  metricsSystem));
+                  metricsSystem,
+                  dvtSelectionsEndpointEnabled));
       validatorTimingChannels.add(
           new SyncCommitteeScheduler(
               metricsSystem, spec, syncCommitteeDutyLoader, new Random()::nextInt));

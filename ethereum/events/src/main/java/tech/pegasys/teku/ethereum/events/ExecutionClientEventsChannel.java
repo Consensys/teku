@@ -11,21 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api;
+package tech.pegasys.teku.ethereum.events;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
+import tech.pegasys.teku.infrastructure.events.VoidReturningChannelInterface;
 
-public class ExecutionClientDataProvider implements ExecutionClientEventsChannel {
-
-  private final AtomicBoolean isExecutionClientAvailable = new AtomicBoolean(true);
-
-  @Override
-  public void onAvailabilityUpdated(final boolean isAvailable) {
-    isExecutionClientAvailable.set(isAvailable);
-  }
-
-  public boolean isExecutionClientAvailable() {
-    return isExecutionClientAvailable.get();
-  }
+public interface ExecutionClientEventsChannel extends VoidReturningChannelInterface {
+  /**
+   * @param isAvailable true on EL startup, or on a successful call after availability has been set
+   *     to false, false on an EL error or on EL going offline (e.g. restart)
+   */
+  void onAvailabilityUpdated(boolean isAvailable);
 }

@@ -11,21 +11,19 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.api;
+package tech.pegasys.teku.ethereum.executionclient.serialization;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import java.io.IOException;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 
-public class ExecutionClientDataProvider implements ExecutionClientEventsChannel {
-
-  private final AtomicBoolean isExecutionClientAvailable = new AtomicBoolean(true);
+public class Bytes4Deserializer extends JsonDeserializer<Bytes4> {
 
   @Override
-  public void onAvailabilityUpdated(final boolean isAvailable) {
-    isExecutionClientAvailable.set(isAvailable);
-  }
-
-  public boolean isExecutionClientAvailable() {
-    return isExecutionClientAvailable.get();
+  public Bytes4 deserialize(final JsonParser p, final DeserializationContext ctxt)
+      throws IOException {
+    return Bytes4.fromHexString(p.getValueAsString());
   }
 }
