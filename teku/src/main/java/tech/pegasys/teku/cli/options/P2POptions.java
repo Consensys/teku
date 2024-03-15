@@ -228,6 +228,16 @@ public class P2POptions {
   private Integer peerRateLimit = P2PConfig.DEFAULT_PEER_RATE_LIMIT;
 
   @Option(
+      names = {"--Xpeer-all-topics-filter-enabled"},
+      paramLabel = "<BOOLEAN>",
+      showDefaultValue = Visibility.ALWAYS,
+      description = "Add all topic filtering to p2p configuration.",
+      arity = "0..1",
+      hidden = true,
+      fallbackValue = "true")
+  private boolean allTopicsFilterEnabled = P2PConfig.DEFAULT_PEER_ALL_TOPIC_FILTER_ENABLED;
+
+  @Option(
       names = {"--Xpeer-request-limit"},
       paramLabel = "<NUMBER>",
       description =
@@ -322,6 +332,7 @@ public class P2POptions {
                     .targetSubnetSubscriberCount(p2pTargetSubnetSubscriberCount)
                     .isGossipScoringEnabled(gossipScoringEnabled)
                     .peerRateLimit(peerRateLimit)
+                    .allTopicsFilterEnabled(allTopicsFilterEnabled)
                     .peerRequestLimit(peerRequestLimit))
         .discovery(
             d -> {

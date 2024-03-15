@@ -41,7 +41,7 @@ class SwaggerWebjarIntegrityTest {
    *
    * <p>NOTICE: If it doesn't match due to swagger version update, both
    * `infrastructure/restapi/src/main/resources/swagger-ui/vendor` (just jar files copy) and
-   * `infrastructure/restapi/src/main/resources/swagger-ui/patched` (uptodate vendor files with
+   * `infrastructure/restapi/src/main/resources/swagger-ui/patched` (up-to-date vendor files with
    * changed links similar to the current modifications) should be updated
    */
   @Test

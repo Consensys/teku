@@ -62,7 +62,10 @@ public abstract class TransitionBenchmark {
   Spec spec;
   WeakSubjectivityValidator wsValidator;
   RecentChainData recentChainData;
+
+  @SuppressWarnings("deprecation")
   BeaconChainUtil localChain;
+
   BlockImporter blockImporter;
   Iterator<SignedBeaconBlock> blockIterator;
   BlockImportResult lastResult;
@@ -72,6 +75,7 @@ public abstract class TransitionBenchmark {
   int validatorsCount;
 
   @Setup(Level.Trial)
+  @SuppressWarnings("deprecation")
   public void init() throws Exception {
     spec = TestSpecFactory.createMainnetAltair();
     AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
