@@ -250,7 +250,7 @@ public class Phase0AttestationValidatorTest extends AbstractAttestationValidator
                         attestation.getAggregationBits(),
                         new AttestationData(
                             data.getSlot(),
-                            spec.getCommitteeCountPerSlot(
+                            spec.getCommitteCountPerSlot(
                                 blockAndState.getState(), data.getTarget().getEpoch()),
                             data.getBeaconBlockRoot(),
                             data.getSource(),

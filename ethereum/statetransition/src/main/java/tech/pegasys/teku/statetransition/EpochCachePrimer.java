@@ -93,7 +93,7 @@ public class EpochCachePrimer {
     final UInt64 lookaheadEpoch =
         stateEpoch.plus(spec.getSpecConfig(stateEpoch).getMinSeedLookahead());
     final UInt64 lookAheadEpochStartSlot = spec.computeStartSlotAtEpoch(lookaheadEpoch);
-    final UInt64 committeeCount = spec.getCommitteeCountPerSlot(state, lookaheadEpoch);
+    final UInt64 committeeCount = spec.getCommitteCountPerSlot(state, lookaheadEpoch);
     UInt64.range(lookAheadEpochStartSlot, spec.computeStartSlotAtEpoch(lookaheadEpoch.plus(1)))
         .forEach(
             slot ->
