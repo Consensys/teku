@@ -208,27 +208,21 @@ public abstract class AbstractRpcMethodIntegrationTest {
   public record PeerAndNetwork(Eth2Peer peer, Eth2P2PNetwork network) {}
 
   protected static Stream<Arguments> generateSpecTransitionWithCombinationParams() {
-    return Arrays.stream(SpecMilestone.values())
-        .filter(milestone -> milestone.ordinal() < SpecMilestone.values().length - 1)
+    return SpecMilestone.getAllMilestonesFrom(SpecMilestone.ALTAIR).stream()
         .flatMap(
             milestone -> {
-              final SpecMilestone nextMilestone = SpecMilestone.values()[milestone.ordinal() + 1];
+              final SpecMilestone prevMilestone = milestone.getPreviousMilestone();
               return Stream.of(
-                  Arguments.of(milestone, nextMilestone, true, true),
-                  Arguments.of(milestone, nextMilestone, false, true),
-                  Arguments.of(milestone, nextMilestone, true, false),
-                  Arguments.of(milestone, nextMilestone, false, false));
+                  Arguments.of(prevMilestone, milestone, true, true),
+                  Arguments.of(prevMilestone, milestone, false, true),
+                  Arguments.of(prevMilestone, milestone, true, false),
+                  Arguments.of(prevMilestone, milestone, false, false));
             });
   }
 
   protected static Stream<Arguments> generateSpecTransition() {
-    return Arrays.stream(SpecMilestone.values())
-        .filter(milestone -> milestone.ordinal() < SpecMilestone.values().length - 1)
-        .map(
-            milestone -> {
-              final SpecMilestone nextMilestone = SpecMilestone.values()[milestone.ordinal() + 1];
-              return Arguments.of(milestone, nextMilestone);
-            });
+    return SpecMilestone.getAllMilestonesFrom(SpecMilestone.ALTAIR).stream()
+        .map(milestone -> Arguments.of(milestone.getPreviousMilestone(), milestone));
   }
 
   protected static Stream<Arguments> generateSpec() {
