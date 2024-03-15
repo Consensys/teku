@@ -228,6 +228,10 @@
     {
       "moduleName": "com.google.guava:guava-parent",
       "moduleLicense": "Apache License, Version 2.0"
+    },
+    {
+      "moduleName": "org.jupnp:org.jupnp",
+      "moduleLicense": "CDDL-1.0"
     }
   ]
 }
