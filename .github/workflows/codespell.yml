@@ -24,7 +24,7 @@ jobs:
           restore-keys: ${{ runner.os }}-pip-
 
       - name: Install prerequisites
-        run: sudo pip install -r ./.codespell/requirements.txt
+        run: sudo pip install codespell
 
       - name: Spell check
         run: codespell --config=./.codespell/.codespellrc
