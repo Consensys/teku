@@ -13,14 +13,18 @@
 
 package tech.pegasys.teku.ethereum.executionlayer;
 
+import java.util.List;
 import java.util.Optional;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionclient.ExecutionEngineClient;
 import tech.pegasys.teku.ethereum.executionclient.methods.EngineApiMethod;
 import tech.pegasys.teku.ethereum.executionclient.methods.JsonRpcRequestParams;
+import tech.pegasys.teku.ethereum.executionclient.response.ResponseUnwrapper;
+import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.Spec;
+import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
@@ -108,5 +112,15 @@ public class ExecutionClientHandlerImpl implements ExecutionClientHandler {
         .getMethod(
             EngineApiMethod.ENGINE_NEW_PAYLOAD, executionPayload::getMilestone, PayloadStatus.class)
         .execute(paramsBuilder.build());
+  }
+
+  @Override
+  public SafeFuture<List<ClientVersion>> engineGetClientVersion(final ClientVersion clientVersion) {
+    return executionEngineClient
+        .getClientVersionV1(ClientVersionV1.fromInternalClientVersion(clientVersion))
+        .thenApply(ResponseUnwrapper::unwrapExecutionClientResponseOrThrow)
+        .thenApply(
+            clientVersions ->
+                clientVersions.stream().map(ClientVersionV1::asInternalClientVersion).toList());
   }
 }

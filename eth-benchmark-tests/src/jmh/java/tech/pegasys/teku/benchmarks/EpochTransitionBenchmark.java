@@ -75,7 +75,10 @@ public class EpochTransitionBenchmark {
   Spec spec;
   WeakSubjectivityValidator wsValidator;
   RecentChainData recentChainData;
+
+  @SuppressWarnings("deprecation")
   BeaconChainUtil localChain;
+
   BlockImporter blockImporter;
   Iterator<SignedBeaconBlock> blockIterator;
   BlockImportResult lastResult;
@@ -92,6 +95,7 @@ public class EpochTransitionBenchmark {
   int validatorsCount = 400000;
 
   @Setup(Level.Trial)
+  @SuppressWarnings("deprecation")
   public void init() throws Exception {
     AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
 

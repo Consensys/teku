@@ -45,7 +45,8 @@ public class ValidatorSlashingDetectionAcceptanceTest extends AcceptanceTestBase
   final SystemTimeProvider timeProvider = new SystemTimeProvider();
   final String network = "swift";
   final String slashingActionLog =
-      "Validator(s) with public key(s) %s got slashed. Shutting down...";
+      "Validator slashing detection is enabled and validator(s) with public key(s) %s detected as slashed. "
+          + "Shutting down...";
   final int shutdownWaitingSeconds = 60;
 
   enum SlashingEventType {

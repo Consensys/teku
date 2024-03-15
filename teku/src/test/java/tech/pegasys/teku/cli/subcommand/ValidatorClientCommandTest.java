@@ -211,8 +211,8 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void shouldSetUseDvtSelectionsEndpoint() {
-    final String[] args = {"vc", "--network", "minimal", "--Xdvt-integration-enabled"};
+  public void shouldSetUseObolDvtSelectionsEndpoint() {
+    final String[] args = {"vc", "--network", "minimal", "--Xobol-dvt-integration-enabled"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
 
     assertThat(config.validatorClient().getValidatorConfig().isDvtSelectionsEndpointEnabled())
@@ -220,7 +220,7 @@ public class ValidatorClientCommandTest extends AbstractBeaconNodeCommandTest {
   }
 
   @Test
-  public void shouldNotUseDvtSelectionsEndpointByDefault() {
+  public void shouldNotUseObolDvtSelectionsEndpointByDefault() {
     final String[] args = {"vc", "--network", "minimal"};
     final TekuConfiguration config = getTekuConfigurationFromArguments(args);
     assertThat(config.validatorClient().getValidatorConfig().isDvtSelectionsEndpointEnabled())

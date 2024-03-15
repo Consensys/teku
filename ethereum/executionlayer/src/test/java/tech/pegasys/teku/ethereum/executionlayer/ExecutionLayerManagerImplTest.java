@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 import static tech.pegasys.teku.ethereum.executionlayer.ExecutionBuilderModule.BUILDER_BOOST_FACTOR_MAX_PROFIT;
 import static tech.pegasys.teku.ethereum.executionlayer.ExecutionBuilderModule.BUILDER_BOOST_FACTOR_PREFER_BUILDER;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -49,6 +50,7 @@ import tech.pegasys.teku.spec.datastructures.builder.BuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -196,6 +198,18 @@ class ExecutionLayerManagerImplTest {
     verifyNoInteractions(builderClient);
 
     verifySourceCounter(Source.LOCAL_EL, FallbackReason.NONE);
+  }
+
+  @Test
+  public void engineGetClientVersion_shouldReturnClientVersionViaEngine() {
+    final ClientVersion consensusClientVersion = dataStructureUtil.randomClientVersion();
+    final List<ClientVersion> engineResponse = List.of(dataStructureUtil.randomClientVersion());
+
+    when(executionClientHandler.engineGetClientVersion(consensusClientVersion))
+        .thenReturn(SafeFuture.completedFuture(engineResponse));
+
+    assertThat(executionLayerManager.engineGetClientVersion(consensusClientVersion))
+        .isCompletedWithValue(engineResponse);
   }
 
   @Test

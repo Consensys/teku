@@ -14,7 +14,6 @@
 package tech.pegasys.teku.ethereum.executionclient.auth;
 
 import io.jsonwebtoken.Jwts.SIG;
-import io.jsonwebtoken.SignatureAlgorithm;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -34,6 +33,7 @@ public class JwtSecretKeyLoader {
 
   private static final Logger LOG = LogManager.getLogger();
 
+  private static final String HMAC_SHA256_ALGORITHM_NAME = "HmacSHA256";
   public static final String JWT_SECRET_FILE_NAME = "ee-jwt-secret.hex";
   private final Optional<String> jwtSecretFile;
   private final Path beaconDataDirectory;
@@ -75,7 +75,7 @@ public class JwtSecretKeyLoader {
     try {
       final Bytes bytesFromHex = Bytes.fromHexString(Files.readString(filePath).trim());
       LOG.info("JWT secret loaded from {}", filePath.toAbsolutePath());
-      return new SecretKeySpec(bytesFromHex.toArray(), SignatureAlgorithm.HS256.getJcaName());
+      return new SecretKeySpec(bytesFromHex.toArray(), HMAC_SHA256_ALGORITHM_NAME);
     } catch (final FileNotFoundException | NoSuchFileException e) {
       throw new InvalidConfigurationException(
           "Could not find execution engine JWT secret file: " + filePath.toAbsolutePath(), e);

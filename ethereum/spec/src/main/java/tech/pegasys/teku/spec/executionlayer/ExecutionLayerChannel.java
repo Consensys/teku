@@ -13,6 +13,7 @@
 
 package tech.pegasys.teku.spec.executionlayer;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.tuweni.bytes.Bytes32;
@@ -25,6 +26,7 @@ import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.GetPayloadResponse;
@@ -69,6 +71,12 @@ public interface ExecutionLayerChannel extends ChannelInterface {
         }
 
         @Override
+        public SafeFuture<List<ClientVersion>> engineGetClientVersion(
+            final ClientVersion clientVersion) {
+          return SafeFuture.completedFuture(List.of());
+        }
+
+        @Override
         public SafeFuture<Void> builderRegisterValidators(
             final SszList<SignedValidatorRegistration> signedValidatorRegistrations,
             final UInt64 slot) {
@@ -106,6 +114,8 @@ public interface ExecutionLayerChannel extends ChannelInterface {
       Optional<PayloadBuildingAttributes> payloadBuildingAttributes);
 
   SafeFuture<PayloadStatus> engineNewPayload(NewPayloadRequest newPayloadRequest);
+
+  SafeFuture<List<ClientVersion>> engineGetClientVersion(ClientVersion clientVersion);
 
   /**
    * This is low level method, use {@link

@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.config.Constants.MAXIMUM_CONCURRENT_EE_REQU
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import org.apache.logging.log4j.LogManager;
@@ -49,6 +50,7 @@ import tech.pegasys.teku.spec.SpecMilestone;
 import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
+import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadResult;
 import tech.pegasys.teku.spec.datastructures.execution.FallbackReason;
@@ -223,6 +225,12 @@ public class ExecutionLayerManagerImpl implements ExecutionLayerManager {
   public SafeFuture<PayloadStatus> engineNewPayload(final NewPayloadRequest newPayloadRequest) {
     LOG.trace("calling engineNewPayload(newPayloadRequest={})", newPayloadRequest);
     return executionClientHandler.engineNewPayload(newPayloadRequest);
+  }
+
+  @Override
+  public SafeFuture<List<ClientVersion>> engineGetClientVersion(final ClientVersion clientVersion) {
+    LOG.trace("calling engineGetClientVersion(clientVersion={})", clientVersion);
+    return executionClientHandler.engineGetClientVersion(clientVersion);
   }
 
   @Override

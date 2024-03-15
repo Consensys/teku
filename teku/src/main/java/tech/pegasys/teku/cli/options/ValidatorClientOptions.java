@@ -75,7 +75,7 @@ public class ValidatorClientOptions {
       ValidatorConfig.DEFAULT_VALIDATOR_CLIENT_USE_POST_VALIDATORS_ENDPOINT_ENABLED;
 
   @Option(
-      names = {"--Xdvt-integration-enabled"},
+      names = {"--Xobol-dvt-integration-enabled"},
       paramLabel = "<BOOLEAN>",
       description =
           "Use DVT endpoints to determine if a distributed validator has aggregation duties.",
@@ -83,8 +83,8 @@ public class ValidatorClientOptions {
       showDefaultValue = CommandLine.Help.Visibility.ALWAYS,
       hidden = true,
       fallbackValue = "true")
-  private boolean dvtSelectionsEndpointEnabled =
-      ValidatorConfig.DEFAULT_DVT_SELECTIONS_ENDPOINT_ENABLED;
+  private boolean obolDvtSelectionsEndpointEnabled =
+      ValidatorConfig.DEFAULT_OBOL_DVT_SELECTIONS_ENDPOINT_ENABLED;
 
   public void configure(TekuConfiguration.Builder builder) {
     configureBeaconNodeApiEndpoints();
@@ -99,7 +99,7 @@ public class ValidatorClientOptions {
                 .failoversSendSubnetSubscriptionsEnabled(failoversSendSubnetSubscriptionsEnabled)
                 .failoversPublishSignedDutiesEnabled(failoversPublishSignedDutiesEnabled)
                 .sentryNodeConfigurationFile(exclusiveParams.sentryConfigFile)
-                .dvtSelectionsEndpointEnabled(dvtSelectionsEndpointEnabled));
+                .obolDvtSelectionsEndpointEnabled(obolDvtSelectionsEndpointEnabled));
   }
 
   private void configureBeaconNodeApiEndpoints() {

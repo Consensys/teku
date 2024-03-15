@@ -15,13 +15,8 @@ package tech.pegasys.teku.api.response.v2.debug;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import tech.pegasys.teku.api.schema.Version;
-import tech.pegasys.teku.api.schema.altair.BeaconStateAltair;
-import tech.pegasys.teku.api.schema.bellatrix.BeaconStateBellatrix;
 import tech.pegasys.teku.api.schema.interfaces.State;
-import tech.pegasys.teku.api.schema.phase0.BeaconStatePhase0;
 
 @SuppressWarnings("JavaCase")
 public class GetStateResponseV2 {
@@ -31,15 +26,7 @@ public class GetStateResponseV2 {
   @JsonProperty("execution_optimistic")
   public final boolean execution_optimistic;
 
-  @JsonTypeInfo(
-      use = JsonTypeInfo.Id.NAME,
-      include = JsonTypeInfo.As.EXTERNAL_PROPERTY,
-      property = "version")
-  @JsonSubTypes({
-    @JsonSubTypes.Type(value = BeaconStatePhase0.class, name = "phase0"),
-    @JsonSubTypes.Type(value = BeaconStateAltair.class, name = "altair"),
-    @JsonSubTypes.Type(value = BeaconStateBellatrix.class, name = "bellatrix")
-  })
+  @JsonProperty("data")
   public final State data;
 
   @JsonCreator

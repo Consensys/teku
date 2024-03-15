@@ -5,7 +5,7 @@ dependencyManagement {
     dependency 'com.fasterxml.jackson.dataformat:jackson-dataformat-toml:2.16.1'
     dependency 'com.fasterxml.jackson.module:jackson-module-kotlin:2.16.1'
 
-    dependencySet(group: 'com.google.errorprone', version: '2.25.0') {
+    dependencySet(group: 'com.google.errorprone', version: '2.26.0') {
       entry 'error_prone_annotation'
       entry 'error_prone_check_api'
       entry 'error_prone_core'

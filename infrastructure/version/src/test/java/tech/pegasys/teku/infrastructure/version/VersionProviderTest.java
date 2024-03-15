@@ -18,12 +18,41 @@ import static tech.pegasys.teku.infrastructure.version.VersionProvider.ENV_HOME;
 import static tech.pegasys.teku.infrastructure.version.VersionProvider.ENV_LOCALAPPDATA;
 import static tech.pegasys.teku.infrastructure.version.VersionProvider.ENV_XDG_DATA_HOME;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
 import org.apache.logging.log4j.util.Strings;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class VersionProviderTest {
   private static final String TEKU = "/teku";
+
+  @Test
+  void commitHashConstant_isValidCommitHash() {
+    assertThat(VersionProvider.COMMIT_HASH)
+        .hasValueSatisfying(
+            commitHash -> assertThat(commitHash).hasSize(40).matches("[0-9a-fA-F]+"));
+  }
+
+  @Test
+  void getCommitHashIsEmpty_whenGitPropertiesFileDoesNotExist() {
+    final InputStream notExistingFile =
+        VersionProviderTest.class.getClassLoader().getResourceAsStream("foo.properties");
+    assertThat(VersionProvider.getCommitHash(notExistingFile)).isEmpty();
+  }
+
+  @Test
+  void getCommitHashIsEmpty_whenGitCommitIdPropertyDoesNotExist(@TempDir Path tempDir)
+      throws IOException {
+    final Path gitPropertiesFile = tempDir.resolve("git.properties");
+
+    Files.writeString(gitPropertiesFile, "git.commit.foo=3824d24e9fee209d2335780643dac7f2dc4986e1");
+
+    assertThat(VersionProvider.getCommitHash(Files.newInputStream(gitPropertiesFile))).isEmpty();
+  }
 
   @Test
   void defaultStoragePath_shouldHandleWindowsPath() {
