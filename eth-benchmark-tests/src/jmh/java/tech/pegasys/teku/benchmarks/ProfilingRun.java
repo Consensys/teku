@@ -66,6 +66,7 @@ public class ProfilingRun {
 
   @Disabled
   @Test
+  @SuppressWarnings("deprecation")
   public void importBlocks() throws Exception {
 
     AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
@@ -157,6 +158,7 @@ public class ProfilingRun {
 
   @Disabled
   @Test
+  @SuppressWarnings("deprecation")
   public void importBlocksMemProfiling() throws Exception {
 
     AbstractBlockProcessor.depositSignatureVerifier = BLSSignatureVerifier.NO_OP;
