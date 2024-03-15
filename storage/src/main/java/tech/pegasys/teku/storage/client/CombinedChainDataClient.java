@@ -510,7 +510,7 @@ public class CombinedChainDataClient {
     List<CommitteeAssignment> result = new ArrayList<>();
     final int slotsPerEpoch = spec.slotsPerEpoch(epoch);
     final UInt64 startingSlot = spec.computeStartSlotAtEpoch(epoch);
-    int committeeCount = spec.getCommitteCountPerSlot(state, epoch).intValue();
+    int committeeCount = spec.getCommitteeCountPerSlot(state, epoch).intValue();
     for (int i = 0; i < slotsPerEpoch; i++) {
       UInt64 slot = startingSlot.plus(i);
       for (int j = 0; j < committeeCount; j++) {

@@ -132,7 +132,7 @@ public class AttestationValidator {
               // The committee index is within the expected range
               if (data.getIndex()
                   .isGreaterThanOrEqualTo(
-                      spec.getCommitteCountPerSlot(state, data.getTarget().getEpoch()))) {
+                      spec.getCommitteeCountPerSlot(state, data.getTarget().getEpoch()))) {
                 return completedFuture(
                     InternalValidationResultWithState.reject(
                         "Committee index %s is out of range", data.getIndex()));

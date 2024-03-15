@@ -73,10 +73,10 @@ class EpochCachePrimerTest {
 
     when(mockSpec.getBeaconStateUtil(any())).thenReturn(beaconStateUtil);
 
-    when(mockSpec.getCommitteCountPerSlot(any(), any()))
+    when(mockSpec.getCommitteeCountPerSlot(any(), any()))
         .thenAnswer(
             invocation ->
-                realSpec.getCommitteCountPerSlot(
+                realSpec.getCommitteeCountPerSlot(
                     invocation.getArgument(0), invocation.getArgument(1)));
   }
 
@@ -144,7 +144,7 @@ class EpochCachePrimerTest {
     forEachSlotInEpoch(
         lookaheadEpoch,
         slot ->
-            UInt64.range(UInt64.ZERO, realSpec.getCommitteCountPerSlot(state, lookaheadEpoch))
+            UInt64.range(UInt64.ZERO, realSpec.getCommitteeCountPerSlot(state, lookaheadEpoch))
                 .forEach(
                     committeeIndex ->
                         verify(mockSpec).getBeaconCommittee(state, slot, committeeIndex)));

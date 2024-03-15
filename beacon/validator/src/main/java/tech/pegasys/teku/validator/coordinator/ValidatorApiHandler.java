@@ -465,7 +465,7 @@ public class ValidatorApiHandler implements ValidatorApiChannel {
       final UInt64 slot,
       final int committeeIndex) {
     final UInt64 epoch = spec.computeEpochAtSlot(slot);
-    final int committeeCount = spec.getCommitteCountPerSlot(state, epoch).intValue();
+    final int committeeCount = spec.getCommitteeCountPerSlot(state, epoch).intValue();
 
     if (committeeIndex < 0 || committeeIndex >= committeeCount) {
       throw new IllegalArgumentException(
