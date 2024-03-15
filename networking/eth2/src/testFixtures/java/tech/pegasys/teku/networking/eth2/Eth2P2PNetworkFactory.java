@@ -331,7 +331,8 @@ public class Eth2P2PNetworkFactory {
             syncCommitteeSubnetService,
             gossipEncoding,
             GossipConfigurator.NOOP,
-            processedAttestationSubscriptionProvider);
+            processedAttestationSubscriptionProvider,
+            config.isAllTopicsFilterEnabled());
       }
     }
 
