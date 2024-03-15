@@ -22,10 +22,12 @@ import tech.pegasys.teku.infrastructure.ssz.schema.collections.SszBitlistSchema;
 import tech.pegasys.teku.infrastructure.ssz.tree.TreeNode;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 import tech.pegasys.teku.spec.config.SpecConfig;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 
 public class PendingAttestation
-    extends Container4<PendingAttestation, SszBitlist, AttestationData, SszUInt64, SszUInt64> {
+    extends Container4<PendingAttestation, SszBitlist, AttestationData, SszUInt64, SszUInt64>
+    implements AttestationContainer {
 
   public static class PendingAttestationSchema
       extends ContainerSchema4<
@@ -82,10 +84,12 @@ public class PendingAttestation
     return (PendingAttestationSchema) super.getSchema();
   }
 
+  @Override
   public SszBitlist getAggregationBits() {
     return getField0();
   }
 
+  @Override
   public AttestationData getData() {
     return getField1();
   }
