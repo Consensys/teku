@@ -48,4 +48,18 @@ public class InclusionListSchema
   public InclusionList createFromBackingNode(final TreeNode node) {
     return new InclusionList(this, node);
   }
+
+  @SuppressWarnings("unchecked")
+  public SszListSchema<SszByteVector, ? extends SszList<SszByteVector>> getSummarySchema() {
+    return (SszListSchema<SszByteVector, ? extends SszList<SszByteVector>>) getFieldSchema0();
+  }
+
+  @SuppressWarnings("unchecked")
+  public SszListSchema<Transaction, ? extends SszList<Transaction>> getTransactionsSchema() {
+    return (SszListSchema<Transaction, ? extends SszList<Transaction>>) getFieldSchema1();
+  }
+
+  public TransactionSchema getTransactionSchema() {
+    return (TransactionSchema) getTransactionsSchema().getElementSchema();
+  }
 }

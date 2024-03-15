@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionclient;
 
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import org.hyperledger.besu.plugin.services.MetricsSystem;
 import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
@@ -23,8 +24,11 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.ethereum.executionclient.schema.GetInclusionListV1Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
+import tech.pegasys.teku.ethereum.executionclient.schema.InclusionListConfigurationV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.InclusionListStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
@@ -32,6 +36,7 @@ import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.ThrottlingTaskQueue;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.metrics.TekuMetricCategory;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
@@ -122,6 +127,27 @@ public class ThrottlingExecutionEngineClient implements ExecutionEngineClient {
       final Optional<PayloadAttributesV3> payloadAttributes) {
     return taskQueue.queueTask(
         () -> delegate.forkChoiceUpdatedV3(forkChoiceState, payloadAttributes));
+  }
+
+  @Override
+  public SafeFuture<Response<InclusionListStatusV1>> newInclusionListV1(
+      final List<Bytes20> inclusionListSummary,
+      final List<Bytes> inclusionListTransactions,
+      final Bytes32 parentBeaconBlockRoot,
+      final InclusionListConfigurationV1 inclusionListConfiguration) {
+    return taskQueue.queueTask(
+        () ->
+            delegate.newInclusionListV1(
+                inclusionListSummary,
+                inclusionListTransactions,
+                parentBeaconBlockRoot,
+                inclusionListConfiguration));
+  }
+
+  @Override
+  public SafeFuture<Response<GetInclusionListV1Response>> getInclusionListV1(
+      final InclusionListConfigurationV1 inclusionListConfiguration) {
+    return taskQueue.queueTask(() -> delegate.getInclusionListV1(inclusionListConfiguration));
   }
 
   @Override

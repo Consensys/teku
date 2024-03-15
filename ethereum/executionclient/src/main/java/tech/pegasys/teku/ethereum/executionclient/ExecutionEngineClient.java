@@ -15,6 +15,7 @@ package tech.pegasys.teku.ethereum.executionclient;
 
 import java.util.List;
 import java.util.Optional;
+import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
 import tech.pegasys.teku.ethereum.executionclient.schema.ClientVersionV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV1;
@@ -22,14 +23,18 @@ import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.ExecutionPayloadV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceStateV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.ForkChoiceUpdatedResult;
+import tech.pegasys.teku.ethereum.executionclient.schema.GetInclusionListV1Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV2Response;
 import tech.pegasys.teku.ethereum.executionclient.schema.GetPayloadV3Response;
+import tech.pegasys.teku.ethereum.executionclient.schema.InclusionListConfigurationV1;
+import tech.pegasys.teku.ethereum.executionclient.schema.InclusionListStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV2;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadAttributesV3;
 import tech.pegasys.teku.ethereum.executionclient.schema.PayloadStatusV1;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes20;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.spec.datastructures.execution.PowBlock;
 import tech.pegasys.teku.spec.logic.versions.deneb.types.VersionedHash;
@@ -55,6 +60,15 @@ public interface ExecutionEngineClient {
       ExecutionPayloadV3 executionPayload,
       List<VersionedHash> blobVersionedHashes,
       Bytes32 parentBeaconBlockRoot);
+
+  SafeFuture<Response<InclusionListStatusV1>> newInclusionListV1(
+      List<Bytes20> inclusionListSummary,
+      List<Bytes> inclusionListTransactions,
+      Bytes32 parentBeaconBlockRoot,
+      InclusionListConfigurationV1 inclusionListConfiguration);
+
+  SafeFuture<Response<GetInclusionListV1Response>> getInclusionListV1(
+      InclusionListConfigurationV1 inclusionListConfiguration);
 
   SafeFuture<Response<ForkChoiceUpdatedResult>> forkChoiceUpdatedV1(
       ForkChoiceStateV1 forkChoiceState, Optional<PayloadAttributesV1> payloadAttributes);
