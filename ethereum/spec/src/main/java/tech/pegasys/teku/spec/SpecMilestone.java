@@ -51,7 +51,8 @@ public enum SpecMilestone {
     if (equals(PHASE0)) {
       throw new IllegalArgumentException("There is no milestone prior to Phase0");
     }
-    return SpecMilestone.values()[ordinal() - 1];
+    final List<SpecMilestone> priorMilestones = getAllPriorMilestones(this);
+    return priorMilestones.get(priorMilestones.size() - 1);
   }
 
   /**
