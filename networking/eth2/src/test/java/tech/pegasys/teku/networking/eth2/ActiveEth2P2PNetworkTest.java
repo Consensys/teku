@@ -285,6 +285,7 @@ public class ActiveEth2P2PNetworkTest {
         syncCommitteeSubnetService,
         gossipEncoding,
         gossipConfigurator,
-        processedAttestationSubscriptionProvider);
+        processedAttestationSubscriptionProvider,
+        true);
   }
 }

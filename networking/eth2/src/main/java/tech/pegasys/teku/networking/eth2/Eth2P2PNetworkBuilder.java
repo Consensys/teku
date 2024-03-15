@@ -183,7 +183,8 @@ public class Eth2P2PNetworkBuilder {
         syncCommitteeSubnetService,
         gossipEncoding,
         config.getGossipConfigurator(),
-        processedAttestationSubscriptionProvider);
+        processedAttestationSubscriptionProvider,
+        config.isAllTopicsFilterEnabled());
   }
 
   private GossipForkManager buildGossipForkManager(
