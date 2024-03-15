@@ -28,7 +28,7 @@ import tech.pegasys.teku.test.acceptance.dsl.TekuValidatorNode;
  * - Node 2: Stand-alone VC with a separate BN <br>
  * The slashing event is sent to the first node via the POST attester/proposer slashing REST API. It
  * is then sent <br>
- * to the second BN withing a block which sends it to it's VC via the attester/proposer slashing SSE
+ * to the second BN within a block which sends it to it's VC via the attester/proposer slashing SSE
  * channel
  */
 public class MultiPeersStandAloneVcBlocksAcceptanceTest

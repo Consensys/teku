@@ -33,6 +33,7 @@ import org.apache.tuweni.bytes.Bytes32;
 import org.apache.tuweni.units.bigints.UInt256;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformance;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
 import tech.pegasys.teku.infrastructure.bytes.Bytes8;
 import tech.pegasys.teku.infrastructure.collections.cache.LRUCache;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
@@ -51,6 +52,7 @@ import tech.pegasys.teku.spec.datastructures.blocks.SignedBeaconBlock;
 import tech.pegasys.teku.spec.datastructures.builder.BuilderPayload;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadHeader;
@@ -68,6 +70,9 @@ import tech.pegasys.teku.spec.schemas.SchemaDefinitionsDeneb;
 
 public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
   private static final Logger LOG = LogManager.getLogger();
+  private static final ClientVersion STUB_CLIENT_VERSION =
+      new ClientVersion("SB", ExecutionLayerChannel.STUB_ENDPOINT_PREFIX, "0.0.0", Bytes4.ZERO);
+
   private final TimeProvider timeProvider;
   private final Map<Bytes32, PowBlock> knownBlocks = new ConcurrentHashMap<>();
   private final Map<Bytes32, PayloadStatus> knownPosBlocks = new ConcurrentHashMap<>();
@@ -311,6 +316,11 @@ public class ExecutionLayerChannelStub implements ExecutionLayerChannel {
         newPayloadRequest.getParentBeaconBlockRoot(),
         returnedStatus);
     return SafeFuture.completedFuture(returnedStatus);
+  }
+
+  @Override
+  public SafeFuture<List<ClientVersion>> engineGetClientVersion(final ClientVersion clientVersion) {
+    return SafeFuture.completedFuture(List.of(STUB_CLIENT_VERSION));
   }
 
   @Override

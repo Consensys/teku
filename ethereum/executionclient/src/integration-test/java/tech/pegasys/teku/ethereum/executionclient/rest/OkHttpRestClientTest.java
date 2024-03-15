@@ -180,7 +180,7 @@ class OkHttpRestClientTest {
     final TestObject2 requestBodyObject = new TestObject2(TEST_BLOCK_HASH);
     final SafeFuture<Response<TestObject>> responseFuture =
         underTest.postAsync(
-            TEST_PATH, requestBodyObject, requestTypeDefinition, responseTypeDefinition);
+            TEST_PATH, Map.of(), requestBodyObject, requestTypeDefinition, responseTypeDefinition);
 
     assertThat(responseFuture)
         .succeedsWithin(Duration.ofSeconds(1))
@@ -206,7 +206,11 @@ class OkHttpRestClientTest {
     final TestObject2 requestBodyObject = new TestObject2(TEST_BLOCK_HASH);
     final SafeFuture<Response<TestObject>> responseFuture =
         underTest.postAsync(
-            TEST_PATH, requestBodyObject, failingRequestTypeDefinition, responseTypeDefinition);
+            TEST_PATH,
+            Map.of(),
+            requestBodyObject,
+            failingRequestTypeDefinition,
+            responseTypeDefinition);
 
     // this will fail if there are uncaught exceptions in other threads
     Waiter.waitFor(() -> assertThat(responseFuture).isDone(), 30, TimeUnit.SECONDS, false);

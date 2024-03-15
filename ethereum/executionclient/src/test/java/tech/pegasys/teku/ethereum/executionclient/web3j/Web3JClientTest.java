@@ -39,7 +39,7 @@ import org.web3j.protocol.core.Request;
 import org.web3j.protocol.core.Response.Error;
 import org.web3j.protocol.core.methods.response.VoidResponse;
 import org.web3j.protocol.websocket.WebSocketService;
-import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
+import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.executionclient.schema.Response;
 import tech.pegasys.teku.infrastructure.async.SafeFuture;
 import tech.pegasys.teku.infrastructure.async.SafeFutureAssert;

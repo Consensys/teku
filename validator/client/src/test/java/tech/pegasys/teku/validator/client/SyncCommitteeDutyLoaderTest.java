@@ -74,7 +74,8 @@ class SyncCommitteeDutyLoaderTest {
           validatorApiChannel,
           chainHeadTracker,
           forkProvider,
-          metricsSystem);
+          metricsSystem,
+          false);
 
   @BeforeEach
   void setUp() {
