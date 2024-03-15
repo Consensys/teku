@@ -29,6 +29,8 @@ import tech.pegasys.teku.spec.config.NetworkingSpecConfig;
 public class P2PConfig {
 
   public static final int DEFAULT_PEER_RATE_LIMIT = 500;
+
+  public static final boolean DEFAULT_PEER_ALL_TOPIC_FILTER_ENABLED = false;
   public static final int DEFAULT_PEER_REQUEST_LIMIT = 50;
   public static final int DEFAULT_P2P_TARGET_SUBNET_SUBSCRIBER_COUNT = 2;
   public static final boolean DEFAULT_SUBSCRIBE_ALL_SUBNETS_ENABLED = false;
@@ -55,6 +57,8 @@ public class P2PConfig {
   private final int batchVerifyMaxBatchSize;
   private final boolean batchVerifyStrictThreadLimitEnabled;
 
+  private final boolean allTopicsFilterEnabled;
+
   private P2PConfig(
       final Spec spec,
       final NetworkConfig networkConfig,
@@ -68,7 +72,8 @@ public class P2PConfig {
       final int batchVerifyMaxThreads,
       final int batchVerifyQueueCapacity,
       final int batchVerifyMaxBatchSize,
-      final boolean batchVerifyStrictThreadLimitEnabled) {
+      final boolean batchVerifyStrictThreadLimitEnabled,
+      boolean allTopicsFilterEnabled) {
     this.spec = spec;
     this.networkConfig = networkConfig;
     this.discoveryConfig = discoveryConfig;
@@ -83,6 +88,7 @@ public class P2PConfig {
     this.batchVerifyMaxBatchSize = batchVerifyMaxBatchSize;
     this.batchVerifyStrictThreadLimitEnabled = batchVerifyStrictThreadLimitEnabled;
     this.networkingSpecConfig = spec.getNetworkingConfig();
+    this.allTopicsFilterEnabled = allTopicsFilterEnabled;
   }
 
   public static Builder builder() {
@@ -145,6 +151,10 @@ public class P2PConfig {
     return networkingSpecConfig;
   }
 
+  public boolean isAllTopicsFilterEnabled() {
+    return allTopicsFilterEnabled;
+  }
+
   public static class Builder {
     private final NetworkConfig.Builder networkConfig = NetworkConfig.builder();
     private final DiscoveryConfig.Builder discoveryConfig = DiscoveryConfig.builder();
@@ -161,6 +171,7 @@ public class P2PConfig {
     private int batchVerifyMaxBatchSize = DEFAULT_BATCH_VERIFY_MAX_BATCH_SIZE;
     private boolean batchVerifyStrictThreadLimitEnabled =
         DEFAULT_BATCH_VERIFY_STRICT_THREAD_LIMIT_ENABLED;
+    private boolean allTopicsFilterEnabled = DEFAULT_PEER_ALL_TOPIC_FILTER_ENABLED;
 
     private Builder() {}
 
@@ -195,7 +206,8 @@ public class P2PConfig {
           batchVerifyMaxThreads,
           batchVerifyQueueCapacity,
           batchVerifyMaxBatchSize,
-          batchVerifyStrictThreadLimitEnabled);
+          batchVerifyStrictThreadLimitEnabled,
+          allTopicsFilterEnabled);
     }
 
     private void validate() {
@@ -290,6 +302,11 @@ public class P2PConfig {
     public Builder batchVerifyStrictThreadLimitEnabled(
         final boolean batchVerifyStrictThreadLimitEnabled) {
       this.batchVerifyStrictThreadLimitEnabled = batchVerifyStrictThreadLimitEnabled;
+      return this;
+    }
+
+    public Builder allTopicsFilterEnabled(final boolean allTopicsFilterEnabled) {
+      this.allTopicsFilterEnabled = allTopicsFilterEnabled;
       return this;
     }
   }
