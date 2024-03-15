@@ -541,7 +541,7 @@ class ValidatorApiHandlerTest {
             BlockProductionPerformance.NOOP))
         .thenReturn(SafeFuture.completedFuture(blockContainerAndMetaData));
 
-    // even if passing a non-empty reqestedBlinded and requestedBuilderBoostFactor isn't a valid
+    // even if passing a non-empty requestedBlinded and requestedBuilderBoostFactor isn't a valid
     // combination,
     // we still want to check that all parameters are passed down the line to the block factory
     final SafeFuture<Optional<BlockContainerAndMetaData>> result =
