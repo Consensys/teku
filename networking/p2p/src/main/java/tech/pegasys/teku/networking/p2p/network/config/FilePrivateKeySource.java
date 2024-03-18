@@ -20,6 +20,7 @@ import io.libp2p.core.crypto.KeyType;
 import io.libp2p.core.crypto.PrivKey;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.MalformedInputException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Objects;
@@ -56,8 +57,10 @@ public class FilePrivateKeySource implements PrivateKeySource {
       final Bytes privateKeyBytes = Bytes.fromHexString(Files.readString(Paths.get(fileName)));
       STATUS_LOG.usingGeneratedP2pPrivateKey(fileName, false);
       return privateKeyBytes;
-    } catch (IOException e) {
+    } catch (MalformedInputException e) {
       return getPrivateKeyBytesFromBytesFile();
+    } catch (IOException e) {
+      throw new RuntimeException("p2p private key file not found - " + fileName);
     }
   }
 
