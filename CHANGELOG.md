@@ -10,6 +10,7 @@ the [releases page](https://github.com/Consensys/teku/releases).
 ## Unreleased Changes
 
 ### Breaking Changes
+ - The development command line argument `--Xvalidator-is-local-slashing-protection-synchronized-enabled` has become a supported and documented argument `--validator-is-local-slashing-protection-synchronized-enabled`.
 
 ### Additions and Improvements
 - Introduced [Validator Slashing Prevention feature](https://docs.teku.consensys.io/how-to/prevent-slashing/detect-slashing).
