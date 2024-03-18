@@ -37,7 +37,7 @@ public class FilePrivateKeySource implements PrivateKeySource {
     try {
       File file = new File(fileName);
       if (!file.createNewFile()) {
-        return getPrivateKeyBytesFromFile();
+        return getPrivateKeyBytesFromTextFile();
       }
       final PrivKey privKey = KeyKt.generateKeyPair(KeyType.SECP256K1).component1();
       final Bytes privateKeyBytes = Bytes.wrap(KeyKt.marshalPrivateKey(privKey));
@@ -51,9 +51,19 @@ public class FilePrivateKeySource implements PrivateKeySource {
     }
   }
 
-  private Bytes getPrivateKeyBytesFromFile() {
+  private Bytes getPrivateKeyBytesFromTextFile() {
     try {
       final Bytes privateKeyBytes = Bytes.fromHexString(Files.readString(Paths.get(fileName)));
+      STATUS_LOG.usingGeneratedP2pPrivateKey(fileName, false);
+      return privateKeyBytes;
+    } catch (IOException e) {
+      return getPrivateKeyBytesFromBytesFile();
+    }
+  }
+
+  private Bytes getPrivateKeyBytesFromBytesFile() {
+    try {
+      final Bytes privateKeyBytes = Bytes.wrap(Files.readAllBytes(Paths.get(fileName)));
       STATUS_LOG.usingGeneratedP2pPrivateKey(fileName, false);
       return privateKeyBytes;
     } catch (IOException e) {
