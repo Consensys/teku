@@ -13,11 +13,13 @@
 
 package tech.pegasys.teku.spec.datastructures.operations;
 
+import java.util.List;
 import java.util.Optional;
 import tech.pegasys.teku.infrastructure.ssz.SszContainer;
 import tech.pegasys.teku.infrastructure.ssz.SszData;
 import tech.pegasys.teku.infrastructure.ssz.SszList;
 import tech.pegasys.teku.infrastructure.ssz.collections.SszBitlist;
+import tech.pegasys.teku.infrastructure.unsigned.UInt64;
 
 /**
  * Interface used to represent different types of attestations ({@link Attestation} and {@link
@@ -31,6 +33,10 @@ public interface AttestationContainer extends SszData, SszContainer {
   }
 
   default Optional<SszList<SszBitlist>> getAggregationBitsElectra() {
+    return Optional.empty();
+  }
+
+  default Optional<List<UInt64>> getCommitteeIndices() {
     return Optional.empty();
   }
 }

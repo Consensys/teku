@@ -79,12 +79,9 @@ public class AttestationElectra
     return getField3().getSignature();
   }
 
-  public List<UInt64> getCommitteeIndices(AttestationElectra attestationElectra) {
-    return attestationElectra
-        .getCommitteeBits()
-        .getAllSetBits()
-        .intStream()
-        .mapToObj(UInt64::valueOf)
-        .toList();
+  @Override
+  public Optional<List<UInt64>> getCommitteeIndices() {
+    return Optional.of(
+        getCommitteeBits().getAllSetBits().intStream().mapToObj(UInt64::valueOf).toList());
   }
 }

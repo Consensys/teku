@@ -50,6 +50,7 @@ import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.DepositReceipt;
 import tech.pegasys.teku.spec.datastructures.execution.versions.electra.ExecutionLayerWithdrawalRequest;
 import tech.pegasys.teku.spec.datastructures.operations.Attestation;
+import tech.pegasys.teku.spec.datastructures.operations.AttestationContainer;
 import tech.pegasys.teku.spec.datastructures.operations.AttestationData;
 import tech.pegasys.teku.spec.datastructures.operations.AttesterSlashing;
 import tech.pegasys.teku.spec.datastructures.operations.Deposit;
@@ -296,7 +297,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
   }
 
   protected void assertAttestationValid(
-      final MutableBeaconState state, final Attestation attestation) {
+      final MutableBeaconState state, final AttestationContainer attestation) {
     final AttestationData data = attestation.getData();
 
     final Optional<OperationInvalidReason> invalidReason = validateAttestation(state, data);
@@ -305,7 +306,7 @@ public abstract class AbstractBlockProcessor implements BlockProcessor {
         "process_attestations: %s",
         invalidReason.map(OperationInvalidReason::describe).orElse(""));
 
-    IntList committee =
+    final IntList committee =
         beaconStateAccessors.getBeaconCommittee(state, data.getSlot(), data.getIndex());
     checkArgument(
         attestation.getAggregationBits().orElseThrow().size() == committee.size(),
