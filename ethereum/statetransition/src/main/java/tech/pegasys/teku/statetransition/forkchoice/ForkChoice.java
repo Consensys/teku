@@ -25,6 +25,9 @@ import java.net.ConnectException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -298,7 +301,11 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
       final UInt64 currentTimeMillis, final Optional<TickProcessingPerformance> performanceRecord) {
     final UpdatableStore store = recentChainData.getStore();
     final UInt64 slotAtStartOfTick = spec.getCurrentSlot(store);
-    tickProcessor.onTick(currentTimeMillis).join();
+    try {
+      tickProcessor.onTick(currentTimeMillis).get(30, TimeUnit.SECONDS);
+    } catch (final InterruptedException | TimeoutException | ExecutionException e) {
+      throw new RuntimeException(e);
+    }
     performanceRecord.ifPresent(TickProcessingPerformance::tickProcessorComplete);
     final UInt64 currentSlot = spec.getCurrentSlot(store);
     if (currentSlot.isGreaterThan(slotAtStartOfTick)) {
