@@ -26,6 +26,7 @@ import tech.pegasys.teku.beacon.sync.SyncConfig;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.networking.eth2.P2PConfig;
 import tech.pegasys.teku.networking.p2p.discovery.DiscoveryConfig;
+import tech.pegasys.teku.networking.p2p.libp2p.MultiaddrPeerAddress;
 import tech.pegasys.teku.networking.p2p.network.config.NetworkConfig;
 
 public class P2POptions {
@@ -373,6 +374,13 @@ public class P2POptions {
               }
               if (p2pAdvertisedPort != null) {
                 n.advertisedPort(OptionalInt.of(p2pAdvertisedPort));
+              }
+              if (!p2pDirectPeers.isEmpty()) {
+                n.directPeers(
+                    p2pDirectPeers.stream()
+                        .map(MultiaddrPeerAddress::fromAddress)
+                        .map(MultiaddrPeerAddress::getId)
+                        .toList());
               }
               n.networkInterface(p2pInterface)
                   .isEnabled(p2pEnabled)

@@ -21,6 +21,7 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Consumer;
@@ -29,6 +30,8 @@ import org.apache.logging.log4j.Logger;
 import tech.pegasys.teku.infrastructure.exceptions.InvalidConfigurationException;
 import tech.pegasys.teku.infrastructure.io.PortAvailability;
 import tech.pegasys.teku.networking.p2p.gossip.config.GossipConfig;
+import tech.pegasys.teku.networking.p2p.gossip.config.GossipPeerScoringConfig.DirectPeerManager;
+import tech.pegasys.teku.networking.p2p.peer.NodeId;
 
 public class NetworkConfig {
 
@@ -259,6 +262,13 @@ public class NetworkConfig {
 
     public Builder yamuxEnabled(final boolean yamuxEnabled) {
       this.yamuxEnabled = yamuxEnabled;
+      return this;
+    }
+
+    public Builder directPeers(final List<NodeId> directPeers) {
+      checkNotNull(directPeers);
+      final DirectPeerManager directPeerManager = directPeers::contains;
+      this.gossipConfigBuilder.directPeerManager(directPeerManager);
       return this;
     }
   }
