@@ -334,6 +334,9 @@ public class P2POptions {
   }
 
   public void configure(final TekuConfiguration.Builder builder) {
+    // From a discovery configuration perspective, direct peers are static peers
+    p2pStaticPeers.addAll(p2pDirectPeers);
+
     builder
         .p2p(
             b ->
