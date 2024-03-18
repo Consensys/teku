@@ -29,9 +29,13 @@ import tech.pegasys.teku.spec.datastructures.operations.DepositMessage;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
 import tech.pegasys.teku.spec.logic.common.helpers.MiscHelpers;
 
+/**
+ * Generates deposit receipts for a given slot with a probability of {@link
+ * DepositReceiptsUtil#PROBABILITY_OF_DEPOSIT}
+ */
 public class DepositReceiptsUtil {
 
-  private static final float PROBABILITY_OF_NO_DEPOSIT = 0.5f;
+  private static final float PROBABILITY_OF_DEPOSIT = 0.5f;
   private static final int MAX_NUMBER_OF_DEPOSITS_PER_BLOCK = 3;
 
   private final Spec spec;
@@ -51,7 +55,7 @@ public class DepositReceiptsUtil {
   }
 
   private int getNumberOfDepositReceiptsToGenerate() {
-    if (random.nextFloat() < PROBABILITY_OF_NO_DEPOSIT) {
+    if (random.nextFloat() > PROBABILITY_OF_DEPOSIT) {
       return 0;
     }
     return random.nextInt(1, MAX_NUMBER_OF_DEPOSITS_PER_BLOCK + 1);
