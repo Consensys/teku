@@ -24,6 +24,7 @@ import static tech.pegasys.teku.spec.schemas.ApiSchemas.VALIDATOR_REGISTRATION_S
 
 import com.google.common.base.Preconditions;
 import it.unimi.dsi.fastutil.ints.IntList;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -113,6 +114,7 @@ import tech.pegasys.teku.spec.datastructures.builder.SignedBuilderBid;
 import tech.pegasys.teku.spec.datastructures.builder.SignedValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.builder.ValidatorRegistration;
 import tech.pegasys.teku.spec.datastructures.execution.BlobsBundle;
+import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayload;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadBuilder;
 import tech.pegasys.teku.spec.datastructures.execution.ExecutionPayloadContext;
@@ -280,6 +282,10 @@ public final class DataStructureUtil {
     final byte[] result = new byte[length];
     random.nextBytes(result);
     return Bytes.wrap(result);
+  }
+
+  public String randomString(final int length) {
+    return new String(randomBytes(length).toArrayUnsafe(), StandardCharsets.UTF_8);
   }
 
   public BLSSignature randomSignature() {
@@ -1845,6 +1851,14 @@ public final class DataStructureUtil {
             : Optional.empty(),
         randomWithdrawalList(),
         randomBytes32());
+  }
+
+  public ClientVersion randomClientVersion() {
+    return new ClientVersion(
+        randomString(2),
+        randomString(randomInt(1, 10)),
+        randomString(randomInt(1, 10)),
+        randomBytes4());
   }
 
   public BeaconPreparableProposer randomBeaconPreparableProposer() {

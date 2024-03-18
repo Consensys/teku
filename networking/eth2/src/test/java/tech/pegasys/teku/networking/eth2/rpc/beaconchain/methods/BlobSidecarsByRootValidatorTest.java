@@ -86,4 +86,20 @@ public class BlobSidecarsByRootValidatorTest {
                 .BLOB_SIDECAR_KZG_VERIFICATION_FAILED
                 .describe());
   }
+
+  @Test
+  void blobSidecarResponseWithDuplicateSidecar() {
+    final SignedBeaconBlock block1 = dataStructureUtil.randomSignedBeaconBlock(UInt64.ONE);
+    final BlobIdentifier blobIdentifier1_0 = new BlobIdentifier(block1.getRoot(), UInt64.ZERO);
+    final BlobSidecar blobSidecar1_0 = dataStructureUtil.randomBlobSidecarForBlock(block1, 0);
+
+    validator = new BlobSidecarsByRootValidator(peer, spec, kzg, List.of(blobIdentifier1_0));
+    assertDoesNotThrow(() -> validator.validate(blobSidecar1_0));
+    assertThatThrownBy(() -> validator.validate(blobSidecar1_0))
+        .isExactlyInstanceOf(BlobSidecarsResponseInvalidResponseException.class)
+        .hasMessageContaining(
+            BlobSidecarsResponseInvalidResponseException.InvalidResponseType
+                .BLOB_SIDECAR_UNEXPECTED_IDENTIFIER
+                .describe());
+  }
 }

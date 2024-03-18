@@ -170,6 +170,10 @@ public class EventLogger {
         Color.YELLOW);
   }
 
+  public void logExecutionClientVersion(final String name, final String version) {
+    log.info("Execution Client version: {} {}", name, version);
+  }
+
   public void builderIsNotAvailable(final String errorMessage) {
     final String builderIsNotAvailableEventLog =
         String.format(

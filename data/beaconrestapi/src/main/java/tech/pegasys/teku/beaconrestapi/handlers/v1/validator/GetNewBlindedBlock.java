@@ -109,6 +109,7 @@ public class GetNewBlindedBlock extends RestApiEndpoint {
   }
 
   @Override
+  @SuppressWarnings("deprecation")
   public void handleRequest(final RestApiRequest request) throws JsonProcessingException {
     final UInt64 slot =
         request.getPathParameter(SLOT_PARAMETER.withDescription(SLOT_PATH_DESCRIPTION));

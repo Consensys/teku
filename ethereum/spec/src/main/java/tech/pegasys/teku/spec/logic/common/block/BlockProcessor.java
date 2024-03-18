@@ -123,8 +123,8 @@ public interface BlockProcessor {
   void processDepositWithoutCheckingMerkleProof(
       final MutableBeaconState state,
       final Deposit deposit,
-      final Object2IntMap<BLSPublicKey> pubKeyToIndexMap,
-      final boolean signatureCheckIsDone);
+      final Optional<Object2IntMap<BLSPublicKey>> maybePubkeyToIndexMap,
+      final boolean signatureAlreadyVerified);
 
   void processVoluntaryExits(
       MutableBeaconState state,

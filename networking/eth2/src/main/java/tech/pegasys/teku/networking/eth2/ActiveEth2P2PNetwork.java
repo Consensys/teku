@@ -78,6 +78,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
 
   private volatile Cancellable gossipUpdateTask;
   private ForkInfo currentForkInfo;
+  private final boolean allTopicsFilterEnabled;
 
   public ActiveEth2P2PNetwork(
       final Spec spec,
@@ -91,7 +92,8 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
       final SubnetSubscriptionService syncCommitteeSubnetService,
       final GossipEncoding gossipEncoding,
       final GossipConfigurator gossipConfigurator,
-      final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider) {
+      final ProcessedAttestationSubscriptionProvider processedAttestationSubscriptionProvider,
+      final boolean allTopicsFilterEnabled) {
     super(discoveryNetwork);
     this.spec = spec;
     this.asyncRunner = asyncRunner;
@@ -105,6 +107,7 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     this.attestationSubnetService = attestationSubnetService;
     this.syncCommitteeSubnetService = syncCommitteeSubnetService;
     this.processedAttestationSubscriptionProvider = processedAttestationSubscriptionProvider;
+    this.allTopicsFilterEnabled = allTopicsFilterEnabled;
   }
 
   @Override
@@ -147,7 +150,9 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
             discoveryNetwork::setSyncCommitteeSubnetSubscriptions);
 
     gossipForkManager.configureGossipForEpoch(recentChainData.getCurrentEpoch().orElseThrow());
-
+    if (allTopicsFilterEnabled) {
+      setAllTopicScoring();
+    }
     setTopicScoringParams();
   }
 
@@ -185,11 +190,19 @@ public class ActiveEth2P2PNetwork extends DelegatingP2PNetwork<Eth2Peer> impleme
     gossipUpdateTask =
         asyncRunner.runWithFixedDelay(
             this::updateDynamicTopicScoring,
-            Duration.ZERO,
+            allTopicsFilterEnabled ? Duration.ofMinutes(1) : Duration.ZERO,
             Duration.ofMinutes(1),
             (err) ->
                 LOG.error(
                     "Encountered error while attempting to updating gossip topic scoring", err));
+  }
+
+  private void setAllTopicScoring() {
+    LOG.debug("Update all topic scoring on digest {}", currentForkInfo.getForkDigest(spec));
+    getEth2Context()
+        .thenApply(gossipConfigurator::configureAllTopics)
+        .thenAccept(discoveryNetwork::updateGossipTopicScoring)
+        .ifExceptionGetsHereRaiseABug();
   }
 
   private SafeFuture<?> updateDynamicTopicScoring() {

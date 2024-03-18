@@ -13,12 +13,20 @@
 
 package tech.pegasys.teku.test.acceptance;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Map;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import tech.pegasys.teku.test.acceptance.dsl.AcceptanceTestBase;
 import tech.pegasys.teku.test.acceptance.dsl.GenesisGenerator;
+import tech.pegasys.teku.test.acceptance.dsl.SimpleHttpClient;
 import tech.pegasys.teku.test.acceptance.dsl.TekuBeaconNode;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfig;
 import tech.pegasys.teku.test.acceptance.dsl.TekuNodeConfigBuilder;
@@ -27,6 +35,7 @@ import tech.pegasys.teku.test.acceptance.dsl.tools.ValidatorKeysApi;
 import tech.pegasys.teku.test.acceptance.dsl.tools.deposits.ValidatorKeystores;
 
 public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
+  private static final Logger LOG = LogManager.getLogger();
 
   @Test
   void shouldFailWithNoValidatorKeysWhenExitOptionEnabledOnBeaconNode() throws Exception {
@@ -56,8 +65,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
                 .withInitialState(genesis)
                 .build());
 
-    beaconNode.startWithFailure(
-        "Unable to initialize validator keys, please manually correct errors and try again.");
+    beaconNode.startWithFailure("FATAL - Failed to load keystore", 20);
   }
 
   @Test
@@ -82,8 +90,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
                 .withWritableKeystorePath(initialKeystores, tempDir)
                 .build());
 
-    validatorNode.startWithFailure(
-        "Unable to initialize validator keys, please manually correct errors and try again.");
+    validatorNode.startWithFailure("FATAL - Failed to load keystore", 20);
   }
 
   @Test
@@ -104,8 +111,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
                 .withReadOnlyKeystorePath(initialKeystores, tempDir)
                 .build());
 
-    beaconNode.startWithFailure(
-        "Unable to initialize validator keys, please manually correct errors and try again.");
+    beaconNode.startWithFailure("FATAL - Please check the logs for details.");
   }
 
   @Test
@@ -127,8 +133,7 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
                 .withValidatorKeystoreLockingEnabled(true)
                 .build());
 
-    beaconNode.startWithFailure(
-        "Unable to initialize validator keys, please manually correct errors and try again.");
+    beaconNode.startWithFailure("FATAL - Failed to load keystore, error Access Denied", 20);
   }
 
   @Test
@@ -182,5 +187,55 @@ public class ValidatorClientServiceAcceptanceTest extends AcceptanceTestBase {
     api.assertLocalValidatorListing(Collections.emptyList());
     validatorClient.stop();
     beaconNode.stop();
+  }
+
+  @Test
+  void shouldStartValidatorApiWithoutSslAndAccessData() throws Exception {
+    final TekuBeaconNode beaconNode =
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode()
+                .withExitWhenNoValidatorKeysEnabled(false)
+                .withValidatorApiNoSsl(true)
+                .withSpecifiedBearerToken("admin")
+                .withInteropValidators(0, 8)
+                .build());
+    beaconNode.start();
+    beaconNode.waitForLogMessageContaining("UNSAFE");
+    try {
+      final SimpleHttpClient client = new SimpleHttpClient();
+      final String result =
+          client.get(
+              beaconNode.getValidatorApiUrl(),
+              "/eth/v1/keystores",
+              Map.of("Authorization", "Bearer admin"));
+      assertThat(result).contains("validating_pubkey");
+    } catch (AssertionError ex) {
+      fail("Failed to read response from keystores");
+    }
+  }
+
+  @Test
+  void shouldStartValidatorApiWithoutSslAndRequireCorrectBearer() throws Exception {
+    boolean caught = false;
+    final TekuBeaconNode beaconNode =
+        createTekuBeaconNode(
+            TekuNodeConfigBuilder.createBeaconNode()
+                .withExitWhenNoValidatorKeysEnabled(false)
+                .withValidatorApiNoSsl(true)
+                .withSpecifiedBearerToken("admin")
+                .withInteropValidators(0, 8)
+                .build());
+    beaconNode.start();
+    beaconNode.waitForLogMessageContaining("UNSAFE");
+    try {
+      final SimpleHttpClient client = new SimpleHttpClient();
+      // without a bearer token this will fail
+      client.get(beaconNode.getValidatorApiUrl(), "/eth/v1/keystores");
+    } catch (AssertionError ex) {
+      caught = true;
+      LOG.debug(ex.getMessage());
+      assertThat(ex.getMessage()).contains("401");
+    }
+    assertTrue(caught);
   }
 }

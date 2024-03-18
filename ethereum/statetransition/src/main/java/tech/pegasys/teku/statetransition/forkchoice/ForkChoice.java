@@ -453,6 +453,7 @@ public class ForkChoice implements ForkChoiceUpdatedResultSubscriber {
             .getAvailabilityCheckResult()
             .thenPeek(
                 result -> {
+                  blockImportPerformance.ifPresent(BlockImportPerformance::dataAvailabilityChecked);
                   // consensus validation is completed when DA check is completed
                   if (result.isSuccess()) {
                     blockBroadcastValidator.onConsensusValidationSucceeded();

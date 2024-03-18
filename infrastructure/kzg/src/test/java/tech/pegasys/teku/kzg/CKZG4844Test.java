@@ -86,12 +86,12 @@ public final class CKZG4844Test {
                 () ->
                     CKZG.verifyBlobKzgProofBatch(
                         List.of(Bytes.fromHexString("0x", BYTES_PER_BLOB)),
-                        List.of(KZGCommitment.infinity()),
-                        List.of(KZGProof.INFINITY))),
+                        List.of(getSampleCommitment()),
+                        List.of(getSampleProof()))),
             assertThrows(KZGException.class, () -> CKZG.blobToKzgCommitment(Bytes.EMPTY)),
             assertThrows(
                 KZGException.class,
-                () -> CKZG.computeBlobKzgProof(Bytes.EMPTY, KZGCommitment.infinity())));
+                () -> CKZG.computeBlobKzgProof(Bytes.EMPTY, getSampleCommitment())));
 
     assertThat(exceptions)
         .allSatisfy(
@@ -291,6 +291,10 @@ public final class CKZG4844Test {
 
   private KZGCommitment getSampleCommitment() {
     return CKZG.blobToKzgCommitment(getSampleBlob());
+  }
+
+  private KZGProof getSampleProof() {
+    return CKZG.computeBlobKzgProof(getSampleBlob(), getSampleCommitment());
   }
 
   private UInt256 randomBLSFieldElement() {

@@ -506,6 +506,7 @@ public class ValidatorDataProviderTest {
                         ValidatorStatus.values()[statusIdx]))
             .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
 
+    @SuppressWarnings("EnumOrdinal")
     final List<BLSPublicKey> exitedOrUnknownKeys =
         IntStream.range(
                 ValidatorStatus.exited_unslashed.ordinal(), numOfValidatorRegistrationsAttempted)

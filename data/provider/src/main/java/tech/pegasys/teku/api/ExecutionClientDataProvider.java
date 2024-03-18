@@ -14,7 +14,7 @@
 package tech.pegasys.teku.api;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-import tech.pegasys.teku.ethereum.executionclient.events.ExecutionClientEventsChannel;
+import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
 
 public class ExecutionClientDataProvider implements ExecutionClientEventsChannel {
 

@@ -164,6 +164,7 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
     private Spec spec;
     private ChainHeadTracker chainHeadTracker;
     private UInt64 lastEpochInCommitteePeriod;
+    private boolean useDvtEndpoint = false;
 
     public Builder validatorLogger(final ValidatorLogger validatorLogger) {
       this.validatorLogger = validatorLogger;
@@ -213,6 +214,11 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
       return this;
     }
 
+    public Builder useDvtEndpoint(final boolean useDvtEndpoint) {
+      this.useDvtEndpoint = useDvtEndpoint;
+      return this;
+    }
+
     public SyncCommitteeScheduledDuties build() {
       checkNotNull(spec, "Must provide a spec");
       checkNotNull(validatorApiChannel, "Must provide a validatorApiChannel");
@@ -224,7 +230,12 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
               spec, forkProvider, validatorApiChannel, assignments.values());
       final SyncCommitteeAggregationDuty aggregationDuty =
           new SyncCommitteeAggregationDuty(
-              spec, forkProvider, validatorApiChannel, validatorLogger, assignments.values());
+              spec,
+              forkProvider,
+              validatorApiChannel,
+              validatorLogger,
+              assignments.values(),
+              createSyncAggregatorSelectionProofProvider());
       return new SyncCommitteeScheduledDuties(
           productionDuty,
           aggregationDuty,
@@ -233,6 +244,12 @@ public class SyncCommitteeScheduledDuties implements ScheduledDuties {
           assignments.values(),
           validatorLogger,
           lastEpochInCommitteePeriod);
+    }
+
+    private SyncAggregatorSelectionProofProvider createSyncAggregatorSelectionProofProvider() {
+      return useDvtEndpoint
+          ? new ObolDvtSyncAggregatorSelectionProofProvider(validatorApiChannel)
+          : new SyncAggregatorSelectionProofProvider();
     }
   }
 }

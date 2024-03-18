@@ -132,6 +132,7 @@ public class RestApiBuilder {
             config -> {
               config.http.defaultContentType = "application/json";
               config.showJavalinBanner = false;
+              config.startupWatcherEnabled = false;
               // Work around a bug in Javalin where it decides whether to compress on each call to
               // write which could result in a mix of compressed and uncompressed content
               // and means it doesn't evaluate the length of the response correctly.

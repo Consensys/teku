@@ -15,6 +15,7 @@ package tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods;
 
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import tech.pegasys.teku.kzg.KZG;
 import tech.pegasys.teku.networking.eth2.rpc.beaconchain.methods.BlobSidecarsResponseInvalidResponseException.InvalidResponseType;
 import tech.pegasys.teku.networking.p2p.peer.Peer;
@@ -32,13 +33,14 @@ public class BlobSidecarsByRootValidator extends AbstractBlobSidecarsValidator {
       final KZG kzg,
       final List<BlobIdentifier> expectedBlobIdentifiers) {
     super(peer, spec, kzg);
-    this.expectedBlobIdentifiers = Set.copyOf(expectedBlobIdentifiers);
+    this.expectedBlobIdentifiers = ConcurrentHashMap.newKeySet();
+    this.expectedBlobIdentifiers.addAll(expectedBlobIdentifiers);
   }
 
   public void validate(final BlobSidecar blobSidecar) {
     final BlobIdentifier blobIdentifier =
         new BlobIdentifier(blobSidecar.getBlockRoot(), blobSidecar.getIndex());
-    if (!expectedBlobIdentifiers.contains(blobIdentifier)) {
+    if (!expectedBlobIdentifiers.remove(blobIdentifier)) {
       throw new BlobSidecarsResponseInvalidResponseException(
           peer, InvalidResponseType.BLOB_SIDECAR_UNEXPECTED_IDENTIFIER);
     }

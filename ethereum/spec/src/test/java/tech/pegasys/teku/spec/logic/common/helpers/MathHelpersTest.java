@@ -81,8 +81,7 @@ public class MathHelpersTest {
   @Test
   void sqrtOfMaxValue() {
     UInt64 actual = MathHelpers.integerSquareRoot(UInt64.MAX_VALUE);
-    UInt64 expected = UInt64.valueOf(4294967295L);
-    assertEquals(expected, actual);
+    assertEquals(MathHelpers.MAX_SQRT, actual);
   }
 
   @Test

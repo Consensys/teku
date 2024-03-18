@@ -31,6 +31,7 @@ import org.testcontainers.utility.MountableFile;
 import tech.pegasys.teku.api.response.v1.EventType;
 
 public abstract class TekuNode extends Node {
+  public static final int VALIDATOR_API_PORT = 9052;
   private static final Logger LOG = LogManager.getLogger();
   protected boolean started = false;
 
@@ -68,12 +69,18 @@ public abstract class TekuNode extends Node {
     container.start();
   }
 
+  // be aware that these regex's slow down quickly the bigger they are
+  // by default 10 second timeout, needs to be a short, simple match.
   public void startWithFailure(final String expectedError) throws Exception {
+    startWithFailure(expectedError, 10);
+  }
+
+  public void startWithFailure(final String expectedError, final int timeout) throws Exception {
     setUpStart();
     container.waitingFor(
         new LogMessageWaitStrategy()
-            .withRegEx(".*" + expectedError + ".*")
-            .withStartupTimeout(Duration.ofSeconds(10)));
+            .withRegEx(".*?" + expectedError + ".*")
+            .withStartupTimeout(Duration.ofSeconds(timeout)));
     container.start();
   }
 
@@ -139,5 +146,16 @@ public abstract class TekuNode extends Node {
 
   protected URI getRestApiUrl() {
     return URI.create("http://127.0.0.1:" + container.getMappedPort(REST_API_PORT));
+  }
+
+  public URI getValidatorApiUrl() {
+    final boolean isUseSsl =
+        (boolean) getConfig().getConfigMap().getOrDefault("Xvalidator-api-ssl-enabled", true);
+    final String prefix = isUseSsl ? "https" : "http";
+
+    final URI uri =
+        URI.create(prefix + "://127.0.0.1:" + container.getMappedPort(VALIDATOR_API_PORT));
+    LOG.debug("Validator URL: {}", uri);
+    return uri;
   }
 }

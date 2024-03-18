@@ -65,7 +65,7 @@ public class ValidatorConfig {
   public static final boolean DEFAULT_VALIDATOR_BLINDED_BLOCKS_ENABLED = false;
   public static final int DEFAULT_VALIDATOR_REGISTRATION_SENDING_BATCH_SIZE = 100;
   public static final UInt64 DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT = UInt64.valueOf(30_000_000);
-  public static final boolean DEFAULT_DVT_SELECTIONS_ENDPOINT_ENABLED = false;
+  public static final boolean DEFAULT_OBOL_DVT_SELECTIONS_ENDPOINT_ENABLED = false;
 
   private final List<String> validatorKeys;
   private final List<String> validatorExternalSignerPublicKeySources;
@@ -406,7 +406,7 @@ public class ValidatorConfig {
     private int executorThreads = DEFAULT_VALIDATOR_EXECUTOR_THREADS;
     private boolean isLocalSlashingProtectionSynchronizedModeEnabled =
         DEFAULT_VALIDATOR_IS_LOCAL_SLASHING_PROTECTION_SYNCHRONIZED_ENABLED;
-    private boolean dvtSelectionsEndpointEnabled = DEFAULT_DVT_SELECTIONS_ENDPOINT_ENABLED;
+    private boolean dvtSelectionsEndpointEnabled = DEFAULT_OBOL_DVT_SELECTIONS_ENDPOINT_ENABLED;
 
     private Builder() {}
 
@@ -647,7 +647,7 @@ public class ValidatorConfig {
       return this;
     }
 
-    public Builder dvtSelectionsEndpointEnabled(final boolean dvtSelectionsEndpointEnabled) {
+    public Builder obolDvtSelectionsEndpointEnabled(final boolean dvtSelectionsEndpointEnabled) {
       this.dvtSelectionsEndpointEnabled = dvtSelectionsEndpointEnabled;
       return this;
     }

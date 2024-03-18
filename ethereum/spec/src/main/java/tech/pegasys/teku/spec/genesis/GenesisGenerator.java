@@ -18,6 +18,7 @@ import static tech.pegasys.teku.spec.config.SpecConfig.GENESIS_EPOCH;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import java.util.List;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes32;
@@ -95,7 +96,8 @@ public class GenesisGenerator {
           // We do still verify the signature
           genesisSpec
               .getBlockProcessor()
-              .processDepositWithoutCheckingMerkleProof(state, deposit, keyCache, false);
+              .processDepositWithoutCheckingMerkleProof(
+                  state, deposit, Optional.of(keyCache), false);
 
           processActivation(deposit);
         });

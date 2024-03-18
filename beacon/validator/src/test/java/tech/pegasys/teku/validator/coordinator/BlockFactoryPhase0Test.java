@@ -201,7 +201,7 @@ class BlockFactoryPhase0Test extends AbstractBlockFactoryTest {
             syncCommitteeContributionPool,
             depositProvider,
             eth1DataCache,
-            graffiti,
+            () -> graffiti,
             forkChoiceNotifier,
             executionLayer));
   }
