@@ -143,10 +143,22 @@ public class P2POptions {
   @Option(
       names = {"--p2p-static-peers"},
       paramLabel = "<PEER_ADDRESSES>",
-      description = "Static peers",
+      description =
+          "Specifies a list of 'static' peers with which to establish and maintain connections",
       split = ",",
       arity = "0..*")
   private List<String> p2pStaticPeers = new ArrayList<>();
+
+  @Option(
+      names = {"--p2p-direct-peers"},
+      paramLabel = "<PEER_ADDRESSES>",
+      description =
+          "Specifies a list of 'direct' peers with which to establish and maintain connections.\n"
+              + "Direct peers are static peers with which this node will always exchange full messages, regardless of peer scoring mechanisms.\n"
+              + "Such peers will also need to enable you as direct in order to work.",
+      split = ",",
+      arity = "0..*")
+  private List<String> p2pDirectPeers = new ArrayList<>();
 
   @Option(
       names = {"--Xp2p-multipeer-sync-enabled"},
