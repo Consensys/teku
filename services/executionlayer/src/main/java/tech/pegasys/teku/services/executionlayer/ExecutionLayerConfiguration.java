@@ -35,7 +35,7 @@ public class ExecutionLayerConfiguration {
   public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_FAULTS = 5;
   public static final int DEFAULT_BUILDER_CIRCUIT_BREAKER_ALLOWED_CONSECUTIVE_FAULTS = 3;
   public static final int BUILDER_CIRCUIT_BREAKER_WINDOW_HARD_CAP = 64;
-  public static final UInt64 DEFAULT_BUILDER_BID_COMPARE_FACTOR = BUILDER_BOOST_FACTOR_MAX_PROFIT;
+  public static final UInt64 DEFAULT_BUILDER_BID_COMPARE_FACTOR = 90;
   public static final boolean DEFAULT_BUILDER_SET_USER_AGENT_HEADER = true;
   public static final boolean DEFAULT_USE_SHOULD_OVERRIDE_BUILDER_FLAG = true;
   public static final boolean DEFAULT_EXCHANGE_CAPABILITIES_MONITORING_ENABLED = true;
