@@ -31,12 +31,15 @@ import tech.pegasys.teku.spec.Spec;
 import tech.pegasys.teku.spec.TestSpecFactory;
 import tech.pegasys.teku.spec.datastructures.blocks.Eth1Data;
 import tech.pegasys.teku.spec.datastructures.state.beaconstate.BeaconState;
+import tech.pegasys.teku.spec.datastructures.state.beaconstate.versions.electra.MutableBeaconStateElectra;
 import tech.pegasys.teku.spec.util.DataStructureUtil;
 
 public class Eth1DataCacheTest {
 
   private static final UInt64 CACHE_DURATION = UInt64.valueOf(10_000);
-  private final Spec spec = TestSpecFactory.createMinimalPhase0();
+  private static final UInt64 ELECTRA_FORK_EPOCH = UInt64.valueOf(125);
+
+  private final Spec spec = TestSpecFactory.createMinimalWithElectraForkEpoch(ELECTRA_FORK_EPOCH);
 
   // Note: The slot and genesis time won't line up with the voting period start and end
   // This is semi-deliberate - if you use the Eth1VotingPeriod instance it all works,
@@ -67,7 +70,7 @@ public class Eth1DataCacheTest {
     when(eth1VotingPeriod.getSpecRangeLowerBound(SLOT, GENESIS_TIME))
         .thenReturn(VOTING_PERIOD_START);
     when(eth1VotingPeriod.getSpecRangeUpperBound(SLOT, GENESIS_TIME)).thenReturn(VOTING_PERIOD_END);
-    eth1DataCache = new Eth1DataCache(metricsSystem, eth1VotingPeriod);
+    eth1DataCache = new Eth1DataCache(spec, metricsSystem, eth1VotingPeriod);
   }
 
   // Add tests for eth1 block with no votes
@@ -216,6 +219,12 @@ public class Eth1DataCacheTest {
   }
 
   @Test
+  void shouldUseVoteFromState_ifFormerDepositMechanismHasBeenDisabled() {
+    final BeaconState beaconState = createBeaconStateWithFormerDepositMechanismDisabled();
+    assertThat(eth1DataCache.getEth1Vote(beaconState)).isEqualTo(beaconState.getEth1Data());
+  }
+
+  @Test
   void shouldPruneOldBlocksWhenNewerOnesReceived() {
     final UInt64 olderBlockTimestamp = ZERO;
     final UInt64 oldBlockTimestamp = olderBlockTimestamp.plus(ONE);
@@ -278,6 +287,18 @@ public class Eth1DataCacheTest {
   }
 
   @Test
+  void shouldNotUpdateMetrics_ifFormerDepositMechanismHasBeenDisabled() {
+    final BeaconState state = createBeaconStateWithFormerDepositMechanismDisabled();
+    eth1DataCache.updateMetrics(state);
+
+    assertGaugeValue(Eth1DataCache.VOTES_TOTAL_METRIC_NAME, 0);
+    assertGaugeValue(Eth1DataCache.VOTES_MAX_METRIC_NAME, 0);
+    assertGaugeValue(Eth1DataCache.VOTES_UNKNOWN_METRIC_NAME, 0);
+    assertGaugeValue(Eth1DataCache.VOTES_CURRENT_METRIC_NAME, 0);
+    assertGaugeValue(Eth1DataCache.VOTES_BEST_METRIC_NAME, 0);
+  }
+
+  @Test
   void shouldIncludeUnknownBlocksWhenCalculatingVoteBestMetric() {
     // Metric needs to indicate when a block will be voted in which happens even when unknown
     Eth1Data eth1Data1 = createEth1Data(STATE_DEPOSIT_COUNT);
@@ -301,6 +322,18 @@ public class Eth1DataCacheTest {
     when(beaconState.getEth1DataVotes()).thenReturn(eth1DataVotes);
     when(beaconState.getEth1Data()).thenReturn(stateEth1Data);
     return beaconState;
+  }
+
+  private BeaconState createBeaconStateWithFormerDepositMechanismDisabled() {
+    final UInt64 electraSlot = spec.computeStartSlotAtEpoch(ELECTRA_FORK_EPOCH);
+    final BeaconState preState = dataStructureUtil.stateBuilderElectra().slot(electraSlot).build();
+    return preState.updated(
+        state -> {
+          final UInt64 eth1DepositIndex = dataStructureUtil.randomUInt64();
+          state.setEth1DepositIndex(eth1DepositIndex);
+          MutableBeaconStateElectra.required(state)
+              .setDepositReceiptsStartIndex(eth1DepositIndex.plus(1));
+        });
   }
 
   private Eth1Data createEth1Data(final int depositCount) {

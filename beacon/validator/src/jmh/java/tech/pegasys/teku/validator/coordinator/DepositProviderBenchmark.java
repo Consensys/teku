@@ -17,7 +17,6 @@ import static org.mockito.Mockito.mock;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.apache.tuweni.bytes.Bytes32;
@@ -47,7 +46,7 @@ public class DepositProviderBenchmark {
   private final DataStructureUtil dataStructureUtil = new DataStructureUtil(spec);
   private final int depositEventCount = 1000;
 
-  private List<DepositsFromBlockEvent> events =
+  private final List<DepositsFromBlockEvent> events =
       IntStream.range(0, depositEventCount)
           .mapToObj(
               index ->
@@ -62,14 +61,14 @@ public class DepositProviderBenchmark {
                               dataStructureUtil.randomSignature(),
                               spec.getGenesisSpecConfig().getMaxEffectiveBalance(),
                               UInt64.valueOf(index)))))
-          .collect(Collectors.toList());
+          .toList();
 
   private final NoOpMetricsSystem metricsSystem = new NoOpMetricsSystem();
   private final DepositProvider depositProvider =
       new DepositProvider(
           metricsSystem,
           mock(RecentChainData.class),
-          new Eth1DataCache(metricsSystem, new Eth1VotingPeriod(spec)),
+          new Eth1DataCache(spec, metricsSystem, new Eth1VotingPeriod(spec)),
           mock(StorageUpdateChannel.class),
           mock(Eth1DepositStorageChannel.class),
           spec,

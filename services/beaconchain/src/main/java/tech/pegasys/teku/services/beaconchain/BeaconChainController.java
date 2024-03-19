@@ -824,7 +824,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   protected void initEth1DataCache() {
     LOG.debug("BeaconChainController.initEth1DataCache");
-    eth1DataCache = new Eth1DataCache(metricsSystem, new Eth1VotingPeriod(spec));
+    eth1DataCache = new Eth1DataCache(spec, metricsSystem, new Eth1VotingPeriod(spec));
   }
 
   protected void initAttestationTopicSubscriber() {
