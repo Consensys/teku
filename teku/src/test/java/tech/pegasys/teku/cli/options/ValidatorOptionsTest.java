@@ -15,6 +15,7 @@ package tech.pegasys.teku.cli.options;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_BUILDER_REGISTRATION_GAS_LIMIT;
+import static tech.pegasys.teku.validator.api.ValidatorConfig.DEFAULT_CLIENT_GRAFFITI_APPEND_FORMAT;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -27,6 +28,7 @@ import tech.pegasys.teku.cli.AbstractBeaconNodeCommandTest;
 import tech.pegasys.teku.config.TekuConfiguration;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
 import tech.pegasys.teku.infrastructure.unsigned.UInt64;
+import tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 
 public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
@@ -233,6 +235,24 @@ public class ValidatorOptionsTest extends AbstractBeaconNodeCommandTest {
             .validatorClient()
             .getValidatorConfig();
     assertThat(config.isShutdownWhenValidatorSlashedEnabled()).isTrue();
+  }
+
+  @Test
+  public void shouldSetDefaultGraffitiClientAppend() {
+    final ValidatorConfig config =
+        getTekuConfigurationFromArguments().validatorClient().getValidatorConfig();
+    assertThat(config.getClientGraffitiAppendFormat())
+        .isEqualTo(DEFAULT_CLIENT_GRAFFITI_APPEND_FORMAT);
+  }
+
+  @Test
+  public void shouldOverrideGraffitiClientAppend() {
+    final ValidatorConfig config =
+        getTekuConfigurationFromArguments("--validators-graffiti-client-append-format=NAME_END")
+            .validatorClient()
+            .getValidatorConfig();
+    assertThat(config.getClientGraffitiAppendFormat())
+        .isEqualTo(ClientGraffitiAppendFormat.NAME_END);
   }
 
   @Test

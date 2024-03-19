@@ -18,6 +18,7 @@ dependencies {
   implementation project(':ethereum:pow:api')
   implementation project(':ethereum:pow:merkletree')
   implementation project(':ethereum:spec')
+  implementation project(':ethereum:executionclient')
   implementation project(':networking:eth2')
   implementation project(':infrastructure:logging')
   implementation project(':infrastructure:ssz')

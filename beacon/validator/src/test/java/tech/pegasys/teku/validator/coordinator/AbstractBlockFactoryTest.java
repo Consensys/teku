@@ -85,6 +85,7 @@ import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContribution
 import tech.pegasys.teku.storage.client.RecentChainData;
 import tech.pegasys.teku.storage.storageSystem.InMemoryStorageSystemBuilder;
 import tech.pegasys.teku.storage.storageSystem.StorageSystem;
+import tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat;
 
 @SuppressWarnings("unchecked")
 public abstract class AbstractBlockFactoryTest {
@@ -116,6 +117,9 @@ public abstract class AbstractBlockFactoryTest {
   protected Optional<BuilderPayload> builderPayload = Optional.empty();
 
   protected ExecutionPayloadResult cachedExecutionPayloadResult = null;
+
+  protected GraffitiBuilder graffitiBuilder =
+      new GraffitiBuilder(ClientGraffitiAppendFormat.NONE, Optional.empty());
 
   @BeforeAll
   public static void initSession() {

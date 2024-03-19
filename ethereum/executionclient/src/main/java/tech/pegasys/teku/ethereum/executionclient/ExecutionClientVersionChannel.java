@@ -11,11 +11,14 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package tech.pegasys.teku.validator.coordinator;
+package tech.pegasys.teku.ethereum.executionclient;
 
-import org.apache.tuweni.bytes.Bytes32;
+import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
+import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 
-@FunctionalInterface
-public interface DefaultGraffitiProvider {
-  Bytes32 getDefaultGraffiti();
+public interface ExecutionClientVersionChannel extends ExecutionClientEventsChannel {
+  void onExecutionClientVersion(ClientVersion executionClientVersion);
+
+  @Override
+  default void onAvailabilityUpdated(boolean isAvailable) {}
 }

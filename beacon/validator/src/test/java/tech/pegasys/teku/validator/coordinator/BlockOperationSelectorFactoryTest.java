@@ -89,6 +89,7 @@ import tech.pegasys.teku.statetransition.forkchoice.ForkChoiceNotifier;
 import tech.pegasys.teku.statetransition.synccommittee.SignedContributionAndProofValidator;
 import tech.pegasys.teku.statetransition.synccommittee.SyncCommitteeContributionPool;
 import tech.pegasys.teku.statetransition.validation.OperationValidator;
+import tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat;
 
 class BlockOperationSelectorFactoryTest {
   private final Spec spec = TestSpecFactory.createMinimalDeneb();
@@ -175,6 +176,9 @@ class BlockOperationSelectorFactoryTest {
   private final CapturingBeaconBlockBodyBuilder bodyBuilder =
       new CapturingBeaconBlockBodyBuilder(false);
 
+  private final GraffitiBuilder graffitiBuilder =
+      new GraffitiBuilder(ClientGraffitiAppendFormat.NONE, Optional.empty());
+
   private final BlockOperationSelectorFactory factory =
       new BlockOperationSelectorFactory(
           spec,
@@ -186,7 +190,7 @@ class BlockOperationSelectorFactoryTest {
           contributionPool,
           depositProvider,
           eth1DataCache,
-          () -> defaultGraffiti,
+          graffitiBuilder,
           forkChoiceNotifier,
           executionLayer);
   private final BlockOperationSelectorFactory factoryBellatrix =
@@ -200,7 +204,7 @@ class BlockOperationSelectorFactoryTest {
           contributionPool,
           depositProvider,
           eth1DataCache,
-          () -> defaultGraffiti,
+          graffitiBuilder,
           forkChoiceNotifier,
           executionLayer);
   private ExecutionPayloadContext executionPayloadContext;
@@ -290,7 +294,7 @@ class BlockOperationSelectorFactoryTest {
                 parentRoot,
                 blockSlotState,
                 randaoReveal,
-                Optional.empty(),
+                Optional.of(defaultGraffiti),
                 Optional.empty(),
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)
@@ -378,7 +382,7 @@ class BlockOperationSelectorFactoryTest {
                 parentRoot,
                 blockSlotState,
                 randaoReveal,
-                Optional.empty(),
+                Optional.of(defaultGraffiti),
                 Optional.empty(),
                 Optional.empty(),
                 BlockProductionPerformance.NOOP)

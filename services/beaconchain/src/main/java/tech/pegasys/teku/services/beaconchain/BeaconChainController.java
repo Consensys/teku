@@ -53,6 +53,8 @@ import tech.pegasys.teku.beaconrestapi.JsonTypeDefinitionBeaconRestApi;
 import tech.pegasys.teku.ethereum.events.ExecutionClientEventsChannel;
 import tech.pegasys.teku.ethereum.events.SlotEventsChannel;
 import tech.pegasys.teku.ethereum.execution.types.Eth1Address;
+import tech.pegasys.teku.ethereum.executionclient.ExecutionClientVersionChannel;
+import tech.pegasys.teku.ethereum.executionclient.ExecutionClientVersionProvider;
 import tech.pegasys.teku.ethereum.performance.trackers.BlockProductionPerformanceFactory;
 import tech.pegasys.teku.ethereum.pow.api.Eth1EventsChannel;
 import tech.pegasys.teku.infrastructure.async.AsyncRunner;
@@ -186,12 +188,12 @@ import tech.pegasys.teku.validator.api.ValidatorTimingChannel;
 import tech.pegasys.teku.validator.coordinator.ActiveValidatorTracker;
 import tech.pegasys.teku.validator.coordinator.BlockFactory;
 import tech.pegasys.teku.validator.coordinator.BlockOperationSelectorFactory;
-import tech.pegasys.teku.validator.coordinator.DefaultGraffitiProviderImpl;
 import tech.pegasys.teku.validator.coordinator.DepositProvider;
 import tech.pegasys.teku.validator.coordinator.DutyMetrics;
 import tech.pegasys.teku.validator.coordinator.Eth1DataCache;
 import tech.pegasys.teku.validator.coordinator.Eth1DataProvider;
 import tech.pegasys.teku.validator.coordinator.Eth1VotingPeriod;
+import tech.pegasys.teku.validator.coordinator.GraffitiBuilder;
 import tech.pegasys.teku.validator.coordinator.MilestoneBasedBlockFactory;
 import tech.pegasys.teku.validator.coordinator.ValidatorApiHandler;
 import tech.pegasys.teku.validator.coordinator.performance.DefaultPerformanceTracker;
@@ -877,8 +879,14 @@ public class BeaconChainController extends Service implements BeaconChainControl
 
   public void initValidatorApiHandler() {
     LOG.debug("BeaconChainController.initValidatorApiHandler()");
-    final DefaultGraffitiProviderImpl defaultGraffitiProvider =
-        new DefaultGraffitiProviderImpl(executionLayer);
+    final ExecutionClientVersionProvider executionClientVersionProvider =
+        new ExecutionClientVersionProvider(
+            executionLayer, eventChannels.getPublisher(ExecutionClientVersionChannel.class));
+    final GraffitiBuilder graffitiBuilder =
+        new GraffitiBuilder(
+            beaconConfig.validatorConfig().getClientGraffitiAppendFormat(),
+            beaconConfig.validatorConfig().getGraffitiProvider().get());
+    eventChannels.subscribe(ExecutionClientVersionChannel.class, graffitiBuilder);
     final BlockOperationSelectorFactory operationSelector =
         new BlockOperationSelectorFactory(
             spec,
@@ -890,7 +898,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             syncCommitteeContributionPool,
             depositProvider,
             eth1DataCache,
-            defaultGraffitiProvider,
+            graffitiBuilder,
             forkChoiceNotifier,
             executionLayerBlockProductionManager);
     final BlockFactory blockFactory = new MilestoneBasedBlockFactory(spec, operationSelector);
@@ -940,7 +948,7 @@ public class BeaconChainController extends Service implements BeaconChainControl
             blockProductionPerformanceFactory);
     eventChannels
         .subscribe(SlotEventsChannel.class, activeValidatorTracker)
-        .subscribe(ExecutionClientEventsChannel.class, defaultGraffitiProvider)
+        .subscribe(ExecutionClientEventsChannel.class, executionClientVersionProvider)
         .subscribeMultithreaded(
             ValidatorApiChannel.class,
             validatorApiHandler,

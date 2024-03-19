@@ -520,6 +520,12 @@ public class TekuNodeConfigBuilder {
     return this;
   }
 
+  public TekuNodeConfigBuilder withGraffiti(final String graffiti) {
+    LOG.debug("validators-graffiti: {}", graffiti);
+    configMap.put("validators-graffiti", graffiti);
+    return this;
+  }
+
   private TekuNodeConfigBuilder withPrivateKey(PrivKey privKey) throws IOException {
     mustBe(NodeType.BEACON_NODE);
     this.maybePrivKey = Optional.ofNullable(privKey);

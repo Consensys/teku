@@ -27,6 +27,7 @@ import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
 import tech.pegasys.teku.cli.converter.GraffitiConverter;
 import tech.pegasys.teku.config.TekuConfiguration;
+import tech.pegasys.teku.validator.api.ClientGraffitiAppendFormat;
 import tech.pegasys.teku.validator.api.FileBackedGraffitiProvider;
 import tech.pegasys.teku.validator.api.ValidatorConfig;
 import tech.pegasys.teku.validator.api.ValidatorPerformanceTrackingMode;
@@ -54,6 +55,24 @@ public class ValidatorOptions {
               + "Takes precedence over --validators-graffiti. If the file can not be read, the --validators-graffiti value is used as a fallback.",
       arity = "1")
   private Path graffitiFile;
+
+  @Option(
+      names = {"--validators-graffiti-client-append-format"},
+      paramLabel = "<STRING>",
+      description =
+          """
+                          Appends CL and EL clients information separated with a space to user's graffiti on the Beacon Node.
+                          AUTO modes tries to provide complete version information if there is enough space for it.
+                          To disable use NONE. Available options:
+                            AUTO_END: (default) Clients info is appended after user's graffiti if any.
+                            AUTO_START: Clients info is added before user's graffiti.
+                            NAME_END: Only clients names are appended after user's graffiti. Good when you don't want to disclose clients versions.
+                            NAME_START: Clients names are added before user's graffiti.
+                            NONE: Clients information is not added to the graffiti.
+                          """,
+      arity = "1")
+  private ClientGraffitiAppendFormat clientGraffitiAppendFormat =
+      ValidatorConfig.DEFAULT_CLIENT_GRAFFITI_APPEND_FORMAT;
 
   @Option(
       names = {"--validators-performance-tracking-mode"},
@@ -176,6 +195,7 @@ public class ValidatorOptions {
                 .graffitiProvider(
                     new FileBackedGraffitiProvider(
                         Optional.ofNullable(graffiti), Optional.ofNullable(graffitiFile)))
+                .clientGraffitiAppendFormat(clientGraffitiAppendFormat)
                 .generateEarlyAttestations(generateEarlyAttestations)
                 .executorMaxQueueSize(executorMaxQueueSize)
                 .doppelgangerDetectionEnabled(doppelgangerDetectionEnabled)

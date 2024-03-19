@@ -46,6 +46,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.tuweni.bytes.Bytes;
 import org.apache.tuweni.bytes.Bytes32;
+import org.assertj.core.api.ThrowingConsumer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import tech.pegasys.teku.api.response.v1.EventType;
@@ -479,6 +480,19 @@ public class TekuBeaconNode extends TekuNode {
           assertThat(executionPayload.isDefault()).describedAs("Is default payload").isFalse();
           LOG.debug(
               "Non default execution payload found at slot " + bellatrixBlock.getMessage().slot);
+        },
+        5,
+        MINUTES);
+  }
+
+  public void waitForBlockSatisfying(final ThrowingConsumer<? super SignedBlock> consumer) {
+    LOG.debug("Wait for a block satisfying certain assertions");
+
+    waitFor(
+        () -> {
+          final Optional<SignedBlock> block = fetchHeadBlock();
+          assertThat(block).isPresent();
+          assertThat(block.get()).satisfies(consumer);
         },
         5,
         MINUTES);

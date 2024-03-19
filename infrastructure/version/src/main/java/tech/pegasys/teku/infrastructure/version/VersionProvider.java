@@ -21,6 +21,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import org.apache.commons.lang3.StringUtils;
+import tech.pegasys.teku.infrastructure.bytes.Bytes4;
+import tech.pegasys.teku.spec.datastructures.execution.ClientVersion;
 
 public class VersionProvider {
   public static final String ENV_XDG_DATA_HOME = "XDG_DATA_HOME";
@@ -31,6 +33,17 @@ public class VersionProvider {
   public static final String VERSION =
       CLIENT_IDENTITY + "/" + IMPLEMENTATION_VERSION + "/" + detectOS() + "/" + detectJvm();
   public static final Optional<String> COMMIT_HASH = getCommitHash();
+
+  public static ClientVersion createTekuClientVersion() {
+    // TODO: supplier.memoize
+    return new ClientVersion(
+        ClientVersion.TEKU_CLIENT_CODE,
+        VersionProvider.CLIENT_IDENTITY,
+        VersionProvider.IMPLEMENTATION_VERSION,
+        VersionProvider.COMMIT_HASH
+            .map(commitHash -> Bytes4.fromHexString(commitHash.substring(0, 8)))
+            .orElse(Bytes4.ZERO));
+  }
 
   public static String defaultStoragePath() {
     final String detectedOS = normalizeOS(normalize("os.name"));
