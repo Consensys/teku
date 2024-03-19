@@ -298,7 +298,9 @@ public class StorageConfiguration {
 
     public Builder stateRebuildTimeoutSeconds(int stateRebuildTimeoutSeconds) {
       if (stateRebuildTimeoutSeconds < 10 || stateRebuildTimeoutSeconds > 300) {
-        LOG.warn("State rebuild timeout is set outside of sensible defaults of 10 -> 300, {} was defined. Cannot be below 1, will allow the value to exceed 300.", stateRebuildTimeoutSeconds);
+        LOG.warn(
+            "State rebuild timeout is set outside of sensible defaults of 10 -> 300, {} was defined. Cannot be below 1, will allow the value to exceed 300.",
+            stateRebuildTimeoutSeconds);
       }
       this.stateRebuildTimeoutSeconds = Math.max(stateRebuildTimeoutSeconds, 1);
       LOG.debug("stateRebuildTimeoutSeconds = {}", stateRebuildTimeoutSeconds);
