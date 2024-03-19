@@ -171,7 +171,7 @@ public class DepositProvider
   }
 
   @Override
-  public void onMinGenesisTimeBlock(MinGenesisTimeBlockEvent event) {}
+  public void onMinGenesisTimeBlock(final MinGenesisTimeBlockEvent event) {}
 
   @Override
   public void onSlot(final UInt64 slot) {
@@ -187,6 +187,12 @@ public class DepositProvider
         .get()
         .thenAccept(
             state -> {
+              if (spec.isFormerDepositMechanismDisabled(state)) {
+                // No need to check eth1 deposits are available if former deposit mechanism has been
+                // disabled
+                return;
+              }
+
               final UInt64 eth1DepositCount = state.getEth1Data().getDepositCount();
 
               final UInt64 lastAvailableDepositIndex =

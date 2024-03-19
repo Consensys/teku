@@ -128,7 +128,7 @@ public class PowchainService extends Service {
 
     final Eth1Provider eth1Provider = eth1Providers.getEth1Provider();
     final String depositContract = powConfig.getDepositContract().toHexString();
-    DepositEventsAccessor depositEventsAccessor =
+    final DepositEventsAccessor depositEventsAccessor =
         new DepositEventsAccessor(eth1Provider, depositContract);
 
     final ValidatingEth1EventsPublisher eth1EventsPublisher =
