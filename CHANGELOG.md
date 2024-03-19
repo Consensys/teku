@@ -17,5 +17,6 @@ the [releases page](https://github.com/Consensys/teku/releases).
 - If the EL supports the `engine_getClientVersionV1` Engine API method, the default graffiti (when no graffiti has been configured by the validator) will include EL as well as CL version information. For more details, please see https://github.com/ethereum/execution-apis/pull/517.
 - `—p2p-private-key-file` command line option supports reading a binary private key file.
 - Updated libp2p seen cache configuration to reflect EIP-7045 spec changes. This reduces CPU and network bandwidth consumption.
+- Set DEFAULT_BUILDER_BID_COMPARE_FACTOR to 90. This makes it necessary for external block builders to give at least 10% additional profit compared to a local build before being taken into consideration. If you would like to go back to the previous default, execute the client with --builder-bid-compare-factor=100
 
 ### Bug Fixes
