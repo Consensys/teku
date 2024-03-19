@@ -24,16 +24,19 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   private final UInt64 electraForkEpoch;
 
   private final int maxDepositReceiptsPerPayload;
+  private final int maxExecutionLayerExits;
 
   public SpecConfigElectraImpl(
       final SpecConfigDeneb specConfig,
       final Bytes4 electraForkVersion,
       final UInt64 electraForkEpoch,
-      final int maxDepositReceiptsPerPayload) {
+      final int maxDepositReceiptsPerPayload,
+      final int maxExecutionLayerExits) {
     super(specConfig);
     this.electraForkVersion = electraForkVersion;
     this.electraForkEpoch = electraForkEpoch;
     this.maxDepositReceiptsPerPayload = maxDepositReceiptsPerPayload;
+    this.maxExecutionLayerExits = maxExecutionLayerExits;
   }
 
   @Override
@@ -49,6 +52,11 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
   @Override
   public int getMaxDepositReceiptsPerPayload() {
     return maxDepositReceiptsPerPayload;
+  }
+
+  @Override
+  public int getMaxExecutionLayerExits() {
+    return maxExecutionLayerExits;
   }
 
   @Override
@@ -68,12 +76,17 @@ public class SpecConfigElectraImpl extends DelegatingSpecConfigDeneb implements 
     return Objects.equals(specConfig, that.specConfig)
         && Objects.equals(electraForkVersion, that.electraForkVersion)
         && Objects.equals(electraForkEpoch, that.electraForkEpoch)
-        && maxDepositReceiptsPerPayload == that.maxDepositReceiptsPerPayload;
+        && maxDepositReceiptsPerPayload == that.maxDepositReceiptsPerPayload
+        && maxExecutionLayerExits == that.maxExecutionLayerExits;
   }
 
   @Override
   public int hashCode() {
     return Objects.hash(
-        specConfig, electraForkVersion, electraForkEpoch, maxDepositReceiptsPerPayload);
+        specConfig,
+        electraForkVersion,
+        electraForkEpoch,
+        maxDepositReceiptsPerPayload,
+        maxExecutionLayerExits);
   }
 }

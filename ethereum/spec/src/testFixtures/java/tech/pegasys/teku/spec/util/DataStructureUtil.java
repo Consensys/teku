@@ -232,6 +232,10 @@ public final class DataStructureUtil {
     return randomInt(Integer.MAX_VALUE);
   }
 
+  public int randomPositiveInt(final int bound) {
+    return new Random(nextSeed()).ints(0, bound).findFirst().orElse(0);
+  }
+
   public byte randomByte() {
     final byte[] bytes = new byte[1];
     new Random(nextSeed()).nextBytes(bytes);
